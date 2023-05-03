@@ -1,5 +1,7 @@
 # billbo
 
+*WIP* This is all just thoughts and ideas at this point
+
 Billbo is a storage and archival service for Software Bill of Material (SBOM) files, from now on called SBOMs in plural instead of SBsOM.
 
 Why would you use Billbo? If you're a big organization, you have a lot of SBOMs, possibly terrabytes of SBOM data. You have some parts of your organization that produces SBOMs, and you need to store them somewhere safe. Amazon S3 or similar is probably one of the safer options around since it's API is ubiquitous when you look for object storage.
@@ -22,7 +24,7 @@ You're probably not a big organization, please continue to use files.
 
 ### "I but you need 100 gazillion cores to run that system"
 
-It's written in Rust so it must be fast. Billbo runs fine in 0.1 cores and 32 MB of RAM (Ok, ok... not counting S3 and Kafka).
+It's written in Rust so it must be fast. 
 
 ## Crates 
 
