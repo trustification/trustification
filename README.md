@@ -28,6 +28,40 @@ You're probably not a big organization, please continue to use files.
 
 It's written in Rust so it must be fast. 
 
+## Architecture
+The overall design follows a (micro)-services architecture, where each component in the architecture can have clearly defined service boundaries and may be replaced independently of the other components. 
+
+### Services
+
+Components marked with internal are not accessible on the public internet.
+
+* Authentication/Authorization - Service that supports OIDC for authenticating users (Keycloak) and returning a token (with claims for authorization).
+
+* API - entry point for SBOM producers and consumers. Users are authenticated by the API using a token provided by the authentication service. This service can be scaled dynamically by traffic demand.
+
+* Validation - Service that can validate an SBOM according to company policies (Open Policy Agent or Seedwing).
+
+* (Internal) Object Storage - Storage of SBOMs. The most important property here is that it is durable and has a way to do disaster recovery.
+
+* (Internal) Object Cache - A fixed size cache improving retrieval performance.
+
+* (Internal) Event log - Capturing changes to the object storage. The log has topics containing references to SBOM that need to be indexed and references to SBOM files that are fully stored and indexed. The stream of updates can be consumed by an exporter that publishes SBOM files to an external system.
+
+* (Internal) Secondary Index - Index for quick lookups based on package URL (pURL) or artifact hash (sha256). The index need not be durable as it can be recreated from the data, and can be kept small. The index involves a consumer from the event log that can retrieve the object-to-be-indexed from the storage.
+
+* (Internal) Exporter - An optional service that gets notified when an SBOM is created or is changed, and can retrieve it and publish it to an external system.
+
+As objects are inserted into the storage, an event is emitted into the event log. The advantage of this design is that we can ensure consistency of the object storage, which we consider the most important, and keep data transfers to a minimum. In contrast, an event-sourced system would require us to write the entire SBOM into multiple systems multiple times.
+
+#### Produce flow
+
+![produce](produce.png)
+
+
+#### Consume flow
+
+![consume](consume.png)
+
 ## Crates 
 
 Billbo consists of the following Rust crates, of which some are common APIs and others are standalone micro-services.
