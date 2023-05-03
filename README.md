@@ -2,6 +2,8 @@
 
 *WIP* This is all just thoughts and ideas at this point
 
+![Bilbo](bilbo.jpg)
+
 Billbo is a storage and archival service for Software Bill of Material (SBOM) files, from now on called SBOMs in plural instead of SBsOM.
 
 Why would you use Billbo? If you're a big organization, you have a lot of SBOMs, possibly terrabytes of SBOM data. You have some parts of your organization that produces SBOMs, and you need to store them somewhere safe. Amazon S3 or similar is probably one of the safer options around since it's API is ubiquitous when you look for object storage.
