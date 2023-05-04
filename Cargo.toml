@@ -1,9 +1,9 @@
 [workspace]
 members = [
-    "billbo-api",
-    "billbo-indexer",
-    "billbo-exporter",
-    "billbo-event-bus",
-    "billbo-storage",
-    "billbo-index",
+    "bombastic-api",
+    "bombastic-indexer",
+    "bombastic-exporter",
+    "bombastic-event-bus",
+    "bombastic-storage",
+    "bombastic-index",
 ]
