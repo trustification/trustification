@@ -1,9 +1,9 @@
 [workspace]
 members = [
-    "bombastic-api",
-    "bombastic-indexer",
-    "bombastic-exporter",
-    "bombastic-event-bus",
-    "bombastic-storage",
-    "bombastic-index",
+    "api",
+    "indexer",
+    "exporter",
+    "event-bus",
+    "storage",
+    "index",
 ]
