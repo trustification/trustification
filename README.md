@@ -1,18 +1,18 @@
-# Bombastic
+# BOMbastic
 
 *WIP* This is all just thoughts and ideas at this point
 
 ![Bilbo](bilbo.jpg)
 
-Billbo is a storage and archival service for Software Bill of Material (SBOM) files, from now on called SBOMs in plural instead of SBsOM.
+Bombastic is a storage and archival service for Software Bill of Material (SBOM) files, from now on called SBOMs in plural instead of SBsOM.
 
-Why would you use Billbo? If you're a big organization, you have a lot of SBOMs, possibly terrabytes of SBOM data. You have some parts of your organization that produces SBOMs, and you need to store them somewhere safe. Amazon S3 or similar is probably one of the safer options around since it's API is ubiquitous when you look for object storage.
+Why would you use Bombastic? If you're a big organization, you have a lot of SBOMs, possibly terrabytes of SBOM data. You have some parts of your organization that produces SBOMs, and you need to store them somewhere safe. Amazon S3 or similar is probably one of the safer options around since it's API is ubiquitous when you look for object storage.
 
 But if you're a big organization, you may need to provide these SBOMs to consumers from time to time, either to internal users or customers, fast. And if you're fancy, maybe you even have some need to automatically stream new SBOMs to external systems.
 
 Oh, and authentication! You definitely want that, at least for producers.
 
-Billbo consists of:
+Bombastic consists of:
 
 * An API for publishing and consuming SBOM data
 * Keycloak or similar (OIDC) for authentication and authorization.
@@ -64,7 +64,7 @@ As objects are inserted into the storage, an event is emitted into the event log
 
 ## Crates 
 
-Billbo consists of the following Rust crates, of which some are common APIs and others are standalone micro-services.
+Bombastic consists of the following Rust crates, of which some are common APIs and others are standalone micro-services.
 
 * `bombastic-storage` - facade to s3 api used by indexer and api
 * `bombastic-api` - API server
