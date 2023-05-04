@@ -60,6 +60,8 @@ impl From<S3Error> for Error {
     }
 }
 
+const BASE_PATH: &str = "/bombastic/sbom";
+
 impl Storage {
     pub fn new(config: Config) -> Result<Self, Error> {
         let bucket =
@@ -68,10 +70,14 @@ impl Storage {
     }
 
     pub async fn put(&self, key: &str, value: &[u8]) -> Result<(), Error> {
-        todo!()
+        let path = format!("{}/{}", BASE_PATH, key);
+        self.bucket.put_object(path, value).await?;
+        Ok(())
     }
 
     pub async fn get(&self, key: &str) -> Result<Vec<u8>, Error> {
-        todo!()
+        let path = format!("{}/{}", BASE_PATH, key);
+        let data = self.bucket.get_object(path).await?;
+        Ok(data.to_vec())
     }
 }
