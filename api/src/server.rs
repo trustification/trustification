@@ -1,16 +1,15 @@
-use axum::{
-    body::{Body, Bytes},
-    extract::{Path, Query, State},
-    http::StatusCode,
-    response::IntoResponse,
-    routing::{get, put},
-    Json, Router,
-};
+use std::net::SocketAddr;
+use std::sync::Arc;
+
+use axum::body::{Body, Bytes};
+use axum::extract::{Path, Query, State};
+use axum::http::StatusCode;
+use axum::response::IntoResponse;
+use axum::routing::{get, put};
+use axum::{Json, Router};
 use bombastic_index::Index;
 use bombastic_storage::{Config as StorageConfig, Storage};
 use serde::{Deserialize, Serialize};
-use std::net::SocketAddr;
-use std::sync::Arc;
 use tokio::sync::{Mutex, RwLock};
 
 struct AppState {
@@ -21,10 +20,7 @@ struct AppState {
 
 type SharedState = Arc<AppState>;
 
-pub async fn run<T: AsRef<std::path::Path>, B: Into<SocketAddr>>(
-    index: T,
-    bind: B,
-) -> Result<(), anyhow::Error> {
+pub async fn run<T: AsRef<std::path::Path>, B: Into<SocketAddr>>(index: T, bind: B) -> Result<(), anyhow::Error> {
     let storage = RwLock::new(Storage::new(StorageConfig::new_minio_test())?);
     let index = Mutex::new(Index::new(index)?);
 
@@ -38,16 +34,11 @@ pub async fn run<T: AsRef<std::path::Path>, B: Into<SocketAddr>>(
 
     let addr = bind.into();
     tracing::debug!("listening on {}", addr);
-    axum::Server::bind(&addr)
-        .serve(app.into_make_service())
-        .await?;
+    axum::Server::bind(&addr).serve(app.into_make_service()).await?;
     Ok(())
 }
 
-async fn fetch_sbom(
-    State(state): State<SharedState>,
-    Path(id): Path<String>,
-) -> (StatusCode, Bytes) {
+async fn fetch_sbom(State(state): State<SharedState>, Path(id): Path<String>) -> (StatusCode, Bytes) {
     let storage = state.storage.read().await;
     // TODO: Stream payload/SBOM directly from body rather than going via serde_json.
     match storage.get(&id).await {

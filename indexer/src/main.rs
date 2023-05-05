@@ -1,11 +1,11 @@
+use std::net::SocketAddr;
+use std::path::PathBuf;
+use std::process::{ExitCode, Termination};
+use std::str::FromStr;
+
 use bombastic_index::Index;
 use clap::Parser;
 use serde::{Deserialize, Serialize};
-use std::{net::SocketAddr, path::PathBuf};
-use std::{
-    process::{ExitCode, Termination},
-    str::FromStr,
-};
 
 mod indexer;
 

@@ -1,4 +1,5 @@
-use std::{fmt::Display, path::Path};
+use std::fmt::Display;
+use std::path::Path;
 
 pub struct Index {
     connection: sqlite::Connection,
@@ -58,6 +59,19 @@ impl Index {
             Err(Error::NotFound)
         }
     }
+
+    pub async fn insert(&mut self, purl: &str, sha256: &str, obj: &str) -> Result<(), Error> {
+        const INSERT_PURL: &str = "INSERT INTO sboms VALUES (?, ?, ?)";
+        let mut statement = self.connection.prepare(INSERT_PURL)?;
+        statement.bind(&[(1, purl), (2, sha256), (3, obj)][..])?;
+        loop {
+            let state = statement.next()?;
+            if state == sqlite::State::Done {
+                break;
+            }
+        }
+        Ok(())
+    }
 }
 
 impl From<sqlite::Error> for Error {
@@ -80,11 +94,33 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_query_purl() {
+    async fn test_insert() {
         let mut conn = sqlite::open(":memory:").unwrap();
         init(&mut conn);
 
         let mut index = Index::new_with_handle(conn);
+
+        let result = index
+            .insert(
+                "purl2",
+                "116940abae80491f5357f652e55c48347dd7a2a1ff27df578c4572a383373c71",
+                "key1",
+            )
+            .await;
+        assert!(result.is_ok());
+
+        let result = index.query_purl("purl2").await;
+        assert!(result.is_ok());
+        let result = result.unwrap();
+        assert_eq!(result, "key1");
+    }
+
+    #[tokio::test]
+    async fn test_query_purl() {
+        let mut conn = sqlite::open(":memory:").unwrap();
+        init(&mut conn);
+
+        let index = Index::new_with_handle(conn);
 
         let result = index.query_purl("purl1").await;
         assert!(result.is_ok());
@@ -100,7 +136,7 @@ mod tests {
         let mut conn = sqlite::open(":memory:").unwrap();
         init(&mut conn);
 
-        let mut index = Index::new_with_handle(conn);
+        let index = Index::new_with_handle(conn);
 
         let result = index
             .query_sha256("116940abae80491f5357f652e55c48347dd7a2a1ff27df578c4572a383373c70")

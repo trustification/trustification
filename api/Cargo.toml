@@ -16,5 +16,3 @@ bombastic-index = { path = "../index" }
 bombastic-storage = { path = "../storage" }
 clap = { version = "4", features = ["derive"] }
 anyhow = "1"
-log = "0.4"
-env_logger = "0.10"

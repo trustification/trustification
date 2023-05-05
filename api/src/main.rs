@@ -1,18 +1,16 @@
-use axum::{
-    extract::Query,
-    http::StatusCode,
-    response::IntoResponse,
-    routing::{get, post},
-    Json, Router,
-};
+use std::net::SocketAddr;
+use std::path::PathBuf;
+use std::process::{ExitCode, Termination};
+use std::str::FromStr;
+
+use axum::extract::Query;
+use axum::http::StatusCode;
+use axum::response::IntoResponse;
+use axum::routing::{get, post};
+use axum::{Json, Router};
 use bombastic_index::Index;
 use clap::Parser;
 use serde::{Deserialize, Serialize};
-use std::{net::SocketAddr, path::PathBuf};
-use std::{
-    process::{ExitCode, Termination},
-    str::FromStr,
-};
 
 mod server;
 

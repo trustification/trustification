@@ -1,9 +1,9 @@
-use s3::creds::error::CredentialsError;
-use s3::error::S3Error;
-use s3::Bucket;
 use std::fmt::Display;
 
+use s3::creds::error::CredentialsError;
 pub use s3::creds::Credentials;
+use s3::error::S3Error;
+use s3::Bucket;
 pub use s3::Region;
 
 pub struct Storage {
@@ -70,8 +70,7 @@ const BASE_PATH: &str = "/bombastic/sbom";
 
 impl Storage {
     pub fn new(config: Config) -> Result<Self, Error> {
-        let bucket =
-            Bucket::new(&config.bucket_name, config.region, config.credentials)?.with_path_style();
+        let bucket = Bucket::new(&config.bucket_name, config.region, config.credentials)?.with_path_style();
         Ok(Self { bucket })
     }
 
