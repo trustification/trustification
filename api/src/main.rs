@@ -25,7 +25,7 @@ pub enum Command {
 #[command(
     author,
     version = env!("CARGO_PKG_VERSION"),
-    about = "Trusted Content API Server",
+    about = "Bombastic API Server",
     long_about = None
 )]
 pub struct Cli {

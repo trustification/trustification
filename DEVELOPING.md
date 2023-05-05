@@ -24,9 +24,36 @@ RUST_LOG=info cargo run -p bombastic-api -- run --index index.sqlite
 
 At this point, you can PUT and GET SBOMs with the API using the id.
 
+To ingest an SBOM:
+
+```
+curl -X PUT -d@my-sbom.json http://localhost:8080/api/v1/sbom/mysbom
+```
+
 For searching using the index, more setup is required.
 
-## TODO
+## Kafka
+
+[Download Kafka](https://kafka.apache.org/downloads) and follow the [quick start](https://kafka.apache.org/quickstart) for running it.
+
+
+## Indexer
+
+The indexer requires a connection to Kafka. To run it:
+
+```
+RUST_LOG=info cargo run -p bombastic-indexer -- run --index index.sqlite
+```
+
+## Storage notificatons
+
+In order for the indexer to know about new entries, you need to configure MinIO to forward those events to Kafka:
+
+```
+
+```
+
+
 
 * Setup storage consumer
 * Setup indexer

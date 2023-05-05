@@ -247,6 +247,16 @@ dependencies = [
 [[package]]
 name = "bombastic-indexer"
 version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "bombastic-index",
+ "bombastic-storage",
+ "clap",
+ "serde",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+]
 
 [[package]]
 name = "bombastic-storage"
