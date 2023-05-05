@@ -222,6 +222,7 @@ name = "bombastic-event-bus"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "async-trait",
  "rdkafka",
 ]
 
@@ -246,6 +247,7 @@ dependencies = [
  "bombastic-index",
  "bombastic-storage",
  "clap",
+ "futures",
  "serde",
  "serde_json",
  "sha2",

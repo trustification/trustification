@@ -1,6 +1,3 @@
-#![feature(async_fn_in_trait)]
-#![allow(incomplete_features)]
-
 use std::fmt::Debug;
 
 pub trait Event {
@@ -9,9 +6,12 @@ pub trait Event {
     fn commit(&self) -> Result<(), Self::Error>;
 }
 
+#[async_trait::async_trait]
 pub trait EventBus {
     type Error: Debug;
-    type Event<'m>: Event;
+    type Event<'m>: Event
+    where
+        Self: 'm;
     async fn poll<'m>(&'m self) -> Result<Self::Event<'m>, Self::Error>;
 }
 

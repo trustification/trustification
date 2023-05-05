@@ -1,5 +1,6 @@
 use std::path::PathBuf;
 use std::process::{ExitCode, Termination};
+use std::time::Duration;
 
 use bombastic_index::Index;
 use bombastic_storage::{Config, Storage};
@@ -43,8 +44,9 @@ impl Cli {
                 stored_topic,
                 indexed_topic,
                 failed_topic,
+                sync_interval_seconds,
             }) => {
-                let index = Index::new(index)?;
+                let index = Index::new(&index)?;
                 let storage = Storage::new(Config::new_minio_test())?;
                 let kafka = bombastic_event_bus::kafka::KafkaEventBus::new(
                     kafka_bootstrap_servers,
@@ -53,7 +55,8 @@ impl Cli {
                     indexed_topic,
                     failed_topic,
                 )?;
-                indexer::run(index, storage, kafka).await?;
+                let interval = Duration::from_secs(sync_interval_seconds);
+                indexer::run(index, storage, kafka, interval).await?;
             }
         }
         Ok(ExitCode::SUCCESS)
@@ -78,6 +81,9 @@ pub struct Run {
 
     #[arg(long = "failed-topic", default_value = "failed")]
     pub(crate) failed_topic: String,
+
+    #[arg(long = "sync-interval-seconds", default_value_t = 60)]
+    pub(crate) sync_interval_seconds: u64,
 }
 
 #[tokio::main]

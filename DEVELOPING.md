@@ -19,7 +19,7 @@ Once running, open the [console](http://localhost:9001) and create a bucket name
 To run the API, you can use cargo:
 
 ```
-RUST_LOG=info cargo run -p bombastic-api -- run --index index.sqlite
+RUST_LOG=info cargo run -p bombastic-api -- run --index api-index.sqlite
 ```
 
 At this point, you can PUT and GET SBOMs with the API using the id.
@@ -44,7 +44,7 @@ Once started, create three topics: `stored`, `indexed`, `failed`
 The indexer requires a connection to Kafka. To run it:
 
 ```
-RUST_LOG=info cargo run -p bombastic-indexer -- run --index index.sqlite
+RUST_LOG=info cargo run -p bombastic-indexer -- run --index indexer-index.sqlite
 ```
 
 At this point you should be able to ingest and query the data, either directly or indirectly using the index:
@@ -53,6 +53,8 @@ At this point you should be able to ingest and query the data, either directly o
 curl -X GET http://localhost:8080/api/v1/sbom/mysbom
 curl -X GET http://localhost:8080/api/v1/sbom?purl=pkg%3Amaven%2Fio.seedwing%2Fseedwing-java-example%401.0.0-SNAPSHOT%3Ftype%3Djar
 ```
+
+The indexer will automatically sync the index to the S3 bucket, while the API will periodically retrieve the index from S3. Therefore, there may be a delay between storing the entry and it being indexed.
 
 ## Exporter
 

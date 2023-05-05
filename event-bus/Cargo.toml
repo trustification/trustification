@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 rdkafka = { version = "0.25", features = ["cmake-build"], optional = true }
 anyhow = "1"
+async-trait = "0.1"
 
 [features]
 default = ["kafka"]

@@ -9,6 +9,7 @@ pub use s3::Region;
 pub struct Storage {
     bucket: Bucket,
     prefix: String,
+    index_prefix: String,
 }
 
 pub struct Config {
@@ -67,13 +68,23 @@ impl From<S3Error> for Error {
     }
 }
 
-const BASE_PATH: &str = "/data/sbom/";
+const SBOM_PATH: &str = "/data/sbom/";
+const INDEX_PATH: &str = "/index.sqlite";
 
 impl Storage {
     pub fn new(config: Config) -> Result<Self, Error> {
-        let prefix = format!("{}{}", config.bucket_name, BASE_PATH);
+        let prefix = format!("{}{}", config.bucket_name, SBOM_PATH);
+        let index_prefix = format!("{}{}", config.bucket_name, INDEX_PATH);
         let bucket = Bucket::new(&config.bucket_name, config.region, config.credentials)?.with_path_style();
-        Ok(Self { bucket, prefix })
+        Ok(Self {
+            bucket,
+            prefix,
+            index_prefix,
+        })
+    }
+
+    pub fn is_index(&self, key: &str) -> bool {
+        self.index_prefix == key
     }
 
     pub fn extract_key<'m>(&'m self, key: &'m str) -> Option<&'m str> {
@@ -81,14 +92,24 @@ impl Storage {
     }
 
     pub async fn put(&self, key: &str, value: &[u8]) -> Result<(), Error> {
-        let path = format!("{}{}", BASE_PATH, key);
+        let path = format!("{}{}", SBOM_PATH, key);
         self.bucket.put_object(path, value).await?;
         Ok(())
     }
 
     pub async fn get(&self, key: &str) -> Result<Vec<u8>, Error> {
-        let path = format!("{}{}", BASE_PATH, key);
+        let path = format!("{}{}", SBOM_PATH, key);
         let data = self.bucket.get_object(path).await?;
+        Ok(data.to_vec())
+    }
+
+    pub async fn put_index(&self, index: &[u8]) -> Result<(), Error> {
+        self.bucket.put_object(INDEX_PATH, index).await?;
+        Ok(())
+    }
+
+    pub async fn get_index(&self) -> Result<Vec<u8>, Error> {
+        let data = self.bucket.get_object(INDEX_PATH).await?;
         Ok(data.to_vec())
     }
 }

@@ -1,8 +1,9 @@
 use std::fmt::Display;
-use std::path::Path;
+use std::path::PathBuf;
 
 pub struct Index {
     connection: sqlite::Connection,
+    path: Option<PathBuf>,
 }
 
 #[derive(Debug)]
@@ -10,6 +11,8 @@ pub enum Error {
     Open,
     Internal(sqlite::Error),
     NotFound,
+    NotPersisted,
+    Io(std::io::Error),
 }
 
 impl Display for Error {
@@ -18,6 +21,8 @@ impl Display for Error {
             Self::Open => write!(f, "Error opening index"),
             Self::Internal(e) => write!(f, "Internal error: {:?}", e),
             Self::NotFound => write!(f, "Not found"),
+            Self::NotPersisted => write!(f, "Database is not persisted"),
+            Self::Io(e) => write!(f, "I/O error: {:?}", e),
         }
     }
 }
@@ -28,15 +33,27 @@ impl std::error::Error for Error {}
 const SCHEMA: &str = include_str!("../schema.sql");
 
 impl Index {
-    pub fn new<T: AsRef<Path>>(path: T) -> Result<Self, Error> {
+    pub fn new(path: &PathBuf) -> Result<Self, Error> {
         let connection = sqlite::open(path).map_err(|_| Error::Open)?;
         // TODO: Handle error
         let _ = connection.execute(SCHEMA);
-        Ok(Self { connection })
+        Ok(Self {
+            connection,
+            path: Some(path.clone()),
+        })
+    }
+
+    // Update index data and reopen
+    pub fn sync(&mut self, data: &[u8]) -> Result<(), Error> {
+        if let Some(path) = &self.path {
+            std::fs::write(path, data).map_err(Error::Io)?;
+            self.connection = sqlite::open(path).map_err(|_| Error::Open)?;
+        }
+        Ok(())
     }
 
     pub fn new_with_handle(connection: sqlite::Connection) -> Self {
-        Self { connection }
+        Self { connection, path: None }
     }
 
     pub async fn query_purl(&mut self, purl: &str) -> Result<String, Error> {
@@ -76,6 +93,15 @@ impl Index {
             }
         }
         Ok(())
+    }
+
+    pub fn snapshot(&mut self) -> Result<Vec<u8>, Error> {
+        if let Some(path) = &self.path {
+            let data = std::fs::read(path).map_err(|e| Error::Io(e))?;
+            Ok(data)
+        } else {
+            Err(Error::NotPersisted)
+        }
     }
 }
 
@@ -125,7 +151,7 @@ mod tests {
         let mut conn = sqlite::open(":memory:").unwrap();
         init(&mut conn);
 
-        let index = Index::new_with_handle(conn);
+        let mut index = Index::new_with_handle(conn);
 
         let result = index.query_purl("purl1").await;
         assert!(result.is_ok());
@@ -141,7 +167,7 @@ mod tests {
         let mut conn = sqlite::open(":memory:").unwrap();
         init(&mut conn);
 
-        let index = Index::new_with_handle(conn);
+        let mut index = Index::new_with_handle(conn);
 
         let result = index
             .query_sha256("116940abae80491f5357f652e55c48347dd7a2a1ff27df578c4572a383373c70")

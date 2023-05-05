@@ -2,6 +2,7 @@ use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::process::{ExitCode, Termination};
 use std::str::FromStr;
+use std::time::Duration;
 
 use bombastic_index::Index;
 use bombastic_storage::{Config, Storage};
@@ -39,11 +40,17 @@ impl Cli {
 
     async fn run_command(self) -> anyhow::Result<ExitCode> {
         match self.command {
-            Command::Run(Run { index, bind, port }) => {
-                let index = Index::new(index)?;
+            Command::Run(Run {
+                index,
+                bind,
+                port,
+                sync_interval_seconds,
+            }) => {
+                let index = Index::new(&index)?;
                 let storage = Storage::new(Config::new_minio_test())?;
                 let addr = SocketAddr::from_str(&format!("{}:{}", bind, port))?;
-                server::run(storage, index, addr).await?;
+                let interval = Duration::from_secs(sync_interval_seconds);
+                server::run(storage, index, addr, interval).await?;
             }
         }
         Ok(ExitCode::SUCCESS)
@@ -61,6 +68,9 @@ pub struct Run {
 
     #[arg(short = 'i', long = "index")]
     pub(crate) index: PathBuf,
+
+    #[arg(long = "sync-interval-seconds", default_value_t = 10)]
+    pub(crate) sync_interval_seconds: u64,
 }
 
 #[tokio::main]

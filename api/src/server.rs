@@ -1,5 +1,6 @@
 use std::net::SocketAddr;
 use std::sync::Arc;
+use std::time::Duration;
 
 use axum::body::Bytes;
 use axum::extract::{Path, Query, State};
@@ -19,7 +20,26 @@ struct AppState {
 
 type SharedState = Arc<AppState>;
 
-pub async fn run<B: Into<SocketAddr>>(storage: Storage, index: Index, bind: B) -> Result<(), anyhow::Error> {
+impl AppState {
+    async fn sync_index(&self) -> Result<(), anyhow::Error> {
+        let data = {
+            let storage = self.storage.read().await;
+            storage.get_index().await?
+        };
+
+        let mut index = self.index.lock().await;
+        index.sync(&data[..])?;
+        tracing::info!("Index reloaded");
+        Ok(())
+    }
+}
+
+pub async fn run<B: Into<SocketAddr>>(
+    storage: Storage,
+    index: Index,
+    bind: B,
+    sync_interval: Duration,
+) -> Result<(), anyhow::Error> {
     let storage = RwLock::new(storage);
     let index = Mutex::new(index);
 
@@ -29,9 +49,15 @@ pub async fn run<B: Into<SocketAddr>>(storage: Storage, index: Index, bind: B) -
         .route("/api/v1/sbom", get(query_sbom))
         .route("/api/v1/sbom/:id", get(fetch_sbom))
         .route("/api/v1/sbom/:id", put(publish_sbom))
-        .with_state(state);
+        .with_state(state.clone());
 
     let addr = bind.into();
+    tokio::task::spawn(async move {
+        if let Err(e) = state.sync_index().await {
+            tracing::warn!("Error synchronizing index: {:?}", e);
+        }
+        tokio::time::sleep(sync_interval).await;
+    });
     tracing::debug!("listening on {}", addr);
     axum::Server::bind(&addr).serve(app.into_make_service()).await?;
     Ok(())

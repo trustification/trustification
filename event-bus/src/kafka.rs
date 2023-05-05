@@ -52,9 +52,10 @@ impl KafkaEventBus {
     }
 }
 
+#[async_trait::async_trait]
 impl EventBus for KafkaEventBus {
     type Error = KafkaError;
-    type Event<'m> = KafkaEvent<'m>;
+    type Event<'m> = KafkaEvent<'m> where Self: 'm;
     async fn poll<'m>(&'m self) -> Result<Self::Event<'m>, Self::Error> {
         let message = self.consumer.recv().await?;
         Ok(KafkaEvent {
