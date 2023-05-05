@@ -23,7 +23,7 @@ impl KafkaEventBus {
     pub fn new(
         brokers: String,
         group_id: String,
-        created_topic: String,
+        stored_topic: String,
         indexed_topic: String,
         failed_topic: String,
     ) -> Result<Self, anyhow::Error> {
@@ -35,7 +35,7 @@ impl KafkaEventBus {
             .set("enable.auto.commit", "false")
             .create()?;
 
-        consumer.subscribe(&[&created_topic])?;
+        consumer.subscribe(&[&stored_topic])?;
 
         let producer: FutureProducer = ClientConfig::new()
             .set("bootstrap.servers", &brokers)

@@ -9,7 +9,7 @@ The simplest way to run storage locally is to use MinIO. [Download](https://min.
 With the standalone binary, you can run it like this:
 
 ```
-MINIO_ROOT_USER=admin MINIO_ROOT_PASSWORD=password minio server data --console-address ":9001"
+MINIO_ROOT_USER=admin MINIO_ROOT_PASSWORD=password MINIO_NOTIFY_KAFKA_ENABLE_EVENTBUS="on" MINIO_NOTIFY_KAFKA_BROKERS_EVENTBUS="localhost:9092" MINIO_NOTIFY_KAFKA_TOPIC_EVENTBUS="stored" minio server data --console-address ":9001"
 ```
 
 Once running, open the [console](http://localhost:9001) and create a bucket named 'bombastic'.
@@ -36,6 +36,8 @@ For searching using the index, more setup is required.
 
 [Download Kafka](https://kafka.apache.org/downloads) and follow the [quick start](https://kafka.apache.org/quickstart) for running it.
 
+Once started, create three topics: `stored`, `indexed`, `failed`
+
 
 ## Indexer
 
@@ -45,15 +47,13 @@ The indexer requires a connection to Kafka. To run it:
 RUST_LOG=info cargo run -p bombastic-indexer -- run --index index.sqlite
 ```
 
-## Storage notificatons
-
-In order for the indexer to know about new entries, you need to configure MinIO to forward those events to Kafka:
+At this point you should be able to ingest and query the data, either directly or indirectly using the index:
 
 ```
-
+curl -X GET http://localhost:8080/api/v1/sbom/mysbom
+curl -X GET http://localhost:8080/api/v1/sbom?purl=pkg%3Amaven%2Fio.seedwing%2Fseedwing-java-example%401.0.0-SNAPSHOT%3Ftype%3Djar
 ```
 
+## Exporter
 
-
-* Setup storage consumer
-* Setup indexer
+TODO

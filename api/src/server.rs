@@ -42,7 +42,7 @@ async fn fetch_sbom(State(state): State<SharedState>, Path(id): Path<String>) ->
     let storage = state.storage.read().await;
     // TODO: Stream payload/SBOM directly from body rather than going via serde_json.
     match storage.get(&id).await {
-        Ok(data) => (StatusCode::NOT_FOUND, data.into()),
+        Ok(data) => (StatusCode::OK, data.into()),
         Err(e) => (StatusCode::NOT_FOUND, "".into()),
     }
 }
@@ -50,12 +50,40 @@ async fn fetch_sbom(State(state): State<SharedState>, Path(id): Path<String>) ->
 #[derive(Serialize)]
 struct FetchResponse {}
 
-async fn query_sbom(
-    State(state): State<SharedState>,
-    Query(params): Query<QueryParams>,
-) -> (StatusCode, Json<QueryResponse>) {
-    // TODO: Implement
-    (StatusCode::NOT_FOUND, Json(QueryResponse {}))
+async fn query_sbom(State(state): State<SharedState>, Query(params): Query<QueryParams>) -> (StatusCode, Bytes) {
+    let result = if let Some(purl) = params.purl {
+        tracing::info!("Querying SBOM using purl {}", purl);
+        let mut index = state.index.lock().await;
+        let result = index.query_purl(&purl).await;
+        if let Err(e) = &result {
+            tracing::info!("Index entry for pURL {} not found: {:?}", purl, e);
+        }
+        result
+    } else if let Some(sha256) = params.sha256 {
+        tracing::info!("Querying SBOM using sha256 {}", sha256);
+        let mut index = state.index.lock().await;
+        let result = index.query_sha256(&sha256).await;
+        if let Err(e) = &result {
+            tracing::info!("Index entry for SHA256 {} not found: {:?}", sha256, e);
+        }
+        result
+    } else {
+        return (StatusCode::BAD_REQUEST, Bytes::default());
+    };
+
+    match result {
+        Ok(key) => {
+            let storage = state.storage.read().await;
+            match storage.get(&key).await {
+                Ok(data) => (StatusCode::OK, data.into()),
+                Err(e) => {
+                    tracing::warn!("Unable to locate object with key {}: {:?}", key, e);
+                    (StatusCode::INTERNAL_SERVER_ERROR, Bytes::default())
+                }
+            }
+        }
+        Err(_) => (StatusCode::NOT_FOUND, Bytes::default()),
+    }
 }
 
 #[derive(Debug, Deserialize)]
@@ -63,9 +91,6 @@ struct QueryParams {
     purl: Option<String>,
     sha256: Option<String>,
 }
-
-#[derive(Serialize)]
-struct QueryResponse {}
 
 async fn publish_sbom(
     State(state): State<SharedState>,

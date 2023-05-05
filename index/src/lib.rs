@@ -8,7 +8,7 @@ pub struct Index {
 #[derive(Debug)]
 pub enum Error {
     Open,
-    Internal,
+    Internal(sqlite::Error),
     NotFound,
 }
 
@@ -16,7 +16,7 @@ impl Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Open => write!(f, "Error opening index"),
-            Self::Internal => write!(f, "Internal error"),
+            Self::Internal(e) => write!(f, "Internal error: {:?}", e),
             Self::NotFound => write!(f, "Not found"),
         }
     }
@@ -24,9 +24,14 @@ impl Display for Error {
 
 impl std::error::Error for Error {}
 
+// TODO: SCHEMA migration not supported right now...
+const SCHEMA: &str = include_str!("../schema.sql");
+
 impl Index {
     pub fn new<T: AsRef<Path>>(path: T) -> Result<Self, Error> {
         let connection = sqlite::open(path).map_err(|_| Error::Open)?;
+        // TODO: Handle error
+        let _ = connection.execute(SCHEMA);
         Ok(Self { connection })
     }
 
@@ -34,7 +39,7 @@ impl Index {
         Self { connection }
     }
 
-    pub async fn query_purl(&self, purl: &str) -> Result<String, Error> {
+    pub async fn query_purl(&mut self, purl: &str) -> Result<String, Error> {
         const QUERY_PURL: &str = "SELECT obj FROM sboms WHERE purl=?";
         let mut statement = self.connection.prepare(QUERY_PURL)?;
         statement.bind((1, purl))?;
@@ -47,7 +52,7 @@ impl Index {
         }
     }
 
-    pub async fn query_sha256(&self, hash: &str) -> Result<String, Error> {
+    pub async fn query_sha256(&mut self, hash: &str) -> Result<String, Error> {
         const QUERY_PURL: &str = "SELECT obj FROM sboms WHERE sha256=?";
         let mut statement = self.connection.prepare(QUERY_PURL)?;
         statement.bind((1, hash))?;
@@ -75,8 +80,8 @@ impl Index {
 }
 
 impl From<sqlite::Error> for Error {
-    fn from(_e: sqlite::Error) -> Self {
-        Self::Internal
+    fn from(e: sqlite::Error) -> Self {
+        Self::Internal(e)
     }
 }
 

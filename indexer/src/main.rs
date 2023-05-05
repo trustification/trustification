@@ -4,6 +4,7 @@ use std::process::{ExitCode, Termination};
 use std::str::FromStr;
 
 use bombastic_index::Index;
+use bombastic_storage::{Config, Storage};
 use clap::Parser;
 use serde::{Deserialize, Serialize};
 
@@ -42,18 +43,20 @@ impl Cli {
             Command::Run(Run {
                 index,
                 kafka_bootstrap_servers,
-                created_topic,
+                stored_topic,
                 indexed_topic,
                 failed_topic,
             }) => {
+                let index = Index::new(index)?;
+                let storage = Storage::new(Config::new_minio_test())?;
                 let kafka = bombastic_event_bus::kafka::KafkaEventBus::new(
                     kafka_bootstrap_servers,
                     "indexer".into(),
-                    created_topic,
+                    stored_topic,
                     indexed_topic,
                     failed_topic,
                 )?;
-                indexer::run(index, kafka).await?;
+                indexer::run(index, storage, kafka).await?;
             }
         }
         Ok(ExitCode::SUCCESS)
@@ -70,8 +73,8 @@ pub struct Run {
     #[arg(long = "kafka-bootstraps-servers", default_value = "localhost:9092")]
     pub(crate) kafka_bootstrap_servers: String,
 
-    #[arg(long = "created-topic", default_value = "created")]
-    pub(crate) created_topic: String,
+    #[arg(long = "stored-topic", default_value = "stored")]
+    pub(crate) stored_topic: String,
 
     #[arg(long = "indexed-topic", default_value = "indexed")]
     pub(crate) indexed_topic: String,
