@@ -3,10 +3,10 @@ use std::time::Duration;
 use bombastic_event_bus::{Event, EventBus};
 use bombastic_index::Index;
 use bombastic_storage::Storage;
-use futures::future::{select, Either};
 use futures::pin_mut;
 use serde::Deserialize;
 use sha2::{Digest, Sha256};
+use tokio::select;
 
 #[derive(Deserialize, Debug)]
 pub struct StorageEvent {
@@ -28,8 +28,8 @@ pub async fn run<E: EventBus>(
     loop {
         let tick = interval.tick();
         pin_mut!(tick);
-        match select(event_bus.poll(), tick).await {
-            Either::Left((bus, _)) => match bus {
+        select! {
+            bus = event_bus.poll() => match bus {
                 Ok(event) => loop {
                     if let Some(payload) = event.payload() {
                         if let Ok(data) = serde_json::from_slice::<StorageEvent>(payload) {
@@ -74,7 +74,7 @@ pub async fn run<E: EventBus>(
                     tracing::warn!("Error polling for event: {:?}", e);
                 }
             },
-            Either::Right(_) => match index.snapshot() {
+            _ = tick => match index.snapshot() {
                 Ok(data) => {
                     tracing::info!("Pushing new index to storage");
                     match storage.put_index(&data).await {
@@ -89,7 +89,7 @@ pub async fn run<E: EventBus>(
                 Err(e) => {
                     tracing::warn!("Error taking index snapshot: {:?}", e);
                 }
-            },
+            }
         }
     }
 }
