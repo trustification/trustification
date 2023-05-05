@@ -45,13 +45,6 @@ bin/kafka-topics.sh --create --topic indexed --bootstrap-server localhost:9092
 bin/kafka-topics.sh --create --topic failed --bootstrap-server localhost:9092
 ```
 
-We also need to configure MinIO to forward events:
-
-```
-
-```
-
-
 ## Indexer
 
 The indexer requires a connection to Kafka. To run it:
