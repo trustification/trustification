@@ -8,6 +8,7 @@ use rdkafka::Message;
 
 use crate::{Event, EventBus};
 
+#[allow(unused)]
 pub struct KafkaEventBus {
     consumer: StreamConsumer,
     producer: FutureProducer,

@@ -59,5 +59,4 @@ pub async fn run<E: EventBus>(mut index: Index, storage: Storage, event_bus: E) 
             }
         }
     }
-    Ok(())
 }
