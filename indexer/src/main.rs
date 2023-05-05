@@ -1,12 +1,9 @@
-use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::process::{ExitCode, Termination};
-use std::str::FromStr;
 
 use bombastic_index::Index;
 use bombastic_storage::{Config, Storage};
 use clap::Parser;
-use serde::{Deserialize, Serialize};
 
 mod indexer;
 

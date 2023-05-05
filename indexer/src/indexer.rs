@@ -36,7 +36,7 @@ pub async fn run<E: EventBus>(mut index: Index, storage: Storage, event_bus: E) 
                                             Err(e) => tracing::warn!("Error inserting entry into index: {:?}", e),
                                         }
                                     }
-                                    Err(e) => {}
+                                    Err(_e) => {}
                                 }
                             } else {
                                 tracing::warn!("Error extracting key from event: {:?}", data)

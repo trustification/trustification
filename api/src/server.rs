@@ -1,14 +1,13 @@
 use std::net::SocketAddr;
 use std::sync::Arc;
 
-use axum::body::{Body, Bytes};
+use axum::body::Bytes;
 use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
-use axum::response::IntoResponse;
 use axum::routing::{get, put};
 use axum::{Json, Router};
 use bombastic_index::Index;
-use bombastic_storage::{Config as StorageConfig, Storage};
+use bombastic_storage::Storage;
 use serde::{Deserialize, Serialize};
 use tokio::sync::{Mutex, RwLock};
 
@@ -43,7 +42,7 @@ async fn fetch_sbom(State(state): State<SharedState>, Path(id): Path<String>) ->
     // TODO: Stream payload/SBOM directly from body rather than going via serde_json.
     match storage.get(&id).await {
         Ok(data) => (StatusCode::OK, data.into()),
-        Err(e) => (StatusCode::NOT_FOUND, "".into()),
+        Err(_e) => (StatusCode::NOT_FOUND, "".into()),
     }
 }
 

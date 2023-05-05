@@ -2,8 +2,8 @@ use rdkafka::config::ClientConfig;
 use rdkafka::consumer::stream_consumer::StreamConsumer;
 use rdkafka::consumer::Consumer;
 use rdkafka::error::KafkaError;
-use rdkafka::message::{BorrowedMessage, OwnedMessage};
-use rdkafka::producer::{FutureProducer, FutureRecord};
+use rdkafka::message::BorrowedMessage;
+use rdkafka::producer::FutureProducer;
 use rdkafka::Message;
 
 use crate::{Event, EventBus};

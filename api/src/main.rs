@@ -3,15 +3,9 @@ use std::path::PathBuf;
 use std::process::{ExitCode, Termination};
 use std::str::FromStr;
 
-use axum::extract::Query;
-use axum::http::StatusCode;
-use axum::response::IntoResponse;
-use axum::routing::{get, post};
-use axum::{Json, Router};
 use bombastic_index::Index;
 use bombastic_storage::{Config, Storage};
 use clap::Parser;
-use serde::{Deserialize, Serialize};
 
 mod server;
 
