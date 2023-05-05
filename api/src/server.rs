@@ -53,10 +53,22 @@ pub async fn run<B: Into<SocketAddr>>(
 
     let addr = bind.into();
     tokio::task::spawn(async move {
-        if let Err(e) = state.sync_index().await {
-            tracing::warn!("Error synchronizing index: {:?}", e);
+        loop {
+            if let Ok(_) = state.sync_index().await {
+                tracing::info!("Initial index synced");
+                break;
+            } else {
+                tracing::warn!("Index not yet available");
+            }
+            tokio::time::sleep(Duration::from_secs(5)).await;
         }
-        tokio::time::sleep(sync_interval).await;
+
+        loop {
+            if let Err(e) = state.sync_index().await {
+                tracing::info!("Unable to synchronize index: {:?}", e);
+            }
+            tokio::time::sleep(sync_interval).await;
+        }
     });
     tracing::debug!("listening on {}", addr);
     axum::Server::bind(&addr).serve(app.into_make_service()).await?;

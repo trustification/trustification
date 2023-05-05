@@ -82,7 +82,7 @@ pub struct Run {
     #[arg(long = "failed-topic", default_value = "failed")]
     pub(crate) failed_topic: String,
 
-    #[arg(long = "sync-interval-seconds", default_value_t = 60)]
+    #[arg(long = "sync-interval-seconds", default_value_t = 10)]
     pub(crate) sync_interval_seconds: u64,
 }
 

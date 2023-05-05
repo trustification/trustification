@@ -5,7 +5,6 @@
 ### Storage service
 
 The simplest way to run storage locally is to use MinIO. [Download](https://min.io/download) and run for your platform. It can run as a container or as a standalone binary. 
-
 With the standalone binary, you can run it like this:
 
 ```
@@ -13,6 +12,8 @@ MINIO_ROOT_USER=admin MINIO_ROOT_PASSWORD=password MINIO_NOTIFY_KAFKA_ENABLE_EVE
 ```
 
 Once running, open the [console](http://localhost:9001) and create a bucket named 'bombastic'.
+
+Go to the `Events` pane and click `Subscribe to Event`. When you click on the text field you should see a suggested ARN. Select that and add the hook for 'PUT' - Object Uploaded events. Then click Save.
 
 ## API
 
@@ -36,7 +37,19 @@ For searching using the index, more setup is required.
 
 [Download Kafka](https://kafka.apache.org/downloads) and follow the [quick start](https://kafka.apache.org/quickstart) for running it.
 
-Once started, create three topics: `stored`, `indexed`, `failed`
+Once started, create three topics: `stored`, `indexed`, `failed`:
+
+```
+bin/kafka-topics.sh --create --topic stored --bootstrap-server localhost:9092
+bin/kafka-topics.sh --create --topic indexed --bootstrap-server localhost:9092
+bin/kafka-topics.sh --create --topic failed --bootstrap-server localhost:9092
+```
+
+We also need to configure MinIO to forward events:
+
+```
+
+```
 
 
 ## Indexer
