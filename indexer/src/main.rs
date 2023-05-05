@@ -39,8 +39,21 @@ impl Cli {
 
     async fn run_command(self) -> anyhow::Result<ExitCode> {
         match self.command {
-            Command::Run(Run { index }) => {
-                indexer::run(index).await?;
+            Command::Run(Run {
+                index,
+                kafka_bootstrap_servers,
+                created_topic,
+                indexed_topic,
+                failed_topic,
+            }) => {
+                let kafka = bombastic_event_bus::kafka::KafkaEventBus::new(
+                    kafka_bootstrap_servers,
+                    "indexer".into(),
+                    created_topic,
+                    indexed_topic,
+                    failed_topic,
+                )?;
+                indexer::run(index, kafka).await?;
             }
         }
         Ok(ExitCode::SUCCESS)
@@ -52,6 +65,19 @@ impl Cli {
 pub struct Run {
     #[arg(short = 'i', long = "index")]
     pub(crate) index: PathBuf,
+
+    // TODO: Make optional
+    #[arg(long = "kafka-bootstraps-servers", default_value = "localhost:9092")]
+    pub(crate) kafka_bootstrap_servers: String,
+
+    #[arg(long = "created-topic", default_value = "created")]
+    pub(crate) created_topic: String,
+
+    #[arg(long = "indexed-topic", default_value = "indexed")]
+    pub(crate) indexed_topic: String,
+
+    #[arg(long = "failed-topic", default_value = "failed")]
+    pub(crate) failed_topic: String,
 }
 
 #[tokio::main]
