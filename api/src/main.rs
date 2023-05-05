@@ -6,9 +6,13 @@ use axum::{
     Json, Router,
 };
 use bombastic_index::Index;
+use clap::Parser;
 use serde::{Deserialize, Serialize};
 use std::{net::SocketAddr, path::PathBuf};
-use std::{process::ExitCode, str::FromStr};
+use std::{
+    process::{ExitCode, Termination},
+    str::FromStr,
+};
 
 mod server;
 
@@ -65,7 +69,8 @@ pub struct Run {
 }
 
 #[tokio::main]
-async fn main() {
-    env_logger::init();
+async fn main() -> impl Termination {
+    //env_logger::init();
     tracing_subscriber::fmt::init();
+    Cli::parse().run().await
 }

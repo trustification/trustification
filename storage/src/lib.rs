@@ -19,12 +19,18 @@ pub struct Config {
 impl Config {
     pub fn new_minio_test() -> Self {
         Config {
-            bucket_name: "test-rust-s3".to_string(),
+            bucket_name: "bombastic".to_string(),
             region: Region::Custom {
                 region: "eu-central-1".to_owned(),
                 endpoint: "http://localhost:9000".to_owned(),
             },
-            credentials: Credentials::default().unwrap(),
+            credentials: Credentials {
+                access_key: Some("admin".into()),
+                secret_key: Some("password".into()),
+                security_token: None,
+                session_token: None,
+                expiration: None,
+            },
         }
     }
 }

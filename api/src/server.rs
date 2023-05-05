@@ -85,8 +85,14 @@ async fn publish_sbom(
     let storage = state.storage.write().await;
     // TODO: unbuffered I/O
     match storage.put(&id, &data[..]).await {
-        Ok(_) => (StatusCode::CREATED, Json(response)),
-        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(response)),
+        Ok(_) => {
+            tracing::info!("SBOM of size {} stored successfully", &data[..].len());
+            (StatusCode::CREATED, Json(response))
+        }
+        Err(e) => {
+            tracing::warn!("Error storing SBOM: {:?}", e);
+            (StatusCode::INTERNAL_SERVER_ERROR, Json(response))
+        }
     }
 }
 
