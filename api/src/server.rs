@@ -20,9 +20,9 @@ struct AppState {
 
 type SharedState = Arc<AppState>;
 
-pub async fn run<T: AsRef<std::path::Path>, B: Into<SocketAddr>>(index: T, bind: B) -> Result<(), anyhow::Error> {
-    let storage = RwLock::new(Storage::new(StorageConfig::new_minio_test())?);
-    let index = Mutex::new(Index::new(index)?);
+pub async fn run<B: Into<SocketAddr>>(storage: Storage, index: Index, bind: B) -> Result<(), anyhow::Error> {
+    let storage = RwLock::new(storage);
+    let index = Mutex::new(index);
 
     let state = Arc::new(AppState { storage, index });
 

@@ -9,6 +9,7 @@ use axum::response::IntoResponse;
 use axum::routing::{get, post};
 use axum::{Json, Router};
 use bombastic_index::Index;
+use bombastic_storage::{Config, Storage};
 use clap::Parser;
 use serde::{Deserialize, Serialize};
 
@@ -45,8 +46,10 @@ impl Cli {
     async fn run_command(self) -> anyhow::Result<ExitCode> {
         match self.command {
             Command::Run(Run { index, bind, port }) => {
+                let index = Index::new(index)?;
+                let storage = Storage::new(Config::new_minio_test())?;
                 let addr = SocketAddr::from_str(&format!("{}:{}", bind, port))?;
-                server::run(index, addr).await?;
+                server::run(storage, index, addr).await?;
             }
         }
         Ok(ExitCode::SUCCESS)
