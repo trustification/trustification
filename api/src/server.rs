@@ -139,7 +139,7 @@ async fn publish_sbom(
     // TODO: unbuffered I/O
     match storage.put(&id, &data[..]).await {
         Ok(_) => {
-            tracing::info!("SBOM of size {} stored successfully", &data[..].len());
+            tracing::trace!("SBOM of size {} stored successfully", &data[..].len());
             (StatusCode::CREATED, Json(response))
         }
         Err(e) => {

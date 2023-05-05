@@ -7,7 +7,6 @@ use futures::future::{select, Either};
 use futures::pin_mut;
 use serde::Deserialize;
 use sha2::{Digest, Sha256};
-use tokio::time::{sleep_until, Instant};
 
 #[derive(Deserialize, Debug)]
 pub struct StorageEvent {
@@ -25,16 +24,16 @@ pub async fn run<E: EventBus>(
     event_bus: E,
     sync_interval: Duration,
 ) -> Result<(), anyhow::Error> {
-    let mut next_sync = Instant::now() + sync_interval;
+    let mut interval = tokio::time::interval(sync_interval);
     loop {
-        let tick = sleep_until(next_sync);
+        let tick = interval.tick();
         pin_mut!(tick);
         match select(event_bus.poll(), tick).await {
             Either::Left((bus, _)) => match bus {
                 Ok(event) => loop {
                     if let Some(payload) = event.payload() {
                         if let Ok(data) = serde_json::from_slice::<StorageEvent>(payload) {
-                            tracing::info!("Got payload from event: {:?}", data);
+                            tracing::trace!("Got payload from event: {:?}", data);
                             if data.event_name == PUT_EVENT {
                                 if storage.is_index(&data.key) {
                                     break;
@@ -49,7 +48,7 @@ pub async fn run<E: EventBus>(
                                             hasher.update(&data);
                                             let hash = hasher.finalize();
                                             match index.insert(purl, &format!("{:x}", hash), key).await {
-                                                Ok(_) => tracing::info!("Inserted entry into index"),
+                                                Ok(_) => tracing::debug!("Inserted entry into index"),
                                                 Err(e) => tracing::warn!("Error inserting entry into index: {:?}", e),
                                             }
                                         }
@@ -63,7 +62,7 @@ pub async fn run<E: EventBus>(
                     }
                     match event.commit() {
                         Ok(_) => {
-                            tracing::info!("Event committed successfully");
+                            tracing::trace!("Event committed successfully");
                             break;
                         }
                         Err(e) => {
@@ -75,22 +74,22 @@ pub async fn run<E: EventBus>(
                     tracing::warn!("Error polling for event: {:?}", e);
                 }
             },
-            Either::Right(_) => {
-                match index.snapshot() {
-                    Ok(data) => match storage.put_index(&data).await {
+            Either::Right(_) => match index.snapshot() {
+                Ok(data) => {
+                    tracing::info!("Pushing new index to storage");
+                    match storage.put_index(&data).await {
                         Ok(_) => {
-                            tracing::info!("Index updated successfully");
+                            tracing::trace!("Index updated successfully");
                         }
                         Err(e) => {
                             tracing::warn!("Error updating index: {:?}", e)
                         }
-                    },
-                    Err(e) => {
-                        tracing::warn!("Error taking index snapshot: {:?}", e);
                     }
                 }
-                next_sync = Instant::now() + sync_interval;
-            }
+                Err(e) => {
+                    tracing::warn!("Error taking index snapshot: {:?}", e);
+                }
+            },
         }
     }
 }
