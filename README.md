@@ -1,6 +1,9 @@
 # BOMbastic
 
-*WIP* This is all just thoughts and ideas at this point
+[![CI](https://github.com/xkcd-2347/bombastic/workflows/CI/badge.svg)](https://github.com/xkcd-2347/bombastic/actions?query=workflow%3A%22CI%22)
+[![GitHub release (latest SemVer)](https://img.shields.io/github/v/tag/xkcd-2347/bombastic?sort=semver)](https://github.com/xkcd-2347/bombastic/releases)
+
+*WIP* This is still work in progress but some basic functionality is working.
 
 ![Bilbo](bilbo.jpg)
 
@@ -69,7 +72,7 @@ Bombastic consists of the following Rust crates, of which some are common APIs a
 * `bombastic-storage` - facade to s3 api used by indexer and api
 * `bombastic-api` - API server
 * `bombastic-indexer` - Indexing process consuming events from event-bus and indexing into sqlite
-* `bombastic-index` - API for accessing index
+ `bombastic-index` - API for accessing index
 * `bombastic-exporter` - Exporter process consuming events from event-bus and exporting data
 * `bombastic-event-bus` - API for consuming from event bus (and publishing)
 
