@@ -19,6 +19,7 @@ Bombastic consists of:
 
 * An API for publishing and consuming SBOM data
 * Keycloak or similar (OIDC) for authentication and authorization.
+* Seedwing Policy or similar for SBOM validation 
 * A lookup index based on SQLite. 
 * Amazon S3 or similar object storage such Ceph or MinIO. This way you can run it locally with MinIO, on company infra with Ceph, or on AWS with S3.
 * Apache Kafka or similar for eventing, everybody loves Kafka.
