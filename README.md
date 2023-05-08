@@ -5,7 +5,7 @@
 
 *WIP* This is still work in progress but some basic functionality is working.
 
-![Bilbo](bilbo.jpg)
+![Bilbo](images/bilbo.jpg)
 
 Bombastic is a storage and archival service for Software Bill of Material (SBOM) files, from now on called SBOMs in plural instead of SBsOM.
 
@@ -58,12 +58,12 @@ As objects are inserted into the storage, an event is emitted into the event log
 
 #### Produce flow
 
-![produce](produce.png)
+![produce](images/produce.png)
 
 
 #### Consume flow
 
-![consume](consume.png)
+![consume](images/consume.png)
 
 ## Crates 
 

@@ -31,7 +31,7 @@ RUST_LOG=info cargo run -p bombastic-indexer -- run --index indexer-index.sqlite
 At this point, you can PUT and GET SBOMs with the API using the id. To ingest an SBOM:
 
 ```
-curl -X PUT -d@my-sbom.json http://localhost:8080/api/v1/sbom/mysbom
+curl -X PUT -d@testdata/my-sbom.json http://localhost:8080/api/v1/sbom/mysbom
 ```
 
 To query the data, either using direct lookup or querying via the index:
