@@ -32,6 +32,7 @@ You're probably not a big organization, please continue to use files.
 It's written in Rust so it must be fast. 
 
 ## Architecture
+
 The overall design follows a (micro)-services architecture, where each component in the architecture can have clearly defined service boundaries and may be replaced independently of the other components. 
 
 ### Services
@@ -55,6 +56,10 @@ Components marked with internal are not accessible on the public internet.
 * (Internal) Exporter - An optional service that gets notified when an SBOM is created or is changed, and can retrieve it and publish it to an external system.
 
 As objects are inserted into the storage, an event is emitted into the event log. The advantage of this design is that we can ensure consistency of the object storage, which we consider the most important, and keep data transfers to a minimum. In contrast, an event-sourced system would require us to write the entire SBOM into multiple systems multiple times.
+
+#### Identifiers
+
+A bombastic identifier is used to identify a particular SBOM. Bombastic will happily use whatever identifier scheme you want to use. Ultimately, the SBOMs can be searched by their pURL or SHA256 digest in addition to the identifier.
 
 #### Produce flow
 
