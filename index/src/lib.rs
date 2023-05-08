@@ -97,7 +97,7 @@ impl Index {
 
     pub fn snapshot(&mut self) -> Result<Vec<u8>, Error> {
         if let Some(path) = &self.path {
-            let data = std::fs::read(path).map_err(|e| Error::Io(e))?;
+            let data = std::fs::read(path).map_err(Error::Io)?;
             Ok(data)
         } else {
             Err(Error::NotPersisted)

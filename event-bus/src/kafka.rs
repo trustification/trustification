@@ -41,7 +41,7 @@ impl KafkaEventBus {
         if create_topics {
             let admin: AdminClient<_> = ClientConfig::new().set("bootstrap.servers", &brokers).create()?;
             let topics = &[&stored_topic, &indexed_topic, &failed_topic].map(|t| {
-                let nt = NewTopic::new(&t, 1, rdkafka::admin::TopicReplication::Fixed(1));
+                let nt = NewTopic::new(t, 1, rdkafka::admin::TopicReplication::Fixed(1));
                 nt
             });
             admin.create_topics(topics, &AdminOptions::default()).await?;

@@ -54,7 +54,7 @@ pub async fn run<B: Into<SocketAddr>>(
     let addr = bind.into();
     tokio::task::spawn(async move {
         loop {
-            if let Ok(_) = state.sync_index().await {
+            if state.sync_index().await.is_ok() {
                 tracing::info!("Initial index synced");
                 break;
             } else {

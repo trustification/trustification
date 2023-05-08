@@ -28,7 +28,7 @@ Bombastic consists of:
 
 You're probably not a big organization, please continue to use files.
 
-### "I but you need 100 gazillion cores to run that system"
+### "I'll bet you need 100 gazillion cores to run that system"
 
 It's written in Rust so it must be fast. 
 

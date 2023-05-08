@@ -19,7 +19,7 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn default() -> Result<Self, anyhow::Error> {
+    pub fn defaults() -> Result<Self, anyhow::Error> {
         Ok(Config {
             bucket_name: "bombastic".to_string(),
             region: Region::from_default_env()?,
