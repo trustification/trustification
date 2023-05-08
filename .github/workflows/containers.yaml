@@ -1,0 +1,78 @@
+name: Containers
+
+on:
+  workflow_call:
+    inputs:
+      imageTag:
+        description: The image tag
+        required: true
+        type: string
+        default: "latest"
+      platforms:
+        description: The target platforms to build
+        type: string
+        required: true
+
+  workflow_dispatch:
+    inputs:
+      imageTag:
+        description: The image tag
+        required: true
+        type: string
+        default: "latest"
+      platforms:
+        description: The target platforms to build (like `linux/amd64, linux/arm64`)
+        required: true
+        type: string
+        default: "linux/amd64"
+
+env:
+  IMAGE_NAME: trust-api
+  IMAGE_TAG: ${{ inputs.imageTag }}
+
+jobs:
+  build-containers:
+
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+
+    runs-on: ubuntu-22.04
+    steps:
+
+      - name: Install qemu dependency
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qemu-user-static
+
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Build Image
+        id: build-image
+        uses: redhat-actions/buildah-build@v2
+        with:
+          image: ${{ env.IMAGE_NAME }}
+          tags: ${{ env.IMAGE_TAG }}
+          envs: |
+            TAG=${{ env.IMAGE_TAG }}
+          build-args: |
+            tag=${{ env.IMAGE_TAG }}
+          platforms: ${{ inputs.platforms }}
+          containerfiles: |
+            ./Containerfile
+
+      - name: Check images created
+        run: buildah images | grep '${{ env.IMAGE_NAME }}'
+
+      - name: Save image
+        run: podman save --multi-image-archive ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} > image.tar
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: container
+          path: image.tar
+          if-no-files-found: error

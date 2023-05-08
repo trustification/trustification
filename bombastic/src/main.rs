@@ -1,18 +1,17 @@
 use std::process::{ExitCode, Termination};
-
-use bombastic_indexer::Run;
 use clap::Parser;
 
 #[derive(clap::Subcommand, Debug)]
 pub enum Command {
-    Run(Run),
+    Api(bombastic_api::Run),
+    Indexer(bombastic_indexer::Run),
 }
 
 #[derive(clap::Parser, Debug)]
 #[command(
     author,
     version = env!("CARGO_PKG_VERSION"),
-    about = "Bombastic Indexer",
+    about = "Bombastic",
     long_about = None
 )]
 pub struct Cli {
@@ -33,13 +32,16 @@ impl Cli {
 
     async fn run_command(self) -> anyhow::Result<ExitCode> {
         match self.command {
-            Command::Run(run) => {
-                run.run().await?;
+            Command::Api(run) => {
+                run.run().await
+            }
+            Command::Indexer(run) => {
+                run.run().await
             }
         }
-        Ok(ExitCode::SUCCESS)
     }
 }
+
 
 #[tokio::main]
 async fn main() -> impl Termination {

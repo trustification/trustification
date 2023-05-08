@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    # Run on the main branch
+    branches:
+      - main
+  # Also on PRs, just be careful not to publish anything
+  pull_request:
+  # And merge queues
+  merge_group:
+    types: [checks_requested]
+  # Allow to be called from other workflows (like "release")
+  workflow_call:
+  # But don't trigger on tags, as they are covered by the "release.yaml" workflow
+
+jobs:
+  ci:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/.crates.toml
+            ~/.cargo/.crates2.json
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Check formatting
+        run: |
+          cargo fmt --check
+
+      - name: Check
+        run: cargo check
