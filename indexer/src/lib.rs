@@ -31,12 +31,19 @@ pub struct Run {
 
     #[arg(long = "sync-interval-seconds", default_value_t = 10)]
     pub(crate) sync_interval_seconds: u64,
+
+    #[arg(long = "devmode", default_value_t = false)]
+    pub(crate) devmode: bool,
 }
 
 impl Run {
     pub async fn run(self) -> anyhow::Result<ExitCode> {
         let index = Index::new(&self.index)?;
-        let storage = Storage::new(Config::new_minio_test())?;
+        let storage = Storage::new(if self.devmode {
+            Config::minio_test()
+        } else {
+            Config::default()?
+        })?;
         let kafka = bombastic_event_bus::kafka::KafkaEventBus::new(
             self.kafka_bootstrap_servers,
             "indexer".into(),

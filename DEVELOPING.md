@@ -15,7 +15,7 @@ This will start MinIO and Kafka in containers and initialize them accordingly so
 To run the API, you can use cargo:
 
 ```
-RUST_LOG=info cargo run -p bombastic-api -- run --index api-index.sqlite
+RUST_LOG=info cargo run -p bombastic-api -- run --index api-index.sqlite --devmode
 ```
 
 For searching using the index, more setup is required.
@@ -25,7 +25,7 @@ For searching using the index, more setup is required.
 The indexer consumes events from Kafka and indexes SBOM entries:
 
 ```
-RUST_LOG=info cargo run -p bombastic-indexer -- run --index indexer-index.sqlite
+RUST_LOG=info cargo run -p bombastic-indexer -- run --index indexer-index.sqlite --devmode
 ```
 
 At this point, you can PUT and GET SBOMs with the API using the id. To ingest an SBOM:

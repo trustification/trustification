@@ -275,6 +275,7 @@ dependencies = [
 name = "bombastic-storage"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "rust-s3",
  "tokio",
 ]

@@ -19,7 +19,15 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn new_minio_test() -> Self {
+    pub fn default() -> Result<Self, anyhow::Error> {
+        Ok(Config {
+            bucket_name: "bombastic".to_string(),
+            region: Region::from_default_env()?,
+            credentials: Credentials::from_env()?,
+        })
+    }
+
+    pub fn minio_test() -> Self {
         Config {
             bucket_name: "bombastic".to_string(),
             region: Region::Custom {

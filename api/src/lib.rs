@@ -23,12 +23,19 @@ pub struct Run {
 
     #[arg(long = "sync-interval-seconds", default_value_t = 10)]
     pub(crate) sync_interval_seconds: u64,
+
+    #[arg(long = "devmode", default_value_t = false)]
+    pub(crate) devmode: bool,
 }
 
 impl Run {
     pub async fn run(self) -> anyhow::Result<ExitCode> {
         let index = Index::new(&self.index)?;
-        let storage = Storage::new(Config::new_minio_test())?;
+        let storage = Storage::new(if self.devmode {
+            Config::minio_test()
+        } else {
+            Config::default()?
+        })?;
         let addr = SocketAddr::from_str(&format!("{}:{}", self.bind, self.port))?;
         let interval = Duration::from_secs(self.sync_interval_seconds);
 
