@@ -1,4 +1,5 @@
 use std::process::{ExitCode, Termination};
+
 use clap::Parser;
 
 #[derive(clap::Subcommand, Debug)]
@@ -32,16 +33,11 @@ impl Cli {
 
     async fn run_command(self) -> anyhow::Result<ExitCode> {
         match self.command {
-            Command::Api(run) => {
-                run.run().await
-            }
-            Command::Indexer(run) => {
-                run.run().await
-            }
+            Command::Api(run) => run.run().await,
+            Command::Indexer(run) => run.run().await,
         }
     }
 }
-
 
 #[tokio::main]
 async fn main() -> impl Termination {
