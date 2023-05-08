@@ -6,7 +6,7 @@ use axum::body::Bytes;
 use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
 use axum::routing::{get, put};
-use axum::{Json, Router};
+use axum::Router;
 use bombastic_index::Index;
 use bombastic_storage::Storage;
 use serde::{Deserialize, Serialize};
@@ -80,7 +80,7 @@ async fn fetch_sbom(State(state): State<SharedState>, Path(id): Path<String>) ->
     // TODO: Stream payload/SBOM directly from body rather than going via serde_json.
     match storage.get(&id).await {
         Ok(data) => (StatusCode::OK, data.into()),
-        Err(_e) => (StatusCode::NOT_FOUND, "".into()),
+        Err(_e) => (StatusCode::NOT_FOUND, Bytes::default()),
     }
 }
 
@@ -129,25 +129,18 @@ struct QueryParams {
     sha256: Option<String>,
 }
 
-async fn publish_sbom(
-    State(state): State<SharedState>,
-    Path(id): Path<String>,
-    data: Bytes,
-) -> (StatusCode, Json<PublishResponse>) {
-    let response = PublishResponse {};
+async fn publish_sbom(State(state): State<SharedState>, Path(id): Path<String>, data: Bytes) -> StatusCode {
     let storage = state.storage.write().await;
     // TODO: unbuffered I/O
+    tracing::trace!("Storing new SBOM with id {}", id);
     match storage.put(&id, &data[..]).await {
         Ok(_) => {
             tracing::trace!("SBOM of size {} stored successfully", &data[..].len());
-            (StatusCode::CREATED, Json(response))
+            StatusCode::CREATED
         }
         Err(e) => {
             tracing::warn!("Error storing SBOM: {:?}", e);
-            (StatusCode::INTERNAL_SERVER_ERROR, Json(response))
+            StatusCode::INTERNAL_SERVER_ERROR
         }
     }
 }
-
-#[derive(Serialize)]
-struct PublishResponse {}

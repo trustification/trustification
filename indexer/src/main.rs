@@ -45,6 +45,7 @@ impl Cli {
                 indexed_topic,
                 failed_topic,
                 sync_interval_seconds,
+                create_topics,
             }) => {
                 let index = Index::new(&index)?;
                 let storage = Storage::new(Config::new_minio_test())?;
@@ -54,7 +55,9 @@ impl Cli {
                     stored_topic,
                     indexed_topic,
                     failed_topic,
-                )?;
+                    create_topics,
+                )
+                .await?;
                 let interval = Duration::from_secs(sync_interval_seconds);
                 indexer::run(index, storage, kafka, interval).await?;
             }
@@ -72,6 +75,9 @@ pub struct Run {
     // TODO: Make optional
     #[arg(long = "kafka-bootstraps-servers", default_value = "localhost:9092")]
     pub(crate) kafka_bootstrap_servers: String,
+
+    #[arg(long = "create-topics", default_value_t = true)]
+    pub(crate) create_topics: bool,
 
     #[arg(long = "stored-topic", default_value = "stored")]
     pub(crate) stored_topic: String,

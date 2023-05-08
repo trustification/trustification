@@ -2,18 +2,13 @@
 
 ## Running locally
 
-### Storage service
-
-The simplest way to run storage locally is to use MinIO. [Download](https://min.io/download) and run for your platform. It can run as a container or as a standalone binary. 
-With the standalone binary, you can run it like this:
+Requires podman-compose.
 
 ```
-MINIO_ROOT_USER=admin MINIO_ROOT_PASSWORD=password MINIO_NOTIFY_KAFKA_ENABLE_EVENTBUS="on" MINIO_NOTIFY_KAFKA_BROKERS_EVENTBUS="localhost:9092" MINIO_NOTIFY_KAFKA_TOPIC_EVENTBUS="stored" minio server data --console-address ":9001"
+podman-compose -f compose.yaml up
 ```
 
-Once running, open the [console](http://localhost:9001) and create a bucket named 'bombastic'.
-
-Go to the `Events` pane and click `Subscribe to Event`. When you click on the text field you should see a suggested ARN. Select that and add the hook for 'PUT' - Object Uploaded events. Then click Save.
+This will start MinIO and Kafka in containers and initialize them accordingly so that you don't need to configure anything. Default arguments of Bombastic components will work with this setup.
 
 ## API
 
@@ -23,37 +18,23 @@ To run the API, you can use cargo:
 RUST_LOG=info cargo run -p bombastic-api -- run --index api-index.sqlite
 ```
 
-At this point, you can PUT and GET SBOMs with the API using the id.
-
-To ingest an SBOM:
-
-```
-curl -X PUT -d@my-sbom.json http://localhost:8080/api/v1/sbom/mysbom
-```
-
 For searching using the index, more setup is required.
-
-## Kafka
-
-[Download Kafka](https://kafka.apache.org/downloads) and follow the [quick start](https://kafka.apache.org/quickstart) for running it.
-
-Once started, create three topics: `stored`, `indexed`, `failed`:
-
-```
-bin/kafka-topics.sh --create --topic stored --bootstrap-server localhost:9092
-bin/kafka-topics.sh --create --topic indexed --bootstrap-server localhost:9092
-bin/kafka-topics.sh --create --topic failed --bootstrap-server localhost:9092
-```
 
 ## Indexer
 
-The indexer requires a connection to Kafka. To run it:
+The indexer consumes events from Kafka and indexes SBOM entries:
 
 ```
 RUST_LOG=info cargo run -p bombastic-indexer -- run --index indexer-index.sqlite
 ```
 
-At this point you should be able to ingest and query the data, either directly or indirectly using the index:
+At this point, you can PUT and GET SBOMs with the API using the id. To ingest an SBOM:
+
+```
+curl -X PUT -d@my-sbom.json http://localhost:8080/api/v1/sbom/mysbom
+```
+
+To query the data, either using direct lookup or querying via the index:
 
 ```
 curl -X GET http://localhost:8080/api/v1/sbom/mysbom

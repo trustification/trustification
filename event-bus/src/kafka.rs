@@ -1,3 +1,4 @@
+use rdkafka::admin::{AdminClient, AdminOptions, NewTopic};
 use rdkafka::config::ClientConfig;
 use rdkafka::consumer::stream_consumer::StreamConsumer;
 use rdkafka::consumer::Consumer;
@@ -21,12 +22,13 @@ pub struct KafkaEvent<'m> {
 }
 
 impl KafkaEventBus {
-    pub fn new(
+    pub async fn new(
         brokers: String,
         group_id: String,
         stored_topic: String,
         indexed_topic: String,
         failed_topic: String,
+        create_topics: bool,
     ) -> Result<Self, anyhow::Error> {
         let consumer: StreamConsumer = ClientConfig::new()
             .set("group.id", &group_id)
@@ -36,11 +38,20 @@ impl KafkaEventBus {
             .set("enable.auto.commit", "false")
             .create()?;
 
+        if create_topics {
+            let admin: AdminClient<_> = ClientConfig::new().set("bootstrap.servers", &brokers).create()?;
+            let topics = &[&stored_topic, &indexed_topic, &failed_topic].map(|t| {
+                let nt = NewTopic::new(&t, 1, rdkafka::admin::TopicReplication::Fixed(1));
+                nt
+            });
+            admin.create_topics(topics, &AdminOptions::default()).await?;
+        }
+
         consumer.subscribe(&[&stored_topic])?;
 
         let producer: FutureProducer = ClientConfig::new()
-            .set("bootstrap.servers", &brokers)
             .set("message.timeout.ms", "5000")
+            .set("bootstrap.servers", &brokers)
             .create()?;
 
         Ok(Self {

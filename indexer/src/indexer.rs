@@ -25,12 +25,14 @@ pub async fn run<E: EventBus>(
     sync_interval: Duration,
 ) -> Result<(), anyhow::Error> {
     let mut interval = tokio::time::interval(sync_interval);
+    let mut changed = false;
     loop {
         let tick = interval.tick();
         pin_mut!(tick);
         select! {
             bus = event_bus.poll() => match bus {
                 Ok(event) => loop {
+                    tracing::info!("Got event!");
                     if let Some(payload) = event.payload() {
                         if let Ok(data) = serde_json::from_slice::<StorageEvent>(payload) {
                             tracing::trace!("Got payload from event: {:?}", data);
@@ -48,7 +50,10 @@ pub async fn run<E: EventBus>(
                                             hasher.update(&data);
                                             let hash = hasher.finalize();
                                             match index.insert(purl, &format!("{:x}", hash), key).await {
-                                                Ok(_) => tracing::debug!("Inserted entry into index"),
+                                                Ok(_) => {
+                                                    tracing::debug!("Inserted entry into index");
+                                                    changed = true;
+                                                }
                                                 Err(e) => tracing::warn!("Error inserting entry into index: {:?}", e),
                                             }
                                         }
@@ -74,20 +79,26 @@ pub async fn run<E: EventBus>(
                     tracing::warn!("Error polling for event: {:?}", e);
                 }
             },
-            _ = tick => match index.snapshot() {
-                Ok(data) => {
-                    tracing::info!("Pushing new index to storage");
-                    match storage.put_index(&data).await {
-                        Ok(_) => {
-                            tracing::trace!("Index updated successfully");
+            _ = tick => {
+                if changed {
+                    tracing::debug!("Taking index snapshot and pushing to storage");
+                    match index.snapshot() {
+                        Ok(data) => {
+                            match storage.put_index(&data).await {
+                                Ok(_) => {
+                                    tracing::trace!("Index updated successfully");
+                                }
+                                Err(e) => {
+                                    tracing::warn!("Error updating index: {:?}", e)
+                                }
+                            }
                         }
                         Err(e) => {
-                            tracing::warn!("Error updating index: {:?}", e)
+                            tracing::warn!("Error taking index snapshot: {:?}", e);
                         }
                     }
-                }
-                Err(e) => {
-                    tracing::warn!("Error taking index snapshot: {:?}", e);
+                } else {
+                    tracing::info!("No changes to index");
                 }
             }
         }
