@@ -1,0 +1,34 @@
+indexerVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bombastic-indexer
+  labels:
+    app.kubernetes.io/name: bombastic-indexer
+    app.kubernetes.io/component: indexer
+    app.kubernetes.io/part-of: bombastic
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: bombastic-indexer
+      app.kubernetes.io/component: indexer
+      app.kubernetes.io/part-of: bombastic
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: bombastic-indexer
+        app.kubernetes.io/component: indexer
+        app.kubernetes.io/part-of: bombastic
+    spec:
+      volumes:
+        - name: data
+          emptyDir: {}
+      containers:
+        - image: ghcr.io/xkcd-2347/bombastic:latest
+          imagePullPolicy: Always
+          name: service
+          command: ["/bombastic"]
+          args: ["indexer", "--index", "/data/index.sqlite"]
+          volumeMounts:
+            - name: data
+              mountPath: /data

@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/name: bombastic-api
+    app.kubernetes.io/component: api
+    app.kubernetes.io/part-of: bombastic
+  name: bombastic-api
+spec:
+  ports:
+  - name: endpoint
+    port: 8080
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    app.kubernetes.io/name: bombastic-api
+    app.kubernetes.io/component: api
+    app.kubernetes.io/part-of: bombastic
+  type: ClusterIP
