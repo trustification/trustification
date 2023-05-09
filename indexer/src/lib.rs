@@ -42,7 +42,7 @@ impl Run {
         let storage = Storage::new(if self.devmode {
             Config::minio_test()
         } else {
-            Config::default()?
+            Config::defaults()?
         })?;
         let kafka = bombastic_event_bus::kafka::KafkaEventBus::new(
             self.kafka_bootstrap_servers,

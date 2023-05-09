@@ -34,7 +34,7 @@ impl Run {
         let storage = Storage::new(if self.devmode {
             Config::minio_test()
         } else {
-            Config::default()?
+            Config::defaults()?
         })?;
         let addr = SocketAddr::from_str(&format!("{}:{}", self.bind, self.port))?;
         let interval = Duration::from_secs(self.sync_interval_seconds);
