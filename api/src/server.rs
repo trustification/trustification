@@ -8,9 +8,11 @@ use axum::http::StatusCode;
 use axum::routing::{get, put};
 use axum::Router;
 use bombastic_index::Index;
-use bombastic_storage::Storage;
+use bombastic_storage::{Object, Storage};
 use serde::{Deserialize, Serialize};
 use tokio::sync::{Mutex, RwLock};
+
+use crate::sbom::SBOM;
 
 struct AppState {
     storage: RwLock<Storage>,
@@ -29,7 +31,7 @@ impl AppState {
 
         let mut index = self.index.lock().await;
         index.sync(&data[..])?;
-        tracing::info!("Index reloaded");
+        tracing::debug!("Index reloaded");
         Ok(())
     }
 }
@@ -77,19 +79,36 @@ pub async fn run<B: Into<SocketAddr>>(
 
 async fn fetch_sbom(State(state): State<SharedState>, Path(id): Path<String>) -> (StatusCode, Bytes) {
     let storage = state.storage.read().await;
-    // TODO: Stream payload/SBOM directly from body rather than going via serde_json.
-    match storage.get(&id).await {
-        Ok(data) => (StatusCode::OK, data.into()),
-        Err(_e) => (StatusCode::NOT_FOUND, Bytes::default()),
-    }
+    fetch_object(&storage, &id).await
 }
 
 #[derive(Serialize)]
 struct FetchResponse {}
 
+async fn fetch_object(storage: &Storage, key: &str) -> (StatusCode, Bytes) {
+    match storage.get(&key).await {
+        Ok(obj) => {
+            tracing::trace!("Retrieved object compressed: {}", obj.compressed);
+            if obj.compressed {
+                let mut out = Vec::new();
+                match ::zstd::stream::copy_decode(&obj.data[..], &mut out) {
+                    Ok(_) => (StatusCode::OK, out.into()),
+                    Err(_) => (StatusCode::INTERNAL_SERVER_ERROR, Bytes::default()),
+                }
+            } else {
+                (StatusCode::OK, obj.data.into())
+            }
+        }
+        Err(e) => {
+            tracing::warn!("Unable to locate object with key {}: {:?}", key, e);
+            (StatusCode::INTERNAL_SERVER_ERROR, Bytes::default())
+        }
+    }
+}
+
 async fn query_sbom(State(state): State<SharedState>, Query(params): Query<QueryParams>) -> (StatusCode, Bytes) {
     let result = if let Some(purl) = params.purl {
-        tracing::info!("Querying SBOM using purl {}", purl);
+        tracing::trace!("Querying SBOM using purl {}", purl);
         let mut index = state.index.lock().await;
         let result = index.query_purl(&purl).await;
         if let Err(e) = &result {
@@ -97,7 +116,7 @@ async fn query_sbom(State(state): State<SharedState>, Query(params): Query<Query
         }
         result
     } else if let Some(sha256) = params.sha256 {
-        tracing::info!("Querying SBOM using sha256 {}", sha256);
+        tracing::trace!("Querying SBOM using sha256 {}", sha256);
         let mut index = state.index.lock().await;
         let result = index.query_sha256(&sha256).await;
         if let Err(e) = &result {
@@ -111,13 +130,7 @@ async fn query_sbom(State(state): State<SharedState>, Query(params): Query<Query
     match result {
         Ok(key) => {
             let storage = state.storage.read().await;
-            match storage.get(&key).await {
-                Ok(data) => (StatusCode::OK, data.into()),
-                Err(e) => {
-                    tracing::warn!("Unable to locate object with key {}: {:?}", key, e);
-                    (StatusCode::INTERNAL_SERVER_ERROR, Bytes::default())
-                }
-            }
+            fetch_object(&storage, &key).await
         }
         Err(_) => (StatusCode::NOT_FOUND, Bytes::default()),
     }
@@ -133,14 +146,34 @@ async fn publish_sbom(State(state): State<SharedState>, Path(id): Path<String>, 
     let storage = state.storage.write().await;
     // TODO: unbuffered I/O
     tracing::trace!("Storing new SBOM with id {}", id);
-    match storage.put(&id, &data[..]).await {
-        Ok(_) => {
-            tracing::trace!("SBOM of size {} stored successfully", &data[..].len());
-            StatusCode::CREATED
+
+    if let Ok(sbom) = SBOM::parse(&data) {
+        if let Some(purl) = sbom.purl() {
+            let mut out = Vec::new();
+            let (data, compressed) = match zstd::stream::copy_encode(sbom.raw(), &mut out, 3) {
+                Ok(_) => (&out[..], true),
+                Err(_) => (sbom.raw(), false),
+            };
+            tracing::trace!("Storing new object with compressed: {}", compressed);
+            let value = Object::new(&purl, data, compressed);
+            match storage.put(&id, value).await {
+                Ok(_) => {
+                    tracing::trace!("SBOM of size {} stored successfully", &data[..].len());
+                    StatusCode::CREATED
+                }
+                Err(e) => {
+                    tracing::warn!("Error storing SBOM: {:?}", e);
+                    StatusCode::INTERNAL_SERVER_ERROR
+                }
+            }
+        } else {
+            // TODO Add description in response
+            tracing::trace!("No pURL found");
+            StatusCode::BAD_REQUEST
         }
-        Err(e) => {
-            tracing::warn!("Error storing SBOM: {:?}", e);
-            StatusCode::INTERNAL_SERVER_ERROR
-        }
+    } else {
+        // TODO Add description in response
+        tracing::trace!("No valid SBOM uploaded");
+        StatusCode::BAD_REQUEST
     }
 }

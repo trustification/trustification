@@ -5,6 +5,7 @@ pub use s3::creds::Credentials;
 use s3::error::S3Error;
 use s3::Bucket;
 pub use s3::Region;
+use serde::{Deserialize, Serialize};
 
 pub struct Storage {
     bucket: Bucket,
@@ -50,6 +51,8 @@ pub enum Error {
     Internal,
     Credentials(CredentialsError),
     S3(S3Error),
+    Io(std::io::Error),
+    Codec(bincode::Error),
 }
 
 impl Display for Error {
@@ -58,6 +61,8 @@ impl Display for Error {
             Self::Internal => write!(f, "Internal error"),
             Self::Credentials(e) => write!(f, "{}", e),
             Self::S3(e) => write!(f, "{}", e),
+            Self::Io(e) => write!(f, "{}", e),
+            Self::Codec(e) => write!(f, "{}", e),
         }
     }
 }
@@ -76,8 +81,58 @@ impl From<S3Error> for Error {
     }
 }
 
+impl From<std::io::Error> for Error {
+    fn from(e: std::io::Error) -> Self {
+        Self::Io(e)
+    }
+}
+
+impl From<bincode::Error> for Error {
+    fn from(e: bincode::Error) -> Self {
+        Self::Codec(e)
+    }
+}
+
 const SBOM_PATH: &str = "/data/sbom/";
 const INDEX_PATH: &str = "/index.sqlite";
+
+const VERSION: u32 = 1;
+
+#[derive(Serialize, Deserialize)]
+pub struct Object<'a> {
+    version: u32,
+    pub purl: &'a str,
+    pub compressed: bool,
+    pub data: Vec<u8>,
+}
+
+impl<'a> Object<'a> {
+    pub fn new(purl: &'a str, data: &'a [u8], compressed: bool) -> Self {
+        Self {
+            version: VERSION,
+            purl,
+            data: data.to_vec(),
+            compressed,
+        }
+    }
+
+    fn to_owned(self) -> OwnedObject {
+        OwnedObject {
+            version: self.version,
+            purl: self.purl.to_string(),
+            compressed: self.compressed,
+            data: self.data,
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct OwnedObject {
+    version: u32,
+    pub purl: String,
+    pub compressed: bool,
+    pub data: Vec<u8>,
+}
 
 impl Storage {
     pub fn new(config: Config) -> Result<Self, Error> {
@@ -99,16 +154,18 @@ impl Storage {
         key.strip_prefix(&self.prefix)
     }
 
-    pub async fn put(&self, key: &str, value: &[u8]) -> Result<(), Error> {
+    pub async fn put(&self, key: &str, value: Object<'_>) -> Result<(), Error> {
         let path = format!("{}{}", SBOM_PATH, key);
-        self.bucket.put_object(path, value).await?;
+        let value = bincode::serialize(&value)?;
+        self.bucket.put_object(path, &value).await?;
         Ok(())
     }
 
-    pub async fn get(&self, key: &str) -> Result<Vec<u8>, Error> {
+    pub async fn get(&self, key: &str) -> Result<OwnedObject, Error> {
         let path = format!("{}{}", SBOM_PATH, key);
         let data = self.bucket.get_object(path).await?;
-        Ok(data.to_vec())
+        let value: Object<'_> = bincode::deserialize(&data.as_slice())?;
+        Ok(value.to_owned())
     }
 
     pub async fn put_index(&self, index: &[u8]) -> Result<(), Error> {

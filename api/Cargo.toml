@@ -16,3 +16,4 @@ bombastic-index = { path = "../index" }
 bombastic-storage = { path = "../storage" }
 clap = { version = "4", features = ["derive"] }
 anyhow = "1"
+zstd = "0.12"

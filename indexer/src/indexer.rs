@@ -8,8 +8,6 @@ use serde::Deserialize;
 use sha2::{Digest, Sha256};
 use tokio::select;
 
-use crate::sbom::SBOM;
-
 #[derive(Deserialize, Debug)]
 pub struct StorageEvent {
     #[serde(rename = "EventName")]
@@ -45,36 +43,32 @@ pub async fn run<E: EventBus>(
                                 if let Some(key) = storage.extract_key(&data.key) {
                                     match storage.get(key).await {
                                         Ok(data) => {
-                                            if let Ok(sbom) = SBOM::parse(&data) {
-                                                if let Some(purl) = sbom.purl() {
-                                                    let mut hasher = Sha256::new();
-                                                    hasher.update(&data);
-                                                    let hash = hasher.finalize();
-                                                    match index.insert(&purl, &format!("{:x}", hash), key).await {
-                                                        Ok(_) => {
-                                                            tracing::debug!("Inserted entry into index");
-                                                            bus.send(Topic::INDEXED, key.as_bytes()).await?;
-                                                            changed = true;
-                                                        }
-                                                        Err(e) => {
-                                                            let failure = serde_json::json!( {
-                                                                "key": key,
-                                                                "error": e.to_string(),
-                                                            }).to_string();
-                                                            bus.send(Topic::FAILED, failure.as_bytes()).await?;
-                                                            tracing::warn!("Error inserting entry into index: {:?}", e)
-                                                        }
-                                                    }
+                                            let mut hasher = Sha256::new();
+                                            hasher.update(&data.data);
+                                            let hash = hasher.finalize();
+                                            match index.insert(&data.purl, &format!("{:x}", hash), key).await {
+                                                Ok(_) => {
+                                                    tracing::debug!("Inserted entry into index");
+                                                    bus.send(Topic::INDEXED, key.as_bytes()).await?;
+                                                    changed = true;
+                                                }
+                                                Err(e) => {
+                                                    let failure = serde_json::json!( {
+                                                        "key": key,
+                                                        "error": e.to_string(),
+                                                    }).to_string();
+                                                    bus.send(Topic::FAILED, failure.as_bytes()).await?;
+                                                    tracing::warn!("Error inserting entry into index: {:?}", e)
+                                                }
+                                            }
+                                            /*
                                                 } else {
                                                     let failure = serde_json::json!( {
                                                         "key": key,
                                                         "error": "Unable to locate package URL (pURL) for SBOM",
                                                     }).to_string();
                                                     bus.send(Topic::FAILED, failure.as_bytes()).await?;
-                                                }
-                                            } else {
-                                                tracing::debug!("Error parsing event data, ignoring");
-                                            }
+                                                }*/
                                         }
                                         Err(e) => {
                                             tracing::debug!("Error retrieving document event data, ignoring (error: {:?})", e);
