@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use bombastic_event_bus::{Event, EventBus};
+use bombastic_event_bus::{Event, EventBus, EventConsumer, Topic};
 use bombastic_index::Index;
 use bombastic_storage::Storage;
 use futures::pin_mut;
@@ -21,16 +21,17 @@ const PUT_EVENT: &str = "s3:ObjectCreated:Put";
 pub async fn run<E: EventBus>(
     mut index: Index,
     storage: Storage,
-    event_bus: E,
+    bus: E,
     sync_interval: Duration,
 ) -> Result<(), anyhow::Error> {
     let mut interval = tokio::time::interval(sync_interval);
     let mut changed = false;
+    let consumer = bus.subscribe("indexer", &[Topic::STORED])?;
     loop {
         let tick = interval.tick();
         pin_mut!(tick);
         select! {
-            bus = event_bus.poll() => match bus {
+            event = consumer.next() => match event {
                 Ok(event) => loop {
                     if let Some(payload) = event.payload() {
                         if let Ok(data) = serde_json::from_slice::<StorageEvent>(payload) {

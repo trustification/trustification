@@ -2,6 +2,7 @@ use std::path::PathBuf;
 use std::process::ExitCode;
 use std::time::Duration;
 
+use bombastic_event_bus::Topic;
 use bombastic_index::Index;
 use bombastic_storage::{Config, Storage};
 
@@ -44,15 +45,11 @@ impl Run {
         } else {
             Config::defaults()?
         })?;
-        let kafka = bombastic_event_bus::kafka::KafkaEventBus::new(
-            self.kafka_bootstrap_servers,
-            "indexer".into(),
-            self.stored_topic,
-            self.indexed_topic,
-            self.failed_topic,
-            self.create_topics,
-        )
-        .await?;
+        use bombastic_event_bus::EventBus;
+        let kafka = bombastic_event_bus::kafka::KafkaEventBus::new(self.kafka_bootstrap_servers)?;
+        if self.create_topics {
+            kafka.create(&[Topic::STORED]).await?;
+        }
         let interval = Duration::from_secs(self.sync_interval_seconds);
         indexer::run(index, storage, kafka, interval).await?;
         Ok(ExitCode::SUCCESS)
