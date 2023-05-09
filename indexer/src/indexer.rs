@@ -55,7 +55,14 @@ pub async fn run<E: EventBus>(
                                                     bus.send(Topic::INDEXED, key.as_bytes()).await?;
                                                     changed = true;
                                                 }
-                                                Err(e) => tracing::warn!("Error inserting entry into index: {:?}", e),
+                                                Err(e) => {
+                                                    let failure = serde_json::json!( {
+                                                        "key": key,
+                                                        "error": e.to_string(),
+                                                    }).to_string();
+                                                    bus.send(Topic::FAILED, failure.as_bytes()).await?;
+                                                    tracing::warn!("Error inserting entry into index: {:?}", e)
+                                                }
                                             }
                                         }
                                         Err(_e) => {}
