@@ -52,6 +52,7 @@ pub async fn run<E: EventBus>(
                                             match index.insert(purl, &format!("{:x}", hash), key).await {
                                                 Ok(_) => {
                                                     tracing::debug!("Inserted entry into index");
+                                                    bus.send(Topic::INDEXED, key.as_bytes()).await?;
                                                     changed = true;
                                                 }
                                                 Err(e) => tracing::warn!("Error inserting entry into index: {:?}", e),
