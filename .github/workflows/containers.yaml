@@ -27,7 +27,7 @@ on:
         default: "linux/amd64"
 
 env:
-  IMAGE_NAME: trust-api
+  IMAGE_NAME: bombastic
   IMAGE_TAG: ${{ inputs.imageTag }}
 
 jobs:
