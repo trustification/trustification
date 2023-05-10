@@ -97,10 +97,10 @@ mod tests {
 
     #[test]
     fn parse_spdx() {
-        let data = include_bytes!("../../testdata/my-sbom.json");
+        let data = include_bytes!("../../testdata/ubi9-sbom.json");
         let sbom = SBOM::parse(data).unwrap();
         assert_eq!(
-            "pkg:maven/io.seedwing/seedwing-java-example@1.0.0-SNAPSHOT?type=jar",
+            "pkg:oci/ubi9@sha256:cb303404e576ff5528d4f08b12ad85fab8f61fa9e5dba67b37b119db24865df3?repository_url=registry.redhat.io/ubi9&tag=9.1.0-1782",
             sbom.purl().unwrap()
         );
     }
