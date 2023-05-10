@@ -7,7 +7,6 @@ use bombastic_index::Index;
 use bombastic_storage::{Config, Storage};
 
 mod indexer;
-mod sbom;
 
 #[derive(clap::Args, Debug)]
 #[command(about = "Run the indexer", args_conflicts_with_subcommands = true)]

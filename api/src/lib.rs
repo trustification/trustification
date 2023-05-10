@@ -7,6 +7,7 @@ use std::time::Duration;
 use bombastic_index::Index;
 use bombastic_storage::{Config, Storage};
 
+mod sbom;
 mod server;
 
 #[derive(clap::Args, Debug)]
