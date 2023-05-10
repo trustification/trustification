@@ -48,6 +48,7 @@ pub async fn run<B: Into<SocketAddr>>(
     let state = Arc::new(AppState { storage, index });
 
     let app = Router::new()
+        .route("/healthz", get(health))
         .route("/api/v1/sbom", get(query_sbom))
         .route("/api/v1/sbom/:id", get(fetch_sbom))
         .route("/api/v1/sbom/:id", put(publish_sbom))
@@ -104,6 +105,10 @@ async fn fetch_object(storage: &Storage, key: &str) -> (StatusCode, Bytes) {
             (StatusCode::INTERNAL_SERVER_ERROR, Bytes::default())
         }
     }
+}
+
+async fn health() -> StatusCode {
+    StatusCode::OK
 }
 
 async fn query_sbom(State(state): State<SharedState>, Query(params): Query<QueryParams>) -> (StatusCode, Bytes) {

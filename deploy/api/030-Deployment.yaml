@@ -29,6 +29,29 @@ spec:
           name: service
           command: ["/bombastic"]
           args: ["api", "-p", "8080", "--index", "/data/index.sqlite"]
+          env:
+            - name: RUST_LOG
+              value: info
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: aws-s3-creds
+                  key: keyid
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: aws-s3-creds
+                  key: key
+            - name: AWS_REGION
+              valueFrom:
+                secretKeyRef:
+                  name: aws-settings
+                  key: region
+            - name: AWS_ENDPOINT
+              valueFrom:
+                secretKeyRef:
+                  name: aws-settings
+                  key: endpoint
           volumeMounts:
             - name: data
               mountPath: /data
