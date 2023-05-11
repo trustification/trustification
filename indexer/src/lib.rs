@@ -20,7 +20,7 @@ pub struct Run {
     #[arg(long = "create-topics", default_value_t = true, group = "kafka")]
     pub(crate) create_topics: bool,
 
-    #[arg(long = "sqs", group = "sqs", default_value_t = false)]
+    #[arg(long = "sqs", group = "aws", default_value_t = false)]
     pub(crate) sqs: bool,
 
     #[arg(long = "stored-topic", default_value = "stored")]
