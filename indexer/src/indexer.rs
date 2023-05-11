@@ -26,7 +26,7 @@ pub async fn run<E: EventBus>(
 ) -> Result<(), anyhow::Error> {
     let mut interval = tokio::time::interval(sync_interval);
     let mut changed = false;
-    let consumer = bus.subscribe("indexer", &[Topic::STORED])?;
+    let consumer = bus.subscribe("indexer", &[Topic::STORED]).await?;
     loop {
         let tick = interval.tick();
         pin_mut!(tick);
@@ -80,7 +80,7 @@ pub async fn run<E: EventBus>(
                             }
                         }
                     }
-                    match event.commit() {
+                    match event.commit().await {
                         Ok(_) => {
                             tracing::trace!("Event committed successfully");
                             break;

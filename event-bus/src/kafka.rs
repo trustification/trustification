@@ -34,10 +34,9 @@ impl KafkaEventBus {
 
 #[async_trait::async_trait]
 impl EventBus for KafkaEventBus {
-    type Error = KafkaError;
-    type Consumer = StreamConsumer;
+    type Consumer<'m> = StreamConsumer;
 
-    async fn create(&self, topics: &[Topic]) -> Result<(), Self::Error> {
+    async fn create(&self, topics: &[Topic]) -> Result<(), anyhow::Error> {
         let admin: AdminClient<_> = ClientConfig::new().set("bootstrap.servers", &self.brokers).create()?;
         let topics: Vec<NewTopic> = topics
             .iter()
@@ -47,7 +46,7 @@ impl EventBus for KafkaEventBus {
         Ok(())
     }
 
-    fn subscribe(&self, group: &str, topics: &[Topic]) -> Result<Self::Consumer, Self::Error> {
+    async fn subscribe(&self, group: &str, topics: &[Topic]) -> Result<Self::Consumer<'_>, anyhow::Error> {
         let consumer: StreamConsumer = ClientConfig::new()
             .set("group.id", group)
             .set("bootstrap.servers", &self.brokers)
@@ -60,7 +59,7 @@ impl EventBus for KafkaEventBus {
         Ok(consumer)
     }
 
-    async fn send(&self, topic: Topic, data: &[u8]) -> Result<(), Self::Error> {
+    async fn send(&self, topic: Topic, data: &[u8]) -> Result<(), anyhow::Error> {
         let record = FutureRecord::to(topic.as_ref()).payload(data);
         self.producer
             .send::<(), _, _>(record, Duration::from_secs(10))
@@ -72,9 +71,8 @@ impl EventBus for KafkaEventBus {
 
 #[async_trait::async_trait]
 impl EventConsumer for StreamConsumer {
-    type Error = KafkaError;
     type Event<'m> = KafkaEvent<'m> where Self: 'm;
-    async fn next<'m>(&'m self) -> Result<Self::Event<'m>, Self::Error> {
+    async fn next<'m>(&'m self) -> Result<Self::Event<'m>, anyhow::Error> {
         let message = self.recv().await?;
         Ok(KafkaEvent {
             message,
@@ -83,8 +81,8 @@ impl EventConsumer for StreamConsumer {
     }
 }
 
+#[async_trait::async_trait]
 impl<'m> Event for KafkaEvent<'m> {
-    type Error = KafkaError;
     fn payload(&self) -> Option<&[u8]> {
         self.message.payload()
     }
@@ -93,7 +91,7 @@ impl<'m> Event for KafkaEvent<'m> {
         self.message.topic().try_into()
     }
 
-    fn commit(&self) -> Result<(), Self::Error> {
+    async fn commit(&self) -> Result<(), anyhow::Error> {
         self.consumer
             .commit_message(&self.message, rdkafka::consumer::CommitMode::Sync)?;
         Ok(())
