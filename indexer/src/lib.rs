@@ -8,20 +8,29 @@ use bombastic_storage::{Config, Storage};
 
 mod indexer;
 
+#[derive(clap::ValueEnum, Debug, Clone)]
+pub enum Events {
+    #[clap(name = "kafka")]
+    Kafka,
+    #[clap(name = "sqs")]
+    Sqs,
+}
+
 #[derive(clap::Args, Debug)]
 #[command(about = "Run the indexer", args_conflicts_with_subcommands = true)]
 pub struct Run {
     #[arg(short = 'i', long = "index")]
     pub(crate) index: PathBuf,
 
-    #[arg(long = "kafka-bootstraps-servers", default_value = "localhost:9092", group = "kafka")]
-    pub(crate) kafka_bootstrap_servers: Option<String>,
+    #[arg(long = "kafka-bootstraps-servers", default_value = "localhost:9092")]
+    pub(crate) kafka_bootstrap_servers: String,
 
-    #[arg(long = "create-topics", default_value_t = true, group = "kafka")]
+    #[arg(long = "create-topics", default_value_t = true)]
     pub(crate) create_topics: bool,
 
-    #[arg(long = "sqs", group = "aws", default_value_t = false)]
-    pub(crate) sqs: bool,
+    // Event bus used to communicate with other services.
+    #[arg(long = "events", value_enum)]
+    pub(crate) events: Events,
 
     #[arg(long = "stored-topic", default_value = "stored")]
     pub(crate) stored_topic: String,
@@ -49,18 +58,23 @@ impl Run {
         })?;
         use bombastic_event_bus::EventBus;
         let interval = Duration::from_secs(self.sync_interval_seconds);
-        if let Some(bootstrap) = &self.kafka_bootstrap_servers {
-            let bus = bombastic_event_bus::kafka::KafkaEventBus::new(bootstrap.to_string())?;
-            if self.create_topics {
-                bus.create(&[Topic::STORED]).await?;
+        match self.events {
+            Events::Kafka => {
+                let bootstrap = &self.kafka_bootstrap_servers;
+                let bus = bombastic_event_bus::kafka::KafkaEventBus::new(bootstrap.to_string())?;
+                if self.create_topics {
+                    bus.create(&[Topic::STORED]).await?;
+                }
+                indexer::run(index, storage, bus, interval).await?;
             }
-            indexer::run(index, storage, bus, interval).await?;
-        } else if self.sqs {
-            let bus = bombastic_event_bus::sqs::SqsEventBus::new()?;
-            indexer::run(index, storage, bus, interval).await?;
-        } else {
-            return Err(anyhow::anyhow!("One of kafka or sqs must be used"));
-        };
+            Events::Sqs => {
+                let bus = bombastic_event_bus::sqs::SqsEventBus::new()?;
+                if self.create_topics {
+                    bus.create(&[Topic::STORED]).await?;
+                }
+                indexer::run(index, storage, bus, interval).await?;
+            }
+        }
         Ok(ExitCode::SUCCESS)
     }
 }

@@ -28,7 +28,7 @@ spec:
           imagePullPolicy: Always
           name: service
           command: ["/bombastic"]
-          args: ["indexer", "--index", "/data/index.sqlite", "--sqs"]
+          args: ["indexer", "--index", "/data/index.sqlite", "--events", "sqs"]
           env:
             - name: RUST_LOG
               value: info
