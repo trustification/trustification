@@ -31,7 +31,7 @@ spec:
           args: ["indexer", "--index", "/data/index.sqlite", "--events", "sqs"]
           env:
             - name: RUST_LOG
-              value: trace
+              value: debug
             - name: AWS_ACCESS_KEY_ID
               valueFrom:
                 secretKeyRef:
