@@ -49,7 +49,7 @@ impl Run {
     pub async fn run(self) -> anyhow::Result<ExitCode> {
         let index = Index::new(&self.index)?;
         let storage = Storage::new(if self.devmode {
-            Config::minio_test()
+            Config::test()
         } else {
             Config::defaults()?
         })?;
@@ -65,7 +65,7 @@ impl Run {
                 indexer::run(index, storage, bus, interval).await?;
             }
             Events::Sqs => {
-                let bus = bombastic_event_bus::sqs::SqsEventBus::new()?;
+                let bus = bombastic_event_bus::sqs::SqsEventBus::new().await?;
                 indexer::run(index, storage, bus, interval).await?;
             }
         }

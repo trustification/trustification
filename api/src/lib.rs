@@ -33,7 +33,7 @@ impl Run {
     pub async fn run(self) -> anyhow::Result<ExitCode> {
         let index = Index::new(&self.index)?;
         let storage = Storage::new(if self.devmode {
-            Config::minio_test()
+            Config::test()
         } else {
             Config::defaults()?
         })?;

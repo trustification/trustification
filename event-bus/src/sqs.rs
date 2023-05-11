@@ -1,3 +1,5 @@
+use aws_config::meta::region::RegionProviderChain;
+use aws_sdk_sqs::config::Region;
 use aws_sdk_sqs::operation::receive_message::ReceiveMessageOutput;
 use aws_sdk_sqs::types::Message;
 use aws_sdk_sqs::{Client, Error as SqsSdkError};
@@ -25,8 +27,9 @@ pub struct SqsEventBus {
 }
 
 impl SqsEventBus {
-    pub fn new() -> Result<Self, anyhow::Error> {
-        let config = aws_config::SdkConfig::builder().build();
+    pub async fn new() -> Result<Self, anyhow::Error> {
+        let region_provider = RegionProviderChain::default_provider().or_else(Region::new("eu-west-1"));
+        let config = aws_config::from_env().region(region_provider).load().await;
         let client = Client::new(&config);
         Ok(Self { client })
     }

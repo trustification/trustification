@@ -25,7 +25,7 @@ pub async fn run<E: EventBus>(
     sync_interval: Duration,
 ) -> Result<(), anyhow::Error> {
     let mut interval = tokio::time::interval(sync_interval);
-    let mut changed = false;
+    let mut events = 0;
     let consumer = bus.subscribe("indexer", &[Topic::STORED]).await?;
     loop {
         let tick = interval.tick();
@@ -50,7 +50,7 @@ pub async fn run<E: EventBus>(
                                                 Ok(_) => {
                                                     tracing::debug!("Inserted entry into index");
                                                     bus.send(Topic::INDEXED, key.as_bytes()).await?;
-                                                    changed = true;
+                                                    events += 1;
                                                 }
                                                 Err(e) => {
                                                     let failure = serde_json::json!( {
@@ -61,14 +61,6 @@ pub async fn run<E: EventBus>(
                                                     tracing::warn!("Error inserting entry into index: {:?}", e)
                                                 }
                                             }
-                                            /*
-                                                } else {
-                                                    let failure = serde_json::json!( {
-                                                        "key": key,
-                                                        "error": "Unable to locate package URL (pURL) for SBOM",
-                                                    }).to_string();
-                                                    bus.send(Topic::FAILED, failure.as_bytes()).await?;
-                                                }*/
                                         }
                                         Err(e) => {
                                             tracing::debug!("Error retrieving document event data, ignoring (error: {:?})", e);
@@ -95,8 +87,8 @@ pub async fn run<E: EventBus>(
                 }
             },
             _ = tick => {
-                if changed {
-                    tracing::debug!("Taking index snapshot and pushing to storage");
+                if events > 0{
+                    tracing::debug!("{} new events added, pushing new index to storage", events);
                     match index.snapshot() {
                         Ok(data) => {
                             match storage.put_index(&data).await {

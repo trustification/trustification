@@ -28,7 +28,7 @@ impl Config {
         })
     }
 
-    pub fn minio_test() -> Self {
+    pub fn test() -> Self {
         Config {
             bucket_name: "bombastic".to_string(),
             region: Region::Custom {
