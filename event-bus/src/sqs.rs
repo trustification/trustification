@@ -84,7 +84,7 @@ impl<'d> EventConsumer for SqsConsumer<'d> {
                 Box::pin(
                     self.client
                         .receive_message()
-                        .set_wait_time_seconds(Some(300))
+                        .set_wait_time_seconds(Some(20))
                         .set_max_number_of_messages(Some(1))
                         .queue_url(q.as_ref())
                         .send(),
