@@ -25,9 +25,6 @@ pub struct Run {
     #[arg(long = "kafka-bootstraps-servers", default_value = "localhost:9092")]
     pub(crate) kafka_bootstrap_servers: String,
 
-    #[arg(long = "create-topics", default_value_t = true)]
-    pub(crate) create_topics: bool,
-
     // Event bus used to communicate with other services.
     #[arg(long = "events", value_enum)]
     pub(crate) events: Events,
@@ -62,16 +59,13 @@ impl Run {
             Events::Kafka => {
                 let bootstrap = &self.kafka_bootstrap_servers;
                 let bus = bombastic_event_bus::kafka::KafkaEventBus::new(bootstrap.to_string())?;
-                if self.create_topics {
+                if self.devmode {
                     bus.create(&[Topic::STORED]).await?;
                 }
                 indexer::run(index, storage, bus, interval).await?;
             }
             Events::Sqs => {
                 let bus = bombastic_event_bus::sqs::SqsEventBus::new()?;
-                if self.create_topics {
-                    bus.create(&[Topic::STORED]).await?;
-                }
                 indexer::run(index, storage, bus, interval).await?;
             }
         }
