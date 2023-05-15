@@ -3,13 +3,14 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use axum::body::Bytes;
-use axum::extract::{Path, Query, State};
+use axum::extract::{Query, State};
 use axum::http::StatusCode;
-use axum::routing::{get, put};
+use axum::routing::{get, post};
 use axum::Router;
 use bombastic_index::Index;
 use bombastic_storage::{Object, Storage};
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
+use sha2::{Digest, Sha256};
 use tokio::sync::{Mutex, RwLock};
 
 use crate::sbom::SBOM;
@@ -50,8 +51,7 @@ pub async fn run<B: Into<SocketAddr>>(
     let app = Router::new()
         .route("/healthz", get(health))
         .route("/api/v1/sbom", get(query_sbom))
-        .route("/api/v1/sbom/:id", get(fetch_sbom))
-        .route("/api/v1/sbom/:id", put(publish_sbom))
+        .route("/api/v1/sbom", post(publish_sbom))
         .with_state(state.clone());
 
     let addr = bind.into();
@@ -77,14 +77,6 @@ pub async fn run<B: Into<SocketAddr>>(
     axum::Server::bind(&addr).serve(app.into_make_service()).await?;
     Ok(())
 }
-
-async fn fetch_sbom(State(state): State<SharedState>, Path(id): Path<String>) -> (StatusCode, Bytes) {
-    let storage = state.storage.read().await;
-    fetch_object(&storage, &id).await
-}
-
-#[derive(Serialize)]
-struct FetchResponse {}
 
 async fn fetch_object(storage: &Storage, key: &str) -> (StatusCode, Bytes) {
     match storage.get(&key).await {
@@ -114,12 +106,7 @@ async fn health() -> StatusCode {
 async fn query_sbom(State(state): State<SharedState>, Query(params): Query<QueryParams>) -> (StatusCode, Bytes) {
     let result = if let Some(purl) = params.purl {
         tracing::trace!("Querying SBOM using purl {}", purl);
-        let mut index = state.index.lock().await;
-        let result = index.query_purl(&purl).await;
-        if let Err(e) = &result {
-            tracing::info!("Index entry for pURL {} not found: {:?}", purl, e);
-        }
-        result
+        Ok(purl)
     } else if let Some(sha256) = params.sha256 {
         tracing::trace!("Querying SBOM using sha256 {}", sha256);
         let mut index = state.index.lock().await;
@@ -147,21 +134,25 @@ struct QueryParams {
     sha256: Option<String>,
 }
 
-async fn publish_sbom(State(state): State<SharedState>, Path(id): Path<String>, data: Bytes) -> StatusCode {
+async fn publish_sbom(State(state): State<SharedState>, data: Bytes) -> StatusCode {
     let storage = state.storage.write().await;
     // TODO: unbuffered I/O
-    tracing::trace!("Storing new SBOM with id {}", id);
-
     if let Ok(sbom) = SBOM::parse(&data) {
         if let Some(purl) = sbom.purl() {
+            let hash = Sha256::digest(sbom.raw());
             let mut out = Vec::new();
             let (data, compressed) = match zstd::stream::copy_encode(sbom.raw(), &mut out, 3) {
                 Ok(_) => (&out[..], true),
                 Err(_) => (sbom.raw(), false),
             };
-            tracing::trace!("Storing new object with compressed: {}", compressed);
-            let value = Object::new(&purl, data, compressed);
-            match storage.put(&id, value).await {
+            tracing::debug!(
+                "Storing new SBOM ({}) with hash: {}, compressed: {}",
+                purl,
+                hex::encode(hash),
+                compressed
+            );
+            let value = Object::new(&purl, &hash, data, compressed);
+            match storage.put(&purl, value).await {
                 Ok(_) => {
                     tracing::trace!("SBOM of size {} stored successfully", &data[..].len());
                     StatusCode::CREATED

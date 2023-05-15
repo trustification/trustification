@@ -4,7 +4,6 @@ use bombastic_event_bus::{Event, EventBus, EventConsumer, Topic};
 use bombastic_index::Index;
 use bombastic_storage::{EventType, Storage};
 use futures::pin_mut;
-use sha2::{Digest, Sha256};
 use tokio::select;
 
 pub async fn run<E: EventBus>(
@@ -31,10 +30,7 @@ pub async fn run<E: EventBus>(
                                     if let Some(key) = storage.extract_key(&data.key) {
                                         match storage.get(key).await {
                                             Ok(data) => {
-                                                let mut hasher = Sha256::new();
-                                                hasher.update(&data.data);
-                                                let hash = hasher.finalize();
-                                                match index.insert(&data.purl, &format!("{:x}", hash), key).await {
+                                                match index.insert(&data.purl, &hex::encode(&data.hash[..]), key).await {
                                                     Ok(_) => {
                                                         tracing::trace!("Inserted entry into index");
                                                         bus.send(Topic::INDEXED, key.as_bytes()).await?;

@@ -108,15 +108,17 @@ const VERSION: u32 = 1;
 pub struct Object<'a> {
     version: u32,
     pub purl: &'a str,
+    pub hash: Vec<u8>,
     pub compressed: bool,
     pub data: Vec<u8>,
 }
 
 impl<'a> Object<'a> {
-    pub fn new(purl: &'a str, data: &'a [u8], compressed: bool) -> Self {
+    pub fn new(purl: &'a str, hash: &'a [u8], data: &'a [u8], compressed: bool) -> Self {
         Self {
             version: VERSION,
             purl,
+            hash: hash.to_vec(),
             data: data.to_vec(),
             compressed,
         }
@@ -126,6 +128,7 @@ impl<'a> Object<'a> {
         OwnedObject {
             version: self.version,
             purl: self.purl.to_string(),
+            hash: self.hash,
             compressed: self.compressed,
             data: self.data,
         }
@@ -136,6 +139,7 @@ impl<'a> Object<'a> {
 pub struct OwnedObject {
     version: u32,
     pub purl: String,
+    pub hash: Vec<u8>,
     pub compressed: bool,
     pub data: Vec<u8>,
 }

@@ -28,16 +28,16 @@ The indexer consumes events from Kafka and indexes SBOM entries:
 RUST_LOG=info cargo run -p bombastic-indexer -- run --index indexer-index.sqlite --devmode
 ```
 
-At this point, you can PUT and GET SBOMs with the API using the id. To ingest an SBOM:
+At this point, you can POST and GET SBOMs with the API using the id. To ingest an SBOM:
 
 ```
-curl -X PUT -d@testdata/my-sbom.json http://localhost:8080/api/v1/sbom/mysbom
+curl -X POST --json @testdata/my-sbom.json http://localhost:8080/api/v1/sbom
 ```
 
 To query the data, either using direct lookup or querying via the index:
 
 ```
-curl -X GET http://localhost:8080/api/v1/sbom/mysbom
+curl -X GET http://localhost:8080/api/v1/sbom?purl=pkg%3Amaven%2Fio.seedwing%2Fseedwing-java-example%401.0.0-SNAPSHOT%3Ftype%3Djar
 curl -X GET http://localhost:8080/api/v1/sbom?purl=pkg%3Amaven%2Fio.seedwing%2Fseedwing-java-example%401.0.0-SNAPSHOT%3Ftype%3Djar
 ```
 
