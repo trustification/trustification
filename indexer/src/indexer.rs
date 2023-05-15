@@ -30,7 +30,7 @@ pub async fn run<E: EventBus>(
                                     if let Some(key) = storage.extract_key(&data.key) {
                                         match storage.get(key).await {
                                             Ok(data) => {
-                                                match index.insert(&data.purl, &hex::encode(&data.hash[..]), key).await {
+                                                match index.insert_or_replace(&data.purl, &hex::encode(&data.hash[..]), key).await {
                                                     Ok(_) => {
                                                         tracing::trace!("Inserted entry into index");
                                                         bus.send(Topic::INDEXED, key.as_bytes()).await?;

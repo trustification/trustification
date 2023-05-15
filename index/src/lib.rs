@@ -82,8 +82,8 @@ impl Index {
         }
     }
 
-    pub async fn insert(&mut self, purl: &str, sha256: &str, obj: &str) -> Result<(), Error> {
-        const INSERT_PURL: &str = "INSERT INTO sboms VALUES (?, ?, ?)";
+    pub async fn insert_or_replace(&mut self, purl: &str, sha256: &str, obj: &str) -> Result<(), Error> {
+        const INSERT_PURL: &str = "INSERT OR REPLACE INTO sboms VALUES (?, ?, ?)";
         let mut statement = self.connection.prepare(INSERT_PURL)?;
         statement.bind(&[(1, purl), (2, sha256), (3, obj)][..])?;
         loop {
