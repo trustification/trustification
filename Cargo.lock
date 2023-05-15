@@ -591,6 +591,7 @@ dependencies = [
  "futures",
  "rdkafka",
  "thiserror",
+ "tracing",
 ]
 
 [[package]]
@@ -631,6 +632,7 @@ dependencies = [
  "bincode",
  "rust-s3",
  "serde",
+ "serde_json",
  "tokio",
 ]
 

@@ -24,7 +24,7 @@ pub trait EventConsumer {
     type Event<'m>: Event
     where
         Self: 'm;
-    async fn next<'m>(&'m self) -> Result<Self::Event<'m>, anyhow::Error>;
+    async fn next<'m>(&'m self) -> Result<Option<Self::Event<'m>>, anyhow::Error>;
 }
 
 #[derive(Clone, Copy, Debug)]

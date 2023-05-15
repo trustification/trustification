@@ -32,11 +32,11 @@ pub struct Run {
 impl Run {
     pub async fn run(self) -> anyhow::Result<ExitCode> {
         let index = Index::new(&self.index)?;
-        let storage = Storage::new(if self.devmode {
-            Config::test()
+        let storage = if self.devmode {
+            Storage::new(Config::test(), bombastic_storage::StorageType::Minio)?
         } else {
-            Config::defaults()?
-        })?;
+            Storage::new(Config::defaults()?, bombastic_storage::StorageType::S3)?
+        };
         let addr = SocketAddr::from_str(&format!("{}:{}", self.bind, self.port))?;
         let interval = Duration::from_secs(self.sync_interval_seconds);
 

@@ -7,10 +7,16 @@ use s3::Bucket;
 pub use s3::Region;
 use serde::{Deserialize, Serialize};
 
+pub enum StorageType {
+    Minio,
+    S3,
+}
+
 pub struct Storage {
     bucket: Bucket,
     prefix: String,
     index_prefix: String,
+    stype: StorageType,
 }
 
 pub struct Config {
@@ -135,13 +141,14 @@ pub struct OwnedObject {
 }
 
 impl Storage {
-    pub fn new(config: Config) -> Result<Self, Error> {
+    pub fn new(config: Config, stype: StorageType) -> Result<Self, Error> {
         let prefix = format!("{}{}", config.bucket_name, SBOM_PATH);
         let index_prefix = format!("{}{}", config.bucket_name, INDEX_PATH);
         let bucket = Bucket::new(&config.bucket_name, config.region, config.credentials)?.with_path_style();
         Ok(Self {
             bucket,
             prefix,
+            stype,
             index_prefix,
         })
     }
@@ -176,5 +183,156 @@ impl Storage {
     pub async fn get_index(&self) -> Result<Vec<u8>, Error> {
         let data = self.bucket.get_object(INDEX_PATH).await?;
         Ok(data.to_vec())
+    }
+
+    pub fn decode_event(&self, event: &[u8]) -> Result<StorageEvent, Error> {
+        match self.stype {
+            StorageType::Minio => Ok(serde_json::from_slice::<MinioEvent>(event)
+                .map_err(|_e| Error::Internal)?
+                .try_into()?),
+            StorageType::S3 => Ok(serde_json::from_slice::<S3Event>(event)
+                .map_err(|_e| Error::Internal)?
+                .try_into()?),
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct StorageEvent {
+    pub event_type: EventType,
+    pub key: String,
+}
+
+const MINIO_PUT_EVENT: &str = "s3:ObjectCreated:Put";
+const MINIO_DELETE_EVENT: &str = "s3:ObjectRemoved:Delete";
+
+impl TryFrom<MinioEvent> for StorageEvent {
+    type Error = Error;
+    fn try_from(minio: MinioEvent) -> Result<Self, Self::Error> {
+        let event_type = match minio.event_name.as_ref() {
+            MINIO_PUT_EVENT => Ok(EventType::Put),
+            MINIO_DELETE_EVENT => Ok(EventType::Delete),
+            _ => Err(Error::Internal),
+        }?;
+        Ok(Self {
+            event_type,
+            key: minio.key,
+        })
+    }
+}
+
+const S3_PUT_EVENT: &str = "ObjectCreated:Put";
+const S3_DELETE_EVENT: &str = "ObjectRemoved:Delete";
+
+impl TryFrom<S3Event> for StorageEvent {
+    type Error = Error;
+    fn try_from(s3: S3Event) -> Result<Self, Self::Error> {
+        let first = s3.records.first().ok_or(Error::Internal)?;
+        let event_type = match first.event_name.as_ref() {
+            S3_PUT_EVENT => Ok(EventType::Put),
+            S3_DELETE_EVENT => Ok(EventType::Delete),
+            _ => Err(Error::Internal),
+        }?;
+        Ok(StorageEvent {
+            event_type,
+            key: first.s3.object.key.clone(),
+        })
+    }
+}
+
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+pub enum EventType {
+    Put,
+    Delete,
+}
+
+#[derive(Deserialize, Debug)]
+struct MinioEvent {
+    #[serde(rename = "EventName")]
+    event_name: String,
+    #[serde(rename = "Key")]
+    key: String,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct S3Event {
+    #[serde(rename = "Records")]
+    pub records: Vec<S3Record>,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct S3Record {
+    #[serde(rename = "s3")]
+    s3: S3Data,
+    #[serde(rename = "eventName")]
+    pub event_name: String,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct S3Data {
+    #[serde(rename = "object")]
+    pub object: S3Object,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct S3Object {
+    #[serde(rename = "key")]
+    pub key: String,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_event_decode() {
+        let event = r#"{
+        "Records": [
+            {
+            "awsRegion": "eu-west-1",
+            "eventName": "ObjectCreated:Put",
+            "eventSource": "aws:s3",
+            "eventTime": "2023-05-11T13:25:03.104Z",
+            "eventVersion": "2.1",
+            "requestParameters": {
+                "sourceIPAddress": "10.0.220.140"
+            },
+            "responseElements": {
+                "x-amz-id-2": "PmiHPIpmhpjmmijsu6xXEtk9E2NEK29FBDtZcvGU1jgt7EFFopTzWFPyv/nZwR60Qx5nCvPvVbXKV0wkg87aiSvbgRaIgK8x",
+                "x-amz-request-id": "X3ZPARGNVP97GNFA"
+            },
+            "s3": {
+                "bucket": {
+                "arn": "arn:aws:s3:::bombastic",
+                "name": "bombastic",
+                "ownerIdentity": {
+                    "principalId": "A269W3T43498LN"
+                }
+                },
+                "configurationId": "stored",
+                "object": {
+                "eTag": "7e1f5bce30a48e7618d8d5619d51a20b",
+                "key": "bombastic/data/sbom/mysbom11",
+                "sequencer": "00645CECAF0EE0E7F8",
+                "size": 49312
+                },
+                "s3SchemaVersion": "1.0"
+            },
+            "userIdentity": {
+                "principalId": "AWS:AIDAUA4TFOLTSNJ5R5SJW"
+            }
+            }
+        ]
+        }"#;
+        let decoded = serde_json::from_str::<S3Event>(event).unwrap();
+        let converted: StorageEvent = decoded.try_into().unwrap();
+
+        assert_eq!(converted.event_type, EventType::Put);
+        assert_eq!(converted.key, "bombastic/data/sbom/mysbom11");
+
+        let storage = Storage::new(Config::test(), StorageType::S3).unwrap();
+        let decoded = storage.decode_event(event.as_bytes()).unwrap();
+        assert_eq!(decoded.event_type, EventType::Put);
+        assert_eq!(decoded.key, "bombastic/data/sbom/mysbom11");
     }
 }

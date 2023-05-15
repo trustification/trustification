@@ -35,8 +35,6 @@ impl SqsEventBus {
     }
 }
 
-const ARN_BASE: &str = "arn:aws:sqs:eu-west-1:276797158119:";
-
 #[async_trait::async_trait]
 impl EventBus for SqsEventBus {
     type Consumer<'m> = SqsConsumer<'m>;
@@ -76,7 +74,7 @@ pub struct SqsConsumer<'m> {
 #[async_trait::async_trait]
 impl<'d> EventConsumer for SqsConsumer<'d> {
     type Event<'m> = SqsEvent<'m> where Self: 'm;
-    async fn next<'m>(&'m self) -> Result<Self::Event<'m>, anyhow::Error> {
+    async fn next<'m>(&'m self) -> Result<Option<Self::Event<'m>>, anyhow::Error> {
         let queue_futs: Vec<_> = self
             .queues
             .iter()
@@ -97,14 +95,14 @@ impl<'d> EventConsumer for SqsConsumer<'d> {
         let message: ReceiveMessageOutput = result?;
         if let Some(messages) = message.messages() {
             if let Some(message) = messages.first() {
-                return Ok(SqsEvent {
+                return Ok(Some(SqsEvent {
                     client: self.client,
                     queue: topic,
                     message: message.clone(),
-                });
+                }));
             }
         }
-        Err(SqsError::NoMessage.into())
+        Ok(None)
     }
 }
 

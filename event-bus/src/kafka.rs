@@ -72,12 +72,12 @@ impl EventBus for KafkaEventBus {
 #[async_trait::async_trait]
 impl EventConsumer for StreamConsumer {
     type Event<'m> = KafkaEvent<'m> where Self: 'm;
-    async fn next<'m>(&'m self) -> Result<Self::Event<'m>, anyhow::Error> {
+    async fn next<'m>(&'m self) -> Result<Option<Self::Event<'m>>, anyhow::Error> {
         let message = self.recv().await?;
-        Ok(KafkaEvent {
+        Ok(Some(KafkaEvent {
             message,
             consumer: &self,
-        })
+        }))
     }
 }
 

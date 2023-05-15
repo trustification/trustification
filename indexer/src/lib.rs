@@ -48,11 +48,11 @@ pub struct Run {
 impl Run {
     pub async fn run(self) -> anyhow::Result<ExitCode> {
         let index = Index::new(&self.index)?;
-        let storage = Storage::new(if self.devmode {
-            Config::test()
+        let storage = if self.devmode {
+            Storage::new(Config::test(), bombastic_storage::StorageType::Minio)?
         } else {
-            Config::defaults()?
-        })?;
+            Storage::new(Config::defaults()?, bombastic_storage::StorageType::S3)?
+        };
         use bombastic_event_bus::EventBus;
         let interval = Duration::from_secs(self.sync_interval_seconds);
         match self.events {
