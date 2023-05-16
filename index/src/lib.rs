@@ -132,7 +132,7 @@ mod tests {
         let mut index = Index::new_with_handle(conn);
 
         let result = index
-            .insert(
+            .insert_or_replace(
                 "purl2",
                 "116940abae80491f5357f652e55c48347dd7a2a1ff27df578c4572a383373c71",
                 "key1",
