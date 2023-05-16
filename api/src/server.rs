@@ -1,4 +1,5 @@
 use std::net::SocketAddr;
+use std::str::FromStr;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -133,11 +134,24 @@ struct QueryParams {
     sha256: Option<String>,
 }
 
-async fn publish_sbom(State(state): State<SharedState>, data: Bytes) -> StatusCode {
+#[derive(Debug, Deserialize)]
+struct PublishParams {
+    purl: Option<String>,
+}
+
+async fn publish_sbom(
+    State(state): State<SharedState>,
+    Query(params): Query<PublishParams>,
+    data: Bytes,
+) -> StatusCode {
     let storage = state.storage.write().await;
     // TODO: unbuffered I/O
     if let Ok(sbom) = SBOM::parse(&data) {
-        if let Some(purl) = sbom.purl() {
+        if let Some(purl) = params.purl.or(sbom.purl()) {
+            if let Err(_) = packageurl::PackageUrl::from_str(&purl) {
+                return StatusCode::BAD_REQUEST;
+            }
+
             if let Some(hash) = sbom.sha256() {
                 let mut out = Vec::new();
                 let (data, compressed) = match zstd::stream::copy_encode(sbom.raw(), &mut out, 3) {
@@ -174,12 +188,12 @@ async fn publish_sbom(State(state): State<SharedState>, data: Bytes) -> StatusCo
             }
         } else {
             // TODO Add description in response
-            tracing::trace!("No pURL found");
+            tracing::info!("No pURL found");
             StatusCode::BAD_REQUEST
         }
     } else {
         // TODO Add description in response
-        tracing::trace!("No valid SBOM uploaded");
+        tracing::info!("No valid SBOM uploaded");
         StatusCode::BAD_REQUEST
     }
 }
