@@ -10,7 +10,6 @@ use axum::Router;
 use bombastic_index::Index;
 use bombastic_storage::{Object, Storage};
 use serde::Deserialize;
-use sha2::{Digest, Sha256};
 use tokio::sync::{Mutex, RwLock};
 
 use crate::sbom::SBOM;
@@ -139,28 +138,39 @@ async fn publish_sbom(State(state): State<SharedState>, data: Bytes) -> StatusCo
     // TODO: unbuffered I/O
     if let Ok(sbom) = SBOM::parse(&data) {
         if let Some(purl) = sbom.purl() {
-            let hash = Sha256::digest(sbom.raw());
-            let mut out = Vec::new();
-            let (data, compressed) = match zstd::stream::copy_encode(sbom.raw(), &mut out, 3) {
-                Ok(_) => (&out[..], true),
-                Err(_) => (sbom.raw(), false),
-            };
-            tracing::debug!(
-                "Storing new SBOM ({}) with hash: {}, compressed: {}",
-                purl,
-                hex::encode(hash),
-                compressed
-            );
-            let value = Object::new(&purl, &hash, data, compressed);
-            match storage.put(&purl, value).await {
-                Ok(_) => {
-                    tracing::trace!("SBOM of size {} stored successfully", &data[..].len());
-                    StatusCode::CREATED
+            if let Some(hash) = sbom.sha256() {
+                let mut out = Vec::new();
+                let (data, compressed) = match zstd::stream::copy_encode(sbom.raw(), &mut out, 3) {
+                    Ok(_) => (&out[..], true),
+                    Err(_) => (sbom.raw(), false),
+                };
+                tracing::debug!(
+                    "Storing new SBOM ({}) with hash: {}, compressed: {}",
+                    purl,
+                    hash,
+                    compressed
+                );
+                if let Ok(hash) = hex::decode(hash) {
+                    let value = Object::new(&purl, &hash, data, compressed);
+                    match storage.put(&purl, value).await {
+                        Ok(_) => {
+                            tracing::trace!("SBOM of size {} stored successfully", &data[..].len());
+                            StatusCode::CREATED
+                        }
+                        Err(e) => {
+                            tracing::warn!("Error storing SBOM: {:?}", e);
+                            StatusCode::INTERNAL_SERVER_ERROR
+                        }
+                    }
+                } else {
+                    // TODO Add description in response
+                    tracing::trace!("Unable to decode digest");
+                    StatusCode::BAD_REQUEST
                 }
-                Err(e) => {
-                    tracing::warn!("Error storing SBOM: {:?}", e);
-                    StatusCode::INTERNAL_SERVER_ERROR
-                }
+            } else {
+                // TODO Add description in response
+                tracing::trace!("No SHA256 found");
+                StatusCode::BAD_REQUEST
             }
         } else {
             // TODO Add description in response
