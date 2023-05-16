@@ -573,6 +573,7 @@ dependencies = [
  "bombastic-storage",
  "clap",
  "hex",
+ "packageurl",
  "serde",
  "serde_json",
  "sha2",
@@ -1484,6 +1485,16 @@ name = "overload"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b15813163c1d831bf4a13c3610c05c0d03b39feb07f7e09fa234dac9b15aaf39"
+
+[[package]]
+name = "packageurl"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c53362339d1c48910f1b0c35e2ae96e2d32e442c7dc3ac5f622908ec87221f08"
+dependencies = [
+ "percent-encoding",
+ "thiserror",
+]
 
 [[package]]
 name = "parking_lot"
