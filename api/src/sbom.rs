@@ -169,6 +169,7 @@ mod spdx {
         pub external_refs: Vec<External>,
 
         #[serde(rename = "checksums")]
+        #[serde(default)]
         pub checksums: Vec<Checksum>,
     }
 
