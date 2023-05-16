@@ -39,7 +39,7 @@ services:
       retries: 3
 
   createbuckets:
-    image: minio/mc
+    image: docker.io/minio/mc
     depends_on:
       - minio
       - kafka
