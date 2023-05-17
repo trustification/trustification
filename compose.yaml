@@ -8,9 +8,9 @@ services:
       - KEYCLOAK_ADMIN_PASSWORD=admin123456
       - KEYCLOAK_DB=dev-file
     ports:
-      - "8080:8080"
+      - "8888:8888"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080"]
+      test: ["CMD", "curl", "-f", "http://localhost:8888"]
       interval: 10s
       timeout: 5s
       retries: 5
