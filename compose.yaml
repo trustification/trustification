@@ -1,19 +1,19 @@
 version: '3'
 services:
-  keycloak:
-    image: quay.io/keycloak/keycloak:20.0.0
-    command: start-dev
-    environment:
-      - KEYCLOAK_ADMIN=admin
-      - KEYCLOAK_ADMIN_PASSWORD=admin123456
-      - KEYCLOAK_DB=dev-file
-    ports:
-      - "8888:8888"
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8888"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+#  keycloak:
+#    image: quay.io/keycloak/keycloak:20.0.0
+#    command: start-dev
+#    environment:
+#      - KEYCLOAK_ADMIN=admin
+#      - KEYCLOAK_ADMIN_PASSWORD=admin123456
+#      - KEYCLOAK_DB=dev-file
+#    ports:
+#      - "8888:8888"
+#    healthcheck:
+#      test: ["CMD", "curl", "-f", "http://localhost:8888"]
+#      interval: 10s
+#      timeout: 5s
+#      retries: 5
   minio:
     image: quay.io/minio/minio:RELEASE.2023-05-04T21-44-30Z
     command: server --console-address ":9001" /data1
