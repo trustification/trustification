@@ -128,12 +128,14 @@ mod cyclonedx {
 
     #[derive(Deserialize)]
     pub struct Meta {
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
         pub tools: Vec<Tool>,
         pub component: Component,
     }
 
     #[derive(Deserialize)]
     pub struct Tool {
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
         pub hashes: Vec<Hash>,
     }
 
@@ -156,8 +158,9 @@ mod spdx {
     pub struct SBOM {
         #[serde(rename = "SPDXID")]
         pub spdx_id: String,
-        #[serde(rename = "documentDescribes")]
+        #[serde(rename = "documentDescribes", default, skip_serializing_if = "Vec::is_empty")]
         pub document_describes: Vec<String>,
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
         pub packages: Vec<Package>,
     }
 
@@ -165,11 +168,10 @@ mod spdx {
     pub struct Package {
         #[serde(rename = "SPDXID")]
         pub spdx_id: String,
-        #[serde(rename = "externalRefs")]
+        #[serde(rename = "externalRefs", default, skip_serializing_if = "Vec::is_empty")]
         pub external_refs: Vec<External>,
 
-        #[serde(rename = "checksums")]
-        #[serde(default)]
+        #[serde(rename = "checksums", default, skip_serializing_if = "Vec::is_empty")]
         pub checksums: Vec<Checksum>,
     }
 
