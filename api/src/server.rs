@@ -94,7 +94,7 @@ async fn fetch_object(storage: &Storage, key: &str) -> (StatusCode, Bytes) {
         }
         Err(e) => {
             tracing::warn!("Unable to locate object with key {}: {:?}", key, e);
-            (StatusCode::INTERNAL_SERVER_ERROR, Bytes::default())
+            (StatusCode::NOT_FOUND, Bytes::default())
         }
     }
 }
