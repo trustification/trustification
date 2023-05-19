@@ -4,7 +4,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use axum::body::Bytes;
-use axum::extract::{Query, State};
+use axum::extract::{DefaultBodyLimit, Query, State};
 use axum::http::StatusCode;
 use axum::routing::{get, post};
 use axum::Router;
@@ -52,6 +52,7 @@ pub async fn run<B: Into<SocketAddr>>(
         .route("/healthz", get(health))
         .route("/api/v1/sbom", get(query_sbom))
         .route("/api/v1/sbom", post(publish_sbom))
+        .layer(DefaultBodyLimit::max(10 * 1024 * 1024))
         .with_state(state.clone());
 
     let addr = bind.into();
