@@ -43,6 +43,17 @@ PURL=pkg:oci/$NAME@sha256:$(podman images $REGISTRY/$IMAGE:$TAG --digests '--for
 syft -q -o cyclonedx-json $REGISTRY/$IMAGE:$TAG | http --json POST http://localhost:8080/api/v1/sbom purl==$PURL
 ```
 
+Or when pulling by digest:
+
+```shell
+REGISTRY=docker.io/bitnami
+IMAGE=postgresql
+DIGEST=e6d322cf36ff6b5e2bb13d71c816dc60f1565ff093cc220064dba08c4b057275
+
+PURL=pkg:oci/$IMAGE@sha256:$DIGEST
+syft -q -o spdx-json --name $IMAGE $REGISTRY/$IMAGE@sha256:$DIGEST | http --json POST http://localhost:8080/api/v1/sbom purl==$PURL sha256==$DIGEST
+```
+
 To query the data, either using direct lookup or querying via the index:
 
 ```shell
