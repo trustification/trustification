@@ -20,7 +20,7 @@ pub struct Run {
     pub(crate) port: u16,
 
     #[arg(short = 'i', long = "index")]
-    pub(crate) index: PathBuf,
+    pub(crate) index: Option<PathBuf>,
 
     #[arg(long = "sync-interval-seconds", default_value_t = 10)]
     pub(crate) sync_interval_seconds: u64,
@@ -31,7 +31,12 @@ pub struct Run {
 
 impl Run {
     pub async fn run(self) -> anyhow::Result<ExitCode> {
-        let index = Index::new(&self.index)?;
+        let index: PathBuf = self.index.unwrap_or_else(|| {
+            use rand::RngCore;
+            let r = rand::thread_rng().next_u32();
+            std::env::temp_dir().join(format!("bombastic-api.{}.sqlite", r))
+        });
+        let index = Index::new(&index)?;
         let storage = if self.devmode {
             Storage::new(Config::test(), bombastic_storage::StorageType::Minio)?
         } else {

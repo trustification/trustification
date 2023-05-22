@@ -20,13 +20,13 @@ pub enum Events {
 #[command(about = "Run the indexer", args_conflicts_with_subcommands = true)]
 pub struct Run {
     #[arg(short = 'i', long = "index")]
-    pub(crate) index: PathBuf,
+    pub(crate) index: Option<PathBuf>,
 
     #[arg(long = "kafka-bootstraps-servers", default_value = "localhost:9092")]
     pub(crate) kafka_bootstrap_servers: String,
 
     // Event bus used to communicate with other services.
-    #[arg(long = "events", value_enum)]
+    #[arg(long = "events", value_enum, default_value = "kafka")]
     pub(crate) events: Events,
 
     #[arg(long = "stored-topic", default_value = "stored")]
@@ -47,7 +47,12 @@ pub struct Run {
 
 impl Run {
     pub async fn run(self) -> anyhow::Result<ExitCode> {
-        let index = Index::new(&self.index)?;
+        let index: PathBuf = self.index.unwrap_or_else(|| {
+            use rand::RngCore;
+            let r = rand::thread_rng().next_u32();
+            std::env::temp_dir().join(format!("bombastic-indexer.{}.sqlite", r))
+        });
+        let index = Index::new(&index)?;
         let storage = if self.devmode {
             Storage::new(Config::test(), bombastic_storage::StorageType::Minio)?
         } else {
