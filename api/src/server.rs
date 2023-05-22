@@ -3,11 +3,9 @@ use std::str::FromStr;
 use std::sync::Arc;
 use std::time::Duration;
 
-use axum::body::Bytes;
-use axum::extract::{DefaultBodyLimit, Query, State};
-use axum::http::StatusCode;
-use axum::routing::{get, post};
-use axum::Router;
+use actix_web::middleware::Logger;
+use actix_web::web::{self, Bytes};
+use actix_web::{App, HttpResponse, HttpServer, Responder};
 use bombastic_index::Index;
 use bombastic_storage::{Object, Storage};
 use serde::Deserialize;
@@ -46,20 +44,12 @@ pub async fn run<B: Into<SocketAddr>>(
 ) -> Result<(), anyhow::Error> {
     let storage = RwLock::new(storage);
     let index = Mutex::new(index);
-
     let state = Arc::new(AppState { storage, index });
 
-    let app = Router::new()
-        .route("/healthz", get(health))
-        .route("/api/v1/sbom", get(query_sbom))
-        .route("/api/v1/sbom", post(publish_sbom))
-        .layer(DefaultBodyLimit::max(10 * 1024 * 1024))
-        .with_state(state.clone());
-
-    let addr = bind.into();
+    let sinker = state.clone();
     tokio::task::spawn(async move {
         loop {
-            if state.sync_index().await.is_ok() {
+            if sinker.sync_index().await.is_ok() {
                 tracing::info!("Initial index synced");
                 break;
             } else {
@@ -69,43 +59,59 @@ pub async fn run<B: Into<SocketAddr>>(
         }
 
         loop {
-            if let Err(e) = state.sync_index().await {
+            if let Err(e) = sinker.sync_index().await {
                 tracing::info!("Unable to synchronize index: {:?}", e);
             }
             tokio::time::sleep(sync_interval).await;
         }
     });
+    let addr = bind.into();
     tracing::debug!("listening on {}", addr);
-    axum::Server::bind(&addr).serve(app.into_make_service()).await?;
+    HttpServer::new(move || {
+        App::new()
+            .wrap(Logger::default())
+            .app_data(web::PayloadConfig::new(10 * 1024 * 1024))
+            .app_data(web::Data::new(state.clone()))
+            .service(web::resource("/healthz").to(health))
+            .service(
+                web::scope("/api/v1")
+                    .route("/sbom", web::get().to(query_sbom))
+                    .route("/sbom", web::post().to(publish_sbom)),
+            )
+    })
+    .bind(&addr)?
+    .run()
+    .await?;
     Ok(())
 }
 
-async fn fetch_object(storage: &Storage, key: &str) -> (StatusCode, Bytes) {
+async fn fetch_object(storage: &Storage, key: &str) -> HttpResponse {
     match storage.get(&key).await {
         Ok(obj) => {
             tracing::trace!("Retrieved object compressed: {}", obj.compressed);
             if obj.compressed {
                 let mut out = Vec::new();
                 match ::zstd::stream::copy_decode(&obj.data[..], &mut out) {
-                    Ok(_) => (StatusCode::OK, out.into()),
-                    Err(_) => (StatusCode::INTERNAL_SERVER_ERROR, Bytes::default()),
+                    Ok(_) => HttpResponse::Ok().body(out),
+                    Err(_) => HttpResponse::InternalServerError().body("Unable to decode object"),
                 }
             } else {
-                (StatusCode::OK, obj.data.into())
+                HttpResponse::Ok().body(obj.data)
             }
         }
         Err(e) => {
             tracing::warn!("Unable to locate object with key {}: {:?}", key, e);
-            (StatusCode::NOT_FOUND, Bytes::default())
+            HttpResponse::NotFound().finish()
         }
     }
 }
 
-async fn health() -> StatusCode {
-    StatusCode::OK
+async fn health() -> HttpResponse {
+    HttpResponse::Ok().finish()
 }
 
-async fn query_sbom(State(state): State<SharedState>, Query(params): Query<QueryParams>) -> (StatusCode, Bytes) {
+async fn query_sbom(state: web::Data<SharedState>, params: web::Query<QueryParams>) -> impl Responder {
+    let params = params.into_inner();
     let result = if let Some(purl) = params.purl {
         tracing::trace!("Querying SBOM using purl {}", purl);
         Ok(purl)
@@ -118,7 +124,7 @@ async fn query_sbom(State(state): State<SharedState>, Query(params): Query<Query
         }
         result
     } else {
-        return (StatusCode::BAD_REQUEST, Bytes::default());
+        return HttpResponse::BadRequest().body("Missing valid purl or sha256");
     };
 
     match result {
@@ -126,7 +132,7 @@ async fn query_sbom(State(state): State<SharedState>, Query(params): Query<Query
             let storage = state.storage.read().await;
             fetch_object(&storage, &key).await
         }
-        Err(_) => (StatusCode::NOT_FOUND, Bytes::default()),
+        Err(_) => HttpResponse::NotFound().finish(),
     }
 }
 
@@ -142,11 +148,8 @@ struct PublishParams {
     sha256: Option<String>,
 }
 
-async fn publish_sbom(
-    State(state): State<SharedState>,
-    Query(params): Query<PublishParams>,
-    data: Bytes,
-) -> StatusCode {
+async fn publish_sbom(state: web::Data<SharedState>, params: web::Query<PublishParams>, data: Bytes) -> HttpResponse {
+    let params = params.into_inner();
     let storage = state.storage.write().await;
     // TODO: unbuffered I/O
     match SBOM::parse(&data) {
@@ -154,8 +157,9 @@ async fn publish_sbom(
             info!("Detected SBOM");
             if let Some(purl) = params.purl.or(sbom.purl()) {
                 if let Err(err) = packageurl::PackageUrl::from_str(&purl) {
-                    info!("Unable to parse purl: {err}");
-                    return StatusCode::BAD_REQUEST;
+                    let msg = format!("Unable to parse purl: {err}");
+                    info!(msg);
+                    return HttpResponse::BadRequest().body(msg);
                 }
 
                 if let Some(hash) = params.sha256.or(sbom.sha256()) {
@@ -174,34 +178,36 @@ async fn publish_sbom(
                         let value = Object::new(&purl, &hash, data, compressed);
                         match storage.put(&purl, value).await {
                             Ok(_) => {
-                                tracing::trace!("SBOM of size {} stored successfully", &data[..].len());
-                                StatusCode::CREATED
+                                let msg = format!("SBOM of size {} stored successfully", &data[..].len());
+                                tracing::trace!(msg);
+                                HttpResponse::Created().body(msg)
                             }
                             Err(e) => {
-                                tracing::warn!("Error storing SBOM: {:?}", e);
-                                StatusCode::INTERNAL_SERVER_ERROR
+                                let msg = format!("Error storing SBOM: {:?}", e);
+                                tracing::warn!(msg);
+                                HttpResponse::InternalServerError().body(msg)
                             }
                         }
                     } else {
-                        // TODO Add description in response
-                        tracing::trace!("Unable to decode digest");
-                        StatusCode::BAD_REQUEST
+                        let msg = "Unable to decode digest";
+                        tracing::trace!(msg);
+                        HttpResponse::BadRequest().body(msg)
                     }
                 } else {
-                    // TODO Add description in response
-                    tracing::trace!("No SHA256 found");
-                    StatusCode::BAD_REQUEST
+                    let msg = "No SHA256 found";
+                    tracing::trace!(msg);
+                    HttpResponse::BadRequest().body(msg)
                 }
             } else {
-                // TODO Add description in response
-                tracing::info!("No pURL found");
-                StatusCode::BAD_REQUEST
+                let msg = "No pURL found";
+                tracing::info!(msg);
+                HttpResponse::BadRequest().body(msg)
             }
         }
         Err(err) => {
-            // TODO Add description in response
-            tracing::info!("No valid SBOM uploaded: {err}");
-            StatusCode::BAD_REQUEST
+            let msg = format!("No valid SBOM uploaded: {err}");
+            tracing::info!(msg);
+            HttpResponse::BadRequest().body(msg)
         }
     }
 }
