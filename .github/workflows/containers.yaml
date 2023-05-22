@@ -63,7 +63,7 @@ jobs:
             tag=${{ env.IMAGE_TAG }}
           platforms: ${{ inputs.platforms }}
           containerfiles: |
-            ./Containerfile
+            ./bombastic/Containerfile
 
       - name: Check images created
         run: buildah images | grep '${{ env.IMAGE_NAME }}'

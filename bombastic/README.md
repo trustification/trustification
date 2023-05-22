@@ -1,9 +1,7 @@
 # BOMbastic
 
-[![CI](https://github.com/xkcd-2347/bombastic/workflows/CI/badge.svg)](https://github.com/xkcd-2347/bombastic/actions?query=workflow%3A%22CI%22)
-[![GitHub release (latest SemVer)](https://img.shields.io/github/v/tag/xkcd-2347/bombastic?sort=semver)](https://github.com/xkcd-2347/bombastic/releases)
-
-*WIP* This is still work in progress but some basic functionality is working.
+[![CI](https://github.com/trustification/trustification/workflows/CI/badge.svg)](https://github.com/trustification/trustification/actions?query=workflow%3A%22CI%22)
+[![GitHub release (latest SemVer)](https://img.shields.io/github/v/tag/trustification/trustification?sort=semver)](https://github.com/trustification/trustification/releases)
 
 ![Bilbo](images/bilbo.jpg)
 
