@@ -18,3 +18,4 @@ bombastic-storage = { path = "../storage" }
 clap = { version = "4", features = ["derive"] }
 anyhow = "1"
 futures = "0.3"
+rand = "0.8"

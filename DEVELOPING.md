@@ -15,7 +15,7 @@ This will start MinIO and Kafka in containers and initialize them accordingly so
 To run the API, you can use cargo:
 
 ```shell
-RUST_LOG=info cargo run -p bombastic-api -- run --index api-index.sqlite --devmode
+RUST_LOG=info cargo run -p bombastic-api -- run --devmode
 ```
 
 For searching using the index, more setup is required.
@@ -25,7 +25,7 @@ For searching using the index, more setup is required.
 The indexer consumes events from Kafka and indexes SBOM entries:
 
 ```shell
-RUST_LOG=info cargo run -p bombastic-indexer -- run --index indexer-index.sqlite --events kafka --devmode
+RUST_LOG=info cargo run -p bombastic-indexer -- run --devmode
 ```
 
 At this point, you can POST and GET SBOMs with the API using the id. To ingest an SBOM:
@@ -58,11 +58,11 @@ PURL=pkg:oci/$IMAGE@sha256:$DIGEST
 syft -q -o spdx-json --name $IMAGE $REGISTRY/$IMAGE@sha256:$DIGEST | http --json POST http://localhost:8080/api/v1/sbom purl==$PURL sha256==$DIGEST
 ```
 
-To query the data, either using direct lookup or querying via the index:
+To query the data, either using direct lookup or querying via the index using the sha256 digest:
 
 ```shell
 curl -X GET http://localhost:8080/api/v1/sbom?purl=pkg%3Amaven%2Fio.seedwing%2Fseedwing-java-example%401.0.0-SNAPSHOT%3Ftype%3Djar
-curl -X GET http://localhost:8080/api/v1/sbom?purl=pkg%3Amaven%2Fio.seedwing%2Fseedwing-java-example%401.0.0-SNAPSHOT%3Ftype%3Djar
+curl -X GET http://localhost:8080/api/v1/sbom?sha256=47bd0e0176ba679b66739820bc52880a9e667c57c8b7301de698c0ce7e271bb1
 ```
 
 The indexer will automatically sync the index to the S3 bucket, while the API will periodically retrieve the index from S3. Therefore, there may be a delay between storing the entry and it being indexed.
