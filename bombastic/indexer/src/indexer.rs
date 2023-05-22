@@ -1,8 +1,8 @@
 use std::time::Duration;
 
-use bombastic_event_bus::{Event, EventBus, EventConsumer, Topic};
-use bombastic_index::Index;
-use bombastic_storage::{EventType, Storage};
+use trustification_event_bus::{Event, EventBus, EventConsumer, Topic};
+use trustification_index::Index;
+use trustification_storage::{EventType, Storage};
 use futures::pin_mut;
 use tokio::select;
 

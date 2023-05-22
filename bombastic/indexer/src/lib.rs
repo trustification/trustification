@@ -2,9 +2,9 @@ use std::path::PathBuf;
 use std::process::ExitCode;
 use std::time::Duration;
 
-use bombastic_event_bus::Topic;
-use bombastic_index::Index;
-use bombastic_storage::{Config, Storage};
+use trustification_event_bus::Topic;
+use trustification_index::Index;
+use trustification_storage::{Config, Storage};
 
 mod indexer;
 
@@ -54,23 +54,23 @@ impl Run {
         });
         let index = Index::new(&index)?;
         let storage = if self.devmode {
-            Storage::new(Config::test(), bombastic_storage::StorageType::Minio)?
+            Storage::new(Config::test(), trustification_storage::StorageType::Minio)?
         } else {
-            Storage::new(Config::defaults()?, bombastic_storage::StorageType::S3)?
+            Storage::new(Config::defaults()?, trustification_storage::StorageType::S3)?
         };
-        use bombastic_event_bus::EventBus;
+        use trustification_event_bus::EventBus;
         let interval = Duration::from_secs(self.sync_interval_seconds);
         match self.events {
             Events::Kafka => {
                 let bootstrap = &self.kafka_bootstrap_servers;
-                let bus = bombastic_event_bus::kafka::KafkaEventBus::new(bootstrap.to_string())?;
+                let bus = trustification_event_bus::kafka::KafkaEventBus::new(bootstrap.to_string())?;
                 if self.devmode {
                     bus.create(&[Topic::STORED]).await?;
                 }
                 indexer::run(index, storage, bus, interval).await?;
             }
             Events::Sqs => {
-                let bus = bombastic_event_bus::sqs::SqsEventBus::new().await?;
+                let bus = trustification_event_bus::sqs::SqsEventBus::new().await?;
                 indexer::run(index, storage, bus, interval).await?;
             }
         }

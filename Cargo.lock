@@ -734,8 +734,6 @@ version = "0.1.0"
 dependencies = [
  "actix-web",
  "anyhow",
- "bombastic-index",
- "bombastic-storage",
  "clap",
  "hex",
  "packageurl",
@@ -746,33 +744,9 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
+ "trustification-index",
+ "trustification-storage",
  "zstd",
-]
-
-[[package]]
-name = "bombastic-event-bus"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "async-trait",
- "aws-config",
- "aws-sdk-sqs",
- "futures",
- "rdkafka",
- "thiserror",
- "tracing",
-]
-
-[[package]]
-name = "bombastic-exporter"
-version = "0.1.0"
-
-[[package]]
-name = "bombastic-index"
-version = "0.1.0"
-dependencies = [
- "sqlite",
- "tokio",
 ]
 
 [[package]]
@@ -780,9 +754,6 @@ name = "bombastic-indexer"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "bombastic-event-bus",
- "bombastic-index",
- "bombastic-storage",
  "clap",
  "futures",
  "hex",
@@ -792,18 +763,9 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
-]
-
-[[package]]
-name = "bombastic-storage"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "bincode",
- "rust-s3",
- "serde",
- "serde_json",
- "tokio",
+ "trustification-event-bus",
+ "trustification-index",
+ "trustification-storage",
 ]
 
 [[package]]
@@ -2699,6 +2661,44 @@ dependencies = [
  "tracing",
  "tracing-core",
  "tracing-log",
+]
+
+[[package]]
+name = "trustification-event-bus"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "aws-config",
+ "aws-sdk-sqs",
+ "futures",
+ "rdkafka",
+ "thiserror",
+ "tracing",
+]
+
+[[package]]
+name = "trustification-exporter"
+version = "0.1.0"
+
+[[package]]
+name = "trustification-index"
+version = "0.1.0"
+dependencies = [
+ "sqlite",
+ "tokio",
+]
+
+[[package]]
+name = "trustification-storage"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "bincode",
+ "rust-s3",
+ "serde",
+ "serde_json",
+ "tokio",
 ]
 
 [[package]]

@@ -4,8 +4,8 @@ use std::process::ExitCode;
 use std::str::FromStr;
 use std::time::Duration;
 
-use bombastic_index::Index;
-use bombastic_storage::{Config, Storage};
+use trustification_index::Index;
+use trustification_storage::{Config, Storage};
 
 mod sbom;
 mod server;
@@ -38,9 +38,9 @@ impl Run {
         });
         let index = Index::new(&index)?;
         let storage = if self.devmode {
-            Storage::new(Config::test(), bombastic_storage::StorageType::Minio)?
+            Storage::new(Config::test(), trustification_storage::StorageType::Minio)?
         } else {
-            Storage::new(Config::defaults()?, bombastic_storage::StorageType::S3)?
+            Storage::new(Config::defaults()?, trustification_storage::StorageType::S3)?
         };
         let addr = SocketAddr::from_str(&format!("{}:{}", self.bind, self.port))?;
         let interval = Duration::from_secs(self.sync_interval_seconds);
