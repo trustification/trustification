@@ -2009,6 +2009,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "reservoir"
+version = "0.1.0"
+
+[[package]]
+name = "reservoir-api"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "ring"
 version = "0.16.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
