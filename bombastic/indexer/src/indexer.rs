@@ -1,10 +1,10 @@
 use std::time::Duration;
 
+use futures::pin_mut;
+use tokio::select;
 use trustification_event_bus::{Event, EventBus, EventConsumer, Topic};
 use trustification_index::Index;
 use trustification_storage::{EventType, Storage};
-use futures::pin_mut;
-use tokio::select;
 
 pub async fn run<E: EventBus>(
     mut index: Index,
