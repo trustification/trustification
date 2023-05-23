@@ -1,14 +1,12 @@
+use std::rc::Rc;
+
 use bommer_api::data::{Image, ImageRef, SbomState};
 use itertools::Itertools;
-use patternfly_yew::next::MemoizedTableModel;
-use patternfly_yew::{
-    next::{
-        use_table_data, Cell, CellContext, ColumnWidth, Table, TableColumn, TableEntryRenderer,
-        TableHeader, UseTableData,
-    },
-    prelude::*,
+use patternfly_yew::next::{
+    use_table_data, Cell, CellContext, ColumnWidth, MemoizedTableModel, Table, TableColumn, TableEntryRenderer,
+    TableHeader, UseTableData,
 };
-use std::rc::Rc;
+use patternfly_yew::prelude::*;
 use yew::prelude::*;
 
 #[derive(Clone, Debug, PartialEq, Properties)]

@@ -1,10 +1,12 @@
 mod ws;
 
-use crate::workload::{by_ns, WorkloadState};
+use std::collections::HashMap;
+
 use actix_cors::Cors;
 use actix_web::{get, web, App, HttpRequest, HttpResponse, HttpServer, Responder};
-use std::collections::HashMap;
 use tokio::task::spawn_local;
+
+use crate::workload::{by_ns, WorkloadState};
 
 #[derive(Clone, Debug)]
 pub struct ServerConfig {

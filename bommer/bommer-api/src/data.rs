@@ -25,9 +25,7 @@ pub struct SBOM {
 }
 
 /// A reference to a pod
-#[derive(
-    Clone, Debug, Eq, PartialEq, Hash, Ord, PartialOrd, serde::Serialize, serde::Deserialize,
-)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash, Ord, PartialOrd, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PodRef {
     pub namespace: String,
@@ -40,9 +38,7 @@ pub struct ImageState {
     pub pods: HashSet<PodRef>,
 }
 
-#[derive(
-    Clone, Debug, Eq, PartialEq, Hash, Ord, PartialOrd, serde::Deserialize, serde::Serialize,
-)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash, Ord, PartialOrd, serde::Deserialize, serde::Serialize)]
 pub struct ImageRef(pub String);
 
 impl Display for ImageRef {

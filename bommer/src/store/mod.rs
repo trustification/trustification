@@ -1,13 +1,14 @@
 mod pods;
 
-use crate::pubsub::{State, Subscription};
 use std::collections::{HashMap, HashSet};
 use std::fmt::Debug;
 use std::hash::Hash;
 use std::sync::Arc;
-use tokio::sync::RwLock;
 
 pub use pods::image_store;
+use tokio::sync::RwLock;
+
+use crate::pubsub::{State, Subscription};
 
 #[derive(Clone)]
 pub struct Store<K, O, V>
@@ -176,10 +177,7 @@ where
         self.inner.read().await.state.get_state().await
     }
 
-    pub async fn subscribe(
-        &self,
-        buffer: impl Into<Option<usize>>,
-    ) -> Subscription<K, Owned<O, V>> {
+    pub async fn subscribe(&self, buffer: impl Into<Option<usize>>) -> Subscription<K, Owned<O, V>> {
         self.inner.read().await.state.subscribe(buffer).await
     }
 }

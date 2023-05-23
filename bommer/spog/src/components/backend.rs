@@ -1,5 +1,6 @@
-use patternfly_yew::prelude::*;
 use std::rc::Rc;
+
+use patternfly_yew::prelude::*;
 use url::Url;
 use web_sys::RequestCache;
 use yew::prelude::*;

@@ -1,5 +1,3 @@
-use bommer_api::data::Event;
-use futures::{stream, StreamExt};
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 use std::fmt::Debug;
@@ -7,6 +5,9 @@ use std::hash::Hash;
 use std::ops::{Deref, DerefMut};
 use std::sync::Arc;
 use std::time::Duration;
+
+use bommer_api::data::Event;
+use futures::{stream, StreamExt};
 use tokio::sync::{mpsc, RwLock};
 use tracing::debug;
 
@@ -24,10 +25,7 @@ where
     K: Clone + Debug + Eq + Hash + Send + Sync,
     V: Clone + Debug + Send + Sync,
 {
-    pub fn new(
-        rx: mpsc::Receiver<Event<K, V>>,
-        unsubscribe: impl FnOnce() + Send + Sync + 'static,
-    ) -> Self {
+    pub fn new(rx: mpsc::Receiver<Event<K, V>>, unsubscribe: impl FnOnce() + Send + Sync + 'static) -> Self {
         Self {
             rx,
             unsubscribe: Some(Box::new(unsubscribe)),

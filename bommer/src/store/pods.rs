@@ -1,18 +1,16 @@
-use crate::store::{Owned, Store};
-use bommer_api::data::{ImageRef, PodRef};
-use futures::{Stream, TryStreamExt};
-use k8s_openapi::api::core::v1::{ContainerStatus, Pod};
-use kube::{runtime::watcher, Resource, ResourceExt};
 use std::collections::{HashMap, HashSet};
 use std::future::Future;
 use std::pin::pin;
 
-pub fn image_store<S>(
-    stream: S,
-) -> (
-    Store<ImageRef, PodRef, ()>,
-    impl Future<Output = anyhow::Result<()>>,
-)
+use bommer_api::data::{ImageRef, PodRef};
+use futures::{Stream, TryStreamExt};
+use k8s_openapi::api::core::v1::{ContainerStatus, Pod};
+use kube::runtime::watcher;
+use kube::{Resource, ResourceExt};
+
+use crate::store::{Owned, Store};
+
+pub fn image_store<S>(stream: S) -> (Store<ImageRef, PodRef, ()>, impl Future<Output = anyhow::Result<()>>)
 where
     S: Stream<Item = Result<watcher::Event<Pod>, watcher::Error>>,
 {
@@ -41,12 +39,7 @@ where
 
                 let images = images_from_pod(pod);
 
-                store
-                    .inner
-                    .write()
-                    .await
-                    .apply(pod_ref, images, |_| (), |_, v| v)
-                    .await;
+                store.inner.write().await.apply(pod_ref, images, |_| (), |_, v| v).await;
             }
             watcher::Event::Deleted(pod) => {
                 if let Some(pod_ref) = to_key(&pod) {
@@ -63,12 +56,7 @@ where
     Ok(())
 }
 
-fn to_state(
-    pods: Vec<Pod>,
-) -> (
-    HashMap<ImageRef, Owned<PodRef, ()>>,
-    HashMap<PodRef, HashSet<ImageRef>>,
-) {
+fn to_state(pods: Vec<Pod>) -> (HashMap<ImageRef, Owned<PodRef, ()>>, HashMap<PodRef, HashSet<ImageRef>>) {
     let mut by_images: HashMap<ImageRef, Owned<PodRef, ()>> = Default::default();
     let mut by_pods = HashMap::new();
 

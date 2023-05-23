@@ -30,11 +30,13 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
+            bommer/spog/target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Check formatting
         run: |
           cargo fmt --check
+          cargo fmt --check --manifest-path bommer/spog/Cargo.toml 
 
       - name: Check
         run: cargo check

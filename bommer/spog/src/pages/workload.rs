@@ -1,11 +1,13 @@
+use std::rc::Rc;
+
+use bommer_api::data::{Event, Image, ImageRef};
+use patternfly_yew::prelude::*;
+use yew::prelude::*;
+use yew_hooks::use_websocket;
+
 use crate::backend::{self, IntoWs};
 use crate::components::workload::WorkloadTable;
 use crate::hooks::use_backend;
-use bommer_api::data::{Event, Image, ImageRef};
-use patternfly_yew::prelude::*;
-use std::rc::Rc;
-use yew::prelude::*;
-use yew_hooks::use_websocket;
 
 #[derive(Clone, Debug, PartialEq, Eq, Properties)]
 pub struct WorkloadProperties {

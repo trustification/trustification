@@ -1,8 +1,10 @@
-use crate::pubsub::State;
-use bommer_api::data::{Event, Image, ImageRef};
 use std::future::Future;
 use std::ops::Deref;
+
+use bommer_api::data::{Event, Image, ImageRef};
 use tracing::log;
+
+use crate::pubsub::State;
 
 #[derive(Clone, Debug, Default)]
 pub struct WorkloadState {

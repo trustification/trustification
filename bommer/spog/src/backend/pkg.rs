@@ -1,7 +1,9 @@
-use super::{Backend, Error};
-use bommer_api::data::{Image, ImageRef};
 use std::collections::HashMap;
 use std::ops::{Deref, DerefMut};
+
+use bommer_api::data::{Image, ImageRef};
+
+use super::{Backend, Error};
 
 pub struct WorkloadService {
     backend: Backend,
