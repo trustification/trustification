@@ -21,7 +21,6 @@ pub(crate) fn configure() -> impl FnOnce(&mut ServiceConfig) {
         config.service(search_packages);
         config.service(search_package_dependencies);
         config.service(search_package_dependents);
-        config.service(get_trusted);
         config.service(check_sbom);
     }
 }
@@ -44,13 +43,13 @@ impl TrustedContent {
 
     pub async fn search(&self, purl_str: &str) -> Result<Vec<PackageRef>, ApiError> {
         if let Ok(purl) = PackageUrl::from_str(purl_str) {
-            let trusted_versions: Vec<PackageRef> = self
+            let packages: Vec<PackageRef> = self
                 .client
                 .get_packages(purl.clone())
                 .await
                 .map_err(|_| ApiError::InternalError)?;
 
-            Ok(trusted_versions)
+            Ok(packages)
         } else {
             Err(ApiError::InvalidPackageUrl {
                 purl: purl_str.to_string(),
@@ -58,7 +57,7 @@ impl TrustedContent {
         }
     }
 
-    async fn get_trusted(&self, purl_str: &str) -> Result<Package, ApiError> {
+    async fn get_package(&self, purl_str: &str) -> Result<Package, ApiError> {
         if let Ok(purl) = PackageUrl::from_str(purl_str) {
             // get vulnerabilities from Guac
             let mut vulns = self
@@ -74,7 +73,7 @@ impl TrustedContent {
             vulns.append(&mut snyk_vulns);
 
             //get related packages from Guac
-            let mut packages: Vec<PackageRef> = self
+            let packages: Vec<PackageRef> = self
                 .client
                 .get_packages(purl.clone())
                 .await
@@ -93,22 +92,9 @@ impl TrustedContent {
                 });
             }
 
-            let trusted_versions: Vec<PackageRef> = packages
-                .drain(..)
-                .filter(|p| {
-                    if let Ok(p) = PackageUrl::from_str(&p.purl) {
-                        self.is_trusted(&p)
-                    } else {
-                        false
-                    }
-                })
-                .collect();
-
             let p = Package {
                 purl: Some(purl.to_string()),
                 href: Some(format!("/api/package?purl={}", &urlencoding::encode(&purl.to_string()))),
-                trusted: Some(self.is_trusted(&purl)),
-                trusted_versions,
                 snyk: None,
                 vulnerabilities: vulns,
                 sbom: if self.sbom.exists(&purl.to_string()) {
@@ -126,20 +112,6 @@ impl TrustedContent {
                 purl: purl_str.to_string(),
             })
         }
-    }
-
-    // temp fn to decide if the package is trusted based on its version or namespace
-    fn is_trusted(&self, purl: &PackageUrl<'_>) -> bool {
-        purl.version().map_or(false, |v| v.contains("redhat")) || purl.namespace().map_or(false, |v| v == "redhat")
-    }
-
-    async fn get_all_trusted(&self) -> Result<Vec<Package>, ApiError> {
-        let trusted_versions: Vec<Package> = self
-            .client
-            .get_all_packages()
-            .await
-            .map_err(|_| ApiError::InternalError)?;
-        Ok(trusted_versions)
     }
 }
 
@@ -163,21 +135,11 @@ pub async fn get_package(
     query: web::Query<PackageQuery>,
 ) -> Result<HttpResponse, ApiError> {
     if let Some(purl) = &query.purl {
-        let p = data.get_trusted(purl).await?;
+        let p = data.get_package(purl).await?;
         Ok(HttpResponse::Ok().json(p))
     } else {
         Err(ApiError::MissingQueryArgument)
     }
-}
-
-#[utoipa::path(
-    responses(
-        (status = 200, description = "Get the entire inventory", body = Vec<Package>),
-    )
-)]
-#[get("/api/trusted")]
-pub async fn get_trusted(data: web::Data<TrustedContent>) -> Result<HttpResponse, ApiError> {
-    Ok(HttpResponse::Ok().json(data.get_all_trusted().await?))
 }
 
 #[utoipa::path(
@@ -191,7 +153,7 @@ pub async fn get_trusted(data: web::Data<TrustedContent>) -> Result<HttpResponse
 pub async fn get_packages(data: web::Data<TrustedContent>, body: Json<PackageList>) -> Result<HttpResponse, ApiError> {
     let mut packages: Vec<Option<Package>> = Vec::new();
     for purl in body.list().iter() {
-        if let Ok(p) = data.get_trusted(purl).await {
+        if let Ok(p) = data.get_package(purl).await {
             packages.push(Some(p));
         }
     }
@@ -253,7 +215,6 @@ pub async fn search_package_dependents(
             (PackageRef {
                 purl: "pkg:maven/io.vertx/vertx-web@4.3.4.redhat-00007".to_string(),
                 href: format!("/api/package?purl={}", &urlencoding::encode("pkg:maven/io.vertx/vertx-web@4.3.4.redhat-00007")),
-                trusted: Some(true),
                 sbom: None,
                 })]
         )),

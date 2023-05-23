@@ -34,7 +34,6 @@ impl Guac {
             let p = PackageRef {
                 purl: purl.clone(),
                 href: format!("/api/package?purl={}", &urlencoding::encode(&purl)),
-                trusted: Some(self.is_trusted(purl)),
                 sbom: if self.sbom.exists(&purl) {
                     Some(format!("/api/package/sbom?purl={}", &urlencoding::encode(&purl)))
                 } else {
@@ -44,14 +43,6 @@ impl Guac {
             ret.push(p);
         }
         Ok(ret)
-    }
-
-    fn is_trusted(&self, purl: &str) -> bool {
-        if let Ok(purl) = PackageUrl::from_str(purl) {
-            purl.version().map_or(false, |v| v.contains("redhat")) || purl.namespace().map_or(false, |v| v == "redhat")
-        } else {
-            false
-        }
     }
 
     pub async fn get_vulnerability(&self, cve_id: &str) -> Result<Vulnerability, anyhow::Error> {
@@ -68,7 +59,6 @@ impl Guac {
                 let p = PackageRef {
                     purl: purl.clone(),
                     href: format!("/api/package?purl={}", &urlencoding::encode(&purl)),
-                    trusted: Some(self.is_trusted(&purl)),
                     sbom: if self.sbom.exists(&purl) {
                         Some(format!("/api/package/sbom?purl={}", &urlencoding::encode(&purl)))
                     } else {
@@ -185,7 +175,6 @@ impl Guac {
             let p = PackageRef {
                 purl: purl.clone(),
                 href: format!("/api/package?purl={}", &urlencoding::encode(&purl)),
-                trusted: Some(self.is_trusted(&purl)),
                 sbom: if self.sbom.exists(&purl) {
                     Some(format!("/api/package/sbom?purl={}", &urlencoding::encode(&purl)))
                 } else {
@@ -200,30 +189,6 @@ impl Guac {
         Ok(PackageDependencies(ret))
     }
 
-    pub async fn get_all_packages(&self) -> Result<Vec<Package>, anyhow::Error> {
-        let all_packages = self.client.get_all_packages().await?;
-
-        let mut all = Vec::new();
-        for purl in all_packages.iter() {
-            let vulns = self.get_vulnerabilities(&purl).await?;
-            let p = Package {
-                purl: Some(purl.to_string()),
-                href: Some(format!("/api/package?purl={}", &urlencoding::encode(&purl.to_string()))),
-                trusted: Some(self.is_trusted(&purl)),
-                trusted_versions: vec![],
-                snyk: None,
-                vulnerabilities: vulns,
-                sbom: if self.sbom.exists(&purl) {
-                    Some(format!("/api/package/sbom?purl={}", &urlencoding::encode(&purl)))
-                } else {
-                    None
-                },
-            };
-            all.push(p);
-        }
-        Ok(all)
-    }
-
     pub async fn get_dependents(&self, purl: &str) -> Result<PackageDependencies, anyhow::Error> {
         let deps = self.client.is_dependent(purl).await.map_err(|e| {
             let e = format!("Error getting dependents from GUAC: {:?}", e);
@@ -236,7 +201,6 @@ impl Guac {
             let p = PackageRef {
                 purl: purl.clone(),
                 href: format!("/api/package?purl={}", &urlencoding::encode(&purl)),
-                trusted: Some(self.is_trusted(&purl)),
                 sbom: if self.sbom.exists(&purl) {
                     Some(format!("/api/package/sbom?purl={}", &urlencoding::encode(&purl)))
                 } else {
