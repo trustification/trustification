@@ -31,25 +31,27 @@ jobs:
             ~/.cargo/git/db/
             target/
             bommer/bommer-ui/target/
+            spog/ui/target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Check formatting
         run: |
           cargo fmt --check
-          cargo fmt --check --manifest-path bommer/bommer-ui/Cargo.toml 
+          cargo fmt --check --manifest-path bommer/bommer-ui/Cargo.toml
+          cargo fmt --check --manifest-path spog/ui/Cargo.toml
 
       - name: Check
         run: cargo check
 
       - name: Check (frontend)
         run: |
-          cd bommer/bommer-ui
-          cargo check
+          cargo check --manifest-path bommer/bommer-ui/Cargo.toml
+          cargo check --manifest-path spog/ui/Cargo.toml
 
       - name: Test
         run: cargo test
 
       - name: Test (frontend)
         run: |
-          cd bommer/bommer-ui
-          cargo test
+          cargo test --manifest-path bommer/bommer-ui/Cargo.toml
+          cargo test --manifest-path spog/ui/Cargo.toml
