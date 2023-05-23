@@ -19,7 +19,6 @@ permissions:
 
 env:
   SYFT_VERSION: "0.68.1"
-  IMAGE_NAME: bombastic
 
 jobs:
 
@@ -57,6 +56,9 @@ jobs:
     permissions:
       contents: read
       packages: write
+    strategy:
+      matrix:
+        name: ["bombastic"]
 
     needs: [ init, ci, container ]
     runs-on: ubuntu-22.04
@@ -80,10 +82,10 @@ jobs:
         - name: Push to ghcr.io
           id: push-images
           env:
-            IMAGE: "ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:${{ needs.init.outputs.version }}"
+            IMAGE: "ghcr.io/${{ github.repository_owner }}/${{ matrix.name }}:${{ needs.init.outputs.version }}"
           run: |
             podman push \
-              "${{ env.IMAGE_NAME }}:${{ needs.init.outputs.version }}" \
+              "${{ matrix.name }}:${{ needs.init.outputs.version }}" \
               "${IMAGE}" \
               --digestfile "${RUNNER_TEMP}/push.digest"
             echo "imageDigest=$(cat ${RUNNER_TEMP}/push.digest)" >> $GITHUB_OUTPUT
