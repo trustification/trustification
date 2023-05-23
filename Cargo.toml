@@ -3,6 +3,8 @@ members = [
     "bombastic/bombastic",
     "bombastic/api",
     "bombastic/indexer",
+    "bommer",
+    "bommer/bommer-api",
     "reservoir/reservoir",
     "reservoir/api",
     "bombastic/index",

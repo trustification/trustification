@@ -39,5 +39,15 @@ jobs:
       - name: Check
         run: cargo check
 
+      - name: Check (frontend)
+        run: |
+          cd bommer/spog
+          cargo check
+
       - name: Test
         run: cargo test
+
+      - name: Test (frontend)
+        run: |
+          cd bommer/spog
+          cargo test

@@ -1,0 +1,7 @@
+[[hooks]]
+stage = "build"
+command = "bash"
+command_arguments = ["dev/trunk-hook.sh"]
+
+[serve]
+port = 8020
