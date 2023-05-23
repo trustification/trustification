@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::fmt::Display;
 
 use s3::creds::error::CredentialsError;
@@ -107,29 +108,33 @@ const VERSION: u32 = 1;
 #[derive(Serialize, Deserialize)]
 pub struct Object<'a> {
     version: u32,
-    pub purl: &'a str,
-    pub hash: Vec<u8>,
+    pub key: &'a str,
     pub compressed: bool,
+    pub annotations: HashMap<&'a str, &'a str>,
     pub data: Vec<u8>,
 }
 
 impl<'a> Object<'a> {
-    pub fn new(purl: &'a str, hash: &'a [u8], data: &'a [u8], compressed: bool) -> Self {
+    pub fn new(key: &'a str, annotations: HashMap<&'a str, &'a str>, data: &'a [u8], compressed: bool) -> Self {
         Self {
             version: VERSION,
-            purl,
-            hash: hash.to_vec(),
-            data: data.to_vec(),
+            key,
             compressed,
+            data: data.to_vec(),
+            annotations,
         }
     }
 
     fn to_owned(self) -> OwnedObject {
+        let mut annotations = HashMap::new();
+        for (key, value) in self.annotations.iter() {
+            annotations.insert(key.to_string(), value.to_string());
+        }
         OwnedObject {
             version: self.version,
-            purl: self.purl.to_string(),
-            hash: self.hash,
             compressed: self.compressed,
+            key: self.key.to_string(),
+            annotations,
             data: self.data,
         }
     }
@@ -138,9 +143,9 @@ impl<'a> Object<'a> {
 #[derive(Serialize, Deserialize)]
 pub struct OwnedObject {
     version: u32,
-    pub purl: String,
-    pub hash: Vec<u8>,
+    pub key: String,
     pub compressed: bool,
+    pub annotations: HashMap<String, String>,
     pub data: Vec<u8>,
 }
 

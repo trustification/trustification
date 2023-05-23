@@ -174,24 +174,20 @@ async fn publish_sbom(state: web::Data<SharedState>, params: web::Query<PublishP
                         hash,
                         compressed
                     );
-                    if let Ok(hash) = hex::decode(hash) {
-                        let value = Object::new(&purl, &hash, data, compressed);
-                        match storage.put(&purl, value).await {
-                            Ok(_) => {
-                                let msg = format!("SBOM of size {} stored successfully", &data[..].len());
-                                tracing::trace!(msg);
-                                HttpResponse::Created().body(msg)
-                            }
-                            Err(e) => {
-                                let msg = format!("Error storing SBOM: {:?}", e);
-                                tracing::warn!(msg);
-                                HttpResponse::InternalServerError().body(msg)
-                            }
+                    let mut annotations = std::collections::HashMap::new();
+                    annotations.insert("digest", hash.as_str());
+                    let value = Object::new(&purl, annotations, data, compressed);
+                    match storage.put(&purl, value).await {
+                        Ok(_) => {
+                            let msg = format!("SBOM of size {} stored successfully", &data[..].len());
+                            tracing::trace!(msg);
+                            HttpResponse::Created().body(msg)
                         }
-                    } else {
-                        let msg = "Unable to decode digest";
-                        tracing::trace!(msg);
-                        HttpResponse::BadRequest().body(msg)
+                        Err(e) => {
+                            let msg = format!("Error storing SBOM: {:?}", e);
+                            tracing::warn!(msg);
+                            HttpResponse::InternalServerError().body(msg)
+                        }
                     }
                 } else {
                     let msg = "No SHA256 found";
