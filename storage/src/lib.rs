@@ -26,17 +26,17 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn defaults() -> Result<Self, anyhow::Error> {
+    pub fn defaults(bucket_name: &str) -> Result<Self, anyhow::Error> {
         Ok(Config {
-            bucket_name: "bombastic".to_string(),
+            bucket_name: bucket_name.to_string(),
             region: Region::from_default_env()?,
             credentials: Credentials::from_env()?,
         })
     }
 
-    pub fn test() -> Self {
+    pub fn test(bucket_name: &str) -> Self {
         Config {
-            bucket_name: "bombastic".to_string(),
+            bucket_name: bucket_name.to_string(),
             region: Region::Custom {
                 region: "eu-central-1".to_owned(),
                 endpoint: "http://localhost:9000".to_owned(),
@@ -99,7 +99,7 @@ impl From<bincode::Error> for Error {
     }
 }
 
-const SBOM_PATH: &str = "/data/sbom/";
+const DATA_PATH: &str = "/data/";
 const INDEX_PATH: &str = "/index.sqlite";
 
 const VERSION: u32 = 1;
@@ -146,7 +146,7 @@ pub struct OwnedObject {
 
 impl Storage {
     pub fn new(config: Config, stype: StorageType) -> Result<Self, Error> {
-        let prefix = format!("{}{}", config.bucket_name, SBOM_PATH);
+        let prefix = format!("{}{}", config.bucket_name, DATA_PATH);
         let index_prefix = format!("{}{}", config.bucket_name, INDEX_PATH);
         let bucket = Bucket::new(&config.bucket_name, config.region, config.credentials)?.with_path_style();
         Ok(Self {
@@ -166,14 +166,14 @@ impl Storage {
     }
 
     pub async fn put(&self, key: &str, value: Object<'_>) -> Result<(), Error> {
-        let path = format!("{}{}", SBOM_PATH, key);
+        let path = format!("{}{}", DATA_PATH, key);
         let value = bincode::serialize(&value)?;
         self.bucket.put_object(path, &value).await?;
         Ok(())
     }
 
     pub async fn get(&self, key: &str) -> Result<OwnedObject, Error> {
-        let path = format!("{}{}", SBOM_PATH, key);
+        let path = format!("{}{}", DATA_PATH, key);
         let data = self.bucket.get_object(path).await?;
         let value: Object<'_> = bincode::deserialize(&data.as_slice())?;
         Ok(value.to_owned())
@@ -316,7 +316,7 @@ mod tests {
                 "configurationId": "stored",
                 "object": {
                 "eTag": "7e1f5bce30a48e7618d8d5619d51a20b",
-                "key": "bombastic/data/sbom/mysbom11",
+                "key": "bombastic/data/mysbom11",
                 "sequencer": "00645CECAF0EE0E7F8",
                 "size": 49312
                 },
@@ -332,11 +332,11 @@ mod tests {
         let converted: StorageEvent = decoded.try_into().unwrap();
 
         assert_eq!(converted.event_type, EventType::Put);
-        assert_eq!(converted.key, "bombastic/data/sbom/mysbom11");
+        assert_eq!(converted.key, "bombastic/data/mysbom11");
 
-        let storage = Storage::new(Config::test(), StorageType::S3).unwrap();
+        let storage = Storage::new(Config::test("bombastic"), StorageType::S3).unwrap();
         let decoded = storage.decode_event(event.as_bytes()).unwrap();
         assert_eq!(decoded.event_type, EventType::Put);
-        assert_eq!(decoded.key, "bombastic/data/sbom/mysbom11");
+        assert_eq!(decoded.key, "bombastic/data/mysbom11");
     }
 }
