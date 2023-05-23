@@ -1,0 +1,4 @@
+[[hooks]]
+stage = "build"
+command = "bash"
+command_arguments = ["dev/trunk-hook.sh"]
