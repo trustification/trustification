@@ -5,8 +5,8 @@ members = [
     "bombastic/indexer",
     "reservoir/reservoir",
     "reservoir/api",
+    "bombastic/index",
     "exporter",
     "event-bus",
     "storage",
-    "index",
 ]

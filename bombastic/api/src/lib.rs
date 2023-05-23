@@ -4,7 +4,7 @@ use std::process::ExitCode;
 use std::str::FromStr;
 use std::time::Duration;
 
-use trustification_index::Index;
+use bombastic_index::Index;
 use trustification_storage::{Config, Storage};
 
 mod sbom;
