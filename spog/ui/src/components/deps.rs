@@ -93,9 +93,9 @@ pub fn package_refs(props: &PackageRefsProperties) -> Html {
     let header = html_nested!(
         <TableHeader>
             <TableColumn label="Name" />
-            <TableColumn label="Version"/>
-            <TableColumn/>
-            <TableColumn/>
+            <TableColumn label="Version" />
+            <TableColumn label="Type" />
+            <TableColumn label="Qualifiers" />
         </TableHeader>
     );
 

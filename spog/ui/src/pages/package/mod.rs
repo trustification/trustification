@@ -9,7 +9,11 @@ use crate::{
     utils::RenderOptional,
 };
 use packageurl::PackageUrl;
-use patternfly_yew::prelude::*;
+use patternfly_yew::next::CardBodyVariant;
+use patternfly_yew::{
+    next::{Card, CardBody, CardDivider},
+    prelude::*,
+};
 use search::PackageSearch;
 use std::rc::Rc;
 use std::str::FromStr;
@@ -125,25 +129,27 @@ fn package_information(props: &PackageInformationProperties) -> Html {
         <Grid gutter=true>
             <GridItem cols={[9]}>
                 <Card compact=true>
-                    <Tabs>
-                        <Tab label={remote_refs_count_title(&fetch_deps_out, |data|data.first(), "Dependency", "Dependencies")}>
-                            { remote_content(&fetch_deps_out, |data| html!(
-                                <PackageReferences refs={data.first().cloned().map(|d|d.0).unwrap_or_default()} />
-                            )) }
-                        </Tab>
+                    <CardBody>
+                        <Tabs>
+                            <Tab label={remote_refs_count_title(&fetch_deps_out, |data|data.first(), "Dependency", "Dependencies")}>
+                                { remote_content(&fetch_deps_out, |data| html!(
+                                    <PackageReferences refs={data.first().cloned().map(|d|d.0).unwrap_or_default()} />
+                                )) }
+                            </Tab>
 
-                        <Tab label={remote_refs_count_title(&fetch_deps_in, |data|data.first(), "Dependent", "Dependents")}>
-                            { remote_content(&fetch_deps_in, |data| html!(
-                                <PackageReferences refs={data.first().cloned().map(|d|d.0).unwrap_or_default()} />
-                            )) }
-                        </Tab>
+                            <Tab label={remote_refs_count_title(&fetch_deps_in, |data|data.first(), "Dependent", "Dependents")}>
+                                { remote_content(&fetch_deps_in, |data| html!(
+                                    <PackageReferences refs={data.first().cloned().map(|d|d.0).unwrap_or_default()} />
+                                )) }
+                            </Tab>
 
-                        <Tab label={remote_refs_count_title(&fetch_package, |data|Some(&data.vulnerabilities), "Vulnerability", "Vulnerabilities")}>
-                            { remote_content(&fetch_package, |data| html!(
-                                <PackageVulnerabilities package={data.clone()} />
-                            )) }
-                        </Tab>
-                    </Tabs>
+                            <Tab label={remote_refs_count_title(&fetch_package, |data|Some(&data.vulnerabilities), "Vulnerability", "Vulnerabilities")}>
+                                { remote_content(&fetch_package, |data| html!(
+                                    <PackageVulnerabilities package={data.clone()} />
+                                )) }
+                            </Tab>
+                        </Tabs>
+                    </CardBody>
                 </Card>
             </GridItem>
 
@@ -153,16 +159,31 @@ fn package_information(props: &PackageInformationProperties) -> Html {
                     <Card
                         title={html!(<Title size={Size::XLarge}>{ pkg_name }</Title>)}
                     >
-                        <Clipboard readonly=true code=true value={props.purl.to_string()} />
-                        <DescriptionList>
-                            <DescriptionGroup term="Version">{props.purl.version().clone().or_none()}</DescriptionGroup>
-                            if let Some(path) = props.purl.subpath() {
-                                <DescriptionGroup term="Path">{path}</DescriptionGroup>
-                            }
-                            { for props.purl.qualifiers().iter().map(|(k, v)|{
-                                html!(<DescriptionGroup term={k.to_string()}> { v } </DescriptionGroup>)
-                            })}
-                        </DescriptionList>
+                        <CardBody>
+                            <Clipboard readonly=true code=true value={props.purl.to_string()} />
+                        </CardBody>
+                        <CardBody>
+                            <DescriptionList>
+                                <DescriptionGroup term="Version">{props.purl.version().clone().or_none()}</DescriptionGroup>
+                                if let Some(path) = props.purl.subpath() {
+                                    <DescriptionGroup term="Path">{path}</DescriptionGroup>
+                                }
+                            </DescriptionList>
+                        </CardBody>
+
+                        { if !props.purl.qualifiers().is_empty() {
+                            vec![
+                                html_nested!(<CardDivider/>).into(),
+                                html_nested!(
+                                    <CardBody>
+                                        <Title level={Level::H3}>{ "Qualifiers" }</Title>
+                                        { for props.purl.qualifiers().iter().map(|(k, v)|{
+                                            html!(<Label label={format!("{k}={v}")} />)
+                                        })}
+                                    </CardBody>
+                                ).into()
+                            ] as Vec<CardBodyVariant>
+                        } else { vec![] }}
                     </Card>
 
                     { remote_card(&fetch_package, |_data|
@@ -208,7 +229,9 @@ where
                 { title(fetch.data()) }
             </Title>)}
         >
-            { remote_content(fetch, body) }
+            <CardBody>
+                { remote_content(fetch, body) }
+            </CardBody>
         </Card>
     )
 }
