@@ -45,6 +45,9 @@ pub struct Run {
     pub(crate) devmode: bool,
 }
 
+// TODO: SCHEMA migration not supported right now...
+const SCHEMA: &str = include_str!("../schema.sql");
+
 impl Run {
     pub async fn run(self) -> anyhow::Result<ExitCode> {
         let index: PathBuf = self.index.unwrap_or_else(|| {
@@ -52,7 +55,7 @@ impl Run {
             let r = rand::thread_rng().next_u32();
             std::env::temp_dir().join(format!("bombastic-indexer.{}.sqlite", r))
         });
-        let index = Index::new(&index)?;
+        let index = Index::new(&index, Some(SCHEMA))?;
         let storage = if self.devmode {
             Storage::new(Config::test(), trustification_storage::StorageType::Minio)?
         } else {
