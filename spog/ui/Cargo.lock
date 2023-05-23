@@ -96,37 +96,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
-name = "chicken-coop"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "chrono",
- "cyclonedx-bom",
- "gloo-net",
- "gloo-utils",
- "itertools",
- "log",
- "packageurl",
- "patternfly-yew",
- "reqwest",
- "roxmltree",
- "serde",
- "serde_json",
- "spog-model",
- "strum",
- "thiserror",
- "url",
- "wasm-bindgen",
- "wasm-bindgen-futures",
- "wasm-logger",
- "web-sys",
- "yew",
- "yew-hooks",
- "yew-more-hooks",
- "yew-nested-router",
-]
-
-[[package]]
 name = "chrono"
 version = "0.4.24"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1388,6 +1357,37 @@ dependencies = [
  "serde_json",
  "urlencoding",
  "utoipa",
+]
+
+[[package]]
+name = "spog-ui"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "cyclonedx-bom",
+ "gloo-net",
+ "gloo-utils",
+ "itertools",
+ "log",
+ "packageurl",
+ "patternfly-yew",
+ "reqwest",
+ "roxmltree",
+ "serde",
+ "serde_json",
+ "spog-model",
+ "strum",
+ "thiserror",
+ "url",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "wasm-logger",
+ "web-sys",
+ "yew",
+ "yew-hooks",
+ "yew-more-hooks",
+ "yew-nested-router",
 ]
 
 [[package]]

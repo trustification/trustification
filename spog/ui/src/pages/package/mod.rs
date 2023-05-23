@@ -3,7 +3,7 @@ mod versions;
 
 use crate::{
     backend::{data, Backend, PackageService},
-    components::{deps::PackageReferences, remote_content, remote_refs_count_title, Trusted},
+    components::{deps::PackageReferences, remote_content, remote_refs_count_title},
     hooks::use_backend,
     pages::AppRoute,
     utils::RenderOptional,
@@ -165,12 +165,9 @@ fn package_information(props: &PackageInformationProperties) -> Html {
                         </DescriptionList>
                     </Card>
 
-                    { remote_card(&fetch_package, |data|
+                    { remote_card(&fetch_package, |_data|
                         html!(<>
                             {"Support"}
-                            if let Some(data::Package{trusted: Some(true), ..}) = data {
-                                {" "} <Trusted/>
-                            }
                         </>),
                     |data| html!( <>
                         <PackageDetails package={data.clone()}/>
