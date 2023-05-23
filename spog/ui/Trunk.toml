@@ -1,3 +1,6 @@
+[serve]
+port = 6030
+
 [[hooks]]
 stage = "build"
 command = "bash"
