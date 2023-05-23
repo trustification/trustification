@@ -45,7 +45,7 @@ features = [
 #yew-nested-router = { git = "https://github.com/ctron/yew-nested-router", rev = "9689db446dee7030325884df768d0c2e84f353d6" }
 #yew-more-hooks = { git = "https://github.com/ctron/yew-more-hooks", rev = "9f39517aabe25cfadae48f2d225daa1c3a608c20" }
 #yew-more-hooks = { path = "../yew-more-hooks" }
-patternfly-yew = { git = "https://github.com/ctron/patternfly-yew", rev = "8ef2b7aaa6b7ccfcf6a065901889ad3b5ad38d42" }
+patternfly-yew = { git = "https://github.com/ctron/patternfly-yew", rev = "84bdd7456643c69e567d381590cee3cbe22a9d48" }
 #patternfly-yew = { path = "../patternfly-yew" }
 
 spog-model = { path = "../model" }
