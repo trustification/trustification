@@ -46,7 +46,7 @@ pub struct Run {
 }
 
 // TODO: SCHEMA migration not supported right now...
-const SCHEMA: &str = include_str!("../schema.sql");
+const SCHEMA: &str = include_str!("../../schemas/index.sql");
 
 impl Run {
     pub async fn run(self) -> anyhow::Result<ExitCode> {

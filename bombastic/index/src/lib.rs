@@ -114,7 +114,7 @@ mod tests {
     use super::*;
 
     fn init(conn: &mut sqlite::Connection) {
-        let schema = std::fs::read_to_string("schema.sql").unwrap();
+        let schema = std::fs::read_to_string("../schemas/index.sql").unwrap();
         println!("Read schema: {:?}", schema.trim());
         conn.execute(schema.trim()).unwrap();
 
