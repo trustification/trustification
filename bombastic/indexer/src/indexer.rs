@@ -30,20 +30,24 @@ pub async fn run<E: EventBus>(
                                     if let Some(key) = storage.extract_key(&data.key) {
                                         match storage.get(key).await {
                                             Ok(data) => {
-                                                match index.insert_or_replace(&data.purl, &hex::encode(&data.hash[..]), key).await {
-                                                    Ok(_) => {
-                                                        tracing::trace!("Inserted entry into index");
-                                                        bus.send(Topic::INDEXED, key.as_bytes()).await?;
-                                                        events += 1;
+                                                if let Some(hash) = data.annotations.get("digest") {
+                                                    match index.insert_or_replace(&data.key, hash.as_str(), key).await {
+                                                        Ok(_) => {
+                                                            tracing::trace!("Inserted entry into index");
+                                                            bus.send(Topic::INDEXED, key.as_bytes()).await?;
+                                                            events += 1;
+                                                        }
+                                                        Err(e) => {
+                                                            let failure = serde_json::json!( {
+                                                                "key": key,
+                                                                "error": e.to_string(),
+                                                            }).to_string();
+                                                            bus.send(Topic::FAILED, failure.as_bytes()).await?;
+                                                            tracing::warn!("Error inserting entry into index: {:?}", e)
+                                                        }
                                                     }
-                                                    Err(e) => {
-                                                        let failure = serde_json::json!( {
-                                                            "key": key,
-                                                            "error": e.to_string(),
-                                                        }).to_string();
-                                                        bus.send(Topic::FAILED, failure.as_bytes()).await?;
-                                                        tracing::warn!("Error inserting entry into index: {:?}", e)
-                                                    }
+                                                } else {
+                                                    tracing::debug!("Digest not found in annotations");
                                                 }
                                             }
                                             Err(e) => {
