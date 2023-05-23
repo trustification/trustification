@@ -1,7 +1,10 @@
-use crate::{components::backend::Backend, console::Console, pages::AppRoute};
 use patternfly_yew::prelude::*;
 use yew::prelude::*;
 use yew_nested_router::prelude::*;
+
+use crate::components::backend::Backend;
+use crate::console::Console;
+use crate::pages::AppRoute;
 
 #[function_component(Application)]
 pub fn app() -> Html {

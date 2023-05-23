@@ -1,7 +1,6 @@
 mod pkg;
 
 pub use pkg::*;
-
 use url::{ParseError, Url};
 
 #[derive(Clone, Debug, PartialEq, Eq)]

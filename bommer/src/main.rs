@@ -4,13 +4,15 @@ mod server;
 mod store;
 mod workload;
 
+use futures::FutureExt;
+use k8s_openapi::api::core::v1::Pod;
+use kube::runtime::watcher;
+use kube::{Api, Client};
+use tracing::{info, warn};
+
 use crate::bombastic::BombasticSource;
 use crate::server::ServerConfig;
 use crate::store::image_store;
-use futures::FutureExt;
-use k8s_openapi::api::core::v1::Pod;
-use kube::{runtime::watcher, Api, Client};
-use tracing::{info, warn};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -20,15 +22,9 @@ async fn main() -> anyhow::Result<()> {
 
     let api: Api<Pod> = Api::all(client);
 
-    let stream = watcher(
-        api,
-        watcher::Config {
-            ..Default::default()
-        },
-    );
+    let stream = watcher(api, watcher::Config { ..Default::default() });
 
-    let url =
-        std::env::var("BOMBASTIC_URL").unwrap_or_else(|_| "http://localhost:8080".to_string());
+    let url = std::env::var("BOMBASTIC_URL").unwrap_or_else(|_| "http://localhost:8080".to_string());
     let source = BombasticSource::new(url.parse()?);
 
     let (store, runner) = image_store(stream);
@@ -74,12 +70,8 @@ async fn main() -> anyhow::Result<()> {
 
     let server = server::run(config, map);
 
-    let (result, _, _) = futures::future::select_all([
-        server.boxed_local(),
-        runner.boxed_local(),
-        runner2.boxed_local(),
-    ])
-    .await;
+    let (result, _, _) =
+        futures::future::select_all([server.boxed_local(), runner.boxed_local(), runner2.boxed_local()]).await;
 
     result?;
 

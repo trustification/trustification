@@ -1,9 +1,11 @@
-use crate::pubsub::Subscription;
+use std::time::Duration;
+
 use actix_ws::{CloseCode, CloseReason, Message};
 use bommer_api::data::{Event, Image, ImageRef, SbomState};
 use futures::StreamExt;
-use std::time::Duration;
 use tokio::time::{interval, Instant};
+
+use crate::pubsub::Subscription;
 
 const HEARTBEAT: Duration = Duration::from_secs(5);
 const TIMEOUT: Duration = Duration::from_secs(20);
@@ -76,10 +78,7 @@ pub async fn run(
     let _ = session.close(close_reason).await;
 }
 
-async fn handle_evt(
-    session: &mut actix_ws::Session,
-    mut evt: Event<ImageRef, Image>,
-) -> anyhow::Result<()> {
+async fn handle_evt(session: &mut actix_ws::Session, mut evt: Event<ImageRef, Image>) -> anyhow::Result<()> {
     match &mut evt {
         Event::Added(_, state) | Event::Modified(_, state) => {
             strip_sbom(&mut state.sbom);
