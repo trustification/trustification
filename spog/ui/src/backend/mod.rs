@@ -1,7 +1,7 @@
 // pub mod data;
 
 pub mod data {
-    pub use trust_api_model::prelude::*;
+    pub use spog_model::prelude::*;
 }
 
 mod pkg;

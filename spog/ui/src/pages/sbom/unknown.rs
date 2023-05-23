@@ -1,8 +1,8 @@
 use cyclonedx_bom::prelude::Bom;
 use patternfly_yew::prelude::*;
+use spog_model::prelude::*;
 use std::collections::BTreeSet;
 use std::rc::Rc;
-use trust_api_model::prelude::*;
 use yew::prelude::*;
 
 #[derive(Clone, PartialEq)]

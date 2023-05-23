@@ -1,4 +1,4 @@
-use crate::{backend::data, components::Trusted, pages::AppRoute};
+use crate::{backend::data, pages::AppRoute};
 use itertools::Itertools;
 use packageurl::PackageUrl;
 use patternfly_yew::prelude::*;
@@ -52,9 +52,6 @@ impl TableEntryRenderer for PackageRef {
             0 => html!(
                 <>
                     <Link<AppRoute> target={AppRoute::Package {package: self.pkg.purl.clone()}}>{&self.label}</Link<AppRoute>>
-                    if let Some(true) = &self.pkg.trusted {
-                        {" "} <Trusted />
-                    }
                 </>
             ),
             1 => self.purl.version().map(Html::from).unwrap_or_default(),

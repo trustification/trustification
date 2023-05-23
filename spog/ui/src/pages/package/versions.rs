@@ -1,4 +1,4 @@
-use crate::{backend::data::PackageRef, components::Trusted, pages::AppRoute};
+use crate::{backend::data::PackageRef, pages::AppRoute};
 use packageurl::PackageUrl;
 use patternfly_yew::prelude::*;
 use std::str::FromStr;
@@ -43,9 +43,6 @@ pub fn package_versions(props: &PackageVersionsProperties) -> Html {
                     >
                         {&v.version}
                     </yew_nested_router::components::Link<AppRoute>>
-                    if v.pkg.trusted.unwrap_or_default() {
-                        {" "}<Trusted/>
-                    }
                 </>)
             })}
         </List>
