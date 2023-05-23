@@ -38,9 +38,9 @@ impl Run {
         });
         let index = Index::new(&index)?;
         let storage = if self.devmode {
-            Storage::new(Config::test(), trustification_storage::StorageType::Minio)?
+            Storage::new(Config::test("bombastic"), trustification_storage::StorageType::Minio)?
         } else {
-            Storage::new(Config::defaults()?, trustification_storage::StorageType::S3)?
+            Storage::new(Config::defaults("bombastic")?, trustification_storage::StorageType::S3)?
         };
         let addr = SocketAddr::from_str(&format!("{}:{}", self.bind, self.port))?;
         let interval = Duration::from_secs(self.sync_interval_seconds);
