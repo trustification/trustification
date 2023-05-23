@@ -30,20 +30,20 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-            bommer/spog/target/
+            bommer/bommer-ui/target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Check formatting
         run: |
           cargo fmt --check
-          cargo fmt --check --manifest-path bommer/spog/Cargo.toml 
+          cargo fmt --check --manifest-path bommer/bommer-ui/Cargo.toml 
 
       - name: Check
         run: cargo check
 
       - name: Check (frontend)
         run: |
-          cd bommer/spog
+          cd bommer/bommer-ui
           cargo check
 
       - name: Test
@@ -51,5 +51,5 @@ jobs:
 
       - name: Test (frontend)
         run: |
-          cd bommer/spog
+          cd bommer/bommer-ui
           cargo test
