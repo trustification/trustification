@@ -10,6 +10,8 @@ members = [
     "vexination/api",
     "reservoir/reservoir",
     "reservoir/api",
+    "spog/api",
+    "spog/model",
     "exporter",
     "event-bus",
     "storage",
