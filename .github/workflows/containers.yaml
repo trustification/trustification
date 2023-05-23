@@ -27,7 +27,6 @@ on:
         default: "linux/amd64"
 
 env:
-  IMAGE_NAME: bombastic
   IMAGE_TAG: ${{ inputs.imageTag }}
 
 jobs:
@@ -39,6 +38,9 @@ jobs:
       id-token: write
 
     runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        name: ["bombastic"]
     steps:
 
       - name: Install qemu dependency
@@ -55,7 +57,7 @@ jobs:
         id: build-image
         uses: redhat-actions/buildah-build@v2
         with:
-          image: ${{ env.IMAGE_NAME }}
+          image: ${{ matrix.name }}
           tags: ${{ env.IMAGE_TAG }}
           envs: |
             TAG=${{ env.IMAGE_TAG }}
@@ -63,13 +65,13 @@ jobs:
             tag=${{ env.IMAGE_TAG }}
           platforms: ${{ inputs.platforms }}
           containerfiles: |
-            ./bombastic/Containerfile
+            ./${{ matrix.name }}/Containerfile
 
       - name: Check images created
-        run: buildah images | grep '${{ env.IMAGE_NAME }}'
+        run: buildah images | grep '${{ matrix.name }}'
 
       - name: Save image
-        run: podman save --multi-image-archive ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} > image.tar
+        run: podman save --multi-image-archive ${{ matrix.name }}:${{ env.IMAGE_TAG }} > image.tar
 
       - uses: actions/upload-artifact@v3
         with:
