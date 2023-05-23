@@ -123,9 +123,7 @@ pub fn upload(props: &UploadProperties) -> Html {
                 Err((String::new(), "Requires an SBOM".to_string()))
             } else {
                 // return success, as validated JSON
-                onvalidate
-                    .emit(content.clone())
-                    .map_err(|err| (content, err))
+                onvalidate.emit(content.clone()).map_err(|err| (content, err))
             }
         },
         (drop_content.clone(), props.onvalidate.clone()),
@@ -142,10 +140,7 @@ pub fn upload(props: &UploadProperties) -> Html {
     let helper_text = processing
         .error()
         .map(|err| FormHelperText::from((err.1.to_string(), InputState::Error)));
-    let state = helper_text
-        .as_ref()
-        .map(|h| h.input_state)
-        .unwrap_or_default();
+    let state = helper_text.as_ref().map(|h| h.input_state).unwrap_or_default();
     let content = use_memo(
         |processing| match &**processing {
             UseAsyncState::Ready(Ok(content)) => content.clone(),
@@ -183,8 +178,7 @@ pub fn upload(props: &UploadProperties) -> Html {
                 let files = ele
                     .files()
                     .map(|files| {
-                        let mut r =
-                            Vec::with_capacity(files.length().try_into().unwrap_or_default());
+                        let mut r = Vec::with_capacity(files.length().try_into().unwrap_or_default());
                         for i in 0..files.length() {
                             Extend::extend(&mut r, files.get(i));
                         }

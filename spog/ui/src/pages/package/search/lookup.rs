@@ -53,11 +53,7 @@ fn single_entry(props: &SingleValueEntryProperties) -> Html {
         let validator = props.validator.clone();
         use_effect_with_deps(
             move |input| {
-                state.set(
-                    validator
-                        .emit((**input).clone())
-                        .map_err(|err| err.to_string()),
-                );
+                state.set(validator.emit((**input).clone()).map_err(|err| err.to_string()));
             },
             input.clone(),
         );

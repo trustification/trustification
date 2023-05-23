@@ -45,21 +45,14 @@ pub fn inspect(props: &InspectProperties) -> Html {
 
     let backend = use_backend();
 
-    let service = use_memo(
-        |backend| PackageService::new((**backend).clone()),
-        backend.clone(),
-    );
+    let service = use_memo(|backend| PackageService::new((**backend).clone()), backend.clone());
 
     let fetch = {
         let service = service.clone();
         use_async_with_cloned_deps(
             |purls| async move {
                 service
-                    .search(
-                        purls
-                            .iter()
-                            .filter_map(|purl| PackageUrl::from_str(purl).ok()),
-                    )
+                    .search(purls.iter().filter_map(|purl| PackageUrl::from_str(purl).ok()))
                     .await
             },
             purls.clone(),

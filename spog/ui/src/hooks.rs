@@ -6,6 +6,5 @@ use yew::prelude::*;
 /// the [`crate::components::backend::Backend`] component.
 #[hook]
 pub fn use_backend() -> Rc<Backend> {
-    use_context::<Rc<Backend>>()
-        .expect("Must be called from a component wrapped in a 'Backend' component")
+    use_context::<Rc<Backend>>().expect("Must be called from a component wrapped in a 'Backend' component")
 }

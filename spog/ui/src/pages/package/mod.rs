@@ -82,17 +82,11 @@ pub struct PackageInformationProperties {
 fn package_information(props: &PackageInformationProperties) -> Html {
     let backend = use_backend();
 
-    let service = use_memo(
-        |backend| PackageService::new((**backend).clone()),
-        backend.clone(),
-    );
+    let service = use_memo(|backend| PackageService::new((**backend).clone()), backend.clone());
 
     let fetch_package = {
         let service = service.clone();
-        use_async_with_cloned_deps(
-            |purl| async move { service.lookup(purl).await },
-            props.purl.clone(),
-        )
+        use_async_with_cloned_deps(|purl| async move { service.lookup(purl).await }, props.purl.clone())
     };
 
     let fetch_versions = {
@@ -229,16 +223,11 @@ pub struct PackageDetailsProperties {
 
 #[function_component(PackageDetails)]
 fn package_details(props: &PackageDetailsProperties) -> Html {
-    let backend = use_context::<Rc<Backend>>()
-        .expect("Can only be called being wrapped by the 'Backend' component");
+    let backend = use_context::<Rc<Backend>>().expect("Can only be called being wrapped by the 'Backend' component");
 
     log::info!("SBOM: {:?}", props.package.sbom);
 
-    let sbom = props
-        .package
-        .sbom
-        .as_ref()
-        .and_then(|href| backend.join(&href).ok());
+    let sbom = props.package.sbom.as_ref().and_then(|href| backend.join(&href).ok());
 
     html!(
         if let Some(sbom) = sbom {
