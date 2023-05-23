@@ -29,14 +29,12 @@ impl Display for Error {
 
 impl std::error::Error for Error {}
 
-// TODO: SCHEMA migration not supported right now...
-const SCHEMA: &str = include_str!("../schema.sql");
-
 impl Index {
-    pub fn new(path: &PathBuf) -> Result<Self, Error> {
+    pub fn new(path: &PathBuf, schema: Option<&str>) -> Result<Self, Error> {
         let connection = sqlite::open(path).map_err(|_| Error::Open)?;
-        // TODO: Handle error
-        let _ = connection.execute(SCHEMA);
+        if let Some(schema) = schema {
+            let _ = connection.execute(schema);
+        }
         Ok(Self {
             connection,
             path: Some(path.clone()),

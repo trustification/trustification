@@ -36,7 +36,7 @@ impl Run {
             let r = rand::thread_rng().next_u32();
             std::env::temp_dir().join(format!("bombastic-api.{}.sqlite", r))
         });
-        let index = Index::new(&index)?;
+        let index = Index::new(&index, None)?;
         let storage = if self.devmode {
             Storage::new(Config::test(), trustification_storage::StorageType::Minio)?
         } else {
