@@ -37,13 +37,10 @@ pub fn sbom() -> Html {
             html!(<Inspect raw={raw.clone()} bom={bom.clone()} />)
         }
         None => {
-            let onvalidate =
-                Callback::from(
-                    |data: String| match Bom::parse_from_json_v1_3(data.as_bytes()) {
-                        Ok(_sbom) => Ok(data),
-                        Err(err) => Err(format!("Failed to parse SBOM: {err}")),
-                    },
-                );
+            let onvalidate = Callback::from(|data: String| match Bom::parse_from_json_v1_3(data.as_bytes()) {
+                Ok(_sbom) => Ok(data),
+                Err(err) => Err(format!("Failed to parse SBOM: {err}")),
+            });
 
             html!(
                 <>
@@ -84,8 +81,7 @@ fn common_header() -> Html {
 fn generate_card() -> Html {
     let maven = r#"mvn org.cyclonedx:cyclonedx-maven-plugin:2.7.7:makeAggregateBom -Dcyclonedx.skipAttach=true -DoutputFormat=json -DschemaVersion=1.3 -Dcyclonedx.verbose=false"#;
     let container = r#"syft packages <container> -o cyclonedx-json --file sbom.json"#;
-    let container_example =
-        r#"syft packages quay.io/keycloak/keycloak:latest -o cyclonedx-json --file sbom.json"#;
+    let container_example = r#"syft packages quay.io/keycloak/keycloak:latest -o cyclonedx-json --file sbom.json"#;
 
     use patternfly_yew::next::TextInput;
 

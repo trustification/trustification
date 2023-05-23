@@ -47,10 +47,7 @@ impl Criteria {
         let purl = &**state;
         match self {
             Self::Type => purl.ty().to_string(),
-            Self::Namespace => purl
-                .namespace()
-                .map(ToString::to_string)
-                .unwrap_or_default(),
+            Self::Namespace => purl.namespace().map(ToString::to_string).unwrap_or_default(),
             Self::Name => purl.name().to_string(),
             Self::Version => purl.version().map(ToString::to_string).unwrap_or_default(),
         }
@@ -105,10 +102,7 @@ impl Criteria {
 pub fn package_search() -> Html {
     let backend = use_backend();
 
-    let service = use_memo(
-        |backend| PackageService::new((**backend).clone()),
-        backend.clone(),
-    );
+    let service = use_memo(|backend| PackageService::new((**backend).clone()), backend.clone());
 
     let state = use_state_eq(|| {
         // initialize with the state from history, or with a reasonable default
@@ -177,10 +171,7 @@ pub fn package_search() -> Html {
         })
     };
 
-    let onclear = criteria.and_then(|c| {
-        c.onremove(state.clone())
-            .map(|cb| cb.reform(|_: MouseEvent| ()))
-    });
+    let onclear = criteria.and_then(|c| c.onremove(state.clone()).map(|cb| cb.reform(|_: MouseEvent| ())));
     let onset = {
         let criteria = criteria.clone();
         let state = state.clone();

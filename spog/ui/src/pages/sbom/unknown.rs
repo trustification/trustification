@@ -63,8 +63,5 @@ pub fn into_unknown(bom: &Bom, refs: &[PackageRef]) -> Vec<UnknownEntry> {
         components.remove(&found.purl);
     }
 
-    components
-        .into_iter()
-        .map(|purl| UnknownEntry { purl })
-        .collect()
+    components.into_iter().map(|purl| UnknownEntry { purl }).collect()
 }

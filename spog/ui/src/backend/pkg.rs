@@ -1,7 +1,5 @@
 use super::{Backend, Error};
-use crate::backend::data::{
-    Package, PackageDependencies, PackageDependents, PackageList, PackageRef,
-};
+use crate::backend::data::{Package, PackageDependencies, PackageDependents, PackageList, PackageRef};
 use packageurl::PackageUrl;
 use serde::Deserialize;
 
@@ -65,12 +63,7 @@ impl PackageService {
         I: IntoIterator<Item = PackageUrl<'a>>,
         for<'de> R: Deserialize<'de>,
     {
-        let purls = PackageList(
-            purls
-                .into_iter()
-                .map(|purl| purl.to_string())
-                .collect::<Vec<_>>(),
-        );
+        let purls = PackageList(purls.into_iter().map(|purl| purl.to_string()).collect::<Vec<_>>());
 
         Ok(self
             .client
