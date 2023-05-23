@@ -1,0 +1,36 @@
+[package]
+name = "spog-api"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+
+description = "An API server for trusted content"
+
+[dependencies]
+actix-cors = "0.6"
+actix-web = "4"
+log = "0.4"
+env_logger = "0.10"
+serde_json = "1.0.89"
+clap = { version = "4.0.29", features = ["derive"] }
+serde = { version = "1.0.152" }
+okapi = "0.7.0-rc.1"
+packageurl = { version = "0.3", features = ["serde"] }
+tokio = { version = "*", features = ["rt", "fs", "macros", "rt-multi-thread"] }
+anyhow = "1"
+actix-rt = "*"
+actix = "*"
+actix-ws = "*"
+chrono = "0.4.23"
+mime = "0.3.16"
+thiserror = "1"
+futures = "0.3"
+utoipa = { version = "3", features = ["actix_extras"] }
+utoipa-swagger-ui = { version = "3", features = ["actix-web"] }
+urlencoding = "2.1.2"
+guac = { git = "https://github.com/dejanb/guac-rs.git", branch = "main" }
+http = "*"
+reqwest = "0.11.16"
+snyk = { git = "https://github.com/dejanb/snyk-rs.git", branch = "main" }
+#guac = { path = "../guac-rs/lib" }
+spog-model = { path = "../model" }

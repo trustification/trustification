@@ -1,0 +1,12 @@
+version: "3.9"
+services:
+  guac:
+    image: ghcr.io/dejanb/local-organic-guac
+    command: ["bash", "-c", "/opt/guac/guacone gql-server --gql-debug"]
+    ports:
+      - "8080:8080"
+
+  api:
+    image: ghcr.io/xkcd-2347/trust-api:latest
+    ports:
+      - "8081:8080"
