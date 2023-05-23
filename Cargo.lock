@@ -734,6 +734,7 @@ version = "0.1.0"
 dependencies = [
  "actix-web",
  "anyhow",
+ "bombastic-index",
  "clap",
  "hex",
  "packageurl",
@@ -744,9 +745,16 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
- "trustification-index",
  "trustification-storage",
  "zstd",
+]
+
+[[package]]
+name = "bombastic-index"
+version = "0.1.0"
+dependencies = [
+ "sqlite",
+ "tokio",
 ]
 
 [[package]]
@@ -754,6 +762,7 @@ name = "bombastic-indexer"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "bombastic-index",
  "clap",
  "futures",
  "hex",
@@ -764,7 +773,6 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "trustification-event-bus",
- "trustification-index",
  "trustification-storage",
 ]
 
@@ -2692,14 +2700,6 @@ dependencies = [
 [[package]]
 name = "trustification-exporter"
 version = "0.1.0"
-
-[[package]]
-name = "trustification-index"
-version = "0.1.0"
-dependencies = [
- "sqlite",
- "tokio",
-]
 
 [[package]]
 name = "trustification-storage"

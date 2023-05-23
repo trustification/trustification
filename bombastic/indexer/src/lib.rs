@@ -2,8 +2,8 @@ use std::path::PathBuf;
 use std::process::ExitCode;
 use std::time::Duration;
 
+use bombastic_index::Index;
 use trustification_event_bus::Topic;
-use trustification_index::Index;
 use trustification_storage::{Config, Storage};
 
 mod indexer;

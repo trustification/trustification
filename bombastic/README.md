@@ -72,7 +72,7 @@ Bombastic consists of the following Rust crates, of which some are common APIs a
 
 * `bombastic-api` - API server
 * `bombastic-indexer` - Indexing process consuming events from event-bus and indexing into sqlite
-* `trustification-index` - API for accessing index
+* `bombastic-index` - API for accessing index
 * `trustification-exporter` - Exporter process consuming events from event-bus and exporting data
 * `trustification-event-bus` - API for consuming from event bus (and publishing)
 * `trustification-storage` - facade to s3 api used by indexer and api

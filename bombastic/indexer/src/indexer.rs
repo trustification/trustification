@@ -1,9 +1,9 @@
 use std::time::Duration;
 
+use bombastic_index::Index;
 use futures::pin_mut;
 use tokio::select;
 use trustification_event_bus::{Event, EventBus, EventConsumer, Topic};
-use trustification_index::Index;
 use trustification_storage::{EventType, Storage};
 
 pub async fn run<E: EventBus>(
