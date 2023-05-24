@@ -2,6 +2,7 @@
 
 pub mod backend;
 pub mod common;
+pub mod cvss;
 pub mod deps;
 
 use patternfly_yew::prelude::*;

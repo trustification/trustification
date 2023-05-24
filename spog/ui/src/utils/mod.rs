@@ -1,3 +1,5 @@
+pub mod cvss;
+
 use yew::prelude::*;
 
 pub trait RenderOptional: Sized {
