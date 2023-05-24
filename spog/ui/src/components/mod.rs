@@ -1,6 +1,7 @@
 //! Re-usable component
 
 pub mod backend;
+pub mod common;
 pub mod deps;
 
 use patternfly_yew::prelude::*;

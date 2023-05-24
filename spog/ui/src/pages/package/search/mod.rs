@@ -171,7 +171,17 @@ pub fn package_search() -> Html {
         })
     };
 
-    let onclear = criteria.and_then(|c| c.onremove(state.clone()).map(|cb| cb.reform(|_: MouseEvent| ())));
+    let onclear = {
+        let text = text.clone();
+        criteria.and_then(|c| {
+            c.onremove(state.clone()).map(|cb| {
+                cb.reform(move |_: MouseEvent| {
+                    // clear the input field
+                    text.set(String::new());
+                })
+            })
+        })
+    };
     let onset = {
         let criteria = criteria.clone();
         let state = state.clone();

@@ -1,3 +1,4 @@
+use crate::components::common::PageHeading;
 use patternfly_yew::prelude::*;
 use yew::prelude::*;
 
@@ -5,12 +6,7 @@ use yew::prelude::*;
 pub fn chicken() -> Html {
     html!(
         <>
-            <PageSection sticky={[PageSectionSticky::Top]} variant={PageSectionVariant::Light} >
-                <Content>
-                    <Title size={Size::XXXXLarge}>{"Chickens"}</Title>
-                    <p>{ "Bock, Bock!" }</p>
-                </Content>
-            </PageSection>
+            <PageHeading subtitle="Bock, Bock!" >{"Chickens"}</PageHeading>
 
             // We need to set the main section to fill, as we have a footer section
             <PageSection fill={PageSectionFill::Fill}>
