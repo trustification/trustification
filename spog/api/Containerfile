@@ -2,7 +2,7 @@ FROM registry.access.redhat.com/ubi9/ubi-minimal:latest as builder
 
 ARG tag
 
-RUN microdnf install -y gcc openssl  openssl-devel
+RUN microdnf install -y gcc openssl openssl-devel cmake gcc-c++
 RUN curl https://sh.rustup.rs -sSf | sh -s -- -y --profile minimal
 ENV PATH "$PATH:/root/.cargo/bin"
 LABEL org.opencontainers.image.source="https://github.com/trustification/trustification"

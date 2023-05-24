@@ -40,7 +40,13 @@ jobs:
     runs-on: ubuntu-22.04
     strategy:
       matrix:
-        name: ["bombastic"]
+        include:
+          - name: bombastic
+            containerfile: bombastic/Containerfile
+          - name: vexination
+            containerfile: vexination/Containerfile
+          - name: spog-api
+            containerfile: spog/api/Containerfile
     steps:
 
       - name: Install qemu dependency
@@ -65,7 +71,7 @@ jobs:
             tag=${{ env.IMAGE_TAG }}
           platforms: ${{ inputs.platforms }}
           containerfiles: |
-            ./${{ matrix.name }}/Containerfile
+            ./${{ matrix.containerfile }}
 
       - name: Check images created
         run: buildah images | grep '${{ matrix.name }}'
