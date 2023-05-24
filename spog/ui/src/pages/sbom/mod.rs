@@ -1,14 +1,14 @@
-use cyclonedx_bom::prelude::*;
-use patternfly_yew::prelude::*;
-use std::rc::Rc;
-use yew::prelude::*;
-
 mod inspect;
 mod unknown;
 mod upload;
 
+use crate::components::common::PageHeading;
+use cyclonedx_bom::prelude::*;
 use inspect::Inspect;
+use patternfly_yew::prelude::*;
+use std::rc::Rc;
 use upload::Upload;
+use yew::prelude::*;
 
 #[function_component(SBOM)]
 pub fn sbom() -> Html {
@@ -68,12 +68,7 @@ pub fn sbom() -> Html {
 #[function_component(CommonHeader)]
 fn common_header() -> Html {
     html!(
-        <PageSection variant={PageSectionVariant::Light} fill=false>
-            <Title level={Level::H1}>{"Inspect SBOM"}</Title>
-            <Content>
-                <p> {"Hm, let's have a look, …"} </p>
-            </Content>
-        </PageSection>
+        <PageHeading subtitle="Upload and analyze a custom SBOM">{"Inspect SBOM"}</PageHeading>
     )
 }
 

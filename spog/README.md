@@ -15,21 +15,20 @@ podman build guac -f guac/dockerfiles/Dockerfile.guac-ubi -t localhost/guac:late
 Start up GUAC:
 
 ```shell
-# podman run -p 6010:8080 --name guac -ti localhost/guac:latest gql-server --gql-debug
-podman run -p 8080:8080 --name guac -ti localhost/guac:latest /opt/guac/guacgql --gql-debug
+podman run -p 6010:8080 --name guac -ti localhost/guac:latest /opt/guac/guacgql --gql-debug
 ```
 
 Ingest some data:
 
 ```shell
-podman run --net=host -v $PWD/example-data:/data:Z --rm -ti localhost/guac:latest /opt/guac/guacone collect files /data
-podman run --net=host --rm -ti localhost/guac:latest osv -p=false
+podman run --net=host -v $PWD/example-data:/data:Z --rm -ti localhost/guac:latest /opt/guac/guacone --gql-addr http://localhost:6010/query collect files /data
+#podman run --net=host --rm -ti localhost/guac:latest osv -p=false
 ```
 
 Run the API server:
 
 ```shell
-cargo run --package spog-api -- run --port 6020
+cargo run --package spog-api -- run --port 6020 --guac http://localhost:6010/query
 ```
 
 Next run the frontend:

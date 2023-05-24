@@ -3,15 +3,14 @@ mod versions;
 
 use crate::{
     backend::{data, Backend, PackageService},
-    components::{deps::PackageReferences, remote_content, remote_refs_count_title},
+    components::{common::PageHeading, deps::PackageReferences, remote_content, remote_refs_count_title},
     hooks::use_backend,
     pages::AppRoute,
     utils::RenderOptional,
 };
 use packageurl::PackageUrl;
-use patternfly_yew::next::CardBodyVariant;
 use patternfly_yew::{
-    next::{Card, CardBody, CardDivider},
+    next::{Card, CardBody, CardBodyVariant, CardDivider},
     prelude::*,
 };
 use search::PackageSearch;
@@ -31,16 +30,14 @@ pub struct PackageProperties {
 pub fn package(props: &PackageProperties) -> Html {
     html!(
         <>
-            <PageSection variant={PageSectionVariant::Light} sticky={[PageSectionSticky::Top]} >
-                <Content>
-                    if let Some(purl) = purl(&props.package) {
-                        <Title size={Size::XXXXLarge}>{package_title(purl)}</Title>
-                    } else {
-                        <Title size={Size::XXXXLarge}>{"Search Packages"}</Title>
-                    }
-                    <p>{ "Get detailed package information" }</p>
-                </Content>
-            </PageSection>
+            <PageHeading subtitle="Get detailed package information">
+            {
+                match purl(&props.package) {
+                    Some(purl) => package_title(purl),
+                    None => "Search Packages".into(),
+                }
+            }
+            </PageHeading>
 
             // We need to set the main section to fill, as we have a footer section
             <PageSection variant={PageSectionVariant::Default} fill={PageSectionFill::Fill}>
