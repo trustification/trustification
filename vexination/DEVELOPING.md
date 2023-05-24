@@ -34,5 +34,5 @@ You can also crawl Red Hat security data using the walker, which will feed the S
 
 
 ```shell
-RUST_LOG=info cargo run -p vexination-walker -- run --devmode --source https://www.redhat.com/.well-known/csaf/provider-metadata.json
+RUST_LOG=info cargo run -p vexination-walker -- run --devmode --source https://www.redhat.com/.well-known/csaf/provider-metadata.json -3
 ```

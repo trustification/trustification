@@ -6,14 +6,14 @@ use csaf_walker::{
     fetcher::Fetcher,
     retrieve::RetrievingVisitor,
     source::HttpSource,
-    validation::{ValidatedAdvisory, ValidationError, ValidationVisitor},
+    validation::{ValidatedAdvisory, ValidationError, ValidationOptions, ValidationVisitor},
     walker::Walker,
 };
 use serde::Deserialize;
 use tokio::sync::{Mutex, RwLock};
 use trustification_storage::{Object, Storage};
 
-pub async fn run(storage: Storage, source: url::Url) -> Result<(), anyhow::Error> {
+pub async fn run(storage: Storage, source: url::Url, options: ValidationOptions) -> Result<(), anyhow::Error> {
     let fetcher = Fetcher::new(Default::default()).await?;
     let source = HttpSource { url: source, fetcher };
     let storage = Arc::new(storage);
@@ -72,7 +72,8 @@ pub async fn run(storage: Storage, source: url::Url) -> Result<(), anyhow::Error
                     }
                     Ok::<_, anyhow::Error>(())
                 }
-            }),
+            })
+            .with_options(options),
         ))
         .await?;
     Ok(())
