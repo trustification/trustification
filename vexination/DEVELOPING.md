@@ -28,7 +28,11 @@ To query the data, either using direct lookup or querying via the index using th
 
 ```shell
 curl -X GET http://localhost:8080/api/v1/vex?advisory=RHSA-2023:1441
-curl -X GET http://localhost:8080/api/v1/vex?advisory=RHSA-2023:1441&revision=1
 ```
 
-If you don't specify a revision, you will get the latest revision of the VEX document.
+You can also crawl Red Hat security data using the walker, which will feed the S3 storage with data:
+
+
+```shell
+RUST_LOG=info cargo run -p vexination-walker -- run --devmode --source https://www.redhat.com/.well-known/csaf/provider-metadata.json
+```

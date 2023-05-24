@@ -8,6 +8,7 @@ members = [
     "bommer/bommer-api",
     "vexination/vexination",
     "vexination/api",
+    "vexination/walker",
     "reservoir/reservoir",
     "reservoir/api",
     "spog/api",

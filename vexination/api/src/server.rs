@@ -7,7 +7,7 @@ use actix_web::web::{self, Bytes};
 use actix_web::{App, HttpResponse, HttpServer, Responder};
 use serde::Deserialize;
 use tokio::sync::{Mutex, RwLock};
-use trustification_storage::Storage;
+use trustification_storage::{Object, Storage};
 
 struct AppState {
     storage: RwLock<Storage>,
@@ -63,26 +63,66 @@ async fn health() -> HttpResponse {
     HttpResponse::Ok().finish()
 }
 
-async fn query_vex(state: web::Data<SharedState>, params: web::Query<QueryParams>) -> impl Responder {
-    let params = params.into_inner();
-    HttpResponse::NotFound()
-}
-
 #[derive(Debug, Deserialize)]
 struct QueryParams {
     cve: Option<String>,
     advisory: Option<String>,
 }
 
+async fn query_vex(state: web::Data<SharedState>, params: web::Query<QueryParams>) -> HttpResponse {
+    let params = params.into_inner();
+    let advisory = if let Some(advisory) = params.advisory {
+        tracing::trace!("Querying VEX using advisory {}", advisory);
+        advisory
+    } else if let Some(cve) = params.cve {
+        return HttpResponse::BadRequest()
+            .body("CVE lookup is not yet supported")
+            .into();
+    } else {
+        return HttpResponse::BadRequest().body("Missing valid advisory or CVE").into();
+    };
+
+    let storage = state.storage.read().await;
+    fetch_object(&storage, &advisory).await
+}
+
 #[derive(Debug, Deserialize)]
 struct PublishParams {
-    cve: Option<String>,
     advisory: Option<String>,
 }
 
 async fn publish_vex(state: web::Data<SharedState>, params: web::Query<PublishParams>, data: Bytes) -> HttpResponse {
     let params = params.into_inner();
+    let advisory = if let Some(advisory) = params.advisory {
+        advisory.to_string()
+    } else {
+        match serde_json::from_slice::<csaf::Csaf>(&data) {
+            Ok(data) => data.document.tracking.id,
+            Err(e) => {
+                tracing::warn!("Unknown input format: {:?}", e);
+                return HttpResponse::BadRequest().into();
+            }
+        }
+    };
+
     let storage = state.storage.write().await;
-    // TODO: unbuffered I/O
-    todo!()
+    let mut out = Vec::new();
+    let (data, compressed) = match zstd::stream::copy_encode(&data[..], &mut out, 3) {
+        Ok(_) => (&out[..], true),
+        Err(_) => (&data[..], false),
+    };
+    tracing::debug!("Storing new VEX with id: {}, compressed: {}", advisory, compressed);
+    let value = Object::new(&advisory, std::collections::HashMap::new(), data, compressed);
+    match storage.put(&advisory, value).await {
+        Ok(_) => {
+            let msg = format!("VEX of size {} stored successfully", &data[..].len());
+            tracing::trace!(msg);
+            HttpResponse::Created().body(msg)
+        }
+        Err(e) => {
+            let msg = format!("Error storing VEX: {:?}", e);
+            tracing::warn!(msg);
+            HttpResponse::InternalServerError().body(msg)
+        }
+    }
 }
