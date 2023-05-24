@@ -49,10 +49,12 @@ services:
       /usr/bin/mc mb myminio/bombastic || true;
       /usr/bin/mc policy download myminio/bombastic;
       /usr/bin/mc event add myminio/bombastic arn:minio:sqs::EVENTBUS:kafka --event put;
+
+      /usr/bin/mc mb myminio/vexination || true;
+      /usr/bin/mc policy download myminio/vexination;
+      /usr/bin/mc event add myminio/vexination arn:minio:sqs::EVENTBUS:kafka --event put;
       /usr/bin/mc admin service restart myminio;"
 
-     # /usr/bin/mc admin config set myminio/bombastic notify_kafka:EVENTBUS brokers="kafka:9094" topic="stored";
-     # /usr/bin/mc admin service restart myminio/bombastic;
   kafka:
     image: docker.io/bitnami/kafka:3.4
     expose:

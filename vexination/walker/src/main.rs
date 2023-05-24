@@ -1,18 +1,18 @@
 use std::process::{ExitCode, Termination};
 
 use clap::Parser;
+use vexination_walker::Run;
 
 #[derive(clap::Subcommand, Debug)]
 pub enum Command {
-    Api(vexination_api::Run),
-    Walker(vexination_walker::Run),
+    Run(Run),
 }
 
 #[derive(clap::Parser, Debug)]
 #[command(
     author,
     version = env!("CARGO_PKG_VERSION"),
-    about = "Vexination",
+    about = "Vexination Walker",
     long_about = None
 )]
 pub struct Cli {
@@ -33,14 +33,14 @@ impl Cli {
 
     async fn run_command(self) -> anyhow::Result<ExitCode> {
         match self.command {
-            Command::Api(run) => run.run().await,
-            Command::Walker(run) => run.run().await,
+            Command::Run(cmd) => cmd.run().await,
         }
     }
 }
 
 #[tokio::main]
 async fn main() -> impl Termination {
+    //env_logger::init();
     tracing_subscriber::fmt::init();
     Cli::parse().run().await
 }
