@@ -25,10 +25,7 @@ pub async fn run(storage: Storage, source: url::Url) -> Result<(), anyhow::Error
                 let storage = storage.clone();
                 async move {
                     match advisory {
-                        // NOTE: We ignore signature errors because old advisories may have keys that have expired. This
-                        // should perhaps bee a configuration option for the walker.
-                        Ok(ValidatedAdvisory { retrieved })
-                        | Err(ValidationError::Signature { error: _, retrieved }) => {
+                        Ok(ValidatedAdvisory { retrieved }) => {
                             let data = retrieved.data;
                             match serde_json::from_slice::<csaf::Csaf>(&data) {
                                 Ok(doc) => {
