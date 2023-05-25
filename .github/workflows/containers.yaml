@@ -77,10 +77,10 @@ jobs:
         run: buildah images | grep '${{ matrix.name }}'
 
       - name: Save image
-        run: podman save --multi-image-archive ${{ matrix.name }}:${{ env.IMAGE_TAG }} > image.tar
+        run: podman save --multi-image-archive ${{ matrix.name }}:${{ env.IMAGE_TAG }} > ${{ matrix.name }}-image.tar
 
       - uses: actions/upload-artifact@v3
         with:
           name: container
-          path: image.tar
+          path: ${{ matrix.name }}-image.tar
           if-no-files-found: error

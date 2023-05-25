@@ -70,7 +70,7 @@ jobs:
           run: ls -R ~/download
         - name: Load container
           run: |
-              podman load --input ~/download/container/image.tar
+              podman load --input ~/download/container/${{ matrix.name }}-image.tar
 
         - name: Log in to ghcr.io
           uses: redhat-actions/podman-login@v1
