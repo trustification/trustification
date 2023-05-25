@@ -58,7 +58,7 @@ jobs:
       packages: write
     strategy:
       matrix:
-        name: ["bombastic"]
+        name: ["bombastic", "vexination", "spog-api"]
 
     needs: [ init, ci, container ]
     runs-on: ubuntu-22.04
