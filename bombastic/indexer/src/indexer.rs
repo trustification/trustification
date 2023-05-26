@@ -3,18 +3,21 @@ use std::time::Duration;
 use bombastic_index::Index;
 use futures::pin_mut;
 use tokio::select;
-use trustification_event_bus::{Event, EventBus, EventConsumer, Topic};
+use trustification_event_bus::{Event, EventBus, EventConsumer};
 use trustification_storage::{EventType, Storage};
 
 pub async fn run<E: EventBus>(
     mut index: Index,
     storage: Storage,
     bus: E,
+    stored_topic: &str,
+    indexed_topic: &str,
+    failed_topic: &str,
     sync_interval: Duration,
 ) -> Result<(), anyhow::Error> {
     let mut interval = tokio::time::interval(sync_interval);
     let mut events = 0;
-    let consumer = bus.subscribe("indexer", &[Topic::STORED]).await?;
+    let consumer = bus.subscribe("indexer", &[stored_topic]).await?;
     let mut uncommitted_events = Vec::new();
     loop {
         let tick = interval.tick();
@@ -35,7 +38,7 @@ pub async fn run<E: EventBus>(
                                                     match index.insert_or_replace(&data.key, hash.as_str(), key).await {
                                                         Ok(_) => {
                                                             tracing::trace!("Inserted entry into index");
-                                                            bus.send(Topic::INDEXED, key.as_bytes()).await?;
+                                                            bus.send(indexed_topic, key.as_bytes()).await?;
                                                             events += 1;
                                                         }
                                                         Err(e) => {
@@ -43,7 +46,7 @@ pub async fn run<E: EventBus>(
                                                                 "key": key,
                                                                 "error": e.to_string(),
                                                             }).to_string();
-                                                            bus.send(Topic::FAILED, failure.as_bytes()).await?;
+                                                            bus.send(failed_topic, failure.as_bytes()).await?;
                                                             tracing::warn!("Error inserting entry into index: {:?}", e)
                                                         }
                                                     }

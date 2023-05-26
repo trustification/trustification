@@ -47,6 +47,8 @@ jobs:
             containerfile: vexination/Containerfile
           - name: spog-api
             containerfile: spog/api/Containerfile
+          - name: spog-search
+            containerfile: spog/search/Containerfile
     steps:
 
       - name: Install qemu dependency

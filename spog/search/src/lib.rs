@@ -4,7 +4,6 @@ use std::process::ExitCode;
 use std::str::FromStr;
 use std::time::Duration;
 
-use trustification_storage::{Config, Storage};
 use vexination_index::Index;
 
 mod server;
@@ -26,6 +25,9 @@ pub struct Run {
 
     #[arg(long = "devmode", default_value_t = false)]
     pub(crate) devmode: bool,
+
+    #[arg(long = "storage-endpoint", default_value = None)]
+    pub(crate) storage_endpoint: Option<String>,
 }
 
 impl Run {
@@ -41,11 +43,7 @@ impl Run {
         // TODO: Index for bombastic
         let index = Index::new(&index)?;
         // TODO: Storage with multiple buckets (bombastic and vexination?)
-        let storage = if self.devmode {
-            Storage::new(Config::test("vexination"), trustification_storage::StorageType::Minio)?
-        } else {
-            Storage::new(Config::defaults("vexination")?, trustification_storage::StorageType::S3)?
-        };
+        let storage = trustification_storage::create("vexination", self.devmode, self.storage_endpoint)?;
         let addr = SocketAddr::from_str(&format!("{}:{}", self.bind, self.port))?;
         let interval = Duration::from_secs(self.sync_interval_seconds);
 

@@ -31,16 +31,14 @@ pub struct Run {
     /// Enable OpenPGP v3 signatures. Conflicts with 'policy_date'.
     #[arg(short = '3', long = "v3-signatures", conflicts_with = "policy_date")]
     v3_signatures: bool,
+
+    #[arg(long = "storage-endpoint", default_value = None)]
+    pub(crate) storage_endpoint: Option<String>,
 }
 
 impl Run {
     pub async fn run(self) -> anyhow::Result<ExitCode> {
-        let storage = if self.devmode {
-            Storage::new(Config::test("vexination"), trustification_storage::StorageType::Minio)?
-        } else {
-            Storage::new(Config::defaults("vexination")?, trustification_storage::StorageType::S3)?
-        };
-
+        let storage = trustification_storage::create("vexination", self.devmode, self.storage_endpoint)?;
         let validation_date: Option<SystemTime> = match (self.policy_date, self.v3_signatures) {
             (_, true) => Some(SystemTime::from(
                 Date::from_calendar_date(2007, Month::January, 1)

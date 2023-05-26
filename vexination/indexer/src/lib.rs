@@ -2,8 +2,6 @@ use std::path::PathBuf;
 use std::process::ExitCode;
 use std::time::Duration;
 
-use trustification_event_bus::Topic;
-use trustification_storage::{Config, Storage};
 use vexination_index::Index;
 
 mod indexer;
@@ -22,20 +20,20 @@ pub struct Run {
     #[arg(short = 'i', long = "index")]
     pub(crate) index: Option<PathBuf>,
 
-    #[arg(long = "kafka-bootstraps-servers", default_value = "localhost:9092")]
+    #[arg(long = "kafka-bootstrap-servers", default_value = "localhost:9092")]
     pub(crate) kafka_bootstrap_servers: String,
 
     // Event bus used to communicate with other services.
     #[arg(long = "events", value_enum, default_value = "kafka")]
     pub(crate) events: Events,
 
-    #[arg(long = "stored-topic", default_value = "stored")]
+    #[arg(long = "stored-topic", default_value = "vex-stored")]
     pub(crate) stored_topic: String,
 
-    #[arg(long = "indexed-topic", default_value = "indexed")]
+    #[arg(long = "indexed-topic", default_value = "vex-indexed")]
     pub(crate) indexed_topic: String,
 
-    #[arg(long = "failed-topic", default_value = "failed")]
+    #[arg(long = "failed-topic", default_value = "vex-failed")]
     pub(crate) failed_topic: String,
 
     #[arg(long = "sync-interval-seconds", default_value_t = 10)]
@@ -43,6 +41,9 @@ pub struct Run {
 
     #[arg(long = "devmode", default_value_t = false)]
     pub(crate) devmode: bool,
+
+    #[arg(long = "storage-endpoint", default_value = None)]
+    pub(crate) storage_endpoint: Option<String>,
 }
 
 impl Run {
@@ -57,11 +58,7 @@ impl Run {
 
         let index = Index::new(&index_dir)?;
 
-        let storage = if self.devmode {
-            Storage::new(Config::test("vexination"), trustification_storage::StorageType::Minio)?
-        } else {
-            Storage::new(Config::defaults("vexination")?, trustification_storage::StorageType::S3)?
-        };
+        let storage = trustification_storage::create("vexination", self.devmode, self.storage_endpoint)?;
         use trustification_event_bus::EventBus;
         let interval = Duration::from_secs(self.sync_interval_seconds);
         match self.events {
@@ -69,13 +66,31 @@ impl Run {
                 let bootstrap = &self.kafka_bootstrap_servers;
                 let bus = trustification_event_bus::kafka::KafkaEventBus::new(bootstrap.to_string())?;
                 if self.devmode {
-                    bus.create(&[Topic::STORED]).await?;
+                    bus.create(&[self.stored_topic.as_str()]).await?;
                 }
-                indexer::run(index, storage, bus, interval).await?;
+                indexer::run(
+                    index,
+                    storage,
+                    bus,
+                    self.stored_topic.as_str(),
+                    self.indexed_topic.as_str(),
+                    self.failed_topic.as_str(),
+                    interval,
+                )
+                .await?;
             }
             Events::Sqs => {
                 let bus = trustification_event_bus::sqs::SqsEventBus::new().await?;
-                indexer::run(index, storage, bus, interval).await?;
+                indexer::run(
+                    index,
+                    storage,
+                    bus,
+                    self.stored_topic.as_str(),
+                    self.indexed_topic.as_str(),
+                    self.failed_topic.as_str(),
+                    interval,
+                )
+                .await?;
             }
         }
         Ok(ExitCode::SUCCESS)

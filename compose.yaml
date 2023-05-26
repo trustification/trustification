@@ -1,19 +1,5 @@
 version: '3'
 services:
-#  keycloak:
-#    image: quay.io/keycloak/keycloak:20.0.0
-#    command: start-dev
-#    environment:
-#      - KEYCLOAK_ADMIN=admin
-#      - KEYCLOAK_ADMIN_PASSWORD=admin123456
-#      - KEYCLOAK_DB=dev-file
-#    ports:
-#      - "8888:8888"
-#    healthcheck:
-#      test: ["CMD", "curl", "-f", "http://localhost:8888"]
-#      interval: 10s
-#      timeout: 5s
-#      retries: 5
   minio:
     image: quay.io/minio/minio:RELEASE.2023-05-04T21-44-30Z
     command: server --console-address ":9001" /data1
@@ -28,9 +14,12 @@ services:
     environment:
       MINIO_ROOT_USER: admin
       MINIO_ROOT_PASSWORD: password
-      MINIO_NOTIFY_KAFKA_ENABLE_EVENTBUS: on
-      MINIO_NOTIFY_KAFKA_BROKERS_EVENTBUS: "kafka:9094"
-      MINIO_NOTIFY_KAFKA_TOPIC_EVENTBUS: "stored"
+      MINIO_NOTIFY_KAFKA_ENABLE_BOMBASTIC: on
+      MINIO_NOTIFY_KAFKA_BROKERS_BOMBASTIC: "kafka:9094"
+      MINIO_NOTIFY_KAFKA_TOPIC_BOMBASTIC: "sbom-stored"
+      MINIO_NOTIFY_KAFKA_ENABLE_VEXINATION: on
+      MINIO_NOTIFY_KAFKA_BROKERS_VEXINATION: "kafka:9094"
+      MINIO_NOTIFY_KAFKA_TOPIC_VEXINATION: "vex-stored"
     restart: always
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
@@ -48,11 +37,11 @@ services:
       /usr/bin/mc config host add myminio http://minio:9000 admin password;
       /usr/bin/mc mb myminio/bombastic || true;
       /usr/bin/mc policy download myminio/bombastic;
-      /usr/bin/mc event add myminio/bombastic arn:minio:sqs::EVENTBUS:kafka --event put;
+      /usr/bin/mc event add myminio/bombastic arn:minio:sqs::BOMBASTIC:kafka --event put;
 
       /usr/bin/mc mb myminio/vexination || true;
       /usr/bin/mc policy download myminio/vexination;
-      /usr/bin/mc event add myminio/vexination arn:minio:sqs::EVENTBUS:kafka --event put;
+      /usr/bin/mc event add myminio/vexination arn:minio:sqs::VEXINATION:kafka --event put;
       /usr/bin/mc admin service restart myminio;"
 
   kafka:

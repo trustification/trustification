@@ -35,12 +35,12 @@ impl Config {
         })
     }
 
-    pub fn test(bucket_name: &str) -> Self {
+    pub fn test(bucket_name: &str, endpoint: Option<String>) -> Self {
         Config {
             bucket_name: bucket_name.to_string(),
             region: Region::Custom {
                 region: "eu-central-1".to_owned(),
-                endpoint: "http://localhost:9000".to_owned(),
+                endpoint: endpoint.unwrap_or("http://localhost:9000".to_owned()),
             },
             credentials: Credentials {
                 access_key: Some("admin".into()),
@@ -51,6 +51,15 @@ impl Config {
             },
         }
     }
+}
+
+pub fn create(bucket_name: &str, devmode: bool, storage_endpoint: Option<String>) -> Result<Storage, anyhow::Error> {
+    let storage = if devmode {
+        Storage::new(Config::test(bucket_name, storage_endpoint), StorageType::Minio)?
+    } else {
+        Storage::new(Config::defaults(bucket_name)?, StorageType::S3)?
+    };
+    Ok(storage)
 }
 
 #[derive(Debug)]
@@ -339,7 +348,7 @@ mod tests {
         assert_eq!(converted.event_type, EventType::Put);
         assert_eq!(converted.key, "bombastic/data/mysbom11");
 
-        let storage = Storage::new(Config::test("bombastic"), StorageType::S3).unwrap();
+        let storage = Storage::new(Config::test("bombastic", None), StorageType::S3).unwrap();
         let decoded = storage.decode_event(event.as_bytes()).unwrap();
         assert_eq!(decoded.event_type, EventType::Put);
         assert_eq!(decoded.key, "bombastic/data/mysbom11");
