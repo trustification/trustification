@@ -104,6 +104,18 @@ impl<'d> EventConsumer for SqsConsumer<'d> {
         }
         Ok(None)
     }
+
+    async fn commit<'m>(&'m self, events: &[Self::Event<'m>]) -> Result<(), anyhow::Error> {
+        for event in events {
+            self.client
+                .delete_message()
+                .queue_url(event.queue.as_ref())
+                .set_receipt_handle(event.message.receipt_handle().map(|s| s.into()))
+                .send()
+                .await?;
+        }
+        Ok(())
+    }
 }
 
 pub struct SqsEvent<'m> {
@@ -120,15 +132,5 @@ impl<'m> Event for SqsEvent<'m> {
 
     fn topic(&self) -> Result<Topic, ()> {
         Ok(self.queue)
-    }
-
-    async fn commit(&self) -> Result<(), anyhow::Error> {
-        self.client
-            .delete_message()
-            .queue_url(self.queue.as_ref())
-            .set_receipt_handle(self.message.receipt_handle().map(|s| s.into()))
-            .send()
-            .await?;
-        Ok(())
     }
 }

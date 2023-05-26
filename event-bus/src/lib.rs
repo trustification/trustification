@@ -5,7 +5,6 @@ use std::fmt::Debug;
 pub trait Event {
     fn topic(&self) -> Result<Topic, ()>;
     fn payload(&self) -> Option<&[u8]>;
-    async fn commit(&self) -> Result<(), anyhow::Error>;
 }
 
 #[async_trait::async_trait]
@@ -25,6 +24,7 @@ pub trait EventConsumer {
     where
         Self: 'm;
     async fn next<'m>(&'m self) -> Result<Option<Self::Event<'m>>, anyhow::Error>;
+    async fn commit<'m>(&'m self, events: &[Self::Event<'m>]) -> Result<(), anyhow::Error>;
 }
 
 #[derive(Clone, Copy, Debug)]
