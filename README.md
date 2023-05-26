@@ -32,3 +32,20 @@ You can search all the data using the `spog-search` endpoint:
 ```shell
 curl "http://localhost:8083/?q=bind"
 ```
+
+## Building
+
+To build all trustification components:
+
+``` shell
+cargo build
+```
+
+To use containers to build and package:
+
+``` shell
+podman build -t bombastic -f bombastic/Containerfile .
+podman build -t vexination -f vexination/Containerfile .
+podman build -t spog-search -f spog/search/Containerfile .
+podman build -t spog-api -f spog/api/Containerfile .
+```
