@@ -7,7 +7,7 @@ use rdkafka::consumer::Consumer;
 use rdkafka::error::KafkaError;
 use rdkafka::message::BorrowedMessage;
 use rdkafka::producer::{FutureProducer, FutureRecord};
-use rdkafka::Message;
+use rdkafka::{Message, TopicPartitionList};
 
 use crate::{Event, EventBus, EventConsumer, Topic};
 
@@ -79,6 +79,18 @@ impl EventConsumer for StreamConsumer {
             consumer: &self,
         }))
     }
+
+    async fn commit<'m>(&'m self, events: &[Self::Event<'m>]) -> Result<(), anyhow::Error> {
+        let mut position = self.position()?;
+        for event in events {
+            let topic = event.message.topic();
+            let partition = event.message.partition();
+            let offset = event.message.offset() + 1;
+            position.set_partition_offset(topic, partition, rdkafka::Offset::Offset(offset))?;
+        }
+        Consumer::commit(self, &position, rdkafka::consumer::CommitMode::Sync)?;
+        Ok(())
+    }
 }
 
 #[async_trait::async_trait]
@@ -89,11 +101,5 @@ impl<'m> Event for KafkaEvent<'m> {
 
     fn topic(&self) -> Result<Topic, ()> {
         self.message.topic().try_into()
-    }
-
-    async fn commit(&self) -> Result<(), anyhow::Error> {
-        self.consumer
-            .commit_message(&self.message, rdkafka::consumer::CommitMode::Sync)?;
-        Ok(())
     }
 }

@@ -15,12 +15,13 @@ pub async fn run<E: EventBus>(
     let mut interval = tokio::time::interval(sync_interval);
     let mut events = 0;
     let consumer = bus.subscribe("indexer", &[Topic::STORED]).await?;
+    let mut uncommitted_events = Vec::new();
     loop {
         let tick = interval.tick();
         pin_mut!(tick);
         select! {
             event = consumer.next() => match event {
-                Ok(Some(event)) => loop {
+                Ok(Some(event)) => {
                     if let Some(payload) = event.payload() {
                         if let Ok(data) = storage.decode_event(&payload) {
                             if data.event_type == EventType::Put {
@@ -63,16 +64,8 @@ pub async fn run<E: EventBus>(
                             tracing::warn!("Error decoding event: {:?}", e);
                         }
                     }
-                    match event.commit().await {
-                        Ok(_) => {
-                            tracing::trace!("Event committed successfully");
-                            break;
-                        }
-                        Err(e) => {
-                            tracing::warn!("Error committing event: {:?}", e)
-                        }
-                    }
-                },
+                    uncommitted_events.push(event);
+                }
                 Ok(None) => {
                     tracing::debug!("Polling returned no events, retrying");
                 }
@@ -88,6 +81,15 @@ pub async fn run<E: EventBus>(
                             match storage.put_index(&data).await {
                                 Ok(_) => {
                                     tracing::trace!("Index updated successfully");
+                                    match consumer.commit(&uncommitted_events[..]).await {
+                                        Ok(_) => {
+                                            tracing::trace!("Event committed successfully");
+                                            uncommitted_events.clear();
+                                        }
+                                        Err(e) => {
+                                            tracing::warn!("Error committing event: {:?}", e)
+                                        }
+                                    }
                                     events = 0;
                                 }
                                 Err(e) => {
