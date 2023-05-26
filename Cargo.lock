@@ -4034,6 +4034,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6e63cff320ae2c57904679ba7cb63280a3dc4613885beafb148ee7bf9aa9042d"
 
 [[package]]
+name = "spog"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "serde",
+ "serde_json",
+ "spog-search",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
 name = "spog-api"
 version = "0.1.0"
 dependencies = [
@@ -4680,6 +4694,22 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "52984d277bdf2a751072b5df30ec0377febdb02f7696d64c2d7d54630bac4303"
 dependencies = [
  "serde_json",
+]
+
+[[package]]
+name = "trust"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "bombastic",
+ "clap",
+ "serde",
+ "serde_json",
+ "spog",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+ "vexination",
 ]
 
 [[package]]
