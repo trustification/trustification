@@ -110,7 +110,7 @@ impl From<bincode::Error> for Error {
 }
 
 const DATA_PATH: &str = "/data/";
-const INDEX_PATH: &str = "/index.sqlite";
+const INDEX_PATH: &str = "/index";
 
 const VERSION: u32 = 1;
 
