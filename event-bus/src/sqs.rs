@@ -5,7 +5,7 @@ use aws_sdk_sqs::types::Message;
 use aws_sdk_sqs::{Client, Error as SqsSdkError};
 use thiserror::Error;
 
-use crate::{Event, EventBus, EventConsumer, Topic};
+use crate::{Event, EventBus, EventConsumer};
 
 #[derive(Debug, Error)]
 pub enum SqsError {
@@ -39,26 +39,26 @@ impl SqsEventBus {
 impl EventBus for SqsEventBus {
     type Consumer<'m> = SqsConsumer<'m>;
 
-    async fn create(&self, topics: &[Topic]) -> Result<(), anyhow::Error> {
+    async fn create(&self, topics: &[&str]) -> Result<(), anyhow::Error> {
         for topic in topics.iter() {
-            self.client.create_queue().queue_name(topic.as_ref()).send().await?;
+            self.client.create_queue().queue_name(topic.to_string()).send().await?;
         }
         Ok(())
     }
 
-    async fn subscribe(&self, _group: &str, topics: &[Topic]) -> Result<Self::Consumer<'_>, anyhow::Error> {
+    async fn subscribe(&self, _group: &str, topics: &[&str]) -> Result<Self::Consumer<'_>, anyhow::Error> {
         Ok(SqsConsumer {
             client: &self.client,
-            queues: topics.to_vec(),
+            queues: topics.iter().map(|s| s.to_string()).collect(),
         })
     }
 
-    async fn send(&self, topic: Topic, data: &[u8]) -> Result<(), anyhow::Error> {
+    async fn send(&self, topic: &str, data: &[u8]) -> Result<(), anyhow::Error> {
         // TODO
         let s = core::str::from_utf8(data).unwrap();
         self.client
             .send_message()
-            .queue_url(topic.as_ref())
+            .queue_url(topic)
             .message_body(s)
             .send()
             .await?;
@@ -68,7 +68,7 @@ impl EventBus for SqsEventBus {
 
 pub struct SqsConsumer<'m> {
     client: &'m Client,
-    queues: Vec<Topic>,
+    queues: Vec<String>,
 }
 
 #[async_trait::async_trait]
@@ -84,20 +84,19 @@ impl<'d> EventConsumer for SqsConsumer<'d> {
                         .receive_message()
                         .set_wait_time_seconds(Some(20))
                         .set_max_number_of_messages(Some(1))
-                        .queue_url(q.as_ref())
+                        .queue_url(q.as_str())
                         .send(),
                 )
             })
             .collect();
 
         let (result, idx, _) = futures::future::select_all(queue_futs).await;
-        let topic = self.queues[idx];
+        let topic = &self.queues[idx];
         let message: ReceiveMessageOutput = result?;
         if let Some(messages) = message.messages() {
             if let Some(message) = messages.first() {
                 return Ok(Some(SqsEvent {
-                    client: self.client,
-                    queue: topic,
+                    queue: topic.as_str(),
                     message: message.clone(),
                 }));
             }
@@ -109,7 +108,7 @@ impl<'d> EventConsumer for SqsConsumer<'d> {
         for event in events {
             self.client
                 .delete_message()
-                .queue_url(event.queue.as_ref())
+                .queue_url(event.queue)
                 .set_receipt_handle(event.message.receipt_handle().map(|s| s.into()))
                 .send()
                 .await?;
@@ -119,8 +118,7 @@ impl<'d> EventConsumer for SqsConsumer<'d> {
 }
 
 pub struct SqsEvent<'m> {
-    client: &'m Client,
-    queue: Topic,
+    queue: &'m str,
     message: Message,
 }
 
@@ -130,7 +128,7 @@ impl<'m> Event for SqsEvent<'m> {
         return self.message.body().map(|s| s.as_bytes());
     }
 
-    fn topic(&self) -> Result<Topic, ()> {
+    fn topic(&self) -> Result<&str, ()> {
         Ok(self.queue)
     }
 }

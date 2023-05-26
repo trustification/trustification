@@ -7,9 +7,9 @@ use rdkafka::consumer::Consumer;
 use rdkafka::error::KafkaError;
 use rdkafka::message::BorrowedMessage;
 use rdkafka::producer::{FutureProducer, FutureRecord};
-use rdkafka::{Message, TopicPartitionList};
+use rdkafka::Message;
 
-use crate::{Event, EventBus, EventConsumer, Topic};
+use crate::{Event, EventBus, EventConsumer};
 
 #[allow(unused)]
 pub struct KafkaEventBus {
@@ -19,7 +19,6 @@ pub struct KafkaEventBus {
 
 pub struct KafkaEvent<'m> {
     message: BorrowedMessage<'m>,
-    consumer: &'m StreamConsumer,
 }
 
 impl KafkaEventBus {
@@ -36,7 +35,7 @@ impl KafkaEventBus {
 impl EventBus for KafkaEventBus {
     type Consumer<'m> = StreamConsumer;
 
-    async fn create(&self, topics: &[Topic]) -> Result<(), anyhow::Error> {
+    async fn create(&self, topics: &[&str]) -> Result<(), anyhow::Error> {
         let admin: AdminClient<_> = ClientConfig::new().set("bootstrap.servers", &self.brokers).create()?;
         let topics: Vec<NewTopic> = topics
             .iter()
@@ -46,7 +45,7 @@ impl EventBus for KafkaEventBus {
         Ok(())
     }
 
-    async fn subscribe(&self, group: &str, topics: &[Topic]) -> Result<Self::Consumer<'_>, anyhow::Error> {
+    async fn subscribe(&self, group: &str, topics: &[&str]) -> Result<Self::Consumer<'_>, anyhow::Error> {
         let consumer: StreamConsumer = ClientConfig::new()
             .set("group.id", group)
             .set("bootstrap.servers", &self.brokers)
@@ -59,7 +58,7 @@ impl EventBus for KafkaEventBus {
         Ok(consumer)
     }
 
-    async fn send(&self, topic: Topic, data: &[u8]) -> Result<(), anyhow::Error> {
+    async fn send(&self, topic: &str, data: &[u8]) -> Result<(), anyhow::Error> {
         let record = FutureRecord::to(topic.as_ref()).payload(data);
         self.producer
             .send::<(), _, _>(record, Duration::from_secs(10))
@@ -74,10 +73,7 @@ impl EventConsumer for StreamConsumer {
     type Event<'m> = KafkaEvent<'m> where Self: 'm;
     async fn next<'m>(&'m self) -> Result<Option<Self::Event<'m>>, anyhow::Error> {
         let message = self.recv().await?;
-        Ok(Some(KafkaEvent {
-            message,
-            consumer: &self,
-        }))
+        Ok(Some(KafkaEvent { message }))
     }
 
     async fn commit<'m>(&'m self, events: &[Self::Event<'m>]) -> Result<(), anyhow::Error> {
@@ -99,7 +95,7 @@ impl<'m> Event for KafkaEvent<'m> {
         self.message.payload()
     }
 
-    fn topic(&self) -> Result<Topic, ()> {
-        self.message.topic().try_into()
+    fn topic(&self) -> Result<&str, ()> {
+        Ok(self.message.topic())
     }
 }

@@ -5,7 +5,6 @@ use std::str::FromStr;
 use std::time::Duration;
 
 use bombastic_index::Index;
-use trustification_storage::{Config, Storage};
 
 mod sbom;
 mod server;
@@ -27,6 +26,9 @@ pub struct Run {
 
     #[arg(long = "devmode", default_value_t = false)]
     pub(crate) devmode: bool,
+
+    #[arg(long = "storage-endpoint", default_value = None)]
+    pub(crate) storage_endpoint: Option<String>,
 }
 
 impl Run {
@@ -37,11 +39,7 @@ impl Run {
             std::env::temp_dir().join(format!("bombastic-api.{}.sqlite", r))
         });
         let index = Index::new(&index, None)?;
-        let storage = if self.devmode {
-            Storage::new(Config::test("bombastic"), trustification_storage::StorageType::Minio)?
-        } else {
-            Storage::new(Config::defaults("bombastic")?, trustification_storage::StorageType::S3)?
-        };
+        let storage = trustification_storage::create("bombastic", self.devmode, self.storage_endpoint)?;
         let addr = SocketAddr::from_str(&format!("{}:{}", self.bind, self.port))?;
         let interval = Duration::from_secs(self.sync_interval_seconds);
 

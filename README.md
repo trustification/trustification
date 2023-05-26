@@ -10,3 +10,25 @@ use that information to learn impact of vulnerabilities and dependency changes.
 * [Bombastic](bombastic/README.md) - Storage and archival of SBOM documents.
 * [Vexination](vexination/README.md) - Storage and archival of VEX documents.
 * [Reservoir](reservoir/README.md) - Managing product metadata and access control.
+
+## Running locally
+
+Prerequisite: podman-compose or docker-compose.
+
+To start all dependencies and trustification components:
+
+``` shell
+podman-compose -f compose.yaml -f compose-trustification.yaml up
+```
+
+This will start MinIO and Kafka for object storage and eventing and then run all the trustification services. It will also start to ingest data from Red Hat sources automatically via the vexination-walker and (TODO bombastic-walker) processes.
+
+## Usage
+
+### Searching
+
+You can search all the data using the `spog-search` endpoint:
+
+```shell
+curl "http://localhost:8083/?q=bind"
+```
