@@ -44,8 +44,5 @@ cargo build
 To use containers to build and package:
 
 ``` shell
-podman build -t bombastic -f bombastic/Containerfile .
-podman build -t vexination -f vexination/Containerfile .
-podman build -t spog-search -f spog/search/Containerfile .
-podman build -t spog-api -f spog/api/Containerfile .
+podman build -t trust -f trust/Containerfile .
 ```

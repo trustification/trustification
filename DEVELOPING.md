@@ -18,10 +18,9 @@ This will start MinIO and Kafka in containers and initialize them accordingly so
 To run the API processes, you can use cargo:
 
 ```shell
-RUST_LOG=info cargo run -p spog-api -- run --devmode -p 8080 &
-RUST_LOG=info cargo run -p vexination-api -- run --devmode -p 8081 &
-RUST_LOG=info cargo run -p bombastic-api -- run --devmode -p 8082 &
-RUST_LOG=info cargo run -p spog-search -- run --devmode -p 8083 &
+RUST_LOG=info cargo run -p trust -- vexination api --devmode -p 8081 &
+RUST_LOG=info cargo run -p trust -- bombastic api --devmode -p 8082 &
+RUST_LOG=info cargo run -p trust -- spog search --devmode -p 8083 &
 ```
 
 ## Indexing
@@ -29,8 +28,8 @@ RUST_LOG=info cargo run -p spog-search -- run --devmode -p 8083 &
 To run the indexer processes, you can use cargo:
 
 ```shell
-RUST_LOG=info cargo run -p vexination-indexer -- run --devmode &
-RUST_LOG=info cargo run -p bombastic-indexer -- run --devmode &
+RUST_LOG=info cargo run -p trust -- vexination indexer --devmode &
+RUST_LOG=info cargo run -p trust -- bombastic indexer --devmode &
 ```
 
 ## Ingesting VEX
@@ -50,7 +49,7 @@ curl -X GET "http://localhost:8081/api/v1/vex?advisory=RHSA-2023:1441"
 You can also crawl Red Hat security data using the walker, which will feed the S3 storage with data:
 
 ```shell
-RUST_LOG=info cargo run -p vexination-walker -- run --devmode --source https://www.redhat.com/.well-known/csaf/provider-metadata.json -3
+RUST_LOG=info cargo run -p trust -- vexination walker --devmode --source https://www.redhat.com/.well-known/csaf/provider-metadata.json -3
 ```
 
 ## Ingesting SBOMs

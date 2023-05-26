@@ -11,15 +11,14 @@ RUN mkdir /usr/src/project
 COPY . /usr/src/project
 WORKDIR /usr/src/project
 
-RUN TAG=$tag cargo build -p vexination --release
+RUN TAG=$tag cargo build -p trust --release
 
 FROM registry.access.redhat.com/ubi9/ubi-minimal:latest
 
 LABEL org.opencontainers.image.source="https://github.com/trustification/trustification"
 
-COPY --from=builder /usr/src/project/target/release/vexination /
+COPY --from=builder /usr/src/project/target/release/trust /
 
 ENV RUST_LOG info
-EXPOSE 8080
 
-ENTRYPOINT ["/vexination"]
+ENTRYPOINT ["/trust"]

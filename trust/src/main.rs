@@ -1,18 +1,22 @@
 use std::process::{ExitCode, Termination};
 
 use clap::Parser;
-use vexination_indexer::Run;
 
 #[derive(clap::Subcommand, Debug)]
 pub enum Command {
-    Run(Run),
+    #[command(subcommand)]
+    Vexination(vexination::Command),
+    #[command(subcommand)]
+    Bombastic(bombastic::Command),
+    #[command(subcommand)]
+    Spog(spog::Command),
 }
 
 #[derive(clap::Parser, Debug)]
 #[command(
     author,
     version = env!("CARGO_PKG_VERSION"),
-    about = "Vexination Indexer",
+    about = "Trust",
     long_about = None
 )]
 pub struct Cli {
@@ -33,11 +37,10 @@ impl Cli {
 
     async fn run_command(self) -> anyhow::Result<ExitCode> {
         match self.command {
-            Command::Run(run) => {
-                run.run().await?;
-            }
+            Command::Vexination(run) => run.run().await,
+            Command::Bombastic(run) => run.run().await,
+            Command::Spog(run) => run.run().await,
         }
-        Ok(ExitCode::SUCCESS)
     }
 }
 

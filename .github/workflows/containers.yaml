@@ -41,14 +41,8 @@ jobs:
     strategy:
       matrix:
         include:
-          - name: bombastic
-            containerfile: bombastic/Containerfile
-          - name: vexination
-            containerfile: vexination/Containerfile
-          - name: spog-api
-            containerfile: spog/api/Containerfile
-          - name: spog-search
-            containerfile: spog/search/Containerfile
+          - name: trust
+            containerfile: trust/Containerfile
     steps:
 
       - name: Install qemu dependency
