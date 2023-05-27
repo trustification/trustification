@@ -1,12 +1,18 @@
-use std::collections::HashMap;
-use std::fmt::Display;
+use std::marker::Unpin;
+use std::{collections::HashMap, fmt::Display};
 
+use async_stream::try_stream;
+use bytes::{Buf, Bytes};
+use futures::future::ok;
+use futures::stream::once;
+use futures::{Stream, StreamExt};
 use s3::creds::error::CredentialsError;
 pub use s3::creds::Credentials;
 use s3::error::S3Error;
 use s3::Bucket;
 pub use s3::Region;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
+use tokio_util::io::StreamReader;
 
 pub enum StorageType {
     Minio,
@@ -68,7 +74,6 @@ pub enum Error {
     Credentials(CredentialsError),
     S3(S3Error),
     Io(std::io::Error),
-    Codec(bincode::Error),
 }
 
 impl Display for Error {
@@ -78,7 +83,6 @@ impl Display for Error {
             Self::Credentials(e) => write!(f, "{}", e),
             Self::S3(e) => write!(f, "{}", e),
             Self::Io(e) => write!(f, "{}", e),
-            Self::Codec(e) => write!(f, "{}", e),
         }
     }
 }
@@ -103,60 +107,23 @@ impl From<std::io::Error> for Error {
     }
 }
 
-impl From<bincode::Error> for Error {
-    fn from(e: bincode::Error) -> Self {
-        Self::Codec(e)
+impl From<http::header::InvalidHeaderName> for Error {
+    fn from(_: http::header::InvalidHeaderName) -> Self {
+        Self::Internal
+    }
+}
+
+impl From<http::header::InvalidHeaderValue> for Error {
+    fn from(_: http::header::InvalidHeaderValue) -> Self {
+        Self::Internal
     }
 }
 
 const DATA_PATH: &str = "/data/";
 const INDEX_PATH: &str = "/index";
+const METADATA_PREFIX: &str = "x-amz-meta-";
 
 const VERSION: u32 = 1;
-
-#[derive(Serialize, Deserialize)]
-pub struct Object<'a> {
-    version: u32,
-    pub key: &'a str,
-    pub compressed: bool,
-    pub annotations: HashMap<&'a str, &'a str>,
-    pub data: Vec<u8>,
-}
-
-impl<'a> Object<'a> {
-    pub fn new(key: &'a str, annotations: HashMap<&'a str, &'a str>, data: &'a [u8], compressed: bool) -> Self {
-        Self {
-            version: VERSION,
-            key,
-            compressed,
-            data: data.to_vec(),
-            annotations,
-        }
-    }
-
-    fn to_owned(self) -> OwnedObject {
-        let mut annotations = HashMap::new();
-        for (key, value) in self.annotations.iter() {
-            annotations.insert(key.to_string(), value.to_string());
-        }
-        OwnedObject {
-            version: self.version,
-            compressed: self.compressed,
-            key: self.key.to_string(),
-            annotations,
-            data: self.data,
-        }
-    }
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct OwnedObject {
-    version: u32,
-    pub key: String,
-    pub compressed: bool,
-    pub annotations: HashMap<String, String>,
-    pub data: Vec<u8>,
-}
 
 impl Storage {
     pub fn new(config: Config, stype: StorageType) -> Result<Self, Error> {
@@ -179,18 +146,77 @@ impl Storage {
         key.strip_prefix(&self.prefix)
     }
 
-    pub async fn put(&self, key: &str, value: Object<'_>) -> Result<(), Error> {
-        let path = format!("{}{}", DATA_PATH, key);
-        let value = bincode::serialize(&value)?;
-        self.bucket.put_object(path, &value).await?;
-        Ok(())
+    pub async fn put_slice<'a>(
+        &self,
+        key: &'a str,
+        annotations: HashMap<&'a str, &'a str>,
+        content_type: &str,
+        data: &'a [u8],
+    ) -> Result<u16, Error> {
+        self.put_stream(key, annotations, content_type, &mut once(ok::<_, std::io::Error>(data)))
+            .await
     }
 
-    pub async fn get(&self, key: &str) -> Result<OwnedObject, Error> {
+    pub async fn put_stream<S, B, E>(
+        &self,
+        key: &str,
+        annotations: HashMap<&str, &str>,
+        content_type: &str,
+        stream: &mut S,
+    ) -> Result<u16, Error>
+    where
+        S: Stream<Item = Result<B, E>> + Unpin,
+        B: Buf,
+        E: Into<std::io::Error>,
+    {
+        let mut headers = http::HeaderMap::new();
+        headers.insert("x-amz-meta-version", VERSION.into());
+        for (k, v) in annotations {
+            headers.insert(
+                http::HeaderName::try_from(format!("{METADATA_PREFIX}{k}"))?,
+                http::HeaderValue::from_str(v)?,
+            );
+        }
+        let bucket = self.bucket.with_extra_headers(headers);
+        let mut reader = StreamReader::new(stream);
+        let path = format!("{}{}", DATA_PATH, key);
+        Ok(bucket
+            .put_object_stream_with_content_type(&mut reader, path, content_type)
+            .await?)
+    }
+
+    // This will load the entire S3 object into memory
+    pub async fn get(&self, key: &str) -> Result<(Vec<u8>, HashMap<String, String>), Error> {
         let path = format!("{}{}", DATA_PATH, key);
         let data = self.bucket.get_object(path).await?;
-        let value: Object<'_> = bincode::deserialize(&data.as_slice())?;
-        Ok(value.to_owned())
+        let metadata = data
+            .headers()
+            .iter()
+            .filter_map(|(k, v)| k.strip_prefix(METADATA_PREFIX).map(|k| (k.to_owned(), v.to_owned())))
+            .collect();
+        Ok((data.to_vec(), metadata))
+    }
+
+    // Returns a tuple of content-type and byte stream
+    pub async fn get_stream(
+        &self,
+        key: &str,
+    ) -> Result<(Option<String>, impl Stream<Item = Result<Bytes, Error>>), Error> {
+        let path = format!("{}{}", DATA_PATH, key);
+        let (head, _status) = self.bucket.head_object(&path).await?;
+        let mut s = self.bucket.get_object_stream(&path).await?;
+        let stream = try_stream! {
+            while let Some(chunk) = s.bytes().next().await {
+                yield chunk;
+            }
+        };
+        Ok((head.content_type, stream))
+    }
+
+    pub async fn get_metadata(&self, key: &str) -> Result<HashMap<String, String>, Error> {
+        let path = format!("{}{}", DATA_PATH, key);
+        let (head, _status) = self.bucket.head_object(&path).await?;
+        Ok(head.metadata.unwrap_or(HashMap::new()))
     }
 
     pub async fn put_index(&self, index: &[u8]) -> Result<(), Error> {

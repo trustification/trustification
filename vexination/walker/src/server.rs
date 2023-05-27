@@ -11,7 +11,7 @@ use csaf_walker::{
 };
 use serde::Deserialize;
 use tokio::sync::{Mutex, RwLock};
-use trustification_storage::{Object, Storage};
+use trustification_storage::Storage;
 
 pub async fn run(storage: Storage, source: url::Url, options: ValidationOptions) -> Result<(), anyhow::Error> {
     let fetcher = Fetcher::new(Default::default()).await?;
@@ -27,11 +27,6 @@ pub async fn run(storage: Storage, source: url::Url, options: ValidationOptions)
                         Ok(doc) => {
                             let key = doc.document.tracking.id;
 
-                            let mut out = Vec::new();
-                            let (data, compressed) = match zstd::stream::copy_encode(&data[..], &mut out, 3) {
-                                Ok(_) => (&out[..], true),
-                                Err(_) => (&data[..], false),
-                            };
                             let mut annotations = std::collections::HashMap::new();
                             if let Some(sha256) = &retrieved.sha256 {
                                 annotations.insert("sha256", sha256.expected.as_str());
@@ -41,8 +36,7 @@ pub async fn run(storage: Storage, source: url::Url, options: ValidationOptions)
                                 annotations.insert("sha512", sha512.expected.as_str());
                             }
 
-                            let value = Object::new(&key, annotations, data, compressed);
-                            match storage.put(&key, value).await {
+                            match storage.put_slice(&key, annotations, "application/json", &data).await {
                                 Ok(_) => {
                                     let msg = format!("VEX ({}) of size {} stored successfully", key, &data[..].len());
                                     tracing::info!(msg);
