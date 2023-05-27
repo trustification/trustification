@@ -2,12 +2,13 @@ use std::net::SocketAddr;
 use std::sync::Arc;
 use std::time::Duration;
 
+use actix_web::http::header::ContentType;
 use actix_web::middleware::Logger;
 use actix_web::web::{self, Bytes};
 use actix_web::{App, HttpResponse, HttpServer, Responder};
 use serde::Deserialize;
 use tokio::sync::{Mutex, RwLock};
-use trustification_storage::{Object, Storage};
+use trustification_storage::Storage;
 
 struct AppState {
     storage: RwLock<Storage>,
@@ -39,18 +40,10 @@ pub async fn run<B: Into<SocketAddr>>(storage: Storage, bind: B) -> Result<(), a
 }
 
 async fn fetch_object(storage: &Storage, key: &str) -> HttpResponse {
-    match storage.get(&key).await {
-        Ok(obj) => {
-            tracing::trace!("Retrieved object compressed: {}", obj.compressed);
-            if obj.compressed {
-                let mut out = Vec::new();
-                match ::zstd::stream::copy_decode(&obj.data[..], &mut out) {
-                    Ok(_) => HttpResponse::Ok().body(out),
-                    Err(_) => HttpResponse::InternalServerError().body("Unable to decode object"),
-                }
-            } else {
-                HttpResponse::Ok().body(obj.data)
-            }
+    match storage.get_stream(key).await {
+        Ok((ctype, stream)) => {
+            let ctype = ctype.unwrap_or(ContentType::json().to_string());
+            HttpResponse::Ok().content_type(ctype).streaming(stream)
         }
         Err(e) => {
             tracing::warn!("Unable to locate object with key {}: {:?}", key, e);
@@ -106,14 +99,11 @@ async fn publish_vex(state: web::Data<SharedState>, params: web::Query<PublishPa
     };
 
     let storage = state.storage.write().await;
-    let mut out = Vec::new();
-    let (data, compressed) = match zstd::stream::copy_encode(&data[..], &mut out, 3) {
-        Ok(_) => (&out[..], true),
-        Err(_) => (&data[..], false),
-    };
-    tracing::debug!("Storing new VEX with id: {}, compressed: {}", advisory, compressed);
-    let value = Object::new(&advisory, std::collections::HashMap::new(), data, compressed);
-    match storage.put(&advisory, value).await {
+    tracing::debug!("Storing new VEX with id: {advisory}");
+    match storage
+        .put_slice(&advisory, std::collections::HashMap::new(), "application/json", &data)
+        .await
+    {
         Ok(_) => {
             let msg = format!("VEX of size {} stored successfully", &data[..].len());
             tracing::trace!(msg);

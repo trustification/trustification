@@ -35,19 +35,7 @@ pub async fn run<E: EventBus>(
                                 } else {
                                     if let Some(key) = storage.extract_key(&data.key) {
                                         match storage.get(key).await {
-                                            Ok(obj) => {
-                                                let data = if obj.compressed {
-                                                    let mut out = Vec::new();
-                                                    match ::zstd::stream::copy_decode(&obj.data[..], &mut out) {
-                                                        Ok(_) => out,
-                                                        Err(e) => {
-                                                            tracing::warn!("Error decompressing data: {:?}", e);
-                                                            continue;
-                                                        }
-                                                    }
-                                                } else {
-                                                    obj.data
-                                                };
+                                            Ok((data, _)) => {
                                                 if let Ok(doc) = bombastic_index::SBOM::parse(&data) {
                                                     match indexer.as_mut().unwrap().index(index.index(), &doc) {
                                                         Ok(_) => {

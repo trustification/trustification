@@ -16,8 +16,8 @@ bombastic-index = { path = "../index" }
 trustification-storage = { path = "../../storage" }
 clap = { version = "4", features = ["derive"] }
 anyhow = "1"
-zstd = "0.12"
 sha2 = "0.10"
 hex = "0.4.3"
 packageurl = "0.3"
 rand = "0.8"
+futures = "0.3"
