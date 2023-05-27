@@ -1,14 +1,16 @@
+use std::io;
 use std::net::SocketAddr;
 use std::str::FromStr;
 use std::sync::Arc;
 use std::time::Duration;
 
 use actix_web::middleware::Logger;
-use actix_web::web::{self, Bytes};
-use actix_web::{App, HttpResponse, HttpServer, Responder};
+use actix_web::{guard, web, App, HttpResponse, HttpServer, Responder};
 use bombastic_index::Index;
+use futures::TryStreamExt;
 use serde::Deserialize;
 use tokio::sync::{Mutex, RwLock};
+use tokio_util::io::StreamReader;
 use tracing::info;
 use trustification_storage::{Object, Storage};
 
@@ -70,12 +72,17 @@ pub async fn run<B: Into<SocketAddr>>(
     HttpServer::new(move || {
         App::new()
             .wrap(Logger::default())
-            .app_data(web::PayloadConfig::new(10 * 1024 * 1024))
             .app_data(web::Data::new(state.clone()))
             .service(web::resource("/healthz").to(health))
             .service(
                 web::scope("/api/v1")
                     .route("/sbom", web::get().to(query_sbom))
+                    .route(
+                        "/sbom",
+                        web::post()
+                            .guard(guard::Header("transfer-encoding", "chunked"))
+                            .to(publish_large_sbom),
+                    )
                     .route("/sbom", web::post().to(publish_sbom)),
             )
     })
@@ -148,7 +155,17 @@ struct PublishParams {
     sha256: Option<String>,
 }
 
-async fn publish_sbom(state: web::Data<SharedState>, params: web::Query<PublishParams>, data: Bytes) -> HttpResponse {
+#[derive(Debug, Deserialize)]
+struct PublishLargeParams {
+    purl: String,
+    sha256: String,
+}
+
+async fn publish_sbom(
+    state: web::Data<SharedState>,
+    params: web::Query<PublishParams>,
+    data: web::Bytes,
+) -> HttpResponse {
     let params = params.into_inner();
     let storage = state.storage.write().await;
     // TODO: unbuffered I/O
@@ -176,7 +193,7 @@ async fn publish_sbom(state: web::Data<SharedState>, params: web::Query<PublishP
                     );
                     let mut annotations = std::collections::HashMap::new();
                     annotations.insert("digest", hash.as_str());
-                    let value = Object::new(&purl, annotations, data, compressed);
+                    let value = Object::new(&purl, annotations, Some(data), compressed);
                     match storage.put(&purl, value).await {
                         Ok(_) => {
                             let msg = format!("SBOM of size {} stored successfully", &data[..].len());
@@ -204,6 +221,30 @@ async fn publish_sbom(state: web::Data<SharedState>, params: web::Query<PublishP
             let msg = format!("No valid SBOM uploaded: {err}");
             tracing::info!(msg);
             HttpResponse::BadRequest().body(msg)
+        }
+    }
+}
+
+async fn publish_large_sbom(
+    state: web::Data<SharedState>,
+    params: web::Query<PublishLargeParams>,
+    payload: web::Payload,
+) -> HttpResponse {
+    let storage = state.storage.write().await;
+    let mut annotations = std::collections::HashMap::new();
+    annotations.insert("digest", params.sha256.as_str());
+    let value = Object::new(&params.purl, annotations, None, false);
+    let mut reader = StreamReader::new(payload.map_err(|e| io::Error::new(io::ErrorKind::Other, e)));
+    match storage.put_stream(&params.purl, value, &mut reader).await {
+        Ok(status) => {
+            let msg = format!("SBOM stored with status code: {status}");
+            tracing::trace!(msg);
+            HttpResponse::Created().body(msg)
+        }
+        Err(e) => {
+            let msg = format!("Error storing SBOM: {:?}", e);
+            tracing::warn!(msg);
+            HttpResponse::InternalServerError().body(msg)
         }
     }
 }

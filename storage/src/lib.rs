@@ -7,6 +7,7 @@ use s3::error::S3Error;
 use s3::Bucket;
 pub use s3::Region;
 use serde::{Deserialize, Serialize};
+use tokio::io::AsyncRead;
 
 pub enum StorageType {
     Minio,
@@ -111,6 +112,7 @@ impl From<bincode::Error> for Error {
 
 const DATA_PATH: &str = "/data/";
 const INDEX_PATH: &str = "/index";
+const SBOM_PATH: &str = "/sbom/";
 
 const VERSION: u32 = 1;
 
@@ -124,12 +126,15 @@ pub struct Object<'a> {
 }
 
 impl<'a> Object<'a> {
-    pub fn new(key: &'a str, annotations: HashMap<&'a str, &'a str>, data: &'a [u8], compressed: bool) -> Self {
+    pub fn new(key: &'a str, annotations: HashMap<&'a str, &'a str>, data: Option<&'a [u8]>, compressed: bool) -> Self {
         Self {
             version: VERSION,
             key,
             compressed,
-            data: data.to_vec(),
+            data: match data {
+                Some(d) => d.to_vec(),
+                None => Vec::new(),
+            },
             annotations,
         }
     }
@@ -184,6 +189,17 @@ impl Storage {
         let value = bincode::serialize(&value)?;
         self.bucket.put_object(path, &value).await?;
         Ok(())
+    }
+
+    pub async fn put_stream<R: AsyncRead + Unpin>(
+        &self,
+        key: &str,
+        value: Object<'_>,
+        reader: &mut R,
+    ) -> Result<u16, Error> {
+        self.put(key, value).await?;
+        let path = format!("{}{}", SBOM_PATH, key);
+        Ok(self.bucket.put_object_stream(reader, path).await?)
     }
 
     pub async fn get(&self, key: &str) -> Result<OwnedObject, Error> {

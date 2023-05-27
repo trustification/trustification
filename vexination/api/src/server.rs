@@ -112,7 +112,7 @@ async fn publish_vex(state: web::Data<SharedState>, params: web::Query<PublishPa
         Err(_) => (&data[..], false),
     };
     tracing::debug!("Storing new VEX with id: {}, compressed: {}", advisory, compressed);
-    let value = Object::new(&advisory, std::collections::HashMap::new(), data, compressed);
+    let value = Object::new(&advisory, std::collections::HashMap::new(), Some(data), compressed);
     match storage.put(&advisory, value).await {
         Ok(_) => {
             let msg = format!("VEX of size {} stored successfully", &data[..].len());

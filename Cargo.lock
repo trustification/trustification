@@ -897,6 +897,7 @@ dependencies = [
  "anyhow",
  "bombastic-index",
  "clap",
+ "futures",
  "hex",
  "packageurl",
  "rand 0.8.5",
@@ -904,6 +905,7 @@ dependencies = [
  "serde_json",
  "sha2",
  "tokio",
+ "tokio-util",
  "tracing",
  "tracing-subscriber",
  "trustification-storage",
@@ -4813,6 +4815,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "bincode",
+ "futures",
  "rust-s3",
  "serde",
  "serde_json",

@@ -41,7 +41,7 @@ pub async fn run(storage: Storage, source: url::Url, options: ValidationOptions)
                                 annotations.insert("sha512", sha512.expected.as_str());
                             }
 
-                            let value = Object::new(&key, annotations, data, compressed);
+                            let value = Object::new(&key, annotations, Some(data), compressed);
                             match storage.put(&key, value).await {
                                 Ok(_) => {
                                     let msg = format!("VEX ({}) of size {} stored successfully", key, &data[..].len());
