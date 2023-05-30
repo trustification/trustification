@@ -22,3 +22,6 @@ members = [
     "event-bus",
     "storage",
 ]
+
+[patch.crates-io]
+sikula = { git = "https://github.com/ctron/sikula", rev = "85760a329b852a485fc8b323f7e50e49f88c32a7" }

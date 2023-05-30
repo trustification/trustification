@@ -4,7 +4,7 @@ use std::time::Duration;
 
 use actix_web::middleware::Logger;
 use actix_web::web::{self};
-use actix_web::{App, HttpResponse, HttpServer, Responder};
+use actix_web::{App, HttpResponse, HttpServer};
 use serde::Deserialize;
 use tokio::sync::RwLock;
 use trustification_storage::Storage;

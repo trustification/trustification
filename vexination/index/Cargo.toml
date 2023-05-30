@@ -9,7 +9,7 @@ tracing = "0.1"
 csaf = "0.5"
 zstd = "0.12"
 tar = "0.4"
-sikula = "0.1"
+sikula = "0.2"
 chumsky = "1.0.0-alpha.4"
 
 [dev-dependencies]
