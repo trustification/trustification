@@ -1,5 +1,10 @@
+mod search;
+
+use search::*;
+
 use csaf::{definitions::NoteCategory, Csaf};
-use std::fmt::Display;
+use sikula::prelude::*;
+use std::fmt::{write, Display};
 use std::path::PathBuf;
 use tantivy::collector::Count;
 use tantivy::collector::TopDocs;
@@ -8,11 +13,12 @@ use tantivy::directory::MmapDirectory;
 use tantivy::directory::INDEX_WRITER_LOCK;
 use tantivy::doc;
 use tantivy::merge_policy::LogMergePolicy;
-use tantivy::query::TermSetQuery;
-use tantivy::schema::*;
+use tantivy::query::{TermQuery, TermSetQuery};
+use tantivy::schema::{Term, *};
 use tantivy::Directory;
 use tantivy::Index as SearchIndex;
 use tantivy::IndexWriter;
+use tracing::{info, warn};
 
 pub struct Index {
     index: SearchIndex,
@@ -31,6 +37,7 @@ pub enum Error {
     Snapshot,
     NotFound,
     NotPersisted,
+    Parser(String),
     Search(tantivy::TantivyError),
     Io(std::io::Error),
 }
@@ -42,6 +49,7 @@ impl Display for Error {
             Self::Snapshot => write!(f, "Error snapshotting index"),
             Self::NotFound => write!(f, "Not found"),
             Self::NotPersisted => write!(f, "Database is not persisted"),
+            Self::Parser(e) => write!(f, "Failed to parse query: {e}"),
             Self::Search(e) => write!(f, "Error in search index: {:?}", e),
             Self::Io(e) => write!(f, "I/O error: {:?}", e),
         }
@@ -74,7 +82,7 @@ impl Indexer {
                         }
                     }
 
-                    tracing::info!("Indexing with id {} description {}", id, description);
+                    info!("Indexing with id {} description {}", id, description);
                     let document = doc!(
                         index.fields.id => id.as_str(),
                         index.fields.description => description,
@@ -97,7 +105,7 @@ impl Indexer {
 impl Index {
     fn schema() -> (Schema, Fields) {
         let mut schema = Schema::builder();
-        let id = schema.add_text_field("id", TEXT | FAST | STORED);
+        let id = schema.add_text_field("id", STRING | FAST | STORED);
         let description = schema.add_text_field("description", TEXT);
         (schema.build(), Fields { id, description })
     }
@@ -167,7 +175,7 @@ impl Index {
         Ok(Indexer { writer })
     }
 
-    pub fn search(
+    pub fn search_x(
         &self,
         query: &str,
         fields: &[&str],
@@ -186,6 +194,74 @@ impl Index {
                 terms.push(Term::from_field_text(field.0, query));
             }
         }
+
+        let query = TermSetQuery::new(terms);
+
+        let (top_docs, count) = searcher.search(&query, &(TopDocs::with_limit(len).and_offset(offset), Count))?;
+
+        tracing::trace!("Found {} docs", count);
+
+        let mut hits = Vec::new();
+        for hit in top_docs {
+            let doc = searcher.doc(hit.1)?;
+            if let Some(Some(value)) = doc.get_first(self.fields.id).map(|s| s.as_text()) {
+                hits.push(value.into());
+            }
+        }
+
+        tracing::trace!("Filtered to {}", hits.len());
+
+        Ok(hits)
+    }
+
+    pub fn search(
+        &self,
+        q: &str,
+        fields: &[&str],
+        filters: &[(&str, &str)],
+        offset: usize,
+        len: usize,
+    ) -> Result<Vec<String>, Error> {
+        let mut query = Vulnerabilities::parse_query(&q).map_err(|err| Error::Parser(err.to_string()))?;
+
+        let schema = self.index.schema();
+        let reader = self.index.reader()?;
+        let searcher = reader.searcher();
+
+        query.term = query.term.compact();
+
+        info!("Query: {query:?}");
+        info!("Fields: {:?}", schema.fields().collect::<Vec<_>>());
+
+        let mut terms = vec![];
+        match query.term.compact() {
+            sikula::prelude::Term::Match(Vulnerabilities::Id(Primary::Equal(value))) => {
+                terms.push(Term::from_field_text(schema.get_field("id").unwrap(), value));
+            }
+            sikula::prelude::Term::Match(Vulnerabilities::Id(Primary::Partial(value))) => {
+                terms.push(Term::from_field_text(schema.get_field("id").unwrap(), value));
+            }
+            sikula::prelude::Term::Match(Vulnerabilities::Description(Primary::Equal(value))) => {
+                terms.push(Term::from_field_text(schema.get_field("description").unwrap(), value));
+            }
+            sikula::prelude::Term::Match(Vulnerabilities::Description(Primary::Partial(value))) => {
+                terms.push(Term::from_field_text(schema.get_field("description").unwrap(), value));
+            }
+            n => {
+                warn!("Ignoring search term: {n:?}");
+            }
+        }
+
+        info!("Terms: {terms:?}");
+
+        /*
+        let mut terms = vec![];
+        for field in schema.fields() {
+            let field_name = field.1.name();
+            if fields.is_empty() || fields.contains(&field_name) {
+                terms.push(Term::from_field_text(field.0, q));
+            }
+        }*/
 
         let query = TermSetQuery::new(terms);
 

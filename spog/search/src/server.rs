@@ -10,13 +10,13 @@ use tokio::sync::RwLock;
 use trustification_storage::Storage;
 use vexination_index::Index;
 
-struct AppState {
-    storage: RwLock<Storage>,
+pub struct AppState {
+    pub storage: RwLock<Storage>,
     // TODO: Figure out a way to not lock since we use it read only
-    index: RwLock<Index>,
+    pub index: RwLock<Index>,
 }
 
-type SharedState = Arc<AppState>;
+pub type SharedState = Arc<AppState>;
 
 impl AppState {
     async fn sync_index(&self) -> Result<(), anyhow::Error> {
@@ -70,6 +70,7 @@ pub async fn run<B: Into<SocketAddr>>(
             .app_data(web::Data::new(state.clone()))
             .service(web::resource("/healthz").to(health))
             .service(web::resource("/").to(search))
+            .service(web::resource("/vuln").to(crate::vuln::search))
     })
     .bind(&addr)?
     .run()
@@ -77,7 +78,7 @@ pub async fn run<B: Into<SocketAddr>>(
     Ok(())
 }
 
-async fn fetch_object(storage: &Storage, key: &str) -> Option<Vec<u8>> {
+pub async fn fetch_object(storage: &Storage, key: &str) -> Option<Vec<u8>> {
     match storage.get(&key).await {
         Ok(obj) => {
             tracing::trace!("Retrieved object compressed: {}", obj.compressed);
@@ -128,6 +129,6 @@ async fn search(state: web::Data<SharedState>, params: web::Query<QueryParams>) 
 }
 
 #[derive(Debug, Deserialize)]
-struct QueryParams {
-    q: String,
+pub struct QueryParams {
+    pub q: String,
 }
