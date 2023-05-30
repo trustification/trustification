@@ -7,6 +7,7 @@ use std::time::Duration;
 use vexination_index::Index;
 
 mod server;
+mod vuln;
 
 #[derive(clap::Args, Debug)]
 #[command(about = "Run the search api server", args_conflicts_with_subcommands = true)]
