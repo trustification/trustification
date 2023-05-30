@@ -69,7 +69,6 @@ pub async fn run<B: Into<SocketAddr>>(
             .app_data(web::PayloadConfig::new(10 * 1024 * 1024))
             .app_data(web::Data::new(state.clone()))
             .service(web::resource("/healthz").to(health))
-            .service(web::resource("/").to(search))
             .service(web::resource("/vuln").to(crate::vuln::search))
     })
     .bind(&addr)?
@@ -101,31 +100,6 @@ pub async fn fetch_object(storage: &Storage, key: &str) -> Option<Vec<u8>> {
 
 async fn health() -> HttpResponse {
     HttpResponse::Ok().finish()
-}
-
-async fn search(state: web::Data<SharedState>, params: web::Query<QueryParams>) -> impl Responder {
-    let params = params.into_inner();
-    tracing::trace!("Querying VEX using {}", params.q);
-    let index = state.index.read().await;
-    let result = index.search(params.q.as_str(), &[], &[], 0, 10);
-    if let Err(e) = &result {
-        tracing::info!("Error searching: {:?}", e);
-        return HttpResponse::InternalServerError().body(e.to_string());
-    }
-    let result = result.unwrap();
-
-    let mut ret: Vec<serde_json::Value> = Vec::new();
-    let storage = state.storage.read().await;
-
-    for key in result.iter() {
-        if let Some(obj) = fetch_object(&storage, &key).await {
-            if let Ok(data) = serde_json::from_slice(&obj[..]) {
-                ret.push(data);
-            }
-        }
-    }
-
-    HttpResponse::Ok().json(ret)
 }
 
 #[derive(Debug, Deserialize)]

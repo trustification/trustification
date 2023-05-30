@@ -4,8 +4,11 @@ use sikula::prelude::*;
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Vulnerabilities<'a> {
     Id(Primary<'a>),
+    Cve(Primary<'a>),
     Title(Primary<'a>),
     Description(Primary<'a>),
+    Status(Primary<'a>),
+    Severity(Primary<'a>),
 }
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
@@ -24,8 +27,11 @@ impl FromQualifier for VulnerabilitiesSortable {
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
 pub enum VulnerabilitiesScope {
     Id,
+    Cve,
     Title,
     Description,
+    Status,
+    Severity,
 }
 
 impl FromQualifier for VulnerabilitiesScope {
@@ -34,8 +40,11 @@ impl FromQualifier for VulnerabilitiesScope {
     fn from_qualifier(qualifier: &mir::Qualifier) -> Result<Self, Self::Err> {
         Ok(match qualifier.as_slice() {
             ["id"] => Self::Id,
+            ["cve"] => Self::Cve,
             ["title"] => Self::Title,
             ["description"] => Self::Description,
+            ["status"] => Self::Status,
+            ["severity"] => Self::Severity,
             _ => return Err(()),
         })
     }
@@ -47,7 +56,14 @@ impl<'a> Resource<'a> for Vulnerabilities<'a> {
     type Scope = VulnerabilitiesScope;
 
     fn default_scopes() -> Vec<Self::Scope> {
-        vec![Self::Scope::Description]
+        vec![
+            Self::Scope::Id,
+            Self::Scope::Cve,
+            Self::Scope::Title,
+            Self::Scope::Description,
+            Self::Scope::Severity,
+            Self::Scope::Status,
+        ]
     }
 
     fn parse_query(q: &'a str) -> Result<Query<Self>, Error> {
@@ -77,7 +93,11 @@ impl<'a> Resource<'a> for Vulnerabilities<'a> {
             let invert = term.invert;
             let mut term = match term.expression {
                 mir::Expression::Predicate => match term.qualifier.as_slice() {
-                    // ["read"] => Term::Match(Self::Read),
+                    ["final"] => Term::Match(Self::Status(Primary::Equal("final"))),
+                    ["critical"] => Term::Match(Self::Severity(Primary::Equal("critical"))),
+                    ["high"] => Term::Match(Self::Severity(Primary::Equal("high"))),
+                    ["medium"] => Term::Match(Self::Severity(Primary::Equal("medium"))),
+                    ["low"] => Term::Match(Self::Severity(Primary::Equal("low"))),
                     _ => return Err(Error::UnknownPredicate(term.qualifier)),
                 },
                 mir::Expression::Simple(expression) => match term.qualifier.as_slice() {
@@ -89,10 +109,19 @@ impl<'a> Resource<'a> for Vulnerabilities<'a> {
                                 Self::Scope::Id => Term::Match(Self::Id(
                                     expression.into_expression(QualifierContext::Primary, mir::Qualifier::empty())?,
                                 )),
+                                Self::Scope::Cve => Term::Match(Self::Cve(
+                                    expression.into_expression(QualifierContext::Primary, mir::Qualifier::empty())?,
+                                )),
                                 Self::Scope::Title => Term::Match(Self::Title(
                                     expression.into_expression(QualifierContext::Primary, mir::Qualifier::empty())?,
                                 )),
                                 Self::Scope::Description => Term::Match(Self::Description(
+                                    expression.into_expression(QualifierContext::Primary, mir::Qualifier::empty())?,
+                                )),
+                                Self::Scope::Severity => Term::Match(Self::Severity(
+                                    expression.into_expression(QualifierContext::Primary, mir::Qualifier::empty())?,
+                                )),
+                                Self::Scope::Status => Term::Match(Self::Status(
                                     expression.into_expression(QualifierContext::Primary, mir::Qualifier::empty())?,
                                 )),
                             };
