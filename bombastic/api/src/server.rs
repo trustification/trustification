@@ -1,4 +1,4 @@
-use std::io;
+use std::io::{self};
 use std::net::SocketAddr;
 use std::str::FromStr;
 use std::sync::Arc;
@@ -96,7 +96,9 @@ async fn fetch_object(storage: &Storage, key: &str) -> HttpResponse {
     match storage.get(&key).await {
         Ok(obj) => {
             tracing::trace!("Retrieved object compressed: {}", obj.compressed);
-            if obj.compressed {
+            if obj.data.is_empty() {
+                HttpResponse::Ok().streaming(storage.get_stream(key).await)
+            } else if obj.compressed {
                 let mut out = Vec::new();
                 match ::zstd::stream::copy_decode(&obj.data[..], &mut out) {
                     Ok(_) => HttpResponse::Ok().body(out),

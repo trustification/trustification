@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 use std::fmt::Display;
 
+use bytes::Bytes;
+use futures::{Stream, TryStreamExt};
 use s3::creds::error::CredentialsError;
 pub use s3::creds::Credentials;
 use s3::error::S3Error;
@@ -207,6 +209,16 @@ impl Storage {
         let data = self.bucket.get_object(path).await?;
         let value: Object<'_> = bincode::deserialize(&data.as_slice())?;
         Ok(value.to_owned())
+    }
+
+    pub async fn get_stream(&self, key: &str) -> impl Stream<Item = Result<Bytes, Error>> {
+        let path = format!("{}{}", SBOM_PATH, key);
+        let (mut asyncwriter, asyncreader) = tokio::io::duplex(256 * 1024);
+        let bucket = self.bucket.clone(); // TODO: can i avoid this?
+        tokio::task::spawn(async move {
+            let _ = bucket.get_object_to_writer(path, &mut asyncwriter).await;
+        });
+        tokio_util::io::ReaderStream::new(asyncreader).err_into::<Error>()
     }
 
     pub async fn put_index(&self, index: &[u8]) -> Result<(), Error> {
