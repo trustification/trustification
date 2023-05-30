@@ -1,5 +1,4 @@
 //! Traits with required functionality for the event bus used in Bombastic.
-use std::fmt::Debug;
 
 #[async_trait::async_trait]
 pub trait Event {

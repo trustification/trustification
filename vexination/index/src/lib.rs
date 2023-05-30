@@ -4,7 +4,7 @@ use search::*;
 
 use csaf::{definitions::NoteCategory, Csaf};
 use sikula::prelude::*;
-use std::fmt::{write, Display};
+use std::fmt::Display;
 use std::path::PathBuf;
 use tantivy::collector::Count;
 use tantivy::collector::TopDocs;
@@ -16,7 +16,7 @@ use tantivy::schema::{Term, *};
 use tantivy::Directory;
 use tantivy::Index as SearchIndex;
 use tantivy::IndexWriter;
-use tracing::{info, warn};
+use tracing::info;
 
 pub struct Index {
     index: SearchIndex,
@@ -190,7 +190,7 @@ impl Index {
 
     pub fn new(path: &PathBuf) -> Result<Self, Error> {
         let (schema, fields) = Self::schema();
-        let dir = MmapDirectory::open(path).map_err(|e| Error::Open)?;
+        let dir = MmapDirectory::open(path).map_err(|_e| Error::Open)?;
         let index = SearchIndex::open_or_create(dir, schema)?;
         Ok(Self {
             index,
@@ -311,6 +311,13 @@ impl Index {
                 let term = Term::from_field_text(self.fields.status, value);
                 (occur, term)
             }
+
+            Vulnerabilities::Final => (Occur::Must, Term::from_field_text(self.fields.status, "final")),
+
+            Vulnerabilities::Critical => (Occur::Must, Term::from_field_text(self.fields.severity, "critical")),
+            Vulnerabilities::High => (Occur::Must, Term::from_field_text(self.fields.severity, "high")),
+            Vulnerabilities::Medium => (Occur::Must, Term::from_field_text(self.fields.severity, "medium")),
+            Vulnerabilities::Low => (Occur::Must, Term::from_field_text(self.fields.severity, "low")),
         };
 
         Box::new(BooleanQuery::new(vec![(
@@ -356,35 +363,74 @@ fn primary2occur<'m>(primary: &Primary<'m>) -> (Occur, &'m str) {
 mod tests {
     use super::*;
 
-    #[tokio::test]
-    async fn test_free_form() {
-        env_logger::init();
+    fn assert_free_form<F>(f: F)
+    where
+        F: FnOnce(Index),
+    {
+        let _ = env_logger::try_init();
+
         let data = std::fs::read_to_string("../testdata/rhsa-2023_1441.json").unwrap();
         let csaf: Csaf = serde_json::from_str(&data).unwrap();
         let mut index = Index::new_in_memory().unwrap();
         let mut writer = index.indexer().unwrap();
         writer.index(&mut index, &csaf).unwrap();
         writer.commit().unwrap();
+        f(index);
+    }
 
-        let result = index.search("openssl", 0, 100).unwrap();
-        assert_eq!(result.len(), 1);
+    #[tokio::test]
+    async fn test_free_form_simple_primary() {
+        assert_free_form(|index| {
+            let result = index.search("openssl", 0, 100).unwrap();
+            assert_eq!(result.len(), 1);
+        });
+    }
 
-        let result = index.search("CVE-2023-0286", 0, 100).unwrap();
-        assert_eq!(result.len(), 1);
+    #[tokio::test]
+    async fn test_free_form_simple_primary_2() {
+        assert_free_form(|index| {
+            let result = index.search("CVE-2023-0286", 0, 100).unwrap();
+            assert_eq!(result.len(), 1);
+        });
+    }
 
-        let result = index.search("RHSA-2023:1441", 0, 100).unwrap();
-        assert_eq!(result.len(), 1);
+    #[tokio::test]
+    async fn test_free_form_simple_primary_3() {
+        assert_free_form(|index| {
+            let result = index.search("RHSA-2023:1441", 0, 100).unwrap();
+            assert_eq!(result.len(), 1);
+        });
+    }
 
-        let result = index.search("RHSA-2023:1441 in:id", 0, 100).unwrap();
-        assert_eq!(result.len(), 1);
+    #[tokio::test]
+    async fn test_free_form_primary_scoped() {
+        assert_free_form(|index| {
+            let result = index.search("RHSA-2023:1441 in:id", 0, 100).unwrap();
+            assert_eq!(result.len(), 1);
+        });
+    }
 
-        let result = index.search("is:final", 0, 100).unwrap();
-        assert_eq!(result.len(), 1);
+    #[tokio::test]
+    async fn test_free_form_predicate_final() {
+        assert_free_form(|index| {
+            let result = index.search("is:final", 0, 100).unwrap();
+            assert_eq!(result.len(), 1);
+        });
+    }
 
-        let result = index.search("is:high", 0, 100).unwrap();
-        assert_eq!(result.len(), 1);
+    #[tokio::test]
+    async fn test_free_form_predicate_high() {
+        assert_free_form(|index| {
+            let result = index.search("is:high", 0, 100).unwrap();
+            assert_eq!(result.len(), 1);
+        });
+    }
 
-        let result = index.search("is:critical", 0, 100).unwrap();
-        assert_eq!(result.len(), 0);
+    #[tokio::test]
+    async fn test_free_form_predicate_critical() {
+        assert_free_form(|index| {
+            let result = index.search("is:critical", 0, 100).unwrap();
+            assert_eq!(result.len(), 0);
+        });
     }
 }
