@@ -29,6 +29,8 @@ pub struct Index {
 pub struct Fields {
     id: Field,
     description: Field,
+    cve: Field,
+    packages: Field,
 }
 
 #[derive(Debug)]
@@ -74,6 +76,22 @@ impl Indexer {
         if let Some(vulns) = &csaf.vulnerabilities {
             for vuln in vulns {
                 let mut description = String::new();
+                let mut packages: Vec<String> = Vec::new();
+                let mut cve = String::new();
+
+                if let Some(c) = &vuln.cve {
+                    cve = c.clone();
+                }
+
+                if let Some(status) = &vuln.product_status {
+                    if let Some(products) = &status.known_affected {
+                        for product in products {
+                            packages.push(product.0.clone());
+                        }
+                    }
+                }
+                let packages = packages.join(" ");
+
                 if let Some(notes) = &vuln.notes {
                     for note in notes {
                         if let NoteCategory::Description = note.category {
@@ -82,10 +100,18 @@ impl Indexer {
                         }
                     }
 
-                    info!("Indexing with id {} description {}", id, description);
+                    tracing::debug!(
+                        "Indexing with id {} description {}, cve {}, packages {}",
+                        id,
+                        description,
+                        cve,
+                        packages
+                    );
                     let document = doc!(
                         index.fields.id => id.as_str(),
                         index.fields.description => description,
+                        index.fields.packages => packages,
+                        index.fields.cve => cve,
                     );
 
                     self.writer.add_document(document)?;
@@ -107,7 +133,17 @@ impl Index {
         let mut schema = Schema::builder();
         let id = schema.add_text_field("id", STRING | FAST | STORED);
         let description = schema.add_text_field("description", TEXT);
-        (schema.build(), Fields { id, description })
+        let cve = schema.add_text_field("cve", STRING | FAST | STORED);
+        let packages = schema.add_text_field("packages", STRING);
+        (
+            schema.build(),
+            Fields {
+                id,
+                description,
+                cve,
+                packages,
+            },
+        )
     }
 
     pub fn new_in_memory() -> Result<Self, Error> {
@@ -297,7 +333,13 @@ mod tests {
         writer.index(&mut index, &csaf).unwrap();
         writer.commit().unwrap();
 
-        let result = index.search("openssl", &[], &[], 0, 100).unwrap();
+        let result = index.search_x("openssl", &[], &[], 0, 100).unwrap();
+        assert_eq!(result.len(), 1);
+
+        let result = index.search_x("CVE-2023-0286", &[], &[], 0, 100).unwrap();
+        assert_eq!(result.len(), 1);
+
+        let result = index.search_x("RHSA-2023:1441", &[], &[], 0, 100).unwrap();
         assert_eq!(result.len(), 1);
     }
 }
