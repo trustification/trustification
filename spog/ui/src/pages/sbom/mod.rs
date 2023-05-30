@@ -5,7 +5,10 @@ mod upload;
 use crate::components::common::PageHeading;
 use cyclonedx_bom::prelude::*;
 use inspect::Inspect;
-use patternfly_yew::prelude::*;
+use patternfly_yew::{
+    next::{Card, CardBody},
+    prelude::*,
+};
 use std::rc::Rc;
 use upload::Upload;
 use yew::prelude::*;
@@ -51,7 +54,9 @@ pub fn sbom() -> Html {
                                 <Card
                                     title={html!(<Title> {"SBOM content"} </Title>)}
                                 >
-                                    <Upload {onsubmit} {onvalidate}/>
+                                    <CardBody>
+                                        <Upload {onsubmit} {onvalidate}/>
+                                    </CardBody>
                                 </Card>
                             </GridItem>
                             <GridItem cols={[4]}>
@@ -84,24 +89,26 @@ fn generate_card() -> Html {
         <Card
             title={html!(<Title>{"Generate"}</Title>)}
         >
-            <Tabs r#box=true>
-                <Tab label="Container">
-                    <Content>
-                        <p> { "Run the following command:" } </p>
-                        <p> <TextInput readonly=true value={container}  /> </p>
-                        <p> { "Be sure to replace " } <code> {"<container>"} </code> { "with the actual name of the container, for example:" } </p>
-                        <p> <Clipboard readonly=true code=true value={container_example} variant={ClipboardVariant::Expanded} /> </p>
-                        <p> { "The SBOM will be generated as: " } <code> { "target/sbom.json" } </code> </p>
-                    </Content>
-                </Tab>
-                <Tab label="Maven">
-                    <Content>
-                        <p> { "Run the following command from the root of your project:" } </p>
-                        <p> <Clipboard readonly=true code=true value={maven} variant={ClipboardVariant::Expanded} /> </p>
-                        <p> { "The SBOM will be generated as: " } <code> { "sbom.json" } </code> </p>
-                    </Content>
-                </Tab>
-            </Tabs>
+            <CardBody>
+                <Tabs r#box=true>
+                    <Tab label="Container">
+                        <Content>
+                            <p> { "Run the following command:" } </p>
+                            <p> <TextInput readonly=true value={container}  /> </p>
+                            <p> { "Be sure to replace " } <code> {"<container>"} </code> { "with the actual name of the container, for example:" } </p>
+                            <p> <Clipboard readonly=true code=true value={container_example} variant={ClipboardVariant::Expanded} /> </p>
+                            <p> { "The SBOM will be generated as: " } <code> { "target/sbom.json" } </code> </p>
+                        </Content>
+                    </Tab>
+                    <Tab label="Maven">
+                        <Content>
+                            <p> { "Run the following command from the root of your project:" } </p>
+                            <p> <Clipboard readonly=true code=true value={maven} variant={ClipboardVariant::Expanded} /> </p>
+                            <p> { "The SBOM will be generated as: " } <code> { "sbom.json" } </code> </p>
+                        </Content>
+                    </Tab>
+                </Tabs>
+            </CardBody>
         </Card>
     )
 }
