@@ -30,5 +30,5 @@ pub async fn search(state: web::Data<SharedState>, params: web::Query<QueryParam
 }
 
 async fn search_vex(index: &Index, q: &str) -> anyhow::Result<Vec<String>> {
-    Ok(index.search(q, &[], &[], 0, 10)?)
+    Ok(index.search(q, 0, 10)?)
 }

@@ -8,12 +8,10 @@ use std::fmt::{write, Display};
 use std::path::PathBuf;
 use tantivy::collector::Count;
 use tantivy::collector::TopDocs;
-use tantivy::directory::DirectoryLock;
 use tantivy::directory::MmapDirectory;
 use tantivy::directory::INDEX_WRITER_LOCK;
 use tantivy::doc;
-use tantivy::merge_policy::LogMergePolicy;
-use tantivy::query::{TermQuery, TermSetQuery};
+use tantivy::query::{BooleanQuery, Occur, Query, TermQuery};
 use tantivy::schema::{Term, *};
 use tantivy::Directory;
 use tantivy::Index as SearchIndex;
@@ -28,8 +26,11 @@ pub struct Index {
 
 pub struct Fields {
     id: Field,
+    title: Field,
     description: Field,
     cve: Field,
+    severity: Field,
+    status: Field,
     packages: Field,
 }
 
@@ -73,14 +74,35 @@ pub struct Indexer {
 impl Indexer {
     pub fn index(&mut self, index: &mut Index, csaf: &Csaf) -> Result<(), Error> {
         let id = &csaf.document.tracking.id;
+        let status = match &csaf.document.tracking.status {
+            csaf::document::Status::Draft => "draft",
+            csaf::document::Status::Interim => "interim",
+            csaf::document::Status::Final => "final",
+        };
+
         if let Some(vulns) = &csaf.vulnerabilities {
             for vuln in vulns {
+                let mut title = String::new();
                 let mut description = String::new();
                 let mut packages: Vec<String> = Vec::new();
                 let mut cve = String::new();
+                let mut severity = String::new();
+
+                if let Some(t) = &vuln.title {
+                    title = t.clone();
+                }
 
                 if let Some(c) = &vuln.cve {
                     cve = c.clone();
+                }
+
+                if let Some(scores) = &vuln.scores {
+                    for score in scores {
+                        if let Some(cvss3) = &score.cvss_v3 {
+                            severity = cvss3.severity().as_str().to_string();
+                            break;
+                        }
+                    }
                 }
 
                 if let Some(status) = &vuln.product_status {
@@ -101,17 +123,21 @@ impl Indexer {
                     }
 
                     tracing::debug!(
-                        "Indexing with id {} description {}, cve {}, packages {}",
+                        "Indexing with id {} title {} description {}, cve {}, packages {}",
                         id,
+                        title,
                         description,
                         cve,
                         packages
                     );
                     let document = doc!(
                         index.fields.id => id.as_str(),
+                        index.fields.title => title,
                         index.fields.description => description,
                         index.fields.packages => packages,
                         index.fields.cve => cve,
+                        index.fields.status => status,
+                        index.fields.severity => severity,
                     );
 
                     self.writer.add_document(document)?;
@@ -132,15 +158,21 @@ impl Index {
     fn schema() -> (Schema, Fields) {
         let mut schema = Schema::builder();
         let id = schema.add_text_field("id", STRING | FAST | STORED);
+        let title = schema.add_text_field("title", TEXT);
         let description = schema.add_text_field("description", TEXT);
         let cve = schema.add_text_field("cve", STRING | FAST | STORED);
+        let severity = schema.add_text_field("severity", STRING | FAST);
+        let status = schema.add_text_field("status", STRING);
         let packages = schema.add_text_field("packages", STRING);
         (
             schema.build(),
             Fields {
                 id,
+                title,
                 description,
                 cve,
+                severity,
+                status,
                 packages,
             },
         )
@@ -187,7 +219,7 @@ impl Index {
         if let Some(path) = &self.path {
             tracing::info!("Committing index to path {:?}", path);
             indexer.commit()?;
-            let lock = self.index.directory_mut().sync_directory().map_err(Error::Io)?;
+            self.index.directory_mut().sync_directory().map_err(Error::Io)?;
             let lock = self.index.directory_mut().acquire_lock(&INDEX_WRITER_LOCK);
 
             let mut out = Vec::new();
@@ -211,27 +243,19 @@ impl Index {
         Ok(Indexer { writer })
     }
 
-    pub fn search_x(
-        &self,
-        query: &str,
-        fields: &[&str],
-        filters: &[(&str, &str)],
-        offset: usize,
-        len: usize,
-    ) -> Result<Vec<String>, Error> {
-        let schema = self.index.schema();
+    pub fn search(&self, q: &str, offset: usize, len: usize) -> Result<Vec<String>, Error> {
+        let mut query = Vulnerabilities::parse_query(&q).map_err(|err| Error::Parser(err.to_string()))?;
+
         let reader = self.index.reader()?;
         let searcher = reader.searcher();
 
-        let mut terms = vec![];
-        for field in schema.fields() {
-            let field_name = field.1.name();
-            if fields.is_empty() || fields.contains(&field_name) {
-                terms.push(Term::from_field_text(field.0, query));
-            }
-        }
+        query.term = query.term.compact();
 
-        let query = TermSetQuery::new(terms);
+        info!("Query: {query:?}");
+
+        let query = self.term2query(&query.term);
+
+        info!("Processed query: {:?}", query);
 
         let (top_docs, count) = searcher.search(&query, &(TopDocs::with_limit(len).and_offset(offset), Count))?;
 
@@ -250,72 +274,81 @@ impl Index {
         Ok(hits)
     }
 
-    pub fn search(
-        &self,
-        q: &str,
-        fields: &[&str],
-        filters: &[(&str, &str)],
-        offset: usize,
-        len: usize,
-    ) -> Result<Vec<String>, Error> {
-        let mut query = Vulnerabilities::parse_query(&q).map_err(|err| Error::Parser(err.to_string()))?;
-
-        let schema = self.index.schema();
-        let reader = self.index.reader()?;
-        let searcher = reader.searcher();
-
-        query.term = query.term.compact();
-
-        info!("Query: {query:?}");
-        info!("Fields: {:?}", schema.fields().collect::<Vec<_>>());
-
-        let mut terms = vec![];
-        match query.term.compact() {
-            sikula::prelude::Term::Match(Vulnerabilities::Id(Primary::Equal(value))) => {
-                terms.push(Term::from_field_text(schema.get_field("id").unwrap(), value));
+    fn resource2query<'m>(&self, resource: &Vulnerabilities<'m>) -> Box<dyn Query> {
+        let (occur, term) = match resource {
+            Vulnerabilities::Id(primary) => {
+                let (occur, value) = primary2occur(primary);
+                let term = Term::from_field_text(self.fields.id, value);
+                (occur, term)
             }
-            sikula::prelude::Term::Match(Vulnerabilities::Id(Primary::Partial(value))) => {
-                terms.push(Term::from_field_text(schema.get_field("id").unwrap(), value));
+
+            Vulnerabilities::Cve(primary) => {
+                let (occur, value) = primary2occur(primary);
+                let term = Term::from_field_text(self.fields.cve, value);
+                (occur, term)
             }
-            sikula::prelude::Term::Match(Vulnerabilities::Description(Primary::Equal(value))) => {
-                terms.push(Term::from_field_text(schema.get_field("description").unwrap(), value));
+
+            Vulnerabilities::Description(primary) => {
+                let (occur, value) = primary2occur(primary);
+                let term = Term::from_field_text(self.fields.description, value);
+                (occur, term)
             }
-            sikula::prelude::Term::Match(Vulnerabilities::Description(Primary::Partial(value))) => {
-                terms.push(Term::from_field_text(schema.get_field("description").unwrap(), value));
+
+            Vulnerabilities::Title(primary) => {
+                let (occur, value) = primary2occur(primary);
+                let term = Term::from_field_text(self.fields.title, value);
+                (occur, term)
             }
-            n => {
-                warn!("Ignoring search term: {n:?}");
+
+            Vulnerabilities::Severity(primary) => {
+                let (occur, value) = primary2occur(primary);
+                let term = Term::from_field_text(self.fields.severity, value);
+                (occur, term)
+            }
+
+            Vulnerabilities::Status(primary) => {
+                let (occur, value) = primary2occur(primary);
+                let term = Term::from_field_text(self.fields.status, value);
+                (occur, term)
+            }
+        };
+
+        Box::new(BooleanQuery::new(vec![(
+            occur,
+            Box::new(TermQuery::new(term, IndexRecordOption::Basic)),
+        )]))
+    }
+
+    fn term2query<'m>(&self, term: &sikula::prelude::Term<'m, Vulnerabilities<'m>>) -> Box<dyn Query> {
+        match term {
+            sikula::prelude::Term::Match(resource) => self.resource2query(resource),
+            sikula::prelude::Term::Not(term) => {
+                let query_terms = vec![(Occur::MustNot, self.term2query(&term))];
+                let query = BooleanQuery::new(query_terms);
+                Box::new(query)
+            }
+            sikula::prelude::Term::And(terms) => {
+                let mut query_terms = Vec::new();
+                for term in terms {
+                    query_terms.push(self.term2query(&term));
+                }
+                Box::new(BooleanQuery::intersection(query_terms))
+            }
+            sikula::prelude::Term::Or(terms) => {
+                let mut query_terms = Vec::new();
+                for term in terms {
+                    query_terms.push(self.term2query(&term));
+                }
+                Box::new(BooleanQuery::union(query_terms))
             }
         }
+    }
+}
 
-        info!("Terms: {terms:?}");
-
-        /*
-        let mut terms = vec![];
-        for field in schema.fields() {
-            let field_name = field.1.name();
-            if fields.is_empty() || fields.contains(&field_name) {
-                terms.push(Term::from_field_text(field.0, q));
-            }
-        }*/
-
-        let query = TermSetQuery::new(terms);
-
-        let (top_docs, count) = searcher.search(&query, &(TopDocs::with_limit(len).and_offset(offset), Count))?;
-
-        tracing::trace!("Found {} docs", count);
-
-        let mut hits = Vec::new();
-        for hit in top_docs {
-            let doc = searcher.doc(hit.1)?;
-            if let Some(Some(value)) = doc.get_first(self.fields.id).map(|s| s.as_text()) {
-                hits.push(value.into());
-            }
-        }
-
-        tracing::trace!("Filtered to {}", hits.len());
-
-        Ok(hits)
+fn primary2occur<'m>(primary: &Primary<'m>) -> (Occur, &'m str) {
+    match primary {
+        Primary::Equal(value) => (Occur::Must, value),
+        Primary::Partial(value) => (Occur::Should, value),
     }
 }
 
@@ -324,7 +357,7 @@ mod tests {
     use super::*;
 
     #[tokio::test]
-    async fn test_basic() {
+    async fn test_free_form() {
         env_logger::init();
         let data = std::fs::read_to_string("../testdata/rhsa-2023_1441.json").unwrap();
         let csaf: Csaf = serde_json::from_str(&data).unwrap();
@@ -333,13 +366,25 @@ mod tests {
         writer.index(&mut index, &csaf).unwrap();
         writer.commit().unwrap();
 
-        let result = index.search_x("openssl", &[], &[], 0, 100).unwrap();
+        let result = index.search("openssl", 0, 100).unwrap();
         assert_eq!(result.len(), 1);
 
-        let result = index.search_x("CVE-2023-0286", &[], &[], 0, 100).unwrap();
+        let result = index.search("CVE-2023-0286", 0, 100).unwrap();
         assert_eq!(result.len(), 1);
 
-        let result = index.search_x("RHSA-2023:1441", &[], &[], 0, 100).unwrap();
+        let result = index.search("RHSA-2023:1441", 0, 100).unwrap();
         assert_eq!(result.len(), 1);
+
+        let result = index.search("RHSA-2023:1441 in:id", 0, 100).unwrap();
+        assert_eq!(result.len(), 1);
+
+        let result = index.search("is:final", 0, 100).unwrap();
+        assert_eq!(result.len(), 1);
+
+        let result = index.search("is:high", 0, 100).unwrap();
+        assert_eq!(result.len(), 1);
+
+        let result = index.search("is:critical", 0, 100).unwrap();
+        assert_eq!(result.len(), 0);
     }
 }
