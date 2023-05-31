@@ -24,4 +24,4 @@ members = [
 ]
 
 [patch.crates-io]
-sikula = { git = "https://github.com/ctron/sikula", rev = "85760a329b852a485fc8b323f7e50e49f88c32a7" }
+sikula = { git = "https://github.com/ctron/sikula", rev = "d2c83dc3eab4f6945c8efb7121da5c62310ae8ec" }

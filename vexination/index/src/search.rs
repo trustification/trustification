@@ -1,7 +1,7 @@
 use sikula::prelude::*;
 
 // TODO: reconsider using scoped/primary for some fields, like status and severity
-#[derive(Clone, Debug, PartialEq, Eq, Search)]
+#[derive(Clone, Debug, PartialEq, Search)]
 pub enum Vulnerabilities<'a> {
     #[search(default)]
     Id(Primary<'a>),
@@ -15,7 +15,14 @@ pub enum Vulnerabilities<'a> {
     Status(Primary<'a>),
     #[search(default)]
     Severity(Primary<'a>),
-
+    #[search(default)]
+    Cvss(PartialOrdered<f64>),
+    #[search]
+    Initial(Ordered<time::OffsetDateTime>),
+    #[search]
+    Release(Ordered<time::OffsetDateTime>),
+    #[search]
+    Discovery(Ordered<time::OffsetDateTime>),
     Final,
     Critical,
     High,

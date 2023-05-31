@@ -5,17 +5,18 @@ use search::*;
 use csaf::{definitions::NoteCategory, Csaf};
 use sikula::prelude::*;
 use std::fmt::Display;
+use std::ops::Bound;
 use std::path::PathBuf;
 use tantivy::collector::Count;
 use tantivy::collector::TopDocs;
 use tantivy::directory::MmapDirectory;
 use tantivy::directory::INDEX_WRITER_LOCK;
-use tantivy::doc;
-use tantivy::query::{BooleanQuery, Occur, Query, TermQuery};
+use tantivy::query::{BooleanQuery, Occur, Query, RangeQuery, TermQuery, TermSetQuery};
 use tantivy::schema::{Term, *};
 use tantivy::Directory;
 use tantivy::Index as SearchIndex;
 use tantivy::IndexWriter;
+use tantivy::{doc, DateTime};
 use tracing::info;
 
 pub struct Index {
@@ -29,7 +30,12 @@ pub struct Fields {
     title: Field,
     description: Field,
     cve: Field,
+    advisory_initial: Field,
+    advisory_current: Field,
+    cve_release: Field,
+    cve_discovery: Field,
     severity: Field,
+    cvss: Field,
     status: Field,
     packages: Field,
 }
@@ -96,10 +102,12 @@ impl Indexer {
                     cve = c.clone();
                 }
 
+                let mut score_value = 0.0;
                 if let Some(scores) = &vuln.scores {
                     for score in scores {
                         if let Some(cvss3) = &score.cvss_v3 {
                             severity = cvss3.severity().as_str().to_string();
+                            score_value = cvss3.score().value();
                             break;
                         }
                     }
@@ -123,14 +131,15 @@ impl Indexer {
                     }
 
                     tracing::debug!(
-                        "Indexing with id {} title {} description {}, cve {}, packages {}",
+                        "Indexing with id {} title {} description {}, cve {}, packages {} score {}",
                         id,
                         title,
                         description,
                         cve,
-                        packages
+                        packages,
+                        score_value,
                     );
-                    let document = doc!(
+                    let mut document = doc!(
                         index.fields.id => id.as_str(),
                         index.fields.title => title,
                         index.fields.description => description,
@@ -138,7 +147,32 @@ impl Indexer {
                         index.fields.cve => cve,
                         index.fields.status => status,
                         index.fields.severity => severity,
+                        index.fields.cvss => score_value,
                     );
+
+                    document.add_date(
+                        index.fields.advisory_initial,
+                        DateTime::from_timestamp_millis(csaf.document.tracking.initial_release_date.timestamp_millis()),
+                    );
+
+                    document.add_date(
+                        index.fields.advisory_current,
+                        DateTime::from_timestamp_millis(csaf.document.tracking.current_release_date.timestamp_millis()),
+                    );
+
+                    if let Some(discovery_date) = &vuln.discovery_date {
+                        document.add_date(
+                            index.fields.cve_discovery,
+                            DateTime::from_timestamp_millis(discovery_date.timestamp_millis()),
+                        );
+                    }
+
+                    if let Some(release_date) = &vuln.release_date {
+                        document.add_date(
+                            index.fields.cve_release,
+                            DateTime::from_timestamp_millis(release_date.timestamp_millis()),
+                        );
+                    }
 
                     self.writer.add_document(document)?;
                 }
@@ -163,17 +197,27 @@ impl Index {
         let cve = schema.add_text_field("cve", STRING | FAST | STORED);
         let severity = schema.add_text_field("severity", STRING | FAST);
         let status = schema.add_text_field("status", STRING);
+        let cvss = schema.add_f64_field("cvss", FAST | INDEXED);
         let packages = schema.add_text_field("packages", STRING);
+        let advisory_initial = schema.add_date_field("advisory_initial_date", INDEXED);
+        let advisory_current = schema.add_date_field("advisory_current_date", INDEXED);
+        let cve_discovery = schema.add_date_field("cve_discovery_date", INDEXED);
+        let cve_release = schema.add_date_field("cve_release_date", INDEXED);
         (
             schema.build(),
             Fields {
                 id,
+                cvss,
                 title,
                 description,
                 cve,
                 severity,
                 status,
                 packages,
+                advisory_initial,
+                advisory_current,
+                cve_discovery,
+                cve_release,
             },
         )
     }
@@ -275,55 +319,130 @@ impl Index {
     }
 
     fn resource2query<'m>(&self, resource: &Vulnerabilities<'m>) -> Box<dyn Query> {
-        let (occur, term) = match resource {
+        fn create_boolean(occur: Occur, term: Term) -> Box<dyn Query> {
+            Box::new(BooleanQuery::new(vec![(
+                occur,
+                Box::new(TermQuery::new(term, IndexRecordOption::Basic)),
+            )]))
+        }
+
+        match resource {
             Vulnerabilities::Id(primary) => {
                 let (occur, value) = primary2occur(primary);
                 let term = Term::from_field_text(self.fields.id, value);
-                (occur, term)
+                create_boolean(occur, term)
             }
 
             Vulnerabilities::Cve(primary) => {
                 let (occur, value) = primary2occur(primary);
                 let term = Term::from_field_text(self.fields.cve, value);
-                (occur, term)
+                create_boolean(occur, term)
             }
 
             Vulnerabilities::Description(primary) => {
                 let (occur, value) = primary2occur(primary);
                 let term = Term::from_field_text(self.fields.description, value);
-                (occur, term)
+                create_boolean(occur, term)
             }
 
             Vulnerabilities::Title(primary) => {
                 let (occur, value) = primary2occur(primary);
                 let term = Term::from_field_text(self.fields.title, value);
-                (occur, term)
+                create_boolean(occur, term)
             }
 
             Vulnerabilities::Severity(primary) => {
                 let (occur, value) = primary2occur(primary);
                 let term = Term::from_field_text(self.fields.severity, value);
-                (occur, term)
+                create_boolean(occur, term)
             }
 
             Vulnerabilities::Status(primary) => {
                 let (occur, value) = primary2occur(primary);
                 let term = Term::from_field_text(self.fields.status, value);
-                (occur, term)
+                create_boolean(occur, term)
             }
+            Vulnerabilities::Final => create_boolean(Occur::Must, Term::from_field_text(self.fields.status, "final")),
+            Vulnerabilities::Critical => {
+                create_boolean(Occur::Must, Term::from_field_text(self.fields.severity, "critical"))
+            }
+            Vulnerabilities::High => create_boolean(Occur::Must, Term::from_field_text(self.fields.severity, "high")),
+            Vulnerabilities::Medium => {
+                create_boolean(Occur::Must, Term::from_field_text(self.fields.severity, "medium"))
+            }
+            Vulnerabilities::Low => create_boolean(Occur::Must, Term::from_field_text(self.fields.severity, "low")),
+            Vulnerabilities::Cvss(ordered) => match ordered {
+                PartialOrdered::Less(e) => Box::new(RangeQuery::new_f64_bounds(
+                    self.fields.cvss,
+                    Bound::Unbounded,
+                    Bound::Excluded(*e),
+                )),
+                PartialOrdered::LessEqual(e) => Box::new(RangeQuery::new_f64_bounds(
+                    self.fields.cvss,
+                    Bound::Unbounded,
+                    Bound::Included(*e),
+                )),
+                PartialOrdered::Greater(e) => Box::new(RangeQuery::new_f64_bounds(
+                    self.fields.cvss,
+                    Bound::Excluded(*e),
+                    Bound::Unbounded,
+                )),
+                PartialOrdered::GreaterEqual(e) => Box::new(RangeQuery::new_f64_bounds(
+                    self.fields.cvss,
+                    Bound::Included(*e),
+                    Bound::Unbounded,
+                )),
+                PartialOrdered::Range(from, to) => Box::new(RangeQuery::new_f64_bounds(self.fields.cvss, *from, *to)),
+            },
+            Vulnerabilities::Initial(ordered) => Self::create_date_query(self.fields.advisory_initial, ordered),
+            Vulnerabilities::Release(ordered) => {
+                let q1 = Self::create_date_query(self.fields.advisory_current, ordered);
+                let q2 = Self::create_date_query(self.fields.cve_release, ordered);
+                Box::new(BooleanQuery::union(vec![q1, q2]))
+            }
+            Vulnerabilities::Discovery(ordered) => Self::create_date_query(self.fields.cve_discovery, ordered),
+        }
+    }
 
-            Vulnerabilities::Final => (Occur::Must, Term::from_field_text(self.fields.status, "final")),
-
-            Vulnerabilities::Critical => (Occur::Must, Term::from_field_text(self.fields.severity, "critical")),
-            Vulnerabilities::High => (Occur::Must, Term::from_field_text(self.fields.severity, "high")),
-            Vulnerabilities::Medium => (Occur::Must, Term::from_field_text(self.fields.severity, "medium")),
-            Vulnerabilities::Low => (Occur::Must, Term::from_field_text(self.fields.severity, "low")),
-        };
-
-        Box::new(BooleanQuery::new(vec![(
-            occur,
-            Box::new(TermQuery::new(term, IndexRecordOption::Basic)),
-        )]))
+    fn create_date_query(field: Field, value: &Ordered<time::OffsetDateTime>) -> Box<dyn Query> {
+        match value {
+            Ordered::Less(e) => Box::new(RangeQuery::new_term_bounds(
+                field,
+                Type::Date,
+                &Bound::Unbounded,
+                &Bound::Excluded(Term::from_field_date(field, DateTime::from_utc(*e))),
+            )),
+            Ordered::LessEqual(e) => Box::new(RangeQuery::new_term_bounds(
+                field,
+                Type::Date,
+                &Bound::Unbounded,
+                &Bound::Included(Term::from_field_date(field, DateTime::from_utc(*e))),
+            )),
+            Ordered::Greater(e) => Box::new(RangeQuery::new_term_bounds(
+                field,
+                Type::Date,
+                &Bound::Excluded(Term::from_field_date(field, DateTime::from_utc(*e))),
+                &Bound::Unbounded,
+            )),
+            Ordered::GreaterEqual(e) => Box::new(RangeQuery::new_term_bounds(
+                field,
+                Type::Date,
+                &Bound::Included(Term::from_field_date(field, DateTime::from_utc(*e))),
+                &Bound::Unbounded,
+            )),
+            Ordered::Equal(e) => Box::new(BooleanQuery::new(vec![(
+                Occur::Must,
+                Box::new(TermQuery::new(
+                    Term::from_field_date(field, DateTime::from_utc(*e)),
+                    Default::default(),
+                )),
+            )])),
+            Ordered::Range(from, to) => {
+                let from = bound_map(*from, |f| Term::from_field_date(field, DateTime::from_utc(f)));
+                let to = bound_map(*to, |f| Term::from_field_date(field, DateTime::from_utc(f)));
+                Box::new(RangeQuery::new_term_bounds(field, Type::Date, &from, &to))
+            }
+        }
     }
 
     fn term2query<'m>(&self, term: &sikula::prelude::Term<'m, Vulnerabilities<'m>>) -> Box<dyn Query> {
@@ -356,6 +475,14 @@ fn primary2occur<'m>(primary: &Primary<'m>) -> (Occur, &'m str) {
     match primary {
         Primary::Equal(value) => (Occur::Must, value),
         Primary::Partial(value) => (Occur::Should, value),
+    }
+}
+
+fn bound_map<F: FnOnce(T) -> R, T, R>(bound: Bound<T>, func: F) -> Bound<R> {
+    match bound {
+        Bound::Included(f) => Bound::Included(func(f)),
+        Bound::Excluded(f) => Bound::Excluded(func(f)),
+        Bound::Unbounded => Bound::Unbounded,
     }
 }
 
@@ -431,6 +558,40 @@ mod tests {
         assert_free_form(|index| {
             let result = index.search("is:critical", 0, 100).unwrap();
             assert_eq!(result.len(), 0);
+        });
+    }
+
+    #[tokio::test]
+    async fn test_free_form_ranges() {
+        assert_free_form(|index| {
+            let result = index.search("cvss:>5", 0, 100).unwrap();
+            assert_eq!(result.len(), 1);
+
+            let result = index.search("cvss:<5", 0, 100).unwrap();
+            assert_eq!(result.len(), 0);
+        });
+    }
+
+    #[tokio::test]
+    async fn test_free_form_dates() {
+        assert_free_form(|index| {
+            let result = index.search("initial:>2022-01-01", 0, 100).unwrap();
+            assert_eq!(result.len(), 1);
+
+            let result = index.search("discovery:>2022-01-01", 0, 100).unwrap();
+            assert_eq!(result.len(), 1);
+
+            let result = index.search("release:>2022-01-01", 0, 100).unwrap();
+            assert_eq!(result.len(), 1);
+
+            let result = index.search("release:>2023-02-08", 0, 100).unwrap();
+            assert_eq!(result.len(), 1);
+
+            let result = index.search("release:2022-01-01..2023-01-01", 0, 100).unwrap();
+            assert_eq!(result.len(), 0);
+
+            let result = index.search("release:2022-01-01..2024-01-01", 0, 100).unwrap();
+            assert_eq!(result.len(), 1);
         });
     }
 }
