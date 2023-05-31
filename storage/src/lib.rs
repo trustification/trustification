@@ -1,7 +1,7 @@
-use std::collections::HashMap;
 use std::fmt::Display;
+use std::{collections::HashMap, marker::Unpin};
 
-use bytes::Bytes;
+use bytes::{Buf, Bytes};
 use futures::{Stream, TryStreamExt};
 use s3::creds::error::CredentialsError;
 pub use s3::creds::Credentials;
@@ -9,7 +9,7 @@ use s3::error::S3Error;
 use s3::Bucket;
 pub use s3::Region;
 use serde::{Deserialize, Serialize};
-use tokio::io::AsyncRead;
+use tokio_util::io::{ReaderStream, StreamReader};
 
 pub enum StorageType {
     Minio,
@@ -193,15 +193,16 @@ impl Storage {
         Ok(())
     }
 
-    pub async fn put_stream<R: AsyncRead + Unpin>(
-        &self,
-        key: &str,
-        value: Object<'_>,
-        reader: &mut R,
-    ) -> Result<u16, Error> {
+    pub async fn put_stream<S, B, E>(&self, key: &str, value: Object<'_>, s: &mut S) -> Result<u16, Error>
+    where
+        S: Stream<Item = Result<B, E>> + Unpin,
+        B: Buf,
+        E: Into<std::io::Error>,
+    {
+        let mut reader = StreamReader::new(s);
         self.put(key, value).await?;
         let path = format!("{}{}", SBOM_PATH, key);
-        Ok(self.bucket.put_object_stream(reader, path).await?)
+        Ok(self.bucket.put_object_stream(&mut reader, path).await?)
     }
 
     pub async fn get(&self, key: &str) -> Result<OwnedObject, Error> {
@@ -218,7 +219,7 @@ impl Storage {
         tokio::task::spawn(async move {
             let _ = bucket.get_object_to_writer(path, &mut asyncwriter).await;
         });
-        tokio_util::io::ReaderStream::new(asyncreader).err_into::<Error>()
+        ReaderStream::new(asyncreader).err_into::<Error>()
     }
 
     pub async fn put_index(&self, index: &[u8]) -> Result<(), Error> {

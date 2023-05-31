@@ -4,13 +4,13 @@ use std::str::FromStr;
 use std::sync::Arc;
 use std::time::Duration;
 
+use actix_web::error::PayloadError;
 use actix_web::middleware::Logger;
 use actix_web::{guard, web, App, HttpResponse, HttpServer, Responder};
 use bombastic_index::Index;
 use futures::TryStreamExt;
 use serde::Deserialize;
 use tokio::sync::{Mutex, RwLock};
-use tokio_util::io::StreamReader;
 use tracing::info;
 use trustification_storage::{Object, Storage};
 
@@ -236,8 +236,11 @@ async fn publish_large_sbom(
     let mut annotations = std::collections::HashMap::new();
     annotations.insert("digest", params.sha256.as_str());
     let value = Object::new(&params.purl, annotations, None, false);
-    let mut reader = StreamReader::new(payload.map_err(|e| io::Error::new(io::ErrorKind::Other, e)));
-    match storage.put_stream(&params.purl, value, &mut reader).await {
+    let mut payload = payload.map_err(|e| match e {
+        PayloadError::Io(e) => e,
+        _ => io::Error::new(io::ErrorKind::Other, e),
+    });
+    match storage.put_stream(&params.purl, value, &mut payload).await {
         Ok(status) => {
             let msg = format!("SBOM stored with status code: {status}");
             tracing::trace!(msg);
