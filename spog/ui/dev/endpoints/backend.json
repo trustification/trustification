@@ -1,3 +1,4 @@
 {
-  "url": "http://localhost:6020"
+  "api_url": "http://localhost:6020",
+  "search_url": "http://localhost:8083"
 }

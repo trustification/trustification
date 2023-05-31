@@ -1,5 +1,6 @@
 use super::{Backend, Error};
 use crate::backend::data::{Package, PackageDependencies, PackageDependents, PackageList, PackageRef};
+use crate::backend::Endpoint;
 use packageurl::PackageUrl;
 use serde::Deserialize;
 
@@ -20,7 +21,7 @@ impl PackageService {
     pub async fn lookup(&self, purl: PackageUrl<'_>) -> Result<Package, Error> {
         Ok(self
             .client
-            .get(self.backend.url.join("/api/package")?)
+            .get(self.backend.join(Endpoint::Api, "/api/package")?)
             .query(&[("purl", purl.to_string())])
             .send()
             .await?
@@ -67,7 +68,7 @@ impl PackageService {
 
         Ok(self
             .client
-            .post(self.backend.url.join(path)?)
+            .post(self.backend.join(Endpoint::Api, path)?)
             .json(&purls)
             .send()
             .await?
