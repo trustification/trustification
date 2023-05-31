@@ -1,6 +1,7 @@
 mod search;
 mod versions;
 
+use crate::backend::Endpoint;
 use crate::{
     backend::{data, Backend, PackageService},
     components::{common::PageHeading, deps::PackageReferences, remote_content, remote_refs_count_title},
@@ -244,7 +245,11 @@ fn package_details(props: &PackageDetailsProperties) -> Html {
 
     log::info!("SBOM: {:?}", props.package.sbom);
 
-    let sbom = props.package.sbom.as_ref().and_then(|href| backend.join(&href).ok());
+    let sbom = props
+        .package
+        .sbom
+        .as_ref()
+        .and_then(|href| backend.join(Endpoint::Api, &href).ok());
 
     html!(
         if let Some(sbom) = sbom {

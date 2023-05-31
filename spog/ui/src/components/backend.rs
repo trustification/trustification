@@ -1,6 +1,6 @@
+use crate::backend::Endpoints;
 use patternfly_yew::prelude::*;
 use std::rc::Rc;
-use url::Url;
 use web_sys::RequestCache;
 use yew::prelude::*;
 use yew_more_hooks::hooks::r#async::*;
@@ -10,11 +10,6 @@ pub struct BackendProperties {
     #[prop_or_default]
     pub children: Children,
     pub bootstrap_url: String,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
-pub struct BackendEndpoint {
-    pub url: Url,
 }
 
 #[function_component(Backend)]
@@ -31,14 +26,14 @@ pub fn backend(props: &BackendProperties) -> Html {
                 .await
                 .map_err(|err| format!("Failed to load backend information: {err}"))?;
 
-            let endpoint: BackendEndpoint = response
+            let endpoints: Endpoints = response
                 .json()
                 .await
                 .map_err(|err| format!("Failed to decode backend information: {err}"))?;
 
-            log::info!("Found: {endpoint:?}");
+            log::info!("Found: {endpoints:?}");
 
-            Ok::<_, String>(crate::backend::Backend { url: endpoint.url })
+            Ok::<_, String>(crate::backend::Backend { endpoints })
         },
         UseAsyncOptions::enable_auto(),
     );

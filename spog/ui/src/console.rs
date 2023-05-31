@@ -1,5 +1,6 @@
 use crate::{
     about,
+    backend::Endpoint,
     hooks::use_backend,
     pages::{self, AppRoute},
 };
@@ -30,7 +31,7 @@ pub fn console() -> Html {
                         <NavRouterItem<AppRoute> to={AppRoute::SBOM}>{ "Upload SBOM" }</NavRouterItem<AppRoute>>
                     </NavExpandable>
                     <NavExpandable title="Extend">
-                        if let Ok(url) = backend.join("/swagger-ui/") {
+                        if let Ok(url) = backend.join(Endpoint::Api, "/swagger-ui/") {
                             <NavItem external=true target="_blank" to={url.to_string()}>{ "API" }</NavItem>
                         }
                     </NavExpandable>

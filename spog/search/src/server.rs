@@ -1,3 +1,4 @@
+use actix_cors::Cors;
 use std::net::SocketAddr;
 use std::sync::Arc;
 use std::time::Duration;
@@ -65,9 +66,18 @@ pub async fn run<B: Into<SocketAddr>>(
     });
     let addr = bind.into();
     tracing::debug!("listening on {}", addr);
+
     HttpServer::new(move || {
+        let cors = Cors::default()
+            .send_wildcard()
+            .allow_any_origin()
+            .allow_any_method()
+            .allow_any_header()
+            .max_age(3600);
+
         App::new()
             .wrap(Logger::default())
+            .wrap(cors)
             .app_data(web::PayloadConfig::new(10 * 1024 * 1024))
             .app_data(web::Data::new(state.clone()))
             .service(web::resource("/healthz").to(health))

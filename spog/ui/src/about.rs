@@ -30,7 +30,7 @@ pub fn about() -> Html {
                             <dd>{ commit }</dd>
                         }
                         <dt>{ "Backend" }</dt>
-                        <dd>{ backend.url.to_string() }</dd>
+                        <dd>{ backend.endpoints.api_url.to_string() }</dd>
                     </dl>
                 </Content>
             </patternfly_yew::prelude::About>
