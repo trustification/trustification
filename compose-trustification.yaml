@@ -3,9 +3,9 @@ services:
   vexination-api:
     image: ghcr.io/trustification/trust:latest
     expose:
-      - "8081"
+      - "$VEXINATION_API_PORT"
     ports:
-      - "8081:8080"
+      - "$VEXINATION_API_PORT:8080"
     command: vexination api --devmode --storage-endpoint http://minio:9000
   vexination-indexer:
     image: ghcr.io/trustification/trust:latest
@@ -16,9 +16,9 @@ services:
   bombastic-api:
     image: ghcr.io/trustification/trust:latest
     expose:
-      - "8082"
+      - "$BOMBASTIC_API_PORT"
     ports:
-      - "8082:8080"
+      - "$BOMBASTIC_API_PORT:8080"
     command: bombastic api --devmode --storage-endpoint http://minio:9000
   bombastic-indexer:
     image: ghcr.io/trustification/trust:latest
@@ -26,7 +26,7 @@ services:
   spog-api:
     image: ghcr.io/trustification/trust:latest
     expose:
-      - "8083"
+      - "$SPOG_API_PORT"
     ports:
-      - "8083:8088"
+      - "$SPOG_API_PORT:8088"
     command: spog api --devmode --storage-endpoint http://minio:9000
