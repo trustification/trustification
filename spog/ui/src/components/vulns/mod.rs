@@ -50,18 +50,8 @@ impl TableEntryRenderer<Column> for Csaf {
 
     fn render_details(&self) -> Vec<Span> {
         // FIXME: needs .clone() in csaf: see https://github.com/voteblake/csaf-rs/issues/15
-        let html = match serde_json::to_value(&self).and_then(|json| serde_json::from_value(json)) {
-            Ok(csaf) => {
-                html!(<CsafDetails csaf={Rc::new(csaf)} />)
-            }
-            Err(err) => {
-                html!(
-                    <CodeBlock>
-                        <CodeBlockCode> { err.to_string() } </CodeBlockCode>
-                    </CodeBlock>
-                )
-            }
-        };
+
+        let html = html!(<CsafDetails csaf={Rc::new(self.clone())} />);
 
         vec![Span::max(html)]
     }
