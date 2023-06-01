@@ -1,5 +1,6 @@
 use super::{fetch_object, QueryParams, SharedState};
 use actix_web::{web, HttpResponse, Responder};
+use spog_model::search::SearchResult;
 use trustification_index::IndexStore;
 
 pub async fn search(state: web::Data<SharedState>, params: web::Query<QueryParams>) -> impl Responder {
@@ -30,6 +31,6 @@ pub async fn search(state: web::Data<SharedState>, params: web::Query<QueryParam
     HttpResponse::Ok().json(ret)
 }
 
-async fn search_sbom(index: &IndexStore<bombastic_index::Index>, q: &str) -> anyhow::Result<Vec<String>> {
-    Ok(index.search(q, 0, 10)?)
+async fn search_sbom(index: &IndexStore<bombastic_index::Index>, q: &str) -> anyhow::Result<SearchResult<Vec<String>>> {
+    Ok(index.search(q, 0, 10)?.into())
 }

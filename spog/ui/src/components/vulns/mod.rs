@@ -9,12 +9,13 @@ use patternfly_yew::{
     },
     prelude::*,
 };
+use spog_model::prelude::*;
 use std::rc::Rc;
 use yew::prelude::*;
 
 #[derive(Debug, Properties)]
 pub struct VulnerabilityResultProperties {
-    pub result: Rc<Vec<csaf::Csaf>>,
+    pub result: SearchResult<Rc<Vec<csaf::Csaf>>>,
 }
 
 impl PartialEq for VulnerabilityResultProperties {
@@ -59,7 +60,7 @@ impl TableEntryRenderer<Column> for Csaf {
 
 #[function_component(VulnerabilityResult)]
 pub fn vulnerability_result(props: &VulnerabilityResultProperties) -> Html {
-    let (entries, onexpand) = use_table_data(MemoizedTableModel::new(props.result.clone()));
+    let (entries, onexpand) = use_table_data(MemoizedTableModel::new(props.result.result.clone()));
 
     let header = html_nested! {
         <TableHeader<Column>>

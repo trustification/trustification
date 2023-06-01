@@ -17,6 +17,8 @@ pub enum Vulnerabilities<'a> {
     Severity(Primary<'a>),
     #[search(default)]
     Cvss(PartialOrdered<f64>),
+    #[search(default)]
+    Package(Primary<'a>),
     #[search]
     Initial(Ordered<time::OffsetDateTime>),
     #[search]

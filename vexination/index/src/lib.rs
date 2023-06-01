@@ -230,6 +230,12 @@ impl Index {
                 create_boolean_query(occur, term)
             }
 
+            Vulnerabilities::Package(primary) => {
+                let (occur, value) = primary2occur(primary);
+                let term = Term::from_field_text(self.fields.packages, value);
+                create_boolean_query(occur, term)
+            }
+
             Vulnerabilities::Severity(primary) => {
                 let (occur, value) = primary2occur(&primary);
                 let term = Term::from_field_text(self.fields.severity, value);

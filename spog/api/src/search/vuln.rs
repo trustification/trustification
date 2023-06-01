@@ -1,6 +1,10 @@
 use super::{fetch_object, QueryParams, SharedState};
 use actix_web::{web, HttpResponse, Responder};
+use serde_json::json;
+use spog_model::search::SearchResult;
 use trustification_index::IndexStore;
+
+const MAX_LIMIT: usize = 1_000;
 
 pub async fn search(state: web::Data<SharedState>, params: web::Query<QueryParams>) -> impl Responder {
     let params = params.into_inner();
@@ -8,13 +12,15 @@ pub async fn search(state: web::Data<SharedState>, params: web::Query<QueryParam
     let state = &state.vex;
 
     let index = state.index.read().await;
-    let result = search_vex(&index, &params.q).await;
+    let result = search_vex(&index, &params.q, params.offset, params.limit.min(MAX_LIMIT)).await;
 
-    if let Err(e) = &result {
-        tracing::info!("Error searching: {:?}", e);
-        return HttpResponse::InternalServerError().body(e.to_string());
-    }
-    let result = result.unwrap();
+    let result = match result {
+        Err(e) => {
+            tracing::info!("Error searching: {:?}", e);
+            return HttpResponse::InternalServerError().body(e.to_string());
+        }
+        Ok(result) => result,
+    };
 
     let mut ret: Vec<serde_json::Value> = Vec::new();
     let storage = state.storage.read().await;
@@ -27,9 +33,17 @@ pub async fn search(state: web::Data<SharedState>, params: web::Query<QueryParam
         }
     }
 
-    HttpResponse::Ok().json(ret)
+    HttpResponse::Ok().json(json!({
+        "result": ret,
+        "total": result.total,
+    }))
 }
 
-async fn search_vex(index: &IndexStore<vexination_index::Index>, q: &str) -> anyhow::Result<Vec<String>> {
-    Ok(index.search(q, 0, 10)?)
+async fn search_vex(
+    index: &IndexStore<vexination_index::Index>,
+    q: &str,
+    offset: usize,
+    limit: usize,
+) -> anyhow::Result<SearchResult<Vec<String>>> {
+    Ok(index.search(q, offset, limit)?.into())
 }

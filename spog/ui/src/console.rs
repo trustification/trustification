@@ -21,10 +21,7 @@ pub fn console() -> Html {
         <PageSidebar>
             <Nav>
                 <NavList>
-                    <NavExpandable title="Home">
-                        <NavRouterItem<AppRoute> to={AppRoute::Index}>{ "Overview" }</NavRouterItem<AppRoute>>
-                        <NavRouterItem<AppRoute> to={AppRoute::Chicken}>{ "Chicken" }</NavRouterItem<AppRoute>>
-                    </NavExpandable>
+                    <NavRouterItem<AppRoute> to={AppRoute::Index}>{ "Trusted Content" }</NavRouterItem<AppRoute>>
                     <NavExpandable title="Investigate">
                         <NavRouterItem<AppRoute> to={AppRoute::Package{package: Default::default()}} predicate={AppRoute::is_package}>{ "Packages" }</NavRouterItem<AppRoute>>
                         <NavRouterItem<AppRoute> to={AppRoute::Vulnerability{cve: Default::default()}} predicate={AppRoute::is_vulnerability}>{ "Vulnerabilities" }</NavRouterItem<AppRoute>>

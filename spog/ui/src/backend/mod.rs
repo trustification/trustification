@@ -13,6 +13,7 @@ pub use sbom::*;
 pub use vuln::*;
 
 use url::{ParseError, Url};
+use yew::html::IntoPropValue;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Backend {
@@ -51,4 +52,16 @@ pub enum Error {
     Url(#[from] ParseError),
     #[error("Failed to request: {0}")]
     Request(#[from] reqwest::Error),
+}
+
+impl IntoPropValue<String> for Error {
+    fn into_prop_value(self) -> String {
+        self.to_string()
+    }
+}
+
+impl IntoPropValue<String> for &Error {
+    fn into_prop_value(self) -> String {
+        self.to_string()
+    }
 }
