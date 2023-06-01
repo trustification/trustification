@@ -21,6 +21,7 @@ members = [
     "exporter",
     "event-bus",
     "storage",
+    "index",
 ]
 
 [patch.crates-io]

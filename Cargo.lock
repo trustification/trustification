@@ -914,8 +914,15 @@ dependencies = [
 name = "bombastic-index"
 version = "0.1.0"
 dependencies = [
+ "chumsky",
+ "sikula",
  "sqlite",
+ "tantivy",
+ "tar",
+ "time 0.3.21",
  "tokio",
+ "tracing",
+ "zstd",
 ]
 
 [[package]]
@@ -4170,6 +4177,7 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
+ "trustification-index",
  "trustification-storage",
  "vexination-index",
  "zstd",
@@ -4808,6 +4816,16 @@ name = "trustification-exporter"
 version = "0.1.0"
 
 [[package]]
+name = "trustification-index"
+version = "0.1.0"
+dependencies = [
+ "tantivy",
+ "tar",
+ "tracing",
+ "zstd",
+]
+
+[[package]]
 name = "trustification-storage"
 version = "0.1.0"
 dependencies = [
@@ -5046,6 +5064,7 @@ dependencies = [
  "time 0.3.21",
  "tokio",
  "tracing",
+ "trustification-index",
  "zstd",
 ]
 
@@ -5064,6 +5083,7 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "trustification-event-bus",
+ "trustification-index",
  "trustification-storage",
  "vexination-index",
  "zstd",

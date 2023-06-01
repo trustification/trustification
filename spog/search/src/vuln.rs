@@ -1,6 +1,6 @@
+use crate::server::Index;
 use crate::server::{fetch_object, QueryParams, SharedState};
 use actix_web::{web, HttpResponse, Responder};
-use vexination_index::Index;
 
 pub async fn search(state: web::Data<SharedState>, params: web::Query<QueryParams>) -> impl Responder {
     let params = params.into_inner();

@@ -3,8 +3,7 @@ use std::path::PathBuf;
 use std::process::ExitCode;
 use std::str::FromStr;
 use std::time::Duration;
-
-use vexination_index::Index;
+use trustification_index::IndexStore;
 
 mod server;
 mod vuln;
@@ -42,7 +41,7 @@ impl Run {
         std::fs::create_dir(&index)?;
 
         // TODO: Index for bombastic
-        let index = Index::new(&index)?;
+        let index = IndexStore::new(&index, vexination_index::Index::new())?;
         // TODO: Storage with multiple buckets (bombastic and vexination?)
         let storage = trustification_storage::create("vexination", self.devmode, self.storage_endpoint)?;
         let addr = SocketAddr::from_str(&format!("{}:{}", self.bind, self.port))?;

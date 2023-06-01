@@ -4,28 +4,22 @@ use search::*;
 
 use csaf::{definitions::NoteCategory, Csaf};
 use sikula::prelude::*;
-use std::fmt::Display;
+
 use std::ops::Bound;
-use std::path::PathBuf;
-use tantivy::collector::Count;
-use tantivy::collector::TopDocs;
-use tantivy::directory::MmapDirectory;
-use tantivy::directory::INDEX_WRITER_LOCK;
-use tantivy::query::{BooleanQuery, Occur, Query, RangeQuery, TermQuery, TermSetQuery};
-use tantivy::schema::{Term, *};
-use tantivy::Directory;
-use tantivy::Index as SearchIndex;
-use tantivy::IndexWriter;
-use tantivy::{doc, DateTime};
 use tracing::info;
+use trustification_index::{
+    tantivy::query::{BooleanQuery, Occur, Query, RangeQuery, TermQuery},
+    tantivy::schema::{Field, IndexRecordOption, Schema, Term, Type, FAST, INDEXED, STORED, STRING, TEXT},
+    tantivy::{doc, DateTime},
+    Document, Error as SearchError,
+};
 
 pub struct Index {
-    index: SearchIndex,
-    path: Option<PathBuf>,
+    schema: Schema,
     fields: Fields,
 }
 
-pub struct Fields {
+struct Fields {
     id: Field,
     title: Field,
     description: Field,
@@ -40,45 +34,12 @@ pub struct Fields {
     packages: Field,
 }
 
-#[derive(Debug)]
-pub enum Error {
-    Open,
-    Snapshot,
-    NotFound,
-    NotPersisted,
-    Parser(String),
-    Search(tantivy::TantivyError),
-    Io(std::io::Error),
-}
+impl trustification_index::Index for Index {
+    type DocId = String;
+    type Document = Csaf;
 
-impl Display for Error {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Open => write!(f, "Error opening index"),
-            Self::Snapshot => write!(f, "Error snapshotting index"),
-            Self::NotFound => write!(f, "Not found"),
-            Self::NotPersisted => write!(f, "Database is not persisted"),
-            Self::Parser(e) => write!(f, "Failed to parse query: {e}"),
-            Self::Search(e) => write!(f, "Error in search index: {:?}", e),
-            Self::Io(e) => write!(f, "I/O error: {:?}", e),
-        }
-    }
-}
-
-impl std::error::Error for Error {}
-
-impl From<tantivy::TantivyError> for Error {
-    fn from(e: tantivy::TantivyError) -> Self {
-        Self::Search(e)
-    }
-}
-
-pub struct Indexer {
-    writer: IndexWriter,
-}
-
-impl Indexer {
-    pub fn index(&mut self, index: &mut Index, csaf: &Csaf) -> Result<(), Error> {
+    fn index_doc(&self, csaf: &Csaf) -> Result<Vec<Document>, SearchError> {
+        let mut documents = Vec::new();
         let id = &csaf.document.tracking.id;
         let status = match &csaf.document.tracking.status {
             csaf::document::Status::Draft => "draft",
@@ -140,56 +101,75 @@ impl Indexer {
                         score_value,
                     );
                     let mut document = doc!(
-                        index.fields.id => id.as_str(),
-                        index.fields.title => title,
-                        index.fields.description => description,
-                        index.fields.packages => packages,
-                        index.fields.cve => cve,
-                        index.fields.status => status,
-                        index.fields.severity => severity,
-                        index.fields.cvss => score_value,
+                        self.fields.id => id.as_str(),
+                        self.fields.title => title,
+                        self.fields.description => description,
+                        self.fields.packages => packages,
+                        self.fields.cve => cve,
+                        self.fields.status => status,
+                        self.fields.severity => severity,
+                        self.fields.cvss => score_value,
                     );
 
                     document.add_date(
-                        index.fields.advisory_initial,
+                        self.fields.advisory_initial,
                         DateTime::from_timestamp_millis(csaf.document.tracking.initial_release_date.timestamp_millis()),
                     );
 
                     document.add_date(
-                        index.fields.advisory_current,
+                        self.fields.advisory_current,
                         DateTime::from_timestamp_millis(csaf.document.tracking.current_release_date.timestamp_millis()),
                     );
 
                     if let Some(discovery_date) = &vuln.discovery_date {
                         document.add_date(
-                            index.fields.cve_discovery,
+                            self.fields.cve_discovery,
                             DateTime::from_timestamp_millis(discovery_date.timestamp_millis()),
                         );
                     }
 
                     if let Some(release_date) = &vuln.release_date {
                         document.add_date(
-                            index.fields.cve_release,
+                            self.fields.cve_release,
                             DateTime::from_timestamp_millis(release_date.timestamp_millis()),
                         );
                     }
 
-                    self.writer.add_document(document)?;
+                    documents.push(document);
                 }
             }
         }
-        Ok(())
+        Ok(documents)
     }
 
-    pub fn commit(mut self) -> Result<(), Error> {
-        self.writer.commit()?;
-        self.writer.wait_merging_threads()?;
-        Ok(())
+    fn schema(&self) -> Schema {
+        self.schema.clone()
+    }
+
+    fn prepare_query(&self, q: &str) -> Result<Box<dyn Query>, SearchError> {
+        let mut query = Vulnerabilities::parse_query(&q).map_err(|err| SearchError::Parser(err.to_string()))?;
+
+        query.term = query.term.compact();
+
+        info!("Query: {query:?}");
+
+        let query = self.term2query(&query.term);
+
+        info!("Processed query: {:?}", query);
+        Ok(query)
+    }
+
+    fn process_hit(&self, doc: Document) -> Result<Self::DocId, SearchError> {
+        if let Some(Some(value)) = doc.get_first(self.fields.id).map(|s| s.as_text()) {
+            Ok(value.into())
+        } else {
+            Err(SearchError::NotFound)
+        }
     }
 }
 
 impl Index {
-    fn schema() -> (Schema, Fields) {
+    pub fn new() -> Self {
         let mut schema = Schema::builder();
         let id = schema.add_text_field("id", STRING | FAST | STORED);
         let title = schema.add_text_field("title", TEXT);
@@ -203,9 +183,9 @@ impl Index {
         let advisory_current = schema.add_date_field("advisory_current_date", INDEXED);
         let cve_discovery = schema.add_date_field("cve_discovery_date", INDEXED);
         let cve_release = schema.add_date_field("cve_release_date", INDEXED);
-        (
-            schema.build(),
-            Fields {
+        Self {
+            schema: schema.build(),
+            fields: Fields {
                 id,
                 cvss,
                 title,
@@ -219,103 +199,7 @@ impl Index {
                 cve_discovery,
                 cve_release,
             },
-        )
-    }
-
-    pub fn new_in_memory() -> Result<Self, Error> {
-        let (schema, fields) = Self::schema();
-        let index = SearchIndex::create_in_ram(schema);
-        Ok(Self {
-            index,
-            path: None,
-            fields,
-        })
-    }
-
-    pub fn new(path: &PathBuf) -> Result<Self, Error> {
-        let (schema, fields) = Self::schema();
-        let dir = MmapDirectory::open(path).map_err(|_e| Error::Open)?;
-        let index = SearchIndex::open_or_create(dir, schema)?;
-        Ok(Self {
-            index,
-            path: Some(path.clone()),
-            fields,
-        })
-    }
-
-    pub fn restore(path: &PathBuf, data: &[u8]) -> Result<Self, Error> {
-        let dec = zstd::stream::Decoder::new(data).map_err(Error::Io)?;
-        let mut archive = tar::Archive::new(dec);
-        archive.unpack(path).map_err(Error::Io)?;
-        Self::new(path)
-    }
-
-    pub fn reload(&mut self, data: &[u8]) -> Result<(), Error> {
-        if let Some(path) = &self.path {
-            let dec = zstd::stream::Decoder::new(data).map_err(Error::Io)?;
-            let mut archive = tar::Archive::new(dec);
-            archive.unpack(path).map_err(Error::Io)?;
         }
-        Ok(())
-    }
-
-    pub fn snapshot(&mut self, indexer: Indexer) -> Result<Vec<u8>, Error> {
-        if let Some(path) = &self.path {
-            tracing::info!("Committing index to path {:?}", path);
-            indexer.commit()?;
-            self.index.directory_mut().sync_directory().map_err(Error::Io)?;
-            let lock = self.index.directory_mut().acquire_lock(&INDEX_WRITER_LOCK);
-
-            let mut out = Vec::new();
-            tracing::info!("Creating encoder");
-            let enc = zstd::stream::Encoder::new(&mut out, 3).map_err(Error::Io)?;
-            tracing::info!("Creating builder");
-            let mut archive = tar::Builder::new(enc.auto_finish());
-            tracing::info!("Adding directories from {:?}", path);
-            archive.append_dir_all("", path).map_err(Error::Io)?;
-            tracing::info!("Added it all to the archive");
-            drop(archive);
-            drop(lock);
-            Ok(out)
-        } else {
-            Err(Error::NotPersisted)
-        }
-    }
-
-    pub fn indexer(&mut self) -> Result<Indexer, Error> {
-        let writer = self.index.writer(100_000_000)?;
-        Ok(Indexer { writer })
-    }
-
-    pub fn search(&self, q: &str, offset: usize, len: usize) -> Result<Vec<String>, Error> {
-        let mut query = Vulnerabilities::parse_query(&q).map_err(|err| Error::Parser(err.to_string()))?;
-
-        let reader = self.index.reader()?;
-        let searcher = reader.searcher();
-
-        query.term = query.term.compact();
-
-        info!("Query: {query:?}");
-
-        let query = self.term2query(&query.term);
-
-        info!("Processed query: {:?}", query);
-
-        let (top_docs, count) = searcher.search(&query, &(TopDocs::with_limit(len).and_offset(offset), Count))?;
-
-        tracing::trace!("Found {} docs", count);
-
-        let mut hits = Vec::new();
-        for hit in top_docs {
-            let doc = searcher.doc(hit.1)?;
-            if let Some(Some(value)) = doc.get_first(self.fields.id).map(|s| s.as_text()) {
-                hits.push(value.into());
-            }
-        }
-
-        tracing::trace!("Filtered to {}", hits.len());
-
-        Ok(hits)
     }
 
     fn resource2query<'m>(&self, resource: &Vulnerabilities<'m>) -> Box<dyn Query> {
@@ -489,20 +373,22 @@ fn bound_map<F: FnOnce(T) -> R, T, R>(bound: Bound<T>, func: F) -> Bound<R> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use trustification_index::IndexStore;
 
     fn assert_free_form<F>(f: F)
     where
-        F: FnOnce(Index),
+        F: FnOnce(IndexStore<Index>),
     {
         let _ = env_logger::try_init();
 
         let data = std::fs::read_to_string("../testdata/rhsa-2023_1441.json").unwrap();
         let csaf: Csaf = serde_json::from_str(&data).unwrap();
-        let mut index = Index::new_in_memory().unwrap();
-        let mut writer = index.indexer().unwrap();
-        writer.index(&mut index, &csaf).unwrap();
+        let index = Index::new();
+        let mut store = IndexStore::new_in_memory(index).unwrap();
+        let mut writer = store.indexer().unwrap();
+        writer.index(store.index(), &csaf).unwrap();
         writer.commit().unwrap();
-        f(index);
+        f(store);
     }
 
     #[tokio::test]

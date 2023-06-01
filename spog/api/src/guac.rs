@@ -1,4 +1,3 @@
-use core::str::FromStr;
 use std::sync::Arc;
 
 use anyhow::anyhow;
@@ -7,7 +6,7 @@ use guac::client::GuacClient;
 use http::StatusCode;
 use packageurl::PackageUrl;
 
-use crate::package::{Package, PackageDependencies, PackageRef, VulnerabilityRef};
+use crate::package::{PackageDependencies, PackageRef, VulnerabilityRef};
 use crate::sbom::SbomRegistry;
 use crate::vulnerability::{Cvss3, Vulnerability};
 

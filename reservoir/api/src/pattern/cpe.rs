@@ -92,6 +92,6 @@ mod test {
 
     #[test]
     pub fn construct_simple() {
-        let pattern = CpePattern::application("redhat", "rhel");
+        let _pattern = CpePattern::application("redhat", "rhel");
     }
 }

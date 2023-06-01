@@ -5,6 +5,13 @@ edition = "2021"
 
 [dependencies]
 sqlite = "0.30.4"
+sikula = { version = "0.2", features = ["time"] }
+zstd = "0.12"
+tantivy = "0.19.2"
+tracing = "0.1"
+chumsky = "1.0.0-alpha.4"
+time = "0.3"
+tar = "0.4"
 
 [dev-dependencies]
 tokio = { version = "1", features = ["full"] }

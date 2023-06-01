@@ -1,0 +1,10 @@
+[package]
+name = "trustification-index"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tantivy = "0.19.2"
+tracing = "0.1"
+zstd = "0.12"
+tar = "0.4"

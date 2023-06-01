@@ -3,11 +3,12 @@ use std::time::Duration;
 use futures::pin_mut;
 use tokio::select;
 use trustification_event_bus::{Event, EventBus, EventConsumer};
+use trustification_index::IndexStore;
 use trustification_storage::{EventType, Storage};
 use vexination_index::Index;
 
 pub async fn run<E: EventBus>(
-    mut index: Index,
+    mut index: IndexStore<Index>,
     storage: Storage,
     bus: E,
     stored_topic: &str,
@@ -49,7 +50,7 @@ pub async fn run<E: EventBus>(
                                                 };
 
                                                 if let Ok(doc) = serde_json::from_slice(&data) {
-                                                    match indexer.as_mut().unwrap().index(&mut index, &doc) {
+                                                    match indexer.as_mut().unwrap().index(index.index(), &doc) {
                                                         Ok(_) => {
                                                             tracing::trace!("Inserted entry into index");
                                                             bus.send(indexed_topic, key.as_bytes()).await?;

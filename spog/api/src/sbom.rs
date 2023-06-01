@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 #[derive(Clone)]
 pub struct SbomRegistry {}
 
@@ -9,11 +7,11 @@ impl SbomRegistry {
         Self {}
     }
 
-    pub fn exists(&self, purl: &str) -> bool {
+    pub fn exists(&self, _purl: &str) -> bool {
         false
     }
 
-    pub fn lookup(&self, purl: &str) -> Option<serde_json::Value> {
+    pub fn lookup(&self, _purl: &str) -> Option<serde_json::Value> {
         None
     }
 }
