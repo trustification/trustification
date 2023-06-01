@@ -11,7 +11,7 @@ use tantivy::collector::Count;
 use tantivy::collector::TopDocs;
 use tantivy::directory::MmapDirectory;
 use tantivy::directory::INDEX_WRITER_LOCK;
-use tantivy::query::{BooleanQuery, Occur, Query, RangeQuery, TermQuery, TermSetQuery};
+use tantivy::query::{BooleanQuery, Occur, Query, RangeQuery, TermQuery};
 use tantivy::schema::{Term, *};
 use tantivy::Directory;
 use tantivy::Index as SearchIndex;

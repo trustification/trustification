@@ -32,9 +32,9 @@ pub async fn run<E: EventBus>(
                                     tracing::trace!("It's an index event, ignoring");
                                 } else {
                                     if let Some(key) = storage.extract_key(&data.key) {
-                                        match storage.get(key).await {
-                                            Ok(data) => {
-                                                if let Some(hash) = data.annotations.get("digest") {
+                                        match storage.get_metadata(key).await {
+                                            Ok(annotations) => {
+                                                if let Some(hash) = annotations.get("digest") {
                                                     match index.insert_or_replace(&data.key, hash.as_str(), key).await {
                                                         Ok(_) => {
                                                             tracing::trace!("Inserted entry into index");

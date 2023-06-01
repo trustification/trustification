@@ -79,18 +79,7 @@ pub async fn run<B: Into<SocketAddr>>(
 
 pub async fn fetch_object(storage: &Storage, key: &str) -> Option<Vec<u8>> {
     match storage.get(&key).await {
-        Ok(obj) => {
-            tracing::trace!("Retrieved object compressed: {}", obj.compressed);
-            if obj.compressed {
-                let mut out = Vec::new();
-                match ::zstd::stream::copy_decode(&obj.data[..], &mut out) {
-                    Ok(_) => Some(out),
-                    Err(_) => None,
-                }
-            } else {
-                Some(obj.data)
-            }
-        }
+        Ok((obj, _)) => Some(obj), // TODO: not this; stream instead
         Err(e) => {
             tracing::warn!("Unable to locate object with key {}: {:?}", key, e);
             None

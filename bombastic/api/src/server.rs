@@ -5,6 +5,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use actix_web::error::PayloadError;
+use actix_web::http::header::ContentType;
 use actix_web::middleware::Logger;
 use actix_web::{guard, web, App, HttpResponse, HttpServer, Responder};
 use bombastic_index::Index;
@@ -12,7 +13,7 @@ use futures::TryStreamExt;
 use serde::Deserialize;
 use tokio::sync::{Mutex, RwLock};
 use tracing::info;
-use trustification_storage::{Object, Storage};
+use trustification_storage::Storage;
 
 use crate::sbom::SBOM;
 
@@ -93,20 +94,10 @@ pub async fn run<B: Into<SocketAddr>>(
 }
 
 async fn fetch_object(storage: &Storage, key: &str) -> HttpResponse {
-    match storage.get(&key).await {
-        Ok(obj) => {
-            tracing::trace!("Retrieved object compressed: {}", obj.compressed);
-            if obj.data.is_empty() {
-                HttpResponse::Ok().streaming(storage.get_stream(key).await)
-            } else if obj.compressed {
-                let mut out = Vec::new();
-                match ::zstd::stream::copy_decode(&obj.data[..], &mut out) {
-                    Ok(_) => HttpResponse::Ok().body(out),
-                    Err(_) => HttpResponse::InternalServerError().body("Unable to decode object"),
-                }
-            } else {
-                HttpResponse::Ok().body(obj.data)
-            }
+    match storage.get_stream(key).await {
+        Ok((ctype, stream)) => {
+            let ctype = ctype.unwrap_or(ContentType::json().to_string());
+            HttpResponse::Ok().content_type(ctype).streaming(stream)
         }
         Err(e) => {
             tracing::warn!("Unable to locate object with key {}: {:?}", key, e);
@@ -167,6 +158,7 @@ async fn publish_sbom(
     state: web::Data<SharedState>,
     params: web::Query<PublishParams>,
     data: web::Bytes,
+    content_type: web::Header<ContentType>,
 ) -> HttpResponse {
     let params = params.into_inner();
     let storage = state.storage.write().await;
@@ -182,21 +174,13 @@ async fn publish_sbom(
                 }
 
                 if let Some(hash) = params.sha256.or(sbom.sha256()) {
-                    let mut out = Vec::new();
-                    let (data, compressed) = match zstd::stream::copy_encode(sbom.raw(), &mut out, 3) {
-                        Ok(_) => (&out[..], true),
-                        Err(_) => (sbom.raw(), false),
-                    };
-                    tracing::debug!(
-                        "Storing new SBOM ({}) with hash: {}, compressed: {}",
-                        purl,
-                        hash,
-                        compressed
-                    );
+                    tracing::debug!("Storing new SBOM ({}) with hash: {}", purl, hash);
                     let mut annotations = std::collections::HashMap::new();
                     annotations.insert("digest", hash.as_str());
-                    let value = Object::new(&purl, annotations, Some(data), compressed);
-                    match storage.put(&purl, value).await {
+                    match storage
+                        .put_slice(&purl, annotations, &content_type.to_string(), &mut sbom.raw())
+                        .await
+                    {
                         Ok(_) => {
                             let msg = format!("SBOM of size {} stored successfully", &data[..].len());
                             tracing::trace!(msg);
@@ -231,16 +215,19 @@ async fn publish_large_sbom(
     state: web::Data<SharedState>,
     params: web::Query<PublishLargeParams>,
     payload: web::Payload,
+    content_type: web::Header<ContentType>,
 ) -> HttpResponse {
     let storage = state.storage.write().await;
     let mut annotations = std::collections::HashMap::new();
     annotations.insert("digest", params.sha256.as_str());
-    let value = Object::new(&params.purl, annotations, None, false);
     let mut payload = payload.map_err(|e| match e {
         PayloadError::Io(e) => e,
         _ => io::Error::new(io::ErrorKind::Other, e),
     });
-    match storage.put_stream(&params.purl, value, &mut payload).await {
+    match storage
+        .put_stream(&params.purl, annotations, &content_type.to_string(), &mut payload)
+        .await
+    {
         Ok(status) => {
             let msg = format!("SBOM stored with status code: {status}");
             tracing::trace!(msg);

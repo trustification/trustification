@@ -18,6 +18,7 @@ pub async fn search(state: web::Data<SharedState>, params: web::Query<QueryParam
     let mut ret: Vec<serde_json::Value> = Vec::new();
     let storage = state.storage.read().await;
 
+    // TODO: stream these
     for key in result.iter() {
         if let Some(obj) = fetch_object(&storage, &key).await {
             if let Ok(data) = serde_json::from_slice(&obj[..]) {
