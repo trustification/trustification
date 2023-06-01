@@ -9,10 +9,11 @@ use std::ops::Bound;
 
 use tracing::info;
 use trustification_index::{
-    tantivy::query::{BooleanQuery, Occur, Query, RangeQuery, TermQuery},
-    tantivy::schema::{Field, IndexRecordOption, Schema, Term, Type, FAST, INDEXED, STORED, STRING, TEXT},
+    create_boolean_query, create_date_query, primary2occur,
+    tantivy::query::{BooleanQuery, Occur, Query, RangeQuery},
+    tantivy::schema::{Field, Schema, Term, FAST, INDEXED, STORED, STRING, TEXT},
     tantivy::{doc, DateTime},
-    Document, Error as SearchError,
+    term2query, Document, Error as SearchError,
 };
 
 pub struct Index {
@@ -154,7 +155,7 @@ impl trustification_index::Index for Index {
 
         info!("Query: {query:?}");
 
-        let query = self.term2query(&query.term);
+        let query = term2query(&query.term, &|resource| self.resource2query(resource));
 
         info!("Processed query: {:?}", query);
         Ok(query)
@@ -204,58 +205,57 @@ impl Index {
     }
 
     fn resource2query<'m>(&self, resource: &Vulnerabilities<'m>) -> Box<dyn Query> {
-        fn create_boolean(occur: Occur, term: Term) -> Box<dyn Query> {
-            Box::new(BooleanQuery::new(vec![(
-                occur,
-                Box::new(TermQuery::new(term, IndexRecordOption::Basic)),
-            )]))
-        }
-
         match resource {
             Vulnerabilities::Id(primary) => {
-                let (occur, value) = primary2occur(primary);
+                let (occur, value) = primary2occur(&primary);
                 let term = Term::from_field_text(self.fields.id, value);
-                create_boolean(occur, term)
+                create_boolean_query(occur, term)
             }
 
             Vulnerabilities::Cve(primary) => {
-                let (occur, value) = primary2occur(primary);
+                let (occur, value) = primary2occur(&primary);
                 let term = Term::from_field_text(self.fields.cve, value);
-                create_boolean(occur, term)
+                create_boolean_query(occur, term)
             }
 
             Vulnerabilities::Description(primary) => {
-                let (occur, value) = primary2occur(primary);
+                let (occur, value) = primary2occur(&primary);
                 let term = Term::from_field_text(self.fields.description, value);
-                create_boolean(occur, term)
+                create_boolean_query(occur, term)
             }
 
             Vulnerabilities::Title(primary) => {
-                let (occur, value) = primary2occur(primary);
+                let (occur, value) = primary2occur(&primary);
                 let term = Term::from_field_text(self.fields.title, value);
-                create_boolean(occur, term)
+                create_boolean_query(occur, term)
             }
 
             Vulnerabilities::Severity(primary) => {
-                let (occur, value) = primary2occur(primary);
+                let (occur, value) = primary2occur(&primary);
                 let term = Term::from_field_text(self.fields.severity, value);
-                create_boolean(occur, term)
+                create_boolean_query(occur, term)
             }
 
             Vulnerabilities::Status(primary) => {
-                let (occur, value) = primary2occur(primary);
+                let (occur, value) = primary2occur(&primary);
                 let term = Term::from_field_text(self.fields.status, value);
-                create_boolean(occur, term)
+                create_boolean_query(occur, term)
             }
-            Vulnerabilities::Final => create_boolean(Occur::Must, Term::from_field_text(self.fields.status, "final")),
+            Vulnerabilities::Final => {
+                create_boolean_query(Occur::Must, Term::from_field_text(self.fields.status, "final"))
+            }
             Vulnerabilities::Critical => {
-                create_boolean(Occur::Must, Term::from_field_text(self.fields.severity, "critical"))
+                create_boolean_query(Occur::Must, Term::from_field_text(self.fields.severity, "critical"))
             }
-            Vulnerabilities::High => create_boolean(Occur::Must, Term::from_field_text(self.fields.severity, "high")),
+            Vulnerabilities::High => {
+                create_boolean_query(Occur::Must, Term::from_field_text(self.fields.severity, "high"))
+            }
             Vulnerabilities::Medium => {
-                create_boolean(Occur::Must, Term::from_field_text(self.fields.severity, "medium"))
+                create_boolean_query(Occur::Must, Term::from_field_text(self.fields.severity, "medium"))
             }
-            Vulnerabilities::Low => create_boolean(Occur::Must, Term::from_field_text(self.fields.severity, "low")),
+            Vulnerabilities::Low => {
+                create_boolean_query(Occur::Must, Term::from_field_text(self.fields.severity, "low"))
+            }
             Vulnerabilities::Cvss(ordered) => match ordered {
                 PartialOrdered::Less(e) => Box::new(RangeQuery::new_f64_bounds(
                     self.fields.cvss,
@@ -279,95 +279,14 @@ impl Index {
                 )),
                 PartialOrdered::Range(from, to) => Box::new(RangeQuery::new_f64_bounds(self.fields.cvss, *from, *to)),
             },
-            Vulnerabilities::Initial(ordered) => Self::create_date_query(self.fields.advisory_initial, ordered),
+            Vulnerabilities::Initial(ordered) => create_date_query(self.fields.advisory_initial, ordered),
             Vulnerabilities::Release(ordered) => {
-                let q1 = Self::create_date_query(self.fields.advisory_current, ordered);
-                let q2 = Self::create_date_query(self.fields.cve_release, ordered);
+                let q1 = create_date_query(self.fields.advisory_current, ordered);
+                let q2 = create_date_query(self.fields.cve_release, ordered);
                 Box::new(BooleanQuery::union(vec![q1, q2]))
             }
-            Vulnerabilities::Discovery(ordered) => Self::create_date_query(self.fields.cve_discovery, ordered),
+            Vulnerabilities::Discovery(ordered) => create_date_query(self.fields.cve_discovery, ordered),
         }
-    }
-
-    fn create_date_query(field: Field, value: &Ordered<time::OffsetDateTime>) -> Box<dyn Query> {
-        match value {
-            Ordered::Less(e) => Box::new(RangeQuery::new_term_bounds(
-                field,
-                Type::Date,
-                &Bound::Unbounded,
-                &Bound::Excluded(Term::from_field_date(field, DateTime::from_utc(*e))),
-            )),
-            Ordered::LessEqual(e) => Box::new(RangeQuery::new_term_bounds(
-                field,
-                Type::Date,
-                &Bound::Unbounded,
-                &Bound::Included(Term::from_field_date(field, DateTime::from_utc(*e))),
-            )),
-            Ordered::Greater(e) => Box::new(RangeQuery::new_term_bounds(
-                field,
-                Type::Date,
-                &Bound::Excluded(Term::from_field_date(field, DateTime::from_utc(*e))),
-                &Bound::Unbounded,
-            )),
-            Ordered::GreaterEqual(e) => Box::new(RangeQuery::new_term_bounds(
-                field,
-                Type::Date,
-                &Bound::Included(Term::from_field_date(field, DateTime::from_utc(*e))),
-                &Bound::Unbounded,
-            )),
-            Ordered::Equal(e) => Box::new(BooleanQuery::new(vec![(
-                Occur::Must,
-                Box::new(TermQuery::new(
-                    Term::from_field_date(field, DateTime::from_utc(*e)),
-                    Default::default(),
-                )),
-            )])),
-            Ordered::Range(from, to) => {
-                let from = bound_map(*from, |f| Term::from_field_date(field, DateTime::from_utc(f)));
-                let to = bound_map(*to, |f| Term::from_field_date(field, DateTime::from_utc(f)));
-                Box::new(RangeQuery::new_term_bounds(field, Type::Date, &from, &to))
-            }
-        }
-    }
-
-    fn term2query<'m>(&self, term: &sikula::prelude::Term<'m, Vulnerabilities<'m>>) -> Box<dyn Query> {
-        match term {
-            sikula::prelude::Term::Match(resource) => self.resource2query(resource),
-            sikula::prelude::Term::Not(term) => {
-                let query_terms = vec![(Occur::MustNot, self.term2query(&term))];
-                let query = BooleanQuery::new(query_terms);
-                Box::new(query)
-            }
-            sikula::prelude::Term::And(terms) => {
-                let mut query_terms = Vec::new();
-                for term in terms {
-                    query_terms.push(self.term2query(&term));
-                }
-                Box::new(BooleanQuery::intersection(query_terms))
-            }
-            sikula::prelude::Term::Or(terms) => {
-                let mut query_terms = Vec::new();
-                for term in terms {
-                    query_terms.push(self.term2query(&term));
-                }
-                Box::new(BooleanQuery::union(query_terms))
-            }
-        }
-    }
-}
-
-fn primary2occur<'m>(primary: &Primary<'m>) -> (Occur, &'m str) {
-    match primary {
-        Primary::Equal(value) => (Occur::Must, value),
-        Primary::Partial(value) => (Occur::Should, value),
-    }
-}
-
-fn bound_map<F: FnOnce(T) -> R, T, R>(bound: Bound<T>, func: F) -> Bound<R> {
-    match bound {
-        Bound::Included(f) => Bound::Included(func(f)),
-        Bound::Excluded(f) => Bound::Excluded(func(f)),
-        Bound::Unbounded => Bound::Unbounded,
     }
 }
 

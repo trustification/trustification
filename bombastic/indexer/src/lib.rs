@@ -2,8 +2,6 @@ use std::path::PathBuf;
 use std::process::ExitCode;
 use std::time::Duration;
 
-use bombastic_index::Index;
-
 mod indexer;
 
 #[derive(clap::ValueEnum, Debug, Clone)]
@@ -46,17 +44,16 @@ pub struct Run {
     pub(crate) storage_endpoint: Option<String>,
 }
 
-// TODO: SCHEMA migration not supported right now...
-const SCHEMA: &str = include_str!("../../schemas/index.sql");
-
 impl Run {
     pub async fn run(self) -> anyhow::Result<ExitCode> {
         let index: PathBuf = self.index.unwrap_or_else(|| {
             use rand::RngCore;
             let r = rand::thread_rng().next_u32();
-            std::env::temp_dir().join(format!("bombastic-indexer.{}.sqlite", r))
+            std::env::temp_dir().join(format!("bombastic-index.{}", r))
         });
-        let index = Index::new(&index, Some(SCHEMA))?;
+        std::fs::create_dir(&index)?;
+
+        let index = trustification_index::IndexStore::new(&index, bombastic_index::Index::new())?;
         let storage = trustification_storage::create("bombastic", self.devmode, self.storage_endpoint)?;
         use trustification_event_bus::EventBus;
         let interval = Duration::from_secs(self.sync_interval_seconds);

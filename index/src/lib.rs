@@ -1,15 +1,20 @@
 use std::fmt::Display;
 
+use sikula::prelude::{Ordered, Primary, Resource};
+use std::ops::Bound;
 use std::path::PathBuf;
 use tantivy::collector::Count;
 use tantivy::collector::TopDocs;
 use tantivy::directory::MmapDirectory;
 use tantivy::directory::INDEX_WRITER_LOCK;
-use tantivy::query::Query;
 use tantivy::schema::*;
 use tantivy::Directory;
 use tantivy::Index as SearchIndex;
 use tantivy::IndexWriter;
+use tantivy::{
+    query::{BooleanQuery, Occur, Query, RangeQuery, TermQuery},
+    DateTime,
+};
 
 use tracing::info;
 
@@ -180,4 +185,100 @@ impl<INDEX: Index> IndexStore<INDEX> {
 
         Ok(hits)
     }
+}
+
+/// Convert a sikula term to a query
+pub fn term2query<'m, R: Resource<'m>, F: Fn(&R::Parsed) -> Box<dyn Query>>(
+    term: &sikula::prelude::Term<'m, R>,
+    f: &F,
+) -> Box<dyn Query> {
+    match term {
+        sikula::prelude::Term::Match(resource) => f(resource),
+        sikula::prelude::Term::Not(term) => {
+            let query_terms = vec![(Occur::MustNot, term2query(&term, f))];
+            let query = BooleanQuery::new(query_terms);
+            Box::new(query)
+        }
+        sikula::prelude::Term::And(terms) => {
+            let mut query_terms = Vec::new();
+            for term in terms {
+                query_terms.push(term2query(&term, f));
+            }
+            Box::new(BooleanQuery::intersection(query_terms))
+        }
+        sikula::prelude::Term::Or(terms) => {
+            let mut query_terms = Vec::new();
+            for term in terms {
+                query_terms.push(term2query(&term, f));
+            }
+            Box::new(BooleanQuery::union(query_terms))
+        }
+    }
+}
+
+/// Crate a date query based on an ordered value
+pub fn create_date_query(field: Field, value: &Ordered<time::OffsetDateTime>) -> Box<dyn Query> {
+    match value {
+        Ordered::Less(e) => Box::new(RangeQuery::new_term_bounds(
+            field,
+            Type::Date,
+            &Bound::Unbounded,
+            &Bound::Excluded(Term::from_field_date(field, DateTime::from_utc(*e))),
+        )),
+        Ordered::LessEqual(e) => Box::new(RangeQuery::new_term_bounds(
+            field,
+            Type::Date,
+            &Bound::Unbounded,
+            &Bound::Included(Term::from_field_date(field, DateTime::from_utc(*e))),
+        )),
+        Ordered::Greater(e) => Box::new(RangeQuery::new_term_bounds(
+            field,
+            Type::Date,
+            &Bound::Excluded(Term::from_field_date(field, DateTime::from_utc(*e))),
+            &Bound::Unbounded,
+        )),
+        Ordered::GreaterEqual(e) => Box::new(RangeQuery::new_term_bounds(
+            field,
+            Type::Date,
+            &Bound::Included(Term::from_field_date(field, DateTime::from_utc(*e))),
+            &Bound::Unbounded,
+        )),
+        Ordered::Equal(e) => Box::new(BooleanQuery::new(vec![(
+            Occur::Must,
+            Box::new(TermQuery::new(
+                Term::from_field_date(field, DateTime::from_utc(*e)),
+                Default::default(),
+            )),
+        )])),
+        Ordered::Range(from, to) => {
+            let from = bound_map(*from, |f| Term::from_field_date(field, DateTime::from_utc(f)));
+            let to = bound_map(*to, |f| Term::from_field_date(field, DateTime::from_utc(f)));
+            Box::new(RangeQuery::new_term_bounds(field, Type::Date, &from, &to))
+        }
+    }
+}
+
+/// Convert a sikula primary to a tantivy Occur
+pub fn primary2occur<'m>(primary: &Primary<'m>) -> (Occur, &'m str) {
+    match primary {
+        Primary::Equal(value) => (Occur::Must, value),
+        Primary::Partial(value) => (Occur::Should, value),
+    }
+}
+
+/// Map over a bound
+pub fn bound_map<F: FnOnce(T) -> R, T, R>(bound: Bound<T>, func: F) -> Bound<R> {
+    match bound {
+        Bound::Included(f) => Bound::Included(func(f)),
+        Bound::Excluded(f) => Bound::Excluded(func(f)),
+        Bound::Unbounded => Bound::Unbounded,
+    }
+}
+
+/// Create a boolean query
+pub fn create_boolean_query(occur: Occur, term: Term) -> Box<dyn Query> {
+    Box::new(BooleanQuery::new(vec![(
+        occur,
+        Box::new(TermQuery::new(term, IndexRecordOption::Basic)),
+    )]))
 }
