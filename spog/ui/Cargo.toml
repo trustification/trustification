@@ -46,7 +46,7 @@ features = [
 #yew-nested-router = { git = "https://github.com/ctron/yew-nested-router", rev = "9689db446dee7030325884df768d0c2e84f353d6" }
 #yew-more-hooks = { git = "https://github.com/ctron/yew-more-hooks", rev = "9f39517aabe25cfadae48f2d225daa1c3a608c20" }
 #yew-more-hooks = { path = "../yew-more-hooks" }
-patternfly-yew = { git = "https://github.com/ctron/patternfly-yew", rev = "c37f960cd5af6ff3accbeb41439acb65a96b97df" }
+patternfly-yew = { git = "https://github.com/ctron/patternfly-yew", rev = "3d4a89f2df4517437197b9885a2aa6340e8c641d" }
 #patternfly-yew = { path = "../patternfly-yew" }
 
 csaf = { git = "https://github.com/ctron/csaf-rs", rev = "fa369a5f7ea061bfb541630116fb0478d8f64b2b"} # PR: feature/clone_1

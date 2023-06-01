@@ -1127,7 +1127,7 @@ dependencies = [
 [[package]]
 name = "patternfly-yew"
 version = "0.5.0-alpha.1"
-source = "git+https://github.com/ctron/patternfly-yew?rev=c37f960cd5af6ff3accbeb41439acb65a96b97df#c37f960cd5af6ff3accbeb41439acb65a96b97df"
+source = "git+https://github.com/ctron/patternfly-yew?rev=3d4a89f2df4517437197b9885a2aa6340e8c641d#3d4a89f2df4517437197b9885a2aa6340e8c641d"
 dependencies = [
  "chrono",
  "gloo-events",
@@ -1144,6 +1144,7 @@ dependencies = [
  "wasm-bindgen-futures",
  "web-sys",
  "yew",
+ "yew-hooks",
  "yew-nested-router",
 ]
 
