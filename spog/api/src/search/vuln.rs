@@ -1,5 +1,5 @@
-use crate::server::Index;
-use crate::server::{fetch_object, QueryParams, SharedState};
+use super::{fetch_object, QueryParams, SharedState};
+use crate::search::Index;
 use actix_web::{web, HttpResponse, Responder};
 
 pub async fn search(state: web::Data<SharedState>, params: web::Query<QueryParams>) -> impl Responder {
@@ -19,7 +19,7 @@ pub async fn search(state: web::Data<SharedState>, params: web::Query<QueryParam
     let storage = state.storage.read().await;
 
     for key in result.iter() {
-        if let Some(obj) = fetch_object(&storage, &key).await {
+        if let Some(obj) = fetch_object(&storage, key).await {
             if let Ok(data) = serde_json::from_slice(&obj[..]) {
                 ret.push(data);
             }

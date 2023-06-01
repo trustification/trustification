@@ -23,10 +23,10 @@ services:
   bombastic-indexer:
     image: ghcr.io/trustification/trust:latest
     command: bombastic indexer --devmode --storage-endpoint http://minio:9000 --kafka-bootstrap-servers kafka:9094
-  spog-search:
+  spog-api:
     image: ghcr.io/trustification/trust:latest
     expose:
       - "8083"
     ports:
       - "8083:8088"
-    command: spog search --devmode --storage-endpoint http://minio:9000
+    command: spog api --devmode --storage-endpoint http://minio:9000

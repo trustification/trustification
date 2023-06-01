@@ -6,6 +6,7 @@ use csaf::{definitions::NoteCategory, Csaf};
 use sikula::prelude::*;
 
 use std::ops::Bound;
+
 use tracing::info;
 use trustification_index::{
     tantivy::query::{BooleanQuery, Occur, Query, RangeQuery, TermQuery},

@@ -4111,7 +4111,7 @@ dependencies = [
  "clap",
  "serde",
  "serde_json",
- "spog-search",
+ "spog-api",
  "tokio",
  "tracing",
  "tracing-subscriber",
@@ -4137,6 +4137,7 @@ dependencies = [
  "mime",
  "okapi",
  "packageurl",
+ "rand 0.8.5",
  "reqwest",
  "serde",
  "serde_json",
@@ -4144,9 +4145,14 @@ dependencies = [
  "spog-model",
  "thiserror",
  "tokio",
+ "tracing",
+ "trustification-index",
+ "trustification-storage",
  "urlencoding",
  "utoipa",
  "utoipa-swagger-ui",
+ "vexination-index",
+ "zstd",
 ]
 
 [[package]]
@@ -4158,30 +4164,6 @@ dependencies = [
  "serde_json",
  "urlencoding",
  "utoipa",
-]
-
-[[package]]
-name = "spog-search"
-version = "0.1.0"
-dependencies = [
- "actix-cors",
- "actix-web",
- "anyhow",
- "clap",
- "hex",
- "packageurl",
- "rand 0.8.5",
- "serde",
- "serde_json",
- "sha2",
- "sikula",
- "tokio",
- "tracing",
- "tracing-subscriber",
- "trustification-index",
- "trustification-storage",
- "vexination-index",
- "zstd",
 ]
 
 [[package]]

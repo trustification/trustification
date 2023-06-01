@@ -32,5 +32,12 @@ guac = { git = "https://github.com/dejanb/guac-rs.git", branch = "main" }
 http = "*"
 reqwest = "0.11.16"
 snyk = { git = "https://github.com/dejanb/snyk-rs.git", branch = "main" }
+tracing = "0.1"
+zstd = "0.12"
+rand = "0.8"
+
 #guac = { path = "../guac-rs/lib" }
 spog-model = { path = "../model" }
+vexination-index = { path = "../../vexination/index" }
+trustification-storage = { path = "../../storage" }
+trustification-index = { path = "../../index" }

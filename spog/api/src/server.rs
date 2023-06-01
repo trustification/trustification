@@ -8,13 +8,10 @@ use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
 use crate::sbom::SbomRegistry;
-use crate::{guac, index, package, vulnerability, Snyk};
+use crate::{guac, index, package, search, vulnerability, Run};
 
 pub struct Server {
-    bind: String,
-    port: u16,
-    guac_url: String,
-    snyk: Snyk,
+    run: Run,
 }
 
 #[derive(OpenApi)]
@@ -38,20 +35,17 @@ pub struct Server {
 pub struct ApiDoc;
 
 impl Server {
-    pub fn new(bind: String, port: u16, guac_url: String, snyk: Snyk) -> Self {
-        Self {
-            bind,
-            port,
-            guac_url,
-            snyk,
-        }
+    pub fn new(run: Run) -> Self {
+        Self { run }
     }
 
     pub async fn run(self) -> anyhow::Result<()> {
         let openapi = ApiDoc::openapi();
 
         let sboms = Arc::new(SbomRegistry::new());
-        let guac = Arc::new(guac::Guac::new(&self.guac_url, sboms.clone()));
+        let guac = Arc::new(guac::Guac::new(&self.run.guac_url, sboms.clone()));
+
+        let search = Arc::new(search::configure(&self.run)?);
 
         HttpServer::new(move || {
             let cors = Cors::default()
@@ -68,15 +62,16 @@ impl Server {
                 .app_data(Data::new(package::TrustedContent::new(
                     guac.clone(),
                     sboms.clone(),
-                    self.snyk.clone(),
+                    self.run.snyk.clone(),
                 )))
                 .app_data(Data::new(guac.clone()))
                 .configure(package::configure())
                 .configure(vulnerability::configure())
                 .configure(index::configure())
+                .configure(|config| search(config))
                 .service(SwaggerUi::new("/swagger-ui/{_:.*}").url("/openapi.json", openapi.clone()))
         })
-        .bind((self.bind, self.port))?
+        .bind((self.run.bind, self.run.port))?
         .run()
         .await?;
         Ok(())
