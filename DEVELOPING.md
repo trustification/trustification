@@ -101,8 +101,8 @@ The indexer will automatically sync the index to the S3 bucket, while the API wi
 
 ## Searching
 
-You can search all the data using the `spog-search` endpoint:
+You can search all the data using the `spog-api` endpoint:
 
 ```shell
-curl "http://localhost:8083/?q=openssl"
+curl "http://localhost:8083/vuln/?q=openssl"
 ```

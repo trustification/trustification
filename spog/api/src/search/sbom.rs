@@ -4,11 +4,11 @@ use trustification_index::IndexStore;
 
 pub async fn search(state: web::Data<SharedState>, params: web::Query<QueryParams>) -> impl Responder {
     let params = params.into_inner();
-    tracing::trace!("Querying VEX using {}", params.q);
-    let state = &state.vex;
+    tracing::trace!("Querying SBOM using {}", params.q);
+    let state = &state.sbom;
 
     let index = state.index.read().await;
-    let result = search_vex(&index, &params.q).await;
+    let result = search_sbom(&index, &params.q).await;
 
     if let Err(e) = &result {
         tracing::info!("Error searching: {:?}", e);
@@ -30,6 +30,6 @@ pub async fn search(state: web::Data<SharedState>, params: web::Query<QueryParam
     HttpResponse::Ok().json(ret)
 }
 
-async fn search_vex(index: &IndexStore<vexination_index::Index>, q: &str) -> anyhow::Result<Vec<String>> {
+async fn search_sbom(index: &IndexStore<bombastic_index::Index>, q: &str) -> anyhow::Result<Vec<String>> {
     Ok(index.search(q, 0, 10)?)
 }

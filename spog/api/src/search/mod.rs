@@ -8,8 +8,7 @@ use tokio::sync::RwLock;
 use trustification_index::IndexStore;
 use trustification_storage::Storage;
 
-pub type Index = IndexStore<vexination_index::Index>;
-
+mod sbom;
 mod vuln;
 
 #[derive(Debug, Deserialize)]
@@ -18,14 +17,19 @@ pub struct QueryParams {
 }
 
 pub struct AppState {
+    pub sbom: ServiceState<bombastic_index::Index>,
+    pub vex: ServiceState<vexination_index::Index>,
+}
+
+pub struct ServiceState<T: trustification_index::Index> {
+    // TODO: Use APIs for retrieving storage?
     pub storage: RwLock<Storage>,
-    // TODO: Figure out a way to not lock since we use it read only
-    pub index: RwLock<Index>,
+    pub index: RwLock<IndexStore<T>>,
 }
 
 pub type SharedState = Arc<AppState>;
 
-impl AppState {
+impl<T: trustification_index::Index> ServiceState<T> {
     async fn sync_index(&self) -> Result<(), anyhow::Error> {
         let data = {
             let storage = self.storage.read().await;
@@ -34,7 +38,21 @@ impl AppState {
 
         let mut index = self.index.write().await;
         index.reload(&data[..])?;
-        tracing::debug!("Index reloaded");
+        tracing::info!("Index reloaded");
+        Ok(())
+    }
+}
+
+impl AppState {
+    async fn sync_index(&self) -> Result<(), anyhow::Error> {
+        let vex = self.vex.sync_index().await;
+        let sbom = self.sbom.sync_index().await;
+        if vex.is_err() {
+            return vex;
+        }
+        if sbom.is_err() {
+            return sbom;
+        }
         Ok(())
     }
 }
@@ -61,22 +79,36 @@ pub async fn fetch_object(storage: &Storage, key: &str) -> Option<Vec<u8>> {
 }
 
 pub(crate) fn configure(run: &Run) -> anyhow::Result<impl Fn(&mut ServiceConfig)> {
-    let index: PathBuf = run.index.clone().unwrap_or_else(|| {
+    let base_dir: PathBuf = run.index.clone().unwrap_or_else(|| {
         use rand::RngCore;
         let r = rand::thread_rng().next_u32();
         std::env::temp_dir().join(format!("search-api.{}", r))
     });
 
-    std::fs::create_dir(&index)?;
+    let (bombastic_dir, vexination_dir): (PathBuf, PathBuf) = (base_dir.join("bombastic"), base_dir.join("vexination"));
 
-    // TODO: Index for bombastic
-    let index = IndexStore::new(&index, vexination_index::Index::new())?;
+    std::fs::create_dir(&base_dir)?;
+    std::fs::create_dir(&bombastic_dir)?;
+    std::fs::create_dir(&vexination_dir)?;
+
+    let vexination_index = IndexStore::new(&vexination_dir, vexination_index::Index::new())?;
+    let bombastic_index = IndexStore::new(&bombastic_dir, bombastic_index::Index::new())?;
+
     // TODO: Storage with multiple buckets (bombastic and vexination?)
-    let storage = trustification_storage::create("vexination", run.devmode, run.storage_endpoint.clone())?;
+    // OR: use APIs
+    let vexination_storage = trustification_storage::create("vexination", run.devmode, run.storage_endpoint.clone())?;
+    let bombastic_storage = trustification_storage::create("bombastic", run.devmode, run.storage_endpoint.clone())?;
 
-    let storage = RwLock::new(storage);
-    let index = RwLock::new(index);
-    let state = Arc::new(AppState { storage, index });
+    let state = Arc::new(AppState {
+        vex: ServiceState {
+            storage: RwLock::new(vexination_storage),
+            index: RwLock::new(vexination_index),
+        },
+        sbom: ServiceState {
+            storage: RwLock::new(bombastic_storage),
+            index: RwLock::new(bombastic_index),
+        },
+    });
 
     let sync_interval = Duration::from_secs(run.sync_interval_seconds);
 
@@ -102,6 +134,7 @@ pub(crate) fn configure(run: &Run) -> anyhow::Result<impl Fn(&mut ServiceConfig)
 
     Ok(move |config: &mut ServiceConfig| {
         config.service(web::resource("/vuln").to(vuln::search));
+        config.service(web::resource("/sbom").to(sbom::search));
         config.app_data(web::Data::new(state.clone()));
     })
 }

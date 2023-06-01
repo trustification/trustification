@@ -25,3 +25,5 @@ members = [
 
 [patch.crates-io]
 sikula = { git = "https://github.com/ctron/sikula", rev = "d2c83dc3eab4f6945c8efb7121da5c62310ae8ec" }
+cyclonedx-bom = { git = "https://github.com/lulf/cyclonedx-rust-cargo", branch = "trustification" }
+spdx-rs = { git = "https://github.com/lulf/spdx-rs", rev = "f3f1ea9a72e270c8434f8be6ca1d61608b25b813" }

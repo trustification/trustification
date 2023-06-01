@@ -4,10 +4,11 @@ use bombastic_index::Index;
 use futures::pin_mut;
 use tokio::select;
 use trustification_event_bus::{Event, EventBus, EventConsumer};
+use trustification_index::IndexStore;
 use trustification_storage::{EventType, Storage};
 
 pub async fn run<E: EventBus>(
-    mut index: Index,
+    mut index: IndexStore<Index>,
     storage: Storage,
     bus: E,
     stored_topic: &str,
@@ -17,6 +18,7 @@ pub async fn run<E: EventBus>(
 ) -> Result<(), anyhow::Error> {
     let mut interval = tokio::time::interval(sync_interval);
     let mut events = 0;
+    let mut indexer = Some(index.indexer()?);
     let consumer = bus.subscribe("indexer", &[stored_topic]).await?;
     let mut uncommitted_events = Vec::new();
     loop {
@@ -33,9 +35,21 @@ pub async fn run<E: EventBus>(
                                 } else {
                                     if let Some(key) = storage.extract_key(&data.key) {
                                         match storage.get(key).await {
-                                            Ok(data) => {
-                                                if let Some(hash) = data.annotations.get("digest") {
-                                                    match index.insert_or_replace(&data.key, hash.as_str(), key).await {
+                                            Ok(obj) => {
+                                                let data = if obj.compressed {
+                                                    let mut out = Vec::new();
+                                                    match ::zstd::stream::copy_decode(&obj.data[..], &mut out) {
+                                                        Ok(_) => out,
+                                                        Err(e) => {
+                                                            tracing::warn!("Error decompressing data: {:?}", e);
+                                                            continue;
+                                                        }
+                                                    }
+                                                } else {
+                                                    obj.data
+                                                };
+                                                if let Ok(doc) = bombastic_index::SBOM::parse(&data) {
+                                                    match indexer.as_mut().unwrap().index(index.index(), &doc) {
                                                         Ok(_) => {
                                                             tracing::trace!("Inserted entry into index");
                                                             bus.send(indexed_topic, key.as_bytes()).await?;
@@ -51,7 +65,7 @@ pub async fn run<E: EventBus>(
                                                         }
                                                     }
                                                 } else {
-                                                    tracing::debug!("Digest not found in annotations");
+                                                    tracing::warn!("Error parsing SBOM for key {}, ignored", key);
                                                 }
                                             }
                                             Err(e) => {
@@ -79,7 +93,7 @@ pub async fn run<E: EventBus>(
             _ = tick => {
                 if events > 0 {
                     tracing::debug!("{} new events added, pushing new index to storage", events);
-                    match index.snapshot() {
+                    match index.snapshot(indexer.take().unwrap()) {
                         Ok(data) => {
                             match storage.put_index(&data).await {
                                 Ok(_) => {
@@ -99,6 +113,8 @@ pub async fn run<E: EventBus>(
                                     tracing::warn!("Error updating index: {:?}", e)
                                 }
                             }
+
+                            indexer.replace(index.indexer()?);
                         }
                         Err(e) => {
                             tracing::warn!("Error taking index snapshot: {:?}", e);

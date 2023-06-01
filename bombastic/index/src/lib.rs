@@ -1,180 +1,360 @@
-use std::fmt::Display;
-use std::path::PathBuf;
+mod search;
+use cyclonedx_bom::models::{component::Classification, hash::HashAlgorithm};
+use search::*;
+
+use sikula::prelude::*;
+
+use spdx_rs::models::Algorithm;
+use tracing::info;
+use trustification_index::{
+    create_boolean_query, primary2occur,
+    tantivy::doc,
+    tantivy::query::{Occur, Query},
+    tantivy::schema::{Field, Schema, Term, FAST, STORED, STRING, TEXT},
+    term2query, Document, Error as SearchError,
+};
+
+use core::str::FromStr;
 
 pub struct Index {
-    connection: sqlite::Connection,
-    path: Option<PathBuf>,
+    schema: Schema,
+    fields: Fields,
 }
 
-#[derive(Debug)]
-pub enum Error {
-    Open,
-    Internal(sqlite::Error),
-    NotFound,
-    NotPersisted,
-    Io(std::io::Error),
+pub enum SBOM {
+    CycloneDX(cyclonedx_bom::prelude::Bom),
+    SPDX(spdx_rs::models::SPDX),
 }
 
-impl Display for Error {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Open => write!(f, "Error opening index"),
-            Self::Internal(e) => write!(f, "Internal error: {:?}", e),
-            Self::NotFound => write!(f, "Not found"),
-            Self::NotPersisted => write!(f, "Database is not persisted"),
-            Self::Io(e) => write!(f, "I/O error: {:?}", e),
+impl SBOM {
+    pub fn parse(data: &[u8]) -> Result<Self, serde_json::Error> {
+        if let Ok(bom) = cyclonedx_bom::prelude::Bom::parse_from_json_v1_3(data) {
+            Ok(SBOM::CycloneDX(bom))
+        } else {
+            let spdx = serde_json::from_slice::<spdx_rs::models::SPDX>(data).map_err(|e| {
+                tracing::warn!("Error parsing SPDX: {:?}", e);
+                e
+            })?;
+            Ok(SBOM::SPDX(spdx))
         }
     }
 }
 
-impl std::error::Error for Error {}
+struct Fields {
+    dependent: Field,
+    purl: Field,
+    ptype: Field,
+    pnamespace: Field,
+    pname: Field,
+    pversion: Field,
+    description: Field,
+    sha256: Field,
+    license: Field,
+    qualifiers: Field,
+
+    classifier: Field,
+}
 
 impl Index {
-    pub fn new(path: &PathBuf, schema: Option<&str>) -> Result<Self, Error> {
-        let connection = sqlite::open(path).map_err(|_| Error::Open)?;
-        if let Some(schema) = schema {
-            let _ = connection.execute(schema);
-        }
-        Ok(Self {
-            connection,
-            path: Some(path.clone()),
-        })
-    }
-
-    // Update index data and reopen
-    pub fn sync(&mut self, data: &[u8]) -> Result<(), Error> {
-        if let Some(path) = &self.path {
-            std::fs::write(path, data).map_err(Error::Io)?;
-            self.connection = sqlite::open(path).map_err(|_| Error::Open)?;
-        }
-        Ok(())
-    }
-
-    pub fn new_with_handle(connection: sqlite::Connection) -> Self {
-        Self { connection, path: None }
-    }
-
-    pub async fn query_purl(&mut self, purl: &str) -> Result<String, Error> {
-        const QUERY_PURL: &str = "SELECT obj FROM sboms WHERE purl=?";
-        let mut statement = self.connection.prepare(QUERY_PURL)?;
-        statement.bind((1, purl))?;
-
-        // PURL is unique so produces only 1 hit
-        if let Ok(sqlite::State::Row) = statement.next() {
-            Ok(statement.read::<String, _>("obj")?)
-        } else {
-            Err(Error::NotFound)
+    pub fn new() -> Self {
+        let mut schema = Schema::builder();
+        let fields = Fields {
+            dependent: schema.add_text_field("dependent", STRING | STORED),
+            purl: schema.add_text_field("purl", STRING | FAST | STORED),
+            ptype: schema.add_text_field("ptype", STRING),
+            pnamespace: schema.add_text_field("pnamespace", STRING),
+            pname: schema.add_text_field("pname", STRING),
+            pversion: schema.add_text_field("pversion", STRING),
+            description: schema.add_text_field("description", TEXT),
+            sha256: schema.add_text_field("sha256", STRING),
+            license: schema.add_text_field("license", STRING),
+            qualifiers: schema.add_json_field("qualifiers", STRING),
+            classifier: schema.add_text_field("classifier", STRING),
+        };
+        Self {
+            schema: schema.build(),
+            fields,
         }
     }
 
-    pub async fn query_sha256(&mut self, hash: &str) -> Result<String, Error> {
-        const QUERY_PURL: &str = "SELECT obj FROM sboms WHERE sha256=?";
-        let mut statement = self.connection.prepare(QUERY_PURL)?;
-        statement.bind((1, hash))?;
+    fn index_spdx(&self, bom: &spdx_rs::models::SPDX) -> Result<Vec<Document>, SearchError> {
+        tracing::info!("Indexing SPDX document");
+        let mut documents = Vec::new();
+        for package in &bom.package_information {
+            let mut document = doc!();
 
-        // SHA256 is unique so produces only 1 hit
-        if let Ok(sqlite::State::Row) = statement.next() {
-            Ok(statement.read::<String, _>("obj")?)
-        } else {
-            Err(Error::NotFound)
+            if let Some(comment) = &package.package_summary_description {
+                document.add_text(self.fields.description, comment);
+            }
+
+            for r in package.external_reference.iter() {
+                if r.reference_type == "purl" {
+                    let purl = r.reference_locator.clone();
+                    document.add_text(self.fields.purl, &purl);
+
+                    if let Ok(package) = packageurl::PackageUrl::from_str(&purl) {
+                        document.add_text(self.fields.pname, package.name());
+                        if let Some(namespace) = package.namespace() {
+                            document.add_text(self.fields.pnamespace, namespace);
+                        }
+
+                        if let Some(version) = package.version() {
+                            document.add_text(self.fields.pversion, version);
+                        }
+
+                        let mut qualifiers: serde_json::Map<String, serde_json::Value> = serde_json::Map::new();
+                        for entry in package.qualifiers().iter() {
+                            if let Ok(value) = serde_json::from_str::<serde_json::Value>(entry.1) {
+                                qualifiers.insert(entry.0.to_string(), value);
+                            }
+                        }
+                        document.add_json_object(self.fields.qualifiers, qualifiers);
+                        document.add_text(self.fields.ptype, package.ty());
+                    }
+                }
+            }
+
+            for sum in package.package_checksum.iter() {
+                if sum.algorithm == Algorithm::SHA256 {
+                    document.add_text(self.fields.sha256, &sum.value);
+                }
+            }
+
+            document.add_text(self.fields.license, package.declared_license.to_string());
+
+            documents.push(document);
         }
+        Ok(documents)
     }
 
-    pub async fn insert_or_replace(&mut self, purl: &str, sha256: &str, obj: &str) -> Result<(), Error> {
-        const INSERT_PURL: &str = "INSERT OR REPLACE INTO sboms VALUES (?, ?, ?)";
-        let mut statement = self.connection.prepare(INSERT_PURL)?;
-        statement.bind(&[(1, purl), (2, sha256), (3, obj)][..])?;
-        loop {
-            let state = statement.next()?;
-            if state == sqlite::State::Done {
-                break;
+    fn index_cyclonedx(&self, bom: &cyclonedx_bom::prelude::Bom) -> Result<Vec<Document>, SearchError> {
+        let mut documents = Vec::new();
+        let mut parent = None;
+        if let Some(metadata) = &bom.metadata {
+            if let Some(component) = &metadata.component {
+                documents.push(self.index_cyclonedx_component(component, None)?);
+                if let Some(purl) = &component.purl {
+                    parent.replace(purl.to_string());
+                }
             }
         }
-        Ok(())
+
+        if let Some(components) = &bom.components {
+            for component in components.0.iter() {
+                documents.push(self.index_cyclonedx_component(component, parent.as_deref())?);
+            }
+        }
+        Ok(documents)
     }
 
-    pub fn snapshot(&mut self) -> Result<Vec<u8>, Error> {
-        if let Some(path) = &self.path {
-            let data = std::fs::read(path).map_err(Error::Io)?;
-            Ok(data)
-        } else {
-            Err(Error::NotPersisted)
+    fn index_cyclonedx_component(
+        &self,
+        component: &cyclonedx_bom::prelude::Component,
+        parent: Option<&str>,
+    ) -> Result<Document, SearchError> {
+        let mut document = doc!();
+
+        if let Some(hashes) = &component.hashes {
+            for hash in hashes.0.iter() {
+                if hash.alg == HashAlgorithm::SHA256 {
+                    document.add_text(self.fields.sha256, &hash.content.0);
+                }
+            }
+        }
+
+        if let Some(purl) = &component.purl {
+            let purl = purl.to_string();
+            document.add_text(self.fields.purl, &purl);
+
+            if let Ok(package) = packageurl::PackageUrl::from_str(&purl) {
+                document.add_text(self.fields.pname, package.name());
+                if let Some(namespace) = package.namespace() {
+                    document.add_text(self.fields.pnamespace, namespace);
+                }
+
+                if let Some(version) = package.version() {
+                    document.add_text(self.fields.pversion, version);
+                }
+
+                let mut qualifiers: serde_json::Map<String, serde_json::Value> = serde_json::Map::new();
+                for entry in package.qualifiers().iter() {
+                    if let Ok(value) = serde_json::from_str::<serde_json::Value>(entry.1) {
+                        qualifiers.insert(entry.0.to_string(), value);
+                    }
+                }
+                document.add_json_object(self.fields.qualifiers, qualifiers);
+                document.add_text(self.fields.ptype, package.ty());
+            }
+        }
+
+        if let Some(desc) = &component.description {
+            document.add_text(self.fields.description, desc.to_string());
+        }
+
+        if let Some(licenses) = &component.licenses {
+            use cyclonedx_bom::models::license::{LicenseChoice, LicenseIdentifier};
+            let licenses: Vec<String> = licenses
+                .0
+                .iter()
+                .map(|l| match l {
+                    LicenseChoice::License(l) => match &l.license_identifier {
+                        LicenseIdentifier::Name(s) => Some(s),
+                        LicenseIdentifier::SpdxId(_) => None,
+                    },
+                    LicenseChoice::Expression(_) => None,
+                })
+                .filter(|s| s.is_some())
+                .map(|m| m.unwrap().to_string())
+                .collect();
+            let license = licenses.join(" ");
+            document.add_text(self.fields.license, license);
+        }
+
+        document.add_text(self.fields.classifier, component.component_type.to_string());
+
+        if let Some(parent) = parent {
+            document.add_text(self.fields.dependent, parent);
+        }
+
+        Ok(document)
+    }
+
+    fn resource2query<'m>(&self, resource: &Packages<'m>) -> Box<dyn Query> {
+        match resource {
+            Packages::Dependent(primary) => {
+                let (occur, value) = primary2occur(&primary);
+                let term = Term::from_field_text(self.fields.dependent, value);
+                create_boolean_query(occur, term)
+            }
+
+            Packages::Purl(primary) => {
+                let (occur, value) = primary2occur(&primary);
+                let term = Term::from_field_text(self.fields.purl, value);
+                create_boolean_query(occur, term)
+            }
+
+            Packages::Type(primary) => {
+                let (occur, value) = primary2occur(&primary);
+                let term = Term::from_field_text(self.fields.ptype, value);
+                create_boolean_query(occur, term)
+            }
+
+            Packages::Namespace(primary) => {
+                let (occur, value) = primary2occur(&primary);
+                let term = Term::from_field_text(self.fields.pnamespace, value);
+                create_boolean_query(occur, term)
+            }
+
+            Packages::Name(primary) => {
+                let (occur, value) = primary2occur(&primary);
+                let term = Term::from_field_text(self.fields.pname, value);
+                create_boolean_query(occur, term)
+            }
+
+            Packages::Version(primary) => {
+                let (occur, value) = primary2occur(&primary);
+                let term = Term::from_field_text(self.fields.pversion, value);
+                create_boolean_query(occur, term)
+            }
+
+            Packages::Description(primary) => {
+                let (occur, value) = primary2occur(&primary);
+                let term = Term::from_field_text(self.fields.description, value);
+                create_boolean_query(occur, term)
+            }
+
+            Packages::Digest(primary) => {
+                let (occur, value) = primary2occur(&primary);
+                let term = Term::from_field_text(self.fields.sha256, value);
+                create_boolean_query(occur, term)
+            }
+
+            Packages::License(primary) => {
+                let (occur, value) = primary2occur(&primary);
+                let term = Term::from_field_text(self.fields.license, value);
+                create_boolean_query(occur, term)
+            }
+
+            Packages::Qualifier(primary) => {
+                let (occur, value) = primary2occur(&primary);
+                let term = Term::from_field_text(self.fields.qualifiers, value);
+                create_boolean_query(occur, term)
+            }
+
+            Packages::Application => create_boolean_query(
+                Occur::Must,
+                Term::from_field_text(self.fields.classifier, &Classification::Application.to_string()),
+            ),
+
+            Packages::Library => create_boolean_query(
+                Occur::Must,
+                Term::from_field_text(self.fields.classifier, &Classification::Library.to_string()),
+            ),
+
+            Packages::Framework => create_boolean_query(
+                Occur::Must,
+                Term::from_field_text(self.fields.classifier, &Classification::Framework.to_string()),
+            ),
+
+            Packages::Container => create_boolean_query(
+                Occur::Must,
+                Term::from_field_text(self.fields.classifier, &Classification::Container.to_string()),
+            ),
+
+            Packages::OperatingSystem => create_boolean_query(
+                Occur::Must,
+                Term::from_field_text(self.fields.classifier, &Classification::OperatingSystem.to_string()),
+            ),
+
+            Packages::Device => create_boolean_query(
+                Occur::Must,
+                Term::from_field_text(self.fields.classifier, &Classification::Device.to_string()),
+            ),
+            Packages::Firmware => create_boolean_query(
+                Occur::Must,
+                Term::from_field_text(self.fields.classifier, &Classification::Firmware.to_string()),
+            ),
+            Packages::File => create_boolean_query(
+                Occur::Must,
+                Term::from_field_text(self.fields.classifier, &Classification::File.to_string()),
+            ),
         }
     }
 }
 
-impl From<sqlite::Error> for Error {
-    fn from(e: sqlite::Error) -> Self {
-        Self::Internal(e)
-    }
-}
+impl trustification_index::Index for Index {
+    type DocId = String;
+    type Document = SBOM;
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    fn init(conn: &mut sqlite::Connection) {
-        let schema = std::fs::read_to_string("../schemas/index.sql").unwrap();
-        println!("Read schema: {:?}", schema.trim());
-        conn.execute(schema.trim()).unwrap();
-
-        let test_data = std::fs::read_to_string("testdata.sql").unwrap();
-        conn.execute(test_data).unwrap();
+    fn index_doc(&self, doc: &SBOM) -> Result<Vec<Document>, SearchError> {
+        match doc {
+            SBOM::CycloneDX(bom) => self.index_cyclonedx(bom),
+            SBOM::SPDX(bom) => self.index_spdx(bom),
+        }
     }
 
-    #[tokio::test]
-    async fn test_insert() {
-        let mut conn = sqlite::open(":memory:").unwrap();
-        init(&mut conn);
-
-        let mut index = Index::new_with_handle(conn);
-
-        let result = index
-            .insert_or_replace(
-                "purl2",
-                "116940abae80491f5357f652e55c48347dd7a2a1ff27df578c4572a383373c71",
-                "key1",
-            )
-            .await;
-        assert!(result.is_ok());
-
-        let result = index.query_purl("purl2").await;
-        assert!(result.is_ok());
-        let result = result.unwrap();
-        assert_eq!(result, "key1");
+    fn schema(&self) -> Schema {
+        self.schema.clone()
     }
 
-    #[tokio::test]
-    async fn test_query_purl() {
-        let mut conn = sqlite::open(":memory:").unwrap();
-        init(&mut conn);
+    fn prepare_query(&self, q: &str) -> Result<Box<dyn Query>, SearchError> {
+        let mut query = Packages::parse_query(&q).map_err(|err| SearchError::Parser(err.to_string()))?;
 
-        let mut index = Index::new_with_handle(conn);
+        query.term = query.term.compact();
 
-        let result = index.query_purl("purl1").await;
-        assert!(result.is_ok());
-        let result = result.unwrap();
-        assert_eq!(
-            result,
-            "116940abae80491f5357f652e55c48347dd7a2a1ff27df578c4572a383373c70"
-        );
+        info!("Query: {query:?}");
+
+        let query = term2query(&query.term, &|resource| self.resource2query(resource));
+
+        info!("Processed query: {:?}", query);
+        Ok(query)
     }
 
-    #[tokio::test]
-    async fn test_query_sha256() {
-        let mut conn = sqlite::open(":memory:").unwrap();
-        init(&mut conn);
-
-        let mut index = Index::new_with_handle(conn);
-
-        let result = index
-            .query_sha256("116940abae80491f5357f652e55c48347dd7a2a1ff27df578c4572a383373c70")
-            .await;
-        assert!(result.is_ok());
-        let result = result.unwrap();
-        assert_eq!(
-            result,
-            "116940abae80491f5357f652e55c48347dd7a2a1ff27df578c4572a383373c70"
-        );
+    fn process_hit(&self, doc: Document) -> Result<Self::DocId, SearchError> {
+        if let Some(Some(value)) = doc.get_first(self.fields.purl).map(|s| s.as_text()) {
+            Ok(value.into())
+        } else {
+            Err(SearchError::NotFound)
+        }
     }
 }
