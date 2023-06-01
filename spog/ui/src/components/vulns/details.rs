@@ -1,4 +1,6 @@
 use crate::{components::cvss::CvssScore, utils::cvss::Cvss};
+use csaf::definitions::Branch;
+use csaf::product_tree::ProductTree;
 use csaf::{vulnerability::Vulnerability, Csaf};
 use patternfly_yew::{
     next::{
@@ -28,18 +30,25 @@ pub fn csaf_details(props: &CsafDetailsProps) -> Html {
         props.clone(),
     );
 
-    let products = use_memo(
-        |props| props.csaf.product_tree.clone().unwrap_or_default(),
+    let product = use_memo(
+        |props| {
+            props.csaf.product_tree.clone().unwrap_or_else(|| ProductTree {
+                branches: None,
+                product_groups: None,
+                full_product_names: None,
+                relationships: None,
+            })
+        },
         props.clone(),
     );
 
     html!(
         <Grid gutter=true>
-            <GridItem cols={[12.all()]}>
+            <GridItem cols={[6.all()]}>
                 <CsafVulnTable entries={vulns}/>
             </GridItem>
-            <GridItem cols={[12.all()]}>
-                <CsafProductTable entries={vulns}/>
+            <GridItem cols={[6.all()]}>
+                <CsafProductInfo {product}/>
             </GridItem>
         </Grid>
     )
@@ -126,79 +135,82 @@ pub fn vulnerability_table(props: &CsafVulnTableProperties) -> Html {
 
 // products
 
-#[derive(Clone, Copy, PartialEq, Eq)]
-enum ProductsColumn {
-    Cve,
-    Title,
-    Cwe,
-    Score,
-}
-
 #[derive(Properties)]
-pub struct CsafProductTableProperties {
-    pub entries: Rc<Vec<Vulnerability>>,
+pub struct CsafProductInfoProperties {
+    pub product: Rc<ProductTree>,
 }
 
-impl PartialEq for CsafProductTableProperties {
+impl PartialEq for CsafProductInfoProperties {
     fn eq(&self, other: &Self) -> bool {
-        Rc::ptr_eq(&self.entries, &other.entries)
+        Rc::ptr_eq(&self.product, &other.product)
     }
 }
 
-impl TableEntryRenderer<Column> for Vulnerability {
-    fn render_cell(&self, context: &patternfly_yew::next::CellContext<'_, Column>) -> patternfly_yew::next::Cell {
-        match context.column {
-            Column::Cve => self
-                .cve
-                .clone()
-                .map(|cve| html!(cve))
-                .unwrap_or_else(|| html!(<i>{"N/A"}</i>)),
-            Column::Title => self.title.clone().map(Html::from).unwrap_or_default(),
-            Column::Score => self
-                .scores
-                .clone()
-                .unwrap_or_default()
-                .into_iter()
-                .filter_map(|s| s.cvss_v3)
-                .map(|s| Cvss {
-                    score: s.score().value() as f32,
-                    status: String::new(),
-                })
-                .map(|cvss| html!(<CvssScore {cvss}/>))
-                .collect::<Html>(),
-            Column::Cwe => self
-                .cwe
-                .clone()
-                .map(|cwe| {
-                    html!(<Tooltip text={cwe.name}>
-                        {cwe.id}
-                    </Tooltip>)
-                })
-                .unwrap_or_else(|| html!(<i>{"N/A"}</i>)),
+struct ProductTreeWrapper(Rc<ProductTree>);
+
+impl PartialEq for ProductTreeWrapper {
+    fn eq(&self, other: &Self) -> bool {
+        Rc::ptr_eq(&self.0, &other.0)
+    }
+}
+
+struct BranchWrapper(Branch);
+
+impl TreeTableModel for ProductTreeWrapper {
+    fn children(&self) -> Vec<Rc<dyn TreeNode>> {
+        self.0
+            .branches
+            .iter()
+            .flat_map(|s| s.0.iter())
+            .map(|branch| Rc::new(BranchWrapper(branch.clone())) as Rc<dyn TreeNode>)
+            .collect()
+    }
+}
+
+impl TreeNode for BranchWrapper {
+    fn render_main(&self) -> Cell {
+        html!(<>
+            { &self.0.name } { " " }
+            <Label color={Color::Blue} label={format!("{:?}", self.0.category)} outline=true compact=true/>
+        </>)
+        .into()
+    }
+
+    fn render_cell(&self, ctx: CellContext) -> Cell {
+        match ctx.column {
+            _ => html!(),
         }
         .into()
     }
+
+    fn children(&self) -> Vec<Rc<dyn TreeNode>> {
+        self.0
+            .branches
+            .iter()
+            .flat_map(|s| s.0.iter())
+            .map(|branch| Rc::new(BranchWrapper(branch.clone())) as Rc<dyn TreeNode>)
+            .collect()
+    }
 }
 
-#[function_component(CsafProductsTable)]
-pub fn products_table(props: &CsafVulnTableProperties) -> Html {
-    let (entries, onexpand) = use_table_data(MemoizedTableModel::new(props.entries.clone()));
+#[function_component(CsafProductInfo)]
+pub fn product_info(props: &CsafProductInfoProperties) -> Html {
+    use patternfly_yew::prelude::ColumnWidth;
+    use patternfly_yew::prelude::TableColumn;
 
     let header = html_nested! {
-        <TableHeader<Column>>
-            <TableColumn<Column> label="CVE ID" index={Column::Cve} />
-            <TableColumn<Column> label="Title" index={Column::Title} />
-            <TableColumn<Column> label="Score" index={Column::Score} />
-            <TableColumn<Column> label="CWE" index={Column::Cwe} />
-        </TableHeader<Column>>
+        <TreeTableHeader>
+            <TableColumn label="Name"/>
+        </TreeTableHeader>
     };
 
+    let root = Rc::new(ProductTreeWrapper(props.product.clone()));
+
     html!(
-        <Table<Column, UseTableData<Column, MemoizedTableModel<Vulnerability>>>
-            mode={TableMode::Compact}
-            {header}
-            {entries}
-            {onexpand}
+        <TreeTable<ProductTreeWrapper>
+            mode={TreeTableMode::Compact}
+            header={header}
+            model={root}
         />
     )
 }

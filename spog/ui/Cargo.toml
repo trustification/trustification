@@ -49,6 +49,8 @@ features = [
 patternfly-yew = { git = "https://github.com/ctron/patternfly-yew", rev = "020518c4480583b894ae986a5c3210b18c37a12a" }
 #patternfly-yew = { path = "../patternfly-yew" }
 
+csaf = { git = "https://github.com/ctron/csaf-rs", rev = "fa369a5f7ea061bfb541630116fb0478d8f64b2b"} # PR: feature/clone_1
+
 spog-model = { path = "../model" }
 
 packageurl = { git = "https://github.com/ctron/packageurl.rs", rev = "c9a0c192ff0cba5d75b8cbf8be0b1e4dc14320aa" }
