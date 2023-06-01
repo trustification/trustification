@@ -2,6 +2,7 @@ use std::path::PathBuf;
 use std::process::ExitCode;
 use std::time::Duration;
 
+use trustification_index::IndexStore;
 use vexination_index::Index;
 
 mod indexer;
@@ -56,7 +57,7 @@ impl Run {
 
         std::fs::create_dir(&index_dir)?;
 
-        let index = Index::new(&index_dir)?;
+        let index = IndexStore::new(&index_dir, Index::new())?;
 
         let storage = trustification_storage::create("vexination", self.devmode, self.storage_endpoint)?;
         use trustification_event_bus::EventBus;

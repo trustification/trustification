@@ -7,8 +7,10 @@ use actix_web::web::{self};
 use actix_web::{App, HttpResponse, HttpServer};
 use serde::Deserialize;
 use tokio::sync::RwLock;
+use trustification_index::IndexStore;
 use trustification_storage::Storage;
-use vexination_index::Index;
+
+pub type Index = IndexStore<vexination_index::Index>;
 
 pub struct AppState {
     pub storage: RwLock<Storage>,
