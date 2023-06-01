@@ -20,7 +20,7 @@ To run the API processes, you can use cargo:
 ```shell
 RUST_LOG=info cargo run -p trust -- vexination api --devmode -p 8081 &
 RUST_LOG=info cargo run -p trust -- bombastic api --devmode -p 8082 &
-RUST_LOG=info cargo run -p trust -- spog search --devmode -p 8083 &
+RUST_LOG=info cargo run -p trust -- spog api --devmode -p 8083 &
 ```
 
 ## Indexing
@@ -50,6 +50,12 @@ You can also crawl Red Hat security data using the walker, which will feed the S
 
 ```shell
 RUST_LOG=info cargo run -p trust -- vexination walker --devmode --source https://www.redhat.com/.well-known/csaf/provider-metadata.json -3
+```
+
+If you have a local copy of the data, you can also run:
+
+```shell
+RUST_LOG=info cargo run -p trust -- vexination walker --devmode --source file:///path/to/copy
 ```
 
 ## Ingesting SBOMs

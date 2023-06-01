@@ -21,15 +21,14 @@ pub struct Backend {
 
 #[derive(Clone, Debug, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
 pub struct Endpoints {
-    pub api_url: Url,
-    pub search_url: Url,
+    pub url: Url,
 }
 
 impl Endpoints {
     pub fn get(&self, endpoint: Endpoint) -> &Url {
         match endpoint {
-            Endpoint::Api => &self.api_url,
-            Endpoint::Search => &self.search_url,
+            Endpoint::Api => &self.url,
+            Endpoint::Search => &self.url,
         }
     }
 }

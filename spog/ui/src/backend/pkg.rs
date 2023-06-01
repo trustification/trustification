@@ -1,6 +1,8 @@
 use super::{Backend, Error};
-use crate::backend::data::{Package, PackageDependencies, PackageDependents, PackageList, PackageRef};
-use crate::backend::Endpoint;
+use crate::backend::{
+    data::{Package, PackageDependencies, PackageDependents, PackageList, PackageRef},
+    Endpoint,
+};
 use packageurl::PackageUrl;
 use serde::Deserialize;
 
