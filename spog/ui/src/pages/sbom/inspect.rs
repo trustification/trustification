@@ -4,7 +4,7 @@ use super::{
 };
 use crate::{
     backend::PackageService,
-    components::{count_title, deps::PackageReferences},
+    components::{count_title, deps::PackageReferences, error::Error},
     hooks::use_backend,
 };
 use cyclonedx_bom::prelude::Bom;
@@ -102,6 +102,6 @@ pub fn inspect(props: &InspectProperties) -> Html {
                </PageSection>
             </>
         ),
-        UseAsyncState::Ready(Err(err)) => html!(<>{"Failed to load: "} { err } </>),
+        UseAsyncState::Ready(Err(err)) => html!(<Error {err} />),
     }
 }

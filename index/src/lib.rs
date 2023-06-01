@@ -161,7 +161,7 @@ impl<INDEX: Index> IndexStore<INDEX> {
         Ok(Indexer { writer })
     }
 
-    pub fn search(&self, q: &str, offset: usize, len: usize) -> Result<Vec<INDEX::DocId>, Error> {
+    pub fn search(&self, q: &str, offset: usize, len: usize) -> Result<(Vec<INDEX::DocId>, usize), Error> {
         let reader = self.inner.reader()?;
         let searcher = reader.searcher();
 
@@ -183,7 +183,7 @@ impl<INDEX: Index> IndexStore<INDEX> {
 
         tracing::trace!("Filtered to {}", hits.len());
 
-        Ok(hits)
+        Ok((hits, count))
     }
 }
 

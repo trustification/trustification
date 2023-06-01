@@ -1126,8 +1126,8 @@ dependencies = [
 
 [[package]]
 name = "patternfly-yew"
-version = "0.4.1"
-source = "git+https://github.com/ctron/patternfly-yew?rev=020518c4480583b894ae986a5c3210b18c37a12a#020518c4480583b894ae986a5c3210b18c37a12a"
+version = "0.5.0-alpha.1"
+source = "git+https://github.com/ctron/patternfly-yew?rev=c37f960cd5af6ff3accbeb41439acb65a96b97df#c37f960cd5af6ff3accbeb41439acb65a96b97df"
 dependencies = [
  "chrono",
  "gloo-events",

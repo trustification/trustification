@@ -3,10 +3,7 @@ use csaf::definitions::Branch;
 use csaf::product_tree::ProductTree;
 use csaf::{vulnerability::Vulnerability, Csaf};
 use patternfly_yew::{
-    next::{
-        use_table_data, ColumnWidth, MemoizedTableModel, Table, TableColumn, TableEntryRenderer, TableHeader,
-        UseTableData,
-    },
+    next::{use_table_data, MemoizedTableModel, Table, TableColumn, TableEntryRenderer, TableHeader, UseTableData},
     prelude::*,
 };
 use std::rc::Rc;
@@ -195,7 +192,6 @@ impl TreeNode for BranchWrapper {
 
 #[function_component(CsafProductInfo)]
 pub fn product_info(props: &CsafProductInfoProperties) -> Html {
-    use patternfly_yew::prelude::ColumnWidth;
     use patternfly_yew::prelude::TableColumn;
 
     let header = html_nested! {

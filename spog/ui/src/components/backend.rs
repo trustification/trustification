@@ -1,5 +1,4 @@
-use crate::backend::Endpoints;
-use patternfly_yew::prelude::*;
+use crate::{backend::Endpoints, components::error::Error};
 use std::rc::Rc;
 use web_sys::RequestCache;
 use yew::prelude::*;
@@ -41,18 +40,7 @@ pub fn backend(props: &BackendProperties) -> Html {
     match &*backend {
         UseAsyncState::Pending | UseAsyncState::Processing => html!(),
         UseAsyncState::Ready(Err(err)) => html!(
-            <Bullseye>
-                <Grid gutter=true>
-                    <GridItem offset={[2]} cols={[2]}>
-                        <img src="assets/images/chicken-svgrepo-com.svg" style="transform: scaleY(-1);"/>
-                    </GridItem>
-                    <GridItem cols={[6]}>
-                        <Title>{"Failure"}</Title>
-                        { format!("Failed to initialize backend: {err}") }
-                    </GridItem>
-                </Grid>
-
-            </Bullseye>
+            <Error err={err.clone()}/>
         ),
         UseAsyncState::Ready(Ok(backend)) => html!(
             <ContextProvider<Rc<crate::backend::Backend>> context={Rc::new(backend.clone())}>
