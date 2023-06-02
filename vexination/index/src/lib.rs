@@ -321,7 +321,7 @@ mod tests {
     async fn test_free_form_simple_primary() {
         assert_free_form(|index| {
             let result = index.search("openssl", 0, 100).unwrap();
-            assert_eq!(result.len(), 1);
+            assert_eq!(result.0.len(), 1);
         });
     }
 
@@ -329,7 +329,7 @@ mod tests {
     async fn test_free_form_simple_primary_2() {
         assert_free_form(|index| {
             let result = index.search("CVE-2023-0286", 0, 100).unwrap();
-            assert_eq!(result.len(), 1);
+            assert_eq!(result.0.len(), 1);
         });
     }
 
@@ -337,7 +337,7 @@ mod tests {
     async fn test_free_form_simple_primary_3() {
         assert_free_form(|index| {
             let result = index.search("RHSA-2023:1441", 0, 100).unwrap();
-            assert_eq!(result.len(), 1);
+            assert_eq!(result.0.len(), 1);
         });
     }
 
@@ -345,7 +345,7 @@ mod tests {
     async fn test_free_form_primary_scoped() {
         assert_free_form(|index| {
             let result = index.search("RHSA-2023:1441 in:id", 0, 100).unwrap();
-            assert_eq!(result.len(), 1);
+            assert_eq!(result.0.len(), 1);
         });
     }
 
@@ -353,7 +353,7 @@ mod tests {
     async fn test_free_form_predicate_final() {
         assert_free_form(|index| {
             let result = index.search("is:final", 0, 100).unwrap();
-            assert_eq!(result.len(), 1);
+            assert_eq!(result.0.len(), 1);
         });
     }
 
@@ -361,7 +361,7 @@ mod tests {
     async fn test_free_form_predicate_high() {
         assert_free_form(|index| {
             let result = index.search("is:high", 0, 100).unwrap();
-            assert_eq!(result.len(), 1);
+            assert_eq!(result.0.len(), 1);
         });
     }
 
@@ -369,7 +369,7 @@ mod tests {
     async fn test_free_form_predicate_critical() {
         assert_free_form(|index| {
             let result = index.search("is:critical", 0, 100).unwrap();
-            assert_eq!(result.len(), 0);
+            assert_eq!(result.0.len(), 0);
         });
     }
 
@@ -377,10 +377,10 @@ mod tests {
     async fn test_free_form_ranges() {
         assert_free_form(|index| {
             let result = index.search("cvss:>5", 0, 100).unwrap();
-            assert_eq!(result.len(), 1);
+            assert_eq!(result.0.len(), 1);
 
             let result = index.search("cvss:<5", 0, 100).unwrap();
-            assert_eq!(result.len(), 0);
+            assert_eq!(result.0.len(), 0);
         });
     }
 
@@ -388,22 +388,22 @@ mod tests {
     async fn test_free_form_dates() {
         assert_free_form(|index| {
             let result = index.search("initial:>2022-01-01", 0, 100).unwrap();
-            assert_eq!(result.len(), 1);
+            assert_eq!(result.0.len(), 1);
 
             let result = index.search("discovery:>2022-01-01", 0, 100).unwrap();
-            assert_eq!(result.len(), 1);
+            assert_eq!(result.0.len(), 1);
 
             let result = index.search("release:>2022-01-01", 0, 100).unwrap();
-            assert_eq!(result.len(), 1);
+            assert_eq!(result.0.len(), 1);
 
             let result = index.search("release:>2023-02-08", 0, 100).unwrap();
-            assert_eq!(result.len(), 1);
+            assert_eq!(result.0.len(), 1);
 
             let result = index.search("release:2022-01-01..2023-01-01", 0, 100).unwrap();
-            assert_eq!(result.len(), 0);
+            assert_eq!(result.0.len(), 0);
 
             let result = index.search("release:2022-01-01..2024-01-01", 0, 100).unwrap();
-            assert_eq!(result.len(), 1);
+            assert_eq!(result.0.len(), 1);
         });
     }
 }
