@@ -4901,6 +4901,7 @@ dependencies = [
  "bytes",
  "futures",
  "http",
+ "mime",
  "rust-s3",
  "serde",
  "serde_json",
@@ -5170,6 +5171,7 @@ dependencies = [
  "csaf-walker",
  "hex",
  "humantime 2.1.0",
+ "mime",
  "packageurl",
  "rand 0.8.5",
  "serde",
@@ -5181,7 +5183,6 @@ dependencies = [
  "tracing-subscriber",
  "trustification-storage",
  "url",
- "zstd",
 ]
 
 [[package]]
