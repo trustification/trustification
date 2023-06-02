@@ -113,7 +113,8 @@ async fn publish_sbom(
                 }
 
                 tracing::debug!("Storing new SBOM ({purl})");
-                match storage.put_slice(&purl, content_type.as_ref(), &mut sbom.raw()).await {
+                let mime = content_type.into_inner().0;
+                match storage.put_slice(&purl, mime, &mut sbom.raw()).await {
                     Ok(_) => {
                         let msg = format!("SBOM of size {} stored successfully", &data[..].len());
                         tracing::trace!(msg);
@@ -151,7 +152,8 @@ async fn publish_large_sbom(
             PayloadError::Io(e) => e,
             _ => io::Error::new(io::ErrorKind::Other, e),
         });
-        match storage.put_stream(&purl, content_type.as_ref(), &mut payload).await {
+        let mime = content_type.into_inner().0;
+        match storage.put_stream(&purl, mime, &mut payload).await {
             Ok(status) => {
                 let msg = format!("SBOM stored with status code: {status}");
                 tracing::trace!(msg);

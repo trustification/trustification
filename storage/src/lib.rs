@@ -6,6 +6,7 @@ use bytes::{Buf, Bytes};
 use futures::future::ok;
 use futures::stream::once;
 use futures::{Stream, StreamExt};
+use mime::Mime;
 use s3::creds::error::CredentialsError;
 pub use s3::creds::Credentials;
 use s3::error::S3Error;
@@ -146,12 +147,12 @@ impl Storage {
         key.strip_prefix(&self.prefix)
     }
 
-    pub async fn put_slice<'a>(&self, key: &'a str, content_type: &str, data: &'a [u8]) -> Result<u16, Error> {
+    pub async fn put_slice<'a>(&self, key: &'a str, content_type: Mime, data: &'a [u8]) -> Result<u16, Error> {
         self.put_stream(key, content_type, &mut once(ok::<_, std::io::Error>(data)))
             .await
     }
 
-    pub async fn put_stream<S, B, E>(&self, key: &str, content_type: &str, stream: &mut S) -> Result<u16, Error>
+    pub async fn put_stream<S, B, E>(&self, key: &str, content_type: Mime, stream: &mut S) -> Result<u16, Error>
     where
         S: Stream<Item = Result<B, E>> + Unpin,
         B: Buf,
