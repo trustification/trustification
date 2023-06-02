@@ -5,10 +5,11 @@ processes if you don't need them for developing.
 
 ## Dependencies
 
-Requires `podman-compose` to run dependent services.
+Requires `docker-compose` to run dependent services.
 
 ```shell
-podman-compose -f compose.yaml up
+cd deploy/compose
+docker-compose -f compose.yaml up
 ```
 
 This will start MinIO and Kafka in containers and initialize them accordingly so that you don't need to configure anything. Default arguments of Vexination components will work with this setup.

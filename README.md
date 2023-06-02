@@ -18,7 +18,8 @@ Prerequisite: podman-compose or docker-compose.
 To start all dependencies and trustification components:
 
 ``` shell
-podman-compose -f compose.yaml -f compose-trustification.yaml up
+cd deploy/compose
+docker-compose -f compose.yaml -f compose-trustification.yaml -f compose-guac.yaml up
 ```
 
 This will start MinIO and Kafka for object storage and eventing and then run all the trustification services. It will also start to ingest data from Red Hat sources automatically via the vexination-walker and (TODO bombastic-walker) processes.
