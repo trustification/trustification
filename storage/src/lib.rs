@@ -1,7 +1,7 @@
-use std::collections::HashMap;
-use std::marker::Unpin;
+mod stream;
 
-use async_stream::try_stream;
+use async_compression::tokio::bufread::ZstdEncoder;
+use async_stream::stream;
 use bytes::{Buf, Bytes};
 use futures::future::ok;
 use futures::stream::once;
@@ -13,6 +13,8 @@ use s3::error::S3Error;
 use s3::Bucket;
 pub use s3::Region;
 use serde::Deserialize;
+use std::marker::Unpin;
+use tokio::io::AsyncRead;
 use tokio_util::io::StreamReader;
 
 pub struct Storage {
@@ -93,6 +95,15 @@ impl From<std::io::Error> for Error {
     }
 }
 
+impl Into<std::io::Error> for Error {
+    fn into(self) -> std::io::Error {
+        match self {
+            Self::Io(e) => e,
+            _ => std::io::Error::new(std::io::ErrorKind::Other, self),
+        }
+    }
+}
+
 impl From<http::header::InvalidHeaderName> for Error {
     fn from(_: http::header::InvalidHeaderName) -> Self {
         Self::Internal
@@ -135,51 +146,43 @@ impl Storage {
         let mut headers = http::HeaderMap::new();
         headers.insert(VERSION_HEADER, VERSION.into());
         let bucket = self.bucket.with_extra_headers(headers);
-        let mut reader = StreamReader::new(stream);
         let path = format!("{}{}", DATA_PATH, key);
-        Ok(bucket
-            .put_object_stream_with_content_type(&mut reader, path, content_type)
-            .await?)
+
+        // Compress json using zstd
+        // TODO: fix lifetimes to put this logic in stream module.
+        let (mut rdr, ty): (Box<dyn AsyncRead + Unpin>, &str) = if content_type == mime::APPLICATION_JSON {
+            (Box::new(ZstdEncoder::new(StreamReader::new(stream))), stream::MIME_ZSTD)
+        } else {
+            (Box::new(StreamReader::new(stream)), content_type.as_ref())
+        };
+        Ok(bucket.put_object_stream_with_content_type(&mut rdr, path, ty).await?)
     }
 
     // This will load the entire S3 object into memory
     pub async fn get(&self, key: &str) -> Result<Vec<u8>, Error> {
         let path = format!("{}{}", DATA_PATH, key);
-        let data = self.bucket.get_object(path).await?;
-        Ok(data.to_vec())
+        self.get_object(&path).await
     }
 
-    // Get the data associated with an event record.
-    pub async fn get_for_event(&self, record: &Record) -> Result<Vec<u8>, Error> {
-        // Record keys are URL encoded
-        if let Ok(decoded) = urlencoding::decode(record.key()) {
-            let data = self.bucket.get_object(decoded).await?;
-            Ok(data.to_vec())
-        } else {
-            Err(Error::InvalidKey(record.key().to_string()))
-        }
-    }
-
-    // Returns a tuple of content-type and byte stream
+    // Returns a tuple of content-type and byte stream, and will
+    // uncompress the mime types stream::decode(...) recognizes
     pub async fn get_stream(
         &self,
         key: &str,
     ) -> Result<(Option<String>, impl Stream<Item = Result<Bytes, Error>>), Error> {
         let path = format!("{}{}", DATA_PATH, key);
-        let (head, _status) = self.bucket.head_object(&path).await?;
-        let mut s = self.bucket.get_object_stream(&path).await?;
-        let stream = try_stream! {
-            while let Some(chunk) = s.bytes().next().await {
-                yield chunk;
-            }
-        };
-        Ok((head.content_type, stream))
+        self.get_object_stream(&path).await
     }
 
-    pub async fn get_metadata(&self, key: &str) -> Result<HashMap<String, String>, Error> {
-        let path = format!("{}{}", DATA_PATH, key);
-        let (head, _status) = self.bucket.head_object(&path).await?;
-        Ok(head.metadata.unwrap_or(HashMap::new()))
+    // Get the data associated with an event record.
+    // This will load the entire S3 object into memory
+    pub async fn get_for_event(&self, record: &Record) -> Result<Vec<u8>, Error> {
+        // Record keys are URL encoded
+        if let Ok(decoded) = urlencoding::decode(record.key()) {
+            self.get_object(&decoded).await
+        } else {
+            Err(Error::InvalidKey(record.key().to_string()))
+        }
     }
 
     pub async fn put_index(&self, index: &[u8]) -> Result<(), Error> {
@@ -194,6 +197,33 @@ impl Storage {
 
     pub fn decode_event(&self, event: &[u8]) -> Result<StorageEvent, Error> {
         Ok(serde_json::from_slice::<StorageEvent>(event).map_err(|_e| Error::Internal)?)
+    }
+
+    // Expects the actual S3 path
+    // This will load the entire S3 object into memory
+    async fn get_object(&self, path: &str) -> Result<Vec<u8>, Error> {
+        let mut bytes = vec![];
+        let (_, stream) = self.get_object_stream(path).await?;
+        tokio::pin!(stream);
+        while let Some(chunk) = stream.next().await {
+            bytes.extend_from_slice(&chunk?)
+        }
+        Ok(bytes)
+    }
+
+    // Expects the actual S3 path
+    async fn get_object_stream(
+        &self,
+        path: &str,
+    ) -> Result<(Option<String>, impl Stream<Item = Result<Bytes, Error>>), Error> {
+        let (head, _status) = self.bucket.head_object(path).await?;
+        let mut s = self.bucket.get_object_stream(path).await?;
+        let stream = stream! {
+            while let Some(chunk) = s.bytes().next().await {
+                yield chunk.map_err(Error::S3);
+            }
+        };
+        Ok(stream::decode(head.content_type, stream.boxed()))
     }
 }
 
