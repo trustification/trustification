@@ -71,7 +71,7 @@ impl AppState {
 
 pub async fn fetch_object(storage: &Storage, key: &str) -> Option<Vec<u8>> {
     match storage.get(key).await {
-        Ok((data, _)) => Some(data),
+        Ok(data) => Some(data),
         Err(e) => {
             tracing::warn!("Unable to locate object with key {}: {:?}", key, e);
             None

@@ -26,17 +26,7 @@ pub async fn run(storage: Storage, source: url::Url, options: ValidationOptions)
                     match serde_json::from_slice::<csaf::Csaf>(&data) {
                         Ok(doc) => {
                             let key = doc.document.tracking.id;
-
-                            let mut annotations = std::collections::HashMap::new();
-                            if let Some(sha256) = &retrieved.sha256 {
-                                annotations.insert("sha256", sha256.expected.as_str());
-                            }
-
-                            if let Some(sha512) = &retrieved.sha512 {
-                                annotations.insert("sha512", sha512.expected.as_str());
-                            }
-
-                            match storage.put_slice(&key, annotations, "application/json", &data).await {
+                            match storage.put_slice(&key, "application/json", &data).await {
                                 Ok(_) => {
                                     let msg = format!("VEX ({}) of size {} stored successfully", key, &data[..].len());
                                     tracing::info!(msg);

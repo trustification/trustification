@@ -101,7 +101,7 @@ async fn publish_vex(state: web::Data<SharedState>, params: web::Query<PublishPa
     let storage = state.storage.write().await;
     tracing::debug!("Storing new VEX with id: {advisory}");
     match storage
-        .put_slice(&advisory, std::collections::HashMap::new(), "application/json", &data)
+        .put_slice(&advisory, "application/json", &data)
         .await
     {
         Ok(_) => {
