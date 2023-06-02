@@ -35,7 +35,7 @@ pub async fn run<E: EventBus>(
                                 } else {
                                     if let Some(key) = storage.extract_key(&data.key) {
                                         match storage.get(key).await {
-                                            Ok((data, _)) => {
+                                            Ok(data) => {
                                                 if let Ok(doc) = bombastic_index::SBOM::parse(&data) {
                                                     match indexer.as_mut().unwrap().index(index.index(), &doc) {
                                                         Ok(_) => {

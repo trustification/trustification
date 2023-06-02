@@ -8,7 +8,6 @@ use actix_web::error::PayloadError;
 use actix_web::http::header::ContentType;
 use actix_web::middleware::Logger;
 use actix_web::{guard, web, App, HttpResponse, HttpServer, Responder};
-use bombastic_index::Index;
 use futures::TryStreamExt;
 use serde::Deserialize;
 use tokio::sync::RwLock;
@@ -23,7 +22,11 @@ struct AppState {
 
 type SharedState = Arc<AppState>;
 
-pub async fn run<B: Into<SocketAddr>>(storage: Storage, bind: B, sync_interval: Duration) -> Result<(), anyhow::Error> {
+pub async fn run<B: Into<SocketAddr>>(
+    storage: Storage,
+    bind: B,
+    _sync_interval: Duration,
+) -> Result<(), anyhow::Error> {
     let storage = RwLock::new(storage);
     let state = Arc::new(AppState { storage });
 
@@ -90,12 +93,6 @@ struct PublishParams {
     purl: Option<String>,
 }
 
-#[derive(Debug, Deserialize)]
-struct PublishLargeParams {
-    purl: String,
-    sha256: String,
-}
-
 async fn publish_sbom(
     state: web::Data<SharedState>,
     params: web::Query<PublishParams>,
@@ -116,11 +113,7 @@ async fn publish_sbom(
                 }
 
                 tracing::debug!("Storing new SBOM ({purl})");
-                let annotations = std::collections::HashMap::new();
-                match storage
-                    .put_slice(&purl, annotations, &content_type.to_string(), &mut sbom.raw())
-                    .await
-                {
+                match storage.put_slice(&purl, content_type.as_ref(), &mut sbom.raw()).await {
                     Ok(_) => {
                         let msg = format!("SBOM of size {} stored successfully", &data[..].len());
                         tracing::trace!(msg);
@@ -148,30 +141,31 @@ async fn publish_sbom(
 
 async fn publish_large_sbom(
     state: web::Data<SharedState>,
-    params: web::Query<PublishLargeParams>,
+    params: web::Query<PublishParams>,
     payload: web::Payload,
     content_type: web::Header<ContentType>,
 ) -> HttpResponse {
-    let storage = state.storage.write().await;
-    let mut annotations = std::collections::HashMap::new();
-    annotations.insert("digest", params.sha256.as_str());
-    let mut payload = payload.map_err(|e| match e {
-        PayloadError::Io(e) => e,
-        _ => io::Error::new(io::ErrorKind::Other, e),
-    });
-    match storage
-        .put_stream(&params.purl, annotations, &content_type.to_string(), &mut payload)
-        .await
-    {
-        Ok(status) => {
-            let msg = format!("SBOM stored with status code: {status}");
-            tracing::trace!(msg);
-            HttpResponse::Created().body(msg)
+    if let Some(purl) = &params.purl {
+        let storage = state.storage.write().await;
+        let mut payload = payload.map_err(|e| match e {
+            PayloadError::Io(e) => e,
+            _ => io::Error::new(io::ErrorKind::Other, e),
+        });
+        match storage.put_stream(&purl, content_type.as_ref(), &mut payload).await {
+            Ok(status) => {
+                let msg = format!("SBOM stored with status code: {status}");
+                tracing::trace!(msg);
+                HttpResponse::Created().body(msg)
+            }
+            Err(e) => {
+                let msg = format!("Error storing SBOM: {:?}", e);
+                tracing::warn!(msg);
+                HttpResponse::InternalServerError().body(msg)
+            }
         }
-        Err(e) => {
-            let msg = format!("Error storing SBOM: {:?}", e);
-            tracing::warn!(msg);
-            HttpResponse::InternalServerError().body(msg)
-        }
+    } else {
+        let msg = "ERROR: purl query param is required for chunked payloads";
+        tracing::info!(msg);
+        return HttpResponse::BadRequest().body(msg);
     }
 }

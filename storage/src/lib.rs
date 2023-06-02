@@ -121,7 +121,7 @@ impl From<http::header::InvalidHeaderValue> for Error {
 
 const DATA_PATH: &str = "/data/";
 const INDEX_PATH: &str = "/index";
-const METADATA_PREFIX: &str = "x-amz-meta-";
+const VERSION_HEADER: &str = "x-amz-meta-version";
 
 const VERSION: u32 = 1;
 
@@ -146,37 +146,19 @@ impl Storage {
         key.strip_prefix(&self.prefix)
     }
 
-    pub async fn put_slice<'a>(
-        &self,
-        key: &'a str,
-        annotations: HashMap<&'a str, &'a str>,
-        content_type: &str,
-        data: &'a [u8],
-    ) -> Result<u16, Error> {
-        self.put_stream(key, annotations, content_type, &mut once(ok::<_, std::io::Error>(data)))
+    pub async fn put_slice<'a>(&self, key: &'a str, content_type: &str, data: &'a [u8]) -> Result<u16, Error> {
+        self.put_stream(key, content_type, &mut once(ok::<_, std::io::Error>(data)))
             .await
     }
 
-    pub async fn put_stream<S, B, E>(
-        &self,
-        key: &str,
-        annotations: HashMap<&str, &str>,
-        content_type: &str,
-        stream: &mut S,
-    ) -> Result<u16, Error>
+    pub async fn put_stream<S, B, E>(&self, key: &str, content_type: &str, stream: &mut S) -> Result<u16, Error>
     where
         S: Stream<Item = Result<B, E>> + Unpin,
         B: Buf,
         E: Into<std::io::Error>,
     {
         let mut headers = http::HeaderMap::new();
-        headers.insert("x-amz-meta-version", VERSION.into());
-        for (k, v) in annotations {
-            headers.insert(
-                http::HeaderName::try_from(format!("{METADATA_PREFIX}{k}"))?,
-                http::HeaderValue::from_str(v)?,
-            );
-        }
+        headers.insert(VERSION_HEADER, VERSION.into());
         let bucket = self.bucket.with_extra_headers(headers);
         let mut reader = StreamReader::new(stream);
         let path = format!("{}{}", DATA_PATH, key);
@@ -186,15 +168,10 @@ impl Storage {
     }
 
     // This will load the entire S3 object into memory
-    pub async fn get(&self, key: &str) -> Result<(Vec<u8>, HashMap<String, String>), Error> {
+    pub async fn get(&self, key: &str) -> Result<Vec<u8>, Error> {
         let path = format!("{}{}", DATA_PATH, key);
         let data = self.bucket.get_object(path).await?;
-        let metadata = data
-            .headers()
-            .iter()
-            .filter_map(|(k, v)| k.strip_prefix(METADATA_PREFIX).map(|k| (k.to_owned(), v.to_owned())))
-            .collect();
-        Ok((data.to_vec(), metadata))
+        Ok(data.to_vec())
     }
 
     // Returns a tuple of content-type and byte stream
