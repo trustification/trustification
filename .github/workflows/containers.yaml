@@ -43,6 +43,9 @@ jobs:
         include:
           - name: trust
             containerfile: trust/Containerfile
+          - name: spog-ui
+            containerfile: spog/ui/Containerfile
+
     steps:
 
       - name: Install qemu dependency
