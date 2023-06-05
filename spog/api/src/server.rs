@@ -3,12 +3,16 @@ use std::sync::Arc;
 use actix_cors::Cors;
 use actix_web::middleware::Logger;
 use actix_web::web::Data;
-use actix_web::{App, HttpServer};
+use actix_web::{web, App, HttpResponse, HttpServer};
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
 use crate::sbom::SbomRegistry;
 use crate::{guac, index, package, search, vulnerability, Run};
+
+async fn health() -> HttpResponse {
+    HttpResponse::Ok().finish()
+}
 
 pub struct Server {
     run: Run,
@@ -69,6 +73,7 @@ impl Server {
                 .configure(vulnerability::configure())
                 .configure(index::configure())
                 .configure(|config| search(config))
+                .service(web::resource("/healthz").to(health))
                 .service(SwaggerUi::new("/swagger-ui/{_:.*}").url("/openapi.json", openapi.clone()))
         })
         .bind((self.run.bind, self.run.port))?
