@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use sikula::prelude::{Ordered, Primary, Resource};
+use sikula::prelude::{Ordered, Primary, Search};
 use std::ops::Bound;
 use std::path::PathBuf;
 use tantivy::collector::Count;
@@ -188,7 +188,7 @@ impl<INDEX: Index> IndexStore<INDEX> {
 }
 
 /// Convert a sikula term to a query
-pub fn term2query<'m, R: Resource<'m>, F: Fn(&R::Parsed) -> Box<dyn Query>>(
+pub fn term2query<'m, R: Search<'m>, F: Fn(&R::Parsed) -> Box<dyn Query>>(
     term: &sikula::prelude::Term<'m, R>,
     f: &F,
 ) -> Box<dyn Query> {

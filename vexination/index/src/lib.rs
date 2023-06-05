@@ -149,7 +149,7 @@ impl trustification_index::Index for Index {
     }
 
     fn prepare_query(&self, q: &str) -> Result<Box<dyn Query>, SearchError> {
-        let mut query = Vulnerabilities::parse_query(&q).map_err(|err| SearchError::Parser(err.to_string()))?;
+        let mut query = Vulnerabilities::parse(&q).map_err(|err| SearchError::Parser(err.to_string()))?;
 
         query.term = query.term.compact();
 
