@@ -173,7 +173,7 @@ dependencies = [
 [[package]]
 name = "csaf"
 version = "0.5.0"
-source = "git+https://github.com/ctron/csaf-rs?rev=fa369a5f7ea061bfb541630116fb0478d8f64b2b#fa369a5f7ea061bfb541630116fb0478d8f64b2b"
+source = "git+https://github.com/voteblake/csaf-rs?rev=76cb9ede10adb1fbb495b17e5fd8d95c5cf6c900#76cb9ede10adb1fbb495b17e5fd8d95c5cf6c900"
 dependencies = [
  "chrono",
  "cpe",
@@ -1127,7 +1127,7 @@ dependencies = [
 [[package]]
 name = "patternfly-yew"
 version = "0.5.0-alpha.1"
-source = "git+https://github.com/ctron/patternfly-yew?rev=3d4a89f2df4517437197b9885a2aa6340e8c641d#3d4a89f2df4517437197b9885a2aa6340e8c641d"
+source = "git+https://github.com/ctron/patternfly-yew?rev=f271a6edb14ec9663e70a914f487cea0c15a9354#f271a6edb14ec9663e70a914f487cea0c15a9354"
 dependencies = [
  "chrono",
  "gloo-events",
@@ -2284,9 +2284,8 @@ dependencies = [
 
 [[package]]
 name = "yew-more-hooks"
-version = "0.1.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "46082ce48eb048786d948d87cdd34e3b08d594f56c467f674a6a5e79251c5818"
+version = "0.1.3"
+source = "git+https://github.com/ctron/yew-more-hooks?rev=3c943759287c59a22256a4748993d2407b9a9e9b#3c943759287c59a22256a4748993d2407b9a9e9b"
 dependencies = [
  "gloo-utils",
  "wasm-bindgen-futures",

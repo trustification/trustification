@@ -22,10 +22,11 @@ pub fn console() -> Html {
             <Nav>
                 <NavList>
                     <NavRouterItem<AppRoute> to={AppRoute::Index}>{ "Trusted Content" }</NavRouterItem<AppRoute>>
-                    <NavExpandable title="Investigate">
+                    <NavExpandable title="Explore">
                         <NavRouterItem<AppRoute> to={AppRoute::Package{package: Default::default()}} predicate={AppRoute::is_package}>{ "Packages" }</NavRouterItem<AppRoute>>
+                        <NavRouterItem<AppRoute> to={AppRoute::Advisory{id: Default::default()}} predicate={AppRoute::is_advisory}>{ "Advisories" }</NavRouterItem<AppRoute>>
                         <NavRouterItem<AppRoute> to={AppRoute::Vulnerability{cve: Default::default()}} predicate={AppRoute::is_vulnerability}>{ "Vulnerabilities" }</NavRouterItem<AppRoute>>
-                        <NavRouterItem<AppRoute> to={AppRoute::SBOM}>{ "Upload SBOM" }</NavRouterItem<AppRoute>>
+                        <NavRouterItem<AppRoute> to={AppRoute::SBOM}>{ "Analyze SBOM" }</NavRouterItem<AppRoute>>
                     </NavExpandable>
                     <NavExpandable title="Extend">
                         if let Ok(url) = backend.join(Endpoint::Api, "/swagger-ui/") {
@@ -79,6 +80,7 @@ fn render(route: AppRoute) -> Html {
         AppRoute::Index => html!(<pages::Index/>),
         AppRoute::Chicken => html!(<pages::Chicken/>),
         AppRoute::Package { package } => html!(<pages::Package {package}/>),
+        AppRoute::Advisory { id } => html!(<pages::Advisory {id}/>),
         AppRoute::Vulnerability { cve } => html!(<pages::Vulnerability {cve}/>),
         AppRoute::SBOM => html!(<pages::SBOM/>),
     }

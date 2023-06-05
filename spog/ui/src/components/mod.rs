@@ -5,6 +5,7 @@ pub mod common;
 pub mod cvss;
 pub mod deps;
 pub mod error;
+pub mod vexination;
 pub mod vulns;
 
 use patternfly_yew::prelude::*;

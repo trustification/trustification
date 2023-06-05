@@ -44,12 +44,12 @@ features = [
 [patch.crates-io]
 #yew-nested-router = { path = "../yew-nested-router" }
 #yew-nested-router = { git = "https://github.com/ctron/yew-nested-router", rev = "9689db446dee7030325884df768d0c2e84f353d6" }
-#yew-more-hooks = { git = "https://github.com/ctron/yew-more-hooks", rev = "9f39517aabe25cfadae48f2d225daa1c3a608c20" }
+yew-more-hooks = { git = "https://github.com/ctron/yew-more-hooks", rev = "3c943759287c59a22256a4748993d2407b9a9e9b" }
 #yew-more-hooks = { path = "../yew-more-hooks" }
-patternfly-yew = { git = "https://github.com/ctron/patternfly-yew", rev = "3d4a89f2df4517437197b9885a2aa6340e8c641d" }
+patternfly-yew = { git = "https://github.com/ctron/patternfly-yew", rev = "f271a6edb14ec9663e70a914f487cea0c15a9354" }
 #patternfly-yew = { path = "../patternfly-yew" }
 
-csaf = { git = "https://github.com/ctron/csaf-rs", rev = "fa369a5f7ea061bfb541630116fb0478d8f64b2b"} # PR: feature/clone_1
+csaf = { git = "https://github.com/voteblake/csaf-rs", rev = "76cb9ede10adb1fbb495b17e5fd8d95c5cf6c900"} # FIXME: waiting for release
 
 spog-model = { path = "../model" }
 
