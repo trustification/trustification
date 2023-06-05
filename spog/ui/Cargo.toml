@@ -3,6 +3,8 @@ name = "spog-ui"
 version = "0.1.0"
 edition = "2021"
 license = "Apache-2"
+# Will be present in the about dialog too
+description = "Single Pane of Glass"
 
 [dependencies]
 anyhow = "1"
