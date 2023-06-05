@@ -1,12 +1,15 @@
 FROM ghcr.io/ctron/trunk:latest as builder
 
-RUN mkdir /usr/src/trustification
+# cannot use /usr/src as it is configured as `VOLUME` in the base image, which seems to be an issue
+# for buildah (not for podman build): https://github.com/containers/buildah/issues/4845
 
-COPY . /usr/src/trustification
+RUN mkdir /trustification
 
-RUN ls /usr/src/trustification
+COPY . /trustification
 
-WORKDIR /usr/src/trustification/spog/ui
+RUN ls /trustification
+
+WORKDIR /trustification/spog/ui
 
 RUN true \
     && npm ci \
