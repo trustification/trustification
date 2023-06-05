@@ -1,16 +1,25 @@
 use crate::backend::{SearchOptions, VulnerabilityService};
-use crate::components::vulns::VulnerabilityResult;
 use crate::hooks::use_backend;
+use csaf::Csaf;
 use patternfly_yew::{
     next::{Toolbar, ToolbarContent},
     prelude::*,
 };
+use spog_model::prelude::*;
 use std::rc::Rc;
 use yew::prelude::*;
-use yew_more_hooks::hooks::{use_async_with_cloned_deps, UseAsyncState};
+use yew_more_hooks::hooks::{use_async_with_cloned_deps, UseAsyncHandleDeps};
 
-#[function_component(VulnerabilitySearch)]
-pub fn package_search() -> Html {
+#[derive(PartialEq, Properties)]
+pub struct VexinationSearchProperties {
+    pub callback: Callback<UseAsyncHandleDeps<SearchResult<Rc<Vec<Csaf>>>, String>>,
+
+    #[prop_or_default]
+    pub toolbar_items: ChildrenWithProps<ToolbarItem>,
+}
+
+#[function_component(VexinationSearch)]
+pub fn vexination_search(props: &VexinationSearchProperties) -> Html {
     let backend = use_backend();
 
     let service = use_memo(
@@ -45,10 +54,18 @@ pub fn package_search() -> Html {
                     )
                     .await
                     .map(|result| result.map(Rc::new))
+                    .map_err(|err| err.to_string())
             },
             ((*state).clone(), *offset, *limit),
         )
     };
+
+    use_effect_with_deps(
+        |(callback, search)| {
+            callback.emit(search.clone());
+        },
+        (props.callback.clone(), search.clone()),
+    );
 
     // the current value in the text input field
     let text = use_state_eq(|| (*state).clone());
@@ -63,7 +80,6 @@ pub fn package_search() -> Html {
         let state = state.clone();
         let text = text.clone();
         Callback::from(move |()| {
-            log::info!("Setting new state: {}", *text);
             state.set((*text).clone());
         })
     };
@@ -75,15 +91,6 @@ pub fn package_search() -> Html {
         },
         (*state).clone(),
     );
-
-    // lookup
-
-    let backdrop = use_backdrop();
-    let onlookup = Callback::from(move |_| {
-        if let Some(backdrop) = &backdrop {
-            backdrop.open(html!(<super::LookupVulnerabilityModal/>));
-        }
-    });
 
     // pagination
 
@@ -143,9 +150,7 @@ pub fn package_search() -> Html {
                         </ToolbarItem>
                     </ToolbarGroup>
 
-                    <ToolbarItem>
-                        <Button label="By CVE ID" variant={ButtonVariant::Secondary} onclick={onlookup}/>
-                    </ToolbarItem>
+                    { for props.toolbar_items.iter() }
 
                     <ToolbarItem r#type={ToolbarItemType::Pagination}>
                         <Pagination
@@ -162,34 +167,6 @@ pub fn package_search() -> Html {
                 </ToolbarContent>
                 // <ToolbarContent> { for filters.into_iter() } </ToolbarContent>
             </Toolbar>
-
-            {
-                match &*search {
-                    UseAsyncState::Pending | UseAsyncState::Processing => { html!( <Bullseye><Spinner/></Bullseye> ) }
-                    UseAsyncState::Ready(Ok(result)) if result.is_empty() => {
-                        html!(
-                            <Bullseye>
-                                <EmptyState
-                                    title="No results"
-                                    icon={Icon::Search}
-                                >
-                                    { "Try some different query parameters." }
-                                </EmptyState>
-                            </Bullseye>
-                        )
-                    },
-                    UseAsyncState::Ready(Ok(result)) => {
-                        let result = result.clone();
-                        html!(<VulnerabilityResult {result} />)
-                    },
-                    UseAsyncState::Ready(Err(err)) => html!(
-                        <Bullseye>
-                            <Title>{"Search error"}</Title>
-                            { err }
-                        </Bullseye>
-                    ),
-                }
-            }
 
         </>
     )

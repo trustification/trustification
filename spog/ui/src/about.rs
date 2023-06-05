@@ -8,15 +8,13 @@ pub fn about() -> Html {
 
     html!(
         <Bullseye plain=true>
-            <patternfly_yew::prelude::About
-                brand_src="https://www.patternfly.org/assets/images/PF-Masthead-Logo.svg"
-                brand_alt="Chicken logo"
-                title="Chicken Coop"
-                strapline={html!("Copyright © 2020, 2023 by the Chickens")}
-                hero_style=r#"
---pf-c-about-modal-box__hero--lg--BackgroundImage: url("https://www.patternfly.org/assets/images/pfbg_992@2x.jpg");
---pf-c-about-modal-box__hero--sm--BackgroundImage: url("https://www.patternfly.org/assets/images/pfbg_992.jpg");
-"#
+            <patternfly_yew::prelude::AboutModal
+                brand_image_src="https://www.patternfly.org/assets/images/PF-Masthead-Logo.svg"
+                brand_image_alt="Chicken logo"
+                product_name="Chicken Coop"
+                trademark="Copyright © 2020, 2023 by the Chickens"
+                background_image_src="https://www.patternfly.org/assets/images/pfbg_992.jpg"
+
             >
                 <Content>
                     <p>{ env!("CARGO_PKG_DESCRIPTION") }</p>
@@ -37,7 +35,7 @@ pub fn about() -> Html {
                         <dd>{ backend.endpoints.url.to_string() }</dd>
                     </dl>
                 </Content>
-            </patternfly_yew::prelude::About>
+            </patternfly_yew::prelude::AboutModal>
         </Bullseye>
     )
 }
