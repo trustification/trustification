@@ -28,7 +28,7 @@ spec:
           imagePullPolicy: Always
           name: service
           command: ["/trust"]
-          args: ["bombastic", "indexer", "--index", "/data/index"]
+          args: ["bombastic", "indexer", "--events", "sqs", "--index", "/data/index"]
           env:
             - name: RUST_LOG
               value: info
@@ -42,6 +42,8 @@ spec:
                 secretKeyRef:
                   name: bombastic-credentials-secret
                   key: secret-access-key
+            - name: AWS_REGION
+              value: "eu-west-1"
           volumeMounts:
             - name: data
               mountPath: /data

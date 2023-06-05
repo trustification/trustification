@@ -17,6 +17,7 @@ spec:
       volumes:
         - name: data
           emptyDir: {}
+      restartPolicy: OnFailure
       containers:
         - image: ghcr.io/trustification/trust:latest
           imagePullPolicy: Always
@@ -36,6 +37,8 @@ spec:
                 secretKeyRef:
                   name: vexination-credentials-secret
                   key: secret-access-key
+            - name: AWS_REGION
+              value: "eu-west-1"
           volumeMounts:
             - name: data
               mountPath: /data
