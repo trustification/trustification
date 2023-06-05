@@ -24,34 +24,24 @@ spec:
         - name: data
           emptyDir: {}
       containers:
-        - image: ghcr.io/xkcd-2347/bombastic:latest
+        - image: ghcr.io/trustification/trust:latest
           imagePullPolicy: Always
           name: service
-          command: ["/bombastic"]
-          args: ["indexer", "--index", "/data/index.sqlite", "--events", "sqs"]
+          command: ["/trust"]
+          args: ["bombastic", "indexer", "--index", "/data/index"]
           env:
             - name: RUST_LOG
-              value: debug
+              value: info
             - name: AWS_ACCESS_KEY_ID
               valueFrom:
                 secretKeyRef:
-                  name: aws-s3-creds
-                  key: keyid
+                  name: bombastic-credentials-secret
+                  key: access-key-id
             - name: AWS_SECRET_ACCESS_KEY
               valueFrom:
                 secretKeyRef:
-                  name: aws-s3-creds
-                  key: key
-            - name: AWS_REGION
-              valueFrom:
-                secretKeyRef:
-                  name: aws-settings
-                  key: region
-            - name: AWS_ENDPOINT
-              valueFrom:
-                secretKeyRef:
-                  name: aws-settings
-                  key: endpoint
+                  name: bombastic-credentials-secret
+                  key: secret-access-key
           volumeMounts:
             - name: data
               mountPath: /data
