@@ -171,7 +171,7 @@ impl<INDEX: Index> IndexStore<INDEX> {
 
         let (top_docs, count) = searcher.search(&query, &(TopDocs::with_limit(len).and_offset(offset), Count))?;
 
-        tracing::trace!("Found {} docs", count);
+        tracing::debug!("Found {} docs", count);
 
         let mut hits = Vec::new();
         for hit in top_docs {

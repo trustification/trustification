@@ -29,12 +29,13 @@ pub async fn run<E: EventBus>(
                 Ok(Some(event)) => {
                     if let Some(payload) = event.payload() {
                         if let Ok(data) = storage.decode_event(&payload) {
-                            if data.event_type == EventType::Put {
-                                if storage.is_index(&data.key) {
-                                    tracing::trace!("It's an index event, ignoring");
-                                } else {
-                                    if let Some(key) = storage.extract_key(&data.key) {
-                                        match storage.get(key).await {
+                            for data in data.records {
+                                if data.event_type() == EventType::Put {
+                                    if storage.is_index(data.key()) {
+                                        tracing::trace!("It's an index event, ignoring");
+                                    } else {
+                                        let key = data.key();
+                                        match storage.get_for_event(&data).await {
                                             Ok(data) => {
                                                 if let Ok(doc) = bombastic_index::SBOM::parse(&data) {
                                                     match indexer.as_mut().unwrap().index(index.index(), &doc) {
@@ -60,13 +61,9 @@ pub async fn run<E: EventBus>(
                                                 tracing::debug!("Error retrieving document event data, ignoring (error: {:?})", e);
                                             }
                                         }
-                                    } else {
-                                        tracing::warn!("Error extracting key from event: {:?}", data)
                                     }
                                 }
                             }
-                        } else if let Err(e) = storage.decode_event(&payload) {
-                            tracing::warn!("Error decoding event: {:?}", e);
                         }
                     }
                     uncommitted_events.push(event);
