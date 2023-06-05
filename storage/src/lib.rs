@@ -1,5 +1,5 @@
+use std::collections::HashMap;
 use std::marker::Unpin;
-use std::{collections::HashMap, fmt::Display};
 
 use async_stream::try_stream;
 use bytes::{Buf, Bytes};
@@ -15,16 +15,8 @@ pub use s3::Region;
 use serde::Deserialize;
 use tokio_util::io::StreamReader;
 
-pub enum StorageType {
-    Minio,
-    S3,
-}
-
 pub struct Storage {
     bucket: Bucket,
-    prefix: String,
-    index_prefix: String,
-    stype: StorageType,
 }
 
 pub struct Config {
@@ -62,33 +54,26 @@ impl Config {
 
 pub fn create(bucket_name: &str, devmode: bool, storage_endpoint: Option<String>) -> Result<Storage, anyhow::Error> {
     let storage = if devmode {
-        Storage::new(Config::test(bucket_name, storage_endpoint), StorageType::Minio)?
+        Storage::new(Config::test(bucket_name, storage_endpoint))?
     } else {
-        Storage::new(Config::defaults(bucket_name)?, StorageType::S3)?
+        Storage::new(Config::defaults(bucket_name)?)?
     };
     Ok(storage)
 }
 
-#[derive(Debug)]
+#[derive(Debug, thiserror::Error)]
 pub enum Error {
+    #[error("internal storage error")]
     Internal,
+    #[error("error with credentials")]
     Credentials(CredentialsError),
+    #[error("error with s3 backend {0}")]
     S3(S3Error),
+    #[error("I/O error {0}")]
     Io(std::io::Error),
+    #[error("invalid storage key {0}")]
+    InvalidKey(String),
 }
-
-impl Display for Error {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Internal => write!(f, "Internal error"),
-            Self::Credentials(e) => write!(f, "{}", e),
-            Self::S3(e) => write!(f, "{}", e),
-            Self::Io(e) => write!(f, "{}", e),
-        }
-    }
-}
-
-impl std::error::Error for Error {}
 
 impl From<CredentialsError> for Error {
     fn from(e: CredentialsError) -> Self {
@@ -127,24 +112,13 @@ const VERSION_HEADER: &str = "x-amz-meta-version";
 const VERSION: u32 = 1;
 
 impl Storage {
-    pub fn new(config: Config, stype: StorageType) -> Result<Self, Error> {
-        let prefix = format!("{}{}", config.bucket_name, DATA_PATH);
-        let index_prefix = format!("{}{}", config.bucket_name, INDEX_PATH);
+    pub fn new(config: Config) -> Result<Self, Error> {
         let bucket = Bucket::new(&config.bucket_name, config.region, config.credentials)?.with_path_style();
-        Ok(Self {
-            bucket,
-            prefix,
-            stype,
-            index_prefix,
-        })
+        Ok(Self { bucket })
     }
 
     pub fn is_index(&self, key: &str) -> bool {
-        self.index_prefix == key
-    }
-
-    pub fn extract_key<'m>(&'m self, key: &'m str) -> Option<&'m str> {
-        key.strip_prefix(&self.prefix)
+        format!("/{}", key) == INDEX_PATH
     }
 
     pub async fn put_slice<'a>(&self, key: &'a str, content_type: Mime, data: &'a [u8]) -> Result<u16, Error> {
@@ -173,6 +147,17 @@ impl Storage {
         let path = format!("{}{}", DATA_PATH, key);
         let data = self.bucket.get_object(path).await?;
         Ok(data.to_vec())
+    }
+
+    // Get the data associated with an event record.
+    pub async fn get_for_event(&self, record: &Record) -> Result<Vec<u8>, Error> {
+        // Record keys are URL encoded
+        if let Ok(decoded) = urlencoding::decode(record.key()) {
+            let data = self.bucket.get_object(decoded).await?;
+            Ok(data.to_vec())
+        } else {
+            Err(Error::InvalidKey(record.key().to_string()))
+        }
     }
 
     // Returns a tuple of content-type and byte stream
@@ -208,98 +193,72 @@ impl Storage {
     }
 
     pub fn decode_event(&self, event: &[u8]) -> Result<StorageEvent, Error> {
-        match self.stype {
-            StorageType::Minio => Ok(serde_json::from_slice::<MinioEvent>(event)
-                .map_err(|_e| Error::Internal)?
-                .try_into()?),
-            StorageType::S3 => Ok(serde_json::from_slice::<S3Event>(event)
-                .map_err(|_e| Error::Internal)?
-                .try_into()?),
-        }
+        Ok(serde_json::from_slice::<StorageEvent>(event).map_err(|_e| Error::Internal)?)
     }
 }
 
-#[derive(Debug)]
-pub struct StorageEvent {
-    pub event_type: EventType,
-    pub key: String,
-}
-
-const MINIO_PUT_EVENT: &str = "s3:ObjectCreated:Put";
-const MINIO_DELETE_EVENT: &str = "s3:ObjectRemoved:Delete";
-
-impl TryFrom<MinioEvent> for StorageEvent {
-    type Error = Error;
-    fn try_from(minio: MinioEvent) -> Result<Self, Self::Error> {
-        let event_type = match minio.event_name.as_ref() {
-            MINIO_PUT_EVENT => Ok(EventType::Put),
-            MINIO_DELETE_EVENT => Ok(EventType::Delete),
-            _ => Err(Error::Internal),
-        }?;
-        Ok(Self {
-            event_type,
-            key: minio.key,
-        })
-    }
-}
-
-const S3_PUT_EVENT: &str = "ObjectCreated:Put";
-const S3_DELETE_EVENT: &str = "ObjectRemoved:Delete";
-
-impl TryFrom<S3Event> for StorageEvent {
-    type Error = Error;
-    fn try_from(s3: S3Event) -> Result<Self, Self::Error> {
-        let first = s3.records.first().ok_or(Error::Internal)?;
-        let event_type = match first.event_name.as_ref() {
-            S3_PUT_EVENT => Ok(EventType::Put),
-            S3_DELETE_EVENT => Ok(EventType::Delete),
-            _ => Err(Error::Internal),
-        }?;
-        Ok(StorageEvent {
-            event_type,
-            key: first.s3.object.key.clone(),
-        })
-    }
-}
+const PUT_EVENT: &str = "ObjectCreated:Put";
+const DELETE_EVENT: &str = "ObjectRemoved:Delete";
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum EventType {
     Put,
     Delete,
+    Other,
 }
 
 #[derive(Deserialize, Debug)]
-struct MinioEvent {
-    #[serde(rename = "EventName")]
-    event_name: String,
-    #[serde(rename = "Key")]
-    key: String,
-}
-
-#[derive(Deserialize, Debug)]
-pub struct S3Event {
+pub struct StorageEvent {
     #[serde(rename = "Records")]
-    pub records: Vec<S3Record>,
+    pub records: Vec<Record>,
 }
 
 #[derive(Deserialize, Debug)]
-pub struct S3Record {
+pub struct Record {
     #[serde(rename = "s3")]
     s3: S3Data,
     #[serde(rename = "eventName")]
-    pub event_name: String,
+    event_name: String,
+}
+
+impl Record {
+    pub fn event_type(&self) -> EventType {
+        if self.event_name.ends_with(PUT_EVENT) {
+            EventType::Put
+        } else if self.event_name.ends_with(DELETE_EVENT) {
+            EventType::Delete
+        } else {
+            EventType::Other
+        }
+    }
+
+    pub fn key(&self) -> &str {
+        &self.s3.object.key
+    }
+
+    pub fn bucket(&self) -> &str {
+        &self.s3.bucket.name
+    }
 }
 
 #[derive(Deserialize, Debug)]
 pub struct S3Data {
     #[serde(rename = "object")]
-    pub object: S3Object,
+    object: S3Object,
+    #[serde(rename = "bucket")]
+    bucket: S3Bucket,
 }
 
 #[derive(Deserialize, Debug)]
 pub struct S3Object {
     #[serde(rename = "key")]
-    pub key: String,
+    key: String,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct S3Bucket {
+    #[serde(rename = "name")]
+    name: String,
 }
 
 #[cfg(test)]
@@ -307,7 +266,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_event_decode() {
+    fn test_s3_decode() {
         let event = r#"{
         "Records": [
             {
@@ -325,18 +284,18 @@ mod tests {
             },
             "s3": {
                 "bucket": {
-                "arn": "arn:aws:s3:::bombastic",
-                "name": "bombastic",
-                "ownerIdentity": {
-                    "principalId": "A269W3T43498LN"
-                }
+                    "arn": "arn:aws:s3:::bombastic",
+                    "name": "bombastic",
+                    "ownerIdentity": {
+                        "principalId": "A269W3T43498LN"
+                    }
                 },
                 "configurationId": "stored",
                 "object": {
-                "eTag": "7e1f5bce30a48e7618d8d5619d51a20b",
-                "key": "bombastic/data/mysbom11",
-                "sequencer": "00645CECAF0EE0E7F8",
-                "size": 49312
+                    "eTag": "7e1f5bce30a48e7618d8d5619d51a20b",
+                    "key": "data/mysbom11",
+                    "sequencer": "00645CECAF0EE0E7F8",
+                    "size": 49312
                 },
                 "s3SchemaVersion": "1.0"
             },
@@ -346,15 +305,25 @@ mod tests {
             }
         ]
         }"#;
-        let decoded = serde_json::from_str::<S3Event>(event).unwrap();
-        let converted: StorageEvent = decoded.try_into().unwrap();
 
-        assert_eq!(converted.event_type, EventType::Put);
-        assert_eq!(converted.key, "bombastic/data/mysbom11");
+        let decoded = serde_json::from_str::<StorageEvent>(event).unwrap();
 
-        let storage = Storage::new(Config::test("bombastic", None), StorageType::S3).unwrap();
-        let decoded = storage.decode_event(event.as_bytes()).unwrap();
-        assert_eq!(decoded.event_type, EventType::Put);
-        assert_eq!(decoded.key, "bombastic/data/mysbom11");
+        assert_eq!(1, decoded.records.len());
+        let decoded = &decoded.records[0];
+        assert_eq!(decoded.event_type(), EventType::Put);
+        assert_eq!(decoded.key(), "data/mysbom11");
+        assert_eq!(decoded.bucket(), "bombastic");
+    }
+
+    #[test]
+    fn test_minio_decode() {
+        let event = r#"{"EventName":"s3:ObjectCreated:Put","Key":"vexination/index","Records":[{"eventVersion":"2.0","eventSource":"minio:s3","awsRegion":"","eventTime":"2023-06-05T11:04:06.851Z","eventName":"s3:ObjectCreated:Put","userIdentity":{"principalId":"admin"},"requestParameters":{"principalId":"admin","region":"","sourceIPAddress":"10.89.1.9"},"responseElements":{"content-length":"0","x-amz-id-2":"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855","x-amz-request-id":"1765BE755F95378E","x-minio-deployment-id":"7637fbd9-a700-4918-bc9d-f7929adf0d8f","x-minio-origin-endpoint":"http://10.89.1.9:9000"},"s3":{"s3SchemaVersion":"1.0","configurationId":"Config","bucket":{"name":"vexination","ownerIdentity":{"principalId":"admin"},"arn":"arn:aws:s3:::vexination"},"object":{"key":"index","size":2851,"eTag":"8aebf225551d1a9c71914a91bf36c7e3","contentType":"application/octet-stream","userMetadata":{"content-type":"application/octet-stream"},"sequencer":"1765BE756000DEDE"}},"source":{"host":"10.89.1.9","port":"","userAgent":""}}]}"#;
+        let decoded = serde_json::from_str::<StorageEvent>(event).unwrap();
+
+        assert_eq!(1, decoded.records.len());
+        let decoded = &decoded.records[0];
+        assert_eq!(decoded.event_type(), EventType::Put);
+        assert_eq!(decoded.key(), "index");
+        assert_eq!(decoded.bucket(), "vexination");
     }
 }

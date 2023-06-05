@@ -29,38 +29,39 @@ pub async fn run<E: EventBus>(
                 Ok(Some(event)) => {
                     if let Some(payload) = event.payload() {
                         if let Ok(data) = storage.decode_event(&payload) {
-                            if data.event_type == EventType::Put {
-                                if storage.is_index(&data.key) {
-                                    tracing::trace!("It's an index event, ignoring");
-                                } else if let Some(key) = storage.extract_key(&data.key) {
-                                    match storage.get(key).await {
-                                        Ok(data) => {
-                                            if let Ok(doc) = serde_json::from_slice(&data) {
-                                                match indexer.as_mut().unwrap().index(index.index(), &doc) {
-                                                    Ok(_) => {
-                                                        tracing::trace!("Inserted entry into index");
-                                                        bus.send(indexed_topic, key.as_bytes()).await?;
-                                                        events += 1;
+                            for data in data.records {
+                                if data.event_type() == EventType::Put {
+                                    if storage.is_index(&data.key()) {
+                                        tracing::trace!("It's an index event, ignoring");
+                                    } else {
+                                        let key = data.key();
+                                        match storage.get_for_event(&data).await {
+                                            Ok(data) => {
+                                                if let Ok(doc) = serde_json::from_slice(&data) {
+                                                    match indexer.as_mut().unwrap().index(index.index(), &doc) {
+                                                        Ok(_) => {
+                                                            tracing::debug!("Inserted entry into index");
+                                                            bus.send(indexed_topic, key.as_bytes()).await?;
+                                                            events += 1;
+                                                        }
+                                                        Err(e) => {
+                                                            let failure = serde_json::json!( {
+                                                                "key": key,
+                                                                "error": e.to_string(),
+                                                            }).to_string();
+                                                            bus.send(failed_topic, failure.as_bytes()).await?;
+                                                            tracing::warn!("Error inserting entry into index: {:?}", e)
+                                                        }
                                                     }
-                                                    Err(e) => {
-                                                        let failure = serde_json::json!( {
-                                                            "key": key,
-                                                            "error": e.to_string(),
-                                                        }).to_string();
-                                                        bus.send(failed_topic, failure.as_bytes()).await?;
-                                                        tracing::warn!("Error inserting entry into index: {:?}", e)
-                                                    }
+                                                } else {
+                                                    tracing::debug!("Error parsing object as CSAF");
                                                 }
-                                            } else {
-                                                tracing::debug!("Error parsing object as CSAF");
+                                            }
+                                            Err(e) => {
+                                                tracing::debug!("Error retrieving document event data, ignoring (error: {:?})", e);
                                             }
                                         }
-                                        Err(e) => {
-                                            tracing::debug!("Error retrieving document event data, ignoring (error: {:?})", e);
-                                        }
                                     }
-                                } else {
-                                    tracing::warn!("Error extracting key from event: {:?}", data)
                                 }
                             }
                         } else if let Err(e) = storage.decode_event(&payload) {
