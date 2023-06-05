@@ -16,6 +16,12 @@ pub async fn run<E: EventBus>(
     failed_topic: &str,
     sync_interval: Duration,
 ) -> Result<(), anyhow::Error> {
+    // Load initial index from storage.
+    // TODO: Stream directly to file
+    if let Ok(data) = storage.get_index().await {
+        index.reload(&data[..])?;
+    }
+
     let mut interval = tokio::time::interval(sync_interval);
     let mut indexer = Some(index.indexer()?);
     let mut events = 0;
