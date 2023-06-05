@@ -29,6 +29,10 @@ pub fn about() -> Html {
                             <dt>{ "Commit" }</dt>
                             <dd>{ commit }</dd>
                         }
+                        if let Some(tag) = option_env!("TAG") {
+                            <dt>{ "Tag" }</dt>
+                            <dd>{ tag }</dd>
+                        }
                         <dt>{ "Backend" }</dt>
                         <dd>{ backend.endpoints.url.to_string() }</dd>
                     </dl>

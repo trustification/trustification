@@ -1,5 +1,7 @@
 FROM ghcr.io/ctron/trunk:latest as builder
 
+ARG tag
+
 # cannot use /usr/src as it is configured as `VOLUME` in the base image, which seems to be an issue
 # for buildah (not for podman build): https://github.com/containers/buildah/issues/4845
 
@@ -14,7 +16,7 @@ WORKDIR /trustification/spog/ui
 RUN true \
     && npm ci \
     && rustup target add wasm32-unknown-unknown \
-    && trunk build --release --dist /public
+    && env TAG=$tag trunk build --release --dist /public
 
 FROM registry.access.redhat.com/ubi9/ubi-minimal:latest
 
