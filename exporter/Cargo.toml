@@ -1,8 +1,23 @@
 [package]
-name = "trustification-exporter"
+name = "exporter"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+tokio = { version = "1.0", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0.68"
+hex = "0.4.3"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+trustification-event-bus = { path = "../event-bus", features = ["kafka"] }
+trustification-storage = { path = "../storage" }
+bombastic-index = { path = "../bombastic/index" }
+clap = { version = "4", features = ["derive"] }
+anyhow = "1"
+futures = "0.3"
+rand = "0.8"
+guac = { git = "https://github.com/dejanb/guac-rs.git", version = "0.1.0" }
+#guac-lib = { git = "https://github.com/dejanb/guac-rs.git", branch = "main" }
