@@ -8,5 +8,5 @@ tantivy = "0.19.2"
 tracing = "0.1"
 zstd = "0.12"
 tar = "0.4"
-sikula = { version = "0.2", features = ["time"] }
+sikula = { version = "0.3", features = ["time"] }
 time = "0.3"

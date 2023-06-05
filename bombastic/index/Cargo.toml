@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-sikula = { version = "0.2", features = ["time"] }
+sikula = { version = "0.3", features = ["time"] }
 zstd = "0.12"
 tantivy = "0.19.2"
 tracing = "0.1"
