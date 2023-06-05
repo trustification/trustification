@@ -28,7 +28,7 @@ spec:
           imagePullPolicy: Always
           name: service
           command: ["/trust"]
-          args: ["vexination", "indexer", "--index", "/data/index"]
+          args: ["vexination", "indexer", "--events", "sqs"]
           env:
             - name: RUST_LOG
               value: info

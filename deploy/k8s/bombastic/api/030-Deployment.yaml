@@ -28,7 +28,7 @@ spec:
           imagePullPolicy: Always
           name: service
           command: ["/trust"]
-          args: ["bombastic", "api", "-p", "8080", "--index", "/data/index"]
+          args: ["bombastic", "api", "-p", "8080"]
           env:
             - name: RUST_LOG
               value: info
