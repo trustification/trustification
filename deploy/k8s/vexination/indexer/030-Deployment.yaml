@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vexination-indexer
+  labels:
+    app.kubernetes.io/name: vexination-indexer
+    app.kubernetes.io/component: indexer
+    app.kubernetes.io/part-of: vexination
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: vexination-indexer
+      app.kubernetes.io/component: indexer
+      app.kubernetes.io/part-of: vexination
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: vexination-indexer
+        app.kubernetes.io/component: indexer
+        app.kubernetes.io/part-of: vexination
+    spec:
+      volumes:
+        - name: data
+          emptyDir: {}
+      containers:
+        - image: ghcr.io/trustification/trust:latest
+          imagePullPolicy: Always
+          name: service
+          command: ["/trust"]
+          args: ["vexination", "indexer", "--index", "/data/index"]
+          env:
+            - name: RUST_LOG
+              value: info
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: vexination-credentials-secret
+                  key: access-key-id
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: vexination-credentials-secret
+                  key: secret-access-key
+          volumeMounts:
+            - name: data
+              mountPath: /data
