@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spog-ui
+  labels:
+    app.kubernetes.io/name: spog-ui
+    app.kubernetes.io/component: ui
+    app.kubernetes.io/part-of: spog
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: spog-ui
+      app.kubernetes.io/component: ui
+      app.kubernetes.io/part-of: spog
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: spog-ui
+        app.kubernetes.io/component: ui
+        app.kubernetes.io/part-of: spog
+    spec:
+      volumes:
+        - name: endpoints
+          emptyDir: {}
+        - name: run
+          emptyDir: {}
+      containers:
+        - image: ghcr.io/trustification/spog-ui:latest
+          imagePullPolicy: Always
+          name: service
+          env:
+            - name: API_URL
+              value: https://spog-api-trustification.apps.cluster.trustification.rocks
+          volumeMounts:
+            - name: endpoints
+              mountPath: /endpoints
+            - name: run
+              mountPath: /run
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 2
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 2
