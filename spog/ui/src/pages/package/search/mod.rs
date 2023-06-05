@@ -1,7 +1,7 @@
 mod lookup;
 
 use crate::backend::PackageService;
-use crate::components::deps::PackageReferences;
+use crate::components::{deps::PackageReferences, error::Error};
 use crate::hooks::use_backend;
 use packageurl::PackageUrl;
 use patternfly_yew::{
@@ -287,10 +287,7 @@ pub fn package_search() -> Html {
                         html!(<PackageReferences {refs} />)
                     },
                     UseAsyncState::Ready(Err(err)) => html!(
-                        <Bullseye>
-                            <Title>{"Search error"}</Title>
-                            { err }
-                        </Bullseye>
+                        <Error {err}/>
                     ),
                 }
             }
