@@ -44,6 +44,22 @@ spec:
                   key: secret-access-key
             - name: AWS_REGION
               value: "eu-west-1"
+            - name: INFRASTRUCTURE_ENABLED
+              value: "true"
           volumeMounts:
             - name: data
               mountPath: /data
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: 9010
+            initialDelaySeconds: 2
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: 9010
+            initialDelaySeconds: 2
+          startupProbe:
+            httpGet:
+              path: /health/startup
+              port: 9010
