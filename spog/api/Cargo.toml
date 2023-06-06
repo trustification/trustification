@@ -42,3 +42,4 @@ vexination-index = { path = "../../vexination/index" }
 bombastic-index = { path = "../../bombastic/index" }
 trustification-storage = { path = "../../storage" }
 trustification-index = { path = "../../index" }
+trustification-infrastructure = { path = "../../infrastructure" }

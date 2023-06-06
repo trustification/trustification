@@ -21,6 +21,7 @@ members = [
     "event-bus",
     "storage",
     "index",
+    "infrastructure",
 ]
 
 [patch.crates-io]

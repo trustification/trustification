@@ -29,7 +29,14 @@ impl Cli {
         match self.run_command().await {
             Ok(code) => code,
             Err(err) => {
-                eprintln!("{err}");
+                eprintln!("Error: {err}");
+                for (n, err) in err.chain().skip(1).enumerate() {
+                    if n == 0 {
+                        eprintln!("Caused by:");
+                    }
+                    eprintln!("\t{err}");
+                }
+
                 ExitCode::FAILURE
             }
         }

@@ -2,6 +2,7 @@ use std::net::SocketAddr;
 use std::process::ExitCode;
 use std::str::FromStr;
 use std::time::Duration;
+use trustification_infrastructure::{Infrastructure, InfrastructureConfig};
 
 mod sbom;
 mod server;
@@ -23,15 +24,23 @@ pub struct Run {
 
     #[arg(long = "storage-endpoint", default_value = None)]
     pub(crate) storage_endpoint: Option<String>,
+
+    #[command(flatten)]
+    pub(crate) infra: InfrastructureConfig,
 }
 
 impl Run {
     pub async fn run(self) -> anyhow::Result<ExitCode> {
-        let storage = trustification_storage::create("bombastic", self.devmode, self.storage_endpoint)?;
-        let addr = SocketAddr::from_str(&format!("{}:{}", self.bind, self.port))?;
-        let interval = Duration::from_secs(self.sync_interval_seconds);
+        Infrastructure::from(self.infra)
+            .run(|| async {
+                let storage = trustification_storage::create("bombastic", self.devmode, self.storage_endpoint)?;
+                let addr = SocketAddr::from_str(&format!("{}:{}", self.bind, self.port))?;
+                let interval = Duration::from_secs(self.sync_interval_seconds);
 
-        server::run(storage, addr, interval).await?;
+                server::run(storage, addr, interval).await
+            })
+            .await?;
+
         Ok(ExitCode::SUCCESS)
     }
 }

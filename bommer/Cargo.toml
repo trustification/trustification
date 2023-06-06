@@ -8,6 +8,7 @@ actix-cors = "0.6"
 actix-web = "4"
 actix-ws = "0.2"
 anyhow = "1"
+clap = { version = "4", features = ["derive", "env"] }
 futures = { version = "0.3" }
 k8s-openapi = { version = "0.18.0", features = ["v1_23"] }
 kube = { version = "0.82.2", features = ["runtime"] }
@@ -24,3 +25,5 @@ url = "2"
 uuid = { version = "1", features = ["v4"] }
 
 bommer-api = { path = "bommer-api" }
+
+trustification-infrastructure = { path = "../infrastructure" }

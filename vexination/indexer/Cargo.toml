@@ -14,6 +14,7 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 vexination-index = { path = "../index" }
 trustification-event-bus = { path = "../../event-bus", features = ["kafka"] }
+trustification-infrastructure = { path = "../../infrastructure" }
 trustification-storage = { path = "../../storage" }
 trustification-index = { path = "../../index" }
 clap = { version = "4", features = ["derive"] }
