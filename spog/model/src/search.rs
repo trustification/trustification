@@ -1,5 +1,16 @@
 use std::ops::{Deref, DerefMut};
 
+#[derive(serde::Deserialize, serde::Serialize, Debug, PartialEq, Clone)]
+pub struct VulnSummary {
+    pub cve: String,
+    pub title: String,
+    pub release: time::OffsetDateTime,
+    pub description: String,
+    pub cvss: f64,
+    pub affected_packages: Vec<String>,
+    pub advisories: Vec<String>,
+}
+
 #[derive(Clone, Debug, Default, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
 pub struct SearchResult<T> {
     pub result: T,

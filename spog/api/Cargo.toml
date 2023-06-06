@@ -39,6 +39,7 @@ rand = "0.8"
 #guac = { path = "../guac-rs/lib" }
 spog-model = { path = "../model" }
 vexination-index = { path = "../../vexination/index" }
+vexination-model = { path = "../../vexination/model" }
 bombastic-index = { path = "../../bombastic/index" }
 trustification-storage = { path = "../../storage" }
 trustification-index = { path = "../../index" }

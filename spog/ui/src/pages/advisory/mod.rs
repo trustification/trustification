@@ -1,4 +1,4 @@
-use crate::components::{common::PageHeading, error::Error, vexination::VexinationSearch, vulns::VulnerabilityResult};
+use crate::components::{advisory::AdvisoryResult, advisory::AdvisorySearch, common::PageHeading, error::Error};
 use csaf::Csaf;
 use patternfly_yew::prelude::*;
 use spog_model::search::SearchResult;
@@ -10,9 +10,8 @@ use yew_more_hooks::hooks::{UseAsyncHandleDeps, UseAsyncState};
 
 #[derive(Clone, Debug, PartialEq, Eq, Properties)]
 pub struct AdvisoryProps {
-    // FIXME: allow viewing by fetching via ID
     #[prop_or_default]
-    pub id: String,
+    pub id: Option<String>,
 }
 
 #[function_component(Advisory)]
@@ -24,6 +23,7 @@ pub fn advisory(props: &AdvisoryProps) -> Html {
             search.set((*state).clone());
         })
     };
+    let id = props.id.clone();
 
     html!(
         <>
@@ -31,7 +31,7 @@ pub fn advisory(props: &AdvisoryProps) -> Html {
 
             // We need to set the main section to fill, as we have a footer section
             <PageSection variant={PageSectionVariant::Default} fill={PageSectionFill::Fill}>
-                <VexinationSearch {callback} />
+                <AdvisorySearch {callback} {id}/>
 
                 {
                     match &*search {
@@ -50,7 +50,7 @@ pub fn advisory(props: &AdvisoryProps) -> Html {
                         },
                         UseAsyncState::Ready(Ok(result)) => {
                             let result = result.clone();
-                            html!(<VulnerabilityResult {result} />)
+                            html!(<AdvisoryResult {result} />)
                         },
                         UseAsyncState::Ready(Err(err)) => html!(
                             <Error err={err.clone()}/>

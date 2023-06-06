@@ -27,8 +27,6 @@ pub enum AppRoute {
     Advisory {
         id: String,
     },
-    Vulnerability {
-        cve: String,
-    },
+    Vulnerability,
     SBOM,
 }

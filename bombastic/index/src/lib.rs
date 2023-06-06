@@ -323,7 +323,7 @@ impl Index {
 }
 
 impl trustification_index::Index for Index {
-    type DocId = String;
+    type MatchedDocument = String;
     type Document = SBOM;
 
     fn index_doc(&self, doc: &SBOM) -> Result<Vec<Document>, SearchError> {
@@ -350,7 +350,7 @@ impl trustification_index::Index for Index {
         Ok(query)
     }
 
-    fn process_hit(&self, doc: Document) -> Result<Self::DocId, SearchError> {
+    fn process_hit(&self, doc: Document) -> Result<Self::MatchedDocument, SearchError> {
         if let Some(Some(value)) = doc.get_first(self.fields.purl).map(|s| s.as_text()) {
             Ok(value.into())
         } else {

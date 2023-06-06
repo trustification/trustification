@@ -4,7 +4,7 @@ use crate::backend::Endpoint;
 use reqwest::{RequestBuilder, StatusCode};
 use spog_model::prelude::*;
 
-pub struct VulnerabilityService {
+pub struct VexService {
     backend: Backend,
     client: reqwest::Client,
 }
@@ -29,7 +29,7 @@ impl SearchOptions {
     }
 }
 
-impl VulnerabilityService {
+impl VexService {
     pub fn new(backend: Backend) -> Self {
         Self {
             backend,
@@ -37,11 +37,11 @@ impl VulnerabilityService {
         }
     }
 
-    pub async fn lookup(&self, cve: &String) -> Result<Option<Vulnerability>, Error> {
+    pub async fn lookup(&self, advisory: &String) -> Result<Option<csaf::Csaf>, Error> {
         let response = self
             .client
-            .get(self.backend.join(Endpoint::Api, "/api/vulnerability")?)
-            .query(&[("cve", cve.to_string())])
+            .get(self.backend.join(Endpoint::Api, "/api/v1/advisory")?)
+            .query(&[("advisory", advisory.to_string())])
             .send()
             .await?;
 
@@ -52,10 +52,31 @@ impl VulnerabilityService {
         Ok(Some(response.error_for_status()?.json().await?))
     }
 
-    pub async fn search(&self, q: &str, options: &SearchOptions) -> Result<SearchResult<Vec<csaf::Csaf>>, Error> {
+    pub async fn search_vulnerabilities(
+        &self,
+        q: &str,
+        options: &SearchOptions,
+    ) -> Result<SearchResult<Vec<VulnSummary>>, Error> {
         let request = self
             .client
-            .get(self.backend.join(Endpoint::Search, "/vuln")?)
+            .get(self.backend.join(Endpoint::Search, "/api/v1/vulnerability/search")?)
+            .query(&[("q", q)]);
+
+        let request = options.apply(request);
+
+        let response = request.send().await?;
+
+        Ok(response.error_for_status()?.json().await?)
+    }
+
+    pub async fn search_advisories(
+        &self,
+        q: &str,
+        options: &SearchOptions,
+    ) -> Result<SearchResult<Vec<csaf::Csaf>>, Error> {
+        let request = self
+            .client
+            .get(self.backend.join(Endpoint::Search, "/api/v1/advisory/search")?)
             .query(&[("q", q)]);
 
         let request = options.apply(request);
