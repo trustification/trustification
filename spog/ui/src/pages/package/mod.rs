@@ -288,7 +288,7 @@ fn package_details(props: &PackageDetailsProperties) -> Html {
                 {for vulns.into_iter().map(|v|{
                     html!(<>
                         <yew_nested_router::components::Link<AppRoute>
-                            target={AppRoute::Vulnerability { cve: v.cve.to_string() }}
+                            target={AppRoute::Vulnerability}
                         >
                             { &v.cve }
                         </yew_nested_router::components::Link<AppRoute>>

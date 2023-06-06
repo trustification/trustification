@@ -9,6 +9,7 @@ members = [
     "vexination/vexination",
     "vexination/api",
     "vexination/index",
+    "vexination/model",
     "vexination/indexer",
     "vexination/walker",
     "reservoir/reservoir",

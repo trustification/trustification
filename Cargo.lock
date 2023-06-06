@@ -4326,6 +4326,7 @@ dependencies = [
  "utoipa",
  "utoipa-swagger-ui",
  "vexination-index",
+ "vexination-model",
  "zstd",
 ]
 
@@ -4336,8 +4337,10 @@ dependencies = [
  "chrono",
  "serde",
  "serde_json",
+ "time 0.3.21",
  "urlencoding",
  "utoipa",
+ "vexination-model",
 ]
 
 [[package]]
@@ -5237,6 +5240,7 @@ dependencies = [
  "tokio",
  "tracing",
  "trustification-index",
+ "vexination-model",
  "zstd",
 ]
 
@@ -5260,6 +5264,17 @@ dependencies = [
  "trustification-storage",
  "vexination-index",
  "zstd",
+]
+
+[[package]]
+name = "vexination-model"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "time 0.3.21",
+ "urlencoding",
+ "utoipa",
 ]
 
 [[package]]

@@ -29,12 +29,12 @@ pub struct IndexStore<INDEX: Index> {
 }
 
 pub trait Index {
-    type DocId;
+    type MatchedDocument;
     type Document;
 
     fn schema(&self) -> Schema;
     fn prepare_query(&self, q: &str) -> Result<Box<dyn Query>, Error>;
-    fn process_hit(&self, doc: Document) -> Result<Self::DocId, Error>;
+    fn process_hit(&self, doc: Document) -> Result<Self::MatchedDocument, Error>;
     fn index_doc(&self, document: &Self::Document) -> Result<Vec<Document>, Error>;
 }
 
@@ -161,7 +161,7 @@ impl<INDEX: Index> IndexStore<INDEX> {
         Ok(Indexer { writer })
     }
 
-    pub fn search(&self, q: &str, offset: usize, len: usize) -> Result<(Vec<INDEX::DocId>, usize), Error> {
+    pub fn search(&self, q: &str, offset: usize, len: usize) -> Result<(Vec<INDEX::MatchedDocument>, usize), Error> {
         let reader = self.inner.reader()?;
         let searcher = reader.searcher();
 

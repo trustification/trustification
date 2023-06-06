@@ -8,6 +8,7 @@ use tokio::sync::RwLock;
 use trustification_index::IndexStore;
 use trustification_storage::Storage;
 
+mod advisory;
 mod sbom;
 mod vuln;
 
@@ -60,9 +61,11 @@ impl AppState {
         let vex = self.vex.sync_index().await;
         let sbom = self.sbom.sync_index().await;
         if vex.is_err() {
+            tracing::info!("Error syncing vexination index: {:?}", vex);
             return vex;
         }
         if sbom.is_err() {
+            tracing::info!("Error syncing bombastic index: {:?}", sbom);
             return sbom;
         }
         Ok(())
@@ -134,8 +137,9 @@ pub(crate) fn configure(run: &Run) -> anyhow::Result<impl Fn(&mut ServiceConfig)
     });
 
     Ok(move |config: &mut ServiceConfig| {
-        config.service(web::resource("/vuln").to(vuln::search));
-        config.service(web::resource("/sbom").to(sbom::search));
+        config.service(web::resource("/api/v1/advisory/search").to(advisory::search));
+        config.service(web::resource("/api/v1/vulnerability/search").to(vuln::search));
+        config.service(web::resource("/api/v1/sbom/search").to(sbom::search));
         config.app_data(web::Data::new(state.clone()));
     })
 }

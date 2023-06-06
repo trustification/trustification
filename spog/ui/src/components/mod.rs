@@ -1,12 +1,12 @@
 //! Re-usable component
 
+pub mod advisory;
 pub mod backend;
 pub mod common;
 pub mod cvss;
 pub mod deps;
 pub mod error;
-pub mod vexination;
-pub mod vulns;
+pub mod vulnerability;
 
 use patternfly_yew::prelude::*;
 use std::ops::Deref;
