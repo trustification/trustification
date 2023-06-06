@@ -22,3 +22,6 @@ hex = "0.4.3"
 packageurl = "0.3"
 rand = "0.8"
 futures = "0.3"
+
+utoipa = { version = "3", features = ["actix_extras"] }
+utoipa-swagger-ui = { version = "3", features = ["actix-web"] }

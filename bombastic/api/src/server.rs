@@ -13,6 +13,8 @@ use serde::Deserialize;
 use tokio::sync::RwLock;
 use tracing::info;
 use trustification_storage::Storage;
+use utoipa::OpenApi;
+use utoipa_swagger_ui::SwaggerUi;
 
 use crate::sbom::SBOM;
 
@@ -22,6 +24,15 @@ struct AppState {
 
 type SharedState = Arc<AppState>;
 
+#[derive(OpenApi)]
+#[openapi(
+    paths(
+        query_sbom,
+        publish_sbom,
+    ),
+)]
+pub struct ApiDoc;
+
 pub async fn run<B: Into<SocketAddr>>(
     storage: Storage,
     bind: B,
@@ -29,6 +40,7 @@ pub async fn run<B: Into<SocketAddr>>(
 ) -> Result<(), anyhow::Error> {
     let storage = RwLock::new(storage);
     let state = Arc::new(AppState { storage });
+    let openapi = ApiDoc::openapi();
 
     let addr = bind.into();
     tracing::debug!("listening on {}", addr);
@@ -47,6 +59,7 @@ pub async fn run<B: Into<SocketAddr>>(
                     )
                     .route("/sbom", web::post().to(publish_sbom)),
             )
+            .service(SwaggerUi::new("/swagger-ui/{_:.*}").url("/openapi.json", openapi.clone()))
     })
     .bind(&addr)?
     .run()
@@ -69,6 +82,19 @@ async fn health() -> HttpResponse {
     HttpResponse::Ok().finish()
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/v1/sbom",
+    responses(
+        (status = 200, description = "SBOM found"),
+        (status = NOT_FOUND, description = "SBOM not found in archive"),
+        (status = BAD_REQUEST, description = "Missing valid purl or index entry"),
+    ),
+    params(
+        ("purl" = String, Query, description = "Package URL of SBOM to query"),
+        ("sha256" = String, Query, description = "The index value, as a sha256"),
+    )
+)]
 async fn query_sbom(state: web::Data<SharedState>, params: web::Query<QueryParams>) -> impl Responder {
     let params = params.into_inner();
     if let Some(purl) = params.purl {
@@ -90,6 +116,19 @@ struct PublishParams {
     purl: Option<String>,
 }
 
+#[utoipa::path(
+    post,
+    path = "/api/v1/sbom",
+    responses(
+        (status = 200, description = "SBOM found"),
+        (status = NOT_FOUND, description = "SBOM not found in archive"),
+        (status = BAD_REQUEST, description = "Missing valid purl or index entry"),
+    ),
+    params(
+        ("purl" = String, Query, description = "Package URL of SBOM to query"),
+        ("sha256" = String, Query, description = "The index value, as a sha256"),
+    )
+)]
 async fn publish_sbom(
     state: web::Data<SharedState>,
     params: web::Query<PublishParams>,
