@@ -937,6 +937,9 @@ dependencies = [
  "tracing-subscriber",
  "trustification-infrastructure",
  "trustification-storage",
+ "utoipa",
+ "utoipa-swagger-ui",
+ "zstd",
 ]
 
 [[package]]
