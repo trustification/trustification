@@ -73,7 +73,6 @@ impl Server {
                 .configure(vulnerability::configure())
                 .configure(index::configure())
                 .configure(|config| search(config))
-                .service(web::resource("/healthz").to(health))
                 .service(SwaggerUi::new("/swagger-ui/{_:.*}").url("/openapi.json", openapi.clone()))
         })
         .bind((self.run.bind, self.run.port))?
