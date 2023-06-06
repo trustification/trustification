@@ -27,7 +27,7 @@ pub async fn search(state: web::Data<SharedState>, params: web::Query<QueryParam
 
     // TODO: stream these
     for key in result.iter() {
-        if let Some(obj) = fetch_object(&storage, key).await {
+        if let Some(obj) = fetch_object(&storage, &key.0).await {
             if let Ok(data) = serde_json::from_slice(&obj[..]) {
                 ret.push(data);
             }
@@ -45,6 +45,6 @@ async fn search_vex(
     q: &str,
     offset: usize,
     limit: usize,
-) -> anyhow::Result<SearchResult<Vec<String>>> {
+) -> anyhow::Result<SearchResult<Vec<(String, String)>>> {
     Ok(index.search(q, offset, limit)?.into())
 }

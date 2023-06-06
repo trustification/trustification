@@ -37,7 +37,7 @@ struct Fields {
 }
 
 impl trustification_index::Index for Index {
-    type DocId = String;
+    type DocId = (String, String);
     type Document = Csaf;
 
     fn index_doc(&self, csaf: &Csaf) -> Result<Vec<Document>, SearchError> {
@@ -162,11 +162,12 @@ impl trustification_index::Index for Index {
     }
 
     fn process_hit(&self, doc: Document) -> Result<Self::DocId, SearchError> {
-        if let Some(Some(value)) = doc.get_first(self.fields.id).map(|s| s.as_text()) {
-            Ok(value.into())
-        } else {
-            Err(SearchError::NotFound)
+        if let Some(Some(id)) = doc.get_first(self.fields.id).map(|s| s.as_text()) {
+            if let Some(Some(cve)) = doc.get_first(self.fields.cve).map(|s| s.as_text()) {
+                return Ok((id.into(), cve.into()));
+            }
         }
+        Err(SearchError::NotFound)
     }
 }
 

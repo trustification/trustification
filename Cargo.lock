@@ -5197,7 +5197,11 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
+ "trustification-index",
  "trustification-storage",
+ "urlencoding",
+ "vexination-index",
+ "vexination-model",
  "zstd",
 ]
 
@@ -5239,6 +5243,17 @@ dependencies = [
  "trustification-storage",
  "vexination-index",
  "zstd",
+]
+
+[[package]]
+name = "vexination-model"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "serde",
+ "serde_json",
+ "urlencoding",
+ "utoipa",
 ]
 
 [[package]]
