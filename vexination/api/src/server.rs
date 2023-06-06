@@ -26,7 +26,6 @@ pub async fn run<B: Into<SocketAddr>>(storage: Storage, bind: B) -> Result<(), a
             .wrap(Logger::default())
             .app_data(web::PayloadConfig::new(10 * 1024 * 1024))
             .app_data(web::Data::new(state.clone()))
-            .service(web::resource("/healthz").to(health))
             .service(
                 web::scope("/api/v1")
                     .route("/vex", web::get().to(query_vex))

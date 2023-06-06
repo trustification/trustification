@@ -1,5 +1,6 @@
 use std::path::PathBuf;
 use std::process::ExitCode;
+use trustification_infrastructure::{Infrastructure, InfrastructureConfig};
 
 mod guac;
 mod index;
@@ -36,12 +37,20 @@ pub struct Run {
 
     #[arg(long = "storage-endpoint", default_value = None)]
     pub(crate) storage_endpoint: Option<String>,
+
+    #[command(flatten)]
+    pub(crate) infra: InfrastructureConfig,
 }
 
 impl Run {
     pub async fn run(self) -> anyhow::Result<ExitCode> {
-        let s = server::Server::new(self);
-        s.run().await?;
+        Infrastructure::from(self.infra.clone())
+            .run(|| async {
+                let s = server::Server::new(self);
+                s.run().await
+            })
+            .await?;
+
         Ok(ExitCode::SUCCESS)
     }
 }

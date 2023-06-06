@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 use std::process::ExitCode;
 use std::time::Duration;
+use trustification_infrastructure::{Infrastructure, InfrastructureConfig};
 
 mod indexer;
 
@@ -42,53 +43,60 @@ pub struct Run {
 
     #[arg(long = "storage-endpoint", default_value = None)]
     pub(crate) storage_endpoint: Option<String>,
+
+    #[command(flatten)]
+    pub(crate) infra: InfrastructureConfig,
 }
 
 impl Run {
     pub async fn run(self) -> anyhow::Result<ExitCode> {
-        let index: PathBuf = self.index.unwrap_or_else(|| {
-            use rand::RngCore;
-            let r = rand::thread_rng().next_u32();
-            std::env::temp_dir().join(format!("bombastic-index.{}", r))
-        });
-        std::fs::create_dir(&index)?;
+        Infrastructure::from(self.infra)
+            .run(|| async {
+                let index: PathBuf = self.index.unwrap_or_else(|| {
+                    use rand::RngCore;
+                    let r = rand::thread_rng().next_u32();
+                    std::env::temp_dir().join(format!("bombastic-index.{}", r))
+                });
+                std::fs::create_dir(&index)?;
 
-        let index = trustification_index::IndexStore::new(&index, bombastic_index::Index::new())?;
-        let storage = trustification_storage::create("bombastic", self.devmode, self.storage_endpoint)?;
-        use trustification_event_bus::EventBus;
-        let interval = Duration::from_secs(self.sync_interval_seconds);
-        match self.events {
-            Events::Kafka => {
-                let bootstrap = &self.kafka_bootstrap_servers;
-                let bus = trustification_event_bus::kafka::KafkaEventBus::new(bootstrap.to_string())?;
-                if self.devmode {
-                    bus.create(&[self.stored_topic.as_str()]).await?;
+                let index = trustification_index::IndexStore::new(&index, bombastic_index::Index::new())?;
+                let storage = trustification_storage::create("bombastic", self.devmode, self.storage_endpoint)?;
+                use trustification_event_bus::EventBus;
+                let interval = Duration::from_secs(self.sync_interval_seconds);
+                match self.events {
+                    Events::Kafka => {
+                        let bootstrap = &self.kafka_bootstrap_servers;
+                        let bus = trustification_event_bus::kafka::KafkaEventBus::new(bootstrap.to_string())?;
+                        if self.devmode {
+                            bus.create(&[self.stored_topic.as_str()]).await?;
+                        }
+                        indexer::run(
+                            index,
+                            storage,
+                            bus,
+                            self.stored_topic.as_str(),
+                            self.indexed_topic.as_str(),
+                            self.failed_topic.as_str(),
+                            interval,
+                        )
+                        .await
+                    }
+                    Events::Sqs => {
+                        let bus = trustification_event_bus::sqs::SqsEventBus::new().await?;
+                        indexer::run(
+                            index,
+                            storage,
+                            bus,
+                            self.stored_topic.as_str(),
+                            self.indexed_topic.as_str(),
+                            self.failed_topic.as_str(),
+                            interval,
+                        )
+                        .await
+                    }
                 }
-                indexer::run(
-                    index,
-                    storage,
-                    bus,
-                    self.stored_topic.as_str(),
-                    self.indexed_topic.as_str(),
-                    self.failed_topic.as_str(),
-                    interval,
-                )
-                .await?;
-            }
-            Events::Sqs => {
-                let bus = trustification_event_bus::sqs::SqsEventBus::new().await?;
-                indexer::run(
-                    index,
-                    storage,
-                    bus,
-                    self.stored_topic.as_str(),
-                    self.indexed_topic.as_str(),
-                    self.failed_topic.as_str(),
-                    interval,
-                )
-                .await?;
-            }
-        }
+            })
+            .await?;
         Ok(ExitCode::SUCCESS)
     }
 }
