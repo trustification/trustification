@@ -91,9 +91,12 @@ impl Infrastructure {
             App::new()
                 .wrap(Logger::default())
                 .service(web::resource("/").to(index))
-                .service(web::resource("/live").to(health))
-                .service(web::resource("/ready").to(health))
-                .service(web::resource("/startup").to(health))
+                .service(
+                    web::scope("/health")
+                        .service(web::resource("/live").to(health))
+                        .service(web::resource("/ready").to(health))
+                        .service(web::resource("/startup").to(health)),
+                )
         });
 
         if self.config.infrastructure_workers > 0 {
