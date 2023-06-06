@@ -36,7 +36,6 @@ pub async fn run<B: Into<SocketAddr>>(
         App::new()
             .wrap(Logger::default())
             .app_data(web::Data::new(state.clone()))
-            .service(web::resource("/healthz").to(health))
             .service(
                 web::scope("/api/v1")
                     .route("/sbom", web::get().to(query_sbom))
