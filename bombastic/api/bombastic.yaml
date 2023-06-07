@@ -11,7 +11,6 @@ paths:
       description: Query sboms
       parameters:
         - $ref: '#/components/parameters/PurlQueryParam'
-        - $ref: '#/components/parameters/Sha256QueryParam'
       responses:
         200:
           description: The SBOM content
@@ -23,7 +22,6 @@ paths:
       description: Publish sboms
       parameters:
         - $ref: '#/components/parameters/PurlQueryParam'
-        - $ref: '#/components/parameters/Sha256QueryParam'
         - name: transfer-encoding
           in: header
           description: |
@@ -62,10 +60,3 @@ components:
       content:
         text/plain:
           example: pkg:github/package-url/purl-spec@244fd47e07d1004f0aed9c
-    Sha256QueryParam:
-      name: sha256
-      in: query
-      description: The index value, as a sha256.
-      content:
-        text/plain:
-          example: 47209ab97b0c919d00db3428f241f731eae200c61e441ebdddedfb12493228ff
