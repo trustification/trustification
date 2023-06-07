@@ -92,7 +92,6 @@ async fn health() -> HttpResponse {
     ),
     params(
         ("purl" = String, Query, description = "Package URL of SBOM to query"),
-        ("sha256" = String, Query, description = "The index value, as a sha256"),
     )
 )]
 async fn query_sbom(state: web::Data<SharedState>, params: web::Query<QueryParams>) -> impl Responder {
@@ -126,7 +125,6 @@ struct PublishParams {
     ),
     params(
         ("purl" = String, Query, description = "Package URL of SBOM to query"),
-        ("sha256" = String, Query, description = "The index value, as a sha256"),
     )
 )]
 async fn publish_sbom(
