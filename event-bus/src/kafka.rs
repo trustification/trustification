@@ -40,7 +40,7 @@ impl EventBus for KafkaEventBus {
         let admin: AdminClient<_> = ClientConfig::new().set("bootstrap.servers", &self.brokers).create()?;
         let topics: Vec<NewTopic> = topics
             .iter()
-            .map(|t| NewTopic::new(t.as_ref(), 1, rdkafka::admin::TopicReplication::Fixed(1)))
+            .map(|t| NewTopic::new(t, 1, rdkafka::admin::TopicReplication::Fixed(1)))
             .collect();
         admin.create_topics(&topics[..], &AdminOptions::default()).await?;
         Ok(())
@@ -54,13 +54,13 @@ impl EventBus for KafkaEventBus {
             .set("session.timeout.ms", "6000")
             .set("enable.auto.commit", "false")
             .create()?;
-        let topics: Vec<&str> = topics.iter().map(|t| t.as_ref()).collect();
+        let topics: Vec<&str> = topics.into();
         consumer.subscribe(&topics[..])?;
         Ok(consumer)
     }
 
     async fn send(&self, topic: &str, data: &[u8]) -> Result<(), anyhow::Error> {
-        let record = FutureRecord::to(topic.as_ref()).payload(data);
+        let record = FutureRecord::to(topic).payload(data);
         self.producer
             .send::<(), _, _>(record, Duration::from_secs(10))
             .await
@@ -96,7 +96,7 @@ impl<'m> Event for KafkaEvent<'m> {
         self.message.payload()
     }
 
-    fn topic(&self) -> Result<&str, ()> {
-        Ok(self.message.topic())
+    fn topic(&self) -> &str {
+        self.message.topic()
     }
 }

@@ -34,9 +34,9 @@ impl Guac {
         for purl in pkgs.iter() {
             let p = PackageRef {
                 purl: purl.clone(),
-                href: format!("/api/package?purl={}", &urlencoding::encode(&purl)),
-                sbom: if self.sbom.exists(&purl) {
-                    Some(format!("/api/package/sbom?purl={}", &urlencoding::encode(&purl)))
+                href: format!("/api/package?purl={}", &urlencoding::encode(purl)),
+                sbom: if self.sbom.exists(purl) {
+                    Some(format!("/api/package/sbom?purl={}", &urlencoding::encode(purl)))
                 } else {
                     None
                 },
@@ -59,9 +59,9 @@ impl Guac {
             for purl in vuln.packages.iter() {
                 let p = PackageRef {
                     purl: purl.clone(),
-                    href: format!("/api/package?purl={}", &urlencoding::encode(&purl)),
-                    sbom: if self.sbom.exists(&purl) {
-                        Some(format!("/api/package/sbom?purl={}", &urlencoding::encode(&purl)))
+                    href: format!("/api/package?purl={}", &urlencoding::encode(purl)),
+                    sbom: if self.sbom.exists(purl) {
+                        Some(format!("/api/package/sbom?purl={}", &urlencoding::encode(purl)))
                     } else {
                         None
                     },
@@ -89,17 +89,14 @@ impl Guac {
                         }
                     }
                     if let Some(Some(data)) = data.get("cvss3").map(|s| s.as_object()) {
-                        match (
+                        if let (Some(Some(score)), Some(Some(status))) = (
                             data.get("cvss3_base_score").map(|s| s.as_str()),
                             data.get("status").map(|s| s.as_str()),
                         ) {
-                            (Some(Some(score)), Some(Some(status))) => {
-                                cvss3.replace(Cvss3 {
-                                    score: score.to_string(),
-                                    status: status.to_string(),
-                                });
-                            }
-                            _ => {}
+                            cvss3.replace(Cvss3 {
+                                score: score.to_string(),
+                                status: status.to_string(),
+                            });
                         }
                     }
                     if let Some(Some(data)) = data.get("threat_severity").map(|s| s.as_str()) {
@@ -175,9 +172,9 @@ impl Guac {
         for purl in deps.iter() {
             let p = PackageRef {
                 purl: purl.clone(),
-                href: format!("/api/package?purl={}", &urlencoding::encode(&purl)),
-                sbom: if self.sbom.exists(&purl) {
-                    Some(format!("/api/package/sbom?purl={}", &urlencoding::encode(&purl)))
+                href: format!("/api/package?purl={}", &urlencoding::encode(purl)),
+                sbom: if self.sbom.exists(purl) {
+                    Some(format!("/api/package/sbom?purl={}", &urlencoding::encode(purl)))
                 } else {
                     None
                 },
@@ -201,9 +198,9 @@ impl Guac {
         for purl in deps.iter() {
             let p = PackageRef {
                 purl: purl.clone(),
-                href: format!("/api/package?purl={}", &urlencoding::encode(&purl)),
-                sbom: if self.sbom.exists(&purl) {
-                    Some(format!("/api/package/sbom?purl={}", &urlencoding::encode(&purl)))
+                href: format!("/api/package?purl={}", &urlencoding::encode(purl)),
+                sbom: if self.sbom.exists(purl) {
+                    Some(format!("/api/package/sbom?purl={}", &urlencoding::encode(purl)))
                 } else {
                     None
                 },

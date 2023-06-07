@@ -7,10 +7,6 @@ use utoipa_swagger_ui::SwaggerUi;
 
 use crate::{guac, index, package, sbom::SbomRegistry, search, vulnerability, Run};
 
-async fn health() -> HttpResponse {
-    HttpResponse::Ok().finish()
-}
-
 pub struct Server {
     run: Run,
 }

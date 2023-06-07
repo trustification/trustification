@@ -16,6 +16,7 @@ use trustification_index::{
     },
     term2query, Document, Error as SearchError,
 };
+use vexination_model::prelude::*;
 
 pub struct Index {
     schema: Schema,
@@ -38,7 +39,7 @@ struct Fields {
 }
 
 impl trustification_index::Index for Index {
-    type DocId = String;
+    type MatchedDocument = SearchDocument;
     type Document = Csaf;
 
     fn index_doc(&self, csaf: &Csaf) -> Result<Vec<Document>, SearchError> {
@@ -150,7 +151,7 @@ impl trustification_index::Index for Index {
     }
 
     fn prepare_query(&self, q: &str) -> Result<Box<dyn Query>, SearchError> {
-        let mut query = Vulnerabilities::parse(&q).map_err(|err| SearchError::Parser(err.to_string()))?;
+        let mut query = Vulnerabilities::parse(q).map_err(|err| SearchError::Parser(err.to_string()))?;
 
         query.term = query.term.compact();
 
@@ -162,12 +163,39 @@ impl trustification_index::Index for Index {
         Ok(query)
     }
 
-    fn process_hit(&self, doc: Document) -> Result<Self::DocId, SearchError> {
-        if let Some(Some(value)) = doc.get_first(self.fields.id).map(|s| s.as_text()) {
-            Ok(value.into())
-        } else {
-            Err(SearchError::NotFound)
+    fn process_hit(&self, doc: Document) -> Result<Self::MatchedDocument, SearchError> {
+        // TODO Find a better way to do this
+        if let Some(Some(advisory)) = doc.get_first(self.fields.id).map(|s| s.as_text()) {
+            if let Some(Some(cve)) = doc.get_first(self.fields.cve).map(|s| s.as_text()) {
+                if let Some(Some(title)) = doc.get_first(self.fields.title).map(|s| s.as_text()) {
+                    if let Some(Some(description)) = doc.get_first(self.fields.description).map(|s| s.as_text()) {
+                        if let Some(Some(cvss)) = doc.get_first(self.fields.cvss).map(|s| s.as_f64()) {
+                            if let Some(Some(packages)) = doc.get_first(self.fields.packages).map(|s| s.as_text()) {
+                                if let Some(Some(release)) = doc.get_first(self.fields.cve_release).map(|s| s.as_date())
+                                {
+                                    return Ok(SearchDocument {
+                                        advisory: advisory.to_string(),
+                                        cve: cve.to_string(),
+                                        title: title.to_string(),
+                                        description: description.to_string(),
+                                        cvss,
+                                        release: release.into_utc(),
+                                        affected_packages: packages.split(' ').map(|s| s.to_string()).collect(),
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
+        Err(SearchError::NotFound)
+    }
+}
+
+impl Default for Index {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -175,17 +203,17 @@ impl Index {
     pub fn new() -> Self {
         let mut schema = Schema::builder();
         let id = schema.add_text_field("id", STRING | FAST | STORED);
-        let title = schema.add_text_field("title", TEXT);
-        let description = schema.add_text_field("description", TEXT);
+        let title = schema.add_text_field("title", TEXT | STORED);
+        let description = schema.add_text_field("description", TEXT | STORED);
         let cve = schema.add_text_field("cve", STRING | FAST | STORED);
         let severity = schema.add_text_field("severity", STRING | FAST);
         let status = schema.add_text_field("status", STRING);
-        let cvss = schema.add_f64_field("cvss", FAST | INDEXED);
-        let packages = schema.add_text_field("packages", STRING);
+        let cvss = schema.add_f64_field("cvss", FAST | INDEXED | STORED);
+        let packages = schema.add_text_field("packages", STRING | STORED);
         let advisory_initial = schema.add_date_field("advisory_initial_date", INDEXED);
         let advisory_current = schema.add_date_field("advisory_current_date", INDEXED);
         let cve_discovery = schema.add_date_field("cve_discovery_date", INDEXED);
-        let cve_release = schema.add_date_field("cve_release_date", INDEXED);
+        let cve_release = schema.add_date_field("cve_release_date", INDEXED | STORED);
         Self {
             schema: schema.build(),
             fields: Fields {
@@ -205,28 +233,28 @@ impl Index {
         }
     }
 
-    fn resource2query<'m>(&self, resource: &Vulnerabilities<'m>) -> Box<dyn Query> {
+    fn resource2query(&self, resource: &Vulnerabilities) -> Box<dyn Query> {
         match resource {
             Vulnerabilities::Id(primary) => {
-                let (occur, value) = primary2occur(&primary);
+                let (occur, value) = primary2occur(primary);
                 let term = Term::from_field_text(self.fields.id, value);
                 create_boolean_query(occur, term)
             }
 
             Vulnerabilities::Cve(primary) => {
-                let (occur, value) = primary2occur(&primary);
+                let (occur, value) = primary2occur(primary);
                 let term = Term::from_field_text(self.fields.cve, value);
                 create_boolean_query(occur, term)
             }
 
             Vulnerabilities::Description(primary) => {
-                let (occur, value) = primary2occur(&primary);
+                let (occur, value) = primary2occur(primary);
                 let term = Term::from_field_text(self.fields.description, value);
                 create_boolean_query(occur, term)
             }
 
             Vulnerabilities::Title(primary) => {
-                let (occur, value) = primary2occur(&primary);
+                let (occur, value) = primary2occur(primary);
                 let term = Term::from_field_text(self.fields.title, value);
                 create_boolean_query(occur, term)
             }
@@ -238,13 +266,13 @@ impl Index {
             }
 
             Vulnerabilities::Severity(primary) => {
-                let (occur, value) = primary2occur(&primary);
+                let (occur, value) = primary2occur(primary);
                 let term = Term::from_field_text(self.fields.severity, value);
                 create_boolean_query(occur, term)
             }
 
             Vulnerabilities::Status(primary) => {
-                let (occur, value) = primary2occur(&primary);
+                let (occur, value) = primary2occur(primary);
                 let term = Term::from_field_text(self.fields.status, value);
                 create_boolean_query(occur, term)
             }

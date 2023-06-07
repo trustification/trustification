@@ -99,7 +99,7 @@ where
         let listeners = listeners.map(|(id, l)| {
             let evt = evt.clone();
             async move {
-                if let Err(_) = l.send_timeout(evt, Duration::from_secs(1)).await {
+                if l.send_timeout(evt, Duration::from_secs(1)).await.is_err() {
                     Some(*id)
                 } else {
                     None
@@ -202,7 +202,7 @@ where
     pub async fn remove_state(&self, key: K) {
         let mut lock = self.inner.write().await;
 
-        if let Some(_) = lock.state.remove(&key) {
+        if lock.state.remove(&key).is_some() {
             Inner::broadcast(&mut lock, Event::Removed(key.clone())).await;
         }
     }

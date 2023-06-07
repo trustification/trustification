@@ -1,12 +1,12 @@
-use std::collections::HashMap;
+use std::collections::HashSet;
 
 use super::{QueryParams, SharedState};
+use crate::search::fetch_object;
 use actix_web::{web, HttpResponse, Responder};
-use spog_model::search::{SearchResult, VulnSummary};
+use serde_json::json;
+use spog_model::search::SearchResult;
 use trustification_index::IndexStore;
 use vexination_model::prelude::*;
-
-use super::{fetch_object, QueryParams, SharedState};
 
 const MAX_LIMIT: usize = 1_000;
 
@@ -18,7 +18,7 @@ pub async fn search(state: web::Data<SharedState>, params: web::Query<QueryParam
     let index = state.index.read().await;
     let result = search_vex(&index, &params.q, params.offset, params.limit.min(MAX_LIMIT)).await;
 
-    let mut result = match result {
+    let result = match result {
         Err(e) => {
             tracing::info!("Error searching: {:?}", e);
             return HttpResponse::InternalServerError().body(e.to_string());
@@ -26,31 +26,28 @@ pub async fn search(state: web::Data<SharedState>, params: web::Query<QueryParam
         Ok(result) => result,
     };
 
-    // Deduplicate data
-    let mut m: HashMap<String, VulnSummary> = HashMap::new();
-    for item in result.drain(..) {
-        if let Some(entry) = m.get_mut(&item.cve) {
-            entry.advisories.push(item.advisory);
-        } else {
-            m.insert(
-                item.cve.clone(),
-                VulnSummary {
-                    cve: item.cve,
-                    advisories: vec![item.advisory],
-                    title: item.title,
-                    description: item.description,
-                    release: item.release,
-                    cvss: item.cvss,
-                    affected_packages: item.affected_packages,
-                },
-            );
+    let mut ret: Vec<serde_json::Value> = Vec::new();
+    let storage = state.storage.read().await;
+
+    // Dedup data
+    let mut dedup: HashSet<String> = HashSet::new();
+
+    // TODO: stream these
+    for key in result.iter() {
+        if !dedup.contains(&key.advisory) {
+            if let Some(obj) = fetch_object(&storage, &key.advisory).await {
+                if let Ok(data) = serde_json::from_slice(&obj[..]) {
+                    ret.push(data);
+                    dedup.insert(key.advisory.clone());
+                }
+            }
         }
     }
 
-    HttpResponse::Ok().json(SearchResult::<Vec<VulnSummary>> {
-        total: result.total,
-        result: m.values().cloned().collect(),
-    })
+    HttpResponse::Ok().json(json!({
+        "result": ret,
+        "total": result.total,
+    }))
 }
 
 async fn search_vex(

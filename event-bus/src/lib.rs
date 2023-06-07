@@ -2,7 +2,7 @@
 
 #[async_trait::async_trait]
 pub trait Event {
-    fn topic(&self) -> Result<&str, ()>;
+    fn topic(&self) -> &str;
     fn payload(&self) -> Option<&[u8]>;
 }
 
