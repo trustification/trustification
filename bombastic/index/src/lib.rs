@@ -55,6 +55,12 @@ struct Fields {
     classifier: Field,
 }
 
+impl Default for Index {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Index {
     pub fn new() -> Self {
         let mut schema = Schema::builder();
@@ -219,64 +225,64 @@ impl Index {
         Ok(document)
     }
 
-    fn resource2query<'m>(&self, resource: &Packages<'m>) -> Box<dyn Query> {
+    fn resource2query(&self, resource: &Packages) -> Box<dyn Query> {
         match resource {
             Packages::Dependent(primary) => {
-                let (occur, value) = primary2occur(&primary);
+                let (occur, value) = primary2occur(primary);
                 let term = Term::from_field_text(self.fields.dependent, value);
                 create_boolean_query(occur, term)
             }
 
             Packages::Purl(primary) => {
-                let (occur, value) = primary2occur(&primary);
+                let (occur, value) = primary2occur(primary);
                 let term = Term::from_field_text(self.fields.purl, value);
                 create_boolean_query(occur, term)
             }
 
             Packages::Type(primary) => {
-                let (occur, value) = primary2occur(&primary);
+                let (occur, value) = primary2occur(primary);
                 let term = Term::from_field_text(self.fields.ptype, value);
                 create_boolean_query(occur, term)
             }
 
             Packages::Namespace(primary) => {
-                let (occur, value) = primary2occur(&primary);
+                let (occur, value) = primary2occur(primary);
                 let term = Term::from_field_text(self.fields.pnamespace, value);
                 create_boolean_query(occur, term)
             }
 
             Packages::Name(primary) => {
-                let (occur, value) = primary2occur(&primary);
+                let (occur, value) = primary2occur(primary);
                 let term = Term::from_field_text(self.fields.pname, value);
                 create_boolean_query(occur, term)
             }
 
             Packages::Version(primary) => {
-                let (occur, value) = primary2occur(&primary);
+                let (occur, value) = primary2occur(primary);
                 let term = Term::from_field_text(self.fields.pversion, value);
                 create_boolean_query(occur, term)
             }
 
             Packages::Description(primary) => {
-                let (occur, value) = primary2occur(&primary);
+                let (occur, value) = primary2occur(primary);
                 let term = Term::from_field_text(self.fields.description, value);
                 create_boolean_query(occur, term)
             }
 
             Packages::Digest(primary) => {
-                let (occur, value) = primary2occur(&primary);
+                let (occur, value) = primary2occur(primary);
                 let term = Term::from_field_text(self.fields.sha256, value);
                 create_boolean_query(occur, term)
             }
 
             Packages::License(primary) => {
-                let (occur, value) = primary2occur(&primary);
+                let (occur, value) = primary2occur(primary);
                 let term = Term::from_field_text(self.fields.license, value);
                 create_boolean_query(occur, term)
             }
 
             Packages::Qualifier(primary) => {
-                let (occur, value) = primary2occur(&primary);
+                let (occur, value) = primary2occur(primary);
                 let term = Term::from_field_text(self.fields.qualifiers, value);
                 create_boolean_query(occur, term)
             }
@@ -338,7 +344,7 @@ impl trustification_index::Index for Index {
     }
 
     fn prepare_query(&self, q: &str) -> Result<Box<dyn Query>, SearchError> {
-        let mut query = Packages::parse(&q).map_err(|err| SearchError::Parser(err.to_string()))?;
+        let mut query = Packages::parse(q).map_err(|err| SearchError::Parser(err.to_string()))?;
 
         query.term = query.term.compact();
 

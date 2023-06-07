@@ -33,9 +33,8 @@ impl BombasticSource {
             .send()
             .await?;
 
-        match response.status() {
-            StatusCode::NOT_FOUND => return Ok(None),
-            _ => {}
+        if let StatusCode::NOT_FOUND = response.status() {
+            return Ok(None);
         }
 
         let response = response.error_for_status()?;

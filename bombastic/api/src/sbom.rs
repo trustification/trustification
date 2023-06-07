@@ -2,6 +2,7 @@
 
 use tracing::info;
 
+#[allow(clippy::upper_case_acronyms)]
 pub enum SBOM<'a> {
     SPDX {
         raw: &'a [u8],
@@ -134,6 +135,7 @@ impl<'a> SBOM<'a> {
     }
 }
 
+#[allow(clippy::upper_case_acronyms)]
 mod cyclonedx {
     use serde::Deserialize;
 
@@ -168,6 +170,7 @@ mod cyclonedx {
     }
 }
 
+#[allow(clippy::upper_case_acronyms)]
 mod spdx {
     use serde::Deserialize;
 

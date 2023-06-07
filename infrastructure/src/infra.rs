@@ -55,6 +55,7 @@ async fn health() -> impl Responder {
     HttpResponse::Ok()
 }
 
+#[derive(Default)]
 pub struct Infrastructure {
     config: InfrastructureConfig,
 }
@@ -68,9 +69,7 @@ impl From<InfrastructureConfig> for Infrastructure {
 impl Infrastructure {
     /// create a new instance, with default settings.
     pub fn new() -> Self {
-        Self {
-            config: Default::default(),
-        }
+        Self::default()
     }
 
     pub async fn start(self) -> anyhow::Result<InfrastructureRunner> {

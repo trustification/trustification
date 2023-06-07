@@ -177,7 +177,7 @@ impl<INDEX: Index> IndexStore<INDEX> {
         for hit in top_docs {
             let doc = searcher.doc(hit.1)?;
             if let Ok(value) = self.index.process_hit(doc) {
-                hits.push(value.into());
+                hits.push(value);
             }
         }
 
@@ -195,21 +195,21 @@ pub fn term2query<'m, R: Search<'m>, F: Fn(&R::Parsed) -> Box<dyn Query>>(
     match term {
         sikula::prelude::Term::Match(resource) => f(resource),
         sikula::prelude::Term::Not(term) => {
-            let query_terms = vec![(Occur::MustNot, term2query(&term, f))];
+            let query_terms = vec![(Occur::MustNot, term2query(term, f))];
             let query = BooleanQuery::new(query_terms);
             Box::new(query)
         }
         sikula::prelude::Term::And(terms) => {
             let mut query_terms = Vec::new();
             for term in terms {
-                query_terms.push(term2query(&term, f));
+                query_terms.push(term2query(term, f));
             }
             Box::new(BooleanQuery::intersection(query_terms))
         }
         sikula::prelude::Term::Or(terms) => {
             let mut query_terms = Vec::new();
             for term in terms {
-                query_terms.push(term2query(&term, f));
+                query_terms.push(term2query(term, f));
             }
             Box::new(BooleanQuery::union(query_terms))
         }

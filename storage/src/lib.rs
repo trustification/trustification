@@ -95,11 +95,11 @@ impl From<std::io::Error> for Error {
     }
 }
 
-impl Into<std::io::Error> for Error {
-    fn into(self) -> std::io::Error {
-        match self {
-            Self::Io(e) => e,
-            _ => std::io::Error::new(std::io::ErrorKind::Other, self),
+impl From<Error> for std::io::Error {
+    fn from(e: Error) -> std::io::Error {
+        match e {
+            Error::Io(e) => e,
+            _ => std::io::Error::new(std::io::ErrorKind::Other, e),
         }
     }
 }
@@ -196,7 +196,7 @@ impl Storage {
     }
 
     pub fn decode_event(&self, event: &[u8]) -> Result<StorageEvent, Error> {
-        Ok(serde_json::from_slice::<StorageEvent>(event).map_err(|_e| Error::Internal)?)
+        serde_json::from_slice::<StorageEvent>(event).map_err(|_e| Error::Internal)
     }
 
     // Expects the actual S3 path
