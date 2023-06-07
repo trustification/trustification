@@ -2,13 +2,14 @@ use std::path::PathBuf;
 use std::process::ExitCode;
 use trustification_infrastructure::{Infrastructure, InfrastructureConfig};
 
-mod guac;
-mod index;
-mod package;
+mod advisory;
+//mod guac;
+//mod snyk;
+//mod index;
+//mod package;
 mod sbom;
 mod search;
 mod server;
-mod snyk;
 mod vulnerability;
 
 #[derive(clap::Args, Debug)]

@@ -1,7 +1,6 @@
 use std::collections::HashSet;
 
-use super::{QueryParams, SharedState};
-use crate::search::fetch_object;
+use crate::search::{fetch_object, QueryParams, SharedState};
 use actix_web::{web, HttpResponse, Responder};
 use serde_json::json;
 use spog_model::search::SearchResult;

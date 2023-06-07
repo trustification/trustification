@@ -8,10 +8,6 @@ use tokio::sync::RwLock;
 use trustification_index::IndexStore;
 use trustification_storage::Storage;
 
-mod advisory;
-mod sbom;
-mod vuln;
-
 #[derive(Debug, Deserialize)]
 pub struct QueryParams {
     pub q: String,
@@ -137,9 +133,9 @@ pub(crate) fn configure(run: &Run) -> anyhow::Result<impl Fn(&mut ServiceConfig)
     });
 
     Ok(move |config: &mut ServiceConfig| {
-        config.service(web::resource("/api/v1/advisory/search").to(advisory::search));
-        config.service(web::resource("/api/v1/vulnerability/search").to(vuln::search));
-        config.service(web::resource("/api/v1/sbom/search").to(sbom::search));
+        config.service(web::resource("/api/v1/advisory/search").to(crate::advisory::search));
+        config.service(web::resource("/api/v1/vulnerability/search").to(crate::vulnerability::search));
+        config.service(web::resource("/api/v1/sbom/search").to(crate::sbom::search));
         config.app_data(web::Data::new(state.clone()));
     })
 }
