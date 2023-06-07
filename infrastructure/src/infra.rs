@@ -1,9 +1,8 @@
-use actix_web::http::uri::Builder;
-use actix_web::{middleware::Logger, web, App, HttpRequest, HttpResponse, HttpServer, Responder};
+use std::{future::Future, pin::Pin};
+
+use actix_web::{http::uri::Builder, middleware::Logger, web, App, HttpRequest, HttpResponse, HttpServer, Responder};
 use anyhow::Context;
 use futures::future::select_all;
-use std::future::Future;
-use std::pin::Pin;
 
 const DEFAULT_BIND_ADDR: &str = "localhost:9010";
 

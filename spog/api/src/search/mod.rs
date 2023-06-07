@@ -1,12 +1,12 @@
-use crate::Run;
+use std::{path::PathBuf, sync::Arc, time::Duration};
+
 use actix_web::web::{self, ServiceConfig};
 use serde::Deserialize;
-use std::path::PathBuf;
-use std::sync::Arc;
-use std::time::Duration;
 use tokio::sync::RwLock;
 use trustification_index::IndexStore;
 use trustification_storage::Storage;
+
+use crate::Run;
 
 mod sbom;
 mod vuln;

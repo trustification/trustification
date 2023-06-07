@@ -1,9 +1,11 @@
 mod pods;
 
-use std::collections::{HashMap, HashSet};
-use std::fmt::Debug;
-use std::hash::Hash;
-use std::sync::Arc;
+use std::{
+    collections::{HashMap, HashSet},
+    fmt::Debug,
+    hash::Hash,
+    sync::Arc,
+};
 
 pub use pods::image_store;
 use tokio::sync::RwLock;

@@ -1,13 +1,14 @@
 use std::time::Duration;
 
-use rdkafka::admin::{AdminClient, AdminOptions, NewTopic};
-use rdkafka::config::ClientConfig;
-use rdkafka::consumer::stream_consumer::StreamConsumer;
-use rdkafka::consumer::Consumer;
-use rdkafka::error::KafkaError;
-use rdkafka::message::BorrowedMessage;
-use rdkafka::producer::{FutureProducer, FutureRecord};
-use rdkafka::Message;
+use rdkafka::{
+    admin::{AdminClient, AdminOptions, NewTopic},
+    config::ClientConfig,
+    consumer::{stream_consumer::StreamConsumer, Consumer},
+    error::KafkaError,
+    message::BorrowedMessage,
+    producer::{FutureProducer, FutureRecord},
+    Message,
+};
 
 use crate::{Event, EventBus, EventConsumer};
 

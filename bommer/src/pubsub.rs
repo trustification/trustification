@@ -1,10 +1,11 @@
-use std::collections::hash_map::Entry;
-use std::collections::HashMap;
-use std::fmt::Debug;
-use std::hash::Hash;
-use std::ops::{Deref, DerefMut};
-use std::sync::Arc;
-use std::time::Duration;
+use std::{
+    collections::{hash_map::Entry, HashMap},
+    fmt::Debug,
+    hash::Hash,
+    ops::{Deref, DerefMut},
+    sync::Arc,
+    time::Duration,
+};
 
 use bommer_api::data::Event;
 use futures::{stream, StreamExt};

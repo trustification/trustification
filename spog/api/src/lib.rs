@@ -1,5 +1,5 @@
-use std::path::PathBuf;
-use std::process::ExitCode;
+use std::{path::PathBuf, process::ExitCode};
+
 use trustification_infrastructure::{Infrastructure, InfrastructureConfig};
 
 mod guac;

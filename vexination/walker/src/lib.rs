@@ -1,14 +1,15 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use std::path::PathBuf;
-use std::process::ExitCode;
-use std::str::FromStr;
-use std::time::Duration;
-use std::time::SystemTime;
-use time::{Date, Month, UtcOffset};
+use std::{
+    path::PathBuf,
+    process::ExitCode,
+    str::FromStr,
+    time::{Duration, SystemTime},
+};
 
 use csaf_walker::validation::ValidationOptions;
+use time::{Date, Month, UtcOffset};
 use trustification_storage::{Config, Storage};
 
 mod server;

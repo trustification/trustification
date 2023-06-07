@@ -1,8 +1,7 @@
 use aws_config::meta::region::RegionProviderChain;
-use aws_sdk_sqs::config::Region;
-use aws_sdk_sqs::operation::receive_message::ReceiveMessageOutput;
-use aws_sdk_sqs::types::Message;
-use aws_sdk_sqs::{Client, Error as SqsSdkError};
+use aws_sdk_sqs::{
+    config::Region, operation::receive_message::ReceiveMessageOutput, types::Message, Client, Error as SqsSdkError,
+};
 use thiserror::Error;
 
 use crate::{Event, EventBus, EventConsumer};

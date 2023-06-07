@@ -7,14 +7,11 @@ mod workload;
 use clap::Parser;
 use futures::FutureExt;
 use k8s_openapi::api::core::v1::Pod;
-use kube::runtime::watcher;
-use kube::{Api, Client};
+use kube::{runtime::watcher, Api, Client};
 use tracing::{info, warn};
 use trustification_infrastructure::{Infrastructure, InfrastructureConfig};
 
-use crate::bombastic::BombasticSource;
-use crate::server::ServerConfig;
-use crate::store::image_store;
+use crate::{bombastic::BombasticSource, server::ServerConfig, store::image_store};
 
 #[derive(Clone, Debug, clap::Parser)]
 pub struct Cli {

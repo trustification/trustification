@@ -1,6 +1,5 @@
-use std::path::PathBuf;
-use std::process::ExitCode;
-use std::time::Duration;
+use std::{path::PathBuf, process::ExitCode, time::Duration};
+
 use trustification_infrastructure::{Infrastructure, InfrastructureConfig};
 
 mod indexer;

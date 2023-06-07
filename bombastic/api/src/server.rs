@@ -1,13 +1,15 @@
-use std::io::{self};
-use std::net::SocketAddr;
-use std::str::FromStr;
-use std::sync::Arc;
-use std::time::Duration;
+use std::{
+    io::{self},
+    net::SocketAddr,
+    str::FromStr,
+    sync::Arc,
+    time::Duration,
+};
 
-use actix_web::error::PayloadError;
-use actix_web::http::header::ContentType;
-use actix_web::middleware::Logger;
-use actix_web::{guard, web, App, HttpResponse, HttpServer, Responder};
+use actix_web::{
+    error::PayloadError, guard, http::header::ContentType, middleware::Logger, web, App, HttpResponse, HttpServer,
+    Responder,
+};
 use futures::TryStreamExt;
 use serde::Deserialize;
 use tokio::sync::RwLock;

@@ -1,7 +1,6 @@
 mod client;
 
-use std::future::Future;
-use std::time::Duration;
+use std::{future::Future, time::Duration};
 
 use anyhow::bail;
 use bommer_api::data::{Event, Image, ImageRef, PodRef, SbomState, SBOM};
@@ -10,9 +9,7 @@ use futures::FutureExt;
 use packageurl::PackageUrl;
 use tracing::{info, warn};
 
-use crate::pubsub::Output;
-use crate::store::Store;
-use crate::workload::WorkloadState;
+use crate::{pubsub::Output, store::Store, workload::WorkloadState};
 
 pub fn store(
     store: Store<ImageRef, PodRef, ()>,

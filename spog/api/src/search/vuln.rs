@@ -1,8 +1,9 @@
-use super::{fetch_object, QueryParams, SharedState};
 use actix_web::{web, HttpResponse, Responder};
 use serde_json::json;
 use spog_model::search::SearchResult;
 use trustification_index::IndexStore;
+
+use super::{fetch_object, QueryParams, SharedState};
 
 const MAX_LIMIT: usize = 1_000;
 

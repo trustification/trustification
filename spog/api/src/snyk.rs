@@ -1,7 +1,9 @@
 use snyk::apis::configuration::{self, ApiKey};
 
-use crate::package::{ApiError, VulnerabilityRef};
-use crate::Snyk;
+use crate::{
+    package::{ApiError, VulnerabilityRef},
+    Snyk,
+};
 
 pub async fn get_vulnerabilities(snyk: Snyk, purl: &str) -> Result<Vec<VulnerabilityRef>, anyhow::Error> {
     let mut ret = Vec::new();
