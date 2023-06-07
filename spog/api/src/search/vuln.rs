@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 
-use super::{QueryParams, SharedState};
 use actix_web::{web, HttpResponse, Responder};
 use spog_model::search::{SearchResult, VulnSummary};
 use trustification_index::IndexStore;
