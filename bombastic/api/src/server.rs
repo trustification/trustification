@@ -56,7 +56,7 @@ pub async fn run<B: Into<SocketAddr>>(
             )
             .service(SwaggerUi::new("/swagger-ui/{_:.*}").url("/openapi.json", openapi.clone()))
     })
-    .bind(&addr)?
+    .bind(addr)?
     .run()
     .await?;
     Ok(())
@@ -71,10 +71,6 @@ async fn fetch_object(storage: &Storage, key: &str) -> HttpResponse {
             HttpResponse::NotFound().finish()
         }
     }
-}
-
-async fn health() -> HttpResponse {
-    HttpResponse::Ok().finish()
 }
 
 #[utoipa::path(
@@ -143,7 +139,7 @@ async fn publish_sbom(
 
                 tracing::debug!("Storing new SBOM ({purl})");
                 let mime = content_type.into_inner().0;
-                match storage.put_slice(&purl, mime, &mut sbom.raw()).await {
+                match storage.put_slice(&purl, mime, sbom.raw()).await {
                     Ok(_) => {
                         let msg = format!("SBOM of size {} stored successfully", &data[..].len());
                         tracing::trace!(msg);
@@ -182,7 +178,7 @@ async fn publish_large_sbom(
             _ => io::Error::new(io::ErrorKind::Other, e),
         });
         let mime = content_type.into_inner().0;
-        match storage.put_stream(&purl, mime, &mut payload).await {
+        match storage.put_stream(purl, mime, &mut payload).await {
             Ok(status) => {
                 let msg = format!("SBOM stored with status code: {status}");
                 tracing::trace!(msg);
@@ -197,6 +193,6 @@ async fn publish_large_sbom(
     } else {
         let msg = "ERROR: purl query param is required for chunked payloads";
         tracing::info!(msg);
-        return HttpResponse::BadRequest().body(msg);
+        HttpResponse::BadRequest().body(msg)
     }
 }

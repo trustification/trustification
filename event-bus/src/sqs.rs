@@ -128,7 +128,7 @@ impl<'m> Event for SqsEvent<'m> {
         return self.message.body().map(|s| s.as_bytes());
     }
 
-    fn topic(&self) -> Result<&str, ()> {
-        Ok(self.queue)
+    fn topic(&self) -> &str {
+        self.queue
     }
 }

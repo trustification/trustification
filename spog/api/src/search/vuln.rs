@@ -47,7 +47,7 @@ pub async fn search(state: web::Data<SharedState>, params: web::Query<QueryParam
 
     HttpResponse::Ok().json(SearchResult::<Vec<VulnSummary>> {
         total: result.total,
-        result: m.values().map(|v| v.clone()).collect(),
+        result: m.values().cloned().collect(),
     })
 }
 

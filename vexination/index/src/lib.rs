@@ -150,7 +150,7 @@ impl trustification_index::Index for Index {
     }
 
     fn prepare_query(&self, q: &str) -> Result<Box<dyn Query>, SearchError> {
-        let mut query = Vulnerabilities::parse(&q).map_err(|err| SearchError::Parser(err.to_string()))?;
+        let mut query = Vulnerabilities::parse(q).map_err(|err| SearchError::Parser(err.to_string()))?;
 
         query.term = query.term.compact();
 
@@ -179,11 +179,7 @@ impl trustification_index::Index for Index {
                                         description: description.to_string(),
                                         cvss,
                                         release: release.into_utc(),
-                                        affected_packages: packages
-                                            .split(" ")
-                                            .into_iter()
-                                            .map(|s| s.to_string())
-                                            .collect(),
+                                        affected_packages: packages.split(' ').map(|s| s.to_string()).collect(),
                                     });
                                 }
                             }
@@ -193,6 +189,12 @@ impl trustification_index::Index for Index {
             }
         }
         Err(SearchError::NotFound)
+    }
+}
+
+impl Default for Index {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -230,28 +232,28 @@ impl Index {
         }
     }
 
-    fn resource2query<'m>(&self, resource: &Vulnerabilities<'m>) -> Box<dyn Query> {
+    fn resource2query(&self, resource: &Vulnerabilities) -> Box<dyn Query> {
         match resource {
             Vulnerabilities::Id(primary) => {
-                let (occur, value) = primary2occur(&primary);
+                let (occur, value) = primary2occur(primary);
                 let term = Term::from_field_text(self.fields.id, value);
                 create_boolean_query(occur, term)
             }
 
             Vulnerabilities::Cve(primary) => {
-                let (occur, value) = primary2occur(&primary);
+                let (occur, value) = primary2occur(primary);
                 let term = Term::from_field_text(self.fields.cve, value);
                 create_boolean_query(occur, term)
             }
 
             Vulnerabilities::Description(primary) => {
-                let (occur, value) = primary2occur(&primary);
+                let (occur, value) = primary2occur(primary);
                 let term = Term::from_field_text(self.fields.description, value);
                 create_boolean_query(occur, term)
             }
 
             Vulnerabilities::Title(primary) => {
-                let (occur, value) = primary2occur(&primary);
+                let (occur, value) = primary2occur(primary);
                 let term = Term::from_field_text(self.fields.title, value);
                 create_boolean_query(occur, term)
             }
@@ -263,13 +265,13 @@ impl Index {
             }
 
             Vulnerabilities::Severity(primary) => {
-                let (occur, value) = primary2occur(&primary);
+                let (occur, value) = primary2occur(primary);
                 let term = Term::from_field_text(self.fields.severity, value);
                 create_boolean_query(occur, term)
             }
 
             Vulnerabilities::Status(primary) => {
-                let (occur, value) = primary2occur(&primary);
+                let (occur, value) = primary2occur(primary);
                 let term = Term::from_field_text(self.fields.status, value);
                 create_boolean_query(occur, term)
             }

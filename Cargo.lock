@@ -939,7 +939,6 @@ dependencies = [
  "trustification-storage",
  "utoipa",
  "utoipa-swagger-ui",
- "zstd",
 ]
 
 [[package]]

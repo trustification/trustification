@@ -32,7 +32,7 @@ pub async fn run<B: Into<SocketAddr>>(storage: Storage, bind: B) -> Result<(), a
                     .route("/vex", web::post().to(publish_vex)),
             )
     })
-    .bind(&addr)?
+    .bind(addr)?
     .run()
     .await?;
     Ok(())
@@ -67,11 +67,9 @@ async fn query_vex(state: web::Data<SharedState>, params: web::Query<QueryParams
         tracing::trace!("Querying VEX using advisory {}", advisory);
         advisory
     } else if let Some(cve) = params.cve {
-        return HttpResponse::BadRequest()
-            .body("CVE lookup is not yet supported")
-            .into();
+        return HttpResponse::BadRequest().body("CVE lookup is not yet supported");
     } else {
-        return HttpResponse::BadRequest().body("Missing valid advisory or CVE").into();
+        return HttpResponse::BadRequest().body("Missing valid advisory or CVE");
     };
 
     let storage = state.storage.read().await;

@@ -34,10 +34,10 @@ pub async fn run<E: EventBus>(
             event = consumer.next() => match event {
                 Ok(Some(event)) => {
                     if let Some(payload) = event.payload() {
-                        if let Ok(data) = storage.decode_event(&payload) {
+                        if let Ok(data) = storage.decode_event(payload) {
                             for data in data.records {
                                 if data.event_type() == EventType::Put {
-                                    if storage.is_index(&data.key()) {
+                                    if storage.is_index(data.key()) {
                                         tracing::trace!("It's an index event, ignoring");
                                     } else {
                                         let key = data.key();
@@ -70,7 +70,7 @@ pub async fn run<E: EventBus>(
                                     }
                                 }
                             }
-                        } else if let Err(e) = storage.decode_event(&payload) {
+                        } else if let Err(e) = storage.decode_event(payload) {
                             tracing::warn!("Error decoding event: {:?}", e);
                         }
                     }
