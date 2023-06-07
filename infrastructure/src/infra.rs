@@ -82,7 +82,11 @@ impl Infrastructure {
     async fn start_internal(self) -> anyhow::Result<Pin<Box<dyn Future<Output = anyhow::Result<()>>>>> {
         if !self.config.infrastructure_enabled {
             tracing::info!("Infrastructure endpoint is disabled");
-            return Ok(Box::pin(async move { loop {} }));
+            return Ok(Box::pin(async move {
+                loop {
+                    tokio::time::sleep(tokio::time::Duration::from_secs(3600)).await
+                }
+            }));
         }
 
         tracing::info!("Setting up infrastructure endpoint");
