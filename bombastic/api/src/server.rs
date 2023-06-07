@@ -25,12 +25,7 @@ struct AppState {
 type SharedState = Arc<AppState>;
 
 #[derive(OpenApi)]
-#[openapi(
-    paths(
-        query_sbom,
-        publish_sbom,
-    ),
-)]
+#[openapi(paths(query_sbom, publish_sbom,))]
 pub struct ApiDoc;
 
 pub async fn run<B: Into<SocketAddr>>(
