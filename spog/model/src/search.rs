@@ -1,5 +1,7 @@
 use std::ops::{Deref, DerefMut};
 
+pub use vexination_model::prelude::ProductPackage;
+
 #[derive(serde::Deserialize, serde::Serialize, Debug, PartialEq, Clone)]
 pub struct VulnSummary {
     pub cve: String,
@@ -7,7 +9,8 @@ pub struct VulnSummary {
     pub release: time::OffsetDateTime,
     pub description: String,
     pub cvss: f64,
-    pub affected_packages: Vec<String>,
+    pub affected: Vec<ProductPackage>,
+    pub fixed: Vec<ProductPackage>,
     pub advisories: Vec<String>,
 }
 

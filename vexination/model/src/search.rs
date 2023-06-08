@@ -6,5 +6,12 @@ pub struct SearchDocument {
     pub release: time::OffsetDateTime,
     pub description: String,
     pub cvss: f64,
-    pub affected_packages: Vec<String>,
+    pub affected: Vec<ProductPackage>,
+    pub fixed: Vec<ProductPackage>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, PartialEq, Debug, Clone)]
+pub struct ProductPackage {
+    cpe: Option<String>,
+    purl: Option<String>,
 }
