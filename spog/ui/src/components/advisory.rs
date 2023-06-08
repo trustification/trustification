@@ -1,5 +1,6 @@
-use crate::backend::{SearchOptions, VexService};
+use crate::backend::{Endpoint, SearchOptions, VexService};
 use crate::hooks::use_backend;
+use url::{ParseError, Url};
 use csaf::Csaf;
 use details::CsafDetails;
 use patternfly_yew::{
@@ -192,25 +193,39 @@ impl PartialEq for AdvisoryResultProperties {
     }
 }
 
+pub struct CsafEntry {
+    url: Option<Url>,
+    csaf: Csaf
+}
+
 #[derive(Copy, Clone, PartialEq, Eq)]
 pub enum Column {
     Id,
     Title,
     Revision,
-    Products,
     Download,
     Vulnerabilities,
 }
 
-impl TableEntryRenderer<Column> for Csaf {
+impl TableEntryRenderer<Column> for CsafEntry {
     fn render_cell(&self, context: &CellContext<'_, Column>) -> Cell {
         match context.column {
-            Column::Id => html!(&self.document.tracking.id).into(),
-            Column::Title => html!(&self.document.title).into(),
-            Column::Revision => html!(&self.document.tracking.current_release_date.to_rfc3339()).into(),
-            Column::Products => html!().into(),
-            Column::Download => html!(<a href={format!("/api/v1/advisory?id={}", self.document.tracking.id)}>{"Download"}</a>).into(),
+            Column::Id => html!(&self.csaf.document.tracking.id).into(),
+            Column::Title => html!(&self.csaf.document.title).into(),
+            Column::Revision => html!(&self.csaf.document.tracking.current_release_date.to_rfc3339()).into(),
+            Column::Download => {
+                if let Some(url) = &self.url {
+                    html!(
+                        <a href={url.as_str().to_string()}>
+                            <Button icon={Icon::Download} variant={ButtonVariant::Plain} />
+                        </a>
+                    ).into()
+                } else {
+                    html!().into()
+                }
+            }
             Column::Vulnerabilities => self
+                .csaf
                 .vulnerabilities
                 .as_ref()
                 .map(|v| html!(v.len().to_string()))
@@ -220,7 +235,7 @@ impl TableEntryRenderer<Column> for Csaf {
     }
 
     fn render_details(&self) -> Vec<Span> {
-        let html = html!(<CsafDetails csaf={Rc::new(self.clone())} />);
+        let html = html!(<CsafDetails csaf={Rc::new(self.csaf.clone())} />);
         vec![Span::max(html)]
     }
 
@@ -231,21 +246,29 @@ impl TableEntryRenderer<Column> for Csaf {
 
 #[function_component(AdvisoryResult)]
 pub fn vulnerability_result(props: &AdvisoryResultProperties) -> Html {
-    let (entries, onexpand) = use_table_data(MemoizedTableModel::new(props.result.result.clone()));
+    let backend = use_backend();
+    let entries: Vec<CsafEntry> = props.result.result.iter().map(|csaf| {
+        let url = backend.join(Endpoint::Api, &format!("/api/v1/advisory?id={}", csaf.document.tracking.id)).ok();
+        CsafEntry {
+            csaf: csaf.clone(),
+            url
+        }
+    }).collect();
+
+    let (entries, onexpand) = use_table_data(MemoizedTableModel::new(Rc::new(entries)));
 
     let header = html_nested! {
         <TableHeader<Column>>
             <TableColumn<Column> label="ID" index={Column::Id} width={ColumnWidth::Percent(10)}/>
-            <TableColumn<Column> label="Title" index={Column::Title} width={ColumnWidth::Percent(45)}/>
+            <TableColumn<Column> label="Title" index={Column::Title} width={ColumnWidth::Percent(50)}/>
             <TableColumn<Column> label="Revision" index={Column::Revision} width={ColumnWidth::Percent(10)}/>
-            <TableColumn<Column> label="Products" index={Column::Products} width={ColumnWidth::Percent(10)}/>
-            <TableColumn<Column> label="Download" index={Column::Products} width={ColumnWidth::Percent(10)}/>
-            <TableColumn<Column> label="Vulnerabilities" index={Column::Vulnerabilities} width={ColumnWidth::Percent(10)}/>
+            <TableColumn<Column> label="Download" index={Column::Download} width={ColumnWidth::Percent(10)}/>
+            <TableColumn<Column> label="Vulnerabilities" index={Column::Vulnerabilities} width={ColumnWidth::Percent(20)}/>
         </TableHeader<Column>>
     };
 
     html!(
-        <Table<Column, UseTableData<Column, MemoizedTableModel<Csaf>>>
+        <Table<Column, UseTableData<Column, MemoizedTableModel<CsafEntry>>>
             mode={TableMode::CompactExpandable}
             {header}
             {entries}

@@ -2,7 +2,12 @@ mod search;
 
 use search::*;
 
-use csaf::{definitions::NoteCategory, Csaf};
+use csaf::{
+    definitions::{NoteCategory, ProductIdT},
+    product_tree::ProductTree,
+    Csaf,
+};
+use serde_json::{Map, Value};
 use sikula::prelude::*;
 
 use std::ops::Bound;
@@ -24,6 +29,7 @@ pub struct Index {
 
 struct Fields {
     id: Field,
+    document_status: Field,
     title: Field,
     description: Field,
     cve: Field,
@@ -33,8 +39,13 @@ struct Fields {
     cve_discovery: Field,
     severity: Field,
     cvss: Field,
-    status: Field,
-    packages: Field,
+    product_status: Field,
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+struct ProductPackage {
+    cpe: Option<String>,
+    purl: Option<String>,
 }
 
 impl trustification_index::Index for Index {
@@ -44,7 +55,7 @@ impl trustification_index::Index for Index {
     fn index_doc(&self, csaf: &Csaf) -> Result<Vec<Document>, SearchError> {
         let mut documents = Vec::new();
         let id = &csaf.document.tracking.id;
-        let status = match &csaf.document.tracking.status {
+        let document_status = match &csaf.document.tracking.status {
             csaf::document::Status::Draft => "draft",
             csaf::document::Status::Interim => "interim",
             csaf::document::Status::Final => "final",
@@ -54,7 +65,7 @@ impl trustification_index::Index for Index {
             for vuln in vulns {
                 let mut title = String::new();
                 let mut description = String::new();
-                let mut packages: Vec<String> = Vec::new();
+                let mut product_status: Map<String, Value> = Map::new();
                 let mut cve = String::new();
                 let mut severity = String::new();
 
@@ -78,13 +89,32 @@ impl trustification_index::Index for Index {
                 }
 
                 if let Some(status) = &vuln.product_status {
+                    let mut affected: Vec<ProductPackage> = Vec::new();
                     if let Some(products) = &status.known_affected {
                         for product in products {
-                            packages.push(product.0.clone());
+                            if let Some(p) = find_product_package(csaf, product) {
+                                affected.push(p);
+                            }
                         }
                     }
+
+                    let mut fixed: Vec<ProductPackage> = Vec::new();
+                    if let Some(products) = &status.fixed {
+                        for product in products {
+                            if let Some(p) = find_product_package(csaf, product) {
+                                fixed.push(p);
+                            }
+                        }
+                    }
+
+                    if let Ok(value) = serde_json::to_value(affected) {
+                        product_status.insert("known_affected".to_string(), value);
+                    }
+
+                    if let Ok(value) = serde_json::to_value(fixed) {
+                        product_status.insert("fixed".to_string(), value);
+                    }
                 }
-                let packages = packages.join(" ");
 
                 if let Some(notes) = &vuln.notes {
                     for note in notes {
@@ -95,21 +125,21 @@ impl trustification_index::Index for Index {
                     }
 
                     tracing::debug!(
-                        "Indexing with id {} title {} description {}, cve {}, packages {} score {}",
+                        "Indexing with id {} title {} description {}, cve {}, product_status {:?} score {}",
                         id,
                         title,
                         description,
                         cve,
-                        packages,
+                        serde_json::to_string(&product_status).ok(),
                         score_value,
                     );
                     let mut document = doc!(
                         self.fields.id => id.as_str(),
                         self.fields.title => title,
                         self.fields.description => description,
-                        self.fields.packages => packages,
                         self.fields.cve => cve,
-                        self.fields.status => status,
+                        self.fields.document_status => document_status,
+                        self.fields.product_status => product_status,
                         self.fields.severity => severity,
                         self.fields.cvss => score_value,
                     );
@@ -169,9 +199,20 @@ impl trustification_index::Index for Index {
                 if let Some(Some(title)) = doc.get_first(self.fields.title).map(|s| s.as_text()) {
                     if let Some(Some(description)) = doc.get_first(self.fields.description).map(|s| s.as_text()) {
                         if let Some(Some(cvss)) = doc.get_first(self.fields.cvss).map(|s| s.as_f64()) {
-                            if let Some(Some(packages)) = doc.get_first(self.fields.packages).map(|s| s.as_text()) {
+                            if let Some(Some(product_status)) =
+                                doc.get_first(self.fields.product_status).map(|s| s.as_json())
+                            {
                                 if let Some(Some(release)) = doc.get_first(self.fields.cve_release).map(|s| s.as_date())
                                 {
+                                    let affected = product_status
+                                        .get("affected")
+                                        .map(|val| serde_json::from_value(val.clone()).unwrap_or(Vec::new()))
+                                        .unwrap_or(Vec::new());
+
+                                    let fixed = product_status
+                                        .get("fixed")
+                                        .map(|val| serde_json::from_value(val.clone()).unwrap_or(Vec::new()))
+                                        .unwrap_or(Vec::new());
                                     return Ok(SearchDocument {
                                         advisory: advisory.to_string(),
                                         cve: cve.to_string(),
@@ -179,7 +220,8 @@ impl trustification_index::Index for Index {
                                         description: description.to_string(),
                                         cvss,
                                         release: release.into_utc(),
-                                        affected_packages: packages.split(' ').map(|s| s.to_string()).collect(),
+                                        affected,
+                                        fixed,
                                     });
                                 }
                             }
@@ -206,9 +248,9 @@ impl Index {
         let description = schema.add_text_field("description", TEXT | STORED);
         let cve = schema.add_text_field("cve", STRING | FAST | STORED);
         let severity = schema.add_text_field("severity", STRING | FAST);
-        let status = schema.add_text_field("status", STRING);
+        let document_status = schema.add_text_field("document_status", STRING);
+        let product_status = schema.add_json_field("product_status", STRING | STORED);
         let cvss = schema.add_f64_field("cvss", FAST | INDEXED | STORED);
-        let packages = schema.add_text_field("packages", STRING | STORED);
         let advisory_initial = schema.add_date_field("advisory_initial_date", INDEXED);
         let advisory_current = schema.add_date_field("advisory_current_date", INDEXED);
         let cve_discovery = schema.add_date_field("cve_discovery_date", INDEXED);
@@ -222,8 +264,8 @@ impl Index {
                 description,
                 cve,
                 severity,
-                status,
-                packages,
+                document_status,
+                product_status,
                 advisory_initial,
                 advisory_current,
                 cve_discovery,
@@ -260,7 +302,7 @@ impl Index {
 
             Vulnerabilities::Package(primary) => {
                 let (occur, value) = primary2occur(primary);
-                let term = Term::from_field_text(self.fields.packages, value);
+                let term = Term::from_field_text(self.fields.product_status, value);
                 create_boolean_query(occur, term)
             }
 
@@ -272,11 +314,11 @@ impl Index {
 
             Vulnerabilities::Status(primary) => {
                 let (occur, value) = primary2occur(primary);
-                let term = Term::from_field_text(self.fields.status, value);
+                let term = Term::from_field_text(self.fields.document_status, value);
                 create_boolean_query(occur, term)
             }
             Vulnerabilities::Final => {
-                create_boolean_query(Occur::Must, Term::from_field_text(self.fields.status, "final"))
+                create_boolean_query(Occur::Must, Term::from_field_text(self.fields.document_status, "final"))
             }
             Vulnerabilities::Critical => {
                 create_boolean_query(Occur::Must, Term::from_field_text(self.fields.severity, "critical"))
@@ -322,6 +364,59 @@ impl Index {
             Vulnerabilities::Discovery(ordered) => create_date_query(self.fields.cve_discovery, ordered),
         }
     }
+}
+
+use csaf::definitions::{BranchesT, ProductIdentificationHelper};
+fn find_product_identifier<'m, F: Fn(&'m ProductIdentificationHelper) -> Option<R>, R>(
+    branches: &'m BranchesT,
+    product_id: &'m ProductIdT,
+    f: &'m F,
+) -> Option<R> {
+    for branch in branches.0.iter() {
+        if branch.name == product_id.0 {
+            if let Some(name) = &branch.product {
+                if let Some(helper) = &name.product_identification_helper {
+                    if let Some(ret) = f(&helper) {
+                        return Some(ret);
+                    }
+                }
+            }
+        }
+
+        if let Some(branches) = &branch.branches {
+            if let Some(ret) = find_product_identifier(&branches, product_id, f) {
+                return Some(ret);
+            }
+        }
+    }
+    None
+}
+
+fn find_product_ref<'m>(tree: &'m ProductTree, product_id: &ProductIdT) -> Option<&'m ProductIdT> {
+    if let Some(rs) = &tree.relationships {
+        for r in rs {
+            if r.full_product_name.product_id.0 == product_id.0 {
+                return Some(&r.product_reference);
+            }
+        }
+    }
+    None
+}
+
+fn find_product_package(csaf: &Csaf, product_id: &ProductIdT) -> Option<ProductPackage> {
+    if let Some(tree) = &csaf.product_tree {
+        if let Some(r) = find_product_ref(tree, product_id) {
+            if let Some(branches) = &tree.branches {
+                return find_product_identifier(&branches, r, &|helper: &ProductIdentificationHelper| {
+                    Some(ProductPackage {
+                        purl: helper.purl.as_ref().map(|p| p.to_string()),
+                        cpe: helper.cpe.as_ref().map(|p| p.to_string()),
+                    })
+                });
+            }
+        }
+    }
+    None
 }
 
 #[cfg(test)]
