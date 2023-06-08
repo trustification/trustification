@@ -24,7 +24,7 @@ pub async fn run(storage: Storage, source: url::Url, options: ValidationOptions)
                     match serde_json::from_slice::<csaf::Csaf>(&data) {
                         Ok(doc) => {
                             let key = doc.document.tracking.id;
-                            match storage.put_slice(&key, mime::APPLICATION_JSON, &data).await {
+                            match storage.put_slice(&key, &data).await {
                                 Ok(_) => {
                                     let msg = format!("VEX ({}) of size {} stored successfully", key, &data[..].len());
                                     tracing::info!(msg);

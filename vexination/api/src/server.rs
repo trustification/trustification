@@ -1,7 +1,7 @@
 use std::{net::SocketAddr, sync::Arc, time::Duration};
 
 use actix_web::{
-    http::header::ContentType,
+    http::header::{self, ContentType},
     middleware::Logger,
     web::{self, Bytes},
     App, HttpResponse, HttpServer, Responder,
@@ -40,10 +40,11 @@ pub async fn run<B: Into<SocketAddr>>(storage: Storage, bind: B) -> Result<(), a
 
 async fn fetch_object(storage: &Storage, key: &str) -> HttpResponse {
     match storage.get_stream(key).await {
-        Ok((ctype, stream)) => {
-            let ctype = ctype.unwrap_or(ContentType::json().to_string());
-            HttpResponse::Ok().content_type(ctype).streaming(stream)
-        }
+        Ok((Some(encoding), stream)) => HttpResponse::Ok()
+            .content_type(ContentType::json())
+            .insert_header((header::CONTENT_ENCODING, encoding))
+            .streaming(stream),
+        Ok((None, stream)) => HttpResponse::Ok().content_type(ContentType::json()).streaming(stream),
         Err(e) => {
             tracing::warn!("Unable to locate object with key {}: {:?}", key, e);
             HttpResponse::NotFound().finish()
@@ -97,7 +98,7 @@ async fn publish_vex(state: web::Data<SharedState>, params: web::Query<PublishPa
 
     let storage = state.storage.write().await;
     tracing::debug!("Storing new VEX with id: {advisory}");
-    match storage.put_slice(&advisory, ContentType::json().0, &data).await {
+    match storage.put_slice(&advisory, &data).await {
         Ok(_) => {
             let msg = format!("VEX of size {} stored successfully", &data[..].len());
             tracing::trace!(msg);
