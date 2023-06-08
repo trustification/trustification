@@ -7,6 +7,7 @@ use actix_web::{web, HttpResponse, Responder};
 use serde_json::json;
 use spog_model::search::SearchResult;
 use trustification_index::IndexStore;
+use trustification_storage::Storage;
 use vexination_model::prelude::*;
 
 const MAX_LIMIT: usize = 1_000;
@@ -23,17 +24,23 @@ pub struct GetParams {
     pub id: String,
 }
 
+async fn fetch_object_stream(storage: &Storage, key: &str) -> HttpResponse {
+    match storage.get_stream(key).await {
+        Ok((Some(ctype), stream)) => HttpResponse::Ok().content_type(ctype).streaming(stream),
+        Ok((None, stream)) => HttpResponse::Ok().streaming(stream),
+        Err(e) => {
+            tracing::warn!("Unable to locate object with key {}: {:?}", key, e);
+            HttpResponse::NotFound().finish()
+        }
+    }
+}
+
 pub async fn get(state: web::Data<SharedState>, params: web::Query<GetParams>) -> impl Responder {
     let params = params.into_inner();
     let state = &state.vex;
     let storage = state.storage.read().await;
 
-    // TODO: Stream
-    if let Some(obj) = fetch_object(&storage, &params.id).await {
-        HttpResponse::Ok().json(obj)
-    } else {
-        HttpResponse::NotFound().finish()
-    }
+    fetch_object_stream(&storage, &params.id).await
 }
 
 pub async fn search(state: web::Data<SharedState>, params: web::Query<QueryParams>) -> impl Responder {
