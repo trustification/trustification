@@ -1,19 +1,15 @@
 mod stream;
 
+use std::marker::Unpin;
+
 use async_compression::tokio::bufread::ZstdEncoder;
 use async_stream::stream;
 use bytes::{Buf, Bytes};
-use futures::future::ok;
-use futures::stream::once;
-use futures::{Stream, StreamExt};
+use futures::{future::ok, stream::once, Stream, StreamExt};
 use mime::Mime;
-use s3::creds::error::CredentialsError;
-pub use s3::creds::Credentials;
-use s3::error::S3Error;
-use s3::Bucket;
-pub use s3::Region;
+use s3::{creds::error::CredentialsError, error::S3Error, Bucket};
+pub use s3::{creds::Credentials, Region};
 use serde::Deserialize;
-use std::marker::Unpin;
 use tokio::io::AsyncRead;
 use tokio_util::io::StreamReader;
 

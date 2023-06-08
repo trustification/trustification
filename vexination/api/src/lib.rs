@@ -1,11 +1,8 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use std::net::SocketAddr;
-use std::path::PathBuf;
-use std::process::ExitCode;
-use std::str::FromStr;
-use std::time::Duration;
+use std::{net::SocketAddr, path::PathBuf, process::ExitCode, str::FromStr, time::Duration};
+
 use trustification_infrastructure::{Infrastructure, InfrastructureConfig};
 
 mod server;

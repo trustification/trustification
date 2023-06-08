@@ -1,12 +1,13 @@
-use std::collections::{HashMap, HashSet};
-use std::future::Future;
-use std::pin::pin;
+use std::{
+    collections::{HashMap, HashSet},
+    future::Future,
+    pin::pin,
+};
 
 use bommer_api::data::{ImageRef, PodRef};
 use futures::{Stream, TryStreamExt};
 use k8s_openapi::api::core::v1::{ContainerStatus, Pod};
-use kube::runtime::watcher;
-use kube::{Resource, ResourceExt};
+use kube::{runtime::watcher, Resource, ResourceExt};
 
 use crate::store::{Owned, Store};
 

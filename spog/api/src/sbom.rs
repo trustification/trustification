@@ -1,9 +1,11 @@
-use crate::search;
-use crate::server::{fetch_object, SharedState};
-use actix_web::web::ServiceConfig;
-use actix_web::{web, HttpResponse, Responder};
+use actix_web::{web, web::ServiceConfig, HttpResponse, Responder};
 use spog_model::search::SearchResult;
 use trustification_index::IndexStore;
+
+use crate::{
+    search,
+    server::{fetch_object, SharedState},
+};
 
 pub(crate) fn configure() -> impl FnOnce(&mut ServiceConfig) {
     |config: &mut ServiceConfig| {

@@ -1,7 +1,9 @@
-use std::collections::{HashMap, HashSet};
-use std::fmt::{Debug, Display, Formatter};
-use std::hash::Hash;
-use std::ops::Deref;
+use std::{
+    collections::{HashMap, HashSet},
+    fmt::{Debug, Display, Formatter},
+    hash::Hash,
+    ops::Deref,
+};
 
 #[derive(Clone, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]

@@ -1,7 +1,6 @@
 use async_compression::tokio::bufread::{BzDecoder, ZstdDecoder};
 use bytes::Bytes;
-use futures::stream::BoxStream;
-use futures::{StreamExt, TryStreamExt};
+use futures::{stream::BoxStream, StreamExt, TryStreamExt};
 use tokio_util::io::{ReaderStream, StreamReader};
 
 use crate::Error;
