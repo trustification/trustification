@@ -3,7 +3,7 @@ mod stream;
 use std::marker::Unpin;
 
 use async_compression::tokio::bufread::ZstdEncoder;
-use async_stream::stream;
+use async_stream::try_stream;
 use bytes::{Buf, Bytes};
 use futures::{future::ok, stream::once, Stream, StreamExt};
 use http::{header::CONTENT_ENCODING, HeaderValue};
@@ -70,7 +70,7 @@ pub enum Error {
     Io(std::io::Error),
     #[error("invalid storage key {0}")]
     InvalidKey(String),
-    #[error("unknown encoding {0}")]
+    #[error("unexpected encoding {0}")]
     Encoding(String),
 }
 
@@ -165,6 +165,24 @@ impl Storage {
         self.get_object_stream(&path).await
     }
 
+    // return raw stream *only* if the object's Content-Encoding matches encoding
+    pub async fn get_encoded_stream(
+        &self,
+        key: &str,
+        encoding: &str,
+    ) -> Result<impl Stream<Item = Result<Bytes, Error>>, Error> {
+        let path = format!("{}{}", DATA_PATH, key);
+        let (head, _status) = self.bucket.head_object(&path).await?;
+        match head.content_encoding {
+            Some(ref s) if s == encoding => {
+                let mut s = self.bucket.get_object_stream(&path).await?;
+                Ok(try_stream! { while let Some(chunk) = s.bytes().next().await { yield chunk?; }})
+            }
+            Some(s) => Err(Error::Encoding(s)),
+            _ => Err(Error::Encoding(encoding.into())),
+        }
+    }
+
     // Get the data associated with an event record.
     // This will load the entire S3 object into memory
     pub async fn get_for_event(&self, record: &Record) -> Result<Vec<u8>, Error> {
@@ -212,9 +230,9 @@ impl Storage {
     ) -> Result<(Option<String>, impl Stream<Item = Result<Bytes, Error>>), Error> {
         let (head, _status) = self.bucket.head_object(path).await?;
         let mut s = self.bucket.get_object_stream(path).await?;
-        let stream = stream! {
+        let stream = try_stream! {
             while let Some(chunk) = s.bytes().next().await {
-                yield chunk.map_err(Error::S3);
+                yield chunk?;
             }
         };
         Ok(stream::decode(head.content_encoding, stream.boxed()))
