@@ -9,15 +9,15 @@ use std::{
 use actix_web::{
     error::PayloadError,
     guard,
-    http::header::{self, ContentType},
-    middleware::Logger,
+    http::header::{self, AcceptEncoding, ContentEncoding, ContentType, Encoding},
+    middleware::{Compress, Logger},
     web, App, HttpResponse, HttpServer, Responder,
 };
 use futures::TryStreamExt;
 use serde::Deserialize;
 use tokio::sync::RwLock;
 use tracing::info;
-use trustification_storage::Storage;
+use trustification_storage::{Error, Storage};
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
@@ -47,6 +47,7 @@ pub async fn run<B: Into<SocketAddr>>(
     HttpServer::new(move || {
         App::new()
             .wrap(Logger::default())
+            .wrap(Compress::default())
             .app_data(web::Data::new(state.clone()))
             .service(
                 web::scope("/api/v1")
@@ -67,17 +68,38 @@ pub async fn run<B: Into<SocketAddr>>(
     Ok(())
 }
 
-async fn fetch_object(storage: &Storage, key: &str) -> HttpResponse {
-    match storage.get_stream(key).await {
-        Ok((Some(encoding), stream)) => HttpResponse::Ok()
+async fn fetch_object(storage: &Storage, key: &str, accept_encoding: AcceptEncoding) -> HttpResponse {
+    let encoded = match accept_encoding.negotiate(vec![Encoding::zstd()].iter()) {
+        Some(Encoding::Known(ContentEncoding::Zstd)) => match storage.get_encoded_stream(key, "zstd").await {
+            Ok(stream) => {
+                tracing::info!("Returning zstd-encoded stream");
+                Some(stream)
+            }
+            Err(Error::S3(e)) => {
+                // probably a 404 so no sense in continuing
+                tracing::warn!("Unable to locate object with key {}: {:?}", key, e);
+                return HttpResponse::NotFound().finish();
+            }
+            _ => None, // ignore non-S3 errors
+        },
+        _ => None, // client won't accept zstd-encoded stream
+    };
+    match encoded {
+        Some(stream) => HttpResponse::Ok()
             .content_type(ContentType::json())
-            .insert_header((header::CONTENT_ENCODING, encoding))
+            .insert_header(ContentEncoding::Zstd)
             .streaming(stream),
-        Ok((None, stream)) => HttpResponse::Ok().content_type(ContentType::json()).streaming(stream),
-        Err(e) => {
-            tracing::warn!("Unable to locate object with key {}: {:?}", key, e);
-            HttpResponse::NotFound().finish()
-        }
+        None => match storage.get_stream(key).await {
+            Ok((Some(encoding), stream)) => HttpResponse::Ok()
+                .content_type(ContentType::json())
+                .insert_header((header::CONTENT_ENCODING, encoding))
+                .streaming(stream),
+            Ok((None, stream)) => HttpResponse::Ok().content_type(ContentType::json()).streaming(stream),
+            Err(e) => {
+                tracing::warn!("Unable to locate object with key {}: {:?}", key, e);
+                HttpResponse::NotFound().finish()
+            }
+        },
     }
 }
 
@@ -93,12 +115,16 @@ async fn fetch_object(storage: &Storage, key: &str) -> HttpResponse {
         ("purl" = String, Query, description = "Package URL of SBOM to query"),
     )
 )]
-async fn query_sbom(state: web::Data<SharedState>, params: web::Query<QueryParams>) -> impl Responder {
+async fn query_sbom(
+    state: web::Data<SharedState>,
+    params: web::Query<QueryParams>,
+    accept_encoding: web::Header<AcceptEncoding>,
+) -> impl Responder {
     let params = params.into_inner();
     if let Some(purl) = params.purl {
         tracing::trace!("Querying SBOM using purl {}", purl);
         let storage = state.storage.read().await;
-        fetch_object(&storage, &purl).await
+        fetch_object(&storage, &purl, accept_encoding.into_inner()).await
     } else {
         HttpResponse::BadRequest().body("Missing valid purl")
     }
