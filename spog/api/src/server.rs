@@ -1,16 +1,14 @@
-use std::sync::Arc;
+use std::{path::PathBuf, sync::Arc, time::Duration};
 
-use crate::Run;
 use actix_cors::Cors;
-use actix_web::middleware::Logger;
-use actix_web::{web, App, HttpServer};
-use std::path::PathBuf;
-use std::time::Duration;
+use actix_web::{middleware::Logger, web, App, HttpServer};
 use tokio::sync::RwLock;
 use trustification_index::IndexStore;
 use trustification_storage::Storage;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
+
+use crate::Run;
 
 pub struct Server {
     run: Run,

@@ -1,26 +1,17 @@
-use std::fmt::Display;
+use std::{fmt::Display, ops::Bound, path::PathBuf};
 
 use sikula::prelude::{Ordered, Primary, Search};
-use std::ops::Bound;
-use std::path::PathBuf;
-use tantivy::collector::Count;
-use tantivy::collector::TopDocs;
-use tantivy::directory::MmapDirectory;
-use tantivy::directory::INDEX_WRITER_LOCK;
-use tantivy::schema::*;
-use tantivy::Directory;
-use tantivy::Index as SearchIndex;
-use tantivy::IndexWriter;
-use tantivy::{
-    query::{BooleanQuery, Occur, Query, RangeQuery, TermQuery},
-    DateTime,
-};
-
-use tracing::info;
-
 // Rexport to align versions
 pub use tantivy;
 pub use tantivy::schema::Document;
+use tantivy::{
+    collector::{Count, TopDocs},
+    directory::{MmapDirectory, INDEX_WRITER_LOCK},
+    query::{BooleanQuery, Occur, Query, RangeQuery, TermQuery},
+    schema::*,
+    DateTime, Directory, Index as SearchIndex, IndexWriter,
+};
+use tracing::info;
 
 pub struct IndexStore<INDEX: Index> {
     inner: SearchIndex,

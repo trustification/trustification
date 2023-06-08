@@ -1,20 +1,20 @@
 mod search;
+use core::str::FromStr;
+
 use cyclonedx_bom::models::{component::Classification, hash::HashAlgorithm};
 use search::*;
-
 use sikula::prelude::*;
-
 use spdx_rs::models::Algorithm;
 use tracing::info;
 use trustification_index::{
     create_boolean_query, primary2occur,
-    tantivy::doc,
-    tantivy::query::{Occur, Query},
-    tantivy::schema::{Field, Schema, Term, FAST, STORED, STRING, TEXT},
+    tantivy::{
+        doc,
+        query::{Occur, Query},
+        schema::{Field, Schema, Term, FAST, STORED, STRING, TEXT},
+    },
     term2query, Document, Error as SearchError,
 };
-
-use core::str::FromStr;
 
 pub struct Index {
     schema: Schema,
@@ -42,6 +42,7 @@ impl SBOM {
 
 struct Fields {
     dependent: Field,
+    cpe: Field,
     purl: Field,
     ptype: Field,
     pnamespace: Field,
@@ -66,6 +67,7 @@ impl Index {
         let mut schema = Schema::builder();
         let fields = Fields {
             dependent: schema.add_text_field("dependent", STRING | STORED),
+            cpe: schema.add_text_field("purl", STRING | FAST | STORED),
             purl: schema.add_text_field("purl", STRING | FAST | STORED),
             ptype: schema.add_text_field("ptype", STRING),
             pnamespace: schema.add_text_field("pnamespace", STRING),
