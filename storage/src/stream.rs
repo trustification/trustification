@@ -7,15 +7,15 @@ use crate::Error;
 
 type ObjectStream = BoxStream<'static, Result<Bytes, Error>>;
 
-// Returns a tuple of encoding type (if any), and a stream
-pub fn decode(encoding: Option<String>, stream: ObjectStream) -> (Option<String>, ObjectStream) {
+// Returns an unencoded JSON stream
+pub fn decode(encoding: Option<String>, stream: ObjectStream) -> Result<ObjectStream, Error> {
     match encoding {
-        Some(ref s) => match s.as_str() {
-            "zstd" => (None, zstd(stream)),
-            "bzip2" => (None, bzip(stream)),
-            _ => (encoding, stream),
+        Some(s) => match s.as_str() {
+            "zstd" => Ok(zstd(stream)),
+            "bzip2" => Ok(bzip(stream)),
+            _ => Err(Error::Encoding(s)),
         },
-        None => (encoding, stream),
+        None => Err(Error::Encoding("none".to_string())),
     }
 }
 

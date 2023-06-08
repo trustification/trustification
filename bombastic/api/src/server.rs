@@ -9,7 +9,7 @@ use std::{
 use actix_web::{
     error::PayloadError,
     guard,
-    http::header::{self, AcceptEncoding, ContentEncoding, ContentType, Encoding},
+    http::header::{AcceptEncoding, ContentEncoding, ContentType, Encoding},
     middleware::{Compress, Logger},
     web, App, HttpResponse, HttpServer, Responder,
 };
@@ -90,11 +90,7 @@ async fn fetch_object(storage: &Storage, key: &str, accept_encoding: AcceptEncod
             .insert_header(ContentEncoding::Zstd)
             .streaming(stream),
         None => match storage.get_stream(key).await {
-            Ok((Some(encoding), stream)) => HttpResponse::Ok()
-                .content_type(ContentType::json())
-                .insert_header((header::CONTENT_ENCODING, encoding))
-                .streaming(stream),
-            Ok((None, stream)) => HttpResponse::Ok().content_type(ContentType::json()).streaming(stream),
+            Ok(stream) => HttpResponse::Ok().content_type(ContentType::json()).streaming(stream),
             Err(e) => {
                 tracing::warn!("Unable to locate object with key {}: {:?}", key, e);
                 HttpResponse::NotFound().finish()
