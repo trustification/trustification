@@ -6,9 +6,11 @@ use guac::client::GuacClient;
 use http::StatusCode;
 use packageurl::PackageUrl;
 
-use crate::package::{PackageDependencies, PackageRef, VulnerabilityRef};
-use crate::sbom::SbomRegistry;
-use crate::vulnerability::{Cvss3, Vulnerability};
+use crate::{
+    package::{PackageDependencies, PackageRef, VulnerabilityRef},
+    sbom::SbomRegistry,
+    vulnerability::{Cvss3, Vulnerability},
+};
 
 #[derive(Clone)]
 pub struct Guac {

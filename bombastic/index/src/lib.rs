@@ -1,20 +1,20 @@
 mod search;
+use core::str::FromStr;
+
 use cyclonedx_bom::models::{component::Classification, hash::HashAlgorithm};
 use search::*;
-
 use sikula::prelude::*;
-
 use spdx_rs::models::Algorithm;
 use tracing::info;
 use trustification_index::{
     create_boolean_query, primary2occur,
-    tantivy::doc,
-    tantivy::query::{Occur, Query},
-    tantivy::schema::{Field, Schema, Term, FAST, STORED, STRING, TEXT},
+    tantivy::{
+        doc,
+        query::{Occur, Query},
+        schema::{Field, Schema, Term, FAST, STORED, STRING, TEXT},
+    },
     term2query, Document, Error as SearchError,
 };
-
-use core::str::FromStr;
 
 pub struct Index {
     schema: Schema,

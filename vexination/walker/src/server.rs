@@ -1,6 +1,4 @@
-use std::net::SocketAddr;
-use std::sync::Arc;
-use std::time::Duration;
+use std::{net::SocketAddr, sync::Arc, time::Duration};
 
 use csaf_walker::{
     fetcher::Fetcher,

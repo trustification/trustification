@@ -1,18 +1,19 @@
 mod search;
 
-use search::*;
-
-use csaf::{definitions::NoteCategory, Csaf};
-use sikula::prelude::*;
-
 use std::ops::Bound;
 
+use csaf::{definitions::NoteCategory, Csaf};
+use search::*;
+use sikula::prelude::*;
 use tracing::info;
 use trustification_index::{
     create_boolean_query, create_date_query, primary2occur,
-    tantivy::query::{BooleanQuery, Occur, Query, RangeQuery},
-    tantivy::schema::{Field, Schema, Term, FAST, INDEXED, STORED, STRING, TEXT},
-    tantivy::{doc, DateTime},
+    tantivy::{
+        doc,
+        query::{BooleanQuery, Occur, Query, RangeQuery},
+        schema::{Field, Schema, Term, FAST, INDEXED, STORED, STRING, TEXT},
+        DateTime,
+    },
     term2query, Document, Error as SearchError,
 };
 use vexination_model::prelude::*;
@@ -326,8 +327,9 @@ impl Index {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use trustification_index::IndexStore;
+
+    use super::*;
 
     fn assert_free_form<F>(f: F)
     where

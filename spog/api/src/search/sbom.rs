@@ -1,7 +1,8 @@
-use super::{fetch_object, QueryParams, SharedState};
 use actix_web::{web, HttpResponse, Responder};
 use spog_model::search::SearchResult;
 use trustification_index::IndexStore;
+
+use super::{fetch_object, QueryParams, SharedState};
 
 pub async fn search(state: web::Data<SharedState>, params: web::Query<QueryParams>) -> impl Responder {
     let params = params.into_inner();

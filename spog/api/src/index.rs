@@ -1,6 +1,4 @@
-use actix_web::http::StatusCode;
-use actix_web::web::ServiceConfig;
-use actix_web::{error, get, HttpRequest, HttpResponse};
+use actix_web::{error, get, http::StatusCode, web::ServiceConfig, HttpRequest, HttpResponse};
 use http::uri::Builder;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;

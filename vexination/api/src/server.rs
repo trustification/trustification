@@ -1,11 +1,11 @@
-use std::net::SocketAddr;
-use std::sync::Arc;
-use std::time::Duration;
+use std::{net::SocketAddr, sync::Arc, time::Duration};
 
-use actix_web::http::header::ContentType;
-use actix_web::middleware::Logger;
-use actix_web::web::{self, Bytes};
-use actix_web::{App, HttpResponse, HttpServer, Responder};
+use actix_web::{
+    http::header::ContentType,
+    middleware::Logger,
+    web::{self, Bytes},
+    App, HttpResponse, HttpServer, Responder,
+};
 use serde::Deserialize;
 use tokio::sync::{Mutex, RwLock};
 use trustification_storage::Storage;

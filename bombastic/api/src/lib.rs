@@ -1,7 +1,5 @@
-use std::net::SocketAddr;
-use std::process::ExitCode;
-use std::str::FromStr;
-use std::time::Duration;
+use std::{net::SocketAddr, process::ExitCode, str::FromStr, time::Duration};
+
 use trustification_infrastructure::{Infrastructure, InfrastructureConfig};
 
 mod sbom;

@@ -1,14 +1,11 @@
 use std::sync::Arc;
 
 use actix_cors::Cors;
-use actix_web::middleware::Logger;
-use actix_web::web::Data;
-use actix_web::{App, HttpServer};
+use actix_web::{middleware::Logger, web, web::Data, App, HttpResponse, HttpServer};
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
-use crate::sbom::SbomRegistry;
-use crate::{guac, index, package, search, vulnerability, Run};
+use crate::{guac, index, package, sbom::SbomRegistry, search, vulnerability, Run};
 
 pub struct Server {
     run: Run,

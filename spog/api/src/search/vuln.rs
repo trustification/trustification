@@ -1,10 +1,11 @@
 use std::collections::HashMap;
 
-use super::{QueryParams, SharedState};
 use actix_web::{web, HttpResponse, Responder};
 use spog_model::search::{SearchResult, VulnSummary};
 use trustification_index::IndexStore;
 use vexination_model::prelude::*;
+
+use super::{fetch_object, QueryParams, SharedState};
 
 const MAX_LIMIT: usize = 1_000;
 

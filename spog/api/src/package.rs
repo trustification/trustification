@@ -1,18 +1,22 @@
 use core::str::FromStr;
 use std::sync::Arc;
 
-use actix_web::http::header::{ContentDisposition, DispositionParam, DispositionType};
-use actix_web::http::StatusCode;
-use actix_web::web::{Json, ServiceConfig};
-use actix_web::{error, get, post, web, HttpResponse};
+use actix_web::{
+    error, get,
+    http::{
+        header::{ContentDisposition, DispositionParam, DispositionType},
+        StatusCode,
+    },
+    post, web,
+    web::{Json, ServiceConfig},
+    HttpResponse,
+};
 use packageurl::PackageUrl;
 use serde::{Deserialize, Serialize};
 pub use spog_model::pkg::*;
 use thiserror::Error;
 
-use crate::guac::Guac;
-use crate::sbom::SbomRegistry;
-use crate::Snyk;
+use crate::{guac::Guac, sbom::SbomRegistry, Snyk};
 
 pub(crate) fn configure() -> impl FnOnce(&mut ServiceConfig) {
     |config: &mut ServiceConfig| {

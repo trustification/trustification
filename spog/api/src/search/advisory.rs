@@ -1,12 +1,13 @@
 use std::collections::HashSet;
 
-use super::{QueryParams, SharedState};
-use crate::search::fetch_object;
 use actix_web::{web, HttpResponse, Responder};
 use serde_json::json;
 use spog_model::search::SearchResult;
 use trustification_index::IndexStore;
 use vexination_model::prelude::*;
+
+use super::{QueryParams, SharedState};
+use crate::search::fetch_object;
 
 const MAX_LIMIT: usize = 1_000;
 
