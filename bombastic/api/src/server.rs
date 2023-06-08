@@ -7,8 +7,11 @@ use std::{
 };
 
 use actix_web::{
-    error::PayloadError, guard, http::header::ContentType, middleware::Logger, web, App, HttpResponse, HttpServer,
-    Responder,
+    error::PayloadError,
+    guard,
+    http::header::{self, ContentType},
+    middleware::Logger,
+    web, App, HttpResponse, HttpServer, Responder,
 };
 use futures::TryStreamExt;
 use serde::Deserialize;
@@ -66,8 +69,11 @@ pub async fn run<B: Into<SocketAddr>>(
 
 async fn fetch_object(storage: &Storage, key: &str) -> HttpResponse {
     match storage.get_stream(key).await {
-        Ok((Some(ctype), stream)) => HttpResponse::Ok().content_type(ctype).streaming(stream),
-        Ok((None, stream)) => HttpResponse::Ok().streaming(stream),
+        Ok((Some(encoding), stream)) => HttpResponse::Ok()
+            .content_type(ContentType::json())
+            .insert_header((header::CONTENT_ENCODING, encoding))
+            .streaming(stream),
+        Ok((None, stream)) => HttpResponse::Ok().content_type(ContentType::json()).streaming(stream),
         Err(e) => {
             tracing::warn!("Unable to locate object with key {}: {:?}", key, e);
             HttpResponse::NotFound().finish()
@@ -124,7 +130,6 @@ async fn publish_sbom(
     state: web::Data<SharedState>,
     params: web::Query<PublishParams>,
     data: web::Bytes,
-    content_type: web::Header<ContentType>,
 ) -> HttpResponse {
     let params = params.into_inner();
     let storage = state.storage.write().await;
@@ -140,8 +145,7 @@ async fn publish_sbom(
                 }
 
                 tracing::debug!("Storing new SBOM ({purl})");
-                let mime = content_type.into_inner().0;
-                match storage.put_slice(&purl, mime, sbom.raw()).await {
+                match storage.put_slice(&purl, sbom.raw()).await {
                     Ok(_) => {
                         let msg = format!("SBOM of size {} stored successfully", &data[..].len());
                         tracing::trace!(msg);
@@ -171,7 +175,6 @@ async fn publish_large_sbom(
     state: web::Data<SharedState>,
     params: web::Query<PublishParams>,
     payload: web::Payload,
-    content_type: web::Header<ContentType>,
 ) -> HttpResponse {
     if let Some(purl) = &params.purl {
         let storage = state.storage.write().await;
@@ -179,8 +182,7 @@ async fn publish_large_sbom(
             PayloadError::Io(e) => e,
             _ => io::Error::new(io::ErrorKind::Other, e),
         });
-        let mime = content_type.into_inner().0;
-        match storage.put_stream(purl, mime, &mut payload).await {
+        match storage.put_stream(purl, &mut payload).await {
             Ok(status) => {
                 let msg = format!("SBOM stored with status code: {status}");
                 tracing::trace!(msg);

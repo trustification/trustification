@@ -5,19 +5,17 @@ use tokio_util::io::{ReaderStream, StreamReader};
 
 use crate::Error;
 
-pub const MIME_ZSTD: &str = "application/zstd";
-pub const MIME_BZIP: &str = "application/x-bzip2";
-
 type ObjectStream = BoxStream<'static, Result<Bytes, Error>>;
 
-pub fn decode(content_type: Option<String>, stream: ObjectStream) -> (Option<String>, ObjectStream) {
-    match content_type {
+// Returns a tuple of encoding type (if any), and a stream
+pub fn decode(encoding: Option<String>, stream: ObjectStream) -> (Option<String>, ObjectStream) {
+    match encoding {
         Some(ref s) => match s.as_str() {
-            MIME_ZSTD => (Some(mime::APPLICATION_JSON.to_string()), zstd(stream)),
-            MIME_BZIP => (Some(mime::APPLICATION_JSON.to_string()), bzip(stream)),
-            _ => (content_type, stream),
+            "zstd" => (None, zstd(stream)),
+            "bzip2" => (None, bzip(stream)),
+            _ => (encoding, stream),
         },
-        None => (content_type, stream),
+        None => (encoding, stream),
     }
 }
 

@@ -6,11 +6,10 @@ use async_compression::tokio::bufread::ZstdEncoder;
 use async_stream::stream;
 use bytes::{Buf, Bytes};
 use futures::{future::ok, stream::once, Stream, StreamExt};
-use mime::Mime;
+use http::{header::CONTENT_ENCODING, HeaderValue};
 use s3::{creds::error::CredentialsError, error::S3Error, Bucket};
 pub use s3::{creds::Credentials, Region};
 use serde::Deserialize;
-use tokio::io::AsyncRead;
 use tokio_util::io::StreamReader;
 
 pub struct Storage {
@@ -71,6 +70,8 @@ pub enum Error {
     Io(std::io::Error),
     #[error("invalid storage key {0}")]
     InvalidKey(String),
+    #[error("unknown encoding {0}")]
+    Encoding(String),
 }
 
 impl From<CredentialsError> for Error {
@@ -128,12 +129,11 @@ impl Storage {
         format!("/{}", key) == INDEX_PATH
     }
 
-    pub async fn put_slice<'a>(&self, key: &'a str, content_type: Mime, data: &'a [u8]) -> Result<u16, Error> {
-        self.put_stream(key, content_type, &mut once(ok::<_, std::io::Error>(data)))
-            .await
+    pub async fn put_slice<'a>(&self, key: &'a str, json: &'a [u8]) -> Result<u16, Error> {
+        self.put_stream(key, &mut once(ok::<_, std::io::Error>(json))).await
     }
 
-    pub async fn put_stream<S, B, E>(&self, key: &str, content_type: Mime, stream: &mut S) -> Result<u16, Error>
+    pub async fn put_stream<S, B, E>(&self, key: &str, json: &mut S) -> Result<u16, Error>
     where
         S: Stream<Item = Result<B, E>> + Unpin,
         B: Buf,
@@ -141,17 +141,13 @@ impl Storage {
     {
         let mut headers = http::HeaderMap::new();
         headers.insert(VERSION_HEADER, VERSION.into());
+        headers.insert(CONTENT_ENCODING, HeaderValue::from_static("zstd"));
         let bucket = self.bucket.with_extra_headers(headers);
         let path = format!("{}{}", DATA_PATH, key);
-
-        // Compress json using zstd
-        // TODO: fix lifetimes to put this logic in stream module.
-        let (mut rdr, ty): (Box<dyn AsyncRead + Unpin>, &str) = if content_type == mime::APPLICATION_JSON {
-            (Box::new(ZstdEncoder::new(StreamReader::new(stream))), stream::MIME_ZSTD)
-        } else {
-            (Box::new(StreamReader::new(stream)), content_type.as_ref())
-        };
-        Ok(bucket.put_object_stream_with_content_type(&mut rdr, path, ty).await?)
+        let mut rdr = ZstdEncoder::new(StreamReader::new(json));
+        Ok(bucket
+            .put_object_stream_with_content_type(&mut rdr, path, "application/json")
+            .await?)
     }
 
     // This will load the entire S3 object into memory
@@ -160,8 +156,7 @@ impl Storage {
         self.get_object(&path).await
     }
 
-    // Returns a tuple of content-type and byte stream, and will
-    // uncompress the mime types stream::decode(...) recognizes
+    // Returns a tuple of content-encoding -- None if not encoded -- and byte stream
     pub async fn get_stream(
         &self,
         key: &str,
@@ -199,7 +194,10 @@ impl Storage {
     // This will load the entire S3 object into memory
     async fn get_object(&self, path: &str) -> Result<Vec<u8>, Error> {
         let mut bytes = vec![];
-        let (_, stream) = self.get_object_stream(path).await?;
+        let (encoding, stream) = self.get_object_stream(path).await?;
+        if let Some(e) = encoding {
+            return Err(Error::Encoding(e));
+        }
         tokio::pin!(stream);
         while let Some(chunk) = stream.next().await {
             bytes.extend_from_slice(&chunk?)
@@ -207,7 +205,7 @@ impl Storage {
         Ok(bytes)
     }
 
-    // Expects the actual S3 path
+    // Expects the actual S3 path and returns a tuple of an optional content-encoding and a stream.
     async fn get_object_stream(
         &self,
         path: &str,
@@ -219,7 +217,7 @@ impl Storage {
                 yield chunk.map_err(Error::S3);
             }
         };
-        Ok(stream::decode(head.content_type, stream.boxed()))
+        Ok(stream::decode(head.content_encoding, stream.boxed()))
     }
 }
 
