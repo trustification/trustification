@@ -32,15 +32,6 @@ pub struct Run {
     #[arg(long = "stored-topic", default_value = "sbom-stored")]
     pub(crate) stored_topic: String,
 
-    #[arg(long = "indexed-topic", default_value = "sbom-indexed")]
-    pub(crate) indexed_topic: String,
-
-    #[arg(long = "failed-topic", default_value = "sbom-failed")]
-    pub(crate) failed_topic: String,
-
-    #[arg(long = "sync-interval-seconds", default_value_t = 10)]
-    pub(crate) sync_interval_seconds: u64,
-
     #[arg(long = "devmode", default_value_t = false)]
     pub(crate) devmode: bool,
 
@@ -60,27 +51,11 @@ impl Run {
                 if self.devmode {
                     bus.create(&[self.stored_topic.as_str()]).await?;
                 }
-                exporter::run(
-                    storage,
-                    bus,
-                    emitter,
-                    self.stored_topic.as_str(),
-                    self.indexed_topic.as_str(),
-                    self.failed_topic.as_str(),
-                )
-                .await?;
+                exporter::run(storage, bus, emitter, self.stored_topic.as_str()).await?;
             }
             Events::Sqs => {
                 let bus = trustification_event_bus::sqs::SqsEventBus::new().await?;
-                exporter::run(
-                    storage,
-                    bus,
-                    emitter,
-                    self.stored_topic.as_str(),
-                    self.indexed_topic.as_str(),
-                    self.failed_topic.as_str(),
-                )
-                .await?;
+                exporter::run(storage, bus, emitter, self.stored_topic.as_str()).await?;
             }
         }
         Ok(ExitCode::SUCCESS)
