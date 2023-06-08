@@ -8,8 +8,6 @@ pub async fn run<E: EventBus, M: Emitter + Send + Sync>(
     bus: E,
     emitter: M,
     stored_topic: &str,
-    exported_topic: &str,
-    failed_topic: &str,
 ) -> Result<(), anyhow::Error> {
     let consumer = bus.subscribe("exporter", &[stored_topic]).await?;
     loop {
@@ -26,33 +24,22 @@ pub async fn run<E: EventBus, M: Emitter + Send + Sync>(
                                         let key = data.key();
                                         match storage.get_for_event(&data).await {
                                             Ok(data) => {
-                                                if let Ok(_) = bombastic_index::SBOM::parse(&data) {
-                                                    let document = Document {
-                                                        blob: data,
-                                                        r#type: DocumentType::UNKNOWN,
-                                                        format: FormatType::UNKNOWN,
-                                                        source_information: SourceInformation {
-                                                            collector: "S3Collector".into(),
-                                                            source: key.to_string(),
-                                                        },
-                                                    };
-
-                                                    match emitter.publish(document).await {
-                                                        Ok(_) => {
-                                                            tracing::trace!("Inserted entry into index");
-                                                            bus.send(exported_topic, key.as_bytes()).await?;
-                                                        }
-                                                        Err(e) => {
-                                                            let failure = serde_json::json!( {
-                                                                "key": key,
-                                                                "error": e.to_string(),
-                                                            }).to_string();
-                                                            bus.send(failed_topic, failure.as_bytes()).await?;
-                                                            tracing::warn!("Error inserting entry into index: {:?}", e)
-                                                        }
+                                                let document = Document {
+                                                    blob: data,
+                                                    r#type: DocumentType::UNKNOWN,
+                                                    format: FormatType::UNKNOWN,
+                                                    source_information: SourceInformation {
+                                                        collector: "S3Collector".into(),
+                                                        source: key.to_string(),
+                                                    },
+                                                };
+                                                match emitter.publish(document).await {
+                                                    Ok(_) => {
+                                                        tracing::trace!("Exported SBOM entry!");
                                                     }
-                                                } else {
-                                                    tracing::warn!("Error parsing SBOM for key {}, ignored", key);
+                                                    Err(e) => {
+                                                        tracing::warn!("Error exporting entry: {:?}", e)
+                                                    }
                                                 }
                                             }
                                             Err(e) => {
