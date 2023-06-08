@@ -1,6 +1,5 @@
 use crate::backend::{Endpoint, SearchOptions, VexService};
 use crate::hooks::use_backend;
-use url::{ParseError, Url};
 use csaf::Csaf;
 use details::CsafDetails;
 use patternfly_yew::{
@@ -17,6 +16,7 @@ use patternfly_yew::{
 use spog_model::prelude::*;
 use spog_model::prelude::*;
 use std::rc::Rc;
+use url::{ParseError, Url};
 use yew::prelude::*;
 use yew::prelude::*;
 use yew_more_hooks::hooks::{use_async_with_cloned_deps, UseAsyncHandleDeps};
@@ -195,7 +195,7 @@ impl PartialEq for AdvisoryResultProperties {
 
 pub struct CsafEntry {
     url: Option<Url>,
-    csaf: Csaf
+    csaf: Csaf,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq)]
@@ -219,7 +219,8 @@ impl TableEntryRenderer<Column> for CsafEntry {
                         <a href={url.as_str().to_string()}>
                             <Button icon={Icon::Download} variant={ButtonVariant::Plain} />
                         </a>
-                    ).into()
+                    )
+                    .into()
                 } else {
                     html!().into()
                 }
@@ -247,13 +248,23 @@ impl TableEntryRenderer<Column> for CsafEntry {
 #[function_component(AdvisoryResult)]
 pub fn vulnerability_result(props: &AdvisoryResultProperties) -> Html {
     let backend = use_backend();
-    let entries: Vec<CsafEntry> = props.result.result.iter().map(|csaf| {
-        let url = backend.join(Endpoint::Api, &format!("/api/v1/advisory?id={}", csaf.document.tracking.id)).ok();
-        CsafEntry {
-            csaf: csaf.clone(),
-            url
-        }
-    }).collect();
+    let entries: Vec<CsafEntry> = props
+        .result
+        .result
+        .iter()
+        .map(|csaf| {
+            let url = backend
+                .join(
+                    Endpoint::Api,
+                    &format!("/api/v1/advisory?id={}", csaf.document.tracking.id),
+                )
+                .ok();
+            CsafEntry {
+                csaf: csaf.clone(),
+                url,
+            }
+        })
+        .collect();
 
     let (entries, onexpand) = use_table_data(MemoizedTableModel::new(Rc::new(entries)));
 
