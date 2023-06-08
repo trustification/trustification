@@ -2,7 +2,7 @@ use std::{net::SocketAddr, sync::Arc, time::Duration};
 
 use actix_web::{
     http::header::{self, ContentType},
-    middleware::Logger,
+    middleware::{Compress, Logger},
     web::{self, Bytes},
     App, HttpResponse, HttpServer, Responder,
 };
@@ -24,6 +24,7 @@ pub async fn run<B: Into<SocketAddr>>(storage: Storage, bind: B) -> Result<(), a
     HttpServer::new(move || {
         App::new()
             .wrap(Logger::default())
+            .wrap(Compress::default())
             .app_data(web::PayloadConfig::new(10 * 1024 * 1024))
             .app_data(web::Data::new(state.clone()))
             .service(
