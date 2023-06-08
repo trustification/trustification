@@ -41,11 +41,7 @@ pub async fn run<B: Into<SocketAddr>>(storage: Storage, bind: B) -> Result<(), a
 
 async fn fetch_object(storage: &Storage, key: &str) -> HttpResponse {
     match storage.get_stream(key).await {
-        Ok((Some(encoding), stream)) => HttpResponse::Ok()
-            .content_type(ContentType::json())
-            .insert_header((header::CONTENT_ENCODING, encoding))
-            .streaming(stream),
-        Ok((None, stream)) => HttpResponse::Ok().content_type(ContentType::json()).streaming(stream),
+        Ok(stream) => HttpResponse::Ok().content_type(ContentType::json()).streaming(stream),
         Err(e) => {
             tracing::warn!("Unable to locate object with key {}: {:?}", key, e);
             HttpResponse::NotFound().finish()

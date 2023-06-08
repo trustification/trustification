@@ -28,8 +28,7 @@ pub struct GetParams {
 
 async fn fetch_object_stream(storage: &Storage, key: &str) -> HttpResponse {
     match storage.get_stream(key).await {
-        Ok((Some(ctype), stream)) => HttpResponse::Ok().content_type(ctype).streaming(stream),
-        Ok((None, stream)) => HttpResponse::Ok().streaming(stream),
+        Ok(stream) => HttpResponse::Ok().streaming(stream),
         Err(e) => {
             tracing::warn!("Unable to locate object with key {}: {:?}", key, e);
             HttpResponse::NotFound().finish()

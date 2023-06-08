@@ -156,11 +156,8 @@ impl Storage {
         self.get_object(&path).await
     }
 
-    // Returns a tuple of content-encoding -- None if not encoded -- and byte stream
-    pub async fn get_stream(
-        &self,
-        key: &str,
-    ) -> Result<(Option<String>, impl Stream<Item = Result<Bytes, Error>>), Error> {
+    // Returns unencoded stream
+    pub async fn get_stream(&self, key: &str) -> Result<impl Stream<Item = Result<Bytes, Error>>, Error> {
         let path = format!("{}{}", DATA_PATH, key);
         self.get_object_stream(&path).await
     }
@@ -212,10 +209,7 @@ impl Storage {
     // This will load the entire S3 object into memory
     async fn get_object(&self, path: &str) -> Result<Vec<u8>, Error> {
         let mut bytes = vec![];
-        let (encoding, stream) = self.get_object_stream(path).await?;
-        if let Some(e) = encoding {
-            return Err(Error::Encoding(e));
-        }
+        let stream = self.get_object_stream(path).await?;
         tokio::pin!(stream);
         while let Some(chunk) = stream.next().await {
             bytes.extend_from_slice(&chunk?)
@@ -223,11 +217,8 @@ impl Storage {
         Ok(bytes)
     }
 
-    // Expects the actual S3 path and returns a tuple of an optional content-encoding and a stream.
-    async fn get_object_stream(
-        &self,
-        path: &str,
-    ) -> Result<(Option<String>, impl Stream<Item = Result<Bytes, Error>>), Error> {
+    // Expects the actual S3 path and returns a JSON stream
+    async fn get_object_stream(&self, path: &str) -> Result<impl Stream<Item = Result<Bytes, Error>>, Error> {
         let (head, _status) = self.bucket.head_object(path).await?;
         let mut s = self.bucket.get_object_stream(path).await?;
         let stream = try_stream! {
@@ -235,7 +226,7 @@ impl Storage {
                 yield chunk?;
             }
         };
-        Ok(stream::decode(head.content_encoding, stream.boxed()))
+        stream::decode(head.content_encoding, stream.boxed())
     }
 }
 
