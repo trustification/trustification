@@ -111,3 +111,17 @@ You can search all the data using the `spog-api` endpoint:
 ```shell
 curl "http://localhost:8083/vuln/?q=openssl"
 ```
+
+## Working with local images
+
+If you need to build an image locally, you can do that by running
+
+```shell
+docker build -f trust/Containerfile -t trust:latest .
+```
+
+Then, you can use it like
+
+```shell
+TRUST_IMAGE=trust:latest docker-compose -f compose.yaml -f compose-trustification.yaml up --force-recreate
+```
