@@ -12,6 +12,7 @@ chumsky = "1.0.0-alpha.4"
 time = "0.3"
 tar = "0.4"
 trustification-index = { path = "../../index" }
+bombastic-model = { path = "../model" }
 cyclonedx-bom = "0.4.0"
 spdx-rs = "0.5.2"
 packageurl = "0.3"

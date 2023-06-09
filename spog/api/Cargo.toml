@@ -30,7 +30,7 @@ utoipa-swagger-ui = { version = "3", features = ["actix-web"] }
 urlencoding = "2.1.2"
 guac = { git = "https://github.com/dejanb/guac-rs.git", branch = "main" }
 http = "*"
-reqwest = "0.11.16"
+reqwest = { version = "0.11.16", features = ["stream"] }
 snyk = { git = "https://github.com/dejanb/snyk-rs.git", branch = "main" }
 tracing = "0.1"
 zstd = "0.12"
@@ -40,7 +40,7 @@ rand = "0.8"
 spog-model = { path = "../model" }
 vexination-index = { path = "../../vexination/index" }
 vexination-model = { path = "../../vexination/model" }
-bombastic-index = { path = "../../bombastic/index" }
+bombastic-model = { path = "../../bombastic/model" }
 trustification-storage = { path = "../../storage" }
 trustification-index = { path = "../../index" }
 trustification-infrastructure = { path = "../../infrastructure" }

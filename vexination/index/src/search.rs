@@ -18,6 +18,10 @@ pub enum Vulnerabilities<'a> {
     Cvss(PartialOrdered<f64>),
     #[search(default)]
     Package(Primary<'a>),
+    #[search(default)]
+    Fixed(Primary<'a>),
+    #[search(default)]
+    Affected(Primary<'a>),
     #[search]
     Initial(Ordered<time::OffsetDateTime>),
     #[search]

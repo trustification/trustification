@@ -1,6 +1,7 @@
-use crate::backend::{SearchOptions, VexService};
+use crate::backend::{PackageService, SearchOptions};
 use crate::hooks::use_backend;
 use crate::pages::AppRoute;
+use packageurl::PackageUrl;
 use patternfly_yew::next::{
     use_table_data, Cell, CellContext, ColumnWidth, MemoizedTableModel, Table, TableColumn, TableEntryRenderer,
     TableHeader, UseTableData,
@@ -11,13 +12,14 @@ use patternfly_yew::{
 };
 use spog_model::prelude::*;
 use std::rc::Rc;
+use std::str::FromStr;
 use yew::prelude::*;
 use yew_more_hooks::hooks::{use_async_with_cloned_deps, UseAsyncHandleDeps};
 use yew_nested_router::components::Link;
 
 #[derive(PartialEq, Properties)]
-pub struct VulnerabilitySearchProperties {
-    pub callback: Callback<UseAsyncHandleDeps<SearchResult<Rc<Vec<VulnSummary>>>, String>>,
+pub struct PackageSearchProperties {
+    pub callback: Callback<UseAsyncHandleDeps<SearchResult<Rc<Vec<PackageSummary>>>, String>>,
 
     pub query: Option<String>,
 
@@ -25,11 +27,11 @@ pub struct VulnerabilitySearchProperties {
     pub toolbar_items: ChildrenWithProps<ToolbarItem>,
 }
 
-#[function_component(VulnerabilitySearch)]
-pub fn vulnerability_search(props: &VulnerabilitySearchProperties) -> Html {
+#[function_component(PackageSearch)]
+pub fn package_search(props: &PackageSearchProperties) -> Html {
     let backend = use_backend();
 
-    let service = use_memo(|backend| VexService::new((**backend).clone()), backend.clone());
+    let service = use_memo(|backend| PackageService::new((**backend).clone()), backend.clone());
 
     let offset = use_state_eq(|| 0);
     let limit = use_state_eq(|| 10);
@@ -51,7 +53,7 @@ pub fn vulnerability_search(props: &VulnerabilitySearchProperties) -> Html {
         use_async_with_cloned_deps(
             move |(state, offset, limit)| async move {
                 service
-                    .search_vulnerabilities(
+                    .search_packages(
                         &state,
                         &SearchOptions {
                             offset: Some(offset),
@@ -179,11 +181,11 @@ pub fn vulnerability_search(props: &VulnerabilitySearchProperties) -> Html {
 }
 
 #[derive(Debug, Properties)]
-pub struct VulnResultProperties {
-    pub result: SearchResult<Rc<Vec<VulnSummary>>>,
+pub struct PackageResultProperties {
+    pub result: SearchResult<Rc<Vec<PackageSummary>>>,
 }
 
-impl PartialEq for VulnResultProperties {
+impl PartialEq for PackageResultProperties {
     fn eq(&self, other: &Self) -> bool {
         Rc::ptr_eq(&self.result, &other.result)
     }
@@ -191,100 +193,69 @@ impl PartialEq for VulnResultProperties {
 
 #[derive(Copy, Clone, PartialEq, Eq)]
 pub enum Column {
-    Cve,
-    Title,
-    Released,
-    Cvss,
+    Name,
+    Supplier,
+    Products,
+    Description,
+    Vulnerabilities,
+    Version,
 }
 
-impl TableEntryRenderer<Column> for VulnSummary {
+impl TableEntryRenderer<Column> for PackageSummary {
     fn render_cell(&self, context: &CellContext<'_, Column>) -> Cell {
         match context.column {
-            Column::Cve => html!(&self.cve).into(),
-            Column::Title => html!(&self.title).into(),
-            Column::Released => {
-                let format = time::macros::format_description!("[year]-[month]-[day]");
-                let s = if let Ok(s) = self.release.format(format) {
-                    s.to_string()
-                } else {
-                    self.release.to_string()
-                };
-                html!(s).into()
+            Column::Name => html!(&self.name).into(),
+            Column::Supplier => html!(&self.supplier).into(),
+            Column::Products => html!(&self.dependents.len()).into(),
+            Column::Description => html!(&self.description).into(),
+            Column::Vulnerabilities => {
+                html!(<Link<AppRoute> target={AppRoute::Vulnerability { query: format!("affected:\"{}\"", self.purl)}}>{self.vulnerabilities.len()}</Link<AppRoute>>).into()
             }
-            Column::Cvss => html!(&self.cvss).into(),
+            Column::Version => {
+                if let Ok(purl) = PackageUrl::from_str(&self.purl) {
+                    if let Some(version) = purl.version() {
+                        html!(version).into()
+                    } else {
+                        html!().into()
+                    }
+                } else {
+                    html!().into()
+                }
+            }
         }
     }
 
     fn render_details(&self) -> Vec<Span> {
-        let html = html!(<VulnDetails vuln={Rc::new(self.clone())} />);
+        let html = html!(); //<Details vuln={Rc::new(self.clone())} />);
         vec![Span::max(html)]
     }
 
     fn is_full_width_details(&self) -> Option<bool> {
-        Some(true)
+        Some(false)
     }
 }
 
-#[function_component(VulnerabilityResult)]
-pub fn vulnerability_result(props: &VulnResultProperties) -> Html {
+#[function_component(PackageResult)]
+pub fn package_result(props: &PackageResultProperties) -> Html {
     let (entries, onexpand) = use_table_data(MemoizedTableModel::new(props.result.result.clone()));
 
     let header = html_nested! {
         <TableHeader<Column>>
-            <TableColumn<Column> label="CVE" index={Column::Cve} width={ColumnWidth::Percent(10)}/>
-            <TableColumn<Column> label="Title" index={Column::Title} width={ColumnWidth::Percent(60)}/>
-            <TableColumn<Column> label="Released" index={Column::Released} width={ColumnWidth::Percent(15)}/>
-            <TableColumn<Column> label="CVSS" index={Column::Cvss} width={ColumnWidth::Percent(15)}/>
+            <TableColumn<Column> label="Name" index={Column::Name} width={ColumnWidth::Percent(10)}/>
+            <TableColumn<Column> label="Version" index={Column::Version} width={ColumnWidth::Percent(15)}/>
+            <TableColumn<Column> label="Supplier" index={Column::Supplier} width={ColumnWidth::Percent(10)}/>
+            <TableColumn<Column> label="Products" index={Column::Products} width={ColumnWidth::Percent(10)}/>
+            <TableColumn<Column> label="Description" index={Column::Description} width={ColumnWidth::Percent(40)}/>
+            <TableColumn<Column> label="Vulnerabilities" index={Column::Vulnerabilities} width={ColumnWidth::Percent(15)}/>
         </TableHeader<Column>>
     };
 
     html!(
-        <Table<Column, UseTableData<Column, MemoizedTableModel<VulnSummary>>>
-            mode={TableMode::CompactExpandable}
-            {header}
-            {entries}
-            {onexpand}
-        />
-    )
-}
-
-use yew::prelude::*;
-
-#[derive(Clone, Properties)]
-pub struct VulnDetailsProps {
-    pub vuln: Rc<VulnSummary>,
-}
-
-impl PartialEq for VulnDetailsProps {
-    fn eq(&self, other: &Self) -> bool {
-        Rc::ptr_eq(&self.vuln, &other.vuln)
-    }
-}
-
-#[function_component(VulnDetails)]
-pub fn vuln_details(props: &VulnDetailsProps) -> Html {
-    let summary = use_memo(|props| props.vuln.clone(), props.clone());
-
-    let advisories: Vec<Html> = summary
-        .advisories
-        .iter()
-        .map(|a| {
-            html!(
-                <Link<AppRoute> target={AppRoute::Advisory { query: format!("id:{}", a) }}>{a}</Link<AppRoute>>
-            )
-        })
-        .collect::<Vec<Html>>();
-    html!(
-        <Panel>
-            <PanelMain>
-            <PanelMainBody>{&summary.description}</PanelMainBody>
-            </PanelMain>
-            <PanelFooter>
-            <h3>{"Related Advisories"}</h3>
-            <List r#type={ListType::Inline}>
-            {advisories}
-            </List>
-            </PanelFooter>
-        </Panel>
+         <Table<Column, UseTableData<Column, MemoizedTableModel<PackageSummary>>>
+             mode={TableMode::CompactExpandable}
+             {header}
+             {entries}
+             {onexpand}
+         />
     )
 }

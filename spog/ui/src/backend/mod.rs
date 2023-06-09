@@ -29,7 +29,6 @@ impl Endpoints {
     pub fn get(&self, endpoint: Endpoint) -> &Url {
         match endpoint {
             Endpoint::Api => &self.url,
-            Endpoint::Search => &self.url,
         }
     }
 }
@@ -37,7 +36,6 @@ impl Endpoints {
 #[derive(Copy, Clone, Eq, PartialEq)]
 pub enum Endpoint {
     Api,
-    Search,
 }
 
 impl Backend {

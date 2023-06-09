@@ -2,6 +2,7 @@
 members = [
     "bombastic/bombastic",
     "bombastic/api",
+    "bombastic/model",
     "bombastic/indexer",
     "bombastic/index",
     "bommer",

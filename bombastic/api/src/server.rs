@@ -1,9 +1,6 @@
 use std::{
     io::{self},
     net::SocketAddr,
-    str::FromStr,
-    sync::Arc,
-    time::Duration,
 };
 
 use actix_web::{
@@ -13,33 +10,22 @@ use actix_web::{
     middleware::{Compress, Logger},
     web, App, HttpRequest, HttpResponse, HttpServer, Responder,
 };
+use bombastic_model::prelude::*;
 use futures::TryStreamExt;
 use serde::Deserialize;
-use tokio::sync::RwLock;
 use tracing::info;
 use trustification_storage::Storage;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
 use crate::sbom::SBOM;
-
-struct AppState {
-    storage: RwLock<Storage>,
-}
-
-type SharedState = Arc<AppState>;
+use crate::SharedState;
 
 #[derive(OpenApi)]
-#[openapi(paths(query_sbom, publish_sbom,))]
+#[openapi(paths(query_sbom, publish_sbom, search_sbom))]
 pub struct ApiDoc;
 
-pub async fn run<B: Into<SocketAddr>>(
-    storage: Storage,
-    bind: B,
-    _sync_interval: Duration,
-) -> Result<(), anyhow::Error> {
-    let storage = RwLock::new(storage);
-    let state = Arc::new(AppState { storage });
+pub async fn run<B: Into<SocketAddr>>(state: SharedState, bind: B) -> Result<(), anyhow::Error> {
     let openapi = ApiDoc::openapi();
 
     let addr = bind.into();
@@ -52,6 +38,7 @@ pub async fn run<B: Into<SocketAddr>>(
             .service(
                 web::scope("/api/v1")
                     .route("/sbom", web::get().to(query_sbom))
+                    .route("/sbom/search", web::get().to(search_sbom))
                     .route(
                         "/sbom",
                         web::post()
@@ -106,10 +93,10 @@ async fn fetch_object(storage: &Storage, key: &str, accept_encoding: AcceptEncod
     responses(
         (status = 200, description = "SBOM found"),
         (status = NOT_FOUND, description = "SBOM not found in archive"),
-        (status = BAD_REQUEST, description = "Missing valid purl or index entry"),
+        (status = BAD_REQUEST, description = "Missing valid id or index entry"),
     ),
     params(
-        ("purl" = String, Query, description = "Package URL of SBOM to query"),
+        ("id" = String, Query, description = "Package URL or CPE of SBOM to query"),
     )
 )]
 async fn query_sbom(
@@ -118,23 +105,73 @@ async fn query_sbom(
     accept_encoding: web::Header<AcceptEncoding>,
 ) -> impl Responder {
     let params = params.into_inner();
-    if let Some(purl) = params.purl {
-        tracing::trace!("Querying SBOM using purl {}", purl);
+    if let Some(id) = params.id {
+        tracing::trace!("Querying SBOM using id {}", id);
         let storage = state.storage.read().await;
-        fetch_object(&storage, &purl, accept_encoding.into_inner()).await
+        fetch_object(&storage, &id, accept_encoding.into_inner()).await
     } else {
-        HttpResponse::BadRequest().body("Missing valid purl")
+        HttpResponse::BadRequest().body("Missing valid id")
     }
 }
 
 #[derive(Debug, Deserialize)]
 struct QueryParams {
-    purl: Option<String>,
+    id: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct SearchParams {
+    pub q: String,
+    #[serde(default = "default_offset")]
+    pub offset: usize,
+    #[serde(default = "default_limit")]
+    pub limit: usize,
+}
+
+const fn default_offset() -> usize {
+    0
+}
+
+const fn default_limit() -> usize {
+    10
+}
+
+#[utoipa::path(
+    get,
+    path = "/api/v1/sbom/search",
+    responses(
+        (status = 200, description = "Search completed"),
+        (status = BAD_REQUEST, description = "Bad query"),
+    ),
+    params(
+        ("q" = String, Query, description = "Search query"),
+    )
+)]
+async fn search_sbom(state: web::Data<SharedState>, params: web::Query<SearchParams>) -> impl Responder {
+    let params = params.into_inner();
+
+    tracing::info!("Querying SBOMusing {}", params.q);
+
+    let index = state.index.read().await;
+    let result = index.search(&params.q, params.offset, params.limit);
+
+    let result = match result {
+        Err(e) => {
+            tracing::info!("Error searching: {:?}", e);
+            return HttpResponse::InternalServerError().body(e.to_string());
+        }
+        Ok(result) => result,
+    };
+
+    HttpResponse::Ok().json(SearchResult {
+        total: result.1,
+        result: result.0,
+    })
 }
 
 #[derive(Debug, Deserialize)]
 struct PublishParams {
-    purl: Option<String>,
+    id: String,
 }
 
 #[utoipa::path(
@@ -143,10 +180,10 @@ struct PublishParams {
     responses(
         (status = 200, description = "SBOM found"),
         (status = NOT_FOUND, description = "SBOM not found in archive"),
-        (status = BAD_REQUEST, description = "Missing valid purl or index entry"),
+        (status = BAD_REQUEST, description = "Missing valid id"),
     ),
     params(
-        ("purl" = String, Query, description = "Package URL of SBOM to query"),
+        ("id" = String, Query, description = "Package URL or product identifier of SBOM to query"),
     )
 )]
 async fn publish_sbom(
@@ -159,31 +196,21 @@ async fn publish_sbom(
     // TODO: unbuffered I/O
     match SBOM::parse(&data) {
         Ok(sbom) => {
-            info!("Detected SBOM");
-            if let Some(purl) = params.purl.or(sbom.purl()) {
-                if let Err(err) = packageurl::PackageUrl::from_str(&purl) {
-                    let msg = format!("Unable to parse purl: {err}");
-                    info!(msg);
-                    return HttpResponse::BadRequest().body(msg);
-                }
+            info!("Valid SBOM");
+            let id = params.id;
 
-                tracing::debug!("Storing new SBOM ({purl})");
-                match storage.put_slice(&purl, sbom.raw()).await {
-                    Ok(_) => {
-                        let msg = format!("SBOM of size {} stored successfully", &data[..].len());
-                        tracing::trace!(msg);
-                        HttpResponse::Created().body(msg)
-                    }
-                    Err(e) => {
-                        let msg = format!("Error storing SBOM: {:?}", e);
-                        tracing::warn!(msg);
-                        HttpResponse::InternalServerError().body(msg)
-                    }
+            tracing::debug!("Storing new SBOM ({id})");
+            match storage.put_slice(&id, sbom.raw()).await {
+                Ok(_) => {
+                    let msg = format!("SBOM of size {} stored successfully", &data[..].len());
+                    tracing::trace!(msg);
+                    HttpResponse::Created().body(msg)
                 }
-            } else {
-                let msg = "No pURL found";
-                tracing::info!(msg);
-                HttpResponse::BadRequest().body(msg)
+                Err(e) => {
+                    let msg = format!("Error storing SBOM: {:?}", e);
+                    tracing::warn!(msg);
+                    HttpResponse::InternalServerError().body(msg)
+                }
             }
         }
         Err(err) => {
@@ -210,28 +237,23 @@ async fn publish_large_sbom(
             return res;
         }
     };
-    if let Some(purl) = &params.purl {
-        let storage = state.storage.write().await;
-        let mut payload = payload.map_err(|e| match e {
-            PayloadError::Io(e) => e,
-            _ => io::Error::new(io::ErrorKind::Other, e),
-        });
-        match storage.put_stream(purl, enc, &mut payload).await {
-            Ok(status) => {
-                let msg = format!("SBOM stored with status code: {status}");
-                tracing::trace!(msg);
-                HttpResponse::Created().body(msg)
-            }
-            Err(e) => {
-                let msg = format!("Error storing SBOM: {:?}", e);
-                tracing::warn!(msg);
-                HttpResponse::InternalServerError().body(msg)
-            }
+    let id = &params.id;
+    let storage = state.storage.write().await;
+    let mut payload = payload.map_err(|e| match e {
+        PayloadError::Io(e) => e,
+        _ => io::Error::new(io::ErrorKind::Other, e),
+    });
+    match storage.put_stream(id, enc, &mut payload).await {
+        Ok(status) => {
+            let msg = format!("SBOM stored with status code: {status}");
+            tracing::trace!(msg);
+            HttpResponse::Created().body(msg)
         }
-    } else {
-        let msg = "ERROR: purl query param is required for chunked payloads";
-        tracing::info!(msg);
-        HttpResponse::BadRequest().body(msg)
+        Err(e) => {
+            let msg = format!("Error storing SBOM: {:?}", e);
+            tracing::warn!(msg);
+            HttpResponse::InternalServerError().body(msg)
+        }
     }
 }
 

@@ -39,6 +39,9 @@ pub struct Run {
     #[arg(long = "storage-endpoint", default_value = None)]
     pub(crate) storage_endpoint: Option<String>,
 
+    #[arg(long = "bombastic-url", default_value = "http://localhost:8082")]
+    pub(crate) bombastic_url: reqwest::Url,
+
     #[command(flatten)]
     pub(crate) infra: InfrastructureConfig,
 }

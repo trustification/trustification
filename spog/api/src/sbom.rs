@@ -1,11 +1,11 @@
-use actix_web::{web, web::ServiceConfig, HttpResponse, Responder};
-use spog_model::search::SearchResult;
-use trustification_index::IndexStore;
+use std::collections::HashMap;
 
-use crate::{
-    search,
-    server::{fetch_object, SharedState},
-};
+use actix_web::{web, web::ServiceConfig, HttpResponse, Responder};
+use http::StatusCode;
+use spog_model::search::{PackageSummary, SearchResult};
+use tracing::{info, trace, warn};
+
+use crate::{search, server::SharedState};
 
 pub(crate) fn configure() -> impl FnOnce(&mut ServiceConfig) {
     |config: &mut ServiceConfig| {
@@ -16,50 +16,118 @@ pub(crate) fn configure() -> impl FnOnce(&mut ServiceConfig) {
 
 #[derive(Debug, serde::Deserialize)]
 pub struct GetParams {
-    pub purl: String,
+    pub id: String,
 }
 
 pub async fn get(state: web::Data<SharedState>, params: web::Query<GetParams>) -> impl Responder {
     let params = params.into_inner();
-    let state = &state.sbom;
-    let storage = state.storage.read().await;
 
-    // TODO: Stream
-    if let Some(obj) = fetch_object(&storage, &params.purl).await {
-        HttpResponse::Ok().json(obj)
+    let client = reqwest::Client::new();
+    let url = if let Ok(url) = state.bombastic.join("/api/v1/sbom") {
+        url
     } else {
-        HttpResponse::NotFound().finish()
-    }
-}
-
-pub async fn search(state: web::Data<SharedState>, params: web::Query<search::QueryParams>) -> impl Responder {
-    let params = params.into_inner();
-    tracing::trace!("Querying SBOM using {}", params.q);
-    let state = &state.sbom;
-
-    let index = state.index.read().await;
-    let result = search_sbom(&index, &params.q).await;
-
-    if let Err(e) = &result {
-        tracing::info!("Error searching: {:?}", e);
-        return HttpResponse::InternalServerError().body(e.to_string());
-    }
-    let result = result.unwrap();
-
-    let mut ret: Vec<serde_json::Value> = Vec::new();
-    let storage = state.storage.read().await;
-
-    for key in result.iter() {
-        if let Some(obj) = fetch_object(&storage, key).await {
-            if let Ok(data) = serde_json::from_slice(&obj[..]) {
-                ret.push(data);
-            }
+        warn!("Error constructing bombastic search URL");
+        return HttpResponse::InternalServerError().finish();
+    };
+    match client.get(url).query(&[("id", &params.id)]).send().await {
+        Ok(response) => {
+            return HttpResponse::Ok()
+                .status(response.status())
+                .streaming(response.bytes_stream())
+        }
+        Err(e) => {
+            warn!("Error lookup in bombastic: {:?}", e);
+            HttpResponse::InternalServerError().finish()
         }
     }
-
-    HttpResponse::Ok().json(ret)
 }
 
-async fn search_sbom(index: &IndexStore<bombastic_index::Index>, q: &str) -> anyhow::Result<SearchResult<Vec<String>>> {
-    Ok(index.search(q, 0, 10)?.into())
+pub async fn search(state: web::Data<SharedState>, params: web::Query<search::QueryParams>) -> HttpResponse {
+    let params = params.into_inner();
+    trace!("Querying SBOM using {}", params.q);
+    let client = reqwest::Client::new();
+
+    let url = if let Ok(url) = state.bombastic.join("/api/v1/sbom/search") {
+        url
+    } else {
+        warn!("Error constructing bombastic search URL");
+        return HttpResponse::InternalServerError().finish();
+    };
+    match client
+        .get(url)
+        .query(&[("q", &params.q)])
+        .query(&[("offset", params.offset), ("limit", params.limit)])
+        .send()
+        .await
+    {
+        Ok(response) => {
+            if response.status() == StatusCode::OK {
+                match response.json::<bombastic_model::prelude::SearchResult>().await {
+                    Ok(mut data) => {
+                        let mut m: HashMap<String, PackageSummary> = HashMap::new();
+                        for item in data.result.drain(..) {
+                            if let Some(entry) = m.get_mut(&item.purl) {
+                                if !entry.dependents.contains(&item.dependent) {
+                                    entry.dependents.push(item.dependent);
+                                }
+                            } else {
+                                m.insert(
+                                    item.purl.clone(),
+                                    PackageSummary {
+                                        purl: item.purl,
+                                        name: item.name,
+                                        sha256: item.sha256,
+                                        license: item.license,
+                                        classifier: item.classifier,
+                                        supplier: item.supplier,
+                                        description: item.description,
+                                        dependents: vec![item.dependent],
+                                        vulnerabilities: Vec::new(),
+                                    },
+                                );
+                            }
+                        }
+
+                        let mut result = SearchResult::<Vec<PackageSummary>> {
+                            total: Some(m.len()),
+                            result: m.values().cloned().collect(),
+                        };
+
+                        search_vulnerabilities(state, &mut result.result).await;
+                        info!("Search result: {:?}", result);
+                        HttpResponse::Ok().json(result)
+                    }
+                    Err(e) => {
+                        warn!("Error deserializing bombastic result: {:?}", e);
+                        HttpResponse::InternalServerError().finish()
+                    }
+                }
+            } else {
+                return HttpResponse::Ok().status(response.status()).finish();
+            }
+        }
+        Err(e) => {
+            warn!("Error searching bombastic: {:?}", e);
+            HttpResponse::InternalServerError().finish()
+        }
+    }
+}
+
+async fn search_vulnerabilities(state: web::Data<SharedState>, packages: &mut Vec<PackageSummary>) {
+    let state = &state.vex;
+    let index = state.index.read().await;
+    for package in packages {
+        let q = format!("affected:\"{}\"", package.purl);
+        if let Ok(result) = index.search(&q, 0, 1000) {
+            for summary in result.0 {
+                package.vulnerabilities.push(summary.cve);
+            }
+        }
+
+        info!(
+            "Found {} vulns related to {}",
+            package.vulnerabilities.len(),
+            package.purl
+        );
+    }
 }
