@@ -1,11 +1,32 @@
-use async_compression::tokio::bufread::{BzDecoder, ZstdDecoder};
-use bytes::Bytes;
-use futures::{stream::BoxStream, StreamExt, TryStreamExt};
+use async_compression::tokio::bufread::{BzDecoder, ZstdDecoder, ZstdEncoder};
+use bytes::{Buf, Bytes};
+use futures::{stream::BoxStream, Stream, StreamExt, TryStreamExt};
+use tokio::io::{AsyncRead, BufReader};
 use tokio_util::io::{ReaderStream, StreamReader};
 
 use crate::Error;
 
 type ObjectStream = BoxStream<'static, Result<Bytes, Error>>;
+
+pub fn zstd_encoder<'a, S, B, E>(
+    encoding: Option<&'a str>,
+    data: &'a mut S,
+) -> Result<Box<dyn AsyncRead + Unpin + 'a>, Error>
+where
+    S: Stream<Item = Result<B, E>> + Unpin,
+    B: Buf + 'a,
+    E: Into<std::io::Error>,
+{
+    match encoding {
+        None => Ok(Box::new(ZstdEncoder::new(StreamReader::new(data)))),
+        Some(s) => match s {
+            "zstd" => Ok(Box::new(StreamReader::new(data))),
+            #[rustfmt::skip]
+            "bzip2" => Ok(Box::new(ZstdEncoder::new(BufReader::new(BzDecoder::new(StreamReader::new(data)))))),
+            e => Err(Error::Encoding(e.to_string())),
+        },
+    }
+}
 
 // Returns an unencoded JSON stream
 pub fn decode(encoding: Option<String>, stream: ObjectStream) -> Result<ObjectStream, Error> {
