@@ -2,7 +2,6 @@ mod stream;
 
 use std::marker::Unpin;
 
-use async_compression::tokio::bufread::ZstdEncoder;
 use async_stream::try_stream;
 use bytes::{Buf, Bytes};
 use futures::{future::ok, stream::once, Stream, StreamExt};
@@ -10,7 +9,6 @@ use http::{header::CONTENT_ENCODING, HeaderValue};
 use s3::{creds::error::CredentialsError, error::S3Error, Bucket};
 pub use s3::{creds::Credentials, Region};
 use serde::Deserialize;
-use tokio_util::io::StreamReader;
 
 pub struct Storage {
     bucket: Bucket,
@@ -116,6 +114,7 @@ impl From<http::header::InvalidHeaderValue> for Error {
 const DATA_PATH: &str = "/data/";
 const INDEX_PATH: &str = "/index";
 const VERSION_HEADER: &str = "x-amz-meta-version";
+const JSON: &str = "application/json";
 
 const VERSION: u32 = 1;
 
@@ -130,13 +129,19 @@ impl Storage {
     }
 
     pub async fn put_slice<'a>(&self, key: &'a str, json: &'a [u8]) -> Result<u16, Error> {
-        self.put_stream(key, &mut once(ok::<_, std::io::Error>(json))).await
+        self.put_stream(key, None, &mut once(ok::<_, std::io::Error>(json)))
+            .await
     }
 
-    pub async fn put_stream<S, B, E>(&self, key: &str, json: &mut S) -> Result<u16, Error>
+    pub async fn put_stream<'a, S, B, E>(
+        &self,
+        key: &'a str,
+        encoding: Option<&str>,
+        data: &mut S,
+    ) -> Result<u16, Error>
     where
         S: Stream<Item = Result<B, E>> + Unpin,
-        B: Buf,
+        B: Buf + 'a,
         E: Into<std::io::Error>,
     {
         let mut headers = http::HeaderMap::new();
@@ -144,10 +149,8 @@ impl Storage {
         headers.insert(CONTENT_ENCODING, HeaderValue::from_static("zstd"));
         let bucket = self.bucket.with_extra_headers(headers);
         let path = format!("{}{}", DATA_PATH, key);
-        let mut rdr = ZstdEncoder::new(StreamReader::new(json));
-        Ok(bucket
-            .put_object_stream_with_content_type(&mut rdr, path, "application/json")
-            .await?)
+        let mut rdr = stream::zstd_encoder(encoding, data)?;
+        Ok(bucket.put_object_stream_with_content_type(&mut rdr, path, JSON).await?)
     }
 
     // This will load the entire S3 object into memory

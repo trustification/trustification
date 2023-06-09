@@ -9,9 +9,9 @@ use std::{
 use actix_web::{
     error::PayloadError,
     guard,
-    http::header::{AcceptEncoding, ContentEncoding, ContentType, Encoding},
+    http::header::{Accept, AcceptEncoding, ContentEncoding, ContentType, Encoding, HeaderValue, CONTENT_ENCODING},
     middleware::{Compress, Logger},
-    web, App, HttpResponse, HttpServer, Responder,
+    web, App, HttpRequest, HttpResponse, HttpServer, Responder,
 };
 use futures::TryStreamExt;
 use serde::Deserialize;
@@ -194,17 +194,28 @@ async fn publish_sbom(
 }
 
 async fn publish_large_sbom(
+    req: HttpRequest,
     state: web::Data<SharedState>,
     params: web::Query<PublishParams>,
     payload: web::Payload,
+    content_type: web::Header<ContentType>,
 ) -> HttpResponse {
+    if let Some(res) = verify_type(content_type.into_inner()) {
+        return res;
+    }
+    let enc = match verify_encoding(req.headers().get(CONTENT_ENCODING)) {
+        Ok(v) => v,
+        Err(res) => {
+            return res;
+        }
+    };
     if let Some(purl) = &params.purl {
         let storage = state.storage.write().await;
         let mut payload = payload.map_err(|e| match e {
             PayloadError::Io(e) => e,
             _ => io::Error::new(io::ErrorKind::Other, e),
         });
-        match storage.put_stream(purl, &mut payload).await {
+        match storage.put_stream(purl, enc, &mut payload).await {
             Ok(status) => {
                 let msg = format!("SBOM stored with status code: {status}");
                 tracing::trace!(msg);
@@ -220,5 +231,27 @@ async fn publish_large_sbom(
         let msg = "ERROR: purl query param is required for chunked payloads";
         tracing::info!(msg);
         HttpResponse::BadRequest().body(msg)
+    }
+}
+
+fn verify_type(content_type: ContentType) -> Option<HttpResponse> {
+    if content_type == ContentType::json() {
+        None
+    } else {
+        Some(HttpResponse::BadRequest().insert_header(Accept::json()).finish())
+    }
+}
+
+// bzip2 prevents us from using the ContentEncoding enum
+fn verify_encoding(content_encoding: Option<&HeaderValue>) -> Result<Option<&str>, HttpResponse> {
+    match content_encoding {
+        Some(enc) => match enc.to_str() {
+            Ok(v @ ("bzip2" | "zstd")) => Ok(Some(v)),
+            Ok(_) => Err(HttpResponse::BadRequest()
+                .insert_header(AcceptEncoding(vec!["bzip2".parse().unwrap(), "zstd".parse().unwrap()]))
+                .finish()),
+            Err(_) => Err(HttpResponse::InternalServerError().finish()),
+        },
+        None => Ok(None),
     }
 }
