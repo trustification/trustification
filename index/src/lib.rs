@@ -11,7 +11,7 @@ use tantivy::{
     schema::*,
     DateTime, Directory, Index as SearchIndex, IndexWriter,
 };
-use tracing::info;
+use tracing::{info, warn};
 
 pub struct IndexStore<INDEX: Index> {
     inner: SearchIndex,
@@ -169,6 +169,8 @@ impl<INDEX: Index> IndexStore<INDEX> {
             let doc = searcher.doc(hit.1)?;
             if let Ok(value) = self.index.process_hit(doc) {
                 hits.push(value);
+            } else {
+                warn!("Error processing hit {:?}", hit);
             }
         }
 

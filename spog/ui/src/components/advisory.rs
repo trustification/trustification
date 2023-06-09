@@ -25,7 +25,7 @@ use yew_more_hooks::hooks::{use_async_with_cloned_deps, UseAsyncHandleDeps};
 pub struct AdvisorySearchProperties {
     pub callback: Callback<UseAsyncHandleDeps<SearchResult<Rc<Vec<Csaf>>>, String>>,
 
-    pub id: Option<String>,
+    pub query: Option<String>,
 
     #[prop_or_default]
     pub toolbar_items: ChildrenWithProps<ToolbarItem>,
@@ -47,7 +47,7 @@ pub fn advisory_search(props: &AdvisorySearchProperties) -> Html {
             .state()
             .ok()
             .and_then(|state| state.as_string())
-            .unwrap_or_else(|| props.id.clone().unwrap_or_else(String::default))
+            .unwrap_or_else(|| props.query.clone().unwrap_or_else(String::default))
     });
 
     let search = {

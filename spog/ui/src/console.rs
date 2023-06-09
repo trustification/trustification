@@ -18,25 +18,25 @@ pub fn console() -> Html {
     let backend = use_backend();
 
     let sidebar = html_nested!(
-        <PageSidebar>
-            <Nav>
-                <NavList>
-                    <NavRouterItem<AppRoute> to={AppRoute::Index}>{ "Trusted Content" }</NavRouterItem<AppRoute>>
-                    <NavExpandable title="Explore">
-                        <NavRouterItem<AppRoute> to={AppRoute::Package{package: Default::default()}} predicate={AppRoute::is_package}>{ "Packages" }</NavRouterItem<AppRoute>>
-                        <NavRouterItem<AppRoute> to={AppRoute::Advisory{id: Default::default()}} predicate={AppRoute::is_advisory}>{ "Advisories" }</NavRouterItem<AppRoute>>
-                        <NavRouterItem<AppRoute> to={AppRoute::Vulnerability} predicate={AppRoute::is_vulnerability}>{ "Vulnerabilities" }</NavRouterItem<AppRoute>>
-                        <NavRouterItem<AppRoute> to={AppRoute::SBOM}>{ "Analyze SBOM" }</NavRouterItem<AppRoute>>
-                    </NavExpandable>
-                    <NavExpandable title="Extend">
-                        if let Ok(url) = backend.join(Endpoint::Api, "/swagger-ui/") {
-                            <NavItem external=true target="_blank" to={url.to_string()}>{ "API" }</NavItem>
-                        }
-                    </NavExpandable>
-                </NavList>
-            </Nav>
-        </PageSidebar>
-    );
+            <PageSidebar>
+                <Nav>
+                    <NavList>
+                        <NavRouterItem<AppRoute> to={AppRoute::Index}>{ "Trusted Content" }</NavRouterItem<AppRoute>>
+                        <NavExpandable title="Explore">
+                            <NavRouterItem<AppRoute> to={AppRoute::Package{query: Default::default()}} predicate={AppRoute::is_package}>{ "Packages" }</NavRouterItem<AppRoute>>
+                            <NavRouterItem<AppRoute> to={AppRoute::Advisory{query: Default::default()}} predicate={AppRoute::is_advisory}>{ "Advisories" }</NavRouterItem<AppRoute>>
+                            <NavRouterItem<AppRoute> to={AppRoute::Vulnerability{query: Default::default()}} predicate={AppRoute::is_vulnerability}>{ "Vulnerabilities" }</NavRouterItem<AppRoute>>
+    //                        <NavRouterItem<AppRoute> to={AppRoute::SBOM}>{ "Analyze SBOM" }</NavRouterItem<AppRoute>>
+                        </NavExpandable>
+                        <NavExpandable title="Extend">
+                            if let Ok(url) = backend.join(Endpoint::Api, "/swagger-ui/") {
+                                <NavItem external=true target="_blank" to={url.to_string()}>{ "API" }</NavItem>
+                            }
+                        </NavExpandable>
+                    </NavList>
+                </Nav>
+            </PageSidebar>
+        );
 
     let callback_github = use_open("https://github.com/xkcd-2347/chicken-coop", "_blank");
 
@@ -79,9 +79,9 @@ fn render(route: AppRoute) -> Html {
     match route {
         AppRoute::Index => html!(<pages::Index/>),
         AppRoute::Chicken => html!(<pages::Chicken/>),
-        AppRoute::Package { package } => html!(<pages::Package {package}/>),
-        AppRoute::Advisory { id } => html!(<pages::Advisory {id}/>),
-        AppRoute::Vulnerability => html!(<pages::Vulnerability/>),
-        AppRoute::SBOM => html!(<pages::SBOM/>),
+        AppRoute::Package { query } => html!(<pages::Package {query}/>),
+        AppRoute::Advisory { query } => html!(<pages::Advisory {query}/>),
+        AppRoute::Vulnerability { query } => html!(<pages::Vulnerability {query}/>),
+        //        AppRoute::SBOM => html!(<pages::SBOM/>),
     }
 }

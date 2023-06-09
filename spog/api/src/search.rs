@@ -14,5 +14,5 @@ const fn default_offset() -> usize {
 }
 
 const fn default_limit() -> usize {
-    10
+    100
 }

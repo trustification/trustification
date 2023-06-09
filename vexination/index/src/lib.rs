@@ -8,9 +8,8 @@ use csaf::{
     Csaf,
 };
 use search::*;
-use serde_json::{Map, Value};
 use sikula::prelude::*;
-use tracing::info;
+use tracing::debug;
 use trustification_index::{
     create_boolean_query, create_date_query, primary2occur,
     tantivy::{
@@ -40,7 +39,8 @@ struct Fields {
     cve_discovery: Field,
     severity: Field,
     cvss: Field,
-    product_status: Field,
+    fixed: Field,
+    affected: Field,
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -64,113 +64,92 @@ impl trustification_index::Index for Index {
 
         if let Some(vulns) = &csaf.vulnerabilities {
             for vuln in vulns {
-                let mut title = String::new();
-                let mut description = String::new();
-                let mut product_status: Map<String, Value> = Map::new();
-                let mut cve = String::new();
-                let mut severity = String::new();
+                let mut document = doc!(
+                    self.fields.id => id.as_str(),
+                    self.fields.document_status => document_status,
+                );
 
-                if let Some(t) = &vuln.title {
-                    title = t.clone();
+                if let Some(title) = &vuln.title {
+                    document.add_text(self.fields.title, title);
                 }
 
-                if let Some(c) = &vuln.cve {
-                    cve = c.clone();
+                if let Some(cve) = &vuln.cve {
+                    document.add_text(self.fields.cve, cve);
                 }
 
-                let mut score_value = 0.0;
                 if let Some(scores) = &vuln.scores {
                     for score in scores {
                         if let Some(cvss3) = &score.cvss_v3 {
-                            severity = cvss3.severity().as_str().to_string();
-                            score_value = cvss3.score().value();
+                            document.add_f64(self.fields.cvss, cvss3.score().value());
+                            document.add_text(self.fields.severity, cvss3.severity().as_str());
                             break;
                         }
-                    }
-                }
-
-                if let Some(status) = &vuln.product_status {
-                    let mut affected: Vec<ProductPackage> = Vec::new();
-                    if let Some(products) = &status.known_affected {
-                        for product in products {
-                            if let Some(p) = find_product_package(csaf, product) {
-                                affected.push(p);
-                            }
-                        }
-                    }
-
-                    let mut fixed: Vec<ProductPackage> = Vec::new();
-                    if let Some(products) = &status.fixed {
-                        for product in products {
-                            if let Some(p) = find_product_package(csaf, product) {
-                                fixed.push(p);
-                            }
-                        }
-                    }
-
-                    if let Ok(value) = serde_json::to_value(affected) {
-                        product_status.insert("known_affected".to_string(), value);
-                    }
-
-                    if let Ok(value) = serde_json::to_value(fixed) {
-                        product_status.insert("fixed".to_string(), value);
                     }
                 }
 
                 if let Some(notes) = &vuln.notes {
                     for note in notes {
                         if let NoteCategory::Description = note.category {
-                            description = note.text.clone();
-                            break;
+                            document.add_text(self.fields.description, note.text.as_str());
+                        }
+                    }
+                }
+
+                if let Some(status) = &vuln.product_status {
+                    if let Some(products) = &status.known_affected {
+                        for product in products {
+                            if let Some(p) = find_product_package(csaf, product) {
+                                if let Some(cpe) = p.cpe {
+                                    document.add_text(self.fields.affected, cpe);
+                                }
+                                if let Some(purl) = p.purl {
+                                    document.add_text(self.fields.affected, purl);
+                                }
+                            }
                         }
                     }
 
-                    tracing::debug!(
-                        "Indexing with id {} title {} description {}, cve {}, product_status {:?} score {}",
-                        id,
-                        title,
-                        description,
-                        cve,
-                        serde_json::to_string(&product_status).ok(),
-                        score_value,
-                    );
-                    let mut document = doc!(
-                        self.fields.id => id.as_str(),
-                        self.fields.title => title,
-                        self.fields.description => description,
-                        self.fields.cve => cve,
-                        self.fields.document_status => document_status,
-                        self.fields.product_status => product_status,
-                        self.fields.severity => severity,
-                        self.fields.cvss => score_value,
-                    );
-
-                    document.add_date(
-                        self.fields.advisory_initial,
-                        DateTime::from_timestamp_millis(csaf.document.tracking.initial_release_date.timestamp_millis()),
-                    );
-
-                    document.add_date(
-                        self.fields.advisory_current,
-                        DateTime::from_timestamp_millis(csaf.document.tracking.current_release_date.timestamp_millis()),
-                    );
-
-                    if let Some(discovery_date) = &vuln.discovery_date {
-                        document.add_date(
-                            self.fields.cve_discovery,
-                            DateTime::from_timestamp_millis(discovery_date.timestamp_millis()),
-                        );
+                    if let Some(products) = &status.fixed {
+                        for product in products {
+                            if let Some(p) = find_product_package(csaf, product) {
+                                if let Some(cpe) = p.cpe {
+                                    document.add_text(self.fields.fixed, cpe);
+                                }
+                                if let Some(purl) = p.purl {
+                                    document.add_text(self.fields.fixed, purl);
+                                }
+                            }
+                        }
                     }
-
-                    if let Some(release_date) = &vuln.release_date {
-                        document.add_date(
-                            self.fields.cve_release,
-                            DateTime::from_timestamp_millis(release_date.timestamp_millis()),
-                        );
-                    }
-
-                    documents.push(document);
                 }
+
+                document.add_date(
+                    self.fields.advisory_initial,
+                    DateTime::from_timestamp_millis(csaf.document.tracking.initial_release_date.timestamp_millis()),
+                );
+
+                document.add_date(
+                    self.fields.advisory_current,
+                    DateTime::from_timestamp_millis(csaf.document.tracking.current_release_date.timestamp_millis()),
+                );
+
+                if let Some(discovery_date) = &vuln.discovery_date {
+                    document.add_date(
+                        self.fields.cve_discovery,
+                        DateTime::from_timestamp_millis(discovery_date.timestamp_millis()),
+                    );
+                }
+
+                if let Some(release_date) = &vuln.release_date {
+                    document.add_date(
+                        self.fields.cve_release,
+                        DateTime::from_timestamp_millis(release_date.timestamp_millis()),
+                    );
+                }
+
+                debug!("Adding doc: {:?}", document);
+
+                documents.push(document);
             }
         }
         Ok(documents)
@@ -185,11 +164,11 @@ impl trustification_index::Index for Index {
 
         query.term = query.term.compact();
 
-        info!("Query: {query:?}");
+        debug!("Query: {query:?}");
 
         let query = term2query(&query.term, &|resource| self.resource2query(resource));
 
-        info!("Processed query: {:?}", query);
+        debug!("Processed query: {:?}", query);
         Ok(query)
     }
 
@@ -200,31 +179,25 @@ impl trustification_index::Index for Index {
                 if let Some(Some(title)) = doc.get_first(self.fields.title).map(|s| s.as_text()) {
                     if let Some(Some(description)) = doc.get_first(self.fields.description).map(|s| s.as_text()) {
                         if let Some(Some(cvss)) = doc.get_first(self.fields.cvss).map(|s| s.as_f64()) {
-                            if let Some(Some(product_status)) =
-                                doc.get_first(self.fields.product_status).map(|s| s.as_json())
-                            {
-                                if let Some(Some(release)) = doc.get_first(self.fields.cve_release).map(|s| s.as_date())
-                                {
-                                    let affected = product_status
-                                        .get("affected")
-                                        .map(|val| serde_json::from_value(val.clone()).unwrap_or(Vec::new()))
-                                        .unwrap_or(Vec::new());
-
-                                    let fixed = product_status
-                                        .get("fixed")
-                                        .map(|val| serde_json::from_value(val.clone()).unwrap_or(Vec::new()))
-                                        .unwrap_or(Vec::new());
-                                    return Ok(SearchDocument {
-                                        advisory: advisory.to_string(),
-                                        cve: cve.to_string(),
-                                        title: title.to_string(),
-                                        description: description.to_string(),
-                                        cvss,
-                                        release: release.into_utc(),
-                                        affected,
-                                        fixed,
-                                    });
-                                }
+                            if let Some(Some(release)) = doc.get_first(self.fields.cve_release).map(|s| s.as_date()) {
+                                let fixed: Vec<String> = doc
+                                    .get_all(self.fields.fixed)
+                                    .flat_map(|f| f.as_text().map(|s| s.to_string()))
+                                    .collect();
+                                let affected: Vec<String> = doc
+                                    .get_all(self.fields.affected)
+                                    .flat_map(|f| f.as_text().map(|s| s.to_string()))
+                                    .collect();
+                                return Ok(SearchDocument {
+                                    advisory: advisory.to_string(),
+                                    cve: cve.to_string(),
+                                    title: title.to_string(),
+                                    description: description.to_string(),
+                                    cvss,
+                                    release: release.into_utc(),
+                                    affected,
+                                    fixed,
+                                });
                             }
                         }
                     }
@@ -250,7 +223,8 @@ impl Index {
         let cve = schema.add_text_field("cve", STRING | FAST | STORED);
         let severity = schema.add_text_field("severity", STRING | FAST);
         let document_status = schema.add_text_field("document_status", STRING);
-        let product_status = schema.add_json_field("product_status", STRING | STORED);
+        let affected = schema.add_text_field("affected", STORED | STRING);
+        let fixed = schema.add_text_field("fixed", STORED | STRING);
         let cvss = schema.add_f64_field("cvss", FAST | INDEXED | STORED);
         let advisory_initial = schema.add_date_field("advisory_initial_date", INDEXED);
         let advisory_current = schema.add_date_field("advisory_current_date", INDEXED);
@@ -266,7 +240,8 @@ impl Index {
                 cve,
                 severity,
                 document_status,
-                product_status,
+                fixed,
+                affected,
                 advisory_initial,
                 advisory_current,
                 cve_discovery,
@@ -303,7 +278,21 @@ impl Index {
 
             Vulnerabilities::Package(primary) => {
                 let (occur, value) = primary2occur(primary);
-                let term = Term::from_field_text(self.fields.product_status, value);
+                let q1 = create_boolean_query(occur, Term::from_field_text(self.fields.affected, value));
+                let q2 = create_boolean_query(occur, Term::from_field_text(self.fields.fixed, value));
+
+                Box::new(BooleanQuery::union(vec![q1, q2]))
+            }
+
+            Vulnerabilities::Fixed(primary) => {
+                let (occur, value) = primary2occur(primary);
+                let term = Term::from_field_text(self.fields.fixed, value);
+                create_boolean_query(occur, term)
+            }
+
+            Vulnerabilities::Affected(primary) => {
+                let (occur, value) = primary2occur(primary);
+                let term = Term::from_field_text(self.fields.affected, value);
                 create_boolean_query(occur, term)
             }
 
@@ -377,7 +366,7 @@ fn find_product_identifier<'m, F: Fn(&'m ProductIdentificationHelper) -> Option<
         if branch.name == product_id.0 {
             if let Some(name) = &branch.product {
                 if let Some(helper) = &name.product_identification_helper {
-                    if let Some(ret) = f(&helper) {
+                    if let Some(ret) = f(helper) {
                         return Some(ret);
                     }
                 }
@@ -385,7 +374,7 @@ fn find_product_identifier<'m, F: Fn(&'m ProductIdentificationHelper) -> Option<
         }
 
         if let Some(branches) = &branch.branches {
-            if let Some(ret) = find_product_identifier(&branches, product_id, f) {
+            if let Some(ret) = find_product_identifier(branches, product_id, f) {
                 return Some(ret);
             }
         }
@@ -408,7 +397,7 @@ fn find_product_package(csaf: &Csaf, product_id: &ProductIdT) -> Option<ProductP
     if let Some(tree) = &csaf.product_tree {
         if let Some(r) = find_product_ref(tree, product_id) {
             if let Some(branches) = &tree.branches {
-                return find_product_identifier(&branches, r, &|helper: &ProductIdentificationHelper| {
+                return find_product_identifier(branches, r, &|helper: &ProductIdentificationHelper| {
                     Some(ProductPackage {
                         purl: helper.purl.as_ref().map(|p| p.to_string()),
                         cpe: helper.cpe.as_ref().map(|p| p.to_string()),
@@ -528,6 +517,20 @@ mod tests {
             assert_eq!(result.0.len(), 0);
 
             let result = index.search("release:2022-01-01..2024-01-01", 0, 100).unwrap();
+            assert_eq!(result.0.len(), 1);
+        });
+    }
+
+    #[tokio::test]
+    async fn test_packages() {
+        assert_free_form(|index| {
+            let result = index
+                .search(
+                    "affected:\"pkg:rpm/redhat/openssl@1.1.1k-7.el8_6?arch=x86_64&epoch=1\"",
+                    0,
+                    100,
+                )
+                .unwrap();
             assert_eq!(result.0.len(), 1);
         });
     }

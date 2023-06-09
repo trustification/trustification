@@ -11,7 +11,7 @@ use yew_more_hooks::hooks::{UseAsyncHandleDeps, UseAsyncState};
 #[derive(Clone, Debug, PartialEq, Eq, Properties)]
 pub struct AdvisoryProps {
     #[prop_or_default]
-    pub id: Option<String>,
+    pub query: Option<String>,
 }
 
 #[function_component(Advisory)]
@@ -23,7 +23,7 @@ pub fn advisory(props: &AdvisoryProps) -> Html {
             search.set((*state).clone());
         })
     };
-    let id = props.id.clone();
+    let query = props.query.clone();
 
     html!(
         <>
@@ -31,7 +31,7 @@ pub fn advisory(props: &AdvisoryProps) -> Html {
 
             // We need to set the main section to fill, as we have a footer section
             <PageSection variant={PageSectionVariant::Default} fill={PageSectionFill::Fill}>
-                <AdvisorySearch {callback} {id}/>
+                <AdvisorySearch {callback} {query}/>
 
                 {
                     match &*search {

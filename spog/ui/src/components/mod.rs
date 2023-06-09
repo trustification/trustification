@@ -4,8 +4,9 @@ pub mod advisory;
 pub mod backend;
 pub mod common;
 pub mod cvss;
-pub mod deps;
+// pub mod deps;
 pub mod error;
+pub mod package;
 pub mod vulnerability;
 
 use patternfly_yew::prelude::*;

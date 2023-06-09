@@ -67,7 +67,7 @@ impl Server {
 }
 
 pub struct AppState {
-    pub sbom: ServiceState<bombastic_index::Index>,
+    pub bombastic: reqwest::Url,
     pub vex: ServiceState<vexination_index::Index>,
 }
 
@@ -96,14 +96,9 @@ impl<T: trustification_index::Index> ServiceState<T> {
 impl AppState {
     async fn sync_index(&self) -> Result<(), anyhow::Error> {
         let vex = self.vex.sync_index().await;
-        let sbom = self.sbom.sync_index().await;
         if vex.is_err() {
             tracing::info!("Error syncing vexination index: {:?}", vex);
             return vex;
-        }
-        if sbom.is_err() {
-            tracing::info!("Error syncing bombastic index: {:?}", sbom);
-            return sbom;
         }
         Ok(())
     }
@@ -116,29 +111,21 @@ pub(crate) fn configure(run: &Run) -> anyhow::Result<Arc<AppState>> {
         std::env::temp_dir().join(format!("search-api.{}", r))
     });
 
-    let (bombastic_dir, vexination_dir): (PathBuf, PathBuf) = (base_dir.join("bombastic"), base_dir.join("vexination"));
+    let vexination_dir: PathBuf = base_dir.join("vexination");
 
     std::fs::create_dir(&base_dir)?;
-    std::fs::create_dir(&bombastic_dir)?;
     std::fs::create_dir(&vexination_dir)?;
 
+    // TODO: Use APIs for bombastic
     let vexination_index = IndexStore::new(&vexination_dir, vexination_index::Index::new())?;
-    let bombastic_index = IndexStore::new(&bombastic_dir, bombastic_index::Index::new())?;
-
-    // TODO: Storage with multiple buckets (bombastic and vexination?)
-    // OR: use APIs
     let vexination_storage = trustification_storage::create("vexination", run.devmode, run.storage_endpoint.clone())?;
-    let bombastic_storage = trustification_storage::create("bombastic", run.devmode, run.storage_endpoint.clone())?;
 
     let state = Arc::new(AppState {
         vex: ServiceState {
             storage: RwLock::new(vexination_storage),
             index: RwLock::new(vexination_index),
         },
-        sbom: ServiceState {
-            storage: RwLock::new(bombastic_storage),
-            index: RwLock::new(bombastic_index),
-        },
+        bombastic: run.bombastic_url.clone(),
     });
 
     let sync_interval = Duration::from_secs(run.sync_interval_seconds);
@@ -165,7 +152,6 @@ pub(crate) fn configure(run: &Run) -> anyhow::Result<Arc<AppState>> {
 
     Ok(state)
 }
-
 pub async fn fetch_object(storage: &Storage, key: &str) -> Option<Vec<u8>> {
     match storage.get(key).await {
         Ok(data) => Some(data),

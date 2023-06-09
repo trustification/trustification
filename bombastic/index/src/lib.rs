@@ -1,20 +1,19 @@
-mod search;
+use bombastic_model::prelude::*;
 use core::str::FromStr;
-
 use cyclonedx_bom::models::{component::Classification, hash::HashAlgorithm};
 use search::*;
 use sikula::prelude::*;
 use spdx_rs::models::Algorithm;
-use tracing::info;
+use tracing::{debug, info, warn};
 use trustification_index::{
     create_boolean_query, primary2occur,
-    tantivy::{
-        doc,
-        query::{Occur, Query},
-        schema::{Field, Schema, Term, FAST, STORED, STRING, TEXT},
-    },
+    tantivy::doc,
+    tantivy::query::{Occur, Query},
+    tantivy::schema::{Field, Schema, Term, FAST, STORED, STRING, TEXT},
     term2query, Document, Error as SearchError,
 };
+
+mod search;
 
 pub struct Index {
     schema: Schema,
@@ -32,7 +31,7 @@ impl SBOM {
             Ok(SBOM::CycloneDX(bom))
         } else {
             let spdx = serde_json::from_slice::<spdx_rs::models::SPDX>(data).map_err(|e| {
-                tracing::warn!("Error parsing SPDX: {:?}", e);
+                warn!("Error parsing SPDX: {:?}", e);
                 e
             })?;
             Ok(SBOM::SPDX(spdx))
@@ -42,8 +41,9 @@ impl SBOM {
 
 struct Fields {
     dependent: Field,
-    cpe: Field,
     purl: Field,
+    name: Field,
+    cpe: Field,
     ptype: Field,
     pnamespace: Field,
     pname: Field,
@@ -52,6 +52,7 @@ struct Fields {
     sha256: Field,
     license: Field,
     qualifiers: Field,
+    supplier: Field,
 
     classifier: Field,
 }
@@ -67,17 +68,19 @@ impl Index {
         let mut schema = Schema::builder();
         let fields = Fields {
             dependent: schema.add_text_field("dependent", STRING | STORED),
-            cpe: schema.add_text_field("cpe", STRING | FAST | STORED),
+            cpe: schema.add_text_field("cpe", STRING | STORED),
+            name: schema.add_text_field("name", STRING | STORED),
             purl: schema.add_text_field("purl", STRING | FAST | STORED),
             ptype: schema.add_text_field("ptype", STRING),
             pnamespace: schema.add_text_field("pnamespace", STRING),
             pname: schema.add_text_field("pname", STRING),
-            pversion: schema.add_text_field("pversion", STRING),
-            description: schema.add_text_field("description", TEXT),
-            sha256: schema.add_text_field("sha256", STRING),
-            license: schema.add_text_field("license", STRING),
+            pversion: schema.add_text_field("pversion", STRING | STORED),
+            description: schema.add_text_field("description", TEXT | STORED),
+            sha256: schema.add_text_field("sha256", STRING | STORED),
+            license: schema.add_text_field("license", STRING | STORED),
+            supplier: schema.add_text_field("supplier", TEXT | STORED),
             qualifiers: schema.add_json_field("qualifiers", STRING),
-            classifier: schema.add_text_field("classifier", STRING),
+            classifier: schema.add_text_field("classifier", STRING | STORED),
         };
         Self {
             schema: schema.build(),
@@ -86,51 +89,79 @@ impl Index {
     }
 
     fn index_spdx(&self, bom: &spdx_rs::models::SPDX) -> Result<Vec<Document>, SearchError> {
-        tracing::info!("Indexing SPDX document");
+        debug!("Indexing SPDX document");
         let mut documents = Vec::new();
+        let mut parents: Vec<String> = Vec::new();
+
         for package in &bom.package_information {
-            let mut document = doc!();
-
-            if let Some(comment) = &package.package_summary_description {
-                document.add_text(self.fields.description, comment);
+            if bom
+                .document_creation_information
+                .document_describes
+                .contains(&package.package_spdx_identifier)
+            {
+                for r in &package.external_reference {
+                    parents.push(r.reference_locator.clone());
+                }
             }
+        }
 
-            for r in package.external_reference.iter() {
-                if r.reference_type == "purl" {
-                    let purl = r.reference_locator.clone();
-                    document.add_text(self.fields.purl, &purl);
+        for package in &bom.package_information {
+            if !bom
+                .document_creation_information
+                .document_describes
+                .contains(&package.package_spdx_identifier)
+            {
+                for parent in &parents {
+                    let mut document = doc!();
 
-                    if let Ok(package) = packageurl::PackageUrl::from_str(&purl) {
-                        document.add_text(self.fields.pname, package.name());
-                        if let Some(namespace) = package.namespace() {
-                            document.add_text(self.fields.pnamespace, namespace);
-                        }
+                    if let Some(comment) = &package.package_summary_description {
+                        document.add_text(self.fields.description, comment);
+                    }
 
-                        if let Some(version) = package.version() {
-                            document.add_text(self.fields.pversion, version);
-                        }
+                    for r in package.external_reference.iter() {
+                        if r.reference_type == "purl" {
+                            let purl = r.reference_locator.clone();
+                            document.add_text(self.fields.purl, &purl);
 
-                        let mut qualifiers: serde_json::Map<String, serde_json::Value> = serde_json::Map::new();
-                        for entry in package.qualifiers().iter() {
-                            if let Ok(value) = serde_json::from_str::<serde_json::Value>(entry.1) {
-                                qualifiers.insert(entry.0.to_string(), value);
+                            if let Ok(package) = packageurl::PackageUrl::from_str(&purl) {
+                                document.add_text(self.fields.pname, package.name());
+                                if let Some(namespace) = package.namespace() {
+                                    document.add_text(self.fields.pnamespace, namespace);
+                                }
+
+                                if let Some(version) = package.version() {
+                                    document.add_text(self.fields.pversion, version);
+                                }
+
+                                let mut qualifiers: serde_json::Map<String, serde_json::Value> = serde_json::Map::new();
+                                for entry in package.qualifiers().iter() {
+                                    if let Ok(value) = serde_json::from_str::<serde_json::Value>(entry.1) {
+                                        qualifiers.insert(entry.0.to_string(), value);
+                                    }
+                                }
+                                document.add_json_object(self.fields.qualifiers, qualifiers);
+                                document.add_text(self.fields.ptype, package.ty());
                             }
                         }
-                        document.add_json_object(self.fields.qualifiers, qualifiers);
-                        document.add_text(self.fields.ptype, package.ty());
                     }
+
+                    document.add_text(self.fields.name, &package.package_name);
+
+                    for sum in package.package_checksum.iter() {
+                        if sum.algorithm == Algorithm::SHA256 {
+                            document.add_text(self.fields.sha256, &sum.value);
+                        }
+                    }
+
+                    document.add_text(self.fields.license, package.declared_license.to_string());
+                    document.add_text(self.fields.dependent, parent);
+                    if let Some(supplier) = &package.package_supplier {
+                        document.add_text(self.fields.supplier, supplier);
+                    }
+
+                    documents.push(document);
                 }
             }
-
-            for sum in package.package_checksum.iter() {
-                if sum.algorithm == Algorithm::SHA256 {
-                    document.add_text(self.fields.sha256, &sum.value);
-                }
-            }
-
-            document.add_text(self.fields.license, package.declared_license.to_string());
-
-            documents.push(document);
         }
         Ok(documents)
     }
@@ -176,6 +207,7 @@ impl Index {
 
             if let Ok(package) = packageurl::PackageUrl::from_str(&purl) {
                 document.add_text(self.fields.pname, package.name());
+                document.add_text(self.fields.name, package.name());
                 if let Some(namespace) = package.namespace() {
                     document.add_text(self.fields.pnamespace, namespace);
                 }
@@ -235,6 +267,12 @@ impl Index {
                 create_boolean_query(occur, term)
             }
 
+            Packages::PackageName(primary) => {
+                let (occur, value) = primary2occur(primary);
+                let term = Term::from_field_text(self.fields.name, value);
+                create_boolean_query(occur, term)
+            }
+
             Packages::Purl(primary) => {
                 let (occur, value) = primary2occur(primary);
                 let term = Term::from_field_text(self.fields.purl, value);
@@ -280,6 +318,12 @@ impl Index {
             Packages::License(primary) => {
                 let (occur, value) = primary2occur(primary);
                 let term = Term::from_field_text(self.fields.license, value);
+                create_boolean_query(occur, term)
+            }
+
+            Packages::Supplier(primary) => {
+                let (occur, value) = primary2occur(primary);
+                let term = Term::from_field_text(self.fields.supplier, value);
                 create_boolean_query(occur, term)
             }
 
@@ -331,7 +375,7 @@ impl Index {
 }
 
 impl trustification_index::Index for Index {
-    type MatchedDocument = String;
+    type MatchedDocument = SearchDocument;
     type Document = SBOM;
 
     fn index_doc(&self, doc: &SBOM) -> Result<Vec<Document>, SearchError> {
@@ -359,10 +403,58 @@ impl trustification_index::Index for Index {
     }
 
     fn process_hit(&self, doc: Document) -> Result<Self::MatchedDocument, SearchError> {
-        if let Some(Some(value)) = doc.get_first(self.fields.purl).map(|s| s.as_text()) {
-            Ok(value.into())
-        } else {
-            Err(SearchError::NotFound)
-        }
+        let purl = doc
+            .get_first(self.fields.purl)
+            .map(|s| s.as_text().unwrap_or(""))
+            .unwrap_or("N/A");
+
+        let name = doc
+            .get_first(self.fields.name)
+            .map(|s| s.as_text().unwrap_or(""))
+            .unwrap_or("");
+
+        let dependent = doc
+            .get_first(self.fields.dependent)
+            .map(|s| s.as_text().unwrap_or(""))
+            .unwrap_or("");
+
+        let sha256 = doc
+            .get_first(self.fields.sha256)
+            .map(|s| s.as_text().unwrap_or(""))
+            .unwrap_or("");
+
+        let license = doc
+            .get_first(self.fields.license)
+            .map(|s| s.as_text().unwrap_or("Unknown"))
+            .unwrap_or("Unknown");
+
+        let classifier = doc
+            .get_first(self.fields.classifier)
+            .map(|s| s.as_text().unwrap_or("Unknown"))
+            .unwrap_or("Unknown");
+
+        let supplier = doc
+            .get_first(self.fields.supplier)
+            .map(|s| s.as_text().unwrap_or("Unknown"))
+            .unwrap_or("Unknown");
+
+        let description = doc
+            .get_first(self.fields.description)
+            .map(|s| s.as_text().unwrap_or(name))
+            .unwrap_or(name);
+
+        let hit = SearchDocument {
+            purl: purl.to_string(),
+            name: name.to_string(),
+            dependent: dependent.to_string(),
+            sha256: sha256.to_string(),
+            license: license.to_string(),
+            classifier: classifier.to_string(),
+            supplier: supplier.to_string(),
+            description: description.to_string(),
+        };
+        info!("HIT: {:?}", hit);
+
+        Ok(hit)
     }
 }

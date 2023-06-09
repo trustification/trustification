@@ -1,10 +1,11 @@
 use sikula::prelude::*;
 
-// TODO: reconsider using scoped/primary for some fields, like status and severity
 #[derive(Clone, Debug, PartialEq, Search)]
 pub enum Packages<'a> {
     #[search(default)]
     Dependent(Primary<'a>),
+    #[search(default)]
+    PackageName(Primary<'a>),
     #[search(default)]
     Purl(Primary<'a>),
     #[search(default)]
@@ -21,6 +22,8 @@ pub enum Packages<'a> {
     Digest(Primary<'a>),
     #[search(default)]
     License(Primary<'a>),
+    #[search(default)]
+    Supplier(Primary<'a>),
     #[search(default)]
     Qualifier(Primary<'a>),
     Application,

@@ -57,9 +57,10 @@ impl VexService {
         q: &str,
         options: &SearchOptions,
     ) -> Result<SearchResult<Vec<VulnSummary>>, Error> {
+        log::info!("Search query: {}", q);
         let request = self
             .client
-            .get(self.backend.join(Endpoint::Search, "/api/v1/vulnerability/search")?)
+            .get(self.backend.join(Endpoint::Api, "/api/v1/vulnerability/search")?)
             .query(&[("q", q)]);
 
         let request = options.apply(request);
@@ -76,7 +77,7 @@ impl VexService {
     ) -> Result<SearchResult<Vec<csaf::Csaf>>, Error> {
         let request = self
             .client
-            .get(self.backend.join(Endpoint::Search, "/api/v1/advisory/search")?)
+            .get(self.backend.join(Endpoint::Api, "/api/v1/advisory/search")?)
             .query(&[("q", q)]);
 
         let request = options.apply(request);

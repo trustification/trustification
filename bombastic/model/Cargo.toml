@@ -1,0 +1,16 @@
+[package]
+name = "bombastic-model"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+
+description = "The data model of the API"
+
+[dependencies]
+utoipa = { version = "3" }
+serde = { version = "1", features = ["derive"] }
+time = { version = "0.3", features = ["serde"] }
+
+# required by ToSchema utopia
+serde_json = "1"
+urlencoding = "2"
