@@ -67,7 +67,7 @@ impl Index {
         let mut schema = Schema::builder();
         let fields = Fields {
             dependent: schema.add_text_field("dependent", STRING | STORED),
-            cpe: schema.add_text_field("purl", STRING | FAST | STORED),
+            cpe: schema.add_text_field("cpe", STRING | FAST | STORED),
             purl: schema.add_text_field("purl", STRING | FAST | STORED),
             ptype: schema.add_text_field("ptype", STRING),
             pnamespace: schema.add_text_field("pnamespace", STRING),
