@@ -9,7 +9,7 @@ use std::{
 use actix_web::{
     error::PayloadError,
     guard,
-    http::header::{Accept, AcceptEncoding, ContentEncoding, ContentType, Encoding, HeaderValue, CONTENT_ENCODING},
+    http::header::{self, Accept, AcceptEncoding, ContentType, HeaderValue, CONTENT_ENCODING},
     middleware::{Compress, Logger},
     web, App, HttpRequest, HttpResponse, HttpServer, Responder,
 };
@@ -17,7 +17,7 @@ use futures::TryStreamExt;
 use serde::Deserialize;
 use tokio::sync::RwLock;
 use tracing::info;
-use trustification_storage::{Error, Storage};
+use trustification_storage::Storage;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
@@ -69,25 +69,26 @@ pub async fn run<B: Into<SocketAddr>>(
 }
 
 async fn fetch_object(storage: &Storage, key: &str, accept_encoding: AcceptEncoding) -> HttpResponse {
-    let encoded = match accept_encoding.negotiate(vec![Encoding::zstd()].iter()) {
-        Some(Encoding::Known(ContentEncoding::Zstd)) => match storage.get_encoded_stream(key, "zstd").await {
-            Ok(stream) => {
-                tracing::info!("Returning zstd-encoded stream");
-                Some(stream)
-            }
-            Err(Error::S3(e)) => {
-                // probably a 404 so no sense in continuing
-                tracing::warn!("Unable to locate object with key {}: {:?}", key, e);
-                return HttpResponse::NotFound().finish();
-            }
-            _ => None, // ignore non-S3 errors
+    let encoding = match storage.get_head(key).await {
+        Ok(head) if head.status.is_success() => head.content_encoding,
+        _ => {
+            return HttpResponse::NotFound().finish();
+        }
+    };
+    let encoded = match encoding {
+        Some(ref encoding) => match accept_encoding.negotiate(vec![encoding.parse().unwrap()].iter()) {
+            Some(x) if &x.to_string() == encoding => match storage.get_encoded_stream(key).await {
+                Ok(stream) => Some(stream),
+                _ => None,
+            },
+            _ => None,
         },
-        _ => None, // client won't accept zstd-encoded stream
+        _ => None,
     };
     match encoded {
         Some(stream) => HttpResponse::Ok()
             .content_type(ContentType::json())
-            .insert_header(ContentEncoding::Zstd)
+            .insert_header((header::CONTENT_ENCODING, encoding.unwrap()))
             .streaming(stream),
         None => match storage.get_stream(key).await {
             Ok(stream) => HttpResponse::Ok().content_type(ContentType::json()).streaming(stream),
