@@ -5,7 +5,7 @@ use std::marker::Unpin;
 use async_stream::try_stream;
 use bytes::{Buf, Bytes};
 use futures::{future::ok, stream::once, Stream, StreamExt};
-use http::{header::CONTENT_ENCODING, HeaderValue};
+use http::{header::CONTENT_ENCODING, HeaderValue, StatusCode};
 use s3::{creds::error::CredentialsError, error::S3Error, Bucket};
 pub use s3::{creds::Credentials, Region};
 use serde::Deserialize;
@@ -118,6 +118,11 @@ const JSON: &str = "application/json";
 
 const VERSION: u32 = 1;
 
+pub struct Head {
+    pub status: StatusCode,
+    pub content_encoding: Option<String>,
+}
+
 impl Storage {
     pub fn new(config: Config) -> Result<Self, Error> {
         let bucket = Bucket::new(&config.bucket_name, config.region, config.credentials)?.with_path_style();
@@ -146,10 +151,13 @@ impl Storage {
     {
         let mut headers = http::HeaderMap::new();
         headers.insert(VERSION_HEADER, VERSION.into());
-        headers.insert(CONTENT_ENCODING, HeaderValue::from_static("zstd"));
+        headers.insert(
+            CONTENT_ENCODING,
+            HeaderValue::from_str(encoding.unwrap_or("zstd")).unwrap(),
+        );
         let bucket = self.bucket.with_extra_headers(headers);
         let path = format!("{}{}", DATA_PATH, key);
-        let mut rdr = stream::zstd_encoder(encoding, data)?;
+        let mut rdr = stream::encode(encoding, data)?;
         Ok(bucket.put_object_stream_with_content_type(&mut rdr, path, JSON).await?)
     }
 
@@ -159,28 +167,26 @@ impl Storage {
         self.get_object(&path).await
     }
 
+    pub async fn get_head(&self, key: &str) -> Result<Head, Error> {
+        let path = format!("{}{}", DATA_PATH, key);
+        let (head, status) = self.bucket.head_object(&path).await?;
+        Ok(Head {
+            status: StatusCode::from_u16(status).map_err(|_| Error::Internal)?,
+            content_encoding: head.content_encoding,
+        })
+    }
+
     // Returns unencoded stream
     pub async fn get_stream(&self, key: &str) -> Result<impl Stream<Item = Result<Bytes, Error>>, Error> {
         let path = format!("{}{}", DATA_PATH, key);
         self.get_object_stream(&path).await
     }
 
-    // return raw stream *only* if the object's Content-Encoding matches encoding
-    pub async fn get_encoded_stream(
-        &self,
-        key: &str,
-        encoding: &str,
-    ) -> Result<impl Stream<Item = Result<Bytes, Error>>, Error> {
+    // Returns encoded stream
+    pub async fn get_encoded_stream(&self, key: &str) -> Result<impl Stream<Item = Result<Bytes, Error>>, Error> {
         let path = format!("{}{}", DATA_PATH, key);
-        let (head, _status) = self.bucket.head_object(&path).await?;
-        match head.content_encoding {
-            Some(ref s) if s == encoding => {
-                let mut s = self.bucket.get_object_stream(&path).await?;
-                Ok(try_stream! { while let Some(chunk) = s.bytes().next().await { yield chunk?; }})
-            }
-            Some(s) => Err(Error::Encoding(s)),
-            _ => Err(Error::Encoding(encoding.into())),
-        }
+        let mut s = self.bucket.get_object_stream(&path).await?;
+        Ok(try_stream! { while let Some(chunk) = s.bytes().next().await { yield chunk?; }})
     }
 
     // Get the data associated with an event record.
