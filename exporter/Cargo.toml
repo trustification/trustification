@@ -21,3 +21,5 @@ futures = "0.3"
 rand = "0.8"
 guac = { git = "https://github.com/dejanb/guac-rs.git", version = "0.1.0" }
 #guac-lib = { git = "https://github.com/dejanb/guac-rs.git", branch = "main" }
+strum = "0.24"
+strum_macros = "0.24"

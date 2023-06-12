@@ -1918,6 +1918,8 @@ dependencies = [
  "rand 0.8.5",
  "serde",
  "serde_json",
+ "strum",
+ "strum_macros",
  "tokio",
  "tracing",
  "tracing-subscriber",
@@ -2271,7 +2273,7 @@ dependencies = [
 [[package]]
 name = "guac"
 version = "0.1.0"
-source = "git+https://github.com/dejanb/guac-rs.git#23c76bed4a4d7723f79e4fe590cb880676cc67ce"
+source = "git+https://github.com/dejanb/guac-rs.git#dd1607f4fc9e031ae44465aec24a3a5e82540d4d"
 dependencies = [
  "anyhow",
  "async-nats",
