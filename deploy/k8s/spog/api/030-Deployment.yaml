@@ -20,37 +20,19 @@ spec:
         app.kubernetes.io/component: api
         app.kubernetes.io/part-of: spog
     spec:
-      volumes:
-        - name: data
-          emptyDir: {}
       containers:
         - image: ghcr.io/trustification/trust:latest
           imagePullPolicy: Always
           name: service
           command: ["/trust"]
-          args: ["spog", "api", "-p", "8080"]
+          args: ["spog", "api", "-p", "8080", "--bombastic-url", "http://bombastic-api", "--vexination-url", "http://vexination-api"]
           env:
             - name: RUST_LOG
               value: info
-            - name: AWS_ACCESS_KEY_ID
-              valueFrom:
-                secretKeyRef:
-                  name: vexination-credentials-secret
-                  key: access-key-id
-            - name: AWS_SECRET_ACCESS_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: vexination-credentials-secret
-                  key: secret-access-key
-            - name: AWS_REGION
-              value: "eu-west-1"
             - name: INFRASTRUCTURE_ENABLED
               value: "true"
             - name: INFRASTRUCTURE_BIND
               value: "[::]:9010"
-          volumeMounts:
-            - name: data
-              mountPath: /data
           ports:
             - containerPort: 8080
               protocol: TCP
