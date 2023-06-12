@@ -425,7 +425,7 @@ mod tests {
         let index = Index::new();
         let mut store = IndexStore::new_in_memory(index).unwrap();
         let mut writer = store.indexer().unwrap();
-        writer.index(store.index(), &csaf).unwrap();
+        writer.index(store.index(), &csaf.document.tracking.id, &csaf).unwrap();
         writer.commit().unwrap();
         f(store);
     }
