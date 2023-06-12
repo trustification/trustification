@@ -1,8 +1,8 @@
-use super::{Backend, Error};
-use crate::backend::data::Vulnerability;
-use crate::backend::Endpoint;
 use reqwest::{RequestBuilder, StatusCode};
 use spog_model::prelude::*;
+
+use super::{Backend, Error};
+use crate::backend::{data::Vulnerability, Endpoint};
 
 pub struct VexService {
     backend: Backend,

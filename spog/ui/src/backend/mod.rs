@@ -10,9 +10,8 @@ mod vuln;
 
 pub use pkg::*;
 pub use sbom::*;
-pub use vuln::*;
-
 use url::{ParseError, Url};
+pub use vuln::*;
 use yew::html::IntoPropValue;
 
 #[derive(Clone, Debug, PartialEq, Eq)]

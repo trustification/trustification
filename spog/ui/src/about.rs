@@ -1,6 +1,7 @@
-use crate::hooks::use_backend;
 use patternfly_yew::prelude::*;
 use yew::prelude::*;
+
+use crate::hooks::use_backend;
 
 #[function_component(About)]
 pub fn about() -> Html {

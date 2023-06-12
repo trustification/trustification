@@ -9,8 +9,9 @@ pub mod error;
 pub mod package;
 pub mod vulnerability;
 
-use patternfly_yew::prelude::*;
 use std::ops::Deref;
+
+use patternfly_yew::prelude::*;
 use yew::prelude::*;
 use yew_more_hooks::prelude::{UseAsyncHandleDeps, UseAsyncState};
 

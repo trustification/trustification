@@ -1,11 +1,12 @@
+use packageurl::PackageUrl;
+use serde::Deserialize;
+use spog_model::prelude::*;
+
 use super::{Backend, Error};
 use crate::backend::{
     data::{Package, PackageDependencies, PackageDependents, PackageList, PackageRef},
     Endpoint, SearchOptions,
 };
-use packageurl::PackageUrl;
-use serde::Deserialize;
-use spog_model::prelude::*;
 
 pub struct PackageService {
     backend: Backend,

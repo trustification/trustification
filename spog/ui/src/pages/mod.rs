@@ -12,9 +12,9 @@ mod vulnerability;
 pub use advisory::*;
 pub use chicken::*;
 pub use index::*;
-pub use package::*;
 // pub use sbom::*;
 pub use package::Package;
+pub use package::*;
 pub use vulnerability::Vulnerability;
 
 #[derive(Clone, Debug, PartialEq, Eq, Target)]

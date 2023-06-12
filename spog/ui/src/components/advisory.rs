@@ -1,25 +1,23 @@
-use crate::backend::{Endpoint, SearchOptions, VexService};
-use crate::hooks::use_backend;
+use std::rc::Rc;
+
 use csaf::Csaf;
 use details::CsafDetails;
 use patternfly_yew::{
     next::{
         use_table_data, Cell, CellContext, ColumnWidth, MemoizedTableModel, Table, TableColumn, TableEntryRenderer,
-        TableHeader, UseTableData,
+        TableHeader, Toolbar, ToolbarContent, UseTableData,
     },
     prelude::*,
 };
-use patternfly_yew::{
-    next::{Toolbar, ToolbarContent},
-    prelude::*,
-};
 use spog_model::prelude::*;
-use spog_model::prelude::*;
-use std::rc::Rc;
 use url::{ParseError, Url};
 use yew::prelude::*;
-use yew::prelude::*;
 use yew_more_hooks::hooks::{use_async_with_cloned_deps, UseAsyncHandleDeps};
+
+use crate::{
+    backend::{Endpoint, SearchOptions, VexService},
+    hooks::use_backend,
+};
 
 #[derive(PartialEq, Properties)]
 pub struct AdvisorySearchProperties {
@@ -290,16 +288,16 @@ pub fn vulnerability_result(props: &AdvisoryResultProperties) -> Html {
 
 mod details {
 
-    use crate::{components::cvss::CvssScore, utils::cvss::Cvss};
-    use csaf::definitions::Branch;
-    use csaf::product_tree::ProductTree;
-    use csaf::{vulnerability::Vulnerability, Csaf};
+    use std::rc::Rc;
+
+    use csaf::{definitions::Branch, product_tree::ProductTree, vulnerability::Vulnerability, Csaf};
     use patternfly_yew::{
         next::{use_table_data, MemoizedTableModel, Table, TableColumn, TableEntryRenderer, TableHeader, UseTableData},
         prelude::*,
     };
-    use std::rc::Rc;
     use yew::prelude::*;
+
+    use crate::{components::cvss::CvssScore, utils::cvss::Cvss};
 
     #[derive(Clone, Properties)]
     pub struct CsafDetailsProps {

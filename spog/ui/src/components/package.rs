@@ -1,22 +1,24 @@
-use crate::backend::{PackageService, SearchOptions, Endpoint};
-use crate::hooks::use_backend;
-use crate::pages::AppRoute;
+use std::{rc::Rc, str::FromStr};
+
 use packageurl::PackageUrl;
-use patternfly_yew::next::{
-    use_table_data, Cell, CellContext, ColumnWidth, MemoizedTableModel, Table, TableColumn, TableEntryRenderer,
-    TableHeader, UseTableData,
-};
 use patternfly_yew::{
-    next::{Toolbar, ToolbarContent},
+    next::{
+        use_table_data, Cell, CellContext, ColumnWidth, MemoizedTableModel, Table, TableColumn, TableEntryRenderer,
+        TableHeader, Toolbar, ToolbarContent, UseTableData,
+    },
     prelude::*,
 };
 use spog_model::prelude::*;
-use std::rc::Rc;
-use std::str::FromStr;
+use url::Url;
 use yew::prelude::*;
 use yew_more_hooks::hooks::{use_async_with_cloned_deps, UseAsyncHandleDeps};
 use yew_nested_router::components::Link;
-use url::Url;
+
+use crate::{
+    backend::{Endpoint, PackageService, SearchOptions},
+    hooks::use_backend,
+    pages::AppRoute,
+};
 
 #[derive(PartialEq, Properties)]
 pub struct PackageSearchProperties {
@@ -250,12 +252,7 @@ pub fn package_result(props: &PackageResultProperties) -> Html {
         .result
         .iter()
         .map(|pkg| {
-            let url = backend
-                .join(
-                    Endpoint::Api,
-                    "/api/v1/package",
-                )
-                .ok();
+            let url = backend.join(Endpoint::Api, "/api/v1/package").ok();
             PackageEntry {
                 package: pkg.clone(),
                 url,
@@ -304,19 +301,17 @@ pub fn package_details(props: &PackageDetailsProps) -> Html {
     let package = use_memo(|props| props.package.clone(), props.clone());
 
     let base = &package.url;
-    let sboms: Vec<sboms::SbomTableEntry> = package.package
+    let sboms: Vec<sboms::SbomTableEntry> = package
+        .package
         .sboms
         .iter()
-        .map(|a| {
-            sboms::SbomTableEntry {
-                id: a.clone(),
-                url: if let Some(url) = base.as_ref() {
-                    url.join(&format!("?id={}", urlencoding::encode(a))).ok()
-                } else {
-                    None
-                },
-            }
-
+        .map(|a| sboms::SbomTableEntry {
+            id: a.clone(),
+            url: if let Some(url) = base.as_ref() {
+                url.join(&format!("?id={}", urlencoding::encode(a))).ok()
+            } else {
+                None
+            },
         })
         .collect::<Vec<sboms::SbomTableEntry>>();
     let sboms = Rc::new(sboms);
@@ -334,14 +329,16 @@ pub fn package_details(props: &PackageDetailsProps) -> Html {
 }
 
 mod sboms {
+    use std::rc::Rc;
+
     use patternfly_yew::{
         next::{use_table_data, MemoizedTableModel, Table, TableColumn, TableEntryRenderer, TableHeader, UseTableData},
         prelude::*,
     };
-    use std::rc::Rc;
-    use yew::prelude::*;
-    use super::*;
     use url::Url;
+    use yew::prelude::*;
+
+    use super::*;
 
     #[derive(Clone, Copy, PartialEq, Eq)]
     enum Column {

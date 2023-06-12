@@ -1,7 +1,8 @@
-use crate::{components::backend::Backend, console::Console, pages::AppRoute};
 use patternfly_yew::prelude::*;
 use yew::prelude::*;
 use yew_nested_router::prelude::*;
+
+use crate::{components::backend::Backend, console::Console, pages::AppRoute};
 
 const DEFAULT_BACKEND_URL: &str = "/.well-known/chicken/backend.json";
 
