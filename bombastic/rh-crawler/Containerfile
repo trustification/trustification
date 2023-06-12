@@ -1,0 +1,8 @@
+FROM registry.access.redhat.com/ubi9/ubi-minimal:latest
+
+RUN microdnf install -y wget gpg
+LABEL org.opencontainers.image.source="https://github.com/trustification/trustification"
+
+COPY ./crawl.sh /
+
+ENTRYPOINT ["./crawl.sh"]
