@@ -53,9 +53,8 @@ impl trustification_index::Index for Index {
     type MatchedDocument = SearchDocument;
     type Document = Csaf;
 
-    fn index_doc(&self, csaf: &Csaf) -> Result<Vec<Document>, SearchError> {
+    fn index_doc(&self, id: &str, csaf: &Csaf) -> Result<Vec<Document>, SearchError> {
         let mut documents = Vec::new();
-        let id = &csaf.document.tracking.id;
         let document_status = match &csaf.document.tracking.status {
             csaf::document::Status::Draft => "draft",
             csaf::document::Status::Interim => "interim",
@@ -65,7 +64,7 @@ impl trustification_index::Index for Index {
         if let Some(vulns) = &csaf.vulnerabilities {
             for vuln in vulns {
                 let mut document = doc!(
-                    self.fields.id => id.as_str(),
+                    self.fields.id => id,
                     self.fields.document_status => document_status,
                 );
 

@@ -1560,6 +1560,7 @@ dependencies = [
  "thiserror",
  "time 0.3.20",
  "url",
+ "urlencoding",
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "wasm-logger",

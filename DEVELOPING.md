@@ -64,7 +64,7 @@ RUST_LOG=info cargo run -p trust -- vexination walker --devmode --source file://
 At this point, you can POST and GET SBOMs with the API using a pURL for the id. To ingest a small-ish SBOM:
 
 ```shell
-curl -X POST --json @bombastic/testdata/my-sbom.json http://localhost:8082/api/v1/sbom
+curl -X POST --json @bombastic/testdata/my-sbom.json http://localhost:8082/api/v1/sbom?id=my-sbom
 ```
 For large SBOM's, you must use a "chunked" `Transfer-Encoding` and explicitly pass the pURL:
 ```shell
@@ -110,10 +110,11 @@ The indexer will automatically sync the index to the S3 bucket, while the API wi
 
 ## Searching
 
-You can search all the data using the `spog-api` endpoint:
+You can search all the data using the `bombastic-api` or `vexination-api` endpoints:
 
 ```shell
-curl "http://localhost:8083/vuln/?q=openssl"
+curl "http://localhost:8082/api/v1/sbom/search?q=openssl"
+curl "http://localhost:8081/api/v1/vex/search?q=openssl"
 ```
 
 ## Working with local images

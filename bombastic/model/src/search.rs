@@ -1,5 +1,6 @@
 #[derive(serde::Deserialize, serde::Serialize, Debug, PartialEq)]
 pub struct SearchDocument {
+    pub sbom_id: String,
     pub dependent: String,
     pub name: String,
     pub purl: String,

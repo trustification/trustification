@@ -1,11 +1,15 @@
 use core::str::FromStr;
 
 use bombastic_model::prelude::*;
-use cyclonedx_bom::models::{component::Classification, hash::HashAlgorithm};
+use cyclonedx_bom::models::{
+    component::Classification,
+    hash::HashAlgorithm,
+    license::{LicenseChoice, LicenseIdentifier},
+};
 use search::*;
 use sikula::prelude::*;
 use spdx_rs::models::Algorithm;
-use tracing::{debug, info, warn};
+use tracing::{debug, info, trace, warn};
 use trustification_index::{
     create_boolean_query, primary2occur,
     tantivy::{
@@ -43,6 +47,7 @@ impl SBOM {
 }
 
 struct Fields {
+    sbom_id: Field,
     dependent: Field,
     purl: Field,
     name: Field,
@@ -56,7 +61,6 @@ struct Fields {
     license: Field,
     qualifiers: Field,
     supplier: Field,
-
     classifier: Field,
 }
 
@@ -70,6 +74,7 @@ impl Index {
     pub fn new() -> Self {
         let mut schema = Schema::builder();
         let fields = Fields {
+            sbom_id: schema.add_text_field("sbom_id", STRING | STORED),
             dependent: schema.add_text_field("dependent", STRING | STORED),
             cpe: schema.add_text_field("cpe", STRING | STORED),
             name: schema.add_text_field("name", STRING | STORED),
@@ -82,7 +87,7 @@ impl Index {
             sha256: schema.add_text_field("sha256", STRING | STORED),
             license: schema.add_text_field("license", STRING | STORED),
             supplier: schema.add_text_field("supplier", TEXT | STORED),
-            qualifiers: schema.add_json_field("qualifiers", STRING),
+            qualifiers: schema.add_text_field("qualifiers", STRING),
             classifier: schema.add_text_field("classifier", STRING | STORED),
         };
         Self {
@@ -91,7 +96,7 @@ impl Index {
         }
     }
 
-    fn index_spdx(&self, bom: &spdx_rs::models::SPDX) -> Result<Vec<Document>, SearchError> {
+    fn index_spdx(&self, id: &str, bom: &spdx_rs::models::SPDX) -> Result<Vec<Document>, SearchError> {
         debug!("Indexing SPDX document");
         let mut documents = Vec::new();
         let mut parents: Vec<String> = Vec::new();
@@ -122,6 +127,9 @@ impl Index {
                     }
 
                     for r in package.external_reference.iter() {
+                        if r.reference_type == "cpe22type" {
+                            document.add_text(self.fields.cpe, &r.reference_locator);
+                        }
                         if r.reference_type == "purl" {
                             let purl = r.reference_locator.clone();
                             document.add_text(self.fields.purl, &purl);
@@ -136,13 +144,9 @@ impl Index {
                                     document.add_text(self.fields.pversion, version);
                                 }
 
-                                let mut qualifiers: serde_json::Map<String, serde_json::Value> = serde_json::Map::new();
                                 for entry in package.qualifiers().iter() {
-                                    if let Ok(value) = serde_json::from_str::<serde_json::Value>(entry.1) {
-                                        qualifiers.insert(entry.0.to_string(), value);
-                                    }
+                                    document.add_text(self.fields.qualifiers, entry.1);
                                 }
-                                document.add_json_object(self.fields.qualifiers, qualifiers);
                                 document.add_text(self.fields.ptype, package.ty());
                             }
                         }
@@ -162,6 +166,8 @@ impl Index {
                         document.add_text(self.fields.supplier, supplier);
                     }
 
+                    document.add_text(self.fields.sbom_id, id);
+
                     documents.push(document);
                 }
             }
@@ -169,12 +175,12 @@ impl Index {
         Ok(documents)
     }
 
-    fn index_cyclonedx(&self, bom: &cyclonedx_bom::prelude::Bom) -> Result<Vec<Document>, SearchError> {
+    fn index_cyclonedx(&self, id: &str, bom: &cyclonedx_bom::prelude::Bom) -> Result<Vec<Document>, SearchError> {
         let mut documents = Vec::new();
         let mut parent = None;
         if let Some(metadata) = &bom.metadata {
             if let Some(component) = &metadata.component {
-                documents.push(self.index_cyclonedx_component(component, None)?);
+                documents.push(self.index_cyclonedx_component(id, component, None)?);
                 if let Some(purl) = &component.purl {
                     parent.replace(purl.to_string());
                 }
@@ -183,7 +189,7 @@ impl Index {
 
         if let Some(components) = &bom.components {
             for component in components.0.iter() {
-                documents.push(self.index_cyclonedx_component(component, parent.as_deref())?);
+                documents.push(self.index_cyclonedx_component(id, component, parent.as_deref())?);
             }
         }
         Ok(documents)
@@ -191,11 +197,13 @@ impl Index {
 
     fn index_cyclonedx_component(
         &self,
+        id: &str,
         component: &cyclonedx_bom::prelude::Component,
         parent: Option<&str>,
     ) -> Result<Document, SearchError> {
         let mut document = doc!();
 
+        document.add_text(self.fields.sbom_id, id);
         if let Some(hashes) = &component.hashes {
             for hash in hashes.0.iter() {
                 if hash.alg == HashAlgorithm::SHA256 {
@@ -219,13 +227,9 @@ impl Index {
                     document.add_text(self.fields.pversion, version);
                 }
 
-                let mut qualifiers: serde_json::Map<String, serde_json::Value> = serde_json::Map::new();
                 for entry in package.qualifiers().iter() {
-                    if let Ok(value) = serde_json::from_str::<serde_json::Value>(entry.1) {
-                        qualifiers.insert(entry.0.to_string(), value);
-                    }
+                    document.add_text(self.fields.qualifiers, entry.1);
                 }
-                document.add_json_object(self.fields.qualifiers, qualifiers);
                 document.add_text(self.fields.ptype, package.ty());
             }
         }
@@ -235,22 +239,15 @@ impl Index {
         }
 
         if let Some(licenses) = &component.licenses {
-            use cyclonedx_bom::models::license::{LicenseChoice, LicenseIdentifier};
-            let licenses: Vec<String> = licenses
-                .0
-                .iter()
-                .map(|l| match l {
-                    LicenseChoice::License(l) => match &l.license_identifier {
-                        LicenseIdentifier::Name(s) => Some(s),
-                        LicenseIdentifier::SpdxId(_) => None,
-                    },
-                    LicenseChoice::Expression(_) => None,
-                })
-                .filter(|s| s.is_some())
-                .map(|m| m.unwrap().to_string())
-                .collect();
-            let license = licenses.join(" ");
-            document.add_text(self.fields.license, license);
+            licenses.0.iter().for_each(|l| match l {
+                LicenseChoice::License(l) => match &l.license_identifier {
+                    LicenseIdentifier::Name(s) => {
+                        document.add_text(self.fields.license, s.to_string());
+                    }
+                    LicenseIdentifier::SpdxId(_) => (),
+                },
+                LicenseChoice::Expression(_) => (),
+            });
         }
 
         document.add_text(self.fields.classifier, component.component_type.to_string());
@@ -381,10 +378,10 @@ impl trustification_index::Index for Index {
     type MatchedDocument = SearchDocument;
     type Document = SBOM;
 
-    fn index_doc(&self, doc: &SBOM) -> Result<Vec<Document>, SearchError> {
+    fn index_doc(&self, id: &str, doc: &SBOM) -> Result<Vec<Document>, SearchError> {
         match doc {
-            SBOM::CycloneDX(bom) => self.index_cyclonedx(bom),
-            SBOM::SPDX(bom) => self.index_spdx(bom),
+            SBOM::CycloneDX(bom) => self.index_cyclonedx(id, bom),
+            SBOM::SPDX(bom) => self.index_spdx(id, bom),
         }
     }
 
@@ -406,6 +403,15 @@ impl trustification_index::Index for Index {
     }
 
     fn process_hit(&self, doc: Document) -> Result<Self::MatchedDocument, SearchError> {
+        let id = doc
+            .get_first(self.fields.sbom_id)
+            .map(|s| s.as_text().unwrap_or(""))
+            .unwrap_or("");
+
+        if id.is_empty() {
+            return Err(SearchError::NotFound);
+        }
+
         let purl = doc
             .get_first(self.fields.purl)
             .map(|s| s.as_text().unwrap_or(""))
@@ -447,6 +453,7 @@ impl trustification_index::Index for Index {
             .unwrap_or(name);
 
         let hit = SearchDocument {
+            sbom_id: id.to_string(),
             purl: purl.to_string(),
             name: name.to_string(),
             dependent: dependent.to_string(),
@@ -456,7 +463,7 @@ impl trustification_index::Index for Index {
             supplier: supplier.to_string(),
             description: description.to_string(),
         };
-        info!("HIT: {:?}", hit);
+        trace!("HIT: {:?}", hit);
 
         Ok(hit)
     }

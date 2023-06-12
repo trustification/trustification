@@ -1,4 +1,4 @@
-use crate::backend::{PackageService, SearchOptions};
+use crate::backend::{PackageService, SearchOptions, Endpoint};
 use crate::hooks::use_backend;
 use crate::pages::AppRoute;
 use packageurl::PackageUrl;
@@ -16,6 +16,7 @@ use std::str::FromStr;
 use yew::prelude::*;
 use yew_more_hooks::hooks::{use_async_with_cloned_deps, UseAsyncHandleDeps};
 use yew_nested_router::components::Link;
+use url::Url;
 
 #[derive(PartialEq, Properties)]
 pub struct PackageSearchProperties {
@@ -201,18 +202,24 @@ pub enum Column {
     Version,
 }
 
-impl TableEntryRenderer<Column> for PackageSummary {
+#[derive(Clone)]
+pub struct PackageEntry {
+    url: Option<Url>,
+    package: PackageSummary,
+}
+
+impl TableEntryRenderer<Column> for PackageEntry {
     fn render_cell(&self, context: &CellContext<'_, Column>) -> Cell {
         match context.column {
-            Column::Name => html!(&self.name).into(),
-            Column::Supplier => html!(&self.supplier).into(),
-            Column::Products => html!(&self.dependents.len()).into(),
-            Column::Description => html!(&self.description).into(),
+            Column::Name => html!(&self.package.name).into(),
+            Column::Supplier => html!(&self.package.supplier).into(),
+            Column::Products => html!(&self.package.dependents.len()).into(),
+            Column::Description => html!(&self.package.description).into(),
             Column::Vulnerabilities => {
-                html!(<Link<AppRoute> target={AppRoute::Vulnerability { query: format!("affected:\"{}\"", self.purl)}}>{self.vulnerabilities.len()}</Link<AppRoute>>).into()
+                html!(<Link<AppRoute> target={AppRoute::Vulnerability { query: format!("affected:\"{}\"", self.package.purl)}}>{self.package.vulnerabilities.len()}</Link<AppRoute>>).into()
             }
             Column::Version => {
-                if let Ok(purl) = PackageUrl::from_str(&self.purl) {
+                if let Ok(purl) = PackageUrl::from_str(&self.package.purl) {
                     if let Some(version) = purl.version() {
                         html!(version).into()
                     } else {
@@ -226,18 +233,37 @@ impl TableEntryRenderer<Column> for PackageSummary {
     }
 
     fn render_details(&self) -> Vec<Span> {
-        let html = html!(); //<Details vuln={Rc::new(self.clone())} />);
+        let html = html!(<PackageDetails package={Rc::new(self.clone())} />);
         vec![Span::max(html)]
     }
 
     fn is_full_width_details(&self) -> Option<bool> {
-        Some(false)
+        Some(true)
     }
 }
 
 #[function_component(PackageResult)]
 pub fn package_result(props: &PackageResultProperties) -> Html {
-    let (entries, onexpand) = use_table_data(MemoizedTableModel::new(props.result.result.clone()));
+    let backend = use_backend();
+    let entries: Vec<PackageEntry> = props
+        .result
+        .result
+        .iter()
+        .map(|pkg| {
+            let url = backend
+                .join(
+                    Endpoint::Api,
+                    "/api/v1/package",
+                )
+                .ok();
+            PackageEntry {
+                package: pkg.clone(),
+                url,
+            }
+        })
+        .collect();
+
+    let (entries, onexpand) = use_table_data(MemoizedTableModel::new(Rc::new(entries)));
 
     let header = html_nested! {
         <TableHeader<Column>>
@@ -251,11 +277,135 @@ pub fn package_result(props: &PackageResultProperties) -> Html {
     };
 
     html!(
-         <Table<Column, UseTableData<Column, MemoizedTableModel<PackageSummary>>>
+         <Table<Column, UseTableData<Column, MemoizedTableModel<PackageEntry>>>
              mode={TableMode::CompactExpandable}
              {header}
              {entries}
              {onexpand}
          />
     )
+}
+
+use yew::prelude::*;
+
+#[derive(Clone, Properties)]
+pub struct PackageDetailsProps {
+    pub package: Rc<PackageEntry>,
+}
+
+impl PartialEq for PackageDetailsProps {
+    fn eq(&self, other: &Self) -> bool {
+        Rc::ptr_eq(&self.package, &other.package)
+    }
+}
+
+#[function_component(PackageDetails)]
+pub fn package_details(props: &PackageDetailsProps) -> Html {
+    let package = use_memo(|props| props.package.clone(), props.clone());
+
+    let base = &package.url;
+    let sboms: Vec<sboms::SbomTableEntry> = package.package
+        .sboms
+        .iter()
+        .map(|a| {
+            sboms::SbomTableEntry {
+                id: a.clone(),
+                url: if let Some(url) = base.as_ref() {
+                    url.join(&format!("?id={}", urlencoding::encode(a))).ok()
+                } else {
+                    None
+                },
+            }
+
+        })
+        .collect::<Vec<sboms::SbomTableEntry>>();
+    let sboms = Rc::new(sboms);
+    html!(
+        <Panel>
+            <PanelMain>
+            <PanelMainBody>{&package.package.description}</PanelMainBody>
+            </PanelMain>
+            <PanelFooter>
+            <h3>{"Related SBOMs"}</h3>
+            <sboms::SbomTable entries={sboms} />
+            </PanelFooter>
+        </Panel>
+    )
+}
+
+mod sboms {
+    use patternfly_yew::{
+        next::{use_table_data, MemoizedTableModel, Table, TableColumn, TableEntryRenderer, TableHeader, UseTableData},
+        prelude::*,
+    };
+    use std::rc::Rc;
+    use yew::prelude::*;
+    use super::*;
+    use url::Url;
+
+    #[derive(Clone, Copy, PartialEq, Eq)]
+    enum Column {
+        Id,
+        Download,
+    }
+
+    #[derive(Clone, PartialEq)]
+    pub struct SbomTableEntry {
+        pub id: String,
+        pub url: Option<Url>,
+    }
+
+    #[derive(Properties, Clone, PartialEq)]
+    pub struct SbomTableProperties {
+        pub entries: Rc<Vec<SbomTableEntry>>,
+    }
+
+    #[function_component(SbomTable)]
+    pub fn sbom_table(props: &SbomTableProperties) -> Html {
+        let (entries, onexpand) = use_table_data(MemoizedTableModel::new(props.entries.clone()));
+
+        let header = html_nested! {
+            <TableHeader<Column>>
+                <TableColumn<Column> label="Id" index={Column::Id} />
+                <TableColumn<Column> label="Download" index={Column::Download} />
+            </TableHeader<Column>>
+        };
+
+        html!(
+            <Table<Column, UseTableData<Column, MemoizedTableModel<SbomTableEntry>>>
+                mode={TableMode::Compact}
+                {header}
+                {entries}
+                {onexpand}
+            />
+        )
+    }
+
+    impl TableEntryRenderer<Column> for SbomTableEntry {
+        fn render_cell(&self, context: &patternfly_yew::next::CellContext<'_, Column>) -> patternfly_yew::next::Cell {
+            match context.column {
+                Column::Id => html!(&self.id).into(),
+                Column::Download => {
+                    if let Some(url) = &self.url {
+                        html!(
+                            <a href={url.to_string()}>
+                                <Button icon={Icon::Download} variant={ButtonVariant::Plain} />
+                            </a>
+                        )
+                        .into()
+                    } else {
+                        html!().into()
+                    }
+                }
+            }
+        }
+
+        fn render_details(&self) -> Vec<Span> {
+            vec![Span::max(html!())]
+        }
+
+        fn is_full_width_details(&self) -> Option<bool> {
+            Some(false)
+        }
+    }
 }
