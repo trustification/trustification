@@ -1,7 +1,8 @@
+use std::sync::Arc;
+
 use actix_cors::Cors;
 use actix_web::{middleware::Logger, web, App, HttpServer};
 use http::StatusCode;
-use std::sync::Arc;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 

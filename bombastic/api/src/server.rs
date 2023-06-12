@@ -18,8 +18,7 @@ use trustification_storage::Storage;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
-use crate::sbom::SBOM;
-use crate::SharedState;
+use crate::{sbom::SBOM, SharedState};
 
 #[derive(OpenApi)]
 #[openapi(paths(query_sbom, publish_sbom, search_sbom))]
