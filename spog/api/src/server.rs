@@ -1,10 +1,7 @@
-use std::{path::PathBuf, sync::Arc, time::Duration};
-
 use actix_cors::Cors;
 use actix_web::{middleware::Logger, web, App, HttpServer};
-use tokio::sync::RwLock;
-use trustification_index::IndexStore;
-use trustification_storage::Storage;
+use http::StatusCode;
+use std::sync::Arc;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
@@ -67,97 +64,100 @@ impl Server {
 }
 
 pub struct AppState {
+    client: reqwest::Client,
     pub bombastic: reqwest::Url,
-    pub vex: ServiceState<vexination_index::Index>,
+    pub vexination: reqwest::Url,
 }
 
-pub struct ServiceState<T: trustification_index::Index> {
-    // TODO: Use APIs for retrieving storage?
-    pub storage: RwLock<Storage>,
-    pub index: RwLock<IndexStore<T>>,
+impl AppState {
+    pub async fn get_sbom(
+        &self,
+        id: &str,
+    ) -> Result<impl futures::Stream<Item = reqwest::Result<bytes::Bytes>>, anyhow::Error> {
+        let url = self.bombastic.join("/api/v1/sbom")?;
+        let response = self.client.get(url).query(&[("id", id)]).send().await?;
+        if response.status() == StatusCode::OK {
+            Ok(response.bytes_stream())
+        } else {
+            Err(anyhow::anyhow!(
+                "Error querying bombastic service: {:?}",
+                response.status()
+            ))
+        }
+    }
+
+    pub async fn search_sbom(
+        &self,
+        q: &str,
+        offset: usize,
+        limit: usize,
+    ) -> Result<bombastic_model::search::SearchResult, anyhow::Error> {
+        let url = self.bombastic.join("/api/v1/sbom/search")?;
+        let response = self
+            .client
+            .get(url)
+            .query(&[("q", q)])
+            .query(&[("offset", offset), ("limit", limit)])
+            .send()
+            .await?;
+        if response.status() == StatusCode::OK {
+            Ok(response.json::<bombastic_model::prelude::SearchResult>().await?)
+        } else {
+            Err(anyhow::anyhow!(
+                "Error querying bombastic service: {:?}",
+                response.status()
+            ))
+        }
+    }
+
+    pub async fn get_vex(
+        &self,
+        id: &str,
+    ) -> Result<impl futures::Stream<Item = reqwest::Result<bytes::Bytes>>, anyhow::Error> {
+        let url = self.vexination.join("/api/v1/vex")?;
+        let response = self.client.get(url).query(&[("advisory", id)]).send().await?;
+        if response.status() == StatusCode::OK {
+            Ok(response.bytes_stream())
+        } else {
+            Err(anyhow::anyhow!(
+                "Error querying bombastic service: {:?}",
+                response.status()
+            ))
+        }
+    }
+
+    pub async fn search_vex(
+        &self,
+        q: &str,
+        offset: usize,
+        limit: usize,
+    ) -> Result<vexination_model::search::SearchResult, anyhow::Error> {
+        let url = self.vexination.join("/api/v1/vex/search")?;
+        let response = self
+            .client
+            .get(url)
+            .query(&[("q", q)])
+            .query(&[("offset", offset), ("limit", limit)])
+            .send()
+            .await?;
+        if response.status() == StatusCode::OK {
+            Ok(response.json::<vexination_model::prelude::SearchResult>().await?)
+        } else {
+            Err(anyhow::anyhow!(
+                "Error querying vexination service: {:?}",
+                response.status()
+            ))
+        }
+    }
 }
 
 pub type SharedState = Arc<AppState>;
 
-impl<T: trustification_index::Index> ServiceState<T> {
-    async fn sync_index(&self) -> Result<(), anyhow::Error> {
-        let data = {
-            let storage = self.storage.read().await;
-            storage.get_index().await?
-        };
-
-        let mut index = self.index.write().await;
-        index.reload(&data[..])?;
-        tracing::info!("Index reloaded");
-        Ok(())
-    }
-}
-
-impl AppState {
-    async fn sync_index(&self) -> Result<(), anyhow::Error> {
-        let vex = self.vex.sync_index().await;
-        if vex.is_err() {
-            tracing::info!("Error syncing vexination index: {:?}", vex);
-            return vex;
-        }
-        Ok(())
-    }
-}
-
 pub(crate) fn configure(run: &Run) -> anyhow::Result<Arc<AppState>> {
-    let base_dir: PathBuf = run.index.clone().unwrap_or_else(|| {
-        use rand::RngCore;
-        let r = rand::thread_rng().next_u32();
-        std::env::temp_dir().join(format!("search-api.{}", r))
-    });
-
-    let vexination_dir: PathBuf = base_dir.join("vexination");
-
-    std::fs::create_dir(&base_dir)?;
-    std::fs::create_dir(&vexination_dir)?;
-
-    // TODO: Use APIs for bombastic
-    let vexination_index = IndexStore::new(&vexination_dir, vexination_index::Index::new())?;
-    let vexination_storage = trustification_storage::create("vexination", run.devmode, run.storage_endpoint.clone())?;
-
     let state = Arc::new(AppState {
-        vex: ServiceState {
-            storage: RwLock::new(vexination_storage),
-            index: RwLock::new(vexination_index),
-        },
+        client: reqwest::Client::new(),
         bombastic: run.bombastic_url.clone(),
+        vexination: run.vexination_url.clone(),
     });
-
-    let sync_interval = Duration::from_secs(run.sync_interval_seconds);
-
-    let sinker = state.clone();
-    tokio::task::spawn(async move {
-        loop {
-            if sinker.sync_index().await.is_ok() {
-                tracing::info!("Initial index synced");
-                break;
-            } else {
-                tracing::warn!("Index not yet available");
-            }
-            tokio::time::sleep(Duration::from_secs(5)).await;
-        }
-
-        loop {
-            if let Err(e) = sinker.sync_index().await {
-                tracing::info!("Unable to synchronize index: {:?}", e);
-            }
-            tokio::time::sleep(sync_interval).await;
-        }
-    });
-
     Ok(state)
-}
-pub async fn fetch_object(storage: &Storage, key: &str) -> Option<Vec<u8>> {
-    match storage.get(key).await {
-        Ok(data) => Some(data),
-        Err(e) => {
-            tracing::warn!("Unable to locate object with key {}: {:?}", key, e);
-            None
-        }
-    }
 }

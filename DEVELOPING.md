@@ -21,7 +21,7 @@ To run the API processes, you can use cargo:
 ```shell
 RUST_LOG=info cargo run -p trust -- vexination api --devmode -p 8081 &
 RUST_LOG=info cargo run -p trust -- bombastic api --devmode -p 8082 &
-RUST_LOG=info cargo run -p trust -- spog api --devmode -p 8083 &
+RUST_LOG=info cargo run -p trust -- spog api -p 8083 &
 ```
 
 ## Indexing

@@ -71,17 +71,17 @@ impl Run {
         tokio::task::spawn(async move {
             loop {
                 if sinker.sync_index().await.is_ok() {
-                    tracing::info!("Initial index synced");
+                    tracing::info!("Initial bombastic index synced");
                     break;
                 } else {
-                    tracing::warn!("Index not yet available");
+                    tracing::warn!("Bombastic index not yet available");
                 }
                 tokio::time::sleep(Duration::from_secs(5)).await;
             }
 
             loop {
                 if let Err(e) = sinker.sync_index().await {
-                    tracing::info!("Unable to synchronize index: {:?}", e);
+                    tracing::info!("Unable to synchronize bombastic index: {:?}", e);
                 }
                 tokio::time::sleep(sync_interval).await;
             }
@@ -108,7 +108,7 @@ impl AppState {
 
         let mut index = self.index.write().await;
         index.reload(&data[..])?;
-        tracing::info!("Index reloaded");
+        tracing::debug!("Bombastic index reloaded");
         Ok(())
     }
 }

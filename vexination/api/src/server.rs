@@ -1,5 +1,6 @@
 use std::{net::SocketAddr, sync::Arc, time::Duration};
 
+use crate::SharedState;
 use actix_web::{
     http::header::{self, ContentType},
     middleware::{Compress, Logger},
@@ -9,16 +10,9 @@ use actix_web::{
 use serde::Deserialize;
 use tokio::sync::{Mutex, RwLock};
 use trustification_storage::Storage;
+use vexination_model::prelude::*;
 
-struct AppState {
-    storage: RwLock<Storage>,
-}
-
-type SharedState = Arc<AppState>;
-
-pub async fn run<B: Into<SocketAddr>>(storage: Storage, bind: B) -> Result<(), anyhow::Error> {
-    let storage = RwLock::new(storage);
-    let state = Arc::new(AppState { storage });
+pub async fn run<B: Into<SocketAddr>>(state: SharedState, bind: B) -> Result<(), anyhow::Error> {
     let addr = bind.into();
     tracing::debug!("listening on {}", addr);
     HttpServer::new(move || {
@@ -30,7 +24,8 @@ pub async fn run<B: Into<SocketAddr>>(storage: Storage, bind: B) -> Result<(), a
             .service(
                 web::scope("/api/v1")
                     .route("/vex", web::get().to(query_vex))
-                    .route("/vex", web::post().to(publish_vex)),
+                    .route("/vex", web::post().to(publish_vex))
+                    .route("/vex/search", web::get().to(search_vex)),
             )
     })
     .bind(addr)?
@@ -55,23 +50,12 @@ async fn health() -> HttpResponse {
 
 #[derive(Debug, Deserialize)]
 struct QueryParams {
-    cve: Option<String>,
-    advisory: Option<String>,
+    advisory: String,
 }
 
 async fn query_vex(state: web::Data<SharedState>, params: web::Query<QueryParams>) -> HttpResponse {
-    let params = params.into_inner();
-    let advisory = if let Some(advisory) = params.advisory {
-        tracing::trace!("Querying VEX using advisory {}", advisory);
-        advisory
-    } else if let Some(cve) = params.cve {
-        return HttpResponse::BadRequest().body("CVE lookup is not yet supported");
-    } else {
-        return HttpResponse::BadRequest().body("Missing valid advisory or CVE");
-    };
-
     let storage = state.storage.read().await;
-    fetch_object(&storage, &advisory).await
+    fetch_object(&storage, &params.advisory).await
 }
 
 #[derive(Debug, Deserialize)]
@@ -107,4 +91,43 @@ async fn publish_vex(state: web::Data<SharedState>, params: web::Query<PublishPa
             HttpResponse::InternalServerError().body(msg)
         }
     }
+}
+
+#[derive(Debug, Deserialize)]
+pub struct SearchParams {
+    pub q: String,
+    #[serde(default = "default_offset")]
+    pub offset: usize,
+    #[serde(default = "default_limit")]
+    pub limit: usize,
+}
+
+const fn default_offset() -> usize {
+    0
+}
+
+const fn default_limit() -> usize {
+    10
+}
+
+async fn search_vex(state: web::Data<SharedState>, params: web::Query<SearchParams>) -> impl Responder {
+    let params = params.into_inner();
+
+    tracing::info!("Querying VEX using {}", params.q);
+
+    let index = state.index.read().await;
+    let result = index.search(&params.q, params.offset, params.limit);
+
+    let result = match result {
+        Err(e) => {
+            tracing::info!("Error searching: {:?}", e);
+            return HttpResponse::InternalServerError().body(e.to_string());
+        }
+        Ok(result) => result,
+    };
+
+    HttpResponse::Ok().json(SearchResult {
+        total: result.1,
+        result: result.0,
+    })
 }
