@@ -1,10 +1,16 @@
-use crate::components::{advisory::AdvisoryResult, advisory::AdvisorySearch, common::PageHeading, error::Error};
+use std::rc::Rc;
+
 use csaf::Csaf;
 use patternfly_yew::prelude::*;
 use spog_model::search::SearchResult;
-use std::rc::Rc;
 use yew::prelude::*;
 use yew_more_hooks::hooks::{UseAsyncHandleDeps, UseAsyncState};
+
+use crate::components::{
+    advisory::{AdvisoryResult, AdvisorySearch},
+    common::PageHeading,
+    error::Error,
+};
 
 // FIXME: use a different API and representation
 

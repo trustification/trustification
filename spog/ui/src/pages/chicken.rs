@@ -1,6 +1,7 @@
-use crate::components::common::PageHeading;
 use patternfly_yew::prelude::*;
 use yew::prelude::*;
+
+use crate::components::common::PageHeading;
 
 #[function_component(Chicken)]
 pub fn chicken() -> Html {

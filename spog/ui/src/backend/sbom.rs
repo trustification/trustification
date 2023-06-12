@@ -1,6 +1,7 @@
+use url::Url;
+
 use super::{Backend, Error};
 use crate::backend::Endpoint;
-use url::Url;
 
 #[allow(unused)]
 pub struct SBOMService {

@@ -1,6 +1,7 @@
-use crate::utils::cvss::{Cvss, Severity};
 use patternfly_yew::prelude::*;
 use yew::prelude::*;
+
+use crate::utils::cvss::{Cvss, Severity};
 
 #[derive(Clone, Debug, PartialEq, Properties)]
 pub struct CvssScoreProperties {

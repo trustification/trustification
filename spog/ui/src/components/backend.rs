@@ -1,8 +1,10 @@
-use crate::{backend::Endpoints, components::error::Error};
 use std::rc::Rc;
+
 use web_sys::RequestCache;
 use yew::prelude::*;
 use yew_more_hooks::hooks::r#async::*;
+
+use crate::{backend::Endpoints, components::error::Error};
 
 #[derive(Clone, Debug, PartialEq, Properties)]
 pub struct BackendProperties {

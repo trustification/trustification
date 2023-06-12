@@ -1,5 +1,6 @@
-use spog_model::vuln::Cvss3;
 use std::str::FromStr;
+
+use spog_model::vuln::Cvss3;
 use yew::html::IntoPropValue;
 
 #[derive(Clone, Debug, PartialEq)]

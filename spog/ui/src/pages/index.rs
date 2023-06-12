@@ -1,9 +1,10 @@
-use crate::components::common::PageHeading;
 use patternfly_yew::{
     next::{Card, CardBody},
     prelude::*,
 };
 use yew::prelude::*;
+
+use crate::components::common::PageHeading;
 
 #[function_component(Index)]
 pub fn index() -> Html {

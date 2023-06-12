@@ -1,13 +1,14 @@
+use patternfly_yew::prelude::*;
+use yew::prelude::*;
+use yew_more_hooks::prelude::*;
+use yew_nested_router::prelude::Switch as RouterSwitch;
+
 use crate::{
     about,
     backend::Endpoint,
     hooks::use_backend,
     pages::{self, AppRoute},
 };
-use patternfly_yew::prelude::*;
-use yew::prelude::*;
-use yew_more_hooks::prelude::*;
-use yew_nested_router::prelude::Switch as RouterSwitch;
 
 #[function_component(Console)]
 pub fn console() -> Html {
