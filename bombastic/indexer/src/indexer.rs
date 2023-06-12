@@ -42,9 +42,9 @@ pub async fn run<E: EventBus>(
                                     } else {
                                         let key = data.key();
                                         match storage.get_for_event(&data).await {
-                                            Ok(data) => {
+                                            Ok((k, data)) => {
                                                 if let Ok(doc) = bombastic_index::SBOM::parse(&data) {
-                                                    match indexer.as_mut().unwrap().index(index.index(), &doc) {
+                                                    match indexer.as_mut().unwrap().index(index.index(), &k, &doc) {
                                                         Ok(_) => {
                                                             tracing::trace!("Inserted entry into index");
                                                             bus.send(indexed_topic, key.as_bytes()).await?;

@@ -191,10 +191,15 @@ impl Storage {
 
     // Get the data associated with an event record.
     // This will load the entire S3 object into memory
-    pub async fn get_for_event(&self, record: &Record) -> Result<Vec<u8>, Error> {
+    pub async fn get_for_event(&self, record: &Record) -> Result<(String, Vec<u8>), Error> {
         // Record keys are URL encoded
         if let Ok(decoded) = urlencoding::decode(record.key()) {
-            self.get_object(&decoded).await
+            let prefix = decoded
+                .strip_prefix("data/")
+                .map(|s| s.to_string())
+                .unwrap_or(decoded.to_string());
+            let ret = self.get_object(&decoded).await?;
+            Ok((prefix, ret))
         } else {
             Err(Error::InvalidKey(record.key().to_string()))
         }

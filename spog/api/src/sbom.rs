@@ -40,10 +40,14 @@ pub async fn search(state: web::Data<SharedState>, params: web::Query<search::Qu
                     if !entry.dependents.contains(&item.dependent) {
                         entry.dependents.push(item.dependent);
                     }
+                    if !entry.sboms.contains(&item.sbom_id) {
+                        entry.sboms.push(item.sbom_id);
+                    }
                 } else {
                     m.insert(
                         item.purl.clone(),
                         PackageSummary {
+                            sboms: vec![item.sbom_id],
                             purl: item.purl,
                             name: item.name,
                             sha256: item.sha256,

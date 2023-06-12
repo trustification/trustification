@@ -42,9 +42,9 @@ pub async fn run<E: EventBus>(
                                     } else {
                                         let key = data.key();
                                         match storage.get_for_event(&data).await {
-                                            Ok(data) => {
-                                                if let Ok(doc) = serde_json::from_slice(&data) {
-                                                    match indexer.as_mut().unwrap().index(index.index(), &doc) {
+                                            Ok((_, data)) => {
+                                                if let Ok(doc) = serde_json::from_slice::<csaf::Csaf>(&data) {
+                                                    match indexer.as_mut().unwrap().index(index.index(), &doc.document.tracking.id, &doc) {
                                                         Ok(_) => {
                                                             tracing::debug!("Inserted entry into index");
                                                             bus.send(indexed_topic, key.as_bytes()).await?;

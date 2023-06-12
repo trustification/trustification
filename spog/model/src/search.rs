@@ -22,6 +22,7 @@ pub struct PackageSummary {
     pub description: String,
     pub supplier: String,
     pub dependents: Vec<String>,
+    pub sboms: Vec<String>,
     pub vulnerabilities: Vec<String>,
 }
 

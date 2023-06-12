@@ -26,7 +26,7 @@ pub trait Index {
     fn schema(&self) -> Schema;
     fn prepare_query(&self, q: &str) -> Result<Box<dyn Query>, Error>;
     fn process_hit(&self, doc: Document) -> Result<Self::MatchedDocument, Error>;
-    fn index_doc(&self, document: &Self::Document) -> Result<Vec<Document>, Error>;
+    fn index_doc(&self, id: &str, document: &Self::Document) -> Result<Vec<Document>, Error>;
 }
 
 #[derive(Debug)]
@@ -67,8 +67,8 @@ pub struct Indexer {
 }
 
 impl Indexer {
-    pub fn index<INDEX: Index>(&mut self, index: &mut INDEX, raw: &INDEX::Document) -> Result<(), Error> {
-        let docs = index.index_doc(raw)?;
+    pub fn index<INDEX: Index>(&mut self, index: &mut INDEX, id: &str, raw: &INDEX::Document) -> Result<(), Error> {
+        let docs = index.index_doc(id, raw)?;
         for doc in docs {
             self.writer.add_document(doc)?;
         }
