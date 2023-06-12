@@ -1,8 +1,8 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use std::sync::Arc;
-use std::{net::SocketAddr, path::PathBuf, process::ExitCode, str::FromStr, time::Duration};
+use std::{net::SocketAddr, path::PathBuf, process::ExitCode, str::FromStr, sync::Arc, time::Duration};
+
 use tokio::sync::RwLock;
 use trustification_index::IndexStore;
 use trustification_infrastructure::{Infrastructure, InfrastructureConfig};

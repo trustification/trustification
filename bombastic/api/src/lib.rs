@@ -1,5 +1,5 @@
-use std::sync::Arc;
-use std::{net::SocketAddr, process::ExitCode, str::FromStr, time::Duration};
+use std::{net::SocketAddr, process::ExitCode, str::FromStr, sync::Arc, time::Duration};
+
 use tokio::sync::RwLock;
 use trustification_index::IndexStore;
 use trustification_infrastructure::{Infrastructure, InfrastructureConfig};

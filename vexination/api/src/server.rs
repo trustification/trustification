@@ -1,6 +1,5 @@
 use std::{net::SocketAddr, sync::Arc, time::Duration};
 
-use crate::SharedState;
 use actix_web::{
     http::header::{self, ContentType},
     middleware::{Compress, Logger},
@@ -11,6 +10,8 @@ use serde::Deserialize;
 use tokio::sync::{Mutex, RwLock};
 use trustification_storage::Storage;
 use vexination_model::prelude::*;
+
+use crate::SharedState;
 
 pub async fn run<B: Into<SocketAddr>>(state: SharedState, bind: B) -> Result<(), anyhow::Error> {
     let addr = bind.into();
