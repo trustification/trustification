@@ -2,6 +2,7 @@ use std::path::PathBuf;
 use std::process::ExitCode;
 
 use guac::collector::emitter::NatsEmitter;
+use strum_macros::Display;
 
 pub mod exporter;
 
@@ -11,6 +12,15 @@ pub enum Events {
     Kafka,
     #[clap(name = "sqs")]
     Sqs,
+}
+
+#[derive(clap::ValueEnum, Debug, Clone, Display)]
+#[strum(serialize_all = "lowercase")]
+pub enum Storage {
+    #[clap(name = "bombastic")]
+    Bombastic,
+    #[clap(name = "vexation")]
+    Vexation,
 }
 
 #[derive(clap::Args, Debug)]
@@ -35,13 +45,16 @@ pub struct Run {
     #[arg(long = "devmode", default_value_t = false)]
     pub(crate) devmode: bool,
 
+    #[arg(long = "storage", value_enum, default_value = None)]
+    pub(crate) storage: Storage,
+
     #[arg(long = "storage-endpoint", default_value = None)]
     pub(crate) storage_endpoint: Option<String>,
 }
 
 impl Run {
     pub async fn run(self) -> anyhow::Result<ExitCode> {
-        let storage = trustification_storage::create("bombastic", self.devmode, self.storage_endpoint)?;
+        let storage = trustification_storage::create(&self.storage.to_string(), self.devmode, self.storage_endpoint)?;
         use trustification_event_bus::EventBus;
         let emitter = NatsEmitter::new(&self.guac_url).await?;
         match self.events {

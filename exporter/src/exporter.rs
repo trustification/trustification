@@ -15,7 +15,7 @@ pub async fn run<E: EventBus, M: Emitter + Send + Sync>(
             event = consumer.next() => match event {
                 Ok(Some(event)) => {
                     if let Some(payload) = event.payload() {
-                        if let Ok(data) = storage.decode_event(&payload) {
+                        if let Ok(data) = storage.decode_event(payload) {
                             for data in data.records {
                                 if data.event_type() == EventType::Put {
                                     if storage.is_index(data.key()) {
@@ -23,7 +23,7 @@ pub async fn run<E: EventBus, M: Emitter + Send + Sync>(
                                     } else {
                                         let key = data.key();
                                         match storage.get_for_event(&data).await {
-                                            Ok(data) => {
+                                            Ok((_, data)) => {
                                                 let document = Document {
                                                     blob: data,
                                                     r#type: DocumentType::UNKNOWN,
