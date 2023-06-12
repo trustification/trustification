@@ -11,6 +11,7 @@ fi
 
 # Default variables
 BOMBASTIC_API=${*: -1}
+BOMBASTIC_PATH="/api/v1/sbom"
 SOURCE="https://access.redhat.com/security/data/sbom/beta/index.txt"
 
 ###################################
@@ -103,10 +104,11 @@ while read -r sbom; do
 
     # All is well, let's upload that to bombastic
     id=$(basename -s ".json.bz2" "$file")
-    curl -H "content-encoding: bzip2" \
+    curl --fail -H "content-encoding: bzip2" \
          -H "transfer-encoding: chunked" \
+         -H "content-type: application/json" \
          --data @"$file" \
-         "$BOMBASTIC_API"?id="$id"
+         "$BOMBASTIC_API""$BOMBASTIC_PATH"?id="$id"
     echo
 
     cleanup "$file"
