@@ -4319,6 +4319,7 @@ dependencies = [
  "actix-ws",
  "anyhow",
  "bombastic-model",
+ "bytes",
  "chrono",
  "clap",
  "env_logger 0.10.0",
@@ -4338,13 +4339,10 @@ dependencies = [
  "thiserror",
  "tokio",
  "tracing",
- "trustification-index",
  "trustification-infrastructure",
- "trustification-storage",
  "urlencoding",
  "utoipa",
  "utoipa-swagger-ui",
- "vexination-index",
  "vexination-model",
  "zstd",
 ]
@@ -5237,8 +5235,11 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
+ "trustification-index",
  "trustification-infrastructure",
  "trustification-storage",
+ "vexination-index",
+ "vexination-model",
  "zstd",
 ]
 

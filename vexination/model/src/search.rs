@@ -9,3 +9,9 @@ pub struct SearchDocument {
     pub affected: Vec<String>,
     pub fixed: Vec<String>,
 }
+
+#[derive(serde::Deserialize, serde::Serialize, Debug, PartialEq)]
+pub struct SearchResult {
+    pub total: usize,
+    pub result: Vec<SearchDocument>,
+}

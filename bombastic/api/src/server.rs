@@ -150,7 +150,7 @@ const fn default_limit() -> usize {
 async fn search_sbom(state: web::Data<SharedState>, params: web::Query<SearchParams>) -> impl Responder {
     let params = params.into_inner();
 
-    tracing::info!("Querying SBOMusing {}", params.q);
+    tracing::info!("Querying SBOM using {}", params.q);
 
     let index = state.index.read().await;
     let result = index.search(&params.q, params.offset, params.limit);
