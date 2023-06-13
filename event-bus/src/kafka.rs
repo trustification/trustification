@@ -10,7 +10,7 @@ use rdkafka::{
     Message,
 };
 
-use crate::{Event, EventBus, EventConsumer};
+use crate::Event;
 
 #[allow(unused)]
 pub struct KafkaEventBus {
@@ -18,25 +18,16 @@ pub struct KafkaEventBus {
     producer: FutureProducer,
 }
 
-pub struct KafkaEvent<'m> {
-    message: BorrowedMessage<'m>,
-}
-
 impl KafkaEventBus {
-    pub fn new(brokers: String) -> Result<Self, KafkaError> {
+    pub(crate) fn new(brokers: String) -> Result<Self, KafkaError> {
         let producer: FutureProducer = ClientConfig::new()
             .set("message.timeout.ms", "5000")
             .set("bootstrap.servers", &brokers)
             .create()?;
         Ok(Self { brokers, producer })
     }
-}
 
-#[async_trait::async_trait]
-impl EventBus for KafkaEventBus {
-    type Consumer<'m> = StreamConsumer;
-
-    async fn create(&self, topics: &[&str]) -> Result<(), anyhow::Error> {
+    pub(crate) async fn create(&self, topics: &[&str]) -> Result<(), anyhow::Error> {
         let admin: AdminClient<_> = ClientConfig::new().set("bootstrap.servers", &self.brokers).create()?;
         let topics: Vec<NewTopic> = topics
             .iter()
@@ -46,7 +37,7 @@ impl EventBus for KafkaEventBus {
         Ok(())
     }
 
-    async fn subscribe(&self, group: &str, topics: &[&str]) -> Result<Self::Consumer<'_>, anyhow::Error> {
+    pub(crate) async fn subscribe(&self, group: &str, topics: &[&str]) -> Result<KafkaConsumer, anyhow::Error> {
         let consumer: StreamConsumer = ClientConfig::new()
             .set("group.id", group)
             .set("bootstrap.servers", &self.brokers)
@@ -56,10 +47,10 @@ impl EventBus for KafkaEventBus {
             .create()?;
         let topics: Vec<&str> = topics.into();
         consumer.subscribe(&topics[..])?;
-        Ok(consumer)
+        Ok(KafkaConsumer { consumer })
     }
 
-    async fn send(&self, topic: &str, data: &[u8]) -> Result<(), anyhow::Error> {
+    pub(crate) async fn send(&self, topic: &str, data: &[u8]) -> Result<(), anyhow::Error> {
         let record = FutureRecord::to(topic).payload(data);
         self.producer
             .send::<(), _, _>(record, Duration::from_secs(10))
@@ -69,34 +60,37 @@ impl EventBus for KafkaEventBus {
     }
 }
 
-#[async_trait::async_trait]
-impl EventConsumer for StreamConsumer {
-    type Event<'m> = KafkaEvent<'m> where Self: 'm;
-    async fn next<'m>(&'m self) -> Result<Option<Self::Event<'m>>, anyhow::Error> {
-        let message = self.recv().await?;
+pub struct KafkaConsumer {
+    consumer: StreamConsumer,
+}
+
+impl KafkaConsumer {
+    pub(crate) async fn next<'m>(&'m self) -> Result<Option<KafkaEvent<'m>>, anyhow::Error> {
+        let message = self.consumer.recv().await?;
         Ok(Some(KafkaEvent { message }))
     }
 
-    async fn commit<'m>(&'m self, events: &[Self::Event<'m>]) -> Result<(), anyhow::Error> {
-        let mut position = self.position()?;
+    pub(crate) async fn commit<'m>(&'m self, events: &[Event<'m>]) -> Result<(), anyhow::Error> {
+        let mut position = self.consumer.position()?;
         for event in events {
-            let topic = event.message.topic();
-            let partition = event.message.partition();
-            let offset = event.message.offset() + 1;
-            position.set_partition_offset(topic, partition, rdkafka::Offset::Offset(offset))?;
+            if let Event::Kafka(event) = event {
+                let topic = event.message.topic();
+                let partition = event.message.partition();
+                let offset = event.message.offset() + 1;
+                position.set_partition_offset(topic, partition, rdkafka::Offset::Offset(offset))?;
+            }
         }
-        Consumer::commit(self, &position, rdkafka::consumer::CommitMode::Sync)?;
+        Consumer::commit(&self.consumer, &position, rdkafka::consumer::CommitMode::Sync)?;
         Ok(())
     }
 }
 
-#[async_trait::async_trait]
-impl<'m> Event for KafkaEvent<'m> {
-    fn payload(&self) -> Option<&[u8]> {
-        self.message.payload()
-    }
+pub struct KafkaEvent<'m> {
+    message: BorrowedMessage<'m>,
+}
 
-    fn topic(&self) -> &str {
-        self.message.topic()
+impl<'m> KafkaEvent<'m> {
+    pub(crate) fn payload(&self) -> Option<&[u8]> {
+        self.message.payload()
     }
 }

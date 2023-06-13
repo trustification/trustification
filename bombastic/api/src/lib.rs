@@ -1,9 +1,9 @@
 use std::{net::SocketAddr, process::ExitCode, str::FromStr, sync::Arc, time::Duration};
 
 use tokio::sync::RwLock;
-use trustification_index::IndexStore;
+use trustification_index::{IndexConfig, IndexStore};
 use trustification_infrastructure::{Infrastructure, InfrastructureConfig};
-use trustification_storage::Storage;
+use trustification_storage::{Storage, StorageConfig};
 
 mod sbom;
 mod server;
@@ -17,24 +17,21 @@ pub struct Run {
     #[arg(short = 'p', long = "port", default_value_t = 8080)]
     pub(crate) port: u16,
 
-    #[arg(short = 'i', long = "index")]
-    pub(crate) index: Option<std::path::PathBuf>,
-
-    #[arg(long = "sync-interval-seconds", default_value_t = 10)]
-    pub(crate) sync_interval_seconds: u64,
-
     #[arg(long = "devmode", default_value_t = false)]
     pub(crate) devmode: bool,
 
-    #[arg(long = "storage-endpoint", default_value = None)]
-    pub(crate) storage_endpoint: Option<String>,
+    #[command(flatten)]
+    pub(crate) index: IndexConfig,
+
+    #[command(flatten)]
+    pub(crate) storage: StorageConfig,
 
     #[command(flatten)]
     pub(crate) infra: InfrastructureConfig,
 }
 
 impl Run {
-    pub async fn run(self) -> anyhow::Result<ExitCode> {
+    pub async fn run(mut self) -> anyhow::Result<ExitCode> {
         let state = self.configure()?;
         Infrastructure::from(self.infra)
             .run(|| async {
@@ -47,26 +44,16 @@ impl Run {
         Ok(ExitCode::SUCCESS)
     }
 
-    fn configure(&self) -> anyhow::Result<Arc<AppState>> {
-        let bombastic_dir = self.index.clone().unwrap_or_else(|| {
-            use rand::RngCore;
-            let r = rand::thread_rng().next_u32();
-            std::env::temp_dir().join(format!("bombastic-index.{}", r))
-        });
-
-        std::fs::create_dir(&bombastic_dir)?;
-
-        let bombastic_index = IndexStore::new(&bombastic_dir, bombastic_index::Index::new())?;
-        let bombastic_storage =
-            trustification_storage::create("bombastic", self.devmode, self.storage_endpoint.clone())?;
+    fn configure(&mut self) -> anyhow::Result<Arc<AppState>> {
+        let index = IndexStore::new(&self.index, bombastic_index::Index::new())?;
+        let storage = self.storage.create("bombastic", self.devmode)?;
 
         let state = Arc::new(AppState {
-            storage: RwLock::new(bombastic_storage),
-            index: RwLock::new(bombastic_index),
+            storage: RwLock::new(storage),
+            index: RwLock::new(index),
         });
 
-        let sync_interval = Duration::from_secs(self.sync_interval_seconds);
-
+        let sync_interval: Duration = self.index.sync_interval.into();
         let sinker = state.clone();
         tokio::task::spawn(async move {
             loop {

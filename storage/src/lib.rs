@@ -14,46 +14,41 @@ pub struct Storage {
     bucket: Bucket,
 }
 
-pub struct Config {
-    bucket_name: String,
-    region: Region,
-    credentials: Credentials,
+#[derive(Clone, Debug, clap::Parser)]
+#[command(rename_all_env = "SCREAMING_SNAKE_CASE")]
+pub struct StorageConfig {
+    /// Bucket name to use for storing data and index
+    #[arg(env, long = "storage-bucket")]
+    pub bucket: Option<String>,
+
+    /// Storage region to use
+    #[arg(env, long = "storage-region")]
+    pub region: Option<Region>,
+
+    /// Storage endpoint to use
+    #[arg(env, long = "storage-endpoint")]
+    pub endpoint: Option<String>,
+
+    /// Access key for using storage
+    #[arg(env, long = "storage-access-key")]
+    pub access_key: Option<String>,
+
+    /// Secret key for using storage
+    #[arg(env, long = "storage-secret-key")]
+    pub secret_key: Option<String>,
 }
 
-impl Config {
-    pub fn defaults(bucket_name: &str) -> Result<Self, anyhow::Error> {
-        Ok(Config {
-            bucket_name: bucket_name.to_string(),
-            region: Region::from_default_env()?,
-            credentials: Credentials::from_env()?,
-        })
-    }
-
-    pub fn test(bucket_name: &str, endpoint: Option<String>) -> Self {
-        Config {
-            bucket_name: bucket_name.to_string(),
-            region: Region::Custom {
-                region: "eu-central-1".to_owned(),
-                endpoint: endpoint.unwrap_or("http://localhost:9000".to_owned()),
-            },
-            credentials: Credentials {
-                access_key: Some("admin".into()),
-                secret_key: Some("password".into()),
-                security_token: None,
-                session_token: None,
-                expiration: None,
-            },
+impl StorageConfig {
+    pub fn create(&mut self, default_bucket: &str, devmode: bool) -> Result<Storage, Error> {
+        if devmode {
+            self.access_key = Some("admin".to_string());
+            self.secret_key = Some("password".to_string());
+            self.bucket = Some(default_bucket.to_string());
+            Ok(Storage::new(self)?)
+        } else {
+            Ok(Storage::new(self)?)
         }
     }
-}
-
-pub fn create(bucket_name: &str, devmode: bool, storage_endpoint: Option<String>) -> Result<Storage, anyhow::Error> {
-    let storage = if devmode {
-        Storage::new(Config::test(bucket_name, storage_endpoint))?
-    } else {
-        Storage::new(Config::defaults(bucket_name)?)?
-    };
-    Ok(storage)
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -124,8 +119,30 @@ pub struct Head {
 }
 
 impl Storage {
-    pub fn new(config: Config) -> Result<Self, Error> {
-        let bucket = Bucket::new(&config.bucket_name, config.region, config.credentials)?.with_path_style();
+    pub fn new(config: &StorageConfig) -> Result<Self, Error> {
+        let credentials = if let (Some(access_key), Some(secret_key)) = (&config.access_key, &config.secret_key) {
+            Credentials {
+                access_key: Some(access_key.into()),
+                secret_key: Some(secret_key.into()),
+                security_token: None,
+                session_token: None,
+                expiration: None,
+            }
+        } else {
+            Credentials::default()?
+        };
+
+        let region = config.region.clone().unwrap_or_else(|| Region::Custom {
+            region: "eu-central-1".to_owned(),
+            endpoint: config.endpoint.clone().unwrap_or("http://localhost:9000".to_string()),
+        });
+
+        let bucket = config
+            .bucket
+            .as_ref()
+            .map(|s| s.as_str())
+            .expect("Required parameter bucket was not set");
+        let bucket = Bucket::new(&bucket, region, credentials)?.with_path_style();
         Ok(Self { bucket })
     }
 

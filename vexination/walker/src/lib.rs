@@ -10,7 +10,7 @@ use std::{
 
 use csaf_walker::validation::ValidationOptions;
 use time::{Date, Month, UtcOffset};
-use trustification_storage::{Config, Storage};
+use trustification_storage::{Storage, StorageConfig};
 
 mod server;
 
@@ -21,10 +21,6 @@ pub struct Run {
     #[arg(short, long)]
     pub(crate) source: url::Url,
 
-    /// Run in development mode
-    #[arg(long = "devmode", default_value_t = false)]
-    pub(crate) devmode: bool,
-
     /// OpenPGP policy date.
     #[arg(long)]
     policy_date: Option<humantime::Timestamp>,
@@ -33,13 +29,16 @@ pub struct Run {
     #[arg(short = '3', long = "v3-signatures", conflicts_with = "policy_date")]
     v3_signatures: bool,
 
-    #[arg(long = "storage-endpoint", default_value = None)]
-    pub(crate) storage_endpoint: Option<String>,
+    #[arg(long = "devmode", default_value_t = false)]
+    pub(crate) devmode: bool,
+
+    #[command(flatten)]
+    pub(crate) storage: StorageConfig,
 }
 
 impl Run {
-    pub async fn run(self) -> anyhow::Result<ExitCode> {
-        let storage = trustification_storage::create("vexination", self.devmode, self.storage_endpoint)?;
+    pub async fn run(mut self) -> anyhow::Result<ExitCode> {
+        let storage = self.storage.create("vexination", self.devmode)?;
         let validation_date: Option<SystemTime> = match (self.policy_date, self.v3_signatures) {
             (_, true) => Some(SystemTime::from(
                 Date::from_calendar_date(2007, Month::January, 1)

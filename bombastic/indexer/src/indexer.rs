@@ -3,14 +3,14 @@ use std::time::Duration;
 use bombastic_index::Index;
 use futures::pin_mut;
 use tokio::select;
-use trustification_event_bus::{Event, EventBus, EventConsumer};
+use trustification_event_bus::EventBus;
 use trustification_index::IndexStore;
 use trustification_storage::{EventType, Storage};
 
-pub async fn run<E: EventBus>(
+pub async fn run(
     mut index: IndexStore<Index>,
     storage: Storage,
-    bus: E,
+    bus: EventBus,
     stored_topic: &str,
     indexed_topic: &str,
     failed_topic: &str,
