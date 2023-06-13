@@ -4,16 +4,21 @@
 [![GitHub release (latest SemVer)](https://img.shields.io/github/v/tag/trustification/trustification?sort=semver)](https://github.com/trustification/trustification/releases)
 
 
-Trustification is a collection of software that allow you to store bill of materials (SBOM), security information (VEX) for your organization and
-use that information to learn impact of vulnerabilities and dependency changes.
+Trustification is a collection of software that allow you to store bill of materials (SBOM), vulnerability information (VEX) for your organization and use that information to learn impact of vulnerabilities and dependency changes.
 
 * [Bombastic](bombastic/README.md) - Storage and archival of SBOM documents.
 * [Vexination](vexination/README.md) - Storage and archival of VEX documents.
 * [Reservoir](reservoir/README.md) - Managing product metadata and access control.
 * [Spog](spog/README.md) - Single Pane Of Glass API and frontend.
 
+Services such as Bombastic and Vexination uses S3-compatible storage for storing
+SBOM/VEX data and a search index. The search index is used to query data using the [sikula](https://github.com/ctron/sikula) query language.
 
-Check the README files for individual components for more detailed information.
+Have a look at the README file for each service for more detailed information on how they work.
+
+## Usage
+
+You can try out a publicly hosted trustification instance at [https://trustification.dev](https://trustification.dev). This instance is ingested with Red Hat security advisories and SBOMs for Red Hat products only.
 
 ## Running locally
 
