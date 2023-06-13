@@ -7,6 +7,8 @@ use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
 use crate::Run;
+use crate::{advisory, sbom, vulnerability};
+use spog_model::search;
 
 pub struct Server {
     run: Run,
@@ -14,18 +16,21 @@ pub struct Server {
 
 #[derive(OpenApi)]
 #[openapi(
-       // paths(
-       //     crate::advisory::search,
-       //     crate::sbom::search,
-       //     crate::vulnerability::search,
-       // ),
-        //components(
-        //    schemas(package::Package, package::PackageList, package::PackageDependencies, package::PackageDependents, package::PackageRef, package::SnykData, package::VulnerabilityRef, vulnerability::Vulnerability)
-        //),
-        //tags(
-        //    (name = "package", description = "Package query endpoints."),
-        //    (name = "vulnerability", description = "Vulnerability query endpoints")
-        //),
+        paths(
+            sbom::get,
+            sbom::search,
+            advisory::get,
+            advisory::search,
+            vulnerability::search,
+        ),
+        components(
+            schemas(search::PackageSummary, search::VulnSummary, search::SearchResult<Vec<search::PackageSummary>>)
+        ),
+        tags(
+            (name = "package", description = "Package endpoints"),
+            (name = "advisory", description = "Advisory endpoints"),
+            (name = "vulnerability", description = "Vulnerability endpoints"),
+        ),
     )]
 pub struct ApiDoc;
 

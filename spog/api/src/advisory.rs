@@ -21,6 +21,17 @@ pub struct GetParams {
     pub id: String,
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/v1/advisory",
+    responses(
+        (status = 200, description = "Advisory was found", body = Pet),
+        (status = NOT_FOUND, description = "Advisory was not found")
+    ),
+    params(
+        ("id" = String, Path, description = "Id of advisory to fetch"),
+    )
+)]
 pub async fn get(state: web::Data<SharedState>, params: web::Query<GetParams>) -> impl Responder {
     match state.get_vex(&params.id).await {
         Ok(stream) => HttpResponse::Ok().streaming(stream),
@@ -31,6 +42,18 @@ pub async fn get(state: web::Data<SharedState>, params: web::Query<GetParams>) -
     }
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/v1/advisory/search",
+    responses(
+        (status = 200, description = "Search was performed successfully", body = Pet),
+    ),
+    params(
+        ("q" = String, Path, description = "Search query"),
+        ("offset" = u64, Path, description = "Offset in the search results to return"),
+        ("limit" = u64, Path, description = "Max entries returned in the search results"),
+    )
+)]
 pub async fn search(state: web::Data<SharedState>, params: web::Query<QueryParams>) -> impl Responder {
     let params = params.into_inner();
     trace!("Querying VEX using {}", params.q);
