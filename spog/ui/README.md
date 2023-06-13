@@ -7,6 +7,7 @@
 [Install Rust](https://www.rust-lang.org/tools/install), then:
 
 ```shell
+rustup target add wasm32-unknown-unknown
 cargo install trunk
 ```
 
