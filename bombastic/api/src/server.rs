@@ -5,8 +5,8 @@ use std::{
 
 use crate::SharedState;
 use actix_web::{
-    error::{self, PayloadError},
     delete,
+    error::{self, PayloadError},
     get,
     http::{
         header::{self, Accept, AcceptEncoding, ContentType, HeaderValue, CONTENT_ENCODING},
@@ -19,15 +19,13 @@ use bombastic_model::prelude::*;
 use derive_more::{Display, Error, From};
 use futures::TryStreamExt;
 use serde::Deserialize;
-use tracing::info;
-use trustification_storage::{Error, Storage};
 use trustification_index::Error as IndexError;
 use trustification_storage::Error as StorageError;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
 #[derive(OpenApi)]
-#[openapi(paths(query_sbom, publish_sbom, search_sbom))]
+#[openapi(paths(query_sbom, publish_sbom, search_sbom, delete_sbom))]
 pub struct ApiDoc;
 
 pub async fn run<B: Into<SocketAddr>>(state: SharedState, bind: B) -> Result<(), anyhow::Error> {
@@ -256,22 +254,16 @@ fn verify_encoding(content_encoding: Option<&HeaderValue>) -> Result<Option<&str
     )
 )]
 #[delete("/sbom")]
-async fn delete_sbom(state: web::Data<SharedState>, params: web::Query<QueryParams>) -> HttpResponse {
+async fn delete_sbom(
+    state: web::Data<SharedState>,
+    params: web::Query<IdentifierParams>,
+) -> actix_web::Result<impl Responder> {
     let params = params.into_inner();
+    let id = &params.id;
+    tracing::trace!("Deleting SBOM using id {}", id);
+    let storage = state.storage.write().await;
 
-    if let Some(id) = params.id {
-        tracing::trace!("Deleting SBOM using id {}", &id);
-        let storage = state.storage.write().await;
-        delete_object(&storage, &id).await
-    } else {
-        HttpResponse::BadRequest().body("Missing valid id")
-    }
-}
+    storage.delete(id).await.map_err(|e| Error::Storage(e))?;
 
-async fn delete_object(storage: &Storage, key: &str) -> HttpResponse {
-    match storage.delete(key).await {
-        Ok(()) => HttpResponse::NoContent().finish(),
-        Err(Error::InvalidKey(_)) => HttpResponse::NotFound().finish(),
-        Err(_) => HttpResponse::InternalServerError().finish(),
-    }
+    Ok(HttpResponse::NoContent().finish())
 }
