@@ -87,7 +87,7 @@ services:
         echo "checking-for-services";
         until nc -z guac-collectsub 2782 > /dev/null 2>&1; do sleep 5; done;
         echo "guac collectsub up";
-        until curl -I http://guac-graphql:$GUAC_API_PORT/query > /dev/null 2>&1; do sleep 5; done;
+        until curl -I http://guac-graphql:8080/query > /dev/null 2>&1; do sleep 5; done;
         echo "graphql up";
 
     depends_on:
