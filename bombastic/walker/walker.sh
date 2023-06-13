@@ -104,10 +104,11 @@ while read -r sbom; do
 
     # All is well, let's upload that to bombastic
     id=$(basename -s ".json.bz2" "$file")
-    curl --fail -H "content-encoding: bzip2" \
+    curl --fail -X POST \
+         -H "content-encoding: bzip2" \
          -H "transfer-encoding: chunked" \
          -H "content-type: application/json" \
-         --data @"$file" \
+         -T "$file" \
          "$BOMBASTIC_API""$BOMBASTIC_PATH"?id="$id"
     echo
 
