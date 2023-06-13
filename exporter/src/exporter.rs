@@ -1,11 +1,11 @@
 use guac::collector::{emitter::Emitter, Document, DocumentType, FormatType, SourceInformation};
 use tokio::select;
-use trustification_event_bus::{Event, EventBus, EventConsumer};
+use trustification_event_bus::EventBus;
 use trustification_storage::{EventType, Storage};
 
-pub async fn run<E: EventBus, M: Emitter + Send + Sync>(
+pub async fn run<M: Emitter + Send + Sync>(
     storage: Storage,
-    bus: E,
+    bus: EventBus,
     emitter: M,
     stored_topic: &str,
 ) -> Result<(), anyhow::Error> {

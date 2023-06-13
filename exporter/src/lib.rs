@@ -1,7 +1,9 @@
-use std::{path::PathBuf, process::ExitCode};
+use std::process::ExitCode;
 
 use guac::collector::emitter::NatsEmitter;
 use strum_macros::Display;
+use trustification_event_bus::EventBusConfig;
+use trustification_storage::StorageConfig;
 
 pub mod exporter;
 
@@ -25,12 +27,6 @@ pub enum Storage {
 #[derive(clap::Args, Debug)]
 #[command(about = "Run the exporter", args_conflicts_with_subcommands = true)]
 pub struct Run {
-    #[arg(short = 'i', long = "index")]
-    pub(crate) index: Option<PathBuf>,
-
-    #[arg(long = "kafka-bootstrap-servers", default_value = "localhost:9092")]
-    pub(crate) kafka_bootstrap_servers: String,
-
     #[arg(long = "guac-url", default_value = "127.0.0.1:4222")]
     pub(crate) guac_url: String,
 
@@ -44,32 +40,27 @@ pub struct Run {
     #[arg(long = "devmode", default_value_t = false)]
     pub(crate) devmode: bool,
 
-    #[arg(long = "storage", value_enum, default_value = None)]
-    pub(crate) storage: Storage,
+    #[command(flatten)]
+    pub(crate) bus: EventBusConfig,
 
-    #[arg(long = "storage-endpoint", default_value = None)]
-    pub(crate) storage_endpoint: Option<String>,
+    #[command(flatten)]
+    pub(crate) storage: StorageConfig,
 }
 
 impl Run {
-    pub async fn run(self) -> anyhow::Result<ExitCode> {
-        let storage = trustification_storage::create(&self.storage.to_string(), self.devmode, self.storage_endpoint)?;
-        use trustification_event_bus::EventBus;
+    pub async fn run(mut self) -> anyhow::Result<ExitCode> {
+        let default_bucket = self
+            .storage
+            .bucket
+            .clone()
+            .expect("Required parameter --storage-bucket not set");
+        let storage = self.storage.create(&default_bucket, self.devmode)?;
+        let bus = self.bus.create().await?;
         let emitter = NatsEmitter::new(&self.guac_url).await?;
-        match self.events {
-            Events::Kafka => {
-                let bootstrap = &self.kafka_bootstrap_servers;
-                let bus = trustification_event_bus::kafka::KafkaEventBus::new(bootstrap.to_string())?;
-                if self.devmode {
-                    bus.create(&[self.stored_topic.as_str()]).await?;
-                }
-                exporter::run(storage, bus, emitter, self.stored_topic.as_str()).await?;
-            }
-            Events::Sqs => {
-                let bus = trustification_event_bus::sqs::SqsEventBus::new().await?;
-                exporter::run(storage, bus, emitter, self.stored_topic.as_str()).await?;
-            }
+        if self.devmode {
+            bus.create(&[self.stored_topic.as_str()]).await?;
         }
+        exporter::run(storage, bus, emitter, self.stored_topic.as_str()).await?;
         Ok(ExitCode::SUCCESS)
     }
 }
