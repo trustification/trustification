@@ -3,12 +3,11 @@ use std::sync::Arc;
 use actix_cors::Cors;
 use actix_web::{middleware::Logger, web, App, HttpServer};
 use http::StatusCode;
+use spog_model::search;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
-use crate::Run;
-use crate::{advisory, sbom, vulnerability};
-use spog_model::search;
+use crate::{advisory, sbom, vulnerability, Run};
 
 pub struct Server {
     run: Run,
