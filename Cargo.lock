@@ -1910,7 +1910,6 @@ name = "exporter"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "bombastic-index",
  "clap",
  "futures",
  "guac 0.1.0 (git+https://github.com/dejanb/guac-rs.git)",
