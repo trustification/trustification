@@ -5,10 +5,11 @@ use std::{
 
 use actix_web::{
     error::PayloadError,
-    guard,
+    get,
+    guard::GuardContext,
     http::header::{self, Accept, AcceptEncoding, ContentType, HeaderValue, CONTENT_ENCODING},
     middleware::{Compress, Logger},
-    web, App, HttpRequest, HttpResponse, HttpServer, Responder,
+    post, route, web, App, HttpRequest, HttpResponse, HttpServer, Responder,
 };
 use bombastic_model::prelude::*;
 use futures::TryStreamExt;
@@ -36,15 +37,10 @@ pub async fn run<B: Into<SocketAddr>>(state: SharedState, bind: B) -> Result<(),
             .app_data(web::Data::new(state.clone()))
             .service(
                 web::scope("/api/v1")
-                    .route("/sbom", web::get().to(query_sbom))
-                    .route("/sbom/search", web::get().to(search_sbom))
-                    .route(
-                        "/sbom",
-                        web::post()
-                            .guard(guard::Header("transfer-encoding", "chunked"))
-                            .to(publish_large_sbom),
-                    )
-                    .route("/sbom", web::post().to(publish_sbom)),
+                    .service(query_sbom)
+                    .service(search_sbom)
+                    .service(publish_large_sbom)
+                    .service(publish_sbom),
             )
             .service(SwaggerUi::new("/swagger-ui/{_:.*}").url("/openapi.json", openapi.clone()))
     })
@@ -100,6 +96,7 @@ async fn fetch_object(storage: &Storage, key: &str, accept_encoding: AcceptEncod
         ("id" = String, Query, description = "Package URL or CPE of SBOM to query"),
     )
 )]
+#[get("/sbom")]
 async fn query_sbom(
     state: web::Data<SharedState>,
     params: web::Query<QueryParams>,
@@ -148,6 +145,7 @@ const fn default_limit() -> usize {
         ("q" = String, Query, description = "Search query"),
     )
 )]
+#[get("/sbom/search")]
 async fn search_sbom(state: web::Data<SharedState>, params: web::Query<SearchParams>) -> impl Responder {
     let params = params.into_inner();
 
@@ -187,6 +185,7 @@ struct PublishParams {
         ("id" = String, Query, description = "Package URL or product identifier of SBOM to query"),
     )
 )]
+#[post("/sbom")]
 async fn publish_sbom(
     state: web::Data<SharedState>,
     params: web::Query<PublishParams>,
@@ -222,6 +221,14 @@ async fn publish_sbom(
     }
 }
 
+fn chunked(ctx: &GuardContext) -> bool {
+    if let Some(val) = ctx.head().headers.get("transfer-encoding") {
+        return val == "chunked";
+    }
+    false
+}
+
+#[route("/sbom", method = "PUT", method = "POST", guard = "chunked")]
 async fn publish_large_sbom(
     req: HttpRequest,
     state: web::Data<SharedState>,
