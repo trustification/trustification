@@ -6,6 +6,7 @@ use std::{
 use crate::SharedState;
 use actix_web::{
     error::{self, PayloadError},
+    delete,
     get,
     http::{
         header::{self, Accept, AcceptEncoding, ContentType, HeaderValue, CONTENT_ENCODING},
@@ -18,6 +19,8 @@ use bombastic_model::prelude::*;
 use derive_more::{Display, Error, From};
 use futures::TryStreamExt;
 use serde::Deserialize;
+use tracing::info;
+use trustification_storage::{Error, Storage};
 use trustification_index::Error as IndexError;
 use trustification_storage::Error as StorageError;
 use utoipa::OpenApi;
@@ -41,7 +44,8 @@ pub async fn run<B: Into<SocketAddr>>(state: SharedState, bind: B) -> Result<(),
                 web::scope("/api/v1")
                     .service(query_sbom)
                     .service(search_sbom)
-                    .service(publish_sbom),
+                    .service(publish_sbom)
+                    .service(delete_sbom),
             )
             .service(SwaggerUi::new("/swagger-ui/{_:.*}").url("/openapi.json", openapi.clone()))
     })
@@ -236,5 +240,38 @@ fn verify_encoding(content_encoding: Option<&HeaderValue>) -> Result<Option<&str
             _ => Err(Error::InvalidContentEncoding),
         },
         None => Ok(None),
+    }
+}
+
+#[utoipa::path(
+    delete,
+    path = "/api/v1/sbom",
+    responses(
+        (status = 204, description = "SBOM deleted"),
+        (status = NOT_FOUND, description = "SBOM not found in archive"),
+        (status = BAD_REQUEST, description = "Missing id"),
+    ),
+    params(
+        ("id" = String, Query, description = "Package URL or product identifier of SBOM to query"),
+    )
+)]
+#[delete("/sbom")]
+async fn delete_sbom(state: web::Data<SharedState>, params: web::Query<QueryParams>) -> HttpResponse {
+    let params = params.into_inner();
+
+    if let Some(id) = params.id {
+        tracing::trace!("Deleting SBOM using id {}", &id);
+        let storage = state.storage.write().await;
+        delete_object(&storage, &id).await
+    } else {
+        HttpResponse::BadRequest().body("Missing valid id")
+    }
+}
+
+async fn delete_object(storage: &Storage, key: &str) -> HttpResponse {
+    match storage.delete(key).await {
+        Ok(()) => HttpResponse::NoContent().finish(),
+        Err(Error::InvalidKey(_)) => HttpResponse::NotFound().finish(),
+        Err(_) => HttpResponse::InternalServerError().finish(),
     }
 }

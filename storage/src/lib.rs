@@ -262,6 +262,12 @@ impl Storage {
         };
         stream::decode(head.content_encoding, stream.boxed())
     }
+
+    pub async fn delete(&self, key: &str) -> Result<(), Error> {
+        let path = format!("{}{}", DATA_PATH, key);
+        self.bucket.delete_object(path).await?;
+        Ok(())
+    }
 }
 
 const PUT_EVENT: &str = "ObjectCreated:Put";
