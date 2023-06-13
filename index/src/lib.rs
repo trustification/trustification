@@ -13,6 +13,18 @@ use tantivy::{
 };
 use tracing::{info, warn};
 
+#[derive(Clone, Debug, clap::Parser)]
+#[command(rename_all_env = "SCREAMING_SNAKE_CASE")]
+pub struct IndexConfig {
+    /// Local folder to store index.
+    #[arg(short = 'i', long = "index-dir")]
+    pub index: Option<std::path::PathBuf>,
+
+    /// Synchronization interval for index persistence.
+    #[arg(long = "index-sync-interval", default_value = "30s")]
+    pub sync_interval: humantime::Duration,
+}
+
 pub struct IndexStore<INDEX: Index> {
     inner: SearchIndex,
     path: Option<PathBuf>,
@@ -93,13 +105,21 @@ impl<INDEX: Index> IndexStore<INDEX> {
         })
     }
 
-    pub fn new(path: &PathBuf, index: INDEX) -> Result<Self, Error> {
+    pub fn new(config: &IndexConfig, index: INDEX) -> Result<Self, Error> {
+        let path = config.index.clone().unwrap_or_else(|| {
+            use rand::RngCore;
+            let r = rand::thread_rng().next_u32();
+            std::env::temp_dir().join(format!("index.{}", r))
+        });
+
+        std::fs::create_dir(&path).map_err(|_| Error::Open)?;
+
         let schema = index.schema();
-        let dir = MmapDirectory::open(path).map_err(|_e| Error::Open)?;
+        let dir = MmapDirectory::open(&path).map_err(|_e| Error::Open)?;
         let inner = SearchIndex::open_or_create(dir, schema)?;
         Ok(Self {
             inner,
-            path: Some(path.clone()),
+            path: Some(path),
             index,
         })
     }
@@ -108,11 +128,15 @@ impl<INDEX: Index> IndexStore<INDEX> {
         &mut self.index
     }
 
-    pub fn restore(path: &PathBuf, data: &[u8], index: INDEX) -> Result<Self, Error> {
-        let dec = zstd::stream::Decoder::new(data).map_err(Error::Io)?;
-        let mut archive = tar::Archive::new(dec);
-        archive.unpack(path).map_err(Error::Io)?;
-        Self::new(path, index)
+    pub fn restore(config: &IndexConfig, data: &[u8], index: INDEX) -> Result<Self, Error> {
+        if let Some(path) = &config.index {
+            let dec = zstd::stream::Decoder::new(data).map_err(Error::Io)?;
+            let mut archive = tar::Archive::new(dec);
+            archive.unpack(path).map_err(Error::Io)?;
+            Self::new(config, index)
+        } else {
+            Err(Error::Open)
+        }
     }
 
     pub fn reload(&mut self, data: &[u8]) -> Result<(), Error> {

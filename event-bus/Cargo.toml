@@ -4,16 +4,12 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-rdkafka = { version = "0.31", features = ["cmake-build"], optional = true }
+rdkafka = { version = "0.31", features = ["cmake-build"] }
 anyhow = "1"
 async-trait = "0.1"
-aws-sdk-sqs = { version = "0.27.0", optional = true }
-aws-config = { version = "0.55.2", optional = true }
+aws-sdk-sqs = "0.27.0"
+aws-config = "0.55.2"
 futures = "0.3"
 thiserror = "1.0"
 tracing = "0.1"
-
-[features]
-default = ["kafka", "sqs"]
-kafka = ["rdkafka"]
-sqs = ["aws-sdk-sqs", "aws-config"]
+clap = { version = "4", features = ["derive"] }

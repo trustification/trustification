@@ -10,3 +10,6 @@ zstd = "0.12"
 tar = "0.4"
 sikula = { version = "0.3", features = ["time"] }
 time = "0.3"
+clap = { version = "4", features = ["derive", "env"] }
+humantime = "2.1.0"
+rand = "0.8"

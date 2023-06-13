@@ -5283,6 +5283,7 @@ dependencies = [
  "async-trait",
  "aws-config",
  "aws-sdk-sqs",
+ "clap",
  "futures",
  "rdkafka",
  "thiserror",
@@ -5293,6 +5294,9 @@ dependencies = [
 name = "trustification-index"
 version = "0.1.0"
 dependencies = [
+ "clap",
+ "humantime 2.1.0",
+ "rand 0.8.5",
  "sikula",
  "tantivy",
  "tar",
@@ -5323,6 +5327,7 @@ dependencies = [
  "async-compression",
  "async-stream",
  "bytes",
+ "clap",
  "futures",
  "http",
  "rust-s3",

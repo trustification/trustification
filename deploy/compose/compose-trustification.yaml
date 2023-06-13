@@ -32,4 +32,4 @@ services:
       - "$SPOG_API_PORT"
     ports:
       - "$SPOG_API_PORT:8088"
-    command: spog api
+    command: spog api --storage-endpoint http://minio:9000 --bombastic-url http://bombastic-api:8080 --vexination-url http://vexination-api:8080

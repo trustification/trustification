@@ -18,3 +18,4 @@ tracing = "0.1"
 urlencoding = "2.1.2"
 thiserror = "1"
 async-compression = { version = "0.4", features = ["tokio", "zstd", "bzip2"] }
+clap = { version = "4", features = ["derive", "env"] }
