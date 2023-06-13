@@ -23,7 +23,7 @@ pub fn console() -> Html {
                 <Nav>
                     <NavList>
                         <NavRouterItem<AppRoute> to={AppRoute::Index}>{ "Trusted Content" }</NavRouterItem<AppRoute>>
-                        <NavExpandable title="Explore">
+                        <NavExpandable title="Search">
                             <NavRouterItem<AppRoute> to={AppRoute::Package{query: Default::default()}} predicate={AppRoute::is_package}>{ "Packages" }</NavRouterItem<AppRoute>>
                             <NavRouterItem<AppRoute> to={AppRoute::Advisory{query: Default::default()}} predicate={AppRoute::is_advisory}>{ "Advisories" }</NavRouterItem<AppRoute>>
                             <NavRouterItem<AppRoute> to={AppRoute::Vulnerability{query: Default::default()}} predicate={AppRoute::is_vulnerability}>{ "Vulnerabilities" }</NavRouterItem<AppRoute>>

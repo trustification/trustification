@@ -1,6 +1,6 @@
 use std::ops::{Deref, DerefMut};
 
-#[derive(serde::Deserialize, serde::Serialize, Debug, PartialEq, Clone)]
+#[derive(utoipa::ToSchema, serde::Deserialize, serde::Serialize, Debug, PartialEq, Clone)]
 pub struct VulnSummary {
     pub cve: String,
     pub title: String,
@@ -12,7 +12,7 @@ pub struct VulnSummary {
     pub advisories: Vec<String>,
 }
 
-#[derive(serde::Deserialize, serde::Serialize, Debug, PartialEq, Clone)]
+#[derive(utoipa::ToSchema, serde::Deserialize, serde::Serialize, Debug, PartialEq, Clone)]
 pub struct PackageSummary {
     pub purl: String,
     pub name: String,
@@ -26,7 +26,7 @@ pub struct PackageSummary {
     pub vulnerabilities: Vec<String>,
 }
 
-#[derive(Clone, Debug, Default, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
+#[derive(utoipa::ToSchema, Clone, Debug, Default, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
 pub struct SearchResult<T> {
     pub result: T,
     #[serde(default, skip_serializing_if = "Option::is_none")]

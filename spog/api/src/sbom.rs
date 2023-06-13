@@ -18,6 +18,17 @@ pub struct GetParams {
     pub id: String,
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/v1/package",
+    responses(
+        (status = 200, description = "Package was found", body = Pet),
+        (status = NOT_FOUND, description = "Package was not found")
+    ),
+    params(
+        ("id" = String, Path, description = "Id of package to fetch"),
+    )
+)]
 pub async fn get(state: web::Data<SharedState>, params: web::Query<GetParams>) -> impl Responder {
     let params = params.into_inner();
     match state.get_sbom(&params.id).await {
@@ -29,6 +40,18 @@ pub async fn get(state: web::Data<SharedState>, params: web::Query<GetParams>) -
     }
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/v1/package/search",
+    responses(
+        (status = 200, description = "Search was performed successfully", body = Pet),
+    ),
+    params(
+        ("q" = String, Path, description = "Search query"),
+        ("offset" = u64, Path, description = "Offset in the search results to return"),
+        ("limit" = u64, Path, description = "Max entries returned in the search results"),
+    )
+)]
 pub async fn search(state: web::Data<SharedState>, params: web::Query<search::QueryParams>) -> HttpResponse {
     let params = params.into_inner();
     trace!("Querying SBOM using {}", params.q);
