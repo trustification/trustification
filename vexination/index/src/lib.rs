@@ -424,8 +424,8 @@ mod tests {
         let csaf: Csaf = serde_json::from_str(&data).unwrap();
         let index = Index::new();
         let mut store = IndexStore::new_in_memory(index).unwrap();
-        let mut writer = store.indexer().unwrap();
-        writer.index(store.index(), &csaf.document.tracking.id, &csaf).unwrap();
+        let mut writer = store.writer().unwrap();
+        writer.write(store.index(), &csaf.document.tracking.id, &csaf).unwrap();
         writer.commit().unwrap();
         f(store);
     }
