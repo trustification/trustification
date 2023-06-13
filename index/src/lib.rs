@@ -9,7 +9,7 @@ use tantivy::{
     directory::{MmapDirectory, INDEX_WRITER_LOCK},
     query::{BooleanQuery, Occur, Query, RangeQuery, TermQuery},
     schema::*,
-    DateTime, Directory, Index as SearchIndex, IndexWriter,
+    DateTime, Directory, Index as SearchIndex,
 };
 use tracing::{info, warn};
 
@@ -74,12 +74,12 @@ impl From<tantivy::TantivyError> for Error {
     }
 }
 
-pub struct Indexer {
-    writer: IndexWriter,
+pub struct IndexWriter {
+    writer: tantivy::IndexWriter,
 }
 
-impl Indexer {
-    pub fn index<INDEX: Index>(&mut self, index: &mut INDEX, id: &str, raw: &INDEX::Document) -> Result<(), Error> {
+impl IndexWriter {
+    pub fn write<INDEX: Index>(&mut self, index: &mut INDEX, id: &str, raw: &INDEX::Document) -> Result<(), Error> {
         let docs = index.index_doc(id, raw)?;
         for doc in docs {
             self.writer.add_document(doc)?;
@@ -148,10 +148,10 @@ impl<INDEX: Index> IndexStore<INDEX> {
         Ok(())
     }
 
-    pub fn snapshot(&mut self, indexer: Indexer) -> Result<Vec<u8>, Error> {
+    pub fn snapshot(&mut self, writer: IndexWriter) -> Result<Vec<u8>, Error> {
         if let Some(path) = &self.path {
             tracing::info!("Committing index to path {:?}", path);
-            indexer.commit()?;
+            writer.commit()?;
             self.inner.directory_mut().sync_directory().map_err(Error::Io)?;
             let lock = self.inner.directory_mut().acquire_lock(&INDEX_WRITER_LOCK);
 
@@ -171,9 +171,9 @@ impl<INDEX: Index> IndexStore<INDEX> {
         }
     }
 
-    pub fn indexer(&mut self) -> Result<Indexer, Error> {
+    pub fn writer(&mut self) -> Result<IndexWriter, Error> {
         let writer = self.inner.writer(100_000_000)?;
-        Ok(Indexer { writer })
+        Ok(IndexWriter { writer })
     }
 
     pub fn search(&self, q: &str, offset: usize, len: usize) -> Result<(Vec<INDEX::MatchedDocument>, usize), Error> {

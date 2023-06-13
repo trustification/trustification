@@ -24,7 +24,7 @@ pub async fn run(
 
     let mut interval = tokio::time::interval(sync_interval);
     let mut events = 0;
-    let mut indexer = Some(index.indexer()?);
+    let mut writer = Some(index.writer()?);
     let consumer = bus.subscribe("indexer", &[stored_topic]).await?;
     let mut uncommitted_events = Vec::new();
     loop {
@@ -44,7 +44,7 @@ pub async fn run(
                                         match storage.get_for_event(&data).await {
                                             Ok((k, data)) => {
                                                 match bombastic_index::SBOM::parse(&data) {
-                                                    Ok(doc) => match indexer.as_mut().unwrap().index(index.index(), &k, &doc) {
+                                                    Ok(doc) => match writer.as_mut().unwrap().write(index.index(), &k, &doc) {
                                                         Ok(_) => {
                                                             tracing::debug!("Inserted entry into index");
                                                             bus.send(indexed_topic, key.as_bytes()).await?;
@@ -96,7 +96,7 @@ pub async fn run(
             _ = tick => {
                 if events > 0 {
                     tracing::debug!("{} new events added, pushing new index to storage", events);
-                    match index.snapshot(indexer.take().unwrap()) {
+                    match index.snapshot(writer.take().unwrap()) {
                         Ok(data) => {
                             match storage.put_index(&data).await {
                                 Ok(_) => {
@@ -117,7 +117,7 @@ pub async fn run(
                                 }
                             }
 
-                            indexer.replace(index.indexer()?);
+                            writer.replace(index.writer()?);
                         }
                         Err(e) => {
                             tracing::warn!("Error taking index snapshot: {:?}", e);
