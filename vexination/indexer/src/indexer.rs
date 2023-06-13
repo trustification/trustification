@@ -43,36 +43,46 @@ pub async fn run(
                                         let key = data.key();
                                         match storage.get_for_event(&data).await {
                                             Ok((_, data)) => {
-                                                if let Ok(doc) = serde_json::from_slice::<csaf::Csaf>(&data) {
-                                                    match indexer.as_mut().unwrap().index(index.index(), &doc.document.tracking.id, &doc) {
+                                                match serde_json::from_slice::<csaf::Csaf>(&data) {
+                                                    Ok(doc) => match indexer.as_mut().unwrap().index(index.index(), &doc.document.tracking.id, &doc) {
                                                         Ok(_) => {
                                                             tracing::debug!("Inserted entry into index");
                                                             bus.send(indexed_topic, key.as_bytes()).await?;
                                                             events += 1;
                                                         }
                                                         Err(e) => {
+                                                            tracing::warn!("Error inserting entry into index: {:?}", e);
                                                             let failure = serde_json::json!( {
                                                                 "key": key,
                                                                 "error": e.to_string(),
                                                             }).to_string();
                                                             bus.send(failed_topic, failure.as_bytes()).await?;
-                                                            tracing::warn!("Error inserting entry into index: {:?}", e)
                                                         }
                                                     }
-                                                } else {
-                                                    tracing::debug!("Error parsing object as CSAF");
+                                                    Err(e) => {
+                                                        tracing::warn!("Error parsing object as CSAF: {:?}", e);
+                                                        let failure = serde_json::json!( {
+                                                            "key": key,
+                                                            "error": e.to_string(),
+                                                        }).to_string();
+                                                        bus.send(failed_topic, failure.as_bytes()).await?;
+                                                    }
                                                 }
                                             }
                                             Err(e) => {
-                                                tracing::debug!("Error retrieving document event data, ignoring (error: {:?})", e);
+                                                tracing::warn!("Error retrieving document event data, ignoring (error: {:?})", e);
                                             }
                                         }
                                     }
+                                } else {
+                                    tracing::debug!("Non-PUT event ({:?}), skipping", data);
                                 }
                             }
-                        } else if let Err(e) = storage.decode_event(payload) {
-                            tracing::warn!("Error decoding event: {:?}", e);
+                        } else {
+                            tracing::warn!("Error decoding event, skipping");
                         }
+                    } else {
+                        tracing::warn!("No event for payload, skipping");
                     }
                     uncommitted_events.push(event);
                 },

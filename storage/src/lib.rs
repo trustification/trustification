@@ -262,6 +262,7 @@ impl Storage {
 }
 
 const PUT_EVENT: &str = "ObjectCreated:Put";
+const MULTIPART_PUT_EVENT: &str = "ObjectCreated:CompleteMultipartUpload";
 const DELETE_EVENT: &str = "ObjectRemoved:Delete";
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
@@ -287,7 +288,7 @@ pub struct Record {
 
 impl Record {
     pub fn event_type(&self) -> EventType {
-        if self.event_name.ends_with(PUT_EVENT) {
+        if self.event_name.ends_with(PUT_EVENT) || self.event_name.ends_with(MULTIPART_PUT_EVENT) {
             EventType::Put
         } else if self.event_name.ends_with(DELETE_EVENT) {
             EventType::Delete
