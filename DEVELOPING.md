@@ -68,18 +68,18 @@ curl -X POST --json @bombastic/testdata/my-sbom.json http://localhost:8082/api/v
 ```
 For large SBOM's, you must use a "chunked" `Transfer-Encoding`:
 ```shell
-curl -X POST -H "transfer-encoding: chunked" --json @bombastic/testdata/ubi9-sbom.json http://localhost:8082/api/v1/sbom?id=ubi9
+curl -H "transfer-encoding: chunked" --json @bombastic/testdata/ubi9-sbom.json http://localhost:8082/api/v1/sbom?id=ubi9
 ```
 You can also post compressed SBOM's using the `Content-Encoding` header, though the `Content-Type` header
 should always be `application/json` (as is implied by the `--json` option above).
 
 Both `zstd` and `bzip2` encodings are supported:
 ```shell
-curl -X POST -H "transfer-encoding: chunked" \
-             -H "content-encoding: bzip2" \
-             -H "content-type: application/json" \
-             -T openshift-4.13.json.bz2 \
-             http://localhost:8082/api/v1/sbom?id=openshift-4.13
+curl -H "transfer-encoding: chunked" \
+     -H "content-encoding: bzip2" \
+     -H "content-type: application/json" \
+     -T openshift-4.13.json.bz2 \
+     http://localhost:8082/api/v1/sbom?id=openshift-4.13
 ```
 You can also crawl Red Hat security data using the walker, which will push data through bombastic:
 
