@@ -43,10 +43,10 @@ pub async fn run(
                                         let key = data.key();
                                         match storage.get_for_event(&data).await {
                                             Ok((k, data)) => {
-                                                if let Ok(doc) = bombastic_index::SBOM::parse(&data) {
-                                                    match indexer.as_mut().unwrap().index(index.index(), &k, &doc) {
+                                                match bombastic_index::SBOM::parse(&data) {
+                                                    Ok(doc) => match indexer.as_mut().unwrap().index(index.index(), &k, &doc) {
                                                         Ok(_) => {
-                                                            tracing::trace!("Inserted entry into index");
+                                                            tracing::debug!("Inserted entry into index");
                                                             bus.send(indexed_topic, key.as_bytes()).await?;
                                                             events += 1;
                                                         }
@@ -59,18 +59,30 @@ pub async fn run(
                                                             tracing::warn!("Error inserting entry into index: {:?}", e)
                                                         }
                                                     }
-                                                } else {
-                                                    tracing::warn!("Error parsing SBOM for key {}, ignored", key);
+                                                    Err(e) => {
+                                                        tracing::warn!("Error parsing SBOM for key {}: {:?}, ignored", key, e);
+                                                        let failure = serde_json::json!( {
+                                                                "key": key,
+                                                                "error": e.to_string(),
+                                                            }).to_string();
+                                                        bus.send(failed_topic, failure.as_bytes()).await?;
+                                                    }
                                                 }
                                             }
                                             Err(e) => {
-                                                tracing::debug!("Error retrieving document event data, ignoring (error: {:?})", e);
+                                                tracing::warn!("Error retrieving document event data, ignoring (error: {:?})", e);
                                             }
                                         }
                                     }
+                                } else {
+                                    tracing::debug!("Non-PUT event ({:?}), skipping", data);
                                 }
                             }
+                        } else {
+                            tracing::warn!("Error decoding event, skipping");
                         }
+                    } else {
+                        tracing::warn!("No event for payload, skipping");
                     }
                     uncommitted_events.push(event);
                 }
