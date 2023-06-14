@@ -3,23 +3,25 @@ use std::{
     net::SocketAddr,
 };
 
+use crate::SharedState;
 use actix_web::{
-    error::PayloadError,
+    error::{self, PayloadError},
     get,
-    guard::GuardContext,
-    http::header::{self, Accept, AcceptEncoding, ContentType, HeaderValue, CONTENT_ENCODING},
+    http::{
+        header::{self, Accept, AcceptEncoding, ContentType, HeaderValue, CONTENT_ENCODING},
+        StatusCode,
+    },
     middleware::{Compress, Logger},
-    post, route, web, App, HttpRequest, HttpResponse, HttpServer, Responder,
+    route, web, App, HttpRequest, HttpResponse, HttpServer, Responder,
 };
 use bombastic_model::prelude::*;
+use derive_more::{Display, Error, From};
 use futures::TryStreamExt;
 use serde::Deserialize;
-use tracing::info;
-use trustification_storage::Storage;
+use trustification_index::Error as IndexError;
+use trustification_storage::Error as StorageError;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
-
-use crate::{sbom::SBOM, SharedState};
 
 #[derive(OpenApi)]
 #[openapi(paths(query_sbom, publish_sbom, search_sbom))]
@@ -39,7 +41,6 @@ pub async fn run<B: Into<SocketAddr>>(state: SharedState, bind: B) -> Result<(),
                 web::scope("/api/v1")
                     .service(query_sbom)
                     .service(search_sbom)
-                    .service(publish_large_sbom)
                     .service(publish_sbom),
             )
             .service(SwaggerUi::new("/swagger-ui/{_:.*}").url("/openapi.json", openapi.clone()))
@@ -50,38 +51,43 @@ pub async fn run<B: Into<SocketAddr>>(state: SharedState, bind: B) -> Result<(),
     Ok(())
 }
 
-// Return decoded stream, unless user's accept-encoding matches our stored encoding
-async fn fetch_object(storage: &Storage, key: &str, accept_encoding: AcceptEncoding) -> HttpResponse {
-    let encoding = match storage.get_head(key).await {
-        Ok(head) if head.status.is_success() => head.content_encoding.and_then(|ref e| {
-            accept_encoding
-                .negotiate(vec![e.parse().unwrap()].iter())
-                .map(|s| s.to_string())
-                .filter(|x| x == e)
-        }),
-        _ => {
-            return HttpResponse::NotFound().finish();
+#[derive(Debug, Display, Error, From)]
+enum Error {
+    #[display(fmt = "storage error: {}", "_0")]
+    Storage(StorageError),
+    #[display(fmt = "index error: {}", "_0")]
+    Index(IndexError),
+    #[display(fmt = "only JSON is accepted")]
+    InvalidContentType,
+    #[display(fmt = "invalid encoding, check Accept-Encoding")]
+    InvalidContentEncoding,
+}
+
+impl error::ResponseError for Error {
+    fn error_response(&self) -> HttpResponse {
+        let mut res = HttpResponse::build(self.status_code());
+        res.insert_header(ContentType::plaintext());
+        match self {
+            Self::InvalidContentType => res.insert_header(Accept::json()),
+            Self::InvalidContentEncoding => {
+                res.insert_header(AcceptEncoding(vec!["bzip2".parse().unwrap(), "zstd".parse().unwrap()]))
+            }
+            _ => &mut res,
         }
-    };
-    match encoding {
-        Some(enc) => match storage.get_encoded_stream(key).await {
-            Ok(stream) => HttpResponse::Ok()
-                .content_type(ContentType::json())
-                .insert_header((header::CONTENT_ENCODING, enc))
-                .streaming(stream),
-            Err(e) => {
-                tracing::warn!("Unable to locate object with key {}: {:?}", key, e);
-                HttpResponse::NotFound().finish()
-            }
-        },
-        None => match storage.get_stream(key).await {
-            Ok(stream) => HttpResponse::Ok().content_type(ContentType::json()).streaming(stream),
-            Err(e) => {
-                tracing::warn!("Unable to locate object with key {}: {:?}", key, e);
-                HttpResponse::NotFound().finish()
-            }
-        },
+        .body(self.to_string())
     }
+    fn status_code(&self) -> StatusCode {
+        match *self {
+            Self::Storage(StorageError::NotFound) => StatusCode::NOT_FOUND,
+            Self::InvalidContentType | Self::InvalidContentEncoding => StatusCode::BAD_REQUEST,
+            _ => StatusCode::INTERNAL_SERVER_ERROR,
+        }
+    }
+}
+
+#[derive(Debug, Deserialize)]
+struct IdentifierParams {
+    id: String,
 }
 
 #[utoipa::path(
@@ -99,22 +105,32 @@ async fn fetch_object(storage: &Storage, key: &str, accept_encoding: AcceptEncod
 #[get("/sbom")]
 async fn query_sbom(
     state: web::Data<SharedState>,
-    params: web::Query<QueryParams>,
+    params: web::Query<IdentifierParams>,
     accept_encoding: web::Header<AcceptEncoding>,
-) -> impl Responder {
-    let params = params.into_inner();
-    if let Some(id) = params.id {
-        tracing::trace!("Querying SBOM using id {}", id);
-        let storage = state.storage.read().await;
-        fetch_object(&storage, &id, accept_encoding.into_inner()).await
-    } else {
-        HttpResponse::BadRequest().body("Missing valid id")
+) -> actix_web::Result<impl Responder> {
+    let key = params.into_inner().id;
+    tracing::trace!("Querying SBOM using id {}", key);
+    let storage = state.storage.read().await;
+    // determine the encoding of the stored object, if any
+    let encoding = storage.get_head(&key).await.ok().and_then(|head| {
+        head.content_encoding.and_then(|ref e| {
+            accept_encoding
+                .negotiate(vec![e.parse().unwrap()].iter())
+                .map(|s| s.to_string())
+                .filter(|x| x == e)
+        })
+    });
+    match encoding {
+        // if client's accept-encoding includes S3 encoding, return encoded stream
+        Some(enc) => Ok(HttpResponse::Ok()
+            .content_type(ContentType::json())
+            .insert_header((header::CONTENT_ENCODING, enc))
+            .streaming(storage.get_encoded_stream(&key).await.map_err(Error::Storage)?)),
+        // otherwise, decode the stream
+        None => Ok(HttpResponse::Ok()
+            .content_type(ContentType::json())
+            .streaming(storage.get_decoded_stream(&key).await.map_err(Error::Storage)?)),
     }
-}
-
-#[derive(Debug, Deserialize)]
-struct QueryParams {
-    id: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -146,142 +162,76 @@ const fn default_limit() -> usize {
     )
 )]
 #[get("/sbom/search")]
-async fn search_sbom(state: web::Data<SharedState>, params: web::Query<SearchParams>) -> impl Responder {
+async fn search_sbom(
+    state: web::Data<SharedState>,
+    params: web::Query<SearchParams>,
+) -> actix_web::Result<impl Responder> {
     let params = params.into_inner();
 
     tracing::info!("Querying SBOM using {}", params.q);
 
     let index = state.index.read().await;
-    let result = index.search(&params.q, params.offset, params.limit);
+    let result = index
+        .search(&params.q, params.offset, params.limit)
+        .map_err(Error::Index)?;
 
-    let result = match result {
-        Err(e) => {
-            tracing::info!("Error searching: {:?}", e);
-            return HttpResponse::InternalServerError().body(e.to_string());
-        }
-        Ok(result) => result,
-    };
-
-    HttpResponse::Ok().json(SearchResult {
+    Ok(HttpResponse::Ok().json(SearchResult {
         total: result.1,
         result: result.0,
-    })
-}
-
-#[derive(Debug, Deserialize)]
-struct PublishParams {
-    id: String,
+    }))
 }
 
 #[utoipa::path(
-    post,
+    put,
     path = "/api/v1/sbom",
     responses(
         (status = 200, description = "SBOM found"),
-        (status = NOT_FOUND, description = "SBOM not found in archive"),
         (status = BAD_REQUEST, description = "Missing valid id"),
     ),
     params(
         ("id" = String, Query, description = "Package URL or product identifier of SBOM to query"),
     )
 )]
-#[post("/sbom")]
+#[route("/sbom", method = "PUT", method = "POST")]
 async fn publish_sbom(
-    state: web::Data<SharedState>,
-    params: web::Query<PublishParams>,
-    data: web::Bytes,
-) -> HttpResponse {
-    let params = params.into_inner();
-    let storage = state.storage.write().await;
-    // TODO: unbuffered I/O
-    match SBOM::parse(&data) {
-        Ok(sbom) => {
-            info!("Valid SBOM");
-            let id = params.id;
-
-            tracing::debug!("Storing new SBOM ({id})");
-            match storage.put_slice(&id, sbom.raw()).await {
-                Ok(_) => {
-                    let msg = format!("SBOM of size {} stored successfully", &data[..].len());
-                    tracing::trace!(msg);
-                    HttpResponse::Created().body(msg)
-                }
-                Err(e) => {
-                    let msg = format!("Error storing SBOM: {:?}", e);
-                    tracing::warn!(msg);
-                    HttpResponse::InternalServerError().body(msg)
-                }
-            }
-        }
-        Err(err) => {
-            let msg = format!("No valid SBOM uploaded: {err}");
-            tracing::info!(msg);
-            HttpResponse::BadRequest().body(msg)
-        }
-    }
-}
-
-fn chunked(ctx: &GuardContext) -> bool {
-    if let Some(val) = ctx.head().headers.get("transfer-encoding") {
-        return val == "chunked";
-    }
-    false
-}
-
-#[route("/sbom", method = "PUT", method = "POST", guard = "chunked")]
-async fn publish_large_sbom(
     req: HttpRequest,
     state: web::Data<SharedState>,
-    params: web::Query<PublishParams>,
+    params: web::Query<IdentifierParams>,
     payload: web::Payload,
-    content_type: web::Header<ContentType>,
-) -> HttpResponse {
-    if let Some(res) = verify_type(content_type.into_inner()) {
-        return res;
-    }
-    let enc = match verify_encoding(req.headers().get(CONTENT_ENCODING)) {
-        Ok(v) => v,
-        Err(res) => {
-            return res;
-        }
-    };
+    content_type: Option<web::Header<ContentType>>,
+) -> actix_web::Result<impl Responder> {
+    let _ = verify_type(content_type)?;
+    let enc = verify_encoding(req.headers().get(CONTENT_ENCODING))?;
     let id = &params.id;
     let storage = state.storage.write().await;
     let mut payload = payload.map_err(|e| match e {
         PayloadError::Io(e) => e,
         _ => io::Error::new(io::ErrorKind::Other, e),
     });
-    match storage.put_stream(id, enc, &mut payload).await {
-        Ok(status) => {
-            let msg = format!("SBOM stored with status code: {status}");
-            tracing::trace!(msg);
-            HttpResponse::Created().body(msg)
-        }
-        Err(e) => {
-            let msg = format!("Error storing SBOM: {:?}", e);
-            tracing::warn!(msg);
-            HttpResponse::InternalServerError().body(msg)
-        }
-    }
+    let status = storage
+        .put_stream(id, enc, &mut payload)
+        .await
+        .map_err(Error::Storage)?;
+    tracing::trace!("SBOM stored with status code: {status}");
+    Ok(HttpResponse::Created().finish())
 }
 
-fn verify_type(content_type: ContentType) -> Option<HttpResponse> {
-    if content_type == ContentType::json() {
-        None
-    } else {
-        Some(HttpResponse::BadRequest().insert_header(Accept::json()).finish())
+fn verify_type(content_type: Option<web::Header<ContentType>>) -> Result<ContentType, Error> {
+    if let Some(hdr) = content_type {
+        let ct = hdr.into_inner();
+        if ct == ContentType::json() {
+            return Ok(ct);
+        }
     }
+    Err(Error::InvalidContentType)
 }
 
 // bzip2 prevents us from using the ContentEncoding enum
-fn verify_encoding(content_encoding: Option<&HeaderValue>) -> Result<Option<&str>, HttpResponse> {
+fn verify_encoding(content_encoding: Option<&HeaderValue>) -> Result<Option<&str>, Error> {
     match content_encoding {
         Some(enc) => match enc.to_str() {
             Ok(v @ ("bzip2" | "zstd")) => Ok(Some(v)),
-            Ok(_) => Err(HttpResponse::BadRequest()
-                .insert_header(AcceptEncoding(vec!["bzip2".parse().unwrap(), "zstd".parse().unwrap()]))
-                .finish()),
-            Err(_) => Err(HttpResponse::InternalServerError().finish()),
+            _ => Err(Error::InvalidContentEncoding),
         },
         None => Ok(None),
     }

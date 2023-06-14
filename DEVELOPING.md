@@ -64,9 +64,9 @@ RUST_LOG=info cargo run -p trust -- vexination walker --devmode --source file://
 At this point, you can POST and GET SBOMs with the API using a unique identifier for the id. To ingest a small-ish SBOM:
 
 ```shell
-curl -X POST --json @bombastic/testdata/my-sbom.json http://localhost:8082/api/v1/sbom?id=my-sbom
+curl --json @bombastic/testdata/my-sbom.json http://localhost:8082/api/v1/sbom?id=my-sbom
 ```
-For large SBOM's, you must use a "chunked" `Transfer-Encoding`:
+For large SBOM's, you may use a "chunked" `Transfer-Encoding`:
 ```shell
 curl -H "transfer-encoding: chunked" --json @bombastic/testdata/ubi9-sbom.json http://localhost:8082/api/v1/sbom?id=ubi9
 ```

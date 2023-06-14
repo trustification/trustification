@@ -995,6 +995,7 @@ dependencies = [
  "bombastic-index",
  "bombastic-model",
  "clap",
+ "derive_more",
  "futures",
  "hex",
  "packageurl",
