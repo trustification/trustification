@@ -28,7 +28,7 @@ spec:
           imagePullPolicy: Always
           name: service
           command: ["/trust"]
-          args: ["bombastic", "api", "-p", "8080"]
+          args: ["bombastic", "api", "-p", "8080", "--storage-bucket", "bombastic"]
           env:
             - name: RUST_LOG
               value: info
@@ -42,7 +42,7 @@ spec:
                 secretKeyRef:
                   name: bombastic-credentials-secret
                   key: secret-access-key
-            - name: AWS_REGION
+            - name: REGION
               value: "eu-west-1"
             - name: INFRASTRUCTURE_ENABLED
               value: "true"
