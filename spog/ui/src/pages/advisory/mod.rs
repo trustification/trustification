@@ -1,8 +1,7 @@
 use std::rc::Rc;
 
-use csaf::Csaf;
 use patternfly_yew::prelude::*;
-use spog_model::search::SearchResult;
+use spog_model::prelude::*;
 use yew::prelude::*;
 use yew_more_hooks::hooks::{UseAsyncHandleDeps, UseAsyncState};
 
@@ -25,9 +24,11 @@ pub fn advisory(props: &AdvisoryProps) -> Html {
     let search = use_state_eq(UseAsyncState::default);
     let callback = {
         let search = search.clone();
-        Callback::from(move |state: UseAsyncHandleDeps<SearchResult<Rc<Vec<Csaf>>>, String>| {
-            search.set((*state).clone());
-        })
+        Callback::from(
+            move |state: UseAsyncHandleDeps<SearchResult<Rc<Vec<AdvisorySummary>>>, String>| {
+                search.set((*state).clone());
+            },
+        )
     };
     let query = if let Some(props) = &props.query {
         if props.is_empty() {

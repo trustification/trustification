@@ -2,7 +2,7 @@ use reqwest::{RequestBuilder, StatusCode};
 use spog_model::prelude::*;
 
 use super::{Backend, Error};
-use crate::backend::{data::Vulnerability, Endpoint};
+use crate::backend::Endpoint;
 
 pub struct VexService {
     backend: Backend,
@@ -37,11 +37,10 @@ impl VexService {
         }
     }
 
-    pub async fn lookup(&self, advisory: &String) -> Result<Option<csaf::Csaf>, Error> {
+    pub async fn lookup(&self, advisory: &AdvisorySummary) -> Result<Option<csaf::Csaf>, Error> {
         let response = self
             .client
-            .get(self.backend.join(Endpoint::Api, "/api/v1/advisory")?)
-            .query(&[("advisory", advisory.to_string())])
+            .get(self.backend.join(Endpoint::Api, &advisory.href)?)
             .send()
             .await?;
 
@@ -74,7 +73,7 @@ impl VexService {
         &self,
         q: &str,
         options: &SearchOptions,
-    ) -> Result<SearchResult<Vec<csaf::Csaf>>, Error> {
+    ) -> Result<SearchResult<Vec<AdvisorySummary>>, Error> {
         let request = self
             .client
             .get(self.backend.join(Endpoint::Api, "/api/v1/advisory/search")?)

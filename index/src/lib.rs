@@ -9,8 +9,9 @@ use tantivy::{
     directory::{MmapDirectory, INDEX_WRITER_LOCK},
     query::{BooleanQuery, Occur, Query, RangeQuery, TermQuery},
     schema::*,
-    DateTime, Directory, Index as SearchIndex,
+    DateTime, Directory, Index as SearchIndex, Searcher,
 };
+use time::OffsetDateTime;
 use tracing::{info, warn};
 
 #[derive(Clone, Debug, clap::Parser)]
@@ -37,7 +38,12 @@ pub trait Index {
 
     fn schema(&self) -> Schema;
     fn prepare_query(&self, q: &str) -> Result<Box<dyn Query>, Error>;
-    fn process_hit(&self, doc: Document) -> Result<Self::MatchedDocument, Error>;
+    fn process_hit(
+        &self,
+        doc: Document,
+        searcher: &Searcher,
+        query: &dyn Query,
+    ) -> Result<Self::MatchedDocument, Error>;
     fn index_doc(&self, id: &str, document: &Self::Document) -> Result<Vec<Document>, Error>;
 }
 
@@ -191,7 +197,7 @@ impl<INDEX: Index> IndexStore<INDEX> {
         let mut hits = Vec::new();
         for hit in top_docs {
             let doc = searcher.doc(hit.1)?;
-            if let Ok(value) = self.index.process_hit(doc) {
+            if let Ok(value) = self.index.process_hit(doc, &searcher, &query) {
                 hits.push(value);
             } else {
                 warn!("Error processing hit {:?}", hit);
@@ -298,4 +304,19 @@ pub fn create_boolean_query(occur: Occur, term: Term) -> Box<dyn Query> {
         occur,
         Box::new(TermQuery::new(term, IndexRecordOption::Basic)),
     )]))
+}
+
+pub fn field2str(doc: &Document, field: Field) -> Result<&str, Error> {
+    let value = doc.get_first(field).map(|s| s.as_text()).unwrap_or(None);
+    value.map(|v| Ok(v)).unwrap_or(Err(Error::NotFound))
+}
+
+pub fn field2date(doc: &Document, field: Field) -> Result<OffsetDateTime, Error> {
+    let value = doc.get_first(field).map(|s| s.as_date()).unwrap_or(None);
+    value.map(|v| Ok(v.into_utc())).unwrap_or(Err(Error::NotFound))
+}
+
+pub fn field2float(doc: &Document, field: Field) -> Result<f64, Error> {
+    let value = doc.get_first(field).map(|s| s.as_f64()).unwrap_or(None);
+    value.map(|v| Ok(v)).unwrap_or(Err(Error::NotFound))
 }

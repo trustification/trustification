@@ -9,6 +9,7 @@ pub struct SearchDocument {
     pub supplier: String,
     pub classifier: String,
     pub description: String,
+    pub snippet: String,
     pub created: time::OffsetDateTime,
 }
 

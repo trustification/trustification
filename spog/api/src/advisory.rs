@@ -1,8 +1,7 @@
-use std::collections::HashSet;
+use std::collections::HashMap;
 
 use actix_web::{web, web::ServiceConfig, HttpResponse, Responder};
-use futures::StreamExt;
-use serde_json::json;
+use spog_model::search::{AdvisorySummary, SearchResult};
 use tracing::{info, trace, warn};
 
 use crate::{search::QueryParams, server::SharedState};
@@ -25,7 +24,7 @@ pub struct GetParams {
     get,
     path = "/api/v1/advisory",
     responses(
-        (status = 200, description = "Advisory was found", body = Pet),
+        (status = 200, description = "Advisory was found", body = Csaf),
         (status = NOT_FOUND, description = "Advisory was not found")
     ),
     params(
@@ -46,7 +45,7 @@ pub async fn get(state: web::Data<SharedState>, params: web::Query<GetParams>) -
     get,
     path = "/api/v1/advisory/search",
     responses(
-        (status = 200, description = "Search was performed successfully", body = Pet),
+        (status = 200, description = "Search was performed successfully", body = SearchResult<Vec<AdvisorySummary>>),
     ),
     params(
         ("q" = String, Path, description = "Search query"),
@@ -61,7 +60,7 @@ pub async fn search(state: web::Data<SharedState>, params: web::Query<QueryParam
         .search_vex(&params.q, params.offset, params.limit.min(MAX_LIMIT))
         .await;
 
-    let result = match result {
+    let mut result = match result {
         Err(e) => {
             info!("Error searching: {:?}", e);
             return HttpResponse::InternalServerError().body(e.to_string());
@@ -69,37 +68,32 @@ pub async fn search(state: web::Data<SharedState>, params: web::Query<QueryParam
         Ok(result) => result,
     };
 
-    let mut ret: Vec<serde_json::Value> = Vec::new();
-
     // Dedup data
-    let mut dedup: HashSet<String> = HashSet::new();
+    let mut m: HashMap<String, AdvisorySummary> = HashMap::new();
 
-    // TODO: stream these?
-    for key in result.result.iter() {
-        if !dedup.contains(&key.advisory) {
-            if let Ok(mut obj) = state.get_vex(&key.advisory).await {
-                let mut data = Vec::new();
-                while let Some(item) = obj.next().await {
-                    match item {
-                        Ok(item) => {
-                            data.extend_from_slice(&item[..]);
-                        }
-                        Err(e) => {
-                            warn!("Error consuming object stream: {:?}", e);
-                            return HttpResponse::InternalServerError().body(e.to_string());
-                        }
-                    }
-                }
-                if let Ok(data) = serde_json::from_slice(&data[..]) {
-                    ret.push(data);
-                    dedup.insert(key.advisory.clone());
-                }
+    for item in result.result.drain(..) {
+        if let Some(entry) = m.get_mut(&item.advisory_id) {
+            if !entry.cves.contains(&item.cve_id) {
+                entry.cves.push(item.cve_id);
             }
+        } else {
+            m.insert(
+                item.advisory_id.clone(),
+                AdvisorySummary {
+                    id: item.advisory_id.clone(),
+                    title: item.advisory_title,
+                    snippet: item.advisory_snippet,
+                    desc: item.advisory_desc,
+                    date: item.advisory_date,
+                    href: format!("/api/v1/advisory?id={}", item.advisory_id),
+                    cves: vec![item.cve_id],
+                },
+            );
         }
     }
 
-    HttpResponse::Ok().json(json!({
-        "result": ret,
-        "total": result.total,
-    }))
+    HttpResponse::Ok().json(SearchResult::<Vec<AdvisorySummary>> {
+        total: Some(result.total),
+        result: m.values().cloned().collect(),
+    })
 }
