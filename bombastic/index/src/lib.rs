@@ -9,13 +9,16 @@ use cyclonedx_bom::models::{
 use search::*;
 use sikula::prelude::*;
 use spdx_rs::models::Algorithm;
+use tantivy::schema::INDEXED;
+use time::format_description::well_known::Rfc3339;
 use tracing::{debug, info, trace, warn};
 use trustification_index::{
-    create_boolean_query, primary2occur,
+    create_boolean_query, create_date_query, primary2occur,
     tantivy::{
         doc,
         query::{Occur, Query},
         schema::{Field, Schema, Term, FAST, STORED, STRING, TEXT},
+        DateTime,
     },
     term2query, Document, Error as SearchError,
 };
@@ -49,6 +52,7 @@ impl SBOM {
 struct Fields {
     sbom_id: Field,
     dependent: Field,
+    created: Field,
     purl: Field,
     name: Field,
     cpe: Field,
@@ -81,6 +85,7 @@ impl Index {
             purl: schema.add_text_field("purl", STRING | FAST | STORED),
             ptype: schema.add_text_field("ptype", STRING),
             pnamespace: schema.add_text_field("pnamespace", STRING),
+            created: schema.add_date_field("created", INDEXED | STORED),
             pname: schema.add_text_field("pname", STRING),
             pversion: schema.add_text_field("pversion", STRING | STORED),
             description: schema.add_text_field("description", TEXT | STORED),
@@ -125,6 +130,12 @@ impl Index {
                     if let Some(comment) = &package.package_summary_description {
                         document.add_text(self.fields.description, comment);
                     }
+
+                    let created = &bom.document_creation_information.creation_info.created;
+                    document.add_date(
+                        self.fields.created,
+                        DateTime::from_timestamp_millis(created.timestamp_millis()),
+                    );
 
                     for r in package.external_reference.iter() {
                         if r.reference_type == "cpe22type" {
@@ -178,9 +189,22 @@ impl Index {
     fn index_cyclonedx(&self, id: &str, bom: &cyclonedx_bom::prelude::Bom) -> Result<Vec<Document>, SearchError> {
         let mut documents = Vec::new();
         let mut parent = None;
+
+        let mut created = None;
+
         if let Some(metadata) = &bom.metadata {
+            if let Some(timestamp) = &metadata.timestamp {
+                let timestamp = timestamp.to_string();
+                if let Ok(d) = time::OffsetDateTime::parse(&timestamp, &Rfc3339) {
+                    created.replace(DateTime::from_timestamp_secs(d.unix_timestamp()));
+                }
+            }
             if let Some(component) = &metadata.component {
-                documents.push(self.index_cyclonedx_component(id, component, None)?);
+                let mut doc = self.index_cyclonedx_component(id, component, None)?;
+                if let Some(created) = &created {
+                    doc.add_date(self.fields.created, created.clone());
+                }
+                documents.push(doc);
                 if let Some(purl) = &component.purl {
                     parent.replace(purl.to_string());
                 }
@@ -189,7 +213,12 @@ impl Index {
 
         if let Some(components) = &bom.components {
             for component in components.0.iter() {
-                documents.push(self.index_cyclonedx_component(id, component, parent.as_deref())?);
+                let mut doc = self.index_cyclonedx_component(id, component, parent.as_deref())?;
+                if let Some(created) = &created {
+                    doc.add_date(self.fields.created, created.clone());
+                }
+
+                documents.push(doc);
             }
         }
         Ok(documents)
@@ -302,6 +331,8 @@ impl Index {
                 let term = Term::from_field_text(self.fields.pversion, value);
                 create_boolean_query(occur, term)
             }
+
+            Packages::Created(ordered) => create_date_query(self.fields.created, ordered),
 
             Packages::Description(primary) => {
                 let (occur, value) = primary2occur(primary);
@@ -452,6 +483,15 @@ impl trustification_index::Index for Index {
             .map(|s| s.as_text().unwrap_or(name))
             .unwrap_or(name);
 
+        let created: time::OffsetDateTime = doc
+            .get_first(self.fields.created)
+            .map(|s| {
+                s.as_date()
+                    .map(|d| d.into_utc())
+                    .unwrap_or(time::OffsetDateTime::UNIX_EPOCH)
+            })
+            .unwrap_or(time::OffsetDateTime::UNIX_EPOCH);
+
         let hit = SearchDocument {
             sbom_id: id.to_string(),
             purl: purl.to_string(),
@@ -461,6 +501,7 @@ impl trustification_index::Index for Index {
             license: license.to_string(),
             classifier: classifier.to_string(),
             supplier: supplier.to_string(),
+            created,
             description: description.to_string(),
         };
         trace!("HIT: {:?}", hit);

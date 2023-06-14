@@ -39,7 +39,7 @@ pub fn console() -> Html {
             </PageSidebar>
         );
 
-    let callback_github = use_open("https://github.com/xkcd-2347/chicken-coop", "_blank");
+    let callback_github = use_open("https://github.com/trustification/trustification", "_blank");
 
     let backdrop = use_backdrop();
 

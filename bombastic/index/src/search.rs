@@ -18,6 +18,8 @@ pub enum Packages<'a> {
     Version(Primary<'a>),
     #[search(default)]
     Description(Primary<'a>),
+    #[search]
+    Created(Ordered<time::OffsetDateTime>),
     #[search(default)]
     Digest(Primary<'a>),
     #[search(default)]

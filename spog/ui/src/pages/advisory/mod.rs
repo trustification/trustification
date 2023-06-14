@@ -29,7 +29,15 @@ pub fn advisory(props: &AdvisoryProps) -> Html {
             search.set((*state).clone());
         })
     };
-    let query = props.query.clone();
+    let query = if let Some(props) = &props.query {
+        if props.is_empty() {
+            None
+        } else {
+            Some(props.clone())
+        }
+    } else {
+        None
+    };
 
     html!(
         <>

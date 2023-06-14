@@ -9,6 +9,7 @@ pub struct SearchDocument {
     pub supplier: String,
     pub classifier: String,
     pub description: String,
+    pub created: time::OffsetDateTime,
 }
 
 #[derive(serde::Deserialize, serde::Serialize, Debug, PartialEq)]
