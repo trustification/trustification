@@ -44,7 +44,7 @@ pub async fn run(
                                         match storage.get_for_event(&data).await {
                                             Ok((_, data)) => {
                                                 match serde_json::from_slice::<csaf::Csaf>(&data) {
-                                                    Ok(doc) => match writer.as_mut().unwrap().write(index.index(), &doc.document.tracking.id, &doc) {
+                                                    Ok(doc) => match writer.as_mut().unwrap().add_document(index.index_as_mut(), &doc.document.tracking.id, &doc) {
                                                         Ok(_) => {
                                                             tracing::debug!("Inserted entry into index");
                                                             bus.send(indexed_topic, key.as_bytes()).await?;

@@ -195,6 +195,13 @@ impl trustification_index::Index for Index {
         Ok(documents)
     }
 
+    fn doc_id_to_term(&self, id: &str) -> Term {
+        self.schema
+            .get_field("id")
+            .map(|f| Term::from_field_text(f, id))
+            .unwrap()
+    }
+
     fn schema(&self) -> Schema {
         self.schema.clone()
     }
@@ -261,6 +268,7 @@ impl Default for Index {
 }
 
 impl Index {
+    // TODO use CONST for field names
     pub fn new() -> Self {
         let mut schema = Schema::builder();
         let advisory_id = schema.add_text_field("advisory_id", STRING | FAST | STORED);
