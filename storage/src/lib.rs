@@ -55,6 +55,8 @@ impl StorageConfig {
 pub enum Error {
     #[error("internal storage error")]
     Internal,
+    #[error("object not found")]
+    NotFound,
     #[error("error with credentials")]
     Credentials(CredentialsError),
     #[error("error with s3 backend {0}")]
@@ -75,6 +77,11 @@ impl From<CredentialsError> for Error {
 
 impl From<S3Error> for Error {
     fn from(e: S3Error) -> Self {
+        if let S3Error::HttpFailWithBody(status, _) = e {
+            if status == 404 {
+                return Self::NotFound;
+            }
+        }
         Self::S3(e)
     }
 }
@@ -137,12 +144,8 @@ impl Storage {
             endpoint: config.endpoint.clone().unwrap_or("http://localhost:9000".to_string()),
         });
 
-        let bucket = config
-            .bucket
-            .as_ref()
-            .map(|s| s.as_str())
-            .expect("Required parameter bucket was not set");
-        let bucket = Bucket::new(&bucket, region, credentials)?.with_path_style();
+        let bucket = config.bucket.as_deref().expect("Required parameter bucket was not set");
+        let bucket = Bucket::new(bucket, region, credentials)?.with_path_style();
         Ok(Self { bucket })
     }
 
@@ -194,7 +197,7 @@ impl Storage {
     }
 
     // Returns unencoded stream
-    pub async fn get_stream(&self, key: &str) -> Result<impl Stream<Item = Result<Bytes, Error>>, Error> {
+    pub async fn get_decoded_stream(&self, key: &str) -> Result<impl Stream<Item = Result<Bytes, Error>>, Error> {
         let path = format!("{}{}", DATA_PATH, key);
         self.get_object_stream(&path).await
     }
@@ -240,8 +243,7 @@ impl Storage {
     // This will load the entire S3 object into memory
     async fn get_object(&self, path: &str) -> Result<Vec<u8>, Error> {
         let mut bytes = vec![];
-        let stream = self.get_object_stream(path).await?;
-        tokio::pin!(stream);
+        let mut stream = self.get_object_stream(path).await?;
         while let Some(chunk) = stream.next().await {
             bytes.extend_from_slice(&chunk?)
         }
