@@ -4,7 +4,7 @@ use bombastic_index::Index;
 use futures::pin_mut;
 use tokio::select;
 use trustification_event_bus::EventBus;
-use trustification_index::IndexStore;
+use trustification_index::{Index as IndexTrait, IndexStore};
 use trustification_storage::{EventType, Storage};
 
 pub async fn run(
@@ -36,17 +36,18 @@ pub async fn run(
                     if let Some(payload) = event.payload() {
                         if let Ok(data) = storage.decode_event(payload) {
                             for data in data.records {
-                                if data.event_type() == EventType::Put {
-                                    if storage.is_index(data.key()) {
-                                        tracing::trace!("It's an index event, ignoring");
-                                    } else {
-                                        let key = data.key();
-                                        match storage.get_for_event(&data).await {
-                                            Ok((k, data)) => {
-                                                match bombastic_index::SBOM::parse(&data) {
-                                                    Ok(doc) => match writer.as_mut().unwrap().write(index.index(), &k, &doc) {
-                                                        Ok(_) => {
-                                                            tracing::debug!("Inserted entry into index");
+                                if storage.is_index(data.key()) {
+                                    tracing::trace!("It's an index event, ignoring");
+                                } else {
+                                    match data.event_type() {
+                                        EventType::Put => {
+                                            let key = data.key();
+                                            match storage.get_for_event(&data).await {
+                                                Ok((k, data)) => {
+                                                    match bombastic_index::SBOM::parse(&data) {
+                                                        Ok(doc) => match writer.as_mut().unwrap().add_document(index.index_as_mut(), &k, &doc) {
+                                                            Ok(_) => {
+                                                                tracing::debug!("Inserted entry into index");
                                                             bus.send(indexed_topic, key.as_bytes()).await?;
                                                             events += 1;
                                                         }
@@ -67,15 +68,21 @@ pub async fn run(
                                                             }).to_string();
                                                         bus.send(failed_topic, failure.as_bytes()).await?;
                                                     }
+                                                    }
+                                                }
+                                                Err(e) => {
+                                                    tracing::warn!("Error retrieving document event data, ignoring (error: {:?})", e);
                                                 }
                                             }
-                                            Err(e) => {
-                                                tracing::warn!("Error retrieving document event data, ignoring (error: {:?})", e);
-                                            }
+                                        },
+                                        EventType::Delete => {
+                                            let key = data.key();
+                                            writer.as_mut().unwrap().delete_document(index.index().doc_id_to_term(key));
+                                            tracing::debug!("Deleted entry {key} from index");
+                                            events += 1;
                                         }
+                                        _ => tracing::debug!("Non (PUT | DELETE)  event ({:?}), skipping", data),
                                     }
-                                } else {
-                                    tracing::debug!("Non-PUT event ({:?}), skipping", data);
                                 }
                             }
                         } else {

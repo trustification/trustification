@@ -431,6 +431,13 @@ impl trustification_index::Index for Index {
         }
     }
 
+    fn doc_id_to_term(&self, id: &str) -> Term {
+        self.schema
+            .get_field("sbom_id")
+            .map(|f| Term::from_field_text(f, id))
+            .unwrap()
+    }
+
     fn prepare_query(&self, q: &str) -> Result<Box<dyn Query>, SearchError> {
         if q.is_empty() {
             return Ok(Box::new(AllQuery));

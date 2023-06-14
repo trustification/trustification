@@ -46,6 +46,7 @@ pub trait Index {
         query: &dyn Query,
     ) -> Result<Self::MatchedDocument, Error>;
     fn index_doc(&self, id: &str, document: &Self::Document) -> Result<Vec<Document>, Error>;
+    fn doc_id_to_term(&self, id: &str) -> Term;
 }
 
 #[derive(Debug)]
@@ -86,7 +87,12 @@ pub struct IndexWriter {
 }
 
 impl IndexWriter {
-    pub fn write<INDEX: Index>(&mut self, index: &mut INDEX, id: &str, raw: &INDEX::Document) -> Result<(), Error> {
+    pub fn add_document<INDEX: Index>(
+        &mut self,
+        index: &mut INDEX,
+        id: &str,
+        raw: &INDEX::Document,
+    ) -> Result<(), Error> {
         let docs = index.index_doc(id, raw)?;
         for doc in docs {
             self.writer.add_document(doc)?;
@@ -98,6 +104,10 @@ impl IndexWriter {
         self.writer.commit()?;
         self.writer.wait_merging_threads()?;
         Ok(())
+    }
+
+    pub fn delete_document(&self, term: Term) {
+        self.writer.delete_term(term);
     }
 }
 
@@ -135,7 +145,11 @@ impl<INDEX: Index> IndexStore<INDEX> {
         })
     }
 
-    pub fn index(&mut self) -> &mut INDEX {
+    pub fn index(&self) -> &INDEX {
+        &self.index
+    }
+
+    pub fn index_as_mut(&mut self) -> &mut INDEX {
         &mut self.index
     }
 
