@@ -39,6 +39,8 @@ spec:
                   key: secret-access-key
             - name: AWS_REGION
               value: "eu-west-1"
+            - name: REGION
+              value: "eu-west-1"
           volumeMounts:
             - name: data
               mountPath: /data
