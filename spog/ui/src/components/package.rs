@@ -132,8 +132,9 @@ pub fn package_search(props: &PackageSearchProperties) -> Html {
         }
     };
 
-    // render
+    let hidden = text.is_empty();
 
+    // render
     html!(
         <>
             <Toolbar>
@@ -152,7 +153,9 @@ pub fn package_search(props: &PackageSearchProperties) -> Html {
                                             oninput={ Callback::from(move |data| text.set(data)) }
                                         />
                                         <TextInputGroupUtilities>
-                                            <Button icon={Icon::Times} variant={ButtonVariant::Plain} onclick={onclear} />
+                                            <div hidden={hidden}>
+                                                <Button icon={Icon::Times} variant={ButtonVariant::None} onclick={onclear} />
+                                            </div>
                                         </TextInputGroupUtilities>
                                         <Button icon={Icon::ArrowRight} variant={ButtonVariant::Control} onclick={onset.reform(|_|())} />
                                     </TextInputGroup>
