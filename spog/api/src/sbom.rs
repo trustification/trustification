@@ -76,7 +76,7 @@ pub async fn search(state: web::Data<SharedState>, params: web::Query<search::Qu
                             sha256: item.sha256,
                             license: item.license,
                             classifier: item.classifier,
-                            supplier: item.supplier,
+                            supplier: item.supplier.trim_start_matches("Organization: ").to_string(),
                             description: item.description,
                             dependents: vec![item.dependent],
                             vulnerabilities: Vec::new(),
