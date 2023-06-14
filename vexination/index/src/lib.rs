@@ -9,9 +9,10 @@ use csaf::{
 };
 use search::*;
 use sikula::prelude::*;
-use tracing::debug;
+use tantivy::{Searcher, SnippetGenerator};
+use tracing::{debug, info};
 use trustification_index::{
-    create_boolean_query, create_date_query, primary2occur,
+    create_boolean_query, create_date_query, field2date, field2float, field2str, primary2occur,
     tantivy::{
         doc,
         query::{BooleanQuery, Occur, Query, RangeQuery},
@@ -28,19 +29,25 @@ pub struct Index {
 }
 
 struct Fields {
-    id: Field,
-    document_status: Field,
-    title: Field,
-    description: Field,
-    cve: Field,
+    advisory_id: Field,
+    advisory_status: Field,
+    advisory_title: Field,
+    advisory_description: Field,
+    advisory_severity: Field,
+    advisory_revision: Field,
     advisory_initial: Field,
     advisory_current: Field,
+
+    cve_id: Field,
+    cve_title: Field,
+    cve_description: Field,
     cve_release: Field,
     cve_discovery: Field,
-    severity: Field,
-    cvss: Field,
-    fixed: Field,
-    affected: Field,
+    cve_severity: Field,
+    cve_cvss: Field,
+    cve_fixed: Field,
+    cve_affected: Field,
+    cve_cwe: Field,
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -61,35 +68,69 @@ impl trustification_index::Index for Index {
             csaf::document::Status::Final => "final",
         };
 
+        let mut base = doc!(
+            self.fields.advisory_id => id,
+            self.fields.advisory_status => document_status,
+            self.fields.advisory_title => csaf.document.title.clone(),
+        );
+
+        if let Some(notes) = &csaf.document.notes {
+            for note in notes {
+                match &note.category {
+                    NoteCategory::Description | NoteCategory::Summary => {
+                        base.add_text(self.fields.advisory_description, &note.text);
+                    }
+                    _ => {}
+                }
+            }
+        }
+
+        if let Some(severity) = &csaf.document.aggregate_severity {
+            base.add_text(self.fields.advisory_severity, &severity.text);
+        }
+
+        for revision in &csaf.document.tracking.revision_history {
+            base.add_text(self.fields.advisory_revision, &revision.summary);
+        }
+
+        base.add_date(
+            self.fields.advisory_initial,
+            DateTime::from_timestamp_millis(csaf.document.tracking.initial_release_date.timestamp_millis()),
+        );
+
+        base.add_date(
+            self.fields.advisory_current,
+            DateTime::from_timestamp_millis(csaf.document.tracking.current_release_date.timestamp_millis()),
+        );
+
         if let Some(vulns) = &csaf.vulnerabilities {
             for vuln in vulns {
-                let mut document = doc!(
-                    self.fields.id => id,
-                    self.fields.document_status => document_status,
-                );
-
+                let mut document = base.clone();
                 if let Some(title) = &vuln.title {
-                    document.add_text(self.fields.title, title);
+                    document.add_text(self.fields.cve_title, title);
                 }
 
                 if let Some(cve) = &vuln.cve {
-                    document.add_text(self.fields.cve, cve);
+                    document.add_text(self.fields.cve_id, cve);
                 }
 
                 if let Some(scores) = &vuln.scores {
                     for score in scores {
                         if let Some(cvss3) = &score.cvss_v3 {
-                            document.add_f64(self.fields.cvss, cvss3.score().value());
-                            document.add_text(self.fields.severity, cvss3.severity().as_str());
-                            break;
+                            document.add_f64(self.fields.cve_cvss, cvss3.score().value());
+                            document.add_text(self.fields.cve_severity, cvss3.severity().as_str());
                         }
                     }
+                }
+
+                if let Some(cwe) = &vuln.cwe {
+                    document.add_text(self.fields.cve_cwe, &cwe.id);
                 }
 
                 if let Some(notes) = &vuln.notes {
                     for note in notes {
                         if let NoteCategory::Description = note.category {
-                            document.add_text(self.fields.description, note.text.as_str());
+                            document.add_text(self.fields.cve_description, note.text.as_str());
                         }
                     }
                 }
@@ -99,10 +140,10 @@ impl trustification_index::Index for Index {
                         for product in products {
                             if let Some(p) = find_product_package(csaf, product) {
                                 if let Some(cpe) = p.cpe {
-                                    document.add_text(self.fields.affected, cpe);
+                                    document.add_text(self.fields.cve_affected, cpe);
                                 }
                                 if let Some(purl) = p.purl {
-                                    document.add_text(self.fields.affected, purl);
+                                    document.add_text(self.fields.cve_affected, purl);
                                 }
                             }
                         }
@@ -112,25 +153,15 @@ impl trustification_index::Index for Index {
                         for product in products {
                             if let Some(p) = find_product_package(csaf, product) {
                                 if let Some(cpe) = p.cpe {
-                                    document.add_text(self.fields.fixed, cpe);
+                                    document.add_text(self.fields.cve_fixed, cpe);
                                 }
                                 if let Some(purl) = p.purl {
-                                    document.add_text(self.fields.fixed, purl);
+                                    document.add_text(self.fields.cve_fixed, purl);
                                 }
                             }
                         }
                     }
                 }
-
-                document.add_date(
-                    self.fields.advisory_initial,
-                    DateTime::from_timestamp_millis(csaf.document.tracking.initial_release_date.timestamp_millis()),
-                );
-
-                document.add_date(
-                    self.fields.advisory_current,
-                    DateTime::from_timestamp_millis(csaf.document.tracking.current_release_date.timestamp_millis()),
-                );
 
                 if let Some(discovery_date) = &vuln.discovery_date {
                     document.add_date(
@@ -147,7 +178,6 @@ impl trustification_index::Index for Index {
                 }
 
                 debug!("Adding doc: {:?}", document);
-
                 documents.push(document);
             }
         }
@@ -171,39 +201,41 @@ impl trustification_index::Index for Index {
         Ok(query)
     }
 
-    fn process_hit(&self, doc: Document) -> Result<Self::MatchedDocument, SearchError> {
-        // TODO Find a better way to do this
-        if let Some(Some(advisory)) = doc.get_first(self.fields.id).map(|s| s.as_text()) {
-            if let Some(Some(cve)) = doc.get_first(self.fields.cve).map(|s| s.as_text()) {
-                if let Some(Some(title)) = doc.get_first(self.fields.title).map(|s| s.as_text()) {
-                    if let Some(Some(description)) = doc.get_first(self.fields.description).map(|s| s.as_text()) {
-                        if let Some(Some(cvss)) = doc.get_first(self.fields.cvss).map(|s| s.as_f64()) {
-                            if let Some(Some(release)) = doc.get_first(self.fields.cve_release).map(|s| s.as_date()) {
-                                let fixed: Vec<String> = doc
-                                    .get_all(self.fields.fixed)
-                                    .flat_map(|f| f.as_text().map(|s| s.to_string()))
-                                    .collect();
-                                let affected: Vec<String> = doc
-                                    .get_all(self.fields.affected)
-                                    .flat_map(|f| f.as_text().map(|s| s.to_string()))
-                                    .collect();
-                                return Ok(SearchDocument {
-                                    advisory: advisory.to_string(),
-                                    cve: cve.to_string(),
-                                    title: title.to_string(),
-                                    description: description.to_string(),
-                                    cvss,
-                                    release: release.into_utc(),
-                                    affected,
-                                    fixed,
-                                });
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        Err(SearchError::NotFound)
+    fn process_hit(
+        &self,
+        doc: Document,
+        searcher: &Searcher,
+        query: &dyn Query,
+    ) -> Result<Self::MatchedDocument, SearchError> {
+        let snippet_generator = SnippetGenerator::create(searcher, query, self.fields.advisory_description)?;
+        let advisory_snippet = snippet_generator.snippet_from_doc(&doc).to_html();
+
+        let advisory_id = field2str(&doc, self.fields.advisory_id)?;
+        let advisory_title = field2str(&doc, self.fields.advisory_title)?;
+        let advisory_date = field2date(&doc, self.fields.advisory_current)?;
+        let advisory_desc = field2str(&doc, self.fields.advisory_description)?;
+
+        let cve_id = field2str(&doc, self.fields.cve_id)?;
+        let cve_title = field2str(&doc, self.fields.cve_title)?;
+        let cve_release = field2date(&doc, self.fields.cve_release)?;
+        let cve_cvss = field2float(&doc, self.fields.cve_cvss).ok();
+        let snippet_generator = SnippetGenerator::create(searcher, query, self.fields.cve_description)?;
+        let cve_desc = field2str(&doc, self.fields.cve_description)?;
+        let cve_snippet = snippet_generator.snippet_from_doc(&doc).to_html();
+
+        Ok(SearchDocument {
+            advisory_id: advisory_id.to_string(),
+            advisory_title: advisory_title.to_string(),
+            advisory_date,
+            advisory_snippet,
+            advisory_desc: advisory_desc.to_string(),
+            cve_id: cve_id.to_string(),
+            cve_title: cve_title.to_string(),
+            cve_release,
+            cve_snippet,
+            cve_desc: cve_desc.to_string(),
+            cve_cvss,
+        })
     }
 }
 
@@ -216,35 +248,48 @@ impl Default for Index {
 impl Index {
     pub fn new() -> Self {
         let mut schema = Schema::builder();
-        let id = schema.add_text_field("id", STRING | FAST | STORED);
-        let title = schema.add_text_field("title", TEXT | STORED);
-        let description = schema.add_text_field("description", TEXT | STORED);
-        let cve = schema.add_text_field("cve", STRING | FAST | STORED);
-        let severity = schema.add_text_field("severity", STRING | FAST);
-        let document_status = schema.add_text_field("document_status", STRING);
-        let affected = schema.add_text_field("affected", STORED | STRING);
-        let fixed = schema.add_text_field("fixed", STORED | STRING);
-        let cvss = schema.add_f64_field("cvss", FAST | INDEXED | STORED);
+        let advisory_id = schema.add_text_field("advisory_id", STRING | FAST | STORED);
+        let advisory_status = schema.add_text_field("advisory_status", STRING);
+        let advisory_title = schema.add_text_field("advisory_title", TEXT | STORED);
+        let advisory_description = schema.add_text_field("advisory_description", TEXT | STORED);
+        let advisory_revision = schema.add_text_field("advisory_revision", STRING | STORED);
+        let advisory_severity = schema.add_text_field("advisory_severity", STRING | STORED);
         let advisory_initial = schema.add_date_field("advisory_initial_date", INDEXED);
-        let advisory_current = schema.add_date_field("advisory_current_date", INDEXED);
+        let advisory_current = schema.add_date_field("advisory_current_date", INDEXED | STORED);
+
+        let cve_id = schema.add_text_field("cve_id", STRING | FAST | STORED);
+        let cve_title = schema.add_text_field("cve_title", TEXT | STORED);
+        let cve_description = schema.add_text_field("cve_description", TEXT | STORED);
         let cve_discovery = schema.add_date_field("cve_discovery_date", INDEXED);
         let cve_release = schema.add_date_field("cve_release_date", INDEXED | STORED);
+        let cve_severity = schema.add_text_field("cve_severity", STRING | FAST);
+        let cve_affected = schema.add_text_field("cve_affected", STORED | STRING);
+        let cve_fixed = schema.add_text_field("cve_fixed", STORED | STRING);
+        let cve_cvss = schema.add_f64_field("cve_cvss", FAST | INDEXED | STORED);
+        let cve_cwe = schema.add_text_field("cve_cwe", STRING | STORED);
+
         Self {
             schema: schema.build(),
             fields: Fields {
-                id,
-                cvss,
-                title,
-                description,
-                cve,
-                severity,
-                document_status,
-                fixed,
-                affected,
+                advisory_id,
+                advisory_status,
+                advisory_title,
+                advisory_description,
+                advisory_revision,
+                advisory_severity,
                 advisory_initial,
                 advisory_current,
+
+                cve_id,
+                cve_title,
+                cve_description,
                 cve_discovery,
                 cve_release,
+                cve_severity,
+                cve_affected,
+                cve_fixed,
+                cve_cvss,
+                cve_cwe,
             },
         }
     }
@@ -253,96 +298,100 @@ impl Index {
         match resource {
             Vulnerabilities::Id(primary) => {
                 let (occur, value) = primary2occur(primary);
-                let term = Term::from_field_text(self.fields.id, value);
+                let term = Term::from_field_text(self.fields.advisory_id, value);
                 create_boolean_query(occur, term)
             }
 
             Vulnerabilities::Cve(primary) => {
                 let (occur, value) = primary2occur(primary);
-                let term = Term::from_field_text(self.fields.cve, value);
+                let term = Term::from_field_text(self.fields.cve_id, value);
                 create_boolean_query(occur, term)
             }
 
             Vulnerabilities::Description(primary) => {
                 let (occur, value) = primary2occur(primary);
-                let term = Term::from_field_text(self.fields.description, value);
-                create_boolean_query(occur, term)
+                let q1 = create_boolean_query(occur, Term::from_field_text(self.fields.advisory_description, value));
+                let q2 = create_boolean_query(occur, Term::from_field_text(self.fields.cve_description, value));
+                Box::new(BooleanQuery::union(vec![q1, q2]))
             }
 
             Vulnerabilities::Title(primary) => {
                 let (occur, value) = primary2occur(primary);
-                let term = Term::from_field_text(self.fields.title, value);
-                create_boolean_query(occur, term)
+                let q1 = create_boolean_query(occur, Term::from_field_text(self.fields.advisory_title, value));
+                let q2 = create_boolean_query(occur, Term::from_field_text(self.fields.cve_title, value));
+                Box::new(BooleanQuery::union(vec![q1, q2]))
             }
 
             Vulnerabilities::Package(primary) => {
                 let (occur, value) = primary2occur(primary);
-                let q1 = create_boolean_query(occur, Term::from_field_text(self.fields.affected, value));
-                let q2 = create_boolean_query(occur, Term::from_field_text(self.fields.fixed, value));
+                let q1 = create_boolean_query(occur, Term::from_field_text(self.fields.cve_affected, value));
+                let q2 = create_boolean_query(occur, Term::from_field_text(self.fields.cve_fixed, value));
 
                 Box::new(BooleanQuery::union(vec![q1, q2]))
             }
 
             Vulnerabilities::Fixed(primary) => {
                 let (occur, value) = primary2occur(primary);
-                let term = Term::from_field_text(self.fields.fixed, value);
+                let term = Term::from_field_text(self.fields.cve_fixed, value);
                 create_boolean_query(occur, term)
             }
 
             Vulnerabilities::Affected(primary) => {
                 let (occur, value) = primary2occur(primary);
-                let term = Term::from_field_text(self.fields.affected, value);
+                let term = Term::from_field_text(self.fields.cve_affected, value);
                 create_boolean_query(occur, term)
             }
 
             Vulnerabilities::Severity(primary) => {
                 let (occur, value) = primary2occur(primary);
-                let term = Term::from_field_text(self.fields.severity, value);
+                let term = Term::from_field_text(self.fields.cve_severity, value);
                 create_boolean_query(occur, term)
             }
 
             Vulnerabilities::Status(primary) => {
                 let (occur, value) = primary2occur(primary);
-                let term = Term::from_field_text(self.fields.document_status, value);
+                let term = Term::from_field_text(self.fields.advisory_status, value);
                 create_boolean_query(occur, term)
             }
             Vulnerabilities::Final => {
-                create_boolean_query(Occur::Must, Term::from_field_text(self.fields.document_status, "final"))
+                create_boolean_query(Occur::Must, Term::from_field_text(self.fields.advisory_status, "final"))
             }
             Vulnerabilities::Critical => {
-                create_boolean_query(Occur::Must, Term::from_field_text(self.fields.severity, "critical"))
+                create_boolean_query(Occur::Must, Term::from_field_text(self.fields.cve_severity, "critical"))
             }
             Vulnerabilities::High => {
-                create_boolean_query(Occur::Must, Term::from_field_text(self.fields.severity, "high"))
+                create_boolean_query(Occur::Must, Term::from_field_text(self.fields.cve_severity, "high"))
             }
             Vulnerabilities::Medium => {
-                create_boolean_query(Occur::Must, Term::from_field_text(self.fields.severity, "medium"))
+                create_boolean_query(Occur::Must, Term::from_field_text(self.fields.cve_severity, "medium"))
             }
             Vulnerabilities::Low => {
-                create_boolean_query(Occur::Must, Term::from_field_text(self.fields.severity, "low"))
+                create_boolean_query(Occur::Must, Term::from_field_text(self.fields.cve_severity, "low"))
             }
             Vulnerabilities::Cvss(ordered) => match ordered {
                 PartialOrdered::Less(e) => Box::new(RangeQuery::new_f64_bounds(
-                    self.fields.cvss,
+                    self.fields.cve_cvss,
                     Bound::Unbounded,
                     Bound::Excluded(*e),
                 )),
                 PartialOrdered::LessEqual(e) => Box::new(RangeQuery::new_f64_bounds(
-                    self.fields.cvss,
+                    self.fields.cve_cvss,
                     Bound::Unbounded,
                     Bound::Included(*e),
                 )),
                 PartialOrdered::Greater(e) => Box::new(RangeQuery::new_f64_bounds(
-                    self.fields.cvss,
+                    self.fields.cve_cvss,
                     Bound::Excluded(*e),
                     Bound::Unbounded,
                 )),
                 PartialOrdered::GreaterEqual(e) => Box::new(RangeQuery::new_f64_bounds(
-                    self.fields.cvss,
+                    self.fields.cve_cvss,
                     Bound::Included(*e),
                     Bound::Unbounded,
                 )),
-                PartialOrdered::Range(from, to) => Box::new(RangeQuery::new_f64_bounds(self.fields.cvss, *from, *to)),
+                PartialOrdered::Range(from, to) => {
+                    Box::new(RangeQuery::new_f64_bounds(self.fields.cve_cvss, *from, *to))
+                }
             },
             Vulnerabilities::Initial(ordered) => create_date_query(self.fields.advisory_initial, ordered),
             Vulnerabilities::Release(ordered) => {

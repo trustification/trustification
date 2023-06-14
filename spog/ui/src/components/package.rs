@@ -16,6 +16,7 @@ use yew_nested_router::components::Link;
 
 use crate::{
     backend::{Endpoint, PackageService, SearchOptions},
+    components::common::SafeHtml,
     hooks::use_backend,
     pages::AppRoute,
     utils::last_weeks_date,
@@ -41,7 +42,7 @@ pub fn package_search(props: &PackageSearchProperties) -> Html {
     let limit = use_state_eq(|| 10);
 
     // Default is SBOM created past weeks
-    let default_query = format!("created:>{}", last_weeks_date());
+    let _default_query = format!("created:>{}", last_weeks_date());
 
     // the active query
     let state = use_state_eq(|| {
@@ -206,7 +207,6 @@ pub enum Column {
     Name,
     Supplier,
     Products,
-    Description,
     Vulnerabilities,
     Version,
 }
@@ -223,7 +223,6 @@ impl TableEntryRenderer<Column> for PackageEntry {
             Column::Name => html!(&self.package.name).into(),
             Column::Supplier => html!(&self.package.supplier).into(),
             Column::Products => html!(&self.package.dependents.len()).into(),
-            Column::Description => html!(&self.package.description).into(),
             Column::Vulnerabilities => {
                 html!(<Link<AppRoute> target={AppRoute::Vulnerability { query: format!("affected:\"{}\"", self.package.purl)}}>{self.package.vulnerabilities.len()}</Link<AppRoute>>).into()
             }
@@ -271,12 +270,11 @@ pub fn package_result(props: &PackageResultProperties) -> Html {
 
     let header = html_nested! {
         <TableHeader<Column>>
-            <TableColumn<Column> label="Name" index={Column::Name} width={ColumnWidth::Percent(10)}/>
-            <TableColumn<Column> label="Version" index={Column::Version} width={ColumnWidth::Percent(15)}/>
-            <TableColumn<Column> label="Supplier" index={Column::Supplier} width={ColumnWidth::Percent(10)}/>
-            <TableColumn<Column> label="Products" index={Column::Products} width={ColumnWidth::Percent(10)}/>
-            <TableColumn<Column> label="Description" index={Column::Description} width={ColumnWidth::Percent(40)}/>
-            <TableColumn<Column> label="Vulnerabilities" index={Column::Vulnerabilities} width={ColumnWidth::Percent(15)}/>
+            <TableColumn<Column> label="Name" index={Column::Name} width={ColumnWidth::Percent(15)}/>
+            <TableColumn<Column> label="Version" index={Column::Version} width={ColumnWidth::Percent(20)}/>
+            <TableColumn<Column> label="Supplier" index={Column::Supplier} width={ColumnWidth::Percent(20)}/>
+            <TableColumn<Column> label="Products" index={Column::Products} width={ColumnWidth::Percent(20)}/>
+            <TableColumn<Column> label="Vulnerabilities" index={Column::Vulnerabilities} width={ColumnWidth::Percent(25)}/>
         </TableHeader<Column>>
     };
 
@@ -289,8 +287,6 @@ pub fn package_result(props: &PackageResultProperties) -> Html {
          />
     )
 }
-
-use yew::prelude::*;
 
 #[derive(Clone, Properties)]
 pub struct PackageDetailsProps {
@@ -322,10 +318,13 @@ pub fn package_details(props: &PackageDetailsProps) -> Html {
         })
         .collect::<Vec<sboms::SbomTableEntry>>();
     let sboms = Rc::new(sboms);
+    let snippet = package.package.snippet.clone();
     html!(
         <Panel>
             <PanelMain>
-            <PanelMainBody>{&package.package.description}</PanelMainBody>
+            <PanelMainBody>
+            <SafeHtml html={snippet} />
+            </PanelMainBody>
             </PanelMain>
             <PanelFooter>
             <h3>{"Related SBOMs"}</h3>
@@ -344,8 +343,6 @@ mod sboms {
     };
     use url::Url;
     use yew::prelude::*;
-
-    use super::*;
 
     #[derive(Clone, Copy, PartialEq, Eq)]
     enum Column {

@@ -12,6 +12,7 @@ serde = { version = "1", features = ["derive"] }
 chrono = { version = "0.4", default-features = false, features = ["serde"] }
 vexination-model = { path = "../../vexination/model" }
 time = { version = "0.3" }
+url = "2"
 
 # required by ToSchema utopia
 serde_json = "1"

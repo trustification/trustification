@@ -9,7 +9,7 @@ use cyclonedx_bom::models::{
 use search::*;
 use sikula::prelude::*;
 use spdx_rs::models::Algorithm;
-use tantivy::schema::INDEXED;
+use tantivy::{schema::INDEXED, Searcher, SnippetGenerator};
 use time::format_description::well_known::Rfc3339;
 use tracing::{debug, info, trace, warn};
 use trustification_index::{
@@ -433,7 +433,15 @@ impl trustification_index::Index for Index {
         Ok(query)
     }
 
-    fn process_hit(&self, doc: Document) -> Result<Self::MatchedDocument, SearchError> {
+    fn process_hit(
+        &self,
+        doc: Document,
+        searcher: &Searcher,
+        query: &dyn Query,
+    ) -> Result<Self::MatchedDocument, SearchError> {
+        let snippet_generator = SnippetGenerator::create(searcher, query, self.fields.description)?;
+        let snippet = snippet_generator.snippet_from_doc(&doc).to_html();
+
         let id = doc
             .get_first(self.fields.sbom_id)
             .map(|s| s.as_text().unwrap_or(""))
@@ -503,6 +511,7 @@ impl trustification_index::Index for Index {
             supplier: supplier.to_string(),
             created,
             description: description.to_string(),
+            snippet,
         };
         trace!("HIT: {:?}", hit);
 

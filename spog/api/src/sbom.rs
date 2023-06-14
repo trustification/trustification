@@ -76,6 +76,7 @@ pub async fn search(state: web::Data<SharedState>, params: web::Query<search::Qu
                             sha256: item.sha256,
                             license: item.license,
                             classifier: item.classifier,
+                            snippet: item.snippet,
                             supplier: item.supplier.trim_start_matches("Organization: ").to_string(),
                             description: item.description,
                             dependents: vec![item.dependent],
@@ -90,6 +91,7 @@ pub async fn search(state: web::Data<SharedState>, params: web::Query<search::Qu
                 result: m.values().cloned().collect(),
             };
 
+            // TODO: Use guac to lookup vulnerabilities for each package!
             search_vulnerabilities(state, &mut result.result).await;
             debug!("Search result: {:?}", result);
             HttpResponse::Ok().json(result)
@@ -106,7 +108,7 @@ async fn search_vulnerabilities(state: web::Data<SharedState>, packages: &mut Ve
         let q = format!("affected:\"{}\"", package.purl);
         if let Ok(result) = state.search_vex(&q, 0, 1000).await {
             for summary in result.result {
-                package.vulnerabilities.push(summary.cve);
+                package.vulnerabilities.push(summary.cve_id);
             }
         }
 

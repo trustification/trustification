@@ -1,25 +1,14 @@
-use std::{rc::Rc, str::FromStr};
+use std::rc::Rc;
 
-use csaf::Csaf;
-use packageurl::PackageUrl;
-use patternfly_yew::{
-    next::{Card, CardBody, CardDivider},
-    prelude::*,
-};
+use patternfly_yew::prelude::*;
 use spog_model::prelude::*;
 use yew::prelude::*;
 use yew_more_hooks::hooks::r#async::*;
 
-use crate::{
-    backend::{data::PackageRef, VexService},
-    components::{
-        common::PageHeading,
-        cvss::CvssScore,
-        error::Error,
-        package::{PackageResult, PackageSearch},
-    },
-    hooks::use_backend,
-    pages::AppRoute,
+use crate::components::{
+    common::PageHeading,
+    error::Error,
+    package::{PackageResult, PackageSearch},
 };
 
 #[derive(Clone, Debug, PartialEq, Eq, Properties)]

@@ -1,14 +1,24 @@
 use std::ops::{Deref, DerefMut};
 
 #[derive(utoipa::ToSchema, serde::Deserialize, serde::Serialize, Debug, PartialEq, Clone)]
-pub struct VulnSummary {
-    pub cve: String,
+pub struct AdvisorySummary {
+    pub id: String,
     pub title: String,
+    pub snippet: String,
+    pub desc: String,
+    pub date: time::OffsetDateTime,
+    pub cves: Vec<String>,
+    pub href: String,
+}
+
+#[derive(utoipa::ToSchema, serde::Deserialize, serde::Serialize, Debug, PartialEq, Clone)]
+pub struct VulnSummary {
+    pub id: String,
+    pub title: String,
+    pub desc: String,
     pub release: time::OffsetDateTime,
-    pub description: String,
-    pub cvss: f64,
-    pub affected: Vec<String>,
-    pub fixed: Vec<String>,
+    pub cvss: Option<f64>,
+    pub snippet: String,
     pub advisories: Vec<String>,
 }
 
@@ -18,6 +28,7 @@ pub struct PackageSummary {
     pub name: String,
     pub sha256: String,
     pub license: String,
+    pub snippet: String,
     pub classifier: String,
     pub description: String,
     pub supplier: String,

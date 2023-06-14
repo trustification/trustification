@@ -1,7 +1,9 @@
-use std::rc::Rc;
+use crate::{
+    backend::{Endpoint, SearchOptions, VexService},
+    hooks::use_backend,
+    utils::last_weeks_date,
+};
 
-use csaf::Csaf;
-use details::CsafDetails;
 use patternfly_yew::{
     next::{
         use_table_data, Cell, CellContext, ColumnWidth, MemoizedTableModel, Table, TableColumn, TableEntryRenderer,
@@ -10,19 +12,16 @@ use patternfly_yew::{
     prelude::*,
 };
 use spog_model::prelude::*;
-use url::{ParseError, Url};
+use std::rc::Rc;
+use url::Url;
 use yew::prelude::*;
 use yew_more_hooks::hooks::{use_async_with_cloned_deps, UseAsyncHandleDeps};
 
-use crate::{
-    backend::{Endpoint, SearchOptions, VexService},
-    hooks::use_backend,
-    utils::last_weeks_date,
-};
+use details::AdvisoryDetails;
 
 #[derive(PartialEq, Properties)]
 pub struct AdvisorySearchProperties {
-    pub callback: Callback<UseAsyncHandleDeps<SearchResult<Rc<Vec<Csaf>>>, String>>,
+    pub callback: Callback<UseAsyncHandleDeps<SearchResult<Rc<Vec<AdvisorySummary>>>, String>>,
 
     pub query: Option<String>,
 
@@ -187,20 +186,21 @@ pub fn advisory_search(props: &AdvisorySearchProperties) -> Html {
     )
 }
 
+#[derive(PartialEq, Properties, Clone)]
+pub struct AdvisoryEntry {
+    summary: AdvisorySummary,
+    url: Option<Url>,
+}
+
 #[derive(Debug, Properties)]
 pub struct AdvisoryResultProperties {
-    pub result: SearchResult<Rc<Vec<csaf::Csaf>>>,
+    pub result: SearchResult<Rc<Vec<AdvisorySummary>>>,
 }
 
 impl PartialEq for AdvisoryResultProperties {
     fn eq(&self, other: &Self) -> bool {
         Rc::ptr_eq(&self.result, &other.result)
     }
-}
-
-pub struct CsafEntry {
-    url: Option<Url>,
-    csaf: Csaf,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq)]
@@ -212,12 +212,20 @@ pub enum Column {
     Vulnerabilities,
 }
 
-impl TableEntryRenderer<Column> for CsafEntry {
+impl TableEntryRenderer<Column> for AdvisoryEntry {
     fn render_cell(&self, context: &CellContext<'_, Column>) -> Cell {
         match context.column {
-            Column::Id => html!(&self.csaf.document.tracking.id).into(),
-            Column::Title => html!(&self.csaf.document.title).into(),
-            Column::Revision => html!(&self.csaf.document.tracking.current_release_date.to_rfc3339()).into(),
+            Column::Id => html!(&self.summary.id).into(),
+            Column::Title => html!(&self.summary.title).into(),
+            Column::Revision => {
+                let format = time::macros::format_description!("[year]-[month]-[day]");
+                let s = if let Ok(s) = self.summary.date.format(format) {
+                    s.to_string()
+                } else {
+                    self.summary.date.to_string()
+                };
+                html!(s).into()
+            }
             Column::Download => {
                 if let Some(url) = &self.url {
                     html!(
@@ -230,18 +238,24 @@ impl TableEntryRenderer<Column> for CsafEntry {
                     html!().into()
                 }
             }
-            Column::Vulnerabilities => self
-                .csaf
-                .vulnerabilities
-                .as_ref()
-                .map(|v| html!(v.len().to_string()))
-                .unwrap_or_else(|| html!(<i>{"N/A"}</i>))
-                .into(),
+            Column::Vulnerabilities => {
+                let l = self.summary.cves.len();
+                html!(if l == 0 {
+                    {
+                        "N/A"
+                    }
+                } else {
+                    {
+                        l.to_string()
+                    }
+                })
+                .into()
+            }
         }
     }
 
     fn render_details(&self) -> Vec<Span> {
-        let html = html!(<CsafDetails csaf={Rc::new(self.csaf.clone())} />);
+        let html = html!(<AdvisoryDetails advisory={Rc::new(self.summary.clone())} />);
         vec![Span::max(html)]
     }
 
@@ -253,19 +267,14 @@ impl TableEntryRenderer<Column> for CsafEntry {
 #[function_component(AdvisoryResult)]
 pub fn vulnerability_result(props: &AdvisoryResultProperties) -> Html {
     let backend = use_backend();
-    let entries: Vec<CsafEntry> = props
+    let entries: Vec<AdvisoryEntry> = props
         .result
         .result
         .iter()
-        .map(|csaf| {
-            let url = backend
-                .join(
-                    Endpoint::Api,
-                    &format!("/api/v1/advisory?id={}", csaf.document.tracking.id),
-                )
-                .ok();
-            CsafEntry {
-                csaf: csaf.clone(),
+        .map(|summary| {
+            let url = backend.join(Endpoint::Api, &summary.href).ok();
+            AdvisoryEntry {
+                summary: summary.clone(),
                 url,
             }
         })
@@ -284,7 +293,7 @@ pub fn vulnerability_result(props: &AdvisoryResultProperties) -> Html {
     };
 
     html!(
-        <Table<Column, UseTableData<Column, MemoizedTableModel<CsafEntry>>>
+        <Table<Column, UseTableData<Column, MemoizedTableModel<AdvisoryEntry>>>
             mode={TableMode::CompactExpandable}
             {header}
             {entries}
@@ -297,55 +306,80 @@ mod details {
 
     use std::rc::Rc;
 
-    use csaf::{definitions::Branch, product_tree::ProductTree, vulnerability::Vulnerability, Csaf};
+    use crate::backend::VexService;
+    use crate::hooks::use_backend;
+    use csaf::{definitions::Branch, product_tree::ProductTree, vulnerability::Vulnerability};
     use patternfly_yew::{
         next::{use_table_data, MemoizedTableModel, Table, TableColumn, TableEntryRenderer, TableHeader, UseTableData},
         prelude::*,
     };
+    use spog_model::prelude::*;
     use yew::prelude::*;
+    use yew_more_hooks::hooks::use_async_with_cloned_deps;
 
-    use crate::{components::cvss::CvssScore, utils::cvss::Cvss};
+    use crate::{components::common::SafeHtml, components::cvss::CvssScore, utils::cvss::Cvss};
 
     #[derive(Clone, Properties)]
-    pub struct CsafDetailsProps {
-        pub csaf: Rc<Csaf>,
+    pub struct AdvisoryDetailsProps {
+        pub advisory: Rc<AdvisorySummary>,
     }
 
-    impl PartialEq for CsafDetailsProps {
+    impl PartialEq for AdvisoryDetailsProps {
         fn eq(&self, other: &Self) -> bool {
-            Rc::ptr_eq(&self.csaf, &other.csaf)
+            Rc::ptr_eq(&self.advisory, &other.advisory)
         }
     }
 
-    #[function_component(CsafDetails)]
-    pub fn csaf_details(props: &CsafDetailsProps) -> Html {
-        let vulns = use_memo(
-            |props| props.csaf.vulnerabilities.clone().unwrap_or_default(),
-            props.clone(),
-        );
+    #[function_component(AdvisoryDetails)]
+    pub fn csaf_details(props: &AdvisoryDetailsProps) -> Html {
+        let backend = use_backend();
+        let service = use_memo(|backend| VexService::new((**backend).clone()), backend.clone());
+        let summary = props.advisory.clone();
 
-        let product = use_memo(
-            |props| {
-                props.csaf.product_tree.clone().unwrap_or_else(|| ProductTree {
-                    branches: None,
-                    product_groups: None,
-                    full_product_names: None,
-                    relationships: None,
-                })
-            },
-            props.clone(),
-        );
+        let fetch = {
+            let service = service.clone();
+            use_async_with_cloned_deps(
+                move |summary| async move {
+                    service
+                        .lookup(&summary)
+                        .await
+                        .map(|result| result.map(Rc::new))
+                        .map_err(|err| err.to_string())
+                },
+                (*summary).clone(),
+            )
+        };
 
-        html!(
-            <Grid gutter=true>
-                <GridItem cols={[6.all()]}>
-                    <CsafVulnTable entries={vulns}/>
-                </GridItem>
-                <GridItem cols={[6.all()]}>
-                    <CsafProductInfo {product}/>
-                </GridItem>
-            </Grid>
-        )
+        if let Some(Some(csaf)) = fetch.data() {
+            let vulns = Rc::new(csaf.vulnerabilities.clone().unwrap_or_default());
+            let product = Rc::new(csaf.product_tree.clone().unwrap_or_else(|| ProductTree {
+                branches: None,
+                product_groups: None,
+                full_product_names: None,
+                relationships: None,
+            }));
+
+            let snippet = summary.desc.clone();
+            html!(
+                <Panel>
+                    <PanelMain>
+                    <PanelMainBody>
+                    <SafeHtml html={snippet} />
+                    <Grid gutter=true>
+                        <GridItem cols={[6.all()]}>
+                            <CsafVulnTable entries={vulns}/>
+                        </GridItem>
+                        <GridItem cols={[6.all()]}>
+                            <CsafProductInfo {product}/>
+                        </GridItem>
+                    </Grid>
+                    </PanelMainBody>
+                    </PanelMain>
+                </Panel>
+            )
+        } else {
+            html!(<></>)
+        }
     }
 
     // vulns
