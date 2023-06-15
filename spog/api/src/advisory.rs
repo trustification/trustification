@@ -70,11 +70,13 @@ pub async fn search(state: web::Data<SharedState>, params: web::Query<QueryParam
 
     // Dedup data
     let mut m: HashMap<String, AdvisorySummary> = HashMap::new();
+    let mut collapsed = 0;
 
     for item in result.result.drain(..) {
         if let Some(entry) = m.get_mut(&item.advisory_id) {
             if !entry.cves.contains(&item.cve_id) {
                 entry.cves.push(item.cve_id);
+                collapsed += 1;
             }
         } else {
             m.insert(
@@ -93,7 +95,7 @@ pub async fn search(state: web::Data<SharedState>, params: web::Query<QueryParam
     }
 
     HttpResponse::Ok().json(SearchResult::<Vec<AdvisorySummary>> {
-        total: Some(result.total),
+        total: Some(result.total - collapsed),
         result: m.values().cloned().collect(),
     })
 }
