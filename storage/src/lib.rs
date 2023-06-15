@@ -116,8 +116,6 @@ impl From<http::header::InvalidHeaderValue> for Error {
 const DATA_PATH: &str = "/data/";
 const INDEX_PATH: &str = "/index";
 const VERSION_HEADER: &str = "x-amz-meta-version";
-const JSON: &str = "application/json";
-
 const VERSION: u32 = 1;
 
 pub struct Head {
@@ -153,14 +151,10 @@ impl Storage {
         format!("/{}", key) == INDEX_PATH
     }
 
-    pub async fn put_slice<'a>(&self, key: &'a str, json: &'a [u8]) -> Result<u16, Error> {
-        self.put_stream(key, None, &mut once(ok::<_, std::io::Error>(json)))
-            .await
-    }
-
     pub async fn put_stream<'a, S, B, E>(
         &self,
         key: &'a str,
+        content_type: &'a str,
         encoding: Option<&str>,
         data: &mut S,
     ) -> Result<u16, Error>
@@ -178,7 +172,14 @@ impl Storage {
         let bucket = self.bucket.with_extra_headers(headers);
         let path = format!("{}{}", DATA_PATH, key);
         let mut rdr = stream::encode(encoding, data)?;
-        Ok(bucket.put_object_stream_with_content_type(&mut rdr, path, JSON).await?)
+        Ok(bucket
+            .put_object_stream_with_content_type(&mut rdr, path, content_type)
+            .await?)
+    }
+
+    pub async fn put_json_slice<'a>(&self, key: &'a str, json: &'a [u8]) -> Result<u16, Error> {
+        let mut stream = once(ok::<_, std::io::Error>(json));
+        self.put_stream(key, "application/json", None, &mut stream).await
     }
 
     // This will load the entire S3 object into memory

@@ -80,7 +80,7 @@ async fn publish_vex(state: web::Data<SharedState>, params: web::Query<PublishPa
 
     let storage = state.storage.write().await;
     tracing::debug!("Storing new VEX with id: {advisory}");
-    match storage.put_slice(&advisory, &data).await {
+    match storage.put_json_slice(&advisory, &data).await {
         Ok(_) => {
             let msg = format!("VEX of size {} stored successfully", &data[..].len());
             tracing::trace!(msg);
