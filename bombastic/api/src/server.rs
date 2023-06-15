@@ -200,7 +200,7 @@ async fn publish_sbom(
     payload: web::Payload,
     content_type: Option<web::Header<ContentType>>,
 ) -> actix_web::Result<impl Responder> {
-    let _ = verify_type(content_type)?;
+    let typ = verify_type(content_type)?;
     let enc = verify_encoding(req.headers().get(CONTENT_ENCODING))?;
     let id = &params.id;
     let storage = state.storage.write().await;
@@ -209,7 +209,7 @@ async fn publish_sbom(
         _ => io::Error::new(io::ErrorKind::Other, e),
     });
     let status = storage
-        .put_stream(id, enc, &mut payload)
+        .put_stream(id, typ.as_ref(), enc, &mut payload)
         .await
         .map_err(Error::Storage)?;
     tracing::trace!("SBOM stored with status code: {status}");

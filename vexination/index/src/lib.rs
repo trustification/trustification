@@ -10,7 +10,7 @@ use csaf::{
 use search::*;
 use sikula::prelude::*;
 use tantivy::{Searcher, SnippetGenerator};
-use tracing::{debug, info};
+use tracing::debug;
 use trustification_index::{
     create_boolean_query, create_date_query, field2date, field2float, field2str, primary2occur,
     tantivy::{
