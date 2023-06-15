@@ -263,7 +263,7 @@ async fn delete_sbom(
     tracing::trace!("Deleting SBOM using id {}", id);
     let storage = state.storage.write().await;
 
-    storage.delete(id).await.map_err(|e| Error::Storage(e))?;
+    storage.delete(id).await.map_err(Error::Storage)?;
 
     Ok(HttpResponse::NoContent().finish())
 }

@@ -197,7 +197,7 @@ impl trustification_index::Index for Index {
 
     fn doc_id_to_term(&self, id: &str) -> Term {
         self.schema
-            .get_field("id")
+            .get_field("advisory_id")
             .map(|f| Term::from_field_text(f, id))
             .unwrap()
     }
@@ -482,7 +482,7 @@ fn find_product_package(csaf: &Csaf, product_id: &ProductIdT) -> Option<ProductP
 
 #[cfg(test)]
 mod tests {
-    use trustification_index::{Index as IndexTrait, IndexStore};
+    use trustification_index::IndexStore;
 
     use super::*;
 
@@ -617,8 +617,7 @@ mod tests {
 
             // Now we remove the entry from the index
             let writer = index.writer().unwrap();
-            let term = index.index().doc_id_to_term("RHSA-2023:1441");
-            writer.delete_document(term);
+            writer.delete_document(index.index(), "RHSA-2023:1441");
             writer.commit().unwrap();
 
             // Ta-da ! No more data

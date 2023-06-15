@@ -1,5 +1,6 @@
 mod stream;
 
+use std::borrow::Cow;
 use std::marker::Unpin;
 
 use async_stream::try_stream;
@@ -151,6 +152,18 @@ impl Storage {
         format!("/{}", key) == INDEX_PATH
     }
 
+    pub fn key_from_event(record: &Record) -> Result<(Cow<str>, String), Error> {
+        if let Ok(decoded) = urlencoding::decode(record.key()) {
+            let key = decoded
+                .strip_prefix("data/")
+                .map(|s| s.to_string())
+                .unwrap_or(decoded.to_string());
+            Ok((decoded, key))
+        } else {
+            Err(Error::InvalidKey(record.key().to_string()))
+        }
+    }
+
     pub async fn put_stream<'a, S, B, E>(
         &self,
         key: &'a str,
@@ -214,13 +227,9 @@ impl Storage {
     // This will load the entire S3 object into memory
     pub async fn get_for_event(&self, record: &Record) -> Result<(String, Vec<u8>), Error> {
         // Record keys are URL encoded
-        if let Ok(decoded) = urlencoding::decode(record.key()) {
-            let prefix = decoded
-                .strip_prefix("data/")
-                .map(|s| s.to_string())
-                .unwrap_or(decoded.to_string());
+        if let Ok((decoded, key)) = Self::key_from_event(record) {
             let ret = self.get_object(&decoded).await?;
-            Ok((prefix, ret))
+            Ok((key.to_string(), ret))
         } else {
             Err(Error::InvalidKey(record.key().to_string()))
         }
@@ -263,10 +272,9 @@ impl Storage {
         stream::decode(head.content_encoding, stream.boxed())
     }
 
-    pub async fn delete(&self, key: &str) -> Result<(), Error> {
+    pub async fn delete(&self, key: &str) -> Result<u16, Error> {
         let path = format!("{}{}", DATA_PATH, key);
-        self.bucket.delete_object(path).await?;
-        Ok(())
+        Ok(self.bucket.delete_object(path).await.map(|r| r.status_code())?)
     }
 }
 

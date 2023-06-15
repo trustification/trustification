@@ -4,7 +4,7 @@ use bombastic_index::Index;
 use futures::pin_mut;
 use tokio::select;
 use trustification_event_bus::EventBus;
-use trustification_index::{Index as IndexTrait, IndexStore};
+use trustification_index::IndexStore;
 use trustification_storage::{EventType, Storage};
 
 pub async fn run(
@@ -76,8 +76,8 @@ pub async fn run(
                                             }
                                         },
                                         EventType::Delete => {
-                                            let key = data.key();
-                                            writer.as_mut().unwrap().delete_document(index.index().doc_id_to_term(key));
+                                            let (_, key) = Storage::key_from_event(&data)?;
+                                            writer.as_mut().unwrap().delete_document(index.index(), key.as_str());
                                             tracing::debug!("Deleted entry {key} from index");
                                             events += 1;
                                         }
