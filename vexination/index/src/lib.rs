@@ -482,7 +482,7 @@ fn find_product_package(csaf: &Csaf, product_id: &ProductIdT) -> Option<ProductP
 
 #[cfg(test)]
 mod tests {
-    use trustification_index::IndexStore;
+    use trustification_index::{Index as IndexTrait, IndexStore};
 
     use super::*;
 
@@ -497,7 +497,9 @@ mod tests {
         let index = Index::new();
         let mut store = IndexStore::new_in_memory(index).unwrap();
         let mut writer = store.writer().unwrap();
-        writer.write(store.index(), &csaf.document.tracking.id, &csaf).unwrap();
+        writer
+            .add_document(store.index_as_mut(), &csaf.document.tracking.id, &csaf)
+            .unwrap();
         writer.commit().unwrap();
         f(store);
     }
@@ -603,6 +605,25 @@ mod tests {
                 )
                 .unwrap();
             assert_eq!(result.0.len(), 1);
+        });
+    }
+
+    #[tokio::test]
+    async fn test_delete_document() {
+        assert_free_form(|mut index| {
+            // our data is there
+            let result = index.search("RHSA-2023:1441 in:id", 0, 100).unwrap();
+            assert_eq!(result.0.len(), 1);
+
+            // Now we remove the entry from the index
+            let writer = index.writer().unwrap();
+            let term = index.index().doc_id_to_term("RHSA-2023:1441");
+            writer.delete_document(term);
+            writer.commit().unwrap();
+
+            // Ta-da ! No more data
+            let result = index.search("RHSA-2023:1441 in:id", 0, 100).unwrap();
+            assert_eq!(result.0.len(), 0);
         });
     }
 
