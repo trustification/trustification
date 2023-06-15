@@ -51,15 +51,17 @@ pub async fn run<B: Into<SocketAddr>>(state: SharedState, bind: B) -> Result<(),
     Ok(())
 }
 
+const ACCEPT_ENCODINGS: [&'static str; 2] = ["bzip2", "zstd"];
+
 #[derive(Debug, Display, Error, From)]
 enum Error {
     #[display(fmt = "storage error: {}", "_0")]
     Storage(StorageError),
     #[display(fmt = "index error: {}", "_0")]
     Index(IndexError),
-    #[display(fmt = "only JSON is accepted")]
+    #[display(fmt = "invalid type, see Accept header")]
     InvalidContentType,
-    #[display(fmt = "invalid encoding, check Accept-Encoding")]
+    #[display(fmt = "invalid encoding, see Accept-Encoding header")]
     InvalidContentEncoding,
 }
 
@@ -69,9 +71,9 @@ impl error::ResponseError for Error {
         res.insert_header(ContentType::plaintext());
         match self {
             Self::InvalidContentType => res.insert_header(Accept::json()),
-            Self::InvalidContentEncoding => {
-                res.insert_header(AcceptEncoding(vec!["bzip2".parse().unwrap(), "zstd".parse().unwrap()]))
-            }
+            Self::InvalidContentEncoding => res.insert_header(AcceptEncoding(
+                ACCEPT_ENCODINGS.iter().map(|s| s.parse().unwrap()).collect(),
+            )),
             _ => &mut res,
         }
         .body(self.to_string())
@@ -230,7 +232,7 @@ fn verify_type(content_type: Option<web::Header<ContentType>>) -> Result<Content
 fn verify_encoding(content_encoding: Option<&HeaderValue>) -> Result<Option<&str>, Error> {
     match content_encoding {
         Some(enc) => match enc.to_str() {
-            Ok(v @ ("bzip2" | "zstd")) => Ok(Some(v)),
+            Ok(v) if ACCEPT_ENCODINGS.contains(&v) => Ok(Some(v)),
             _ => Err(Error::InvalidContentEncoding),
         },
         None => Ok(None),
