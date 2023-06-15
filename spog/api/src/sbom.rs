@@ -58,6 +58,7 @@ pub async fn search(state: web::Data<SharedState>, params: web::Query<search::Qu
     match state.search_sbom(&params.q, params.offset, params.limit).await {
         Ok(mut data) => {
             let mut m: HashMap<String, PackageSummary> = HashMap::new();
+            let mut collapsed = 0;
             for item in data.result.drain(..) {
                 if let Some(entry) = m.get_mut(&item.purl) {
                     if !entry.dependents.contains(&item.dependent) {
@@ -65,6 +66,7 @@ pub async fn search(state: web::Data<SharedState>, params: web::Query<search::Qu
                     }
                     if !entry.sboms.contains(&item.sbom_id) {
                         entry.sboms.push(item.sbom_id);
+                        collapsed += 1;
                     }
                 } else {
                     m.insert(
@@ -87,7 +89,7 @@ pub async fn search(state: web::Data<SharedState>, params: web::Query<search::Qu
             }
 
             let mut result = SearchResult::<Vec<PackageSummary>> {
-                total: Some(m.len()),
+                total: Some(data.total - collapsed),
                 result: m.values().cloned().collect(),
             };
 
