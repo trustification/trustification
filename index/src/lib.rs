@@ -106,7 +106,8 @@ impl IndexWriter {
         Ok(())
     }
 
-    pub fn delete_document(&self, term: Term) {
+    pub fn delete_document<INDEX: Index>(&self, index: &INDEX, key: &str) {
+        let term = index.doc_id_to_term(key);
         self.writer.delete_term(term);
     }
 }
