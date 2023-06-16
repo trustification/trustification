@@ -286,6 +286,7 @@ pub fn vulnerability_result(props: &AdvisoryResultProperties) -> Html {
 }
 
 mod details {
+
     use std::rc::Rc;
 
     use crate::backend::VexService;
