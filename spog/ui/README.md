@@ -43,5 +43,5 @@ Running locally:
 trunk serve
 ```
 
-Then navigate to: http://localhost:8080
+Then navigate to: http://localhost:6030
 
