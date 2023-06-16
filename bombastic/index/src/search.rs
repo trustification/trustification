@@ -3,11 +3,11 @@ use sikula::prelude::*;
 #[derive(Clone, Debug, PartialEq, Search)]
 pub enum Packages<'a> {
     #[search(default)]
-    Dependent(Primary<'a>),
-    #[search(default)]
     PackageName(Primary<'a>),
     #[search(default)]
     Purl(Primary<'a>),
+    #[search(default)]
+    Cpe(Primary<'a>),
     #[search(default)]
     Type(Primary<'a>),
     #[search(default)]

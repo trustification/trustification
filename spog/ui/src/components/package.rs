@@ -202,8 +202,9 @@ impl PartialEq for PackageResultProperties {
 pub enum Column {
     Name,
     Supplier,
-    Products,
-    Vulnerabilities,
+    Download,
+    Dependencies,
+    Advisories,
     Version,
 }
 
@@ -218,21 +219,23 @@ impl TableEntryRenderer<Column> for PackageEntry {
         match context.column {
             Column::Name => html!(&self.package.name).into(),
             Column::Supplier => html!(&self.package.supplier).into(),
-            Column::Products => html!(&self.package.dependents.len()).into(),
-            Column::Vulnerabilities => {
-                html!(<Link<AppRoute> target={AppRoute::Vulnerability { query: format!("affected:\"{}\"", self.package.purl)}}>{self.package.vulnerabilities.len()}</Link<AppRoute>>).into()
-            }
-            Column::Version => {
-                if let Ok(purl) = PackageUrl::from_str(&self.package.purl) {
-                    if let Some(version) = purl.version() {
-                        html!(version).into()
-                    } else {
-                        html!().into()
-                    }
+            Column::Download => {
+                if let Some(url) = &self.url {
+                    html!(
+                        <a href={url.as_str().to_string()}>
+                            <Button icon={Icon::Download} variant={ButtonVariant::Plain} />
+                        </a>
+                    )
+                    .into()
                 } else {
                     html!().into()
                 }
             }
+            Column::Dependencies => html!(&self.package.dependencies.len()).into(),
+            Column::Advisories => {
+                html!(<Link<AppRoute> target={AppRoute::Advisory { query: format!("affected:\"{}\"", self.package.purl)}}>{self.package.advisories.len()}</Link<AppRoute>>).into()
+            }
+            Column::Version => html!(&self.package.version).into(),
         }
     }
 
@@ -254,7 +257,7 @@ pub fn package_result(props: &PackageResultProperties) -> Html {
         .result
         .iter()
         .map(|pkg| {
-            let url = backend.join(Endpoint::Api, "/api/v1/package").ok();
+            let url = backend.join(Endpoint::Api, &pkg.href).ok();
             PackageEntry {
                 package: pkg.clone(),
                 url,
@@ -269,8 +272,9 @@ pub fn package_result(props: &PackageResultProperties) -> Html {
             <TableColumn<Column> label="Name" index={Column::Name} width={ColumnWidth::Percent(15)}/>
             <TableColumn<Column> label="Version" index={Column::Version} width={ColumnWidth::Percent(20)}/>
             <TableColumn<Column> label="Supplier" index={Column::Supplier} width={ColumnWidth::Percent(20)}/>
-            <TableColumn<Column> label="Products" index={Column::Products} width={ColumnWidth::Percent(20)}/>
-            <TableColumn<Column> label="Vulnerabilities" index={Column::Vulnerabilities} width={ColumnWidth::Percent(25)}/>
+            <TableColumn<Column> label="Download" index={Column::Download} width={ColumnWidth::Percent(15)}/>
+            <TableColumn<Column> label="Dependencies" index={Column::Dependencies} width={ColumnWidth::Percent(10)}/>
+            <TableColumn<Column> label="Advisories" index={Column::Advisories} width={ColumnWidth::Percent(10)}/>
         </TableHeader<Column>>
     };
 
@@ -298,23 +302,10 @@ impl PartialEq for PackageDetailsProps {
 #[function_component(PackageDetails)]
 pub fn package_details(props: &PackageDetailsProps) -> Html {
     let package = use_memo(|props| props.package.clone(), props.clone());
-
-    let base = &package.url;
-    let sboms: Vec<sboms::SbomTableEntry> = package
-        .package
-        .sboms
-        .iter()
-        .map(|a| sboms::SbomTableEntry {
-            id: a.clone(),
-            url: if let Some(url) = base.as_ref() {
-                url.join(&format!("?id={}", urlencoding::encode(a))).ok()
-            } else {
-                None
-            },
-        })
-        .collect::<Vec<sboms::SbomTableEntry>>();
-    let sboms = Rc::new(sboms);
-    let snippet = package.package.snippet.clone();
+    let mut snippet = package.package.snippet.clone();
+    if snippet.is_empty() {
+        snippet = "No description available".to_string();
+    }
     html!(
         <Panel>
             <PanelMain>
@@ -322,87 +313,6 @@ pub fn package_details(props: &PackageDetailsProps) -> Html {
             <SafeHtml html={snippet} />
             </PanelMainBody>
             </PanelMain>
-            <PanelFooter>
-            <h3>{"Related SBOMs"}</h3>
-            <sboms::SbomTable entries={sboms} />
-            </PanelFooter>
         </Panel>
     )
-}
-
-mod sboms {
-    use std::rc::Rc;
-
-    use patternfly_yew::{
-        next::{use_table_data, MemoizedTableModel, Table, TableColumn, TableEntryRenderer, TableHeader, UseTableData},
-        prelude::*,
-    };
-    use url::Url;
-    use yew::prelude::*;
-
-    #[derive(Clone, Copy, PartialEq, Eq)]
-    enum Column {
-        Id,
-        Download,
-    }
-
-    #[derive(Clone, PartialEq)]
-    pub struct SbomTableEntry {
-        pub id: String,
-        pub url: Option<Url>,
-    }
-
-    #[derive(Properties, Clone, PartialEq)]
-    pub struct SbomTableProperties {
-        pub entries: Rc<Vec<SbomTableEntry>>,
-    }
-
-    #[function_component(SbomTable)]
-    pub fn sbom_table(props: &SbomTableProperties) -> Html {
-        let (entries, onexpand) = use_table_data(MemoizedTableModel::new(props.entries.clone()));
-
-        let header = html_nested! {
-            <TableHeader<Column>>
-                <TableColumn<Column> label="Id" index={Column::Id} />
-                <TableColumn<Column> label="Download" index={Column::Download} />
-            </TableHeader<Column>>
-        };
-
-        html!(
-            <Table<Column, UseTableData<Column, MemoizedTableModel<SbomTableEntry>>>
-                mode={TableMode::Compact}
-                {header}
-                {entries}
-                {onexpand}
-            />
-        )
-    }
-
-    impl TableEntryRenderer<Column> for SbomTableEntry {
-        fn render_cell(&self, context: &patternfly_yew::next::CellContext<'_, Column>) -> patternfly_yew::next::Cell {
-            match context.column {
-                Column::Id => html!(&self.id).into(),
-                Column::Download => {
-                    if let Some(url) = &self.url {
-                        html!(
-                            <a href={url.to_string()}>
-                                <Button icon={Icon::Download} variant={ButtonVariant::Plain} />
-                            </a>
-                        )
-                        .into()
-                    } else {
-                        html!().into()
-                    }
-                }
-            }
-        }
-
-        fn render_details(&self) -> Vec<Span> {
-            vec![Span::max(html!())]
-        }
-
-        fn is_full_width_details(&self) -> Option<bool> {
-            Some(false)
-        }
-    }
 }

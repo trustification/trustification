@@ -8,9 +8,10 @@ pub struct AdvisorySummary {
     pub desc: String,
     pub date: time::OffsetDateTime,
     pub cves: Vec<String>,
+    pub cvss_max: Option<f64>,
     pub href: String,
 }
-
+/*
 #[derive(utoipa::ToSchema, serde::Deserialize, serde::Serialize, Debug, PartialEq, Clone)]
 pub struct VulnSummary {
     pub id: String,
@@ -20,21 +21,24 @@ pub struct VulnSummary {
     pub cvss: Option<f64>,
     pub snippet: String,
     pub advisories: Vec<String>,
-}
+}*/
 
 #[derive(utoipa::ToSchema, serde::Deserialize, serde::Serialize, Debug, PartialEq, Clone)]
 pub struct PackageSummary {
-    pub purl: String,
+    pub id: String,
     pub name: String,
+    pub version: String,
+    pub purl: String,
+    pub cpe: String,
     pub sha256: String,
     pub license: String,
     pub snippet: String,
     pub classifier: String,
     pub description: String,
     pub supplier: String,
-    pub dependents: Vec<String>,
-    pub sboms: Vec<String>,
-    pub vulnerabilities: Vec<String>,
+    pub dependencies: Vec<String>,
+    pub href: String,
+    pub advisories: Vec<String>,
 }
 
 #[derive(utoipa::ToSchema, Clone, Debug, Default, PartialEq, Eq, serde::Deserialize, serde::Serialize)]

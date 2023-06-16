@@ -12,7 +12,7 @@ use sikula::prelude::*;
 use tantivy::{query::AllQuery, store::ZstdCompressor, IndexSettings, Searcher, SnippetGenerator};
 use tracing::debug;
 use trustification_index::{
-    create_boolean_query, create_date_query, field2date, field2float, field2str, primary2occur,
+    create_boolean_query, create_date_query, field2date, field2f64vec, field2str, field2strvec, primary2occur,
     tantivy::{
         doc,
         query::{BooleanQuery, Occur, Query, RangeQuery},
@@ -72,14 +72,13 @@ impl trustification_index::Index for Index {
     }
 
     fn index_doc(&self, id: &str, csaf: &Csaf) -> Result<Vec<Document>, SearchError> {
-        let mut documents = Vec::new();
         let document_status = match &csaf.document.tracking.status {
             csaf::document::Status::Draft => "draft",
             csaf::document::Status::Interim => "interim",
             csaf::document::Status::Final => "final",
         };
 
-        let mut base = doc!(
+        let mut document = doc!(
             self.fields.advisory_id => id,
             self.fields.advisory_status => document_status,
             self.fields.advisory_title => csaf.document.title.clone(),
@@ -89,7 +88,7 @@ impl trustification_index::Index for Index {
             for note in notes {
                 match &note.category {
                     NoteCategory::Description | NoteCategory::Summary => {
-                        base.add_text(self.fields.advisory_description, &note.text);
+                        document.add_text(self.fields.advisory_description, &note.text);
                     }
                     _ => {}
                 }
@@ -97,26 +96,25 @@ impl trustification_index::Index for Index {
         }
 
         if let Some(severity) = &csaf.document.aggregate_severity {
-            base.add_text(self.fields.advisory_severity, &severity.text);
+            document.add_text(self.fields.advisory_severity, &severity.text);
         }
 
         for revision in &csaf.document.tracking.revision_history {
-            base.add_text(self.fields.advisory_revision, &revision.summary);
+            document.add_text(self.fields.advisory_revision, &revision.summary);
         }
 
-        base.add_date(
+        document.add_date(
             self.fields.advisory_initial,
             DateTime::from_timestamp_millis(csaf.document.tracking.initial_release_date.timestamp_millis()),
         );
 
-        base.add_date(
+        document.add_date(
             self.fields.advisory_current,
             DateTime::from_timestamp_millis(csaf.document.tracking.current_release_date.timestamp_millis()),
         );
 
         if let Some(vulns) = &csaf.vulnerabilities {
             for vuln in vulns {
-                let mut document = base.clone();
                 if let Some(title) = &vuln.title {
                     document.add_text(self.fields.cve_title, title);
                 }
@@ -189,10 +187,9 @@ impl trustification_index::Index for Index {
                 }
 
                 debug!("Adding doc: {:?}", document);
-                documents.push(document);
             }
         }
-        Ok(documents)
+        Ok(vec![document])
     }
 
     fn doc_id_to_term(&self, id: &str) -> Term {
@@ -237,13 +234,24 @@ impl trustification_index::Index for Index {
         let advisory_date = field2date(&doc, self.fields.advisory_current)?;
         let advisory_desc = field2str(&doc, self.fields.advisory_description)?;
 
-        let cve_id = field2str(&doc, self.fields.cve_id)?;
-        let cve_title = field2str(&doc, self.fields.cve_title)?;
-        let cve_release = field2date(&doc, self.fields.cve_release)?;
-        let cve_cvss = field2float(&doc, self.fields.cve_cvss).ok();
-        let snippet_generator = SnippetGenerator::create(searcher, query, self.fields.cve_description)?;
-        let cve_desc = field2str(&doc, self.fields.cve_description)?;
-        let cve_snippet = snippet_generator.snippet_from_doc(&doc).to_html();
+        let cves = field2strvec(&doc, self.fields.cve_id)?
+            .iter()
+            .map(|s| s.to_string())
+            .collect();
+
+        let mut cvss_max: Option<f64> = None;
+        for score in field2f64vec(&doc, self.fields.cve_cvss)? {
+            match &mut cvss_max {
+                Some(current) => {
+                    if *current >= score {
+                        *current = score;
+                    }
+                }
+                None => {
+                    cvss_max.replace(score);
+                }
+            }
+        }
 
         Ok(SearchDocument {
             advisory_id: advisory_id.to_string(),
@@ -251,12 +259,8 @@ impl trustification_index::Index for Index {
             advisory_date,
             advisory_snippet,
             advisory_desc: advisory_desc.to_string(),
-            cve_id: cve_id.to_string(),
-            cve_title: cve_title.to_string(),
-            cve_release,
-            cve_snippet,
-            cve_desc: cve_desc.to_string(),
-            cve_cvss,
+            cves,
+            cvss_max,
         })
     }
 }

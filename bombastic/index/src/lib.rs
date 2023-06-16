@@ -9,11 +9,16 @@ use cyclonedx_bom::models::{
 use search::*;
 use sikula::prelude::*;
 use spdx_rs::models::Algorithm;
-use tantivy::{query::AllQuery, schema::INDEXED, store::ZstdCompressor, IndexSettings, Searcher, SnippetGenerator};
+use tantivy::{
+    query::{AllQuery, BooleanQuery},
+    schema::INDEXED,
+    store::ZstdCompressor,
+    IndexSettings, Searcher, SnippetGenerator,
+};
 use time::format_description::well_known::Rfc3339;
 use tracing::{debug, info, trace, warn};
 use trustification_index::{
-    create_boolean_query, create_date_query, primary2occur,
+    create_boolean_query, create_date_query, field2str, field2strvec, primary2occur,
     tantivy::{
         doc,
         query::{Occur, Query},
@@ -28,6 +33,23 @@ mod search;
 pub struct Index {
     schema: Schema,
     fields: Fields,
+}
+
+pub struct PackageFields {
+    name: Field,
+    version: Field,
+    desc: Field,
+    purl: Field,
+    cpe: Field,
+    license: Field,
+    supplier: Field,
+    classifier: Field,
+    sha256: Field,
+    purl_type: Field,
+    purl_name: Field,
+    purl_namespace: Field,
+    purl_version: Field,
+    purl_qualifiers: Field,
 }
 
 pub enum SBOM {
@@ -51,21 +73,10 @@ impl SBOM {
 
 struct Fields {
     sbom_id: Field,
-    dependent: Field,
-    created: Field,
-    purl: Field,
-    name: Field,
-    cpe: Field,
-    ptype: Field,
-    pnamespace: Field,
-    pname: Field,
-    pversion: Field,
-    description: Field,
-    sha256: Field,
-    license: Field,
-    qualifiers: Field,
-    supplier: Field,
-    classifier: Field,
+    sbom_created: Field,
+    sbom_creators: Field,
+    sbom: PackageFields,
+    dep: PackageFields,
 }
 
 impl Default for Index {
@@ -79,21 +90,40 @@ impl Index {
         let mut schema = Schema::builder();
         let fields = Fields {
             sbom_id: schema.add_text_field("sbom_id", STRING | STORED),
-            dependent: schema.add_text_field("dependent", STRING | STORED),
-            cpe: schema.add_text_field("cpe", STRING | STORED),
-            name: schema.add_text_field("name", STRING | STORED),
-            purl: schema.add_text_field("purl", STRING | FAST | STORED),
-            ptype: schema.add_text_field("ptype", STRING),
-            pnamespace: schema.add_text_field("pnamespace", STRING),
-            created: schema.add_date_field("created", INDEXED | FAST | STORED),
-            pname: schema.add_text_field("pname", STRING),
-            pversion: schema.add_text_field("pversion", STRING | STORED),
-            description: schema.add_text_field("description", TEXT | STORED),
-            sha256: schema.add_text_field("sha256", STRING | STORED),
-            license: schema.add_text_field("license", STRING | STORED),
-            supplier: schema.add_text_field("supplier", TEXT | STORED),
-            qualifiers: schema.add_text_field("qualifiers", STRING),
-            classifier: schema.add_text_field("classifier", STRING | STORED),
+            sbom_created: schema.add_date_field("sbom_created", INDEXED | FAST | STORED),
+            sbom_creators: schema.add_text_field("sbom_creators", STRING | STORED),
+            sbom: PackageFields {
+                name: schema.add_text_field("sbom_name", STRING | STORED),
+                version: schema.add_text_field("sbom_version", STRING | STORED),
+                purl: schema.add_text_field("sbom_purl", STRING | STORED),
+                desc: schema.add_text_field("sbom_desc", TEXT | STORED),
+                license: schema.add_text_field("sbom_license", TEXT | STORED),
+                cpe: schema.add_text_field("sbom_cpe", STRING | STORED),
+                supplier: schema.add_text_field("sbom_supplier", TEXT | STORED),
+                classifier: schema.add_text_field("sbom_classifier", STRING),
+                sha256: schema.add_text_field("sbom_sha256", STRING | STORED),
+                purl_type: schema.add_text_field("sbom_purl_type", STRING),
+                purl_name: schema.add_text_field("sbom_purl_name", STRING),
+                purl_namespace: schema.add_text_field("sbom_purl_namespace", STRING),
+                purl_version: schema.add_text_field("sbom_purl_version", STRING),
+                purl_qualifiers: schema.add_text_field("sbom_purl_qualifiers", STRING),
+            },
+            dep: PackageFields {
+                name: schema.add_text_field("dep_name", STRING),
+                purl: schema.add_text_field("dep_purl", STRING | STORED),
+                version: schema.add_text_field("dep_version", STRING),
+                desc: schema.add_text_field("dep_desc", TEXT),
+                cpe: schema.add_text_field("dep_cpe", STRING | STORED),
+                license: schema.add_text_field("dep_license", TEXT | STORED),
+                supplier: schema.add_text_field("dep_supplier", TEXT),
+                classifier: schema.add_text_field("dep_classifier", STRING),
+                sha256: schema.add_text_field("dep_sha256", STRING),
+                purl_type: schema.add_text_field("dep_purl_type", STRING),
+                purl_name: schema.add_text_field("dep_purl_name", STRING),
+                purl_namespace: schema.add_text_field("dep_purl_namespace", STRING),
+                purl_version: schema.add_text_field("dep_purl_version", STRING),
+                purl_qualifiers: schema.add_text_field("dep_purl_qualifiers", STRING),
+            },
         };
         Self {
             schema: schema.build(),
@@ -103,8 +133,20 @@ impl Index {
 
     fn index_spdx(&self, id: &str, bom: &spdx_rs::models::SPDX) -> Result<Vec<Document>, SearchError> {
         debug!("Indexing SPDX document");
-        let mut documents = Vec::new();
-        let mut parents: Vec<String> = Vec::new();
+
+        let mut document = doc!();
+
+        document.add_text(self.fields.sbom_id, id);
+
+        for creators in &bom.document_creation_information.creation_info.creators {
+            document.add_text(self.fields.sbom_creators, creators);
+        }
+
+        let created = &bom.document_creation_information.creation_info.created;
+        document.add_date(
+            self.fields.sbom_created,
+            DateTime::from_timestamp_millis(created.timestamp_millis()),
+        );
 
         for package in &bom.package_information {
             if bom
@@ -112,166 +154,140 @@ impl Index {
                 .document_describes
                 .contains(&package.package_spdx_identifier)
             {
-                for r in &package.external_reference {
-                    parents.push(r.reference_locator.clone());
+                Self::index_spdx_package(&mut document, package, &self.fields.sbom);
+            } else {
+                Self::index_spdx_package(&mut document, package, &self.fields.dep);
+            }
+        }
+        Ok(vec![document])
+    }
+
+    fn index_spdx_package(
+        document: &mut Document,
+        package: &spdx_rs::models::PackageInformation,
+        fields: &PackageFields,
+    ) {
+        if let Some(comment) = &package.package_summary_description {
+            document.add_text(fields.desc, comment);
+        }
+        for r in package.external_reference.iter() {
+            if r.reference_type == "cpe22type" {
+                document.add_text(fields.cpe, &r.reference_locator);
+            }
+            if r.reference_type == "purl" {
+                let purl = r.reference_locator.clone();
+                document.add_text(fields.purl, &purl);
+
+                if let Ok(package) = packageurl::PackageUrl::from_str(&purl) {
+                    document.add_text(fields.purl_name, package.name());
+                    if let Some(namespace) = package.namespace() {
+                        document.add_text(fields.purl_namespace, namespace);
+                    }
+
+                    if let Some(version) = package.version() {
+                        document.add_text(fields.purl_version, version);
+                    }
+
+                    for entry in package.qualifiers().iter() {
+                        document.add_text(fields.purl_qualifiers, entry.1);
+                    }
+
+                    document.add_text(fields.purl_type, package.ty());
                 }
             }
         }
 
-        for package in &bom.package_information {
-            if !bom
-                .document_creation_information
-                .document_describes
-                .contains(&package.package_spdx_identifier)
-            {
-                for parent in &parents {
-                    let mut document = doc!();
+        document.add_text(fields.name, &package.package_name);
+        if let Some(version) = &package.package_version {
+            document.add_text(fields.version, version);
+        }
 
-                    if let Some(comment) = &package.package_summary_description {
-                        document.add_text(self.fields.description, comment);
-                    }
-
-                    let created = &bom.document_creation_information.creation_info.created;
-                    document.add_date(
-                        self.fields.created,
-                        DateTime::from_timestamp_millis(created.timestamp_millis()),
-                    );
-
-                    for r in package.external_reference.iter() {
-                        if r.reference_type == "cpe22type" {
-                            document.add_text(self.fields.cpe, &r.reference_locator);
-                        }
-                        if r.reference_type == "purl" {
-                            let purl = r.reference_locator.clone();
-                            document.add_text(self.fields.purl, &purl);
-
-                            if let Ok(package) = packageurl::PackageUrl::from_str(&purl) {
-                                document.add_text(self.fields.pname, package.name());
-                                if let Some(namespace) = package.namespace() {
-                                    document.add_text(self.fields.pnamespace, namespace);
-                                }
-
-                                if let Some(version) = package.version() {
-                                    document.add_text(self.fields.pversion, version);
-                                }
-
-                                for entry in package.qualifiers().iter() {
-                                    document.add_text(self.fields.qualifiers, entry.1);
-                                }
-                                document.add_text(self.fields.ptype, package.ty());
-                            }
-                        }
-                    }
-
-                    document.add_text(self.fields.name, &package.package_name);
-
-                    for sum in package.package_checksum.iter() {
-                        if sum.algorithm == Algorithm::SHA256 {
-                            document.add_text(self.fields.sha256, &sum.value);
-                        }
-                    }
-
-                    document.add_text(self.fields.license, package.declared_license.to_string());
-                    document.add_text(self.fields.dependent, parent);
-                    if let Some(supplier) = &package.package_supplier {
-                        document.add_text(self.fields.supplier, supplier);
-                    }
-
-                    document.add_text(self.fields.sbom_id, id);
-
-                    documents.push(document);
-                }
+        for sum in package.package_checksum.iter() {
+            if sum.algorithm == Algorithm::SHA256 {
+                document.add_text(fields.sha256, &sum.value);
             }
         }
-        Ok(documents)
+
+        document.add_text(fields.license, package.declared_license.to_string());
+        if let Some(supplier) = &package.package_supplier {
+            document.add_text(fields.supplier, supplier);
+        }
     }
 
     fn index_cyclonedx(&self, id: &str, bom: &cyclonedx_bom::prelude::Bom) -> Result<Vec<Document>, SearchError> {
-        let mut documents = Vec::new();
-        let mut parent = None;
+        let mut document = doc!();
 
-        let mut created = None;
-
+        document.add_text(self.fields.sbom_id, id);
         if let Some(metadata) = &bom.metadata {
             if let Some(timestamp) = &metadata.timestamp {
                 let timestamp = timestamp.to_string();
                 if let Ok(d) = time::OffsetDateTime::parse(&timestamp, &Rfc3339) {
-                    created.replace(DateTime::from_timestamp_secs(d.unix_timestamp()));
+                    document.add_date(
+                        self.fields.sbom_created,
+                        DateTime::from_timestamp_secs(d.unix_timestamp()),
+                    );
                 }
             }
+
             if let Some(component) = &metadata.component {
-                let mut doc = self.index_cyclonedx_component(id, component, None)?;
-                if let Some(created) = &created {
-                    doc.add_date(self.fields.created, created.clone());
-                }
-                documents.push(doc);
-                if let Some(purl) = &component.purl {
-                    parent.replace(purl.to_string());
-                }
+                Self::index_cyclonedx_component(&mut document, component, &self.fields.sbom);
             }
         }
 
         if let Some(components) = &bom.components {
             for component in components.0.iter() {
-                let mut doc = self.index_cyclonedx_component(id, component, parent.as_deref())?;
-                if let Some(created) = &created {
-                    doc.add_date(self.fields.created, created.clone());
-                }
-
-                documents.push(doc);
+                Self::index_cyclonedx_component(&mut document, component, &self.fields.dep);
             }
         }
-        Ok(documents)
+        Ok(vec![document])
     }
 
     fn index_cyclonedx_component(
-        &self,
-        id: &str,
+        document: &mut Document,
         component: &cyclonedx_bom::prelude::Component,
-        parent: Option<&str>,
-    ) -> Result<Document, SearchError> {
-        let mut document = doc!();
-
-        document.add_text(self.fields.sbom_id, id);
+        fields: &PackageFields,
+    ) {
         if let Some(hashes) = &component.hashes {
             for hash in hashes.0.iter() {
                 if hash.alg == HashAlgorithm::SHA256 {
-                    document.add_text(self.fields.sha256, &hash.content.0);
+                    document.add_text(fields.sha256, &hash.content.0);
                 }
             }
         }
 
+        document.add_text(fields.name, component.name.to_string());
+        document.add_text(fields.version, component.version.to_string());
+
         if let Some(purl) = &component.purl {
             let purl = purl.to_string();
-            document.add_text(self.fields.purl, &purl);
+            document.add_text(fields.purl, &purl);
 
             if let Ok(package) = packageurl::PackageUrl::from_str(&purl) {
-                document.add_text(self.fields.pname, package.name());
-                document.add_text(self.fields.name, package.name());
+                document.add_text(fields.purl_name, package.name());
                 if let Some(namespace) = package.namespace() {
-                    document.add_text(self.fields.pnamespace, namespace);
+                    document.add_text(fields.purl_namespace, namespace);
                 }
 
                 if let Some(version) = package.version() {
-                    document.add_text(self.fields.pversion, version);
+                    document.add_text(fields.purl_version, version);
                 }
 
                 for entry in package.qualifiers().iter() {
-                    document.add_text(self.fields.qualifiers, entry.1);
+                    document.add_text(fields.purl_qualifiers, entry.1);
                 }
-                document.add_text(self.fields.ptype, package.ty());
+                document.add_text(fields.purl_type, package.ty());
             }
         }
 
         if let Some(desc) = &component.description {
-            document.add_text(self.fields.description, desc.to_string());
+            document.add_text(fields.desc, desc.to_string());
         }
 
         if let Some(licenses) = &component.licenses {
             licenses.0.iter().for_each(|l| match l {
                 LicenseChoice::License(l) => match &l.license_identifier {
                     LicenseIdentifier::Name(s) => {
-                        document.add_text(self.fields.license, s.to_string());
+                        document.add_text(fields.license, s.to_string());
                     }
                     LicenseIdentifier::SpdxId(_) => (),
                 },
@@ -279,129 +295,99 @@ impl Index {
             });
         }
 
-        document.add_text(self.fields.classifier, component.component_type.to_string());
-
-        if let Some(parent) = parent {
-            document.add_text(self.fields.dependent, parent);
-        }
-
-        Ok(document)
+        document.add_text(fields.classifier, component.component_type.to_string());
     }
 
     fn resource2query(&self, resource: &Packages) -> Box<dyn Query> {
         match resource {
-            Packages::Dependent(primary) => {
-                let (occur, value) = primary2occur(primary);
-                let term = Term::from_field_text(self.fields.dependent, value);
-                create_boolean_query(occur, term)
-            }
-
             Packages::PackageName(primary) => {
-                let (occur, value) = primary2occur(primary);
-                let term = Term::from_field_text(self.fields.name, value);
-                create_boolean_query(occur, term)
+                self.match_boolean_union(&[self.fields.sbom.name, self.fields.dep.name], primary)
             }
 
             Packages::Purl(primary) => {
-                let (occur, value) = primary2occur(primary);
-                let term = Term::from_field_text(self.fields.purl, value);
-                create_boolean_query(occur, term)
+                self.match_boolean_union(&[self.fields.sbom.purl, self.fields.dep.purl], primary)
             }
+
+            Packages::Cpe(primary) => self.match_boolean_union(&[self.fields.sbom.cpe, self.fields.dep.cpe], primary),
 
             Packages::Type(primary) => {
-                let (occur, value) = primary2occur(primary);
-                let term = Term::from_field_text(self.fields.ptype, value);
-                create_boolean_query(occur, term)
+                self.match_boolean_union(&[self.fields.sbom.purl_type, self.fields.dep.purl_type], primary)
             }
 
-            Packages::Namespace(primary) => {
-                let (occur, value) = primary2occur(primary);
-                let term = Term::from_field_text(self.fields.pnamespace, value);
-                create_boolean_query(occur, term)
-            }
+            Packages::Namespace(primary) => self.match_boolean_union(
+                &[self.fields.sbom.purl_namespace, self.fields.dep.purl_namespace],
+                primary,
+            ),
 
             Packages::Name(primary) => {
-                let (occur, value) = primary2occur(primary);
-                let term = Term::from_field_text(self.fields.pname, value);
-                create_boolean_query(occur, term)
+                self.match_boolean_union(&[self.fields.sbom.purl_name, self.fields.dep.purl_name], primary)
             }
 
-            Packages::Version(primary) => {
-                let (occur, value) = primary2occur(primary);
-                let term = Term::from_field_text(self.fields.pversion, value);
-                create_boolean_query(occur, term)
-            }
+            Packages::Created(ordered) => create_date_query(self.fields.sbom_created, ordered),
 
-            Packages::Created(ordered) => create_date_query(self.fields.created, ordered),
+            Packages::Version(primary) => self.match_boolean_union(
+                &[
+                    self.fields.sbom.purl_version,
+                    self.fields.dep.purl_version,
+                    self.fields.sbom.version,
+                    self.fields.dep.version,
+                ],
+                primary,
+            ),
 
             Packages::Description(primary) => {
-                let (occur, value) = primary2occur(primary);
-                let term = Term::from_field_text(self.fields.description, value);
-                create_boolean_query(occur, term)
+                self.match_boolean_union(&[self.fields.sbom.desc, self.fields.dep.desc], primary)
             }
 
             Packages::Digest(primary) => {
-                let (occur, value) = primary2occur(primary);
-                let term = Term::from_field_text(self.fields.sha256, value);
-                create_boolean_query(occur, term)
+                self.match_boolean_union(&[self.fields.sbom.sha256, self.fields.dep.sha256], primary)
             }
 
             Packages::License(primary) => {
-                let (occur, value) = primary2occur(primary);
-                let term = Term::from_field_text(self.fields.license, value);
-                create_boolean_query(occur, term)
+                self.match_boolean_union(&[self.fields.sbom.license, self.fields.dep.license], primary)
             }
 
             Packages::Supplier(primary) => {
-                let (occur, value) = primary2occur(primary);
-                let term = Term::from_field_text(self.fields.supplier, value);
-                create_boolean_query(occur, term)
+                self.match_boolean_union(&[self.fields.sbom.supplier, self.fields.dep.supplier], primary)
             }
 
-            Packages::Qualifier(primary) => {
-                let (occur, value) = primary2occur(primary);
-                let term = Term::from_field_text(self.fields.qualifiers, value);
-                create_boolean_query(occur, term)
-            }
-
-            Packages::Application => create_boolean_query(
-                Occur::Must,
-                Term::from_field_text(self.fields.classifier, &Classification::Application.to_string()),
+            Packages::Qualifier(primary) => self.match_boolean_union(
+                &[self.fields.sbom.purl_qualifiers, self.fields.dep.purl_qualifiers],
+                primary,
             ),
 
-            Packages::Library => create_boolean_query(
-                Occur::Must,
-                Term::from_field_text(self.fields.classifier, &Classification::Library.to_string()),
-            ),
-
-            Packages::Framework => create_boolean_query(
-                Occur::Must,
-                Term::from_field_text(self.fields.classifier, &Classification::Framework.to_string()),
-            ),
-
-            Packages::Container => create_boolean_query(
-                Occur::Must,
-                Term::from_field_text(self.fields.classifier, &Classification::Container.to_string()),
-            ),
-
-            Packages::OperatingSystem => create_boolean_query(
-                Occur::Must,
-                Term::from_field_text(self.fields.classifier, &Classification::OperatingSystem.to_string()),
-            ),
-
-            Packages::Device => create_boolean_query(
-                Occur::Must,
-                Term::from_field_text(self.fields.classifier, &Classification::Device.to_string()),
-            ),
-            Packages::Firmware => create_boolean_query(
-                Occur::Must,
-                Term::from_field_text(self.fields.classifier, &Classification::Firmware.to_string()),
-            ),
-            Packages::File => create_boolean_query(
-                Occur::Must,
-                Term::from_field_text(self.fields.classifier, &Classification::File.to_string()),
-            ),
+            Packages::Application => self.match_classifiers(Classification::Application),
+            Packages::Library => self.match_classifiers(Classification::Library),
+            Packages::Framework => self.match_classifiers(Classification::Framework),
+            Packages::Container => self.match_classifiers(Classification::Container),
+            Packages::OperatingSystem => self.match_classifiers(Classification::OperatingSystem),
+            Packages::Device => self.match_classifiers(Classification::Device),
+            Packages::Firmware => self.match_classifiers(Classification::Firmware),
+            Packages::File => self.match_classifiers(Classification::File),
         }
+    }
+
+    fn match_boolean_union(&self, fields: &[Field], value: &Primary<'_>) -> Box<dyn Query> {
+        let (occur, value) = primary2occur(value);
+        let queries: Vec<Box<dyn Query>> = fields
+            .iter()
+            .map(|f| create_boolean_query(occur, Term::from_field_text(*f, value)))
+            .collect();
+
+        Box::new(BooleanQuery::union(queries))
+    }
+
+    fn match_classifiers(&self, classification: Classification) -> Box<dyn Query> {
+        Box::new(BooleanQuery::union(vec![
+            create_boolean_query(
+                Occur::Must,
+                Term::from_field_text(self.fields.sbom.classifier, &classification.to_string()),
+            ),
+            create_boolean_query(
+                Occur::Must,
+                Term::from_field_text(self.fields.dep.classifier, &classification.to_string()),
+            ),
+        ]))
     }
 }
 
@@ -423,7 +409,7 @@ impl trustification_index::Index for Index {
     fn settings(&self) -> IndexSettings {
         IndexSettings {
             sort_by_field: Some(tantivy::IndexSortByField {
-                field: self.schema.get_field_name(self.fields.created).to_string(),
+                field: self.schema.get_field_name(self.fields.sbom_created).to_string(),
                 order: tantivy::Order::Desc,
             }),
             docstore_compression: tantivy::store::Compressor::Zstd(ZstdCompressor::default()),
@@ -461,60 +447,58 @@ impl trustification_index::Index for Index {
         searcher: &Searcher,
         query: &dyn Query,
     ) -> Result<Self::MatchedDocument, SearchError> {
-        let snippet_generator = SnippetGenerator::create(searcher, query, self.fields.description)?;
+        let id = field2str(&doc, self.fields.sbom_id)?;
+
+        let snippet_generator = SnippetGenerator::create(searcher, query, self.fields.sbom.desc)?;
         let snippet = snippet_generator.snippet_from_doc(&doc).to_html();
 
-        let id = doc
-            .get_first(self.fields.sbom_id)
-            .map(|s| s.as_text().unwrap_or(""))
-            .unwrap_or("");
-
-        if id.is_empty() {
-            return Err(SearchError::NotFound);
-        }
-
         let purl = doc
-            .get_first(self.fields.purl)
+            .get_first(self.fields.sbom.purl)
+            .map(|s| s.as_text().unwrap_or(""))
+            .unwrap_or("N/A");
+
+        let cpe = doc
+            .get_first(self.fields.sbom.cpe)
             .map(|s| s.as_text().unwrap_or(""))
             .unwrap_or("N/A");
 
         let name = doc
-            .get_first(self.fields.name)
+            .get_first(self.fields.sbom.name)
             .map(|s| s.as_text().unwrap_or(""))
             .unwrap_or("");
 
-        let dependent = doc
-            .get_first(self.fields.dependent)
+        let version = doc
+            .get_first(self.fields.sbom.version)
             .map(|s| s.as_text().unwrap_or(""))
             .unwrap_or("");
 
         let sha256 = doc
-            .get_first(self.fields.sha256)
+            .get_first(self.fields.sbom.sha256)
             .map(|s| s.as_text().unwrap_or(""))
             .unwrap_or("");
 
         let license = doc
-            .get_first(self.fields.license)
+            .get_first(self.fields.sbom.license)
             .map(|s| s.as_text().unwrap_or("Unknown"))
             .unwrap_or("Unknown");
 
         let classifier = doc
-            .get_first(self.fields.classifier)
+            .get_first(self.fields.sbom.classifier)
             .map(|s| s.as_text().unwrap_or("Unknown"))
             .unwrap_or("Unknown");
 
         let supplier = doc
-            .get_first(self.fields.supplier)
+            .get_first(self.fields.sbom.supplier)
             .map(|s| s.as_text().unwrap_or("Unknown"))
             .unwrap_or("Unknown");
 
         let description = doc
-            .get_first(self.fields.description)
+            .get_first(self.fields.sbom.desc)
             .map(|s| s.as_text().unwrap_or(name))
             .unwrap_or(name);
 
         let created: time::OffsetDateTime = doc
-            .get_first(self.fields.created)
+            .get_first(self.fields.sbom_created)
             .map(|s| {
                 s.as_date()
                     .map(|d| d.into_utc())
@@ -522,18 +506,25 @@ impl trustification_index::Index for Index {
             })
             .unwrap_or(time::OffsetDateTime::UNIX_EPOCH);
 
+        let dependencies: Vec<String> = field2strvec(&doc, self.fields.dep.purl)?
+            .iter()
+            .map(|s| s.to_string())
+            .collect();
+
         let hit = SearchDocument {
-            sbom_id: id.to_string(),
+            id: id.to_string(),
+            version: version.to_string(),
             purl: purl.to_string(),
+            cpe: cpe.to_string(),
             name: name.to_string(),
-            dependent: dependent.to_string(),
             sha256: sha256.to_string(),
             license: license.to_string(),
             classifier: classifier.to_string(),
             supplier: supplier.to_string(),
+            snippet,
             created,
             description: description.to_string(),
-            snippet,
+            dependencies,
         };
         trace!("HIT: {:?}", hit);
 
@@ -573,7 +564,7 @@ mod tests {
     async fn test_search_form() {
         assert_search(|index| {
             let result = index.search("openssl", 0, 100).unwrap();
-            assert_eq!(result.0.len(), 4);
+            assert_eq!(result.0.len(), 1);
         });
     }
 
@@ -595,7 +586,7 @@ mod tests {
     async fn test_search_namespace() {
         assert_search(|index| {
             let result = index.search("redhat in:namespace", 0, 10000).unwrap();
-            assert_eq!(result.0.len(), 613);
+            assert_eq!(result.0.len(), 1);
         });
     }
 
@@ -603,7 +594,7 @@ mod tests {
     async fn test_search_created() {
         assert_search(|index| {
             let result = index.search("created:>2022-01-01", 0, 10000).unwrap();
-            assert_eq!(result.0.len(), 712);
+            assert_eq!(result.0.len(), 2);
         });
     }
 
@@ -612,7 +603,16 @@ mod tests {
         assert_search(|index| {
             let result = index.search("", 0, 10000).unwrap();
             // Should get all documents from test data
-            assert_eq!(result.0.len(), 712);
+            assert_eq!(result.0.len(), 2);
+        });
+    }
+
+    #[tokio::test]
+    async fn test_quarkus() {
+        assert_search(|index| {
+            let result = index.search("quarkus", 0, 10000).unwrap();
+            // Should get all documents from test data
+            assert_eq!(result.0.len(), 1);
         });
     }
 }

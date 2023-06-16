@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use actix_web::{web, web::ServiceConfig, HttpResponse, Responder};
 use spog_model::search::{AdvisorySummary, SearchResult};
 use tracing::{info, trace, warn};
@@ -68,34 +66,22 @@ pub async fn search(state: web::Data<SharedState>, params: web::Query<QueryParam
         Ok(result) => result,
     };
 
-    // Dedup data
-    let mut m: HashMap<String, AdvisorySummary> = HashMap::new();
-    let mut collapsed = 0;
-
+    let mut m: Vec<AdvisorySummary> = Vec::new();
     for item in result.result.drain(..) {
-        if let Some(entry) = m.get_mut(&item.advisory_id) {
-            if !entry.cves.contains(&item.cve_id) {
-                entry.cves.push(item.cve_id);
-                collapsed += 1;
-            }
-        } else {
-            m.insert(
-                item.advisory_id.clone(),
-                AdvisorySummary {
-                    id: item.advisory_id.clone(),
-                    title: item.advisory_title,
-                    snippet: item.advisory_snippet,
-                    desc: item.advisory_desc,
-                    date: item.advisory_date,
-                    href: format!("/api/v1/advisory?id={}", item.advisory_id),
-                    cves: vec![item.cve_id],
-                },
-            );
-        }
+        m.push(AdvisorySummary {
+            id: item.advisory_id.clone(),
+            title: item.advisory_title,
+            snippet: item.advisory_snippet,
+            desc: item.advisory_desc,
+            date: item.advisory_date,
+            cvss_max: item.cvss_max,
+            href: format!("/api/v1/advisory?id={}", item.advisory_id),
+            cves: item.cves,
+        });
     }
 
     HttpResponse::Ok().json(SearchResult::<Vec<AdvisorySummary>> {
-        total: Some(result.total - collapsed),
-        result: m.values().cloned().collect(),
+        total: Some(result.total),
+        result: m,
     })
 }
