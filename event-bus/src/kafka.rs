@@ -65,7 +65,7 @@ pub struct KafkaConsumer {
 }
 
 impl KafkaConsumer {
-    pub(crate) async fn next<'m>(&'m self) -> Result<Option<KafkaEvent<'m>>, anyhow::Error> {
+    pub(crate) async fn next(&self) -> Result<Option<KafkaEvent>, anyhow::Error> {
         let message = self.consumer.recv().await?;
         Ok(Some(KafkaEvent { message }))
     }

@@ -3,6 +3,7 @@
 mod kafka;
 mod sqs;
 
+#[allow(clippy::large_enum_variant)]
 pub enum Event<'m> {
     Kafka(kafka::KafkaEvent<'m>),
     Sqs(sqs::SqsEvent<'m>),

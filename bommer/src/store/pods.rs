@@ -11,6 +11,9 @@ use kube::{runtime::watcher, Resource, ResourceExt};
 
 use crate::store::{Owned, Store};
 
+type Images = HashMap<ImageRef, Owned<PodRef, ()>>;
+type Pods = HashMap<PodRef, HashSet<ImageRef>>;
+
 pub fn image_store<S>(stream: S) -> (Store<ImageRef, PodRef, ()>, impl Future<Output = anyhow::Result<()>>)
 where
     S: Stream<Item = Result<watcher::Event<Pod>, watcher::Error>>,
@@ -57,8 +60,8 @@ where
     Ok(())
 }
 
-fn to_state(pods: Vec<Pod>) -> (HashMap<ImageRef, Owned<PodRef, ()>>, HashMap<PodRef, HashSet<ImageRef>>) {
-    let mut by_images: HashMap<ImageRef, Owned<PodRef, ()>> = Default::default();
+fn to_state(pods: Vec<Pod>) -> (Images, Pods) {
+    let mut by_images: Images = Default::default();
     let mut by_pods = HashMap::new();
 
     for pod in pods {
