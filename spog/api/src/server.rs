@@ -7,7 +7,7 @@ use spog_model::search;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
-use crate::{advisory, sbom, vulnerability, Run};
+use crate::{advisory, sbom, Run};
 
 pub struct Server {
     run: Run,
@@ -20,15 +20,16 @@ pub struct Server {
             sbom::search,
             advisory::get,
             advisory::search,
-            vulnerability::search,
+            //vulnerability::search,
         ),
         components(
-            schemas(search::PackageSummary, search::VulnSummary, search::SearchResult<Vec<search::PackageSummary>>)
+            //schemas(search::PackageSummary, search::VulnSummary, search::SearchResult<Vec<search::PackageSummary>>)
+            schemas(search::PackageSummary, search::SearchResult<Vec<search::PackageSummary>>)
         ),
         tags(
             (name = "package", description = "Package endpoints"),
             (name = "advisory", description = "Advisory endpoints"),
-            (name = "vulnerability", description = "Vulnerability endpoints"),
+          //  (name = "vulnerability", description = "Vulnerability endpoints"),
         ),
     )]
 pub struct ApiDoc;
@@ -58,7 +59,7 @@ impl Server {
                 .app_data(web::Data::new(state))
                 .configure(crate::sbom::configure())
                 .configure(crate::advisory::configure())
-                .configure(crate::vulnerability::configure())
+                //.configure(crate::vulnerability::configure())
                 .service(SwaggerUi::new("/swagger-ui/{_:.*}").url("/openapi.json", openapi.clone()))
         })
         .bind((self.run.bind, self.run.port))?

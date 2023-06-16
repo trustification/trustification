@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use actix_web::{web, web::ServiceConfig, HttpResponse, Responder};
 use spog_model::search::{PackageSummary, SearchResult};
 use tracing::{debug, info, trace, warn};
@@ -57,44 +55,33 @@ pub async fn search(state: web::Data<SharedState>, params: web::Query<search::Qu
     trace!("Querying SBOM using {}", params.q);
     match state.search_sbom(&params.q, params.offset, params.limit).await {
         Ok(mut data) => {
-            let mut m: HashMap<String, PackageSummary> = HashMap::new();
-            let mut collapsed = 0;
+            let mut m: Vec<PackageSummary> = Vec::new();
             for item in data.result.drain(..) {
-                if let Some(entry) = m.get_mut(&item.purl) {
-                    if !entry.dependents.contains(&item.dependent) {
-                        entry.dependents.push(item.dependent);
-                    }
-                    if !entry.sboms.contains(&item.sbom_id) {
-                        entry.sboms.push(item.sbom_id);
-                        collapsed += 1;
-                    }
-                } else {
-                    m.insert(
-                        item.purl.clone(),
-                        PackageSummary {
-                            sboms: vec![item.sbom_id],
-                            purl: item.purl,
-                            name: item.name,
-                            sha256: item.sha256,
-                            license: item.license,
-                            classifier: item.classifier,
-                            snippet: item.snippet,
-                            supplier: item.supplier.trim_start_matches("Organization: ").to_string(),
-                            description: item.description,
-                            dependents: vec![item.dependent],
-                            vulnerabilities: Vec::new(),
-                        },
-                    );
-                }
+                m.push(PackageSummary {
+                    id: item.id.clone(),
+                    purl: item.purl,
+                    name: item.name,
+                    cpe: item.cpe,
+                    version: item.version,
+                    sha256: item.sha256,
+                    license: item.license,
+                    snippet: item.snippet,
+                    classifier: item.classifier,
+                    supplier: item.supplier.trim_start_matches("Organization: ").to_string(),
+                    href: format!("/api/v1/package?id={}", item.id),
+                    description: item.description,
+                    dependencies: item.dependencies,
+                    advisories: Vec::new(),
+                });
             }
 
             let mut result = SearchResult::<Vec<PackageSummary>> {
-                total: Some(data.total - collapsed),
-                result: m.values().cloned().collect(),
+                total: Some(data.total),
+                result: m,
             };
 
-            // TODO: Use guac to lookup vulnerabilities for each package!
-            search_vulnerabilities(state, &mut result.result).await;
+            // TODO: Use guac to lookup advisories for each package!
+            search_advisories(state, &mut result.result).await;
             debug!("Search result: {:?}", result);
             HttpResponse::Ok().json(result)
         }
@@ -105,18 +92,17 @@ pub async fn search(state: web::Data<SharedState>, params: web::Query<search::Qu
     }
 }
 
-async fn search_vulnerabilities(state: web::Data<SharedState>, packages: &mut Vec<PackageSummary>) {
+async fn search_advisories(state: web::Data<SharedState>, packages: &mut Vec<PackageSummary>) {
     for package in packages {
-        let q = format!("affected:\"{}\"", package.purl);
+        let q = format!("fixed:\"{}\"", package.name);
         if let Ok(result) = state.search_vex(&q, 0, 1000).await {
             for summary in result.result {
-                package.vulnerabilities.push(summary.cve_id);
+                package.advisories.push(summary.advisory_id);
             }
         }
-
         info!(
-            "Found {} vulns related to {}",
-            package.vulnerabilities.len(),
+            "Found {} advisories related to {}",
+            package.advisories.len(),
             package.purl
         );
     }

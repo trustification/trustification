@@ -7,7 +7,7 @@ pub mod cvss;
 // pub mod deps;
 pub mod error;
 pub mod package;
-pub mod vulnerability;
+// pub mod vulnerability;
 
 use std::ops::Deref;
 

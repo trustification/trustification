@@ -3,6 +3,7 @@ use crate::{
     hooks::use_backend,
 };
 
+use crate::{components::cvss::CvssScore, utils::cvss::Cvss};
 use patternfly_yew::{
     next::{
         use_table_data, Cell, CellContext, ColumnWidth, MemoizedTableModel, Table, TableColumn, TableEntryRenderer,
@@ -205,6 +206,7 @@ pub enum Column {
     Title,
     Revision,
     Download,
+    MaxCvss,
     Vulnerabilities,
 }
 
@@ -214,8 +216,7 @@ impl TableEntryRenderer<Column> for AdvisoryEntry {
             Column::Id => html!(&self.summary.id).into(),
             Column::Title => html!(&self.summary.title).into(),
             Column::Revision => {
-                let format = time::macros::format_description!("[year]-[month]-[day]");
-                let s = if let Ok(s) = self.summary.date.format(format) {
+                let s = if let Ok(s) = self.summary.date.format(&time::format_description::well_known::Rfc3339) {
                     s.to_string()
                 } else {
                     self.summary.date.to_string()
@@ -234,6 +235,15 @@ impl TableEntryRenderer<Column> for AdvisoryEntry {
                     html!().into()
                 }
             }
+            Column::MaxCvss => self
+                .summary
+                .cvss_max
+                .map(|s| Cvss {
+                    score: s as f32,
+                    status: String::new(),
+                })
+                .map(|cvss| html!(<CvssScore {cvss}/>).into())
+                .unwrap_or(html!().into()),
             Column::Vulnerabilities => {
                 let l = self.summary.cves.len();
                 html!(if l == 0 {
@@ -281,10 +291,11 @@ pub fn vulnerability_result(props: &AdvisoryResultProperties) -> Html {
     let header = html_nested! {
         <TableHeader<Column>>
             <TableColumn<Column> label="ID" index={Column::Id} width={ColumnWidth::Percent(10)}/>
-            <TableColumn<Column> label="Title" index={Column::Title} width={ColumnWidth::Percent(50)}/>
+            <TableColumn<Column> label="Title" index={Column::Title} width={ColumnWidth::Percent(45)}/>
             <TableColumn<Column> label="Revision" index={Column::Revision} width={ColumnWidth::Percent(10)}/>
-            <TableColumn<Column> label="Download" index={Column::Download} width={ColumnWidth::Percent(10)}/>
-            <TableColumn<Column> label="Vulnerabilities" index={Column::Vulnerabilities} width={ColumnWidth::Percent(20)}/>
+            <TableColumn<Column> label="Download" index={Column::Download} width={ColumnWidth::Percent(5)}/>
+            <TableColumn<Column> label="Highest Score" index={Column::MaxCvss} width={ColumnWidth::Percent(15)}/>
+            <TableColumn<Column> label="Vulnerabilities" index={Column::Vulnerabilities} width={ColumnWidth::Percent(15)}/>
         </TableHeader<Column>>
     };
 

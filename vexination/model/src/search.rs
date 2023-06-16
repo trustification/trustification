@@ -5,13 +5,8 @@ pub struct SearchDocument {
     pub advisory_date: time::OffsetDateTime,
     pub advisory_snippet: String,
     pub advisory_desc: String,
-
-    pub cve_id: String,
-    pub cve_title: String,
-    pub cve_release: time::OffsetDateTime,
-    pub cve_snippet: String,
-    pub cve_desc: String,
-    pub cve_cvss: Option<f64>,
+    pub cvss_max: Option<f64>,
+    pub cves: Vec<String>,
 }
 
 #[derive(serde::Deserialize, serde::Serialize, Debug, PartialEq)]

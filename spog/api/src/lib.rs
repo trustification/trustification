@@ -10,7 +10,7 @@ mod advisory;
 mod sbom;
 mod search;
 mod server;
-mod vulnerability;
+// mod vulnerability;
 
 #[derive(clap::Args, Debug)]
 #[command(about = "Run the api server", args_conflicts_with_subcommands = true)]

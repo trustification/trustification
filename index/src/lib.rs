@@ -311,6 +311,14 @@ pub fn create_boolean_query(occur: Occur, term: Term) -> Box<dyn Query> {
     )]))
 }
 
+pub fn field2strvec(doc: &Document, field: Field) -> Result<Vec<&str>, Error> {
+    Ok(doc.get_all(field).map(|s| s.as_text().unwrap_or_default()).collect())
+}
+
+pub fn field2f64vec(doc: &Document, field: Field) -> Result<Vec<f64>, Error> {
+    Ok(doc.get_all(field).map(|s| s.as_f64().unwrap_or_default()).collect())
+}
+
 pub fn field2str(doc: &Document, field: Field) -> Result<&str, Error> {
     let value = doc.get_first(field).map(|s| s.as_text()).unwrap_or(None);
     value.map(|v| Ok(v)).unwrap_or(Err(Error::NotFound))
