@@ -9,7 +9,7 @@ use csaf::{
 };
 use search::*;
 use sikula::prelude::*;
-use tantivy::{Searcher, SnippetGenerator};
+use tantivy::{query::AllQuery, store::ZstdCompressor, IndexSettings, Searcher, SnippetGenerator};
 use tracing::debug;
 use trustification_index::{
     create_boolean_query, create_date_query, field2date, field2float, field2str, primary2occur,
@@ -59,6 +59,17 @@ struct ProductPackage {
 impl trustification_index::Index for Index {
     type MatchedDocument = SearchDocument;
     type Document = Csaf;
+
+    fn settings(&self) -> IndexSettings {
+        IndexSettings {
+            sort_by_field: Some(tantivy::IndexSortByField {
+                field: self.schema.get_field_name(self.fields.advisory_current).to_string(),
+                order: tantivy::Order::Desc,
+            }),
+            docstore_compression: tantivy::store::Compressor::Zstd(ZstdCompressor::default()),
+            ..Default::default()
+        }
+    }
 
     fn index_doc(&self, id: &str, csaf: &Csaf) -> Result<Vec<Document>, SearchError> {
         let mut documents = Vec::new();
@@ -189,6 +200,10 @@ impl trustification_index::Index for Index {
     }
 
     fn prepare_query(&self, q: &str) -> Result<Box<dyn Query>, SearchError> {
+        if q.is_empty() {
+            return Ok(Box::new(AllQuery));
+        }
+
         let mut query = Vulnerabilities::parse(q).map_err(|err| SearchError::Parser(err.to_string()))?;
 
         query.term = query.term.compact();
@@ -255,7 +270,7 @@ impl Index {
         let advisory_revision = schema.add_text_field("advisory_revision", STRING | STORED);
         let advisory_severity = schema.add_text_field("advisory_severity", STRING | STORED);
         let advisory_initial = schema.add_date_field("advisory_initial_date", INDEXED);
-        let advisory_current = schema.add_date_field("advisory_current_date", INDEXED | STORED);
+        let advisory_current = schema.add_date_field("advisory_current_date", INDEXED | FAST | STORED);
 
         let cve_id = schema.add_text_field("cve_id", STRING | FAST | STORED);
         let cve_title = schema.add_text_field("cve_title", TEXT | STORED);
@@ -579,6 +594,15 @@ mod tests {
                     100,
                 )
                 .unwrap();
+            assert_eq!(result.0.len(), 1);
+        });
+    }
+
+    #[tokio::test]
+    async fn test_all() {
+        assert_free_form(|index| {
+            let result = index.search("", 0, 100).unwrap();
+            // Should get all documents (1)
             assert_eq!(result.0.len(), 1);
         });
     }

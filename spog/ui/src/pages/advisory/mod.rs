@@ -30,15 +30,7 @@ pub fn advisory(props: &AdvisoryProps) -> Html {
             },
         )
     };
-    let query = if let Some(props) = &props.query {
-        if props.is_empty() {
-            None
-        } else {
-            Some(props.clone())
-        }
-    } else {
-        None
-    };
+    let query = props.query.clone();
 
     html!(
         <>

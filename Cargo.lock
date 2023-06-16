@@ -1020,6 +1020,7 @@ dependencies = [
  "bombastic-model",
  "chumsky",
  "cyclonedx-bom",
+ "env_logger 0.10.0",
  "packageurl",
  "serde",
  "serde_json",
@@ -4808,6 +4809,7 @@ dependencies = [
  "time 0.3.21",
  "uuid",
  "winapi",
+ "zstd",
 ]
 
 [[package]]

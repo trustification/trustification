@@ -9,7 +9,7 @@ use cyclonedx_bom::models::{
 use search::*;
 use sikula::prelude::*;
 use spdx_rs::models::Algorithm;
-use tantivy::{schema::INDEXED, Searcher, SnippetGenerator};
+use tantivy::{query::AllQuery, schema::INDEXED, store::ZstdCompressor, IndexSettings, Searcher, SnippetGenerator};
 use time::format_description::well_known::Rfc3339;
 use tracing::{debug, info, trace, warn};
 use trustification_index::{
@@ -85,7 +85,7 @@ impl Index {
             purl: schema.add_text_field("purl", STRING | FAST | STORED),
             ptype: schema.add_text_field("ptype", STRING),
             pnamespace: schema.add_text_field("pnamespace", STRING),
-            created: schema.add_date_field("created", INDEXED | STORED),
+            created: schema.add_date_field("created", INDEXED | FAST | STORED),
             pname: schema.add_text_field("pname", STRING),
             pversion: schema.add_text_field("pversion", STRING | STORED),
             description: schema.add_text_field("description", TEXT | STORED),
@@ -420,7 +420,22 @@ impl trustification_index::Index for Index {
         self.schema.clone()
     }
 
+    fn settings(&self) -> IndexSettings {
+        IndexSettings {
+            sort_by_field: Some(tantivy::IndexSortByField {
+                field: self.schema.get_field_name(self.fields.created).to_string(),
+                order: tantivy::Order::Desc,
+            }),
+            docstore_compression: tantivy::store::Compressor::Zstd(ZstdCompressor::default()),
+            ..Default::default()
+        }
+    }
+
     fn prepare_query(&self, q: &str) -> Result<Box<dyn Query>, SearchError> {
+        if q.is_empty() {
+            return Ok(Box::new(AllQuery));
+        }
+
         let mut query = Packages::parse(q).map_err(|err| SearchError::Parser(err.to_string()))?;
 
         query.term = query.term.compact();
@@ -516,5 +531,81 @@ impl trustification_index::Index for Index {
         trace!("HIT: {:?}", hit);
 
         Ok(hit)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use trustification_index::IndexStore;
+
+    use super::*;
+
+    fn assert_search<F>(f: F)
+    where
+        F: FnOnce(IndexStore<Index>),
+    {
+        let _ = env_logger::try_init();
+
+        let index = Index::new();
+        let mut store = IndexStore::new_in_memory(index).unwrap();
+        let mut writer = store.writer().unwrap();
+
+        let data = std::fs::read_to_string("../testdata/ubi9-sbom.json").unwrap();
+        let sbom = SBOM::parse(data.as_bytes()).unwrap();
+        writer.write(store.index(), "ubi9-sbom", &sbom).unwrap();
+
+        let data = std::fs::read_to_string("../testdata/my-sbom.json").unwrap();
+        let sbom = SBOM::parse(data.as_bytes()).unwrap();
+        writer.write(store.index(), "my-sbom", &sbom).unwrap();
+        writer.commit().unwrap();
+
+        f(store);
+    }
+
+    #[tokio::test]
+    async fn test_search_form() {
+        assert_search(|index| {
+            let result = index.search("openssl", 0, 100).unwrap();
+            assert_eq!(result.0.len(), 4);
+        });
+    }
+
+    #[tokio::test]
+    async fn test_search_purl() {
+        assert_search(|index| {
+            let result = index
+                .search(
+                    "\"pkg:rpm/redhat/openssl-libs@3.0.1-47.el9_1?arch=ppc64le&epoch=1\" in:purl",
+                    0,
+                    100,
+                )
+                .unwrap();
+            assert_eq!(result.0.len(), 1);
+        });
+    }
+
+    #[tokio::test]
+    async fn test_search_namespace() {
+        assert_search(|index| {
+            let result = index.search("redhat in:namespace", 0, 10000).unwrap();
+            assert_eq!(result.0.len(), 613);
+        });
+    }
+
+    #[tokio::test]
+    async fn test_search_created() {
+        assert_search(|index| {
+            let result = index.search("created:>2022-01-01", 0, 10000).unwrap();
+            assert_eq!(result.0.len(), 712);
+        });
+    }
+
+    #[tokio::test]
+    async fn test_all() {
+        assert_search(|index| {
+            let result = index.search("", 0, 10000).unwrap();
+            // Should get all documents from test data
+            assert_eq!(result.0.len(), 712);
+        });
     }
 }
