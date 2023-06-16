@@ -38,7 +38,7 @@ where
                 Navigation::Previous => *page - 1,
                 Navigation::Page(page) => page,
             };
-            page.set(newpage);
+            page.set(if newpage >= 1 { newpage } else { 0 });
         })
     };
 
