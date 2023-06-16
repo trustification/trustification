@@ -10,6 +10,13 @@ use std::rc::Rc;
 use yew::prelude::*;
 use yew_more_hooks::hooks::{use_async_with_cloned_deps, UseAsyncHandleDeps};
 
+use crate::utils::pagination_to_offset;
+
+use crate::shared::{
+    components::simple_pagination::SimplePagination,
+    hooks::use_pagination_state::{use_pagination_state, UsePaginationStateArgs},
+};
+
 #[derive(PartialEq, Properties)]
 pub struct VexinationSearchProperties {
     pub callback: Callback<UseAsyncHandleDeps<SearchResult<Rc<Vec<Csaf>>>, String>>,
@@ -27,8 +34,9 @@ pub fn vexination_search(props: &VexinationSearchProperties) -> Html {
         backend.clone(),
     );
 
-    let offset = use_state_eq(|| 0);
-    let limit = use_state_eq(|| 10);
+    let pagination_state = use_pagination_state(|| UsePaginationStateArgs {
+        initial_items_per_page: 10,
+    });
 
     // the active query
     let state = use_state_eq(|| {
@@ -43,20 +51,20 @@ pub fn vexination_search(props: &VexinationSearchProperties) -> Html {
     let search = {
         let service = service.clone();
         use_async_with_cloned_deps(
-            move |(state, offset, limit)| async move {
+            move |(state, page, per_page)| async move {
                 service
                     .search(
                         &state,
                         &SearchOptions {
-                            offset: Some(offset),
-                            limit: Some(limit),
+                            offset: Some(pagination_to_offset(page, per_page)),
+                            limit: Some(per_page),
                         },
                     )
                     .await
                     .map(|result| result.map(Rc::new))
                     .map_err(|err| err.to_string())
             },
-            ((*state).clone(), *offset, *limit),
+            ((*state).clone(), pagination_state.page, pagination_state.per_page),
         )
     };
 
@@ -95,31 +103,6 @@ pub fn vexination_search(props: &VexinationSearchProperties) -> Html {
     // pagination
 
     let total = search.data().and_then(|d| d.total);
-    let onlimit = {
-        let limit = limit.clone();
-        Callback::from(move |n| {
-            limit.set(n);
-        })
-    };
-    let onnavigation = {
-        if let Some(total) = total {
-            let offset = offset.clone();
-
-            let limit = limit.clone();
-            Callback::from(move |nav| {
-                let o = match nav {
-                    Navigation::First => 0,
-                    Navigation::Last => total - *limit,
-                    Navigation::Next => *offset + *limit,
-                    Navigation::Previous => *offset - *limit,
-                    Navigation::Page(n) => *limit * n - 1,
-                };
-                offset.set(o);
-            })
-        } else {
-            Callback::default()
-        }
-    };
 
     // render
 
@@ -153,15 +136,13 @@ pub fn vexination_search(props: &VexinationSearchProperties) -> Html {
                     { for props.toolbar_items.iter() }
 
                     <ToolbarItem r#type={ToolbarItemType::Pagination}>
-                        <Pagination
-                            total_entries={total}
-                            selected_choice={*limit}
-                            offset={*offset}
-                            entries_per_page_choices={vec![10, 25, 50]}
-                            {onnavigation}
-                            {onlimit}
-                        >
-                        </Pagination>
+                        <SimplePagination
+                            total_items={total}
+                            page={pagination_state.page}
+                            per_page={pagination_state.per_page}
+                            on_page_change={pagination_state.on_page_change}
+                            on_per_page_change={pagination_state.on_per_page_change}
+                        />
                     </ToolbarItem>
 
                 </ToolbarContent>
