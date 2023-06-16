@@ -19,7 +19,6 @@ use crate::{
     components::common::SafeHtml,
     hooks::use_backend,
     pages::AppRoute,
-    utils::last_weeks_date,
 };
 
 #[derive(PartialEq, Properties)]
@@ -40,9 +39,6 @@ pub fn package_search(props: &PackageSearchProperties) -> Html {
 
     let offset = use_state_eq(|| 0);
     let limit = use_state_eq(|| 10);
-
-    // Default is SBOM created past weeks
-    let _default_query = format!("created:>{}", last_weeks_date());
 
     // the active query
     let state = use_state_eq(|| {

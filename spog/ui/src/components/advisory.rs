@@ -1,7 +1,6 @@
 use crate::{
     backend::{Endpoint, SearchOptions, VexService},
     hooks::use_backend,
-    utils::last_weeks_date,
 };
 
 use patternfly_yew::{
@@ -38,9 +37,6 @@ pub fn advisory_search(props: &AdvisorySearchProperties) -> Html {
     let offset = use_state_eq(|| 0);
     let limit = use_state_eq(|| 10);
 
-    // Default is vulnerabilities past weeks
-    let default_query = format!("release:>{}", last_weeks_date());
-
     // the active query
     let state = use_state_eq(|| {
         // initialize with the state from history, or with a reasonable default
@@ -48,7 +44,7 @@ pub fn advisory_search(props: &AdvisorySearchProperties) -> Html {
             .state()
             .ok()
             .and_then(|state| state.as_string())
-            .unwrap_or_else(|| props.query.clone().unwrap_or(default_query))
+            .unwrap_or_else(|| props.query.clone().unwrap_or(String::default()))
     });
 
     let search = {

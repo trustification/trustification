@@ -9,7 +9,7 @@ use tantivy::{
     directory::{MmapDirectory, INDEX_WRITER_LOCK},
     query::{BooleanQuery, Occur, Query, RangeQuery, TermQuery},
     schema::*,
-    DateTime, Directory, Index as SearchIndex, Searcher,
+    DateTime, Directory, Index as SearchIndex, IndexSettings, Searcher,
 };
 use time::OffsetDateTime;
 use tracing::{info, warn};
@@ -36,6 +36,7 @@ pub trait Index {
     type MatchedDocument;
     type Document;
 
+    fn settings(&self) -> IndexSettings;
     fn schema(&self) -> Schema;
     fn prepare_query(&self, q: &str) -> Result<Box<dyn Query>, Error>;
     fn process_hit(
@@ -103,7 +104,9 @@ impl IndexWriter {
 impl<INDEX: Index> IndexStore<INDEX> {
     pub fn new_in_memory(index: INDEX) -> Result<Self, Error> {
         let schema = index.schema();
-        let inner = SearchIndex::create_in_ram(schema);
+        let settings = index.settings();
+        let builder = SearchIndex::builder().schema(schema).settings(settings);
+        let inner = builder.create_in_ram()?;
         Ok(Self {
             inner,
             index,
@@ -121,8 +124,10 @@ impl<INDEX: Index> IndexStore<INDEX> {
         std::fs::create_dir(&path).map_err(|_| Error::Open)?;
 
         let schema = index.schema();
+        let settings = index.settings();
+        let builder = SearchIndex::builder().schema(schema).settings(settings);
         let dir = MmapDirectory::open(&path).map_err(|_e| Error::Open)?;
-        let inner = SearchIndex::open_or_create(dir, schema)?;
+        let inner = builder.open_or_create(dir)?;
         Ok(Self {
             inner,
             path: Some(path),

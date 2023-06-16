@@ -6,7 +6,7 @@ edition = "2021"
 [dependencies]
 sikula = { version = "0.3", features = ["time"] }
 zstd = "0.12"
-tantivy = "0.19.2"
+tantivy = { version = "0.19.2", features = ["zstd-compression"] }
 tracing = "0.1"
 chumsky = "1.0.0-alpha.4"
 time = "0.3"
@@ -21,3 +21,6 @@ serde_json = "1.0.68"
 
 [dev-dependencies]
 tokio = { version = "1", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0.68"
+env_logger = "0.10"
