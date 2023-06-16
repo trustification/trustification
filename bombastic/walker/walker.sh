@@ -1,13 +1,9 @@
 #!/bin/bash
 
 #fail on any subprocess failures
-set -euo pipefail
+set -uo pipefail
 
 usage() { echo "Usage: $0 [-s <url to index.txt>] bombastic_url" 1>&2; exit 1; }
-
-if [ $# -lt 1 ]; then
-    >&2 usage
-fi
 
 # Default variables
 BOMBASTIC_API=${*: -1}
@@ -24,8 +20,8 @@ help()
    echo
    echo "sbomwalker [OPTIONS] BOMBASTIC_API_URL"
    echo "options:"
-   echo "s     Specify the source URL. Defaults to https://access.redhat.com/security/data/sbom/beta/index.txt"
-   echo "h     Print this Help."
+   echo "   -s <URL>  Specify the source URL. Defaults to https://access.redhat.com/security/data/sbom/beta/index.txt"
+   echo "   -h        Print this Help."
    echo
    echo "example:"
    echo "sbomwalker localhost:8080"
@@ -34,7 +30,7 @@ help()
 }
 
 # Get the options
-while getopts ":h:s" option; do
+while getopts ":hs:" option; do
    case $option in
       h) # display Help
          help
@@ -54,15 +50,15 @@ download_files()
 {
     echo "Downloading files for $1"
 
-    wget -nv "$1"
-    wget -nv "$1".asc
+    wget -nv "$1" && \
+    wget -nv "$1".asc && \
     wget -nv "$1".sha256
 }
 
 verify() {
      echo "verifying hash and signature for $1"
 
-     sha256sum --check "$1".sha256
+     sha256sum --check "$1".sha256 && \
      gpg -q --verify "$1".asc  "$1" 2>/dev/null
 }
 
@@ -99,8 +95,18 @@ while read -r sbom; do
 
     sbom_url="$base"/"$sbom"
     download_files $sbom_url
+    if [[ $? -ne 0 ]]; then
+        echo "Error downloading files. Skipping"
+        cleanup "$file"1
+        continue
+    fi
     file=$(basename $sbom_url)
     verify $file
+    if [[ $? -ne 0 ]]; then
+        echo "Error verifying files. Skipping"
+        cleanup "$file"
+        continue
+    fi
 
     # All is well, let's upload that to bombastic
     id=$(basename -s ".json.bz2" "$file")
