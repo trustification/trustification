@@ -1,6 +1,7 @@
 use crate::{
     backend::{Endpoint, SearchOptions, VexService},
     hooks::use_backend,
+    utils::pagination_to_offset,
 };
 
 use crate::{components::cvss::CvssScore, utils::cvss::Cvss};
@@ -289,6 +290,7 @@ pub fn vulnerability_result(props: &AdvisoryResultProperties) -> Html {
 }
 
 mod details {
+
     use std::rc::Rc;
 
     use crate::backend::VexService;
