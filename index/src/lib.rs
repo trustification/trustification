@@ -336,7 +336,7 @@ pub fn field2f64vec(doc: &Document, field: Field) -> Result<Vec<f64>, Error> {
 
 pub fn field2str(doc: &Document, field: Field) -> Result<&str, Error> {
     let value = doc.get_first(field).map(|s| s.as_text()).unwrap_or(None);
-    value.map(|v| Ok(v)).unwrap_or(Err(Error::NotFound))
+    value.map(Ok).unwrap_or(Err(Error::NotFound))
 }
 
 pub fn field2date(doc: &Document, field: Field) -> Result<OffsetDateTime, Error> {
@@ -346,5 +346,5 @@ pub fn field2date(doc: &Document, field: Field) -> Result<OffsetDateTime, Error>
 
 pub fn field2float(doc: &Document, field: Field) -> Result<f64, Error> {
     let value = doc.get_first(field).map(|s| s.as_f64()).unwrap_or(None);
-    value.map(|v| Ok(v)).unwrap_or(Err(Error::NotFound))
+    value.map(Ok).unwrap_or(Err(Error::NotFound))
 }

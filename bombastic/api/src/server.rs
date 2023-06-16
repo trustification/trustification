@@ -53,7 +53,7 @@ pub async fn run<B: Into<SocketAddr>>(state: SharedState, bind: B) -> Result<(),
     Ok(())
 }
 
-const ACCEPT_ENCODINGS: [&'static str; 2] = ["bzip2", "zstd"];
+const ACCEPT_ENCODINGS: [&str; 2] = ["bzip2", "zstd"];
 
 #[derive(Debug, Display, Error, From)]
 enum Error {
