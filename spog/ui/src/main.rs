@@ -8,7 +8,6 @@ mod console;
 mod hooks;
 mod pages;
 mod utils;
-mod shared;
 
 use wasm_bindgen::prelude::*;
 
