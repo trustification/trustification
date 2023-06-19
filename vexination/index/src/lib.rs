@@ -50,7 +50,7 @@ struct Fields {
     cve_cwe: Field,
 }
 
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 struct ProductPackage {
     cpe: Option<String>,
     purl: Option<String>,
@@ -147,7 +147,17 @@ impl trustification_index::Index for Index {
                 if let Some(status) = &vuln.product_status {
                     if let Some(products) = &status.known_affected {
                         for product in products {
-                            if let Some(p) = find_product_package(csaf, product) {
+                            let (pp, related_pp) = find_product_package(csaf, product);
+                            if let Some(p) = pp {
+                                if let Some(cpe) = p.cpe {
+                                    document.add_text(self.fields.cve_affected, cpe);
+                                }
+                                if let Some(purl) = p.purl {
+                                    document.add_text(self.fields.cve_affected, purl);
+                                }
+                            }
+
+                            if let Some(p) = related_pp {
                                 if let Some(cpe) = p.cpe {
                                     document.add_text(self.fields.cve_affected, cpe);
                                 }
@@ -160,7 +170,17 @@ impl trustification_index::Index for Index {
 
                     if let Some(products) = &status.fixed {
                         for product in products {
-                            if let Some(p) = find_product_package(csaf, product) {
+                            let (pp, related_pp) = find_product_package(csaf, product);
+                            if let Some(p) = pp {
+                                if let Some(cpe) = p.cpe {
+                                    document.add_text(self.fields.cve_fixed, cpe);
+                                }
+                                if let Some(purl) = p.purl {
+                                    document.add_text(self.fields.cve_fixed, purl);
+                                }
+                            }
+
+                            if let Some(p) = related_pp {
                                 if let Some(cpe) = p.cpe {
                                     document.add_text(self.fields.cve_fixed, cpe);
                                 }
@@ -351,21 +371,24 @@ impl Index {
 
             Vulnerabilities::Package(primary) => {
                 let (occur, value) = primary2occur(primary);
-                let q1 = create_boolean_query(occur, Term::from_field_text(self.fields.cve_affected, value));
-                let q2 = create_boolean_query(occur, Term::from_field_text(self.fields.cve_fixed, value));
+                let value = rewrite_cpe(value);
+                let q1 = create_boolean_query(occur, Term::from_field_text(self.fields.cve_affected, &value));
+                let q2 = create_boolean_query(occur, Term::from_field_text(self.fields.cve_fixed, &value));
 
                 Box::new(BooleanQuery::union(vec![q1, q2]))
             }
 
             Vulnerabilities::Fixed(primary) => {
                 let (occur, value) = primary2occur(primary);
-                let term = Term::from_field_text(self.fields.cve_fixed, value);
+                let value = rewrite_cpe(value);
+                let term = Term::from_field_text(self.fields.cve_fixed, &value);
                 create_boolean_query(occur, term)
             }
 
             Vulnerabilities::Affected(primary) => {
                 let (occur, value) = primary2occur(primary);
-                let term = Term::from_field_text(self.fields.cve_affected, value);
+                let value = rewrite_cpe(value);
+                let term = Term::from_field_text(self.fields.cve_affected, &value);
                 create_boolean_query(occur, term)
             }
 
@@ -438,9 +461,9 @@ fn find_product_identifier<'m, F: Fn(&'m ProductIdentificationHelper) -> Option<
     f: &'m F,
 ) -> Option<R> {
     for branch in branches.0.iter() {
-        if branch.name == product_id.0 {
-            if let Some(name) = &branch.product {
-                if let Some(helper) = &name.product_identification_helper {
+        if let Some(product) = &branch.product {
+            if product.product_id.0 == product_id.0 {
+                if let Some(helper) = &product.product_identification_helper {
                     if let Some(ret) = f(helper) {
                         return Some(ret);
                     }
@@ -457,31 +480,51 @@ fn find_product_identifier<'m, F: Fn(&'m ProductIdentificationHelper) -> Option<
     None
 }
 
-fn find_product_ref<'m>(tree: &'m ProductTree, product_id: &ProductIdT) -> Option<&'m ProductIdT> {
+fn find_product_ref<'m>(tree: &'m ProductTree, product_id: &ProductIdT) -> Option<(&'m ProductIdT, &'m ProductIdT)> {
     if let Some(rs) = &tree.relationships {
         for r in rs {
             if r.full_product_name.product_id.0 == product_id.0 {
-                return Some(&r.product_reference);
+                return Some((&r.product_reference, &r.relates_to_product_reference));
             }
         }
     }
     None
 }
 
-fn find_product_package(csaf: &Csaf, product_id: &ProductIdT) -> Option<ProductPackage> {
+fn find_product_package(csaf: &Csaf, product_id: &ProductIdT) -> (Option<ProductPackage>, Option<ProductPackage>) {
     if let Some(tree) = &csaf.product_tree {
-        if let Some(r) = find_product_ref(tree, product_id) {
+        if let Some((p_ref, p_ref_related)) = find_product_ref(tree, product_id) {
             if let Some(branches) = &tree.branches {
-                return find_product_identifier(branches, r, &|helper: &ProductIdentificationHelper| {
+                let pp = find_product_identifier(branches, p_ref, &|helper: &ProductIdentificationHelper| {
                     Some(ProductPackage {
                         purl: helper.purl.as_ref().map(|p| p.to_string()),
                         cpe: helper.cpe.as_ref().map(|p| p.to_string()),
                     })
                 });
+
+                let related_pp =
+                    find_product_identifier(branches, p_ref_related, &|helper: &ProductIdentificationHelper| {
+                        Some(ProductPackage {
+                            purl: helper.purl.as_ref().map(|p| p.to_string()),
+                            cpe: helper.cpe.as_ref().map(|p| p.to_string()),
+                        })
+                    });
+
+                return (pp, related_pp);
             }
         }
     }
-    None
+    (None, None)
+}
+
+// Attempt to parse CPE and rewrite to correctly formatted CPE
+fn rewrite_cpe(value: &str) -> String {
+    if value.starts_with("cpe:/") {
+        if let Ok(cpe) = cpe::uri::Uri::parse(value) {
+            return cpe.to_string();
+        }
+    }
+    value.to_string()
 }
 
 #[cfg(test)]
@@ -607,6 +650,16 @@ mod tests {
                     0,
                     100,
                 )
+                .unwrap();
+            assert_eq!(result.0.len(), 1);
+        });
+    }
+
+    #[tokio::test]
+    async fn test_products() {
+        assert_free_form(|index| {
+            let result = index
+                .search("fixed:\"cpe:/o:redhat:rhel_eus:8.6::baseos\"", 0, 100)
                 .unwrap();
             assert_eq!(result.0.len(), 1);
         });
