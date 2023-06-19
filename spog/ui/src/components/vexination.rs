@@ -1,5 +1,5 @@
 use crate::backend::{SearchOptions, VulnerabilityService};
-use crate::hooks::use_backend;
+use crate::hooks::use_backend::use_backend;
 use csaf::Csaf;
 use patternfly_yew::{
     next::{Toolbar, ToolbarContent},
@@ -12,10 +12,8 @@ use yew_more_hooks::hooks::{use_async_with_cloned_deps, UseAsyncHandleDeps};
 
 use crate::utils::pagination_to_offset;
 
-use crate::shared::{
-    components::simple_pagination::SimplePagination,
-    hooks::use_pagination_state::{use_pagination_state, UsePaginationStateArgs},
-};
+use crate::components::simple_pagination::SimplePagination;
+use crate::hooks::use_pagination_state::{use_pagination_state, UsePaginationStateArgs};
 
 #[derive(PartialEq, Properties)]
 pub struct VexinationSearchProperties {

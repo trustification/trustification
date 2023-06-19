@@ -8,6 +8,7 @@ pub mod cvss;
 pub mod error;
 pub mod package;
 // pub mod vulnerability;
+pub mod simple_pagination;
 
 use std::ops::Deref;
 
