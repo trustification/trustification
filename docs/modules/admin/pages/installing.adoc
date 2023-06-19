@@ -1,0 +1,38 @@
+= Installing
+
+Trustification services are all shipped using the `trust` CLI which is capable of running any of the services using command line flags.
+
+Trustification rely on external services for storage and eventing.  Whether you want to run on-prem or in the cloud, there is an alternative for both.
+
+To store data, trustification services rely on the Amazon S3 APIs. This does not mean you need to run trustification on AWS, because the API is implemented by Google Cloud Storage (GCS) and MinIO (Open Source) as well.
+
+For notification and sharing events between trustification services, a message bus like Apache Kafka or AWS SQS can be used.
+
+== Infrastructure
+
+At present, the following infrastructure must exist (names can be changed by adjusting command line flags in manifests):
+
+* S3 buckets named `vexination` and `bombastic` for storing data and the search index.
+* Topics/queues named `sbom-stored`, `sbom-indexed` and `sbom-failed` for Bombastic.
+* Topics/queues named `vex-stored`, `vex-indexed` and `vex-failed` for Vexination.
+* Credentials for reading and writing data to the above resources.
+
+Depending on your choice of infrastructure, you can create these resources and manage access using your favorite tool, such as terraform.
+
+== Deployment options
+
+=== Bare metal
+
+Running on bare metal requires downloading the `trust` binary from the link:https://github.com/trustification/trustification/releases[releases]. 
+
+=== Container Image
+
+The services are published in a container image at `ghcr.io/trustification/trust`. The UI is published in a separate container image `ghcr.io/trustification/trust-ui`.
+
+=== Kubernetes
+
+Since Kubernetes runs containers, running trustification on Kubernetes is easy! Since it's so easy, we don't provide any out of the box charts or installation script,
+, since lots of the configuration options would be specific to the environment in which the server is run.
+
+We provide a basic set of Kubernetes manifests in the link:https://github.com/trustification/trustification/tree/main/deploy/k8s[deploy/k8s] which you can use as a basis for your environment. By default the manifests reference two
+secrets named `bombastic-credentials-secret` and `vexination-credentials-secret` which must contain the AWS credentials for accessing S3 and SQS infrastructure.

@@ -154,11 +154,13 @@ impl Index {
                 .document_describes
                 .contains(&package.package_spdx_identifier)
             {
+                info!("Indexing SBOM {} with name {}", id, package.package_name);
                 Self::index_spdx_package(&mut document, package, &self.fields.sbom);
             } else {
                 Self::index_spdx_package(&mut document, package, &self.fields.dep);
             }
         }
+        debug!("Indexed {:?}", document);
         Ok(vec![document])
     }
 
@@ -514,7 +516,7 @@ impl trustification_index::Index for Index {
             description: description.to_string(),
             dependencies,
         };
-        trace!("HIT: {:?}", hit);
+        info!("HIT: {:?}", hit);
 
         Ok(hit)
     }

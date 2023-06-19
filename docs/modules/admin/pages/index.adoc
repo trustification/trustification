@@ -1,0 +1,3 @@
+= Admin Guide
+
+The admin guide covers installation and setup of Trustification services.
