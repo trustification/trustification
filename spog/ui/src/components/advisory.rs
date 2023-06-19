@@ -1,10 +1,11 @@
 use crate::{
     backend::{Endpoint, SearchOptions, VexService},
-    hooks::use_backend,
+    hooks::use_backend::use_backend,
+    hooks::use_pagination_state::{use_pagination_state, UsePaginationStateArgs},
     utils::pagination_to_offset,
 };
 
-use crate::{components::cvss::CvssScore, utils::cvss::Cvss};
+use crate::{components::cvss::CvssScore, components::simple_pagination::SimplePagination, utils::cvss::Cvss};
 use patternfly_yew::{
     next::{
         use_table_data, Cell, CellContext, ColumnWidth, MemoizedTableModel, Table, TableColumn, TableEntryRenderer,
@@ -19,11 +20,6 @@ use yew::prelude::*;
 use yew_more_hooks::hooks::{use_async_with_cloned_deps, UseAsyncHandleDeps};
 
 use details::AdvisoryDetails;
-
-use crate::{
-    components::simple_pagination::SimplePagination,
-    hooks::use_pagination_state::{use_pagination_state, UsePaginationStateArgs},
-};
 
 #[derive(PartialEq, Properties)]
 pub struct AdvisorySearchProperties {
@@ -294,7 +290,7 @@ mod details {
     use std::rc::Rc;
 
     use crate::backend::VexService;
-    use crate::hooks::use_backend;
+    use crate::hooks::use_backend::use_backend;
     use csaf::{definitions::Branch, product_tree::ProductTree, vulnerability::Vulnerability};
     use patternfly_yew::{
         next::{use_table_data, MemoizedTableModel, Table, TableColumn, TableEntryRenderer, TableHeader, UseTableData},

@@ -17,7 +17,7 @@ use yew_nested_router::components::Link;
 use crate::{
     backend::{Endpoint, PackageService, SearchOptions},
     components::common::SafeHtml,
-    hooks::use_backend,
+    hooks::use_backend::use_backend,
     pages::AppRoute,
 };
 

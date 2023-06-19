@@ -5,7 +5,7 @@ use super::{
 use crate::{
     backend::PackageService,
     components::{count_title, deps::PackageReferences, error::Error},
-    hooks::use_backend,
+    hooks::use_backend::use_backend,
 };
 use cyclonedx_bom::prelude::Bom;
 use packageurl::PackageUrl;

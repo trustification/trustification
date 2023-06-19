@@ -6,7 +6,7 @@ use yew_nested_router::prelude::Switch as RouterSwitch;
 use crate::{
     about,
     backend::Endpoint,
-    hooks::use_backend,
+    hooks::use_backend::use_backend,
     pages::{self, AppRoute},
 };
 

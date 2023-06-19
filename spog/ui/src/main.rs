@@ -7,7 +7,6 @@ mod components;
 mod console;
 mod hooks;
 mod pages;
-mod shared;
 mod utils;
 
 use wasm_bindgen::prelude::*;
