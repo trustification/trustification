@@ -182,7 +182,6 @@ pub enum Column {
     Title,
     Revision,
     Download,
-    MaxCvss,
     Vulnerabilities,
 }
 
@@ -211,15 +210,6 @@ impl TableEntryRenderer<Column> for AdvisoryEntry {
                     html!().into()
                 }
             }
-            Column::MaxCvss => self
-                .summary
-                .cvss_max
-                .map(|s| Cvss {
-                    score: s as f32,
-                    status: String::new(),
-                })
-                .map(|cvss| html!(<CvssScore {cvss}/>).into())
-                .unwrap_or(html!().into()),
             Column::Vulnerabilities => {
                 let l = self.summary.cves.len();
                 html!(if l == 0 {
@@ -270,7 +260,6 @@ pub fn vulnerability_result(props: &AdvisoryResultProperties) -> Html {
             <TableColumn<Column> label="Title" index={Column::Title} width={ColumnWidth::Percent(45)}/>
             <TableColumn<Column> label="Revision" index={Column::Revision} width={ColumnWidth::Percent(10)}/>
             <TableColumn<Column> label="Download" index={Column::Download} width={ColumnWidth::Percent(5)}/>
-            <TableColumn<Column> label="Highest Score" index={Column::MaxCvss} width={ColumnWidth::Percent(15)}/>
             <TableColumn<Column> label="Vulnerabilities" index={Column::Vulnerabilities} width={ColumnWidth::Percent(15)}/>
         </TableHeader<Column>>
     };
