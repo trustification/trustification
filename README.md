@@ -6,13 +6,21 @@
 
 Trustification is a collection of software that allow you to store bill of materials (SBOM), vulnerability information (VEX) for your organization and use that information to learn impact of vulnerabilities and dependency changes.
 
+With Trustification you can:
+
+* Store SBOM and VEX documents for your company software and their dependencies.
+* Discover and learn the state of vulnerabilities related to your software.
+* Explore SBOM and VEX documents using search queries.
+* Share access to your SBOM and VEX information with others.
+
+Trustification consists of a set of services you can use standalone or together:
+
 * [Bombastic](bombastic/README.md) - Storage and archival of SBOM documents.
 * [Vexination](vexination/README.md) - Storage and archival of VEX documents.
 * [Reservoir](reservoir/README.md) - Managing product metadata and access control.
 * [Spog](spog/README.md) - Single Pane Of Glass API and frontend.
 
-Services such as Bombastic and Vexination uses S3-compatible storage for storing
-SBOM/VEX data and a search index. The search index is used to query data using the [sikula](https://github.com/ctron/sikula) query language.
+Services such as Bombastic and Vexination uses S3-compatible storage for storing SBOM/VEX data and a search index. The search index is used to query data using the [sikula](https://github.com/ctron/sikula) query language.
 
 Have a look at the README file for each service for more detailed information on how they work.
 

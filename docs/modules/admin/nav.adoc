@@ -1,0 +1,3 @@
+* xref:index.adoc[Admin Guide]
+** xref:installing.adoc[Installing]
+** xref:openapi.adoc[OpenAPI 3]

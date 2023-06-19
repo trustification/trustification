@@ -1,0 +1,104 @@
+= Search and retrieve
+
+Trustification allows searching SBOM and VEX data using a builtin search engine so that you can find relevant data quickly. Once found,
+you can also retrieve the original SBOM and VEX data.
+
+You can use either the UI or the REST API for searching data in both Bombastic and Vexination.
+
+== UI
+
+The Spog UI can be used to search link:https://trustification.dev/advisory/[advisories] or link:https://trustification.dev/package/[packages]. See the query language description
+below for example queries.
+
+== REST APIs
+
+There are three REST APIs that you can use for searching. They differ in what data they search and the expected flow.
+
+* Spog - this is the API is focused on the needs of the UI and might make queries to multiple underlying sources.
+* Bombastic - this API can be used to search and retrieve SBOM data only.
+* Vexination - this API can be used to search VEX data only.
+
+=== Spog API
+
+The Spog API can be searched and retrieved using the following paths:
+
+* `GET /api/v1/package/search?q=<query>`
+* `GET /api/v1/advisory/search?q=<query>`
+* `GET /api/v1/package/search?q=<query>`
+* `GET /api/v1/package?id=<package id>`
+
+Examples:
+
+* link:https://api.trustification.dev/api/v1/advisory/search?q=openssl[]
+* link:https://api.trustification.dev/api/v1/advisory?id=RHSA-2023:1441[]
+
+=== Bombastic API
+
+The Bombastic API can be searched for SBOM data using the following paths:
+
+* `GET /api/v1/sbom/search?q=<query>`
+* `GET /api/v1/sbom?id=<SBOM id>`
+
+Examples:
+
+* link:https://sbom.trustification.dev/api/v1/sbom/search?q=openssl[]
+* link:https://sbom.trustification.dev/api/v1/sbom?id=vertx-4.0[]
+
+=== Vexination API
+
+The Vexination API can be searched VEX data using the following paths:
+
+* `GET /api/v1/vex/search?q=<query>`
+* `GET /api/v1/vex?id=<advisory id>`
+
+Examples:
+
+* link:https://vex.trustification.dev/api/v1/vex/search?q=openssl[]
+* link:https://vex.trustification.dev/api/v1/vex?id=RHSA-2023:1441[]
+
+== Query language
+
+The search query language is based on link:https://github.com/ctron/sikula[Sikula], which is modelled after the GitHub search syntax. The fields that can be referenced in the query depend on which source is being searched.
+
+In general, any free form text will search titles, descriptions for the documents and return the matches that the search engine thinks is best.
+
+You can search in specific fields such as title using `<query> in:title`. You can also use ranges for date fields: `release:2022-01-01..2022-12-31`.
+
+Each service also allow some short-hand predictates that can be specified using `is:<predicate>`.
+
+=== Vexination fields
+
+* `id` look at the advisory identifier.
+* `cve` CVE vulnerability id mentioned in advisory.
+* `title` Advisory or CVE title.
+* `description` Advisory or CVE description.
+* `status` Advisory status.
+* `cvss` CVSS scores.
+* `package` Affected or fixed packages/products mentioned in product status.
+* `affected` Affected packages/products mentioned in CVEs.
+* `fixed` Fixed packages/products mentioned in CVEs.
+* `release` Advisory or CVE release date.
+* `discovery` Advisory or CVE discovery date.
+
+In addition there are a few predicates:
+
+* `critical` - CVE in critical category.
+* `high` - CVE in high category.
+* `medium` - CVE in medium category.
+* `low` - CVE in low category.
+
+=== Bombastic fields
+
+* `package-name` SBOM package name.
+* `purl` SBOM package URL.
+* `cpe` SBOM product identifier.
+* `description` SBOM description.
+* `digest` Artifact digest of package or dependency in SBOM.
+* `dependency` Package name, package URL or CPE of dependency.
+* `license` License of package or dependency.
+
+=== Examples
+
+* Searching for vulnerabilities mentioning log4j in default fields: link:https://vex.trustification.dev/api/v1/vex?q=log4j[log4j].
+* Searching for vulnerabilities mentioning java the past 30 days: link:https://vex.trustification.dev/api/v1/vex?q=java+release%3A%3E2023-05-03[java release:>2023-05-03].
+* Searching for packages mentioning openssl: link:https://sbom.trustification.dev/api/v1/sbom?q=openssl[openssl].
