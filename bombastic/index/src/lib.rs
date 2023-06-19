@@ -16,7 +16,7 @@ use tantivy::{
     IndexSettings, Searcher, SnippetGenerator,
 };
 use time::format_description::well_known::Rfc3339;
-use tracing::{debug, info, trace, warn};
+use tracing::{debug, info, warn};
 use trustification_index::{
     create_boolean_query, create_date_query, field2str, field2strvec, primary2occur,
     tantivy::{
@@ -300,44 +300,27 @@ impl Index {
 
     fn resource2query(&self, resource: &Packages) -> Box<dyn Query> {
         match resource {
-            Packages::PackageName(primary) => {
-                self.match_boolean_union(&[self.fields.sbom.name, self.fields.dep.name], primary)
-            }
-
-            Packages::Purl(primary) => {
-                self.match_boolean_union(&[self.fields.sbom.purl, self.fields.dep.purl], primary)
-            }
-
-            Packages::Cpe(primary) => self.match_boolean_union(&[self.fields.sbom.cpe, self.fields.dep.cpe], primary),
-
-            Packages::Type(primary) => {
-                self.match_boolean_union(&[self.fields.sbom.purl_type, self.fields.dep.purl_type], primary)
-            }
-
-            Packages::Namespace(primary) => self.match_boolean_union(
-                &[self.fields.sbom.purl_namespace, self.fields.dep.purl_namespace],
-                primary,
-            ),
-
-            Packages::Name(primary) => {
-                self.match_boolean_union(&[self.fields.sbom.purl_name, self.fields.dep.purl_name], primary)
-            }
-
-            Packages::Created(ordered) => create_date_query(self.fields.sbom_created, ordered),
-
-            Packages::Version(primary) => self.match_boolean_union(
+            Packages::Package(primary) => self.match_boolean_union(
                 &[
-                    self.fields.sbom.purl_version,
-                    self.fields.dep.purl_version,
-                    self.fields.sbom.version,
-                    self.fields.dep.version,
+                    self.fields.sbom.name,
+                    self.fields.sbom.purl,
+                    self.fields.sbom.cpe,
+                    self.fields.sbom.purl_name,
                 ],
                 primary,
             ),
 
-            Packages::Description(primary) => {
-                self.match_boolean_union(&[self.fields.sbom.desc, self.fields.dep.desc], primary)
+            Packages::Type(primary) => self.match_boolean_union(&[self.fields.sbom.purl_type], primary),
+
+            Packages::Namespace(primary) => self.match_boolean_union(&[self.fields.sbom.purl_namespace], primary),
+
+            Packages::Created(ordered) => create_date_query(self.fields.sbom_created, ordered),
+
+            Packages::Version(primary) => {
+                self.match_boolean_union(&[self.fields.sbom.purl_version, self.fields.sbom.version], primary)
             }
+
+            Packages::Description(primary) => self.match_boolean_union(&[self.fields.sbom.desc], primary),
 
             Packages::Digest(primary) => {
                 self.match_boolean_union(&[self.fields.sbom.sha256, self.fields.dep.sha256], primary)
@@ -347,12 +330,17 @@ impl Index {
                 self.match_boolean_union(&[self.fields.sbom.license, self.fields.dep.license], primary)
             }
 
-            Packages::Supplier(primary) => {
-                self.match_boolean_union(&[self.fields.sbom.supplier, self.fields.dep.supplier], primary)
-            }
+            Packages::Supplier(primary) => self.match_boolean_union(&[self.fields.sbom.supplier], primary),
 
-            Packages::Qualifier(primary) => self.match_boolean_union(
-                &[self.fields.sbom.purl_qualifiers, self.fields.dep.purl_qualifiers],
+            Packages::Qualifier(primary) => self.match_boolean_union(&[self.fields.sbom.purl_qualifiers], primary),
+
+            Packages::Dependency(primary) => self.match_boolean_union(
+                &[
+                    self.fields.dep.name,
+                    self.fields.dep.purl_name,
+                    self.fields.dep.purl,
+                    self.fields.dep.cpe,
+                ],
                 primary,
             ),
 
@@ -569,15 +557,18 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_search_purl() {
+    async fn test_search_package() {
         assert_search(|index| {
             let result = index
                 .search(
-                    "\"pkg:rpm/redhat/openssl-libs@3.0.1-47.el9_1?arch=ppc64le&epoch=1\" in:purl",
+"\"pkg:oci/ubi9@sha256:cb303404e576ff5528d4f08b12ad85fab8f61fa9e5dba67b37b119db24865df3?repository_url=registry.redhat.io/ubi9&tag=9.1.0-1782\" in:package",
                     0,
                     100,
                 )
                 .unwrap();
+            assert_eq!(result.0.len(), 1);
+
+            let result = index.search("ubi9-container in:package", 0, 100).unwrap();
             assert_eq!(result.0.len(), 1);
         });
     }
@@ -585,7 +576,7 @@ mod tests {
     #[tokio::test]
     async fn test_search_namespace() {
         assert_search(|index| {
-            let result = index.search("redhat in:namespace", 0, 10000).unwrap();
+            let result = index.search("io.seedwing in:namespace", 0, 10000).unwrap();
             assert_eq!(result.0.len(), 1);
         });
     }
@@ -608,9 +599,18 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_dependency() {
+        assert_search(|index| {
+            let result = index.search("openssl in:dependency", 0, 10000).unwrap();
+            // Should get all documents from test data
+            assert_eq!(result.0.len(), 1);
+        });
+    }
+
+    #[tokio::test]
     async fn test_quarkus() {
         assert_search(|index| {
-            let result = index.search("quarkus", 0, 10000).unwrap();
+            let result = index.search("quarkus-arc", 0, 10000).unwrap();
             // Should get all documents from test data
             assert_eq!(result.0.len(), 1);
         });
