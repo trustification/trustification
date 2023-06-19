@@ -58,7 +58,7 @@ jobs:
       packages: write
     strategy:
       matrix:
-        name: ["trust", "spog-ui"]
+        name: ["trust", "trust-ui"]
 
     needs: [ init, ci, container ]
     runs-on: ubuntu-22.04
