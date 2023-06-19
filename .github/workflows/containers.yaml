@@ -43,7 +43,7 @@ jobs:
         include:
           - name: trust
             containerfile: trust/Containerfile
-          - name: spog-ui
+          - name: trust-ui
             containerfile: spog/ui/Containerfile
 
     steps:
