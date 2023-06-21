@@ -4,9 +4,9 @@ RUN mkdir /trustification
 
 COPY . /trustification
 
-RUN ls /trustification
+RUN ls /trustification/docs
 
-WORKDIR /trustification
+WORKDIR /trustification/docs
 
 RUN true \
     && npm ci \
@@ -21,7 +21,7 @@ RUN microdnf install -y nginx jq
 RUN true \
     && mkdir /public
 
-COPY --from=builder /trustification/build/site /public/
+COPY --from=builder /trustification/docs/build/site /public/
 COPY config/nginx.conf /etc/nginx/nginx.conf
 
 COPY config/nginx.sh /nginx.sh
