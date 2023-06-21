@@ -1,7 +1,7 @@
 version: '3'
 services:
   minio:
-    image: quay.io/minio/minio:RELEASE.2023-05-04T21-44-30Z
+    image: quay.io/minio/minio:RELEASE.2023-06-19T19-52-50Z
     command: server --console-address ":9001" /data1
     depends_on:
       kafka:
@@ -13,23 +13,23 @@ services:
       - "9000:9000"
       - "9001:9001"
     environment:
-      MINIO_ROOT_USER: admin
-      MINIO_ROOT_PASSWORD: password
-      MINIO_NOTIFY_KAFKA_ENABLE_BOMBASTIC: on
+      MINIO_ROOT_USER: "admin"
+      MINIO_ROOT_PASSWORD: "password"
+      MINIO_NOTIFY_KAFKA_ENABLE_BOMBASTIC: "on"
       MINIO_NOTIFY_KAFKA_BROKERS_BOMBASTIC: "kafka:9094"
       MINIO_NOTIFY_KAFKA_TOPIC_BOMBASTIC: "sbom-stored"
-      MINIO_NOTIFY_KAFKA_ENABLE_VEXINATION: on
+      MINIO_NOTIFY_KAFKA_ENABLE_VEXINATION: "on"
       MINIO_NOTIFY_KAFKA_BROKERS_VEXINATION: "kafka:9094"
       MINIO_NOTIFY_KAFKA_TOPIC_VEXINATION: "vex-stored"
     restart: always
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
-      interval: 10s
+      interval: 30s
       timeout: 20s
-      retries: 3
+      retries: 10
 
   createbuckets:
-    image: docker.io/minio/mc
+    image: quay.io/minio/mc:RELEASE.2023-06-19T19-31-19Z
     depends_on:
       minio:
         condition: service_healthy
@@ -64,6 +64,6 @@ services:
       - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9094,EXTERNAL://localhost:9092
     healthcheck:
       test: ["CMD-SHELL", "kafka-topics.sh --bootstrap-server localhost:9094 --list"]
-      interval: 10s
-      timeout: 10s
-      retries: 4
+      interval: 30s
+      timeout: 20s
+      retries: 10

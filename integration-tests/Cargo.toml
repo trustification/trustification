@@ -1,0 +1,30 @@
+[package]
+name = "integration-tests"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tokio = { version = "1", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0.68"
+env_logger = "0.10"
+lazy_static = "1.4"
+reqwest = { version = "0.11", features = ["json"] }
+anyhow = "1"
+
+bombastic-api = { path = "../bombastic/api" }
+bombastic-indexer = { path = "../bombastic/indexer" }
+
+vexination-api = { path = "../vexination/api" }
+vexination-indexer = { path = "../vexination/indexer" }
+
+trustification-event-bus = { path = "../event-bus" }
+trustification-infrastructure = { path = "../infrastructure" }
+trustification-storage = { path = "../storage" }
+trustification-index = { path = "../index" }
+
+[dev-dependencies]
+env_logger = "0.10"
+
+[features]
+integration-tests = []

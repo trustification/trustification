@@ -1,0 +1,38 @@
+name: Integration Tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  integration-tests:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/.crates.toml
+            ~/.cargo/.crates2.json
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+            bommer/bommer-ui/target/
+            spog/ui/target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      - name: Compose
+        run: |
+          docker-compose -f deploy/compose/compose.yaml up -d
+      - name: Test
+        run: |
+          RUST_LOG=info cargo test -p integration-tests --features integration-tests -- --nocapture
+          docker-compose -f deploy/compose/compose.yaml ps
+      - name: Print logs
+        if: always()
+        run: |
+          docker-compose -f deploy/compose/compose.yaml logs
+          docker-compose -f deploy/compose/compose.yaml down

@@ -12,28 +12,28 @@ mod indexer;
 #[command(about = "Run the indexer", args_conflicts_with_subcommands = true)]
 pub struct Run {
     #[arg(long = "stored-topic", default_value = "vex-stored")]
-    pub(crate) stored_topic: String,
+    pub stored_topic: String,
 
     #[arg(long = "indexed-topic", default_value = "vex-indexed")]
-    pub(crate) indexed_topic: String,
+    pub indexed_topic: String,
 
     #[arg(long = "failed-topic", default_value = "vex-failed")]
-    pub(crate) failed_topic: String,
+    pub failed_topic: String,
 
     #[arg(long = "devmode", default_value_t = false)]
-    pub(crate) devmode: bool,
+    pub devmode: bool,
 
     #[command(flatten)]
-    pub(crate) bus: EventBusConfig,
+    pub bus: EventBusConfig,
 
     #[command(flatten)]
-    pub(crate) index: IndexConfig,
+    pub index: IndexConfig,
 
     #[command(flatten)]
-    pub(crate) storage: StorageConfig,
+    pub storage: StorageConfig,
 
     #[command(flatten)]
-    pub(crate) infra: InfrastructureConfig,
+    pub infra: InfrastructureConfig,
 }
 
 impl Run {

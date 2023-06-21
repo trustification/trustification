@@ -18,6 +18,7 @@ members = [
     "spog/api",
     "spog/model",
     "spog/spog",
+    "integration-tests",
     "trust",
     "exporter",
     "event-bus",

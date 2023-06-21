@@ -11,37 +11,34 @@ mod indexer;
 #[command(about = "Run the indexer", args_conflicts_with_subcommands = true)]
 pub struct Run {
     #[arg(long = "stored-topic", default_value = "sbom-stored")]
-    pub(crate) stored_topic: String,
+    pub stored_topic: String,
 
     #[arg(long = "indexed-topic", default_value = "sbom-indexed")]
-    pub(crate) indexed_topic: String,
+    pub indexed_topic: String,
 
     #[arg(long = "failed-topic", default_value = "sbom-failed")]
-    pub(crate) failed_topic: String,
-
-    #[arg(long = "create-topics", default_value_t = false)]
-    pub(crate) create_topics: bool,
+    pub failed_topic: String,
 
     #[arg(long = "devmode", default_value_t = false)]
-    pub(crate) devmode: bool,
+    pub devmode: bool,
 
     #[command(flatten)]
-    pub(crate) bus: EventBusConfig,
+    pub bus: EventBusConfig,
 
     #[command(flatten)]
-    pub(crate) index: IndexConfig,
+    pub index: IndexConfig,
 
     #[command(flatten)]
-    pub(crate) storage: StorageConfig,
+    pub storage: StorageConfig,
 
     #[command(flatten)]
-    pub(crate) infra: InfrastructureConfig,
+    pub infra: InfrastructureConfig,
 }
 
 impl Run {
     pub async fn run(mut self) -> anyhow::Result<ExitCode> {
         Infrastructure::from(self.infra)
-            .run(|| async {
+            .run(|| async move {
                 let index = IndexStore::new(&self.index, bombastic_index::Index::new())?;
                 let storage = self.storage.create("bombastic", self.devmode)?;
 

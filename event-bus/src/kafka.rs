@@ -44,6 +44,7 @@ impl KafkaEventBus {
             .set("enable.partition.eof", "false")
             .set("session.timeout.ms", "6000")
             .set("enable.auto.commit", "false")
+            .set("auto.offset.reset", "earliest")
             .create()?;
         let topics: Vec<&str> = topics.into();
         consumer.subscribe(&topics[..])?;
