@@ -6,8 +6,8 @@ use yew::prelude::*;
 use yew_more_hooks::hooks::r#async::*;
 
 use crate::components::{
+    async_state_renderer::AsyncStateRenderer,
     common::PageHeading,
-    error::Error,
     package::{PackageResult, PackageSearch},
 };
 
@@ -37,30 +37,13 @@ pub fn package(props: &PackageProps) -> Html {
             // We need to set the main section to fill, as we have a footer section
             <PageSection variant={PageSectionVariant::Default} fill={PageSectionFill::Fill}>
                 <PackageSearch {callback} {query} />
-                {
-                    match &*search {
-                        UseAsyncState::Pending | UseAsyncState::Processing => { html!( <Bullseye><Spinner/></Bullseye> ) }
-                        UseAsyncState::Ready(Ok(result)) if result.is_empty() => {
-                            html!(
-                                <Bullseye>
-                                    <EmptyState
-                                        title="No results"
-                                        icon={Icon::Search}
-                                    >
-                                        { "Try a different search expression." }
-                                    </EmptyState>
-                                </Bullseye>
-                            )
-                        },
-                        UseAsyncState::Ready(Ok(result)) => {
-                            let result = result.clone();
-                            html!(<PackageResult {result} />)
-                        },
-                        UseAsyncState::Ready(Err(err)) => html!(
-                            <Error err={err.clone()}/>
-                        ),
-                    }
-                }
+
+                 <AsyncStateRenderer<PackageSummary>
+                    state={(*search).clone()}
+                    on_ready={Callback::from(move |result| {
+                        html!(<PackageResult {result} />)
+                    })}
+                />
             </PageSection>
         </>
     )

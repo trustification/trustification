@@ -7,8 +7,8 @@ use yew_more_hooks::hooks::{UseAsyncHandleDeps, UseAsyncState};
 
 use crate::components::{
     advisory::{AdvisoryResult, AdvisorySearch},
+    async_state_renderer::AsyncStateRenderer,
     common::PageHeading,
-    error::Error,
 };
 
 // FIXME: use a different API and representation
@@ -40,30 +40,12 @@ pub fn advisory(props: &AdvisoryProps) -> Html {
             <PageSection variant={PageSectionVariant::Default} fill={PageSectionFill::Fill}>
                 <AdvisorySearch {callback} {query}/>
 
-                {
-                    match &*search {
-                        UseAsyncState::Pending | UseAsyncState::Processing => { html!( <Bullseye><Spinner/></Bullseye> ) }
-                        UseAsyncState::Ready(Ok(result)) if result.is_empty() => {
-                            html!(
-                                <Bullseye>
-                                    <EmptyState
-                                        title="No results"
-                                        icon={Icon::Search}
-                                    >
-                                        { "Try a different search expression." }
-                                    </EmptyState>
-                                </Bullseye>
-                            )
-                        },
-                        UseAsyncState::Ready(Ok(result)) => {
-                            let result = result.clone();
-                            html!(<AdvisoryResult {result} />)
-                        },
-                        UseAsyncState::Ready(Err(err)) => html!(
-                            <Error err={err.clone()}/>
-                        ),
-                    }
-                }
+                <AsyncStateRenderer<AdvisorySummary>
+                    state={(*search).clone()}
+                    on_ready={Callback::from(move |result| {
+                        html!(<AdvisoryResult {result} />)
+                    })}
+                />
             </PageSection>
         </>
     )
