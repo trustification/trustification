@@ -29,7 +29,7 @@ jobs:
           docker-compose -f deploy/compose/compose.yaml up -d
       - name: Test
         run: |
-          RUST_LOG=info cargo test -p integration-tests --features integration-tests -- --nocapture
+          RUST_LOG=info cargo test -p integration-tests -- --nocapture
           docker-compose -f deploy/compose/compose.yaml ps
       - name: Print logs
         if: always()

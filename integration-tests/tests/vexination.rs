@@ -3,7 +3,6 @@ use reqwest::StatusCode;
 use serde_json::{Map, Value};
 use std::time::Duration;
 
-#[cfg(feature = "integration-tests")]
 #[test]
 fn test_vexination() {
     run_test(Duration::from_secs(60), async move {

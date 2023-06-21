@@ -26,6 +26,32 @@ members = [
     "index",
     "infrastructure",
 ]
+default-members = [
+    "bombastic/bombastic",
+    "bombastic/api",
+    "bombastic/model",
+    "bombastic/indexer",
+    "bombastic/index",
+    "bommer",
+    "bommer/bommer-api",
+    "vexination/vexination",
+    "vexination/api",
+    "vexination/index",
+    "vexination/model",
+    "vexination/indexer",
+    "vexination/walker",
+    "reservoir/reservoir",
+    "reservoir/api",
+    "spog/api",
+    "spog/model",
+    "spog/spog",
+    "trust",
+    "exporter",
+    "event-bus",
+    "storage",
+    "index",
+    "infrastructure",
+]
 
 [patch.crates-io]
 #sikula = { git = "https://github.com/ctron/sikula", rev = "cea7429f6b690adcdcd1ce2edb2b9e2277834e03" }
