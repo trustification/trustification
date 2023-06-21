@@ -53,7 +53,7 @@ jobs:
           cargo check --manifest-path spog/ui/Cargo.toml
 
       - name: Test
-        run: cargo test --workspace --exclude integration-tests
+        run: cargo test
 
       - name: Test (frontend)
         run: |
