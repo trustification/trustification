@@ -14,22 +14,22 @@ mod server;
 #[command(about = "Run the api server", args_conflicts_with_subcommands = true)]
 pub struct Run {
     #[arg(short, long, default_value = "0.0.0.0")]
-    pub(crate) bind: String,
+    pub bind: String,
 
     #[arg(short = 'p', long = "port", default_value_t = 8080)]
-    pub(crate) port: u16,
+    pub port: u16,
 
     #[arg(long = "devmode", default_value_t = false)]
-    pub(crate) devmode: bool,
+    pub devmode: bool,
 
     #[command(flatten)]
-    pub(crate) index: IndexConfig,
+    pub index: IndexConfig,
 
     #[command(flatten)]
-    pub(crate) storage: StorageConfig,
+    pub storage: StorageConfig,
 
     #[command(flatten)]
-    pub(crate) infra: InfrastructureConfig,
+    pub infra: InfrastructureConfig,
 }
 
 impl Run {

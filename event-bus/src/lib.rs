@@ -87,7 +87,7 @@ pub struct EventBusConfig {
 
     /// Kafka bootstrap servers if using Kafka event bus
     #[arg(long = "kafka-bootstrap-servers", default_value = "localhost:9092")]
-    pub(crate) kafka_bootstrap_servers: String,
+    pub kafka_bootstrap_servers: String,
 }
 
 impl EventBusConfig {

@@ -47,18 +47,18 @@ pub async fn run(
                                                     match bombastic_index::SBOM::parse(&data) {
                                                         Ok(doc) => match writer.as_mut().unwrap().add_document(index.index_as_mut(), &k, &doc) {
                                                             Ok(_) => {
-                                                                tracing::debug!("Inserted entry into index");
-                                                            bus.send(indexed_topic, key.as_bytes()).await?;
-                                                            events += 1;
-                                                        }
-                                                        Err(e) => {
-                                                            let failure = serde_json::json!( {
-                                                                "key": key,
-                                                                "error": e.to_string(),
-                                                            }).to_string();
-                                                            bus.send(failed_topic, failure.as_bytes()).await?;
-                                                            tracing::warn!("Error inserting entry into index: {:?}", e)
-                                                        }
+                                                                tracing::trace!("Inserted entry into index");
+                                                                    bus.send(indexed_topic, key.as_bytes()).await?;
+                                                                    events += 1;
+                                                            }
+                                                            Err(e) => {
+                                                                let failure = serde_json::json!( {
+                                                                    "key": key,
+                                                                    "error": e.to_string(),
+                                                                }).to_string();
+                                                                bus.send(failed_topic, failure.as_bytes()).await?;
+                                                                tracing::warn!("Error inserting entry into index: {:?}", e)
+                                                            }
                                                     }
                                                     Err(e) => {
                                                         tracing::warn!("Error parsing SBOM for key {}: {:?}, ignored", key, e);
@@ -102,7 +102,7 @@ pub async fn run(
             },
             _ = tick => {
                 if events > 0 {
-                    tracing::debug!("{} new events added, pushing new index to storage", events);
+                    tracing::trace!("{} new events added, pushing new index to storage", events);
                     match index.snapshot(writer.take().unwrap()) {
                         Ok(data) => {
                             match storage.put_index(&data).await {

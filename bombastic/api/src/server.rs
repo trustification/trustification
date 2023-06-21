@@ -81,10 +81,13 @@ impl error::ResponseError for Error {
         .body(self.to_string())
     }
     fn status_code(&self) -> StatusCode {
-        match *self {
+        match self {
             Self::Storage(StorageError::NotFound) => StatusCode::NOT_FOUND,
             Self::InvalidContentType | Self::InvalidContentEncoding => StatusCode::BAD_REQUEST,
-            _ => StatusCode::INTERNAL_SERVER_ERROR,
+            e => {
+                tracing::info!("ERROR: {:?}", e);
+                StatusCode::INTERNAL_SERVER_ERROR
+            }
         }
     }
 }
