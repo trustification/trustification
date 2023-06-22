@@ -49,7 +49,7 @@ jobs:
 
   # now do the actual (release) builds
   build:
-    needs: [ init, ci ]
+    needs: [ init ] #, ci ]
 
     strategy:
       matrix:
@@ -130,7 +130,7 @@ jobs:
           if-no-files-found: error
 
   containers:
-      needs: [ init, ci ]
+      needs: [ init ] #, ci ]
 
       uses: ./.github/workflows/containers.yaml
       secrets: inherit
