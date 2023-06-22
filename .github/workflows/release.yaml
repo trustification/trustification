@@ -55,21 +55,21 @@ jobs:
       matrix:
         target:
           - linux-amd64
-          - macos-amd64
-          - macos-aarch64
-          - windows-amd64
+          #- macos-amd64
+          #- macos-aarch64
+          #- windows-amd64
         include:
           - target: linux-amd64
             os: ubuntu-22.04
-          - target: macos-amd64
-            os: macos-12
-          - target: macos-aarch64
-            os: macos-12
-            rustTarget: "aarch64-apple-darwin"
-            xcode: "true"
-          - target: windows-amd64
-            os: windows-2022
-            exe: ".exe"
+          #- target: macos-amd64
+          #  os: macos-12
+          #- target: macos-aarch64
+          #  os: macos-12
+          #  rustTarget: "aarch64-apple-darwin"
+          #  xcode: "true"
+          #- target: windows-amd64
+          #  os: windows-2022
+          #  exe: ".exe"
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -109,9 +109,9 @@ jobs:
         shell: bash
         run: |
           if [[ "${{ matrix.xcode }}" == "true" ]]; then
-            TAG=${{ needs.init.outputs.version }} SDKROOT=$(xcrun -sdk macosx --show-sdk-path) MACOSX_DEPLOYMENT_TARGET=$(xcrun -sdk macosx --show-sdk-platform-version) cargo auditable build --target=${{ matrix.rustTarget }} -p trust --no-default-features --release
+            TAG=${{ needs.init.outputs.version }} SDKROOT=$(xcrun -sdk macosx --show-sdk-path) MACOSX_DEPLOYMENT_TARGET=$(xcrun -sdk macosx --show-sdk-platform-version) cargo auditable build --target=${{ matrix.rustTarget }} -p trust --release
           else
-            TAG=${{ needs.init.outputs.version }} cargo auditable build --release -p trust --no-default-features
+            TAG=${{ needs.init.outputs.version }} cargo auditable build --release -p trust
           fi
 
       - name: List output
