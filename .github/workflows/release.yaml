@@ -258,7 +258,7 @@ jobs:
       - name: Generate container SBOM
         run: |
           syft ~/download/${{ matrix.name }}-container/${{ matrix.name }}-image.tar --output cyclonedx-json --catalogers rpm,cargo-auditable > staging/${{ matrix.name }}.sbom.json
-          cyclonedx merge --input-files staging/${{ matrix.name }}.sbom.json staging/trust-ui.project.sbom.json --output-file staging/{{ matrix.name }}.sbom.json
+          cyclonedx merge --input-files staging/${{ matrix.name }}.sbom.json staging/trust-ui.project.sbom.json --output-file staging/${{ matrix.name }}.sbom.json
 
       - name: Load container
         run: |
