@@ -120,7 +120,7 @@ jobs:
 
       - name: Rename binary
         shell: bash
-        run: cp -pv target/${{ matrix.rustTarget }}/release/trust{{ matrix.exe }} target/release/trust-${{ matrix.target }}${{ matrix.exe }}
+        run: cp -pv target/${{ matrix.rustTarget }}/release/trust${{ matrix.exe }} target/release/trust-${{ matrix.target }}${{ matrix.exe }}
 
       - name: Upload binary
         uses: actions/upload-artifact@v3
