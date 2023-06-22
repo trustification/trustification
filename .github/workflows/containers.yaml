@@ -92,6 +92,6 @@ jobs:
 
       - uses: actions/upload-artifact@v3
         with:
-          name: container
+          name: ${{ matrix.name }}-container
           path: ${{ matrix.name }}-image.tar
           if-no-files-found: error
