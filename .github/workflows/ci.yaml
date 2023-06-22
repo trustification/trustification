@@ -59,3 +59,7 @@ jobs:
         run: |
           cargo test --manifest-path bommer/bommer-ui/Cargo.toml
           cargo test --manifest-path spog/ui/Cargo.toml
+
+  integration:
+    uses: ./.github/workflows/integration.yaml
+

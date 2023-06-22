@@ -1,0 +1,41 @@
+name: nightly
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * *' # every night
+
+permissions:
+  contents: write # for creating a release
+
+jobs:
+  args:
+    runs-on: ubuntu-22.04
+    outputs:
+      commit: ${{ steps.getflags.outputs.commit }}
+      version: ${{ steps.getflags.outputs.version }}
+    steps:
+      - id: checkout
+        uses: actions/checkout@v3
+      - id: getflags
+        run: |
+          curl -sSLf https://github.com/TomWright/dasel/releases/download/v2.1.2/dasel_linux_amd64 -o dasel && chmod +x dasel
+          echo "version=$(./dasel -f trust/Cargo.toml -r toml -s package.version)" >> "$GITHUB_OUTPUT"
+          echo "commit=$(echo -n $GITHUB_SHA | head -c 8)" >> "$GITHUB_OUTPUT"
+  tag:
+    runs-on: ubuntu-22.04
+    needs: args
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.NIGHTLY_TOKEN }}
+      - name: Clean old tags
+        run: |
+          ./.github/prune-nightly.sh
+      - name: Tag it
+        run: |
+          git config --global user.email "ci@trustification.io"
+          git config --global user.name "Trustificationl CI"
+          git tag v${{ needs.args.outputs.version }}-nightly.${{ needs.args.outputs.commit }} -m 'Nightly release'
+          git push --follow-tags
