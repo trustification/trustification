@@ -1,5 +1,12 @@
 name: Containers
 
+inputs:
+  imageTag:
+    description: The image tag
+    required: true
+    type: string
+    default: "latest"
+
 on:
   push:
     # Run on the main branch
