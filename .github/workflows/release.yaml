@@ -329,4 +329,4 @@ jobs:
     secrets: inherit
 
     with:
-      imageTag: ${{ needs.init.outputs.version }}
+      releaseTag: ${{ needs.init.outputs.version }}
