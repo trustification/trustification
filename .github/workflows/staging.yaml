@@ -1,0 +1,30 @@
+name: staging
+
+on:
+  workflow_call:
+    inputs:
+      releaseTag:
+        description: The release tag
+        required: true
+        type: string
+
+  workflow_dispatch:
+    inputs:
+      releaseTag:
+        description: The release tag
+        required: true
+        type: string
+        default: latest
+
+env:
+  RELEASE_TAG: ${{ inputs.imageTag }}
+
+jobs:
+  tag:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Tag it
+        env:
+          GITHUB_TOKEN: ${{ secrets.STAGING_TOKEN }}
+        run: |
+          gh workflow -R https://github.com/trustification/trustification.dev run staging -F tag="${{ env.RELEASE_TAG }}"

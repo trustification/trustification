@@ -321,3 +321,12 @@ jobs:
           fi
           gh release create ${OPTS} --title "${{ needs.init.outputs.version }}" -F /tmp/changelog.md ${TAG} \
             $(find staging -type f)
+
+  staging:
+    needs: [ init, publish ]
+
+    uses: ./.github/workflows/staging.yaml
+    secrets: inherit
+
+    with:
+      imageTag: ${{ needs.init.outputs.version }}
