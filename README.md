@@ -47,7 +47,7 @@ You can also try out the publicly hosted instance at [https://trustification.dev
 
 ## Developing
 
-See [DEVELOPMENT](DEVELOPMENT.md) for running the different components while developing.
+See [DEVELOPMENT](DEVELOPING.md) for running the different components while developing.
 
 ## Building
 
