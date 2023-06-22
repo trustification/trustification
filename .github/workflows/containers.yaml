@@ -1,12 +1,5 @@
 name: Containers
 
-inputs:
-  imageTag:
-    description: The image tag
-    required: true
-    type: string
-    default: "latest"
-
 on:
   push:
     # Run on the main branch
@@ -42,7 +35,12 @@ env:
   IMAGE_TAG: ${{ inputs.imageTag }}
 
 jobs:
+
   build-containers:
+    # Default for pushes
+    if: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
+    env:
+      IMAGE_TAG: latest
 
     permissions:
       contents: read
