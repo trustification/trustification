@@ -227,7 +227,7 @@ jobs:
       - name: Create SBOM of the frontend
         # gather (embedded) dependencies from the yarn build
         run: |
-          syft spog/ui/package-lock.json --output cyclonedx-json > staging/spog-ui.project.sbom.json
+          syft spog/ui/package-lock.json --output cyclonedx-json > staging/trust-ui.project.sbom.json
 
       - name: Merge project SBOM
         # merge both SBOMs
@@ -235,7 +235,7 @@ jobs:
           cyclonedx merge \
             --input-files \
             staging/trust.project.sbom.json \
-            staging/spog-ui.project.sbom.json \
+            staging/trust-ui.project.sbom.json \
             --output-file staging/project.sbom.json
 
       - name: Create SBOMs for binaries
@@ -244,7 +244,7 @@ jobs:
         run: |
           for i in $(ls staging/trust*); do
             syft ${i} --output cyclonedx-json > ${i}.sbom.cargo-auditable.json
-            cyclonedx merge --input-files ${i}.sbom.cargo-auditable.json staging/spog-ui.project.sbom.json --output-file ${i}.sbom.json
+            cyclonedx merge --input-files ${i}.sbom.cargo-auditable.json staging/trust-ui.project.sbom.json --output-file ${i}.sbom.json
           done
 
       - name: Cosign blobs
@@ -257,12 +257,12 @@ jobs:
 
       - name: Generate container SBOM
         run: |
-          syft ~/download/container/${{ matrix.name }}-image.tar --output cyclonedx-json --catalogers rpm,cargo-auditable > staging/${{ matrix.name }}.sbom.json
-          cyclonedx merge --input-files staging/${{ matrix.name }}.sbom.json staging/spog-ui.project.sbom.json --output-file staging/{{ matrix.name }}.sbom.json
+          syft ~/download/${{ matrix.name }}-container/${{ matrix.name }}-image.tar --output cyclonedx-json --catalogers rpm,cargo-auditable > staging/${{ matrix.name }}.sbom.json
+          cyclonedx merge --input-files staging/${{ matrix.name }}.sbom.json staging/trust-ui.project.sbom.json --output-file staging/{{ matrix.name }}.sbom.json
 
       - name: Load container
         run: |
-            podman load --input ~/download/container/${{ matrix.name }}-image.tar
+            podman load --input ~/download/${{ matrix.name }}-container/${{ matrix.name }}-image.tar
 
       - name: Log in to ghcr.io
         uses: redhat-actions/podman-login@v1
@@ -305,7 +305,7 @@ jobs:
           cosign attest --yes --recursive  --type cyclonedx --predicate staging/${{ matrix.name  }}.sbom.json ${IMAGE}
 
       - run: |
-          cp ~/download/container/${{ matrix.name }}-image.tar staging/${{ matrix.name }}-container.tar
+          cp ~/download/${{ matrix.name }}-container/${{ matrix.name }}-image.tar staging/${{ matrix.name }}-container.tar
           xz staging/${{ matrix.name }}-container.tar
 
       - name: Display staging area

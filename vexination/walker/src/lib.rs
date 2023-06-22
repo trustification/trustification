@@ -38,7 +38,7 @@ pub struct Run {
 
 impl Run {
     pub async fn run(mut self) -> anyhow::Result<ExitCode> {
-        let storage = self.storage.create("vexination", self.devmode)?;
+        let storage = self.storage.create("vexination-prod", self.devmode)?;
         let validation_date: Option<SystemTime> = match (self.policy_date, self.v3_signatures) {
             (_, true) => Some(SystemTime::from(
                 Date::from_calendar_date(2007, Month::January, 1)
