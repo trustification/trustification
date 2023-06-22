@@ -4,6 +4,7 @@ use std::process::ExitCode;
 pub enum Command {
     Api(bombastic_api::Run),
     Indexer(bombastic_indexer::Run),
+    Walker(bombastic_walker::Run),
 }
 
 impl Command {
@@ -11,6 +12,7 @@ impl Command {
         match self {
             Self::Api(run) => run.run().await,
             Self::Indexer(run) => run.run().await,
+            Self::Walker(run) => run.run().await,
         }
     }
 }

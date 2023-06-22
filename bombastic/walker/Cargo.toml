@@ -1,0 +1,18 @@
+[package]
+name = "bombastic-walker"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = "1"
+chrono = "0.4.26"
+clap = "4.3.3"
+csv = "1.2.2"
+humantime = "2.1.0"
+reqwest = "0.11.18"
+serde = "1.0.164"
+time = "0.3.21"
+tokio = "1.28.2"
+url = "2.4.0"
