@@ -1,11 +1,6 @@
 name: Containers
 
 on:
-  push:
-    # Run on the main branch
-    branches:
-      - main
-
   workflow_call:
     inputs:
       imageTag:
@@ -37,11 +32,6 @@ env:
 jobs:
 
   build-containers:
-    # Default for pushes
-    if: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
-    env:
-      IMAGE_TAG: latest
-
     permissions:
       contents: read
       packages: write
