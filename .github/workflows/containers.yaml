@@ -1,6 +1,11 @@
 name: Containers
 
 on:
+  push:
+    # Run on the main branch
+    branches:
+      - main
+
   workflow_call:
     inputs:
       imageTag:

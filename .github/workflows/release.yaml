@@ -1,0 +1,323 @@
+name: release
+
+on:
+  push:
+    # Releases are tags named 'v<version>', and must have the "major.minor.micro", for example: "0.1.0".
+    # Release candidates are tagged as `v<version>-rc<num>`, for example: "0.1.0-rc1".
+    tags:
+      - "v*"
+
+permissions:
+  contents: write # for creating a release
+  packages: write # for publishing containers
+  id-token: write # for using OIDC tokens
+
+env:
+  SYFT_VERSION: "0.68.1"
+
+jobs:
+
+  init:
+    runs-on: ubuntu-22.04
+    outputs:
+      version: ${{steps.version.outputs.version}}
+      prerelease: ${{steps.state.outputs.prerelease}}
+    steps:
+      - name: Evaluate state
+        id: state
+        env:
+          HEAD_REF: ${{github.head_ref}}
+        run: |
+          test -z "${HEAD_REF}" && (echo 'do-publish=true' >> $GITHUB_OUTPUT)
+          if [[ "${{ github.event.ref }}" =~ ^refs/tags/v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo release=true >> $GITHUB_OUTPUT
+          elif [[ "${{ github.event.ref }}" =~ ^refs/tags/v.*$ ]]; then
+              echo prerelease=true >> $GITHUB_OUTPUT
+          fi
+      - name: Set version
+        id: version
+        run: |
+          VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
+          [[ "${{ github.ref }}" == "refs/tags/"* ]] && VERSION=$(echo $VERSION | sed -e 's/^v//')
+          [ "$VERSION" == "main" ] && VERSION=latest
+          echo "Version: $VERSION"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+  # check that our CI would pass
+  ci:
+    uses: ./.github/workflows/ci.yaml
+
+  # now do the actual (release) builds
+  build:
+    needs: [ init, ci ]
+
+    strategy:
+      matrix:
+        target:
+          - linux-amd64
+          - macos-amd64
+          - macos-aarch64
+          - windows-amd64
+        include:
+          - target: linux-amd64
+            os: ubuntu-22.04
+          - target: macos-amd64
+            os: macos-12
+          - target: macos-aarch64
+            os: macos-12
+            rustTarget: "aarch64-apple-darwin"
+            xcode: "true"
+          - target: windows-amd64
+            os: windows-2022
+            exe: ".exe"
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/.crates.toml
+            ~/.cargo/.crates2.json
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 16
+
+      - name: Install trunk
+        run: cargo install trunk
+
+      - name: Install additional targets target
+        run: |
+          rustup target add wasm32-unknown-unknown
+          rustup target add aarch64-apple-darwin
+
+      - name: Install cargo-auditable
+        run: cargo install cargo-auditable
+
+      - name: Build
+        shell: bash
+        run: |
+          if [[ "${{ matrix.xcode }}" == "true" ]]; then
+            TAG=${{ needs.init.outputs.version }} SDKROOT=$(xcrun -sdk macosx --show-sdk-path) MACOSX_DEPLOYMENT_TARGET=$(xcrun -sdk macosx --show-sdk-platform-version) cargo auditable build --target=${{ matrix.rustTarget }} -p trust --no-default-features --release
+          else
+            TAG=${{ needs.init.outputs.version }} cargo auditable build --release -p trust --no-default-features
+          fi
+
+      - name: List output
+        shell: bash
+        run: ls -l target/release/
+
+      - name: Rename binary
+        shell: bash
+        run: cp -pv target/${{ matrix.rustTarget }}/release/trust{{ matrix.exe }} target/release/trust-${{ matrix.target }}${{ matrix.exe }}
+
+      - name: Upload binary
+        uses: actions/upload-artifact@v3
+        with:
+          name: trust-binary-${{ matrix.target }}
+          path: target/release/trust-${{ matrix.target }}${{ matrix.exe }}
+          if-no-files-found: error
+
+  containers:
+      needs: [ init, ci ]
+
+      uses: ./.github/workflows/containers.yaml
+      secrets: inherit
+
+      with:
+        imageTag: ${{ needs.init.outputs.version }}
+        platforms: "linux/amd64"
+
+  publish:
+    needs: [ init, build, containers ]
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        name: ["trust", "trust-ui", "trust-docs"]
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      # cache cargo data, not because of the build, but because of cargo based tooling
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/.crates.toml
+            ~/.cargo/.crates2.json
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          # although we don't use anything from the Cargo project, we still keep hashing the .lock file to get some
+          # id that aligns with the project
+          key: ${{ runner.os }}-cargo-publish-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Install cyclonedx cli
+        run: |
+          curl -sLO https://github.com/CycloneDX/cyclonedx-cli/releases/download/v0.24.2/cyclonedx-linux-x64
+          sudo install cyclonedx-linux-x64 /usr/local/bin/cyclonedx
+          cyclonedx --version
+
+      - name: Install convco
+        run: |
+          curl -sLO https://github.com/convco/convco/releases/download/v0.3.15/convco-ubuntu.zip
+          unzip convco-ubuntu.zip
+          chmod a+x convco
+          sudo mv convco /usr/local/bin
+
+      - name: Fetch syft binary
+        run: |
+          curl -sL "https://github.com/anchore/syft/releases/download/v${SYFT_VERSION}/syft_${SYFT_VERSION}_linux_amd64.tar.gz" -o syft.tar.gz
+          tar xzf syft.tar.gz
+          chmod a+x syft
+          sudo mv syft /usr/local/bin
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v2
+
+      - name: Check cosign
+        run: cosign version
+
+      - name: Generate changelog
+        run: |
+          convco changelog -s --max-majors=1 --max-minors=1 --max-patches=1 > /tmp/changelog.md
+
+      - uses: actions/download-artifact@v3
+        with:
+          path: ~/download
+
+      - name: Display downloaded content
+        run: ls -R ~/download
+
+      - name: Stage release
+        run: |
+          mkdir -p staging
+          cp -pv ~/download/*/trust-* staging/
+
+      - name: Install nodejs dependencies
+        run: |
+          cd spog/ui
+          npm i
+
+      - name: Create SBOM of the cargo projects
+        # gather dependencies from cargo auditable build
+        run: |
+          cargo install cargo-cyclonedx
+          cargo cyclonedx --all --format json
+          cp trust/bom.json staging/trust.project.sbom.json
+
+      - name: Create SBOM of the frontend
+        # gather (embedded) dependencies from the yarn build
+        run: |
+          syft spog/ui/package-lock.json --output cyclonedx-json > staging/spog-ui.project.sbom.json
+
+      - name: Merge project SBOM
+        # merge both SBOMs
+        run: |
+          cyclonedx merge \
+            --input-files \
+            staging/trust.project.sbom.json \
+            staging/spog-ui.project.sbom.json \
+            --output-file staging/project.sbom.json
+
+      - name: Create SBOMs for binaries
+        # this step will create SBOMs for binaries, based on the information embedded by `cargo auditable build`
+        # and amend the information with the frontend project SBOM
+        run: |
+          for i in $(ls staging/trust*); do
+            syft ${i} --output cyclonedx-json > ${i}.sbom.cargo-auditable.json
+            cyclonedx merge --input-files ${i}.sbom.cargo-auditable.json staging/spog-ui.project.sbom.json --output-file ${i}.sbom.json
+          done
+
+      - name: Cosign blobs
+        env:
+          COSIGN_EXPERIMENTAL: "1"
+        run: |
+          for i in $(ls staging/trust*); do
+            cosign sign-blob --yes --b64=false ${i} --output-signature ${i}.cosign.sig --output-certificate ${i}.cosign.crt
+          done
+
+      - name: Generate container SBOM
+        run: |
+          syft ~/download/container/${{ matrix.name }}-image.tar --output cyclonedx-json --catalogers rpm,cargo-auditable > staging/${{ matrix.name }}.sbom.json
+          cyclonedx merge --input-files staging/${{ matrix.name }}.sbom.json staging/spog-ui.project.sbom.json --output-file staging/{{ matrix.name }}.sbom.json
+
+      - name: Load container
+        run: |
+            podman load --input ~/download/container/${{ matrix.name }}-image.tar
+
+      - name: Log in to ghcr.io
+        uses: redhat-actions/podman-login@v1
+        with:
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+          registry: "ghcr.io"
+
+      - name: Push to ghcr.io
+        id: push-images
+        env:
+          IMAGE: "ghcr.io/${{ github.repository_owner }}/${{ matrix.name }}:${{ needs.init.outputs.version }}"
+        run: |
+          podman push \
+            "${{ matrix.name }}:${{ needs.init.outputs.version }}" \
+            "${IMAGE}" \
+            --digestfile "${RUNNER_TEMP}/push.digest"
+          echo "imageDigest${{ matrix.name }}=$(cat ${RUNNER_TEMP}/push.digest)" >> $GITHUB_OUTPUT
+            rm ${RUNNER_TEMP}/push.digest
+
+
+      - name: Sign the images with GitHub OIDC Token
+        env:
+          COSIGN_EXPERIMENTAL: true
+        run: |
+          imageDigest="${{ steps.push-images.outputs.imageDigest }}${{ matrix.name }}"
+          echo "Image Digest: ${imageDigest}"
+          # and then construct the full (pushed) name
+          cosign sign --yes --recursive "ghcr.io/${{ github.repository_owner }}/${{ matrix.name }}@${imageDigest}"
+
+      - name: Attach container SBOM information
+        env:
+          COSIGN_EXPERIMENTAL: true
+          IMAGE: "ghcr.io/${{ github.repository_owner }}/${{ matrix.name }}:${{ needs.init.outputs.version }}"
+        run: |
+          # attach and sign SBOM
+          cosign attach sbom --sbom staging/${{ matrix.name }}.sbom.json --input-format json --type cyclonedx ${IMAGE}
+          cosign sign --attachment sbom ${IMAGE}
+          # attach SBOM as attestation
+          cosign attest --yes --recursive  --type cyclonedx --predicate staging/${{ matrix.name  }}.sbom.json ${IMAGE}
+
+      - run: |
+          cp ~/download/container/${{ matrix.name }}-image.tar staging/${{ matrix.name }}-container.tar
+          xz staging/${{ matrix.name }}-container.tar
+
+      - name: Display staging area
+        run: ls -R staging
+
+      - name: Create Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: v${{ needs.init.outputs.version }}
+        run: |
+          OPTS=""
+          if [[ "${{ needs.init.outputs.prerelease }}" == "true" ]]; then
+            OPTS="${OPTS} -p"
+          fi
+          gh release create ${OPTS} --title "${{ needs.init.outputs.version }}" -F /tmp/changelog.md ${TAG} \
+            $(find staging -type f)
