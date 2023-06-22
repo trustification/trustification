@@ -6,13 +6,7 @@ use crate::{
 };
 
 use crate::{components::cvss::CvssScore, components::simple_pagination::SimplePagination, utils::cvss::Cvss};
-use patternfly_yew::{
-    next::{
-        use_table_data, Cell, CellContext, ColumnWidth, MemoizedTableModel, Table, TableColumn, TableEntryRenderer,
-        TableHeader, Toolbar, ToolbarContent, UseTableData,
-    },
-    prelude::*,
-};
+use patternfly_yew::prelude::*;
 use spog_model::prelude::*;
 use std::rc::Rc;
 use url::Url;
@@ -281,10 +275,7 @@ mod details {
     use crate::backend::VexService;
     use crate::hooks::use_backend::use_backend;
     use csaf::{definitions::Branch, product_tree::ProductTree, vulnerability::Vulnerability};
-    use patternfly_yew::{
-        next::{use_table_data, MemoizedTableModel, Table, TableColumn, TableEntryRenderer, TableHeader, UseTableData},
-        prelude::*,
-    };
+    use patternfly_yew::prelude::*;
     use spog_model::prelude::*;
     use yew::prelude::*;
     use yew_more_hooks::hooks::use_async_with_cloned_deps;
@@ -376,7 +367,7 @@ mod details {
     }
 
     impl TableEntryRenderer<Column> for Vulnerability {
-        fn render_cell(&self, context: &patternfly_yew::next::CellContext<'_, Column>) -> patternfly_yew::next::Cell {
+        fn render_cell(&self, context: &CellContext<'_, Column>) -> Cell {
             match context.column {
                 Column::Cve => self
                     .cve
@@ -456,39 +447,32 @@ mod details {
 
     struct BranchWrapper(Branch);
 
-    impl TreeTableModel for ProductTreeWrapper {
-        fn children(&self) -> Vec<Rc<dyn TreeNode>> {
+    impl TreeTableModel<()> for ProductTreeWrapper {
+        fn children(&self) -> Vec<Rc<dyn TreeNode<()>>> {
             self.0
                 .branches
                 .iter()
                 .flat_map(|s| s.0.iter())
-                .map(|branch| Rc::new(BranchWrapper(branch.clone())) as Rc<dyn TreeNode>)
+                .map(|branch| Rc::new(BranchWrapper(branch.clone())) as Rc<dyn TreeNode<()>>)
                 .collect()
         }
     }
 
-    impl TreeNode for BranchWrapper {
-        fn render_main(&self) -> Cell {
+    impl TreeNode<()> for BranchWrapper {
+        fn render_cell(&self, _ctx: CellContext<'_, ()>) -> Cell {
             html!(<>
-            { &self.0.name } { " " }
-            <Label color={Color::Blue} label={format!("{:?}", self.0.category)} outline=true compact=true/>
-        </>)
+                { &self.0.name } { " " }
+                <Label color={Color::Blue} label={format!("{:?}", self.0.category)} outline=true compact=true/>
+            </>)
             .into()
         }
 
-        fn render_cell(&self, ctx: CellContext) -> Cell {
-            match ctx.column {
-                _ => html!(),
-            }
-            .into()
-        }
-
-        fn children(&self) -> Vec<Rc<dyn TreeNode>> {
+        fn children(&self) -> Vec<Rc<dyn TreeNode<()>>> {
             self.0
                 .branches
                 .iter()
                 .flat_map(|s| s.0.iter())
-                .map(|branch| Rc::new(BranchWrapper(branch.clone())) as Rc<dyn TreeNode>)
+                .map(|branch| Rc::new(BranchWrapper(branch.clone())) as Rc<dyn TreeNode<()>>)
                 .collect()
         }
     }
@@ -498,15 +482,15 @@ mod details {
         use patternfly_yew::prelude::TableColumn;
 
         let header = html_nested! {
-            <TreeTableHeader>
-                <TableColumn label="Name"/>
-            </TreeTableHeader>
+            <TreeTableHeader<()>>
+                <TableColumn<()> index={()} label="Name"/>
+            </TreeTableHeader<()>>
         };
 
         let root = Rc::new(ProductTreeWrapper(props.product.clone()));
 
         html!(
-            <TreeTable<ProductTreeWrapper>
+            <TreeTable<(), ProductTreeWrapper>
                 mode={TreeTableMode::Compact}
                 header={header}
                 model={root}

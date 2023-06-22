@@ -1,13 +1,6 @@
-use std::{rc::Rc, str::FromStr};
+use std::rc::Rc;
 
-use packageurl::PackageUrl;
-use patternfly_yew::{
-    next::{
-        use_table_data, Cell, CellContext, ColumnWidth, MemoizedTableModel, Table, TableColumn, TableEntryRenderer,
-        TableHeader, Toolbar, ToolbarContent, UseTableData,
-    },
-    prelude::*,
-};
+use patternfly_yew::prelude::*;
 use spog_model::prelude::*;
 use url::Url;
 use yew::prelude::*;

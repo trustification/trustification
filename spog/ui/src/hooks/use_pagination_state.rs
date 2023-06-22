@@ -1,4 +1,4 @@
-use patternfly_yew::Navigation;
+use patternfly_yew::prelude::Navigation;
 use yew::prelude::*;
 
 #[derive(Clone, PartialEq, Properties, Eq)]

@@ -12,8 +12,18 @@ use crate::{
 
 #[function_component(Console)]
 pub fn console() -> Html {
-    let logo = html! (
-        <Brand src="assets/images/chicken-svgrepo-com.svg" alt="Chicken Logo" />
+    let brand = html! (
+        <MastheadBrand>
+            <Brand
+                src="assets/images/chicken-svgrepo-com.svg"
+                alt="Logo"
+                style={r#"
+                    --pf-v5-c-brand--Height: var(--pf-v5-c-page__header-brand-link--c-brand--MaxHeight);
+                "#}
+            >
+                <BrandSource srcset="assets/images/chicken-svgrepo-com.svg" />
+            </Brand>
+        </MastheadBrand>
     );
 
     let backend = use_backend();
@@ -51,26 +61,27 @@ pub fn console() -> Html {
 
     let tools = html!(
         <Toolbar>
-            <ToolbarItem>
-                <Button icon={Icon::Github} onclick={callback_github}/>
-            </ToolbarItem>
-            <ToolbarItem>
-                <AppLauncher
-                    position={Position::Right}
-                    toggle={Icon::QuestionCircle}
-                >
-                    <AppLauncherItem onclick={callback_about}>{ "About" }</AppLauncherItem>
-                </AppLauncher>
-            </ToolbarItem>
+            <ToolbarContent>
+                <ToolbarItem modifiers={[ToolbarElementModifier::Right]}>
+                    <Button icon={Icon::Github} onclick={callback_github} variant={ButtonVariant::Plain} />
+                    <Dropdown
+                        position={Position::Right}
+                        variant={MenuToggleVariant::Plain}
+                        icon={Icon::QuestionCircle}
+                    >
+                        <MenuAction text="About" onclick={callback_about} />
+                    </Dropdown>
+                </ToolbarItem>
+            </ToolbarContent>
         </Toolbar>
     );
 
     html!(
-        <Page {logo} {sidebar} {tools}>
+        <Page {brand} {sidebar} {tools}>
             <RouterSwitch<AppRoute> {render}/>
 
             <PageSection variant={PageSectionVariant::Darker} fill={PageSectionFill::NoFill}>
-                {"Copyright © 2023 Red Hat, Inc. and "} <a href="https://github.com/xkcd-2347" target="_blank"> {"The chickens"} </a> {"."}
+                {"Copyright © 2023 Red Hat, Inc. and "} <a href="https://github.com/trustification" target="_blank"> {"The chickens"} </a> {"."}
             </PageSection>
         </Page>
     )
