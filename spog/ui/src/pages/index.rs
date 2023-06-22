@@ -1,7 +1,4 @@
-use patternfly_yew::{
-    next::{Card, CardBody},
-    prelude::*,
-};
+use patternfly_yew::prelude::*;
 use yew::prelude::*;
 
 use crate::components::common::PageHeading;

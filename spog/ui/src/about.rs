@@ -9,16 +9,12 @@ pub fn about() -> Html {
 
     html!(
         <Bullseye plain=true>
-            <patternfly_yew::prelude::AboutModal
+            <AboutModal
                 brand_image_src="assets/images/chicken-svgrepo-com.svg"
-                brand_image_alt="Chicken logo"
+                brand_image_alt="Logo"
+                background_image_src="assets/images/pfbg-icon.svg"
                 product_name="Chicken Coop"
                 trademark="Copyright © 2020, 2023 by the Chickens"
-                background_image_src="https://www.patternfly.org/assets/images/pfbg_992.jpg"
-                hero_style=r#"
---pf-c-about-modal-box__hero--lg--BackgroundImage: url("https://www.patternfly.org/assets/images/pfbg_992@2x.jpg");
---pf-c-about-modal-box__hero--sm--BackgroundImage: url("https://www.patternfly.org/assets/images/pfbg_992.jpg");
-"#
             >
                 <Content>
                     <p>{ env!("CARGO_PKG_DESCRIPTION") }</p>
@@ -39,7 +35,7 @@ pub fn about() -> Html {
                         <dd>{ backend.endpoints.url.to_string() }</dd>
                     </dl>
                 </Content>
-            </patternfly_yew::prelude::AboutModal>
+            </AboutModal>
         </Bullseye>
     )
 }
