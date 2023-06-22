@@ -5,6 +5,7 @@ members = [
     "bombastic/model",
     "bombastic/indexer",
     "bombastic/index",
+    "bombastic/walker",
     "bommer",
     "bommer/bommer-api",
     "vexination/vexination",
