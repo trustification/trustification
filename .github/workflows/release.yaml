@@ -247,6 +247,8 @@ jobs:
           done
 
       - name: Cosign blobs
+        permissions:
+          id-token: write # for using OIDC tokens
         env:
           COSIGN_EXPERIMENTAL: "1"
         run: |
