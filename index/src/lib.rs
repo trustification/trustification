@@ -302,7 +302,7 @@ pub fn create_date_query(field: Field, value: &Ordered<time::OffsetDateTime>) ->
 }
 
 /// Convert a sikula primary to a tantivy query for string fields
-pub fn create_string_query<'m>(field: Field, primary: &Primary<'m>) -> Box<dyn Query> {
+pub fn create_string_query(field: Field, primary: &Primary<'_>) -> Box<dyn Query> {
     match primary {
         Primary::Equal(value) => Box::new(TermQuery::new(Term::from_field_text(field, value), Default::default())),
         Primary::Partial(value) => {
@@ -324,7 +324,7 @@ pub fn create_string_query<'m>(field: Field, primary: &Primary<'m>) -> Box<dyn Q
 }
 
 /// Convert a sikula primary to a tantivy query for text fields
-pub fn create_text_query<'m>(field: Field, primary: &Primary<'m>) -> Box<dyn Query> {
+pub fn create_text_query(field: Field, primary: &Primary<'_>) -> Box<dyn Query> {
     match primary {
         Primary::Equal(value) => Box::new(TermQuery::new(Term::from_field_text(field, value), Default::default())),
         Primary::Partial(value) => Box::new(TermQuery::new(Term::from_field_text(field, value), Default::default())),
