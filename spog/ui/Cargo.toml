@@ -36,6 +36,11 @@ csaf = { version = "0.5.0", default-features = false }
 
 spog-model = "0.1.0"
 
+trustification-version = { path = "../../version" }
+
+[build-dependencies]
+trustification-version = { path = "../../version", features = ["build"] }
+
 [dependencies.web-sys]
 version = "0.3.61"
 features = [

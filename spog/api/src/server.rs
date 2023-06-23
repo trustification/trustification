@@ -4,10 +4,11 @@ use actix_cors::Cors;
 use actix_web::{middleware::Logger, web, App, HttpServer};
 use http::StatusCode;
 use spog_model::search;
+use trustification_version::version;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
-use crate::{advisory, sbom, Run};
+use crate::{advisory, index, sbom, Run};
 
 pub struct Server {
     run: Run,
@@ -20,11 +21,19 @@ pub struct Server {
             sbom::search,
             advisory::get,
             advisory::search,
+            trustification_version::version::version_fn,
             //vulnerability::search,
         ),
         components(
             //schemas(search::PackageSummary, search::VulnSummary, search::SearchResult<Vec<search::PackageSummary>>)
-            schemas(search::PackageSummary, search::SearchResult<Vec<search::PackageSummary>>)
+            schemas(
+                search::PackageSummary,
+                search::SearchResult<Vec<search::PackageSummary>>,
+                trustification_version::VersionInformation,
+                trustification_version::Version,
+                trustification_version::Git,
+                trustification_version::Build,
+            )
         ),
         tags(
             (name = "package", description = "Package endpoints"),
@@ -57,6 +66,8 @@ impl Server {
                 .wrap(Logger::default())
                 .wrap(cors)
                 .app_data(web::Data::new(state))
+                .configure(index::configure())
+                .configure(version::configurator(version!()))
                 .configure(crate::sbom::configure())
                 .configure(crate::advisory::configure())
                 //.configure(crate::vulnerability::configure())
