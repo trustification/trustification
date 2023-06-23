@@ -11,16 +11,15 @@ pub enum Vulnerabilities<'a> {
     Title(Primary<'a>),
     #[search(default)]
     Description(Primary<'a>),
-    #[search(default)]
     Status(Primary<'a>),
-    #[search(default)]
+    #[search]
     Severity(Primary<'a>),
     Cvss(PartialOrdered<f64>),
-    #[search(default)]
+    #[search]
     Package(Primary<'a>),
-    #[search(default)]
+    #[search]
     Fixed(Primary<'a>),
-    #[search(default)]
+    #[search]
     Affected(Primary<'a>),
     #[search]
     Initial(Ordered<time::OffsetDateTime>),
