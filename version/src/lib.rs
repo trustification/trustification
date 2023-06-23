@@ -16,7 +16,7 @@
 //! This will ensure all the necessary information is generated. It can then be turned into
 //! an information structure like this:
 //!
-//! ```rust
+//! ```ignore
 //! use trustification_version::version;
 //!
 //! let version = version!();
@@ -30,7 +30,7 @@
 //! of [`VersionInformation`] containing the information from during the build time. This can
 //! be used e.g. in combination with actix:
 //!
-//! ```rust
+//! ```ignore
 //! use trustification_version::version;
 //!
 //! actix_web::App::new()
