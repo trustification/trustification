@@ -22,12 +22,16 @@ pub struct Backend {
 #[derive(Clone, Debug, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
 pub struct Endpoints {
     pub url: Url,
+    pub bombastic: Url,
+    pub vexination: Url,
 }
 
 impl Endpoints {
     pub fn get(&self, endpoint: Endpoint) -> &Url {
         match endpoint {
             Endpoint::Api => &self.url,
+            Endpoint::Vexination => &self.vexination,
+            Endpoint::Bombastic => &self.bombastic,
         }
     }
 }
@@ -35,6 +39,8 @@ impl Endpoints {
 #[derive(Copy, Clone, Eq, PartialEq)]
 pub enum Endpoint {
     Api,
+    Vexination,
+    Bombastic,
 }
 
 impl Backend {
