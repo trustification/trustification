@@ -280,9 +280,7 @@ jobs:
             podman push \
               "${container}:${{ needs.init.outputs.version }}" \
               "${IMAGE}" \
-              --digestfile "${RUNNER_TEMP}/push.digest"
-            echo "imageDigest${container}=$(cat ${RUNNER_TEMP}/push.digest)" >> $GITHUB_OUTPUT
-            rm ${RUNNER_TEMP}/push.digest
+              --digestfile "${RUNNER_TEMP}/push.${container}.digest"
           done
 
 
@@ -291,7 +289,7 @@ jobs:
           COSIGN_EXPERIMENTAL: true
         run: |
           for container in trust trust-ui trust-docs; do
-            imageDigest="${{ steps.push-images.outputs.imageDigest }}${container}"
+            imageDigest="$(cat ${RUNNER_TEMP}/push.${container}.digest)"
             echo "Image Digest: ${imageDigest}"
             # and then construct the full (pushed) name
             cosign sign --yes --recursive "ghcr.io/${{ github.repository_owner }}/${container}@${imageDigest}"
