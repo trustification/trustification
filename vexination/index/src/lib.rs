@@ -12,10 +12,10 @@ use sikula::prelude::*;
 use tantivy::{query::AllQuery, store::ZstdCompressor, IndexSettings, Searcher, SnippetGenerator};
 use tracing::debug;
 use trustification_index::{
-    create_boolean_query, create_date_query, field2date, field2f64vec, field2str, field2strvec, primary2occur,
+    create_date_query, create_string_query, create_text_query, field2date, field2f64vec, field2str, field2strvec,
     tantivy::{
         doc,
-        query::{BooleanQuery, Occur, Query, RangeQuery},
+        query::{BooleanQuery, Query, RangeQuery},
         schema::{Field, Schema, Term, FAST, INDEXED, STORED, STRING, TEXT},
         DateTime,
     },
@@ -343,81 +343,42 @@ impl Index {
 
     fn resource2query(&self, resource: &Vulnerabilities) -> Box<dyn Query> {
         match resource {
-            Vulnerabilities::Id(primary) => {
-                let (occur, value) = primary2occur(primary);
-                let term = Term::from_field_text(self.fields.advisory_id, value);
-                create_boolean_query(occur, term)
-            }
+            Vulnerabilities::Id(primary) => create_string_query(self.fields.advisory_id, primary),
 
-            Vulnerabilities::Cve(primary) => {
-                let (occur, value) = primary2occur(primary);
-                let term = Term::from_field_text(self.fields.cve_id, value);
-                create_boolean_query(occur, term)
-            }
+            Vulnerabilities::Cve(primary) => create_string_query(self.fields.cve_id, primary),
 
             Vulnerabilities::Description(primary) => {
-                let (occur, value) = primary2occur(primary);
-                let q1 = create_boolean_query(occur, Term::from_field_text(self.fields.advisory_description, value));
-                let q2 = create_boolean_query(occur, Term::from_field_text(self.fields.cve_description, value));
+                let q1 = create_text_query(self.fields.advisory_description, primary);
+                let q2 = create_text_query(self.fields.cve_description, primary);
                 Box::new(BooleanQuery::union(vec![q1, q2]))
             }
 
             Vulnerabilities::Title(primary) => {
-                let (occur, value) = primary2occur(primary);
-                let q1 = create_boolean_query(occur, Term::from_field_text(self.fields.advisory_title, value));
-                let q2 = create_boolean_query(occur, Term::from_field_text(self.fields.cve_title, value));
+                let q1 = create_text_query(self.fields.advisory_title, primary);
+                let q2 = create_text_query(self.fields.cve_title, primary);
                 Box::new(BooleanQuery::union(vec![q1, q2]))
             }
 
             Vulnerabilities::Package(primary) => {
-                let (occur, value) = primary2occur(primary);
-                let value = rewrite_cpe(value);
-                let q1 = create_boolean_query(occur, Term::from_field_text(self.fields.cve_affected, &value));
-                let q2 = create_boolean_query(occur, Term::from_field_text(self.fields.cve_fixed, &value));
+                let q1 = create_rewrite_string_query(self.fields.cve_affected, primary);
+                let q2 = create_rewrite_string_query(self.fields.cve_fixed, primary);
 
                 Box::new(BooleanQuery::union(vec![q1, q2]))
             }
 
-            Vulnerabilities::Fixed(primary) => {
-                let (occur, value) = primary2occur(primary);
-                let value = rewrite_cpe(value);
-                let term = Term::from_field_text(self.fields.cve_fixed, &value);
-                create_boolean_query(occur, term)
-            }
+            Vulnerabilities::Fixed(primary) => create_rewrite_string_query(self.fields.cve_fixed, primary),
 
-            Vulnerabilities::Affected(primary) => {
-                let (occur, value) = primary2occur(primary);
-                let value = rewrite_cpe(value);
-                let term = Term::from_field_text(self.fields.cve_affected, &value);
-                create_boolean_query(occur, term)
-            }
+            Vulnerabilities::Affected(primary) => create_rewrite_string_query(self.fields.cve_affected, primary),
 
-            Vulnerabilities::Severity(primary) => {
-                let (occur, value) = primary2occur(primary);
-                let term = Term::from_field_text(self.fields.cve_severity, value);
-                create_boolean_query(occur, term)
-            }
+            Vulnerabilities::Severity(primary) => create_string_query(self.fields.cve_severity, primary),
 
-            Vulnerabilities::Status(primary) => {
-                let (occur, value) = primary2occur(primary);
-                let term = Term::from_field_text(self.fields.advisory_status, value);
-                create_boolean_query(occur, term)
-            }
-            Vulnerabilities::Final => {
-                create_boolean_query(Occur::Must, Term::from_field_text(self.fields.advisory_status, "final"))
-            }
-            Vulnerabilities::Critical => {
-                create_boolean_query(Occur::Must, Term::from_field_text(self.fields.cve_severity, "critical"))
-            }
-            Vulnerabilities::High => {
-                create_boolean_query(Occur::Must, Term::from_field_text(self.fields.cve_severity, "high"))
-            }
-            Vulnerabilities::Medium => {
-                create_boolean_query(Occur::Must, Term::from_field_text(self.fields.cve_severity, "medium"))
-            }
-            Vulnerabilities::Low => {
-                create_boolean_query(Occur::Must, Term::from_field_text(self.fields.cve_severity, "low"))
-            }
+            Vulnerabilities::Status(primary) => create_string_query(self.fields.advisory_status, primary),
+
+            Vulnerabilities::Final => create_string_query(self.fields.advisory_status, &Primary::Equal("final")),
+            Vulnerabilities::Critical => create_string_query(self.fields.cve_severity, &Primary::Equal("critical")),
+            Vulnerabilities::High => create_string_query(self.fields.cve_severity, &Primary::Equal("high")),
+            Vulnerabilities::Medium => create_string_query(self.fields.cve_severity, &Primary::Equal("medium")),
+            Vulnerabilities::Low => create_string_query(self.fields.cve_severity, &Primary::Equal("low")),
             Vulnerabilities::Cvss(ordered) => match ordered {
                 PartialOrdered::Less(e) => Box::new(RangeQuery::new_f64_bounds(
                     self.fields.cve_cvss,
@@ -515,6 +476,19 @@ fn find_product_package(csaf: &Csaf, product_id: &ProductIdT) -> (Option<Product
         }
     }
     (None, None)
+}
+
+fn create_rewrite_string_query(field: Field, primary: &Primary<'_>) -> Box<dyn Query> {
+    match primary {
+        Primary::Equal(value) => {
+            let rewrite = rewrite_cpe(value);
+            create_string_query(field, &Primary::Equal(&rewrite))
+        }
+        Primary::Partial(value) => {
+            let rewrite = rewrite_cpe(value);
+            create_string_query(field, &Primary::Partial(&rewrite))
+        }
+    }
 }
 
 // Attempt to parse CPE and rewrite to correctly formatted CPE
