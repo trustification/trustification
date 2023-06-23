@@ -1,4 +1,5 @@
 use std::ops::{Deref, DerefMut};
+use time::OffsetDateTime;
 
 #[derive(utoipa::ToSchema, serde::Deserialize, serde::Serialize, Debug, PartialEq, Clone)]
 pub struct AdvisorySummary {
@@ -39,6 +40,7 @@ pub struct PackageSummary {
     pub dependencies: Vec<String>,
     pub href: String,
     pub advisories: Vec<String>,
+    pub created: OffsetDateTime,
 }
 
 #[derive(utoipa::ToSchema, Clone, Debug, Default, PartialEq, Eq, serde::Deserialize, serde::Serialize)]

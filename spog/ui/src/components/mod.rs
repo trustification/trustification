@@ -2,6 +2,7 @@
 
 pub mod advisory;
 pub mod backend;
+pub mod catalog;
 pub mod common;
 pub mod cvss;
 // pub mod deps;
@@ -13,6 +14,7 @@ pub mod simple_pagination;
 
 use std::ops::Deref;
 
+use crate::components::error::Error;
 use patternfly_yew::prelude::*;
 use yew::prelude::*;
 use yew_more_hooks::prelude::{UseAsyncHandleDeps, UseAsyncState};
@@ -35,7 +37,7 @@ where
     match &*fetch {
         UseAsyncState::Pending | UseAsyncState::Processing => html!(<Spinner/>),
         UseAsyncState::Ready(Ok(data)) => body(data),
-        UseAsyncState::Ready(Err(err)) => html!(<>{"Failed to load: "} { err } </>),
+        UseAsyncState::Ready(Err(err)) => html!(<Error err={err.to_string()} />),
     }
 }
 

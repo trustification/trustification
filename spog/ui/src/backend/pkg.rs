@@ -1,6 +1,7 @@
 use packageurl::PackageUrl;
 use serde::Deserialize;
 use spog_model::prelude::*;
+use std::rc::Rc;
 
 use super::{Backend, Error};
 use crate::backend::{
@@ -9,13 +10,13 @@ use crate::backend::{
 };
 
 pub struct PackageService {
-    backend: Backend,
+    backend: Rc<Backend>,
     client: reqwest::Client,
 }
 
 #[allow(unused)]
 impl PackageService {
-    pub fn new(backend: Backend) -> Self {
+    pub fn new(backend: Rc<Backend>) -> Self {
         Self {
             backend,
             client: reqwest::Client::new(),

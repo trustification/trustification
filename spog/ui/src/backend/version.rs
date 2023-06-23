@@ -1,6 +1,5 @@
-use super::{Backend, Error};
-use crate::backend::{Endpoint, Endpoints};
-use std::fmt::format;
+use super::Backend;
+use crate::backend::Endpoint;
 use std::rc::Rc;
 use trustification_version::VersionInformation;
 use web_sys::RequestCache;

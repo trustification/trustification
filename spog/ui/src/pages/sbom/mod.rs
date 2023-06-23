@@ -1,114 +1,220 @@
-mod inspect;
-mod unknown;
-mod upload;
-
-use crate::components::common::PageHeading;
-use cyclonedx_bom::prelude::*;
-use inspect::Inspect;
-use patternfly_yew::{
-    next::{Card, CardBody},
-    prelude::*,
+use crate::{
+    backend,
+    components::{common::PageHeading, error::Error},
+    hooks::use_backend::use_backend,
+    model,
 };
+use cyclonedx_bom::prelude::Bom;
+use patternfly_yew::prelude::*;
+use spdx_rs::models::{PackageInformation, SPDX};
 use std::rc::Rc;
-use upload::Upload;
 use yew::prelude::*;
+use yew_more_hooks::prelude::*;
+
+#[derive(Clone, Debug, PartialEq, Properties)]
+pub struct SBOMProperties {
+    pub id: String,
+}
 
 #[function_component(SBOM)]
-pub fn sbom() -> Html {
-    let content = use_state_eq(|| None::<String>);
-
-    let onsubmit = {
-        let content = content.clone();
-        Callback::from(move |data| {
-            content.set(Some(data));
-        })
-    };
-
-    let sbom = use_memo(
-        |content| {
-            content.as_ref().and_then(|data| {
-                Bom::parse_from_json_v1_3(data.as_bytes())
-                    .ok()
-                    .map(|sbom| (Rc::new(data.clone()), Rc::new(sbom)))
-            })
+pub fn sbom(props: &SBOMProperties) -> Html {
+    let backend = use_backend();
+    let info = use_async_with_cloned_deps(
+        |(id, backend)| async move {
+            backend::SBOMService::new(backend.clone())
+                .get(id)
+                .await
+                .map(crate::model::SBOM::parse)
+                .map(Rc::new)
         },
-        content.clone(),
+        (props.id.clone(), backend.clone()),
     );
 
-    match sbom.as_ref() {
-        Some((raw, bom)) => {
-            html!(<Inspect raw={raw.clone()} bom={bom.clone()} />)
-        }
-        None => {
-            let onvalidate = Callback::from(|data: String| match Bom::parse_from_json_v1_3(data.as_bytes()) {
-                Ok(_sbom) => Ok(data),
-                Err(err) => Err(format!("Failed to parse SBOM: {err}")),
-            });
+    let (heading, content) = match &*info {
+        UseAsyncState::Pending | UseAsyncState::Processing => (
+            html!(<PageHeading subtitle="SBOM detail information">{ &props.id }</PageHeading>),
+            html!(<Spinner/>),
+        ),
+        UseAsyncState::Ready(Ok(data)) => (
+            html!(<PageHeading subtitle="SBOM detail information">{ &props.id } {" "} <Label label={data.type_name()} color={Color::Blue} /> </PageHeading>),
+            html!(<Details sbom={data.clone()}/> ),
+        ),
+        UseAsyncState::Ready(Err(err)) => (
+            html!(<PageHeading subtitle="SBOM detail information">{ &props.id }</PageHeading>),
+            html!(<Error err={err.to_string()} />),
+        ),
+    };
 
+    html!(
+        <>
+            { heading }
+            <PageSection fill={PageSectionFill::Fill}>
+                { content }
+            </PageSection>
+        </>
+    )
+}
+
+#[derive(Clone, PartialEq, Properties)]
+struct DetailsProps {
+    sbom: Rc<model::SBOM>,
+}
+
+#[function_component(Details)]
+fn details(props: &DetailsProps) -> Html {
+    match &*props.sbom {
+        model::SBOM::SPDX { bom, source } => {
             html!(
-                <>
-                    <CommonHeader />
-                    <PageSection variant={PageSectionVariant::Default} fill=true>
+                <Tabs>
+                    <Tab label="Overview">
                         <Grid gutter=true>
-                            <GridItem cols={[8]}>
-                                <Card
-                                    title={html!(<Title> {"SBOM content"} </Title>)}
-                                >
-                                    <CardBody>
-                                        <Upload {onsubmit} {onvalidate}/>
-                                    </CardBody>
-                                </Card>
-                            </GridItem>
-                            <GridItem cols={[4]}>
-                                <GenerateCard />
-                            </GridItem>
+                            <GridItem cols={[4]}>{spdx_meta(bom)}</GridItem>
+                            <GridItem cols={[2]}>{spdx_creator(bom)}</GridItem>
                         </Grid>
-                    </PageSection>
-                </>
+                    </Tab>
+                    <Tab label="Packages">
+                        <SpdxPackages packages={
+                            {
+                                let mut packages = bom.package_information.clone();
+                                packages.sort_unstable_by(|a,b| {
+                                    a.package_name.cmp(&b.package_name)
+                                });
+                                Rc::new(packages)
+                            }
+
+                        } />
+                    </Tab>
+                    <Tab label="Source">
+                        <CodeBlock>
+                            <CodeBlockCode> { source.clone() } </CodeBlockCode>
+                        </CodeBlock>
+                    </Tab>
+                </Tabs>
+            )
+        }
+        model::SBOM::CycloneDX { bom, source } => {
+            html!(
+                <Tabs>
+                    <Tab label="Overview">
+                    </Tab>
+                    <Tab label="Source">
+                        <CodeBlock>
+                            <CodeBlockCode> { source.clone() } </CodeBlockCode>
+                        </CodeBlock>
+                    </Tab>
+                </Tabs>
+            )
+        }
+        model::SBOM::Unknown(data) => {
+            html!(
+                <CodeBlock>
+                    <CodeBlockCode> { data } </CodeBlockCode>
+                </CodeBlock>
             )
         }
     }
 }
 
-#[function_component(CommonHeader)]
-fn common_header() -> Html {
+fn spdx_creator(bom: &SPDX) -> Html {
+    let title = html!(<Title>{"Creation"}</Title>);
+
     html!(
-        <PageHeading subtitle="Upload and analyze a custom SBOM">{"Inspect SBOM"}</PageHeading>
+        <Card {title}>
+            <CardBody>
+                <DescriptionList>
+                    <DescriptionGroup term="Created">{ &bom.document_creation_information.creation_info.created.to_string() }</DescriptionGroup>
+                    if let Some(info) = &bom.document_creation_information.creation_info.license_list_version {
+                        <DescriptionGroup term="License List Version">{ &info.to_string() }</DescriptionGroup>
+                    }
+                    {
+                        match bom.document_creation_information.creation_info.creators.len() {
+                            0 => html!(),
+                            1 => {
+                                // we can be sure to have one
+                                html!(
+                                    <DescriptionGroup term="Creator">
+                                        { bom.document_creation_information.creation_info.creators[0].clone() }
+                                    </DescriptionGroup>
+                                )
+                            },
+                            _ => html! (
+                                <DescriptionGroup term="Creators">
+                                    <List>
+                                        { for bom.document_creation_information.creation_info.creators.iter().map(Html::from) }
+                                    </List>
+                                </DescriptionGroup>
+                            )
+                        }
+                    }
+                </DescriptionList>
+            </CardBody>
+            { bom.document_creation_information.creation_info.creator_comment.as_ref().map(|comment|{
+                html_nested!(<CardBody> { comment } </CardBody>)
+            })}
+        </Card>
     )
 }
 
-#[function_component(GenerateCard)]
-fn generate_card() -> Html {
-    let maven = r#"mvn org.cyclonedx:cyclonedx-maven-plugin:2.7.7:makeAggregateBom -Dcyclonedx.skipAttach=true -DoutputFormat=json -DschemaVersion=1.3 -Dcyclonedx.verbose=false"#;
-    let container = r#"syft packages <container> -o cyclonedx-json --file sbom.json"#;
-    let container_example = r#"syft packages quay.io/keycloak/keycloak:latest -o cyclonedx-json --file sbom.json"#;
-
-    use patternfly_yew::next::TextInput;
+fn spdx_meta(bom: &SPDX) -> Html {
+    let title = html!(<Title>{"Metadata"}</Title>);
 
     html!(
-        <Card
-            title={html!(<Title>{"Generate"}</Title>)}
-        >
+        <Card {title}>
             <CardBody>
-                <Tabs r#box=true>
-                    <Tab label="Container">
-                        <Content>
-                            <p> { "Run the following command:" } </p>
-                            <p> <TextInput readonly=true value={container}  /> </p>
-                            <p> { "Be sure to replace " } <code> {"<container>"} </code> { "with the actual name of the container, for example:" } </p>
-                            <p> <Clipboard readonly=true code=true value={container_example} variant={ClipboardVariant::Expanded} /> </p>
-                            <p> { "The SBOM will be generated as: " } <code> { "target/sbom.json" } </code> </p>
-                        </Content>
-                    </Tab>
-                    <Tab label="Maven">
-                        <Content>
-                            <p> { "Run the following command from the root of your project:" } </p>
-                            <p> <Clipboard readonly=true code=true value={maven} variant={ClipboardVariant::Expanded} /> </p>
-                            <p> { "The SBOM will be generated as: " } <code> { "sbom.json" } </code> </p>
-                        </Content>
-                    </Tab>
-                </Tabs>
+                <DescriptionList>
+                    <DescriptionGroup term="Name">{ &bom.document_creation_information.document_name }</DescriptionGroup>
+                    <DescriptionGroup term="ID">{ &bom.document_creation_information.spdx_identifier }</DescriptionGroup>
+                    <DescriptionGroup term="Namespace">{ &bom.document_creation_information.spdx_document_namespace }</DescriptionGroup>
+                    <DescriptionGroup term="SPDX Version">{ &bom.document_creation_information.spdx_version }</DescriptionGroup>
+                    <DescriptionGroup term="Data License">{ &bom.document_creation_information.data_license }</DescriptionGroup>
+                </DescriptionList>
             </CardBody>
+            { bom.document_creation_information.document_comment.as_ref().map(|comment|{
+                html_nested!(<CardBody> { comment } </CardBody>)
+            })}
         </Card>
+    )
+}
+
+#[derive(PartialEq, Properties)]
+struct SpdxPackagesProperties {
+    packages: Rc<Vec<PackageInformation>>,
+}
+
+#[function_component(SpdxPackages)]
+fn spdx_packages(props: &SpdxPackagesProperties) -> Html {
+    #[derive(Clone, Eq, PartialEq)]
+    enum Column {
+        Name,
+        Version,
+    }
+
+    impl TableEntryRenderer<Column> for PackageInformation {
+        fn render_cell(&self, context: &CellContext<'_, Column>) -> Cell {
+            match context.column {
+                Column::Name => html!(&self.package_name),
+                Column::Version => html!(self.package_version.clone().unwrap_or_default()),
+            }
+            .into()
+        }
+    }
+
+    let header = html_nested!(
+        <TableHeader<Column>>
+            <TableColumn<Column> index={Column::Name} label="Name" />
+            <TableColumn<Column> index={Column::Version} label="Version" />
+        </TableHeader<Column>>
+    );
+
+    let (entries, onexpand) = use_table_data(MemoizedTableModel::new(props.packages.clone()));
+
+    html!(
+        <Table<Column, UseTableData<Column, MemoizedTableModel<PackageInformation>>>
+            mode={TableMode::Compact}
+            {header}
+            {entries}
+            {onexpand}
+        />
+
     )
 }

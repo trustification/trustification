@@ -73,6 +73,7 @@ pub async fn search(state: web::Data<SharedState>, params: web::Query<search::Qu
                     description: item.description,
                     dependencies: item.dependencies,
                     advisories: Vec::new(),
+                    created: item.created,
                 });
             }
 
