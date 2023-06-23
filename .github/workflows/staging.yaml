@@ -17,7 +17,7 @@ on:
         default: latest
 
 env:
-  RELEASE_TAG: ${{ inputs.imageTag }}
+  RELEASE_TAG: ${{ inputs.releaseTag }}
 
 jobs:
   tag:
