@@ -145,9 +145,6 @@ jobs:
       contents: write
       packages: write
       id-token: write # for using OIDC tokens
-    strategy:
-      matrix:
-        name: ["trust", "trust-ui", "trust-docs"]
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout
@@ -257,12 +254,16 @@ jobs:
 
       - name: Generate container SBOM
         run: |
-          syft ~/download/${{ matrix.name }}-container/${{ matrix.name }}-image.tar --output cyclonedx-json --catalogers rpm,cargo-auditable > staging/${{ matrix.name }}.sbom.json
-          cyclonedx merge --input-files staging/${{ matrix.name }}.sbom.json staging/trust-ui.project.sbom.json --output-file staging/${{ matrix.name }}.sbom.json
+          for container in trust trust-ui trust-docs; do
+            syft ~/download/${container}-container/${container}-image.tar --output cyclonedx-json --catalogers rpm,cargo-auditable > staging/${container}.sbom.json
+            cyclonedx merge --input-files staging/${container}.sbom.json staging/trust-ui.project.sbom.json --output-file staging/${container}.sbom.json
+          done
 
       - name: Load container
         run: |
-            podman load --input ~/download/${{ matrix.name }}-container/${{ matrix.name }}-image.tar
+          for container in trust trust-ui trust-docs; do
+            podman load --input ~/download/${container}-container/${container}-image.tar
+          done
 
       - name: Log in to ghcr.io
         uses: redhat-actions/podman-login@v1
@@ -273,40 +274,47 @@ jobs:
 
       - name: Push to ghcr.io
         id: push-images
-        env:
-          IMAGE: "ghcr.io/${{ github.repository_owner }}/${{ matrix.name }}:${{ needs.init.outputs.version }}"
         run: |
-          podman push \
-            "${{ matrix.name }}:${{ needs.init.outputs.version }}" \
-            "${IMAGE}" \
-            --digestfile "${RUNNER_TEMP}/push.digest"
-          echo "imageDigest=$(cat ${RUNNER_TEMP}/push.digest)" >> $GITHUB_OUTPUT
+          for container in trust trust-ui trust-docs; do
+            IMAGE="ghcr.io/${{ github.repository_owner }}/${container}:${{ needs.init.outputs.version }}"
+            podman push \
+              "${container}:${{ needs.init.outputs.version }}" \
+              "${IMAGE}" \
+              --digestfile "${RUNNER_TEMP}/push.digest"
+            echo "imageDigest${container}=$(cat ${RUNNER_TEMP}/push.digest)" >> $GITHUB_OUTPUT
             rm ${RUNNER_TEMP}/push.digest
+          done
 
 
       - name: Sign the images with GitHub OIDC Token
         env:
           COSIGN_EXPERIMENTAL: true
         run: |
-          imageDigest="${{ steps.push-images.outputs.imageDigest }}"
-          echo "Image Digest: ${imageDigest}"
-          # and then construct the full (pushed) name
-          cosign sign --yes --recursive "ghcr.io/${{ github.repository_owner }}/${{ matrix.name }}@${imageDigest}"
+          for container in trust trust-ui trust-docs; do
+            imageDigest="${{ steps.push-images.outputs.imageDigest }}${container}"
+            echo "Image Digest: ${imageDigest}"
+            # and then construct the full (pushed) name
+            cosign sign --yes --recursive "ghcr.io/${{ github.repository_owner }}/${container}@${imageDigest}"
+          done
 
       - name: Attach container SBOM information
         env:
           COSIGN_EXPERIMENTAL: true
-          IMAGE: "ghcr.io/${{ github.repository_owner }}/${{ matrix.name }}:${{ needs.init.outputs.version }}"
         run: |
-          # attach and sign SBOM
-          cosign attach sbom --sbom staging/${{ matrix.name }}.sbom.json --input-format json --type cyclonedx ${IMAGE}
-          cosign sign --attachment sbom ${IMAGE}
-          # attach SBOM as attestation
-          cosign attest --yes --recursive  --type cyclonedx --predicate staging/${{ matrix.name  }}.sbom.json ${IMAGE}
+          for container in trust trust-ui trust-docs; do
+            IMAGE="ghcr.io/${{ github.repository_owner }}/${container}:${{ needs.init.outputs.version }}"
+            # attach and sign SBOM
+            cosign attach sbom --sbom staging/${container}.sbom.json --input-format json --type cyclonedx ${IMAGE}
+            cosign sign --attachment sbom ${IMAGE}
+            # attach SBOM as attestation
+            cosign attest --yes --recursive  --type cyclonedx --predicate staging/${container}.sbom.json ${IMAGE}
+          done
 
       - run: |
-          cp ~/download/${{ matrix.name }}-container/${{ matrix.name }}-image.tar staging/${{ matrix.name }}-container.tar
-          xz staging/${{ matrix.name }}-container.tar
+          for container in trust trust-ui trust-docs; do
+            cp ~/download/${container}-container/${container}-image.tar staging/${container}-container.tar
+            xz staging/${container}-container.tar
+          done
 
       - name: Display staging area
         run: ls -R staging
