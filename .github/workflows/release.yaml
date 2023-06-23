@@ -142,7 +142,7 @@ jobs:
   publish:
     needs: [ init, build, containers ]
     permissions:
-      contents: read
+      contents: write
       packages: write
       id-token: write # for using OIDC tokens
     strategy:
