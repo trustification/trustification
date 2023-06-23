@@ -5371,6 +5371,7 @@ dependencies = [
  "tokio",
  "tokio-util",
  "tracing",
+ "trustification-version",
  "urlencoding",
 ]
 

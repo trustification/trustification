@@ -6,13 +6,15 @@ use std::marker::Unpin;
 use async_stream::try_stream;
 use bytes::{Buf, Bytes};
 use futures::{future::ok, stream::once, Stream, StreamExt};
-use http::{header::CONTENT_ENCODING, HeaderValue, StatusCode};
+use http::{header::CONTENT_ENCODING, StatusCode};
 use s3::{creds::error::CredentialsError, error::S3Error, Bucket};
 pub use s3::{creds::Credentials, Region};
 use serde::Deserialize;
+use trustification_version::version;
 
 pub struct Storage {
     bucket: Bucket,
+    version: String,
 }
 
 #[derive(Clone, Debug, clap::Parser)]
@@ -117,7 +119,6 @@ impl From<http::header::InvalidHeaderValue> for Error {
 const DATA_PATH: &str = "/data/";
 const INDEX_PATH: &str = "/index";
 const VERSION_HEADER: &str = "x-amz-meta-version";
-const VERSION: u32 = 1;
 
 pub struct Head {
     pub status: StatusCode,
@@ -145,7 +146,8 @@ impl Storage {
 
         let bucket = config.bucket.as_deref().expect("Required parameter bucket was not set");
         let bucket = Bucket::new(bucket, region, credentials)?.with_path_style();
-        Ok(Self { bucket })
+        let version = version!().version.full;
+        Ok(Self { bucket, version })
     }
 
     pub fn is_index(&self, key: &str) -> bool {
@@ -177,11 +179,8 @@ impl Storage {
         E: Into<std::io::Error>,
     {
         let mut headers = http::HeaderMap::new();
-        headers.insert(VERSION_HEADER, VERSION.into());
-        headers.insert(
-            CONTENT_ENCODING,
-            HeaderValue::from_str(encoding.unwrap_or("zstd")).unwrap(),
-        );
+        headers.insert(VERSION_HEADER, self.version.parse().unwrap());
+        headers.insert(CONTENT_ENCODING, encoding.unwrap_or("zstd").parse().unwrap());
         let bucket = self.bucket.with_extra_headers(headers);
         let path = format!("{}{}", DATA_PATH, key);
         let mut rdr = stream::encode(encoding, data)?;
