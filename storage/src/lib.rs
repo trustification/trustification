@@ -170,7 +170,7 @@ impl Storage {
         content_type: &'a str,
         encoding: Option<&str>,
         data: &mut S,
-    ) -> Result<u16, Error>
+    ) -> Result<usize, Error>
     where
         S: Stream<Item = Result<B, E>> + Unpin,
         B: Buf + 'a,
@@ -187,10 +187,11 @@ impl Storage {
         let mut rdr = stream::encode(encoding, data)?;
         Ok(bucket
             .put_object_stream_with_content_type(&mut rdr, path, content_type)
-            .await?)
+            .await?
+            .uploaded_bytes())
     }
 
-    pub async fn put_json_slice<'a>(&self, key: &'a str, json: &'a [u8]) -> Result<u16, Error> {
+    pub async fn put_json_slice<'a>(&self, key: &'a str, json: &'a [u8]) -> Result<usize, Error> {
         let mut stream = once(ok::<_, std::io::Error>(json));
         self.put_stream(key, "application/json", None, &mut stream).await
     }
