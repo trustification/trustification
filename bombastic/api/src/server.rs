@@ -234,12 +234,13 @@ async fn publish_sbom(
         PayloadError::Io(e) => e,
         _ => io::Error::new(io::ErrorKind::Other, e),
     });
-    let status = storage
+    let size = storage
         .put_stream(id, typ.as_ref(), enc, &mut payload)
         .await
         .map_err(Error::Storage)?;
-    tracing::trace!("SBOM stored with status code: {status}");
-    Ok(HttpResponse::Created().finish())
+    let msg = format!("Successfully uploaded SBOM: id={id}, size={size}");
+    tracing::info!(msg);
+    Ok(HttpResponse::Created().body(msg))
 }
 
 fn verify_type(content_type: Option<web::Header<ContentType>>) -> Result<ContentType, Error> {
