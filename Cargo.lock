@@ -5584,6 +5584,8 @@ dependencies = [
  "trustification-index",
  "trustification-infrastructure",
  "trustification-storage",
+ "utoipa",
+ "utoipa-swagger-ui",
  "vexination-index",
  "vexination-model",
  "zstd",

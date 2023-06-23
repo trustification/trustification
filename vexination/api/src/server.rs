@@ -1,19 +1,31 @@
 use std::{net::SocketAddr, sync::Arc, time::Duration};
 
 use actix_web::{
+    get,
     http::header::{self, ContentType},
     middleware::{Compress, Logger},
+    route,
     web::{self, Bytes},
     App, HttpResponse, HttpServer, Responder,
 };
 use serde::Deserialize;
 use tokio::sync::{Mutex, RwLock};
 use trustification_storage::Storage;
+use utoipa::OpenApi;
+use utoipa_swagger_ui::SwaggerUi;
 use vexination_model::prelude::*;
 
 use crate::SharedState;
 
+#[derive(OpenApi)]
+#[openapi(
+    paths(fetch_vex, publish_vex, search_vex),
+    components(schemas(SearchDocument, SearchResult),)
+)]
+pub struct ApiDoc;
+
 pub async fn run<B: Into<SocketAddr>>(state: SharedState, bind: B) -> Result<(), anyhow::Error> {
+    let openapi = ApiDoc::openapi();
     let addr = bind.into();
     tracing::debug!("listening on {}", addr);
     HttpServer::new(move || {
@@ -24,10 +36,11 @@ pub async fn run<B: Into<SocketAddr>>(state: SharedState, bind: B) -> Result<(),
             .app_data(web::Data::new(state.clone()))
             .service(
                 web::scope("/api/v1")
-                    .route("/vex", web::get().to(query_vex))
-                    .route("/vex", web::post().to(publish_vex))
-                    .route("/vex/search", web::get().to(search_vex)),
+                    .service(fetch_vex)
+                    .service(publish_vex)
+                    .service(search_vex),
             )
+            .service(SwaggerUi::new("/swagger-ui/{_:.*}").url("/openapi.json", openapi.clone()))
     })
     .bind(addr)?
     .run()
@@ -45,25 +58,56 @@ async fn fetch_object(storage: &Storage, key: &str) -> HttpResponse {
     }
 }
 
-async fn health() -> HttpResponse {
-    HttpResponse::Ok().finish()
-}
-
+/// Parameters passed when fetching an advisory.
 #[derive(Debug, Deserialize)]
 struct QueryParams {
+    /// Identifier of the advisory to get
     advisory: String,
 }
 
-async fn query_vex(state: web::Data<SharedState>, params: web::Query<QueryParams>) -> HttpResponse {
+/// Retrieve an SBOM using its identifier.
+#[utoipa::path(
+    get,
+    tag = "vexination",
+    path = "/api/v1/vex",
+    responses(
+        (status = 200, description = "VEX found"),
+        (status = NOT_FOUND, description = "VEX not found in archive"),
+        (status = BAD_REQUEST, description = "Missing valid id or index entry"),
+    ),
+    params(
+        ("advisory" = String, Query, description = "Identifier of VEX to fetch"),
+    )
+)]
+#[get("/vex")]
+async fn fetch_vex(state: web::Data<SharedState>, params: web::Query<QueryParams>) -> HttpResponse {
     let storage = state.storage.read().await;
     fetch_object(&storage, &params.advisory).await
 }
 
+/// Parameters passed when publishing advisory.
 #[derive(Debug, Deserialize)]
 struct PublishParams {
+    /// Optional: Advisory identifier (overrides identifier derived from document)
     advisory: Option<String>,
 }
 
+/// Upload a VEX document.
+///
+/// The document must be in the CSAF v2.0 format.
+#[utoipa::path(
+    put,
+    tag = "vexination",
+    path = "/api/v1/vex",
+    responses(
+        (status = 200, description = "VEX uploaded successfully"),
+        (status = BAD_REQUEST, description = "Missing valid id"),
+    ),
+    params(
+        ("advisory" = String, Query, description = "Identifier assigned to the VEX"),
+    )
+)]
+#[route("/vex", method = "PUT", method = "POST")]
 async fn publish_vex(state: web::Data<SharedState>, params: web::Query<PublishParams>, data: Bytes) -> HttpResponse {
     let params = params.into_inner();
     let advisory = if let Some(advisory) = params.advisory {
@@ -94,11 +138,15 @@ async fn publish_vex(state: web::Data<SharedState>, params: web::Query<PublishPa
     }
 }
 
+/// Parameters for search query.
 #[derive(Debug, Deserialize)]
 pub struct SearchParams {
+    /// Search query string
     pub q: String,
+    /// Offset of documents to return (for pagination)
     #[serde(default = "default_offset")]
     pub offset: usize,
+    /// Max number of documents to return
     #[serde(default = "default_limit")]
     pub limit: usize,
 }
@@ -111,6 +159,22 @@ const fn default_limit() -> usize {
     10
 }
 
+/// Search for a VEX using a free form search query.
+///
+/// See the [documentation](https://docs.trustification.dev/trustification/user/retrieve.html) for a description of the query language.
+#[utoipa::path(
+    get,
+    tag = "vexination",
+    path = "/api/v1/vex/search",
+    responses(
+        (status = 200, description = "Search completed"),
+        (status = BAD_REQUEST, description = "Bad query"),
+    ),
+    params(
+        ("q" = String, Query, description = "Search query"),
+    )
+)]
+#[get("/vex/search")]
 async fn search_vex(state: web::Data<SharedState>, params: web::Query<SearchParams>) -> impl Responder {
     let params = params.into_inner();
 

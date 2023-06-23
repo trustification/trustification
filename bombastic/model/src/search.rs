@@ -21,12 +21,12 @@ pub struct SearchDocument {
     pub classifier: String,
     /// SBOM description
     pub description: String,
-    /// Snippet highlighting part of description that matched.
+    /// Snippet highlighting part of description that matched
     pub snippet: String,
-    /// SBOM creation time in RFC3339 format.
+    /// SBOM creation time in RFC3339 format
     #[schema(value_type = String)]
     pub created: time::OffsetDateTime,
-    /// List of dependency package names that matched.
+    /// List of dependency package names that matched
     pub dependencies: Vec<String>,
 }
 
