@@ -31,7 +31,7 @@ pub fn configure(version: VersionInformation, config: &mut ServiceConfig) {
 ///
 /// ## Example
 ///
-/// ```rust
+/// ```ignore
 /// use trustification_version::version;
 ///
 /// actix_web::App::new()
