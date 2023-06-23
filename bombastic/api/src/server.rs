@@ -26,7 +26,6 @@ use utoipa_swagger_ui::SwaggerUi;
 
 #[derive(OpenApi)]
 #[openapi(
-    info(description = "Bombastic REST API for fetching, publishing and searching SBOM data"),
     paths(query_sbom, publish_sbom, search_sbom, delete_sbom),
     components(schemas(SearchDocument, SearchResult),)
 )]
@@ -96,8 +95,10 @@ impl error::ResponseError for Error {
     }
 }
 
+/// Parameters to fetch and publish requests.
 #[derive(Debug, Deserialize)]
 struct IdentifierParams {
+    /// Identifier of SBOM
     id: String,
 }
 
@@ -146,11 +147,15 @@ async fn query_sbom(
     }
 }
 
+/// Parameters for search query.
 #[derive(Debug, Deserialize)]
 pub struct SearchParams {
+    /// Search query string
     pub q: String,
+    /// Offset of documents to return (for pagination)
     #[serde(default = "default_offset")]
     pub offset: usize,
+    /// Max number of documents to return
     #[serde(default = "default_limit")]
     pub limit: usize,
 }
@@ -206,7 +211,7 @@ async fn search_sbom(
     tag = "bombastic",
     path = "/api/v1/sbom",
     responses(
-        (status = 200, description = "SBOM found"),
+        (status = 200, description = "SBOM uploaded successfully"),
         (status = BAD_REQUEST, description = "Missing valid id"),
     ),
     params(
