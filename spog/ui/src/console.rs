@@ -43,6 +43,12 @@ pub fn console() -> Html {
                             if let Ok(url) = backend.join(Endpoint::Api, "/swagger-ui/") {
                                 <NavItem external=true target="_blank" to={url.to_string()}>{ "API" }</NavItem>
                             }
+                            if let Ok(url) = backend.join(Endpoint::Bombastic, "/swagger-ui/") {
+                                <NavItem external=true target="_blank" to={url.to_string()}>{ "SBOM API" }</NavItem>
+                            }
+                            if let Ok(url) = backend.join(Endpoint::Vexination, "/swagger-ui/") {
+                                <NavItem external=true target="_blank" to={url.to_string()}>{ "VEX API" }</NavItem>
+                            }
                         </NavExpandable>
                     </NavList>
                 </Nav>
