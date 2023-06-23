@@ -25,7 +25,11 @@ use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
 #[derive(OpenApi)]
-#[openapi(paths(query_sbom, publish_sbom, search_sbom, delete_sbom))]
+#[openapi(
+    info(description = "Bombastic REST API for fetching, publishing and searching SBOM data"),
+    paths(query_sbom, publish_sbom, search_sbom, delete_sbom),
+    components(schemas(SearchDocument, SearchResult),)
+)]
 pub struct ApiDoc;
 
 pub async fn run<B: Into<SocketAddr>>(state: SharedState, bind: B) -> Result<(), anyhow::Error> {
@@ -97,8 +101,10 @@ struct IdentifierParams {
     id: String,
 }
 
+/// Retrieve an SBOM using its identifier.
 #[utoipa::path(
     get,
+    tag = "bombastic",
     path = "/api/v1/sbom",
     responses(
         (status = 200, description = "SBOM found"),
@@ -106,7 +112,7 @@ struct IdentifierParams {
         (status = BAD_REQUEST, description = "Missing valid id or index entry"),
     ),
     params(
-        ("id" = String, Query, description = "Package URL or CPE of SBOM to query"),
+        ("id" = String, Query, description = "Identifier of SBOM to fetch"),
     )
 )]
 #[get("/sbom")]
@@ -157,8 +163,12 @@ const fn default_limit() -> usize {
     10
 }
 
+/// Search for an SBOM using a free form search query.
+///
+/// See the [documentation](https://docs.trustification.dev/trustification/user/retrieve.html) for a description of the query language.
 #[utoipa::path(
     get,
+    tag = "bombastic",
     path = "/api/v1/sbom/search",
     responses(
         (status = 200, description = "Search completed"),
@@ -188,15 +198,19 @@ async fn search_sbom(
     }))
 }
 
+/// Upload an SBOM with an identifier.
+///
+/// Clients may split the transfer using multipart uploads. The only supported content type is JSON, but content encoding can be unset, bzip2 or zstd.
 #[utoipa::path(
     put,
+    tag = "bombastic",
     path = "/api/v1/sbom",
     responses(
         (status = 200, description = "SBOM found"),
         (status = BAD_REQUEST, description = "Missing valid id"),
     ),
     params(
-        ("id" = String, Query, description = "Package URL or product identifier of SBOM to query"),
+        ("id" = String, Query, description = "Identifier assigned to the SBOM"),
     )
 )]
 #[route("/sbom", method = "PUT", method = "POST")]
@@ -244,8 +258,10 @@ fn verify_encoding(content_encoding: Option<&HeaderValue>) -> Result<Option<&str
     }
 }
 
+/// Delete an SBOM using its identifier.
 #[utoipa::path(
     delete,
+    tag = "bombastic",
     path = "/api/v1/sbom",
     responses(
         (status = 204, description = "SBOM deleted"),
