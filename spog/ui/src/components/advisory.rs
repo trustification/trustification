@@ -1,11 +1,12 @@
 use crate::{
     backend::{Endpoint, SearchOptions, VexService},
-    hooks::use_backend::use_backend,
-    hooks::use_pagination_state::{use_pagination_state, UsePaginationStateArgs},
+    components::simple_pagination::SimplePagination,
+    hooks::{
+        use_backend::use_backend,
+        use_pagination_state::{use_pagination_state, UsePaginationStateArgs},
+    },
     utils::pagination_to_offset,
 };
-
-use crate::{components::cvss::CvssScore, components::simple_pagination::SimplePagination, utils::cvss::Cvss};
 use patternfly_yew::prelude::*;
 use spog_model::prelude::*;
 use std::rc::Rc;

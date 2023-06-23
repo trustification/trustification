@@ -35,6 +35,7 @@ pub fn console() -> Html {
                         <NavRouterItem<AppRoute> to={AppRoute::Index}>{ "Trusted Content" }</NavRouterItem<AppRoute>>
                         <NavExpandable title="Search">
                             <NavRouterItem<AppRoute> to={AppRoute::Package{query: Default::default()}} predicate={AppRoute::is_package}>{ "Packages" }</NavRouterItem<AppRoute>>
+                            <NavRouterItem<AppRoute> to={AppRoute::Catalog{query: Default::default()}} predicate={AppRoute::is_catalog}>{ "Catalog" }</NavRouterItem<AppRoute>>
                             <NavRouterItem<AppRoute> to={AppRoute::Advisory{query: Default::default()}} predicate={AppRoute::is_advisory}>{ "Advisories" }</NavRouterItem<AppRoute>>
                             //<NavRouterItem<AppRoute> to={AppRoute::Vulnerability{query: Default::default()}} predicate={AppRoute::is_vulnerability}>{ "Vulnerabilities" }</NavRouterItem<AppRoute>>
     //                        <NavRouterItem<AppRoute> to={AppRoute::SBOM}>{ "Analyze SBOM" }</NavRouterItem<AppRoute>>
@@ -98,6 +99,8 @@ fn render(route: AppRoute) -> Html {
         AppRoute::Index => html!(<pages::Index/>),
         AppRoute::Chicken => html!(<pages::Chicken/>),
         AppRoute::Package { query } => html!(<pages::Package {query}/>),
+        AppRoute::Catalog { query } => html!(<pages::Catalog {query}/>),
+        AppRoute::SBOM { id } => html!(<pages::SBOM {id}/>),
         AppRoute::Advisory { query } => html!(<pages::Advisory {query}/>),
         // AppRoute::Vulnerability { query } => html!(<pages::Vulnerability {query}/>),
         //        AppRoute::SBOM => html!(<pages::SBOM/>),

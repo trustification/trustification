@@ -6,19 +6,17 @@ use yew::prelude::*;
 use yew_more_hooks::hooks::r#async::*;
 
 use crate::components::{
-    async_state_renderer::AsyncStateRenderer,
-    common::PageHeading,
-    package::{PackageResult, PackageSearch},
+    async_state_renderer::AsyncStateRenderer, catalog::CatalogSearch, common::PageHeading, package::PackageResult,
 };
 
 #[derive(Clone, Debug, PartialEq, Eq, Properties)]
-pub struct PackageProps {
+pub struct CatalogProps {
     #[prop_or_default]
     pub query: Option<String>,
 }
 
-#[function_component(Package)]
-pub fn package(props: &PackageProps) -> Html {
+#[function_component(Catalog)]
+pub fn catalog(props: &CatalogProps) -> Html {
     let search = use_state_eq(UseAsyncState::default);
     let callback = {
         let search = search.clone();
@@ -32,18 +30,18 @@ pub fn package(props: &PackageProps) -> Html {
 
     html!(
         <>
-            <PageHeading subtitle="Search packages">{"Packages"}</PageHeading>
+            <PageHeading subtitle="Search for SBOMs">{"Package Catalog"}</PageHeading>
 
             // We need to set the main section to fill, as we have a footer section
-            <PageSection variant={PageSectionVariant::Default} fill={PageSectionFill::Fill}>
-                <PackageSearch {callback} {query} />
-
-                <AsyncStateRenderer<PackageSummary>
-                    state={(*search).clone()}
-                    on_ready={Callback::from(move |result| {
-                        html!(<PackageResult {result} />)
-                    })}
-                />
+            <PageSection variant={PageSectionVariant::Light} fill={PageSectionFill::Fill}>
+                <CatalogSearch {callback} {query}>
+                    <AsyncStateRenderer<PackageSummary>
+                        state={(*search).clone()}
+                        on_ready={Callback::from(move |result| {
+                            html!(<PackageResult {result} />)
+                        })}
+                    />
+                </CatalogSearch>
             </PageSection>
         </>
     )

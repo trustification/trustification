@@ -28,7 +28,7 @@ pub struct PackageSearchProperties {
 pub fn package_search(props: &PackageSearchProperties) -> Html {
     let backend = use_backend();
 
-    let service = use_memo(|backend| PackageService::new((**backend).clone()), backend.clone());
+    let service = use_memo(|backend| PackageService::new(backend.clone()), backend.clone());
 
     let offset = use_state_eq(|| 0);
     let limit = use_state_eq(|| 10);
@@ -195,6 +195,7 @@ impl PartialEq for PackageResultProperties {
 pub enum Column {
     Name,
     Supplier,
+    Created,
     Download,
     Dependencies,
     Advisories,
@@ -210,20 +211,22 @@ pub struct PackageEntry {
 impl TableEntryRenderer<Column> for PackageEntry {
     fn render_cell(&self, context: &CellContext<'_, Column>) -> Cell {
         match context.column {
-            Column::Name => html!(&self.package.name).into(),
+            Column::Name => {
+                html!(
+                    <Link<AppRoute>
+                        target={AppRoute::SBOM { id: self.package.id.clone() }}
+                    >{ &self.package.name }</Link<AppRoute>>
+                ).into()
+            },
             Column::Supplier => html!(&self.package.supplier).into(),
-            Column::Download => {
+            Column::Created => html!(self.package.created.date().to_string()).into(),
+            Column::Download => html!(
                 if let Some(url) = &self.url {
-                    html!(
-                        <a href={url.as_str().to_string()}>
-                            <Button icon={Icon::Download} variant={ButtonVariant::Plain} />
-                        </a>
-                    )
-                    .into()
-                } else {
-                    html!().into()
+                    <a href={url.as_str().to_string()} target="_blank">
+                        <Button icon={Icon::Download} variant={ButtonVariant::Plain} />
+                    </a>
                 }
-            }
+            ).into(),
             Column::Dependencies => html!(&self.package.dependencies.len()).into(),
             Column::Advisories => {
                 html!(<Link<AppRoute> target={AppRoute::Advisory { query: format!("affected:\"{}\"", self.package.purl)}}>{self.package.advisories.len()}</Link<AppRoute>>).into()
@@ -265,9 +268,10 @@ pub fn package_result(props: &PackageResultProperties) -> Html {
             <TableColumn<Column> label="Name" index={Column::Name} width={ColumnWidth::Percent(15)}/>
             <TableColumn<Column> label="Version" index={Column::Version} width={ColumnWidth::Percent(20)}/>
             <TableColumn<Column> label="Supplier" index={Column::Supplier} width={ColumnWidth::Percent(20)}/>
-            <TableColumn<Column> label="Download" index={Column::Download} width={ColumnWidth::Percent(15)}/>
+            <TableColumn<Column> label="Created" index={Column::Created} width={ColumnWidth::Percent(10)}/>
             <TableColumn<Column> label="Dependencies" index={Column::Dependencies} width={ColumnWidth::Percent(10)}/>
             <TableColumn<Column> label="Advisories" index={Column::Advisories} width={ColumnWidth::Percent(10)}/>
+            <TableColumn<Column> label="Download" index={Column::Download} width={ColumnWidth::FitContent}/>
         </TableHeader<Column>>
     };
 
