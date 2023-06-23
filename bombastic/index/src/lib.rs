@@ -18,7 +18,7 @@ use tantivy::{
 use time::format_description::well_known::Rfc3339;
 use tracing::{debug, info, warn};
 use trustification_index::{
-    create_boolean_query, create_date_query, field2str, field2strvec, primary2occur,
+    create_boolean_query, create_date_query, create_string_query, create_text_query, field2str, field2strvec,
     tantivy::{
         doc,
         query::{Occur, Query},
@@ -302,7 +302,7 @@ impl Index {
 
     fn resource2query(&self, resource: &Packages) -> Box<dyn Query> {
         match resource {
-            Packages::Package(primary) => self.match_boolean_union(
+            Packages::Package(primary) => self.create_string_query(
                 &[
                     self.fields.sbom.name,
                     self.fields.sbom.purl,
@@ -312,27 +312,27 @@ impl Index {
                 primary,
             ),
 
-            Packages::Type(primary) => self.match_boolean_union(&[self.fields.sbom.purl_type], primary),
+            Packages::Type(primary) => self.create_string_query(&[self.fields.sbom.purl_type], primary),
 
-            Packages::Namespace(primary) => self.match_boolean_union(&[self.fields.sbom.purl_namespace], primary),
+            Packages::Namespace(primary) => self.create_string_query(&[self.fields.sbom.purl_namespace], primary),
 
             Packages::Created(ordered) => create_date_query(self.fields.sbom_created, ordered),
 
             Packages::Version(primary) => {
-                self.match_boolean_union(&[self.fields.sbom.purl_version, self.fields.sbom.version], primary)
+                self.create_string_query(&[self.fields.sbom.purl_version, self.fields.sbom.version], primary)
             }
 
-            Packages::Description(primary) => self.match_boolean_union(&[self.fields.sbom.desc], primary),
+            Packages::Description(primary) => self.create_text_query(&[self.fields.sbom.desc], primary),
 
-            Packages::Digest(primary) => self.match_boolean_union(&[self.fields.sbom.sha256], primary),
+            Packages::Digest(primary) => self.create_string_query(&[self.fields.sbom.sha256], primary),
 
-            Packages::License(primary) => self.match_boolean_union(&[self.fields.sbom.license], primary),
+            Packages::License(primary) => self.create_string_query(&[self.fields.sbom.license], primary),
 
-            Packages::Supplier(primary) => self.match_boolean_union(&[self.fields.sbom.supplier], primary),
+            Packages::Supplier(primary) => self.create_string_query(&[self.fields.sbom.supplier], primary),
 
-            Packages::Qualifier(primary) => self.match_boolean_union(&[self.fields.sbom.purl_qualifiers], primary),
+            Packages::Qualifier(primary) => self.create_string_query(&[self.fields.sbom.purl_qualifiers], primary),
 
-            Packages::Dependency(primary) => self.match_boolean_union(
+            Packages::Dependency(primary) => self.create_string_query(
                 &[
                     self.fields.dep.name,
                     self.fields.dep.purl_name,
@@ -353,24 +353,24 @@ impl Index {
         }
     }
 
-    fn match_boolean_union(&self, fields: &[Field], value: &Primary<'_>) -> Box<dyn Query> {
-        let (occur, value) = primary2occur(value);
-        let queries: Vec<Box<dyn Query>> = fields
-            .iter()
-            .map(|f| create_boolean_query(occur, Term::from_field_text(*f, value)))
-            .collect();
+    fn create_string_query(&self, fields: &[Field], value: &Primary<'_>) -> Box<dyn Query> {
+        let queries: Vec<Box<dyn Query>> = fields.iter().map(|f| create_string_query(*f, value)).collect();
+        Box::new(BooleanQuery::union(queries))
+    }
 
+    fn create_text_query(&self, fields: &[Field], value: &Primary<'_>) -> Box<dyn Query> {
+        let queries: Vec<Box<dyn Query>> = fields.iter().map(|f| create_text_query(*f, value)).collect();
         Box::new(BooleanQuery::union(queries))
     }
 
     fn match_classifiers(&self, classification: Classification) -> Box<dyn Query> {
         Box::new(BooleanQuery::union(vec![
             create_boolean_query(
-                Occur::Must,
+                Occur::Should,
                 Term::from_field_text(self.fields.sbom.classifier, &classification.to_string()),
             ),
             create_boolean_query(
-                Occur::Must,
+                Occur::Should,
                 Term::from_field_text(self.fields.dep.classifier, &classification.to_string()),
             ),
         ]))
@@ -567,6 +567,9 @@ mod tests {
             assert_eq!(result.0.len(), 1);
 
             let result = index.search("ubi9-container in:package", 0, 100).unwrap();
+            assert_eq!(result.0.len(), 1);
+
+            let result = index.search("ubi9-containe in:package", 0, 100).unwrap();
             assert_eq!(result.0.len(), 1);
         });
     }

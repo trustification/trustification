@@ -7,7 +7,7 @@ pub use tantivy::schema::Document;
 use tantivy::{
     collector::{Count, TopDocs},
     directory::{MmapDirectory, INDEX_WRITER_LOCK},
-    query::{BooleanQuery, Occur, Query, RangeQuery, TermQuery},
+    query::{BooleanQuery, Occur, Query, RangeQuery, RegexQuery, TermQuery},
     schema::*,
     DateTime, Directory, Index as SearchIndex, IndexSettings, Searcher,
 };
@@ -301,11 +301,33 @@ pub fn create_date_query(field: Field, value: &Ordered<time::OffsetDateTime>) ->
     }
 }
 
-/// Convert a sikula primary to a tantivy Occur
-pub fn primary2occur<'m>(primary: &Primary<'m>) -> (Occur, &'m str) {
+/// Convert a sikula primary to a tantivy query for string fields
+pub fn create_string_query<'m>(field: Field, primary: &Primary<'m>) -> Box<dyn Query> {
     match primary {
-        Primary::Equal(value) => (Occur::Must, value),
-        Primary::Partial(value) => (Occur::Should, value),
+        Primary::Equal(value) => Box::new(TermQuery::new(Term::from_field_text(field, value), Default::default())),
+        Primary::Partial(value) => {
+            // Note: This could be expensive so consider alternatives
+            let pattern = format!(".*{}.*", value);
+            let mut queries: Vec<Box<dyn Query>> = Vec::new();
+            if let Ok(query) = RegexQuery::from_pattern(&pattern, field) {
+                queries.push(Box::new(query));
+            } else {
+                warn!("Unable to partial query from {}", pattern);
+            }
+            queries.push(Box::new(TermQuery::new(
+                Term::from_field_text(field, value),
+                Default::default(),
+            )));
+            Box::new(BooleanQuery::union(queries))
+        }
+    }
+}
+
+/// Convert a sikula primary to a tantivy query for text fields
+pub fn create_text_query<'m>(field: Field, primary: &Primary<'m>) -> Box<dyn Query> {
+    match primary {
+        Primary::Equal(value) => Box::new(TermQuery::new(Term::from_field_text(field, value), Default::default())),
+        Primary::Partial(value) => Box::new(TermQuery::new(Term::from_field_text(field, value), Default::default())),
     }
 }
 
