@@ -1,11 +1,21 @@
-use patternfly_yew::prelude::*;
-use yew::prelude::*;
-
+use crate::backend::VersionService;
 use crate::hooks::use_backend::use_backend;
+use patternfly_yew::prelude::*;
+use std::rc::Rc;
+use trustification_version::{version, VersionInformation};
+use yew::prelude::*;
+use yew_more_hooks::hooks::*;
 
 #[function_component(About)]
 pub fn about() -> Html {
     let backend = use_backend();
+
+    let version = use_memo(|()| version!(), ());
+
+    let remote = use_async_with_cloned_deps(
+        |backend| async { VersionService::new(backend).get_version().await.map(Rc::new) },
+        backend.clone(),
+    );
 
     html!(
         <Bullseye plain=true>
@@ -17,25 +27,59 @@ pub fn about() -> Html {
                 trademark="Copyright © 2020, 2023 by the Chickens"
             >
                 <Content>
-                    <p>{ env!("CARGO_PKG_DESCRIPTION") }</p>
+                    <p>{ &version.description }</p>
+                    // width is required to better align
                     <dl style="width: 100%">
-                        <dt>{ "Version" }</dt>
-                        <dd>{ env!("CARGO_PKG_VERSION") }</dd>
-                        <dt>{ "License" }</dt>
-                        <dd>{ env!("CARGO_PKG_LICENSE") }</dd>
-                        if let Some(commit) = option_env!("BUILD_COMMIT") {
-                            <dt>{ "Commit" }</dt>
-                            <dd>{ commit }</dd>
-                        }
-                        if let Some(tag) = option_env!("TAG") {
-                            <dt>{ "Tag" }</dt>
-                            <dd>{ tag }</dd>
-                        }
+                        <dt>{ "Frontend" }</dt>
+                        <dd>
+                            <VersionInfo {version}/>
+                        </dd>
+
                         <dt>{ "Backend" }</dt>
-                        <dd>{ backend.endpoints.url.to_string() }</dd>
+                        <dd>
+                            <p> { backend.endpoints.url.to_string() } </p>
+                            {
+                                match &*remote {
+                                    UseAsyncState::Pending | UseAsyncState::Processing => {
+                                        html!( <Spinner/> )
+                                    },
+                                    UseAsyncState::Ready(Ok(result)) => {
+                                        html!(<>
+                                            <VersionInfo version={result.clone()} />
+                                        </>)
+                                    },
+                                    UseAsyncState::Ready(Err(err)) => html! (
+                                        format!("Failed to retrieve version: {err}")
+                                    ),
+                                }
+                            }
+                        </dd>
                     </dl>
+
                 </Content>
             </AboutModal>
         </Bullseye>
+    )
+}
+
+#[derive(PartialEq, Properties)]
+pub struct VersionInfoProperties {
+    pub version: Rc<VersionInformation>,
+}
+
+#[function_component(VersionInfo)]
+fn version_info(props: &VersionInfoProperties) -> Html {
+    html!(
+        <dl>
+            <dt>{ "Version" }</dt>
+            <dd>{ &props.version.version.full }</dd>
+            if let Some(info) = &props.version.git.describe {
+                <dt>{ "Git" }</dt>
+                <dd>{ &info }</dd>
+            }
+            <dt>{ "Build timestamp" }</dt>
+            <dd>{ &props.version.build.timestamp }</dd>
+
+        </dl>
     )
 }

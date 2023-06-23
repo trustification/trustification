@@ -6,11 +6,13 @@ pub mod data {
 
 mod pkg;
 mod sbom;
+mod version;
 mod vuln;
 
 pub use pkg::*;
 pub use sbom::*;
 use url::{ParseError, Url};
+pub use version::*;
 pub use vuln::*;
 use yew::html::IntoPropValue;
 

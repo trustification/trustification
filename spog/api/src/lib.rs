@@ -5,7 +5,7 @@ use trustification_infrastructure::{Infrastructure, InfrastructureConfig};
 mod advisory;
 //mod guac;
 //mod snyk;
-//mod index;
+mod index;
 //mod package;
 mod sbom;
 mod search;
