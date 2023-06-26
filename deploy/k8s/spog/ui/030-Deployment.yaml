@@ -32,6 +32,10 @@ spec:
           env:
             - name: API_URL
               value: REPLACE_WITH_BACKEND
+            - name: BOMBASTIC_URL
+              value: REPLACE_WITH_BACKEND
+            - name: VEXINATION_URL
+              value: REPLACE_WITH_BACKEND
           volumeMounts:
             - name: endpoints
               mountPath: /endpoints
