@@ -55,6 +55,5 @@ impl Cli {
 
 #[tokio::main]
 async fn main() -> impl Termination {
-    tracing_subscriber::fmt::init();
     Cli::parse().run().await
 }

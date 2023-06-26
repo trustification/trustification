@@ -27,7 +27,7 @@ pub struct ApiDoc;
 pub async fn run<B: Into<SocketAddr>>(state: SharedState, bind: B) -> Result<(), anyhow::Error> {
     let openapi = ApiDoc::openapi();
     let addr = bind.into();
-    tracing::debug!("listening on {}", addr);
+    log::debug!("listening on {}", addr);
     HttpServer::new(move || {
         App::new()
             .wrap(Logger::default())
@@ -52,7 +52,7 @@ async fn fetch_object(storage: &Storage, key: &str) -> HttpResponse {
     match storage.get_decoded_stream(key).await {
         Ok(stream) => HttpResponse::Ok().content_type(ContentType::json()).streaming(stream),
         Err(e) => {
-            tracing::warn!("Unable to locate object with key {}: {:?}", key, e);
+            log::warn!("Unable to locate object with key {}: {:?}", key, e);
             HttpResponse::NotFound().finish()
         }
     }
@@ -116,23 +116,23 @@ async fn publish_vex(state: web::Data<SharedState>, params: web::Query<PublishPa
         match serde_json::from_slice::<csaf::Csaf>(&data) {
             Ok(data) => data.document.tracking.id,
             Err(e) => {
-                tracing::warn!("Unknown input format: {:?}", e);
+                log::warn!("Unknown input format: {:?}", e);
                 return HttpResponse::BadRequest().into();
             }
         }
     };
 
     let storage = state.storage.write().await;
-    tracing::debug!("Storing new VEX with id: {advisory}");
+    log::debug!("Storing new VEX with id: {advisory}");
     match storage.put_json_slice(&advisory, &data).await {
         Ok(_) => {
             let msg = format!("VEX of size {} stored successfully", &data[..].len());
-            tracing::trace!(msg);
+            log::trace!("{}", msg);
             HttpResponse::Created().body(msg)
         }
         Err(e) => {
             let msg = format!("Error storing VEX: {:?}", e);
-            tracing::warn!(msg);
+            log::warn!("{}", msg);
             HttpResponse::InternalServerError().body(msg)
         }
     }
@@ -185,14 +185,14 @@ const fn default_explain() -> bool {
 async fn search_vex(state: web::Data<SharedState>, params: web::Query<SearchParams>) -> impl Responder {
     let params = params.into_inner();
 
-    tracing::info!("Querying VEX using {}", params.q);
+    log::info!("Querying VEX using {}", params.q);
 
     let index = state.index.read().await;
     let result = index.search(&params.q, params.offset, params.limit, params.explain);
 
     let result = match result {
         Err(e) => {
-            tracing::info!("Error searching: {:?}", e);
+            log::info!("Error searching: {:?}", e);
             return HttpResponse::InternalServerError().body(e.to_string());
         }
         Ok(result) => result,

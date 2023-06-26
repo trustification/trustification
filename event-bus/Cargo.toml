@@ -11,5 +11,5 @@ aws-sdk-sqs = "0.27.0"
 aws-config = "0.55.2"
 futures = "0.3"
 thiserror = "1.0"
-tracing = "0.1"
+log = "0.4"
 clap = { version = "4", features = ["derive"] }

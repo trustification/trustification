@@ -35,7 +35,7 @@ pub async fn run<B: Into<SocketAddr>>(state: SharedState, bind: B) -> Result<(),
     let openapi = ApiDoc::openapi();
 
     let addr = bind.into();
-    tracing::debug!("listening on {}", addr);
+    log::debug!("listening on {}", addr);
     HttpServer::new(move || {
         App::new()
             .wrap(Logger::default())
@@ -88,7 +88,7 @@ impl error::ResponseError for Error {
             Self::Storage(StorageError::NotFound) => StatusCode::NOT_FOUND,
             Self::InvalidContentType | Self::InvalidContentEncoding => StatusCode::BAD_REQUEST,
             e => {
-                tracing::info!("ERROR: {:?}", e);
+                log::info!("ERROR: {:?}", e);
                 StatusCode::INTERNAL_SERVER_ERROR
             }
         }
@@ -123,7 +123,7 @@ async fn query_sbom(
     accept_encoding: web::Header<AcceptEncoding>,
 ) -> actix_web::Result<impl Responder> {
     let key = params.into_inner().id;
-    tracing::trace!("Querying SBOM using id {}", key);
+    log::trace!("Querying SBOM using id {}", key);
     let storage = state.storage.read().await;
     // determine the encoding of the stored object, if any
     let encoding = storage.get_head(&key).await.ok().and_then(|head| {
@@ -197,7 +197,7 @@ async fn search_sbom(
 ) -> actix_web::Result<impl Responder> {
     let params = params.into_inner();
 
-    tracing::info!("Querying SBOM using {}", params.q);
+    log::info!("Querying SBOM using {}", params.q);
 
     let index = state.index.read().await;
     let result = index
@@ -246,7 +246,7 @@ async fn publish_sbom(
         .await
         .map_err(Error::Storage)?;
     let msg = format!("Successfully uploaded SBOM: id={id}, size={size}");
-    tracing::info!(msg);
+    log::info!("{}", msg);
     Ok(HttpResponse::Created().body(msg))
 }
 
@@ -292,7 +292,7 @@ async fn delete_sbom(
 ) -> actix_web::Result<impl Responder> {
     let params = params.into_inner();
     let id = &params.id;
-    tracing::trace!("Deleting SBOM using id {}", id);
+    log::trace!("Deleting SBOM using id {}", id);
     let storage = state.storage.write().await;
 
     storage.delete(id).await.map_err(Error::Storage)?;

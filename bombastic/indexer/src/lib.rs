@@ -38,7 +38,7 @@ pub struct Run {
 impl Run {
     pub async fn run(mut self) -> anyhow::Result<ExitCode> {
         Infrastructure::from(self.infra)
-            .run(|| async move {
+            .run("bombastic-indexer", || async move {
                 let index = IndexStore::new(&self.index, bombastic_index::Index::new())?;
                 let storage = self.storage.create("bombastic", self.devmode)?;
 

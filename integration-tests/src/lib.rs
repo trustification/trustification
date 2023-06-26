@@ -145,6 +145,7 @@ fn bombastic_indexer(storage_endpoint: &str, kafka_bootstrap_servers: &str) -> b
             infrastructure_enabled: false,
             infrastructure_bind: "127.0.0.1".into(),
             infrastructure_workers: 1,
+            enable_tracing: false,
         },
     }
 }
@@ -169,6 +170,7 @@ fn bombastic_api(storage_endpoint: &str) -> bombastic_api::Run {
             infrastructure_enabled: false,
             infrastructure_bind: "127.0.0.1".into(),
             infrastructure_workers: 1,
+            enable_tracing: false,
         },
     }
 }
@@ -199,6 +201,7 @@ fn vexination_indexer(storage_endpoint: &str, kafka_bootstrap_servers: &str) -> 
             infrastructure_enabled: false,
             infrastructure_bind: "127.0.0.1".into(),
             infrastructure_workers: 1,
+            enable_tracing: false,
         },
     }
 }
@@ -223,6 +226,7 @@ fn vexination_api(storage_endpoint: &str) -> vexination_api::Run {
             infrastructure_enabled: false,
             infrastructure_bind: "127.0.0.1".into(),
             infrastructure_workers: 1,
+            enable_tracing: false,
         },
     }
 }

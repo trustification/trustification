@@ -10,6 +10,7 @@ actix-ws = "0.2"
 anyhow = "1"
 clap = { version = "4", features = ["derive", "env"] }
 futures = { version = "0.3" }
+env_logger = "0.10"
 k8s-openapi = { version = "0.18.0", features = ["v1_23"] }
 kube = { version = "0.82.2", features = ["runtime"] }
 packageurl = "0.3.0"
@@ -19,8 +20,7 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 thiserror = "1"
 tokio = { version = "1", features = ["full"] }
-tracing = "0.1"
-tracing-subscriber = "0.3"
+log = "0.4"
 url = "2"
 uuid = { version = "1", features = ["v4"] }
 

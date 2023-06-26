@@ -8,7 +8,16 @@ actix-web = "4"
 anyhow = "1"
 clap = { version = "4", features = ["derive", "env"] }
 futures = "0.3"
+serde = { version = "1", features = ["derive"]  }
 serde_json = "1"
 thiserror = "1.0"
 tokio = { version = "1", features = ["time"] }
-tracing = "0.1"
+opentelemetry = { version = "0.19.0", features = ["rt-tokio"] }
+tracing-bunyan-formatter = "0.3.7"
+actix-web-opentelemetry = "0.13.0"
+actix-web-prom = "0.6.0"
+tracing-subscriber = { version = "0.3.17", default-features = false, features = ["env-filter", "tracing-log"] }
+tracing-opentelemetry = "0.19.0"
+opentelemetry-jaeger = { version = "0.18.0", features = ["rt-tokio"] }
+env_logger = "0.10"
+log = "0.4"

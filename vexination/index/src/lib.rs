@@ -7,10 +7,10 @@ use csaf::{
     product_tree::ProductTree,
     Csaf,
 };
+use log::{debug, warn};
 use search::*;
 use sikula::prelude::*;
 use tantivy::{query::AllQuery, store::ZstdCompressor, DocAddress, IndexSettings, Searcher, SnippetGenerator};
-use tracing::{debug, warn};
 use trustification_index::{
     create_date_query, create_string_query, create_text_query, field2date, field2f64vec, field2str, field2strvec,
     tantivy::{

@@ -4,6 +4,8 @@ use actix_web::{http::uri::Builder, middleware::Logger, web, App, HttpRequest, H
 use anyhow::Context;
 use futures::future::select_all;
 
+use crate::tracing::init_tracing;
+
 const DEFAULT_BIND_ADDR: &str = "localhost:9010";
 
 /// Infrastructure
@@ -19,6 +21,9 @@ pub struct InfrastructureConfig {
     /// Number of workers
     #[arg(long, env, default_value = "1")]
     pub infrastructure_workers: usize,
+    /// Enable tracing
+    #[arg(long, env)]
+    pub enable_tracing: bool,
 }
 
 impl Default for InfrastructureConfig {
@@ -27,6 +32,7 @@ impl Default for InfrastructureConfig {
             infrastructure_enabled: false,
             infrastructure_bind: DEFAULT_BIND_ADDR.into(),
             infrastructure_workers: 1,
+            enable_tracing: false,
         }
     }
 }
@@ -79,7 +85,7 @@ impl Infrastructure {
 
     async fn start_internal(self) -> anyhow::Result<Pin<Box<dyn Future<Output = anyhow::Result<()>>>>> {
         if !self.config.infrastructure_enabled {
-            tracing::info!("Infrastructure endpoint is disabled");
+            log::info!("Infrastructure endpoint is disabled");
             return Ok(Box::pin(async move {
                 loop {
                     tokio::time::sleep(tokio::time::Duration::from_secs(3600)).await
@@ -87,7 +93,7 @@ impl Infrastructure {
             }));
         }
 
-        tracing::info!("Setting up infrastructure endpoint");
+        log::info!("Setting up infrastructure endpoint");
 
         let mut http = HttpServer::new(move || {
             App::new()
@@ -110,20 +116,21 @@ impl Infrastructure {
             .context("Failed to bind infrastructure endpoint")?;
 
         Ok(Box::pin(async move {
-            tracing::info!("Running infrastructure endpoint on:");
+            log::info!("Running infrastructure endpoint on:");
             for (addr, scheme) in http.addrs_with_scheme() {
-                tracing::info!("   {scheme}://{addr}");
+                log::info!("   {scheme}://{addr}");
             }
             http.run().await.context("Failed to run infrastructure endpoint")?;
             Ok::<_, anyhow::Error>(())
         }))
     }
 
-    pub async fn run<F, Fut>(self, main: F) -> anyhow::Result<()>
+    pub async fn run<F, Fut>(self, id: &str, main: F) -> anyhow::Result<()>
     where
         F: FnOnce() -> Fut,
         Fut: Future<Output = anyhow::Result<()>>,
     {
+        init_tracing(id, self.config.enable_tracing.into());
         let runner = Box::pin(self.start_internal().await?);
         let main = Box::pin(main()) as Pin<Box<dyn Future<Output = anyhow::Result<()>>>>;
         let (result, _index, _others) = select_all([runner, main]).await;

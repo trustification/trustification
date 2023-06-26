@@ -37,7 +37,7 @@ pub async fn run(
                         if let Ok(data) = storage.decode_event(payload) {
                             for data in data.records {
                                 if storage.is_index(data.key()) {
-                                    tracing::trace!("It's an index event, ignoring");
+                                    log::trace!("It's an index event, ignoring");
                                 } else {
                                     match data.event_type() {
                                         EventType::Put => {
@@ -47,7 +47,7 @@ pub async fn run(
                                                     match bombastic_index::SBOM::parse(&data) {
                                                         Ok(doc) => match writer.as_mut().unwrap().add_document(index.index_as_mut(), &k, &doc) {
                                                             Ok(_) => {
-                                                                tracing::trace!("Inserted entry into index");
+                                                                log::trace!("Inserted entry into index");
                                                                     bus.send(indexed_topic, key.as_bytes()).await?;
                                                                     events += 1;
                                                             }
@@ -57,11 +57,11 @@ pub async fn run(
                                                                     "error": e.to_string(),
                                                                 }).to_string();
                                                                 bus.send(failed_topic, failure.as_bytes()).await?;
-                                                                tracing::warn!("Error inserting entry into index: {:?}", e)
+                                                                log::warn!("Error inserting entry into index: {:?}", e)
                                                             }
                                                     }
                                                     Err(e) => {
-                                                        tracing::warn!("Error parsing SBOM for key {}: {:?}, ignored", key, e);
+                                                        log::warn!("Error parsing SBOM for key {}: {:?}, ignored", key, e);
                                                         let failure = serde_json::json!( {
                                                                 "key": key,
                                                                 "error": e.to_string(),
@@ -71,67 +71,67 @@ pub async fn run(
                                                     }
                                                 }
                                                 Err(e) => {
-                                                    tracing::warn!("Error retrieving document event data, ignoring (error: {:?})", e);
+                                                    log::warn!("Error retrieving document event data, ignoring (error: {:?})", e);
                                                 }
                                             }
                                         },
                                         EventType::Delete => {
                                             let (_, key) = Storage::key_from_event(&data)?;
                                             writer.as_mut().unwrap().delete_document(index.index(), key.as_str());
-                                            tracing::debug!("Deleted entry {key} from index");
+                                            log::debug!("Deleted entry {key} from index");
                                             events += 1;
                                         }
-                                        _ => tracing::debug!("Non (PUT | DELETE)  event ({:?}), skipping", data),
+                                        _ => log::debug!("Non (PUT | DELETE)  event ({:?}), skipping", data),
                                     }
                                 }
                             }
                         } else {
-                            tracing::warn!("Error decoding event, skipping");
+                            log::warn!("Error decoding event, skipping");
                         }
                     } else {
-                        tracing::warn!("No event for payload, skipping");
+                        log::warn!("No event for payload, skipping");
                     }
                     uncommitted_events.push(event);
                 }
                 Ok(None) => {
-                    tracing::debug!("Polling returned no events, retrying");
+                    log::debug!("Polling returned no events, retrying");
                 }
                 Err(e) => {
-                    tracing::warn!("Error polling for event: {:?}", e);
+                    log::warn!("Error polling for event: {:?}", e);
                 }
             },
             _ = tick => {
                 if events > 0 {
-                    tracing::trace!("{} new events added, pushing new index to storage", events);
+                    log::trace!("{} new events added, pushing new index to storage", events);
                     match index.snapshot(writer.take().unwrap()) {
                         Ok(data) => {
                             match storage.put_index(&data).await {
                                 Ok(_) => {
-                                    tracing::trace!("Index updated successfully");
+                                    log::trace!("Index updated successfully");
                                     match consumer.commit(&uncommitted_events[..]).await {
                                         Ok(_) => {
-                                            tracing::trace!("Event committed successfully");
+                                            log::trace!("Event committed successfully");
                                             uncommitted_events.clear();
                                         }
                                         Err(e) => {
-                                            tracing::warn!("Error committing event: {:?}", e)
+                                            log::warn!("Error committing event: {:?}", e)
                                         }
                                     }
                                     events = 0;
                                 }
                                 Err(e) => {
-                                    tracing::warn!("Error updating index: {:?}", e)
+                                    log::warn!("Error updating index: {:?}", e)
                                 }
                             }
 
                             writer.replace(index.writer()?);
                         }
                         Err(e) => {
-                            tracing::warn!("Error taking index snapshot: {:?}", e);
+                            log::warn!("Error taking index snapshot: {:?}", e);
                         }
                     }
                 } else {
-                    tracing::trace!("No changes to index");
+                    log::trace!("No changes to index");
                 }
             }
         }

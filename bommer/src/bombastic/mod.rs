@@ -6,8 +6,8 @@ use anyhow::bail;
 use bommer_api::data::{Event, Image, ImageRef, PodRef, SbomState, SBOM};
 pub use client::BombasticSource;
 use futures::FutureExt;
+use log::{info, warn};
 use packageurl::PackageUrl;
-use tracing::{info, warn};
 
 use crate::{pubsub::Output, store::Store, workload::WorkloadState};
 

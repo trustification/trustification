@@ -10,8 +10,7 @@ actix-web = "4"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0.68"
 tokio = { version = "1.0", features = ["full"] }
-tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+log = "0.4"
 trustification-infrastructure = { path = "../../infrastructure" }
 trustification-storage = { path = "../../storage" }
 trustification-index = { path = "../../index" }
