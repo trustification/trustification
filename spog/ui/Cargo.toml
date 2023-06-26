@@ -8,6 +8,7 @@ description = "Single Pane of Glass"
 
 [dependencies]
 anyhow = "1"
+browser-panic-hook = "0.2.0"
 chrono = { version = "0.4", default-features = false, features = ["wasmbind"] }
 csaf = { version = "0.5.0", default-features = false }
 cyclonedx-bom = "0.4"
