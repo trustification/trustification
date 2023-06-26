@@ -21,7 +21,7 @@ pub enum Packages<'a> {
     #[search]
     Supplier(Primary<'a>),
     #[search]
-    Qualifier(Primary<'a>),
+    Qualifier(Qualified<'a, &'a str>),
     #[search]
     Dependency(Primary<'a>),
     Application,

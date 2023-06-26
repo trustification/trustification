@@ -50,6 +50,7 @@ pub struct PackageFields {
     purl_namespace: Field,
     purl_version: Field,
     purl_qualifiers: Field,
+    purl_qualifiers_values: Field,
 }
 
 pub enum SBOM {
@@ -107,6 +108,7 @@ impl Index {
                 purl_namespace: schema.add_text_field("sbom_purl_namespace", STRING),
                 purl_version: schema.add_text_field("sbom_purl_version", STRING),
                 purl_qualifiers: schema.add_text_field("sbom_purl_qualifiers", STRING),
+                purl_qualifiers_values: schema.add_text_field("sbom_purl_qualifiers_values", STRING),
             },
             dep: PackageFields {
                 name: schema.add_text_field("dep_name", FAST | STRING),
@@ -123,6 +125,7 @@ impl Index {
                 purl_namespace: schema.add_text_field("dep_purl_namespace", STRING),
                 purl_version: schema.add_text_field("dep_purl_version", STRING),
                 purl_qualifiers: schema.add_text_field("dep_purl_qualifiers", STRING),
+                purl_qualifiers_values: schema.add_text_field("dep_purl_qualifiers_values", STRING),
             },
         };
         Self {
@@ -191,7 +194,8 @@ impl Index {
                     }
 
                     for entry in package.qualifiers().iter() {
-                        document.add_text(fields.purl_qualifiers, entry.1);
+                        document.add_text(fields.purl_qualifiers, format!("{}={}", entry.0, entry.1));
+                        document.add_text(fields.purl_qualifiers_values, entry.1);
                     }
 
                     document.add_text(fields.purl_type, package.ty());
@@ -330,7 +334,15 @@ impl Index {
 
             Packages::Supplier(primary) => self.create_string_query(&[self.fields.sbom.supplier], primary),
 
-            Packages::Qualifier(primary) => self.create_string_query(&[self.fields.sbom.purl_qualifiers], primary),
+            Packages::Qualifier(qualified) => {
+                let mut qs = Vec::new();
+                for qualifier in qualified.qualifier.0.iter() {
+                    let exp = format!("{}={}", qualifier, qualified.expression);
+                    let q = self.create_string_query(&[self.fields.sbom.purl_qualifiers], &Primary::Equal(&exp));
+                    qs.push(q);
+                }
+                Box::new(BooleanQuery::union(qs))
+            }
 
             Packages::Dependency(primary) => self.create_string_query(
                 &[
