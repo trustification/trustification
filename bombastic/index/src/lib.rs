@@ -625,7 +625,6 @@ mod tests {
     async fn test_all() {
         assert_search(|index| {
             let result = search(&index, "");
-            // Should get all documents from test data
             assert_eq!(result.0.len(), 2);
         });
     }
@@ -634,7 +633,6 @@ mod tests {
     async fn test_dependency() {
         assert_search(|index| {
             let result = search(&index, "dependency:openssl");
-            // Should get all documents from test data
             assert_eq!(result.0.len(), 1);
         });
     }
@@ -643,7 +641,27 @@ mod tests {
     async fn test_quarkus() {
         assert_search(|index| {
             let result = search(&index, "dependency:quarkus-arc");
-            // Should get all documents from test data
+            assert_eq!(result.0.len(), 1);
+        });
+    }
+
+    #[tokio::test]
+    async fn test_purl_qualifiers() {
+        assert_search(|index| {
+            let result = search(&index, "qualifier:tag:9.1.0-1782");
+            assert_eq!(result.0.len(), 1);
+        });
+    }
+
+    #[tokio::test]
+    async fn test_supplier() {
+        assert_search(|index| {
+            let result = search(&index, "supplier:\"Organization: Red Hat\"");
+            assert_eq!(result.0.len(), 1);
+        });
+
+        assert_search(|index| {
+            let result = search(&index, "\"Red Hat\" in:supplier");
             assert_eq!(result.0.len(), 1);
         });
     }
