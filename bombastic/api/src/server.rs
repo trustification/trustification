@@ -158,6 +158,9 @@ pub struct SearchParams {
     /// Max number of documents to return
     #[serde(default = "default_limit")]
     pub limit: usize,
+    /// Provide a detailed explanation of query matches
+    #[serde(default = "default_explain")]
+    pub explain: bool,
 }
 
 const fn default_offset() -> usize {
@@ -166,6 +169,10 @@ const fn default_offset() -> usize {
 
 const fn default_limit() -> usize {
     10
+}
+
+const fn default_explain() -> bool {
+    false
 }
 
 /// Search for an SBOM using a free form search query.
@@ -194,7 +201,7 @@ async fn search_sbom(
 
     let index = state.index.read().await;
     let result = index
-        .search(&params.q, params.offset, params.limit)
+        .search(&params.q, params.offset, params.limit, params.explain)
         .map_err(Error::Index)?;
 
     Ok(HttpResponse::Ok().json(SearchResult {

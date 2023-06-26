@@ -68,6 +68,7 @@ pub async fn search(state: web::Data<SharedState>, params: web::Query<QueryParam
 
     let mut m: Vec<AdvisorySummary> = Vec::new();
     for item in result.result.drain(..) {
+        let item = item.document;
         m.push(AdvisorySummary {
             id: item.advisory_id.clone(),
             title: item.advisory_title,
