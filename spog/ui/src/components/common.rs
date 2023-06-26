@@ -6,12 +6,18 @@ pub struct PageHeadingProperties {
     pub children: Children,
     #[prop_or_default]
     pub subtitle: Option<String>,
+    #[prop_or(true)]
+    pub sticky: bool,
 }
 
 #[function_component(PageHeading)]
 pub fn page_heading(props: &PageHeadingProperties) -> Html {
+    let sticky = match props.sticky {
+        true => vec![PageSectionSticky::Top],
+        false => vec![],
+    };
     html!(
-        <PageSection sticky={[PageSectionSticky::Top]} variant={PageSectionVariant::Light} >
+        <PageSection {sticky} variant={PageSectionVariant::Light} >
             <Content>
                 <Title size={Size::XXXXLarge}>{ for props.children.iter() }</Title>
                 if let Some(subtitle) = &props.subtitle {
