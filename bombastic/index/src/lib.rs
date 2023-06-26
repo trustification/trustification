@@ -618,6 +618,15 @@ mod tests {
         assert_search(|index| {
             let result = search(&index, "created:>2022-01-01");
             assert_eq!(result.0.len(), 2);
+
+            let result = search(&index, "created:2023-03-30");
+            assert_eq!(result.0.len(), 1);
+
+            let result = search(&index, "created:2023-03-29");
+            assert_eq!(result.0.len(), 0);
+
+            let result = search(&index, "created:2023-03-31");
+            assert_eq!(result.0.len(), 0);
         });
     }
 
