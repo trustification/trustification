@@ -209,7 +209,7 @@ pub struct PackageEntry {
 }
 
 impl TableEntryRenderer<Column> for PackageEntry {
-    fn render_cell(&self, context: &CellContext<'_, Column>) -> Cell {
+    fn render_cell(&self, context: CellContext<'_, Column>) -> Cell {
         match context.column {
             Column::Name => {
                 html!(

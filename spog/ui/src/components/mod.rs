@@ -11,6 +11,7 @@ pub mod package;
 // pub mod vulnerability;
 pub mod async_state_renderer;
 pub mod simple_pagination;
+pub mod spdx;
 
 use std::ops::Deref;
 

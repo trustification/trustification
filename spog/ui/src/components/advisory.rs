@@ -181,7 +181,7 @@ pub enum Column {
 }
 
 impl TableEntryRenderer<Column> for AdvisoryEntry {
-    fn render_cell(&self, context: &CellContext<'_, Column>) -> Cell {
+    fn render_cell(&self, context: CellContext<'_, Column>) -> Cell {
         match context.column {
             Column::Id => html!(&self.summary.id).into(),
             Column::Title => html!(&self.summary.title).into(),
@@ -368,7 +368,7 @@ mod details {
     }
 
     impl TableEntryRenderer<Column> for Vulnerability {
-        fn render_cell(&self, context: &CellContext<'_, Column>) -> Cell {
+        fn render_cell(&self, context: CellContext<'_, Column>) -> Cell {
             match context.column {
                 Column::Cve => self
                     .cve
@@ -420,7 +420,7 @@ mod details {
                 mode={TableMode::Compact}
                 {header}
                 {entries}
-                {onexpand}
+                onexpand={(*onexpand).clone()}
             />
         )
     }

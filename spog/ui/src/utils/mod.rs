@@ -32,3 +32,19 @@ where
 pub fn pagination_to_offset(page: usize, per_page: usize) -> usize {
     (page - 1).max(0) * per_page
 }
+
+pub struct OrNone<T>(pub Option<T>)
+where
+    T: Into<Html>;
+
+impl<T> From<OrNone<T>> for Html
+where
+    T: Into<Html>,
+{
+    fn from(value: OrNone<T>) -> Self {
+        match value.0 {
+            Some(value) => value.into(),
+            None => html!(<i>{"n/a"}</i>),
+        }
+    }
+}
