@@ -16,7 +16,7 @@ if [ -f "$BACKEND_JSON_FILE" ]; then
 fi
 
 # inject backend URL
-echo "$BACKEND_JSON" | jq --arg url "$API_URL" '. + {url: $url}' | tee /endpoints/backend.json
+echo "$BACKEND_JSON" | jq --arg url "$API_URL" '. + {url: $url}' | jq --arg url "$BOMBASTIC_URL" '. + {bombastic: $url}' | jq --arg url "$VEXINATION_URL" '. + {vexination: $url}' | tee /endpoints/backend.json
 
 echo "Final backend information:"
 echo "---"
