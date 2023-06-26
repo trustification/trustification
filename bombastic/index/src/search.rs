@@ -18,7 +18,7 @@ pub enum Packages<'a> {
     Digest(Primary<'a>),
     #[search]
     License(Primary<'a>),
-    #[search]
+    #[search(scope)]
     Supplier(Primary<'a>),
     #[search]
     Qualifier(Primary<'a>),
