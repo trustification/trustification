@@ -9,8 +9,8 @@ use std::{
 
 use bommer_api::data::Event;
 use futures::{stream, StreamExt};
+use log::debug;
 use tokio::sync::{mpsc, RwLock};
-use tracing::debug;
 
 pub struct Subscription<K, V>
 where
@@ -115,7 +115,7 @@ where
         // remove failed subscribers
 
         for id in failed {
-            debug!(?id, "Removing failed listener");
+            debug!("Removing failed listener {}", id);
             self.listeners.remove(&id);
         }
     }

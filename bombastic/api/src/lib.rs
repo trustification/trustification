@@ -34,7 +34,7 @@ impl Run {
     pub async fn run(mut self) -> anyhow::Result<ExitCode> {
         let state = self.configure()?;
         Infrastructure::from(self.infra)
-            .run(|| async move {
+            .run("bombastic-api", || async move {
                 let addr = SocketAddr::from_str(&format!("{}:{}", self.bind, self.port))?;
 
                 server::run(state, addr).await
@@ -57,17 +57,17 @@ impl Run {
         tokio::task::spawn(async move {
             loop {
                 if sinker.sync_index().await.is_ok() {
-                    tracing::info!("Initial bombastic index synced");
+                    log::info!("Initial bombastic index synced");
                     break;
                 } else {
-                    tracing::warn!("Bombastic index not yet available");
+                    log::warn!("Bombastic index not yet available");
                 }
                 tokio::time::sleep(Duration::from_secs(5)).await;
             }
 
             loop {
                 if let Err(e) = sinker.sync_index().await {
-                    tracing::info!("Unable to synchronize bombastic index: {:?}", e);
+                    log::info!("Unable to synchronize bombastic index: {:?}", e);
                 }
                 tokio::time::sleep(sync_interval).await;
             }
@@ -94,7 +94,7 @@ impl AppState {
 
         let mut index = self.index.write().await;
         index.reload(&data[..])?;
-        tracing::debug!("Bombastic index reloaded");
+        log::debug!("Bombastic index reloaded");
         Ok(())
     }
 }

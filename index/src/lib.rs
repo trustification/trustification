@@ -2,6 +2,7 @@ use std::{fmt::Display, ops::Bound, path::PathBuf};
 
 use sikula::prelude::{Ordered, Primary, Search};
 // Rexport to align versions
+use log::{debug, warn};
 pub use tantivy;
 pub use tantivy::schema::Document;
 use tantivy::{
@@ -12,7 +13,6 @@ use tantivy::{
     DateTime, Directory, DocAddress, Index as SearchIndex, IndexSettings, Searcher,
 };
 use time::{OffsetDateTime, UtcOffset};
-use tracing::{debug, warn};
 
 #[derive(Clone, Debug, clap::Parser)]
 #[command(rename_all_env = "SCREAMING_SNAKE_CASE")]
@@ -178,19 +178,19 @@ impl<INDEX: Index> IndexStore<INDEX> {
 
     pub fn snapshot(&mut self, writer: IndexWriter) -> Result<Vec<u8>, Error> {
         if let Some(path) = &self.path {
-            tracing::info!("Committing index to path {:?}", path);
+            log::info!("Committing index to path {:?}", path);
             writer.commit()?;
             self.inner.directory_mut().sync_directory().map_err(Error::Io)?;
             let lock = self.inner.directory_mut().acquire_lock(&INDEX_WRITER_LOCK);
 
             let mut out = Vec::new();
-            tracing::info!("Creating encoder");
+            log::info!("Creating encoder");
             let enc = zstd::stream::Encoder::new(&mut out, 3).map_err(Error::Io)?;
-            tracing::info!("Creating builder");
+            log::info!("Creating builder");
             let mut archive = tar::Builder::new(enc.auto_finish());
-            tracing::info!("Adding directories from {:?}", path);
+            log::info!("Adding directories from {:?}", path);
             archive.append_dir_all("", path).map_err(Error::Io)?;
-            tracing::info!("Added it all to the archive");
+            log::info!("Added it all to the archive");
             drop(archive);
             drop(lock);
             Ok(out)

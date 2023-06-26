@@ -6,7 +6,7 @@ edition = "2021"
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
 tantivy = { version = "0.19.2", features = ["zstd-compression"] }
-tracing = "0.1"
+log = "0.4"
 csaf = "0.5"
 zstd = "0.12"
 tar = "0.4"

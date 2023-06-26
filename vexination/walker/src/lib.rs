@@ -50,7 +50,7 @@ impl Run {
             _ => None,
         };
 
-        tracing::debug!("Policy date: {validation_date:?}");
+        log::debug!("Policy date: {validation_date:?}");
 
         let options = ValidationOptions { validation_date };
 

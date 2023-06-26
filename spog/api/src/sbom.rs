@@ -1,6 +1,6 @@
 use actix_web::{web, web::ServiceConfig, HttpResponse, Responder};
+use log::{debug, info, trace, warn};
 use spog_model::search::{PackageSummary, SearchResult};
-use tracing::{debug, info, trace, warn};
 
 use crate::{search, server::SharedState};
 

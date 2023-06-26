@@ -27,21 +27,21 @@ pub async fn run(storage: Storage, source: url::Url, options: ValidationOptions)
                             match storage.put_json_slice(&key, &data).await {
                                 Ok(_) => {
                                     let msg = format!("VEX ({}) of size {} stored successfully", key, &data[..].len());
-                                    tracing::info!(msg);
+                                    log::info!("{}", msg);
                                 }
                                 Err(e) => {
                                     let msg = format!("(Skipped) Error storing VEX: {:?}", e);
-                                    tracing::info!(msg);
+                                    log::info!("{}", msg);
                                 }
                             }
                         }
                         Err(e) => {
-                            tracing::warn!("(Ignored) Error parsing advisory to retrieve ID: {:?}", e);
+                            log::warn!("(Ignored) Error parsing advisory to retrieve ID: {:?}", e);
                         }
                     }
                 }
                 Err(e) => {
-                    tracing::warn!("Ignoring advisory: {:?}", e);
+                    log::warn!("Ignoring advisory: {:?}", e);
                 }
             }
             Ok::<_, anyhow::Error>(())

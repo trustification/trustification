@@ -14,7 +14,7 @@ futures = "0.3"
 bytes = "1"
 http = "0.2"
 async-stream = "0.3"
-tracing = "0.1"
+log = "0.4"
 urlencoding = "2.1.2"
 thiserror = "1"
 async-compression = { version = "0.4", features = ["tokio", "zstd", "bzip2"] }

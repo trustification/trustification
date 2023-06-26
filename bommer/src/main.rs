@@ -8,7 +8,7 @@ use clap::Parser;
 use futures::FutureExt;
 use k8s_openapi::api::core::v1::Pod;
 use kube::{runtime::watcher, Api, Client};
-use tracing::{info, warn};
+use log::{info, warn};
 use trustification_infrastructure::{Infrastructure, InfrastructureConfig};
 
 use crate::{bombastic::BombasticSource, server::ServerConfig, store::image_store};
@@ -27,7 +27,7 @@ pub struct Cli {
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    tracing_subscriber::fmt::init();
+    let _ = env_logger::try_init();
 
     let cli = Cli::parse();
 
@@ -79,7 +79,7 @@ async fn main() -> anyhow::Result<()> {
     let config = ServerConfig { bind_addr };
 
     Infrastructure::from(cli.infra)
-        .run(|| async {
+        .run("bommber", || async {
             let server = server::run(config, map);
 
             let (result, _, _) =

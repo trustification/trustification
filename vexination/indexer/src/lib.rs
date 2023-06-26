@@ -39,7 +39,7 @@ pub struct Run {
 impl Run {
     pub async fn run(mut self) -> anyhow::Result<ExitCode> {
         Infrastructure::from(self.infra)
-            .run(|| async {
+            .run("vexination-indexer", || async {
                 let index = IndexStore::new(&self.index, Index::new())?;
                 let storage = self.storage.create("vexination", self.devmode)?;
                 let interval = self.index.sync_interval.into();

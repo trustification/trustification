@@ -6,6 +6,7 @@ use cyclonedx_bom::models::{
     hash::HashAlgorithm,
     license::{LicenseChoice, LicenseIdentifier},
 };
+use log::{debug, info, warn};
 use sikula::prelude::*;
 use spdx_rs::models::Algorithm;
 use tantivy::{
@@ -15,7 +16,6 @@ use tantivy::{
     DocAddress, IndexSettings, Searcher, SnippetGenerator,
 };
 use time::format_description::well_known::Rfc3339;
-use tracing::{debug, info, warn};
 use trustification_index::{
     create_boolean_query, create_date_query, create_string_query, create_text_query, field2str, field2strvec,
     tantivy::{
@@ -558,7 +558,7 @@ mod tests {
     where
         F: FnOnce(IndexStore<Index>),
     {
-        let _ = tracing_subscriber::fmt::try_init();
+        let _ = env_logger::try_init();
 
         let index = Index::new();
         let mut store = IndexStore::new_in_memory(index).unwrap();

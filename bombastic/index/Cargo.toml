@@ -7,7 +7,7 @@ edition = "2021"
 sikula = { version = "0.3", features = ["time"] }
 zstd = "0.12"
 tantivy = { version = "0.19.2", features = ["zstd-compression"] }
-tracing = "0.1"
+log = "0.4"
 chumsky = "1.0.0-alpha.4"
 time = "0.3"
 tar = "0.4"
@@ -24,4 +24,3 @@ tokio = { version = "1", features = ["full"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0.68"
 env_logger = "0.10"
-tracing-subscriber = { version = "0.3", features = ["env-filter"] }

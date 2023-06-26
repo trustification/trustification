@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-use tracing::info;
+use log::info;
 
 #[allow(clippy::upper_case_acronyms)]
 pub enum SBOM<'a> {
@@ -216,8 +216,6 @@ mod spdx {
 
 #[cfg(test)]
 mod tests {
-    use tracing::Level;
-
     use super::SBOM;
 
     #[test]
@@ -255,7 +253,7 @@ mod tests {
     /// Must parse correctly, but doesn't have a PackageURL.
     #[test]
     fn parse_cyclonedx_syft() {
-        tracing_subscriber::fmt().with_max_level(Level::DEBUG).init();
+        let _ = env_logger::try_init();
 
         let data = include_bytes!("../../testdata/syft.cyclonedx.json");
         let sbom = SBOM::parse(data).unwrap();

@@ -1,7 +1,6 @@
 use std::{future::Future, ops::Deref};
 
 use bommer_api::data::{Event, Image, ImageRef};
-use tracing::log;
 
 use crate::pubsub::State;
 

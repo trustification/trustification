@@ -19,7 +19,7 @@ pub async fn run<M: Emitter + Send + Sync>(
                             for data in data.records {
                                 if data.event_type() == EventType::Put {
                                     if storage.is_index(data.key()) {
-                                        tracing::trace!("It's an index event, ignoring");
+                                        log::trace!("It's an index event, ignoring");
                                     } else {
                                         let key = data.key();
                                         match storage.get_for_event(&data).await {
@@ -35,15 +35,15 @@ pub async fn run<M: Emitter + Send + Sync>(
                                                 };
                                                 match emitter.publish(document).await {
                                                     Ok(_) => {
-                                                        tracing::trace!("Exported SBOM entry!");
+                                                        log::trace!("Exported SBOM entry!");
                                                     }
                                                     Err(e) => {
-                                                        tracing::warn!("Error exporting entry: {:?}", e)
+                                                        log::warn!("Error exporting entry: {:?}", e)
                                                     }
                                                 }
                                             }
                                             Err(e) => {
-                                                tracing::debug!("Error retrieving document event data, ignoring (error: {:?})", e);
+                                                log::debug!("Error retrieving document event data, ignoring (error: {:?})", e);
                                             }
                                         }
                                     }
@@ -53,10 +53,10 @@ pub async fn run<M: Emitter + Send + Sync>(
                     }
                 }
                 Ok(None) => {
-                    tracing::debug!("Polling returned no events, retrying");
+                    log::debug!("Polling returned no events, retrying");
                 }
                 Err(e) => {
-                    tracing::warn!("Error polling for event: {:?}", e);
+                    log::warn!("Error polling for event: {:?}", e);
                 }
             },
         }
