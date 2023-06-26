@@ -637,6 +637,15 @@ mod tests {
 
             let result = search(&index, "release:2022-01-01..2024-01-01");
             assert_eq!(result.0.len(), 1);
+
+            let result = search(&index, "release:2023-03-23");
+            assert_eq!(result.0.len(), 1);
+
+            let result = search(&index, "release:2023-03-24");
+            assert_eq!(result.0.len(), 0);
+
+            let result = search(&index, "release:2023-03-22");
+            assert_eq!(result.0.len(), 0);
         });
     }
 

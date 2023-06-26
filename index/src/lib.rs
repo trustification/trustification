@@ -11,7 +11,7 @@ use tantivy::{
     schema::*,
     DateTime, Directory, DocAddress, Index as SearchIndex, IndexSettings, Searcher,
 };
-use time::OffsetDateTime;
+use time::{OffsetDateTime, UtcOffset};
 use tracing::{debug, info, warn};
 
 #[derive(Clone, Debug, clap::Parser)]
@@ -294,13 +294,17 @@ pub fn create_date_query(field: Field, value: &Ordered<time::OffsetDateTime>) ->
             &Bound::Included(Term::from_field_date(field, DateTime::from_utc(*e))),
             &Bound::Unbounded,
         )),
-        Ordered::Equal(e) => Box::new(BooleanQuery::new(vec![(
-            Occur::Must,
-            Box::new(TermQuery::new(
-                Term::from_field_date(field, DateTime::from_utc(*e)),
-                Default::default(),
-            )),
-        )])),
+        Ordered::Equal(e) => {
+            let theday = e.to_offset(UtcOffset::UTC).date();
+            let theday_after = theday.next_day().unwrap_or(theday);
+
+            let theday = theday.midnight().assume_utc();
+            let theday_after = theday_after.midnight().assume_utc();
+
+            let from = Bound::Included(Term::from_field_date(field, DateTime::from_utc(theday)));
+            let to = Bound::Included(Term::from_field_date(field, DateTime::from_utc(theday_after)));
+            Box::new(RangeQuery::new_term_bounds(field, Type::Date, &from, &to))
+        }
         Ordered::Range(from, to) => {
             let from = bound_map(*from, |f| Term::from_field_date(field, DateTime::from_utc(f)));
             let to = bound_map(*to, |f| Term::from_field_date(field, DateTime::from_utc(f)));
