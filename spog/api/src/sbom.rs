@@ -57,6 +57,7 @@ pub async fn search(state: web::Data<SharedState>, params: web::Query<search::Qu
         Ok(mut data) => {
             let mut m: Vec<PackageSummary> = Vec::new();
             for item in data.result.drain(..) {
+                let item = item.document;
                 m.push(PackageSummary {
                     id: item.id.clone(),
                     purl: item.purl,
@@ -97,6 +98,7 @@ async fn search_advisories(state: web::Data<SharedState>, packages: &mut Vec<Pac
         let q = format!("fixed:\"{}\"", package.name);
         if let Ok(result) = state.search_vex(&q, 0, 1000).await {
             for summary in result.result {
+                let summary = summary.document;
                 package.advisories.push(summary.advisory_id);
             }
         }

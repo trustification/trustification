@@ -9,10 +9,10 @@ use tantivy::{
     directory::{MmapDirectory, INDEX_WRITER_LOCK},
     query::{BooleanQuery, Occur, Query, RangeQuery, RegexQuery, TermQuery},
     schema::*,
-    DateTime, Directory, Index as SearchIndex, IndexSettings, Searcher,
+    DateTime, Directory, DocAddress, Index as SearchIndex, IndexSettings, Searcher,
 };
 use time::OffsetDateTime;
-use tracing::{info, warn};
+use tracing::{debug, info, warn};
 
 #[derive(Clone, Debug, clap::Parser)]
 #[command(rename_all_env = "SCREAMING_SNAKE_CASE")]
@@ -33,7 +33,7 @@ pub struct IndexStore<INDEX: Index> {
 }
 
 pub trait Index {
-    type MatchedDocument;
+    type MatchedDocument: core::fmt::Debug;
     type Document;
 
     fn settings(&self) -> IndexSettings;
@@ -41,9 +41,11 @@ pub trait Index {
     fn prepare_query(&self, q: &str) -> Result<Box<dyn Query>, Error>;
     fn process_hit(
         &self,
-        doc: Document,
+        doc: DocAddress,
+        score: f32,
         searcher: &Searcher,
         query: &dyn Query,
+        explain: bool,
     ) -> Result<Self::MatchedDocument, Error>;
     fn index_doc(&self, id: &str, document: &Self::Document) -> Result<Vec<Document>, Error>;
     fn doc_id_to_term(&self, id: &str) -> Term;
@@ -202,7 +204,13 @@ impl<INDEX: Index> IndexStore<INDEX> {
         Ok(IndexWriter { writer })
     }
 
-    pub fn search(&self, q: &str, offset: usize, len: usize) -> Result<(Vec<INDEX::MatchedDocument>, usize), Error> {
+    pub fn search(
+        &self,
+        q: &str,
+        offset: usize,
+        len: usize,
+        explain: bool,
+    ) -> Result<(Vec<INDEX::MatchedDocument>, usize), Error> {
         let reader = self.inner.reader()?;
         let searcher = reader.searcher();
 
@@ -216,8 +224,8 @@ impl<INDEX: Index> IndexStore<INDEX> {
 
         let mut hits = Vec::new();
         for hit in top_docs {
-            let doc = searcher.doc(hit.1)?;
-            if let Ok(value) = self.index.process_hit(doc, &searcher, &query) {
+            if let Ok(value) = self.index.process_hit(hit.1, hit.0, &searcher, &query, explain) {
+                debug!("HIT: {:?}", value);
                 hits.push(value);
             } else {
                 warn!("Error processing hit {:?}", hit);

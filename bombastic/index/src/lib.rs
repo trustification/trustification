@@ -13,7 +13,7 @@ use tantivy::{
     query::{AllQuery, BooleanQuery},
     schema::INDEXED,
     store::ZstdCompressor,
-    IndexSettings, Searcher, SnippetGenerator,
+    DocAddress, IndexSettings, Searcher, SnippetGenerator,
 };
 use time::format_description::well_known::Rfc3339;
 use tracing::{debug, info, warn};
@@ -378,7 +378,7 @@ impl Index {
 }
 
 impl trustification_index::Index for Index {
-    type MatchedDocument = SearchDocument;
+    type MatchedDocument = SearchHit;
     type Document = SBOM;
 
     fn index_doc(&self, id: &str, doc: &SBOM) -> Result<Vec<Document>, SearchError> {
@@ -429,10 +429,13 @@ impl trustification_index::Index for Index {
 
     fn process_hit(
         &self,
-        doc: Document,
+        doc_address: DocAddress,
+        score: f32,
         searcher: &Searcher,
         query: &dyn Query,
+        explain: bool,
     ) -> Result<Self::MatchedDocument, SearchError> {
+        let doc = searcher.doc(doc_address)?;
         let id = field2str(&doc, self.fields.sbom_id)?;
 
         let snippet_generator = SnippetGenerator::create(searcher, query, self.fields.sbom.desc)?;
@@ -497,7 +500,7 @@ impl trustification_index::Index for Index {
             .map(|s| s.to_string())
             .collect();
 
-        let hit = SearchDocument {
+        let document = SearchDocument {
             id: id.to_string(),
             version: version.to_string(),
             purl: purl.to_string(),
@@ -512,9 +515,24 @@ impl trustification_index::Index for Index {
             description: description.to_string(),
             dependencies,
         };
-        info!("HIT: {:?}", hit);
 
-        Ok(hit)
+        let explanation: Option<serde_json::Value> = if explain {
+            match query.explain(searcher, doc_address) {
+                Ok(explanation) => Some(serde_json::to_value(explanation).ok()).unwrap_or(None),
+                Err(e) => {
+                    warn!("Error producing explanation for document {:?}: {:?}", doc_address, e);
+                    None
+                }
+            }
+        } else {
+            None
+        };
+
+        Ok(SearchHit {
+            document,
+            score,
+            explanation,
+        })
     }
 }
 
@@ -546,10 +564,14 @@ mod tests {
         f(store);
     }
 
+    fn search(index: &IndexStore<Index>, query: &str) -> (Vec<SearchHit>, usize) {
+        index.search(query, 0, 10000, false).unwrap()
+    }
+
     #[tokio::test]
     async fn test_search_form() {
         assert_search(|index| {
-            let result = index.search("ubi9-container", 0, 100).unwrap();
+            let result = search(&index, "ubi9-container");
             assert_eq!(result.0.len(), 1);
         });
     }
@@ -557,19 +579,16 @@ mod tests {
     #[tokio::test]
     async fn test_search_package() {
         assert_search(|index| {
-            let result = index
-                .search(
-"\"pkg:oci/ubi9@sha256:cb303404e576ff5528d4f08b12ad85fab8f61fa9e5dba67b37b119db24865df3?repository_url=registry.redhat.io/ubi9&tag=9.1.0-1782\" in:package",
-                    0,
-                    100,
-                )
-                .unwrap();
+            let result =
+                search(&index,
+"\"pkg:oci/ubi9@sha256:cb303404e576ff5528d4f08b12ad85fab8f61fa9e5dba67b37b119db24865df3?repository_url=registry.redhat.io/ubi9&tag=9.1.0-1782\" in:package"
+                );
             assert_eq!(result.0.len(), 1);
 
-            let result = index.search("ubi9-container in:package", 0, 100).unwrap();
+            let result = search(&index, "ubi9-container in:package");
             assert_eq!(result.0.len(), 1);
 
-            let result = index.search("ubi9-containe in:package", 0, 100).unwrap();
+            let result = search(&index, "ubi9-containe in:package");
             assert_eq!(result.0.len(), 1);
         });
     }
@@ -577,7 +596,7 @@ mod tests {
     #[tokio::test]
     async fn test_search_namespace() {
         assert_search(|index| {
-            let result = index.search("namespace:io.seedwing", 0, 10000).unwrap();
+            let result = search(&index, "namespace:io.seedwing");
             assert_eq!(result.0.len(), 1);
         });
     }
@@ -585,7 +604,7 @@ mod tests {
     #[tokio::test]
     async fn test_search_created() {
         assert_search(|index| {
-            let result = index.search("created:>2022-01-01", 0, 10000).unwrap();
+            let result = search(&index, "created:>2022-01-01");
             assert_eq!(result.0.len(), 2);
         });
     }
@@ -593,7 +612,7 @@ mod tests {
     #[tokio::test]
     async fn test_all() {
         assert_search(|index| {
-            let result = index.search("", 0, 10000).unwrap();
+            let result = search(&index, "");
             // Should get all documents from test data
             assert_eq!(result.0.len(), 2);
         });
@@ -602,7 +621,7 @@ mod tests {
     #[tokio::test]
     async fn test_dependency() {
         assert_search(|index| {
-            let result = index.search("dependency:openssl", 0, 10000).unwrap();
+            let result = search(&index, "dependency:openssl");
             // Should get all documents from test data
             assert_eq!(result.0.len(), 1);
         });
@@ -611,9 +630,22 @@ mod tests {
     #[tokio::test]
     async fn test_quarkus() {
         assert_search(|index| {
-            let result = index.search("dependency:quarkus-arc", 0, 10000).unwrap();
+            let result = search(&index, "dependency:quarkus-arc");
             // Should get all documents from test data
             assert_eq!(result.0.len(), 1);
+        });
+    }
+
+    #[tokio::test]
+    async fn test_explain() {
+        assert_search(|index| {
+            let result = index.search("dependency:openssl", 0, 10000, true).unwrap();
+            assert_eq!(result.0.len(), 1);
+            assert!(result.0[0].explanation.is_some());
+            println!(
+                "Explanation: {}",
+                serde_json::to_string_pretty(&result.0[0].explanation.as_ref().unwrap()).unwrap()
+            );
         });
     }
 }

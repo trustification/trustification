@@ -9,8 +9,8 @@ use csaf::{
 };
 use search::*;
 use sikula::prelude::*;
-use tantivy::{query::AllQuery, store::ZstdCompressor, IndexSettings, Searcher, SnippetGenerator};
-use tracing::debug;
+use tantivy::{query::AllQuery, store::ZstdCompressor, DocAddress, IndexSettings, Searcher, SnippetGenerator};
+use tracing::{debug, warn};
 use trustification_index::{
     create_date_query, create_string_query, create_text_query, field2date, field2f64vec, field2str, field2strvec,
     tantivy::{
@@ -57,7 +57,7 @@ struct ProductPackage {
 }
 
 impl trustification_index::Index for Index {
-    type MatchedDocument = SearchDocument;
+    type MatchedDocument = SearchHit;
     type Document = Csaf;
 
     fn settings(&self) -> IndexSettings {
@@ -242,10 +242,13 @@ impl trustification_index::Index for Index {
 
     fn process_hit(
         &self,
-        doc: Document,
+        doc_address: DocAddress,
+        score: f32,
         searcher: &Searcher,
         query: &dyn Query,
+        explain: bool,
     ) -> Result<Self::MatchedDocument, SearchError> {
+        let doc = searcher.doc(doc_address)?;
         let snippet_generator = SnippetGenerator::create(searcher, query, self.fields.advisory_description)?;
         let advisory_snippet = snippet_generator.snippet_from_doc(&doc).to_html();
 
@@ -273,7 +276,7 @@ impl trustification_index::Index for Index {
             }
         }
 
-        Ok(SearchDocument {
+        let document = SearchDocument {
             advisory_id: advisory_id.to_string(),
             advisory_title: advisory_title.to_string(),
             advisory_date,
@@ -281,6 +284,24 @@ impl trustification_index::Index for Index {
             advisory_desc: advisory_desc.to_string(),
             cves,
             cvss_max,
+        };
+
+        let explanation: Option<serde_json::Value> = if explain {
+            match query.explain(searcher, doc_address) {
+                Ok(explanation) => Some(serde_json::to_value(explanation).ok()).unwrap_or(None),
+                Err(e) => {
+                    warn!("Error producing explanation for document {:?}: {:?}", doc_address, e);
+                    None
+                }
+            }
+        } else {
+            None
+        };
+
+        Ok(SearchHit {
+            document,
+            score,
+            explanation,
         })
     }
 }
@@ -525,10 +546,14 @@ mod tests {
         f(store);
     }
 
+    fn search(index: &IndexStore<Index>, query: &str) -> (Vec<SearchHit>, usize) {
+        index.search(query, 0, 10000, false).unwrap()
+    }
+
     #[tokio::test]
     async fn test_free_form_simple_primary() {
         assert_free_form(|index| {
-            let result = index.search("openssl", 0, 100).unwrap();
+            let result = search(&index, "openssl");
             assert_eq!(result.0.len(), 1);
         });
     }
@@ -536,7 +561,7 @@ mod tests {
     #[tokio::test]
     async fn test_free_form_simple_primary_2() {
         assert_free_form(|index| {
-            let result = index.search("CVE-2023-0286", 0, 100).unwrap();
+            let result = search(&index, "CVE-2023-0286");
             assert_eq!(result.0.len(), 1);
         });
     }
@@ -544,7 +569,7 @@ mod tests {
     #[tokio::test]
     async fn test_free_form_simple_primary_3() {
         assert_free_form(|index| {
-            let result = index.search("RHSA-2023:1441", 0, 100).unwrap();
+            let result = search(&index, "RHSA-2023:1441");
             assert_eq!(result.0.len(), 1);
         });
     }
@@ -552,7 +577,7 @@ mod tests {
     #[tokio::test]
     async fn test_free_form_primary_scoped() {
         assert_free_form(|index| {
-            let result = index.search("RHSA-2023:1441 in:id", 0, 100).unwrap();
+            let result = search(&index, "RHSA-2023:1441 in:id");
             assert_eq!(result.0.len(), 1);
         });
     }
@@ -560,7 +585,7 @@ mod tests {
     #[tokio::test]
     async fn test_free_form_predicate_final() {
         assert_free_form(|index| {
-            let result = index.search("is:final", 0, 100).unwrap();
+            let result = search(&index, "is:final");
             assert_eq!(result.0.len(), 1);
         });
     }
@@ -568,7 +593,7 @@ mod tests {
     #[tokio::test]
     async fn test_free_form_predicate_high() {
         assert_free_form(|index| {
-            let result = index.search("is:high", 0, 100).unwrap();
+            let result = search(&index, "is:high");
             assert_eq!(result.0.len(), 1);
         });
     }
@@ -576,7 +601,7 @@ mod tests {
     #[tokio::test]
     async fn test_free_form_predicate_critical() {
         assert_free_form(|index| {
-            let result = index.search("is:critical", 0, 100).unwrap();
+            let result = search(&index, "is:critical");
             assert_eq!(result.0.len(), 0);
         });
     }
@@ -584,10 +609,10 @@ mod tests {
     #[tokio::test]
     async fn test_free_form_ranges() {
         assert_free_form(|index| {
-            let result = index.search("cvss:>5", 0, 100).unwrap();
+            let result = search(&index, "cvss:>5");
             assert_eq!(result.0.len(), 1);
 
-            let result = index.search("cvss:<5", 0, 100).unwrap();
+            let result = search(&index, "cvss:<5");
             assert_eq!(result.0.len(), 0);
         });
     }
@@ -595,22 +620,22 @@ mod tests {
     #[tokio::test]
     async fn test_free_form_dates() {
         assert_free_form(|index| {
-            let result = index.search("initial:>2022-01-01", 0, 100).unwrap();
+            let result = search(&index, "initial:>2022-01-01");
             assert_eq!(result.0.len(), 1);
 
-            let result = index.search("discovery:>2022-01-01", 0, 100).unwrap();
+            let result = search(&index, "discovery:>2022-01-01");
             assert_eq!(result.0.len(), 1);
 
-            let result = index.search("release:>2022-01-01", 0, 100).unwrap();
+            let result = search(&index, "release:>2022-01-01");
             assert_eq!(result.0.len(), 1);
 
-            let result = index.search("release:>2023-02-08", 0, 100).unwrap();
+            let result = search(&index, "release:>2023-02-08");
             assert_eq!(result.0.len(), 1);
 
-            let result = index.search("release:2022-01-01..2023-01-01", 0, 100).unwrap();
+            let result = search(&index, "release:2022-01-01..2023-01-01");
             assert_eq!(result.0.len(), 0);
 
-            let result = index.search("release:2022-01-01..2024-01-01", 0, 100).unwrap();
+            let result = search(&index, "release:2022-01-01..2024-01-01");
             assert_eq!(result.0.len(), 1);
         });
     }
@@ -618,13 +643,10 @@ mod tests {
     #[tokio::test]
     async fn test_packages() {
         assert_free_form(|index| {
-            let result = index
-                .search(
-                    "affected:\"pkg:rpm/redhat/openssl@1.1.1k-7.el8_6?arch=x86_64&epoch=1\"",
-                    0,
-                    100,
-                )
-                .unwrap();
+            let result = search(
+                &index,
+                "affected:\"pkg:rpm/redhat/openssl@1.1.1k-7.el8_6?arch=x86_64&epoch=1\"",
+            );
             assert_eq!(result.0.len(), 1);
         });
     }
@@ -632,9 +654,7 @@ mod tests {
     #[tokio::test]
     async fn test_products() {
         assert_free_form(|index| {
-            let result = index
-                .search("fixed:\"cpe:/o:redhat:rhel_eus:8.6::baseos\"", 0, 100)
-                .unwrap();
+            let result = search(&index, "fixed:\"cpe:/o:redhat:rhel_eus:8.6::baseos\"");
             assert_eq!(result.0.len(), 1);
         });
     }
@@ -643,7 +663,7 @@ mod tests {
     async fn test_delete_document() {
         assert_free_form(|mut index| {
             // our data is there
-            let result = index.search("RHSA-2023:1441 in:id", 0, 100).unwrap();
+            let result = search(&index, "RHSA-2023:1441 in:id");
             assert_eq!(result.0.len(), 1);
 
             // Now we remove the entry from the index
@@ -652,7 +672,7 @@ mod tests {
             writer.commit().unwrap();
 
             // Ta-da ! No more data
-            let result = index.search("RHSA-2023:1441 in:id", 0, 100).unwrap();
+            let result = search(&index, "RHSA-2023:1441 in:id");
             assert_eq!(result.0.len(), 0);
         });
     }
@@ -660,7 +680,7 @@ mod tests {
     #[tokio::test]
     async fn test_all() {
         assert_free_form(|index| {
-            let result = index.search("", 0, 100).unwrap();
+            let result = search(&index, "");
             // Should get all documents (1)
             assert_eq!(result.0.len(), 1);
         });
