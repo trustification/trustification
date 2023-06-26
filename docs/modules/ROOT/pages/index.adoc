@@ -1,11 +1,12 @@
 = Trustification
 :page-aliases: docs:ROOT:index.adoc
 
-Trustification is a collection of software that allow you to store bill of materials (SBOM), vulnerability information (VEX) for your organization and use that information to learn impact of vulnerabilities and dependency changes.
+The Trustification project is a collection of software components that enables you to store and retrieve Software Bill of Materials (SBOMs), and Vulnerability Exploitability eXchange (VEX) information.
+Developers can use this information to learn about common security vulnerabilities, and dependency changes within their software supply chain.
 
-With Trustification you can:
+Trustification can do the following:
 
-* Store SBOM and VEX documents for your company software and their dependencies.
-* Discover and learn the state of vulnerabilities related to your software.
-* Explore SBOM and VEX documents using search queries.
+* Store SBOM and VEX documents for your software, and its dependencies.
+* Discover, and learn the state of vulnerabilities related to your software.
+* Explore SBOM and VEX documents by using search queries.
 * Share access to your SBOM and VEX information with others.
