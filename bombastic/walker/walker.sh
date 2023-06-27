@@ -3,12 +3,21 @@
 #fail on any subprocess failures
 set -uo pipefail
 
-usage() { echo "Usage: $0 [-s <url to index.txt>] bombastic_url" 1>&2; exit 1; }
+usage() { echo "Usage: $0 spdx_url bombastic_url" 1>&2; exit 1; }
 
 # Default variables
-BOMBASTIC_API=${*: -1}
+BOMBASTIC_API=""
 BOMBASTIC_PATH="/api/v1/sbom"
-SOURCE="https://access.redhat.com/security/data/sbom/beta/index.txt"
+SOURCE=""
+
+if [ $# -ne 2 ] ; then
+  echo "SPDX_URL and BOMBASTIC_URL are required arguments"
+  usage
+  exit 1
+else
+  SOURCE=$1
+  BOMBASTIC_API=$2
+fi
 
 ###################################
 # Help                            #
@@ -18,27 +27,24 @@ help()
    # Display Help
    echo "Get Sboms from prodsec and push to bombastic."
    echo
-   echo "sbomwalker [OPTIONS] BOMBASTIC_API_URL"
+   echo "sbom_uploader [-h] SBOM_URL BOMBASTIC_API_URL"
    echo "options:"
-   echo "   -s <URL>  Specify the source URL. Defaults to https://access.redhat.com/security/data/sbom/beta/index.txt"
    echo "   -h        Print this Help."
    echo
    echo "example:"
-   echo "sbomwalker localhost:8080"
-   echo "sbomwalker -s https://access.redhat.com/security/data/sbom/beta/index.txt localhost:8080"
+   echo "sbomwalker https://access.redhat.com/security/data/sbom/beta/sbdx/3amp-2.json.bz2 localhost:8080"
    echo
 }
 
 # Get the options
-while getopts ":hs:" option; do
+while getopts ":h:" option; do
+  echo $option
    case $option in
       h) # display Help
          help
          exit 0
          ;;
-      s) SOURCE=${OPTARG}
-         ;;
-      *) usage
+      ?) usage
          exit 1
          ;;
    esac
@@ -50,9 +56,9 @@ download_files()
 {
     echo "Downloading files for $1"
 
-    wget -nv "$1" && \
-    wget -nv "$1".asc && \
-    wget -nv "$1".sha256
+    curl --no-progress-meter -O "$1" && \
+    curl --no-progress-meter -O "$1".asc && \
+    curl --no-progress-meter -O "$1".sha256
 }
 
 verify() {
@@ -71,54 +77,33 @@ cleanup()
 
 }
 
-# Import prodsec pubkey
-setup_pubkey() {
-  # From https://access.redhat.com/security/team/contact/#contact
-  wget -nv https://access.redhat.com/sites/default/files/pages/attachments/dce3823597f5eac4.txt
-  gpg --import dce3823597f5eac4.txt
-  rm dce3823597f5eac4.txt
-}
-
 
 ###################################
 # Main                            #
 ###################################
 
-setup_pubkey
-
-# Download index file
-wget -nv "$SOURCE" -O index.txt
-base=$(dirname "$SOURCE")
-
-# Loop through the entries
-while read -r sbom; do
-
-    sbom_url="$base"/"$sbom"
-    download_files $sbom_url
-    if [[ $? -ne 0 ]]; then
-        echo "Error downloading files. Skipping"
-        cleanup "$file"1
-        continue
-    fi
-    file=$(basename $sbom_url)
-    verify $file
-    if [[ $? -ne 0 ]]; then
-        echo "Error verifying files. Skipping"
-        cleanup "$file"
-        continue
-    fi
-
-    # All is well, let's upload that to bombastic
-    id=$(basename -s ".json.bz2" "$file")
-    curl --fail -X POST \
-         -H "content-encoding: bzip2" \
-         -H "transfer-encoding: chunked" \
-         -H "content-type: application/json" \
-         -T "$file" \
-         "$BOMBASTIC_API""$BOMBASTIC_PATH"?id="$id"
-    echo
-
+download_files $SOURCE
+if [[ $? -ne 0 ]]; then
+    echo "Error downloading files. Skipping"
     cleanup "$file"
-done < "index.txt"
+    exit 1
+fi
+file=$(basename $SOURCE)
+verify $file
+if [[ $? -ne 0 ]]; then
+    echo "Error verifying files. Skipping"
+    cleanup "$file"
+    exit 1
+fi
 
-rm index.txt
+# All is well, let's upload that to bombastic
+id=$(basename -s ".json.bz2" "$file")
+echo "Uploading $id to bombastic"
+curl -f --no-progress-meter -X POST \
+     -H "content-encoding: bzip2" \
+     -H "transfer-encoding: chunked" \
+     -H "content-type: application/json" \
+     -T "$file" \
+     "$BOMBASTIC_API""$BOMBASTIC_PATH"?id="$id"
+
+cleanup "$file"
