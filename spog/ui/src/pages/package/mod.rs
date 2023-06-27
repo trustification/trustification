@@ -28,7 +28,7 @@ pub fn package(props: &PackageProps) -> Html {
             },
         )
     };
-    let query = props.query.clone();
+    let query = props.query.clone().filter(|s| !s.is_empty());
 
     html!(
         <>

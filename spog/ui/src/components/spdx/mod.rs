@@ -301,7 +301,7 @@ pub fn spdx_packages(props: &SpdxPackagesProperties) -> Html {
     let total_entries = filtered_packages.len();
 
     let entries = use_memo(
-        |(bom, filtered_packages, package_map, offset, limit, filter)| {
+        |(bom, filtered_packages, package_map, offset, limit)| {
             let relations = Rc::new(bom.relationships.clone());
             filtered_packages
                 .iter()
@@ -322,16 +322,13 @@ pub fn spdx_packages(props: &SpdxPackagesProperties) -> Html {
             package_map,
             *offset,
             *limit,
-            (*filter).clone(),
         ),
     );
 
     let (entries, onexpand) = use_table_data(MemoizedTableModel::new(entries));
 
-    let onexpand = onexpand.reform(|(key, state)| {
-        log::info!("Toggled: {state}");
-        (key, state)
-    });
+    // FIXME: if the following is missing, expansion is broken, figure out "why"
+    let onexpand = onexpand.reform(|(key, state)| (key, state));
 
     let limit_callback = {
         let limit = limit.clone();

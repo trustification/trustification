@@ -26,7 +26,7 @@ pub fn catalog(props: &CatalogProps) -> Html {
             },
         )
     };
-    let query = props.query.clone();
+    let query = props.query.clone().filter(|s| !s.is_empty());
 
     html!(
         <>

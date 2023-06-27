@@ -13,7 +13,7 @@ chrono = { version = "0.4", default-features = false, features = ["wasmbind"] }
 csaf = { version = "0.5.0", default-features = false }
 cyclonedx-bom = "0.4"
 gloo-net = "0.3"
-gloo-utils = "0.1"
+gloo-utils = { version = "0.1", features = ["serde"] }
 humansize = "2"
 itertools = "0.10"
 log = "0.4"
@@ -40,6 +40,7 @@ yew-nested-router = "0.2.1"
 
 spog-model = "0.1.0"
 
+bombastic-model = { path = "../../bombastic/model" }
 trustification-version = { path = "../../version" }
 
 [build-dependencies]
@@ -59,11 +60,11 @@ features = [
 #yew-nested-router = { git = "https://github.com/ctron/yew-nested-router", rev = "9689db446dee7030325884df768d0c2e84f353d6" }
 yew-more-hooks = { git = "https://github.com/ctron/yew-more-hooks", rev = "3c943759287c59a22256a4748993d2407b9a9e9b" }
 #yew-more-hooks = { path = "../yew-more-hooks" }
-patternfly-yew = { git = "https://github.com/ctron/patternfly-yew", rev = "94c7c00c4c1c0a1e77a22a5e0f182d6c204c46f9" }
+patternfly-yew = { git = "https://github.com/ctron/patternfly-yew", rev = "f7e087d309e835e1a0d996ceb54e8c8acf91f1ff" }
 #patternfly-yew = { path = "../../../patternfly-yew" }
 
 
-csaf = { git = "https://github.com/voteblake/csaf-rs", rev = "76cb9ede10adb1fbb495b17e5fd8d95c5cf6c900"} # FIXME: waiting for release
+csaf = { git = "https://github.com/voteblake/csaf-rs", rev = "76cb9ede10adb1fbb495b17e5fd8d95c5cf6c900" } # FIXME: waiting for release
 
 spog-model = { path = "../model" }
 
