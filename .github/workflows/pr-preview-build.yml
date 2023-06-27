@@ -26,6 +26,7 @@ jobs:
           BUILD_COMMIT: ${{ github.sha }}
         working-directory: spog/ui
         run: |
+          rustup target add wasm32-unknown-unknown
           trunk build --public-url /
           cat << EOF > dist/endpoints/backend.json
           {
