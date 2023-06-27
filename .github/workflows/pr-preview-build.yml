@@ -30,9 +30,9 @@ jobs:
           trunk build --public-url /
           cat << EOF > dist/endpoints/backend.json
           {
-            "url": "https://api.trustification.dev",
-            "vexination": "https://api.trustification.dev",
-            "bombastic": "https://api.trustification.dev"
+            "url": "https://api.staging.trustification.dev",
+            "vexination": "https://vex.staging.trustification.dev",
+            "bombastic": "https://sbom.staging.trustification.dev"
           }
           EOF
 
