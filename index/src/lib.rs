@@ -12,7 +12,7 @@ use tantivy::{
     DateTime, Directory, DocAddress, Index as SearchIndex, IndexSettings, Searcher,
 };
 use time::{OffsetDateTime, UtcOffset};
-use tracing::{debug, info, warn};
+use tracing::{debug, warn};
 
 #[derive(Clone, Debug, clap::Parser)]
 #[command(rename_all_env = "SCREAMING_SNAKE_CASE")]
@@ -216,11 +216,11 @@ impl<INDEX: Index> IndexStore<INDEX> {
 
         let query = self.index.prepare_query(q)?;
 
-        info!("Processed query: {:?}", query);
+        debug!("Processed query: {:?}", query);
 
         let (top_docs, count) = searcher.search(&query, &(TopDocs::with_limit(len).and_offset(offset), Count))?;
 
-        tracing::debug!("Found {} docs", count);
+        debug!("Found {} docs", count);
 
         let mut hits = Vec::new();
         for hit in top_docs {
@@ -232,7 +232,7 @@ impl<INDEX: Index> IndexStore<INDEX> {
             }
         }
 
-        tracing::trace!("Filtered to {}", hits.len());
+        debug!("Filtered to {}", hits.len());
 
         Ok((hits, count))
     }
