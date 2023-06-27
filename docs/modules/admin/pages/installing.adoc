@@ -34,5 +34,4 @@ The services are published in a container image at `ghcr.io/trustification/trust
 Since Kubernetes runs containers, running trustification on Kubernetes is easy! Since it's so easy, we don't provide any out of the box charts or installation script,
 , since lots of the configuration options would be specific to the environment in which the server is run.
 
-We provide a basic set of Kubernetes manifests in the link:https://github.com/trustification/trustification/tree/main/deploy/k8s[deploy/k8s] which you can use as a basis for your environment. By default the manifests reference two
-secrets named `bombastic-credentials-secret` and `vexination-credentials-secret` which must contain the AWS credentials for accessing S3 and SQS infrastructure.
+We maintain a Helm chart at the link:https://github.com/trustification/trustification.dev[trustification.dev] repository used to deploy the link:https://trustification.dev[] instance. Feel free to use this chart as a basis for your environment. By default the manifests reference two secrets named `bombastic-credentials-secret` and `vexination-credentials-secret` which must contain the AWS credentials for accessing S3 and SQS infrastructure.
