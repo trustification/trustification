@@ -1,0 +1,50 @@
+name: PR Preview Build
+on: pull_request
+
+jobs:
+  build-pr-preview:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install trunk
+        run: |
+          curl -sL https://github.com/thedodd/trunk/releases/download/v0.16.0/trunk-x86_64-unknown-linux-gnu.tar.gz -o trunk-x86_64-unknown-linux-gnu.tar.gz
+          tar xzf trunk-x86_64-unknown-linux-gnu.tar.gz
+          sudo install trunk /usr/bin/trunk
+      - uses: actions/setup-node@v3
+        with:
+          node-version: "18"
+      - name: Install NPM dependencies
+        working-directory: spog/ui
+        run: npm install
+
+      - name: Set build timestamp
+        run: echo "BUILD_TIMESTAMP=$(date --rfc-3339=seconds --utc)" >> $GITHUB_ENV
+      - name: Build page
+        env:
+          BUILD_COMMIT: ${{ github.sha }}
+        working-directory: spog/ui
+        run: |
+          trunk build --public-url /
+          cat << EOF > dist/endpoints/backend.json
+          {
+            "url": "https://api.trustification.dev",
+            "vexination": "https://api.trustification.dev",
+            "bombastic": "https://api.trustification.dev"
+          }
+          EOF
+
+      - name: Save PR number
+        run: |
+          mkdir -p ./pr
+          echo ${{ github.event.number }} > ./pr/NR
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: dist
+          path: spog/ui/dist/
+      - uses: actions/upload-artifact@v3
+        with:
+          name: pr
+          path: pr/
