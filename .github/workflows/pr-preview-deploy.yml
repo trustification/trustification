@@ -73,7 +73,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const issue_number = ${{steps.issue_number.outputs.result}};
-            return `trustification-pr-${issue_number}-preview.surge.sh`;
+            return `trustification-spog-pr-${issue_number}-preview.surge.sh`;
           result-encoding: string
       - name: Install Surge
         run: npm install -g surge
