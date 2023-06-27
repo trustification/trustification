@@ -176,7 +176,7 @@ impl Index {
             document.add_text(fields.desc, comment);
         }
         for r in package.external_reference.iter() {
-            if r.reference_type == "cpe22type" {
+            if r.reference_type == "cpe22Type" {
                 document.add_text(fields.cpe, &r.reference_locator);
             }
             if r.reference_type == "purl" {
@@ -431,11 +431,11 @@ impl trustification_index::Index for Index {
 
         query.term = query.term.compact();
 
-        info!("Query: {query:?}");
+        debug!("Query: {query:?}");
 
         let query = term2query(&query.term, &|resource| self.resource2query(resource));
 
-        info!("Processed query: {:?}", query);
+        debug!("Processed query: {:?}", query);
         Ok(query)
     }
 
@@ -558,7 +558,7 @@ mod tests {
     where
         F: FnOnce(IndexStore<Index>),
     {
-        let _ = env_logger::try_init();
+        let _ = tracing_subscriber::fmt::try_init();
 
         let index = Index::new();
         let mut store = IndexStore::new_in_memory(index).unwrap();
@@ -568,9 +568,14 @@ mod tests {
         let sbom = SBOM::parse(data.as_bytes()).unwrap();
         writer.add_document(store.index_as_mut(), "ubi9-sbom", &sbom).unwrap();
 
+        let data = std::fs::read_to_string("../testdata/kmm-1.json").unwrap();
+        let sbom = SBOM::parse(data.as_bytes()).unwrap();
+        writer.add_document(store.index_as_mut(), "kmm-1", &sbom).unwrap();
+
         let data = std::fs::read_to_string("../testdata/my-sbom.json").unwrap();
         let sbom = SBOM::parse(data.as_bytes()).unwrap();
         writer.add_document(store.index_as_mut(), "my-sbom", &sbom).unwrap();
+
         writer.commit().unwrap();
 
         f(store);
@@ -602,6 +607,12 @@ mod tests {
 
             let result = search(&index, "ubi9-containe in:package");
             assert_eq!(result.0.len(), 1);
+
+            let result = search(&index, "ubi9-containe in:package");
+            assert_eq!(result.0.len(), 1);
+
+            let result = search(&index, "\"cpe:/a:redhat:kernel_module_management:1.0::el9\" in:package");
+            assert_eq!(result.0.len(), 1);
         });
     }
 
@@ -617,7 +628,7 @@ mod tests {
     async fn test_search_created() {
         assert_search(|index| {
             let result = search(&index, "created:>2022-01-01");
-            assert_eq!(result.0.len(), 2);
+            assert_eq!(result.0.len(), 3);
 
             let result = search(&index, "created:2023-03-30");
             assert_eq!(result.0.len(), 1);
@@ -634,7 +645,7 @@ mod tests {
     async fn test_all() {
         assert_search(|index| {
             let result = search(&index, "");
-            assert_eq!(result.0.len(), 2);
+            assert_eq!(result.0.len(), 3);
         });
     }
 
@@ -666,12 +677,12 @@ mod tests {
     async fn test_supplier() {
         assert_search(|index| {
             let result = search(&index, "supplier:\"Organization: Red Hat\"");
-            assert_eq!(result.0.len(), 1);
+            assert_eq!(result.0.len(), 2);
         });
 
         assert_search(|index| {
             let result = search(&index, "\"Red Hat\" in:supplier");
-            assert_eq!(result.0.len(), 1);
+            assert_eq!(result.0.len(), 2);
         });
     }
 
