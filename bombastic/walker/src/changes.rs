@@ -1,30 +1,26 @@
 use anyhow::Result;
-use std::collections::HashMap;
-use std::io::Write;
 use chrono::{DateTime, Utc};
 use csv;
 use reqwest::Url;
+use std::collections::HashMap;
+use std::io::Write;
 
 use serde::Deserialize;
 
-/// INPUT : a CSV File containing the changes
-/// OUTPUT : the item changed since the last call
-
-#[derive(Debug, serde::Deserialize, Eq, PartialEq)]
+#[derive(Debug, Deserialize, Eq, PartialEq)]
 struct ChangeRow {
     path: String,
-    last_change: DateTime<Utc>
+    last_change: DateTime<Utc>,
 }
 
 pub struct ChangeTracker {
     address: Url,
-    store: HashMap<String, DateTime<Utc>>
+    store: HashMap<String, DateTime<Utc>>,
 }
 
 impl ChangeTracker {
     pub fn new(address: Url) -> ChangeTracker {
-
-        ChangeTracker{
+        ChangeTracker {
             address,
             store: HashMap::new(),
         }
@@ -40,8 +36,7 @@ impl ChangeTracker {
                 if entry < &new_entry.1 {
                     to_update.push(new_entry.0.clone())
                 }
-            }
-            else {
+            } else {
                 to_update.push(new_entry.0.clone())
             }
         }
@@ -53,9 +48,7 @@ impl ChangeTracker {
     async fn read_csv(content: TextBody) -> Result<HashMap<String, DateTime<Utc>>> {
         let mut store = HashMap::new();
 
-        let mut rdr = csv::ReaderBuilder::new()
-            .has_headers(false)
-            .from_reader(content);
+        let mut rdr = csv::ReaderBuilder::new().has_headers(false).from_reader(content);
 
         for result in rdr.deserialize() {
             let record: ChangeRow = result.unwrap();
@@ -66,34 +59,28 @@ impl ChangeTracker {
     }
 
     async fn download_changesfile(address: &Url) -> Result<TextBody> {
-        let body = reqwest::get(address.clone())
-            .await?
-            .text()
-            .await?;
+        let body = reqwest::get(address.clone()).await?.text().await?;
 
-       Ok(TextBody::from(body))
+        Ok(TextBody::from(body))
     }
 }
 
 struct TextBody {
     body: Vec<String>,
-    index: usize
-
+    index: usize,
 }
 
-
 impl std::io::Read for TextBody {
-    fn read(&mut self,  mut buf: &mut [u8]) -> std::io::Result<usize> {
+    fn read(&mut self, mut buf: &mut [u8]) -> std::io::Result<usize> {
         if self.index < self.body.len() {
             let line = self.body.get(self.index).unwrap();
             let size = line.len();
             buf.write(line.as_bytes())?;
 
-            self.index +=1;
+            self.index += 1;
             Ok(size)
-        }
-        else {
-            return Ok(0)
+        } else {
+            return Ok(0);
         }
     }
 }
