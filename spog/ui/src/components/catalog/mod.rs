@@ -1,8 +1,13 @@
 use crate::backend::{PackageService, SearchOptions};
 use crate::hooks::use_backend::use_backend;
+use bombastic_model::prelude::Packages;
+use gloo_utils::format::JsValueSerdeExt;
 use patternfly_yew::prelude::*;
+use sikula::prelude::*;
 use spog_model::prelude::*;
+use std::borrow::Cow;
 use std::{collections::HashSet, rc::Rc};
+use wasm_bindgen::JsValue;
 use yew::prelude::*;
 use yew_more_hooks::prelude::*;
 
@@ -29,24 +34,41 @@ pub fn catalog_search(props: &CatalogSearchProperties) -> Html {
     let limit = use_state_eq(|| 10);
 
     // the active query
-    let state = use_state_eq(|| {
-        // initialize with the state from history, or with a reasonable default
-        props.query.clone().unwrap_or_else(|| {
-            gloo_utils::history()
-                .state()
-                .ok()
-                .and_then(|state| state.as_string())
-                .unwrap_or_else(String::default)
-        })
+    let search_params = use_state_eq(|| {
+        // initialize with the state from properties, history, or with a reasonable default
+        props
+            .query
+            .clone()
+            .map(|s| {
+                log::debug!("Initial: {s}");
+                match s.is_empty() {
+                    true => SearchMode::default(),
+                    false => SearchMode::Complex(s),
+                }
+            })
+            .unwrap_or_else(|| {
+                let state = gloo_utils::history().state();
+
+                log::debug!("State: {state:?}");
+
+                state
+                    .ok()
+                    .and_then(|state| {
+                        let deser = state.into_serde::<SearchMode>();
+                        log::debug!("Deserialized: {deser:?}");
+                        deser.ok()
+                    })
+                    .unwrap_or_else(SearchMode::default)
+            })
     });
 
     let search = {
         let service = service.clone();
         use_async_with_cloned_deps(
-            move |(state, offset, limit)| async move {
+            move |(search_params, offset, limit)| async move {
                 service
                     .search_packages(
-                        &state,
+                        &search_params.as_str(),
                         &SearchOptions {
                             offset: Some(offset),
                             limit: Some(limit),
@@ -56,7 +78,7 @@ pub fn catalog_search(props: &CatalogSearchProperties) -> Html {
                     .map(|result| result.map(Rc::new))
                     .map_err(|err| err.to_string())
             },
-            ((*state).clone(), *offset, *limit),
+            ((*search_params).clone(), *offset, *limit),
         )
     };
 
@@ -68,33 +90,64 @@ pub fn catalog_search(props: &CatalogSearchProperties) -> Html {
     );
 
     // the current value in the text input field
-    let text = use_state_eq(|| (*state).clone());
+    let text = use_state_eq(|| match &*search_params {
+        SearchMode::Complex(s) => s.to_string(),
+        SearchMode::Simple(s) => s.terms.join(" "),
+    });
 
-    let text_state = use_memo(|text| {}, (*text).clone());
+    // parse filter
+    let filter_input_state = use_memo(
+        |(simple, text)| match simple {
+            true => InputState::Default,
+            false => match Packages::parse(text) {
+                Ok(_) => InputState::Default,
+                Err(_) => InputState::Error,
+            },
+        },
+        ((*search_params).is_simple(), (*text).clone()),
+    );
 
+    // clear search, keep mode
     let onclear = {
         let text = text.clone();
-        let state = state.clone();
+        let search_params = search_params.clone();
         Callback::from(move |_| {
             text.set(String::new());
             // trigger empty search
-            state.set(String::new());
+            match *search_params {
+                SearchMode::Complex(_) => search_params.set(SearchMode::Complex(String::new())),
+                SearchMode::Simple(_) => search_params.set(SearchMode::Simple(Default::default())),
+            }
         })
     };
+
+    // apply text field to search
     let onset = {
-        let state = state.clone();
+        let search_params = search_params.clone();
         let text = text.clone();
         Callback::from(move |()| {
-            state.set((*text).clone());
+            let s = (*search_params).clone();
+            match s {
+                SearchMode::Complex(_) => {
+                    search_params.set(SearchMode::Complex((*text).clone()));
+                }
+                SearchMode::Simple(mut s) => {
+                    let text = &*text;
+                    s.terms = text.split(" ").map(|s| s.to_string()).collect();
+                    search_params.set(SearchMode::Simple(s));
+                }
+            }
         })
     };
 
     use_effect_with_deps(
-        |query| {
+        |search_params| {
             // store changes to the state in the current history
-            let _ = gloo_utils::history().replace_state(&query.into(), "");
+            if let Ok(data) = JsValue::from_serde(search_params) {
+                let _ = gloo_utils::history().replace_state(&data, "");
+            }
         },
-        (*state).clone(),
+        (*search_params).clone(),
     );
 
     // pagination
@@ -159,6 +212,26 @@ pub fn catalog_search(props: &CatalogSearchProperties) -> Html {
         )
     };
 
+    let simple = search_params.is_simple();
+
+    // toggle search mode: simple <-> complex
+    let ontogglesimple = {
+        let search_params = search_params.clone();
+        let text = text.clone();
+
+        Callback::from(move |state| match state {
+            false => {
+                let q = (*search_params).as_str().to_string();
+                search_params.set(SearchMode::Complex(q.clone()));
+                text.set(q);
+            }
+            true => {
+                search_params.set(SearchMode::default());
+                text.set(String::new());
+            }
+        })
+    };
+
     // render
     html!(
         <>
@@ -166,7 +239,7 @@ pub fn catalog_search(props: &CatalogSearchProperties) -> Html {
             <Grid>
                 <GridItem cols={[2]}>
                     <div style="height: 100%; display: flex; flex-direction: row; align-items: center;">
-                        <Title level={Level::H2}>{ "Categories" }</Title>
+                        <Title level={Level::H2}>{ "Categories " } <Switch checked={simple} label="Simple" label_off="Complex" onchange={ontogglesimple}/> </Title>
                     </div>
                 </GridItem>
                 <GridItem cols={[10]}>
@@ -180,12 +253,14 @@ pub fn catalog_search(props: &CatalogSearchProperties) -> Html {
                                         <input type="submit" hidden=true formmethod="dialog" />
                                         <InputGroup>
                                             <TextInputGroup>
-                                                <TextInputGroupMain
+                                                <TextInput
                                                     icon={Icon::Search}
                                                     placeholder="Search"
                                                     value={(*text).clone()}
+                                                    state={*filter_input_state}
                                                     oninput={ Callback::from(move |data| text.set(data)) }
                                                 />
+
                                                 if !hidden {
                                                     <TextInputGroupUtilities>
                                                         <Button icon={Icon::Times} variant={ButtonVariant::Plain} onclick={onclear} />
@@ -193,7 +268,12 @@ pub fn catalog_search(props: &CatalogSearchProperties) -> Html {
                                                 }
                                             </TextInputGroup>
                                             <InputGroupItem>
-                                                <Button icon={Icon::ArrowRight} variant={ButtonVariant::Control} onclick={onset.reform(|_|())} />
+                                                <Button
+                                                    disabled={*filter_input_state == InputState::Error}
+                                                    icon={Icon::ArrowRight}
+                                                    variant={ButtonVariant::Control}
+                                                    onclick={onset.reform(|_|())}
+                                                />
                                             </InputGroupItem>
                                         </InputGroup>
                                     </Form>
@@ -221,34 +301,121 @@ pub fn catalog_search(props: &CatalogSearchProperties) -> Html {
 
                 <GridItem cols={[2]}>
                     <Accordion large=true bordered=true>
+
                         { filter_section("Supplier", html!(
                             <List r#type={ListType::Plain}>
-                                <Check>{ "Red Hat" }</Check>
+                                <Check
+                                    checked={(*search_params).map(|s|s.supplier_redhat)}
+                                    onchange={search_set(&search_params, |s, state|s.supplier_redhat=state)}
+                                    disabled={!simple}
+                                >
+                                    { "Red Hat" }
+                                </Check>
                             </List>
                         ))}
+
                         { filter_section("Type", html!(
                             <List r#type={ListType::Plain}>
-                                <Check>{ "Container" }</Check>
+                                <Check
+                                    checked={(*search_params).map(|s|s.is_container)}
+                                    onchange={search_set(&search_params, |s, state|s.is_container=state)}
+                                    disabled={!simple}
+                                >
+                                    { "Container" }
+                                </Check>
                             </List>
                         ))}
+
                         { filter_section("Architecture", html!(
                             <List r#type={ListType::Plain}>
-                                <Check>{ "amd64" }</Check>
-                                <Check>{ "aarch64" }</Check>
-                                <Check>{ "s390" }</Check>
+                                <Check disabled=true>{ "amd64" }</Check>
+                                <Check disabled=true>{ "aarch64" }</Check>
+                                <Check disabled=true>{ "s390" }</Check>
                             </List>
                         ))}
                     </Accordion>
                 </GridItem>
 
                 <GridItem cols={[10]}>
-
                     { for props.children.iter() }
-
                 </GridItem>
 
             </Grid>
 
         </>
     )
+}
+
+fn search_set<F>(search: &UseStateHandle<SearchMode>, f: F) -> Callback<bool>
+where
+    F: Fn(&mut SearchParameters, bool) + 'static,
+{
+    let search = search.clone();
+    Callback::from(move |state| {
+        if let SearchMode::Simple(simple) = &*search {
+            let mut simple = simple.clone();
+            f(&mut simple, state);
+            search.set(SearchMode::Simple(simple));
+        }
+    })
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+struct SearchParameters {
+    supplier_redhat: bool,
+    is_container: bool,
+    terms: Vec<String>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+enum SearchMode {
+    Complex(String),
+    Simple(SearchParameters),
+}
+
+impl SearchMode {
+    pub fn is_simple(&self) -> bool {
+        matches!(self, Self::Simple(_))
+    }
+
+    pub fn map<F>(&self, f: F) -> bool
+    where
+        F: FnOnce(&SearchParameters) -> bool,
+    {
+        match self {
+            Self::Simple(s) => f(s),
+            Self::Complex(_) => false,
+        }
+    }
+
+    pub fn as_str(&self) -> Cow<'_, str> {
+        match self {
+            Self::Complex(s) => s.into(),
+            Self::Simple(s) => {
+                let mut q = s.terms.join(" ");
+
+                if s.supplier_redhat {
+                    if !q.is_empty() {
+                        q.push(' ');
+                    }
+                    q.push_str(r#"supplier:"Organization: Red Hat""#);
+                }
+
+                if s.is_container {
+                    if !q.is_empty() {
+                        q.push(' ');
+                    }
+                    q.push_str("type:oci");
+                }
+
+                q.into()
+            }
+        }
+    }
+}
+
+impl Default for SearchMode {
+    fn default() -> Self {
+        Self::Simple(Default::default())
+    }
 }

@@ -71,6 +71,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bef38d45163c2f1dde094a7dfd33ccf595c92905c8f8f4fdc18d06fb1037718a"
 
 [[package]]
+name = "bombastic-model"
+version = "0.1.0"
+dependencies = [
+ "chumsky",
+ "serde",
+ "serde_json",
+ "sikula",
+ "time 0.3.22",
+ "urlencoding",
+ "utoipa",
+]
+
+[[package]]
 name = "boolinator"
 version = "2.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1212,7 +1225,7 @@ dependencies = [
 [[package]]
 name = "patternfly-yew"
 version = "0.5.0-alpha.2"
-source = "git+https://github.com/ctron/patternfly-yew?rev=94c7c00c4c1c0a1e77a22a5e0f182d6c204c46f9#94c7c00c4c1c0a1e77a22a5e0f182d6c204c46f9"
+source = "git+https://github.com/ctron/patternfly-yew?rev=f7e087d309e835e1a0d996ceb54e8c8acf91f1ff#f7e087d309e835e1a0d996ceb54e8c8acf91f1ff"
 dependencies = [
  "chrono",
  "gloo-events",
@@ -1593,6 +1606,7 @@ dependencies = [
  "chumsky",
  "sikula-macros",
  "thiserror",
+ "time 0.3.22",
 ]
 
 [[package]]
@@ -1689,6 +1703,7 @@ name = "spog-ui"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "bombastic-model",
  "browser-panic-hook",
  "chrono",
  "csaf",
