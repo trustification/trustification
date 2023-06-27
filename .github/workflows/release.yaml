@@ -277,10 +277,14 @@ jobs:
         run: |
           for container in trust trust-ui trust-docs; do
             IMAGE="ghcr.io/${{ github.repository_owner }}/${container}:${{ needs.init.outputs.version }}"
+            LATEST="ghcr.io/${{ github.repository_owner }}/${container}:latest"
             podman push \
               "${container}:${{ needs.init.outputs.version }}" \
               "${IMAGE}" \
               --digestfile "${RUNNER_TEMP}/push.${container}.digest"
+            podman push \
+              "${container}:${{ needs.init.outputs.version }}" \
+              "${LATEST}"
           done
 
 
