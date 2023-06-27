@@ -6,7 +6,6 @@ use cyclonedx_bom::models::{
     hash::HashAlgorithm,
     license::{LicenseChoice, LicenseIdentifier},
 };
-use search::*;
 use sikula::prelude::*;
 use spdx_rs::models::Algorithm;
 use tantivy::{
