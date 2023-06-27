@@ -70,6 +70,8 @@ pub fn catalog_search(props: &CatalogSearchProperties) -> Html {
     // the current value in the text input field
     let text = use_state_eq(|| (*state).clone());
 
+    let text_state = use_memo(|text| {}, (*text).clone());
+
     let onclear = {
         let text = text.clone();
         let state = state.clone();
@@ -227,8 +229,6 @@ pub fn catalog_search(props: &CatalogSearchProperties) -> Html {
                         { filter_section("Type", html!(
                             <List r#type={ListType::Plain}>
                                 <Check>{ "Container" }</Check>
-                                <Check>{ "Application" }</Check>
-                                <Check>{ "Library" }</Check>
                             </List>
                         ))}
                         { filter_section("Architecture", html!(

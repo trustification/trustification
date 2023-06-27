@@ -1068,8 +1068,10 @@ dependencies = [
 name = "bombastic-model"
 version = "0.1.0"
 dependencies = [
+ "chumsky",
  "serde",
  "serde_json",
+ "sikula",
  "time 0.3.22",
  "urlencoding",
  "utoipa",
