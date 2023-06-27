@@ -19,7 +19,11 @@ pub struct TestContext {
 /// - Bombastic Indexer
 /// - Vexination API
 /// - Vexination Indexer
-pub fn run_test<F: Future<Output = Result<(), anyhow::Error>>>(timeout: Duration, test: F) {
+pub fn run_test<F, Fut>(timeout: Duration, test: F)
+where
+    F: FnOnce(u16, u16) -> Fut,
+    Fut: Future<Output = ()>,
+{
     let _ = env_logger::try_init();
     let ctx = TestContext {
         storage_endpoint: "http://localhost:9000".into(),
@@ -31,6 +35,9 @@ pub fn run_test<F: Future<Output = Result<(), anyhow::Error>>>(timeout: Duration
 
     let runtime = tokio::runtime::Runtime::new().unwrap();
     runtime.block_on(rt.run_until(async move {
+        let mut bombastic = bombastic_api(&api.storage_endpoint);
+        let mut vexination = vexination_api(&api.storage_endpoint);
+
         select! {
             biased;
 
@@ -53,7 +60,7 @@ pub fn run_test<F: Future<Output = Result<(), anyhow::Error>>>(timeout: Duration
             },
 
 
-            bapi = bombastic_api(&api.storage_endpoint).run() => match bapi {
+            bapi = bombastic.serve(bombastic.index.clone(), bombastic.storage.clone(), &prometheus::Registry::new(), bombastic.devmode).unwrap() => match bapi {
                 Err(e) => {
                     panic!("Error running bombastic API: {:?}", e);
                 }
@@ -62,7 +69,7 @@ pub fn run_test<F: Future<Output = Result<(), anyhow::Error>>>(timeout: Duration
                 }
             },
 
-            vapi = vexination_api(&api.storage_endpoint).run() => match vapi {
+            vapi = vexination.serve(vexination.index.clone(), vexination.storage.clone(), &prometheus::Registry::new(), vexination.devmode).unwrap() => match vapi {
                 Err(e) => {
                     panic!("Error running vexination API: {:?}", e);
                 }
@@ -76,7 +83,7 @@ pub fn run_test<F: Future<Output = Result<(), anyhow::Error>>>(timeout: Duration
                 // Probe bombastic API
                 loop {
                     let response = client
-                        .get("http://localhost:8082/api/v1/sbom?id=none")
+                        .get(format!("http://localhost:{}/api/v1/sbom?id=none", bombastic.port))
                         .send()
                         .await
                         .unwrap();
@@ -89,7 +96,7 @@ pub fn run_test<F: Future<Output = Result<(), anyhow::Error>>>(timeout: Duration
                 // Probe vexination API
                 loop {
                     let response = client
-                        .get("http://localhost:8081/api/v1/vex?advisory=none")
+                        .get(format!("http://localhost:{}/api/v1/vex?advisory=none", vexination.port))
                         .send()
                         .await
                         .unwrap();
@@ -100,7 +107,7 @@ pub fn run_test<F: Future<Output = Result<(), anyhow::Error>>>(timeout: Duration
                 }
 
                 // Run test
-                test.await
+                test(bombastic.port, vexination.port).await
             } => {
                 println!("Test completed");
             }
@@ -108,7 +115,7 @@ pub fn run_test<F: Future<Output = Result<(), anyhow::Error>>>(timeout: Duration
                 panic!("Test timed out");
             }
         }
-    }));
+    }))
 }
 
 pub async fn assert_within_timeout<F: Future>(t: Duration, f: F) {
@@ -153,7 +160,7 @@ fn bombastic_indexer(storage_endpoint: &str, kafka_bootstrap_servers: &str) -> b
 fn bombastic_api(storage_endpoint: &str) -> bombastic_api::Run {
     bombastic_api::Run {
         bind: "127.0.0.1".to_string(),
-        port: 8082,
+        port: 0,
         devmode: true,
         index: IndexConfig {
             index: None,
@@ -209,7 +216,7 @@ fn vexination_indexer(storage_endpoint: &str, kafka_bootstrap_servers: &str) -> 
 fn vexination_api(storage_endpoint: &str) -> vexination_api::Run {
     vexination_api::Run {
         bind: "127.0.0.1".to_string(),
-        port: 8081,
+        port: 0,
         devmode: true,
         index: IndexConfig {
             index: None,
