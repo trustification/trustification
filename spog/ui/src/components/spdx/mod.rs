@@ -84,6 +84,7 @@ pub fn spdx_main(bom: &SPDX) -> Html {
                     <DescriptionList>
                         <DescriptionGroup term="Name">{ &package.package_name }</DescriptionGroup>
                         <DescriptionGroup term="Version">{ OrNone(package.package_version.as_ref()) }</DescriptionGroup>
+                        <DescriptionGroup term="External References"> { spdx_external_references(&package)} </DescriptionGroup>
                     </DescriptionList>
                 )]
                 },
@@ -134,113 +135,6 @@ pub fn spdx_stats(size: usize, bom: &SPDX) -> Html {
 pub struct SpdxPackagesProperties {
     pub bom: Rc<SPDX>,
 }
-
-/*
-
-// Tree version
-
-#[function_component(SpdxPackages)]
-pub fn spdx_packages(props: &SpdxPackagesProperties) -> Html {
-    #[derive(Clone, Eq, PartialEq)]
-    enum Column {
-        Name,
-        Version,
-    }
-
-    #[derive(Clone, PartialEq)]
-    struct ModelWrapper {
-        root: Vec<String>,
-        packages: Rc<HashMap<String, PackageInformation>>,
-        relations: Rc<Vec<Relationship>>,
-    }
-
-    impl TreeTableModel<Column> for ModelWrapper {
-        fn children(&self) -> Vec<Rc<dyn TreeNode<Column>>> {
-            self.root
-                .iter()
-                .filter_map(|r| self.packages.get(r))
-                .map(|p| {
-                    Rc::new(PackageInformationWrapper {
-                        package: p.clone(),
-                        relations: Rc::downgrade(&self.relations),
-                        packages: Rc::downgrade(&self.packages),
-                    }) as Rc<dyn TreeNode<Column>>
-                })
-                .collect()
-        }
-    }
-
-    struct PackageInformationWrapper {
-        package: PackageInformation,
-        relations: Weak<Vec<Relationship>>,
-        packages: Weak<HashMap<String, PackageInformation>>,
-    }
-
-    impl TreeNode<Column> for PackageInformationWrapper {
-        fn children(&self) -> Vec<Rc<dyn TreeNode<Column>>> {
-            let (relations, packages) = match (self.relations.upgrade(), self.packages.upgrade()) {
-                (Some(relations), Some(packages)) => (relations, packages),
-                _ => return vec![],
-            };
-
-            relations
-                .iter()
-                .filter_map(|r| match r.relationship_type {
-                    RelationshipType::ContainedBy if r.related_spdx_element == self.package.package_spdx_identifier => {
-                        packages.get(&r.spdx_element_id).cloned()
-                    }
-                    _ => None,
-                })
-                .map(|package| {
-                    Rc::new(PackageInformationWrapper {
-                        packages: self.packages.clone(),
-                        relations: self.relations.clone(),
-                        package,
-                    }) as Rc<dyn TreeNode<Column>>
-                })
-                .collect()
-        }
-
-        fn render_cell(&self, context: CellContext<Column>) -> Cell {
-            match context.column {
-                Column::Name => html!(&self.package.package_name),
-                Column::Version => html!(self.package.package_version.clone().unwrap_or_default()),
-            }
-            .into()
-        }
-    }
-
-    let header = html_nested!(
-        <TreeTableHeader<Column>>
-            <TableColumn<Column> index={Column::Name} label="Name" />
-            <TableColumn<Column> index={Column::Version} label="Version" />
-        </TreeTableHeader<Column>>
-    );
-
-    let model = use_memo(
-        |bom| ModelWrapper {
-            root: bom.document_creation_information.document_describes.clone(),
-            packages: Rc::new(
-                bom.package_information
-                    .iter()
-                    .map(|p| (p.package_spdx_identifier.clone(), p.clone()))
-                    .collect::<HashMap<_, _>>(),
-            ),
-            relations: Rc::new(bom.relationships.clone()),
-        },
-        props.bom.clone(),
-    );
-
-    html!(
-        <TreeTable<Column, ModelWrapper>
-            mode={TreeTableMode::Compact}
-            {header}
-            {model}
-        />
-
-    )
-}
- */
 
 #[function_component(SpdxPackages)]
 pub fn spdx_packages(props: &SpdxPackagesProperties) -> Html {
@@ -317,13 +211,7 @@ pub fn spdx_packages(props: &SpdxPackagesProperties) -> Html {
                     <GridItem cols={[4]}>
                         <Card plain=true title={html!(<Title>{"External References"}</Title>)}>
                             <CardBody>
-                                { for self.package.external_reference.iter().map(|e|{
-                                    html!( <>
-                                        {&e.reference_locator} { " " }
-                                        <Label label={format!("{:?}", e.reference_category)} color={Color::Blue} /> { " " }
-                                        <Label label={format!("{}", e.reference_type)} color={Color::Grey} />
-                                    </> )
-                                }) }
+                                { spdx_external_references(&self.package) }
                             </CardBody>
                         </Card>
                     </GridItem>
@@ -525,5 +413,24 @@ pub fn spdx_packages(props: &SpdxPackagesProperties) -> Html {
                 position={PaginationPosition::Bottom}
             />
         </>
+    )
+}
+
+/// render the external packages
+fn spdx_external_references(package: &PackageInformation) -> Html {
+    html!(
+        <List>
+            { for package
+                .external_reference
+                .iter()
+                .map(|e| {
+                    html!( <>
+                    {&e.reference_locator} { " " }
+                    <Label label={format!("{:?}", e.reference_category)} color={Color::Blue} /> { " " }
+                    <Label label={format!("{}", e.reference_type)} color={Color::Grey} />
+                </> )
+                })
+            }
+        </List>
     )
 }
