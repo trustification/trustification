@@ -24,28 +24,14 @@ use crate::SharedState;
 )]
 pub struct ApiDoc;
 
-pub async fn run<B: Into<SocketAddr>>(state: SharedState, bind: B) -> Result<(), anyhow::Error> {
-    let openapi = ApiDoc::openapi();
-    let addr = bind.into();
-    log::debug!("listening on {}", addr);
-    HttpServer::new(move || {
-        App::new()
-            .wrap(Logger::default())
-            .wrap(Compress::default())
-            .app_data(web::PayloadConfig::new(10 * 1024 * 1024))
-            .app_data(web::Data::new(state.clone()))
-            .service(
-                web::scope("/api/v1")
-                    .service(fetch_vex)
-                    .service(publish_vex)
-                    .service(search_vex),
-            )
-            .service(SwaggerUi::new("/swagger-ui/{_:.*}").url("/openapi.json", openapi.clone()))
-    })
-    .bind(addr)?
-    .run()
-    .await?;
-    Ok(())
+pub fn config(cfg: &mut web::ServiceConfig) {
+    cfg.service(
+        web::scope("/api/v1")
+            .service(fetch_vex)
+            .service(publish_vex)
+            .service(search_vex),
+    )
+    .service(SwaggerUi::new("/swagger-ui/{_:.*}").url("/openapi.json", ApiDoc::openapi()));
 }
 
 async fn fetch_object(storage: &Storage, key: &str) -> HttpResponse {

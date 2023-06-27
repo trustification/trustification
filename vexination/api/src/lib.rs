@@ -3,6 +3,11 @@
 #![allow(unused_imports)]
 use std::{net::SocketAddr, path::PathBuf, process::ExitCode, str::FromStr, sync::Arc, time::Duration};
 
+use actix_web::{
+    dev::Server,
+    middleware::{Compress, Logger},
+    web, App, HttpServer,
+};
 use prometheus::Registry;
 use tokio::sync::RwLock;
 use trustification_index::{IndexConfig, IndexStore};
@@ -34,20 +39,42 @@ pub struct Run {
 }
 
 impl Run {
-    pub async fn run(self) -> anyhow::Result<ExitCode> {
-        let index = self.index;
-        let storage = self.storage;
+    pub async fn run(mut self) -> anyhow::Result<ExitCode> {
+        let index = self.index.clone();
+        let storage = self.storage.clone();
         let devmode = self.devmode;
-        Infrastructure::from(self.infra)
+        Infrastructure::from(self.infra.clone())
             .run("vexination-api", |metrics| async move {
-                let state = Self::configure(index, storage, metrics.registry(), devmode)?;
-                let addr = SocketAddr::from_str(&format!("{}:{}", self.bind, self.port))?;
-
-                server::run(state, addr).await
+                self.serve(index, storage, metrics.registry(), devmode)?
+                    .await
+                    .map_err(anyhow::Error::msg)
             })
             .await?;
-
         Ok(ExitCode::SUCCESS)
+    }
+
+    pub fn serve(
+        &mut self,
+        index: IndexConfig,
+        storage: StorageConfig,
+        registry: &Registry,
+        devmode: bool,
+    ) -> anyhow::Result<Server> {
+        let state = Self::configure(index, storage, registry, devmode)?;
+        let addr = SocketAddr::from_str(&format!("{}:{}", self.bind, self.port))?;
+        let server = HttpServer::new(move || {
+            App::new()
+                .wrap(Logger::default())
+                .wrap(Compress::default())
+                .app_data(web::PayloadConfig::new(10 * 1024 * 1024))
+                .app_data(web::Data::new(state.clone()))
+                .configure(server::config)
+        })
+        .bind(addr)?;
+        let addrs = server.addrs();
+        self.port = addrs[0].port();
+        log::info!("listening on {}", addrs[0]);
+        Ok(server.run())
     }
 
     fn configure(

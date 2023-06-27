@@ -14,9 +14,17 @@ docker-compose -f compose.yaml up
 
 This will start MinIO and Kafka in containers and initialize them accordingly so that you don't need to configure anything. Default arguments of Vexination components will work with this setup.
 
+The MinIO console is available at http://localhost:9001
+
 ## Integration tests
 
 Trustification comes with a set of integration tests that you can run assuming dependent services are launched with the above compose configuration:
+
+```
+cargo test -p integration-tests
+```
+
+To see more detailed output:
 
 ```
 RUST_LOG=info cargo test -p integration-tests -- --nocapture

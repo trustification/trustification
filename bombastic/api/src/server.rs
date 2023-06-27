@@ -1,7 +1,4 @@
-use std::{
-    io::{self},
-    net::SocketAddr,
-};
+use std::io::{self};
 
 use crate::SharedState;
 use actix_web::{
@@ -12,8 +9,7 @@ use actix_web::{
         header::{self, Accept, AcceptEncoding, ContentType, HeaderValue, CONTENT_ENCODING},
         StatusCode,
     },
-    middleware::{Compress, Logger},
-    route, web, App, HttpRequest, HttpResponse, HttpServer, Responder,
+    route, web, HttpRequest, HttpResponse, Responder,
 };
 use bombastic_model::prelude::*;
 use derive_more::{Display, Error, From};
@@ -31,29 +27,15 @@ use utoipa_swagger_ui::SwaggerUi;
 )]
 pub struct ApiDoc;
 
-pub async fn run<B: Into<SocketAddr>>(state: SharedState, bind: B) -> Result<(), anyhow::Error> {
-    let openapi = ApiDoc::openapi();
-
-    let addr = bind.into();
-    log::debug!("listening on {}", addr);
-    HttpServer::new(move || {
-        App::new()
-            .wrap(Logger::default())
-            .wrap(Compress::default())
-            .app_data(web::Data::new(state.clone()))
-            .service(
-                web::scope("/api/v1")
-                    .service(query_sbom)
-                    .service(search_sbom)
-                    .service(publish_sbom)
-                    .service(delete_sbom),
-            )
-            .service(SwaggerUi::new("/swagger-ui/{_:.*}").url("/openapi.json", openapi.clone()))
-    })
-    .bind(addr)?
-    .run()
-    .await?;
-    Ok(())
+pub fn config(cfg: &mut web::ServiceConfig) {
+    cfg.service(
+        web::scope("/api/v1")
+            .service(query_sbom)
+            .service(search_sbom)
+            .service(publish_sbom)
+            .service(delete_sbom),
+    )
+    .service(SwaggerUi::new("/swagger-ui/{_:.*}").url("/openapi.json", ApiDoc::openapi()));
 }
 
 const ACCEPT_ENCODINGS: [&str; 2] = ["bzip2", "zstd"];

@@ -5,23 +5,24 @@ use std::time::Duration;
 
 #[test]
 fn test_vexination() {
-    run_test(Duration::from_secs(60), async move {
+    run_test(Duration::from_secs(60), |_, port| async move {
         let client = reqwest::Client::new();
         let input =
             serde_json::from_str::<Map<String, Value>>(include_str!("../../vexination/testdata/rhsa-2023_1441.json"))
                 .unwrap();
         let response = client
-            .post("http://localhost:8081/api/v1/vex")
+            .post(format!("http://localhost:{port}/api/v1/vex"))
             .json(&input)
             .send()
-            .await?;
+            .await
+            .unwrap();
         assert_eq!(response.status(), StatusCode::CREATED);
 
         assert_within_timeout(Duration::from_secs(30), async move {
             loop {
                 // 1. Check that we can get the VEX back
                 let response = client
-                    .get("http://localhost:8081/api/v1/vex?advisory=RHSA-2023%3A1441")
+                    .get(format!("http://localhost:{port}/api/v1/vex?advisory=RHSA-2023%3A1441"))
                     .header("Accept", "application/json")
                     .send()
                     .await
@@ -33,7 +34,7 @@ fn test_vexination() {
 
                     // 2. Make sure we can search for the VEX (takes some time)
                     let response = client
-                        .get("http://localhost:8081/api/v1/vex/search?q=")
+                        .get(format!("http://localhost:{port}/api/v1/vex/search?q="))
                         .send()
                         .await
                         .unwrap();
@@ -49,6 +50,5 @@ fn test_vexination() {
             }
         })
         .await;
-        Ok(())
     })
 }
