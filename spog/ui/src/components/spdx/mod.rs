@@ -372,22 +372,70 @@ pub fn spdx_packages(props: &SpdxPackagesProperties) -> Html {
         props.bom.clone(),
     );
 
+    let offset = use_state_eq(|| 0);
+    let limit = use_state_eq(|| 10);
+
+    let filter = use_state_eq(String::new);
+
+    let filtered_packages = {
+        let offset = offset.clone();
+        let limit = limit.clone();
+        use_memo(
+            move |(bom, filter)| {
+                let mut packages = bom
+                    .package_information
+                    .clone()
+                    .into_iter()
+                    // apply filter
+                    .filter(|p| filter.is_empty() || p.package_name.contains(filter))
+                    .collect::<Vec<_>>();
+
+                // we need to sort after filtering, as paging requires a sorted list
+                packages.sort_unstable_by(|a, b| a.package_name.cmp(&b.package_name));
+
+                // try to cap last page, only apply once
+                if *offset > packages.len() {
+                    if *limit > packages.len() {
+                        offset.set(0);
+                    } else {
+                        offset.set(packages.len() - *limit);
+                    }
+                }
+
+                // return result
+                packages
+            },
+            (props.bom.clone(), (*filter).clone()),
+        )
+    };
+
+    // total entries must be based on the filtered list
+    let total_entries = filtered_packages.len();
+
     let entries = use_memo(
-        |(bom, package_map)| {
+        |(bom, filtered_packages, package_map, offset, limit, filter)| {
             let relations = Rc::new(bom.relationships.clone());
-            let mut packages = bom
-                .package_information
+            filtered_packages
                 .iter()
+                // apply pagination window
+                .skip(*offset)
+                .take(*limit)
+                // map
                 .map(|package| PackageWrapper {
-                    package: package.clone(),
+                    package: (*package).clone(),
                     relations: relations.clone(),
                     packages: package_map.clone(),
                 })
-                .collect::<Vec<_>>();
-            packages.sort_unstable_by(|a, b| a.package.package_name.cmp(&b.package.package_name));
-            packages
+                .collect::<Vec<_>>()
         },
-        (props.bom.clone(), package_map),
+        (
+            props.bom.clone(),
+            filtered_packages.clone(),
+            package_map,
+            *offset,
+            *limit,
+            (*filter).clone(),
+        ),
     );
 
     let (entries, onexpand) = use_table_data(MemoizedTableModel::new(entries));
@@ -397,12 +445,85 @@ pub fn spdx_packages(props: &SpdxPackagesProperties) -> Html {
         (key, state)
     });
 
+    let limit_callback = {
+        let limit = limit.clone();
+        Callback::from(move |number| limit.set(number))
+    };
+
+    let nav_callback = {
+        let offset = offset.clone();
+        let limit = *limit;
+        Callback::from(move |page: Navigation| {
+            let o = match page {
+                Navigation::First => 0,
+                Navigation::Last => ((total_entries - 1) / limit) * limit,
+                Navigation::Previous => *offset - limit,
+                Navigation::Next => *offset + limit,
+                Navigation::Page(n) => (n - 1) * limit,
+            };
+            offset.set(o);
+        })
+    };
+
+    let onclearfilter = {
+        let filter = filter.clone();
+        Callback::from(move |_| filter.set(String::new()))
+    };
+
+    let onsetfilter = {
+        let filter = filter.clone();
+        Callback::from(move |value: String| filter.set(value.trim().to_string()))
+    };
+
     html!(
-        <Table<Column, UseTableData<Column, MemoizedTableModel<PackageWrapper>>>
-            mode={TableMode::CompactExpandable}
-            {header}
-            {entries}
-            {onexpand}
-        />
+        <>
+            <Toolbar>
+                <ToolbarContent>
+                    <ToolbarItem r#type={ToolbarItemType::SearchFilter}>
+                        <TextInputGroup>
+                            <TextInputGroupMain
+                                placeholder="Filter"
+                                icon={Icon::Search}
+                                value={(*filter).clone()}
+                                oninput={onsetfilter}
+                            />
+                            if !filter.is_empty() {
+                                <TextInputGroupUtilities>
+                                    <Button icon={Icon::Times} variant={ButtonVariant::Plain} onclick={onclearfilter}/>
+                                </TextInputGroupUtilities>
+                            }
+                        </TextInputGroup>
+                    </ToolbarItem>
+
+                    <ToolbarItem r#type={ToolbarItemType::Pagination}>
+                        <Pagination
+                            {total_entries}
+                            offset={*offset}
+                            entries_per_page_choices={vec![5, 10, 25, 50]}
+                            selected_choice={*limit}
+                            onlimit={&limit_callback}
+                            onnavigation={&nav_callback}
+                        />
+                    </ToolbarItem>
+                </ToolbarContent>
+            </Toolbar>
+
+            <Table<Column, UseTableData<Column, MemoizedTableModel<PackageWrapper>>>
+                mode={TableMode::CompactExpandable}
+                {header}
+                {entries}
+                {onexpand}
+            />
+
+            <Pagination
+                {total_entries}
+                offset={*offset}
+                entries_per_page_choices={vec![5, 10, 25, 50]}
+                selected_choice={*limit}
+                onlimit={&limit_callback}
+                onnavigation={&nav_callback}
+                position={PaginationPosition::Bottom}
+            />
+        </>
     )
 }
