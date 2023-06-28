@@ -18,6 +18,8 @@ members = [
     "spog/api",
     "spog/model",
     "spog/spog",
+    "exhort/api",
+    "exhort/exhort",
     "integration-tests",
     "trust",
     "exporter",

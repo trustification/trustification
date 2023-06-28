@@ -1982,6 +1982,37 @@ dependencies = [
 ]
 
 [[package]]
+name = "exhort"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "exhort-api",
+ "log",
+ "serde",
+ "serde_json",
+ "tokio",
+]
+
+[[package]]
+name = "exhort-api"
+version = "0.1.0"
+dependencies = [
+ "actix-web",
+ "anyhow",
+ "clap",
+ "derive_more",
+ "env_logger 0.10.0",
+ "futures",
+ "log",
+ "serde",
+ "serde_json",
+ "trustification-infrastructure",
+ "utoipa",
+ "utoipa-swagger-ui",
+]
+
+[[package]]
 name = "exporter"
 version = "0.1.0"
 dependencies = [
@@ -5623,6 +5654,7 @@ dependencies = [
  "anyhow",
  "bombastic",
  "clap",
+ "exhort",
  "exporter",
  "log",
  "serde",

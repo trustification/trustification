@@ -10,6 +10,8 @@ pub enum Command {
     Bombastic(bombastic::Command),
     #[command(subcommand)]
     Spog(spog::Command),
+    #[command(subcommand)]
+    Exhort(exhort::Command),
     Exporter(exporter::Run),
 }
 
@@ -48,6 +50,7 @@ impl Cli {
             Command::Vexination(run) => run.run().await,
             Command::Bombastic(run) => run.run().await,
             Command::Spog(run) => run.run().await,
+            Command::Exhort(run) => run.run().await,
             Command::Exporter(run) => run.run().await,
         }
     }
