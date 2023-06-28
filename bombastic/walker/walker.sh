@@ -10,14 +10,6 @@ BOMBASTIC_API=""
 BOMBASTIC_PATH="/api/v1/sbom"
 SOURCE=""
 
-if [ $# -ne 2 ] ; then
-  echo "SPDX_URL and BOMBASTIC_URL are required arguments"
-  usage
-  exit 1
-else
-  SOURCE=$1
-  BOMBASTIC_API=$2
-fi
 
 ###################################
 # Help                            #
@@ -27,18 +19,17 @@ help()
    # Display Help
    echo "Get Sboms from prodsec and push to bombastic."
    echo
-   echo "sbom_uploader [-h] SBOM_URL BOMBASTIC_API_URL"
+   echo "$0 [-h] SBOM_URL BOMBASTIC_API_URL"
    echo "options:"
    echo "   -h        Print this Help."
    echo
    echo "example:"
-   echo "sbomwalker https://access.redhat.com/security/data/sbom/beta/sbdx/3amp-2.json.bz2 localhost:8080"
+   echo "$0 https://access.redhat.com/security/data/sbom/beta/sbdx/3amp-2.json.bz2 localhost:8080"
    echo
 }
 
 # Get the options
-while getopts ":h:" option; do
-  echo $option
+while getopts ":h" option; do
    case $option in
       h) # display Help
          help
@@ -50,6 +41,14 @@ while getopts ":h:" option; do
    esac
 done
 
+if [ $# -ne 2 ] ; then
+  echo "SPDX_URL and BOMBASTIC_URL are required arguments"
+  usage
+  exit 1
+else
+  SOURCE=$1
+  BOMBASTIC_API=$2
+fi
 
 
 download_files()
