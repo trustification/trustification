@@ -208,6 +208,16 @@ pub struct PackageEntry {
     package: PackageSummary,
 }
 
+impl PackageEntry {
+    fn package_name(&self) -> Html {
+        if self.package.name.is_empty() {
+            html!(<i>{ &self.package.id }</i>)
+        } else {
+            (&self.package.name).into()
+        }
+    }
+}
+
 impl TableEntryRenderer<Column> for PackageEntry {
     fn render_cell(&self, context: CellContext<'_, Column>) -> Cell {
         match context.column {
@@ -215,7 +225,7 @@ impl TableEntryRenderer<Column> for PackageEntry {
                 html!(
                     <Link<AppRoute>
                         target={AppRoute::SBOM { id: self.package.id.clone() }}
-                    >{ &self.package.name }</Link<AppRoute>>
+                    >{ self.package_name() }</Link<AppRoute>>
                 ).into()
             },
             Column::Supplier => html!(&self.package.supplier).into(),
