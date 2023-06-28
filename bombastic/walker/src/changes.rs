@@ -1,6 +1,5 @@
 use anyhow::Result;
 use chrono::{DateTime, Utc};
-use csv;
 use reqwest::Url;
 use std::collections::HashMap;
 use std::io::Write;
@@ -33,7 +32,7 @@ impl ChangeTracker {
         let mut to_update = Vec::new();
         for new_entry in &new_store {
             if let Some(entry) = self.store.get(new_entry.0) {
-                if entry < &new_entry.1 {
+                if entry < new_entry.1 {
                     to_update.push(new_entry.0.clone())
                 }
             } else {
@@ -75,12 +74,12 @@ impl std::io::Read for TextBody {
         if self.index < self.body.len() {
             let line = self.body.get(self.index).unwrap();
             let size = line.len();
-            buf.write(line.as_bytes())?;
+            buf.write_all(line.as_bytes())?;
 
             self.index += 1;
             Ok(size)
         } else {
-            return Ok(0);
+            Ok(0)
         }
     }
 }
@@ -88,7 +87,7 @@ impl std::io::Read for TextBody {
 impl From<String> for TextBody {
     fn from(value: String) -> Self {
         TextBody {
-            body: value.split_inclusive("\n").map(|s| s.to_string()).collect(),
+            body: value.split_inclusive('\n').map(|s| s.to_string()).collect(),
             index: 0,
         }
     }

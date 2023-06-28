@@ -74,7 +74,7 @@ impl Run {
         for entry in entries {
             let mut sbom_path = sbom_path.clone();
             // craft the url to the SBOM file
-            sbom_path.path_segments_mut().unwrap().extend(entry.split("/"));
+            sbom_path.path_segments_mut().unwrap().extend(entry.split('/'));
 
             run(script_path, &sbom_path, &self.config.bombastic);
 
