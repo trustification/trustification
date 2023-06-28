@@ -1,6 +1,5 @@
 use std::process::ExitCode;
 
-
 #[derive(clap::Subcommand, Debug)]
 pub enum Command {
     Api(exhort_api::Run),

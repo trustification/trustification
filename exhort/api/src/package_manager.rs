@@ -1,4 +1,3 @@
-
 use serde::Deserialize;
 
 #[derive(Deserialize)]
@@ -20,7 +19,7 @@ impl TryFrom<&str> for PackageManager {
             "gradle" => Ok(Self::Gradle),
             "pip" => Ok(Self::Pip),
             "gomodules" => Ok(Self::Gomodules),
-            _ => Err(())
+            _ => Err(()),
         }
     }
 }
