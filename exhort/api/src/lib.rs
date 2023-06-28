@@ -4,11 +4,10 @@ use std::str::FromStr;
 use std::sync::Arc;
 use trustification_infrastructure::{Infrastructure, InfrastructureConfig};
 
-mod server;
 mod component_analysis;
-mod request;
 mod package_manager;
-
+mod request;
+mod server;
 
 #[derive(clap::Args, Debug)]
 #[command(about = "Run the api server", args_conflicts_with_subcommands = true)]
@@ -30,7 +29,7 @@ impl Run {
     pub async fn run(mut self) -> anyhow::Result<ExitCode> {
         let state = self.configure()?;
         Infrastructure::from(self.infra)
-            .run("bombastic-api", || async move {
+            .run("exhort-api", || async move {
                 let addr = SocketAddr::from_str(&format!("{}:{}", self.bind, self.port))?;
 
                 server::run(state, addr).await
@@ -40,16 +39,13 @@ impl Run {
         Ok(ExitCode::SUCCESS)
     }
 
-
     fn configure(&mut self) -> anyhow::Result<Arc<AppState>> {
-        let state = Arc::new(AppState {
-        });
+        let state = Arc::new(AppState {});
 
         Ok(state)
     }
 }
 
-pub struct AppState {
-}
+pub struct AppState {}
 
 pub(crate) type SharedState = Arc<AppState>;

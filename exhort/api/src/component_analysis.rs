@@ -1,7 +1,4 @@
-use actix_web::{
-    http::header::ContentType,
-    post, web, HttpResponse, Responder,
-};
+use actix_web::{http::header::ContentType, post, web, HttpResponse, Responder};
 
 use crate::package_manager::PackageManager;
 use crate::request::Request;
