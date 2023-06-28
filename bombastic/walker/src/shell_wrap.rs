@@ -37,14 +37,14 @@ pub fn script_path(name: &str) -> Result<String, io::Error> {
     let which = Command::new(name).arg("-h").output();
 
     match which {
-        Ok(_) => return Ok(String::from(name)),
+        Ok(_) => Ok(String::from(name)),
         // If the script is not found we assume the workdir is the cargo root
         Err(e) => match e.kind() {
             ErrorKind::NotFound => {
                 let mut default_path = String::from("bombastic/walker/");
                 default_path.push_str(name);
 
-                return Ok(default_path);
+                Ok(default_path)
             }
             _ => Err(e),
         },
@@ -54,7 +54,7 @@ pub fn script_path(name: &str) -> Result<String, io::Error> {
 pub fn log_script_output(log: io::Result<Output>, script_name: &str) {
     match log {
         Ok(r) => {
-            for line in String::from_utf8_lossy(&r.stdout).split("\n") {
+            for line in String::from_utf8_lossy(&r.stdout).split('\n') {
                 if !line.is_empty() {
                     tracing::info!("{script_name}: {line}");
                 }
