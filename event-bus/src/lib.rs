@@ -1,4 +1,6 @@
-//! Traits with required functionality for the event bus used in Trustification.
+//! Event bus used in Trustification.
+
+use prometheus::{opts, register_int_counter_vec_with_registry, IntCounterVec, Registry};
 
 mod kafka;
 mod sqs;
@@ -16,64 +18,131 @@ impl<'m> Event<'m> {
             Self::Sqs(event) => event.payload(),
         }
     }
+
+    pub fn topic(&self) -> &str {
+        match self {
+            Self::Kafka(event) => event.topic(),
+            Self::Sqs(event) => event.topic(),
+        }
+    }
 }
 
-pub enum EventBus {
+pub struct EventBus {
+    metrics: Metrics,
+    inner: InnerBus,
+}
+
+#[derive(Clone)]
+struct Metrics {
+    sent_total: IntCounterVec,
+    received_total: IntCounterVec,
+    committed_total: IntCounterVec,
+}
+
+impl Metrics {
+    fn register(registry: &Registry) -> Result<Self, anyhow::Error> {
+        let sent_total = register_int_counter_vec_with_registry!(
+            opts!("eventbus_sent_total", "Total number of events sent"),
+            &["topic"],
+            registry
+        )?;
+
+        let received_total = register_int_counter_vec_with_registry!(
+            opts!("eventbus_received_total", "Total number of events received"),
+            &["topic"],
+            registry
+        )?;
+
+        let committed_total = register_int_counter_vec_with_registry!(
+            opts!("eventbus_committed_total", "Total number of events committed"),
+            &["topic"],
+            registry
+        )?;
+
+        Ok(Self {
+            sent_total,
+            received_total,
+            committed_total,
+        })
+    }
+}
+
+enum InnerBus {
     Kafka(kafka::KafkaEventBus),
     Sqs(sqs::SqsEventBus),
 }
 
 impl EventBus {
     pub async fn subscribe(&self, group: &str, topics: &[&str]) -> Result<EventConsumer<'_>, anyhow::Error> {
-        match self {
-            Self::Kafka(bus) => {
+        match &self.inner {
+            InnerBus::Kafka(bus) => {
                 let consumer = bus.subscribe(group, topics).await?;
-                Ok(EventConsumer::Kafka(consumer))
+                Ok(EventConsumer::new(InnerConsumer::Kafka(consumer), self.metrics.clone()))
             }
-            Self::Sqs(bus) => {
+            InnerBus::Sqs(bus) => {
                 let consumer = bus.subscribe(group, topics).await?;
-                Ok(EventConsumer::Sqs(consumer))
+                Ok(EventConsumer::new(InnerConsumer::Sqs(consumer), self.metrics.clone()))
             }
         }
     }
     pub async fn create(&self, topics: &[&str]) -> Result<(), anyhow::Error> {
-        match self {
-            Self::Kafka(bus) => bus.create(topics).await,
-            Self::Sqs(bus) => bus.create(topics).await,
+        match &self.inner {
+            InnerBus::Kafka(bus) => bus.create(topics).await,
+            InnerBus::Sqs(bus) => bus.create(topics).await,
         }
     }
 
     pub async fn send(&self, topic: &str, data: &[u8]) -> Result<(), anyhow::Error> {
-        match self {
-            Self::Kafka(bus) => bus.send(topic, data).await,
-            Self::Sqs(bus) => bus.send(topic, data).await,
+        match &self.inner {
+            InnerBus::Kafka(bus) => bus.send(topic, data).await?,
+            InnerBus::Sqs(bus) => bus.send(topic, data).await?,
         }
+        self.metrics.sent_total.with_label_values(&[topic]).inc();
+        Ok(())
     }
 }
 
-pub enum EventConsumer<'d> {
+pub struct EventConsumer<'d> {
+    metrics: Metrics,
+    inner: InnerConsumer<'d>,
+}
+
+impl<'d> EventConsumer<'d> {
+    fn new(inner: InnerConsumer<'d>, metrics: Metrics) -> Self {
+        Self { inner, metrics }
+    }
+}
+
+enum InnerConsumer<'d> {
     Kafka(kafka::KafkaConsumer),
     Sqs(sqs::SqsConsumer<'d>),
 }
 
 impl<'d> EventConsumer<'d> {
     pub async fn next<'m>(&'m self) -> Result<Option<Event<'m>>, anyhow::Error> {
-        match self {
-            Self::Kafka(consumer) => {
+        let event = match &self.inner {
+            InnerConsumer::Kafka(consumer) => {
                 let event = consumer.next().await?;
-                Ok(event.map(Event::Kafka))
+                event.map(Event::Kafka)
             }
-            Self::Sqs(consumer) => {
+            InnerConsumer::Sqs(consumer) => {
                 let event = consumer.next().await?;
-                Ok(event.map(Event::Sqs))
+                event.map(Event::Sqs)
             }
+        };
+        if let Some(event) = &event {
+            self.metrics.received_total.with_label_values(&[event.topic()]).inc();
         }
+        Ok(event)
     }
 
     pub async fn commit<'m>(&'m self, events: &[Event<'m>]) -> Result<(), anyhow::Error> {
-        match self {
-            Self::Kafka(consumer) => consumer.commit(events).await,
-            Self::Sqs(consumer) => consumer.commit(events).await,
+        for event in events {
+            self.metrics.committed_total.with_label_values(&[event.topic()]).inc();
+        }
+        match &self.inner {
+            InnerConsumer::Kafka(consumer) => consumer.commit(events).await,
+            InnerConsumer::Sqs(consumer) => consumer.commit(events).await,
         }
     }
 }
@@ -91,16 +160,22 @@ pub struct EventBusConfig {
 }
 
 impl EventBusConfig {
-    pub async fn create(&self) -> Result<EventBus, anyhow::Error> {
+    pub async fn create(&self, registry: &Registry) -> Result<EventBus, anyhow::Error> {
         match self.event_bus {
             EventBusType::Kafka => {
                 let bootstrap = &self.kafka_bootstrap_servers;
                 let bus = kafka::KafkaEventBus::new(bootstrap.to_string())?;
-                Ok(EventBus::Kafka(bus))
+                Ok(EventBus {
+                    metrics: Metrics::register(registry)?,
+                    inner: InnerBus::Kafka(bus),
+                })
             }
             EventBusType::Sqs => {
                 let bus = sqs::SqsEventBus::new().await?;
-                Ok(EventBus::Sqs(bus))
+                Ok(EventBus {
+                    metrics: Metrics::register(registry)?,
+                    inner: InnerBus::Sqs(bus),
+                })
             }
         }
     }

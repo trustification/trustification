@@ -43,7 +43,7 @@ pub struct Run {
 impl Run {
     pub async fn run(self) -> anyhow::Result<ExitCode> {
         Infrastructure::from(self.infra.clone())
-            .run("spog-api", || async {
+            .run("spog-api", |_metrics| async {
                 let s = server::Server::new(self);
                 s.run().await
             })

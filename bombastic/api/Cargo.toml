@@ -24,6 +24,7 @@ packageurl = "0.3"
 rand = "0.8"
 futures = "0.3"
 derive_more = "0.99"
+prometheus = "0.13.3"
 
 utoipa = { version = "3", features = ["actix_extras"] }
 utoipa-swagger-ui = { version = "3", features = ["actix-web"] }

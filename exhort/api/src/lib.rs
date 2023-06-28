@@ -26,10 +26,10 @@ pub struct Run {
 }
 
 impl Run {
-    pub async fn run(mut self) -> anyhow::Result<ExitCode> {
-        let state = self.configure()?;
+    pub async fn run(self) -> anyhow::Result<ExitCode> {
         Infrastructure::from(self.infra)
-            .run("exhort-api", || async move {
+            .run("exhort-api", |_metrics| async move {
+                let state = Self::configure()?;
                 let addr = SocketAddr::from_str(&format!("{}:{}", self.bind, self.port))?;
 
                 server::run(state, addr).await
@@ -39,7 +39,7 @@ impl Run {
         Ok(ExitCode::SUCCESS)
     }
 
-    fn configure(&mut self) -> anyhow::Result<Arc<AppState>> {
+    fn configure() -> anyhow::Result<Arc<AppState>> {
         let state = Arc::new(AppState {});
 
         Ok(state)
