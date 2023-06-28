@@ -48,8 +48,8 @@ pub async fn run(
                                                         Ok(doc) => match writer.as_mut().unwrap().add_document(index.index_as_mut(), &k, &doc) {
                                                             Ok(_) => {
                                                                 log::trace!("Inserted entry into index");
-                                                                    bus.send(indexed_topic, key.as_bytes()).await?;
-                                                                    events += 1;
+                                                                bus.send(indexed_topic, key.as_bytes()).await?;
+                                                                events += 1;
                                                             }
                                                             Err(e) => {
                                                                 let failure = serde_json::json!( {

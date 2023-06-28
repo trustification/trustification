@@ -79,7 +79,7 @@ async fn main() -> anyhow::Result<()> {
     let config = ServerConfig { bind_addr };
 
     Infrastructure::from(cli.infra)
-        .run("bommber", || async {
+        .run("bommber", |_metrics| async {
             let server = server::run(config, map);
 
             let (result, _, _) =

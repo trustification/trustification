@@ -7,12 +7,105 @@ use async_stream::try_stream;
 use bytes::{Buf, Bytes};
 use futures::{future::ok, stream::once, Stream, StreamExt};
 use http::{header::CONTENT_ENCODING, HeaderValue, StatusCode};
+use prometheus::{
+    histogram_opts, opts, register_histogram_with_registry, register_int_counter_with_registry, Histogram, IntCounter,
+    Registry,
+};
 use s3::{creds::error::CredentialsError, error::S3Error, Bucket};
 pub use s3::{creds::Credentials, Region};
 use serde::Deserialize;
 
 pub struct Storage {
     bucket: Bucket,
+    metrics: Metrics,
+}
+
+#[derive(Clone)]
+struct Metrics {
+    puts_failed_total: IntCounter,
+    puts_total: IntCounter,
+    index_puts_total: IntCounter,
+    // NOTE: We cannot observe the get latency of streamed gets from within storage
+    gets_total: IntCounter,
+    gets_failed_total: IntCounter,
+
+    deletes_total: IntCounter,
+    deletes_failed_total: IntCounter,
+
+    put_latency_seconds: Histogram,
+    get_latency_seconds: Histogram,
+}
+
+impl Metrics {
+    fn register(registry: &Registry) -> Result<Self, Error> {
+        let puts_total = register_int_counter_with_registry!(
+            opts!("storage_object_puts_total", "Total number of put operations"),
+            registry
+        )?;
+
+        let index_puts_total = register_int_counter_with_registry!(
+            opts!("storage_index_puts_total", "Total number of put operations for index"),
+            registry
+        )?;
+
+        let gets_total = register_int_counter_with_registry!(
+            opts!("storage_object_gets_total", "Total number of get operations"),
+            registry
+        )?;
+
+        let deletes_total = register_int_counter_with_registry!(
+            opts!("storage_object_deletes_total", "Total number of delete operations"),
+            registry
+        )?;
+
+        let puts_failed_total = register_int_counter_with_registry!(
+            opts!("storage_puts_failed_total", "Total number of failed put operations"),
+            registry
+        )?;
+
+        let gets_failed_total = register_int_counter_with_registry!(
+            opts!("storage_gets_failed_total", "Total number of failed get operations"),
+            registry
+        )?;
+
+        let deletes_failed_total = register_int_counter_with_registry!(
+            opts!(
+                "storage_deletes_failed_total",
+                "Total number of failed delete operations"
+            ),
+            registry
+        )?;
+
+        let put_latency_seconds = register_histogram_with_registry!(
+            histogram_opts!(
+                "storage_put_latency_seconds",
+                "Put latency",
+                vec![0.0001, 0.001, 0.01, 0.1, 1.0, 10.0]
+            ),
+            registry
+        )?;
+
+        let get_latency_seconds = register_histogram_with_registry!(
+            histogram_opts!(
+                "storage_get_latency_seconds",
+                "Get latency",
+                vec![0.0001, 0.001, 0.01, 0.1, 1.0, 10.0]
+            ),
+            registry
+        )?;
+
+        Ok(Self {
+            puts_total,
+            index_puts_total,
+            gets_total,
+            deletes_total,
+            puts_failed_total,
+            gets_failed_total,
+            deletes_failed_total,
+            put_latency_seconds,
+            get_latency_seconds,
+        })
+    }
 }
 
 #[derive(Clone, Debug, clap::Parser)]
@@ -40,14 +133,14 @@ pub struct StorageConfig {
 }
 
 impl StorageConfig {
-    pub fn create(&mut self, default_bucket: &str, devmode: bool) -> Result<Storage, Error> {
+    pub fn create(&mut self, default_bucket: &str, devmode: bool, registry: &Registry) -> Result<Storage, Error> {
         if devmode {
             self.access_key = Some("admin".to_string());
             self.secret_key = Some("password".to_string());
             self.bucket = Some(default_bucket.to_string());
-            Ok(Storage::new(self)?)
+            Ok(Storage::new(self, registry)?)
         } else {
-            Ok(Storage::new(self)?)
+            Ok(Storage::new(self, registry)?)
         }
     }
 }
@@ -68,6 +161,8 @@ pub enum Error {
     InvalidKey(String),
     #[error("unexpected encoding {0}")]
     Encoding(String),
+    #[error("Prometheus error {0}")]
+    Prometheus(prometheus::Error),
 }
 
 impl From<CredentialsError> for Error {
@@ -114,6 +209,12 @@ impl From<http::header::InvalidHeaderValue> for Error {
     }
 }
 
+impl From<prometheus::Error> for Error {
+    fn from(e: prometheus::Error) -> Self {
+        Self::Prometheus(e)
+    }
+}
+
 const DATA_PATH: &str = "/data/";
 const INDEX_PATH: &str = "/index";
 const VERSION_HEADER: &str = "x-amz-meta-version";
@@ -125,7 +226,7 @@ pub struct Head {
 }
 
 impl Storage {
-    pub fn new(config: &StorageConfig) -> Result<Self, Error> {
+    pub fn new(config: &StorageConfig, registry: &Registry) -> Result<Self, Error> {
         let credentials = if let (Some(access_key), Some(secret_key)) = (&config.access_key, &config.secret_key) {
             Credentials {
                 access_key: Some(access_key.into()),
@@ -145,7 +246,10 @@ impl Storage {
 
         let bucket = config.bucket.as_deref().expect("Required parameter bucket was not set");
         let bucket = Bucket::new(bucket, region, credentials)?.with_path_style();
-        Ok(Self { bucket })
+        Ok(Self {
+            bucket,
+            metrics: Metrics::register(registry)?,
+        })
     }
 
     pub fn is_index(&self, key: &str) -> bool {
@@ -176,6 +280,8 @@ impl Storage {
         B: Buf + 'a,
         E: Into<std::io::Error>,
     {
+        self.metrics.puts_total.inc();
+        let put_start = self.metrics.put_latency_seconds.start_timer();
         let mut headers = http::HeaderMap::new();
         headers.insert(VERSION_HEADER, VERSION.into());
         headers.insert(
@@ -185,10 +291,16 @@ impl Storage {
         let bucket = self.bucket.with_extra_headers(headers);
         let path = format!("{}{}", DATA_PATH, key);
         let mut rdr = stream::encode(encoding, data)?;
-        Ok(bucket
+        let len = bucket
             .put_object_stream_with_content_type(&mut rdr, path, content_type)
-            .await?
-            .uploaded_bytes())
+            .await
+            .map_err(|e| {
+                self.metrics.puts_failed_total.inc();
+                e
+            })?
+            .uploaded_bytes();
+        put_start.observe_duration();
+        Ok(len)
     }
 
     pub async fn put_json_slice<'a>(&self, key: &'a str, json: &'a [u8]) -> Result<usize, Error> {
@@ -238,6 +350,7 @@ impl Storage {
 
     pub async fn put_index(&self, index: &[u8]) -> Result<(), Error> {
         self.bucket.put_object(INDEX_PATH, index).await?;
+        self.metrics.index_puts_total.inc();
         Ok(())
     }
 
@@ -253,29 +366,49 @@ impl Storage {
     // Expects the actual S3 path
     // This will load the entire S3 object into memory
     async fn get_object(&self, path: &str) -> Result<Vec<u8>, Error> {
+        let get_start = self.metrics.get_latency_seconds.start_timer();
         let mut bytes = vec![];
         let mut stream = self.get_object_stream(path).await?;
         while let Some(chunk) = stream.next().await {
             bytes.extend_from_slice(&chunk?)
         }
+        get_start.observe_duration();
         Ok(bytes)
     }
 
     // Expects the actual S3 path and returns a JSON stream
     async fn get_object_stream(&self, path: &str) -> Result<impl Stream<Item = Result<Bytes, Error>>, Error> {
-        let (head, _status) = self.bucket.head_object(path).await?;
-        let mut s = self.bucket.get_object_stream(path).await?;
-        let stream = try_stream! {
-            while let Some(chunk) = s.bytes().next().await {
-                yield chunk?;
-            }
+        self.metrics.gets_total.inc();
+        let res = {
+            let (head, _status) = self.bucket.head_object(path).await?;
+            let mut s = self.bucket.get_object_stream(path).await?;
+            let stream = try_stream! {
+                while let Some(chunk) = s.bytes().next().await {
+                    yield chunk?;
+                }
+            };
+            stream::decode(head.content_encoding, stream.boxed())
         };
-        stream::decode(head.content_encoding, stream.boxed())
+        if res.is_err() {
+            self.metrics.gets_failed_total.inc();
+        }
+
+        res
     }
 
     pub async fn delete(&self, key: &str) -> Result<u16, Error> {
+        self.metrics.deletes_total.inc();
         let path = format!("{}{}", DATA_PATH, key);
-        Ok(self.bucket.delete_object(path).await.map(|r| r.status_code())?)
+        let res = self
+            .bucket
+            .delete_object(path)
+            .await
+            .map(|r| r.status_code())
+            .map_err(|e| {
+                self.metrics.deletes_failed_total.inc();
+                e
+            })?;
+        Ok(res)
     }
 }
 

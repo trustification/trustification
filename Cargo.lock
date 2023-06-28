@@ -1056,6 +1056,7 @@ dependencies = [
  "hex",
  "log",
  "packageurl",
+ "prometheus",
  "rand 0.8.5",
  "serde",
  "serde_json",
@@ -1099,6 +1100,7 @@ dependencies = [
  "futures",
  "hex",
  "log",
+ "prometheus",
  "rand 0.8.5",
  "serde",
  "serde_json",
@@ -2020,6 +2022,7 @@ dependencies = [
  "guac 0.1.0 (git+https://github.com/dejanb/guac-rs.git)",
  "hex",
  "log",
+ "prometheus",
  "rand 0.8.5",
  "serde",
  "serde_json",
@@ -3874,8 +3877,15 @@ dependencies = [
  "lazy_static",
  "memchr",
  "parking_lot",
+ "protobuf",
  "thiserror",
 ]
+
+[[package]]
+name = "protobuf"
+version = "2.28.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "106dd99e98437432fed6519dedecfade6a06a73bb7b2a1e019fdd2bee5778d94"
 
 [[package]]
 name = "psm"
@@ -5673,6 +5683,7 @@ dependencies = [
  "clap",
  "futures",
  "log",
+ "prometheus",
  "rdkafka",
  "thiserror",
 ]
@@ -5685,6 +5696,7 @@ dependencies = [
  "env_logger 0.10.0",
  "humantime 2.1.0",
  "log",
+ "prometheus",
  "rand 0.8.5",
  "serde",
  "serde_json",
@@ -5693,7 +5705,6 @@ dependencies = [
  "tar",
  "time 0.3.22",
  "tokio",
- "tracing-subscriber",
  "zstd",
 ]
 
@@ -5711,6 +5722,7 @@ dependencies = [
  "log",
  "opentelemetry 0.19.0",
  "opentelemetry-jaeger",
+ "prometheus",
  "serde",
  "serde_json",
  "thiserror",
@@ -5732,6 +5744,7 @@ dependencies = [
  "futures",
  "http",
  "log",
+ "prometheus",
  "rust-s3",
  "serde",
  "serde_json",
@@ -5965,6 +5978,7 @@ dependencies = [
  "hex",
  "log",
  "packageurl",
+ "prometheus",
  "rand 0.8.5",
  "serde",
  "serde_json",
@@ -6011,6 +6025,7 @@ dependencies = [
  "futures",
  "hex",
  "log",
+ "prometheus",
  "rand 0.8.5",
  "serde",
  "serde_json",
@@ -6046,6 +6061,7 @@ dependencies = [
  "humantime 2.1.0",
  "log",
  "packageurl",
+ "prometheus",
  "rand 0.8.5",
  "serde",
  "serde_json",

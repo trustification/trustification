@@ -1,6 +1,7 @@
 use std::process::ExitCode;
 
 use guac::collector::emitter::NatsEmitter;
+use prometheus::Registry;
 use strum_macros::Display;
 use trustification_event_bus::EventBusConfig;
 use trustification_storage::StorageConfig;
@@ -49,13 +50,15 @@ pub struct Run {
 
 impl Run {
     pub async fn run(mut self) -> anyhow::Result<ExitCode> {
+        // TODO: Add infrastructure to surface metrics
+        let registry = Registry::default();
         let default_bucket = self
             .storage
             .bucket
             .clone()
             .expect("Required parameter --storage-bucket not set");
-        let storage = self.storage.create(&default_bucket, self.devmode)?;
-        let bus = self.bus.create().await?;
+        let storage = self.storage.create(&default_bucket, self.devmode, &registry)?;
+        let bus = self.bus.create(&registry).await?;
         let emitter = NatsEmitter::new(&self.guac_url).await?;
         if self.devmode {
             bus.create(&[self.stored_topic.as_str()]).await?;

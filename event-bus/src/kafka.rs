@@ -91,6 +91,10 @@ pub struct KafkaEvent<'m> {
 }
 
 impl<'m> KafkaEvent<'m> {
+    pub(crate) fn topic(&self) -> &str {
+        self.message.topic()
+    }
+
     pub(crate) fn payload(&self) -> Option<&[u8]> {
         self.message.payload()
     }
