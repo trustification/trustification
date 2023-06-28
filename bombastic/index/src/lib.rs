@@ -75,6 +75,7 @@ struct Fields {
     sbom_id: Field,
     sbom_created: Field,
     sbom_creators: Field,
+    sbom_name: Field,
     sbom: PackageFields,
     dep: PackageFields,
 }
@@ -92,22 +93,23 @@ impl Index {
             sbom_id: schema.add_text_field("sbom_id", STRING | FAST | STORED),
             sbom_created: schema.add_date_field("sbom_created", INDEXED | FAST | STORED),
             sbom_creators: schema.add_text_field("sbom_creators", STRING | STORED),
+            sbom_name: schema.add_text_field("sbom_name", STRING | FAST | STORED),
             sbom: PackageFields {
-                name: schema.add_text_field("sbom_name", STRING | FAST | STORED),
-                version: schema.add_text_field("sbom_version", STRING | STORED),
-                purl: schema.add_text_field("sbom_purl", STRING | FAST | STORED),
-                desc: schema.add_text_field("sbom_desc", TEXT | STORED),
-                license: schema.add_text_field("sbom_license", TEXT | STORED),
-                cpe: schema.add_text_field("sbom_cpe", STRING | FAST | STORED),
-                supplier: schema.add_text_field("sbom_supplier", STRING | STORED),
-                classifier: schema.add_text_field("sbom_classifier", STRING),
-                sha256: schema.add_text_field("sbom_sha256", STRING | STORED),
-                purl_type: schema.add_text_field("sbom_purl_type", STRING),
-                purl_name: schema.add_text_field("sbom_purl_name", FAST | STRING),
-                purl_namespace: schema.add_text_field("sbom_purl_namespace", STRING),
-                purl_version: schema.add_text_field("sbom_purl_version", STRING),
-                purl_qualifiers: schema.add_text_field("sbom_purl_qualifiers", STRING),
-                purl_qualifiers_values: schema.add_text_field("sbom_purl_qualifiers_values", STRING),
+                name: schema.add_text_field("sbom_pkg_name", STRING | FAST | STORED),
+                version: schema.add_text_field("sbom_pkg_version", STRING | STORED),
+                purl: schema.add_text_field("sbom_pkg_purl", STRING | FAST | STORED),
+                desc: schema.add_text_field("sbom_pkg_desc", TEXT | STORED),
+                license: schema.add_text_field("sbom_pkg_license", TEXT | STORED),
+                cpe: schema.add_text_field("sbom_pkg_cpe", STRING | FAST | STORED),
+                supplier: schema.add_text_field("sbom_pkg_supplier", STRING | STORED),
+                classifier: schema.add_text_field("sbom_pkg_classifier", STRING),
+                sha256: schema.add_text_field("sbom_pkg_sha256", STRING | STORED),
+                purl_type: schema.add_text_field("sbom_pkg_purl_type", STRING),
+                purl_name: schema.add_text_field("sbom_pkg_purl_name", FAST | STRING),
+                purl_namespace: schema.add_text_field("sbom_pkg_purl_namespace", STRING),
+                purl_version: schema.add_text_field("sbom_pkg_purl_version", STRING),
+                purl_qualifiers: schema.add_text_field("sbom_pkg_purl_qualifiers", STRING),
+                purl_qualifiers_values: schema.add_text_field("sbom_pkg_purl_qualifiers_values", STRING),
             },
             dep: PackageFields {
                 name: schema.add_text_field("dep_name", FAST | STRING),
@@ -139,6 +141,7 @@ impl Index {
         let mut document = doc!();
 
         document.add_text(self.fields.sbom_id, id);
+        document.add_text(self.fields.sbom_name, &bom.document_creation_information.document_name);
 
         for creators in &bom.document_creation_information.creation_info.creators {
             document.add_text(self.fields.sbom_creators, creators);
@@ -235,6 +238,7 @@ impl Index {
             }
 
             if let Some(component) = &metadata.component {
+                document.add_text(self.fields.sbom_name, component.name.to_string());
                 Self::index_cyclonedx_component(&mut document, component, &self.fields.sbom);
             }
         }
@@ -307,6 +311,7 @@ impl Index {
         match resource {
             Packages::Package(primary) => self.create_string_query(
                 &[
+                    self.fields.sbom_name,
                     self.fields.sbom.name,
                     self.fields.sbom.purl,
                     self.fields.sbom.cpe,
@@ -448,6 +453,7 @@ impl trustification_index::Index for Index {
     ) -> Result<Self::MatchedDocument, SearchError> {
         let doc = searcher.doc(doc_address)?;
         let id = field2str(&doc, self.fields.sbom_id)?;
+        let name = field2str(&doc, self.fields.sbom_name)?;
 
         let snippet_generator = SnippetGenerator::create(searcher, query, self.fields.sbom.desc)?;
         let snippet = snippet_generator.snippet_from_doc(&doc).to_html();
@@ -461,11 +467,6 @@ impl trustification_index::Index for Index {
             .get_first(self.fields.sbom.cpe)
             .map(|s| s.as_text().unwrap_or(""))
             .unwrap_or("N/A");
-
-        let name = doc
-            .get_first(self.fields.sbom.name)
-            .map(|s| s.as_text().unwrap_or(""))
-            .unwrap_or("");
 
         let version = doc
             .get_first(self.fields.sbom.version)
