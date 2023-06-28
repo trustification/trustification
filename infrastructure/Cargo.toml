@@ -21,3 +21,4 @@ tracing-opentelemetry = "0.19.0"
 opentelemetry-jaeger = { version = "0.18.0", features = ["rt-tokio"] }
 env_logger = "0.10"
 log = "0.4"
+prometheus = "0.13.3"

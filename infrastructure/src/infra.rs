@@ -1,8 +1,10 @@
+use std::sync::Arc;
 use std::{future::Future, pin::Pin};
 
 use actix_web::{http::uri::Builder, middleware::Logger, web, App, HttpRequest, HttpResponse, HttpServer, Responder};
 use anyhow::Context;
 use futures::future::select_all;
+use prometheus::{Registry, TextEncoder};
 
 use crate::tracing::init_tracing;
 
@@ -40,7 +42,7 @@ impl Default for InfrastructureConfig {
 pub async fn index(req: HttpRequest) -> HttpResponse {
     let conn = req.connection_info();
 
-    let apis = ["/health/live", "/health/ready", "/health/startup"]
+    let apis = ["/health/live", "/health/ready", "/health/startup", "/metrics"]
         .into_iter()
         .filter_map(|api| {
             Builder::new()
@@ -60,14 +62,27 @@ async fn health() -> impl Responder {
     HttpResponse::Ok()
 }
 
+async fn metrics(metrics: web::Data<Arc<Metrics>>) -> HttpResponse {
+    let encoder = TextEncoder::new();
+    let metric_families = metrics.registry().gather();
+    match encoder.encode_to_string(&metric_families) {
+        Ok(data) => HttpResponse::Ok().content_type("text/plain").body(data),
+        Err(e) => HttpResponse::InternalServerError().body(format!("Error retrieving metrics: {:?}", e)),
+    }
+}
+
 #[derive(Default)]
 pub struct Infrastructure {
     config: InfrastructureConfig,
+    metrics: Arc<Metrics>,
 }
 
 impl From<InfrastructureConfig> for Infrastructure {
     fn from(config: InfrastructureConfig) -> Self {
-        Self { config }
+        Self {
+            config,
+            metrics: Default::default(),
+        }
     }
 }
 
@@ -96,8 +111,10 @@ impl Infrastructure {
         log::info!("Setting up infrastructure endpoint");
 
         let mut http = HttpServer::new(move || {
+            let metrics_registry = self.metrics.clone();
             App::new()
                 .wrap(Logger::default())
+                .app_data(web::Data::new(metrics_registry))
                 .service(web::resource("/").to(index))
                 .service(
                     web::scope("/health")
@@ -105,6 +122,7 @@ impl Infrastructure {
                         .service(web::resource("/ready").to(health))
                         .service(web::resource("/startup").to(health)),
                 )
+                .service(web::resource("/metrics").to(metrics))
         });
 
         if self.config.infrastructure_workers > 0 {
@@ -127,14 +145,25 @@ impl Infrastructure {
 
     pub async fn run<F, Fut>(self, id: &str, main: F) -> anyhow::Result<()>
     where
-        F: FnOnce() -> Fut,
+        F: FnOnce(Arc<Metrics>) -> Fut,
         Fut: Future<Output = anyhow::Result<()>>,
     {
         init_tracing(id, self.config.enable_tracing.into());
+        let main = Box::pin(main(self.metrics.clone())) as Pin<Box<dyn Future<Output = anyhow::Result<()>>>>;
         let runner = Box::pin(self.start_internal().await?);
-        let main = Box::pin(main()) as Pin<Box<dyn Future<Output = anyhow::Result<()>>>>;
         let (result, _index, _others) = select_all([runner, main]).await;
         result
+    }
+}
+
+#[derive(Default)]
+pub struct Metrics {
+    registry: Registry,
+}
+
+impl Metrics {
+    pub fn registry(&self) -> &Registry {
+        &self.registry
     }
 }
 

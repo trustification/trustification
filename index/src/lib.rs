@@ -1,5 +1,9 @@
 use std::{fmt::Display, ops::Bound, path::PathBuf};
 
+use prometheus::{
+    histogram_opts, opts, register_histogram_with_registry, register_int_counter_with_registry,
+    register_int_gauge_with_registry, Histogram, IntCounter, IntGauge, Registry,
+};
 use sikula::prelude::{Ordered, Primary, Search};
 // Rexport to align versions
 use log::{debug, warn};
@@ -26,10 +30,72 @@ pub struct IndexConfig {
     pub sync_interval: humantime::Duration,
 }
 
+#[derive(Clone)]
+struct Metrics {
+    indexed_total: IntCounter,
+    snapshots_total: IntCounter,
+    queries_total: IntCounter,
+    index_size_disk_bytes: IntGauge,
+    indexing_latency_seconds: Histogram,
+    query_latency_seconds: Histogram,
+}
+
+impl Metrics {
+    fn register(registry: &Registry) -> Result<Self, Error> {
+        let indexed_total = register_int_counter_with_registry!(
+            opts!("index_indexed_total", "Total number of indexing operations"),
+            registry
+        )?;
+
+        let queries_total = register_int_counter_with_registry!(
+            opts!("index_queries_total", "Total number of search queries"),
+            registry
+        )?;
+
+        let snapshots_total = register_int_counter_with_registry!(
+            opts!("index_snapshots_total", "Total number of snapshots taken"),
+            registry
+        )?;
+
+        let index_size_disk_bytes = register_int_gauge_with_registry!(
+            opts!("index_size_disk_bytes", "Amount of bytes consumed by index on disk"),
+            registry
+        )?;
+
+        let indexing_latency_seconds = register_histogram_with_registry!(
+            histogram_opts!(
+                "index_indexing_latency_seconds",
+                "Indexing latency",
+                vec![0.0001, 0.001, 0.01, 0.1, 1.0, 10.0]
+            ),
+            registry
+        )?;
+
+        let query_latency_seconds = register_histogram_with_registry!(
+            histogram_opts!(
+                "index_query_latency_seconds",
+                "Search query latency",
+                vec![0.0001, 0.001, 0.01, 0.1, 1.0, 10.0]
+            ),
+            registry
+        )?;
+
+        Ok(Self {
+            indexed_total,
+            snapshots_total,
+            queries_total,
+            index_size_disk_bytes,
+            indexing_latency_seconds,
+            query_latency_seconds,
+        })
+    }
+}
+
 pub struct IndexStore<INDEX: Index> {
     inner: SearchIndex,
     path: Option<PathBuf>,
     index: INDEX,
+    metrics: Metrics,
 }
 
 pub trait Index {
@@ -59,7 +125,14 @@ pub enum Error {
     NotPersisted,
     Parser(String),
     Search(tantivy::TantivyError),
+    Prometheus(prometheus::Error),
     Io(std::io::Error),
+}
+
+impl From<prometheus::Error> for Error {
+    fn from(e: prometheus::Error) -> Self {
+        Self::Prometheus(e)
+    }
 }
 
 impl Display for Error {
@@ -71,6 +144,7 @@ impl Display for Error {
             Self::NotPersisted => write!(f, "Database is not persisted"),
             Self::Parser(e) => write!(f, "Failed to parse query: {e}"),
             Self::Search(e) => write!(f, "Error in search index: {:?}", e),
+            Self::Prometheus(e) => write!(f, "Error in prometheus: {:?}", e),
             Self::Io(e) => write!(f, "I/O error: {:?}", e),
         }
     }
@@ -86,6 +160,7 @@ impl From<tantivy::TantivyError> for Error {
 
 pub struct IndexWriter {
     writer: tantivy::IndexWriter,
+    metrics: Metrics,
 }
 
 impl IndexWriter {
@@ -98,7 +173,10 @@ impl IndexWriter {
         self.delete_document(index, id);
         let docs = index.index_doc(id, raw)?;
         for doc in docs {
+            let indexing_latency = self.metrics.indexing_latency_seconds.start_timer();
             self.writer.add_document(doc)?;
+            indexing_latency.observe_duration();
+            self.metrics.indexed_total.inc();
         }
         Ok(())
     }
@@ -125,10 +203,11 @@ impl<INDEX: Index> IndexStore<INDEX> {
             inner,
             index,
             path: None,
+            metrics: Metrics::register(&Default::default())?,
         })
     }
 
-    pub fn new(config: &IndexConfig, index: INDEX) -> Result<Self, Error> {
+    pub fn new(config: &IndexConfig, index: INDEX, metrics_registry: &Registry) -> Result<Self, Error> {
         let path = config.index.clone().unwrap_or_else(|| {
             use rand::RngCore;
             let r = rand::thread_rng().next_u32();
@@ -146,6 +225,7 @@ impl<INDEX: Index> IndexStore<INDEX> {
             inner,
             path: Some(path),
             index,
+            metrics: Metrics::register(metrics_registry)?,
         })
     }
 
@@ -155,17 +235,6 @@ impl<INDEX: Index> IndexStore<INDEX> {
 
     pub fn index_as_mut(&mut self) -> &mut INDEX {
         &mut self.index
-    }
-
-    pub fn restore(config: &IndexConfig, data: &[u8], index: INDEX) -> Result<Self, Error> {
-        if let Some(path) = &config.index {
-            let dec = zstd::stream::Decoder::new(data).map_err(Error::Io)?;
-            let mut archive = tar::Archive::new(dec);
-            archive.unpack(path).map_err(Error::Io)?;
-            Self::new(config, index)
-        } else {
-            Err(Error::Open)
-        }
     }
 
     pub fn reload(&mut self, data: &[u8]) -> Result<(), Error> {
@@ -183,6 +252,14 @@ impl<INDEX: Index> IndexStore<INDEX> {
             writer.commit()?;
             self.inner.directory_mut().sync_directory().map_err(Error::Io)?;
             let lock = self.inner.directory_mut().acquire_lock(&INDEX_WRITER_LOCK);
+
+            let mut total_size: i64 = 0;
+            for file in self.inner.directory().list_managed_files() {
+                let sz = std::fs::metadata(file).map(|m| m.len()).unwrap_or(0);
+                total_size += sz as i64;
+            }
+            self.metrics.index_size_disk_bytes.set(total_size);
+            self.metrics.snapshots_total.inc();
 
             let mut out = Vec::new();
             log::info!("Creating encoder");
@@ -202,7 +279,10 @@ impl<INDEX: Index> IndexStore<INDEX> {
 
     pub fn writer(&mut self) -> Result<IndexWriter, Error> {
         let writer = self.inner.writer(100_000_000)?;
-        Ok(IndexWriter { writer })
+        Ok(IndexWriter {
+            writer,
+            metrics: self.metrics.clone(),
+        })
     }
 
     pub fn search(
@@ -212,6 +292,8 @@ impl<INDEX: Index> IndexStore<INDEX> {
         len: usize,
         explain: bool,
     ) -> Result<(Vec<INDEX::MatchedDocument>, usize), Error> {
+        let latency = self.metrics.query_latency_seconds.start_timer();
+
         let reader = self.inner.reader()?;
         let searcher = reader.searcher();
 
@@ -220,6 +302,8 @@ impl<INDEX: Index> IndexStore<INDEX> {
         debug!("Processed query: {:?}", query);
 
         let (top_docs, count) = searcher.search(&query, &(TopDocs::with_limit(len).and_offset(offset), Count))?;
+
+        self.metrics.queries_total.inc();
 
         debug!("Found {} docs", count);
 
@@ -235,6 +319,7 @@ impl<INDEX: Index> IndexStore<INDEX> {
 
         debug!("Filtered to {}", hits.len());
 
+        latency.observe_duration();
         Ok((hits, count))
     }
 }
@@ -458,7 +543,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_basic_index() {
-        let _ = tracing_subscriber::fmt::try_init();
+        let _ = env_logger::try_init();
         let mut store = IndexStore::new_in_memory(TestIndex::new()).unwrap();
         let mut writer = store.writer().unwrap();
 
@@ -473,7 +558,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_index_removal() {
-        let _ = tracing_subscriber::fmt::try_init();
+        let _ = env_logger::try_init();
         let mut store = IndexStore::new_in_memory(TestIndex::new()).unwrap();
         let mut writer = store.writer().unwrap();
 
@@ -494,7 +579,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_duplicates() {
-        let _ = tracing_subscriber::fmt::try_init();
+        let _ = env_logger::try_init();
         let mut store = IndexStore::new_in_memory(TestIndex::new()).unwrap();
         let mut writer = store.writer().unwrap();
 

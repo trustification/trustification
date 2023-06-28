@@ -116,6 +116,10 @@ pub struct SqsEvent<'m> {
 }
 
 impl<'m> SqsEvent<'m> {
+    pub(crate) fn topic(&self) -> &str {
+        self.queue
+    }
+
     pub(crate) fn payload(&self) -> Option<&[u8]> {
         self.message.body().map(|m| m.as_bytes())
     }

@@ -20,3 +20,4 @@ csaf-walker = { version = "0.1.2", default-features = false, features = ["crypto
 url = { version = "2.3.1", features = ["serde"] }
 time = "0.3.21"
 humantime = "2.1.0"
+prometheus = "0.13.3"

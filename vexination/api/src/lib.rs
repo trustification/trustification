@@ -3,6 +3,7 @@
 #![allow(unused_imports)]
 use std::{net::SocketAddr, path::PathBuf, process::ExitCode, str::FromStr, sync::Arc, time::Duration};
 
+use prometheus::Registry;
 use tokio::sync::RwLock;
 use trustification_index::{IndexConfig, IndexStore};
 use trustification_infrastructure::{Infrastructure, InfrastructureConfig};
@@ -33,10 +34,13 @@ pub struct Run {
 }
 
 impl Run {
-    pub async fn run(mut self) -> anyhow::Result<ExitCode> {
-        let state = self.configure()?;
+    pub async fn run(self) -> anyhow::Result<ExitCode> {
+        let index = self.index;
+        let storage = self.storage;
+        let devmode = self.devmode;
         Infrastructure::from(self.infra)
-            .run("vexination-api", || async {
+            .run("vexination-api", |metrics| async move {
+                let state = Self::configure(index, storage, metrics.registry(), devmode)?;
                 let addr = SocketAddr::from_str(&format!("{}:{}", self.bind, self.port))?;
 
                 server::run(state, addr).await
@@ -46,16 +50,20 @@ impl Run {
         Ok(ExitCode::SUCCESS)
     }
 
-    fn configure(&mut self) -> anyhow::Result<Arc<AppState>> {
-        let index = IndexStore::new(&self.index, vexination_index::Index::new())?;
-        let storage = self.storage.create("vexination", self.devmode)?;
+    fn configure(
+        index: IndexConfig,
+        mut storage: StorageConfig,
+        registry: &Registry,
+        devmode: bool,
+    ) -> anyhow::Result<Arc<AppState>> {
+        let sync_interval = index.sync_interval.into();
+        let index = IndexStore::new(&index, vexination_index::Index::new(), registry)?;
+        let storage = storage.create("vexination", devmode, registry)?;
 
         let state = Arc::new(AppState {
             storage: RwLock::new(storage),
             index: RwLock::new(index),
         });
-
-        let sync_interval = self.index.sync_interval.into();
 
         let sinker = state.clone();
         tokio::task::spawn(async move {
