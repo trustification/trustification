@@ -1308,9 +1308,9 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "4.3.8"
+version = "4.3.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d9394150f5b4273a1763355bd1c2ec54cc5a2593f790587bcd6b2c947cfa9211"
+checksum = "bba77a07e4489fb41bd90e8d4201c3eb246b3c2c9ea2ba0bddd6c1d1df87db7d"
 dependencies = [
  "clap_builder",
  "clap_derive",
@@ -1319,9 +1319,9 @@ dependencies = [
 
 [[package]]
 name = "clap_builder"
-version = "4.3.8"
+version = "4.3.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9a78fbdd3cc2914ddf37ba444114bc7765bbdcb55ec9cbe6fa054f0137400717"
+checksum = "2c9b4a88bb4bc35d3d6f65a21b0f0bafe9c894fa00978de242c555ec28bea1c0"
 dependencies = [
  "anstream",
  "anstyle",
@@ -4755,9 +4755,9 @@ checksum = "74233d3b3b2f6d4b006dc19dee745e73e2a6bfb6f93607cd3b02bd5b00797d7c"
 
 [[package]]
 name = "sikula"
-version = "0.3.0"
+version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a66cae82bdbce9da08f5603f4bb5ba6b51a9af5118c6c249632a2ed01f6d780f"
+checksum = "7a7f4af071cbc47fe30c7ed24cbf489cd669778cfddd10937841ef455b76b937"
 dependencies = [
  "chumsky",
  "sikula-macros",
@@ -4767,9 +4767,9 @@ dependencies = [
 
 [[package]]
 name = "sikula-macros"
-version = "0.3.0"
+version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "89cf66869897526a03e5891947be842539de219b4bb1b18f454fb71d144de2dd"
+checksum = "f6043325d158320a33fc075123f2f6d508e9c408f31f973a400bd7a3a9e5a728"
 dependencies = [
  "convert_case 0.6.0",
  "darling 0.20.1",
@@ -5652,13 +5652,18 @@ name = "trustification-index"
 version = "0.1.0"
 dependencies = [
  "clap",
+ "env_logger 0.10.0",
  "humantime 2.1.0",
  "log",
  "rand 0.8.5",
+ "serde",
+ "serde_json",
  "sikula",
  "tantivy",
  "tar",
  "time 0.3.22",
+ "tokio",
+ "tracing-subscriber",
  "zstd",
 ]
 

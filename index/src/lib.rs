@@ -95,6 +95,7 @@ impl IndexWriter {
         id: &str,
         raw: &INDEX::Document,
     ) -> Result<(), Error> {
+        self.delete_document(index, id);
         let docs = index.index_doc(id, raw)?;
         for doc in docs {
             self.writer.add_document(doc)?;
@@ -381,4 +382,142 @@ pub fn field2date(doc: &Document, field: Field) -> Result<OffsetDateTime, Error>
 pub fn field2float(doc: &Document, field: Field) -> Result<f64, Error> {
     let value = doc.get_first(field).map(|s| s.as_f64()).unwrap_or(None);
     value.map(Ok).unwrap_or(Err(Error::NotFound))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    struct TestIndex {
+        schema: Schema,
+        id: Field,
+        text: Field,
+    }
+
+    impl TestIndex {
+        pub fn new() -> Self {
+            let mut builder = Schema::builder();
+            let id = builder.add_text_field("id", STRING | FAST | STORED);
+            let text = builder.add_text_field("text", TEXT);
+            let schema = builder.build();
+            Self { schema, id, text }
+        }
+    }
+
+    impl Index for TestIndex {
+        type MatchedDocument = String;
+        type Document = String;
+
+        fn settings(&self) -> IndexSettings {
+            IndexSettings::default()
+        }
+
+        fn schema(&self) -> Schema {
+            self.schema.clone()
+        }
+
+        fn prepare_query(&self, q: &str) -> Result<Box<dyn Query>, Error> {
+            let queries: Vec<Box<dyn Query>> = vec![
+                Box::new(TermQuery::new(
+                    Term::from_field_text(self.id, q),
+                    IndexRecordOption::Basic,
+                )),
+                Box::new(TermQuery::new(
+                    Term::from_field_text(self.text, q),
+                    IndexRecordOption::Basic,
+                )),
+            ];
+            Ok(Box::new(BooleanQuery::union(queries)))
+        }
+
+        fn process_hit(
+            &self,
+            doc: DocAddress,
+            _score: f32,
+            searcher: &Searcher,
+            _query: &dyn Query,
+            _explain: bool,
+        ) -> Result<Self::MatchedDocument, Error> {
+            let d = searcher.doc(doc)?;
+            let id = d.get_first(self.id).map(|v| v.as_text()).ok_or(Error::NotFound)?;
+            Ok(id.unwrap_or("").to_string())
+        }
+
+        fn index_doc(&self, id: &str, document: &Self::Document) -> Result<Vec<Document>, Error> {
+            let doc = tantivy::doc!(
+                self.id => id.to_string(),
+                self.text => document.to_string()
+            );
+            Ok(vec![doc])
+        }
+
+        fn doc_id_to_term(&self, id: &str) -> Term {
+            Term::from_field_text(self.id, id)
+        }
+    }
+
+    #[tokio::test]
+    async fn test_basic_index() {
+        let _ = tracing_subscriber::fmt::try_init();
+        let mut store = IndexStore::new_in_memory(TestIndex::new()).unwrap();
+        let mut writer = store.writer().unwrap();
+
+        writer
+            .add_document(store.index_as_mut(), "foo", &"Foo is great".to_string())
+            .unwrap();
+
+        writer.commit().unwrap();
+
+        assert_eq!(store.search("is", 0, 10, false).unwrap().1, 1);
+    }
+
+    #[tokio::test]
+    async fn test_index_removal() {
+        let _ = tracing_subscriber::fmt::try_init();
+        let mut store = IndexStore::new_in_memory(TestIndex::new()).unwrap();
+        let mut writer = store.writer().unwrap();
+
+        writer
+            .add_document(store.index_as_mut(), "foo", &"Foo is great".to_string())
+            .unwrap();
+
+        writer.commit().unwrap();
+
+        assert_eq!(store.search("is", 0, 10, false).unwrap().1, 1);
+
+        let writer = store.writer().unwrap();
+        writer.delete_document(store.index_as_mut(), "foo");
+        writer.commit().unwrap();
+
+        assert_eq!(store.search("is", 0, 10, false).unwrap().1, 0);
+    }
+
+    #[tokio::test]
+    async fn test_duplicates() {
+        let _ = tracing_subscriber::fmt::try_init();
+        let mut store = IndexStore::new_in_memory(TestIndex::new()).unwrap();
+        let mut writer = store.writer().unwrap();
+
+        writer
+            .add_document(store.index_as_mut(), "foo", &"Foo is great".to_string())
+            .unwrap();
+
+        writer
+            .add_document(store.index_as_mut(), "foo", &"Foo is great".to_string())
+            .unwrap();
+
+        writer.commit().unwrap();
+
+        assert_eq!(store.search("is", 0, 10, false).unwrap().1, 1);
+
+        // Duplicates also removed if separate commits.
+        let mut writer = store.writer().unwrap();
+        writer
+            .add_document(store.index_as_mut(), "foo", &"Foo is great".to_string())
+            .unwrap();
+
+        writer.commit().unwrap();
+
+        assert_eq!(store.search("is", 0, 10, false).unwrap().1, 1);
+    }
 }
