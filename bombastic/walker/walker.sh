@@ -72,7 +72,7 @@ verify() {
      echo "verifying hash and signature for $1"
 
      sha256sum --check "$1".sha256 && \
-     gpg -q --verify "$1".asc  "$1" 2>/dev/null
+     gpg -q --homedir "$WORKDIR" --verify "$1".asc  "$1" 2>/dev/null
 }
 
 cleanup()
@@ -93,13 +93,13 @@ cd "$WORKDIR" || exit 1
 
 file=$(basename "$SOURCE")
 if ! download_files "$SOURCE"; then
-    echo "Error downloading files. Skipping"
+    echo "Error downloading files. Skipping" >&2
     cleanup "$file"
     exit 1
 fi
 
 if ! verify "$file"; then
-    echo "Error verifying files. Skipping"
+    echo "Error verifying files. Skipping" >&2
     cleanup "$file"
     exit 1
 fi
@@ -107,11 +107,16 @@ fi
 # All is well, let's upload that to bombastic
 id=$(basename -s ".json.bz2" "$file")
 echo "Uploading $id to bombastic"
-curl -f --no-progress-meter -X POST \
+if ! curl -f --no-progress-meter -X POST \
      -H "content-encoding: bzip2" \
      -H "transfer-encoding: chunked" \
      -H "content-type: application/json" \
      -T "$file" \
-     "$BOMBASTIC_API""$BOMBASTIC_PATH"?id="$id"
+     "$BOMBASTIC_API""$BOMBASTIC_PATH"?id="$id"; then
+
+       echo "Error uploading files to bombastic. Skipping" >&2
+       cleanup "$file"
+       exit 1
+fi
 
 cleanup "$file"
