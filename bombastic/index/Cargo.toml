@@ -8,7 +8,6 @@ sikula = { version = "0.3", features = ["time"] }
 zstd = "0.12"
 tantivy = { version = "0.19.2", features = ["zstd-compression"] }
 log = "0.4"
-chumsky = "1.0.0-alpha.4"
 time = "0.3"
 tar = "0.4"
 trustification-index = { path = "../../index" }
