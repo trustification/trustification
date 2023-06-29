@@ -12,7 +12,7 @@ pub use tantivy::schema::Document;
 use tantivy::{
     collector::{Count, TopDocs},
     directory::{MmapDirectory, INDEX_WRITER_LOCK},
-    query::{BooleanQuery, Occur, Query, RangeQuery, RegexQuery, TermQuery},
+    query::{BooleanQuery, BoostQuery, Occur, Query, RangeQuery, RegexQuery, TermQuery},
     schema::*,
     DateTime, Directory, DocAddress, Index as SearchIndex, IndexSettings, Searcher,
 };
@@ -427,6 +427,11 @@ pub fn create_text_query(field: Field, primary: &Primary<'_>) -> Box<dyn Query> 
         Primary::Equal(value) => Box::new(TermQuery::new(Term::from_field_text(field, value), Default::default())),
         Primary::Partial(value) => Box::new(TermQuery::new(Term::from_field_text(field, value), Default::default())),
     }
+}
+
+/// Boost score of a term
+pub fn boost(q: Box<dyn Query>, weight: f32) -> Box<dyn Query> {
+    Box::new(BoostQuery::new(q, weight))
 }
 
 /// Map over a bound
