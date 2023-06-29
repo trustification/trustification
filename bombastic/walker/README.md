@@ -13,4 +13,9 @@ Override the changes.csv location :  `--changes-url https://access.redhat.com/se
 
 Start in long-running mode, to monitor the change file and update when needed: `--scan-interval 30s`
 
+Provide the path to the scripts: `--scripts_path bombastic/walker` 
+
+Set a custom working directory : `--workdir /tmp/walker`
+
+
 Settings can be set with environment variables.

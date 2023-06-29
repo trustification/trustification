@@ -3,12 +3,13 @@
 #fail on any subprocess failures
 set -uo pipefail
 
-usage() { echo "Usage: $0 spdx_url bombastic_url" 1>&2; exit 1; }
+usage() { echo "Usage: $0 spdx_url bombastic_url" 1>&2; }
 
 # Default variables
 BOMBASTIC_API=""
 BOMBASTIC_PATH="/api/v1/sbom"
 SOURCE=""
+WORKDIR=$(pwd)
 
 
 ###################################
@@ -22,6 +23,7 @@ help()
    echo "$0 [-h] SBOM_URL BOMBASTIC_API_URL"
    echo "options:"
    echo "   -h        Print this Help."
+   echo "   -w        Path to a writable working directory"
    echo
    echo "example:"
    echo "$0 https://access.redhat.com/security/data/sbom/beta/sbdx/3amp-2.json.bz2 localhost:8080"
@@ -29,17 +31,23 @@ help()
 }
 
 # Get the options
-while getopts ":h" option; do
+while getopts ":hw:" option; do
    case $option in
       h) # display Help
          help
          exit 0
          ;;
-      ?) usage
+      w) # specify work dir
+         WORKDIR=$OPTARG
+         ;;
+      \?) usage
          exit 1
          ;;
    esac
 done
+
+# Shift the positional parameters
+shift $((OPTIND - 1))
 
 if [ $# -ne 2 ] ; then
   echo "SPDX_URL and BOMBASTIC_URL are required arguments"
@@ -81,15 +89,16 @@ cleanup()
 # Main                            #
 ###################################
 
-download_files $SOURCE
-if [[ $? -ne 0 ]]; then
+cd "$WORKDIR" || exit 1
+
+file=$(basename "$SOURCE")
+if ! download_files "$SOURCE"; then
     echo "Error downloading files. Skipping"
     cleanup "$file"
     exit 1
 fi
-file=$(basename $SOURCE)
-verify $file
-if [[ $? -ne 0 ]]; then
+
+if ! verify "$file"; then
     echo "Error verifying files. Skipping"
     cleanup "$file"
     exit 1
