@@ -1,4 +1,3 @@
-use std::path::PathBuf;
 use std::process::ExitCode;
 
 use crate::changes::ChangeTracker;
@@ -59,24 +58,21 @@ impl Run {
             .script_context
             .setup_gpg(self.config.signing_key_source.as_ref())?;
 
-        // find the script location
-        let script_path = self.config.script_context.script_path("./walker.sh")?;
-
         if let Some(sync_interval) = self.config.scan_interval {
             let mut interval = tokio::time::interval(sync_interval.into());
             loop {
                 interval.tick().await;
 
-                self.call_script(watcher.update().await?, &source, &script_path);
+                self.call_script(watcher.update().await?, &source);
             }
         } else {
-            self.call_script(watcher.update().await?, &source, &script_path);
+            self.call_script(watcher.update().await?, &source);
         }
 
         Ok(ExitCode::SUCCESS)
     }
 
-    fn call_script(&self, entries: Vec<String>, sbom_path: &Url, script_path: &PathBuf) {
+    fn call_script(&self, entries: Vec<String>, sbom_path: &Url) {
         for entry in entries {
             let mut sbom_path = sbom_path.clone();
             // craft the url to the SBOM file
@@ -84,7 +80,7 @@ impl Run {
 
             self.config
                 .script_context
-                .bombastic_upload(&sbom_path, &self.config.bombastic, script_path);
+                .bombastic_upload(&sbom_path, &self.config.bombastic);
 
             // cleanup the url for the next run
             sbom_path.path_segments_mut().unwrap().pop().pop();
