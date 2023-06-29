@@ -1,7 +1,8 @@
+use std::path::PathBuf;
 use std::process::ExitCode;
 
 use crate::changes::ChangeTracker;
-use crate::shell_wrap::{run, script_path, setup_gpg};
+use crate::shell_wrap::ScriptContext;
 use clap::{arg, command, Args};
 use url::Url;
 
@@ -18,6 +19,9 @@ pub struct Run {
 #[derive(Clone, Debug, clap::Parser)]
 #[command(rename_all_env = "SCREAMING_SNAKE_CASE")]
 pub struct WalkerConfig {
+    #[command(flatten)]
+    pub script_context: ScriptContext,
+
     /// Long-running mode. The index file will be scanned for changes every interval.
     #[arg(long = "scan-interval")]
     pub scan_interval: Option<humantime::Duration>,
@@ -51,32 +55,36 @@ impl Run {
         source.path_segments_mut().unwrap().pop();
 
         // add ProdSec signing key to trusted gpg keys
-        setup_gpg(self.config.signing_key_source.as_ref())?;
+        self.config
+            .script_context
+            .setup_gpg(self.config.signing_key_source.as_ref())?;
 
         // find the script location
-        let script_path = script_path("walker.sh")?;
+        let script_path = self.config.script_context.script_path("./walker.sh")?;
 
         if let Some(sync_interval) = self.config.scan_interval {
             let mut interval = tokio::time::interval(sync_interval.into());
             loop {
                 interval.tick().await;
 
-                self.call_script(watcher.update().await?, script_path.as_str(), &source);
+                self.call_script(watcher.update().await?, &source, &script_path);
             }
         } else {
-            self.call_script(watcher.update().await?, script_path.as_str(), &source);
+            self.call_script(watcher.update().await?, &source, &script_path);
         }
 
         Ok(ExitCode::SUCCESS)
     }
 
-    fn call_script(&self, entries: Vec<String>, script_path: &str, sbom_path: &Url) {
+    fn call_script(&self, entries: Vec<String>, sbom_path: &Url, script_path: &PathBuf) {
         for entry in entries {
             let mut sbom_path = sbom_path.clone();
             // craft the url to the SBOM file
             sbom_path.path_segments_mut().unwrap().extend(entry.split('/'));
 
-            run(script_path, &sbom_path, &self.config.bombastic);
+            self.config
+                .script_context
+                .bombastic_upload(&sbom_path, &self.config.bombastic, script_path);
 
             // cleanup the url for the next run
             sbom_path.path_segments_mut().unwrap().pop().pop();
