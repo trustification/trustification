@@ -1,6 +1,6 @@
 use std::io;
 use std::path::PathBuf;
-use std::process::{Command, Output, Stdio};
+use std::process::{Command, Output};
 use url::Url;
 
 #[derive(Clone, Debug, clap::Parser)]
@@ -28,12 +28,7 @@ impl ScriptContext {
             cmd.arg("-w").arg(path);
         }
 
-        let result = cmd
-            .arg(sbom_path.as_str())
-            .arg(bombastic.as_str())
-            .stdout(Stdio::piped())
-            .stderr(Stdio::inherit())
-            .output();
+        let result = cmd.arg(sbom_path.as_str()).arg(bombastic.as_str()).output();
 
         log_script_output(result, "walker.sh");
     }
@@ -47,11 +42,7 @@ impl ScriptContext {
             cmd.arg("-w").arg(path);
         }
 
-        let log = cmd
-            .arg(address)
-            .stdout(Stdio::piped())
-            .stderr(Stdio::inherit())
-            .output();
+        let log = cmd.arg(address).output();
 
         log_script_output(log, "setup_gpg_key.sh");
         Ok(())
@@ -64,6 +55,11 @@ pub fn log_script_output(log: io::Result<Output>, script_name: &str) {
             for line in String::from_utf8_lossy(&r.stdout).split('\n') {
                 if !line.is_empty() {
                     tracing::info!("{script_name}: {line}");
+                }
+            }
+            for line in String::from_utf8_lossy(&r.stderr).split('\n') {
+                if !line.is_empty() {
+                    tracing::warn!("{script_name}: {line}");
                 }
             }
         }
