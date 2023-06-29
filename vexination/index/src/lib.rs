@@ -12,7 +12,8 @@ use search::*;
 use sikula::prelude::*;
 use tantivy::{query::AllQuery, store::ZstdCompressor, DocAddress, IndexSettings, Searcher, SnippetGenerator};
 use trustification_index::{
-    create_date_query, create_string_query, create_text_query, field2date, field2f64vec, field2str, field2strvec,
+    boost, create_date_query, create_string_query, create_text_query, field2date, field2f64vec, field2str,
+    field2strvec,
     tantivy::{
         doc,
         query::{BooleanQuery, Query, RangeQuery},
@@ -363,10 +364,14 @@ impl Index {
     }
 
     fn resource2query(&self, resource: &Vulnerabilities) -> Box<dyn Query> {
+        const ID_WEIGHT: f32 = 1.5;
+        const CVE_ID_WEIGHT: f32 = 1.4;
+        const ADV_TITLE_WEIGHT: f32 = 1.3;
+        const CVE_TITLE_WEIGHT: f32 = 1.3;
         match resource {
-            Vulnerabilities::Id(primary) => create_string_query(self.fields.advisory_id, primary),
+            Vulnerabilities::Id(primary) => boost(create_string_query(self.fields.advisory_id, primary), ID_WEIGHT),
 
-            Vulnerabilities::Cve(primary) => create_string_query(self.fields.cve_id, primary),
+            Vulnerabilities::Cve(primary) => boost(create_string_query(self.fields.cve_id, primary), CVE_ID_WEIGHT),
 
             Vulnerabilities::Description(primary) => {
                 let q1 = create_text_query(self.fields.advisory_description, primary);
@@ -375,8 +380,8 @@ impl Index {
             }
 
             Vulnerabilities::Title(primary) => {
-                let q1 = create_text_query(self.fields.advisory_title, primary);
-                let q2 = create_text_query(self.fields.cve_title, primary);
+                let q1 = boost(create_text_query(self.fields.advisory_title, primary), ADV_TITLE_WEIGHT);
+                let q2 = boost(create_text_query(self.fields.cve_title, primary), CVE_TITLE_WEIGHT);
                 Box::new(BooleanQuery::union(vec![q1, q2]))
             }
 

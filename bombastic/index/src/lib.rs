@@ -17,7 +17,7 @@ use tantivy::{
 };
 use time::format_description::well_known::Rfc3339;
 use trustification_index::{
-    create_boolean_query, create_date_query, create_string_query, create_text_query, field2str, field2strvec,
+    boost, create_boolean_query, create_date_query, create_string_query, create_text_query, field2str, field2strvec,
     tantivy::{
         doc,
         query::{Occur, Query},
@@ -306,23 +306,28 @@ impl Index {
     }
 
     fn resource2query(&self, resource: &Packages) -> Box<dyn Query> {
+        const PACKAGE_WEIGHT: f32 = 1.5;
+        const CREATED_WEIGHT: f32 = 1.25;
         match resource {
-            Packages::Package(primary) => self.create_string_query(
-                &[
-                    self.fields.sbom_name,
-                    self.fields.sbom.name,
-                    self.fields.sbom.purl,
-                    self.fields.sbom.cpe,
-                    self.fields.sbom.purl_name,
-                ],
-                primary,
+            Packages::Package(primary) => boost(
+                self.create_string_query(
+                    &[
+                        self.fields.sbom_name,
+                        self.fields.sbom.name,
+                        self.fields.sbom.purl,
+                        self.fields.sbom.cpe,
+                        self.fields.sbom.purl_name,
+                    ],
+                    primary,
+                ),
+                PACKAGE_WEIGHT,
             ),
 
             Packages::Type(primary) => self.create_string_query(&[self.fields.sbom.purl_type], primary),
 
             Packages::Namespace(primary) => self.create_string_query(&[self.fields.sbom.purl_namespace], primary),
 
-            Packages::Created(ordered) => create_date_query(self.fields.sbom_created, ordered),
+            Packages::Created(ordered) => boost(create_date_query(self.fields.sbom_created, ordered), CREATED_WEIGHT),
 
             Packages::Version(primary) => {
                 self.create_string_query(&[self.fields.sbom.purl_version, self.fields.sbom.version], primary)
