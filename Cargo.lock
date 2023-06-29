@@ -1073,7 +1073,6 @@ name = "bombastic-index"
 version = "0.1.0"
 dependencies = [
  "bombastic-model",
- "chumsky",
  "cyclonedx-bom",
  "env_logger 0.10.0",
  "log",
@@ -1115,7 +1114,6 @@ dependencies = [
 name = "bombastic-model"
 version = "0.1.0"
 dependencies = [
- "chumsky",
  "serde",
  "serde_json",
  "sikula",

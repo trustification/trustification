@@ -27,8 +27,6 @@ use trustification_index::{
     term2query, Document, Error as SearchError,
 };
 
-mod search;
-
 pub struct Index {
     schema: Schema,
     fields: Fields,

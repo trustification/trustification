@@ -74,7 +74,6 @@ checksum = "bef38d45163c2f1dde094a7dfd33ccf595c92905c8f8f4fdc18d06fb1037718a"
 name = "bombastic-model"
 version = "0.1.0"
 dependencies = [
- "chumsky",
  "serde",
  "serde_json",
  "sikula",
@@ -1599,9 +1598,9 @@ dependencies = [
 
 [[package]]
 name = "sikula"
-version = "0.3.0"
+version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a66cae82bdbce9da08f5603f4bb5ba6b51a9af5118c6c249632a2ed01f6d780f"
+checksum = "7a7f4af071cbc47fe30c7ed24cbf489cd669778cfddd10937841ef455b76b937"
 dependencies = [
  "chumsky",
  "sikula-macros",
@@ -1611,9 +1610,9 @@ dependencies = [
 
 [[package]]
 name = "sikula-macros"
-version = "0.3.0"
+version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "89cf66869897526a03e5891947be842539de219b4bb1b18f454fb71d144de2dd"
+checksum = "f6043325d158320a33fc075123f2f6d508e9c408f31f973a400bd7a3a9e5a728"
 dependencies = [
  "convert_case",
  "darling 0.20.1",
