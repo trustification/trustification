@@ -1,5 +1,4 @@
 use std::io;
-use std::io::ErrorKind;
 use std::path::PathBuf;
 use std::process::{Command, Output, Stdio};
 use url::Url;
@@ -8,8 +7,8 @@ use url::Url;
 #[command(rename_all_env = "SCREAMING_SNAKE_CASE")]
 pub struct ScriptContext {
     /// Path to shell scripts
-    #[arg(long = "scripts_path")]
-    path: Option<PathBuf>,
+    #[arg(long = "scripts-path", default_value = "bombastic/walker/")]
+    path: PathBuf,
 
     /// Path to a writeable working directory
     #[arg(long = "workdir", default_value = "./")]
@@ -20,7 +19,9 @@ const DEFAULT_GPG_KEY_SOURCE: &str =
     "https://access.redhat.com/sites/default/files/pages/attachments/dce3823597f5eac4.txt";
 
 impl ScriptContext {
-    pub fn bombastic_upload(&self, sbom_path: &Url, bombastic: &Url, script_path: &PathBuf) {
+    pub fn bombastic_upload(&self, sbom_path: &Url, bombastic: &Url) {
+        // find the script location
+        let script_path = self.path.join(PathBuf::from("./walker.sh"));
         let mut cmd = Command::new(script_path);
 
         if let Some(path) = &self.workdir {
@@ -39,7 +40,7 @@ impl ScriptContext {
 
     pub fn setup_gpg(&self, key_address: Option<&Url>) -> Result<(), anyhow::Error> {
         let address = key_address.map_or(DEFAULT_GPG_KEY_SOURCE, |s| s.as_str());
-        let script_path = self.script_path("./setup_gpg_key.sh")?;
+        let script_path = self.path.join(PathBuf::from("setup_gpg_key.sh"));
 
         let mut cmd = Command::new(script_path);
         if let Some(path) = &self.workdir {
@@ -54,33 +55,6 @@ impl ScriptContext {
 
         log_script_output(log, "setup_gpg_key.sh");
         Ok(())
-    }
-
-    pub fn script_path(&self, name: &str) -> Result<PathBuf, io::Error> {
-        if let Some(path) = &self.path {
-            let path = path.join(PathBuf::from(name));
-            return Ok(path);
-        }
-
-        // ubi-minimal don't have which so we try to start the script
-        let which = Command::new(name).arg("-h").output();
-
-        match which {
-            Ok(_) => Ok(PathBuf::from(name)),
-            // If the script is not found we assume the workdir is the cargo root
-            Err(e) => match e.kind() {
-                ErrorKind::NotFound => {
-                    let mut default_path = PathBuf::from("bombastic/walker/");
-                    default_path.push(name);
-
-                    Ok(default_path)
-                }
-                _ => {
-                    tracing::error!("{name}: {e}");
-                    Err(e)
-                }
-            },
-        }
     }
 }
 
