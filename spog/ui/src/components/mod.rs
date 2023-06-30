@@ -10,6 +10,7 @@ pub mod error;
 pub mod package;
 // pub mod vulnerability;
 pub mod async_state_renderer;
+pub mod search;
 pub mod simple_pagination;
 pub mod spdx;
 
