@@ -2813,6 +2813,7 @@ dependencies = [
  "trustification-index",
  "trustification-infrastructure",
  "trustification-storage",
+ "urlencoding",
  "vexination-api",
  "vexination-indexer",
 ]
