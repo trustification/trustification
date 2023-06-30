@@ -1,20 +1,12 @@
-#![allow(dead_code)]
-#![allow(unused_variables)]
-#![allow(unused_imports)]
 use std::{
     net::{SocketAddr, TcpListener},
-    path::PathBuf,
     process::ExitCode,
     str::FromStr,
     sync::Arc,
     time::Duration,
 };
 
-use actix_web::{
-    dev::Server,
-    middleware::{Compress, Logger},
-    web, App, HttpServer,
-};
+use actix_web::{web, App, HttpServer};
 use prometheus::Registry;
 use tokio::sync::RwLock;
 use trustification_index::{IndexConfig, IndexStore};
@@ -54,9 +46,6 @@ impl Run {
                 let state = Self::configure(index, storage, metrics.registry(), self.devmode)?;
                 let mut srv = HttpServer::new(move || {
                     App::new()
-                        .wrap(Logger::default())
-                        .wrap(Compress::default())
-                        .app_data(web::PayloadConfig::new(10 * 1024 * 1024))
                         .app_data(web::Data::new(state.clone()))
                         .configure(server::config)
                 });

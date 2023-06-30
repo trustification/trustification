@@ -6,10 +6,7 @@ use std::{
     time::Duration,
 };
 
-use actix_web::{
-    middleware::{Compress, Logger},
-    web, App, HttpServer,
-};
+use actix_web::{web, App, HttpServer};
 use prometheus::Registry;
 use tokio::sync::RwLock;
 use trustification_index::{IndexConfig, IndexStore};
@@ -50,8 +47,6 @@ impl Run {
                 let state = Self::configure(index, storage, metrics.registry(), self.devmode)?;
                 let mut srv = HttpServer::new(move || {
                     App::new()
-                        .wrap(Logger::default())
-                        .wrap(Compress::default())
                         .app_data(web::Data::new(state.clone()))
                         .configure(server::config)
                 });
