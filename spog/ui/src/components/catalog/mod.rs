@@ -47,11 +47,8 @@ pub fn catalog_search(props: &CatalogSearchProperties) -> Html {
                 }
             })
             .unwrap_or_else(|| {
-                let state = gloo_utils::history().state();
-
-                log::debug!("State: {state:?}");
-
-                state
+                gloo_utils::history()
+                    .state()
                     .ok()
                     .and_then(|state| {
                         let deser = state.into_serde::<SearchMode>();
