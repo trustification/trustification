@@ -22,7 +22,7 @@ pub fn backend(props: &BackendProperties) -> Html {
             // current web page. Which is something that Url (which is used by reqwest) doesn't
             // support. But gloo_net does.
             let response = gloo_net::http::Request::get("/endpoints/backend.json")
-                .cache(RequestCache::NoCache)
+                .cache(RequestCache::NoStore)
                 .send()
                 .await
                 .map_err(|err| format!("Failed to load backend information: {err}"))?;
