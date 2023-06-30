@@ -569,7 +569,7 @@ mod tests {
     #[tokio::test]
     async fn test_free_form_simple_primary_3() {
         assert_free_form(|index| {
-            let result = search(&index, "RHSA-2023:1441");
+            let result = search(&index, r#""RHSA-2023:1441""#);
             assert_eq!(result.0.len(), 1);
         });
     }
@@ -577,7 +577,7 @@ mod tests {
     #[tokio::test]
     async fn test_free_form_primary_scoped() {
         assert_free_form(|index| {
-            let result = search(&index, "RHSA-2023:1441 in:id");
+            let result = search(&index, r#""RHSA-2023:1441" in:id"#);
             assert_eq!(result.0.len(), 1);
         });
     }
@@ -672,7 +672,7 @@ mod tests {
     async fn test_delete_document() {
         assert_free_form(|mut index| {
             // our data is there
-            let result = search(&index, "RHSA-2023:1441 in:id");
+            let result = search(&index, r#""RHSA-2023:1441" in:id"#);
             assert_eq!(result.0.len(), 1);
 
             // Now we remove the entry from the index
@@ -681,7 +681,7 @@ mod tests {
             writer.commit().unwrap();
 
             // Ta-da ! No more data
-            let result = search(&index, "RHSA-2023:1441 in:id");
+            let result = search(&index, r#""RHSA-2023:1441" in:id"#);
             assert_eq!(result.0.len(), 0);
         });
     }
