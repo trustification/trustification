@@ -4834,9 +4834,9 @@ checksum = "74233d3b3b2f6d4b006dc19dee745e73e2a6bfb6f93607cd3b02bd5b00797d7c"
 
 [[package]]
 name = "sikula"
-version = "0.3.1"
+version = "0.4.0-alpha.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7a7f4af071cbc47fe30c7ed24cbf489cd669778cfddd10937841ef455b76b937"
+checksum = "93787e04b364d65a13963c78a9072f27aaf4bf5da09c78f3a7ded44507a0543b"
 dependencies = [
  "chumsky",
  "sikula-macros",
@@ -4846,9 +4846,9 @@ dependencies = [
 
 [[package]]
 name = "sikula-macros"
-version = "0.3.1"
+version = "0.4.0-alpha.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f6043325d158320a33fc075123f2f6d508e9c408f31f973a400bd7a3a9e5a728"
+checksum = "efb90bd2f94e5ead65ea9e1b04dcaa7a3bee539d7f993a7fb1d1bb86695aad2a"
 dependencies = [
  "convert_case 0.6.0",
  "darling 0.20.1",
