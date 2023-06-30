@@ -1,15 +1,12 @@
-use std::{net::SocketAddr, sync::Arc, time::Duration};
-
 use actix_web::{
     get,
-    http::header::{self, ContentType},
+    http::header::ContentType,
     middleware::{Compress, Logger},
     route,
     web::{self, Bytes},
-    App, HttpResponse, HttpServer, Responder,
+    HttpResponse, Responder,
 };
 use serde::Deserialize;
-use tokio::sync::{Mutex, RwLock};
 use trustification_storage::Storage;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
@@ -27,6 +24,9 @@ pub struct ApiDoc;
 pub fn config(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/api/v1")
+            .wrap(Logger::default())
+            .wrap(Compress::default())
+            .app_data(web::PayloadConfig::new(10 * 1024 * 1024))
             .service(fetch_vex)
             .service(publish_vex)
             .service(search_vex),
