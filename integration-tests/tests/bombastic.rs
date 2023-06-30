@@ -2,12 +2,13 @@ use integration_tests::{assert_within_timeout, run_test};
 use reqwest::StatusCode;
 use serde_json::{json, Value};
 use std::time::Duration;
+use urlencoding::encode;
 
 #[test]
 fn test_upload() {
     run_test(Duration::from_secs(60), |port, _| async move {
-        let input = serde_json::from_str(include_str!("../../bombastic/testdata/ubi9-sbom.json")).unwrap();
-        let id = "ubi9";
+        let input = serde_json::from_str(include_str!("../../bombastic/testdata/my-sbom.json")).unwrap();
+        let id = "test-upload";
         upload(port, id, &input).await;
         let response = reqwest::get(format!("http://localhost:{port}/api/v1/sbom?id={id}"))
             .await
@@ -22,13 +23,13 @@ fn test_upload() {
 fn test_search() {
     run_test(Duration::from_secs(60), |port, _| async move {
         let input = serde_json::from_str(include_str!("../../bombastic/testdata/ubi9-sbom.json")).unwrap();
-        let key = "ubi9";
-        upload(port, key, &input).await;
+        upload(port, "test-search", &input).await;
         assert_within_timeout(Duration::from_secs(30), async move {
             // Ensure we can search for the SBOM. We want to allow the
             // indexer time to do its thing, so might need to retry
             loop {
-                let url = format!("http://localhost:{port}/api/v1/sbom/search?q={key}");
+                let query = encode("ubi9-container in:package");
+                let url = format!("http://localhost:{port}/api/v1/sbom/search?q={query}");
                 let response = reqwest::get(url).await.unwrap();
                 assert_eq!(response.status(), StatusCode::OK);
                 let payload: Value = response.json().await.unwrap();
