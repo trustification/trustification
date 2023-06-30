@@ -1,4 +1,5 @@
 use crate::backend::{PackageService, SearchOptions};
+use crate::components::search::SearchHelpPopover;
 use crate::hooks::use_backend::use_backend;
 use bombastic_model::prelude::Packages;
 use gloo_utils::format::JsValueSerdeExt;
@@ -243,7 +244,7 @@ pub fn catalog_search(props: &CatalogSearchProperties) -> Html {
 
                     <Toolbar>
                         <ToolbarContent>
-                            <ToolbarGroup>
+                            <ToolbarGroup variant={GroupVariant::Filter}>
                                 <ToolbarItem r#type={ToolbarItemType::SearchFilter} width={["600px".to_string()]}>
                                     <Form onsubmit={onset.reform(|_|())}>
                                         // needed to trigger submit when pressing enter in the search field
@@ -275,6 +276,11 @@ pub fn catalog_search(props: &CatalogSearchProperties) -> Html {
                                         </InputGroup>
                                     </Form>
                                 </ToolbarItem>
+
+                                <ToolbarItem additional_class={classes!("pf-m-align-self-center")}>
+                                    <CatalogSearchHelpPopover/>
+                                </ToolbarItem>
+
                             </ToolbarGroup>
 
                             { for props.toolbar_items.iter() }
@@ -415,4 +421,22 @@ impl Default for SearchMode {
     fn default() -> Self {
         Self::Simple(Default::default())
     }
+}
+
+#[function_component(CatalogSearchHelpPopover)]
+pub fn help() -> Html {
+    html!(
+        <SearchHelpPopover>
+            <Content>
+                <p></p>
+                <p> {"The following qualifiers can be used:"} </p>
+            </Content>
+            <DescriptionList>
+                <DescriptionGroup term="type">{ Html::from_html_unchecked(r#"
+                    <p>The type of package (e.g. <code>oci</code>).</p>
+                "#.into()) }</DescriptionGroup>
+                <DescriptionGroup term="supplier">{ "The supplier of the package." }</DescriptionGroup>
+            </DescriptionList>
+        </SearchHelpPopover>
+    )
 }
