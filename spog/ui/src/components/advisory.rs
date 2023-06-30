@@ -124,7 +124,7 @@ pub fn advisory_search(props: &AdvisorySearchProperties) -> Html {
                                         />
                                         <TextInputGroupUtilities>
                                             <div hidden={hidden}>
-                                                <Button icon={Icon::Times} variant={ButtonVariant::None} onclick={onclear} />
+                                                <Button icon={Icon::Times} variant={ButtonVariant::Plain} onclick={onclear} />
                                             </div>
                                         </TextInputGroupUtilities>
                                         <Button icon={Icon::ArrowRight} variant={ButtonVariant::Control} onclick={onset.reform(|_|())} />
