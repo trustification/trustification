@@ -1139,6 +1139,7 @@ dependencies = [
  "time 0.3.22",
  "tokio",
  "tracing",
+ "trustification-infrastructure",
  "url",
 ]
 
@@ -6107,6 +6108,7 @@ dependencies = [
  "sha2 0.10.7",
  "time 0.3.22",
  "tokio",
+ "trustification-infrastructure",
  "trustification-storage",
  "url",
 ]

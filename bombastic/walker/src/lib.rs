@@ -3,6 +3,7 @@ use std::process::ExitCode;
 use crate::changes::ChangeTracker;
 use crate::shell_wrap::ScriptContext;
 use clap::{arg, command, Args};
+use trustification_infrastructure::{Infrastructure, InfrastructureConfig};
 use url::Url;
 
 mod changes;
@@ -13,6 +14,9 @@ mod shell_wrap;
 pub struct Run {
     #[command(flatten)]
     pub(crate) config: WalkerConfig,
+
+    #[command(flatten)]
+    pub infra: InfrastructureConfig,
 }
 
 #[derive(Clone, Debug, clap::Parser)]
@@ -42,45 +46,48 @@ const CHANGE_ADDRESS: &str = "https://access.redhat.com/security/data/sbom/beta/
 
 impl Run {
     pub async fn run(self) -> anyhow::Result<ExitCode> {
-        let source = self
-            .config
-            .index_source
-            .clone()
-            .unwrap_or(Url::parse(CHANGE_ADDRESS).unwrap());
-        let mut watcher = ChangeTracker::new(source.clone());
+        Infrastructure::from(self.infra)
+            .run("bombastic-walker", |_| async move {
+                let source = self
+                    .config
+                    .index_source
+                    .clone()
+                    .unwrap_or(Url::parse(CHANGE_ADDRESS).unwrap());
+                let mut watcher = ChangeTracker::new(source.clone());
 
-        // remove the "change.csv" segment from the URL
-        let mut source = source;
-        source.path_segments_mut().unwrap().pop();
+                // remove the "change.csv" segment from the URL
+                let mut source = source;
+                source.path_segments_mut().unwrap().pop();
 
-        // add ProdSec signing key to trusted gpg keys
-        self.config
-            .script_context
-            .setup_gpg(self.config.signing_key_source.as_ref())?;
+                // add ProdSec signing key to trusted gpg keys
+                self.config
+                    .script_context
+                    .setup_gpg(self.config.signing_key_source.as_ref())?;
 
-        if let Some(sync_interval) = self.config.scan_interval {
-            let mut interval = tokio::time::interval(sync_interval.into());
-            loop {
-                interval.tick().await;
+                if let Some(sync_interval) = self.config.scan_interval {
+                    let mut interval = tokio::time::interval(sync_interval.into());
+                    loop {
+                        interval.tick().await;
 
-                self.call_script(watcher.update().await?, &source);
-            }
-        } else {
-            self.call_script(watcher.update().await?, &source);
-        }
+                        Self::call_script(&self.config, watcher.update().await?, &source);
+                    }
+                } else {
+                    Self::call_script(&self.config, watcher.update().await?, &source);
+                }
+                Ok(())
+            })
+            .await?;
 
         Ok(ExitCode::SUCCESS)
     }
 
-    fn call_script(&self, entries: Vec<String>, sbom_path: &Url) {
+    fn call_script(config: &WalkerConfig, entries: Vec<String>, sbom_path: &Url) {
         for entry in entries {
             let mut sbom_path = sbom_path.clone();
             // craft the url to the SBOM file
             sbom_path.path_segments_mut().unwrap().extend(entry.split('/'));
 
-            self.config
-                .script_context
-                .bombastic_upload(&sbom_path, &self.config.bombastic);
+            config.script_context.bombastic_upload(&sbom_path, &config.bombastic);
 
             // cleanup the url for the next run
             sbom_path.path_segments_mut().unwrap().pop().pop();
