@@ -1,6 +1,6 @@
 use core::future::Future;
 use reqwest::StatusCode;
-use std::time::Duration;
+use std::{net::TcpListener, time::Duration};
 use tokio::{select, task::LocalSet, time::timeout};
 use trustification_event_bus::{EventBusConfig, EventBusType};
 use trustification_index::IndexConfig;
@@ -33,11 +33,14 @@ where
     let rt = LocalSet::new();
     let api = ctx.clone();
 
+    // Use OS-assigned ephemeral ports for the bombastic/vexination servers
+    let blist = TcpListener::bind("localhost:0").unwrap();
+    let bport = blist.local_addr().unwrap().port();
+    let vlist = TcpListener::bind("localhost:0").unwrap();
+    let vport = vlist.local_addr().unwrap().port();
+
     let runtime = tokio::runtime::Runtime::new().unwrap();
     runtime.block_on(rt.run_until(async move {
-        let mut bombastic = bombastic_api(&api.storage_endpoint);
-        let mut vexination = vexination_api(&api.storage_endpoint);
-
         select! {
             biased;
 
@@ -60,7 +63,7 @@ where
             },
 
 
-            bapi = bombastic.serve(bombastic.index.clone(), bombastic.storage.clone(), &prometheus::Registry::new(), bombastic.devmode).unwrap() => match bapi {
+            bapi = bombastic_api(&api.storage_endpoint).run(Some(blist)) => match bapi {
                 Err(e) => {
                     panic!("Error running bombastic API: {:?}", e);
                 }
@@ -69,7 +72,7 @@ where
                 }
             },
 
-            vapi = vexination.serve(vexination.index.clone(), vexination.storage.clone(), &prometheus::Registry::new(), vexination.devmode).unwrap() => match vapi {
+            vapi = vexination_api(&api.storage_endpoint).run(Some(vlist)) => match vapi {
                 Err(e) => {
                     panic!("Error running vexination API: {:?}", e);
                 }
@@ -83,7 +86,7 @@ where
                 // Probe bombastic API
                 loop {
                     let response = client
-                        .get(format!("http://localhost:{}/api/v1/sbom?id=none", bombastic.port))
+                        .get(format!("http://localhost:{}/api/v1/sbom?id=none", bport))
                         .send()
                         .await
                         .unwrap();
@@ -96,7 +99,7 @@ where
                 // Probe vexination API
                 loop {
                     let response = client
-                        .get(format!("http://localhost:{}/api/v1/vex?advisory=none", vexination.port))
+                        .get(format!("http://localhost:{}/api/v1/vex?advisory=none", vport))
                         .send()
                         .await
                         .unwrap();
@@ -107,7 +110,7 @@ where
                 }
 
                 // Run test
-                test(bombastic.port, vexination.port).await
+                test(bport, vport).await
             } => {
                 println!("Test completed");
             }
@@ -160,7 +163,7 @@ fn bombastic_indexer(storage_endpoint: &str, kafka_bootstrap_servers: &str) -> b
 fn bombastic_api(storage_endpoint: &str) -> bombastic_api::Run {
     bombastic_api::Run {
         bind: "127.0.0.1".to_string(),
-        port: 0,
+        port: 8082,
         devmode: true,
         index: IndexConfig {
             index: None,
@@ -216,7 +219,7 @@ fn vexination_indexer(storage_endpoint: &str, kafka_bootstrap_servers: &str) -> 
 fn vexination_api(storage_endpoint: &str) -> vexination_api::Run {
     vexination_api::Run {
         bind: "127.0.0.1".to_string(),
-        port: 0,
+        port: 8081,
         devmode: true,
         index: IndexConfig {
             index: None,
