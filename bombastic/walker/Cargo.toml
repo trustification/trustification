@@ -17,3 +17,4 @@ time = "0.3.21"
 tokio = "1.28.2"
 tracing = "0.1"
 url = "2.4.0"
+trustification-infrastructure = { path = "../../infrastructure" }
