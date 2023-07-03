@@ -262,8 +262,7 @@ fn verify_encoding(content_encoding: Option<&HeaderValue>) -> Result<Option<&str
     tag = "bombastic",
     path = "/api/v1/sbom",
     responses(
-        (status = 204, description = "SBOM deleted"),
-        (status = NOT_FOUND, description = "SBOM not found in archive"),
+        (status = 204, description = "SBOM either deleted or nonexistent"),
         (status = BAD_REQUEST, description = "Missing id"),
     ),
     params(
