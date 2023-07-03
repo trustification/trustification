@@ -6,3 +6,10 @@ $fa-font-path: "webfonts";
 // PatternFly styles
 @import "../node_modules/@patternfly/patternfly/patternfly.scss";
 @import "../node_modules/@patternfly/patternfly/patternfly-addons.scss";
+
+
+// highlight
+
+.tc-c-highlight__match {
+  background-color: yellow;
+}

@@ -1,4 +1,5 @@
 pub mod cvss;
+pub mod highlight;
 
 use yew::prelude::*;
 

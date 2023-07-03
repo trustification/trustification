@@ -1,8 +1,10 @@
 use super::{get_purl, spdx_external_references, spdx_package_list_entry};
+use crate::utils::highlight::highlight;
 use crate::utils::OrNone;
 use packageurl::PackageUrl;
 use patternfly_yew::prelude::*;
 use spdx_rs::models::{PackageInformation, Relationship, SPDX};
+use std::cell::RefCell;
 use std::collections::{hash_map, BTreeMap, BTreeSet, HashMap};
 use std::rc::Rc;
 use yew::prelude::*;
@@ -44,6 +46,7 @@ pub fn spdx_packages(props: &SpdxPackagesProperties) -> Html {
 
     #[derive(Clone, Debug, PartialEq)]
     struct PackageWrapper {
+        filter: Rc<RefCell<String>>,
         base: PackageBase,
         relations: Rc<Vec<Relationship>>,
         all_packages: Rc<HashMap<String, PackageInformation>>,
@@ -77,15 +80,15 @@ pub fn spdx_packages(props: &SpdxPackagesProperties) -> Html {
         fn render_cell(&self, context: CellContext<'_, Column>) -> Cell {
             match &self.base {
                 PackageBase::Plain { package } => match context.column {
-                    Column::Name => html!(package.package_name.clone()),
+                    Column::Name => highlight(&package.package_name, &self.filter.borrow()),
                     Column::Version => html!(package.package_version.clone().unwrap_or_default()),
                     Column::Qualifiers => html!(),
                 },
                 PackageBase::Purl { base, qualifiers, .. } => match context.column {
                     Column::Name => html!(<>
-                        { base.name() }
+                        { highlight(base.name(), &self.filter.borrow()) }
                         if let Some(namespace) = base.namespace() {
-                            { " / " } { namespace }
+                            { " / " } { highlight(namespace, &self.filter.borrow()) }
                         }
                         {" "}
                         <Label compact=true label={base.ty().to_string()} color={Color::Blue} />
@@ -179,76 +182,83 @@ pub fn spdx_packages(props: &SpdxPackagesProperties) -> Html {
         props.bom.clone(),
     );
 
+    let package_filter_string = use_mut_ref(String::default);
+
     // convert from SBOM to package list collapsed by base PURL with qualifiers
-    let packages = use_memo(
-        |(bom, package_map)| {
-            let relations = Rc::new(bom.relationships.clone());
-            let mut result = Vec::with_capacity(bom.package_information.len());
-            let mut base_map = HashMap::new();
+    let packages = {
+        let package_filter_string = package_filter_string.clone();
+        use_memo(
+            |(bom, package_map)| {
+                let relations = Rc::new(bom.relationships.clone());
+                let mut result = Vec::with_capacity(bom.package_information.len());
+                let mut base_map = HashMap::new();
 
-            struct PurlMap {
-                /// base purl
-                base: PackageUrl<'static>,
-                packages: Vec<(PackageUrl<'static>, PackageInformation)>,
-            }
-
-            for package in &bom.package_information {
-                match get_purl(package) {
-                    Some(purl) => {
-                        let base = make_base(purl.clone());
-                        let base_str = base.to_string();
-                        match base_map.entry(base_str) {
-                            hash_map::Entry::Vacant(entry) => {
-                                entry.insert(PurlMap {
-                                    base,
-                                    packages: vec![(purl, package.clone())],
-                                });
-                            }
-                            hash_map::Entry::Occupied(mut entry) => {
-                                entry.get_mut().packages.push((purl, package.clone()));
-                            }
-                        }
-                    }
-                    None => {
-                        result.push(PackageWrapper {
-                            base: PackageBase::Plain {
-                                package: package.clone(),
-                            },
-                            relations: relations.clone(),
-                            all_packages: package_map.clone(),
-                        });
-                    }
-                };
-            }
-
-            for PurlMap { base, packages } in base_map.into_values() {
-                let mut qualifiers = BTreeMap::<String, BTreeSet<String>>::new();
-
-                let mut result_packages = Vec::with_capacity(packages.len());
-                for (purl, package) in packages {
-                    for (k, v) in purl.qualifiers() {
-                        qualifiers.entry(k.to_string()).or_default().insert(v.to_string());
-                    }
-                    result_packages.push(package);
+                struct PurlMap {
+                    /// base purl
+                    base: PackageUrl<'static>,
+                    packages: Vec<(PackageUrl<'static>, PackageInformation)>,
                 }
 
-                result.push(PackageWrapper {
-                    base: PackageBase::Purl {
-                        base,
-                        packages: result_packages,
-                        qualifiers,
-                    },
-                    relations: relations.clone(),
-                    all_packages: package_map.clone(),
-                })
-            }
+                for package in &bom.package_information {
+                    match get_purl(package) {
+                        Some(purl) => {
+                            let base = make_base(purl.clone());
+                            let base_str = base.to_string();
+                            match base_map.entry(base_str) {
+                                hash_map::Entry::Vacant(entry) => {
+                                    entry.insert(PurlMap {
+                                        base,
+                                        packages: vec![(purl, package.clone())],
+                                    });
+                                }
+                                hash_map::Entry::Occupied(mut entry) => {
+                                    entry.get_mut().packages.push((purl, package.clone()));
+                                }
+                            }
+                        }
+                        None => {
+                            result.push(PackageWrapper {
+                                base: PackageBase::Plain {
+                                    package: package.clone(),
+                                },
+                                relations: relations.clone(),
+                                all_packages: package_map.clone(),
+                                filter: package_filter_string.clone(),
+                            });
+                        }
+                    };
+                }
 
-            result.sort_unstable_by(|a, b| a.base.name().cmp(b.base.name()));
+                for PurlMap { base, packages } in base_map.into_values() {
+                    let mut qualifiers = BTreeMap::<String, BTreeSet<String>>::new();
 
-            result
-        },
-        (props.bom.clone(), package_map.clone()),
-    );
+                    let mut result_packages = Vec::with_capacity(packages.len());
+                    for (purl, package) in packages {
+                        for (k, v) in purl.qualifiers() {
+                            qualifiers.entry(k.to_string()).or_default().insert(v.to_string());
+                        }
+                        result_packages.push(package);
+                    }
+
+                    result.push(PackageWrapper {
+                        base: PackageBase::Purl {
+                            base,
+                            packages: result_packages,
+                            qualifiers,
+                        },
+                        relations: relations.clone(),
+                        all_packages: package_map.clone(),
+                        filter: package_filter_string.clone(),
+                    })
+                }
+
+                result.sort_unstable_by(|a, b| a.base.name().cmp(b.base.name()));
+
+                result
+            },
+            (props.bom.clone(), package_map.clone()),
+        )
+    };
 
     let offset = use_state_eq(|| 0);
     let limit = use_state_eq(|| 10);
@@ -256,6 +266,7 @@ pub fn spdx_packages(props: &SpdxPackagesProperties) -> Html {
     let filter = use_state_eq(String::new);
 
     let filtered_packages = {
+        let package_filter_string = package_filter_string.clone();
         let offset = offset.clone();
         let limit = limit.clone();
         use_memo(
@@ -287,6 +298,9 @@ pub fn spdx_packages(props: &SpdxPackagesProperties) -> Html {
                         offset.set(packages.len() - *limit);
                     }
                 }
+
+                // also update the filter value
+                *package_filter_string.borrow_mut() = filter.clone();
 
                 // return result
                 packages
