@@ -661,6 +661,25 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_not() {
+        assert_search(|index| {
+            let result = search(&index, "type:oci");
+            assert_eq!(result.0.len(), 1);
+            let result = search(&index, "NOT type:oci");
+            assert_eq!(result.0.len(), 2);
+
+            let result = search(&index, "NOT ubi9");
+            assert_eq!(result.0.len(), 2);
+
+            let result = search(&index, "type:oci NOT ubi9");
+            assert_eq!(result.0.len(), 0);
+
+            let result = search(&index, "type:oci NOT ubi8");
+            assert_eq!(result.0.len(), 1);
+        });
+    }
+
+    #[tokio::test]
     async fn test_quarkus() {
         assert_search(|index| {
             let result = search(&index, "dependency:quarkus-arc");

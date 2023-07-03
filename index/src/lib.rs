@@ -12,7 +12,7 @@ pub use tantivy::schema::Document;
 use tantivy::{
     collector::{Count, TopDocs},
     directory::{MmapDirectory, INDEX_WRITER_LOCK},
-    query::{BooleanQuery, BoostQuery, Occur, Query, RangeQuery, RegexQuery, TermQuery},
+    query::{AllQuery, BooleanQuery, BoostQuery, Occur, Query, RangeQuery, RegexQuery, TermQuery},
     schema::*,
     DateTime, Directory, DocAddress, Index as SearchIndex, IndexSettings, Searcher,
 };
@@ -332,7 +332,8 @@ pub fn term2query<'m, R: Search<'m>, F: Fn(&R::Parsed) -> Box<dyn Query>>(
     match term {
         sikula::prelude::Term::Match(resource) => f(resource),
         sikula::prelude::Term::Not(term) => {
-            let query_terms = vec![(Occur::MustNot, term2query(term, f))];
+            let all: Box<dyn Query> = Box::new(AllQuery);
+            let query_terms = vec![(Occur::Should, all), (Occur::MustNot, term2query(term, f))];
             let query = BooleanQuery::new(query_terms);
             Box::new(query)
         }
