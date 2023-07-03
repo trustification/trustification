@@ -20,6 +20,48 @@ fn test_upload() {
 }
 
 #[test]
+fn test_delete() {
+    run_test(Duration::from_secs(60), |port, _| async move {
+        let input = serde_json::from_str(include_str!("../../bombastic/testdata/my-sbom.json")).unwrap();
+        let id = "test-delete";
+        upload(port, id, &input).await;
+        let url = &format!("http://localhost:{port}/api/v1/sbom?id={id}");
+        let client = reqwest::Client::new();
+        let response = client.get(url).send().await.unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        let response = client.delete(url).send().await.unwrap();
+        assert_eq!(response.status(), StatusCode::NO_CONTENT);
+        let response = client.get(url).send().await.unwrap();
+        assert_eq!(response.status(), StatusCode::NOT_FOUND);
+    })
+}
+
+#[test]
+fn test_delete_missing() {
+    run_test(Duration::from_secs(60), |port, _| async move {
+        let client = reqwest::Client::new();
+        let response = client
+            .delete(format!("http://localhost:{port}/api/v1/sbom"))
+            .send()
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+        let response = client
+            .delete(format!("http://localhost:{port}/api/v1/sbom?id="))
+            .send()
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::NO_CONTENT);
+        let response = client
+            .delete(format!("http://localhost:{port}/api/v1/sbom?id=missing"))
+            .send()
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::NO_CONTENT);
+    })
+}
+
+#[test]
 fn test_search() {
     run_test(Duration::from_secs(60), |port, _| async move {
         let input = serde_json::from_str(include_str!("../../bombastic/testdata/ubi9-sbom.json")).unwrap();
