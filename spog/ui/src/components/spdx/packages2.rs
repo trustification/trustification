@@ -1,0 +1,400 @@
+use super::packages::spdx_package_list_entry;
+use packageurl::PackageUrl;
+use patternfly_yew::prelude::*;
+use spdx_rs::models::{PackageInformation, Relationship, SPDX};
+use std::collections::{hash_map, BTreeMap, BTreeSet, HashMap};
+use std::rc::Rc;
+use std::str::FromStr;
+use yew::prelude::*;
+
+#[derive(PartialEq, Properties)]
+pub struct SpdxPackagesProperties {
+    pub bom: Rc<SPDX>,
+}
+
+/// get the PURL of a SPDX package information
+fn get_purl(package: &PackageInformation) -> Option<PackageUrl<'static>> {
+    package
+        .external_reference
+        .iter()
+        .find(|p| p.reference_type == "purl")
+        .and_then(|package| PackageUrl::from_str(&package.reference_locator).ok())
+}
+
+/// get the base version of a PURL, without qualifiers
+fn make_base(purl: PackageUrl<'static>) -> PackageUrl<'static> {
+    fn perform(purl: PackageUrl) -> Result<PackageUrl<'static>, packageurl::Error> {
+        let mut result = PackageUrl::new(purl.ty().to_string(), purl.name().to_string())?;
+
+        if let Some(namespace) = purl.namespace() {
+            result.with_namespace(namespace.to_string());
+        }
+        if let Some(version) = purl.version() {
+            result.with_version(version.to_string());
+        }
+        if let Some(subpath) = purl.subpath() {
+            result.with_subpath(subpath.to_string())?;
+        }
+
+        Ok(result)
+    }
+
+    perform(purl.clone()).unwrap_or(purl)
+}
+
+#[function_component(SpdxPackages)]
+pub fn spdx_packages(props: &SpdxPackagesProperties) -> Html {
+    #[derive(Clone, Eq, PartialEq)]
+    enum Column {
+        Name,
+        Version,
+        Qualifiers,
+    }
+
+    #[derive(Clone, Debug, PartialEq)]
+    struct PackageWrapper {
+        base: PackageBase,
+        relations: Rc<Vec<Relationship>>,
+        all_packages: Rc<HashMap<String, PackageInformation>>,
+    }
+
+    #[derive(Clone, Debug, PartialEq)]
+    enum PackageBase {
+        Purl {
+            /// Base part of the PURL
+            base: PackageUrl<'static>,
+            /// All packages belonging to this PURL
+            packages: Vec<PackageInformation>,
+            /// Qualifiers for all packages
+            qualifiers: BTreeMap<String, BTreeSet<String>>,
+        },
+        Plain {
+            package: PackageInformation,
+        },
+    }
+
+    impl PackageBase {
+        pub fn name(&self) -> &str {
+            match self {
+                PackageBase::Purl { base, .. } => base.name(),
+                PackageBase::Plain { package } => &package.package_name,
+            }
+        }
+    }
+
+    impl TableEntryRenderer<Column> for PackageWrapper {
+        fn render_cell(&self, context: CellContext<'_, Column>) -> Cell {
+            match &self.base {
+                PackageBase::Plain { package } => match context.column {
+                    Column::Name => html!(package.package_name.clone()),
+                    Column::Version => html!(package.package_version.clone().unwrap_or_default()),
+                    Column::Qualifiers => html!(),
+                },
+                PackageBase::Purl { base, qualifiers, .. } => match context.column {
+                    Column::Name => html!(base.name()),
+                    Column::Version => html!(base.version().map(ToString::to_string).unwrap_or_default()),
+                    Column::Qualifiers => html!(
+                        { for qualifiers.iter().flat_map(|(k,v)| {
+                            let k = k.clone();
+                            v.iter().map(move |v| {
+                                html!(<><Label label={format!("{k}: {v}")} />{" "}</>)
+                            })
+                        }) }
+                    ),
+                },
+            }
+            .into()
+        }
+
+        fn render_details(&self) -> Vec<Span> {
+            match &self.base {
+                PackageBase::Plain { package } => {
+                    super::packages::render_single_details(&package, &self.all_packages, &self.relations)
+                }
+                PackageBase::Purl {
+                    base,
+                    packages,
+                    qualifiers,
+                } => {
+                    let content = html!(<>
+                        <Grid gutter=true>
+                            <GridItem cols={[4]}>
+                                <Card plain=true title={html!(<Title>{"Details"}</Title>)}>
+                                    <CardBody>
+                                        <DescriptionList>
+                                            <DescriptionGroup term="Base Package"><code>{base.to_string()}</code></DescriptionGroup>
+                                        </DescriptionList>
+                                    </CardBody>
+                                </Card>
+                            </GridItem>
+
+                            <GridItem cols={[4]}>
+                                <Card plain=true title={html!(<Title>{"Qualifiers"}</Title>)}>
+                                    <CardBody>
+                                        <DescriptionList mode={DescriptionListMode::Horizontal}>
+                                        { for qualifiers.iter().map(|(k,v)| {
+                                            html!(<>
+                                                <DescriptionGroup term={k.clone()}>
+                                                    { for v.iter().map(|v|{
+                                                        html!(<><Label label={v.clone()}/> {" "}</>)
+                                                    })}
+                                                </DescriptionGroup>
+                                            </>)
+                                        })}
+                                        </DescriptionList>
+                                    </CardBody>
+                                </Card>
+                            </GridItem>
+
+                            <GridItem cols={[4]}>
+                                <Card plain=true title={html!(<Title>{"Qualifiers"}</Title>)}>
+                                    <CardBody>
+                                        <List r#type={ListType::Basic}>
+                                            { for packages.iter().map(spdx_package_list_entry)}
+                                        </List>
+                                    </CardBody>
+                                </Card>
+                            </GridItem>
+                        </Grid>
+                    </>);
+                    vec![Span::max(content)]
+                }
+            }
+        }
+    }
+
+    let header = html_nested!(
+        <TableHeader<Column>>
+            <TableColumn<Column> index={Column::Name} label="Name" />
+            <TableColumn<Column> index={Column::Version} label="Version" />
+            <TableColumn<Column> index={Column::Qualifiers} label="Qualifiers" />
+        </TableHeader<Column>>
+    );
+
+    let package_map = use_memo(
+        |bom| {
+            bom.package_information
+                .iter()
+                .map(|p| (p.package_spdx_identifier.clone(), p.clone()))
+                .collect::<HashMap<_, _>>()
+        },
+        props.bom.clone(),
+    );
+
+    // convert from SBOM to package list collapsed by base PURL with qualifiers
+    let packages = use_memo(
+        |(bom, package_map)| {
+            let relations = Rc::new(bom.relationships.clone());
+            let mut result = Vec::with_capacity(bom.package_information.len());
+            let mut base_map = HashMap::new();
+
+            struct PurlMap {
+                /// base purl
+                base: PackageUrl<'static>,
+                packages: Vec<(PackageUrl<'static>, PackageInformation)>,
+            }
+
+            for package in &bom.package_information {
+                match get_purl(package) {
+                    Some(purl) => {
+                        let base = make_base(purl.clone());
+                        let base_str = base.to_string();
+                        match base_map.entry(base_str) {
+                            hash_map::Entry::Vacant(entry) => {
+                                entry.insert(PurlMap {
+                                    base,
+                                    packages: vec![(purl, package.clone())],
+                                });
+                            }
+                            hash_map::Entry::Occupied(mut entry) => {
+                                entry.get_mut().packages.push((purl, package.clone()));
+                            }
+                        }
+                    }
+                    None => {
+                        result.push(PackageWrapper {
+                            base: PackageBase::Plain {
+                                package: package.clone(),
+                            },
+                            relations: relations.clone(),
+                            all_packages: package_map.clone(),
+                        });
+                    }
+                };
+            }
+
+            for PurlMap { base, packages } in base_map.into_values() {
+                let mut qualifiers = BTreeMap::<String, BTreeSet<String>>::new();
+
+                let mut result_packages = Vec::with_capacity(packages.len());
+                for (purl, package) in packages {
+                    for (k, v) in purl.qualifiers() {
+                        qualifiers.entry(k.to_string()).or_default().insert(v.to_string());
+                    }
+                    result_packages.push(package);
+                }
+
+                result.push(PackageWrapper {
+                    base: PackageBase::Purl {
+                        base,
+                        packages: result_packages,
+                        qualifiers,
+                    },
+                    relations: relations.clone(),
+                    all_packages: package_map.clone(),
+                })
+            }
+
+            result.sort_unstable_by(|a, b| a.base.name().cmp(b.base.name()));
+
+            result
+        },
+        (props.bom.clone(), package_map.clone()),
+    );
+
+    let offset = use_state_eq(|| 0);
+    let limit = use_state_eq(|| 10);
+
+    let filter = use_state_eq(String::new);
+
+    let filtered_packages = {
+        let offset = offset.clone();
+        let limit = limit.clone();
+        use_memo(
+            move |(packages, filter)| {
+                let packages = packages
+                    .iter()
+                    // apply filter
+                    .filter(|p| {
+                        filter.is_empty() || {
+                            match &p.base {
+                                PackageBase::Plain { package } => package.package_name.contains(filter),
+                                // FIXME: consider caching to_string
+                                PackageBase::Purl { base, .. } => base.to_string().contains(filter),
+                            }
+                        }
+                    })
+                    // clone and collect
+                    .cloned()
+                    .collect::<Vec<_>>();
+
+                // try to cap last page, only apply once
+                if *offset > packages.len() {
+                    if *limit > packages.len() {
+                        offset.set(0);
+                    } else {
+                        offset.set(packages.len() - *limit);
+                    }
+                }
+
+                // return result
+                packages
+            },
+            (packages.clone(), (*filter).clone()),
+        )
+    };
+
+    // total entries must be based on the filtered list
+    let total_entries = filtered_packages.len();
+
+    // page from the filtered entries
+    let entries = use_memo(
+        |(filtered_packages, offset, limit)| {
+            filtered_packages
+                .iter()
+                // apply pagination window
+                .skip(*offset)
+                .take(*limit)
+                .cloned()
+                .collect::<Vec<_>>()
+        },
+        (filtered_packages.clone(), *offset, *limit),
+    );
+
+    let (entries, onexpand) = use_table_data(MemoizedTableModel::new(entries));
+
+    // FIXME: if the following is missing, expansion is broken, figure out "why"
+    let onexpand = onexpand.reform(|(key, state)| (key, state));
+
+    let limit_callback = {
+        let limit = limit.clone();
+        Callback::from(move |number| limit.set(number))
+    };
+
+    let nav_callback = {
+        let offset = offset.clone();
+        let limit = *limit;
+        Callback::from(move |page: Navigation| {
+            let o = match page {
+                Navigation::First => 0,
+                Navigation::Last => ((total_entries - 1) / limit) * limit,
+                Navigation::Previous => *offset - limit,
+                Navigation::Next => *offset + limit,
+                Navigation::Page(n) => (n - 1) * limit,
+            };
+            offset.set(o);
+        })
+    };
+
+    let onclearfilter = {
+        let filter = filter.clone();
+        Callback::from(move |_| filter.set(String::new()))
+    };
+
+    let onsetfilter = {
+        let filter = filter.clone();
+        Callback::from(move |value: String| filter.set(value.trim().to_string()))
+    };
+
+    html!(
+        <>
+            <Toolbar>
+                <ToolbarContent>
+                    <ToolbarItem r#type={ToolbarItemType::SearchFilter}>
+                        <TextInputGroup>
+                            <TextInputGroupMain
+                                placeholder="Filter"
+                                icon={Icon::Search}
+                                value={(*filter).clone()}
+                                oninput={onsetfilter}
+                            />
+                            if !filter.is_empty() {
+                                <TextInputGroupUtilities>
+                                    <Button icon={Icon::Times} variant={ButtonVariant::Plain} onclick={onclearfilter}/>
+                                </TextInputGroupUtilities>
+                            }
+                        </TextInputGroup>
+                    </ToolbarItem>
+
+                    <ToolbarItem r#type={ToolbarItemType::Pagination}>
+                        <Pagination
+                            {total_entries}
+                            offset={*offset}
+                            entries_per_page_choices={vec![5, 10, 25, 50]}
+                            selected_choice={*limit}
+                            onlimit={&limit_callback}
+                            onnavigation={&nav_callback}
+                        />
+                    </ToolbarItem>
+                </ToolbarContent>
+            </Toolbar>
+
+            <Table<Column, UseTableData<Column, MemoizedTableModel<PackageWrapper>>>
+                mode={TableMode::CompactExpandable}
+                {header}
+                {entries}
+                {onexpand}
+            />
+
+            <Pagination
+                {total_entries}
+                offset={*offset}
+                entries_per_page_choices={vec![5, 10, 25, 50]}
+                selected_choice={*limit}
+                onlimit={&limit_callback}
+                onnavigation={&nav_callback}
+                position={PaginationPosition::Bottom}
+            />
+        </>
+    )
+}

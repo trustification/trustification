@@ -312,17 +312,18 @@ impl PartialEq for PackageDetailsProps {
 
 #[function_component(PackageDetails)]
 pub fn package_details(props: &PackageDetailsProps) -> Html {
-    let package = use_memo(|props| props.package.clone(), props.clone());
-    let mut snippet = package.package.snippet.clone();
+    let mut snippet = props.package.package.snippet.clone();
+
     if snippet.is_empty() {
         snippet = "No description available".to_string();
     }
+
     html!(
         <Panel>
             <PanelMain>
-            <PanelMainBody>
-            <SafeHtml html={snippet} />
-            </PanelMainBody>
+                <PanelMainBody>
+                    <SafeHtml html={snippet} />
+                </PanelMainBody>
             </PanelMain>
         </Panel>
     )
