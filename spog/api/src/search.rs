@@ -2,6 +2,7 @@ use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
 pub struct QueryParams {
+    #[serde(default)]
     pub q: String,
     #[serde(default = "default_offset")]
     pub offset: usize,
