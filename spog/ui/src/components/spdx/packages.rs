@@ -82,7 +82,14 @@ pub fn spdx_packages(props: &SpdxPackagesProperties) -> Html {
                     Column::Qualifiers => html!(),
                 },
                 PackageBase::Purl { base, qualifiers, .. } => match context.column {
-                    Column::Name => html!(base.name()),
+                    Column::Name => html!(<>
+                        { base.name() }
+                        if let Some(namespace) = base.namespace() {
+                            { " / " } { namespace }
+                        }
+                        {" "}
+                        <Label compact=true label={base.ty().to_string()} color={Color::Blue} />
+                    </>),
                     Column::Version => html!(base.version().map(ToString::to_string).unwrap_or_default()),
                     Column::Qualifiers => html!(
                         { for qualifiers.iter().flat_map(|(k,v)| {
@@ -261,7 +268,10 @@ pub fn spdx_packages(props: &SpdxPackagesProperties) -> Html {
                             match &p.base {
                                 PackageBase::Plain { package } => package.package_name.contains(filter),
                                 // FIXME: consider caching to_string
-                                PackageBase::Purl { base, .. } => base.to_string().contains(filter),
+                                PackageBase::Purl { base, .. } => {
+                                    base.name().contains(filter)
+                                        || base.namespace().map(|s| s.contains(filter)).unwrap_or_default()
+                                }
                             }
                         }
                     })
