@@ -11,7 +11,7 @@ use crate::{
     backend::{Endpoint, PackageService, SearchOptions},
     components::{common::SafeHtml, simple_pagination::SimplePagination, table_wrapper::TableWrapper},
     hooks::{use_backend::*, use_pagination_state::*},
-    pages::AppRoute,
+    pages::{AppRoute, View},
     utils::pagination_to_offset,
 };
 
@@ -191,7 +191,7 @@ impl TableEntryRenderer<Column> for PackageEntry {
             Column::Name => {
                 html!(
                     <Link<AppRoute>
-                        target={AppRoute::SBOM { id: self.package.id.clone() }}
+                        target={AppRoute::Package(View::Content{id: self.package.id.clone()})}
                     >{ self.package_name() }</Link<AppRoute>>
                 ).into()
             },
