@@ -19,7 +19,7 @@ pub fn page_heading(props: &PageHeadingProperties) -> Html {
     html!(
         <PageSection {sticky} variant={PageSectionVariant::Light} >
             <Content>
-                <Title size={Size::XXXXLarge}>{ for props.children.iter() }</Title>
+                <Title>{ for props.children.iter() }</Title>
                 if let Some(subtitle) = &props.subtitle {
                     <p>{ &subtitle }</p>
                 }

@@ -6,6 +6,7 @@ pub struct UsePaginationStateArgs {
     pub initial_items_per_page: usize,
 }
 
+#[derive(PartialEq, Clone)]
 pub struct PaginationState {
     pub page: usize,
     pub per_page: usize,

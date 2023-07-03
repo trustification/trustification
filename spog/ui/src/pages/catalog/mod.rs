@@ -5,9 +5,7 @@ use spog_model::prelude::*;
 use yew::prelude::*;
 use yew_more_hooks::hooks::r#async::*;
 
-use crate::components::{
-    async_state_renderer::AsyncStateRenderer, catalog::CatalogSearch, common::PageHeading, package::PackageResult,
-};
+use crate::components::{catalog::CatalogSearch, common::PageHeading, package::PackageResult};
 
 #[derive(Clone, Debug, PartialEq, Eq, Properties)]
 pub struct CatalogProps {
@@ -35,12 +33,7 @@ pub fn catalog(props: &CatalogProps) -> Html {
             // We need to set the main section to fill, as we have a footer section
             <PageSection variant={PageSectionVariant::Light} fill={PageSectionFill::Fill}>
                 <CatalogSearch {callback} {query}>
-                    <AsyncStateRenderer<PackageSummary>
-                        state={(*search).clone()}
-                        on_ready={Callback::from(move |result| {
-                            html!(<PackageResult {result} />)
-                        })}
-                    />
+                    <PackageResult state={(*search).clone()} />
                 </CatalogSearch>
             </PageSection>
         </>
