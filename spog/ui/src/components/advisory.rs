@@ -1,10 +1,7 @@
 use crate::{
     backend::{Endpoint, SearchOptions, VexService},
-    components::simple_pagination::SimplePagination,
-    hooks::{
-        use_backend::use_backend,
-        use_pagination_state::{use_pagination_state, UsePaginationStateArgs},
-    },
+    components::{simple_pagination::SimplePagination, table_wrapper::TableWrapper},
+    hooks::{use_backend::use_backend, use_pagination_state::PaginationState},
     utils::pagination_to_offset,
 };
 use patternfly_yew::prelude::*;
@@ -12,7 +9,10 @@ use spog_model::prelude::*;
 use std::rc::Rc;
 use url::Url;
 use yew::prelude::*;
-use yew_more_hooks::hooks::{use_async_with_cloned_deps, UseAsyncHandleDeps};
+use yew_more_hooks::{
+    hooks::{use_async_with_cloned_deps, UseAsyncHandleDeps},
+    prelude::UseAsyncState,
+};
 
 use details::AdvisoryDetails;
 
@@ -21,6 +21,8 @@ pub struct AdvisorySearchProperties {
     pub callback: Callback<UseAsyncHandleDeps<SearchResult<Rc<Vec<AdvisorySummary>>>, String>>,
 
     pub query: Option<String>,
+
+    pub pagination: PaginationState,
 
     #[prop_or_default]
     pub toolbar_items: ChildrenWithProps<ToolbarItem>,
@@ -31,10 +33,6 @@ pub fn advisory_search(props: &AdvisorySearchProperties) -> Html {
     let backend = use_backend();
 
     let service = use_memo(|backend| VexService::new((**backend).clone()), backend.clone());
-
-    let pagination_state = use_pagination_state(|| UsePaginationStateArgs {
-        initial_items_per_page: 10,
-    });
 
     // the active query
     let state = use_state_eq(|| {
@@ -62,7 +60,7 @@ pub fn advisory_search(props: &AdvisorySearchProperties) -> Html {
                     .map(|result| result.map(Rc::new))
                     .map_err(|err| err.to_string())
             },
-            ((*state).clone(), pagination_state.page, pagination_state.per_page),
+            ((*state).clone(), props.pagination.page, props.pagination.per_page),
         )
     };
 
@@ -139,10 +137,10 @@ pub fn advisory_search(props: &AdvisorySearchProperties) -> Html {
                     <ToolbarItem r#type={ToolbarItemType::Pagination}>
                         <SimplePagination
                             total_items={total}
-                            page={pagination_state.page}
-                            per_page={pagination_state.per_page}
-                            on_page_change={pagination_state.on_page_change}
-                            on_per_page_change={pagination_state.on_per_page_change}
+                            page={props.pagination.page}
+                            per_page={props.pagination.per_page}
+                            on_page_change={&props.pagination.on_page_change}
+                            on_per_page_change={&props.pagination.on_per_page_change}
                         />
                     </ToolbarItem>
 
@@ -160,15 +158,9 @@ pub struct AdvisoryEntry {
     url: Option<Url>,
 }
 
-#[derive(Debug, Properties)]
+#[derive(PartialEq, Properties)]
 pub struct AdvisoryResultProperties {
-    pub result: SearchResult<Rc<Vec<AdvisorySummary>>>,
-}
-
-impl PartialEq for AdvisoryResultProperties {
-    fn eq(&self, other: &Self) -> bool {
-        Rc::ptr_eq(&self.result, &other.result)
-    }
+    pub state: UseAsyncState<SearchResult<Rc<Vec<AdvisorySummary>>>, String>,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq)]
@@ -234,38 +226,66 @@ impl TableEntryRenderer<Column> for AdvisoryEntry {
 #[function_component(AdvisoryResult)]
 pub fn vulnerability_result(props: &AdvisoryResultProperties) -> Html {
     let backend = use_backend();
-    let entries: Vec<AdvisoryEntry> = props
-        .result
-        .result
-        .iter()
-        .map(|summary| {
-            let url = backend.join(Endpoint::Api, &summary.href).ok();
-            AdvisoryEntry {
-                summary: summary.clone(),
-                url,
-            }
-        })
-        .collect();
 
-    let (entries, onexpand) = use_table_data(MemoizedTableModel::new(Rc::new(entries)));
-
-    let header = html_nested! {
-        <TableHeader<Column>>
-            <TableColumn<Column> label="ID" index={Column::Id} width={ColumnWidth::Percent(10)}/>
-            <TableColumn<Column> label="Title" index={Column::Title} width={ColumnWidth::Percent(45)}/>
-            <TableColumn<Column> label="Revision" index={Column::Revision} width={ColumnWidth::Percent(10)}/>
-            <TableColumn<Column> label="Download" index={Column::Download} width={ColumnWidth::Percent(5)}/>
-            <TableColumn<Column> label="Vulnerabilities" index={Column::Vulnerabilities} width={ColumnWidth::Percent(15)}/>
-        </TableHeader<Column>>
+    let data = match &props.state {
+        UseAsyncState::Ready(Ok(val)) => {
+            let data: Vec<AdvisoryEntry> = val
+                .result
+                .iter()
+                .map(|summary| {
+                    let url = backend.join(Endpoint::Api, &summary.href).ok();
+                    AdvisoryEntry {
+                        summary: summary.clone(),
+                        url,
+                    }
+                })
+                .collect();
+            Some(data)
+        }
+        _ => None,
     };
 
+    let (entries, _) = use_table_data(MemoizedTableModel::new(Rc::new(data.unwrap_or_default())));
+
+    let header = vec![
+        yew::props!(TableColumnProperties<Column> {
+            index: Column::Id,
+            label: "ID",
+            width: ColumnWidth::Percent(15)
+        }),
+        yew::props!(TableColumnProperties<Column> {
+            index: Column::Title,
+            label: "Title",
+            width: ColumnWidth::Percent(45)
+        }),
+        yew::props!(TableColumnProperties<Column> {
+            index: Column::Revision,
+            label: "Revision",
+            width: ColumnWidth::Percent(15)
+        }),
+        yew::props!(TableColumnProperties<Column> {
+            index: Column::Download,
+            label: "Download",
+            width: ColumnWidth::Percent(5)
+        }),
+        yew::props!(TableColumnProperties<Column> {
+            index: Column::Vulnerabilities,
+            label: "Vulnerabilities",
+            width: ColumnWidth::Percent(15)
+        }),
+    ];
+
     html!(
-        <Table<Column, UseTableData<Column, MemoizedTableModel<AdvisoryEntry>>>
-            mode={TableMode::CompactExpandable}
-            {header}
-            {entries}
-            {onexpand}
-        />
+        <TableWrapper<Column, UseTableData<Column, MemoizedTableModel<AdvisoryEntry>>>
+            loading={&props.state.is_processing()}
+            error={props.state.error().map(|val| val.clone())}
+            empty={entries.is_empty()}
+            header={header}
+        >
+            <Table<Column, UseTableData<Column, MemoizedTableModel<AdvisoryEntry>>>
+                {entries}
+            />
+        </TableWrapper<Column, UseTableData<Column, MemoizedTableModel<AdvisoryEntry>>>>
     )
 }
 

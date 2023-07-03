@@ -86,10 +86,6 @@ pub fn console() -> Html {
     html!(
         <Page {brand} {sidebar} {tools}>
             <RouterSwitch<AppRoute> {render}/>
-
-            <PageSection variant={PageSectionVariant::Darker} fill={PageSectionFill::NoFill}>
-                {"Copyright © 2023 Red Hat, Inc. and "} <a href="https://github.com/trustification" target="_blank"> {"The chickens"} </a> {"."}
-            </PageSection>
         </Page>
     )
 }

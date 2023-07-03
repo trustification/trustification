@@ -4,14 +4,15 @@ use patternfly_yew::prelude::*;
 use spog_model::prelude::*;
 use url::Url;
 use yew::prelude::*;
-use yew_more_hooks::hooks::{use_async_with_cloned_deps, UseAsyncHandleDeps};
+use yew_more_hooks::hooks::{use_async_with_cloned_deps, UseAsyncHandleDeps, UseAsyncState};
 use yew_nested_router::components::Link;
 
 use crate::{
     backend::{Endpoint, PackageService, SearchOptions},
-    components::common::SafeHtml,
-    hooks::use_backend::use_backend,
+    components::{common::SafeHtml, simple_pagination::SimplePagination, table_wrapper::TableWrapper},
+    hooks::{use_backend::*, use_pagination_state::*},
     pages::AppRoute,
+    utils::pagination_to_offset,
 };
 
 #[derive(PartialEq, Properties)]
@@ -19,6 +20,8 @@ pub struct PackageSearchProperties {
     pub callback: Callback<UseAsyncHandleDeps<SearchResult<Rc<Vec<PackageSummary>>>, String>>,
 
     pub query: Option<String>,
+
+    pub pagination: PaginationState,
 
     #[prop_or_default]
     pub toolbar_items: ChildrenWithProps<ToolbarItem>,
@@ -29,9 +32,6 @@ pub fn package_search(props: &PackageSearchProperties) -> Html {
     let backend = use_backend();
 
     let service = use_memo(|backend| PackageService::new(backend.clone()), backend.clone());
-
-    let offset = use_state_eq(|| 0);
-    let limit = use_state_eq(|| 10);
 
     // the active query
     let state = use_state_eq(|| {
@@ -48,20 +48,20 @@ pub fn package_search(props: &PackageSearchProperties) -> Html {
     let search = {
         let service = service.clone();
         use_async_with_cloned_deps(
-            move |(state, offset, limit)| async move {
+            move |(state, page, per_page)| async move {
                 service
                     .search_packages(
                         &state,
                         &SearchOptions {
-                            offset: Some(offset),
-                            limit: Some(limit),
+                            offset: Some(pagination_to_offset(page, per_page)),
+                            limit: Some(per_page),
                         },
                     )
                     .await
                     .map(|result| result.map(Rc::new))
                     .map_err(|err| err.to_string())
             },
-            ((*state).clone(), *offset, *limit),
+            ((*state).clone(), props.pagination.page, props.pagination.per_page),
         )
     };
 
@@ -100,31 +100,6 @@ pub fn package_search(props: &PackageSearchProperties) -> Html {
     // pagination
 
     let total = search.data().and_then(|d| d.total);
-    let onlimit = {
-        let limit = limit.clone();
-        Callback::from(move |n| {
-            limit.set(n);
-        })
-    };
-    let onnavigation = {
-        if let Some(total) = total {
-            let offset = offset.clone();
-
-            let limit = limit.clone();
-            Callback::from(move |nav| {
-                let o = match nav {
-                    Navigation::First => 0,
-                    Navigation::Last => total - *limit,
-                    Navigation::Next => *offset + *limit,
-                    Navigation::Previous => *offset - *limit,
-                    Navigation::Page(n) => *limit * n - 1,
-                };
-                offset.set(o);
-            })
-        } else {
-            Callback::default()
-        }
-    };
 
     let hidden = text.is_empty();
 
@@ -161,15 +136,13 @@ pub fn package_search(props: &PackageSearchProperties) -> Html {
                     { for props.toolbar_items.iter() }
 
                     <ToolbarItem r#type={ToolbarItemType::Pagination}>
-                        <Pagination
-                            total_entries={total}
-                            selected_choice={*limit}
-                            offset={*offset}
-                            entries_per_page_choices={vec![10, 25, 50]}
-                            {onnavigation}
-                            {onlimit}
-                        >
-                        </Pagination>
+                        <SimplePagination
+                            total_items={total}
+                            page={props.pagination.page}
+                            per_page={props.pagination.per_page}
+                            on_page_change={&props.pagination.on_page_change}
+                            on_per_page_change={&props.pagination.on_per_page_change}
+                        />
                     </ToolbarItem>
 
                 </ToolbarContent>
@@ -180,15 +153,9 @@ pub fn package_search(props: &PackageSearchProperties) -> Html {
     )
 }
 
-#[derive(Debug, Properties)]
+#[derive(PartialEq, Properties)]
 pub struct PackageResultProperties {
-    pub result: SearchResult<Rc<Vec<PackageSummary>>>,
-}
-
-impl PartialEq for PackageResultProperties {
-    fn eq(&self, other: &Self) -> bool {
-        Rc::ptr_eq(&self.result, &other.result)
-    }
+    pub state: UseAsyncState<SearchResult<Rc<Vec<PackageSummary>>>, String>,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq)]
@@ -258,40 +225,77 @@ impl TableEntryRenderer<Column> for PackageEntry {
 #[function_component(PackageResult)]
 pub fn package_result(props: &PackageResultProperties) -> Html {
     let backend = use_backend();
-    let entries: Vec<PackageEntry> = props
-        .result
-        .result
-        .iter()
-        .map(|pkg| {
-            let url = backend.join(Endpoint::Api, &pkg.href).ok();
-            PackageEntry {
-                package: pkg.clone(),
-                url,
-            }
-        })
-        .collect();
-
-    let (entries, onexpand) = use_table_data(MemoizedTableModel::new(Rc::new(entries)));
-
-    let header = html_nested! {
-        <TableHeader<Column>>
-            <TableColumn<Column> label="Name" index={Column::Name} width={ColumnWidth::Percent(15)}/>
-            <TableColumn<Column> label="Version" index={Column::Version} width={ColumnWidth::Percent(20)}/>
-            <TableColumn<Column> label="Supplier" index={Column::Supplier} width={ColumnWidth::Percent(20)}/>
-            <TableColumn<Column> label="Created" index={Column::Created} width={ColumnWidth::Percent(10)}/>
-            <TableColumn<Column> label="Dependencies" index={Column::Dependencies} width={ColumnWidth::Percent(10)}/>
-            <TableColumn<Column> label="Advisories" index={Column::Advisories} width={ColumnWidth::Percent(10)}/>
-            <TableColumn<Column> label="Download" index={Column::Download} width={ColumnWidth::FitContent}/>
-        </TableHeader<Column>>
+    let data = match &props.state {
+        UseAsyncState::Ready(Ok(val)) => {
+            let data: Vec<PackageEntry> = val
+                .result
+                .iter()
+                .map(|pkg| {
+                    let url = backend.join(Endpoint::Api, &pkg.href).ok();
+                    PackageEntry {
+                        package: pkg.clone(),
+                        url,
+                    }
+                })
+                .collect();
+            Some(data)
+        }
+        _ => None,
     };
 
+    let (entries, onexpand) = use_table_data(MemoizedTableModel::new(Rc::new(data.unwrap_or_default())));
+
+    let header = vec![
+        yew::props!(TableColumnProperties<Column> {
+            index: Column::Name,
+            label: "Name",
+            width: ColumnWidth::Percent(15)
+        }),
+        yew::props!(TableColumnProperties<Column> {
+            index: Column::Version,
+            label: "Version",
+            width: ColumnWidth::Percent(20)
+        }),
+        yew::props!(TableColumnProperties<Column> {
+            index: Column::Supplier,
+            label: "Supplier",
+            width: ColumnWidth::Percent(20)
+        }),
+        yew::props!(TableColumnProperties<Column> {
+            index: Column::Created,
+            label: "Created",
+            width: ColumnWidth::Percent(10)
+        }),
+        yew::props!(TableColumnProperties<Column> {
+            index: Column::Dependencies,
+            label: "Dependencies",
+            width: ColumnWidth::Percent(10)
+        }),
+        yew::props!(TableColumnProperties<Column> {
+            index: Column::Advisories,
+            label: "Advisories",
+            width: ColumnWidth::Percent(10)
+        }),
+        yew::props!(TableColumnProperties<Column> {
+            index: Column::Download,
+            label: "Download",
+            width: ColumnWidth::FitContent
+        }),
+    ];
+
     html!(
-         <Table<Column, UseTableData<Column, MemoizedTableModel<PackageEntry>>>
-             mode={TableMode::CompactExpandable}
-             {header}
-             {entries}
-             {onexpand}
-         />
+        <TableWrapper<Column, UseTableData<Column, MemoizedTableModel<PackageEntry>>>
+            loading={&props.state.is_processing()}
+            error={props.state.error().map(|val| val.clone())}
+            empty={entries.is_empty()}
+            header={header}
+        >
+            <Table<Column, UseTableData<Column, MemoizedTableModel<PackageEntry>>>
+                mode={TableMode::Expandable}
+                {entries}
+                {onexpand}
+            />
+        </TableWrapper<Column, UseTableData<Column, MemoizedTableModel<PackageEntry>>>>
     )
 }
 

@@ -3,6 +3,9 @@ use yew::prelude::*;
 
 #[derive(Clone, PartialEq, Properties)]
 pub struct SimplePaginationProps {
+    #[prop_or(PaginationPosition::Top)]
+    pub position: PaginationPosition,
+
     pub total_items: Option<usize>,
     pub page: usize,
     pub per_page: usize,
@@ -12,6 +15,25 @@ pub struct SimplePaginationProps {
 
 #[function_component(SimplePagination)]
 pub fn simple_pagination(props: &SimplePaginationProps) -> Html {
+    // Custom total_entries to avoid "Unknown" values in the Pagination
+    let total_entries = use_state_eq(|| Some(0));
+
+    {
+        let total_entries = total_entries.clone();
+        use_effect_with_deps(
+            {
+                move |total_items| match total_items {
+                    Some(val) => {
+                        total_entries.set(Some(*val));
+                    }
+                    None => {}
+                }
+            },
+            props.total_items,
+        );
+    }
+
+    // On page change
     let onnavigation = {
         if let Some(total) = props.total_items {
             let on_page_change = props.on_page_change.clone();
@@ -25,7 +47,8 @@ pub fn simple_pagination(props: &SimplePaginationProps) -> Html {
 
     html!(
         <Pagination
-            total_entries={props.total_items}
+            position={props.position}
+            total_entries={*total_entries}
             offset={(props.page - 1) * props.per_page}
             selected_choice={props.per_page}
             entries_per_page_choices={vec![10, 25, 50]}

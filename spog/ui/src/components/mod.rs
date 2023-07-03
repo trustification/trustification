@@ -13,6 +13,7 @@ pub mod async_state_renderer;
 pub mod search;
 pub mod simple_pagination;
 pub mod spdx;
+pub mod table_wrapper;
 
 use std::ops::Deref;
 
