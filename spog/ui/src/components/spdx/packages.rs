@@ -1,116 +1,36 @@
+use super::{get_purl, spdx_external_references, spdx_package_list_entry};
 use crate::utils::OrNone;
+use packageurl::PackageUrl;
 use patternfly_yew::prelude::*;
 use spdx_rs::models::{PackageInformation, Relationship, SPDX};
-use std::collections::HashMap;
+use std::collections::{hash_map, BTreeMap, BTreeSet, HashMap};
 use std::rc::Rc;
 use yew::prelude::*;
-
-/// render the external packages
-pub fn spdx_external_references(package: &PackageInformation) -> Html {
-    html!(
-        <List>
-            { for package
-                .external_reference
-                .iter()
-                .map(|e| {
-                    html!( <>
-                        {&e.reference_locator} { " " }
-                        <Label label={format!("{:?}", e.reference_category)} color={Color::Blue} /> { " " }
-                        <Label label={format!("{}", e.reference_type)} color={Color::Grey} />
-                    </> )
-                })
-            }
-        </List>
-    )
-}
-
-pub fn spdx_relationship_entry(packages: &HashMap<String, PackageInformation>, rel: &Relationship, id: &str) -> Html {
-    html!(<>
-        { OrNone(packages.get(id).map(spdx_package_list_entry)) }
-        {" "}
-        <Label compact=true label={rel.relationship_type.as_ref().to_string()} />
-    </>)
-}
-
-pub fn spdx_package_list_entry(package: &PackageInformation) -> Html {
-    match &package.package_version {
-        Some(version) => html!(
-                <Tooltip text={version.clone()}>
-                    { &package.package_name }
-                </Tooltip>
-        ),
-        None => {
-            html!(&package.package_name)
-        }
-    }
-}
-
-pub fn render_single_details(
-    package: &PackageInformation,
-    packages: &HashMap<String, PackageInformation>,
-    relations: &Vec<Relationship>,
-) -> Vec<Span> {
-    let outgoing = relations
-        .iter()
-        .filter(|rel| rel.related_spdx_element == package.package_spdx_identifier)
-        .collect::<Vec<_>>();
-    let incoming = relations
-        .iter()
-        .filter(|rel| rel.spdx_element_id == package.package_spdx_identifier)
-        .collect::<Vec<_>>();
-
-    let content = html!(
-        <Grid gutter=true>
-            <GridItem cols={[4]}>
-                <Card plain=true title={html!(<Title>{"Information"}</Title>)}>
-                    <CardBody>
-                        <DescriptionList>
-                            <DescriptionGroup term="Download">{ &package.package_download_location }</DescriptionGroup>
-                            <DescriptionGroup term="Copyright">{ &package.copyright_text }</DescriptionGroup>
-                            <DescriptionGroup term="License (declared)">{ &package.declared_license }</DescriptionGroup>
-                            <DescriptionGroup term="License (concluded)">{ &package.concluded_license }</DescriptionGroup>
-                        </DescriptionList>
-                    </CardBody>
-                </Card>
-            </GridItem>
-
-            <GridItem cols={[4]}>
-                <Card plain=true title={html!(<Title>{"External References"}</Title>)}>
-                    <CardBody>
-                        { spdx_external_references(&package) }
-                    </CardBody>
-                </Card>
-            </GridItem>
-
-            <GridItem cols={[4]}>
-                <Card plain=true title={html!(<Title>{"Relationships"}</Title>)}>
-                    { if !outgoing.is_empty() {
-                        Some(html_nested!(<CardBody>
-                            <Title level={Level::H3}>{"Outgoing"}</Title>
-                            <List r#type={ListType::Basic}>
-                                { for outgoing.into_iter().map(|rel|spdx_relationship_entry(&packages, rel, &rel.spdx_element_id))}
-                            </List>
-                        </CardBody>))
-                    } else { None } }
-                    { if !incoming.is_empty() {
-                        Some(html_nested!(<CardBody>
-                            <Title level={Level::H3}>{"Incoming"}</Title>
-                            <List r#type={ListType::Basic}>
-                                { for incoming.into_iter().map(|rel|spdx_relationship_entry(&packages, rel, &rel.related_spdx_element))}
-                            </List>
-                        </CardBody>))
-                    } else { None } }
-                </Card>
-            </GridItem>
-        </Grid>
-    );
-
-    vec![Span::max(content)]
-}
 
 #[derive(PartialEq, Properties)]
 pub struct SpdxPackagesProperties {
     pub bom: Rc<SPDX>,
+}
+
+/// get the base version of a PURL, without qualifiers
+fn make_base(purl: PackageUrl<'static>) -> PackageUrl<'static> {
+    fn perform(purl: PackageUrl) -> Result<PackageUrl<'static>, packageurl::Error> {
+        let mut result = PackageUrl::new(purl.ty().to_string(), purl.name().to_string())?;
+
+        if let Some(namespace) = purl.namespace() {
+            result.with_namespace(namespace.to_string());
+        }
+        if let Some(version) = purl.version() {
+            result.with_version(version.to_string());
+        }
+        if let Some(subpath) = purl.subpath() {
+            result.with_subpath(subpath.to_string())?;
+        }
+
+        Ok(result)
+    }
+
+    perform(purl.clone()).unwrap_or(purl)
 }
 
 #[function_component(SpdxPackages)]
@@ -119,26 +39,118 @@ pub fn spdx_packages(props: &SpdxPackagesProperties) -> Html {
     enum Column {
         Name,
         Version,
+        Qualifiers,
     }
 
     #[derive(Clone, Debug, PartialEq)]
     struct PackageWrapper {
-        package: PackageInformation,
+        base: PackageBase,
         relations: Rc<Vec<Relationship>>,
-        packages: Rc<HashMap<String, PackageInformation>>,
+        all_packages: Rc<HashMap<String, PackageInformation>>,
+    }
+
+    #[derive(Clone, Debug, PartialEq)]
+    enum PackageBase {
+        Purl {
+            /// Base part of the PURL
+            base: PackageUrl<'static>,
+            /// All packages belonging to this PURL
+            packages: Vec<PackageInformation>,
+            /// Qualifiers for all packages
+            qualifiers: BTreeMap<String, BTreeSet<String>>,
+        },
+        Plain {
+            package: PackageInformation,
+        },
+    }
+
+    impl PackageBase {
+        pub fn name(&self) -> &str {
+            match self {
+                PackageBase::Purl { base, .. } => base.name(),
+                PackageBase::Plain { package } => &package.package_name,
+            }
+        }
     }
 
     impl TableEntryRenderer<Column> for PackageWrapper {
         fn render_cell(&self, context: CellContext<'_, Column>) -> Cell {
-            match context.column {
-                Column::Name => html!(&self.package.package_name),
-                Column::Version => html!(self.package.package_version.clone().unwrap_or_default()),
+            match &self.base {
+                PackageBase::Plain { package } => match context.column {
+                    Column::Name => html!(package.package_name.clone()),
+                    Column::Version => html!(package.package_version.clone().unwrap_or_default()),
+                    Column::Qualifiers => html!(),
+                },
+                PackageBase::Purl { base, qualifiers, .. } => match context.column {
+                    Column::Name => html!(base.name()),
+                    Column::Version => html!(base.version().map(ToString::to_string).unwrap_or_default()),
+                    Column::Qualifiers => html!(
+                        { for qualifiers.iter().flat_map(|(k,v)| {
+                            let k = k.clone();
+                            v.iter().map(move |v| {
+                                html!(<><Label label={format!("{k}: {v}")} />{" "}</>)
+                            })
+                        }) }
+                    ),
+                },
             }
             .into()
         }
 
         fn render_details(&self) -> Vec<Span> {
-            render_single_details(&self.package, &self.packages, &self.relations)
+            match &self.base {
+                PackageBase::Plain { package } => {
+                    super::packages::render_single_details(&package, &self.all_packages, &self.relations)
+                }
+                PackageBase::Purl {
+                    base,
+                    packages,
+                    qualifiers,
+                } => {
+                    let content = html!(<>
+                        <Grid gutter=true>
+                            <GridItem cols={[4]}>
+                                <Card plain=true title={html!(<Title>{"Details"}</Title>)}>
+                                    <CardBody>
+                                        <DescriptionList>
+                                            <DescriptionGroup term="Base Package"><code>{base.to_string()}</code></DescriptionGroup>
+                                        </DescriptionList>
+                                    </CardBody>
+                                </Card>
+                            </GridItem>
+
+                            <GridItem cols={[4]}>
+                                <Card plain=true title={html!(<Title>{"Qualifiers"}</Title>)}>
+                                    <CardBody>
+                                        <DescriptionList mode={DescriptionListMode::Horizontal}>
+                                        { for qualifiers.iter().map(|(k,v)| {
+                                            html!(<>
+                                                <DescriptionGroup term={k.clone()}>
+                                                    { for v.iter().map(|v|{
+                                                        html!(<><Label label={v.clone()}/> {" "}</>)
+                                                    })}
+                                                </DescriptionGroup>
+                                            </>)
+                                        })}
+                                        </DescriptionList>
+                                    </CardBody>
+                                </Card>
+                            </GridItem>
+
+                            <GridItem cols={[4]}>
+                                <Card plain=true title={html!(<Title>{"Packages"}</Title>)}>
+                                    <CardBody>
+                                        <List r#type={ListType::Basic}>
+                                            { for packages.iter().map(spdx_package_list_entry)}
+                                        </List>
+                                    </CardBody>
+                                </Card>
+                            </GridItem>
+                        </Grid>
+                    </>);
+                    vec![Span::max(content)]
+                }
+            }
         }
     }
 
@@ -146,6 +158,7 @@ pub fn spdx_packages(props: &SpdxPackagesProperties) -> Html {
         <TableHeader<Column>>
             <TableColumn<Column> index={Column::Name} label="Name" />
             <TableColumn<Column> index={Column::Version} label="Version" />
+            <TableColumn<Column> index={Column::Qualifiers} label="Qualifiers" />
         </TableHeader<Column>>
     );
 
@@ -159,6 +172,77 @@ pub fn spdx_packages(props: &SpdxPackagesProperties) -> Html {
         props.bom.clone(),
     );
 
+    // convert from SBOM to package list collapsed by base PURL with qualifiers
+    let packages = use_memo(
+        |(bom, package_map)| {
+            let relations = Rc::new(bom.relationships.clone());
+            let mut result = Vec::with_capacity(bom.package_information.len());
+            let mut base_map = HashMap::new();
+
+            struct PurlMap {
+                /// base purl
+                base: PackageUrl<'static>,
+                packages: Vec<(PackageUrl<'static>, PackageInformation)>,
+            }
+
+            for package in &bom.package_information {
+                match get_purl(package) {
+                    Some(purl) => {
+                        let base = make_base(purl.clone());
+                        let base_str = base.to_string();
+                        match base_map.entry(base_str) {
+                            hash_map::Entry::Vacant(entry) => {
+                                entry.insert(PurlMap {
+                                    base,
+                                    packages: vec![(purl, package.clone())],
+                                });
+                            }
+                            hash_map::Entry::Occupied(mut entry) => {
+                                entry.get_mut().packages.push((purl, package.clone()));
+                            }
+                        }
+                    }
+                    None => {
+                        result.push(PackageWrapper {
+                            base: PackageBase::Plain {
+                                package: package.clone(),
+                            },
+                            relations: relations.clone(),
+                            all_packages: package_map.clone(),
+                        });
+                    }
+                };
+            }
+
+            for PurlMap { base, packages } in base_map.into_values() {
+                let mut qualifiers = BTreeMap::<String, BTreeSet<String>>::new();
+
+                let mut result_packages = Vec::with_capacity(packages.len());
+                for (purl, package) in packages {
+                    for (k, v) in purl.qualifiers() {
+                        qualifiers.entry(k.to_string()).or_default().insert(v.to_string());
+                    }
+                    result_packages.push(package);
+                }
+
+                result.push(PackageWrapper {
+                    base: PackageBase::Purl {
+                        base,
+                        packages: result_packages,
+                        qualifiers,
+                    },
+                    relations: relations.clone(),
+                    all_packages: package_map.clone(),
+                })
+            }
+
+            result.sort_unstable_by(|a, b| a.base.name().cmp(b.base.name()));
+
+            result
+        },
+        (props.bom.clone(), package_map.clone()),
+    );
+
     let offset = use_state_eq(|| 0);
     let limit = use_state_eq(|| 10);
 
@@ -168,17 +252,22 @@ pub fn spdx_packages(props: &SpdxPackagesProperties) -> Html {
         let offset = offset.clone();
         let limit = limit.clone();
         use_memo(
-            move |(bom, filter)| {
-                let mut packages = bom
-                    .package_information
-                    .clone()
-                    .into_iter()
+            move |(packages, filter)| {
+                let packages = packages
+                    .iter()
                     // apply filter
-                    .filter(|p| filter.is_empty() || p.package_name.contains(filter))
+                    .filter(|p| {
+                        filter.is_empty() || {
+                            match &p.base {
+                                PackageBase::Plain { package } => package.package_name.contains(filter),
+                                // FIXME: consider caching to_string
+                                PackageBase::Purl { base, .. } => base.to_string().contains(filter),
+                            }
+                        }
+                    })
+                    // clone and collect
+                    .cloned()
                     .collect::<Vec<_>>();
-
-                // we need to sort after filtering, as paging requires a sorted list
-                packages.sort_unstable_by(|a, b| a.package_name.cmp(&b.package_name));
 
                 // try to cap last page, only apply once
                 if *offset > packages.len() {
@@ -192,36 +281,25 @@ pub fn spdx_packages(props: &SpdxPackagesProperties) -> Html {
                 // return result
                 packages
             },
-            (props.bom.clone(), (*filter).clone()),
+            (packages.clone(), (*filter).clone()),
         )
     };
 
     // total entries must be based on the filtered list
     let total_entries = filtered_packages.len();
 
+    // page from the filtered entries
     let entries = use_memo(
-        |(bom, filtered_packages, package_map, offset, limit)| {
-            let relations = Rc::new(bom.relationships.clone());
+        |(filtered_packages, offset, limit)| {
             filtered_packages
                 .iter()
                 // apply pagination window
                 .skip(*offset)
                 .take(*limit)
-                // map
-                .map(|package| PackageWrapper {
-                    package: (*package).clone(),
-                    relations: relations.clone(),
-                    packages: package_map.clone(),
-                })
+                .cloned()
                 .collect::<Vec<_>>()
         },
-        (
-            props.bom.clone(),
-            filtered_packages.clone(),
-            package_map,
-            *offset,
-            *limit,
-        ),
+        (filtered_packages.clone(), *offset, *limit),
     );
 
     let (entries, onexpand) = use_table_data(MemoizedTableModel::new(entries));
@@ -310,4 +388,75 @@ pub fn spdx_packages(props: &SpdxPackagesProperties) -> Html {
             />
         </>
     )
+}
+
+pub fn render_single_details(
+    package: &PackageInformation,
+    packages: &HashMap<String, PackageInformation>,
+    relations: &Vec<Relationship>,
+) -> Vec<Span> {
+    let outgoing = relations
+        .iter()
+        .filter(|rel| rel.related_spdx_element == package.package_spdx_identifier)
+        .collect::<Vec<_>>();
+    let incoming = relations
+        .iter()
+        .filter(|rel| rel.spdx_element_id == package.package_spdx_identifier)
+        .collect::<Vec<_>>();
+
+    let content = html!(
+        <Grid gutter=true>
+            <GridItem cols={[4]}>
+                <Card plain=true title={html!(<Title>{"Information"}</Title>)}>
+                    <CardBody>
+                        <DescriptionList>
+                            <DescriptionGroup term="Download">{ &package.package_download_location }</DescriptionGroup>
+                            <DescriptionGroup term="Copyright">{ &package.copyright_text }</DescriptionGroup>
+                            <DescriptionGroup term="License (declared)">{ &package.declared_license }</DescriptionGroup>
+                            <DescriptionGroup term="License (concluded)">{ &package.concluded_license }</DescriptionGroup>
+                        </DescriptionList>
+                    </CardBody>
+                </Card>
+            </GridItem>
+
+            <GridItem cols={[4]}>
+                <Card plain=true title={html!(<Title>{"External References"}</Title>)}>
+                    <CardBody>
+                        { spdx_external_references(&package) }
+                    </CardBody>
+                </Card>
+            </GridItem>
+
+            <GridItem cols={[4]}>
+                <Card plain=true title={html!(<Title>{"Relationships"}</Title>)}>
+                    { if !outgoing.is_empty() {
+                        Some(html_nested!(<CardBody>
+                            <Title level={Level::H3}>{"Outgoing"}</Title>
+                            <List r#type={ListType::Basic}>
+                                { for outgoing.into_iter().map(|rel|spdx_relationship_entry(&packages, rel, &rel.spdx_element_id))}
+                            </List>
+                        </CardBody>))
+                    } else { None } }
+                    { if !incoming.is_empty() {
+                        Some(html_nested!(<CardBody>
+                            <Title level={Level::H3}>{"Incoming"}</Title>
+                            <List r#type={ListType::Basic}>
+                                { for incoming.into_iter().map(|rel|spdx_relationship_entry(&packages, rel, &rel.related_spdx_element))}
+                            </List>
+                        </CardBody>))
+                    } else { None } }
+                </Card>
+            </GridItem>
+        </Grid>
+    );
+
+    vec![Span::max(content)]
+}
+
+pub fn spdx_relationship_entry(packages: &HashMap<String, PackageInformation>, rel: &Relationship, id: &str) -> Html {
+    html!(<>
+        { OrNone(packages.get(id).map(spdx_package_list_entry)) }
+        {" "}
+        <Label compact=true label={rel.relationship_type.as_ref().to_string()} />
+    </>)
 }

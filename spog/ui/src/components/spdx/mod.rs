@@ -1,14 +1,23 @@
 mod packages;
-mod packages2;
 
-pub use packages::spdx_external_references;
-pub use packages2::*;
+pub use packages::*;
 
 use crate::utils::OrNone;
 use humansize::{format_size, BINARY};
+use packageurl::PackageUrl;
 use patternfly_yew::prelude::*;
-use spdx_rs::models::SPDX;
+use spdx_rs::models::{PackageInformation, SPDX};
+use std::str::FromStr;
 use yew::prelude::*;
+
+/// get the PURL of a SPDX package information
+pub fn get_purl(package: &PackageInformation) -> Option<PackageUrl<'static>> {
+    package
+        .external_reference
+        .iter()
+        .find(|p| p.reference_type == "purl")
+        .and_then(|package| PackageUrl::from_str(&package.reference_locator).ok())
+}
 
 pub fn spdx_creator(bom: &SPDX) -> Html {
     let title = html!(<Title>{"Creation"}</Title>);
@@ -133,4 +142,39 @@ pub fn spdx_stats(size: usize, bom: &SPDX) -> Html {
             </CardBody>
         </Card>
     )
+}
+
+/// render the external packages
+pub fn spdx_external_references(package: &PackageInformation) -> Html {
+    html!(
+        <List>
+            { for package
+                .external_reference
+                .iter()
+                .map(|e| {
+                    html!( <>
+                        {&e.reference_locator} { " " }
+                        <Label label={format!("{:?}", e.reference_category)} color={Color::Blue} /> { " " }
+                        <Label label={format!("{}", e.reference_type)} color={Color::Grey} />
+                    </> )
+                })
+            }
+        </List>
+    )
+}
+
+pub fn spdx_package_list_entry(package: &PackageInformation) -> Html {
+    match get_purl(package) {
+        Some(purl) => html!(<code>{ purl }</code>),
+        None => match &package.package_version {
+            Some(version) => html!(
+                <Tooltip text={version.clone()}>
+                    { &package.package_name }
+                </Tooltip>
+            ),
+            None => {
+                html!(&package.package_name)
+            }
+        },
+    }
 }
