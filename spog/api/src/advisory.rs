@@ -1,4 +1,5 @@
 use actix_web::{web, web::ServiceConfig, HttpResponse, Responder};
+use http::header;
 use log::{info, trace, warn};
 use spog_model::search::{AdvisorySummary, SearchResult};
 
@@ -31,7 +32,13 @@ pub struct GetParams {
 )]
 pub async fn get(state: web::Data<SharedState>, params: web::Query<GetParams>) -> impl Responder {
     match state.get_vex(&params.id).await {
-        Ok(stream) => HttpResponse::Ok().streaming(stream),
+        Ok(stream) => {
+            // TODO: should check the content type, but assume JSON for now
+            let value = format!(r#"attachment; filename="{}.json""#, params.id);
+            HttpResponse::Ok()
+                .append_header((header::CONTENT_DISPOSITION, value))
+                .streaming(stream)
+        }
         Err(e) => {
             warn!("Unable to locate object with key {}: {:?}", params.id, e);
             HttpResponse::NotFound().finish()
