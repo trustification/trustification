@@ -1,6 +1,6 @@
 use crate::{
     backend::{SearchOptions, VexService},
-    components::{simple_pagination::SimplePagination, table_wrapper::TableWrapper},
+    components::simple_pagination::SimplePagination,
     hooks::{use_backend::use_backend, use_pagination_state::*},
     utils::pagination_to_offset,
 };
@@ -27,7 +27,7 @@ pub struct AdvisorySearchProperties {
 pub fn advisory_search(props: &AdvisorySearchProperties) -> Html {
     let backend = use_backend();
 
-    let service = use_memo(|backend| VexService::new((**backend).clone()), backend.clone());
+    let service = use_memo(|backend| VexService::new(backend.clone()), backend.clone());
 
     // the active query
     let state = use_state_eq(|| {

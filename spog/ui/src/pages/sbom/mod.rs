@@ -1,10 +1,14 @@
 use crate::{
     backend,
-    components::{common::PageHeading, error::Error, spdx::*},
+    components::{
+        common::{NotFound, PageHeading},
+        content::{Technical, UnknownContent},
+        error::Error,
+        spdx::*,
+    },
     hooks::use_backend::use_backend,
     model,
 };
-use humansize::{format_size, BINARY};
 use patternfly_yew::prelude::*;
 use std::rc::Rc;
 use yew::prelude::*;
@@ -23,8 +27,7 @@ pub fn sbom(props: &SBOMProperties) -> Html {
             backend::SBOMService::new(backend.clone())
                 .get(id)
                 .await
-                .map(model::SBOM::parse)
-                .map(Rc::new)
+                .map(|result| result.map(model::SBOM::parse).map(Rc::new))
         },
         (props.id.clone(), backend.clone()),
     );
@@ -34,7 +37,11 @@ pub fn sbom(props: &SBOMProperties) -> Html {
             html!(<PageHeading subtitle="SBOM detail information">{ &props.id }</PageHeading>),
             html!(<PageSection fill={PageSectionFill::Fill}><Spinner/></PageSection>),
         ),
-        UseAsyncState::Ready(Ok(data)) => (
+        UseAsyncState::Ready(Ok(None)) => (
+            html!(<PageHeading sticky=false subtitle="SBOM detail information">{ &props.id } {" "} </PageHeading>),
+            html!(<NotFound/>),
+        ),
+        UseAsyncState::Ready(Ok(Some(data))) => (
             html!(<PageHeading sticky=false subtitle="SBOM detail information">{ &props.id } {" "} <Label label={data.type_name()} color={Color::Blue} /> </PageHeading>),
             html!(<Details sbom={data.clone()}/> ),
         ),
@@ -106,7 +113,7 @@ fn details(props: &DetailsProps) -> Html {
                 <Tabs>
                     <Tab label="Overview">
                         <Grid gutter=true>
-                            <GridItem cols={[2]}>{technical(source.as_bytes().len())}</GridItem>
+                            <GridItem cols={[2]}><Technical size={source.as_bytes().len()}/></GridItem>
                         </Grid>
                     </Tab>
                     <Tab label="Source">
@@ -117,34 +124,10 @@ fn details(props: &DetailsProps) -> Html {
                 </Tabs>
             )
         }
-        model::SBOM::Unknown(data) => {
+        model::SBOM::Unknown(source) => {
             html!(
-                <Tabs>
-                    <Tab label="Overview">
-                        <Grid gutter=true>
-                            <GridItem cols={[2]}>{technical(data.as_bytes().len())}</GridItem>
-                        </Grid>
-                    </Tab>
-                    <Tab label="Source">
-                        <CodeBlock>
-                            <CodeBlockCode> { data } </CodeBlockCode>
-                        </CodeBlock>
-                    </Tab>
-                </Tabs>
+                <UnknownContent source={source.clone()} />
             )
         }
     }
-}
-
-pub fn technical(size: usize) -> Html {
-    let title = html!(<Title>{"Statistics"}</Title>);
-    html!(
-        <Card {title}>
-            <CardBody>
-                <DescriptionList>
-                    <DescriptionGroup term="Size">{ format_size(size, BINARY) }</DescriptionGroup>
-                </DescriptionList>
-            </CardBody>
-        </Card>
-    )
 }

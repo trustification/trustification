@@ -1,3 +1,4 @@
+pub mod csaf;
 pub mod cvss;
 pub mod highlight;
 

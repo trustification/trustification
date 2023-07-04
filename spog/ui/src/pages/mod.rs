@@ -7,14 +7,14 @@ mod chicken;
 mod index;
 mod package;
 mod sbom;
-// mod vulnerability;
+mod vex;
 
 pub use advisory::*;
 pub use chicken::*;
 pub use index::*;
 pub use package::Package;
 pub use sbom::*;
-// pub use vulnerability::Vulnerability;
+pub use vex::*;
 
 #[derive(Clone, Debug, PartialEq, Eq, Target)]
 pub enum AppRoute {
@@ -22,12 +22,7 @@ pub enum AppRoute {
     Index,
     Chicken,
     Package(View),
-    Advisory {
-        query: String,
-    },
-    /*Vulnerability {
-        query: String,
-    },*/
+    Advisory(View),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Target)]

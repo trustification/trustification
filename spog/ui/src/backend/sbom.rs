@@ -1,3 +1,4 @@
+use reqwest::StatusCode;
 use std::rc::Rc;
 use url::Url;
 
@@ -27,10 +28,16 @@ impl SBOMService {
         Ok(url)
     }
 
-    pub async fn get(&self, id: impl AsRef<str>) -> Result<String, Error> {
+    pub async fn get(&self, id: impl AsRef<str>) -> Result<Option<String>, Error> {
         let mut url = self.backend.join(Endpoint::Api, "/api/v1/package")?;
         url.query_pairs_mut().append_pair("id", id.as_ref()).finish();
 
-        Ok(self.client.get(url).send().await?.error_for_status()?.text().await?)
+        let response = self.client.get(url).send().await?;
+
+        if response.status() == StatusCode::NOT_FOUND {
+            return Ok(None);
+        }
+
+        Ok(Some(response.error_for_status()?.text().await?))
     }
 }

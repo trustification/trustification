@@ -1,14 +1,21 @@
 use std::rc::Rc;
 
-use crate::backend::VexService;
-use crate::hooks::use_backend::use_backend;
-use csaf::{definitions::Branch, product_tree::ProductTree, vulnerability::Vulnerability};
+use crate::{
+    backend::VexService,
+    components::{
+        advisory::{CsafNotes, CsafProductStatus, CsafReferences},
+        common::CardWrapper,
+    },
+    hooks::use_backend::use_backend,
+};
+use csaf::{definitions::Branch, product_tree::ProductTree, vulnerability::Vulnerability, Csaf};
 use patternfly_yew::prelude::*;
 use spog_model::prelude::*;
 use yew::prelude::*;
 use yew_more_hooks::hooks::use_async_with_cloned_deps;
 
-use crate::{components::common::SafeHtml, components::cvss::CvssScore, utils::cvss::Cvss};
+use crate::utils::OrNone;
+use crate::{components::common::SafeHtml, components::cvss::Cvss3};
 
 #[derive(Clone, Properties)]
 pub struct AdvisoryDetailsProps {
@@ -24,7 +31,7 @@ impl PartialEq for AdvisoryDetailsProps {
 #[function_component(AdvisoryDetails)]
 pub fn csaf_details(props: &AdvisoryDetailsProps) -> Html {
     let backend = use_backend();
-    let service = use_memo(|backend| VexService::new((**backend).clone()), backend.clone());
+    let service = use_memo(|backend| VexService::new(backend.clone()), backend.clone());
     let summary = props.advisory.clone();
 
     let fetch = {
@@ -42,14 +49,6 @@ pub fn csaf_details(props: &AdvisoryDetailsProps) -> Html {
     };
 
     if let Some(Some(csaf)) = fetch.data() {
-        let vulns = Rc::new(csaf.vulnerabilities.clone().unwrap_or_default());
-        let product = Rc::new(csaf.product_tree.clone().unwrap_or_else(|| ProductTree {
-            branches: None,
-            product_groups: None,
-            full_product_names: None,
-            relationships: None,
-        }));
-
         let snippet = summary.desc.clone();
         html!(
             <Panel>
@@ -58,10 +57,10 @@ pub fn csaf_details(props: &AdvisoryDetailsProps) -> Html {
                 <SafeHtml html={snippet} />
                 <Grid gutter=true>
                     <GridItem cols={[6.all()]}>
-                        <CsafVulnTable entries={vulns}/>
+                        <CsafVulnTable csaf={csaf.clone()}/>
                     </GridItem>
                     <GridItem cols={[6.all()]}>
-                        <CsafProductInfo {product}/>
+                        <CsafProductInfo csaf={csaf.clone()}/>
                     </GridItem>
                 </Grid>
                 </PanelMainBody>
@@ -81,27 +80,19 @@ enum Column {
     Title,
     Cwe,
     Score,
+    Discovery,
+    Release,
 }
 
-#[derive(Properties)]
-pub struct CsafVulnTableProperties {
-    pub entries: Rc<Vec<Vulnerability>>,
-}
-
-impl PartialEq for CsafVulnTableProperties {
-    fn eq(&self, other: &Self) -> bool {
-        Rc::ptr_eq(&self.entries, &other.entries)
-    }
+#[derive(PartialEq, Properties)]
+pub struct CsafProperties {
+    pub csaf: Rc<Csaf>,
 }
 
 impl TableEntryRenderer<Column> for Vulnerability {
     fn render_cell(&self, context: CellContext<'_, Column>) -> Cell {
         match context.column {
-            Column::Cve => self
-                .cve
-                .clone()
-                .map(|cve| html!(cve))
-                .unwrap_or_else(|| html!(<i>{"N/A"}</i>)),
+            Column::Cve => html!({ OrNone(self.cve.clone()) }),
             Column::Title => self.title.clone().map(Html::from).unwrap_or_default(),
             Column::Score => self
                 .scores
@@ -109,69 +100,104 @@ impl TableEntryRenderer<Column> for Vulnerability {
                 .unwrap_or_default()
                 .into_iter()
                 .filter_map(|s| s.cvss_v3)
-                .map(|s| Cvss {
-                    score: s.score().value() as f32,
-                    status: String::new(),
-                })
-                .map(|cvss| html!(<CvssScore {cvss}/>))
+                .map(|cvss| html!(<Cvss3 {cvss}/>))
                 .collect::<Html>(),
-            Column::Cwe => self
-                .cwe
-                .clone()
-                .map(|cwe| {
-                    html!(<Tooltip text={cwe.name}>
+            Column::Cwe => OrNone(self.cwe.clone().map(|cwe| {
+                html!(<Tooltip text={cwe.name}>
                         {cwe.id}
                     </Tooltip>)
-                })
-                .unwrap_or_else(|| html!(<i>{"N/A"}</i>)),
+            }))
+            .into(),
+            Column::Discovery => html!({ OrNone(self.discovery_date.clone()) }),
+            Column::Release => html!({ OrNone(self.release_date.clone()) }),
         }
         .into()
     }
+
+    fn render_details(&self) -> Vec<Span> {
+        let content = html!(
+            <Grid gutter=true>
+                <GridItem cols={[6]}>
+                    <CardWrapper plain=true title="IDs">
+                        if let Some(ids) = &self.ids {
+                            <List>
+                                { for ids.iter().map(|id|{
+                                    html!(<>{&id.text}  {" ("} { &id.system_name } {")"}</>)
+                                })}
+                            </List>
+                        }
+                    </CardWrapper>
+                </GridItem>
+                <GridItem cols={[6]}>
+                    <CsafReferences plain=true references={self.references.clone()} />
+                </GridItem>
+
+                <GridItem cols={[6]}>
+                    <CsafNotes plain=true notes={self.notes.clone()} />
+                </GridItem>
+
+                <GridItem cols={[6]}>
+                    <CsafProductStatus plain=true status={self.product_status.clone()} />
+                </GridItem>
+            </Grid>
+
+        );
+
+        // TODO: add remidations
+
+        vec![Span::max(content)]
+    }
+}
+
+#[derive(PartialEq, Properties)]
+pub struct CsafVulnTableProperties {
+    pub csaf: Rc<Csaf>,
+    #[prop_or_default]
+    pub expandable: bool,
 }
 
 #[function_component(CsafVulnTable)]
 pub fn vulnerability_table(props: &CsafVulnTableProperties) -> Html {
-    let (entries, onexpand) = use_table_data(MemoizedTableModel::new(props.entries.clone()));
+    let vulns = use_memo(
+        |csaf| csaf.vulnerabilities.clone().unwrap_or_default(),
+        props.csaf.clone(),
+    );
+
+    let (entries, onexpand) = use_table_data(MemoizedTableModel::new(vulns.clone()));
 
     let header = html_nested! {
         <TableHeader<Column>>
             <TableColumn<Column> label="CVE ID" index={Column::Cve} />
             <TableColumn<Column> label="Title" index={Column::Title} />
+            <TableColumn<Column> label="Discovery" index={Column::Discovery} />
+            <TableColumn<Column> label="Release" index={Column::Release} />
             <TableColumn<Column> label="Score" index={Column::Score} />
             <TableColumn<Column> label="CWE" index={Column::Cwe} />
         </TableHeader<Column>>
     };
 
+    let mode = match props.expandable {
+        true => TableMode::CompactExpandable,
+        false => TableMode::Compact,
+    };
+
+    // FIXME: figure out why this is required
+    let onexpand = onexpand.reform(|x| x);
+
     html!(
         <Table<Column, UseTableData<Column, MemoizedTableModel<Vulnerability>>>
-            mode={TableMode::Compact}
+            {mode}
             {header}
             {entries}
-            onexpand={(*onexpand).clone()}
+            {onexpand}
         />
     )
 }
 
 // products
 
-#[derive(Properties)]
-pub struct CsafProductInfoProperties {
-    pub product: Rc<ProductTree>,
-}
-
-impl PartialEq for CsafProductInfoProperties {
-    fn eq(&self, other: &Self) -> bool {
-        Rc::ptr_eq(&self.product, &other.product)
-    }
-}
-
-struct ProductTreeWrapper(Rc<ProductTree>);
-
-impl PartialEq for ProductTreeWrapper {
-    fn eq(&self, other: &Self) -> bool {
-        Rc::ptr_eq(&self.0, &other.0)
-    }
-}
+#[derive(PartialEq)]
+struct ProductTreeWrapper(ProductTree);
 
 struct BranchWrapper(Branch);
 
@@ -206,8 +232,20 @@ impl TreeNode<()> for BranchWrapper {
 }
 
 #[function_component(CsafProductInfo)]
-pub fn product_info(props: &CsafProductInfoProperties) -> Html {
+pub fn product_info(props: &CsafProperties) -> Html {
     use patternfly_yew::prelude::TableColumn;
+
+    let model = use_memo(
+        |csaf| {
+            ProductTreeWrapper(csaf.product_tree.clone().unwrap_or_else(|| ProductTree {
+                branches: None,
+                product_groups: None,
+                full_product_names: None,
+                relationships: None,
+            }))
+        },
+        props.csaf.clone(),
+    );
 
     let header = html_nested! {
         <TreeTableHeader<()>>
@@ -215,13 +253,11 @@ pub fn product_info(props: &CsafProductInfoProperties) -> Html {
         </TreeTableHeader<()>>
     };
 
-    let root = Rc::new(ProductTreeWrapper(props.product.clone()));
-
     html!(
         <TreeTable<(), ProductTreeWrapper>
             mode={TreeTableMode::Compact}
-            header={header}
-            model={root}
+            {header}
+            {model}
         />
     )
 }

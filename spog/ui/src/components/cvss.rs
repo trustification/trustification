@@ -24,3 +24,16 @@ pub fn cvss_information(props: &CvssScoreProperties) -> Html {
         <Label {label} {color} {outline}/>
     )
 }
+
+#[derive(PartialEq, Properties)]
+pub struct Cvss3Properties {
+    pub cvss: cvss::v3::Base,
+}
+
+#[function_component(Cvss3)]
+pub fn cvss3(props: &Cvss3Properties) -> Html {
+    // TODO: add popover to show more details
+    html!(
+        <CvssScore cvss={&props.cvss} />
+    )
+}

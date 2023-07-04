@@ -1224,7 +1224,7 @@ dependencies = [
 [[package]]
 name = "patternfly-yew"
 version = "0.5.0-alpha.2"
-source = "git+https://github.com/ctron/patternfly-yew?rev=a6b11e4e824024bb7289cbd169d87b67392be9eb#a6b11e4e824024bb7289cbd169d87b67392be9eb"
+source = "git+https://github.com/ctron/patternfly-yew?rev=5d2c569c62bf738cb562cf6c9d3b40e50628c657#5d2c569c62bf738cb562cf6c9d3b40e50628c657"
 dependencies = [
  "chrono",
  "gloo-events",
@@ -1706,6 +1706,7 @@ dependencies = [
  "browser-panic-hook",
  "chrono",
  "csaf",
+ "cvss",
  "cyclonedx-bom",
  "gloo-net 0.3.0",
  "gloo-utils",
