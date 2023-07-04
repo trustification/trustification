@@ -6,7 +6,12 @@ use std::{
     time::Duration,
 };
 
-use actix_web::{web, App, HttpServer};
+use actix_web::{dev::Service, error::ErrorUnauthorized};
+use actix_web::{
+    http::{header::Header, Method},
+    web, App, HttpServer,
+};
+use actix_web_httpauth::headers::authorization::{Authorization, Bearer};
 use prometheus::Registry;
 use tokio::sync::RwLock;
 use trustification_index::{IndexConfig, IndexStore};
@@ -28,6 +33,10 @@ pub struct Run {
     #[arg(long = "devmode", default_value_t = false)]
     pub devmode: bool,
 
+    /// Require a secret token for publishing publishing SBOMs.
+    #[arg(long = "publish-secret")]
+    pub publish_secret_token: Option<String>,
+
     #[command(flatten)]
     pub index: IndexConfig,
 
@@ -46,7 +55,40 @@ impl Run {
             .run("bombastic-api", |metrics| async move {
                 let state = Self::configure(index, storage, metrics.registry(), self.devmode)?;
                 let mut srv = HttpServer::new(move || {
+                    let secret = self.publish_secret_token.clone();
                     App::new()
+                        // NOTE: Workaround until we have an authentication and authorization scheme
+                        .wrap_fn(move |req, srv| {
+                            let secret = secret.clone();
+                            let mut auth = Err(ErrorUnauthorized("Not authorized to write"));
+                            if req.method() == Method::POST
+                                || req.method() == Method::PUT
+                                || req.method() == Method::DELETE
+                            {
+                                if let Some(secret) = secret {
+                                    if let Ok(r) = Authorization::<Bearer>::parse(&req) {
+                                        if r.as_ref().token() == secret {
+                                            auth = Ok(())
+                                        }
+                                    }
+                                } else {
+                                    auth = Ok(())
+                                }
+                            } else {
+                                auth = Ok(())
+                            }
+
+                            let fut = srv.call(req);
+                            async move {
+                                match auth {
+                                    Ok(_) => {
+                                        let res = fut.await?;
+                                        Ok(res)
+                                    }
+                                    Err(e) => Err(e),
+                                }
+                            }
+                        })
                         .app_data(web::Data::new(state.clone()))
                         .configure(server::config)
                 });
