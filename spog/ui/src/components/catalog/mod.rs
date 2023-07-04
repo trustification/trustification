@@ -36,28 +36,25 @@ pub fn catalog_search(props: &CatalogSearchProperties) -> Html {
 
     // the active query
     let search_params = use_state_eq(|| {
-        // initialize with the state from properties, history, or with a reasonable default
-        props
-            .query
-            .clone()
-            .map(|s| {
-                log::debug!("Initial: {s}");
-                match s.is_empty() {
-                    true => SearchMode::default(),
-                    false => SearchMode::Complex(s),
-                }
+        // initialize with the state from history, properties, or with a reasonable default
+        gloo_utils::history()
+            .state()
+            .ok()
+            .and_then(|state| {
+                let deser = state.into_serde::<SearchMode>();
+                log::debug!("Deserialized: {deser:?}");
+                deser.ok()
             })
-            .unwrap_or_else(|| {
-                gloo_utils::history()
-                    .state()
-                    .ok()
-                    .and_then(|state| {
-                        let deser = state.into_serde::<SearchMode>();
-                        log::debug!("Deserialized: {deser:?}");
-                        deser.ok()
-                    })
-                    .unwrap_or_else(SearchMode::default)
+            .or_else(|| {
+                props.query.clone().map(|s| {
+                    log::debug!("Initial: {s}");
+                    match s.is_empty() {
+                        true => SearchMode::default(),
+                        false => SearchMode::Complex(s),
+                    }
+                })
             })
+            .unwrap_or_else(SearchMode::default)
     });
 
     let search = {
