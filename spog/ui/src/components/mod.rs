@@ -1,15 +1,14 @@
 //! Re-usable component
 
 pub mod advisory;
+pub mod async_state_renderer;
 pub mod backend;
 pub mod catalog;
 pub mod common;
+pub mod content;
 pub mod cvss;
-// pub mod deps;
 pub mod error;
 pub mod package;
-// pub mod vulnerability;
-pub mod async_state_renderer;
 pub mod search;
 pub mod simple_pagination;
 pub mod spdx;

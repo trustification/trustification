@@ -40,3 +40,39 @@ pub fn safe_html(props: &Props) -> Html {
 
     Html::VRef(div.into())
 }
+
+#[function_component(NotFound)]
+pub fn not_found() -> Html {
+    html!(
+        <EmptyState
+            title="Not found"
+            icon={Icon::Search}
+            size={Size::Small}
+        >
+            { "The content requested could not be found." }
+        </EmptyState>
+    )
+}
+
+#[derive(PartialEq, Properties)]
+pub struct CardWrapperProperties {
+    pub title: AttrValue,
+
+    #[prop_or_default]
+    pub children: Children,
+
+    #[prop_or_default]
+    pub plain: bool,
+}
+
+#[function_component(CardWrapper)]
+pub fn card_wrapper(props: &CardWrapperProperties) -> Html {
+    let title = html!(<Title>{ &props.title }</Title>);
+    html!(
+        <Card plain={props.plain} {title}>
+            <CardBody>
+                { for props.children.iter() }
+            </CardBody>
+        </Card>
+    )
+}

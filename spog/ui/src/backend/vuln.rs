@@ -1,11 +1,13 @@
+use csaf::Csaf;
 use reqwest::{RequestBuilder, StatusCode};
 use spog_model::prelude::*;
+use std::rc::Rc;
 
 use super::{Backend, Error};
 use crate::backend::Endpoint;
 
 pub struct VexService {
-    backend: Backend,
+    backend: Rc<Backend>,
     client: reqwest::Client,
 }
 
@@ -29,8 +31,26 @@ impl SearchOptions {
     }
 }
 
+#[derive(PartialEq)]
+pub enum Advisory {
+    Csaf { csaf: Rc<Csaf>, source: Rc<String> },
+    Unknown(Rc<String>),
+}
+
+impl Advisory {
+    pub fn parse(source: String) -> Self {
+        match serde_json::from_str(&source) {
+            Ok(csaf) => Advisory::Csaf {
+                csaf: Rc::new(csaf),
+                source: Rc::new(source),
+            },
+            Err(_) => Advisory::Unknown(Rc::new(source)),
+        }
+    }
+}
+
 impl VexService {
-    pub fn new(backend: Backend) -> Self {
+    pub fn new(backend: Rc<Backend>) -> Self {
         Self {
             backend,
             client: reqwest::Client::new(),
@@ -49,6 +69,19 @@ impl VexService {
         }
 
         Ok(Some(response.error_for_status()?.json().await?))
+    }
+
+    pub async fn get(&self, id: impl AsRef<str>) -> Result<Option<String>, Error> {
+        let mut url = self.backend.join(Endpoint::Api, "/api/v1/advisory")?;
+        url.query_pairs_mut().append_pair("id", id.as_ref()).finish();
+
+        let response = self.client.get(url).send().await?;
+
+        if response.status() == StatusCode::NOT_FOUND {
+            return Ok(None);
+        }
+
+        Ok(Some(response.error_for_status()?.text().await?))
     }
 
     /*

@@ -6,7 +6,6 @@ use yew::html::IntoPropValue;
 #[derive(Clone, Debug, PartialEq)]
 pub struct Cvss {
     pub score: f32,
-    pub status: String,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, Ord, PartialOrd)]
@@ -24,7 +23,6 @@ impl TryFrom<Cvss3> for Cvss {
     fn try_from(value: Cvss3) -> Result<Self, Self::Error> {
         Ok(Self {
             score: value.score.parse()?,
-            status: value.status,
         })
     }
 }
@@ -35,11 +33,18 @@ impl IntoPropValue<Cvss> for &Cvss3 {
     }
 }
 
+impl IntoPropValue<Cvss> for &cvss::v3::Base {
+    fn into_prop_value(self) -> Cvss {
+        Cvss {
+            score: self.score().value() as f32,
+        }
+    }
+}
+
 impl Cvss {
     pub fn from_or_critical(cvss: &Cvss3) -> Self {
         Self {
             score: cvss.score.parse().unwrap_or(10.0),
-            status: cvss.status.clone(),
         }
     }
 

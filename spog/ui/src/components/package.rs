@@ -49,26 +49,31 @@ impl PackageEntry {
 impl TableEntryRenderer<Column> for PackageEntry {
     fn render_cell(&self, context: CellContext<'_, Column>) -> Cell {
         match context.column {
-            Column::Name => {
-                html!(
-                    <Link<AppRoute>
-                        target={AppRoute::Package(View::Content{id: self.package.id.clone()})}
-                    >{ self.package_name() }</Link<AppRoute>>
-                ).into()
-            },
+            Column::Name => html!(
+                <Link<AppRoute>
+                    target={AppRoute::Package(View::Content{id: self.package.id.clone()})}
+                >{ self.package_name() }</Link<AppRoute>>
+            )
+            .into(),
             Column::Supplier => html!(&self.package.supplier).into(),
             Column::Created => html!(self.package.created.date().to_string()).into(),
             Column::Download => html!(
                 if let Some(url) = &self.url {
-                    <a href={url.as_str().to_string()} target="_blank">
+                    <a href={url.to_string()} target="_blank">
                         <Button icon={Icon::Download} variant={ButtonVariant::Plain} />
                     </a>
                 }
-            ).into(),
+            )
+            .into(),
             Column::Dependencies => html!(&self.package.dependencies.len()).into(),
-            Column::Advisories => {
-                html!(<Link<AppRoute> target={AppRoute::Advisory { query: format!("affected:\"{}\"", self.package.purl)}}>{self.package.advisories.len()}</Link<AppRoute>>).into()
-            }
+            Column::Advisories => html!(
+                <Link<AppRoute>
+                    target={AppRoute::Advisory(View::Search{query: format!(r#"affected:"{}""#, self.package.purl)})}
+                >
+                    { self.package.advisories.len() }
+                </Link<AppRoute>>
+            )
+            .into(),
             Column::Version => html!(&self.package.version).into(),
         }
     }
