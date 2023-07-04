@@ -1,4 +1,5 @@
 use actix_web::{web, web::ServiceConfig, HttpResponse, Responder};
+use http::header;
 use log::{debug, info, trace, warn};
 use spog_model::search::{PackageSummary, SearchResult};
 
@@ -30,7 +31,13 @@ pub struct GetParams {
 pub async fn get(state: web::Data<SharedState>, params: web::Query<GetParams>) -> impl Responder {
     let params = params.into_inner();
     match state.get_sbom(&params.id).await {
-        Ok(response) => HttpResponse::Ok().streaming(response),
+        Ok(response) => {
+            // TODO: should check the content type, but assume JSON for now
+            let value = format!(r#"attachment; filename="{}.json""#, params.id);
+            HttpResponse::Ok()
+                .append_header((header::CONTENT_DISPOSITION, value))
+                .streaming(response)
+        }
         Err(e) => {
             warn!("Error lookup in bombastic: {:?}", e);
             HttpResponse::InternalServerError().finish()
