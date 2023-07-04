@@ -9,6 +9,7 @@ usage() { echo "Usage: $0 spdx_url bombastic_url" 1>&2; }
 BOMBASTIC_API=""
 BOMBASTIC_PATH="/api/v1/sbom"
 SOURCE=""
+AUTHZ=""
 WORKDIR=$(pwd)
 
 
@@ -31,11 +32,14 @@ help()
 }
 
 # Get the options
-while getopts ":hw:" option; do
+while getopts ":hk:w:" option; do
    case $option in
       h) # display Help
          help
          exit 0
+         ;;
+      k) # specify API key
+         AUTHZ="Authorization: Bearer $OPTARG"
          ;;
       w) # specify work dir
          WORKDIR=$OPTARG
@@ -111,6 +115,7 @@ if ! curl -f --no-progress-meter -X POST \
      -H "content-encoding: bzip2" \
      -H "transfer-encoding: chunked" \
      -H "content-type: application/json" \
+     -H "$AUTHZ" \
      -T "$file" \
      "$BOMBASTIC_API""$BOMBASTIC_PATH"?id="$id"; then
 

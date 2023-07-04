@@ -19,13 +19,17 @@ const DEFAULT_GPG_KEY_SOURCE: &str =
     "https://access.redhat.com/sites/default/files/pages/attachments/dce3823597f5eac4.txt";
 
 impl ScriptContext {
-    pub fn bombastic_upload(&self, sbom_path: &Url, bombastic: &Url) {
+    pub fn bombastic_upload(&self, sbom_path: &Url, bombastic: &Url, bombastic_key: &Option<String>) {
         // find the script location
         let script_path = self.path.join(PathBuf::from("./walker.sh"));
         let mut cmd = Command::new(script_path);
 
         if let Some(path) = &self.workdir {
             cmd.arg("-w").arg(path);
+        }
+
+        if let Some(key) = bombastic_key {
+            cmd.arg("-k").arg(key);
         }
 
         let result = cmd.arg(sbom_path.as_str()).arg(bombastic.as_str()).output();

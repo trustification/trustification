@@ -37,6 +37,10 @@ pub struct WalkerConfig {
     #[arg(long = "bombastic-url")]
     pub(crate) bombastic: Url,
 
+    /// Bombastic key
+    #[arg(env, long = "bombastic-key")]
+    pub(crate) bombastic_key: Option<String>,
+
     /// SBOMs index URL
     #[arg(long = "changes-url")]
     pub(crate) index_source: Option<Url>,
@@ -87,7 +91,9 @@ impl Run {
             // craft the url to the SBOM file
             sbom_path.path_segments_mut().unwrap().extend(entry.split('/'));
 
-            config.script_context.bombastic_upload(&sbom_path, &config.bombastic);
+            config
+                .script_context
+                .bombastic_upload(&sbom_path, &config.bombastic, &config.bombastic_key);
 
             // cleanup the url for the next run
             sbom_path.path_segments_mut().unwrap().pop().pop();
