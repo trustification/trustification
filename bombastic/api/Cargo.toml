@@ -25,6 +25,7 @@ rand = "0.8"
 futures = "0.3"
 derive_more = "0.99"
 prometheus = "0.13.3"
+actix-web-httpauth = "0.8.0"
 
 utoipa = { version = "3", features = ["actix_extras"] }
 utoipa-swagger-ui = { version = "3", features = ["actix-web"] }
