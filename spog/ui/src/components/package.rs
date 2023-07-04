@@ -4,154 +4,15 @@ use patternfly_yew::prelude::*;
 use spog_model::prelude::*;
 use url::Url;
 use yew::prelude::*;
-use yew_more_hooks::hooks::{use_async_with_cloned_deps, UseAsyncHandleDeps, UseAsyncState};
+use yew_more_hooks::hooks::UseAsyncState;
 use yew_nested_router::components::Link;
 
 use crate::{
-    backend::{Endpoint, PackageService, SearchOptions},
-    components::{common::SafeHtml, simple_pagination::SimplePagination, table_wrapper::TableWrapper},
-    hooks::{use_backend::*, use_pagination_state::*},
+    backend::Endpoint,
+    components::{common::SafeHtml, table_wrapper::TableWrapper},
+    hooks::use_backend::*,
     pages::{AppRoute, View},
-    utils::pagination_to_offset,
 };
-
-#[derive(PartialEq, Properties)]
-pub struct PackageSearchProperties {
-    pub callback: Callback<UseAsyncHandleDeps<SearchResult<Rc<Vec<PackageSummary>>>, String>>,
-
-    pub query: Option<String>,
-
-    pub pagination: PaginationState,
-
-    #[prop_or_default]
-    pub toolbar_items: ChildrenWithProps<ToolbarItem>,
-}
-
-#[function_component(PackageSearch)]
-pub fn package_search(props: &PackageSearchProperties) -> Html {
-    let backend = use_backend();
-
-    let service = use_memo(|backend| PackageService::new(backend.clone()), backend.clone());
-
-    // the active query
-    let state = use_state_eq(|| {
-        // initialize with the state from history, or with a reasonable default
-        props.query.clone().unwrap_or_else(|| {
-            gloo_utils::history()
-                .state()
-                .ok()
-                .and_then(|state| state.as_string())
-                .unwrap_or_else(String::default)
-        })
-    });
-
-    let search = {
-        let service = service.clone();
-        use_async_with_cloned_deps(
-            move |(state, page, per_page)| async move {
-                service
-                    .search_packages(
-                        &state,
-                        &SearchOptions {
-                            offset: Some(pagination_to_offset(page, per_page)),
-                            limit: Some(per_page),
-                        },
-                    )
-                    .await
-                    .map(|result| result.map(Rc::new))
-                    .map_err(|err| err.to_string())
-            },
-            ((*state).clone(), props.pagination.page, props.pagination.per_page),
-        )
-    };
-
-    use_effect_with_deps(
-        |(callback, search)| {
-            callback.emit(search.clone());
-        },
-        (props.callback.clone(), search.clone()),
-    );
-
-    // the current value in the text input field
-    let text = use_state_eq(|| (*state).clone());
-
-    let onclear = {
-        let text = text.clone();
-        Callback::from(move |_| {
-            text.set(String::new());
-        })
-    };
-    let onset = {
-        let state = state.clone();
-        let text = text.clone();
-        Callback::from(move |()| {
-            state.set((*text).clone());
-        })
-    };
-
-    use_effect_with_deps(
-        |query| {
-            // store changes to the state in the current history
-            let _ = gloo_utils::history().replace_state(&query.into(), "");
-        },
-        (*state).clone(),
-    );
-
-    // pagination
-
-    let total = search.data().and_then(|d| d.total);
-
-    let hidden = text.is_empty();
-
-    // render
-    html!(
-        <>
-            <Toolbar>
-                <ToolbarContent>
-                    <ToolbarGroup>
-                        <ToolbarItem r#type={ToolbarItemType::SearchFilter} width={["600px".to_string()]}>
-                            <Form onsubmit={onset.reform(|_|())}>
-                                // needed to trigger submit when pressing enter in the search field
-                                <input type="submit" hidden=true formmethod="dialog" />
-                                <InputGroup>
-                                    <TextInputGroup>
-                                        <TextInputGroupMain
-                                            icon={Icon::Search}
-                                            placeholder="Search"
-                                            value={(*text).clone()}
-                                            oninput={ Callback::from(move |data| text.set(data)) }
-                                        />
-                                        <TextInputGroupUtilities>
-                                            <div hidden={hidden}>
-                                                <Button icon={Icon::Times} variant={ButtonVariant::None} onclick={onclear} />
-                                            </div>
-                                        </TextInputGroupUtilities>
-                                        <Button icon={Icon::ArrowRight} variant={ButtonVariant::Control} onclick={onset.reform(|_|())} />
-                                    </TextInputGroup>
-                                </InputGroup>
-                            </Form>
-                        </ToolbarItem>
-                    </ToolbarGroup>
-
-                    { for props.toolbar_items.iter() }
-
-                    <ToolbarItem r#type={ToolbarItemType::Pagination}>
-                        <SimplePagination
-                            total_items={total}
-                            page={props.pagination.page}
-                            per_page={props.pagination.per_page}
-                            on_page_change={&props.pagination.on_page_change}
-                            on_per_page_change={&props.pagination.on_per_page_change}
-                        />
-                    </ToolbarItem>
-
-                </ToolbarContent>
-                // <ToolbarContent> { for filters.into_iter() } </ToolbarContent>
-            </Toolbar>
-
-        </>
-    )
-}
 
 #[derive(PartialEq, Properties)]
 pub struct PackageResultProperties {
