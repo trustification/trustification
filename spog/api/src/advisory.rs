@@ -65,7 +65,7 @@ pub async fn search(state: web::Data<SharedState>, params: web::Query<QueryParam
         .search_vex(&params.q, params.offset, params.limit.min(MAX_LIMIT))
         .await;
 
-    let mut result = match result {
+    let result = match result {
         Err(e) => {
             info!("Error searching: {:?}", e);
             return HttpResponse::InternalServerError().body(e.to_string());
@@ -73,8 +73,8 @@ pub async fn search(state: web::Data<SharedState>, params: web::Query<QueryParam
         Ok(result) => result,
     };
 
-    let mut m: Vec<AdvisorySummary> = Vec::new();
-    for item in result.result.drain(..) {
+    let mut m = Vec::with_capacity(result.result.len());
+    for item in result.result {
         let item = item.document;
         m.push(AdvisorySummary {
             id: item.advisory_id.clone(),

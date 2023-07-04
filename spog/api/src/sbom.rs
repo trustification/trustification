@@ -61,9 +61,9 @@ pub async fn search(state: web::Data<SharedState>, params: web::Query<search::Qu
     let params = params.into_inner();
     trace!("Querying SBOM using {}", params.q);
     match state.search_sbom(&params.q, params.offset, params.limit).await {
-        Ok(mut data) => {
-            let mut m: Vec<PackageSummary> = Vec::new();
-            for item in data.result.drain(..) {
+        Ok(data) => {
+            let mut m: Vec<PackageSummary> = Vec::with_capacity(data.result.len());
+            for item in data.result {
                 let item = item.document;
                 m.push(PackageSummary {
                     id: item.id.clone(),
