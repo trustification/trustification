@@ -1,7 +1,7 @@
 use crate::{
     backend::{Endpoint, SearchOptions, VexService},
     components::{simple_pagination::SimplePagination, table_wrapper::TableWrapper},
-    hooks::{use_backend::use_backend, use_pagination_state::PaginationState},
+    hooks::{use_backend::use_backend, use_pagination_state::*},
     utils::pagination_to_offset,
 };
 use patternfly_yew::prelude::*;
@@ -22,10 +22,11 @@ pub struct AdvisorySearchProperties {
 
     pub query: Option<String>,
 
-    pub pagination: PaginationState,
-
     #[prop_or_default]
     pub toolbar_items: ChildrenWithProps<ToolbarItem>,
+
+    #[prop_or_default]
+    pub children: Children,
 }
 
 #[function_component(AdvisorySearch)]
@@ -37,11 +38,17 @@ pub fn advisory_search(props: &AdvisorySearchProperties) -> Html {
     // the active query
     let state = use_state_eq(|| {
         // initialize with the state from history, or with a reasonable default
-        gloo_utils::history()
-            .state()
-            .ok()
-            .and_then(|state| state.as_string())
-            .unwrap_or_else(|| props.query.clone().unwrap_or(String::default()))
+        props.query.clone().unwrap_or_else(|| {
+            gloo_utils::history()
+                .state()
+                .ok()
+                .and_then(|state| state.as_string())
+                .unwrap_or_else(String::default)
+        })
+    });
+
+    let pagination_state = use_pagination_state(|| UsePaginationStateArgs {
+        initial_items_per_page: 10,
     });
 
     let search = {
@@ -60,7 +67,7 @@ pub fn advisory_search(props: &AdvisorySearchProperties) -> Html {
                     .map(|result| result.map(Rc::new))
                     .map_err(|err| err.to_string())
             },
-            ((*state).clone(), props.pagination.page, props.pagination.per_page),
+            ((*state).clone(), pagination_state.page, pagination_state.per_page),
         )
     };
 
@@ -120,11 +127,11 @@ pub fn advisory_search(props: &AdvisorySearchProperties) -> Html {
                                             value={(*text).clone()}
                                             oninput={ Callback::from(move |data| text.set(data)) }
                                         />
-                                        <TextInputGroupUtilities>
-                                            <div hidden={hidden}>
+                                        if !hidden {
+                                            <TextInputGroupUtilities>
                                                 <Button icon={Icon::Times} variant={ButtonVariant::Plain} onclick={onclear} />
-                                            </div>
-                                        </TextInputGroupUtilities>
+                                            </TextInputGroupUtilities>
+                                        }
                                         <Button icon={Icon::ArrowRight} variant={ButtonVariant::Control} onclick={onset.reform(|_|())} />
                                     </TextInputGroup>
                                 </InputGroup>
@@ -137,16 +144,27 @@ pub fn advisory_search(props: &AdvisorySearchProperties) -> Html {
                     <ToolbarItem r#type={ToolbarItemType::Pagination}>
                         <SimplePagination
                             total_items={total}
-                            page={props.pagination.page}
-                            per_page={props.pagination.per_page}
-                            on_page_change={&props.pagination.on_page_change}
-                            on_per_page_change={&props.pagination.on_per_page_change}
+                            page={pagination_state.page}
+                            per_page={pagination_state.per_page}
+                            on_page_change={&pagination_state.on_page_change}
+                            on_per_page_change={&pagination_state.on_per_page_change}
                         />
                     </ToolbarItem>
 
                 </ToolbarContent>
                 // <ToolbarContent> { for filters.into_iter() } </ToolbarContent>
             </Toolbar>
+
+            { for props.children.iter() }
+
+            <SimplePagination
+                position={PaginationPosition::Bottom}
+                total_items={total}
+                page={pagination_state.page}
+                per_page={pagination_state.per_page}
+                on_page_change={pagination_state.on_page_change}
+                on_per_page_change={pagination_state.on_per_page_change}
+            />
 
         </>
     )
