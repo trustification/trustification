@@ -11,8 +11,6 @@ impl TableEntryRenderer<usize> for SkeletonEntry {
     }
 }
 
-//
-
 #[derive(Clone, PartialEq, Properties)]
 pub struct SimpleTableProps<C, M>
 where
@@ -72,12 +70,7 @@ where
                 entries={skeleton_entries}
             />
         )
-    } else if props.error.is_some() {
-        let error = match &props.error {
-            Some(val) => &val,
-            None => "",
-        };
-
+    } else if let Some(error) = &props.error {
         html!(
             <>
                 <Table<usize, UseTableData<usize, MemoizedTableModel<SkeletonEntry>>>
