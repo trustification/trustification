@@ -182,6 +182,7 @@ fn bombastic_api(storage_endpoint: &str) -> bombastic_api::Run {
             infrastructure_workers: 1,
             enable_tracing: false,
         },
+        publish_secret_token: None,
     }
 }
 
@@ -238,5 +239,6 @@ fn vexination_api(storage_endpoint: &str) -> vexination_api::Run {
             infrastructure_workers: 1,
             enable_tracing: false,
         },
+        publish_secret_token: None,
     }
 }
