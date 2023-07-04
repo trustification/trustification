@@ -34,7 +34,7 @@ pub struct Run {
     pub devmode: bool,
 
     /// Require a secret token for publishing publishing SBOMs.
-    #[arg(long = "publish-secret")]
+    #[arg(env, long = "publish-secret")]
     pub publish_secret_token: Option<String>,
 
     #[command(flatten)]
