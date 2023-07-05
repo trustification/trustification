@@ -12,6 +12,8 @@ use actix_web::{
     web, App, HttpServer,
 };
 use actix_web_httpauth::headers::authorization::{Authorization, Bearer};
+use actix_web_prom::PrometheusMetricsBuilder;
+use anyhow::anyhow;
 use prometheus::Registry;
 use tokio::sync::RwLock;
 use trustification_index::{IndexConfig, IndexStore};
@@ -53,9 +55,15 @@ impl Run {
         Infrastructure::from(self.infra)
             .run("vexination-api", |metrics| async move {
                 let state = Self::configure(index, storage, metrics.registry(), self.devmode)?;
+                let http_metrics = PrometheusMetricsBuilder::new("vexination_api")
+                    .registry(metrics.registry().clone())
+                    .build()
+                    .map_err(|_| anyhow!("Error registering HTTP metrics"))?;
                 let mut srv = HttpServer::new(move || {
+                    let http_metrics = http_metrics.clone();
                     let secret = self.publish_secret_token.clone();
                     App::new()
+                        .wrap(http_metrics)
                         // NOTE: Workaround until we have an authentication and authorization scheme
                         .wrap_fn(move |req, srv| {
                             let secret = secret.clone();

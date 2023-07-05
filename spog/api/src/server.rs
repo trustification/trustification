@@ -2,7 +2,10 @@ use std::sync::Arc;
 
 use actix_cors::Cors;
 use actix_web::{middleware::Logger, web, App, HttpServer};
+use actix_web_prom::PrometheusMetricsBuilder;
+use anyhow::anyhow;
 use http::StatusCode;
+use prometheus::Registry;
 use spog_model::search;
 use trustification_version::version;
 use utoipa::OpenApi;
@@ -48,12 +51,18 @@ impl Server {
         Self { run }
     }
 
-    pub async fn run(self) -> anyhow::Result<()> {
+    pub async fn run(self, registry: &Registry) -> anyhow::Result<()> {
         let openapi = ApiDoc::openapi();
 
         let state = configure(&self.run)?;
 
+        let http_metrics = PrometheusMetricsBuilder::new("spog_api")
+            .registry(registry.clone())
+            .build()
+            .map_err(|_| anyhow!("Error registering HTTP metrics"))?;
+
         HttpServer::new(move || {
+            let http_metrics = http_metrics.clone();
             let state = state.clone();
             let cors = Cors::default()
                 .send_wildcard()
@@ -63,6 +72,7 @@ impl Server {
                 .max_age(3600);
 
             App::new()
+                .wrap(http_metrics)
                 .wrap(Logger::default())
                 .wrap(cors)
                 .app_data(web::Data::new(state))

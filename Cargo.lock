@@ -1063,6 +1063,7 @@ version = "0.1.0"
 dependencies = [
  "actix-web",
  "actix-web-httpauth",
+ "actix-web-prom",
  "anyhow",
  "bombastic-index",
  "bombastic-model",
@@ -5012,6 +5013,7 @@ dependencies = [
  "actix-cors",
  "actix-rt",
  "actix-web",
+ "actix-web-prom",
  "actix-ws",
  "anyhow",
  "bombastic-model",
@@ -5026,6 +5028,7 @@ dependencies = [
  "mime",
  "okapi",
  "packageurl",
+ "prometheus",
  "rand 0.8.5",
  "reqwest",
  "serde",
@@ -6030,6 +6033,7 @@ version = "0.1.0"
 dependencies = [
  "actix-web",
  "actix-web-httpauth",
+ "actix-web-prom",
  "anyhow",
  "clap",
  "csaf",
