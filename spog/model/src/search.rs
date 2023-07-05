@@ -5,6 +5,7 @@ use time::OffsetDateTime;
 pub struct AdvisorySummary {
     pub id: String,
     pub title: String,
+    pub severity: String,
     pub snippet: String,
     pub desc: String,
     pub date: time::OffsetDateTime,
