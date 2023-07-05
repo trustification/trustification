@@ -28,6 +28,7 @@ pub enum Storage {
 #[derive(clap::Args, Debug)]
 #[command(about = "Run the exporter", args_conflicts_with_subcommands = true)]
 pub struct Run {
+    // TODO: change to nats and use infrastructure
     #[arg(long = "guac-url", default_value = "127.0.0.1:4222")]
     pub(crate) guac_url: String,
 
