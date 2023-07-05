@@ -39,6 +39,6 @@ fi
 
 # Import prodsec pubkey
 # From https://access.redhat.com/security/team/contact/#contact
-  curl --no-progress-meter --output gpg_key.txt "$1"
-  gpg --homedir "$WORKDIR" --import gpg_key.txt
-  rm gpg_key.txt
+curl --no-progress-meter --output $WORKDIR/gpg_key.txt "$1"
+gpg --homedir "$WORKDIR" --import $WORKDIR/gpg_key.txt
+rm $WORKDIR/gpg_key.txt
