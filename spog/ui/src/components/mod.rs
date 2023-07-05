@@ -10,6 +10,7 @@ pub mod cvss;
 pub mod error;
 pub mod package;
 pub mod search;
+pub mod severity;
 pub mod simple_pagination;
 pub mod spdx;
 pub mod table_wrapper;
