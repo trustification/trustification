@@ -5,6 +5,7 @@ use crate::{
         common::{CardWrapper, NotFound, PageHeading},
         content::{SourceCode, UnknownContent},
         error::Error,
+        severity::Severity,
     },
     hooks::use_backend::use_backend,
 };
@@ -105,10 +106,10 @@ fn details(props: &DetailsProps) -> Html {
                                                 { match &aggregate_severity.namespace {
                                                     Some(namespace) => html!(
                                                         <Tooltip text={namespace.to_string()}>
-                                                            {&aggregate_severity.text}
+                                                            <Severity severity={aggregate_severity.text.clone()} />
                                                         </Tooltip>
                                                     ),
-                                                    None => html!(&aggregate_severity.text),
+                                                    None => html!(<Severity severity={aggregate_severity.text.clone()} />),
                                                 }}
                                             </DescriptionGroup>
                                         }

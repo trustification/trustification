@@ -1224,7 +1224,6 @@ dependencies = [
 [[package]]
 name = "patternfly-yew"
 version = "0.5.0-alpha.2"
-source = "git+https://github.com/ctron/patternfly-yew?rev=5d2c569c62bf738cb562cf6c9d3b40e50628c657#5d2c569c62bf738cb562cf6c9d3b40e50628c657"
 dependencies = [
  "chrono",
  "gloo-events",
@@ -1736,6 +1735,7 @@ dependencies = [
  "yew-hooks",
  "yew-more-hooks",
  "yew-nested-router",
+ "yew_icons",
 ]
 
 [[package]]
@@ -2557,4 +2557,13 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 1.0.109",
+]
+
+[[package]]
+name = "yew_icons"
+version = "0.7.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0001aab8ce9400873cf42dc56eb1b8db259effdc3e8fdbdf5940e50f31675ee1"
+dependencies = [
+ "yew",
 ]

@@ -1,3 +1,4 @@
+use std::ops::Deref;
 use std::rc::Rc;
 
 use crate::{
@@ -89,7 +90,20 @@ pub struct CsafProperties {
     pub csaf: Rc<Csaf>,
 }
 
-impl TableEntryRenderer<Column> for Vulnerability {
+pub struct VulnerabilityWrapper {
+    vuln: Vulnerability,
+    csaf: Rc<Csaf>,
+}
+
+impl Deref for VulnerabilityWrapper {
+    type Target = Vulnerability;
+
+    fn deref(&self) -> &Self::Target {
+        &self.vuln
+    }
+}
+
+impl TableEntryRenderer<Column> for VulnerabilityWrapper {
     fn render_cell(&self, context: CellContext<'_, Column>) -> Cell {
         match context.column {
             Column::Cve => html!({ OrNone(self.cve.clone()) }),
@@ -117,6 +131,15 @@ impl TableEntryRenderer<Column> for Vulnerability {
     fn render_details(&self) -> Vec<Span> {
         let content = html!(
             <Grid gutter=true>
+
+                <GridItem cols={[8]}>
+                    <CsafProductStatus plain=true status={self.product_status.clone()} csaf={self.csaf.clone()} />
+                </GridItem>
+
+                <GridItem cols={[4]}>
+                    <CsafNotes plain=true notes={self.notes.clone()} />
+                </GridItem>
+
                 <GridItem cols={[6]}>
                     <CardWrapper plain=true title="IDs">
                         if let Some(ids) = &self.ids {
@@ -132,18 +155,11 @@ impl TableEntryRenderer<Column> for Vulnerability {
                     <CsafReferences plain=true references={self.references.clone()} />
                 </GridItem>
 
-                <GridItem cols={[6]}>
-                    <CsafNotes plain=true notes={self.notes.clone()} />
-                </GridItem>
-
-                <GridItem cols={[6]}>
-                    <CsafProductStatus plain=true status={self.product_status.clone()} />
-                </GridItem>
             </Grid>
 
         );
 
-        // TODO: add remidations
+        // TODO: add remediations
 
         vec![Span::max(content)]
     }
@@ -159,7 +175,17 @@ pub struct CsafVulnTableProperties {
 #[function_component(CsafVulnTable)]
 pub fn vulnerability_table(props: &CsafVulnTableProperties) -> Html {
     let vulns = use_memo(
-        |csaf| csaf.vulnerabilities.clone().unwrap_or_default(),
+        |csaf| {
+            csaf.vulnerabilities
+                .clone()
+                .into_iter()
+                .flat_map(|v| v)
+                .map(|vuln| VulnerabilityWrapper {
+                    vuln,
+                    csaf: csaf.clone(),
+                })
+                .collect::<Vec<_>>()
+        },
         props.csaf.clone(),
     );
 
@@ -185,7 +211,7 @@ pub fn vulnerability_table(props: &CsafVulnTableProperties) -> Html {
     let onexpand = onexpand.reform(|x| x);
 
     html!(
-        <Table<Column, UseTableData<Column, MemoizedTableModel<Vulnerability>>>
+        <Table<Column, UseTableData<Column, MemoizedTableModel<VulnerabilityWrapper>>>
             {mode}
             {header}
             {entries}

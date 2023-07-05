@@ -1,0 +1,35 @@
+
+.tc-c-severity {
+
+  .tc-m-severity-low {
+    color: var(--pf-v5-global--info-color--100);
+  }
+
+  .tc-m-severity-moderate {
+    color: var(--pf-v5-global--warning-color--100);
+  }
+
+  .tc-m-severity-important {
+    color: var(--pf-v5-global--danger-color--100);
+  }
+
+  .tc-m-severity-critical {
+    color: var(--pf-v5-global--palette--purple-400);
+  }
+
+  .tc-c-severity__icon svg {
+    height: var(--pf-v5-c-table--cell--FontSize);
+    vertical-align: middle;
+    width: 16px;
+  }
+
+  .tc-c-severity__icon {
+    padding-bottom: .2rem;
+  }
+
+  .tc-c-severity__icon,
+  .tc-c-severity__text {
+    vertical-align: middle;
+  }
+
+}
