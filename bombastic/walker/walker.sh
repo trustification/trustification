@@ -7,7 +7,7 @@ usage() { echo "Usage: $0 spdx_url bombastic_url" 1>&2; }
 
 # Default variables
 BOMBASTIC_API=""
-BOMBASTIC_PATH="/api/v1/sbom"
+BOMBASTIC_PATH="api/v1/sbom"
 SOURCE=""
 AUTHZ=""
 WORKDIR=$(pwd)
