@@ -43,6 +43,7 @@ yew_icons = {version = "0.7", features = ["BootstrapShieldFillExclamation"]}
 spog-model = "0.1.0"
 
 bombastic-model = { path = "../../bombastic/model" }
+vexination-model = { path = "../../vexination/model" }
 trustification-version = { path = "../../version" }
 
 [build-dependencies]
@@ -62,8 +63,8 @@ features = [
 #yew-nested-router = { git = "https://github.com/ctron/yew-nested-router", rev = "9689db446dee7030325884df768d0c2e84f353d6" }
 yew-more-hooks = { git = "https://github.com/ctron/yew-more-hooks", rev = "3c943759287c59a22256a4748993d2407b9a9e9b" }
 #yew-more-hooks = { path = "../yew-more-hooks" }
-#patternfly-yew = { git = "https://github.com/ctron/patternfly-yew", rev = "9cd3c2a6b2bf0780b2df2db8a8e04269af0652bd" }
-patternfly-yew = { path = "../../../patternfly-yew" }
+patternfly-yew = { git = "https://github.com/ctron/patternfly-yew", rev = "4bd14a88e8e94386bd530423154513e0d36b64cb" }
+#patternfly-yew = { path = "../../../patternfly-yew" }
 
 csaf = { git = "https://github.com/voteblake/csaf-rs", rev = "76cb9ede10adb1fbb495b17e5fd8d95c5cf6c900" } # FIXME: waiting for release
 

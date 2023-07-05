@@ -35,8 +35,7 @@ pub fn advisory(props: &AdvisoryProps) -> Html {
         <>
             <PageHeading subtitle="Search security advisories">{"Advisories"}</PageHeading>
 
-            // We need to set the main section to fill, as we have a footer section
-            <PageSection variant={PageSectionVariant::Default}>
+            <PageSection variant={PageSectionVariant::Light}>
                 <AdvisorySearch {callback} {query}>
                     <AdvisoryResult state={(*search).clone()} />
                 </AdvisorySearch>

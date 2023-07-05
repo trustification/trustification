@@ -24,14 +24,6 @@ pub fn trace_product<'a>(csaf: &'a Csaf, product: &ProductIdT) -> Vec<&'a Branch
     result
 }
 
-pub fn trace_product_branches(branches: &[Branch], product: &ProductIdT) {
-    for branch in branches {
-        if let Some(branches) = &branch.branches {
-            trace_product_branches(&branches.0, product);
-        }
-    }
-}
-
 pub fn walk_product_branches<'a, F>(branches: &'a Option<BranchesT>, mut f: F)
 where
     F: FnMut(&[&'a Branch], &'a Branch),

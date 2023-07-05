@@ -207,6 +207,8 @@ pub fn catalog_search(props: &CatalogSearchProperties) -> Html {
         )
     };
 
+    // switch
+
     let simple = search_params.is_simple();
 
     // toggle search mode: simple <-> complex
@@ -290,8 +292,7 @@ pub fn catalog_search(props: &CatalogSearchProperties) -> Html {
                                     entries_per_page_choices={vec![10, 25, 50]}
                                     {onnavigation}
                                     {onlimit}
-                                >
-                                </Pagination>
+                                />
                             </ToolbarItem>
 
                         </ToolbarContent>
