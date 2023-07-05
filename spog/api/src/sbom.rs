@@ -21,7 +21,7 @@ pub struct GetParams {
     get,
     path = "/api/v1/package",
     responses(
-        (status = 200, description = "Package was found", body = Pet),
+        (status = 200, description = "Package was found"),
         (status = NOT_FOUND, description = "Package was not found")
     ),
     params(
@@ -49,7 +49,7 @@ pub async fn get(state: web::Data<SharedState>, params: web::Query<GetParams>) -
     get,
     path = "/api/v1/package/search",
     responses(
-        (status = 200, description = "Search was performed successfully", body = Pet),
+        (status = 200, description = "Search was performed successfully"),
     ),
     params(
         ("q" = String, Path, description = "Search query"),
