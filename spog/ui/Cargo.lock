@@ -1224,6 +1224,7 @@ dependencies = [
 [[package]]
 name = "patternfly-yew"
 version = "0.5.0-alpha.2"
+source = "git+https://github.com/ctron/patternfly-yew?rev=4bd14a88e8e94386bd530423154513e0d36b64cb#4bd14a88e8e94386bd530423154513e0d36b64cb"
 dependencies = [
  "chrono",
  "gloo-events",
@@ -1727,6 +1728,7 @@ dependencies = [
  "trustification-version",
  "url",
  "urlencoding",
+ "vexination-model",
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "wasm-logger",
@@ -2140,6 +2142,7 @@ version = "0.1.0"
 dependencies = [
  "serde",
  "serde_json",
+ "sikula",
  "time 0.3.22",
  "urlencoding",
  "utoipa",

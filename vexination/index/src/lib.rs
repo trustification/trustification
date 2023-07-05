@@ -1,5 +1,3 @@
-mod search;
-
 use std::ops::Bound;
 
 use csaf::{
@@ -8,7 +6,6 @@ use csaf::{
     Csaf,
 };
 use log::{debug, warn};
-use search::*;
 use sikula::prelude::*;
 use tantivy::{
     query::{AllQuery, TermSetQuery},

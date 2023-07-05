@@ -29,8 +29,7 @@ pub fn package(props: &PackageProps) -> Html {
         <>
             <PageHeading subtitle="Search for SBOMs">{"Package Catalog"}</PageHeading>
 
-            // We need to set the main section to fill, as we have a footer section
-            <PageSection variant={PageSectionVariant::Light} fill={PageSectionFill::Fill}>
+            <PageSection variant={PageSectionVariant::Light}>
                 <CatalogSearch {callback} {query}>
                     <PackageResult state={(*search).clone()} />
                 </CatalogSearch>
