@@ -83,22 +83,14 @@ impl TableEntryRenderer<Column> for AdvisoryEntry {
             }
             Column::Vulnerabilities => {
                 let l = self.summary.cves.len();
-                html!(if l == 0 {
-                    {
-                        "N/A"
-                    }
-                } else {
-                    {
-                        l.to_string()
-                    }
-                })
+                if l == 0 { "N/A".to_string() } else { l.to_string() }.into()
             }
         }
         .into()
     }
 
     fn render_details(&self) -> Vec<Span> {
-        let html = html!(<AdvisoryDetails advisory={Rc::new(self.summary.clone())} />);
+        let html = html!( <AdvisoryDetails advisory={Rc::new(self.summary.clone())} />);
         vec![Span::max(html)]
     }
 
@@ -282,28 +274,24 @@ fn note_cat_str(category: &NoteCategory) -> &'static str {
 #[derive(PartialEq, Properties)]
 pub struct CsafProductStatusProperties {
     pub status: Option<ProductStatus>,
-    #[prop_or_default]
-    pub plain: bool,
     pub csaf: Rc<Csaf>,
 }
 
 #[function_component(CsafProductStatus)]
 pub fn csaf_product_status(props: &CsafProductStatusProperties) -> Html {
     html!(
-        <CardWrapper plain=true title="Product Status">
-            if let Some(status) = &props.status {
-                <DescriptionList>
-                    <CsafProductStatusSection title="First Affected" entries={status.first_affected.clone()} csaf={props.csaf.clone()}/>
-                    <CsafProductStatusSection title="First Fixed" entries={status.first_fixed.clone()} csaf={props.csaf.clone()} />
-                    <CsafProductStatusSection title="Fixed" entries={status.fixed.clone()} csaf={props.csaf.clone()} />
-                    <CsafProductStatusSection title="Known Affected" entries={status.known_affected.clone()} csaf={props.csaf.clone()} />
-                    <CsafProductStatusSection title="Known Not Affected" entries={status.known_not_affected.clone()} csaf={props.csaf.clone()} />
-                    <CsafProductStatusSection title="Last Affected" entries={status.last_affected.clone()} csaf={props.csaf.clone()} />
-                    <CsafProductStatusSection title="Recommended" entries={status.recommended.clone()} csaf={props.csaf.clone()} />
-                    <CsafProductStatusSection title="Under Investigation" entries={status.under_investigation.clone()} csaf={props.csaf.clone()} />
-                </DescriptionList>
-            }
-        </CardWrapper>
+        if let Some(status) = &props.status {
+            <DescriptionList>
+                <CsafProductStatusSection title="First Affected" entries={status.first_affected.clone()} csaf={props.csaf.clone()}/>
+                <CsafProductStatusSection title="First Fixed" entries={status.first_fixed.clone()} csaf={props.csaf.clone()} />
+                <CsafProductStatusSection title="Fixed" entries={status.fixed.clone()} csaf={props.csaf.clone()} />
+                <CsafProductStatusSection title="Known Affected" entries={status.known_affected.clone()} csaf={props.csaf.clone()} />
+                <CsafProductStatusSection title="Known Not Affected" entries={status.known_not_affected.clone()} csaf={props.csaf.clone()} />
+                <CsafProductStatusSection title="Last Affected" entries={status.last_affected.clone()} csaf={props.csaf.clone()} />
+                <CsafProductStatusSection title="Recommended" entries={status.recommended.clone()} csaf={props.csaf.clone()} />
+                <CsafProductStatusSection title="Under Investigation" entries={status.under_investigation.clone()} csaf={props.csaf.clone()} />
+            </DescriptionList>
+        }
     )
 }
 
@@ -337,7 +325,7 @@ fn csaf_product_status_entry(csaf: &Csaf, id: &ProductIdT) -> Html {
             let component = product_html(trace_product(&csaf, &r.product_reference));
 
             html!(<>
-                { component } {" "} { relationship } {" "} { product } 
+                { component } {" "} { relationship } {" "} { product }  
             </>)
         })
         .collect()

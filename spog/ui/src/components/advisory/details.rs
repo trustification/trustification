@@ -56,14 +56,7 @@ pub fn csaf_details(props: &AdvisoryDetailsProps) -> Html {
                 <PanelMain>
                 <PanelMainBody>
                 <SafeHtml html={snippet} />
-                <Grid gutter=true>
-                    <GridItem cols={[6.all()]}>
-                        <CsafVulnTable csaf={csaf.clone()}/>
-                    </GridItem>
-                    <GridItem cols={[6.all()]}>
-                        <CsafProductInfo csaf={csaf.clone()}/>
-                    </GridItem>
-                </Grid>
+                <CsafVulnTable csaf={csaf.clone()}/>
                 </PanelMainBody>
                 </PanelMain>
             </Panel>
@@ -83,6 +76,7 @@ enum Column {
     Score,
     Discovery,
     Release,
+    Products,
 }
 
 #[derive(PartialEq, Properties)]
@@ -117,13 +111,18 @@ impl TableEntryRenderer<Column> for VulnerabilityWrapper {
                 .map(|cvss| html!(<Cvss3 {cvss}/>))
                 .collect::<Html>(),
             Column::Cwe => OrNone(self.cwe.clone().map(|cwe| {
-                html!(<Tooltip text={cwe.name}>
+                html!(
+                    <Tooltip text={cwe.name}>
                         {cwe.id}
-                    </Tooltip>)
+                    </Tooltip>
+                )
             }))
             .into(),
             Column::Discovery => html!({ OrNone(self.discovery_date.clone()) }),
             Column::Release => html!({ OrNone(self.release_date.clone()) }),
+            Column::Products => html!(
+                <CsafProductStatus status={self.product_status.clone()} csaf={self.csaf.clone()} />
+            ),
         }
         .into()
     }
@@ -133,7 +132,9 @@ impl TableEntryRenderer<Column> for VulnerabilityWrapper {
             <Grid gutter=true>
 
                 <GridItem cols={[8]}>
-                    <CsafProductStatus plain=true status={self.product_status.clone()} csaf={self.csaf.clone()} />
+                    <CardWrapper title="Product Status">
+                        <CsafProductStatus status={self.product_status.clone()} csaf={self.csaf.clone()} />
+                    </CardWrapper>
                 </GridItem>
 
                 <GridItem cols={[4]}>
@@ -151,6 +152,7 @@ impl TableEntryRenderer<Column> for VulnerabilityWrapper {
                         }
                     </CardWrapper>
                 </GridItem>
+
                 <GridItem cols={[6]}>
                     <CsafReferences plain=true references={self.references.clone()} />
                 </GridItem>
@@ -199,6 +201,7 @@ pub fn vulnerability_table(props: &CsafVulnTableProperties) -> Html {
             <TableColumn<Column> label="Release" index={Column::Release} />
             <TableColumn<Column> label="Score" index={Column::Score} />
             <TableColumn<Column> label="CWE" index={Column::Cwe} />
+            { for (!props.expandable).then(|| html_nested!(<TableColumn<Column> label="Products" index={Column::Products} />))}
         </TableHeader<Column>>
     };
 
