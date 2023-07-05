@@ -202,6 +202,7 @@ async fn search_sbom(
     put,
     tag = "bombastic",
     path = "/api/v1/sbom",
+    request_body(content = Value, description = "The SBOM to be uploaded", content_type = "application/json"),
     responses(
         (status = 200, description = "SBOM uploaded successfully"),
         (status = BAD_REQUEST, description = "Missing valid id"),

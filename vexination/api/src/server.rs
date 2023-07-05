@@ -85,6 +85,7 @@ struct PublishParams {
     put,
     tag = "vexination",
     path = "/api/v1/vex",
+    request_body(content = Value, description = "The VEX doc to be uploaded", content_type = "application/json"),
     responses(
         (status = 200, description = "VEX uploaded successfully"),
         (status = BAD_REQUEST, description = "Missing valid id"),
