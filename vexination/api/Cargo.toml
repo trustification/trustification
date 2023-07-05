@@ -26,6 +26,7 @@ rand = "0.8"
 csaf = "0.5.0"
 prometheus = "0.13.3"
 actix-web-httpauth = "0.8.0"
+actix-web-prom = "0.6.0"
 
 utoipa = { version = "3", features = ["actix_extras"] }
 utoipa-swagger-ui = { version = "3", features = ["actix-web"] }

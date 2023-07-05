@@ -35,6 +35,8 @@ snyk = { git = "https://github.com/dejanb/snyk-rs.git", branch = "main" }
 zstd = "0.12"
 rand = "0.8"
 bytes = "1"
+prometheus = "0.13.3"
+actix-web-prom = "0.6.0"
 
 #guac = { path = "../guac-rs/lib" }
 spog-model = { path = "../model" }
