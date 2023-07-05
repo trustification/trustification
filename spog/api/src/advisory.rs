@@ -82,6 +82,7 @@ pub async fn search(state: web::Data<SharedState>, params: web::Query<QueryParam
             snippet: item.advisory_snippet,
             desc: item.advisory_desc,
             date: item.advisory_date,
+            severity: item.advisory_severity,
             cvss_max: item.cvss_max,
             href: format!("/api/v1/advisory?id={}", item.advisory_id),
             cves: item.cves,

@@ -262,6 +262,7 @@ impl trustification_index::Index for Index {
         let advisory_severity = field2str(&doc, self.fields.advisory_severity)?;
         let advisory_date = field2date(&doc, self.fields.advisory_current)?;
         let advisory_desc = field2str(&doc, self.fields.advisory_description)?;
+        let advisory_severity = field2str(&doc, self.fields.advisory_severity)?.to_string();
 
         let cves = field2strvec(&doc, self.fields.cve_id)?
             .iter()
@@ -289,6 +290,7 @@ impl trustification_index::Index for Index {
             advisory_snippet,
             advisory_severity: advisory_severity.to_string(),
             advisory_desc: advisory_desc.to_string(),
+            advisory_severity,
             cves,
             cvss_max,
         };

@@ -8,6 +8,8 @@ pub struct SearchDocument {
     pub advisory_id: String,
     /// Advisory title
     pub advisory_title: String,
+    /// Aggregated severity of the advisory
+    pub advisory_severity: String,
     /// Advisory release date in RFC3339 format
     #[schema(value_type = String)]
     pub advisory_date: time::OffsetDateTime,
