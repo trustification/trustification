@@ -23,7 +23,7 @@ pub struct GetParams {
     get,
     path = "/api/v1/advisory",
     responses(
-        (status = 200, description = "Advisory was found", body = Csaf),
+        (status = 200, description = "Advisory was found"),
         (status = NOT_FOUND, description = "Advisory was not found")
     ),
     params(
@@ -50,7 +50,7 @@ pub async fn get(state: web::Data<SharedState>, params: web::Query<GetParams>) -
     get,
     path = "/api/v1/advisory/search",
     responses(
-        (status = 200, description = "Search was performed successfully", body = SearchResult<Vec<AdvisorySummary>>),
+        (status = 200, description = "Search was performed successfully"),
     ),
     params(
         ("q" = String, Path, description = "Search query"),
