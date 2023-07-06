@@ -51,36 +51,21 @@ pub enum Column {
 impl TableEntryRenderer<Column> for AdvisoryEntry {
     fn render_cell(&self, context: CellContext<'_, Column>) -> Cell {
         match context.column {
-            Column::Id => html!(<>
+            Column::Id => html!(
                 <Link<AppRoute>
                     target={AppRoute::Advisory(View::Content{id: self.summary.id.clone()})}
                 >{ &self.summary.id }</Link<AppRoute>>
-            </>),
+            ),
             Column::Title => html!(&self.summary.title),
             Column::Severity => html!(
-                <>
-                    <Severity severity={self.summary.severity.clone()} />
-                </>
+                <Severity severity={self.summary.severity.clone()} />
             ),
-            Column::Revision => {
-                let s = if let Ok(s) = self.summary.date.format(&time::format_description::well_known::Rfc3339) {
-                    s.to_string()
-                } else {
-                    self.summary.date.to_string()
-                };
-                html!(s)
-            }
-            Column::Download => {
-                if let Some(url) = &self.url {
-                    html!(
-                        <a href={url.as_str().to_string()}>
-                            <Button icon={Icon::Download} variant={ButtonVariant::Plain} />
-                        </a>
-                    )
-                } else {
-                    html!()
-                }
-            }
+            Column::Revision => self.summary.date.date().to_string().into(),
+            Column::Download => html!(if let Some(url) = &self.url {
+                <a href={url.as_str().to_string()}>
+                    <Button icon={Icon::Download} variant={ButtonVariant::Plain} />
+                </a>
+            }),
             Column::Vulnerabilities => {
                 let l = self.summary.cves.len();
                 if l == 0 { "N/A".to_string() } else { l.to_string() }.into()
@@ -348,36 +333,6 @@ fn product_html(mut branches: Vec<&Branch>) -> Html {
         html!()
     }
 }
-
-/*
-#[function_component(CsafProductStatusSection)]
-fn csaf_product_status(props: &CsafProductStatusSectionProperties) -> Html {
-    html!(
-        if let Some(entries) = &props.entries {
-            <DescriptionGroup term={&props.title}>
-                <List>
-                    { for entries.iter().map(|entry|{
-                        html!(<> {
-                            for find_product_relations(&props.csaf, &entry).map(|r|{
-                                html!(<>
-                                    { &r.full_product_name.name } {" "}
-                                    <List>
-                                        <>
-                                            <Label label={rela_cat_str(&r.category)} compact=true /> { " " }
-                                            { branch_html(trace_product(&props.csaf, &r.product_reference)) }
-                                        </>
-                                        <>{ branch_html(trace_product(&props.csaf, &r.relates_to_product_reference)) }</>
-                                    </List>
-                                </>)
-                            })
-                        } </>)
-                    })}
-                </List>
-            </DescriptionGroup>
-        }
-    )
-}
- */
 
 fn rela_cat_str(category: &RelationshipCategory) -> &'static str {
     match category {
