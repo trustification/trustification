@@ -354,19 +354,19 @@ impl ToFilterExpression for SearchParameters {
         let mut terms = self.terms.clone();
 
         if self.is_low {
-            terms.extend(["is:low".to_string()]);
+            terms.extend(["severity:Low".to_string()]);
         }
 
         if self.is_moderate {
-            terms.extend(["is:moderate".to_string()]);
+            terms.extend(["severity:Moderate".to_string()]);
         }
 
         if self.is_important {
-            terms.extend(["is:important".to_string()]);
+            terms.extend(["severity:Important".to_string()]);
         }
 
         if self.is_critical {
-            terms.extend(["is:critical".to_string()]);
+            terms.extend(["severity:Critical".to_string()]);
         }
 
         if self.is_rhel7 {
