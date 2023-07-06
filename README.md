@@ -41,7 +41,7 @@ To start all dependencies and trustification components:
 ``` shell
 cd deploy/compose
 export TRUST_VERSION=<version>
-docker-compose -f compose.yaml -f compose-trustification.yaml -f compose-guac.yaml up
+docker-compose -f compose.yaml -f compose-trustification.yaml -f compose-guac.yaml -f compose-walkers.yaml up
 ```
 
 This will start MinIO and Kafka for object storage and eventing and then run all the trustification services. It will also start to ingest data from Red Hat sources automatically.

@@ -7,15 +7,11 @@ services:
     ports:
       - "$VEXINATION_API_PORT:8080"
     command: vexination api --devmode --storage-endpoint http://minio:9000
+
   vexination-indexer:
     image: $TRUST_IMAGE:$TRUST_VERSION
     command: vexination indexer --devmode --storage-endpoint http://minio:9000 --kafka-bootstrap-servers kafka:9094
-  vexination-walker:
-    image: $TRUST_IMAGE:$TRUST_VERSION
-    command: vexination walker --devmode --source https://www.redhat.com/.well-known/csaf/provider-metadata.json -3 --storage-endpoint http://minio:9000
-    depends_on:
-      minio:
-        condition: service_healthy
+
   bombastic-api:
     image: $TRUST_IMAGE:$TRUST_VERSION
     expose:
@@ -26,9 +22,7 @@ services:
   bombastic-indexer:
     image: $TRUST_IMAGE:$TRUST_VERSION
     command: bombastic indexer --devmode --storage-endpoint http://minio:9000 --kafka-bootstrap-servers kafka:9094
-  bombastic-walker:
-    image: $TRUST_IMAGE:$TRUST_VERSION
-    command: bombastic walker --bombastic-url http://bombastic-api:8080 --scripts-path /usr/bin
+
   spog-api:
     image: $TRUST_IMAGE:$TRUST_VERSION
     expose:
