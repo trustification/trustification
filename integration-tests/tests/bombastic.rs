@@ -1,4 +1,4 @@
-use integration_tests::{assert_within_timeout, run_test};
+use integration_tests::{assert_within_timeout, with_bombastic};
 use reqwest::StatusCode;
 use serde_json::{json, Value};
 use std::time::Duration;
@@ -6,7 +6,7 @@ use urlencoding::encode;
 
 #[test]
 fn test_upload() {
-    run_test(Duration::from_secs(60), |port, _| async move {
+    with_bombastic(Duration::from_secs(60), |port| async move {
         let input = serde_json::from_str(include_str!("../../bombastic/testdata/my-sbom.json")).unwrap();
         let id = "test-upload";
         upload(port, id, &input).await;
@@ -21,7 +21,7 @@ fn test_upload() {
 
 #[test]
 fn test_delete() {
-    run_test(Duration::from_secs(60), |port, _| async move {
+    with_bombastic(Duration::from_secs(60), |port| async move {
         let input = serde_json::from_str(include_str!("../../bombastic/testdata/my-sbom.json")).unwrap();
         let id = "test-delete";
         upload(port, id, &input).await;
@@ -38,7 +38,7 @@ fn test_delete() {
 
 #[test]
 fn test_delete_missing() {
-    run_test(Duration::from_secs(60), |port, _| async move {
+    with_bombastic(Duration::from_secs(60), |port| async move {
         let client = reqwest::Client::new();
         let response = client
             .delete(format!("http://localhost:{port}/api/v1/sbom"))
@@ -63,7 +63,7 @@ fn test_delete_missing() {
 
 #[test]
 fn test_search() {
-    run_test(Duration::from_secs(60), |port, _| async move {
+    with_bombastic(Duration::from_secs(60), |port| async move {
         let input = serde_json::from_str(include_str!("../../bombastic/testdata/ubi9-sbom.json")).unwrap();
         upload(port, "test-search", &input).await;
         assert_within_timeout(Duration::from_secs(30), async move {
@@ -91,7 +91,7 @@ fn test_search() {
 
 #[test]
 fn test_invalid_type() {
-    run_test(Duration::from_secs(60), |port, _| async move {
+    with_bombastic(Duration::from_secs(60), |port| async move {
         let response = reqwest::Client::new()
             .post(format!("http://localhost:{port}/api/v1/sbom?id=foo"))
             .body("<foo/>")
@@ -106,7 +106,7 @@ fn test_invalid_type() {
 
 #[test]
 fn test_invalid_encoding() {
-    run_test(Duration::from_secs(60), |port, _| async move {
+    with_bombastic(Duration::from_secs(60), |port| async move {
         let response = reqwest::Client::new()
             .post(format!("http://localhost:{port}/api/v1/sbom?id=foo"))
             .body("{}")
