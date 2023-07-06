@@ -139,3 +139,7 @@ services:
         condition: service_completed_successfully
     volumes:
       - ./container_files/guac:/guac
+
+  bombastic-exporter:
+    image: $TRUST_IMAGE:$TRUST_VERSION
+    command: exporter --devmode --storage bombastic --storage-endpoint http://minio:9000 --kafka-bootstrap-servers kafka:9094 --guac-url nats:4222

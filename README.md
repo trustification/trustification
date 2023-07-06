@@ -34,12 +34,17 @@ Prerequisite: podman-compose or docker-compose.
 
 To start all dependencies and trustification components:
 
+1. Find the [latest version tag](https://github.com/trustification/trustification/releases)
+2. Set the environment variable to that version
+3. Start the containers
+
 ``` shell
 cd deploy/compose
+export TRUST_VERSION=<version>
 docker-compose -f compose.yaml -f compose-trustification.yaml -f compose-guac.yaml up
 ```
 
-This will start MinIO and Kafka for object storage and eventing and then run all the trustification services. It will also start to ingest data from Red Hat sources automatically via the vexination-walker and (TODO bombastic-walker) processes.
+This will start MinIO and Kafka for object storage and eventing and then run all the trustification services. It will also start to ingest data from Red Hat sources automatically.
 
 You can also run all of the trustification services via a single binary named `trust` or using the container image `ghcr.io/trustification/trust`. 
 
