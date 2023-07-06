@@ -1,16 +1,17 @@
 use crate::{
     backend::{SearchOptions, VexService},
-    components::simple_pagination::SimplePagination,
+    components::{search::*, severity::Severity, simple_pagination::SimplePagination},
     hooks::{use_backend::use_backend, use_pagination_state::*},
     utils::pagination_to_offset,
 };
 use gloo_utils::format::JsValueSerdeExt;
+use lazy_static::lazy_static;
 use patternfly_yew::prelude::*;
-use sikula::prelude::*;
+use sikula::prelude::Search as _;
 use spog_model::prelude::*;
-use std::borrow::Cow;
 use std::collections::HashSet;
 use std::rc::Rc;
+use std::sync::Arc;
 use vexination_model::prelude::Vulnerabilities;
 use wasm_bindgen::JsValue;
 use yew::prelude::*;
@@ -42,7 +43,7 @@ pub fn advisory_search(props: &AdvisorySearchProperties) -> Html {
             .state()
             .ok()
             .and_then(|state| {
-                let deser = state.into_serde::<SearchMode>();
+                let deser = state.into_serde::<SearchMode<SearchParameters>>();
                 log::debug!("Deserialized: {deser:?}");
                 deser.ok()
             })
@@ -162,34 +163,7 @@ pub fn advisory_search(props: &AdvisorySearchProperties) -> Html {
 
     // filter
 
-    let filter_expansion = use_state(|| {
-        let mut init = HashSet::new();
-        init.insert("Product");
-        init
-    });
-
-    let filter_section = |title: &'static str, children: Html| {
-        let expanded = filter_expansion.contains(title);
-
-        let onclick = {
-            let filter_expansion = filter_expansion.clone();
-            Callback::from(move |()| {
-                let mut selection = (*filter_expansion).clone();
-                if selection.contains(title) {
-                    selection.remove(title);
-                } else {
-                    selection.insert(title);
-                }
-                filter_expansion.set(selection);
-            })
-        };
-
-        html_nested!(
-            <AccordionItem title={title.to_string()} {expanded} {onclick}>
-                { children }
-            </AccordionItem>
-        )
-    };
+    let filter_expansion = use_state(|| SEARCH.category_labels::<HashSet<_>>());
 
     // switch
 
@@ -280,21 +254,7 @@ pub fn advisory_search(props: &AdvisorySearchProperties) -> Html {
                 </GridItem>
 
                 <GridItem cols={[2]}>
-                    <Accordion large=true bordered=true>
-
-                        { filter_section("Product", html!(
-                            <List r#type={ListType::Plain}>
-                                <Check
-                                    checked={(*search_params).map(|s|s.is_rhel9)}
-                                    onchange={search_set(&search_params, |s, state|s.is_rhel9=state)}
-                                    disabled={!simple}
-                                >
-                                    { "Red Hat Enterprise Linux 9" }
-                                </Check>
-                            </List>
-                        ))}
-
-                    </Accordion>
+                    { simple_search(&SEARCH, search_params.clone(), filter_expansion.clone()) }
                 </GridItem>
 
                 <GridItem cols={[10]}>
@@ -316,69 +276,154 @@ pub fn advisory_search(props: &AdvisorySearchProperties) -> Html {
     )
 }
 
-fn search_set<F>(search: &UseStateHandle<SearchMode>, f: F) -> Callback<bool>
-where
-    F: Fn(&mut SearchParameters, bool) + 'static,
-{
-    let search = search.clone();
-    Callback::from(move |state| {
-        if let SearchMode::Simple(simple) = &*search {
-            let mut simple = simple.clone();
-            f(&mut simple, state);
-            search.set(SearchMode::Simple(simple));
-        }
-    })
+lazy_static! {
+    static ref SEARCH: Search<SearchParameters> = Search {
+        categories: vec![
+            SearchCategory {
+                title: "Severity",
+                options: vec![
+                    SearchOption::<SearchParameters>::new_fn(
+                        || html!(<Severity severity="Low"/>),
+                        |options| options.is_low,
+                        |options, value| options.is_low = value
+                    ),
+                    SearchOption::<SearchParameters>::new_fn(
+                        || html!(<Severity severity="Moderate"/>),
+                        |options| options.is_moderate,
+                        |options, value| options.is_moderate = value
+                    ),
+                    SearchOption::<SearchParameters>::new_fn(
+                        || html!(<Severity severity="Important"/>),
+                        |options| options.is_important,
+                        |options, value| options.is_important = value
+                    ),
+                    SearchOption::<SearchParameters>::new_fn(
+                        || html!(<Severity severity="Critical"/>),
+                        |options| options.is_critical,
+                        |options, value| options.is_critical = value
+                    )
+                ],
+            },
+            SearchCategory {
+                title: "Products",
+                options: vec![
+                    SearchOption::<SearchParameters>::new_str(
+                        "Red Hat Enterprise Linux 7",
+                        |options| options.is_rhel7,
+                        |options, value| options.is_rhel7 = value
+                    ),
+                    SearchOption::<SearchParameters>::new_str(
+                        "Red Hat Enterprise Linux 8",
+                        |options| options.is_rhel8,
+                        |options, value| options.is_rhel8 = value
+                    ),
+                    SearchOption::<SearchParameters>::new_str(
+                        "Red Hat Enterprise Linux 9",
+                        |options| options.is_rhel9,
+                        |options, value| options.is_rhel9 = value
+                    ),
+                    SearchOption::<SearchParameters>::new_str(
+                        "OpenShift Container Platform 4",
+                        |options| options.is_ocp4,
+                        |options, value| options.is_ocp4 = value
+                    ),
+                ]
+            }
+        ]
+    };
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
-struct SearchParameters {
+pub struct SearchParameters {
     terms: Vec<String>,
 
+    is_low: bool,
+    is_moderate: bool,
+    is_important: bool,
+    is_critical: bool,
+
+    is_rhel7: bool,
+    is_rhel8: bool,
     is_rhel9: bool,
+
+    is_ocp4: bool,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
-enum SearchMode {
-    Complex(String),
-    Simple(SearchParameters),
-}
+impl ToFilterExpression for SearchParameters {
+    fn to_filter_expression(&self) -> String {
+        let mut terms = self.terms.clone();
 
-impl SearchMode {
-    pub fn is_simple(&self) -> bool {
-        matches!(self, Self::Simple(_))
-    }
-
-    pub fn map<F>(&self, f: F) -> bool
-    where
-        F: FnOnce(&SearchParameters) -> bool,
-    {
-        match self {
-            Self::Simple(s) => f(s),
-            Self::Complex(_) => false,
+        if self.is_low {
+            terms.extend(["is:low".to_string()]);
         }
-    }
 
-    pub fn as_str(&self) -> Cow<'_, str> {
-        match self {
-            Self::Complex(s) => s.into(),
-            Self::Simple(s) => {
-                let mut terms = s.terms.clone();
-
-                if s.is_rhel9 {
-                    terms.extend([
-                        r#"package:"cpe:/a:redhat:enterprise_linux:9::appstream""#.to_string(),
-                        r#"package:"cpe:/a:redhat:enterprise_linux:9::crb""#.to_string(),
-                    ]);
-                }
-
-                terms.join(" ").into()
-            }
+        if self.is_moderate {
+            terms.extend(["is:moderate".to_string()]);
         }
+
+        if self.is_important {
+            terms.extend(["is:important".to_string()]);
+        }
+
+        if self.is_critical {
+            terms.extend(["is:critical".to_string()]);
+        }
+
+        if self.is_rhel7 {
+            terms.extend(rhel7_variants());
+        }
+
+        if self.is_rhel8 {
+            terms.extend(rhel8_variants());
+        }
+
+        if self.is_rhel9 {
+            terms.extend([
+                r#"package:"cpe:/a:redhat:enterprise_linux:9::appstream""#.to_string(),
+                r#"package:"cpe:/a:redhat:enterprise_linux:9::crb""#.to_string(),
+            ]);
+        }
+
+        // cpe:/a:redhat:openshift:4.13::el8
+        if self.is_ocp4 {
+            terms.extend(ocp4_variants());
+        }
+
+        terms.join(" ")
     }
 }
 
-impl Default for SearchMode {
-    fn default() -> Self {
-        Self::Simple(Default::default())
-    }
+fn or_group(terms: Vec<String>) -> Vec<String> {}
+
+fn rhel7_variants() -> Vec<String> {
+    (0..15)
+        .into_iter()
+        .flat_map(|minor| {
+            vec![
+                format!(r#"package:"cpe:/o:redhat:rhel_eus:7.{minor}::client""#),
+                format!(r#"package:"cpe:/o:redhat:rhel_eus:7.{minor}::worksatation""#),
+                format!(r#"package:"cpe:/o:redhat:rhel_eus:7.{minor}::server""#),
+                format!(r#"package:"cpe:/o:redhat:rhel_eus:7.{minor}::computenode""#),
+            ]
+        })
+        .collect()
+}
+
+fn rhel8_variants() -> Vec<String> {
+    (0..10)
+        .into_iter()
+        .flat_map(|minor| {
+            vec![
+                format!(r#"package:"cpe:/o:redhat:rhel_eus:8.{minor}::baseos""#),
+                format!(r#"package:"cpe:/a:redhat:rhel_eus:8.{minor}::crb""#),
+            ]
+        })
+        .collect()
+}
+
+fn ocp4_variants() -> Vec<String> {
+    (0..16)
+        .into_iter()
+        .flat_map(|minor| vec![format!(r#"package:"cpe:/a:redhat:openshift:4.{minor}::el8""#)])
+        .collect()
 }
