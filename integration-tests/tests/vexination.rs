@@ -1,11 +1,11 @@
-use integration_tests::{assert_within_timeout, run_test};
+use integration_tests::{assert_within_timeout, with_vexination};
 use reqwest::StatusCode;
 use serde_json::{Map, Value};
 use std::time::Duration;
 
 #[test]
 fn test_vexination() {
-    run_test(Duration::from_secs(60), |_, port| async move {
+    with_vexination(Duration::from_secs(60), |port| async move {
         let client = reqwest::Client::new();
         let input =
             serde_json::from_str::<Map<String, Value>>(include_str!("../../vexination/testdata/rhsa-2023_1441.json"))
