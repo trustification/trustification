@@ -15,6 +15,8 @@ pub struct SearchDocument {
     pub advisory_snippet: String,
     /// Advisory description
     pub advisory_desc: String,
+    /// Advisory severity
+    pub advisory_severity: String,
     /// List of CVE identifiers that matched within the advisory
     pub cves: Vec<String>,
     /// Highest CVSS score in vulnerabilities matched within the advisory

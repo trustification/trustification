@@ -10,7 +10,11 @@ use csaf::{
 use log::{debug, warn};
 use search::*;
 use sikula::prelude::*;
-use tantivy::{query::AllQuery, store::ZstdCompressor, DocAddress, IndexSettings, Searcher, SnippetGenerator};
+use tantivy::{
+    query::{AllQuery, TermSetQuery},
+    store::ZstdCompressor,
+    DocAddress, IndexSettings, Searcher, SnippetGenerator,
+};
 use trustification_index::{
     boost, create_date_query, create_string_query, create_text_query, field2date, field2f64vec, field2str,
     field2strvec,
@@ -255,6 +259,7 @@ impl trustification_index::Index for Index {
 
         let advisory_id = field2str(&doc, self.fields.advisory_id)?;
         let advisory_title = field2str(&doc, self.fields.advisory_title)?;
+        let advisory_severity = field2str(&doc, self.fields.advisory_severity)?;
         let advisory_date = field2date(&doc, self.fields.advisory_current)?;
         let advisory_desc = field2str(&doc, self.fields.advisory_description)?;
 
@@ -282,6 +287,7 @@ impl trustification_index::Index for Index {
             advisory_title: advisory_title.to_string(),
             advisory_date,
             advisory_snippet,
+            advisory_severity: advisory_severity.to_string(),
             advisory_desc: advisory_desc.to_string(),
             cves,
             cvss_max,
@@ -396,15 +402,33 @@ impl Index {
 
             Vulnerabilities::Affected(primary) => create_rewrite_string_query(self.fields.cve_affected, primary),
 
-            Vulnerabilities::Severity(primary) => create_string_query(self.fields.cve_severity, primary),
+            Vulnerabilities::Severity(value) => Box::new(TermSetQuery::new(vec![Term::from_field_text(
+                self.fields.advisory_severity,
+                value,
+            )])),
 
-            Vulnerabilities::Status(primary) => create_string_query(self.fields.advisory_status, primary),
+            Vulnerabilities::Status(value) => Box::new(TermSetQuery::new(vec![Term::from_field_text(
+                self.fields.advisory_status,
+                value,
+            )])),
 
             Vulnerabilities::Final => create_string_query(self.fields.advisory_status, &Primary::Equal("final")),
-            Vulnerabilities::Critical => create_string_query(self.fields.cve_severity, &Primary::Equal("critical")),
-            Vulnerabilities::High => create_string_query(self.fields.cve_severity, &Primary::Equal("high")),
-            Vulnerabilities::Medium => create_string_query(self.fields.cve_severity, &Primary::Equal("medium")),
-            Vulnerabilities::Low => create_string_query(self.fields.cve_severity, &Primary::Equal("low")),
+            Vulnerabilities::Critical => Box::new(TermSetQuery::new(vec![
+                Term::from_field_text(self.fields.cve_severity, "critical"),
+                Term::from_field_text(self.fields.advisory_severity, "Critical"),
+            ])),
+            Vulnerabilities::High => Box::new(TermSetQuery::new(vec![
+                Term::from_field_text(self.fields.cve_severity, "high"),
+                Term::from_field_text(self.fields.advisory_severity, "Important"),
+            ])),
+            Vulnerabilities::Medium => Box::new(TermSetQuery::new(vec![
+                Term::from_field_text(self.fields.cve_severity, "medium"),
+                Term::from_field_text(self.fields.advisory_severity, "Moderate"),
+            ])),
+            Vulnerabilities::Low => Box::new(TermSetQuery::new(vec![
+                Term::from_field_text(self.fields.cve_severity, "low"),
+                Term::from_field_text(self.fields.advisory_severity, "Low"),
+            ])),
             Vulnerabilities::Cvss(ordered) => match ordered {
                 PartialOrdered::Less(e) => Box::new(RangeQuery::new_f64_bounds(
                     self.fields.cve_cvss,
@@ -650,6 +674,26 @@ mod tests {
             assert_eq!(result.0.len(), 0);
 
             let result = search(&index, "release:2023-03-22");
+            assert_eq!(result.0.len(), 0);
+        });
+    }
+
+    #[tokio::test]
+    async fn test_severity() {
+        assert_free_form(|index| {
+            let result = search(&index, "severity:Important");
+            assert_eq!(result.0.len(), 1);
+
+            let result = search(&index, "is:high");
+            assert_eq!(result.0.len(), 1);
+
+            let result = search(&index, "is:critical");
+            assert_eq!(result.0.len(), 0);
+
+            let result = search(&index, "is:medium");
+            assert_eq!(result.0.len(), 0);
+
+            let result = search(&index, "is:low");
             assert_eq!(result.0.len(), 0);
         });
     }

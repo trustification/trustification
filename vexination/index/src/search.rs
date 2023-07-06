@@ -11,9 +11,9 @@ pub enum Vulnerabilities<'a> {
     Title(Primary<'a>),
     #[search(default)]
     Description(Primary<'a>),
-    Status(Primary<'a>),
+    Status(&'a str),
     #[search]
-    Severity(Primary<'a>),
+    Severity(&'a str),
     Cvss(PartialOrdered<f64>),
     #[search]
     Package(Primary<'a>),
