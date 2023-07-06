@@ -718,6 +718,14 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_products_partial() {
+        assert_free_form(|index| {
+            let result = search(&index, "\"cpe:/o:redhat:rhel_eus\" in:fixed");
+            assert_eq!(result.0.len(), 1);
+        });
+    }
+
+    #[tokio::test]
     async fn test_delete_document() {
         assert_free_form(|mut index| {
             // our data is there
