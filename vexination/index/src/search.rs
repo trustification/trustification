@@ -15,11 +15,11 @@ pub enum Vulnerabilities<'a> {
     #[search]
     Severity(&'a str),
     Cvss(PartialOrdered<f64>),
-    #[search]
+    #[search(scope)]
     Package(Primary<'a>),
-    #[search]
+    #[search(scope)]
     Fixed(Primary<'a>),
-    #[search]
+    #[search(scope)]
     Affected(Primary<'a>),
     #[search]
     Initial(Ordered<time::OffsetDateTime>),
