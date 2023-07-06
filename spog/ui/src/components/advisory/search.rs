@@ -393,8 +393,6 @@ impl ToFilterExpression for SearchParameters {
     }
 }
 
-fn or_group(terms: Vec<String>) -> Vec<String> {}
-
 fn rhel7_variants() -> Vec<String> {
     (0..15)
         .into_iter()
