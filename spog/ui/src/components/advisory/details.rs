@@ -132,7 +132,7 @@ impl TableEntryRenderer<Column> for VulnerabilityWrapper {
             <Grid gutter=true>
 
                 <GridItem cols={[8]}>
-                    <CardWrapper title="Product Status">
+                    <CardWrapper plain=true title="Product Status">
                         <CsafProductStatus status={self.product_status.clone()} csaf={self.csaf.clone()} />
                     </CardWrapper>
                 </GridItem>
