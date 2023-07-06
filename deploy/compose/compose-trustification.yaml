@@ -13,6 +13,9 @@ services:
   vexination-walker:
     image: $TRUST_IMAGE:$TRUST_VERSION
     command: vexination walker --devmode --source https://www.redhat.com/.well-known/csaf/provider-metadata.json -3 --storage-endpoint http://minio:9000
+    depends_on:
+      minio:
+        condition: service_healthy
   bombastic-api:
     image: $TRUST_IMAGE:$TRUST_VERSION
     expose:
