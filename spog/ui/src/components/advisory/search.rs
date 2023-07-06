@@ -378,10 +378,10 @@ impl ToFilterExpression for SearchParameters {
         }
 
         if self.is_rhel9 {
-            terms.extend(or_group([
+            terms.extend([
                 r#"package:"cpe:/a:redhat:enterprise_linux:9::appstream""#.to_string(),
                 r#"package:"cpe:/a:redhat:enterprise_linux:9::crb""#.to_string(),
-            ]));
+            ]);
         }
 
         // cpe:/a:redhat:openshift:4.13::el8
