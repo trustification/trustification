@@ -10,6 +10,7 @@ use patternfly_yew::prelude::*;
 use sikula::prelude::Search as _;
 use spog_model::prelude::*;
 use std::collections::HashSet;
+use std::iter::once;
 use std::rc::Rc;
 use std::sync::Arc;
 use vexination_model::prelude::Vulnerabilities;
@@ -378,10 +379,10 @@ impl ToFilterExpression for SearchParameters {
         }
 
         if self.is_rhel9 {
-            terms.extend([
+            terms.extend(or_group([
                 r#"package:"cpe:/a:redhat:enterprise_linux:9::appstream""#.to_string(),
                 r#"package:"cpe:/a:redhat:enterprise_linux:9::crb""#.to_string(),
-            ]);
+            ]));
         }
 
         // cpe:/a:redhat:openshift:4.13::el8
@@ -393,35 +394,36 @@ impl ToFilterExpression for SearchParameters {
     }
 }
 
-fn rhel7_variants() -> Vec<String> {
-    (0..15)
-        .into_iter()
-        .flat_map(|minor| {
-            vec![
-                format!(r#"package:"cpe:/o:redhat:rhel_eus:7.{minor}::client""#),
-                format!(r#"package:"cpe:/o:redhat:rhel_eus:7.{minor}::worksatation""#),
-                format!(r#"package:"cpe:/o:redhat:rhel_eus:7.{minor}::server""#),
-                format!(r#"package:"cpe:/o:redhat:rhel_eus:7.{minor}::computenode""#),
-            ]
-        })
-        .collect()
+fn or_group(terms: impl IntoIterator<Item = String>) -> impl Iterator<Item = String> {
+    once("(".to_string())
+        .chain(itertools::intersperse(terms, "OR".to_string()))
+        .chain(once(")".to_string()))
 }
 
-fn rhel8_variants() -> Vec<String> {
-    (0..10)
-        .into_iter()
-        .flat_map(|minor| {
-            vec![
-                format!(r#"package:"cpe:/o:redhat:rhel_eus:8.{minor}::baseos""#),
-                format!(r#"package:"cpe:/a:redhat:rhel_eus:8.{minor}::crb""#),
-            ]
-        })
-        .collect()
+fn rhel7_variants() -> impl Iterator<Item = String> {
+    or_group((0..15).into_iter().flat_map(|minor| {
+        vec![
+            format!(r#"package:"cpe:/o:redhat:rhel_eus:7.{minor}::client""#),
+            format!(r#"package:"cpe:/o:redhat:rhel_eus:7.{minor}::worksatation""#),
+            format!(r#"package:"cpe:/o:redhat:rhel_eus:7.{minor}::server""#),
+            format!(r#"package:"cpe:/o:redhat:rhel_eus:7.{minor}::computenode""#),
+        ]
+    }))
 }
 
-fn ocp4_variants() -> Vec<String> {
-    (0..16)
-        .into_iter()
-        .flat_map(|minor| vec![format!(r#"package:"cpe:/a:redhat:openshift:4.{minor}::el8""#)])
-        .collect()
+fn rhel8_variants() -> impl Iterator<Item = String> {
+    or_group((0..10).into_iter().flat_map(|minor| {
+        vec![
+            format!(r#"package:"cpe:/o:redhat:rhel_eus:8.{minor}::baseos""#),
+            format!(r#"package:"cpe:/a:redhat:rhel_eus:8.{minor}::crb""#),
+        ]
+    }))
+}
+
+fn ocp4_variants() -> impl Iterator<Item = String> {
+    or_group(
+        (0..16)
+            .into_iter()
+            .flat_map(|minor| vec![format!(r#"package:"cpe:/a:redhat:openshift:4.{minor}::el8""#)]),
+    )
 }
