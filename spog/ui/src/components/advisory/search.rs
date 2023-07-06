@@ -5,14 +5,13 @@ use crate::{
     utils::pagination_to_offset,
 };
 use gloo_utils::format::JsValueSerdeExt;
+use itertools::Itertools;
 use lazy_static::lazy_static;
 use patternfly_yew::prelude::*;
 use sikula::prelude::Search as _;
 use spog_model::prelude::*;
 use std::collections::HashSet;
-use std::iter::once;
 use std::rc::Rc;
-use std::sync::Arc;
 use vexination_model::prelude::Vulnerabilities;
 use wasm_bindgen::JsValue;
 use yew::prelude::*;
@@ -390,40 +389,71 @@ impl ToFilterExpression for SearchParameters {
             terms.extend(ocp4_variants());
         }
 
-        terms.join(" ")
+        or_group(terms).join(" ")
     }
 }
 
+/// Create an `OR` group from a list of terms. In case the iterator is empty, return an empty string.
 fn or_group(terms: impl IntoIterator<Item = String>) -> impl Iterator<Item = String> {
-    once("(".to_string())
-        .chain(itertools::intersperse(terms, "OR".to_string()))
-        .chain(once(")".to_string()))
+    let mut terms = terms.into_iter();
+
+    let first = terms.next();
+    let (prefix, suffix) = match &first {
+        Some(_) => (Some("(".to_string()), Some(")".to_string())),
+        None => (None, None),
+    };
+
+    prefix
+        .into_iter()
+        .chain(itertools::intersperse(first.into_iter().chain(terms), "OR".to_string()))
+        .chain(suffix)
 }
 
 fn rhel7_variants() -> impl Iterator<Item = String> {
-    or_group((0..15).into_iter().flat_map(|minor| {
+    (0..15).into_iter().flat_map(|minor| {
         vec![
             format!(r#"package:"cpe:/o:redhat:rhel_eus:7.{minor}::client""#),
             format!(r#"package:"cpe:/o:redhat:rhel_eus:7.{minor}::worksatation""#),
             format!(r#"package:"cpe:/o:redhat:rhel_eus:7.{minor}::server""#),
             format!(r#"package:"cpe:/o:redhat:rhel_eus:7.{minor}::computenode""#),
         ]
-    }))
+    })
 }
 
 fn rhel8_variants() -> impl Iterator<Item = String> {
-    or_group((0..10).into_iter().flat_map(|minor| {
+    (0..10).into_iter().flat_map(|minor| {
         vec![
             format!(r#"package:"cpe:/o:redhat:rhel_eus:8.{minor}::baseos""#),
             format!(r#"package:"cpe:/a:redhat:rhel_eus:8.{minor}::crb""#),
         ]
-    }))
+    })
 }
 
 fn ocp4_variants() -> impl Iterator<Item = String> {
-    or_group(
-        (0..16)
-            .into_iter()
-            .flat_map(|minor| vec![format!(r#"package:"cpe:/a:redhat:openshift:4.{minor}::el8""#)]),
-    )
+    (0..16)
+        .into_iter()
+        .flat_map(|minor| vec![format!(r#"package:"cpe:/a:redhat:openshift:4.{minor}::el8""#)])
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn empty() {
+        let s = or_group(vec![]).join(" ");
+        assert_eq!(s, "");
+    }
+
+    #[test]
+    fn one() {
+        let s = or_group(vec!["a".to_string()]).join(" ");
+        assert_eq!(s, "( a )");
+    }
+
+    #[test]
+    fn three() {
+        let s = or_group(vec!["a".to_string(), "b".to_string(), "c".to_string()]).join(" ");
+        assert_eq!(s, "( a OR b OR c )");
+    }
 }
