@@ -1,12 +1,11 @@
 use sikula::prelude::*;
 
-// TODO: reconsider using scoped/primary for some fields, like status and severity
 #[derive(Clone, Debug, PartialEq, Search)]
 pub enum Vulnerabilities<'a> {
     #[search(default)]
-    Id(Primary<'a>),
+    Id(&'a str),
     #[search(default)]
-    Cve(Primary<'a>),
+    Cve(&'a str),
     #[search(default)]
     Title(Primary<'a>),
     #[search(default)]
