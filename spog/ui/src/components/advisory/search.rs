@@ -353,43 +353,50 @@ impl ToFilterExpression for SearchParameters {
     fn to_filter_expression(&self) -> String {
         let mut terms = self.terms.clone();
 
-        if self.is_low {
-            terms.extend(["severity:Low".to_string()]);
+        {
+            let mut severities = vec![];
+            if self.is_low {
+                severities.push("severity:Low".to_string());
+            }
+
+            if self.is_moderate {
+                severities.push("severity:Moderate".to_string());
+            }
+
+            if self.is_important {
+                severities.push("severity:Important".to_string());
+            }
+
+            if self.is_critical {
+                severities.push("severity:Critical".to_string());
+            }
+
+            terms.extend(or_group(severities));
         }
 
-        if self.is_moderate {
-            terms.extend(["severity:Moderate".to_string()]);
+        {
+            let mut products = vec![];
+
+            if self.is_rhel7 {
+                products.push(r#"( "cpe:/o:redhat:rhel_eus:7" in:package )"#.to_string());
+            }
+
+            if self.is_rhel8 {
+                products.push(r#"( "cpe:/a:redhat:rhel_eus:8" in:package )"#.to_string());
+            }
+
+            if self.is_rhel9 {
+                products.push(r#"( "cpe:/a:redhat:enterprise_linux:9" in:package )"#.to_string());
+            }
+
+            if self.is_ocp4 {
+                products.push(r#"( "cpe:/a:redhat:openshift:4" in:package )"#.to_string());
+            }
+
+            terms.extend(or_group(products));
         }
 
-        if self.is_important {
-            terms.extend(["severity:Important".to_string()]);
-        }
-
-        if self.is_critical {
-            terms.extend(["severity:Critical".to_string()]);
-        }
-
-        if self.is_rhel7 {
-            terms.extend(rhel7_variants());
-        }
-
-        if self.is_rhel8 {
-            terms.extend(rhel8_variants());
-        }
-
-        if self.is_rhel9 {
-            terms.extend([
-                r#"package:"cpe:/a:redhat:enterprise_linux:9::appstream""#.to_string(),
-                r#"package:"cpe:/a:redhat:enterprise_linux:9::crb""#.to_string(),
-            ]);
-        }
-
-        // cpe:/a:redhat:openshift:4.13::el8
-        if self.is_ocp4 {
-            terms.extend(ocp4_variants());
-        }
-
-        or_group(terms).join(" ")
+        terms.join(" ")
     }
 }
 
@@ -407,32 +414,6 @@ fn or_group(terms: impl IntoIterator<Item = String>) -> impl Iterator<Item = Str
         .into_iter()
         .chain(itertools::intersperse(first.into_iter().chain(terms), "OR".to_string()))
         .chain(suffix)
-}
-
-fn rhel7_variants() -> impl Iterator<Item = String> {
-    (0..15).into_iter().flat_map(|minor| {
-        vec![
-            format!(r#"package:"cpe:/o:redhat:rhel_eus:7.{minor}::client""#),
-            format!(r#"package:"cpe:/o:redhat:rhel_eus:7.{minor}::worksatation""#),
-            format!(r#"package:"cpe:/o:redhat:rhel_eus:7.{minor}::server""#),
-            format!(r#"package:"cpe:/o:redhat:rhel_eus:7.{minor}::computenode""#),
-        ]
-    })
-}
-
-fn rhel8_variants() -> impl Iterator<Item = String> {
-    (0..10).into_iter().flat_map(|minor| {
-        vec![
-            format!(r#"package:"cpe:/o:redhat:rhel_eus:8.{minor}::baseos""#),
-            format!(r#"package:"cpe:/a:redhat:rhel_eus:8.{minor}::crb""#),
-        ]
-    })
-}
-
-fn ocp4_variants() -> impl Iterator<Item = String> {
-    (0..16)
-        .into_iter()
-        .flat_map(|minor| vec![format!(r#"package:"cpe:/a:redhat:openshift:4.{minor}::el8""#)])
 }
 
 #[cfg(test)]
