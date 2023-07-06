@@ -375,9 +375,21 @@ impl Index {
         const ADV_TITLE_WEIGHT: f32 = 1.3;
         const CVE_TITLE_WEIGHT: f32 = 1.3;
         match resource {
-            Vulnerabilities::Id(primary) => boost(create_string_query(self.fields.advisory_id, primary), ID_WEIGHT),
+            Vulnerabilities::Id(value) => boost(
+                Box::new(TermSetQuery::new(vec![Term::from_field_text(
+                    self.fields.advisory_id,
+                    value,
+                )])),
+                ID_WEIGHT,
+            ),
 
-            Vulnerabilities::Cve(primary) => boost(create_string_query(self.fields.cve_id, primary), CVE_ID_WEIGHT),
+            Vulnerabilities::Cve(value) => boost(
+                Box::new(TermSetQuery::new(vec![Term::from_field_text(
+                    self.fields.cve_id,
+                    value,
+                )])),
+                CVE_ID_WEIGHT,
+            ),
 
             Vulnerabilities::Description(primary) => {
                 let q1 = create_text_query(self.fields.advisory_description, primary);
