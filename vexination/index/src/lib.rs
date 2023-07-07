@@ -7,11 +7,7 @@ use csaf::{
 };
 use log::{debug, warn};
 use sikula::prelude::*;
-use tantivy::{
-    query::{AllQuery, TermSetQuery},
-    store::ZstdCompressor,
-    DocAddress, IndexSettings, Searcher, SnippetGenerator,
-};
+use tantivy::{query::TermSetQuery, store::ZstdCompressor, DocAddress, IndexSettings, Searcher, SnippetGenerator};
 use trustification_index::{
     boost, create_date_query, create_string_query, create_text_query, field2date, field2f64vec, field2str,
     field2strvec,
@@ -21,7 +17,7 @@ use trustification_index::{
         schema::{Field, Schema, Term, FAST, INDEXED, STORED, STRING, TEXT},
         DateTime,
     },
-    term2query, Document, Error as SearchError,
+    Document, Error as SearchError,
 };
 use vexination_model::prelude::*;
 
@@ -60,7 +56,8 @@ struct ProductPackage {
 
 impl trustification_index::Index for Index {
     type MatchedDocument = SearchHit;
-    type Document = Csaf;
+    type InputDocument = Csaf;
+    type Query<'m> = Vulnerabilities<'m>;
 
     fn settings(&self) -> IndexSettings {
         IndexSettings {
@@ -225,21 +222,111 @@ impl trustification_index::Index for Index {
         self.schema.clone()
     }
 
-    fn prepare_query(&self, q: &str) -> Result<Box<dyn Query>, SearchError> {
-        if q.is_empty() {
-            return Ok(Box::new(AllQuery));
+    fn prepare_query(&self, resource: &Vulnerabilities) -> Box<dyn Query> {
+        const ID_WEIGHT: f32 = 1.5;
+        const CVE_ID_WEIGHT: f32 = 1.4;
+        const ADV_TITLE_WEIGHT: f32 = 1.3;
+        const CVE_TITLE_WEIGHT: f32 = 1.3;
+        match resource {
+            Vulnerabilities::Id(value) => boost(
+                Box::new(TermSetQuery::new(vec![Term::from_field_text(
+                    self.fields.advisory_id,
+                    value,
+                )])),
+                ID_WEIGHT,
+            ),
+
+            Vulnerabilities::Cve(value) => boost(
+                Box::new(TermSetQuery::new(vec![Term::from_field_text(
+                    self.fields.cve_id,
+                    value,
+                )])),
+                CVE_ID_WEIGHT,
+            ),
+
+            Vulnerabilities::Description(primary) => {
+                let q1 = create_text_query(self.fields.advisory_description, primary);
+                let q2 = create_text_query(self.fields.cve_description, primary);
+                Box::new(BooleanQuery::union(vec![q1, q2]))
+            }
+
+            Vulnerabilities::Title(primary) => {
+                let q1 = boost(create_text_query(self.fields.advisory_title, primary), ADV_TITLE_WEIGHT);
+                let q2 = boost(create_text_query(self.fields.cve_title, primary), CVE_TITLE_WEIGHT);
+                Box::new(BooleanQuery::union(vec![q1, q2]))
+            }
+
+            Vulnerabilities::Package(primary) => {
+                let q1 = create_rewrite_string_query(self.fields.cve_affected, primary);
+                let q2 = create_rewrite_string_query(self.fields.cve_fixed, primary);
+
+                Box::new(BooleanQuery::union(vec![q1, q2]))
+            }
+
+            Vulnerabilities::Fixed(primary) => create_rewrite_string_query(self.fields.cve_fixed, primary),
+
+            Vulnerabilities::Affected(primary) => create_rewrite_string_query(self.fields.cve_affected, primary),
+
+            Vulnerabilities::Severity(value) => Box::new(TermSetQuery::new(vec![Term::from_field_text(
+                self.fields.advisory_severity,
+                value,
+            )])),
+
+            Vulnerabilities::Status(value) => Box::new(TermSetQuery::new(vec![Term::from_field_text(
+                self.fields.advisory_status,
+                value,
+            )])),
+
+            Vulnerabilities::Final => create_string_query(self.fields.advisory_status, &Primary::Equal("final")),
+            Vulnerabilities::Critical => Box::new(TermSetQuery::new(vec![
+                Term::from_field_text(self.fields.cve_severity, "critical"),
+                Term::from_field_text(self.fields.advisory_severity, "Critical"),
+            ])),
+            Vulnerabilities::High => Box::new(TermSetQuery::new(vec![
+                Term::from_field_text(self.fields.cve_severity, "high"),
+                Term::from_field_text(self.fields.advisory_severity, "Important"),
+            ])),
+            Vulnerabilities::Medium => Box::new(TermSetQuery::new(vec![
+                Term::from_field_text(self.fields.cve_severity, "medium"),
+                Term::from_field_text(self.fields.advisory_severity, "Moderate"),
+            ])),
+            Vulnerabilities::Low => Box::new(TermSetQuery::new(vec![
+                Term::from_field_text(self.fields.cve_severity, "low"),
+                Term::from_field_text(self.fields.advisory_severity, "Low"),
+            ])),
+            Vulnerabilities::Cvss(ordered) => match ordered {
+                PartialOrdered::Less(e) => Box::new(RangeQuery::new_f64_bounds(
+                    self.fields.cve_cvss,
+                    Bound::Unbounded,
+                    Bound::Excluded(*e),
+                )),
+                PartialOrdered::LessEqual(e) => Box::new(RangeQuery::new_f64_bounds(
+                    self.fields.cve_cvss,
+                    Bound::Unbounded,
+                    Bound::Included(*e),
+                )),
+                PartialOrdered::Greater(e) => Box::new(RangeQuery::new_f64_bounds(
+                    self.fields.cve_cvss,
+                    Bound::Excluded(*e),
+                    Bound::Unbounded,
+                )),
+                PartialOrdered::GreaterEqual(e) => Box::new(RangeQuery::new_f64_bounds(
+                    self.fields.cve_cvss,
+                    Bound::Included(*e),
+                    Bound::Unbounded,
+                )),
+                PartialOrdered::Range(from, to) => {
+                    Box::new(RangeQuery::new_f64_bounds(self.fields.cve_cvss, *from, *to))
+                }
+            },
+            Vulnerabilities::Initial(ordered) => create_date_query(self.fields.advisory_initial, ordered),
+            Vulnerabilities::Release(ordered) => {
+                let q1 = create_date_query(self.fields.advisory_current, ordered);
+                let q2 = create_date_query(self.fields.cve_release, ordered);
+                Box::new(BooleanQuery::union(vec![q1, q2]))
+            }
+            Vulnerabilities::Discovery(ordered) => create_date_query(self.fields.cve_discovery, ordered),
         }
-
-        let mut query = Vulnerabilities::parse(q).map_err(|err| SearchError::Parser(err.to_string()))?;
-
-        query.term = query.term.compact();
-
-        debug!("Query: {query:?}");
-
-        let query = term2query(&query.term, &|resource| self.resource2query(resource));
-
-        debug!("Processed query: {:?}", query);
-        Ok(query)
     }
 
     fn process_hit(
@@ -363,113 +450,6 @@ impl Index {
                 cve_cvss,
                 cve_cwe,
             },
-        }
-    }
-
-    fn resource2query(&self, resource: &Vulnerabilities) -> Box<dyn Query> {
-        const ID_WEIGHT: f32 = 1.5;
-        const CVE_ID_WEIGHT: f32 = 1.4;
-        const ADV_TITLE_WEIGHT: f32 = 1.3;
-        const CVE_TITLE_WEIGHT: f32 = 1.3;
-        match resource {
-            Vulnerabilities::Id(value) => boost(
-                Box::new(TermSetQuery::new(vec![Term::from_field_text(
-                    self.fields.advisory_id,
-                    value,
-                )])),
-                ID_WEIGHT,
-            ),
-
-            Vulnerabilities::Cve(value) => boost(
-                Box::new(TermSetQuery::new(vec![Term::from_field_text(
-                    self.fields.cve_id,
-                    value,
-                )])),
-                CVE_ID_WEIGHT,
-            ),
-
-            Vulnerabilities::Description(primary) => {
-                let q1 = create_text_query(self.fields.advisory_description, primary);
-                let q2 = create_text_query(self.fields.cve_description, primary);
-                Box::new(BooleanQuery::union(vec![q1, q2]))
-            }
-
-            Vulnerabilities::Title(primary) => {
-                let q1 = boost(create_text_query(self.fields.advisory_title, primary), ADV_TITLE_WEIGHT);
-                let q2 = boost(create_text_query(self.fields.cve_title, primary), CVE_TITLE_WEIGHT);
-                Box::new(BooleanQuery::union(vec![q1, q2]))
-            }
-
-            Vulnerabilities::Package(primary) => {
-                let q1 = create_rewrite_string_query(self.fields.cve_affected, primary);
-                let q2 = create_rewrite_string_query(self.fields.cve_fixed, primary);
-
-                Box::new(BooleanQuery::union(vec![q1, q2]))
-            }
-
-            Vulnerabilities::Fixed(primary) => create_rewrite_string_query(self.fields.cve_fixed, primary),
-
-            Vulnerabilities::Affected(primary) => create_rewrite_string_query(self.fields.cve_affected, primary),
-
-            Vulnerabilities::Severity(value) => Box::new(TermSetQuery::new(vec![Term::from_field_text(
-                self.fields.advisory_severity,
-                value,
-            )])),
-
-            Vulnerabilities::Status(value) => Box::new(TermSetQuery::new(vec![Term::from_field_text(
-                self.fields.advisory_status,
-                value,
-            )])),
-
-            Vulnerabilities::Final => create_string_query(self.fields.advisory_status, &Primary::Equal("final")),
-            Vulnerabilities::Critical => Box::new(TermSetQuery::new(vec![
-                Term::from_field_text(self.fields.cve_severity, "critical"),
-                Term::from_field_text(self.fields.advisory_severity, "Critical"),
-            ])),
-            Vulnerabilities::High => Box::new(TermSetQuery::new(vec![
-                Term::from_field_text(self.fields.cve_severity, "high"),
-                Term::from_field_text(self.fields.advisory_severity, "Important"),
-            ])),
-            Vulnerabilities::Medium => Box::new(TermSetQuery::new(vec![
-                Term::from_field_text(self.fields.cve_severity, "medium"),
-                Term::from_field_text(self.fields.advisory_severity, "Moderate"),
-            ])),
-            Vulnerabilities::Low => Box::new(TermSetQuery::new(vec![
-                Term::from_field_text(self.fields.cve_severity, "low"),
-                Term::from_field_text(self.fields.advisory_severity, "Low"),
-            ])),
-            Vulnerabilities::Cvss(ordered) => match ordered {
-                PartialOrdered::Less(e) => Box::new(RangeQuery::new_f64_bounds(
-                    self.fields.cve_cvss,
-                    Bound::Unbounded,
-                    Bound::Excluded(*e),
-                )),
-                PartialOrdered::LessEqual(e) => Box::new(RangeQuery::new_f64_bounds(
-                    self.fields.cve_cvss,
-                    Bound::Unbounded,
-                    Bound::Included(*e),
-                )),
-                PartialOrdered::Greater(e) => Box::new(RangeQuery::new_f64_bounds(
-                    self.fields.cve_cvss,
-                    Bound::Excluded(*e),
-                    Bound::Unbounded,
-                )),
-                PartialOrdered::GreaterEqual(e) => Box::new(RangeQuery::new_f64_bounds(
-                    self.fields.cve_cvss,
-                    Bound::Included(*e),
-                    Bound::Unbounded,
-                )),
-                PartialOrdered::Range(from, to) => {
-                    Box::new(RangeQuery::new_f64_bounds(self.fields.cve_cvss, *from, *to))
-                }
-            },
-            Vulnerabilities::Initial(ordered) => create_date_query(self.fields.advisory_initial, ordered),
-            Vulnerabilities::Release(ordered) => {
-                let q1 = create_date_query(self.fields.advisory_current, ordered);
-                let q2 = create_date_query(self.fields.cve_release, ordered);
-                Box::new(BooleanQuery::union(vec![q1, q2]))
-            }
-            Vulnerabilities::Discovery(ordered) => create_date_query(self.fields.cve_discovery, ordered),
         }
     }
 }

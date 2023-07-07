@@ -30,6 +30,66 @@ pub struct IndexConfig {
     pub sync_interval: humantime::Duration,
 }
 
+/// Entry point for adding documents to an index or making searchers or reloading it from S3.
+pub struct IndexStore<INDEX: Index> {
+    inner: SearchIndex,
+    path: Option<PathBuf>,
+    index: INDEX,
+    metrics: Metrics,
+}
+
+/// Interface of an index specific to a document type which has its own schema, input type for indexing and query
+/// language representation using sikula.
+pub trait Index {
+    /// The documents expected to be returned;
+    type MatchedDocument: core::fmt::Debug;
+
+    /// The document type to be indexed.
+    type InputDocument;
+
+    /// The sikula query expected.
+    type Query<'m>: sikula::prelude::Search<'m>
+    where
+        Self: 'm;
+
+    /// Index settings for this index type.
+    fn settings(&self) -> IndexSettings;
+
+    /// Schema for this index.
+    fn schema(&self) -> Schema;
+
+    /// Given a parsed sikula query, construct the appropriate search query.
+    fn prepare_query<'m>(&'m self, query: &<Self::Query<'m> as Search<'m>>::Parsed) -> Box<dyn Query>;
+
+    /// Given a search result hit, construct the corresponding document summary for this hit.
+    fn process_hit(
+        &self,
+        doc: DocAddress,
+        score: f32,
+        searcher: &Searcher,
+        query: &dyn Query,
+        explain: bool,
+    ) -> Result<Self::MatchedDocument, Error>;
+
+    /// Add a given document to the index.
+    fn index_doc(&self, id: &str, document: &Self::InputDocument) -> Result<Vec<Document>, Error>;
+
+    /// Return the search term for locating a given document with an id.
+    fn doc_id_to_term(&self, id: &str) -> Term;
+}
+
+#[derive(Debug)]
+pub enum Error {
+    Open,
+    Snapshot,
+    NotFound,
+    NotPersisted,
+    Parser(String),
+    Search(tantivy::TantivyError),
+    Prometheus(prometheus::Error),
+    Io(std::io::Error),
+}
+
 #[derive(Clone)]
 struct Metrics {
     indexed_total: IntCounter,
@@ -91,44 +151,6 @@ impl Metrics {
     }
 }
 
-pub struct IndexStore<INDEX: Index> {
-    inner: SearchIndex,
-    path: Option<PathBuf>,
-    index: INDEX,
-    metrics: Metrics,
-}
-
-pub trait Index {
-    type MatchedDocument: core::fmt::Debug;
-    type Document;
-
-    fn settings(&self) -> IndexSettings;
-    fn schema(&self) -> Schema;
-    fn prepare_query(&self, q: &str) -> Result<Box<dyn Query>, Error>;
-    fn process_hit(
-        &self,
-        doc: DocAddress,
-        score: f32,
-        searcher: &Searcher,
-        query: &dyn Query,
-        explain: bool,
-    ) -> Result<Self::MatchedDocument, Error>;
-    fn index_doc(&self, id: &str, document: &Self::Document) -> Result<Vec<Document>, Error>;
-    fn doc_id_to_term(&self, id: &str) -> Term;
-}
-
-#[derive(Debug)]
-pub enum Error {
-    Open,
-    Snapshot,
-    NotFound,
-    NotPersisted,
-    Parser(String),
-    Search(tantivy::TantivyError),
-    Prometheus(prometheus::Error),
-    Io(std::io::Error),
-}
-
 impl From<prometheus::Error> for Error {
     fn from(e: prometheus::Error) -> Self {
         Self::Prometheus(e)
@@ -168,7 +190,7 @@ impl IndexWriter {
         &mut self,
         index: &mut INDEX,
         id: &str,
-        raw: &INDEX::Document,
+        raw: &INDEX::InputDocument,
     ) -> Result<(), Error> {
         self.delete_document(index, id);
         let docs = index.index_doc(id, raw)?;
@@ -297,14 +319,22 @@ impl<INDEX: Index> IndexStore<INDEX> {
         let reader = self.inner.reader()?;
         let searcher = reader.searcher();
 
-        let query = self.index.prepare_query(q)?;
+        let result: Result<(Box<dyn Query>, _, usize), Error> = if q.is_empty() {
+            let query: Box<dyn Query> = Box::new(AllQuery);
+            let (top_docs, count) = searcher.search(&query, &(TopDocs::with_limit(len).and_offset(offset), Count))?;
+            Ok((query, top_docs, count))
+        } else {
+            let mut query = INDEX::Query::parse(q).map_err(|err| Error::Parser(err.to_string()))?;
+            query.term = query.term.compact();
+            let query = term2query(&query.term, &|resource| self.index.prepare_query(resource));
+            debug!("Processed query: {:?}", query);
+            let (top_docs, count) = searcher.search(&query, &(TopDocs::with_limit(len).and_offset(offset), Count))?;
+            Ok((query, top_docs, count))
+        };
 
-        debug!("Processed query: {:?}", query);
-
-        let (top_docs, count) = searcher.search(&query, &(TopDocs::with_limit(len).and_offset(offset), Count))?;
+        let (query, top_docs, count) = result?;
 
         self.metrics.queries_total.inc();
-
         debug!("Found {} docs", count);
 
         let mut hits = Vec::new();
@@ -495,9 +525,22 @@ mod tests {
         }
     }
 
+    mod query {
+        use sikula::prelude::*;
+
+        #[derive(Clone, Debug, PartialEq, Search)]
+        pub enum Simple<'a> {
+            #[search(default)]
+            Id(&'a str),
+            #[search(default)]
+            Text(&'a str),
+        }
+    }
+
     impl Index for TestIndex {
         type MatchedDocument = String;
-        type Document = String;
+        type InputDocument = String;
+        type Query<'m> = query::Simple<'m>;
 
         fn settings(&self) -> IndexSettings {
             IndexSettings::default()
@@ -507,18 +550,17 @@ mod tests {
             self.schema.clone()
         }
 
-        fn prepare_query(&self, q: &str) -> Result<Box<dyn Query>, Error> {
-            let queries: Vec<Box<dyn Query>> = vec![
-                Box::new(TermQuery::new(
-                    Term::from_field_text(self.id, q),
+        fn prepare_query(&self, resource: &query::Simple) -> Box<dyn Query> {
+            match resource {
+                query::Simple::Id(value) => Box::new(TermQuery::new(
+                    Term::from_field_text(self.id, value),
                     IndexRecordOption::Basic,
                 )),
-                Box::new(TermQuery::new(
-                    Term::from_field_text(self.text, q),
+                query::Simple::Text(value) => Box::new(TermQuery::new(
+                    Term::from_field_text(self.text, value),
                     IndexRecordOption::Basic,
                 )),
-            ];
-            Ok(Box::new(BooleanQuery::union(queries)))
+            }
         }
 
         fn process_hit(
@@ -534,7 +576,7 @@ mod tests {
             Ok(id.unwrap_or("").to_string())
         }
 
-        fn index_doc(&self, id: &str, document: &Self::Document) -> Result<Vec<Document>, Error> {
+        fn index_doc(&self, id: &str, document: &Self::InputDocument) -> Result<Vec<Document>, Error> {
             let doc = tantivy::doc!(
                 self.id => id.to_string(),
                 self.text => document.to_string()
@@ -559,7 +601,7 @@ mod tests {
 
         writer.commit().unwrap();
 
-        assert_eq!(store.search("is", 0, 10, false).unwrap().1, 1);
+        assert_eq!(store.search("great", 0, 10, false).unwrap().1, 1);
     }
 
     #[tokio::test]
@@ -574,13 +616,13 @@ mod tests {
 
         writer.commit().unwrap();
 
-        assert_eq!(store.search("is", 0, 10, false).unwrap().1, 1);
+        assert_eq!(store.search("great", 0, 10, false).unwrap().1, 1);
 
         let writer = store.writer().unwrap();
         writer.delete_document(store.index_as_mut(), "foo");
         writer.commit().unwrap();
 
-        assert_eq!(store.search("is", 0, 10, false).unwrap().1, 0);
+        assert_eq!(store.search("great", 0, 10, false).unwrap().1, 0);
     }
 
     #[tokio::test]
@@ -599,7 +641,7 @@ mod tests {
 
         writer.commit().unwrap();
 
-        assert_eq!(store.search("is", 0, 10, false).unwrap().1, 1);
+        assert_eq!(store.search("great", 0, 10, false).unwrap().1, 1);
 
         // Duplicates also removed if separate commits.
         let mut writer = store.writer().unwrap();
@@ -609,6 +651,6 @@ mod tests {
 
         writer.commit().unwrap();
 
-        assert_eq!(store.search("is", 0, 10, false).unwrap().1, 1);
+        assert_eq!(store.search("great", 0, 10, false).unwrap().1, 1);
     }
 }

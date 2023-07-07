@@ -10,10 +10,7 @@ use log::{debug, info, warn};
 use sikula::prelude::*;
 use spdx_rs::models::Algorithm;
 use tantivy::{
-    query::{AllQuery, BooleanQuery},
-    schema::INDEXED,
-    store::ZstdCompressor,
-    DocAddress, IndexSettings, Searcher, SnippetGenerator,
+    query::BooleanQuery, schema::INDEXED, store::ZstdCompressor, DocAddress, IndexSettings, Searcher, SnippetGenerator,
 };
 use time::format_description::well_known::Rfc3339;
 use trustification_index::{
@@ -24,7 +21,7 @@ use trustification_index::{
         schema::{Field, Schema, Term, FAST, STORED, STRING, TEXT},
         DateTime,
     },
-    term2query, Document, Error as SearchError,
+    Document, Error as SearchError,
 };
 
 pub struct Index {
@@ -305,7 +302,65 @@ impl Index {
         document.add_text(fields.classifier, component.component_type.to_string());
     }
 
-    fn resource2query(&self, resource: &Packages) -> Box<dyn Query> {
+    fn create_string_query(&self, fields: &[Field], value: &Primary<'_>) -> Box<dyn Query> {
+        let queries: Vec<Box<dyn Query>> = fields.iter().map(|f| create_string_query(*f, value)).collect();
+        Box::new(BooleanQuery::union(queries))
+    }
+
+    fn create_text_query(&self, fields: &[Field], value: &Primary<'_>) -> Box<dyn Query> {
+        let queries: Vec<Box<dyn Query>> = fields.iter().map(|f| create_text_query(*f, value)).collect();
+        Box::new(BooleanQuery::union(queries))
+    }
+
+    fn match_classifiers(&self, classification: Classification) -> Box<dyn Query> {
+        Box::new(BooleanQuery::union(vec![
+            create_boolean_query(
+                Occur::Should,
+                Term::from_field_text(self.fields.sbom.classifier, &classification.to_string()),
+            ),
+            create_boolean_query(
+                Occur::Should,
+                Term::from_field_text(self.fields.dep.classifier, &classification.to_string()),
+            ),
+        ]))
+    }
+}
+
+impl trustification_index::Index for Index {
+    type MatchedDocument = SearchHit;
+    type InputDocument = SBOM;
+    type Query<'m> = Packages<'m>;
+
+    fn index_doc(&self, id: &str, doc: &SBOM) -> Result<Vec<Document>, SearchError> {
+        match doc {
+            SBOM::CycloneDX(bom) => self.index_cyclonedx(id, bom),
+            SBOM::SPDX(bom) => self.index_spdx(id, bom),
+        }
+    }
+
+    fn schema(&self) -> Schema {
+        self.schema.clone()
+    }
+
+    fn settings(&self) -> IndexSettings {
+        IndexSettings {
+            sort_by_field: Some(tantivy::IndexSortByField {
+                field: self.schema.get_field_name(self.fields.sbom_created).to_string(),
+                order: tantivy::Order::Desc,
+            }),
+            docstore_compression: tantivy::store::Compressor::Zstd(ZstdCompressor::default()),
+            ..Default::default()
+        }
+    }
+
+    fn doc_id_to_term(&self, id: &str) -> Term {
+        self.schema
+            .get_field("sbom_id")
+            .map(|f| Term::from_field_text(f, id))
+            .unwrap()
+    }
+
+    fn prepare_query(&self, resource: &Packages) -> Box<dyn Query> {
         const PACKAGE_WEIGHT: f32 = 1.5;
         const CREATED_WEIGHT: f32 = 1.25;
         match resource {
@@ -370,80 +425,6 @@ impl Index {
             Packages::Firmware => self.match_classifiers(Classification::Firmware),
             Packages::File => self.match_classifiers(Classification::File),
         }
-    }
-
-    fn create_string_query(&self, fields: &[Field], value: &Primary<'_>) -> Box<dyn Query> {
-        let queries: Vec<Box<dyn Query>> = fields.iter().map(|f| create_string_query(*f, value)).collect();
-        Box::new(BooleanQuery::union(queries))
-    }
-
-    fn create_text_query(&self, fields: &[Field], value: &Primary<'_>) -> Box<dyn Query> {
-        let queries: Vec<Box<dyn Query>> = fields.iter().map(|f| create_text_query(*f, value)).collect();
-        Box::new(BooleanQuery::union(queries))
-    }
-
-    fn match_classifiers(&self, classification: Classification) -> Box<dyn Query> {
-        Box::new(BooleanQuery::union(vec![
-            create_boolean_query(
-                Occur::Should,
-                Term::from_field_text(self.fields.sbom.classifier, &classification.to_string()),
-            ),
-            create_boolean_query(
-                Occur::Should,
-                Term::from_field_text(self.fields.dep.classifier, &classification.to_string()),
-            ),
-        ]))
-    }
-}
-
-impl trustification_index::Index for Index {
-    type MatchedDocument = SearchHit;
-    type Document = SBOM;
-
-    fn index_doc(&self, id: &str, doc: &SBOM) -> Result<Vec<Document>, SearchError> {
-        match doc {
-            SBOM::CycloneDX(bom) => self.index_cyclonedx(id, bom),
-            SBOM::SPDX(bom) => self.index_spdx(id, bom),
-        }
-    }
-
-    fn schema(&self) -> Schema {
-        self.schema.clone()
-    }
-
-    fn settings(&self) -> IndexSettings {
-        IndexSettings {
-            sort_by_field: Some(tantivy::IndexSortByField {
-                field: self.schema.get_field_name(self.fields.sbom_created).to_string(),
-                order: tantivy::Order::Desc,
-            }),
-            docstore_compression: tantivy::store::Compressor::Zstd(ZstdCompressor::default()),
-            ..Default::default()
-        }
-    }
-
-    fn doc_id_to_term(&self, id: &str) -> Term {
-        self.schema
-            .get_field("sbom_id")
-            .map(|f| Term::from_field_text(f, id))
-            .unwrap()
-    }
-
-    fn prepare_query(&self, q: &str) -> Result<Box<dyn Query>, SearchError> {
-        if q.is_empty() {
-            return Ok(Box::new(AllQuery));
-        }
-
-        let mut query = Packages::parse(q).map_err(|err| SearchError::Parser(err.to_string()))?;
-
-        query.term = query.term.compact();
-
-        debug!("Query: {query:?}");
-
-        let query = term2query(&query.term, &|resource| self.resource2query(resource));
-
-        debug!("Processed query: {:?}", query);
-        Ok(query)
     }
 
     fn process_hit(
