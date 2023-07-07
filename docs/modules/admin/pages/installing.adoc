@@ -1,37 +1,63 @@
-= Installing
+////
+Module Type: PROCEDURE
+////
 
-Trustification services are all shipped using the `trust` CLI which is capable of running any of the services using command line flags.
+[id="installing-trustification-locally"]
 
-Trustification rely on external services for storage and eventing.  Whether you want to run on-prem or in the cloud, there is an alternative for both.
+= Installing Trustification locally
 
-To store data, trustification services rely on the Amazon S3 APIs. This does not mean you need to run trustification on AWS, because the API is implemented by Google Cloud Storage (GCS) and MinIO (Open Source) as well.
+The Trustification services use a web-based user interface, and the `trust` command-line tool.
+The command-line `trust` tool can run any of Trustification's services by using argument flags.
 
-For notification and sharing events between trustification services, a message bus like Apache Kafka or AWS SQS can be used.
+.Prerequisites 
+You must use the following infrastructure components, and software:
 
-== Infrastructure
+* Two S3 buckets named, `vexination` and `bombastic` for storing data, and the search index.
+* Three topics or queues named, `sbom-stored`, `sbom-indexed`, and `sbom-failed` for Bombastic.
+* Three topics or queues named, `vex-stored`, `vex-indexed`, and `vex-failed` for Vexination.
+* Read and write credentials for the above resources.
+* Installation of the `podman-compose` or `docker-compose` tool.
 
-At present, the following infrastructure must exist (names can be changed by adjusting command line flags in manifests):
+[NOTE]
+====
+You can use unique names by adjusting command-line flags in the manifests.
+Depending on your choice of infrastructure, you can create these resources, and manage access using your favorite tool, such as terraform.
+====
 
-* S3 buckets named `vexination` and `bombastic` for storing data and the search index.
-* Topics/queues named `sbom-stored`, `sbom-indexed` and `sbom-failed` for Bombastic.
-* Topics/queues named `vex-stored`, `vex-indexed` and `vex-failed` for Vexination.
-* Credentials for reading and writing data to the above resources.
+.Procedure
 
-Depending on your choice of infrastructure, you can create these resources and manage access using your favorite tool, such as terraform.
+. Clone the link:https://github.com/trustification/trustification[Trustification GitHub project] locally.
 
-== Deployment options
+. Copy the most recent link:https://github.com/trustification/trustification/tags[version tag] from the Trustification GitHub project.
 
-=== Bare metal
+. Set the `TRUST_VERSION` environment variable to the most recent version tag:
++
+.Syntax
+[source,subs="verbatim,quotes"]
+----
+export TRUST_VERSION=_VERSION_TAG_
+----
++
+.Example
+----
+$ export TRUST_VERSION=0.1.0-nightly.8fce4fcf
+----
 
-Running on bare metal requires downloading the `trust` binary from the link:https://github.com/trustification/trustification/releases[releases]. 
+. Change to the `deploy/compose` directory:
++
+.Example
+----
+$ cd deploy/compose
+----
 
-=== Container Image
+. Start the Trustification containers:
++
+.Example
+----
+$ docker-compose -f compose.yaml -f compose-trustification.yaml -f compose-guac.yaml -f compose-walkers.yaml up
+----
++
+This command starts MinIO and Apache Kafka containers, one container for object storage, and another for event sharing and notifications.
+Vulnerability data automatically starts loading from Red Hat sources after the containers start.
 
-The services are published in a container image at `ghcr.io/trustification/trust`. The UI is published in a separate container image `ghcr.io/trustification/trust-ui`.
-
-=== Kubernetes
-
-Since Kubernetes runs containers, running trustification on Kubernetes is easy! Since it's so easy, we don't provide any out of the box charts or installation script,
-, since lots of the configuration options would be specific to the environment in which the server is run.
-
-We maintain a Helm chart at the link:https://github.com/trustification/trustification.dev[trustification.dev] repository used to deploy the link:https://trustification.dev[] instance. Feel free to use this chart as a basis for your environment. By default the manifests reference two secrets named `bombastic-credentials-secret` and `vexination-credentials-secret` which must contain the AWS credentials for accessing S3 and SQS infrastructure.
+. To access the Trustification user interface, open a web browser and point it to `http://localhost:8084`.

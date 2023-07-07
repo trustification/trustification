@@ -1,3 +1,33 @@
-= Admin Guide
+////
+Module Type: CONCEPT
+////
 
-The admin guide covers installation and setup of Trustification services.
+= Administration Guide
+
+This administration guide gives you a better understanding on Trustification's deployment options, installing the Trustification services locally, and reference information for Trustification's OpenAPI structures.
+
+Trustification relies on external services for storage and event notification.
+Trustification's services uses Amazon's S3 APIs to store object data.
+You do not need to run Trustification on Amazon Web Services (AWS), because other cloud vendors, such as Google Cloud Storage (GCS) and MinIO, implement Amazon's S3 API.
+Trustification also uses a message bus, such as Apache's Kafka or AWS Simple Queue Service (SQS), for notifications and sharing events between Trustification's services.
+
+== Deployment options
+
+You have several deployment options to choose from for running Trustification.
+
+=== Bare metal
+
+Running Trustification on bare-metal servers requires you to compile the `trust` binary from source found on the link:https://github.com/trustification/trustification/releases[Trustification releases] page.
+
+=== Container image
+
+Trustification services are available in two container images, `ghcr.io/trustification/trust`, and `ghcr.io/trustification/trust-ui`.
+
+=== Kubernetes
+
+Since Kubernetes runs containers, running Trustification on Kubernetes is easy!
+We do not provide any out-of-the-box charts or an installation script, since many of the configuration options are specific to the running environment.
+
+We keep a Helm chart in the link:https://github.com/trustification/trustification.dev[trustification.dev repository] to deploy a link:https://trustification.dev[Trustification instance].
+Feel free to use this Helm chart as a starting point for your specific environment.
+By default, the manifests reference two secrets named `bombastic-credentials-secret` and `vexination-credentials-secret`, these must contain the AWS credentials for accessing S3 and SQS infrastructure.
