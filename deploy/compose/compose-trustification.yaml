@@ -1,7 +1,7 @@
 version: '3'
 services:
   vexination-api:
-    image: $TRUST_IMAGE:$TRUST_VERSION
+    image: $TRUST_IMAGE:${TRUST_VERSION:?TRUST_VERSION is required}
     expose:
       - "$VEXINATION_API_PORT"
     ports:
@@ -9,33 +9,33 @@ services:
     command: vexination api --devmode --storage-endpoint http://minio:9000
 
   vexination-indexer:
-    image: $TRUST_IMAGE:$TRUST_VERSION
+    image: $TRUST_IMAGE:${TRUST_VERSION:?}
     command: vexination indexer --devmode --storage-endpoint http://minio:9000 --kafka-bootstrap-servers kafka:9094
 
   bombastic-api:
-    image: $TRUST_IMAGE:$TRUST_VERSION
+    image: $TRUST_IMAGE:${TRUST_VERSION:?}
     expose:
       - "$BOMBASTIC_API_PORT"
     ports:
       - "$BOMBASTIC_API_PORT:8080"
     command: bombastic api --devmode --storage-endpoint http://minio:9000
   bombastic-indexer:
-    image: $TRUST_IMAGE:$TRUST_VERSION
+    image: $TRUST_IMAGE:${TRUST_VERSION:?}
     command: bombastic indexer --devmode --storage-endpoint http://minio:9000 --kafka-bootstrap-servers kafka:9094
 
   spog-api:
-    image: $TRUST_IMAGE:$TRUST_VERSION
+    image: $TRUST_IMAGE:${TRUST_VERSION:?}
     expose:
       - "$SPOG_API_PORT"
     ports:
       - "$SPOG_API_PORT:8080"
     command: spog api --bombastic-url http://bombastic-api:8080 --vexination-url http://vexination-api:8080
   spog-ui:
-    image: $TRUST_UI_IMAGE:$TRUST_VERSION
+    image: $TRUST_UI_IMAGE:${TRUST_VERSION:?}
     environment:
       - API_URL=http://localhost:$SPOG_API_PORT
       - BOMBASTIC_URL=http://localhost:$BOMBASTIC_API_PORT
-      - VEXINATION_URL=http://vexination-api:$VEXINATION_API_PORT
+      - VEXINATION_URL=http://localhost:$VEXINATION_API_PORT
     expose:
       - "$SPOG_UI_PORT"
     ports:
