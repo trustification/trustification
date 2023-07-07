@@ -8,6 +8,7 @@ vexination = { path = "../vexination/vexination" }
 bombastic = { path = "../bombastic/bombastic" }
 spog = { path = "../spog/spog" }
 exhort = { path = "../exhort/exhort"}
+collectorist = { path = "../collectorist/collectorist" }
 exporter = { path = "../exporter" }
 
 serde = { version = "1.0", features = ["derive"] }

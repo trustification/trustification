@@ -2,6 +2,7 @@ use std::net::SocketAddr;
 use std::process::ExitCode;
 use std::str::FromStr;
 use std::sync::Arc;
+
 use trustification_infrastructure::{Infrastructure, InfrastructureConfig};
 
 mod component_analysis;
@@ -15,7 +16,7 @@ pub struct Run {
     #[arg(short, long, default_value = "0.0.0.0")]
     pub bind: String,
 
-    #[arg(short = 'p', long = "port", default_value_t = 8080)]
+    #[arg(short = 'p', long = "port", default_value_t = 9919)]
     pub port: u16,
 
     #[arg(long = "devmode", default_value_t = false)]
@@ -27,14 +28,14 @@ pub struct Run {
 
 impl Run {
     pub async fn run(self) -> anyhow::Result<ExitCode> {
-        Infrastructure::from(self.infra)
-            .run("exhort-api", |_metrics| async move {
-                let state = Self::configure()?;
-                let addr = SocketAddr::from_str(&format!("{}:{}", self.bind, self.port))?;
+        let infra = Infrastructure::from(self.infra).run("exhort-api", |_metrics| async move {
+            let state = Self::configure()?;
+            let addr = SocketAddr::from_str(&format!("{}:{}", self.bind, self.port))?;
 
-                server::run(state, addr).await
-            })
-            .await?;
+            server::run(state, addr).await
+        });
+
+        infra.await?;
 
         Ok(ExitCode::SUCCESS)
     }
