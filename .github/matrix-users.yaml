@@ -1,6 +1,10 @@
-mappings:
+mapForChannel:
   ctron: "@ctron:dentrassi.de"
   dejanb: "@dejanb:matrix.org"
-  lulf: "@lulf_:matrix.org"
   danbev: "@danbev:matrix.org"
   jcrossley3: "@jcrossley3:matrix.org"
+
+# in order for this to work, you will need to initiate a DM chat with the bot first
+mapForDirectMessage:
+  ctron: "@ctron:dentrassi.de"
+  lulf: "@lulf_:matrix.org"
