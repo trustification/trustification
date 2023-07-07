@@ -5,6 +5,7 @@ use prometheus::{opts, register_int_counter_vec_with_registry, IntCounterVec, Re
 mod kafka;
 mod sqs;
 
+/// Represents an event receieved from a consumer.
 #[allow(clippy::large_enum_variant)]
 pub enum Event<'m> {
     Kafka(kafka::KafkaEvent<'m>),
@@ -12,6 +13,7 @@ pub enum Event<'m> {
 }
 
 impl<'m> Event<'m> {
+    /// The event payload.
     pub fn payload(&self) -> Option<&[u8]> {
         match self {
             Self::Kafka(event) => event.payload(),
@@ -19,6 +21,7 @@ impl<'m> Event<'m> {
         }
     }
 
+    /// Topic in which the event was received.
     pub fn topic(&self) -> &str {
         match self {
             Self::Kafka(event) => event.topic(),
@@ -27,6 +30,7 @@ impl<'m> Event<'m> {
     }
 }
 
+/// Represents an event bus instance.
 pub struct EventBus {
     metrics: Metrics,
     inner: InnerBus,
@@ -73,6 +77,9 @@ enum InnerBus {
 }
 
 impl EventBus {
+    /// Subscribe to a set of topics using a provided group id.
+    ///
+    /// For Kafka, the group id maps to a consumer group, while for SQS it is ignored.
     pub async fn subscribe(&self, group: &str, topics: &[&str]) -> Result<EventConsumer<'_>, anyhow::Error> {
         match &self.inner {
             InnerBus::Kafka(bus) => {
@@ -85,6 +92,8 @@ impl EventBus {
             }
         }
     }
+
+    /// Create a set of topics on the event bus. This assumes authorization is already setup for this to be allowed.
     pub async fn create(&self, topics: &[&str]) -> Result<(), anyhow::Error> {
         match &self.inner {
             InnerBus::Kafka(bus) => bus.create(topics).await,
@@ -92,6 +101,7 @@ impl EventBus {
         }
     }
 
+    /// Send a message to a topic on the event bus.
     pub async fn send(&self, topic: &str, data: &[u8]) -> Result<(), anyhow::Error> {
         match &self.inner {
             InnerBus::Kafka(bus) => bus.send(topic, data).await?,
@@ -102,6 +112,7 @@ impl EventBus {
     }
 }
 
+/// An event consumer belongs to a group and consumes events from multiple topics.
 pub struct EventConsumer<'d> {
     metrics: Metrics,
     inner: InnerConsumer<'d>,
@@ -119,6 +130,7 @@ enum InnerConsumer<'d> {
 }
 
 impl<'d> EventConsumer<'d> {
+    /// Wait for the next available event on this consumers topics.
     pub async fn next<'m>(&'m self) -> Result<Option<Event<'m>>, anyhow::Error> {
         let event = match &self.inner {
             InnerConsumer::Kafka(consumer) => {
@@ -136,6 +148,9 @@ impl<'d> EventConsumer<'d> {
         Ok(event)
     }
 
+    /// Update the status of events that was previously received.
+    ///
+    /// This will ensure that the consumer will start from the offset after these events.
     pub async fn commit<'m>(&'m self, events: &[Event<'m>]) -> Result<(), anyhow::Error> {
         for event in events {
             self.metrics.committed_total.with_label_values(&[event.topic()]).inc();
@@ -160,6 +175,7 @@ pub struct EventBusConfig {
 }
 
 impl EventBusConfig {
+    /// Create a new event bus of a given type registered with the prometheus metrics.
     pub async fn create(&self, registry: &Registry) -> Result<EventBus, anyhow::Error> {
         match self.event_bus {
             EventBusType::Kafka => {
