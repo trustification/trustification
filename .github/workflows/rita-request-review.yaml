@@ -60,7 +60,7 @@ jobs:
         env:
           MESSAGE: "You've been assigned as a reviewer for PR: ${{ github.event.pull_request.html_url }}"
         run: |
-          podman run --rm  -v ${GITHUB_WORKSPACE}/matrix:/data:z docker.io/matrixcommander/matrix-commander:latest ${{ steps.directMessages.outputs.result }} --message "$MESSAGE"
+          podman run --rm  -v ${GITHUB_WORKSPACE}/matrix:/data:z docker.io/matrixcommander/matrix-commander:latest ${{ steps.directMessages.outputs.result }} --message "$MESSAGE" || true
 
       - name: Logout
         if: always()
