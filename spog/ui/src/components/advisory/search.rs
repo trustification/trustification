@@ -5,7 +5,6 @@ use crate::{
     utils::pagination_to_offset,
 };
 use gloo_utils::format::JsValueSerdeExt;
-use itertools::Itertools;
 use lazy_static::lazy_static;
 use patternfly_yew::prelude::*;
 use sikula::prelude::Search as _;
