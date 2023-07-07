@@ -1,0 +1,42 @@
+on:
+  pull_request_target:
+    branches:
+      - main
+    types:
+      - review_requested
+
+env:
+  USERNAME: "@trustification-bot:matrix.org"
+  PASSWORD: ${{ secrets.MATRIX_BOT_PASSWORD }}
+  ROOM: "#trustification:matrix.org"
+
+jobs:
+  notify_channel:
+    runs-on: ubuntu-22.04
+    if: github.event.pull_request.draft == false
+    steps:
+      - name: Dump event payload
+        run: |
+          echo '${{ toJSON(github.event) }}' | jq
+
+      - uses: actions/checkout@v3
+
+      - run: npm ci
+        working-directory: .github/scripts/map-users
+
+      - uses: actions/github-script@v6
+        id: message
+        with:
+          script: |
+            const { default: message } = await import('${{ github.workspace }}/.github/scripts/map-users/main.mjs')
+            const msg = await message(context.payload)
+            return msg || "";
+          result-encoding: string
+
+      - name: Send message
+        # skip if there is no message (because there was no user)
+        if: ${{ steps.message.outputs.result != '' }}
+        env:
+          MESSAGE: "${{ steps.message.outputs.result }}"
+        run: |
+          podman run --rm docker.io/matrixcommander/matrix-commander:latest --login password --homeserver https://matrix.org --device github --user-login "$USERNAME" --password "$PASSWORD" --room-default "$ROOM" --message "$MESSAGE"  --logout me
