@@ -322,6 +322,11 @@ lazy_static! {
                         |options, value| options.is_rhel9 = value
                     ),
                     SearchOption::<SearchParameters>::new_str(
+                        "OpenShift Container Platform 3",
+                        |options| options.is_ocp3,
+                        |options, value| options.is_ocp3 = value
+                    ),
+                    SearchOption::<SearchParameters>::new_str(
                         "OpenShift Container Platform 4",
                         |options| options.is_ocp4,
                         |options, value| options.is_ocp4 = value
@@ -345,6 +350,7 @@ pub struct SearchParameters {
     is_rhel8: bool,
     is_rhel9: bool,
 
+    is_ocp3: bool,
     is_ocp4: bool,
 }
 
@@ -386,6 +392,10 @@ impl ToFilterExpression for SearchParameters {
 
             if self.is_rhel9 {
                 products.push(r#"( "cpe:/a:redhat:enterprise_linux:9" in:package )"#.to_string());
+            }
+
+            if self.is_ocp3 {
+                products.push(r#"( "cpe:/a:redhat:openshift:3" in:package )"#.to_string());
             }
 
             if self.is_ocp4 {
