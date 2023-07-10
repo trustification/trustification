@@ -23,7 +23,7 @@ services:
       # monitoring port
       - "8222:8222"
     volumes:
-      - ./container_files/nats:/config/nats
+      - ./container_files/nats:/config/nats:z
     restart: on-failure
     healthcheck:
       test: ["CMD", "wget", "--spider", "http://localhost:8222/healthz"]
@@ -43,7 +43,7 @@ services:
       nats:
         condition: service_healthy
     volumes:
-      - ./container_files/guac:/guac
+      - ./container_files/guac:/guac:z
     healthcheck:
       test: ["CMD", "wget", "--spider", "http://localhost:2782"]
       interval: 10s
@@ -62,7 +62,7 @@ services:
     ports:
       - "$GUAC_API_PORT:8080"
     volumes:
-      - ./container_files/guac:/guac
+      - ./container_files/guac:/guac:z
     healthcheck:
       test: ["CMD", "wget", "--spider", "http://localhost:8080"]
       interval: 10s
@@ -81,7 +81,7 @@ services:
       guac-graphql:
         condition: service_healthy
     volumes:
-      - ./container_files/guac:/guac
+      - ./container_files/guac:/guac:z
 
   oci-collector:
     image: $GUAC_IMAGE
@@ -94,7 +94,7 @@ services:
       guac-graphql:
         condition: service_healthy
     volumes:
-      - ./container_files/guac:/guac
+      - ./container_files/guac:/guac:z
 
   depsdev-collector:
     image: $GUAC_IMAGE
@@ -109,7 +109,7 @@ services:
       guac-graphql:
         condition: service_healthy
     volumes:
-      - ./container_files/guac:/guac
+      - ./container_files/guac:/guac:z
 
   osv-certifier:
     image: $GUAC_IMAGE
@@ -122,7 +122,7 @@ services:
       guac-graphql:
         condition: service_healthy
     volumes:
-      - ./container_files/guac:/guac
+      - ./container_files/guac:/guac:z
 
   bombastic-exporter:
     image: $TRUST_IMAGE:${TRUST_VERSION:?TRUST_VERSION is required}
