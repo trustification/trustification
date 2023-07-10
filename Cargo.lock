@@ -2087,6 +2087,7 @@ dependencies = [
  "strum_macros",
  "tokio",
  "trustification-event-bus",
+ "trustification-infrastructure",
  "trustification-storage",
 ]
 
