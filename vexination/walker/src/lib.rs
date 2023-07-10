@@ -34,6 +34,10 @@ pub struct Run {
     #[arg(long = "devmode", default_value_t = false)]
     pub(crate) devmode: bool,
 
+    /// Number of workers, too many might get you rate-limited
+    #[arg(short, long, default_value = "1")]
+    pub(crate) workers: usize,
+
     #[command(flatten)]
     pub(crate) storage: StorageConfig,
 
@@ -61,7 +65,7 @@ impl Run {
 
                 let options = ValidationOptions { validation_date };
 
-                server::run(storage, self.source, options).await
+                server::run(self.workers, storage, self.source, options).await
             })
             .await?;
         Ok(ExitCode::SUCCESS)

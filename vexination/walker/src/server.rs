@@ -11,7 +11,12 @@ use serde::Deserialize;
 use tokio::sync::{Mutex, RwLock};
 use trustification_storage::Storage;
 
-pub async fn run(storage: Storage, source: url::Url, options: ValidationOptions) -> Result<(), anyhow::Error> {
+pub async fn run(
+    workers: usize,
+    storage: Storage,
+    source: url::Url,
+    options: ValidationOptions,
+) -> Result<(), anyhow::Error> {
     let fetcher = Fetcher::new(Default::default()).await?;
     let storage = Arc::new(storage);
 
@@ -55,9 +60,10 @@ pub async fn run(storage: Storage, source: url::Url, options: ValidationOptions)
             .walk(RetrievingVisitor::new(source.clone(), validation))
             .await?;
     } else {
+        log::info!("Walking VEX docs: source='{source}' workers={workers}");
         let source = HttpSource { url: source, fetcher };
         Walker::new(source.clone())
-            .walk(RetrievingVisitor::new(source.clone(), validation))
+            .walk_parallel(workers, RetrievingVisitor::new(source.clone(), validation))
             .await?;
     }
 
