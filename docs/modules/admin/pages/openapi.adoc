@@ -4,6 +4,8 @@ Module Type: REFERENCE
 
 = OpenAPI
 
-The `spog-api` server includes an OpenAPI specification for the hosted policies, under the `/openapi.json` path.
+The `spog-api` server includes an OpenAPI specification for the hosted policies, under the `/openapi.json` HTTP path.
+For example, the public-facing Trustification version, `https://api.trustification.dev/openapi.json`.
 
-Additionally, a user interface for exploring the OpenAPI exists at `/swagger-ui/` directory.
+Additionally, a user interface for exploring the OpenAPI exists at `/swagger-ui/` HTTP path.
+For example, the public-facing Trustification instance, `https://api.trustification.dev/swagger-ui/`.
