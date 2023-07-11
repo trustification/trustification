@@ -1,6 +1,7 @@
 pub mod csaf;
 pub mod cvss;
 pub mod highlight;
+pub mod search;
 
 use yew::prelude::*;
 

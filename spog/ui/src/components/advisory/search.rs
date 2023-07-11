@@ -1,3 +1,4 @@
+use crate::utils::search::or_group;
 use crate::{
     backend::{SearchOptions, VexService},
     components::{search::*, severity::Severity, simple_pagination::SimplePagination},
@@ -9,12 +10,11 @@ use lazy_static::lazy_static;
 use patternfly_yew::prelude::*;
 use sikula::prelude::Search as _;
 use spog_model::prelude::*;
-use std::collections::HashSet;
-use std::rc::Rc;
+use std::{collections::HashSet, rc::Rc};
 use vexination_model::prelude::Vulnerabilities;
 use wasm_bindgen::JsValue;
 use yew::prelude::*;
-use yew_more_hooks::hooks::{use_async_with_cloned_deps, UseAsyncHandleDeps};
+use yew_more_hooks::prelude::*;
 
 #[derive(PartialEq, Properties)]
 pub struct AdvisorySearchProperties {
@@ -158,10 +158,9 @@ pub fn advisory_search(props: &AdvisorySearchProperties) -> Html {
 
     let total = search.data().and_then(|d| d.total);
 
-    let hidden = text.is_empty();
-
     // filter
 
+    let hidden = text.is_empty();
     let filter_expansion = use_state(|| SEARCH.category_labels::<HashSet<_>>());
 
     // switch
@@ -406,45 +405,5 @@ impl ToFilterExpression for SearchParameters {
         }
 
         terms.join(" ")
-    }
-}
-
-/// Create an `OR` group from a list of terms. In case the iterator is empty, return an empty string.
-fn or_group(terms: impl IntoIterator<Item = String>) -> impl Iterator<Item = String> {
-    let mut terms = terms.into_iter();
-
-    let first = terms.next();
-    let (prefix, suffix) = match &first {
-        Some(_) => (Some("(".to_string()), Some(")".to_string())),
-        None => (None, None),
-    };
-
-    prefix
-        .into_iter()
-        .chain(itertools::intersperse(first.into_iter().chain(terms), "OR".to_string()))
-        .chain(suffix)
-}
-
-#[cfg(test)]
-mod test {
-    use super::*;
-    use itertools::Itertools;
-
-    #[test]
-    fn empty() {
-        let s = or_group(vec![]).join(" ");
-        assert_eq!(s, "");
-    }
-
-    #[test]
-    fn one() {
-        let s = or_group(vec!["a".to_string()]).join(" ");
-        assert_eq!(s, "( a )");
-    }
-
-    #[test]
-    fn three() {
-        let s = or_group(vec!["a".to_string(), "b".to_string(), "c".to_string()]).join(" ");
-        assert_eq!(s, "( a OR b OR c )");
     }
 }

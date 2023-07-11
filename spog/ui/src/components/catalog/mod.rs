@@ -1,12 +1,15 @@
-use crate::backend::{PackageService, SearchOptions};
-use crate::components::search::SearchHelpPopover;
-use crate::hooks::use_backend::use_backend;
+use crate::{
+    backend::{PackageService, SearchOptions},
+    components::{search::*, severity::Severity, simple_pagination::SimplePagination},
+    hooks::{use_backend::use_backend, use_pagination_state::*},
+    utils::pagination_to_offset,
+};
 use bombastic_model::prelude::Packages;
 use gloo_utils::format::JsValueSerdeExt;
+use lazy_static::lazy_static;
 use patternfly_yew::prelude::*;
-use sikula::prelude::*;
+use sikula::prelude::Search as _;
 use spog_model::prelude::*;
-use std::borrow::Cow;
 use std::{collections::HashSet, rc::Rc};
 use wasm_bindgen::JsValue;
 use yew::prelude::*;
@@ -31,9 +34,6 @@ pub fn catalog_search(props: &CatalogSearchProperties) -> Html {
 
     let service = use_memo(|backend| PackageService::new(backend.clone()), backend.clone());
 
-    let offset = use_state_eq(|| 0);
-    let limit = use_state_eq(|| 10);
-
     // the active query
     let search_params = use_state_eq(|| {
         // initialize with the state from history, properties, or with a reasonable default
@@ -41,7 +41,7 @@ pub fn catalog_search(props: &CatalogSearchProperties) -> Html {
             .state()
             .ok()
             .and_then(|state| {
-                let deser = state.into_serde::<SearchMode>();
+                let deser = state.into_serde::<SearchMode<SearchParameters>>();
                 log::debug!("Deserialized: {deser:?}");
                 deser.ok()
             })
@@ -57,23 +57,31 @@ pub fn catalog_search(props: &CatalogSearchProperties) -> Html {
             .unwrap_or_else(SearchMode::default)
     });
 
+    let pagination_state = use_pagination_state(|| UsePaginationStateArgs {
+        initial_items_per_page: 10,
+    });
+
     let search = {
         let service = service.clone();
         use_async_with_cloned_deps(
-            move |(search_params, offset, limit)| async move {
+            move |(search_params, page, per_page)| async move {
                 service
                     .search_packages(
                         &search_params.as_str(),
                         &SearchOptions {
-                            offset: Some(offset),
-                            limit: Some(limit),
+                            offset: Some(pagination_to_offset(page, per_page)),
+                            limit: Some(per_page),
                         },
                     )
                     .await
                     .map(|result| result.map(Rc::new))
                     .map_err(|err| err.to_string())
             },
-            ((*search_params).clone(), *offset, *limit),
+            (
+                (*search_params).clone(),
+                pagination_state.page,
+                pagination_state.per_page,
+            ),
         )
     };
 
@@ -148,64 +156,11 @@ pub fn catalog_search(props: &CatalogSearchProperties) -> Html {
     // pagination
 
     let total = search.data().and_then(|d| d.total);
-    let onlimit = {
-        let limit = limit.clone();
-        Callback::from(move |n| {
-            limit.set(n);
-        })
-    };
-    let onnavigation = {
-        if let Some(total) = total {
-            let offset = offset.clone();
 
-            let limit = limit.clone();
-            Callback::from(move |nav| {
-                let o = match nav {
-                    Navigation::First => 0,
-                    Navigation::Last => total - *limit,
-                    Navigation::Next => *offset + *limit,
-                    Navigation::Previous => *offset - *limit,
-                    Navigation::Page(n) => *limit * n - 1,
-                };
-                offset.set(o);
-            })
-        } else {
-            Callback::default()
-        }
-    };
+    // filter
 
     let hidden = text.is_empty();
-
-    let filter_expansion = use_state(|| {
-        let mut init = HashSet::new();
-        init.insert("Supplier");
-        init.insert("Architecture");
-        init.insert("Type");
-        init
-    });
-
-    let filter_section = |title: &'static str, children: Html| {
-        let expanded = filter_expansion.contains(title);
-
-        let onclick = {
-            let filter_expansion = filter_expansion.clone();
-            Callback::from(move |()| {
-                let mut selection = (*filter_expansion).clone();
-                if selection.contains(title) {
-                    selection.remove(title);
-                } else {
-                    selection.insert(title);
-                }
-                filter_expansion.set(selection);
-            })
-        };
-
-        html_nested!(
-            <AccordionItem title={title.to_string()} {expanded} {onclick}>
-                { children }
-            </AccordionItem>
-        )
-    };
+    let filter_expansion = use_state(|| SEARCH.category_labels::<HashSet<_>>());
 
     // switch
 
@@ -285,13 +240,12 @@ pub fn catalog_search(props: &CatalogSearchProperties) -> Html {
                             { for props.toolbar_items.iter() }
 
                             <ToolbarItem r#type={ToolbarItemType::Pagination}>
-                                <Pagination
-                                    total_entries={total}
-                                    selected_choice={*limit}
-                                    offset={*offset}
-                                    entries_per_page_choices={vec![10, 25, 50]}
-                                    {onnavigation}
-                                    {onlimit}
+                                <SimplePagination
+                                    total_items={total}
+                                    page={pagination_state.page}
+                                    per_page={pagination_state.per_page}
+                                    on_page_change={&pagination_state.on_page_change}
+                                    on_per_page_change={&pagination_state.on_per_page_change}
                                 />
                             </ToolbarItem>
 
@@ -301,40 +255,7 @@ pub fn catalog_search(props: &CatalogSearchProperties) -> Html {
                 </GridItem>
 
                 <GridItem cols={[2]}>
-                    <Accordion large=true bordered=true>
-
-                        { filter_section("Supplier", html!(
-                            <List r#type={ListType::Plain}>
-                                <Check
-                                    checked={(*search_params).map(|s|s.supplier_redhat)}
-                                    onchange={search_set(&search_params, |s, state|s.supplier_redhat=state)}
-                                    disabled={!simple}
-                                >
-                                    { "Red Hat" }
-                                </Check>
-                            </List>
-                        ))}
-
-                        { filter_section("Type", html!(
-                            <List r#type={ListType::Plain}>
-                                <Check
-                                    checked={(*search_params).map(|s|s.is_container)}
-                                    onchange={search_set(&search_params, |s, state|s.is_container=state)}
-                                    disabled={!simple}
-                                >
-                                    { "Container" }
-                                </Check>
-                            </List>
-                        ))}
-
-                        { filter_section("Architecture", html!(
-                            <List r#type={ListType::Plain}>
-                                <Check disabled=true>{ "amd64" }</Check>
-                                <Check disabled=true>{ "aarch64" }</Check>
-                                <Check disabled=true>{ "s390" }</Check>
-                            </List>
-                        ))}
-                    </Accordion>
+                    { simple_search(&SEARCH, search_params.clone(), filter_expansion.clone()) }
                 </GridItem>
 
                 <GridItem cols={[10]}>
@@ -343,81 +264,63 @@ pub fn catalog_search(props: &CatalogSearchProperties) -> Html {
 
             </Grid>
 
+            <SimplePagination
+                position={PaginationPosition::Bottom}
+                total_items={total}
+                page={pagination_state.page}
+                per_page={pagination_state.per_page}
+                on_page_change={pagination_state.on_page_change}
+                on_per_page_change={pagination_state.on_per_page_change}
+            />
+
         </>
     )
 }
 
-fn search_set<F>(search: &UseStateHandle<SearchMode>, f: F) -> Callback<bool>
-where
-    F: Fn(&mut SearchParameters, bool) + 'static,
-{
-    let search = search.clone();
-    Callback::from(move |state| {
-        if let SearchMode::Simple(simple) = &*search {
-            let mut simple = simple.clone();
-            f(&mut simple, state);
-            search.set(SearchMode::Simple(simple));
-        }
-    })
+lazy_static! {
+    static ref SEARCH: Search<SearchParameters> = Search {
+        categories: vec![
+            SearchCategory {
+                title: "Supplier",
+                options: vec![SearchOption::<SearchParameters>::new_str(
+                    "Red Hat",
+                    |options| options.supplier_redhat,
+                    |options, value| options.supplier_redhat = value
+                ),]
+            },
+            SearchCategory {
+                title: "Type",
+                options: vec![SearchOption::<SearchParameters>::new_str(
+                    "Container",
+                    |options| options.is_container,
+                    |options, value| options.is_container = value
+                ),]
+            }
+        ]
+    };
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 struct SearchParameters {
+    terms: Vec<String>,
+
     supplier_redhat: bool,
     is_container: bool,
-    terms: Vec<String>,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
-enum SearchMode {
-    Complex(String),
-    Simple(SearchParameters),
-}
+impl ToFilterExpression for SearchParameters {
+    fn to_filter_expression(&self) -> String {
+        let mut terms = self.terms.clone();
 
-impl SearchMode {
-    pub fn is_simple(&self) -> bool {
-        matches!(self, Self::Simple(_))
-    }
-
-    pub fn map<F>(&self, f: F) -> bool
-    where
-        F: FnOnce(&SearchParameters) -> bool,
-    {
-        match self {
-            Self::Simple(s) => f(s),
-            Self::Complex(_) => false,
+        if self.is_container {
+            terms.push("type:oci".to_string());
         }
-    }
 
-    pub fn as_str(&self) -> Cow<'_, str> {
-        match self {
-            Self::Complex(s) => s.into(),
-            Self::Simple(s) => {
-                let mut q = s.terms.join(" ");
-
-                if s.supplier_redhat {
-                    if !q.is_empty() {
-                        q.push(' ');
-                    }
-                    q.push_str(r#"supplier:"Organization: Red Hat""#);
-                }
-
-                if s.is_container {
-                    if !q.is_empty() {
-                        q.push(' ');
-                    }
-                    q.push_str("type:oci");
-                }
-
-                q.into()
-            }
+        if self.supplier_redhat {
+            terms.push(r#"supplier:"Organization: Red Hat""#.to_string());
         }
-    }
-}
 
-impl Default for SearchMode {
-    fn default() -> Self {
-        Self::Simple(Default::default())
+        terms.join(" ")
     }
 }
 
