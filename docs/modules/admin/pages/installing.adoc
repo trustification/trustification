@@ -16,7 +16,9 @@ You must use the following infrastructure components, and software:
 * Three topics or queues named, `sbom-stored`, `sbom-indexed`, and `sbom-failed` for Bombastic.
 * Three topics or queues named, `vex-stored`, `vex-indexed`, and `vex-failed` for Vexination.
 * Read and write credentials for the above resources.
-* Installation of the `podman-compose` or `docker-compose` tool.
+* An implementation of the link:https://www.compose-spec.io/[Compose specification], as used in:
+** The link:https://www.docker.com/products/docker-desktop/[Docker Desktop] application.
+** The link:https://github.com/containers/podman-compose[`podman-compose`] tool, version 1.0.6 or higher.
 
 [NOTE]
 ====
@@ -54,7 +56,7 @@ $ cd deploy/compose
 +
 .Example
 ----
-$ docker-compose -f compose.yaml -f compose-trustification.yaml -f compose-guac.yaml -f compose-walkers.yaml up
+$ podman-compose -f compose.yaml -f compose-trustification.yaml -f compose-guac.yaml -f compose-walkers.yaml up
 ----
 +
 This command starts MinIO and Apache Kafka containers, one container for object storage, and another for event sharing and notifications.
