@@ -15,6 +15,8 @@ use s3::{creds::error::CredentialsError, error::S3Error, Bucket};
 pub use s3::{creds::Credentials, Region};
 use serde::Deserialize;
 
+pub const STORAGE_ENDPOINT: &str = "http://localhost:9000";
+
 pub struct Storage {
     bucket: Bucket,
     metrics: Metrics,

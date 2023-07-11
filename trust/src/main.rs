@@ -1,6 +1,7 @@
 use std::process::{ExitCode, Termination};
 
 use clap::Parser;
+mod all;
 
 #[derive(clap::Subcommand, Debug)]
 pub enum Command {
@@ -13,6 +14,7 @@ pub enum Command {
     #[command(subcommand)]
     Exhort(exhort::Command),
     Exporter(exporter::Run),
+    All(all::Command),
 }
 
 #[derive(clap::Parser, Debug)]
@@ -52,6 +54,7 @@ impl Cli {
             Command::Spog(run) => run.run().await,
             Command::Exhort(run) => run.run().await,
             Command::Exporter(run) => run.run().await,
+            Command::All(run) => run.run().await,
         }
     }
 }

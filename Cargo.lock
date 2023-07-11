@@ -5722,6 +5722,8 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "bombastic",
+ "bombastic-api",
+ "bombastic-indexer",
  "clap",
  "exhort",
  "exporter",
@@ -5731,6 +5733,8 @@ dependencies = [
  "spog",
  "tokio",
  "vexination",
+ "vexination-api",
+ "vexination-indexer",
 ]
 
 [[package]]
