@@ -18,7 +18,7 @@ use prometheus::Registry;
 use tokio::sync::RwLock;
 use trustification_index::{IndexConfig, IndexStore};
 use trustification_infrastructure::{Infrastructure, InfrastructureConfig};
-use trustification_storage::{Storage, StorageConfig};
+use trustification_storage::{Storage, StorageConfig, STORAGE_ENDPOINT};
 
 mod sbom;
 mod server;
@@ -62,7 +62,7 @@ impl Default for Run {
             storage: StorageConfig {
                 region: None,
                 bucket: Some("bombastic".into()),
-                endpoint: Some(trustification_storage::STORAGE_ENDPOINT.into()),
+                endpoint: Some(STORAGE_ENDPOINT.into()),
                 access_key: Some("admin".into()),
                 secret_key: Some("password".into()),
             },

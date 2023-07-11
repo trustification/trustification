@@ -1,5 +1,7 @@
 use std::process::ExitCode;
 
+use reqwest::Url;
+use std::str::FromStr;
 use trustification_infrastructure::{Infrastructure, InfrastructureConfig};
 
 mod advisory;
@@ -38,6 +40,26 @@ pub struct Run {
 
     #[command(flatten)]
     pub(crate) infra: InfrastructureConfig,
+}
+
+impl Default for Run {
+    fn default() -> Self {
+        Self {
+            snyk: Snyk { org: None, token: None },
+            bind: "127.0.0.1".to_string(),
+            port: 8084,
+            guac_url: "http://localhost:8080/query".to_string(),
+            sync_interval_seconds: 10,
+            bombastic_url: Url::from_str("http://localhost:8082").unwrap(),
+            vexination_url: Url::from_str("http://localhost:8081").unwrap(),
+            infra: InfrastructureConfig {
+                infrastructure_enabled: false,
+                infrastructure_bind: "127.0.0.1".into(),
+                infrastructure_workers: 1,
+                enable_tracing: false,
+            },
+        }
+    }
 }
 
 impl Run {

@@ -5731,6 +5731,7 @@ dependencies = [
  "serde",
  "serde_json",
  "spog",
+ "spog-api",
  "tokio",
  "vexination",
  "vexination-api",
