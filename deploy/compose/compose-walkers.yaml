@@ -2,7 +2,7 @@ version: '3'
 services:
   vexination-walker:
     image: $TRUST_IMAGE:${TRUST_VERSION:?TRUST_VERSION is required}
-    command: vexination walker --devmode --source https://www.redhat.com/.well-known/csaf/provider-metadata.json -3 --storage-endpoint http://minio:9000
+    command: vexination walker --devmode --workers 3 --source https://www.redhat.com/.well-known/csaf/provider-metadata.json -3 --storage-endpoint http://minio:9000
     depends_on:
       minio:
         condition: service_healthy

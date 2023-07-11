@@ -1,9 +1,9 @@
 use std::process::ExitCode;
 
 use guac::collector::emitter::NatsEmitter;
-use prometheus::Registry;
 use strum_macros::Display;
 use trustification_event_bus::EventBusConfig;
+use trustification_infrastructure::{Infrastructure, InfrastructureConfig};
 use trustification_storage::StorageConfig;
 
 pub mod exporter;
@@ -47,24 +47,29 @@ pub struct Run {
 
     #[command(flatten)]
     pub(crate) storage: StorageConfig,
+
+    #[command(flatten)]
+    pub infra: InfrastructureConfig,
 }
 
 impl Run {
     pub async fn run(mut self) -> anyhow::Result<ExitCode> {
-        // TODO: Add infrastructure to surface metrics
-        let registry = Registry::default();
-        let default_bucket = self
-            .storage
-            .bucket
-            .clone()
-            .expect("Required parameter --storage-bucket not set");
-        let storage = self.storage.create(&default_bucket, self.devmode, &registry)?;
-        let bus = self.bus.create(&registry).await?;
-        let emitter = NatsEmitter::new(&self.guac_url).await?;
-        if self.devmode {
-            bus.create(&[self.stored_topic.as_str()]).await?;
-        }
-        exporter::run(storage, bus, emitter, self.stored_topic.as_str()).await?;
+        Infrastructure::from(self.infra)
+            .run("bombastic-exporter", |metrics| async move {
+                let default_bucket = self
+                    .storage
+                    .bucket
+                    .clone()
+                    .expect("Required parameter --storage-bucket not set");
+                let storage = self.storage.create(&default_bucket, self.devmode, metrics.registry())?;
+                let bus = self.bus.create(metrics.registry()).await?;
+                let emitter = NatsEmitter::new(&self.guac_url).await?;
+                if self.devmode {
+                    bus.create(&[self.stored_topic.as_str()]).await?;
+                }
+                exporter::run(storage, bus, emitter, self.stored_topic.as_str()).await
+            })
+            .await?;
         Ok(ExitCode::SUCCESS)
     }
 }
