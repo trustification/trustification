@@ -1,59 +1,91 @@
 use patternfly_yew::prelude::Navigation;
+use std::ops::Deref;
 use yew::prelude::*;
+
+pub const DEFAULT_PAGE_SIZE: usize = 10;
 
 #[derive(Clone, PartialEq, Properties, Eq)]
 pub struct UsePaginationStateArgs {
     pub initial_items_per_page: usize,
 }
 
-#[derive(PartialEq, Clone)]
+#[derive(Clone, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct PaginationState {
     pub page: usize,
     pub per_page: usize,
+}
+
+impl Default for PaginationState {
+    fn default() -> Self {
+        Self {
+            page: 1,
+            per_page: DEFAULT_PAGE_SIZE,
+        }
+    }
+}
+
+#[derive(PartialEq, Clone)]
+pub struct UsePaginationState {
+    pub state: UseStateHandle<PaginationState>,
     pub on_page_change: Callback<(Navigation, usize)>,
     pub on_per_page_change: Callback<usize>,
 }
 
+impl Deref for UsePaginationState {
+    type Target = PaginationState;
+
+    fn deref(&self) -> &Self::Target {
+        &self.state
+    }
+}
+
 #[hook]
-pub fn use_pagination_state<T>(config: T) -> PaginationState
+pub fn use_pagination_state<T>(config: T) -> UsePaginationState
 where
     T: FnOnce() -> UsePaginationStateArgs,
 {
-    let args = config();
-
-    let page = use_state_eq(|| 1);
-    let items_per_page = use_state_eq(|| args.initial_items_per_page);
+    let state = use_state_eq(|| {
+        let args = config();
+        PaginationState {
+            per_page: args.initial_items_per_page,
+            page: 1,
+        }
+    });
 
     let on_page_change = {
-        let page = page.clone();
-        let items_per_page = items_per_page.clone();
+        let state = state.clone();
 
         Callback::from(move |nav_and_total: (Navigation, usize)| {
-            let page = page.clone();
-            let items_per_page = items_per_page.clone();
+            let state = state.clone();
 
             let newpage = match nav_and_total.0 {
                 Navigation::First => 1,
-                Navigation::Last => (nav_and_total.1 + *items_per_page - 1) / *items_per_page,
-                Navigation::Next => *page + 1,
-                Navigation::Previous => *page - 1,
+                Navigation::Last => (nav_and_total.1 + (*state).per_page - 1) / (*state).per_page,
+                Navigation::Next => (*state).page + 1,
+                Navigation::Previous => (*state).page - 1,
                 Navigation::Page(page) => page,
             };
-            page.set(if newpage >= 1 { newpage } else { 1 });
+            let newpage = if newpage >= 1 { newpage } else { 1 };
+            state.set(PaginationState {
+                page: newpage,
+                per_page: (*state).per_page,
+            });
         })
     };
 
     let on_per_page_change = {
-        let items_per_page = items_per_page.clone();
-        Callback::from(move |val: usize| {
-            items_per_page.set(val);
+        let state = state.clone();
+        Callback::from(move |per_page: usize| {
+            state.set(PaginationState {
+                page: (*state).page,
+                per_page,
+            })
         })
     };
 
-    PaginationState {
-        page: *page,
-        per_page: *items_per_page,
-        on_page_change: on_page_change,
-        on_per_page_change: on_per_page_change,
+    UsePaginationState {
+        state,
+        on_page_change,
+        on_per_page_change,
     }
 }
