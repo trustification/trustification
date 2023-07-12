@@ -76,3 +76,10 @@ packageurl = { git = "https://github.com/ctron/packageurl.rs", rev = "c9a0c192ff
 # also check root level Cargo.toml
 cyclonedx-bom = { git = "https://github.com/lulf/cyclonedx-rust-cargo", branch = "trustification" }
 spdx-rs = { git = "https://github.com/lulf/spdx-rs", rev = "f3f1ea9a72e270c8434f8be6ca1d61608b25b813" }
+
+# release profile settings to reduce the final binary size
+[profile.release]
+panic = 'abort'
+codegen-units = 1
+opt-level = 's'
+lto = true
