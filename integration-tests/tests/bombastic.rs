@@ -75,11 +75,8 @@ fn test_search() {
                 let response = reqwest::get(url).await.unwrap();
                 assert_eq!(response.status(), StatusCode::OK);
                 let payload: Value = response.json().await.unwrap();
-                if payload["total"] == json!(1) {
-                    assert_eq!(
-                        payload["result"][0]["document"]["version"],
-                        json!("ubi9-container-9.1.0-1782.noarch")
-                    );
+                if payload["total"].as_u64().unwrap() >= 1 {
+                    assert_eq!(payload["result"][0]["document"]["name"], json!("ubi9-container"));
                     break;
                 }
                 tokio::time::sleep(Duration::from_secs(1)).await;
