@@ -3,7 +3,31 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chicken Coop</title>
+    <title>Trustification Console</title>
+
+    <style>
+        #loading {
+            background-color: white;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+        #loading-background {
+            background-image: url("images/chicken-svgrepo-com.svg");
+            background-position: center;
+            background-repeat: no-repeat;
+            background-size: 10%;
+            width: 100%;
+            height: 100%;
+            animation: fadeIn ease-in 3s;
+        }
+        @keyframes fadeIn {
+            0% {opacity:0;}
+            100% {opacity:1;}
+        }
+    </style>
 
     <link data-trunk rel="icon" href="assets/images/chicken-svgrepo-com.svg">
     <link data-trunk rel="scss" href="styles/main.scss">
@@ -17,6 +41,7 @@
 </head>
 
 <body>
+<div id="loading"><div id="loading-background"></div></div>
 </body>
 
 </html>
