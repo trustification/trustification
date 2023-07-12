@@ -8,7 +8,6 @@ use lazy_static::lazy_static;
 use patternfly_yew::prelude::*;
 use spog_model::prelude::*;
 use std::fmt::Debug;
-use std::ops::{Deref, DerefMut};
 use std::{collections::HashSet, rc::Rc};
 use vexination_model::prelude::Vulnerabilities;
 use yew::prelude::*;
@@ -25,25 +24,6 @@ pub struct AdvisorySearchProperties {
 
     #[prop_or_default]
     pub children: Children,
-}
-
-#[derive(Clone, Debug, Default, PartialEq, serde::Serialize, serde::Deserialize)]
-pub struct SearchViewState<T> {
-    pub search: T,
-}
-
-impl<T> Deref for SearchViewState<T> {
-    type Target = T;
-
-    fn deref(&self) -> &Self::Target {
-        &self.search
-    }
-}
-
-impl<T> DerefMut for SearchViewState<T> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.search
-    }
 }
 
 #[function_component(AdvisorySearch)]
@@ -286,7 +266,7 @@ impl SimpleProperties for SearchParameters {
 
 impl ToFilterExpression for SearchParameters {
     fn to_filter_expression(&self) -> String {
-        let mut terms = self.terms.clone();
+        let mut terms = escape_terms(self.terms.clone()).collect::<Vec<_>>();
 
         {
             let mut severities = vec![];

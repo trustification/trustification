@@ -1,30 +1,53 @@
 use crate::components::search::SearchMode;
-use crate::hooks::use_pagination_state::{use_pagination_state, PaginationState, UsePaginationStateArgs};
+use crate::hooks::use_pagination_state::{
+    use_pagination_state, PaginationState, UsePaginationState, UsePaginationStateArgs, DEFAULT_PAGE_SIZE,
+};
 use crate::utils::search::*;
 use bombastic_model::prelude::Packages;
 use gloo_utils::format::JsValueSerdeExt;
 use patternfly_yew::prelude::InputState;
 use sikula::prelude::Search as _;
 use std::fmt::Debug;
+use std::ops::{Deref, DerefMut};
 use std::rc::Rc;
 use vexination_model::search::Vulnerabilities;
 use wasm_bindgen::JsValue;
 use yew::prelude::*;
 
+#[derive(Clone, Debug, Default, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct SearchViewState<T> {
+    pub search: T,
+    pub pagination: PaginationState,
+}
+
+impl<T> Deref for SearchViewState<T> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        &self.search
+    }
+}
+
+impl<T> DerefMut for SearchViewState<T> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.search
+    }
+}
+
 #[hook]
-pub fn use_search_view_state<T, F>(props_query: Option<String>, f: F) -> (UseStateHandle<T>, PaginationState)
+pub fn use_search_view_state<T, F>(props_query: Option<String>, f: F) -> (UseStateHandle<T>, UsePaginationState)
 where
     T: for<'de> serde::Deserialize<'de> + serde::Serialize + Clone + Default + Debug + PartialEq + 'static,
     F: FnOnce(String) -> T,
 {
     // the active query
-    let search_params = use_state_eq(move || {
+    let state = use_state_eq(move || {
         // initialize with the state from history, properties, or with a reasonable default
         gloo_utils::history()
             .state()
             .ok()
             .and_then(|state| {
-                let deser = state.into_serde::<T>();
+                let deser = state.into_serde::<SearchViewState<T>>();
                 log::debug!("Deserialized: {deser:?}");
                 deser.ok()
             })
@@ -33,25 +56,44 @@ where
                     log::debug!("Initial: {s}");
                     match s.is_empty() {
                         true => None,
-                        false => Some(f(s)),
+                        false => Some(SearchViewState {
+                            search: f(s),
+                            ..Default::default()
+                        }),
                     }
                 })
             })
-            .unwrap_or_else(T::default)
+            .unwrap_or_default()
     });
 
+    let search_params = use_state_eq(T::default);
     let pagination_state = use_pagination_state(|| UsePaginationStateArgs {
-        initial_items_per_page: 10,
+        initial_items_per_page: DEFAULT_PAGE_SIZE,
     });
+
+    {
+        let search_params = search_params.clone();
+        let pagination_state = pagination_state.clone();
+        use_effect_with_deps(
+            move |state| {
+                search_params.set(state.search.clone());
+                pagination_state.state.set(state.pagination.clone());
+            },
+            (*state).clone(),
+        );
+    }
 
     use_effect_with_deps(
-        |search_params| {
+        |(search_params, pagination)| {
             // store changes to the state in the current history
-            if let Ok(data) = JsValue::from_serde(search_params) {
+            if let Ok(data) = JsValue::from_serde(&SearchViewState {
+                search: search_params,
+                pagination: pagination.clone(),
+            }) {
                 let _ = gloo_utils::history().replace_state(&data, "");
             }
         },
-        (*search_params).clone(),
+        ((*search_params).clone(), (*pagination_state.state).clone()),
     );
 
     (search_params, pagination_state)
@@ -59,7 +101,7 @@ where
 
 pub struct UseStandardSearch<T> {
     pub search_params: UseStateHandle<SearchMode<T>>,
-    pub pagination_state: PaginationState,
+    pub pagination_state: UsePaginationState,
     pub filter_input_state: Rc<InputState>,
     pub onclear: Callback<MouseEvent>,
     pub onset: Callback<()>,
@@ -107,7 +149,10 @@ where
             true => InputState::Default,
             false => match S::Search::parse(text) {
                 Ok(_) => InputState::Default,
-                Err(_) => InputState::Error,
+                Err(err) => {
+                    log::info!("Failed to parse: {err}");
+                    InputState::Error
+                }
             },
         },
         ((*search_params).is_simple(), (*text).clone()),
