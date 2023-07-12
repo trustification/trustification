@@ -25,7 +25,7 @@ reqwest = { version = "0.11", features = ["json"] }
 roxmltree = "0.18"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-sikula = { version = "0.4.0-alpha", features = ["time"] }
+sikula = { version = "0.4.0-alpha.3", features = ["time"] }
 spdx-rs = "0.5.2"
 strum = { version = "0.25", features = ["derive"] }
 thiserror = "1"
@@ -72,6 +72,8 @@ csaf = { git = "https://github.com/voteblake/csaf-rs", rev = "76cb9ede10adb1fbb4
 spog-model = { path = "../model" }
 
 packageurl = { git = "https://github.com/ctron/packageurl.rs", rev = "c9a0c192ff0cba5d75b8cbf8be0b1e4dc14320aa" }
+
+#sikula = { git = "https://github.com/ctron/sikula", rev = "65a13c415cbbc16e386b91f6b98a16a9ba3aa938"}
 
 # also check root level Cargo.toml
 cyclonedx-bom = { git = "https://github.com/lulf/cyclonedx-rust-cargo", branch = "trustification" }
