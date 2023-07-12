@@ -3,14 +3,11 @@ use crate::hooks::use_pagination_state::{
     use_pagination_state, PaginationState, UsePaginationState, UsePaginationStateArgs, DEFAULT_PAGE_SIZE,
 };
 use crate::utils::search::*;
-use bombastic_model::prelude::Packages;
 use gloo_utils::format::JsValueSerdeExt;
 use patternfly_yew::prelude::InputState;
-use sikula::prelude::Search as _;
 use std::fmt::Debug;
 use std::ops::{Deref, DerefMut};
 use std::rc::Rc;
-use vexination_model::search::Vulnerabilities;
 use wasm_bindgen::JsValue;
 use yew::prelude::*;
 
@@ -109,18 +106,6 @@ pub struct UseStandardSearch<T> {
     pub text: UseStateHandle<String>,
 }
 
-pub trait SearchBorrowed {
-    type Search<'a>: sikula::lir::Search<'a>;
-}
-
-impl<'s> SearchBorrowed for Packages<'s> {
-    type Search<'a> = Packages<'a>;
-}
-
-impl<'s> SearchBorrowed for Vulnerabilities<'s> {
-    type Search<'a> = Vulnerabilities<'a>;
-}
-
 #[hook]
 pub fn use_standard_search<T, S>(props_query: Option<String>) -> UseStandardSearch<T>
 where
@@ -133,7 +118,7 @@ where
         + ToFilterExpression
         + SimpleProperties
         + 'static,
-    S: SearchBorrowed,
+    S: sikula::prelude::Search,
 {
     let (search_params, pagination_state) = use_search_view_state::<SearchMode<T>, _>(props_query, SearchMode::Complex);
 
@@ -147,7 +132,7 @@ where
     let filter_input_state = use_memo(
         |(simple, text)| match simple {
             true => InputState::Default,
-            false => match S::Search::parse(text) {
+            false => match S::parse(text) {
                 Ok(_) => InputState::Default,
                 Err(err) => {
                     log::info!("Failed to parse: {err}");
