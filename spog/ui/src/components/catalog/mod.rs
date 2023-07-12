@@ -221,7 +221,7 @@ impl SimpleProperties for SearchParameters {
 
 impl ToFilterExpression for SearchParameters {
     fn to_filter_expression(&self) -> String {
-        let mut terms = self.terms.clone();
+        let mut terms = escape_terms(self.terms.clone()).collect::<Vec<_>>();
 
         if self.is_container {
             terms.push("type:oci".to_string());

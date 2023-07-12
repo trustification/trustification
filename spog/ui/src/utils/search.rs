@@ -23,6 +23,19 @@ pub trait SimpleProperties {
     fn terms_mut(&mut self) -> &mut Vec<String>;
 }
 
+/// ensure that all terms are either plain or wrapped in quotes.
+///
+/// TODO: be able to actually escape `"` too.
+pub fn escape_terms(i: impl IntoIterator<Item = String>) -> impl Iterator<Item = String> {
+    i.into_iter().map(|s: String| {
+        if s.chars().any(|c| !c.is_alphanumeric()) {
+            format!(r#""{}""#, s.replace('"', ""))
+        } else {
+            s
+        }
+    })
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
