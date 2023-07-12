@@ -40,9 +40,9 @@ fn test_vexination() {
                         .unwrap();
 
                     assert_eq!(response.status(), StatusCode::OK);
-                    let response: Map<String, Value> = response.json().await.unwrap();
+                    let payload: Value = response.json().await.unwrap();
 
-                    if let Some(Some(1)) = response.get("total").map(|t| t.as_i64()) {
+                    if payload["total"].as_u64().unwrap() >= 1 {
                         break;
                     }
                 }
