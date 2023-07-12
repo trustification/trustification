@@ -14,6 +14,15 @@ pub fn or_group(terms: impl IntoIterator<Item = String>) -> impl Iterator<Item =
         .chain(suffix)
 }
 
+pub trait ToFilterExpression {
+    fn to_filter_expression(&self) -> String;
+}
+
+pub trait SimpleProperties {
+    fn terms(&self) -> &[String];
+    fn terms_mut(&mut self) -> &mut Vec<String>;
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
