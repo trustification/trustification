@@ -1,18 +1,16 @@
-use crate::utils::search::or_group;
 use crate::{
     backend::{SearchOptions, VexService},
     components::{search::*, severity::Severity, simple_pagination::SimplePagination},
-    hooks::{use_backend::use_backend, use_pagination_state::*},
-    utils::pagination_to_offset,
+    hooks::{use_backend::use_backend, use_standard_search, UseStandardSearch},
+    utils::{pagination_to_offset, search::*},
 };
-use gloo_utils::format::JsValueSerdeExt;
 use lazy_static::lazy_static;
 use patternfly_yew::prelude::*;
-use sikula::prelude::Search as _;
 use spog_model::prelude::*;
+use std::fmt::Debug;
+use std::ops::{Deref, DerefMut};
 use std::{collections::HashSet, rc::Rc};
 use vexination_model::prelude::Vulnerabilities;
-use wasm_bindgen::JsValue;
 use yew::prelude::*;
 use yew_more_hooks::prelude::*;
 
@@ -29,38 +27,40 @@ pub struct AdvisorySearchProperties {
     pub children: Children,
 }
 
+#[derive(Clone, Debug, Default, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct SearchViewState<T> {
+    pub search: T,
+}
+
+impl<T> Deref for SearchViewState<T> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        &self.search
+    }
+}
+
+impl<T> DerefMut for SearchViewState<T> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.search
+    }
+}
+
 #[function_component(AdvisorySearch)]
 pub fn advisory_search(props: &AdvisorySearchProperties) -> Html {
     let backend = use_backend();
 
     let service = use_memo(|backend| VexService::new(backend.clone()), backend.clone());
 
-    // the active query
-    let search_params = use_state_eq(|| {
-        // initialize with the state from history, properties, or with a reasonable default
-        gloo_utils::history()
-            .state()
-            .ok()
-            .and_then(|state| {
-                let deser = state.into_serde::<SearchMode<SearchParameters>>();
-                log::debug!("Deserialized: {deser:?}");
-                deser.ok()
-            })
-            .or_else(|| {
-                props.query.clone().map(|s| {
-                    log::debug!("Initial: {s}");
-                    match s.is_empty() {
-                        true => SearchMode::default(),
-                        false => SearchMode::Complex(s),
-                    }
-                })
-            })
-            .unwrap_or_else(SearchMode::default)
-    });
-
-    let pagination_state = use_pagination_state(|| UsePaginationStateArgs {
-        initial_items_per_page: 10,
-    });
+    let UseStandardSearch {
+        search_params,
+        pagination_state,
+        filter_input_state,
+        onclear,
+        onset,
+        ontogglesimple,
+        text,
+    } = use_standard_search::<SearchParameters, Vulnerabilities>(props.query.clone());
 
     let search = {
         let service = service.clone();
@@ -93,67 +93,6 @@ pub fn advisory_search(props: &AdvisorySearchProperties) -> Html {
         (props.callback.clone(), search.clone()),
     );
 
-    // the current value in the text input field
-    let text = use_state_eq(|| match &*search_params {
-        SearchMode::Complex(s) => s.to_string(),
-        SearchMode::Simple(s) => s.terms.join(" "),
-    });
-
-    // parse filter
-    let filter_input_state = use_memo(
-        |(simple, text)| match simple {
-            true => InputState::Default,
-            false => match Vulnerabilities::parse(text) {
-                Ok(_) => InputState::Default,
-                Err(_) => InputState::Error,
-            },
-        },
-        ((*search_params).is_simple(), (*text).clone()),
-    );
-
-    // clear search, keep mode
-    let onclear = {
-        let text = text.clone();
-        let search_params = search_params.clone();
-        Callback::from(move |_| {
-            text.set(String::new());
-            // trigger empty search
-            match *search_params {
-                SearchMode::Complex(_) => search_params.set(SearchMode::Complex(String::new())),
-                SearchMode::Simple(_) => search_params.set(SearchMode::Simple(Default::default())),
-            }
-        })
-    };
-
-    // apply text field to search
-    let onset = {
-        let search_params = search_params.clone();
-        let text = text.clone();
-        Callback::from(move |()| {
-            let s = (*search_params).clone();
-            match s {
-                SearchMode::Complex(_) => {
-                    search_params.set(SearchMode::Complex((*text).clone()));
-                }
-                SearchMode::Simple(mut s) => {
-                    let text = &*text;
-                    s.terms = text.split(" ").map(|s| s.to_string()).collect();
-                    search_params.set(SearchMode::Simple(s));
-                }
-            }
-        })
-    };
-
-    use_effect_with_deps(
-        |search_params| {
-            // store changes to the state in the current history
-            if let Ok(data) = JsValue::from_serde(search_params) {
-                let _ = gloo_utils::history().replace_state(&data, "");
-            }
-        },
-        (*search_params).clone(),
-    );
-
     // pagination
 
     let total = search.data().and_then(|d| d.total);
@@ -166,24 +105,6 @@ pub fn advisory_search(props: &AdvisorySearchProperties) -> Html {
     // switch
 
     let simple = search_params.is_simple();
-
-    // toggle search mode: simple <-> complex
-    let ontogglesimple = {
-        let search_params = search_params.clone();
-        let text = text.clone();
-
-        Callback::from(move |state| match state {
-            false => {
-                let q = (*search_params).as_str().to_string();
-                search_params.set(SearchMode::Complex(q.clone()));
-                text.set(q);
-            }
-            true => {
-                search_params.set(SearchMode::default());
-                text.set(String::new());
-            }
-        })
-    };
 
     // render
     html!(
@@ -351,6 +272,16 @@ pub struct SearchParameters {
 
     is_ocp3: bool,
     is_ocp4: bool,
+}
+
+impl SimpleProperties for SearchParameters {
+    fn terms(&self) -> &[String] {
+        &self.terms
+    }
+
+    fn terms_mut(&mut self) -> &mut Vec<String> {
+        &mut self.terms
+    }
 }
 
 impl ToFilterExpression for SearchParameters {

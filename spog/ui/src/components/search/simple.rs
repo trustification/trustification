@@ -1,3 +1,4 @@
+use crate::utils::search::*;
 use patternfly_yew::prelude::*;
 use std::borrow::Cow;
 use std::collections::HashSet;
@@ -171,8 +172,4 @@ where
                 })
         } </Accordion>
     )
-}
-
-pub trait ToFilterExpression {
-    fn to_filter_expression(&self) -> String;
 }
