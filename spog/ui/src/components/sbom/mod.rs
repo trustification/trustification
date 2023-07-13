@@ -1,6 +1,6 @@
 use crate::{
     backend::{PackageService, SearchOptions},
-    components::{search::*, simple_pagination::SimplePagination},
+    components::search::*,
     hooks::{use_backend::use_backend, use_standard_search, UseStandardSearch},
     utils::{pagination_to_offset, search::*},
 };
@@ -31,15 +31,17 @@ pub fn catalog_search(props: &CatalogSearchProperties) -> Html {
 
     let service = use_memo(|backend| PackageService::new(backend.clone()), backend);
 
+    let total = use_state_eq(|| None);
+
     let UseStandardSearch {
         search_params,
-        pagination_state,
+        pagination,
         filter_input_state,
         onclear,
         onset,
         ontogglesimple,
         text,
-    } = use_standard_search::<SearchParameters, Packages>(props.query.clone());
+    } = use_standard_search::<SearchParameters, Packages>(props.query.clone(), *total);
 
     let search = {
         use_async_with_cloned_deps(
@@ -56,13 +58,11 @@ pub fn catalog_search(props: &CatalogSearchProperties) -> Html {
                     .map(|result| result.map(Rc::new))
                     .map_err(|err| err.to_string())
             },
-            (
-                (*search_params).clone(),
-                pagination_state.page,
-                pagination_state.per_page,
-            ),
+            ((*search_params).clone(), pagination.page, pagination.per_page),
         )
     };
+
+    total.set(search.data().and_then(|d| d.total));
 
     use_effect_with_deps(
         |(callback, search)| {
@@ -140,11 +140,8 @@ pub fn catalog_search(props: &CatalogSearchProperties) -> Html {
 
                             <ToolbarItem r#type={ToolbarItemType::Pagination}>
                                 <SimplePagination
-                                    total_items={total}
-                                    page={pagination_state.page}
-                                    per_page={pagination_state.per_page}
-                                    on_page_change={&pagination_state.on_page_change}
-                                    on_per_page_change={&pagination_state.on_per_page_change}
+                                    pagination={pagination.clone()}
+                                    total={total}
                                 />
                             </ToolbarItem>
 
@@ -164,12 +161,9 @@ pub fn catalog_search(props: &CatalogSearchProperties) -> Html {
             </Grid>
 
             <SimplePagination
+                {pagination}
+                total={total}
                 position={PaginationPosition::Bottom}
-                total_items={total}
-                page={pagination_state.page}
-                per_page={pagination_state.per_page}
-                on_page_change={pagination_state.on_page_change}
-                on_per_page_change={pagination_state.on_per_page_change}
             />
 
         </>
