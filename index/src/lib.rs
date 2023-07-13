@@ -305,7 +305,7 @@ impl<INDEX: Index> IndexStore<INDEX> {
 
         self.metrics.queries_total.inc();
 
-        debug!("Found {} docs", count);
+        log::info!("#matches={count} for query '{q}'");
 
         let mut hits = Vec::new();
         for hit in top_docs {
