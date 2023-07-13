@@ -97,7 +97,7 @@ pub fn spdx_main(bom: &SPDX) -> Html {
                     <DescriptionList>
                         <DescriptionGroup term="Name">{ &package.package_name }</DescriptionGroup>
                         <DescriptionGroup term="Version">{ OrNone(package.package_version.as_ref()) }</DescriptionGroup>
-                        <DescriptionGroup term="External References"> { spdx_external_references(&package)} </DescriptionGroup>
+                        <DescriptionGroup term="External References"> { spdx_external_references(package)} </DescriptionGroup>
                     </DescriptionList>
                 )]
                 },

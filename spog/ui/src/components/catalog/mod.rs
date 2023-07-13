@@ -29,7 +29,7 @@ pub struct CatalogSearchProperties {
 pub fn catalog_search(props: &CatalogSearchProperties) -> Html {
     let backend = use_backend();
 
-    let service = use_memo(|backend| PackageService::new(backend.clone()), backend.clone());
+    let service = use_memo(|backend| PackageService::new(backend.clone()), backend);
 
     let UseStandardSearch {
         search_params,
@@ -42,7 +42,6 @@ pub fn catalog_search(props: &CatalogSearchProperties) -> Html {
     } = use_standard_search::<SearchParameters, Packages>(props.query.clone());
 
     let search = {
-        let service = service.clone();
         use_async_with_cloned_deps(
             move |(search_params, page, per_page)| async move {
                 service
@@ -156,7 +155,7 @@ pub fn catalog_search(props: &CatalogSearchProperties) -> Html {
                 </GridItem>
 
                 <GridItem cols={[2]}>
-                    { simple_search(&SEARCH, search_params.clone(), filter_expansion.clone()) }
+                    { simple_search(&SEARCH, search_params, filter_expansion) }
                 </GridItem>
 
                 <GridItem cols={[10]}>

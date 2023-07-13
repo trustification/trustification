@@ -152,7 +152,7 @@ pub fn package_result(props: &PackageResultProperties) -> Html {
     html!(
         <TableWrapper<Column, UseTableData<Column, MemoizedTableModel<PackageEntry>>>
             loading={&props.state.is_processing()}
-            error={props.state.error().map(|val| val.clone())}
+            error={props.state.error().cloned()}
             empty={entries.is_empty()}
             header={header}
         >

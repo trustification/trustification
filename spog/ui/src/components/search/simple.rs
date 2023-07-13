@@ -152,7 +152,7 @@ where
                 .iter()
                 .map(|cat| {
                     filter_section(
-                        &cat.title,
+                        cat.title,
                         html!(
                             <List r#type={ListType::Plain}>
                                 { for cat.options.iter().map(|opt|{
