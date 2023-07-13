@@ -110,7 +110,7 @@ pub fn spdx_packages(props: &SpdxPackagesProperties) -> Html {
         fn render_details(&self) -> Vec<Span> {
             match &self.base {
                 PackageBase::Plain { package } => {
-                    super::packages::render_single_details(&package, &self.all_packages, &self.relations)
+                    super::packages::render_single_details(package, &self.all_packages, &self.relations)
                 }
                 PackageBase::Purl {
                     base,
@@ -256,7 +256,7 @@ pub fn spdx_packages(props: &SpdxPackagesProperties) -> Html {
 
                 result
             },
-            (props.bom.clone(), package_map.clone()),
+            (props.bom.clone(), package_map),
         )
     };
 
@@ -266,7 +266,6 @@ pub fn spdx_packages(props: &SpdxPackagesProperties) -> Html {
     let filter = use_state_eq(String::new);
 
     let filtered_packages = {
-        let package_filter_string = package_filter_string.clone();
         let offset = offset.clone();
         let limit = limit.clone();
         use_memo(
@@ -305,7 +304,7 @@ pub fn spdx_packages(props: &SpdxPackagesProperties) -> Html {
                 // return result
                 packages
             },
-            (packages.clone(), (*filter).clone()),
+            (packages, (*filter).clone()),
         )
     };
 
@@ -323,7 +322,7 @@ pub fn spdx_packages(props: &SpdxPackagesProperties) -> Html {
                 .cloned()
                 .collect::<Vec<_>>()
         },
-        (filtered_packages.clone(), *offset, *limit),
+        (filtered_packages, *offset, *limit),
     );
 
     let (entries, onexpand) = use_table_data(MemoizedTableModel::new(entries));
@@ -417,7 +416,7 @@ pub fn spdx_packages(props: &SpdxPackagesProperties) -> Html {
 pub fn render_single_details(
     package: &PackageInformation,
     packages: &HashMap<String, PackageInformation>,
-    relations: &Vec<Relationship>,
+    relations: &[Relationship],
 ) -> Vec<Span> {
     let outgoing = relations
         .iter()
@@ -446,7 +445,7 @@ pub fn render_single_details(
             <GridItem cols={[4]}>
                 <Card plain=true title={html!(<Title>{"External References"}</Title>)}>
                     <CardBody>
-                        { spdx_external_references(&package) }
+                        { spdx_external_references(package) }
                     </CardBody>
                 </Card>
             </GridItem>
@@ -457,7 +456,7 @@ pub fn render_single_details(
                         Some(html_nested!(<CardBody>
                             <Title level={Level::H3}>{"Outgoing"}</Title>
                             <List r#type={ListType::Basic}>
-                                { for outgoing.into_iter().map(|rel|spdx_relationship_entry(&packages, rel, &rel.spdx_element_id))}
+                                { for outgoing.into_iter().map(|rel|spdx_relationship_entry(packages, rel, &rel.spdx_element_id))}
                             </List>
                         </CardBody>))
                     } else { None } }
@@ -465,7 +464,7 @@ pub fn render_single_details(
                         Some(html_nested!(<CardBody>
                             <Title level={Level::H3}>{"Incoming"}</Title>
                             <List r#type={ListType::Basic}>
-                                { for incoming.into_iter().map(|rel|spdx_relationship_entry(&packages, rel, &rel.related_spdx_element))}
+                                { for incoming.into_iter().map(|rel|spdx_relationship_entry(packages, rel, &rel.related_spdx_element))}
                             </List>
                         </CardBody>))
                     } else { None } }

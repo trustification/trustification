@@ -30,7 +30,7 @@ pub struct AdvisorySearchProperties {
 pub fn advisory_search(props: &AdvisorySearchProperties) -> Html {
     let backend = use_backend();
 
-    let service = use_memo(|backend| VexService::new(backend.clone()), backend.clone());
+    let service = use_memo(|backend| VexService::new(backend.clone()), backend);
 
     let UseStandardSearch {
         search_params,
@@ -43,7 +43,6 @@ pub fn advisory_search(props: &AdvisorySearchProperties) -> Html {
     } = use_standard_search::<SearchParameters, Vulnerabilities>(props.query.clone());
 
     let search = {
-        let service = service.clone();
         use_async_with_cloned_deps(
             move |(search_params, page, per_page)| async move {
                 service
@@ -153,7 +152,7 @@ pub fn advisory_search(props: &AdvisorySearchProperties) -> Html {
                 </GridItem>
 
                 <GridItem cols={[2]}>
-                    { simple_search(&SEARCH, search_params.clone(), filter_expansion.clone()) }
+                    { simple_search(&SEARCH, search_params, filter_expansion) }
                 </GridItem>
 
                 <GridItem cols={[10]}>

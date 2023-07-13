@@ -11,11 +11,7 @@ pub fn trace_product<'a>(csaf: &'a Csaf, product: &ProductIdT) -> Vec<&'a Branch
             if let Some(full_name) = &branch.product {
                 if &full_name.product_id == product {
                     // trace back
-                    result = parents
-                        .into_iter()
-                        .map(|b| *b)
-                        .chain(Some(branch))
-                        .collect::<Vec<&'a Branch>>()
+                    result = parents.iter().copied().chain(Some(branch)).collect::<Vec<&'a Branch>>()
                 }
             }
         });

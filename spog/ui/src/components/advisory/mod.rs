@@ -144,7 +144,7 @@ pub fn advisory_result(props: &AdvisoryResultProperties) -> Html {
     html!(
         <TableWrapper<Column, UseTableData<Column, MemoizedTableModel<AdvisoryEntry>>>
             loading={&props.state.is_processing()}
-            error={props.state.error().map(|val| val.clone())}
+            error={props.state.error().cloned()}
             empty={entries.is_empty()}
             {header}
         >
@@ -199,7 +199,7 @@ pub fn csaf_references(props: &CsafReferencesProperties) -> Html {
                                 </span>
                             </a>
                             if let Some(category) = &reference.category {
-                                <Label compact=true label={ref_cat_str(&category)} color={Color::Blue} />
+                                <Label compact=true label={ref_cat_str(category)} color={Color::Blue} />
                             }
                         </>)
                     }) }
@@ -229,8 +229,8 @@ pub fn csaf_notes(props: &CsafNotesProperties) -> Html {
     html!(
         <CardWrapper plain={props.plain} title="Notes">
             <DescriptionList>
-            { for props.notes.iter().flat_map(|n|n).map(|note| {
-                html!( <DescriptionGroup term={note_term(&note).to_string()}> { &note.text } </DescriptionGroup> )
+            { for props.notes.iter().flatten().map(|note| {
+                html!( <DescriptionGroup term={note_term(note).to_string()}> { &note.text } </DescriptionGroup> )
             })}
             </DescriptionList>
         </CardWrapper>
@@ -303,11 +303,11 @@ fn csaf_product_status(props: &CsafProductStatusSectionProperties) -> Html {
 }
 
 fn csaf_product_status_entry(csaf: &Csaf, id: &ProductIdT) -> Html {
-    find_product_relations(&csaf, id)
+    find_product_relations(csaf, id)
         .map(|r| {
-            let product = product_html(trace_product(&csaf, &r.relates_to_product_reference));
+            let product = product_html(trace_product(csaf, &r.relates_to_product_reference));
             let relationship = html!(<Label label={rela_cat_str(&r.category)} compact=true />);
-            let component = product_html(trace_product(&csaf, &r.product_reference));
+            let component = product_html(trace_product(csaf, &r.product_reference));
 
             html!(<>
                 { component } {" "} { relationship } {" "} { product }  

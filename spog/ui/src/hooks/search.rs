@@ -182,7 +182,7 @@ where
             }
             SearchMode::Simple(mut s) => {
                 let text = &*text;
-                *s.terms_mut() = text.split(" ").map(|s| s.to_string()).collect();
+                *s.terms_mut() = text.split(' ').map(|s| s.to_string()).collect();
                 search_params.set(SearchMode::Simple(s));
             }
         })

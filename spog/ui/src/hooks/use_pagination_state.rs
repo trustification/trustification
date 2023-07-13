@@ -60,15 +60,15 @@ where
 
             let newpage = match nav_and_total.0 {
                 Navigation::First => 1,
-                Navigation::Last => (nav_and_total.1 + (*state).per_page - 1) / (*state).per_page,
-                Navigation::Next => (*state).page + 1,
-                Navigation::Previous => (*state).page - 1,
+                Navigation::Last => (nav_and_total.1 + state.per_page - 1) / state.per_page,
+                Navigation::Next => state.page + 1,
+                Navigation::Previous => state.page - 1,
                 Navigation::Page(page) => page,
             };
             let newpage = if newpage >= 1 { newpage } else { 1 };
             state.set(PaginationState {
                 page: newpage,
-                per_page: (*state).per_page,
+                per_page: state.per_page,
             });
         })
     };
@@ -77,7 +77,7 @@ where
         let state = state.clone();
         Callback::from(move |per_page: usize| {
             state.set(PaginationState {
-                page: (*state).page,
+                page: state.page,
                 per_page,
             })
         })

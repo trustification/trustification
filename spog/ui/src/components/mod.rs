@@ -37,7 +37,7 @@ where
     FB: FnOnce(&T) -> Html,
     E: std::error::Error,
 {
-    match &*fetch {
+    match fetch {
         UseAsyncState::Pending | UseAsyncState::Processing => html!(<Spinner/>),
         UseAsyncState::Ready(Ok(data)) => body(data),
         UseAsyncState::Ready(Err(err)) => html!(<Error err={err.to_string()} />),
