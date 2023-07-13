@@ -4,8 +4,6 @@ use std::str::FromStr;
 use std::sync::Arc;
 use std::time::SystemTime;
 
-use actix_web::cookie::time::Duration;
-use actix_web::rt::time::sleep;
 use futures::future::join;
 use guac::collectsub::{CollectSubClient, Entry, Filter};
 use tokio::time::interval;
