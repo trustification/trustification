@@ -9,7 +9,7 @@ pub enum Packages<'a> {
     Type(Primary<'a>),
     #[search]
     Namespace(Primary<'a>),
-    #[search]
+    #[search(default)]
     Version(Primary<'a>),
     #[search(default)]
     Description(Primary<'a>),

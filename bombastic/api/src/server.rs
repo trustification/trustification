@@ -73,7 +73,7 @@ impl error::ResponseError for Error {
             Self::Storage(StorageError::NotFound) => StatusCode::NOT_FOUND,
             Self::InvalidContentType | Self::InvalidContentEncoding => StatusCode::BAD_REQUEST,
             e => {
-                log::info!("ERROR: {:?}", e);
+                log::error!("{e:?}");
                 StatusCode::INTERNAL_SERVER_ERROR
             }
         }
@@ -182,7 +182,7 @@ async fn search_sbom(
 ) -> actix_web::Result<impl Responder> {
     let params = params.into_inner();
 
-    log::info!("Querying SBOM using {}", params.q);
+    log::info!("Querying SBOM: '{}'", params.q);
 
     let index = state.index.read().await;
     let result = index
