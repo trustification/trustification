@@ -90,10 +90,9 @@ pub fn catalog_search(props: &CatalogSearchProperties) -> Html {
 
             <Grid>
                 <GridItem cols={[2]}>
-                    <div style="height: 100%; display: flex; flex-direction: row; align-items: center;">
-                        <Title level={Level::H2}>{ "Categories " } <Switch checked={simple} label="Simple" label_off="Complex" onchange={ontogglesimple}/> </Title>
-                    </div>
+                    <SimpleModeSwitch {simple} ontoggle={ontogglesimple} />
                 </GridItem>
+
                 <GridItem cols={[10]}>
 
                     <Toolbar>
@@ -181,6 +180,26 @@ lazy_static! {
     static ref SEARCH: Search<SearchParameters> = Search {
         categories: vec![
             SearchCategory {
+                title: "Product",
+                options: vec![
+                    SearchOption::<SearchParameters>::new_str(
+                        "Red Hat Enterprise Linux 7",
+                        |options| options.is_rhel7,
+                        |options, value| options.is_rhel7 = value
+                    ),
+                    SearchOption::<SearchParameters>::new_str(
+                        "Red Hat Enterprise Linux 8",
+                        |options| options.is_rhel8,
+                        |options, value| options.is_rhel8 = value
+                    ),
+                    SearchOption::<SearchParameters>::new_str(
+                        "Red Hat Enterprise Linux 9",
+                        |options| options.is_rhel9,
+                        |options, value| options.is_rhel9 = value
+                    )
+                ]
+            },
+            SearchCategory {
                 title: "Supplier",
                 options: vec![SearchOption::<SearchParameters>::new_str(
                     "Red Hat",
@@ -204,6 +223,10 @@ lazy_static! {
 struct SearchParameters {
     terms: Vec<String>,
 
+    is_rhel7: bool,
+    is_rhel8: bool,
+    is_rhel9: bool,
+
     supplier_redhat: bool,
     is_container: bool,
 }
@@ -221,6 +244,24 @@ impl SimpleProperties for SearchParameters {
 impl ToFilterExpression for SearchParameters {
     fn to_filter_expression(&self) -> String {
         let mut terms = escape_terms(self.terms.clone()).collect::<Vec<_>>();
+
+        {
+            let mut products = vec![];
+
+            if self.is_rhel7 {
+                products.push(r#""pkg:oci/redhat/ubi7""#);
+            }
+
+            if self.is_rhel8 {
+                products.push(r#""pkg:oci/redhat/ubi8""#);
+            }
+
+            if self.is_rhel9 {
+                products.push(r#""pkg:oci/redhat/ubi9""#);
+            }
+
+            terms.extend(or_group(products));
+        }
 
         if self.is_container {
             terms.push("type:oci".to_string());

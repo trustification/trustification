@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use crate::components::{catalog::CatalogSearch, common::PageHeading, package::PackageResult};
+use crate::components::{common::PageHeading, package::PackageResult, sbom::CatalogSearch};
 use patternfly_yew::prelude::*;
 use spog_model::prelude::*;
 use yew::prelude::*;
