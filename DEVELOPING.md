@@ -30,6 +30,22 @@ To see more detailed output:
 RUST_LOG=info cargo test -p integration-tests -- --nocapture
 ```
 
+## Running all processes
+
+To run all processes, you can use cargo:
+
+```shell
+RUST_LOG=info cargo run -p trust -- all
+```
+
+You can also disable a process, for example the one you are working on with
+
+```shell
+RUST_LOG=info cargo run -p trust -- all --bombastic-api-disabled
+```
+
+Look at the command help for all options.
+
 ## APIs
 
 To run the API processes, you can use cargo:

@@ -5,6 +5,8 @@ use prometheus::{opts, register_int_counter_vec_with_registry, IntCounterVec, Re
 mod kafka;
 mod sqs;
 
+pub const KAFKA_BOOTSTRAP_SERVERS: &str = "localhost:9092";
+
 /// Represents an event receieved from a consumer.
 #[allow(clippy::large_enum_variant)]
 pub enum Event<'m> {

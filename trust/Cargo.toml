@@ -5,8 +5,13 @@ edition = "2021"
 
 [dependencies]
 vexination = { path = "../vexination/vexination" }
+vexination-api = { path = "../vexination/api" }
+vexination-indexer = { path = "../vexination/indexer" }
 bombastic = { path = "../bombastic/bombastic" }
+bombastic-api = { path = "../bombastic/api" }
+bombastic-indexer = { path = "../bombastic/indexer" }
 spog = { path = "../spog/spog" }
+spog-api = { path = "../spog/api" }
 exhort = { path = "../exhort/exhort"}
 exporter = { path = "../exporter" }
 

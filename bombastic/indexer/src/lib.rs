@@ -1,9 +1,9 @@
-use std::process::ExitCode;
+use std::{process::ExitCode, time::Duration};
 
-use trustification_event_bus::EventBusConfig;
+use trustification_event_bus::{EventBusConfig, EventBusType, KAFKA_BOOTSTRAP_SERVERS};
 use trustification_index::{IndexConfig, IndexStore};
 use trustification_infrastructure::{Infrastructure, InfrastructureConfig};
-use trustification_storage::StorageConfig;
+use trustification_storage::{StorageConfig, STORAGE_ENDPOINT};
 
 mod indexer;
 
@@ -33,6 +33,38 @@ pub struct Run {
 
     #[command(flatten)]
     pub infra: InfrastructureConfig,
+}
+
+impl Default for Run {
+    fn default() -> Self {
+        Self {
+            stored_topic: "sbom-stored".into(),
+            failed_topic: "sbom-failed".into(),
+            indexed_topic: "sbom-indexed".into(),
+            devmode: true,
+            index: IndexConfig {
+                index: None,
+                sync_interval: Duration::from_secs(2).into(),
+            },
+            storage: StorageConfig {
+                region: None,
+                bucket: Some("bombastic".into()),
+                endpoint: Some(STORAGE_ENDPOINT.into()),
+                access_key: Some("admin".into()),
+                secret_key: Some("password".into()),
+            },
+            bus: EventBusConfig {
+                event_bus: EventBusType::Kafka,
+                kafka_bootstrap_servers: KAFKA_BOOTSTRAP_SERVERS.into(),
+            },
+            infra: InfrastructureConfig {
+                infrastructure_enabled: false,
+                infrastructure_bind: "127.0.0.1".into(),
+                infrastructure_workers: 1,
+                enable_tracing: false,
+            },
+        }
+    }
 }
 
 impl Run {

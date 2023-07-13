@@ -5722,6 +5722,8 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "bombastic",
+ "bombastic-api",
+ "bombastic-indexer",
  "clap",
  "exhort",
  "exporter",
@@ -5729,8 +5731,11 @@ dependencies = [
  "serde",
  "serde_json",
  "spog",
+ "spog-api",
  "tokio",
  "vexination",
+ "vexination-api",
+ "vexination-indexer",
 ]
 
 [[package]]

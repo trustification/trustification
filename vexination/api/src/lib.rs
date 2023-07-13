@@ -18,7 +18,7 @@ use prometheus::Registry;
 use tokio::sync::RwLock;
 use trustification_index::{IndexConfig, IndexStore};
 use trustification_infrastructure::{Infrastructure, InfrastructureConfig};
-use trustification_storage::{Storage, StorageConfig};
+use trustification_storage::{Storage, StorageConfig, STORAGE_ENDPOINT};
 
 mod server;
 
@@ -46,6 +46,34 @@ pub struct Run {
 
     #[command(flatten)]
     pub infra: InfrastructureConfig,
+}
+
+impl Default for Run {
+    fn default() -> Self {
+        Self {
+            bind: "127.0.0.1".to_string(),
+            port: 8081,
+            devmode: true,
+            index: IndexConfig {
+                index: None,
+                sync_interval: Duration::from_secs(2).into(),
+            },
+            storage: StorageConfig {
+                region: None,
+                bucket: Some("vexination".into()),
+                endpoint: Some(STORAGE_ENDPOINT.into()),
+                access_key: Some("admin".into()),
+                secret_key: Some("password".into()),
+            },
+            infra: InfrastructureConfig {
+                infrastructure_enabled: false,
+                infrastructure_bind: "127.0.0.1".into(),
+                infrastructure_workers: 1,
+                enable_tracing: false,
+            },
+            publish_secret_token: None,
+        }
+    }
 }
 
 impl Run {
