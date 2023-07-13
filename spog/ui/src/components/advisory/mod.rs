@@ -344,6 +344,7 @@ fn rela_cat_str(category: &RelationshipCategory) -> &'static str {
     }
 }
 
+#[allow(unused)]
 fn branch_html(branches: Vec<&Branch>) -> Html {
     branches
         .iter()
