@@ -27,7 +27,7 @@ help()
    echo "   -w        Path to a writable working directory"
    echo
    echo "example:"
-   echo "$0 https://access.redhat.com/security/data/sbom/beta/sbdx/3amp-2.json.bz2 localhost:8080"
+   echo "$0 https://access.redhat.com/security/data/sbom/beta/spdx/3amp-2.json.bz2 localhost:8080"
    echo
 }
 
