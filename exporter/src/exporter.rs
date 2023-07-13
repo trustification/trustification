@@ -35,7 +35,7 @@ pub async fn run<M: Emitter + Send + Sync>(
                                                 };
                                                 match emitter.publish(document).await {
                                                     Ok(_) => {
-                                                        log::trace!("Exported SBOM entry!");
+                                                        log::debug!("Successfully exported the document {}", key);
                                                     }
                                                     Err(e) => {
                                                         log::warn!("Error exporting entry: {:?}", e)
