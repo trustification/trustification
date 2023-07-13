@@ -12,6 +12,9 @@ pub enum Command {
     Spog(spog::Command),
     #[command(subcommand)]
     Exhort(exhort::Command),
+    #[command(subcommand)]
+    Collectorist(collectorist::Command),
+
     Exporter(exporter::Run),
 }
 
@@ -51,6 +54,7 @@ impl Cli {
             Command::Bombastic(run) => run.run().await,
             Command::Spog(run) => run.run().await,
             Command::Exhort(run) => run.run().await,
+            Command::Collectorist(run) => run.run().await,
             Command::Exporter(run) => run.run().await,
         }
     }
