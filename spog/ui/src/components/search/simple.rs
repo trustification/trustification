@@ -173,3 +173,18 @@ where
         } </Accordion>
     )
 }
+
+#[derive(PartialEq, Properties)]
+pub struct SimpleModeSwitchProperties {
+    pub simple: bool,
+    pub ontoggle: Callback<bool>,
+}
+
+#[function_component(SimpleModeSwitch)]
+pub fn simple_mode_switch(props: &SimpleModeSwitchProperties) -> Html {
+    html!(
+        <div style="height: 100%; display: flex; flex-direction: row; align-items: center;">
+            <Title level={Level::H2}>{ "Categories " } <Switch checked={props.simple} label="Simple" label_off="Complex" onchange={props.ontoggle.clone()}/> </Title>
+        </div>
+    )
+}

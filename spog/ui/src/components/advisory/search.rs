@@ -91,10 +91,9 @@ pub fn advisory_search(props: &AdvisorySearchProperties) -> Html {
 
             <Grid>
                 <GridItem cols={[2]}>
-                    <div style="height: 100%; display: flex; flex-direction: row; align-items: center;">
-                        <Title level={Level::H2}>{ "Categories " } <Switch checked={simple} label="Simple" label_off="Complex" onchange={ontogglesimple}/> </Title>
-                    </div>
+                    <SimpleModeSwitch {simple} ontoggle={ontogglesimple} />
                 </GridItem>
+
                 <GridItem cols={[10]}>
 
                     <Toolbar>
@@ -269,20 +268,21 @@ impl ToFilterExpression for SearchParameters {
 
         {
             let mut severities = vec![];
+
             if self.is_low {
-                severities.push("severity:Low".to_string());
+                severities.push("severity:Low");
             }
 
             if self.is_moderate {
-                severities.push("severity:Moderate".to_string());
+                severities.push("severity:Moderate");
             }
 
             if self.is_important {
-                severities.push("severity:Important".to_string());
+                severities.push("severity:Important");
             }
 
             if self.is_critical {
-                severities.push("severity:Critical".to_string());
+                severities.push("severity:Critical");
             }
 
             terms.extend(or_group(severities));
@@ -292,23 +292,23 @@ impl ToFilterExpression for SearchParameters {
             let mut products = vec![];
 
             if self.is_rhel7 {
-                products.push(r#"( "cpe:/o:redhat:rhel_eus:7" in:package )"#.to_string());
+                products.push(r#"( "cpe:/o:redhat:rhel_eus:7" in:package )"#);
             }
 
             if self.is_rhel8 {
-                products.push(r#"( "cpe:/a:redhat:rhel_eus:8" in:package )"#.to_string());
+                products.push(r#"( "cpe:/a:redhat:rhel_eus:8" in:package )"#);
             }
 
             if self.is_rhel9 {
-                products.push(r#"( "cpe:/a:redhat:enterprise_linux:9" in:package )"#.to_string());
+                products.push(r#"( "cpe:/a:redhat:enterprise_linux:9" in:package )"#);
             }
 
             if self.is_ocp3 {
-                products.push(r#"( "cpe:/a:redhat:openshift:3" in:package )"#.to_string());
+                products.push(r#"( "cpe:/a:redhat:openshift:3" in:package )"#);
             }
 
             if self.is_ocp4 {
-                products.push(r#"( "cpe:/a:redhat:openshift:4" in:package )"#.to_string());
+                products.push(r#"( "cpe:/a:redhat:openshift:4" in:package )"#);
             }
 
             terms.extend(or_group(products));

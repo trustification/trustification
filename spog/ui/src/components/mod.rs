@@ -3,12 +3,12 @@
 pub mod advisory;
 pub mod async_state_renderer;
 pub mod backend;
-pub mod catalog;
 pub mod common;
 pub mod content;
 pub mod cvss;
 pub mod error;
 pub mod package;
+pub mod sbom;
 pub mod search;
 pub mod severity;
 pub mod simple_pagination;
