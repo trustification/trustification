@@ -10,9 +10,12 @@ use tokio::time::interval;
 
 use trustification_infrastructure::{Infrastructure, InfrastructureConfig};
 
+use crate::state::AppState;
+
+pub(crate) mod collector;
 mod request;
 mod server;
-mod collector;
+mod state;
 
 #[derive(clap::Args, Debug)]
 #[command(about = "Run the api server", args_conflicts_with_subcommands = true)]
@@ -35,10 +38,11 @@ impl Run {
         let infra = Infrastructure::from(self.infra).run("collectorist-api", |_metrics| async move {
             let state = Self::configure()?;
             let addr = SocketAddr::from_str(&format!("{}:{}", self.bind, self.port))?;
-
             server::run(state, addr).await
         });
 
+        // LEAVING THIS HERE FOR NOW until it's actually wired up to more than stdout
+        // at which point it'll be feeding channels and living elsewhere.
         let mut csub = CollectSubClient::new(self.csub_url).await?;
 
         let mut sleep = interval(tokio::time::Duration::from_millis(1000));
@@ -73,12 +77,9 @@ impl Run {
     }
 
     fn configure() -> anyhow::Result<Arc<AppState>> {
-        let state = Arc::new(AppState {});
-
+        let state = Arc::new(AppState::default());
         Ok(state)
     }
 }
-
-pub struct AppState {}
 
 pub(crate) type SharedState = Arc<AppState>;
