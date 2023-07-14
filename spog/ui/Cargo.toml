@@ -43,6 +43,7 @@ spog-model = "0.1.0"
 
 bombastic-model = { path = "../../bombastic/model" }
 vexination-model = { path = "../../vexination/model" }
+trustification-api = { path = "../../api" }
 trustification-version = { path = "../../version" }
 
 [build-dependencies]

@@ -1,3 +1,5 @@
+pub mod metadata;
+
 use std::{fmt::Display, ops::Bound, path::PathBuf};
 
 use prometheus::{
@@ -5,6 +7,7 @@ use prometheus::{
     register_int_gauge_with_registry, Histogram, IntCounter, IntGauge, Registry,
 };
 use sikula::prelude::{Ordered, Primary, Search};
+use trustification_api::search::SearchOptions;
 // Rexport to align versions
 use log::{debug, warn};
 pub use tantivy;
@@ -111,7 +114,7 @@ pub trait Index {
         score: f32,
         searcher: &Searcher,
         query: &dyn Query,
-        explain: bool,
+        options: &SearchOptions,
     ) -> Result<Self::MatchedDocument, Error>;
     fn index_doc(&self, id: &str, document: &Self::Document) -> Result<Vec<Document>, Error>;
     fn doc_id_to_term(&self, id: &str) -> Term;
@@ -290,7 +293,7 @@ impl<INDEX: Index> IndexStore<INDEX> {
         q: &str,
         offset: usize,
         len: usize,
-        explain: bool,
+        options: SearchOptions,
     ) -> Result<(Vec<INDEX::MatchedDocument>, usize), Error> {
         let latency = self.metrics.query_latency_seconds.start_timer();
 
@@ -309,7 +312,7 @@ impl<INDEX: Index> IndexStore<INDEX> {
 
         let mut hits = Vec::new();
         for hit in top_docs {
-            if let Ok(value) = self.index.process_hit(hit.1, hit.0, &searcher, &query, explain) {
+            if let Ok(value) = self.index.process_hit(hit.1, hit.0, &searcher, &query, &options) {
                 debug!("HIT: {:?}", value);
                 hits.push(value);
             } else {
@@ -527,7 +530,7 @@ mod tests {
             _score: f32,
             searcher: &Searcher,
             _query: &dyn Query,
-            _explain: bool,
+            _options: &SearchOptions,
         ) -> Result<Self::MatchedDocument, Error> {
             let d = searcher.doc(doc)?;
             let id = d.get_first(self.id).map(|v| v.as_text()).ok_or(Error::NotFound)?;

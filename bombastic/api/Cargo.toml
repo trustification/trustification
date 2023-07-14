@@ -13,6 +13,7 @@ tokio = { version = "1.0", features = ["full"] }
 log = "0.4"
 bombastic-index = { path = "../index" }
 bombastic-model = { path = "../model" }
+trustification-api = { path = "../../api" }
 trustification-infrastructure = { path = "../../infrastructure" }
 trustification-storage = { path = "../../storage" }
 trustification-index = { path = "../../index" }

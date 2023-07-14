@@ -13,6 +13,7 @@ tar = "0.4"
 sikula = { version = "0.4.0-alpha.3", features = ["time"] }
 chumsky = "1.0.0-alpha.4"
 time = "0.3"
+trustification-api = { path = "../../api" }
 trustification-index = { path = "../../index" }
 vexination-model = { path = "../model" }
 serde_json = "1"

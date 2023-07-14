@@ -1,34 +1,15 @@
 use csaf::Csaf;
-use reqwest::{RequestBuilder, StatusCode};
+use reqwest::StatusCode;
 use spog_model::prelude::*;
 use std::rc::Rc;
+use trustification_api::Apply;
 
 use super::{Backend, Error};
-use crate::backend::Endpoint;
+use crate::backend::{Endpoint, SearchParameters};
 
 pub struct VexService {
     backend: Rc<Backend>,
     client: reqwest::Client,
-}
-
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub struct SearchOptions {
-    pub offset: Option<usize>,
-    pub limit: Option<usize>,
-}
-
-impl SearchOptions {
-    pub fn apply(&self, mut builder: RequestBuilder) -> RequestBuilder {
-        if let Some(limit) = self.limit {
-            builder = builder.query(&[("limit", limit)]);
-        }
-
-        if let Some(offset) = self.offset {
-            builder = builder.query(&[("offset", offset)]);
-        }
-
-        builder
-    }
 }
 
 #[derive(PartialEq)]
@@ -106,16 +87,15 @@ impl VexService {
     pub async fn search_advisories(
         &self,
         q: &str,
-        options: &SearchOptions,
+        options: &SearchParameters,
     ) -> Result<SearchResult<Vec<AdvisorySummary>>, Error> {
-        let request = self
+        let response = self
             .client
             .get(self.backend.join(Endpoint::Api, "/api/v1/advisory/search")?)
-            .query(&[("q", q)]);
-
-        let request = options.apply(request);
-
-        let response = request.send().await?;
+            .query(&[("q", q)])
+            .apply(options)
+            .send()
+            .await?;
 
         Ok(response.error_for_status()?.json().await?)
     }
