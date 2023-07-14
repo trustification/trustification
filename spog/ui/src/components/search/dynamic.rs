@@ -42,11 +42,13 @@ impl ToFilterExpression for DynamicSearchParameters {
         let mut terms = escape_terms(self.terms.clone()).collect::<Vec<_>>();
 
         for cat in &context.categories {
+            let mut cat_terms = vec![];
             for opt in &cat.options {
                 if self.get(Rc::new(cat.label.clone()), Rc::new(opt.id.clone())) {
-                    terms.extend(or_group(opt.terms.clone()));
+                    cat_terms.extend(opt.terms.clone());
                 }
             }
+            terms.extend(or_group(cat_terms));
         }
 
         terms.join(" ")
