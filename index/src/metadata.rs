@@ -10,5 +10,5 @@ pub fn doc2metadata(schema: &Schema, doc: &Document) -> Value {
         .map(|(field, values)| (schema.get_field_entry(field), values))
         .collect::<Vec<_>>();
 
-    serde_json::to_value(&data).unwrap_or_default()
+    serde_json::to_value(data).unwrap_or_default()
 }
