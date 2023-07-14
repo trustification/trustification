@@ -12,6 +12,7 @@ use trustification_infrastructure::{Infrastructure, InfrastructureConfig};
 
 mod request;
 mod server;
+mod collector;
 
 #[derive(clap::Args, Debug)]
 #[command(about = "Run the api server", args_conflicts_with_subcommands = true)]
