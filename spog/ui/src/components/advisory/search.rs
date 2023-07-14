@@ -4,7 +4,6 @@ use crate::{
     hooks::{use_backend::use_backend, use_standard_search, UseStandardSearch},
     utils::{pagination_to_offset, search::*},
 };
-use lazy_static::lazy_static;
 use patternfly_yew::prelude::*;
 use spog_model::prelude::*;
 use std::fmt::Debug;
@@ -79,8 +78,8 @@ pub fn advisory_search(props: &AdvisorySearchProperties) -> Html {
     // switch
 
     let simple = search_params.is_simple();
-    let search = use_memo(|()| SEARCH.clone(), ());
-    let simple_search = use_simple_search(search, search_params);
+    let search = use_memo(|()| default_search(), ());
+    // let simple_search = use_simple_search(search, search_params);
 
     // render
     html!(
@@ -145,7 +144,7 @@ pub fn advisory_search(props: &AdvisorySearchProperties) -> Html {
                 </GridItem>
 
                 <GridItem cols={[2]}>
-                    { (*simple_search).clone() }
+                    <SimpleSearch<SearchParameters> {search} search_params={search_params.clone()} />
                 </GridItem>
 
                 <GridItem cols={[10]}>
@@ -164,66 +163,66 @@ pub fn advisory_search(props: &AdvisorySearchProperties) -> Html {
     )
 }
 
-lazy_static! {
-    static ref SEARCH: Search<SearchParameters> = Search {
+fn default_search() -> Search<SearchParameters> {
+    Search {
         categories: vec![
             SearchCategory {
                 title: "Severity".to_string(),
                 options: vec![
-                    SearchOption::<SearchParameters>::new_fn(
-                        || html!(<Severity severity="Low"/>),
+                    SearchOption::<SearchParameters>::new(
+                        html!(<Severity severity="Low"/>),
                         |options| options.is_low,
-                        |options, value| options.is_low = value
+                        |options, value| options.is_low = value,
                     ),
-                    SearchOption::<SearchParameters>::new_fn(
-                        || html!(<Severity severity="Moderate"/>),
+                    SearchOption::<SearchParameters>::new(
+                        html!(<Severity severity="Moderate"/>),
                         |options| options.is_moderate,
-                        |options, value| options.is_moderate = value
+                        |options, value| options.is_moderate = value,
                     ),
-                    SearchOption::<SearchParameters>::new_fn(
-                        || html!(<Severity severity="Important"/>),
+                    SearchOption::<SearchParameters>::new(
+                        html!(<Severity severity="Important"/>),
                         |options| options.is_important,
-                        |options, value| options.is_important = value
+                        |options, value| options.is_important = value,
                     ),
-                    SearchOption::<SearchParameters>::new_fn(
-                        || html!(<Severity severity="Critical"/>),
+                    SearchOption::<SearchParameters>::new(
+                        html!(<Severity severity="Critical"/>),
                         |options| options.is_critical,
-                        |options, value| options.is_critical = value
-                    )
+                        |options, value| options.is_critical = value,
+                    ),
                 ],
             },
             SearchCategory {
                 title: "Products".to_string(),
                 options: vec![
-                    SearchOption::<SearchParameters>::new_str(
+                    SearchOption::<SearchParameters>::new(
                         "Red Hat Enterprise Linux 7",
                         |options| options.is_rhel7,
-                        |options, value| options.is_rhel7 = value
+                        |options, value| options.is_rhel7 = value,
                     ),
-                    SearchOption::<SearchParameters>::new_str(
+                    SearchOption::<SearchParameters>::new(
                         "Red Hat Enterprise Linux 8",
                         |options| options.is_rhel8,
-                        |options, value| options.is_rhel8 = value
+                        |options, value| options.is_rhel8 = value,
                     ),
-                    SearchOption::<SearchParameters>::new_str(
+                    SearchOption::<SearchParameters>::new(
                         "Red Hat Enterprise Linux 9",
                         |options| options.is_rhel9,
-                        |options, value| options.is_rhel9 = value
+                        |options, value| options.is_rhel9 = value,
                     ),
-                    SearchOption::<SearchParameters>::new_str(
+                    SearchOption::<SearchParameters>::new(
                         "OpenShift Container Platform 3",
                         |options| options.is_ocp3,
-                        |options, value| options.is_ocp3 = value
+                        |options, value| options.is_ocp3 = value,
                     ),
-                    SearchOption::<SearchParameters>::new_str(
+                    SearchOption::<SearchParameters>::new(
                         "OpenShift Container Platform 4",
                         |options| options.is_ocp4,
-                        |options, value| options.is_ocp4 = value
+                        |options, value| options.is_ocp4 = value,
                     ),
-                ]
-            }
-        ]
-    };
+                ],
+            },
+        ],
+    }
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]

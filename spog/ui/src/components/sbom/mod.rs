@@ -2,15 +2,12 @@ use crate::{
     backend::{PackageService, SearchOptions},
     components::search::*,
     hooks::{use_backend::use_backend, use_config, use_standard_search, UseStandardSearch},
-    utils::{pagination_to_offset, search::*},
+    utils::pagination_to_offset,
 };
 use bombastic_model::prelude::Packages;
-use lazy_static::lazy_static;
 use patternfly_yew::prelude::*;
 use spog_model::prelude::*;
-use std::collections::HashSet;
 use std::rc::Rc;
-use std::sync::Arc;
 use yew::prelude::*;
 use yew_more_hooks::prelude::*;
 
@@ -90,7 +87,6 @@ pub fn catalog_search(props: &CatalogSearchProperties) -> Html {
     // switch
 
     let simple = search_params.is_simple();
-    let simple_search = use_simple_search(search_config, search_params);
 
     // render
     html!(
@@ -159,7 +155,7 @@ pub fn catalog_search(props: &CatalogSearchProperties) -> Html {
                 </GridItem>
 
                 <GridItem cols={[2]}>
-                    { (*simple_search).clone() }
+                    <SimpleSearch<DynamicSearchParameters> search={search_config} {search_params} />
                 </GridItem>
 
                 <GridItem cols={[10]}>
@@ -176,193 +172,6 @@ pub fn catalog_search(props: &CatalogSearchProperties) -> Html {
 
         </>
     )
-}
-
-#[derive(Clone, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
-pub struct DynamicSearchParameters {
-    terms: Vec<String>,
-    state: HashSet<(Arc<String>, Arc<String>)>,
-}
-
-impl DynamicSearchParameters {
-    pub fn get(&self, cat: Arc<String>, id: Arc<String>) -> bool {
-        self.state.contains(&(cat, id))
-    }
-
-    pub fn set(&mut self, cat: Arc<String>, id: Arc<String>, value: bool) {
-        if value {
-            self.state.insert((cat, id));
-        } else {
-            self.state.remove(&(cat, id));
-        }
-    }
-}
-
-impl SimpleProperties for DynamicSearchParameters {
-    fn terms(&self) -> &[String] {
-        &self.terms
-    }
-
-    fn terms_mut(&mut self) -> &mut Vec<String> {
-        &mut self.terms
-    }
-}
-
-impl ToFilterExpression for DynamicSearchParameters {
-    type Context = Filters;
-
-    fn to_filter_expression(&self, context: &Self::Context) -> String {
-        let mut terms = escape_terms(self.terms.clone()).collect::<Vec<_>>();
-
-        for cat in &context.categories {
-            for opt in &cat.options {
-                if self.get(Arc::new(cat.label.clone()), Arc::new(opt.id.clone())) {
-                    terms.extend(or_group(opt.terms.clone()));
-                }
-            }
-        }
-
-        terms.join(" ")
-    }
-}
-
-fn convert_search(filters: &Filters) -> Search<DynamicSearchParameters> {
-    let categories = filters
-        .categories
-        .iter()
-        .map(|cat| {
-            let cat_id = Arc::new(cat.label.clone());
-            SearchCategory {
-                title: cat.label.clone(),
-                options: cat
-                    .options
-                    .iter()
-                    .map(|opt| {
-                        let label = format!("<div>{}</div>", opt.label);
-                        let id = Arc::new(opt.id.clone());
-                        SearchOption {
-                            label: Arc::new(move || Html::from_html_unchecked(AttrValue::from(label.clone()))),
-                            getter: {
-                                let cat_id = cat_id.clone();
-                                let id = id.clone();
-                                Arc::new(move |state: &DynamicSearchParameters| state.get(cat_id.clone(), id.clone()))
-                            },
-                            setter: {
-                                let cat_id = cat_id.clone();
-                                let id = id.clone();
-                                Arc::new(move |state: &mut DynamicSearchParameters, value| {
-                                    state.set(cat_id.clone(), id.clone(), value)
-                                })
-                            },
-                        }
-                    })
-                    .collect(),
-            }
-        })
-        .collect();
-
-    Search { categories }
-}
-
-lazy_static! {
-    static ref SEARCH: Search<SearchParameters> = Search {
-        categories: vec![
-            SearchCategory {
-                title: "Product".to_string(),
-                options: vec![
-                    SearchOption::<SearchParameters>::new_str(
-                        "Red Hat Enterprise Linux 7",
-                        |options| options.is_rhel7,
-                        |options, value| options.is_rhel7 = value
-                    ),
-                    SearchOption::<SearchParameters>::new_str(
-                        "Red Hat Enterprise Linux 8",
-                        |options| options.is_rhel8,
-                        |options, value| options.is_rhel8 = value
-                    ),
-                    SearchOption::<SearchParameters>::new_str(
-                        "Red Hat Enterprise Linux 9",
-                        |options| options.is_rhel9,
-                        |options, value| options.is_rhel9 = value
-                    )
-                ]
-            },
-            SearchCategory {
-                title: "Supplier".to_string(),
-                options: vec![SearchOption::<SearchParameters>::new_str(
-                    "Red Hat",
-                    |options| options.supplier_redhat,
-                    |options, value| options.supplier_redhat = value
-                ),]
-            },
-            SearchCategory {
-                title: "Type".to_string(),
-                options: vec![SearchOption::<SearchParameters>::new_str(
-                    "Container",
-                    |options| options.is_container,
-                    |options, value| options.is_container = value
-                ),]
-            }
-        ]
-    };
-}
-
-#[derive(Clone, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
-struct SearchParameters {
-    terms: Vec<String>,
-
-    is_rhel7: bool,
-    is_rhel8: bool,
-    is_rhel9: bool,
-
-    supplier_redhat: bool,
-    is_container: bool,
-}
-
-impl SimpleProperties for SearchParameters {
-    fn terms(&self) -> &[String] {
-        &self.terms
-    }
-
-    fn terms_mut(&mut self) -> &mut Vec<String> {
-        &mut self.terms
-    }
-}
-
-impl ToFilterExpression for SearchParameters {
-    type Context = ();
-
-    fn to_filter_expression(&self, _: &Self::Context) -> String {
-        let mut terms = escape_terms(self.terms.clone()).collect::<Vec<_>>();
-
-        {
-            let mut products = vec![];
-
-            if self.is_rhel7 {
-                products.push(r#""pkg:oci/redhat/ubi7""#);
-            }
-
-            if self.is_rhel8 {
-                products.push(r#""pkg:oci/redhat/ubi8""#);
-            }
-
-            if self.is_rhel9 {
-                products.push(r#""pkg:oci/redhat/ubi9""#);
-            }
-
-            terms.extend(or_group(products));
-        }
-
-        if self.is_container {
-            terms.push("type:oci".to_string());
-        }
-
-        if self.supplier_redhat {
-            terms.push(r#"supplier:"Organization: Red Hat""#.to_string());
-        }
-
-        terms.join(" ")
-    }
 }
 
 #[function_component(CatalogSearchHelpPopover)]

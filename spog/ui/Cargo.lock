@@ -1677,7 +1677,6 @@ dependencies = [
  "gloo-utils",
  "humansize",
  "itertools",
- "lazy_static",
  "log",
  "packageurl",
  "patternfly-yew",
