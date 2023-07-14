@@ -16,6 +16,7 @@ use bombastic_model::prelude::*;
 use derive_more::{Display, Error, From};
 use futures::TryStreamExt;
 use serde::Deserialize;
+use trustification_api::search::SearchOptions;
 use trustification_index::Error as IndexError;
 use trustification_storage::Error as StorageError;
 use utoipa::OpenApi;
@@ -146,6 +147,9 @@ pub struct SearchParams {
     /// Provide a detailed explanation of query matches
     #[serde(default = "default_explain")]
     pub explain: bool,
+    /// Provide additional metadata from the index
+    #[serde(default = "default_metadata")]
+    pub metadata: bool,
 }
 
 const fn default_offset() -> usize {
@@ -158,6 +162,19 @@ const fn default_limit() -> usize {
 
 const fn default_explain() -> bool {
     false
+}
+
+const fn default_metadata() -> bool {
+    false
+}
+
+impl From<&SearchParams> for SearchOptions {
+    fn from(value: &SearchParams) -> Self {
+        Self {
+            explain: value.explain,
+            metadata: value.metadata,
+        }
+    }
 }
 
 /// Search for an SBOM using a free form search query.
@@ -186,7 +203,7 @@ async fn search_sbom(
 
     let index = state.index.read().await;
     let (result, total) = index
-        .search(&params.q, params.offset, params.limit, params.explain)
+        .search(&params.q, params.offset, params.limit, (&params).into())
         .map_err(Error::Index)?;
 
     Ok(HttpResponse::Ok().json(SearchResult { total, result }))

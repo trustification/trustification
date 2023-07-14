@@ -16,8 +16,10 @@ use tantivy::{
     DocAddress, IndexSettings, Searcher, SnippetGenerator,
 };
 use time::format_description::well_known::Rfc3339;
+use trustification_api::search::SearchOptions;
 use trustification_index::{
     boost, create_boolean_query, create_date_query, create_string_query, create_text_query, field2str, field2strvec,
+    metadata::doc2metadata,
     tantivy::{
         doc,
         query::{Occur, Query},
@@ -452,7 +454,7 @@ impl trustification_index::Index for Index {
         score: f32,
         searcher: &Searcher,
         query: &dyn Query,
-        explain: bool,
+        options: &SearchOptions,
     ) -> Result<Self::MatchedDocument, SearchError> {
         let doc = searcher.doc(doc_address)?;
         let id = field2str(&doc, self.fields.sbom_id)?;
@@ -531,7 +533,7 @@ impl trustification_index::Index for Index {
             dependencies,
         };
 
-        let explanation: Option<serde_json::Value> = if explain {
+        let explanation: Option<serde_json::Value> = if options.explain {
             match query.explain(searcher, doc_address) {
                 Ok(explanation) => Some(serde_json::to_value(explanation).ok()).unwrap_or(None),
                 Err(e) => {
@@ -543,10 +545,13 @@ impl trustification_index::Index for Index {
             None
         };
 
+        let metadata = options.metadata.then(|| doc2metadata(&self.schema, &doc));
+
         Ok(SearchHit {
             document,
             score,
             explanation,
+            metadata,
         })
     }
 }

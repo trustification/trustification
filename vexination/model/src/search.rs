@@ -65,7 +65,11 @@ pub struct SearchHit {
     /// Score as evaluated by the search engine.
     pub score: f32,
     /// Explanation of the score if enabled,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub explanation: Option<Value>,
+    /// Additional metadata, if enabled
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub metadata: Option<Value>,
 }
 
 /// The payload returned describing how many results matched and the matching documents (within offset and limit requested).

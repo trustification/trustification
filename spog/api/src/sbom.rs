@@ -1,6 +1,6 @@
 use actix_web::{web, web::ServiceConfig, HttpResponse, Responder};
 use http::header;
-use log::{debug, info, trace, warn};
+use log::{debug, trace, warn};
 use spog_model::search::{PackageSummary, SearchResult};
 
 use crate::{search, server::SharedState};
@@ -104,13 +104,13 @@ pub async fn search(state: web::Data<SharedState>, params: web::Query<search::Qu
 async fn search_advisories(state: web::Data<SharedState>, packages: &mut Vec<PackageSummary>) {
     for package in packages {
         let q = format!("fixed:\"{}\"", package.name);
-        if let Ok(result) = state.search_vex(&q, 0, 1000).await {
+        if let Ok(result) = state.search_vex(&q, 0, 1000, Default::default()).await {
             for summary in result.result {
                 let summary = summary.document;
                 package.advisories.push(summary.advisory_id);
             }
         }
-        info!(
+        debug!(
             "Found {} advisories related to {}",
             package.advisories.len(),
             package.purl

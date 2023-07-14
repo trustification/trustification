@@ -2,11 +2,12 @@ use packageurl::PackageUrl;
 use serde::Deserialize;
 use spog_model::prelude::*;
 use std::rc::Rc;
+use trustification_api::Apply;
 
 use super::{Backend, Error};
 use crate::backend::{
     data::{Package, PackageDependencies, PackageDependents, PackageList, PackageRef},
-    Endpoint, SearchOptions,
+    Endpoint, SearchParameters,
 };
 
 pub struct PackageService {
@@ -59,16 +60,15 @@ impl PackageService {
     pub async fn search_packages(
         &self,
         q: &str,
-        options: &SearchOptions,
+        options: &SearchParameters,
     ) -> Result<SearchResult<Vec<PackageSummary>>, Error> {
-        let request = self
+        let response = self
             .client
             .get(self.backend.join(Endpoint::Api, "/api/v1/package/search")?)
-            .query(&[("q", q)]);
-
-        let request = options.apply(request);
-
-        let response = request.send().await?;
+            .query(&[("q", q)])
+            .apply(options)
+            .send()
+            .await?;
 
         Ok(response.error_for_status()?.json().await?)
     }

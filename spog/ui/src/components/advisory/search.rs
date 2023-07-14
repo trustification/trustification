@@ -1,5 +1,5 @@
 use crate::{
-    backend::{SearchOptions, VexService},
+    backend::{self, VexService},
     components::search::*,
     hooks::{use_backend::use_backend, use_config, use_standard_search, UseStandardSearch},
     utils::pagination_to_offset,
@@ -54,9 +54,10 @@ pub fn advisory_search(props: &AdvisorySearchProperties) -> Html {
                 service
                     .search_advisories(
                         &search_params.as_str(&filters),
-                        &SearchOptions {
+                        &backend::SearchParameters {
                             offset: Some(pagination_to_offset(page, per_page)),
                             limit: Some(per_page),
+                            ..Default::default()
                         },
                     )
                     .await

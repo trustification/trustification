@@ -2,6 +2,7 @@ use actix_web::{web, web::ServiceConfig, HttpResponse, Responder};
 use http::header;
 use log::{info, trace, warn};
 use spog_model::search::{AdvisorySummary, SearchResult};
+use trustification_api::search::SearchOptions;
 
 use crate::{search::QueryParams, server::SharedState};
 
@@ -58,11 +59,20 @@ pub async fn get(state: web::Data<SharedState>, params: web::Query<GetParams>) -
         ("limit" = u64, Path, description = "Max entries returned in the search results"),
     )
 )]
-pub async fn search(state: web::Data<SharedState>, params: web::Query<QueryParams>) -> impl Responder {
+pub async fn search(
+    state: web::Data<SharedState>,
+    params: web::Query<QueryParams>,
+    options: web::Query<SearchOptions>,
+) -> impl Responder {
     let params = params.into_inner();
     trace!("Querying VEX using {}", params.q);
     let result = state
-        .search_vex(&params.q, params.offset, params.limit.min(MAX_LIMIT))
+        .search_vex(
+            &params.q,
+            params.offset,
+            params.limit.min(MAX_LIMIT),
+            options.into_inner(),
+        )
         .await;
 
     let result = match result {
