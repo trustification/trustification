@@ -591,7 +591,17 @@ mod tests {
     }
 
     fn search(index: &IndexStore<Index>, query: &str) -> (Vec<SearchHit>, usize) {
-        index.search(query, 0, 10000, false).unwrap()
+        index
+            .search(
+                query,
+                0,
+                10000,
+                SearchOptions {
+                    explain: false,
+                    metadata: false,
+                },
+            )
+            .unwrap()
     }
 
     #[tokio::test]
