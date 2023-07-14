@@ -5,6 +5,8 @@ processes if you don't need them for developing.
 
 ## Dependencies
 
+### docker-compose
+
 Requires `docker-compose` to run dependent services.
 
 ```shell
@@ -15,6 +17,14 @@ docker-compose -f compose.yaml up
 This will start MinIO and Kafka in containers and initialize them accordingly so that you don't need to configure anything. Default arguments of Vexination components will work with this setup.
 
 The MinIO console is available at http://localhost:9001
+
+### protobuf-compiler
+
+On Fedora, try:
+
+```shell
+sudo dnf install protobuf-compiler
+```
 
 ## Integration tests
 
