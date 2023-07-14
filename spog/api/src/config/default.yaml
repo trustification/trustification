@@ -1,0 +1,70 @@
+# This is the default configuration file. It is compiled into the binary.
+
+bombastic:
+
+  filters:
+    categories:
+
+      - label: Products
+        options:
+
+          - label: UBI 7
+            id: ubi7
+            terms:
+              - '"pkg:oci/redhat/ubi7"'
+
+          - label: UBI 8
+            id: ubi8
+            terms:
+              - '"pkg:oci/redhat/ubi8"'
+
+          - label: UBI 9
+            id: ubi9
+            terms:
+              - '"pkg:oci/redhat/ubi9"'
+
+          - label: Red Hat Enterprise Linux 7
+            id: rhel7
+            terms:
+              - '"cpe:/o:redhat:enterprise_linux:7"'
+
+          - label: Red Hat Enterprise Linux 8
+            id: rhel8
+            terms:
+              - '"cpe:/o:redhat:enterprise_linux:8"'
+
+          - label: Red Hat Enterprise Linux 9
+            id: rhel9
+            terms:
+              - '"cpe:/o:redhat:enterprise_linux:9"'
+
+          - label: Ansible
+            id: ansible
+            terms:
+              - '"cpe:/a:redhat:ansible_automation_platform"'
+
+          - label: AMQ
+            id: amq
+            terms:
+              - '"cpe:/a:redhat:amq" OR "amq-"'
+
+          - label: Quarkus
+            id: quarkus
+            terms:
+              - '"quarkus"'
+
+      - label: Type
+        options:
+          - label: Container
+            id: is_container
+            terms:
+              - 'type:oci'
+
+      - label: Suppliers
+        options:
+          - label: Red Hat
+            id: supplier_redhat
+            terms:
+              - 'supplier:"Organization: Red Hat"'
+
+vexination:

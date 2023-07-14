@@ -61,7 +61,7 @@ impl Server {
             .build()
             .map_err(|_| anyhow!("Error registering HTTP metrics"))?;
 
-        let config_configurator = config::configurator()?;
+        let config_configurator = config::configurator(self.run.config).await?;
 
         HttpServer::new(move || {
             let http_metrics = http_metrics.clone();

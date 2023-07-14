@@ -8,7 +8,7 @@ use lazy_static::lazy_static;
 use patternfly_yew::prelude::*;
 use spog_model::prelude::*;
 use std::fmt::Debug;
-use std::{collections::HashSet, rc::Rc};
+use std::rc::Rc;
 use vexination_model::prelude::Vulnerabilities;
 use yew::prelude::*;
 use yew_more_hooks::prelude::*;
@@ -42,14 +42,14 @@ pub fn advisory_search(props: &AdvisorySearchProperties) -> Html {
         onset,
         ontogglesimple,
         text,
-    } = use_standard_search::<SearchParameters, Vulnerabilities>(props.query.clone(), *total);
+    } = use_standard_search::<SearchParameters, Vulnerabilities>(props.query.clone(), *total, Rc::new(()));
 
     let search = {
         use_async_with_cloned_deps(
             move |(search_params, page, per_page)| async move {
                 service
                     .search_advisories(
-                        &search_params.as_str(),
+                        &search_params.as_str(&()),
                         &SearchOptions {
                             offset: Some(pagination_to_offset(page, per_page)),
                             limit: Some(per_page),
@@ -75,11 +75,12 @@ pub fn advisory_search(props: &AdvisorySearchProperties) -> Html {
     // filter
 
     let hidden = text.is_empty();
-    let filter_expansion = use_state(|| SEARCH.category_labels::<HashSet<_>>());
 
     // switch
 
     let simple = search_params.is_simple();
+    let search = use_memo(|()| SEARCH.clone(), ());
+    let simple_search = use_simple_search(search, search_params);
 
     // render
     html!(
@@ -144,7 +145,7 @@ pub fn advisory_search(props: &AdvisorySearchProperties) -> Html {
                 </GridItem>
 
                 <GridItem cols={[2]}>
-                    { simple_search(&SEARCH, search_params, filter_expansion) }
+                    { (*simple_search).clone() }
                 </GridItem>
 
                 <GridItem cols={[10]}>
@@ -167,7 +168,7 @@ lazy_static! {
     static ref SEARCH: Search<SearchParameters> = Search {
         categories: vec![
             SearchCategory {
-                title: "Severity",
+                title: "Severity".to_string(),
                 options: vec![
                     SearchOption::<SearchParameters>::new_fn(
                         || html!(<Severity severity="Low"/>),
@@ -192,7 +193,7 @@ lazy_static! {
                 ],
             },
             SearchCategory {
-                title: "Products",
+                title: "Products".to_string(),
                 options: vec![
                     SearchOption::<SearchParameters>::new_str(
                         "Red Hat Enterprise Linux 7",
@@ -253,7 +254,9 @@ impl SimpleProperties for SearchParameters {
 }
 
 impl ToFilterExpression for SearchParameters {
-    fn to_filter_expression(&self) -> String {
+    type Context = ();
+
+    fn to_filter_expression(&self, _: &Self::Context) -> String {
         let mut terms = escape_terms(self.terms.clone()).collect::<Vec<_>>();
 
         {

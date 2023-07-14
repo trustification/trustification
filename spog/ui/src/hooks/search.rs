@@ -112,7 +112,11 @@ pub struct UseStandardSearch<T> {
 }
 
 #[hook]
-pub fn use_standard_search<T, S>(props_query: Option<String>, total: Option<usize>) -> UseStandardSearch<T>
+pub fn use_standard_search<T, S>(
+    props_query: Option<String>,
+    total: Option<usize>,
+    context: Rc<T::Context>,
+) -> UseStandardSearch<T>
 where
     T: for<'de> serde::Deserialize<'de>
         + serde::Serialize
@@ -182,10 +186,11 @@ where
     let ontogglesimple = {
         let search_params = search_params.clone();
         let text = text.clone();
+        let context = context.clone();
 
         Callback::from(move |state| match state {
             false => {
-                let q = (*search_params).as_str().to_string();
+                let q = (*search_params).as_str(&context).to_string();
                 search_params.set(SearchMode::Complex(q.clone()));
                 text.set(q);
             }
