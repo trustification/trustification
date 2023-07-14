@@ -185,14 +185,11 @@ async fn search_sbom(
     log::info!("Querying SBOM using {}", params.q);
 
     let index = state.index.read().await;
-    let result = index
+    let (result, total) = index
         .search(&params.q, params.offset, params.limit, params.explain)
         .map_err(Error::Index)?;
 
-    Ok(HttpResponse::Ok().json(SearchResult {
-        total: result.1,
-        result: result.0,
-    }))
+    Ok(HttpResponse::Ok().json(SearchResult { total, result }))
 }
 
 /// Upload an SBOM with an identifier.

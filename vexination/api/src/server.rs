@@ -177,7 +177,7 @@ async fn search_vex(state: web::Data<SharedState>, params: web::Query<SearchPara
     let index = state.index.read().await;
     let result = index.search(&params.q, params.offset, params.limit, params.explain);
 
-    let result = match result {
+    let (result, total) = match result {
         Err(e) => {
             log::info!("Error searching: {:?}", e);
             return HttpResponse::InternalServerError().body(e.to_string());
@@ -185,8 +185,5 @@ async fn search_vex(state: web::Data<SharedState>, params: web::Query<SearchPara
         Ok(result) => result,
     };
 
-    HttpResponse::Ok().json(SearchResult {
-        total: result.1,
-        result: result.0,
-    })
+    HttpResponse::Ok().json(SearchResult { total, result })
 }
