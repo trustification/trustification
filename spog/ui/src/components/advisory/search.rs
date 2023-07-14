@@ -74,7 +74,7 @@ pub fn advisory_search(props: &AdvisorySearchProperties) -> Html {
         |(callback, search)| {
             callback.emit(search.clone());
         },
-        (props.callback.clone(), search.clone()),
+        (props.callback.clone(), search),
     );
 
     // pagination

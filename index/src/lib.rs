@@ -562,7 +562,21 @@ mod tests {
 
         writer.commit().unwrap();
 
-        assert_eq!(store.search("is", 0, 10, false).unwrap().1, 1);
+        assert_eq!(
+            store
+                .search(
+                    "is",
+                    0,
+                    10,
+                    SearchOptions {
+                        explain: false,
+                        metadata: false
+                    }
+                )
+                .unwrap()
+                .1,
+            1
+        );
     }
 
     #[tokio::test]
@@ -577,13 +591,41 @@ mod tests {
 
         writer.commit().unwrap();
 
-        assert_eq!(store.search("is", 0, 10, false).unwrap().1, 1);
+        assert_eq!(
+            store
+                .search(
+                    "is",
+                    0,
+                    10,
+                    SearchOptions {
+                        explain: false,
+                        metadata: false
+                    }
+                )
+                .unwrap()
+                .1,
+            1
+        );
 
         let writer = store.writer().unwrap();
         writer.delete_document(store.index_as_mut(), "foo");
         writer.commit().unwrap();
 
-        assert_eq!(store.search("is", 0, 10, false).unwrap().1, 0);
+        assert_eq!(
+            store
+                .search(
+                    "is",
+                    0,
+                    10,
+                    SearchOptions {
+                        explain: false,
+                        metadata: false
+                    }
+                )
+                .unwrap()
+                .1,
+            0
+        );
     }
 
     #[tokio::test]
@@ -602,7 +644,21 @@ mod tests {
 
         writer.commit().unwrap();
 
-        assert_eq!(store.search("is", 0, 10, false).unwrap().1, 1);
+        assert_eq!(
+            store
+                .search(
+                    "is",
+                    0,
+                    10,
+                    SearchOptions {
+                        explain: false,
+                        metadata: false
+                    }
+                )
+                .unwrap()
+                .1,
+            1
+        );
 
         // Duplicates also removed if separate commits.
         let mut writer = store.writer().unwrap();
@@ -612,6 +668,20 @@ mod tests {
 
         writer.commit().unwrap();
 
-        assert_eq!(store.search("is", 0, 10, false).unwrap().1, 1);
+        assert_eq!(
+            store
+                .search(
+                    "is",
+                    0,
+                    10,
+                    SearchOptions {
+                        explain: false,
+                        metadata: false
+                    }
+                )
+                .unwrap()
+                .1,
+            1
+        );
     }
 }

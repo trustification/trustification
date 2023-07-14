@@ -590,7 +590,17 @@ mod tests {
     }
 
     fn search(index: &IndexStore<Index>, query: &str) -> (Vec<SearchHit>, usize) {
-        index.search(query, 0, 10000, false).unwrap()
+        index
+            .search(
+                query,
+                0,
+                10000,
+                SearchOptions {
+                    metadata: false,
+                    explain: false,
+                },
+            )
+            .unwrap()
     }
 
     #[tokio::test]
@@ -716,7 +726,17 @@ mod tests {
     #[tokio::test]
     async fn test_explain() {
         assert_search(|index| {
-            let result = index.search("dependency:openssl", 0, 10000, true).unwrap();
+            let result = index
+                .search(
+                    "dependency:openssl",
+                    0,
+                    10000,
+                    SearchOptions {
+                        explain: true,
+                        metadata: false,
+                    },
+                )
+                .unwrap();
             assert_eq!(result.0.len(), 1);
             assert!(result.0[0].explanation.is_some());
             println!(
