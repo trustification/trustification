@@ -7,6 +7,7 @@ mod advisory;
 //mod snyk;
 mod index;
 //mod package;
+mod config;
 mod sbom;
 mod search;
 mod server;

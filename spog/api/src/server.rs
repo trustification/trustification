@@ -11,7 +11,7 @@ use trustification_version::version;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
-use crate::{advisory, index, sbom, Run};
+use crate::{advisory, config, index, sbom, Run};
 
 pub struct Server {
     run: Run,
@@ -61,6 +61,8 @@ impl Server {
             .build()
             .map_err(|_| anyhow!("Error registering HTTP metrics"))?;
 
+        let config_configurator = config::configurator()?;
+
         HttpServer::new(move || {
             let http_metrics = http_metrics.clone();
             let state = state.clone();
@@ -80,6 +82,7 @@ impl Server {
                 .configure(version::configurator(version!()))
                 .configure(crate::sbom::configure())
                 .configure(crate::advisory::configure())
+                .configure(config_configurator.clone())
                 //.configure(crate::vulnerability::configure())
                 .service(SwaggerUi::new("/swagger-ui/{_:.*}").url("/openapi.json", openapi.clone()))
         })
