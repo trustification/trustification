@@ -22,9 +22,6 @@ pub struct Run {
     #[arg(short = 'p', long = "port", default_value_t = 9919)]
     pub port: u16,
 
-    #[arg(long = "devmode", default_value_t = false)]
-    pub devmode: bool,
-
     #[command(flatten)]
     pub infra: InfrastructureConfig,
 

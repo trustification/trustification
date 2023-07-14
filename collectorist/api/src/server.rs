@@ -24,7 +24,6 @@ pub async fn run<B: Into<SocketAddr>>(state: SharedState, bind: B) -> Result<(),
             .wrap(Logger::default())
             .wrap(Compress::default())
             .app_data(web::Data::new(state.clone()))
-            //.service(web::scope("/api/v1").service(crate::component_analysis::component_analysis))
             .service(SwaggerUi::new("/swagger-ui/{_:.*}").url("/openapi.json", openapi.clone()))
     })
     .bind(addr)?
