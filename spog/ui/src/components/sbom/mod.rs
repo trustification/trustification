@@ -1,14 +1,16 @@
 use crate::{
     backend::{PackageService, SearchOptions},
     components::search::*,
-    hooks::{use_backend::use_backend, use_standard_search, UseStandardSearch},
+    hooks::{use_backend::use_backend, use_config, use_standard_search, UseStandardSearch},
     utils::{pagination_to_offset, search::*},
 };
 use bombastic_model::prelude::Packages;
 use lazy_static::lazy_static;
 use patternfly_yew::prelude::*;
 use spog_model::prelude::*;
-use std::{collections::HashSet, rc::Rc};
+use std::collections::HashSet;
+use std::rc::Rc;
+use std::sync::Arc;
 use yew::prelude::*;
 use yew_more_hooks::prelude::*;
 
@@ -29,9 +31,14 @@ pub struct CatalogSearchProperties {
 pub fn catalog_search(props: &CatalogSearchProperties) -> Html {
     let backend = use_backend();
 
+    let config = use_config();
+
     let service = use_memo(|backend| PackageService::new(backend.clone()), backend);
 
     let total = use_state_eq(|| None);
+
+    let filters = use_memo(|()| config.bombastic.filters.clone(), ());
+    let search_config = use_memo(|()| convert_search(&filters), ());
 
     let UseStandardSearch {
         search_params,
@@ -41,14 +48,15 @@ pub fn catalog_search(props: &CatalogSearchProperties) -> Html {
         onset,
         ontogglesimple,
         text,
-    } = use_standard_search::<SearchParameters, Packages>(props.query.clone(), *total);
+    } = use_standard_search::<DynamicSearchParameters, Packages>(props.query.clone(), *total, filters.clone());
 
     let search = {
+        let filters = filters.clone();
         use_async_with_cloned_deps(
             move |(search_params, page, per_page)| async move {
                 service
                     .search_packages(
-                        &search_params.as_str(),
+                        &search_params.as_str(&filters),
                         &SearchOptions {
                             offset: Some(pagination_to_offset(page, per_page)),
                             limit: Some(per_page),
@@ -78,11 +86,11 @@ pub fn catalog_search(props: &CatalogSearchProperties) -> Html {
     // filter
 
     let hidden = text.is_empty();
-    let filter_expansion = use_state(|| SEARCH.category_labels::<HashSet<_>>());
 
     // switch
 
     let simple = search_params.is_simple();
+    let simple_search = use_simple_search(search_config, search_params);
 
     // render
     html!(
@@ -151,7 +159,7 @@ pub fn catalog_search(props: &CatalogSearchProperties) -> Html {
                 </GridItem>
 
                 <GridItem cols={[2]}>
-                    { simple_search(&SEARCH, search_params, filter_expansion) }
+                    { (*simple_search).clone() }
                 </GridItem>
 
                 <GridItem cols={[10]}>
@@ -170,11 +178,97 @@ pub fn catalog_search(props: &CatalogSearchProperties) -> Html {
     )
 }
 
+#[derive(Clone, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub struct DynamicSearchParameters {
+    terms: Vec<String>,
+    state: HashSet<(Arc<String>, Arc<String>)>,
+}
+
+impl DynamicSearchParameters {
+    pub fn get(&self, cat: Arc<String>, id: Arc<String>) -> bool {
+        self.state.contains(&(cat, id))
+    }
+
+    pub fn set(&mut self, cat: Arc<String>, id: Arc<String>, value: bool) {
+        if value {
+            self.state.insert((cat, id));
+        } else {
+            self.state.remove(&(cat, id));
+        }
+    }
+}
+
+impl SimpleProperties for DynamicSearchParameters {
+    fn terms(&self) -> &[String] {
+        &self.terms
+    }
+
+    fn terms_mut(&mut self) -> &mut Vec<String> {
+        &mut self.terms
+    }
+}
+
+impl ToFilterExpression for DynamicSearchParameters {
+    type Context = Filters;
+
+    fn to_filter_expression(&self, context: &Self::Context) -> String {
+        let mut terms = escape_terms(self.terms.clone()).collect::<Vec<_>>();
+
+        for cat in &context.categories {
+            for opt in &cat.options {
+                if self.get(Arc::new(cat.label.clone()), Arc::new(opt.id.clone())) {
+                    terms.extend(or_group(opt.terms.clone()));
+                }
+            }
+        }
+
+        terms.join(" ")
+    }
+}
+
+fn convert_search(filters: &Filters) -> Search<DynamicSearchParameters> {
+    let categories = filters
+        .categories
+        .iter()
+        .map(|cat| {
+            let cat_id = Arc::new(cat.label.clone());
+            SearchCategory {
+                title: cat.label.clone(),
+                options: cat
+                    .options
+                    .iter()
+                    .map(|opt| {
+                        let label = format!("<div>{}</div>", opt.label);
+                        let id = Arc::new(opt.id.clone());
+                        SearchOption {
+                            label: Arc::new(move || Html::from_html_unchecked(AttrValue::from(label.clone()))),
+                            getter: {
+                                let cat_id = cat_id.clone();
+                                let id = id.clone();
+                                Arc::new(move |state: &DynamicSearchParameters| state.get(cat_id.clone(), id.clone()))
+                            },
+                            setter: {
+                                let cat_id = cat_id.clone();
+                                let id = id.clone();
+                                Arc::new(move |state: &mut DynamicSearchParameters, value| {
+                                    state.set(cat_id.clone(), id.clone(), value)
+                                })
+                            },
+                        }
+                    })
+                    .collect(),
+            }
+        })
+        .collect();
+
+    Search { categories }
+}
+
 lazy_static! {
     static ref SEARCH: Search<SearchParameters> = Search {
         categories: vec![
             SearchCategory {
-                title: "Product",
+                title: "Product".to_string(),
                 options: vec![
                     SearchOption::<SearchParameters>::new_str(
                         "Red Hat Enterprise Linux 7",
@@ -194,7 +288,7 @@ lazy_static! {
                 ]
             },
             SearchCategory {
-                title: "Supplier",
+                title: "Supplier".to_string(),
                 options: vec![SearchOption::<SearchParameters>::new_str(
                     "Red Hat",
                     |options| options.supplier_redhat,
@@ -202,7 +296,7 @@ lazy_static! {
                 ),]
             },
             SearchCategory {
-                title: "Type",
+                title: "Type".to_string(),
                 options: vec![SearchOption::<SearchParameters>::new_str(
                     "Container",
                     |options| options.is_container,
@@ -236,7 +330,9 @@ impl SimpleProperties for SearchParameters {
 }
 
 impl ToFilterExpression for SearchParameters {
-    fn to_filter_expression(&self) -> String {
+    type Context = ();
+
+    fn to_filter_expression(&self, _: &Self::Context) -> String {
         let mut terms = escape_terms(self.terms.clone()).collect::<Vec<_>>();
 
         {

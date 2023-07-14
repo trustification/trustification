@@ -2,27 +2,28 @@ use crate::utils::search::*;
 use patternfly_yew::prelude::*;
 use std::borrow::Cow;
 use std::collections::HashSet;
+use std::rc::Rc;
 use std::sync::Arc;
 use yew::prelude::*;
 
+#[derive(Clone)]
 pub struct Search<T> {
     pub categories: Vec<SearchCategory<T>>,
 }
 
 impl<T> Search<T> {
-    pub fn category_labels<C>(&self) -> C
-    where
-        C: FromIterator<&'static str>,
-    {
-        self.categories.iter().map(|cat| cat.title).collect()
+    pub fn category_labels(&self) -> impl Iterator<Item = &str> {
+        self.categories.iter().map(|cat| cat.title.as_str())
     }
 }
 
+#[derive(Clone)]
 pub struct SearchCategory<T> {
-    pub title: &'static str,
+    pub title: String,
     pub options: Vec<SearchOption<T>>,
 }
 
+#[derive(Clone)]
 pub struct SearchOption<T> {
     pub label: Arc<dyn Fn() -> Html + Send + Sync>,
     pub getter: Arc<dyn Fn(&T) -> bool + Send + Sync>,
@@ -95,10 +96,10 @@ where
         }
     }
 
-    pub fn as_str(&self) -> Cow<'_, str> {
+    pub fn as_str(&self, context: &T::Context) -> Cow<'_, str> {
         match self {
             Self::Complex(s) => s.into(),
-            Self::Simple(s) => s.to_filter_expression().into(),
+            Self::Simple(s) => s.to_filter_expression(context).into(),
         }
     }
 }
@@ -112,27 +113,34 @@ where
     }
 }
 
-pub fn simple_search<T>(
-    search: &'static Search<T>,
-    search_params: UseStateHandle<SearchMode<T>>,
-    filter_expansion: UseStateHandle<HashSet<&'static str>>,
-) -> Html
+#[hook]
+pub fn use_simple_search<T>(search: Rc<Search<T>>, search_params: UseStateHandle<SearchMode<T>>) -> Rc<Html>
 where
-    T: Clone + ToFilterExpression,
+    T: Clone + ToFilterExpression + 'static,
 {
+    let filter_expansion = {
+        let search = search.clone();
+        use_state(|| {
+            search
+                .category_labels()
+                .map(|s| s.to_string())
+                .collect::<HashSet<String>>()
+        })
+    };
     let active = search_params.is_simple();
 
-    let filter_section = |title: &'static str, children: Html| {
-        let expanded = filter_expansion.contains(title);
+    let filter_section = |title: String, children: Html| {
+        let expanded = filter_expansion.contains(&title);
 
         let onclick = {
+            let title = title.clone();
             let filter_expansion = filter_expansion.clone();
             Callback::from(move |()| {
                 let mut selection = (*filter_expansion).clone();
-                if selection.contains(title) {
-                    selection.remove(title);
+                if selection.contains(&title) {
+                    selection.remove(&title);
                 } else {
-                    selection.insert(title);
+                    selection.insert(title.clone());
                 }
                 filter_expansion.set(selection);
             })
@@ -145,32 +153,37 @@ where
         )
     };
 
-    html!(
-        <Accordion large=true bordered=true> {
-            for search
-                .categories
-                .iter()
-                .map(|cat| {
-                    filter_section(
-                        cat.title,
-                        html!(
-                            <List r#type={ListType::Plain}>
-                                { for cat.options.iter().map(|opt|{
-                                    html!(
-                                        <Check
-                                            checked={(*search_params).map_bool(|s|(opt.getter)(s))}
-                                            onchange={search_set(search_params.clone(), |s, state|(opt.setter)(s, state))}
-                                            disabled={!active}
-                                        >
-                                            { (opt.label)() }
-                                        </Check>
-                                    )
-                                })}
-                            </List>
-                        ),
-                    )
-                })
-        } </Accordion>
+    use_memo(
+        move |()| {
+            html!(
+                <Accordion large=true bordered=true>
+                    {
+                        for search.categories.iter().map(|cat| {
+                            filter_section(
+                                cat.title.clone(),
+                                html!(
+                                    <List r#type={ListType::Plain}>
+                                        { for cat.options.iter().map(|opt|{
+                                            let opt = opt.clone();
+                                            html!(
+                                                <Check
+                                                    checked={(*search_params).map_bool(|s|(opt.getter)(s))}
+                                                    onchange={search_set(search_params.clone(), move |s, state|(opt.setter)(s, state))}
+                                                    disabled={!active}
+                                                >
+                                                    { (opt.label)() }
+                                                </Check>
+                                            )
+                                        })}
+                                    </List>
+                                ),
+                            )
+                        })
+                    }
+                </Accordion>
+            )
+        },
+        (),
     )
 }
 

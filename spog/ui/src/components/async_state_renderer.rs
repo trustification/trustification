@@ -5,9 +5,6 @@ use std::rc::Rc;
 use yew::prelude::*;
 use yew_more_hooks::hooks::UseAsyncState;
 
-#[derive(Clone, Debug, PartialEq)]
-struct Theme {}
-
 #[derive(Clone, PartialEq, Properties)]
 pub struct AsyncStateRendererProps<T>
 where
@@ -22,32 +19,34 @@ pub fn async_state_renderer<T>(props: &AsyncStateRendererProps<T>) -> Html
 where
     T: Clone + PartialEq,
 {
-    html!(<>
-        {
-            match &props.state {
-                UseAsyncState::Pending | UseAsyncState::Processing => {
-                    html!( <Bullseye><Spinner/></Bullseye> )
-                },
-                UseAsyncState::Ready(Ok(result)) if result.is_empty() => {
-                    html!(
-                        <Bullseye>
-                            <EmptyState
-                                title="No results"
-                                icon={Icon::Search}
-                            >
-                                { "Try a different search expression." }
-                            </EmptyState>
-                        </Bullseye>
-                    )
-                },
-                UseAsyncState::Ready(Ok(result)) => {
-                    props.on_ready.emit(result.clone())
-                },
-                UseAsyncState::Ready(Err(err)) => html!(
-                    <Error err={err.clone()}/>
-                ),
-            }
+    async_content(&props.state, |result| match result.is_empty() {
+        true => html!(
+            <Bullseye>
+                <EmptyState
+                    title="No results"
+                    icon={Icon::Search}
+                >
+                    { "Try a different search expression." }
+                </EmptyState>
+            </Bullseye>
+        ),
+        false => props.on_ready.emit(result.clone()),
+    })
+}
+
+pub fn async_content<T, E, F>(state: &UseAsyncState<T, E>, f: F) -> Html
+where
+    T: Clone + PartialEq,
+    E: ToString,
+    F: FnOnce(&T) -> Html,
+{
+    match &state {
+        UseAsyncState::Pending | UseAsyncState::Processing => {
+            html!( <Bullseye><Spinner/></Bullseye> )
         }
-        </>
-    )
+        UseAsyncState::Ready(Ok(result)) => f(result),
+        UseAsyncState::Ready(Err(err)) => html!(
+            <Error err={err.to_string()}/>
+        ),
+    }
 }

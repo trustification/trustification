@@ -1,3 +1,4 @@
+use std::path::PathBuf;
 use std::process::ExitCode;
 
 use trustification_infrastructure::{Infrastructure, InfrastructureConfig};
@@ -36,6 +37,9 @@ pub struct Run {
 
     #[arg(long = "vexination-url", default_value = "http://localhost:8081")]
     pub(crate) vexination_url: reqwest::Url,
+
+    #[arg(short, long = "config")]
+    pub(crate) config: Option<PathBuf>,
 
     #[command(flatten)]
     pub(crate) infra: InfrastructureConfig,

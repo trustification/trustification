@@ -4,6 +4,7 @@ pub mod advisory;
 pub mod async_state_renderer;
 pub mod backend;
 pub mod common;
+pub mod config;
 pub mod content;
 pub mod cvss;
 pub mod error;

@@ -18,7 +18,8 @@ where
 }
 
 pub trait ToFilterExpression {
-    fn to_filter_expression(&self) -> String;
+    type Context;
+    fn to_filter_expression(&self, context: &Self::Context) -> String;
 }
 
 pub trait SimpleProperties {
