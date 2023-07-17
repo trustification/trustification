@@ -1,6 +1,7 @@
 pub mod csaf;
 pub mod cvss;
 pub mod highlight;
+pub mod search;
 
 use yew::prelude::*;
 
@@ -32,7 +33,7 @@ where
 }
 
 pub fn pagination_to_offset(page: usize, per_page: usize) -> usize {
-    (page - 1).max(0) * per_page
+    page * per_page
 }
 
 pub struct OrNone<T>(pub Option<T>)

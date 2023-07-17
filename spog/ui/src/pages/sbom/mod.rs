@@ -29,7 +29,7 @@ pub fn sbom(props: &SBOMProperties) -> Html {
                 .await
                 .map(|result| result.map(model::SBOM::parse).map(Rc::new))
         },
-        (props.id.clone(), backend.clone()),
+        (props.id.clone(), backend),
     );
 
     let (heading, content) = match &*info {
@@ -97,7 +97,7 @@ fn details(props: &DetailsProps) -> Html {
 
                     <PageSection hidden={*tab != 1} fill={PageSectionFill::Fill}>
                         // FIXME: use .clone() instead
-                        <SpdxPackages bom={Rc::new(serde_json::from_str(&source).unwrap())}/>
+                        <SpdxPackages bom={Rc::new(serde_json::from_str(source).unwrap())}/>
                     </PageSection>
 
                     <PageSection hidden={*tab != 2} variant={PageSectionVariant::Light} fill={PageSectionFill::Fill}>

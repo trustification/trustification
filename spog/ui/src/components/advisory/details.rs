@@ -32,11 +32,10 @@ impl PartialEq for AdvisoryDetailsProps {
 #[function_component(AdvisoryDetails)]
 pub fn csaf_details(props: &AdvisoryDetailsProps) -> Html {
     let backend = use_backend();
-    let service = use_memo(|backend| VexService::new(backend.clone()), backend.clone());
+    let service = use_memo(|backend| VexService::new(backend.clone()), backend);
     let summary = props.advisory.clone();
 
     let fetch = {
-        let service = service.clone();
         use_async_with_cloned_deps(
             move |summary| async move {
                 service
@@ -118,10 +117,10 @@ impl TableEntryRenderer<Column> for VulnerabilityWrapper {
                 )
             }))
             .into(),
-            Column::Discovery => html!({ OrNone(self.discovery_date.clone()) }),
-            Column::Release => html!({ OrNone(self.release_date.clone()) }),
+            Column::Discovery => html!({ OrNone(self.discovery_date) }),
+            Column::Release => html!({ OrNone(self.release_date) }),
             Column::Products => html!(
-                <CsafProductStatus status={self.product_status.clone()} csaf={self.csaf.clone()} />
+                <CsafProductStatus status={self.product_status.clone()} csaf={self.csaf.clone()} overview=true />
             ),
         }
         .into()
@@ -133,7 +132,7 @@ impl TableEntryRenderer<Column> for VulnerabilityWrapper {
 
                 <GridItem cols={[8]}>
                     <CardWrapper plain=true title="Product Status">
-                        <CsafProductStatus status={self.product_status.clone()} csaf={self.csaf.clone()} />
+                        <CsafProductStatus status={self.product_status.clone()} csaf={self.csaf.clone()} overview=false />
                     </CardWrapper>
                 </GridItem>
 
@@ -181,7 +180,7 @@ pub fn vulnerability_table(props: &CsafVulnTableProperties) -> Html {
             csaf.vulnerabilities
                 .clone()
                 .into_iter()
-                .flat_map(|v| v)
+                .flatten()
                 .map(|vuln| VulnerabilityWrapper {
                     vuln,
                     csaf: csaf.clone(),
@@ -191,7 +190,7 @@ pub fn vulnerability_table(props: &CsafVulnTableProperties) -> Html {
         props.csaf.clone(),
     );
 
-    let (entries, onexpand) = use_table_data(MemoizedTableModel::new(vulns.clone()));
+    let (entries, onexpand) = use_table_data(MemoizedTableModel::new(vulns));
 
     let header = html_nested! {
         <TableHeader<Column>>
@@ -266,7 +265,7 @@ pub fn product_info(props: &CsafProperties) -> Html {
 
     let model = use_memo(
         |csaf| {
-            ProductTreeWrapper(csaf.product_tree.clone().unwrap_or_else(|| ProductTree {
+            ProductTreeWrapper(csaf.product_tree.clone().unwrap_or(ProductTree {
                 branches: None,
                 product_groups: None,
                 full_product_names: None,

@@ -31,7 +31,7 @@ pub fn vex(props: &VEXProperties) -> Html {
                 .await
                 .map(|result| result.map(backend::Advisory::parse).map(Rc::new))
         },
-        (props.id.clone(), backend.clone()),
+        (props.id.clone(), backend),
     );
 
     let (heading, content) = match &*info {

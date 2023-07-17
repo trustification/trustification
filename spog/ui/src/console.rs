@@ -83,7 +83,7 @@ pub fn console() -> Html {
 
     html!(
         <Page {brand} {sidebar} {tools}>
-            <RouterSwitch<AppRoute> {render}/>
+            <RouterSwitch<AppRoute> {render} default={html!(<pages::NotFound />)}/>
         </Page>
     )
 }

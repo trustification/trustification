@@ -5,7 +5,7 @@ use packageurl::PackageUrl;
 use patternfly_yew::prelude::*;
 use spdx_rs::models::{PackageInformation, Relationship, SPDX};
 use std::cell::RefCell;
-use std::collections::{hash_map, BTreeMap, BTreeSet, HashMap};
+use std::collections::{hash_map, BTreeMap, BTreeSet, HashMap, HashSet};
 use std::rc::Rc;
 use yew::prelude::*;
 
@@ -16,23 +16,45 @@ pub struct SpdxPackagesProperties {
 
 /// get the base version of a PURL, without qualifiers
 fn make_base(purl: PackageUrl<'static>) -> PackageUrl<'static> {
-    fn perform(purl: PackageUrl) -> Result<PackageUrl<'static>, packageurl::Error> {
+    struct Options {
+        with_namespace: bool,
+        with_version: bool,
+        with_subpath: bool,
+    }
+
+    fn perform(purl: PackageUrl, options: Options) -> Result<PackageUrl<'static>, packageurl::Error> {
         let mut result = PackageUrl::new(purl.ty().to_string(), purl.name().to_string())?;
 
-        if let Some(namespace) = purl.namespace() {
-            result.with_namespace(namespace.to_string());
+        if options.with_namespace {
+            if let Some(namespace) = purl.namespace() {
+                result.with_namespace(namespace.to_string());
+            }
         }
-        if let Some(version) = purl.version() {
-            result.with_version(version.to_string());
+
+        if options.with_version {
+            if let Some(version) = purl.version() {
+                result.with_version(version.to_string());
+            }
         }
-        if let Some(subpath) = purl.subpath() {
-            result.with_subpath(subpath.to_string())?;
+
+        if options.with_subpath {
+            if let Some(subpath) = purl.subpath() {
+                result.with_subpath(subpath.to_string())?;
+            }
         }
 
         Ok(result)
     }
 
-    perform(purl.clone()).unwrap_or(purl)
+    perform(
+        purl.clone(),
+        Options {
+            with_version: false,
+            with_namespace: true,
+            with_subpath: true,
+        },
+    )
+    .unwrap_or(purl)
 }
 
 #[function_component(SpdxPackages)]
@@ -40,7 +62,7 @@ pub fn spdx_packages(props: &SpdxPackagesProperties) -> Html {
     #[derive(Clone, Eq, PartialEq)]
     enum Column {
         Name,
-        Version,
+        Versions,
         Qualifiers,
     }
 
@@ -59,6 +81,8 @@ pub fn spdx_packages(props: &SpdxPackagesProperties) -> Html {
             base: PackageUrl<'static>,
             /// All packages belonging to this PURL
             packages: Vec<PackageInformation>,
+            /// Versions for all packages
+            versions: BTreeSet<String>,
             /// Qualifiers for all packages
             qualifiers: BTreeMap<String, BTreeSet<String>>,
         },
@@ -81,10 +105,15 @@ pub fn spdx_packages(props: &SpdxPackagesProperties) -> Html {
             match &self.base {
                 PackageBase::Plain { package } => match context.column {
                     Column::Name => highlight(&package.package_name, &self.filter.borrow()),
-                    Column::Version => html!(package.package_version.clone().unwrap_or_default()),
+                    Column::Versions => html!(package.package_version.clone().unwrap_or_default()),
                     Column::Qualifiers => html!(),
                 },
-                PackageBase::Purl { base, qualifiers, .. } => match context.column {
+                PackageBase::Purl {
+                    base,
+                    qualifiers,
+                    versions,
+                    ..
+                } => match context.column {
                     Column::Name => html!(<>
                         { highlight(base.name(), &self.filter.borrow()) }
                         if let Some(namespace) = base.namespace() {
@@ -93,7 +122,7 @@ pub fn spdx_packages(props: &SpdxPackagesProperties) -> Html {
                         {" "}
                         <Label compact=true label={base.ty().to_string()} color={Color::Blue} />
                     </>),
-                    Column::Version => html!(base.version().map(ToString::to_string).unwrap_or_default()),
+                    Column::Versions => versions.iter().map(Html::from).collect(),
                     Column::Qualifiers => html!(
                         { for qualifiers.iter().flat_map(|(k,v)| {
                             let k = k.clone();
@@ -109,12 +138,11 @@ pub fn spdx_packages(props: &SpdxPackagesProperties) -> Html {
 
         fn render_details(&self) -> Vec<Span> {
             match &self.base {
-                PackageBase::Plain { package } => {
-                    super::packages::render_single_details(&package, &self.all_packages, &self.relations)
-                }
+                PackageBase::Plain { package } => render_single_details(package, &self.all_packages, &self.relations),
                 PackageBase::Purl {
                     base,
                     packages,
+                    versions,
                     qualifiers,
                 } => {
                     let content = html!(<>
@@ -148,6 +176,16 @@ pub fn spdx_packages(props: &SpdxPackagesProperties) -> Html {
                             </GridItem>
 
                             <GridItem cols={[4]}>
+                                <Card plain=true title={html!(<Title>{"Versions"}</Title>)}>
+                                    <CardBody>
+                                        <List r#type={ListType::Basic}>
+                                            { for versions.iter().map(Html::from) }
+                                        </List>
+                                    </CardBody>
+                                </Card>
+                            </GridItem>
+
+                            <GridItem cols={[4]}>
                                 <Card plain=true title={html!(<Title>{"Packages"}</Title>)}>
                                     <CardBody>
                                         <List r#type={ListType::Basic}>
@@ -167,7 +205,7 @@ pub fn spdx_packages(props: &SpdxPackagesProperties) -> Html {
     let header = html_nested!(
         <TableHeader<Column>>
             <TableColumn<Column> index={Column::Name} label="Name" />
-            <TableColumn<Column> index={Column::Version} label="Version" />
+            <TableColumn<Column> index={Column::Versions} label="Versions" />
             <TableColumn<Column> index={Column::Qualifiers} label="Qualifiers" />
         </TableHeader<Column>>
     );
@@ -193,6 +231,8 @@ pub fn spdx_packages(props: &SpdxPackagesProperties) -> Html {
                 let mut result = Vec::with_capacity(bom.package_information.len());
                 let mut base_map = HashMap::new();
 
+                let mut duplicates = HashSet::<&str>::new();
+
                 struct PurlMap {
                     /// base purl
                     base: PackageUrl<'static>,
@@ -200,6 +240,10 @@ pub fn spdx_packages(props: &SpdxPackagesProperties) -> Html {
                 }
 
                 for package in &bom.package_information {
+                    if !duplicates.insert(&package.package_spdx_identifier) {
+                        continue;
+                    }
+
                     match get_purl(package) {
                         Some(purl) => {
                             let base = make_base(purl.clone());
@@ -231,12 +275,18 @@ pub fn spdx_packages(props: &SpdxPackagesProperties) -> Html {
 
                 for PurlMap { base, packages } in base_map.into_values() {
                     let mut qualifiers = BTreeMap::<String, BTreeSet<String>>::new();
-
+                    let mut versions = BTreeSet::<String>::new();
                     let mut result_packages = Vec::with_capacity(packages.len());
+
                     for (purl, package) in packages {
                         for (k, v) in purl.qualifiers() {
                             qualifiers.entry(k.to_string()).or_default().insert(v.to_string());
                         }
+
+                        if let Some(version) = &purl.version() {
+                            versions.insert(version.to_string());
+                        }
+
                         result_packages.push(package);
                     }
 
@@ -245,6 +295,7 @@ pub fn spdx_packages(props: &SpdxPackagesProperties) -> Html {
                             base,
                             packages: result_packages,
                             qualifiers,
+                            versions,
                         },
                         relations: relations.clone(),
                         all_packages: package_map.clone(),
@@ -256,7 +307,7 @@ pub fn spdx_packages(props: &SpdxPackagesProperties) -> Html {
 
                 result
             },
-            (props.bom.clone(), package_map.clone()),
+            (props.bom.clone(), package_map),
         )
     };
 
@@ -266,7 +317,6 @@ pub fn spdx_packages(props: &SpdxPackagesProperties) -> Html {
     let filter = use_state_eq(String::new);
 
     let filtered_packages = {
-        let package_filter_string = package_filter_string.clone();
         let offset = offset.clone();
         let limit = limit.clone();
         use_memo(
@@ -305,7 +355,7 @@ pub fn spdx_packages(props: &SpdxPackagesProperties) -> Html {
                 // return result
                 packages
             },
-            (packages.clone(), (*filter).clone()),
+            (packages, (*filter).clone()),
         )
     };
 
@@ -323,7 +373,7 @@ pub fn spdx_packages(props: &SpdxPackagesProperties) -> Html {
                 .cloned()
                 .collect::<Vec<_>>()
         },
-        (filtered_packages.clone(), *offset, *limit),
+        (filtered_packages, *offset, *limit),
     );
 
     let (entries, onexpand) = use_table_data(MemoizedTableModel::new(entries));
@@ -417,7 +467,7 @@ pub fn spdx_packages(props: &SpdxPackagesProperties) -> Html {
 pub fn render_single_details(
     package: &PackageInformation,
     packages: &HashMap<String, PackageInformation>,
-    relations: &Vec<Relationship>,
+    relations: &[Relationship],
 ) -> Vec<Span> {
     let outgoing = relations
         .iter()
@@ -446,7 +496,7 @@ pub fn render_single_details(
             <GridItem cols={[4]}>
                 <Card plain=true title={html!(<Title>{"External References"}</Title>)}>
                     <CardBody>
-                        { spdx_external_references(&package) }
+                        { spdx_external_references(package) }
                     </CardBody>
                 </Card>
             </GridItem>
@@ -457,7 +507,7 @@ pub fn render_single_details(
                         Some(html_nested!(<CardBody>
                             <Title level={Level::H3}>{"Outgoing"}</Title>
                             <List r#type={ListType::Basic}>
-                                { for outgoing.into_iter().map(|rel|spdx_relationship_entry(&packages, rel, &rel.spdx_element_id))}
+                                { for outgoing.into_iter().map(|rel|spdx_relationship_entry(packages, rel, &rel.spdx_element_id))}
                             </List>
                         </CardBody>))
                     } else { None } }
@@ -465,7 +515,7 @@ pub fn render_single_details(
                         Some(html_nested!(<CardBody>
                             <Title level={Level::H3}>{"Incoming"}</Title>
                             <List r#type={ListType::Basic}>
-                                { for incoming.into_iter().map(|rel|spdx_relationship_entry(&packages, rel, &rel.related_spdx_element))}
+                                { for incoming.into_iter().map(|rel|spdx_relationship_entry(packages, rel, &rel.related_spdx_element))}
                             </List>
                         </CardBody>))
                     } else { None } }

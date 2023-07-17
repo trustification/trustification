@@ -50,7 +50,7 @@ where
                             width: column.width
                         })
                     })
-                    .map(|column| html_nested!(<TableColumn<usize> ..column.clone() />))
+                    .map(|column| html_nested!(<TableColumn<usize> ..column />))
             }
         </TableHeader<usize>>
     );
@@ -63,7 +63,7 @@ where
     )));
 
     // Loading view
-    if props.loading == true {
+    if props.loading {
         html!(
             <Table<usize, UseTableData<usize, MemoizedTableModel<SkeletonEntry>>>
                 header={header}
@@ -122,7 +122,7 @@ where
                             </TableHeader<C>>
                         );
 
-                        let mut item_props = Rc::make_mut(&mut item.props);
+                        let item_props = Rc::make_mut(&mut item.props);
                         item_props.header = Some(header);
                         item
                     })

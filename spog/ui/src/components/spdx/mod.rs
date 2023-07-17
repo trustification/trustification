@@ -97,7 +97,7 @@ pub fn spdx_main(bom: &SPDX) -> Html {
                     <DescriptionList>
                         <DescriptionGroup term="Name">{ &package.package_name }</DescriptionGroup>
                         <DescriptionGroup term="Version">{ OrNone(package.package_version.as_ref()) }</DescriptionGroup>
-                        <DescriptionGroup term="External References"> { spdx_external_references(&package)} </DescriptionGroup>
+                        <DescriptionGroup term="External References"> { spdx_external_references(package)} </DescriptionGroup>
                     </DescriptionList>
                 )]
                 },
@@ -166,15 +166,15 @@ pub fn spdx_external_references(package: &PackageInformation) -> Html {
 pub fn spdx_package_list_entry(package: &PackageInformation) -> Html {
     match get_purl(package) {
         Some(purl) => html!(<code>{ purl }</code>),
-        None => match &package.package_version {
+        None => match &package.package_version.as_deref() {
+            Some("") | None => {
+                html!(&package.package_name)
+            }
             Some(version) => html!(
-                <Tooltip text={version.clone()}>
+                <Tooltip text={version.to_string()}>
                     { &package.package_name }
                 </Tooltip>
             ),
-            None => {
-                html!(&package.package_name)
-            }
         },
     }
 }

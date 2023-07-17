@@ -4,16 +4,19 @@ pub mod data {
     pub use spog_model::prelude::*;
 }
 
+mod config;
 mod pkg;
 mod sbom;
 mod version;
 mod vuln;
 
+pub use config::*;
 pub use pkg::*;
 pub use sbom::*;
-use url::{ParseError, Url};
 pub use version::*;
 pub use vuln::*;
+
+use url::{ParseError, Url};
 use yew::html::IntoPropValue;
 
 #[derive(Clone, Debug, PartialEq, Eq)]

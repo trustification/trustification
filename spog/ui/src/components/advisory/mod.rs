@@ -4,6 +4,7 @@ mod search;
 pub use details::*;
 pub use search::*;
 use std::borrow::Cow;
+use std::collections::HashSet;
 
 use crate::{
     backend::Endpoint,
@@ -144,7 +145,7 @@ pub fn advisory_result(props: &AdvisoryResultProperties) -> Html {
     html!(
         <TableWrapper<Column, UseTableData<Column, MemoizedTableModel<AdvisoryEntry>>>
             loading={&props.state.is_processing()}
-            error={props.state.error().map(|val| val.clone())}
+            error={props.state.error().cloned()}
             empty={entries.is_empty()}
             {header}
         >
@@ -199,7 +200,7 @@ pub fn csaf_references(props: &CsafReferencesProperties) -> Html {
                                 </span>
                             </a>
                             if let Some(category) = &reference.category {
-                                <Label compact=true label={ref_cat_str(&category)} color={Color::Blue} />
+                                <Label compact=true label={ref_cat_str(category)} color={Color::Blue} />
                             }
                         </>)
                     }) }
@@ -229,8 +230,8 @@ pub fn csaf_notes(props: &CsafNotesProperties) -> Html {
     html!(
         <CardWrapper plain={props.plain} title="Notes">
             <DescriptionList>
-            { for props.notes.iter().flat_map(|n|n).map(|note| {
-                html!( <DescriptionGroup term={note_term(&note).to_string()}> { &note.text } </DescriptionGroup> )
+            { for props.notes.iter().flatten().map(|note| {
+                html!( <DescriptionGroup term={note_term(note).to_string()}> { &note.text } </DescriptionGroup> )
             })}
             </DescriptionList>
         </CardWrapper>
@@ -260,6 +261,7 @@ fn note_cat_str(category: &NoteCategory) -> &'static str {
 pub struct CsafProductStatusProperties {
     pub status: Option<ProductStatus>,
     pub csaf: Rc<Csaf>,
+    pub overview: bool,
 }
 
 #[function_component(CsafProductStatus)]
@@ -267,14 +269,14 @@ pub fn csaf_product_status(props: &CsafProductStatusProperties) -> Html {
     html!(
         if let Some(status) = &props.status {
             <DescriptionList>
-                <CsafProductStatusSection title="First Affected" entries={status.first_affected.clone()} csaf={props.csaf.clone()}/>
-                <CsafProductStatusSection title="First Fixed" entries={status.first_fixed.clone()} csaf={props.csaf.clone()} />
-                <CsafProductStatusSection title="Fixed" entries={status.fixed.clone()} csaf={props.csaf.clone()} />
-                <CsafProductStatusSection title="Known Affected" entries={status.known_affected.clone()} csaf={props.csaf.clone()} />
-                <CsafProductStatusSection title="Known Not Affected" entries={status.known_not_affected.clone()} csaf={props.csaf.clone()} />
-                <CsafProductStatusSection title="Last Affected" entries={status.last_affected.clone()} csaf={props.csaf.clone()} />
-                <CsafProductStatusSection title="Recommended" entries={status.recommended.clone()} csaf={props.csaf.clone()} />
-                <CsafProductStatusSection title="Under Investigation" entries={status.under_investigation.clone()} csaf={props.csaf.clone()} />
+                <CsafProductStatusSection title="First Affected" entries={status.first_affected.clone()} csaf={props.csaf.clone()} overview={props.overview} />
+                <CsafProductStatusSection title="First Fixed" entries={status.first_fixed.clone()} csaf={props.csaf.clone()} overview={props.overview} />
+                <CsafProductStatusSection title="Fixed" entries={status.fixed.clone()} csaf={props.csaf.clone()} overview={props.overview} />
+                <CsafProductStatusSection title="Known Affected" entries={status.known_affected.clone()} csaf={props.csaf.clone()} overview={props.overview} />
+                <CsafProductStatusSection title="Known Not Affected" entries={status.known_not_affected.clone()} csaf={props.csaf.clone()} overview={props.overview} />
+                <CsafProductStatusSection title="Last Affected" entries={status.last_affected.clone()} csaf={props.csaf.clone()} overview={props.overview} />
+                <CsafProductStatusSection title="Recommended" entries={status.recommended.clone()} csaf={props.csaf.clone()} overview={props.overview} />
+                <CsafProductStatusSection title="Under Investigation" entries={status.under_investigation.clone()} csaf={props.csaf.clone()} overview={props.overview} />
             </DescriptionList>
         }
     )
@@ -285,6 +287,7 @@ pub struct CsafProductStatusSectionProperties {
     pub title: AttrValue,
     pub entries: Option<Vec<ProductIdT>>,
     pub csaf: Rc<Csaf>,
+    pub overview: bool,
 }
 
 #[function_component(CsafProductStatusSection)]
@@ -293,21 +296,49 @@ fn csaf_product_status(props: &CsafProductStatusSectionProperties) -> Html {
         if let Some(entries) = &props.entries {
             <DescriptionGroup term={&props.title}>
                 <List>
-                    { for entries.iter().map(|entry|{
-                        csaf_product_status_entry(&props.csaf, entry)
-                    })}
+                    {
+                        match props.overview {
+                            false => entries.iter().map(|entry| {
+                                    csaf_product_status_entry_details(&props.csaf, entry)
+                                }).collect::<Vec<_>>(),
+                            true => csaf_product_status_entry_overview(&props.csaf, entries),
+                        }
+                    }
                 </List>
             </DescriptionGroup>
         }
     )
 }
 
-fn csaf_product_status_entry(csaf: &Csaf, id: &ProductIdT) -> Html {
-    find_product_relations(&csaf, id)
+fn csaf_product_status_entry_overview(csaf: &Csaf, entries: &Vec<ProductIdT>) -> Vec<Html> {
+    // for an overview, we just show the container component
+
+    // gather unique set of products
+    let products = entries.iter().map(|id| &id.0).collect::<HashSet<_>>();
+
+    // gather unique set of products they relate to
+    let products = products
+        .into_iter()
+        .flat_map(|id| find_product_relations(csaf, id).map(|rel| &rel.relates_to_product_reference.0))
+        .collect::<HashSet<_>>();
+
+    // render out first segment of those products
+    products
+        .into_iter()
+        .map(|id| {
+            let mut prod = trace_product(csaf, &id);
+            html!({ for prod.pop().map(|branch| Html::from(&branch.name)) })
+        })
+        .collect()
+}
+
+fn csaf_product_status_entry_details(csaf: &Csaf, id: &ProductIdT) -> Html {
+    // for details, we show the actual component plus where it comes from
+    find_product_relations(csaf, &id.0)
         .map(|r| {
-            let product = product_html(trace_product(&csaf, &r.relates_to_product_reference));
+            let product = product_html(trace_product(csaf, &r.relates_to_product_reference.0));
             let relationship = html!(<Label label={rela_cat_str(&r.category)} compact=true />);
-            let component = product_html(trace_product(&csaf, &r.product_reference));
+            let component = product_html(trace_product(csaf, &r.product_reference.0));
 
             html!(<>
                 { component } {" "} { relationship } {" "} { product }  
@@ -344,6 +375,7 @@ fn rela_cat_str(category: &RelationshipCategory) -> &'static str {
     }
 }
 
+#[allow(unused)]
 fn branch_html(branches: Vec<&Branch>) -> Html {
     branches
         .iter()

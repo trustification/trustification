@@ -126,4 +126,8 @@ services:
 
   bombastic-exporter:
     image: $TRUST_IMAGE:${TRUST_VERSION:?TRUST_VERSION is required}
-    command: exporter --devmode --storage-bucket bombastic --storage-endpoint http://minio:9000 --kafka-bootstrap-servers kafka:9094 --guac-url nats:4222
+    command: exporter --devmode --document-type sbom --storage-endpoint http://minio:9000 --kafka-bootstrap-servers kafka:9094 --guac-url nats:4222
+
+  vexination-exporter:
+    image: $TRUST_IMAGE:${TRUST_VERSION:?TRUST_VERSION is required}
+    command: exporter --devmode --document-type vex --storage-endpoint http://minio:9000 --kafka-bootstrap-servers kafka:9094 --guac-url nats:4222
