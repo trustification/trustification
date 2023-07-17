@@ -5,9 +5,9 @@ Once found, you can also retrieve the original SBOM and VEX data.
 
 You can use the web-based user interface (UI), or the REST APIs for searching SBOM and VEX data.
 
-== The Spog UI
+== The Single Pane of Glass user interface
 
-The Spog UI can search link:https://trustification.dev/advisory/search/[advisories] or link:https://trustification.dev/package/search/[packages] for vulnerability data.
+The Single Pane of Glass (SPoG) UI can search link:https://trustification.dev/advisory/search/[advisories] or link:https://trustification.dev/package/search/[packages] for vulnerability data.
 For example, from the _Advisories_ page, type **openssl** in the search field and see the results.
 You can refine your search criteria by filtering based on the **Severity**, and by **Products**.
 
@@ -28,7 +28,7 @@ Also for each service, you can use some short-hand predicates, such as `is:__PRE
 Trustification has three REST APIs that you can use for searching and retrieving.
 They differ in what data they search and the expected flow.
 
-* Spog - This API focuses on the needs of the UI, and can make queries to different underlying sources.
+* SPoG - This API focuses on the needs of the UI, and can make queries to different underlying sources.
 * Bombastic - This API searches and retrieve SBOM data only.
 * Vexination - this API searches VEX data only.
 
