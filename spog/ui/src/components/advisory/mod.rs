@@ -13,6 +13,7 @@ use crate::{
     pages::{AppRoute, View},
     utils::csaf::{find_product_relations, trace_product},
 };
+use csaf::vulnerability::RemediationCategory;
 use csaf::{
     definitions::{Branch, Note, NoteCategory, ProductIdT, Reference, ReferenceCategory},
     document::{PublisherCategory, Status},
@@ -372,6 +373,16 @@ fn rela_cat_str(category: &RelationshipCategory) -> &'static str {
         RelationshipCategory::InstalledOn => "installed on",
         RelationshipCategory::InstalledWith => "installed with",
         RelationshipCategory::OptionalComponentOf => "optional component of",
+    }
+}
+
+fn rem_cat_str(remediation: &RemediationCategory) -> &'static str {
+    match remediation {
+        RemediationCategory::Mitigation => "mitigation",
+        RemediationCategory::NoFixPlanned => "no fix planned",
+        RemediationCategory::NoneAvailable => "none available",
+        RemediationCategory::VendorFix => "vendor fix",
+        RemediationCategory::Workaround => "workaround",
     }
 }
 
