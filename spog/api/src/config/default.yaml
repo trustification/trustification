@@ -70,3 +70,67 @@ bombastic:
               - 'supplier:"Organization: Red Hat"'
 
 vexination:
+
+  filters:
+    categories:
+      - label: Severity
+        options:
+          - id: low
+            label: |
+              <span class="tc-c-severity">
+                  <span class="tc-c-severity__icon"> <span class="tc-m-severity-low"> <i class="fa fa-shield-halved"></i> </span></span>
+                  <span class="tc-c-severity__text"> Low </span>
+              </span>
+            terms:
+              - "severity:Low"
+          - id: moderate
+            label: |
+              <span class="tc-c-severity">
+                  <span class="tc-c-severity__icon"> <span class="tc-m-severity-moderate"> <i class="fa fa-shield-halved"></i> </span></span>
+                  <span class="tc-c-severity__text"> Moderate </span>
+              </span>
+            terms:
+              - "severity:Moderate"
+          - id: important
+            label: |
+              <span class="tc-c-severity">
+                  <span class="tc-c-severity__icon"> <span class="tc-m-severity-important"> <i class="fa fa-shield-halved"></i> </span></span>
+                  <span class="tc-c-severity__text"> Important </span>
+              </span>
+            terms:
+              - "severity:Important"
+          - id: critical
+            label: |
+              <span class="tc-c-severity">
+                  <span class="tc-c-severity__icon"> <span class="tc-m-severity-critical"> <i class="fa fa-shield-halved"></i> </span></span>
+                  <span class="tc-c-severity__text"> Critical </span>
+              </span>
+            terms:
+              - "severity:Critical"
+
+      - label: Products
+        options:
+          - id: rhel7
+            label: Red Hat Enterprise Linux 7
+            terms:
+              - '( "cpe:/o:redhat:rhel_eus:7" in:package )'
+
+          - id: rhel8
+            label: Red Hat Enterprise Linux 8
+            terms:
+              - '( "cpe:/o:redhat:rhel_eus:8" in:package )'
+
+          - id: rhel9
+            label: Red Hat Enterprise Linux 9
+            terms:
+              - '( "cpe:/a:redhat:enterprise_linux:9" in:package )'
+
+          - id: ocp3
+            label: OpenShift Container Platform 3
+            terms:
+              - '( "cpe:/a:redhat:openshift:3" in:package )'
+
+          - id: ocp4
+            label: OpenShift Container Platform 4
+            terms:
+              - '( "cpe:/a:redhat:openshift:4" in:package )'

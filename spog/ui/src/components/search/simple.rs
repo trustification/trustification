@@ -63,6 +63,7 @@ pub struct SearchOption<T> {
 }
 
 impl<T> SearchOption<T> {
+    #[allow(unused)]
     pub fn new<L, G, S>(label: L, getter: G, setter: S) -> Self
     where
         L: Into<LabelProvider>,

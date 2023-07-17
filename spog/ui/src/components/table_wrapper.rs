@@ -122,7 +122,7 @@ where
                             </TableHeader<C>>
                         );
 
-                        let mut item_props = Rc::make_mut(&mut item.props);
+                        let item_props = Rc::make_mut(&mut item.props);
                         item_props.header = Some(header);
                         item
                     })
