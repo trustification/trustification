@@ -80,15 +80,11 @@ pub fn catalog_search(props: &CatalogSearchProperties) -> Html {
 
     let total = search.data().and_then(|d| d.total);
 
-    // filter
+    // render
 
     let hidden = text.is_empty();
-
-    // switch
-
     let simple = search_params.is_simple();
 
-    // render
     html!(
         <>
 

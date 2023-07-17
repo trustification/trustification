@@ -38,7 +38,6 @@ yew = { version = "0.20", features = ["csr"] }
 yew-hooks = "0.2"
 yew-more-hooks = { version = "0.1.2", features = ["yew-hooks"] }
 yew-nested-router = "0.2.2"
-yew_icons = {version = "0.7", features = ["BootstrapShieldFillExclamation"]}
 
 spog-model = "0.1.0"
 

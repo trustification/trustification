@@ -70,18 +70,14 @@ pub fn convert_search(filters: &Filters) -> Search<DynamicSearchParameters> {
                         let label = format!("<div>{}</div>", opt.label);
                         let cat_id = cat_id.clone();
                         let id = Rc::new(opt.id.clone());
-                        SearchOption {
+                        SearchOption::<DynamicSearchParameters> {
                             label: Html::from_html_unchecked(AttrValue::from(label.clone())).into(),
                             getter: {
                                 let cat_id = cat_id.clone();
                                 let id = id.clone();
-                                Rc::new(move |state: &DynamicSearchParameters| state.get(cat_id.clone(), id.clone()))
+                                Rc::new(move |state| state.get(cat_id.clone(), id.clone()))
                             },
-                            setter: {
-                                Rc::new(move |state: &mut DynamicSearchParameters, value| {
-                                    state.set(cat_id.clone(), id.clone(), value)
-                                })
-                            },
+                            setter: { Rc::new(move |state, value| state.set(cat_id.clone(), id.clone(), value)) },
                         }
                     })
                     .collect(),

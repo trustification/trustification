@@ -1702,7 +1702,6 @@ dependencies = [
  "yew-hooks",
  "yew-more-hooks",
  "yew-nested-router",
- "yew_icons",
 ]
 
 [[package]]
@@ -2525,13 +2524,4 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.15",
-]
-
-[[package]]
-name = "yew_icons"
-version = "0.7.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0001aab8ce9400873cf42dc56eb1b8db259effdc3e8fdbdf5940e50f31675ee1"
-dependencies = [
- "yew",
 ]

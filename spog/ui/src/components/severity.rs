@@ -35,9 +35,7 @@ pub struct Shield<T>(pub T);
 
 impl From<Shield<RedHatSeverity>> for Html {
     fn from(value: Shield<RedHatSeverity>) -> Self {
-        use yew_icons::{Icon, IconId};
-
-        let icon = |class: Classes| html!(<Icon {class} icon_id={IconId::BootstrapShieldFillExclamation} />);
+        let icon = |class: Classes| html!(<i class={classes!(class, "fa", "fa-shield-halved")}></i>);
 
         match value.0 {
             RedHatSeverity::Low => icon(classes!("tc-m-severity-low")),
