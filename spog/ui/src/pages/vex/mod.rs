@@ -133,6 +133,11 @@ fn details(props: &DetailsProps) -> Html {
                                                 { &contact_details }
                                             </DescriptionGroup>
                                         }
+                                        if let Some(issuing_authority) = &csaf.document.publisher.issuing_authority {
+                                            <DescriptionGroup term="Issuing Authority">
+                                                { &issuing_authority }
+                                            </DescriptionGroup>
+                                        }
                                     </DescriptionList>
                                 </CardWrapper>
                             </GridItem>

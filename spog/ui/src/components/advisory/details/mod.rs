@@ -1,3 +1,9 @@
+mod product;
+mod remediation;
+
+pub use product::*;
+pub use remediation::*;
+
 use std::ops::Deref;
 use std::rc::Rc;
 
@@ -9,7 +15,7 @@ use crate::{
     },
     hooks::use_backend::use_backend,
 };
-use csaf::{definitions::Branch, product_tree::ProductTree, vulnerability::Vulnerability, Csaf};
+use csaf::{vulnerability::Vulnerability, Csaf};
 use patternfly_yew::prelude::*;
 use spog_model::prelude::*;
 use yew::prelude::*;
@@ -130,17 +136,23 @@ impl TableEntryRenderer<Column> for VulnerabilityWrapper {
         let content = html!(
             <Grid gutter=true>
 
-                <GridItem cols={[8]}>
+                <GridItem cols={[7]}>
                     <CardWrapper plain=true title="Product Status">
                         <CsafProductStatus status={self.product_status.clone()} csaf={self.csaf.clone()} overview=false />
                     </CardWrapper>
                 </GridItem>
 
-                <GridItem cols={[4]}>
-                    <CsafNotes plain=true notes={self.notes.clone()} />
+                <GridItem cols={[5]}>
+                    <CardWrapper plain=true title="Remediations">
+                        <CsafRemediationTable csaf={self.csaf.clone()} remediations={self.remediations.clone()} />
+                    </CardWrapper>
                 </GridItem>
 
                 <GridItem cols={[6]}>
+                    <CsafNotes plain=true notes={self.notes.clone()} />
+                </GridItem>
+
+                <GridItem cols={[4]}>
                     <CardWrapper plain=true title="IDs">
                         if let Some(ids) = &self.ids {
                             <List>
@@ -159,8 +171,6 @@ impl TableEntryRenderer<Column> for VulnerabilityWrapper {
             </Grid>
 
         );
-
-        // TODO: add remediations
 
         vec![Span::max(content)]
     }
@@ -215,74 +225,6 @@ pub fn vulnerability_table(props: &CsafVulnTableProperties) -> Html {
             {header}
             {entries}
             {onexpand}
-        />
-    )
-}
-
-// products
-
-#[derive(PartialEq)]
-struct ProductTreeWrapper(ProductTree);
-
-struct BranchWrapper(Branch);
-
-impl TreeTableModel<()> for ProductTreeWrapper {
-    fn children(&self) -> Vec<Rc<dyn TreeNode<()>>> {
-        self.0
-            .branches
-            .iter()
-            .flat_map(|s| s.0.iter())
-            .map(|branch| Rc::new(BranchWrapper(branch.clone())) as Rc<dyn TreeNode<()>>)
-            .collect()
-    }
-}
-
-impl TreeNode<()> for BranchWrapper {
-    fn render_cell(&self, _ctx: CellContext<'_, ()>) -> Cell {
-        html!(<>
-                { &self.0.name } { " " }
-                <Label color={Color::Blue} label={format!("{:?}", self.0.category)} outline=true compact=true/>
-            </>)
-        .into()
-    }
-
-    fn children(&self) -> Vec<Rc<dyn TreeNode<()>>> {
-        self.0
-            .branches
-            .iter()
-            .flat_map(|s| s.0.iter())
-            .map(|branch| Rc::new(BranchWrapper(branch.clone())) as Rc<dyn TreeNode<()>>)
-            .collect()
-    }
-}
-
-#[function_component(CsafProductInfo)]
-pub fn product_info(props: &CsafProperties) -> Html {
-    use patternfly_yew::prelude::TableColumn;
-
-    let model = use_memo(
-        |csaf| {
-            ProductTreeWrapper(csaf.product_tree.clone().unwrap_or(ProductTree {
-                branches: None,
-                product_groups: None,
-                full_product_names: None,
-                relationships: None,
-            }))
-        },
-        props.csaf.clone(),
-    );
-
-    let header = html_nested! {
-        <TreeTableHeader<()>>
-            <TableColumn<()> index={()} label="Name"/>
-        </TreeTableHeader<()>>
-    };
-
-    html!(
-        <TreeTable<(), ProductTreeWrapper>
-            mode={TreeTableMode::Compact}
-            {header}
-            {model}
         />
     )
 }
