@@ -1,5 +1,7 @@
 # This is the default configuration file. It is compiled into the binary.
 
+$schema: "./schema.yaml"
+
 bombastic:
 
   filters:

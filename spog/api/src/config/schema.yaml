@@ -1,0 +1,66 @@
+$schema: "http://json-schema.org/draft-07/schema#"
+$id: "uri:trustification:spog:ui:config"
+title: "SPoG UI configuration file schema"
+
+type: object
+
+additionalProperties: false
+
+properties:
+
+  "$schema":
+    type: string
+
+  bombastic:
+    type: object
+    additionalProperties: false
+    properties:
+      filters:
+        $ref: "#/definitions/filters"
+
+  vexination:
+    type: object
+    additionalProperties: false
+    properties:
+      filters:
+        $ref: "#/definitions/filters"
+
+definitions:
+  filters:
+    type: object
+    properties:
+      categories:
+        type: array
+        items:
+          $ref: "#/definitions/category"
+
+  category:
+    type: object
+    additionalProperties: false
+    properties:
+      label:
+        type: string
+      options:
+        type: array
+        items:
+          $ref: "#/definitions/option"
+    required:
+      - label
+
+  option:
+    type: object
+    additionalProperties: false
+    properties:
+      id:
+        type: string
+        description: A unique ID of the option
+      label:
+        type: string
+      terms:
+        type: array
+        items:
+          type: string
+    required:
+      - id
+      - label
+      - terms
