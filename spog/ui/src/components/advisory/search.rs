@@ -77,10 +77,6 @@ pub fn advisory_search(props: &AdvisorySearchProperties) -> Html {
         (props.callback.clone(), search.clone()),
     );
 
-    // pagination
-
-    let total = search.data().and_then(|d| d.total);
-
     // render
 
     let hidden = text.is_empty();
@@ -138,7 +134,7 @@ pub fn advisory_search(props: &AdvisorySearchProperties) -> Html {
                             <ToolbarItem r#type={ToolbarItemType::Pagination}>
                                 <SimplePagination
                                     pagination={pagination.clone()}
-                                    total={total}
+                                    total={*total}
                                 />
                             </ToolbarItem>
 
@@ -159,7 +155,7 @@ pub fn advisory_search(props: &AdvisorySearchProperties) -> Html {
 
             <SimplePagination
                 {pagination}
-                total={total}
+                total={*total}
                 position={PaginationPosition::Bottom}
             />
 
