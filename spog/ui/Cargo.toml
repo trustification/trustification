@@ -17,13 +17,12 @@ gloo-net = "0.3"
 gloo-utils = { version = "0.1", features = ["serde"] }
 humansize = "2"
 itertools = "0.10"
-lazy_static = "1"
 log = "0.4"
 packageurl = "0.3"
 patternfly-yew = { version = "0.5.0-alpha.2", features = ["icons-fab", "tree"] }
 reqwest = { version = "0.11", features = ["json"] }
 roxmltree = "0.18"
-serde = { version = "1", features = ["derive"] }
+serde = { version = "1", features = ["derive", "rc"] }
 serde_json = "1"
 sikula = { version = "0.4.0-alpha.3", features = ["time"] }
 spdx-rs = "0.5.2"
@@ -39,12 +38,12 @@ yew = { version = "0.20", features = ["csr"] }
 yew-hooks = "0.2"
 yew-more-hooks = { version = "0.1.2", features = ["yew-hooks"] }
 yew-nested-router = "0.2.2"
-yew_icons = {version = "0.7", features = ["BootstrapShieldFillExclamation"]}
 
 spog-model = "0.1.0"
 
 bombastic-model = { path = "../../bombastic/model" }
 vexination-model = { path = "../../vexination/model" }
+trustification-api = { path = "../../api" }
 trustification-version = { path = "../../version" }
 
 [build-dependencies]
@@ -64,7 +63,7 @@ features = [
 #yew-nested-router = { git = "https://github.com/ctron/yew-nested-router", rev = "9689db446dee7030325884df768d0c2e84f353d6" }
 yew-more-hooks = { git = "https://github.com/ctron/yew-more-hooks", rev = "3c943759287c59a22256a4748993d2407b9a9e9b" }
 #yew-more-hooks = { path = "../yew-more-hooks" }
-patternfly-yew = { git = "https://github.com/ctron/patternfly-yew", rev = "4bd14a88e8e94386bd530423154513e0d36b64cb" }
+patternfly-yew = { git = "https://github.com/ctron/patternfly-yew", rev = "b13c34c00fce5da61cbfa7a6a36d30e03d7420ed" } # FIXME: awaiting release
 #patternfly-yew = { path = "../../../patternfly-yew" }
 
 csaf = { git = "https://github.com/voteblake/csaf-rs", rev = "76cb9ede10adb1fbb495b17e5fd8d95c5cf6c900" } # FIXME: waiting for release

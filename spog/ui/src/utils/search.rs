@@ -1,6 +1,9 @@
 /// Create an `OR` group from a list of terms. In case the iterator is empty, return an empty string.
-pub fn or_group(terms: impl IntoIterator<Item = String>) -> impl Iterator<Item = String> {
-    let mut terms = terms.into_iter();
+pub fn or_group<S>(terms: impl IntoIterator<Item = S>) -> impl Iterator<Item = String>
+where
+    S: Into<String>,
+{
+    let mut terms = terms.into_iter().map(|s| s.into());
 
     let first = terms.next();
     let (prefix, suffix) = match &first {
@@ -15,7 +18,8 @@ pub fn or_group(terms: impl IntoIterator<Item = String>) -> impl Iterator<Item =
 }
 
 pub trait ToFilterExpression {
-    fn to_filter_expression(&self) -> String;
+    type Context;
+    fn to_filter_expression(&self, context: &Self::Context) -> String;
 }
 
 pub trait SimpleProperties {
@@ -43,7 +47,7 @@ mod test {
 
     #[test]
     fn empty() {
-        let s = or_group(vec![]).join(" ");
+        let s = or_group(Vec::<String>::new()).join(" ");
         assert_eq!(s, "");
     }
 

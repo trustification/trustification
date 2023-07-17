@@ -12,6 +12,7 @@ use tantivy::{
     store::ZstdCompressor,
     DocAddress, IndexSettings, Searcher, SnippetGenerator,
 };
+use trustification_api::search::SearchOptions;
 use trustification_index::{
     boost, create_date_query, create_string_query, create_text_query, field2date, field2f64vec, field2str,
     field2strvec,
@@ -248,7 +249,7 @@ impl trustification_index::Index for Index {
         score: f32,
         searcher: &Searcher,
         query: &dyn Query,
-        explain: bool,
+        options: &SearchOptions,
     ) -> Result<Self::MatchedDocument, SearchError> {
         let doc = searcher.doc(doc_address)?;
         let snippet_generator = SnippetGenerator::create(searcher, query, self.fields.advisory_description)?;
@@ -290,7 +291,7 @@ impl trustification_index::Index for Index {
             cvss_max,
         };
 
-        let explanation: Option<serde_json::Value> = if explain {
+        let explanation: Option<serde_json::Value> = if options.explain {
             match query.explain(searcher, doc_address) {
                 Ok(explanation) => Some(serde_json::to_value(explanation).ok()).unwrap_or(None),
                 Err(e) => {
@@ -302,10 +303,13 @@ impl trustification_index::Index for Index {
             None
         };
 
+        let metadata = options.metadata.then(|| doc2metadata(&self.schema, &doc));
+
         Ok(SearchHit {
             document,
             score,
             explanation,
+            metadata,
         })
     }
 }
@@ -475,6 +479,8 @@ impl Index {
 }
 
 use csaf::definitions::{BranchesT, ProductIdentificationHelper};
+use trustification_index::metadata::doc2metadata;
+
 fn find_product_identifier<'m, F: Fn(&'m ProductIdentificationHelper) -> Option<R>, R>(
     branches: &'m BranchesT,
     product_id: &'m ProductIdT,
@@ -585,7 +591,17 @@ mod tests {
     }
 
     fn search(index: &IndexStore<Index>, query: &str) -> (Vec<SearchHit>, usize) {
-        index.search(query, 0, 10000, false).unwrap()
+        index
+            .search(
+                query,
+                0,
+                10000,
+                SearchOptions {
+                    explain: false,
+                    metadata: false,
+                },
+            )
+            .unwrap()
     }
 
     #[tokio::test]

@@ -1,5 +1,6 @@
 [workspace]
 members = [
+    "api",
     "bombastic/bombastic",
     "bombastic/api",
     "bombastic/model",
@@ -21,6 +22,8 @@ members = [
     "spog/spog",
     "exhort/api",
     "exhort/exhort",
+    "collectorist/api",
+    "collectorist/collectorist",
     "integration-tests",
     "trust",
     "exporter",
@@ -49,6 +52,8 @@ default-members = [
     "spog/api",
     "spog/model",
     "spog/spog",
+    "collectorist/api",
+    "collectorist/collectorist",
     "trust",
     "exporter",
     "event-bus",

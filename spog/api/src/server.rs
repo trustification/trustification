@@ -7,11 +7,12 @@ use anyhow::anyhow;
 use http::StatusCode;
 use prometheus::Registry;
 use spog_model::search;
+use trustification_api::{search::SearchOptions, Apply};
 use trustification_version::version;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
-use crate::{advisory, index, sbom, Run};
+use crate::{advisory, config, index, sbom, Run};
 
 pub struct Server {
     run: Run,
@@ -61,6 +62,8 @@ impl Server {
             .build()
             .map_err(|_| anyhow!("Error registering HTTP metrics"))?;
 
+        let config_configurator = config::configurator(self.run.config).await?;
+
         HttpServer::new(move || {
             let http_metrics = http_metrics.clone();
             let state = state.clone();
@@ -80,6 +83,7 @@ impl Server {
                 .configure(version::configurator(version!()))
                 .configure(crate::sbom::configure())
                 .configure(crate::advisory::configure())
+                .configure(config_configurator.clone())
                 //.configure(crate::vulnerability::configure())
                 .service(SwaggerUi::new("/swagger-ui/{_:.*}").url("/openapi.json", openapi.clone()))
         })
@@ -158,6 +162,7 @@ impl AppState {
         q: &str,
         offset: usize,
         limit: usize,
+        options: SearchOptions,
     ) -> Result<vexination_model::search::SearchResult, anyhow::Error> {
         let url = self.vexination.join("/api/v1/vex/search")?;
         let response = self
@@ -165,6 +170,7 @@ impl AppState {
             .get(url)
             .query(&[("q", q)])
             .query(&[("offset", offset), ("limit", limit)])
+            .apply(&options)
             .send()
             .await?;
         if response.status() == StatusCode::OK {

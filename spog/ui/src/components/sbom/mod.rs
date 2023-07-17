@@ -1,14 +1,13 @@
 use crate::{
-    backend::{PackageService, SearchOptions},
-    components::{search::*, simple_pagination::SimplePagination},
-    hooks::{use_backend::use_backend, use_standard_search, UseStandardSearch},
-    utils::{pagination_to_offset, search::*},
+    backend::{self, PackageService},
+    components::search::*,
+    hooks::{use_backend::use_backend, use_config, use_standard_search, UseStandardSearch},
+    utils::pagination_to_offset,
 };
 use bombastic_model::prelude::Packages;
-use lazy_static::lazy_static;
 use patternfly_yew::prelude::*;
 use spog_model::prelude::*;
-use std::{collections::HashSet, rc::Rc};
+use std::rc::Rc;
 use yew::prelude::*;
 use yew_more_hooks::prelude::*;
 
@@ -29,40 +28,47 @@ pub struct CatalogSearchProperties {
 pub fn catalog_search(props: &CatalogSearchProperties) -> Html {
     let backend = use_backend();
 
+    let config = use_config();
+
     let service = use_memo(|backend| PackageService::new(backend.clone()), backend);
+
+    let total = use_state_eq(|| None);
+
+    let filters = use_memo(|()| config.bombastic.filters.clone(), ());
+    let search_config = use_memo(|()| convert_search(&filters), ());
 
     let UseStandardSearch {
         search_params,
-        pagination_state,
+        pagination,
         filter_input_state,
         onclear,
         onset,
         ontogglesimple,
         text,
-    } = use_standard_search::<SearchParameters, Packages>(props.query.clone());
+    } = use_standard_search::<DynamicSearchParameters, Packages>(props.query.clone(), *total, filters.clone());
 
     let search = {
+        let filters = filters.clone();
         use_async_with_cloned_deps(
             move |(search_params, page, per_page)| async move {
                 service
                     .search_packages(
-                        &search_params.as_str(),
-                        &SearchOptions {
+                        &search_params.as_str(&filters),
+                        &backend::SearchParameters {
                             offset: Some(pagination_to_offset(page, per_page)),
                             limit: Some(per_page),
+                            ..Default::default()
                         },
                     )
                     .await
                     .map(|result| result.map(Rc::new))
                     .map_err(|err| err.to_string())
             },
-            (
-                (*search_params).clone(),
-                pagination_state.page,
-                pagination_state.per_page,
-            ),
+            ((*search_params).clone(), pagination.page, pagination.per_page),
         )
     };
+
+    total.set(search.data().and_then(|d| d.total));
 
     use_effect_with_deps(
         |(callback, search)| {
@@ -71,29 +77,19 @@ pub fn catalog_search(props: &CatalogSearchProperties) -> Html {
         (props.callback.clone(), search.clone()),
     );
 
-    // pagination
-
-    let total = search.data().and_then(|d| d.total);
-
-    // filter
+    // render
 
     let hidden = text.is_empty();
-    let filter_expansion = use_state(|| SEARCH.category_labels::<HashSet<_>>());
-
-    // switch
-
     let simple = search_params.is_simple();
 
-    // render
     html!(
         <>
 
             <Grid>
                 <GridItem cols={[2]}>
-                    <div style="height: 100%; display: flex; flex-direction: row; align-items: center;">
-                        <Title level={Level::H2}>{ "Categories " } <Switch checked={simple} label="Simple" label_off="Complex" onchange={ontogglesimple}/> </Title>
-                    </div>
+                    <SimpleModeSwitch {simple} ontoggle={ontogglesimple} />
                 </GridItem>
+
                 <GridItem cols={[10]}>
 
                     <Toolbar>
@@ -141,11 +137,8 @@ pub fn catalog_search(props: &CatalogSearchProperties) -> Html {
 
                             <ToolbarItem r#type={ToolbarItemType::Pagination}>
                                 <SimplePagination
-                                    total_items={total}
-                                    page={pagination_state.page}
-                                    per_page={pagination_state.per_page}
-                                    on_page_change={&pagination_state.on_page_change}
-                                    on_per_page_change={&pagination_state.on_per_page_change}
+                                    pagination={pagination.clone()}
+                                    total={*total}
                                 />
                             </ToolbarItem>
 
@@ -155,7 +148,7 @@ pub fn catalog_search(props: &CatalogSearchProperties) -> Html {
                 </GridItem>
 
                 <GridItem cols={[2]}>
-                    { simple_search(&SEARCH, search_params, filter_expansion) }
+                    <SimpleSearch<DynamicSearchParameters> search={search_config} {search_params} />
                 </GridItem>
 
                 <GridItem cols={[10]}>
@@ -165,73 +158,13 @@ pub fn catalog_search(props: &CatalogSearchProperties) -> Html {
             </Grid>
 
             <SimplePagination
+                {pagination}
+                total={*total}
                 position={PaginationPosition::Bottom}
-                total_items={total}
-                page={pagination_state.page}
-                per_page={pagination_state.per_page}
-                on_page_change={pagination_state.on_page_change}
-                on_per_page_change={pagination_state.on_per_page_change}
             />
 
         </>
     )
-}
-
-lazy_static! {
-    static ref SEARCH: Search<SearchParameters> = Search {
-        categories: vec![
-            SearchCategory {
-                title: "Supplier",
-                options: vec![SearchOption::<SearchParameters>::new_str(
-                    "Red Hat",
-                    |options| options.supplier_redhat,
-                    |options, value| options.supplier_redhat = value
-                ),]
-            },
-            SearchCategory {
-                title: "Type",
-                options: vec![SearchOption::<SearchParameters>::new_str(
-                    "Container",
-                    |options| options.is_container,
-                    |options, value| options.is_container = value
-                ),]
-            }
-        ]
-    };
-}
-
-#[derive(Clone, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
-struct SearchParameters {
-    terms: Vec<String>,
-
-    supplier_redhat: bool,
-    is_container: bool,
-}
-
-impl SimpleProperties for SearchParameters {
-    fn terms(&self) -> &[String] {
-        &self.terms
-    }
-
-    fn terms_mut(&mut self) -> &mut Vec<String> {
-        &mut self.terms
-    }
-}
-
-impl ToFilterExpression for SearchParameters {
-    fn to_filter_expression(&self) -> String {
-        let mut terms = escape_terms(self.terms.clone()).collect::<Vec<_>>();
-
-        if self.is_container {
-            terms.push("type:oci".to_string());
-        }
-
-        if self.supplier_redhat {
-            terms.push(r#"supplier:"Organization: Red Hat""#.to_string());
-        }
-
-        terms.join(" ")
-    }
 }
 
 #[function_component(CatalogSearchHelpPopover)]

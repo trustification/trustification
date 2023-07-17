@@ -1,15 +1,15 @@
-use csaf::definitions::{Branch, BranchesT, ProductIdT};
+use csaf::definitions::{Branch, BranchesT};
 use csaf::product_tree::Relationship;
 use csaf::Csaf;
 
-pub fn trace_product<'a>(csaf: &'a Csaf, product: &ProductIdT) -> Vec<&'a Branch> {
+pub fn trace_product<'a>(csaf: &'a Csaf, product_id: &str) -> Vec<&'a Branch> {
     let mut result = vec![];
 
     if let Some(product_tree) = &csaf.product_tree {
         // let result = &mut result;
         walk_product_branches(&product_tree.branches, |parents, branch| {
             if let Some(full_name) = &branch.product {
-                if &full_name.product_id == product {
+                if &full_name.product_id.0 == product_id {
                     // trace back
                     result = parents.iter().copied().chain(Some(branch)).collect::<Vec<&'a Branch>>()
                 }
@@ -43,13 +43,10 @@ where
 }
 
 /// find relations to a product id
-pub fn find_product_relations<'a>(
-    csaf: &'a Csaf,
-    product: &'a ProductIdT,
-) -> impl Iterator<Item = &'a Relationship> + 'a {
+pub fn find_product_relations<'a>(csaf: &'a Csaf, product: &'a str) -> impl Iterator<Item = &'a Relationship> + 'a {
     csaf.product_tree
         .iter()
         .flat_map(|pt| pt.relationships.iter())
         .flat_map(|r| r.iter())
-        .filter(move |p| &p.full_product_name.product_id == product)
+        .filter(move |p| &p.full_product_name.product_id.0 == product)
 }

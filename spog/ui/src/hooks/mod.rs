@@ -1,6 +1,7 @@
 pub mod use_backend;
-pub mod use_pagination_state;
 
+mod config;
 mod search;
 
+pub use config::*;
 pub use search::*;

@@ -11,6 +11,7 @@ log = "0.4"
 time = "0.3"
 tar = "0.4"
 trustification-index = { path = "../../index" }
+trustification-api = { path = "../../api" }
 bombastic-model = { path = "../model" }
 cyclonedx-bom = "0.4.0"
 spdx-rs = "0.5.2"

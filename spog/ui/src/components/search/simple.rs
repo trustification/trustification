@@ -2,57 +2,78 @@ use crate::utils::search::*;
 use patternfly_yew::prelude::*;
 use std::borrow::Cow;
 use std::collections::HashSet;
-use std::sync::Arc;
+use std::rc::Rc;
 use yew::prelude::*;
 
+#[derive(Clone)]
 pub struct Search<T> {
     pub categories: Vec<SearchCategory<T>>,
 }
 
 impl<T> Search<T> {
-    pub fn category_labels<C>(&self) -> C
-    where
-        C: FromIterator<&'static str>,
-    {
-        self.categories.iter().map(|cat| cat.title).collect()
+    pub fn category_labels(&self) -> impl Iterator<Item = &str> {
+        self.categories.iter().map(|cat| cat.title.as_str())
     }
 }
 
+#[derive(Clone)]
 pub struct SearchCategory<T> {
-    pub title: &'static str,
+    pub title: String,
     pub options: Vec<SearchOption<T>>,
 }
 
+#[derive(Clone)]
+pub enum LabelProvider {
+    Static(Html),
+    Dynamic(Rc<dyn Fn() -> Html>),
+}
+
+impl From<String> for LabelProvider {
+    fn from(value: String) -> Self {
+        Self::Static(Html::from(value))
+    }
+}
+
+impl From<&str> for LabelProvider {
+    fn from(value: &str) -> Self {
+        Self::Static(Html::from(value))
+    }
+}
+
+impl From<Html> for LabelProvider {
+    fn from(value: Html) -> Self {
+        Self::Static(value)
+    }
+}
+
+impl From<&LabelProvider> for Html {
+    fn from(value: &LabelProvider) -> Self {
+        match value {
+            LabelProvider::Static(html) => html.clone(),
+            LabelProvider::Dynamic(f) => f(),
+        }
+    }
+}
+
+#[derive(Clone)]
 pub struct SearchOption<T> {
-    pub label: Arc<dyn Fn() -> Html + Send + Sync>,
-    pub getter: Arc<dyn Fn(&T) -> bool + Send + Sync>,
-    pub setter: Arc<dyn Fn(&mut T, bool) + Send + Sync>,
+    pub label: LabelProvider,
+    pub getter: Rc<dyn Fn(&T) -> bool>,
+    pub setter: Rc<dyn Fn(&mut T, bool)>,
 }
 
 impl<T> SearchOption<T> {
-    pub fn new_str<L, G, S>(label: L, getter: G, setter: S) -> Self
+    #[allow(unused)]
+    pub fn new<L, G, S>(label: L, getter: G, setter: S) -> Self
     where
-        L: Into<Html> + Clone + Send + Sync + 'static,
-        G: Fn(&T) -> bool + Send + Sync + 'static,
-        S: Fn(&mut T, bool) + Send + Sync + 'static,
+        L: Into<LabelProvider>,
+        G: Fn(&T) -> bool + 'static,
+        S: Fn(&mut T, bool) + 'static,
     {
         Self {
-            label: Arc::new(move || label.clone().into()),
-            getter: Arc::new(getter),
-            setter: Arc::new(setter),
-        }
-    }
-
-    pub fn new_fn<L, G, S>(label: L, getter: G, setter: S) -> Self
-    where
-        L: Fn() -> Html + Send + Sync + 'static,
-        G: Fn(&T) -> bool + Send + Sync + 'static,
-        S: Fn(&mut T, bool) + Send + Sync + 'static,
-    {
-        Self {
-            label: Arc::new(label),
-            getter: Arc::new(getter),
-            setter: Arc::new(setter),
+            label: label.into(),
+            getter: Rc::new(getter),
+            setter: Rc::new(setter),
         }
     }
 }
@@ -95,10 +116,10 @@ where
         }
     }
 
-    pub fn as_str(&self) -> Cow<'_, str> {
+    pub fn as_str(&self, context: &T::Context) -> Cow<'_, str> {
         match self {
             Self::Complex(s) => s.into(),
-            Self::Simple(s) => s.to_filter_expression().into(),
+            Self::Simple(s) => s.to_filter_expression(context).into(),
         }
     }
 }
@@ -112,27 +133,53 @@ where
     }
 }
 
-pub fn simple_search<T>(
-    search: &'static Search<T>,
-    search_params: UseStateHandle<SearchMode<T>>,
-    filter_expansion: UseStateHandle<HashSet<&'static str>>,
-) -> Html
+#[derive(Properties)]
+pub struct SimpleSearchProperties<T>
 where
-    T: Clone + ToFilterExpression,
+    T: PartialEq + Clone + ToFilterExpression + 'static,
 {
-    let active = search_params.is_simple();
+    pub search: Rc<Search<T>>,
+    pub search_params: UseStateHandle<SearchMode<T>>,
+}
 
-    let filter_section = |title: &'static str, children: Html| {
-        let expanded = filter_expansion.contains(title);
+impl<T> PartialEq for SimpleSearchProperties<T>
+where
+    T: PartialEq + Clone + ToFilterExpression + 'static,
+{
+    fn eq(&self, other: &Self) -> bool {
+        Rc::ptr_eq(&self.search, &other.search) && self.search_params.eq(&other.search_params)
+    }
+}
+
+#[function_component(SimpleSearch)]
+pub fn simple_search<T>(props: &SimpleSearchProperties<T>) -> Html
+where
+    T: PartialEq + Clone + ToFilterExpression + 'static,
+{
+    let filter_expansion = {
+        let search = props.search.clone();
+        use_state(|| {
+            search
+                .category_labels()
+                .map(|s| Rc::new(s.to_string()))
+                .collect::<HashSet<Rc<String>>>()
+        })
+    };
+
+    let active = props.search_params.is_simple();
+
+    let filter_section = |title: Rc<String>, children: Html| {
+        let expanded = filter_expansion.contains(&title);
 
         let onclick = {
+            let title = title.clone();
             let filter_expansion = filter_expansion.clone();
             Callback::from(move |()| {
                 let mut selection = (*filter_expansion).clone();
-                if selection.contains(title) {
-                    selection.remove(title);
+                if selection.contains(&title) {
+                    selection.remove(&title);
                 } else {
-                    selection.insert(title);
+                    selection.insert(title.clone());
                 }
                 filter_expansion.set(selection);
             })
@@ -146,23 +193,22 @@ where
     };
 
     html!(
-        <Accordion large=true bordered=true> {
-            for search
-                .categories
-                .iter()
-                .map(|cat| {
+        <Accordion large=true bordered=true>
+            {
+                for props.search.categories.iter().map(|cat| {
                     filter_section(
-                        cat.title,
+                        Rc::new(cat.title.clone()),
                         html!(
                             <List r#type={ListType::Plain}>
                                 { for cat.options.iter().map(|opt|{
+                                    let opt = opt.clone();
                                     html!(
                                         <Check
-                                            checked={(*search_params).map_bool(|s|(opt.getter)(s))}
-                                            onchange={search_set(search_params.clone(), |s, state|(opt.setter)(s, state))}
+                                            checked={(*props.search_params).map_bool(|s|(opt.getter)(s))}
+                                            onchange={search_set(props.search_params.clone(), move |s, state|(opt.setter)(s, state))}
                                             disabled={!active}
                                         >
-                                            { (opt.label)() }
+                                            { &opt.label }
                                         </Check>
                                     )
                                 })}
@@ -170,6 +216,98 @@ where
                         ),
                     )
                 })
-        } </Accordion>
+            }
+        </Accordion>
+    )
+}
+
+/*
+#[hook]
+pub fn use_simple_search<T>(search: Rc<Search<T>>, search_params: UseStateHandle<SearchMode<T>>) -> Rc<Html>
+where
+    T: Clone + ToFilterExpression + 'static,
+{
+    let filter_expansion = {
+        let search = search.clone();
+        use_state(|| {
+            search
+                .category_labels()
+                .map(|s| Rc::new(s.to_string()))
+                .collect::<HashSet<Rc<String>>>()
+        })
+    };
+    let active = search_params.is_simple();
+
+    let filter_section = |title: Rc<String>, children: Html| {
+        let expanded = filter_expansion.contains(&title);
+
+        let onclick = {
+            let title = title.clone();
+            let filter_expansion = filter_expansion.clone();
+            Callback::from(move |()| {
+                let mut selection = (*filter_expansion).clone();
+                if selection.contains(&title) {
+                    selection.remove(&title);
+                } else {
+                    selection.insert(title.clone());
+                }
+                filter_expansion.set(selection);
+            })
+        };
+
+        html_nested!(
+            <AccordionItem title={title.to_string()} {expanded} {onclick}>
+                { children }
+            </AccordionItem>
+        )
+    };
+
+    use_memo(
+        move |filter_expansion| {
+            html!(
+                <Accordion large=true bordered=true>
+                    {
+                        for search.categories.iter().map(|cat| {
+                            filter_section(
+                                Rc::new(cat.title.clone()),
+                                html!(
+                                    <List r#type={ListType::Plain}>
+                                        { for cat.options.iter().map(|opt|{
+                                            let opt = opt.clone();
+                                            html!(
+                                                <Check
+                                                    checked={(*search_params).map_bool(|s|(opt.getter)(s))}
+                                                    onchange={search_set(search_params.clone(), move |s, state|(opt.setter)(s, state))}
+                                                    disabled={!active}
+                                                >
+                                                    { &opt.label }
+                                                </Check>
+                                            )
+                                        })}
+                                    </List>
+                                ),
+                            )
+                        })
+                    }
+                </Accordion>
+            )
+        },
+        (*filter_expansion).clone(),
+    )
+}
+*/
+
+#[derive(PartialEq, Properties)]
+pub struct SimpleModeSwitchProperties {
+    pub simple: bool,
+    pub ontoggle: Callback<bool>,
+}
+
+#[function_component(SimpleModeSwitch)]
+pub fn simple_mode_switch(props: &SimpleModeSwitchProperties) -> Html {
+    html!(
+        <div style="height: 100%; display: flex; flex-direction: row; align-items: center;">
+            <Title level={Level::H2}>{ "Categories " } <Switch checked={props.simple} label="Simple" label_off="Complex" onchange={props.ontoggle.clone()}/> </Title>
+        </div>
     )
 }

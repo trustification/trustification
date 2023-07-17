@@ -120,7 +120,7 @@ impl TableEntryRenderer<Column> for VulnerabilityWrapper {
             Column::Discovery => html!({ OrNone(self.discovery_date) }),
             Column::Release => html!({ OrNone(self.release_date) }),
             Column::Products => html!(
-                <CsafProductStatus status={self.product_status.clone()} csaf={self.csaf.clone()} />
+                <CsafProductStatus status={self.product_status.clone()} csaf={self.csaf.clone()} overview=true />
             ),
         }
         .into()
@@ -132,7 +132,7 @@ impl TableEntryRenderer<Column> for VulnerabilityWrapper {
 
                 <GridItem cols={[8]}>
                     <CardWrapper plain=true title="Product Status">
-                        <CsafProductStatus status={self.product_status.clone()} csaf={self.csaf.clone()} />
+                        <CsafProductStatus status={self.product_status.clone()} csaf={self.csaf.clone()} overview=false />
                     </CardWrapper>
                 </GridItem>
 
@@ -208,9 +208,6 @@ pub fn vulnerability_table(props: &CsafVulnTableProperties) -> Html {
         true => TableMode::CompactExpandable,
         false => TableMode::Compact,
     };
-
-    // FIXME: figure out why this is required
-    let onexpand = onexpand.reform(|x| x);
 
     html!(
         <Table<Column, UseTableData<Column, MemoizedTableModel<VulnerabilityWrapper>>>

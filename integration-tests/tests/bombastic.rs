@@ -70,7 +70,7 @@ fn test_search() {
             // Ensure we can search for the SBOM. We want to allow the
             // indexer time to do its thing, so might need to retry
             loop {
-                let query = encode("ubi9-container in:package");
+                let query = encode("ubi9-container-9.1.0-1782.testdata");
                 let url = format!("http://localhost:{port}/api/v1/sbom/search?q={query}");
                 let response = reqwest::get(url).await.unwrap();
                 assert_eq!(response.status(), StatusCode::OK);
