@@ -16,6 +16,7 @@ use bombastic_model::prelude::*;
 use derive_more::{Display, Error, From};
 use futures::TryStreamExt;
 use serde::Deserialize;
+use trustification_api::search::SearchOptions;
 use trustification_index::Error as IndexError;
 use trustification_storage::Error as StorageError;
 use utoipa::OpenApi;
@@ -73,7 +74,7 @@ impl error::ResponseError for Error {
             Self::Storage(StorageError::NotFound) => StatusCode::NOT_FOUND,
             Self::InvalidContentType | Self::InvalidContentEncoding => StatusCode::BAD_REQUEST,
             e => {
-                log::info!("ERROR: {:?}", e);
+                log::error!("{e:?}");
                 StatusCode::INTERNAL_SERVER_ERROR
             }
         }
@@ -146,6 +147,9 @@ pub struct SearchParams {
     /// Provide a detailed explanation of query matches
     #[serde(default = "default_explain")]
     pub explain: bool,
+    /// Provide additional metadata from the index
+    #[serde(default = "default_metadata")]
+    pub metadata: bool,
 }
 
 const fn default_offset() -> usize {
@@ -158,6 +162,19 @@ const fn default_limit() -> usize {
 
 const fn default_explain() -> bool {
     false
+}
+
+const fn default_metadata() -> bool {
+    false
+}
+
+impl From<&SearchParams> for SearchOptions {
+    fn from(value: &SearchParams) -> Self {
+        Self {
+            explain: value.explain,
+            metadata: value.metadata,
+        }
+    }
 }
 
 /// Search for an SBOM using a free form search query.
@@ -182,17 +199,14 @@ async fn search_sbom(
 ) -> actix_web::Result<impl Responder> {
     let params = params.into_inner();
 
-    log::info!("Querying SBOM using {}", params.q);
+    log::info!("Querying SBOM: '{}'", params.q);
 
     let index = state.index.read().await;
-    let result = index
-        .search(&params.q, params.offset, params.limit, params.explain)
+    let (result, total) = index
+        .search(&params.q, params.offset, params.limit, (&params).into())
         .map_err(Error::Index)?;
 
-    Ok(HttpResponse::Ok().json(SearchResult {
-        total: result.1,
-        result: result.0,
-    }))
+    Ok(HttpResponse::Ok().json(SearchResult { total, result }))
 }
 
 /// Upload an SBOM with an identifier.

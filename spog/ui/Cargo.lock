@@ -1189,7 +1189,7 @@ dependencies = [
 [[package]]
 name = "patternfly-yew"
 version = "0.5.0-alpha.2"
-source = "git+https://github.com/ctron/patternfly-yew?rev=5ba924c4419bc2d196821cba0f6adeef052f86cf#5ba924c4419bc2d196821cba0f6adeef052f86cf"
+source = "git+https://github.com/ctron/patternfly-yew?rev=b13c34c00fce5da61cbfa7a6a36d30e03d7420ed#b13c34c00fce5da61cbfa7a6a36d30e03d7420ed"
 dependencies = [
  "chrono",
  "gloo-events",
@@ -1690,6 +1690,7 @@ dependencies = [
  "strum 0.25.0",
  "thiserror",
  "time 0.3.22",
+ "trustification-api",
  "trustification-version",
  "url",
  "urlencoding",
@@ -1974,6 +1975,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "24eb03ba0eab1fd845050058ce5e616558e8f8d8fca633e6b163fe25c797213a"
 dependencies = [
  "once_cell",
+]
+
+[[package]]
+name = "trustification-api"
+version = "0.1.0"
+dependencies = [
+ "reqwest",
+ "serde",
 ]
 
 [[package]]

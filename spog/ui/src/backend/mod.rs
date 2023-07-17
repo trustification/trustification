@@ -7,13 +7,17 @@ pub mod data {
 mod config;
 mod pkg;
 mod sbom;
+mod search;
 mod version;
 mod vuln;
 
 pub use config::*;
 pub use pkg::*;
 pub use sbom::*;
+pub use search::*;
 pub use version::*;
+pub use version::*;
+pub use vuln::*;
 pub use vuln::*;
 
 use url::{ParseError, Url};

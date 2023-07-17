@@ -1,5 +1,5 @@
 use crate::{
-    backend::{PackageService, SearchOptions},
+    backend::{self, PackageService},
     components::search::*,
     hooks::{use_backend::use_backend, use_config, use_standard_search, UseStandardSearch},
     utils::pagination_to_offset,
@@ -54,9 +54,10 @@ pub fn catalog_search(props: &CatalogSearchProperties) -> Html {
                 service
                     .search_packages(
                         &search_params.as_str(&filters),
-                        &SearchOptions {
+                        &backend::SearchParameters {
                             offset: Some(pagination_to_offset(page, per_page)),
                             limit: Some(per_page),
+                            ..Default::default()
                         },
                     )
                     .await
@@ -75,10 +76,6 @@ pub fn catalog_search(props: &CatalogSearchProperties) -> Html {
         },
         (props.callback.clone(), search.clone()),
     );
-
-    // pagination
-
-    let total = search.data().and_then(|d| d.total);
 
     // render
 
@@ -141,7 +138,7 @@ pub fn catalog_search(props: &CatalogSearchProperties) -> Html {
                             <ToolbarItem r#type={ToolbarItemType::Pagination}>
                                 <SimplePagination
                                     pagination={pagination.clone()}
-                                    total={total}
+                                    total={*total}
                                 />
                             </ToolbarItem>
 
@@ -162,7 +159,7 @@ pub fn catalog_search(props: &CatalogSearchProperties) -> Html {
 
             <SimplePagination
                 {pagination}
-                total={total}
+                total={*total}
                 position={PaginationPosition::Bottom}
             />
 

@@ -209,9 +209,6 @@ pub fn vulnerability_table(props: &CsafVulnTableProperties) -> Html {
         false => TableMode::Compact,
     };
 
-    // FIXME: figure out why this is required
-    let onexpand = onexpand.reform(|x| x);
-
     html!(
         <Table<Column, UseTableData<Column, MemoizedTableModel<VulnerabilityWrapper>>>
             {mode}

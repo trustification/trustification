@@ -1247,6 +1247,7 @@ dependencies = [
  "serde_json",
  "sha2 0.10.7",
  "tokio",
+ "trustification-api",
  "trustification-index",
  "trustification-infrastructure",
  "trustification-storage",
@@ -1271,6 +1272,7 @@ dependencies = [
  "tar",
  "time 0.3.22",
  "tokio",
+ "trustification-api",
  "trustification-index",
  "zstd",
 ]
@@ -5378,6 +5380,7 @@ dependencies = [
  "spog-model",
  "thiserror",
  "tokio",
+ "trustification-api",
  "trustification-infrastructure",
  "trustification-version",
  "urlencoding",
@@ -6125,6 +6128,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "trustification-api"
+version = "0.1.0"
+dependencies = [
+ "reqwest",
+ "serde",
+]
+
+[[package]]
 name = "trustification-event-bus"
 version = "0.1.0"
 dependencies = [
@@ -6157,6 +6168,7 @@ dependencies = [
  "tar",
  "time 0.3.22",
  "tokio",
+ "trustification-api",
  "zstd",
 ]
 
@@ -6444,6 +6456,7 @@ dependencies = [
  "serde_json",
  "sha2 0.10.7",
  "tokio",
+ "trustification-api",
  "trustification-index",
  "trustification-infrastructure",
  "trustification-storage",
@@ -6470,6 +6483,7 @@ dependencies = [
  "tar",
  "time 0.3.22",
  "tokio",
+ "trustification-api",
  "trustification-index",
  "vexination-model",
  "zstd",

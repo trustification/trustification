@@ -1,5 +1,5 @@
 use crate::{
-    backend::{SearchOptions, VexService},
+    backend::{self, VexService},
     components::search::*,
     hooks::{use_backend::use_backend, use_config, use_standard_search, UseStandardSearch},
     utils::pagination_to_offset,
@@ -54,9 +54,10 @@ pub fn advisory_search(props: &AdvisorySearchProperties) -> Html {
                 service
                     .search_advisories(
                         &search_params.as_str(&filters),
-                        &SearchOptions {
+                        &backend::SearchParameters {
                             offset: Some(pagination_to_offset(page, per_page)),
                             limit: Some(per_page),
+                            ..Default::default()
                         },
                     )
                     .await
@@ -75,10 +76,6 @@ pub fn advisory_search(props: &AdvisorySearchProperties) -> Html {
         },
         (props.callback.clone(), search.clone()),
     );
-
-    // pagination
-
-    let total = search.data().and_then(|d| d.total);
 
     // render
 
@@ -137,7 +134,7 @@ pub fn advisory_search(props: &AdvisorySearchProperties) -> Html {
                             <ToolbarItem r#type={ToolbarItemType::Pagination}>
                                 <SimplePagination
                                     pagination={pagination.clone()}
-                                    total={total}
+                                    total={*total}
                                 />
                             </ToolbarItem>
 
@@ -158,7 +155,7 @@ pub fn advisory_search(props: &AdvisorySearchProperties) -> Html {
 
             <SimplePagination
                 {pagination}
-                total={total}
+                total={*total}
                 position={PaginationPosition::Bottom}
             />
 

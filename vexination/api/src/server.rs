@@ -7,6 +7,7 @@ use actix_web::{
     HttpResponse, Responder,
 };
 use serde::Deserialize;
+use trustification_api::search::SearchOptions;
 use trustification_storage::Storage;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
@@ -139,6 +140,9 @@ pub struct SearchParams {
     /// Provide a detailed explanation of query matches
     #[serde(default = "default_explain")]
     pub explain: bool,
+    /// Provide additional metadata from the index
+    #[serde(default = "default_metadata")]
+    pub metadata: bool,
 }
 
 const fn default_offset() -> usize {
@@ -151,6 +155,19 @@ const fn default_limit() -> usize {
 
 const fn default_explain() -> bool {
     false
+}
+
+const fn default_metadata() -> bool {
+    false
+}
+
+impl From<&SearchParams> for SearchOptions {
+    fn from(value: &SearchParams) -> Self {
+        Self {
+            explain: value.explain,
+            metadata: value.metadata,
+        }
+    }
 }
 
 /// Search for a VEX using a free form search query.
@@ -175,9 +192,9 @@ async fn search_vex(state: web::Data<SharedState>, params: web::Query<SearchPara
     log::info!("Querying VEX using {}", params.q);
 
     let index = state.index.read().await;
-    let result = index.search(&params.q, params.offset, params.limit, params.explain);
+    let result = index.search(&params.q, params.offset, params.limit, (&params).into());
 
-    let result = match result {
+    let (result, total) = match result {
         Err(e) => {
             log::info!("Error searching: {:?}", e);
             return HttpResponse::InternalServerError().body(e.to_string());
@@ -185,8 +202,5 @@ async fn search_vex(state: web::Data<SharedState>, params: web::Query<SearchPara
         Ok(result) => result,
     };
 
-    HttpResponse::Ok().json(SearchResult {
-        total: result.1,
-        result: result.0,
-    })
+    HttpResponse::Ok().json(SearchResult { total, result })
 }

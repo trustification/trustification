@@ -378,9 +378,6 @@ pub fn spdx_packages(props: &SpdxPackagesProperties) -> Html {
 
     let (entries, onexpand) = use_table_data(MemoizedTableModel::new(entries));
 
-    // FIXME: if the following is missing, expansion is broken, figure out "why"
-    let onexpand = onexpand.reform(|(key, state)| (key, state));
-
     let limit_callback = {
         let limit = limit.clone();
         Callback::from(move |number| limit.set(number))

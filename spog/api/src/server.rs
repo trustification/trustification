@@ -7,6 +7,7 @@ use anyhow::anyhow;
 use http::StatusCode;
 use prometheus::Registry;
 use spog_model::search;
+use trustification_api::{search::SearchOptions, Apply};
 use trustification_version::version;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
@@ -161,6 +162,7 @@ impl AppState {
         q: &str,
         offset: usize,
         limit: usize,
+        options: SearchOptions,
     ) -> Result<vexination_model::search::SearchResult, anyhow::Error> {
         let url = self.vexination.join("/api/v1/vex/search")?;
         let response = self
@@ -168,6 +170,7 @@ impl AppState {
             .get(url)
             .query(&[("q", q)])
             .query(&[("offset", offset), ("limit", limit)])
+            .apply(&options)
             .send()
             .await?;
         if response.status() == StatusCode::OK {
