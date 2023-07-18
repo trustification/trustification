@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -euo pipefail
+set -exuo pipefail
 
 TAGS=$(git for-each-ref --sort=taggerdate --format '%(refname:short) %(taggerdate:short)' refs/tags | grep "nightly")
 NOW=$(date +%s)
