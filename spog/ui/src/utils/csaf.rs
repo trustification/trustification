@@ -9,7 +9,7 @@ pub fn trace_product<'a>(csaf: &'a Csaf, product_id: &str) -> Vec<&'a Branch> {
         // let result = &mut result;
         walk_product_branches(&product_tree.branches, |parents, branch| {
             if let Some(full_name) = &branch.product {
-                if &full_name.product_id.0 == product_id {
+                if full_name.product_id.0 == product_id {
                     // trace back
                     result = parents.iter().copied().chain(Some(branch)).collect::<Vec<&'a Branch>>()
                 }
@@ -48,5 +48,5 @@ pub fn find_product_relations<'a>(csaf: &'a Csaf, product: &'a str) -> impl Iter
         .iter()
         .flat_map(|pt| pt.relationships.iter())
         .flat_map(|r| r.iter())
-        .filter(move |p| &p.full_product_name.product_id.0 == product)
+        .filter(move |p| p.full_product_name.product_id.0 == product)
 }

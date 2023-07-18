@@ -311,7 +311,7 @@ fn csaf_product_status(props: &CsafProductStatusSectionProperties) -> Html {
     )
 }
 
-fn csaf_product_status_entry_overview(csaf: &Csaf, entries: &Vec<ProductIdT>) -> Vec<Html> {
+fn csaf_product_status_entry_overview(csaf: &Csaf, entries: &[ProductIdT]) -> Vec<Html> {
     // for an overview, we just show the container component
 
     // gather unique set of products
@@ -327,7 +327,7 @@ fn csaf_product_status_entry_overview(csaf: &Csaf, entries: &Vec<ProductIdT>) ->
     products
         .into_iter()
         .map(|id| {
-            let mut prod = trace_product(csaf, &id);
+            let mut prod = trace_product(csaf, id);
             html!({ for prod.pop().map(|branch| Html::from(&branch.name)) })
         })
         .collect()

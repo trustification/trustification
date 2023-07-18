@@ -1,11 +1,13 @@
 use std::rc::Rc;
 
+#[allow(clippy::upper_case_acronyms)]
 #[derive(Debug, PartialEq)]
 pub enum SBOM {
     CycloneDX {
         bom: cyclonedx_bom::prelude::Bom,
         source: Rc<String>,
     },
+    #[allow(clippy::upper_case_acronyms)]
     SPDX {
         bom: spdx_rs::models::SPDX,
         source: Rc<String>,

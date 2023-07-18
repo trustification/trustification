@@ -14,7 +14,6 @@ pub struct CsafRemediationTableProperties {
 
 struct RemediationWrapper {
     rem: Remediation,
-    csaf: Rc<Csaf>,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -59,10 +58,7 @@ pub fn remediation_table(props: &CsafRemediationTableProperties) -> Html {
             rems.clone()
                 .into_iter()
                 .flatten()
-                .map(|rem| RemediationWrapper {
-                    rem,
-                    csaf: props.csaf.clone(),
-                })
+                .map(|rem| RemediationWrapper { rem })
                 .collect::<Vec<_>>()
         },
         props.remediations.clone(),

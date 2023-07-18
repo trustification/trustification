@@ -55,11 +55,14 @@ impl From<&LabelProvider> for Html {
     }
 }
 
+pub type SearchOptionGetter<T> = Rc<dyn Fn(&T) -> bool>;
+pub type SearchOptionSetter<T> = Rc<dyn Fn(&mut T, bool)>;
+
 #[derive(Clone)]
 pub struct SearchOption<T> {
     pub label: LabelProvider,
-    pub getter: Rc<dyn Fn(&T) -> bool>,
-    pub setter: Rc<dyn Fn(&mut T, bool)>,
+    pub getter: SearchOptionGetter<T>,
+    pub setter: SearchOptionSetter<T>,
 }
 
 impl<T> SearchOption<T> {
