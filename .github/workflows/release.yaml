@@ -114,6 +114,9 @@ jobs:
           rustup target add wasm32-unknown-unknown
           rustup target add aarch64-apple-darwin
 
+      - name: Install Protoc
+        uses: arduino/setup-protoc@v2
+
       - name: Install cargo-auditable
         run: cargo install cargo-auditable
 
