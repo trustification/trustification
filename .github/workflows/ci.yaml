@@ -14,9 +14,62 @@ on:
   workflow_call:
   # But don't trigger on tags, as they are covered by the "release.yaml" workflow
 
+
+# The overall idea is to be quick, but re-use output from previous steps.
+# The quickest checks is formatting, so we do that first. Next is integration, and ci. For ci we split up backend
+# and frontend, because they are somewhat independent. For each ci part, we run check, clippy, and test, as they
+# build upon each other.
+
 jobs:
-  ci:
+
+  # check formatting, this is quick, we do this first
+  formatting:
     runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Check formatting
+        run: |
+          cargo fmt --check
+          cargo fmt --check --manifest-path bommer/bommer-ui/Cargo.toml
+          cargo fmt --check --manifest-path spog/ui/Cargo.toml
+
+  ci-backend:
+    runs-on: ubuntu-22.04
+    needs:
+      - formatting
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/.crates.toml
+            ~/.cargo/.crates2.json
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+            bommer/bommer-ui/target/
+            spog/ui/target/
+          key: ${{ runner.os }}-cargo-backend-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Install Protoc
+        uses: arduino/setup-protoc@v2
+
+      - name: Check
+        run: cargo check
+
+      - name: Clippy
+        run: cargo clippy --all-targets --all-features -- -D warnings
+
+      - name: Test
+        run: cargo test
+
+  ci-frontend:
+    runs-on: ubuntu-22.04
+    needs:
+      - formatting
     steps:
       - uses: actions/checkout@v3
       - run: rustup component add clippy
@@ -32,33 +85,22 @@ jobs:
             target/
             bommer/bommer-ui/target/
             spog/ui/target/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-frontend-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Install Protoc
         uses: arduino/setup-protoc@v2
 
-      - name: Check formatting
-        run: |
-          cargo fmt --check
-          cargo fmt --check --manifest-path bommer/bommer-ui/Cargo.toml
-          cargo fmt --check --manifest-path spog/ui/Cargo.toml
-
-      - name: Check clippy
-        run: |
-          cargo clippy --all-targets --all-features -- -D warnings
-
       - name: Check
-        run: cargo check
-
-      - name: Check (frontend)
         run: |
           cargo check --manifest-path bommer/bommer-ui/Cargo.toml
           cargo check --manifest-path spog/ui/Cargo.toml
 
-      - name: Test
-        run: cargo test
+      - name: Clippy
+        run: |
+          cargo clippy --all-targets --all-features --manifest-path bommer/bommer-ui/Cargo.toml -- -D warnings
+          cargo clippy --all-targets --all-features --manifest-path spog/ui/Cargo.toml -- -D warnings
 
-      - name: Test (frontend)
+      - name: Test
         run: |
           cargo test --manifest-path bommer/bommer-ui/Cargo.toml
           cargo test --manifest-path spog/ui/Cargo.toml
