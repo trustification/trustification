@@ -17,8 +17,11 @@ on:
 
 # The overall idea is to be quick, but re-use output from previous steps.
 # The quickest checks is formatting, so we do that first. Next is integration, and ci. For ci we split up backend
-# and frontend, because they are somewhat independent. For each ci part, we run check, clippy, and test, as they
-# build upon each other.
+# and frontend, because they are somewhat independent.
+#
+# For the backend part, we run check, clippy, and test as they build upon each other. For the frontend, we run
+# check and clippy, but test as a dedicated job, as we don't have a WASM test runner. Yet, check and clippy for wasm32
+# are different.
 
 jobs:
 
@@ -66,7 +69,7 @@ jobs:
       - name: Test
         run: cargo test
 
-  ci-frontend:
+  ci-frontend-check:
     runs-on: ubuntu-22.04
     needs:
       - formatting
@@ -85,20 +88,40 @@ jobs:
             target/
             bommer/bommer-ui/target/
             spog/ui/target/
-          key: ${{ runner.os }}-cargo-frontend-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-frontend-check-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Install Protoc
         uses: arduino/setup-protoc@v2
 
       - name: Check
         run: |
-          cargo check --manifest-path bommer/bommer-ui/Cargo.toml
-          cargo check --manifest-path spog/ui/Cargo.toml
+          cargo check --target wasm32-unknown-unknown --manifest-path bommer/bommer-ui/Cargo.toml
+          cargo check --target wasm32-unknown-unknown --manifest-path spog/ui/Cargo.toml
 
       - name: Clippy
         run: |
-          cargo clippy --all-targets --all-features --manifest-path bommer/bommer-ui/Cargo.toml -- -D warnings
-          cargo clippy --all-targets --all-features --manifest-path spog/ui/Cargo.toml -- -D warnings
+          cargo clippy --target wasm32-unknown-unknown --all-targets --all-features --manifest-path bommer/bommer-ui/Cargo.toml -- -D warnings
+          cargo clippy --target wasm32-unknown-unknown --all-targets --all-features --manifest-path spog/ui/Cargo.toml -- -D warnings
+
+  ci-frontend-test:
+    runs-on: ubuntu-22.04
+    needs:
+      - formatting
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/.crates.toml
+            ~/.cargo/.crates2.json
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+            bommer/bommer-ui/target/
+            spog/ui/target/
+          key: ${{ runner.os }}-cargo-frontend-test-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Test
         run: |
