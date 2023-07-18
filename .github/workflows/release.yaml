@@ -53,7 +53,7 @@ jobs:
           LATEST=false
           [[ "$REF" =~ ^refs/tags/v[0-9]+\.[0-9]+\.[0-9]+-nightly.[0-9a-f]+$ ]] && LATEST=true
           echo "Latest: $LATEST"
-          echo "$LATEST=false" >> $GITHUB_OUTPUT
+          echo "latest=$LATEST" >> $GITHUB_OUTPUT
 
   # check that our CI would pass
   ci:
