@@ -212,7 +212,7 @@ jobs:
       - name: Install nodejs dependencies
         run: |
           cd spog/ui
-          npm i
+          npm ci
 
       - name: Create SBOM of the cargo projects
         # gather dependencies from cargo auditable build
