@@ -25,7 +25,7 @@ wasm-logger = "0.2"
 yew = { version = "0.20", features = ["csr"] }
 yew-hooks = "0.2"
 yew-more-hooks = { version = "0.1.2", features = ["yew-hooks"] }
-yew-nested-router = "0.2.1"
+yew-nested-router = "0.2.2"
 
 bommer-api = { path = "../bommer-api" }
 

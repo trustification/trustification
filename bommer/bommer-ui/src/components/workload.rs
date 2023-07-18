@@ -44,7 +44,6 @@ impl TableEntryRenderer<Column> for WorkloadEntry {
                 SbomState::Found(_) => html!("Found").into(),
             },
         }
-        .into()
     }
 
     fn render_details(&self) -> Vec<Span> {

@@ -37,7 +37,7 @@ pub fn workload(props: &WorkloadProperties) -> Html {
         use_effect_with_deps(
             move |message| {
                 if let Some(message) = &**message {
-                    if let Ok(evt) = serde_json::from_str::<Event<ImageRef, Image>>(&message) {
+                    if let Ok(evt) = serde_json::from_str::<Event<ImageRef, Image>>(message) {
                         match evt {
                             Event::Added(image, state) | Event::Modified(image, state) => {
                                 let mut s = (**workload).clone();
