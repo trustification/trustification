@@ -1,3 +1,7 @@
 .dockerignore
 .idea/
 target/
+spog/ui/node_modules/
+# the next two are claimed redundant, but they aren't
+bommer/bommer-ui/target/
+spog/ui/target/
