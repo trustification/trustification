@@ -129,5 +129,7 @@ jobs:
           cargo test --manifest-path spog/ui/Cargo.toml
 
   integration:
+    needs:
+      - formatting
     uses: ./.github/workflows/integration.yaml
 
