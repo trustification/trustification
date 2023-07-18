@@ -36,6 +36,6 @@ jobs:
       - name: Tag it
         run: |
           git config --global user.email "ci@trustification.io"
-          git config --global user.name "Trustificationl CI"
+          git config --global user.name "Trustification CI"
           git tag v${{ needs.args.outputs.version }}-nightly.${{ needs.args.outputs.commit }} -m 'Nightly release'
           git push --follow-tags
