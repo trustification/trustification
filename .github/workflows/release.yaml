@@ -22,6 +22,7 @@ jobs:
     outputs:
       version: ${{steps.version.outputs.version}}
       prerelease: ${{steps.state.outputs.prerelease}}
+      latest: ${{steps.latest.outputs.latest}}
     steps:
       - name: Evaluate state
         id: state
@@ -34,6 +35,7 @@ jobs:
           elif [[ "${{ github.event.ref }}" =~ ^refs/tags/v.*$ ]]; then
               echo prerelease=true >> $GITHUB_OUTPUT
           fi
+
       - name: Set version
         id: version
         run: |
@@ -42,6 +44,16 @@ jobs:
           [ "$VERSION" == "main" ] && VERSION=latest
           echo "Version: $VERSION"
           echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Set latest
+        id: latest
+        # Should evaluate to "true" is this should also be pushed as "latest".
+        # This should be the case when we push a nightly, assuming that "nightly" tags increment on the main branch.
+        run: |
+          LATEST=false
+          [[ "$REF" =~ ^refs/tags/v[0-9]+\.[0-9]+\.[0-9]+-nightly.[0-9a-f]+$ ]] && LATEST=true
+          echo "Latest: $LATEST"
+          echo "$LATEST=false" >> $GITHUB_OUTPUT
 
   # check that our CI would pass
   ci:
@@ -146,6 +158,10 @@ jobs:
       packages: write
       id-token: write # for using OIDC tokens
     runs-on: ubuntu-22.04
+
+    env:
+      CONTAINERS: "trust trust-ui trust-docs"
+
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -254,14 +270,14 @@ jobs:
 
       - name: Generate container SBOM
         run: |
-          for container in trust trust-ui trust-docs; do
+          for container in $CONTAINERS; do
             syft ~/download/${container}-container/${container}-image.tar --output cyclonedx-json --catalogers rpm,cargo-auditable > staging/${container}.sbom.json
             cyclonedx merge --input-files staging/${container}.sbom.json staging/trust-ui.project.sbom.json --output-file staging/${container}.sbom.json
           done
 
       - name: Load container
         run: |
-          for container in trust trust-ui trust-docs; do
+          for container in $CONTAINERS; do
             podman load --input ~/download/${container}-container/${container}-image.tar
           done
 
@@ -275,7 +291,7 @@ jobs:
       - name: Push to ghcr.io
         id: push-images
         run: |
-          for container in trust trust-ui trust-docs; do
+          for container in $CONTAINERS; do
             IMAGE="ghcr.io/${{ github.repository_owner }}/${container}:${{ needs.init.outputs.version }}"
             podman push \
               "${container}:${{ needs.init.outputs.version }}" \
@@ -283,12 +299,22 @@ jobs:
               --digestfile "${RUNNER_TEMP}/push.${container}.digest"
           done
 
+      - name: Push to ghcr.io (as latest)
+        if: needs.init.outputs.latest == "true"
+        id: push-images-latest
+        run: |
+          for container in $CONTAINERS; do
+            IMAGE="ghcr.io/${{ github.repository_owner }}/${container}:latest"
+            podman push \
+              "${container}:${{ needs.init.outputs.version }}" \
+              "${IMAGE}"
+          done
 
       - name: Sign the images with GitHub OIDC Token
         env:
           COSIGN_EXPERIMENTAL: true
         run: |
-          for container in trust trust-ui trust-docs; do
+          for container in $CONTAINERS; do
             imageDigest="$(cat ${RUNNER_TEMP}/push.${container}.digest)"
             echo "Image Digest: ${imageDigest}"
             # and then construct the full (pushed) name
@@ -299,7 +325,7 @@ jobs:
         env:
           COSIGN_EXPERIMENTAL: true
         run: |
-          for container in trust trust-ui trust-docs; do
+          for container in $CONTAINERS; do
             IMAGE="ghcr.io/${{ github.repository_owner }}/${container}:${{ needs.init.outputs.version }}"
             # attach and sign SBOM
             cosign attach sbom --sbom staging/${container}.sbom.json --input-format json --type cyclonedx ${IMAGE}
@@ -309,7 +335,7 @@ jobs:
           done
 
       - run: |
-          for container in trust trust-ui trust-docs; do
+          for container in $CONTAINERS; do
             cp ~/download/${container}-container/${container}-image.tar staging/${container}-container.tar
             xz staging/${container}-container.tar
           done
