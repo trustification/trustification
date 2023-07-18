@@ -300,7 +300,7 @@ jobs:
           done
 
       - name: Push to ghcr.io (as latest)
-        if: needs.init.outputs.latest == "true"
+        if: ${{ needs.init.outputs.latest == 'true' }}
         id: push-images-latest
         run: |
           for container in $CONTAINERS; do
