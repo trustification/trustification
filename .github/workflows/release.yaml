@@ -51,7 +51,7 @@ jobs:
         # This should be the case when we push a nightly, assuming that "nightly" tags increment on the main branch.
         run: |
           LATEST=false
-          [[ "$REF" =~ ^refs/tags/v[0-9]+\.[0-9]+\.[0-9]+-nightly.[0-9a-f]+$ ]] && LATEST=true
+          [[ "${{ github.ref }}" =~ ^refs/tags/v[0-9]+\.[0-9]+\.[0-9]+-nightly.[0-9a-f]+$ ]] && LATEST=true
           echo "Latest: $LATEST"
           echo "latest=$LATEST" >> $GITHUB_OUTPUT
 
