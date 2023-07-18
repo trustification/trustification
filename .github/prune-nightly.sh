@@ -11,7 +11,7 @@ while read -r TAG; do
     T=$(echo -n "$TAG" | cut -d ' ' -f 1)
     D=$(echo -n "$TAG" | cut -d ' ' -f 2)
     D=$(date -d "$D" +%s)
-    if [ $OLDEST -gt "$D" ]; then
+    if [[ $OLDEST -gt "$D" ]]; then
       echo "Deleting tag: $T"
       git tag -d "$T"
       git push origin ":$T"
