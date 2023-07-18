@@ -1,16 +1,23 @@
-FROM registry.access.redhat.com/ubi9/ubi-minimal:latest as builder
+FROM registry.access.redhat.com/ubi9/ubi:latest as builder
 
-ARG tag
+RUN dnf install -y gcc openssl openssl-devel cmake gcc-c++ git curl-minimal unzip
 
-RUN microdnf install -y gcc openssl openssl-devel cmake gcc-c++ git
 RUN curl https://sh.rustup.rs -sSf | sh -s -- -y --profile minimal
 ENV PATH "$PATH:/root/.cargo/bin"
-LABEL org.opencontainers.image.source="https://github.com/trustification/trustification"
+
+ARG protoc_version="23.4"
+RUN mkdir protoc && cd protoc && \
+    curl -sSL https://github.com/protocolbuffers/protobuf/releases/download/v${protoc_version}/protoc-${protoc_version}-linux-x86_64.zip -o protoc.zip && \
+    unzip protoc.zip && \
+    install bin/protoc /usr/local/bin && \
+    cd .. && rm -Rf protoc && \
+    protoc --version
 
 RUN mkdir /usr/src/project
 COPY . /usr/src/project
 WORKDIR /usr/src/project
 
+ARG tag
 RUN TAG=$tag cargo build -p trust --release
 
 FROM registry.access.redhat.com/ubi9/ubi-minimal:latest
