@@ -106,8 +106,12 @@ jobs:
         with:
           node-version: 16
 
+      - name: Install cargo binstall
+        run: |
+          curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
+
       - name: Install trunk
-        run: cargo install trunk
+        run: cargo binstall trunk
 
       - name: Install additional targets target
         run: |
@@ -118,7 +122,7 @@ jobs:
         uses: arduino/setup-protoc@v2
 
       - name: Install cargo-auditable
-        run: cargo install cargo-auditable
+        run: cargo binstall cargo-auditable
 
       - name: Build
         shell: bash
