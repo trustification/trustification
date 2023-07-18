@@ -198,10 +198,14 @@ jobs:
 
       - name: Install convco
         run: |
-          curl -sLO https://github.com/convco/convco/releases/download/v0.3.15/convco-ubuntu.zip
+          curl -sLO https://github.com/convco/convco/releases/download/v0.4.0/convco-ubuntu.zip
           unzip convco-ubuntu.zip
           chmod a+x convco
           sudo mv convco /usr/local/bin
+
+      - name: Install cargo binstall
+        run: |
+          curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
 
       - name: Fetch syft binary
         run: |
@@ -240,7 +244,7 @@ jobs:
       - name: Create SBOM of the cargo projects
         # gather dependencies from cargo auditable build
         run: |
-          cargo install cargo-cyclonedx
+          cargo binstall cargo-cyclonedx
           cargo cyclonedx --all --format json
           cp trust/bom.json staging/trust.project.sbom.json
 
