@@ -48,6 +48,19 @@ definitions:
       - label
 
   option:
+    oneOf:
+      - $ref: "#/definitions/checkOption"
+      - $ref: "#/definitions/divider"
+
+  divider:
+    type: object
+    additionalProperties: false
+    properties:
+      divider:
+        type: boolean
+        const: true
+
+  checkOption:
     type: object
     additionalProperties: false
     properties:

@@ -59,7 +59,13 @@ pub type SearchOptionGetter<T> = Rc<dyn Fn(&T) -> bool>;
 pub type SearchOptionSetter<T> = Rc<dyn Fn(&mut T, bool)>;
 
 #[derive(Clone)]
-pub struct SearchOption<T> {
+pub enum SearchOption<T> {
+    Check(SearchOptionCheck<T>),
+    Divider,
+}
+
+#[derive(Clone)]
+pub struct SearchOptionCheck<T> {
     pub label: LabelProvider,
     pub getter: SearchOptionGetter<T>,
     pub setter: SearchOptionSetter<T>,
@@ -67,17 +73,17 @@ pub struct SearchOption<T> {
 
 impl<T> SearchOption<T> {
     #[allow(unused)]
-    pub fn new<L, G, S>(label: L, getter: G, setter: S) -> Self
+    pub fn new_check<L, G, S>(label: L, getter: G, setter: S) -> Self
     where
         L: Into<LabelProvider>,
         G: Fn(&T) -> bool + 'static,
         S: Fn(&mut T, bool) + 'static,
     {
-        Self {
+        Self::Check(SearchOptionCheck {
             label: label.into(),
             getter: Rc::new(getter),
             setter: Rc::new(setter),
-        }
+        })
     }
 }
 
@@ -169,8 +175,6 @@ where
         })
     };
 
-    let active = props.search_params.is_simple();
-
     let filter_section = |title: Rc<String>, children: Html| {
         let expanded = filter_expansion.contains(&title);
 
@@ -203,18 +207,7 @@ where
                         Rc::new(cat.title.clone()),
                         html!(
                             <List r#type={ListType::Plain}>
-                                { for cat.options.iter().map(|opt|{
-                                    let opt = opt.clone();
-                                    html!(
-                                        <Check
-                                            checked={(*props.search_params).map_bool(|s|(opt.getter)(s))}
-                                            onchange={search_set(props.search_params.clone(), move |s, state|(opt.setter)(s, state))}
-                                            disabled={!active}
-                                        >
-                                            { &opt.label }
-                                        </Check>
-                                    )
-                                })}
+                                { for cat.options.iter().map(|opt|render_opt(props, opt))}
                             </List>
                         ),
                     )
@@ -222,6 +215,31 @@ where
             }
         </Accordion>
     )
+}
+
+fn render_opt<T>(props: &SimpleSearchProperties<T>, opt: &SearchOption<T>) -> Html
+where
+    T: PartialEq + Clone + ToFilterExpression + 'static,
+{
+    match opt {
+        SearchOption::Divider => {
+            html!(<ListDivider/>)
+        }
+        SearchOption::Check(opt) => {
+            let active = props.search_params.is_simple();
+
+            let opt = opt.clone();
+            html!(
+                <Check
+                    checked={(*props.search_params).map_bool(|s|(opt.getter)(s))}
+                    onchange={search_set(props.search_params.clone(), move |s, state|(opt.setter)(s, state))}
+                    disabled={!active}
+                >
+                    { &opt.label }
+                </Check>
+            )
+        }
+    }
 }
 
 /*
