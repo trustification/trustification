@@ -1,3 +1,4 @@
+use serde_json::Value;
 use std::ops::{Deref, DerefMut};
 use time::OffsetDateTime;
 
@@ -12,6 +13,9 @@ pub struct AdvisorySummary {
     pub cves: Vec<String>,
     pub cvss_max: Option<f64>,
     pub href: String,
+
+    #[serde(default, skip_serializing_if = "Value::is_null", rename = "$metadata")]
+    pub metadata: Value,
 }
 /*
 #[derive(utoipa::ToSchema, serde::Deserialize, serde::Serialize, Debug, PartialEq, Clone)]
@@ -42,6 +46,9 @@ pub struct PackageSummary {
     pub href: String,
     pub advisories: Vec<String>,
     pub created: OffsetDateTime,
+
+    #[serde(default, skip_serializing_if = "Value::is_null", rename = "$metadata")]
+    pub metadata: Value,
 }
 
 #[derive(utoipa::ToSchema, Clone, Debug, Default, PartialEq, Eq, serde::Deserialize, serde::Serialize)]

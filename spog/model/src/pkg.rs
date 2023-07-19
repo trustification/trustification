@@ -28,8 +28,8 @@ pub struct Package {
 
 #[derive(Clone, Debug, PartialEq, Eq, ToSchema, Serialize, Deserialize)]
 #[schema(example = json!(VulnerabilityRef {
-cve: "cve-2023-0286".into(),
-href: "https://access.redhat.com/security/cve/cve-2023-0286".into()
+    cve: "cve-2023-0286".into(),
+    href: "https://access.redhat.com/security/cve/cve-2023-0286".into()
 }))]
 pub struct VulnerabilityRef {
     pub cve: String,

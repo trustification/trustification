@@ -65,25 +65,6 @@ impl VexService {
         Ok(Some(response.error_for_status()?.text().await?))
     }
 
-    /*
-    pub async fn search_vulnerabilities(
-        &self,
-        q: &str,
-        options: &SearchOptions,
-    ) -> Result<SearchResult<Vec<VulnSummary>>, Error> {
-        log::info!("Search query: {}", q);
-        let request = self
-            .client
-            .get(self.backend.join(Endpoint::Api, "/api/v1/vulnerability/search")?)
-            .query(&[("q", q)]);
-
-        let request = options.apply(request);
-
-        let response = request.send().await?;
-
-        Ok(response.error_for_status()?.json().await?)
-    }*/
-
     pub async fn search_advisories(
         &self,
         q: &str,
