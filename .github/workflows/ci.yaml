@@ -142,3 +142,5 @@ jobs:
       - ci-frontend-check
       - ci-frontend-test
       - integration
+    steps:
+      - run: echo 🎉
