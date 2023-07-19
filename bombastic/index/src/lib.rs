@@ -9,6 +9,7 @@ use cyclonedx_bom::models::{
 use log::{debug, info, warn};
 use sikula::prelude::*;
 use spdx_rs::models::Algorithm;
+use tantivy::query::TermSetQuery;
 use tantivy::{
     query::{AllQuery, BooleanQuery},
     schema::INDEXED,
@@ -325,7 +326,10 @@ impl Index {
                 PACKAGE_WEIGHT,
             ),
 
-            Packages::Type(primary) => self.create_string_query(&[self.fields.sbom.purl_type], primary),
+            Packages::Type(value) => Box::new(TermSetQuery::new(vec![Term::from_field_text(
+                self.fields.sbom.purl_type,
+                value,
+            )])),
 
             Packages::Namespace(primary) => self.create_string_query(&[self.fields.sbom.purl_namespace], primary),
 
@@ -337,7 +341,10 @@ impl Index {
 
             Packages::Description(primary) => self.create_text_query(&[self.fields.sbom.desc], primary),
 
-            Packages::Digest(primary) => self.create_string_query(&[self.fields.sbom.sha256], primary),
+            Packages::Digest(value) => Box::new(TermSetQuery::new(vec![Term::from_field_text(
+                self.fields.sbom.sha256,
+                value,
+            )])),
 
             Packages::License(primary) => self.create_string_query(&[self.fields.sbom.license], primary),
 
