@@ -8,12 +8,19 @@ use derive_more::{Display, Error, From};
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
-use crate::collector::register_collector;
-use crate::collector::{collector_config, deregister_collector};
+use crate::server::collector::register_collector;
+use crate::server::collector::{collector_config, deregister_collector};
 use crate::SharedState;
 
+pub mod collect;
+pub mod collector;
+
 #[derive(OpenApi)]
-#[openapi(paths(crate::collector::register_collector, crate::collector::deregister_collector,))]
+#[openapi(paths(
+    crate::server::collector::register_collector,
+    crate::server::collector::deregister_collector,
+    crate::server::collect::collect,
+))]
 pub struct ApiDoc;
 
 pub async fn run<B: Into<SocketAddr>>(state: SharedState, bind: B) -> Result<(), anyhow::Error> {
@@ -33,7 +40,8 @@ pub fn config(cfg: &mut web::ServiceConfig) {
             .wrap(Compress::default())
             .service(register_collector)
             .service(deregister_collector)
-            .service(collector_config),
+            .service(collector_config)
+            .service(collect::collect),
     )
     .service(SwaggerUi::new("/swagger-ui/{_:.*}").url("/openapi.json", ApiDoc::openapi()));
 }

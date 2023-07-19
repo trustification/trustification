@@ -1,12 +1,8 @@
 use actix_web::{delete, get, post, web, HttpResponse, Responder};
-use serde::{Deserialize, Serialize};
+use collectorist_client::CollectorConfig;
+use log::info;
 
 use crate::SharedState;
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct CollectorConfig {
-    url: String,
-}
 
 /// Register a collector
 #[utoipa::path(
@@ -24,11 +20,15 @@ pub(crate) async fn register_collector(
     id: web::Path<String>,
     config: web::Json<CollectorConfig>,
 ) -> actix_web::Result<impl Responder> {
+    info!("registered collector {} at {}", id, config.url.clone());
+    info!("--> {:?}", config);
     if state
+        .clone()
         .collectors
         .write()
         .await
-        .register((*id).clone(), (*config).clone())
+        .register(state.get_ref().clone(), (*id).clone(), (*config).clone())
+        .await
         .is_ok()
     {
         Ok(HttpResponse::Ok().finish())
@@ -88,18 +88,36 @@ pub(crate) async fn deregister_collector(
 
 #[cfg(test)]
 mod test {
-    use crate::collector::CollectorConfig;
+    use std::time::Duration;
+
     use actix_web::http::StatusCode;
     use actix_web::test::TestRequest;
     use actix_web::{test, web, App};
     use serde_json::json;
 
+    use crate::server::collector::CollectorConfig;
     use crate::server::config;
+    use crate::state::AppState;
     use crate::SharedState;
 
+    #[test]
+    async fn collector_config_round_trip() -> Result<(), anyhow::Error> {
+        let json = json!(
+            {
+                "url": "http://mycollector.example.com/",
+                "cadence": "12m"
+            }
+        );
+
+        let config: CollectorConfig = serde_json::from_str(serde_json::to_string(&json)?.as_str())?;
+        assert_eq!(config.cadence, Duration::from_secs(12 * 60));
+
+        Ok(())
+    }
+
     #[actix_web::test]
-    async fn register_collector() {
-        let state = SharedState::default();
+    async fn register_collector() -> Result<(), anyhow::Error> {
+        let state = SharedState::new(AppState::new("http://csub.example.com/".into()).await?);
 
         let request = TestRequest::post()
             .uri("/api/v1/collector/foo")
@@ -121,11 +139,13 @@ mod test {
         } else {
             panic!("no configuration for `foo`");
         }
+
+        Ok(())
     }
 
     #[actix_web::test]
-    async fn get_collector_config() {
-        let state = SharedState::default();
+    async fn get_collector_config() -> Result<(), anyhow::Error> {
+        let state = SharedState::new(AppState::new("http://csub.example.com/".into()).await?);
         let app = test::init_service(App::new().app_data(web::Data::new(state.clone())).configure(config)).await;
 
         let request = TestRequest::post()
@@ -153,11 +173,14 @@ mod test {
 
         let config: CollectorConfig = test::call_and_read_body_json(&app, request).await;
         assert_eq!(config.url.as_str(), "http://example.com/collector-endpoint");
+
+        Ok(())
     }
 
     #[actix_web::test]
-    async fn deregister_collector() {
-        let state = SharedState::default();
+    async fn deregister_collector() -> Result<(), anyhow::Error> {
+        let state = SharedState::new(AppState::new("http://csub.example.com/".into()).await?);
+
         let app = test::init_service(App::new().app_data(web::Data::new(state.clone())).configure(config)).await;
 
         let request = TestRequest::post()
@@ -199,5 +222,7 @@ mod test {
         let response = test::call_service(&app, request).await;
 
         assert_eq!(StatusCode::NOT_FOUND, response.status());
+
+        Ok(())
     }
 }

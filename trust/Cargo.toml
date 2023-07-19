@@ -9,6 +9,7 @@ bombastic = { path = "../bombastic/bombastic" }
 spog = { path = "../spog/spog" }
 exhort = { path = "../exhort/exhort"}
 collectorist = { path = "../collectorist/collectorist" }
+collector = { path = "../collector/collector" }
 exporter = { path = "../exporter" }
 
 serde = { version = "1.0", features = ["derive"] }
