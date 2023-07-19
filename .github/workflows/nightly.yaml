@@ -25,12 +25,16 @@ jobs:
       - id: getflags
         run: |
           curl -sSLf https://github.com/TomWright/dasel/releases/download/v2.1.2/dasel_linux_amd64 -o dasel && chmod +x dasel
-          echo "version=$(./dasel -f trust/Cargo.toml -r toml -s package.version)" >> "$GITHUB_OUTPUT"
-          echo "commit=$(echo -n $GITHUB_SHA | head -c 8)" >> "$GITHUB_OUTPUT"
+          version="$(./dasel -f trust/Cargo.toml -r toml -s package.version)"
+          commit="$(echo -n $GITHUB_SHA | head -c 8)"
+          
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "commit=$commit" >> "$GITHUB_OUTPUT"
+          echo "tag=v${version}-nightly.${commit}" >> "$GITHUB_OUTPUT"
 
       - name: Tag it
         run: |
           git config --global user.email "ci@trustification.io"
           git config --global user.name "Trustification CI"
-          git tag v${{ steps.getflags.outputs.version }}-nightly.${{ steps.getflags.outputs.commit }} -m 'Nightly release'
+          git tag ${{ steps.getflags.outputs.tag }} -m 'Nightly release'
           git push --follow-tags
