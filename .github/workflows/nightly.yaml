@@ -34,7 +34,7 @@ jobs:
           
           # now check to see if tag already exists, so that we can avoid the error
           
-          if [[ $(git tag -l "$version") ]]; then
+          if [[ $(git tag -l "$tag") ]]; then
             need_tag=false
           else
             need_tag=true
