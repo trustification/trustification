@@ -1,9 +1,9 @@
-use crate::components::search::{Search, SearchCategory, SearchOption};
+use crate::components::search::{Search, SearchCategory, SearchOption, SearchOptionCheck};
 use crate::utils::search::{escape_terms, or_group, SimpleProperties, ToFilterExpression};
-use spog_model::prelude::Filters;
+use spog_model::prelude::*;
 use std::collections::HashSet;
 use std::rc::Rc;
-use yew::{AttrValue, Html};
+use yew::prelude::*;
 
 #[derive(Clone, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct DynamicSearchParameters {
@@ -44,8 +44,11 @@ impl ToFilterExpression for DynamicSearchParameters {
         for cat in &context.categories {
             let mut cat_terms = vec![];
             for opt in &cat.options {
-                if self.get(Rc::new(cat.label.clone()), Rc::new(opt.id.clone())) {
-                    cat_terms.extend(opt.terms.clone());
+                // skip over dividers
+                if let FilterOption::Check(opt) = opt {
+                    if self.get(Rc::new(cat.label.clone()), Rc::new(opt.id.clone())) {
+                        cat_terms.extend(opt.terms.clone());
+                    }
                 }
             }
             terms.extend(or_group(cat_terms));
@@ -59,31 +62,32 @@ pub fn convert_search(filters: &Filters) -> Search<DynamicSearchParameters> {
     let categories = filters
         .categories
         .iter()
-        .map(|cat| {
-            let cat_id = Rc::new(cat.label.clone());
-            SearchCategory {
-                title: cat.label.clone(),
-                options: cat
-                    .options
-                    .iter()
-                    .map(|opt| {
-                        let label = format!("<div>{}</div>", opt.label);
-                        let cat_id = cat_id.clone();
-                        let id = Rc::new(opt.id.clone());
-                        SearchOption::<DynamicSearchParameters> {
-                            label: Html::from_html_unchecked(AttrValue::from(label.clone())).into(),
-                            getter: {
-                                let cat_id = cat_id.clone();
-                                let id = id.clone();
-                                Rc::new(move |state| state.get(cat_id.clone(), id.clone()))
-                            },
-                            setter: { Rc::new(move |state, value| state.set(cat_id.clone(), id.clone(), value)) },
-                        }
-                    })
-                    .collect(),
-            }
+        .map(|cat| SearchCategory {
+            title: cat.label.clone(),
+            options: cat.options.iter().map(|opt| convert_option(&cat.label, opt)).collect(),
         })
         .collect();
 
     Search { categories }
+}
+
+fn convert_option(cat_id: &str, opt: &FilterOption) -> SearchOption<DynamicSearchParameters> {
+    let cat_id = Rc::new(cat_id.to_string());
+
+    match opt {
+        FilterOption::Divider => SearchOption::Divider,
+        FilterOption::Check(opt) => {
+            let label = format!("<div>{}</div>", opt.label);
+            let id = Rc::new(opt.id.clone());
+            SearchOption::Check(SearchOptionCheck::<DynamicSearchParameters> {
+                label: Html::from_html_unchecked(AttrValue::from(label.clone())).into(),
+                getter: {
+                    let cat_id = cat_id.clone();
+                    let id = id.clone();
+                    Rc::new(move |state| state.get(cat_id.clone(), id.clone()))
+                },
+                setter: { Rc::new(move |state, value| state.set(cat_id.clone(), id.clone(), value)) },
+            })
+        }
+    }
 }

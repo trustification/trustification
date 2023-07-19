@@ -17,3 +17,6 @@ url = "2"
 # required by ToSchema utopia
 serde_json = "1"
 urlencoding = "2"
+
+[dev-dependencies]
+serde_json = "1"

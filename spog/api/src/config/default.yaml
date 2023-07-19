@@ -25,6 +25,8 @@ bombastic:
             terms:
               - '"pkg:oci/redhat/ubi9"'
 
+          - divider: true
+
           - label: Red Hat Enterprise Linux 7
             id: rhel7
             terms:
@@ -39,6 +41,8 @@ bombastic:
             id: rhel9
             terms:
               - '"cpe:/o:redhat:enterprise_linux:9"'
+
+          - divider: true
 
           - label: Ansible
             id: ansible
@@ -124,6 +128,8 @@ vexination:
             label: Red Hat Enterprise Linux 9
             terms:
               - '( "cpe:/a:redhat:enterprise_linux:9" in:package )'
+
+          - divider: true
 
           - id: ocp3
             label: OpenShift Container Platform 3
