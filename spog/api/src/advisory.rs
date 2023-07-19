@@ -85,6 +85,7 @@ pub async fn search(
 
     let mut m = Vec::with_capacity(result.result.len());
     for item in result.result {
+        let metadata = item.metadata.unwrap_or_default();
         let item = item.document;
         m.push(AdvisorySummary {
             id: item.advisory_id.clone(),
@@ -96,6 +97,7 @@ pub async fn search(
             cvss_max: item.cvss_max,
             href: format!("/api/v1/advisory?id={}", item.advisory_id),
             cves: item.cves,
+            metadata,
         });
     }
 

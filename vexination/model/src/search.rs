@@ -67,7 +67,7 @@ pub struct SearchHit {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub explanation: Option<Value>,
     /// Additional metadata, if enabled
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", rename = "$metadata")]
     pub metadata: Option<Value>,
 }
 

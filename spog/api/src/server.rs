@@ -122,6 +122,7 @@ impl AppState {
         q: &str,
         offset: usize,
         limit: usize,
+        options: SearchOptions,
     ) -> Result<bombastic_model::search::SearchResult, anyhow::Error> {
         let url = self.bombastic.join("/api/v1/sbom/search")?;
         let response = self
@@ -129,6 +130,7 @@ impl AppState {
             .get(url)
             .query(&[("q", q)])
             .query(&[("offset", offset), ("limit", limit)])
+            .apply(&options)
             .send()
             .await?;
         if response.status() == StatusCode::OK {

@@ -2,6 +2,7 @@ use actix_web::{web, web::ServiceConfig, HttpResponse, Responder};
 use http::header;
 use log::{debug, trace, warn};
 use spog_model::search::{PackageSummary, SearchResult};
+use trustification_api::search::SearchOptions;
 
 use crate::{search, server::SharedState};
 
@@ -57,13 +58,21 @@ pub async fn get(state: web::Data<SharedState>, params: web::Query<GetParams>) -
         ("limit" = u64, Path, description = "Max entries returned in the search results"),
     )
 )]
-pub async fn search(state: web::Data<SharedState>, params: web::Query<search::QueryParams>) -> HttpResponse {
+pub async fn search(
+    state: web::Data<SharedState>,
+    params: web::Query<search::QueryParams>,
+    options: web::Query<SearchOptions>,
+) -> HttpResponse {
     let params = params.into_inner();
     trace!("Querying SBOM using {}", params.q);
-    match state.search_sbom(&params.q, params.offset, params.limit).await {
+    match state
+        .search_sbom(&params.q, params.offset, params.limit, options.into_inner())
+        .await
+    {
         Ok(data) => {
             let mut m: Vec<PackageSummary> = Vec::with_capacity(data.result.len());
             for item in data.result {
+                let metadata = item.metadata.unwrap_or_default();
                 let item = item.document;
                 m.push(PackageSummary {
                     id: item.id.clone(),
@@ -81,6 +90,7 @@ pub async fn search(state: web::Data<SharedState>, params: web::Query<search::Qu
                     dependencies: item.dependencies,
                     advisories: Vec::new(),
                     created: item.created,
+                    metadata,
                 });
             }
 
