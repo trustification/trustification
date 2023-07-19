@@ -22,15 +22,17 @@ jobs:
         run: |
           ./.github/prune-nightly.sh
 
-      - id: getflags
+      - name: Eval tag
+        id: getflags
         run: |
           curl -sSLf https://github.com/TomWright/dasel/releases/download/v2.1.2/dasel_linux_amd64 -o dasel && chmod +x dasel
           version="$(./dasel -f trust/Cargo.toml -r toml -s package.version)"
           commit="$(echo -n $GITHUB_SHA | head -c 8)"
+          tag="v${version}-nightly.${commit}"
           
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "commit=$commit" >> "$GITHUB_OUTPUT"
-          echo "tag=v${version}-nightly.${commit}" >> "$GITHUB_OUTPUT"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
           
           # now check to see if tag already exists, so that we can avoid the error
           
