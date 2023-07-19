@@ -16,8 +16,6 @@ pub use pkg::*;
 pub use sbom::*;
 pub use search::*;
 pub use version::*;
-pub use version::*;
-pub use vuln::*;
 pub use vuln::*;
 
 use url::{ParseError, Url};
