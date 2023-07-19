@@ -31,8 +31,19 @@ jobs:
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "commit=$commit" >> "$GITHUB_OUTPUT"
           echo "tag=v${version}-nightly.${commit}" >> "$GITHUB_OUTPUT"
+          
+          # now check to see if tag already exists, so that we can avoid the error
+          
+          if [[ $(git tag -l "$version") ]]; then
+            need_tag=false
+          else
+            need_tag=true
+          fi
+          
+          echo "need_tag=$need_tag" >> "$GITHUB_OUTPUT"
 
       - name: Tag it
+        if: ${{ steps.getflags.outputs.need_tag == 'true' }}
         run: |
           git config --global user.email "ci@trustification.io"
           git config --global user.name "Trustification CI"
