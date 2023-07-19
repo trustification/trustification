@@ -317,25 +317,44 @@ fn csaf_product_status_entry_overview(csaf: &Csaf, entries: &[ProductIdT]) -> Ve
     // gather unique set of products
     let products = entries.iter().map(|id| &id.0).collect::<HashSet<_>>();
 
+    #[derive(Eq, PartialEq, Hash)]
+    enum Product<'a> {
+        Known(&'a str),
+        Invalid(&'a str),
+    }
+
     // gather unique set of products they relate to
     let products = products
         .into_iter()
-        .flat_map(|id| find_product_relations(csaf, id).map(|rel| &rel.relates_to_product_reference.0))
+        .flat_map(|id| {
+            let products = find_product_relations(csaf, id)
+                .map(|rel| rel.relates_to_product_reference.0.as_str())
+                .collect::<Vec<_>>();
+
+            if products.is_empty() {
+                vec![Product::Invalid(id)]
+            } else {
+                products.into_iter().map(Product::Known).collect::<Vec<_>>()
+            }
+        })
         .collect::<HashSet<_>>();
 
     // render out first segment of those products
     products
         .into_iter()
-        .map(|id| {
-            let mut prod = trace_product(csaf, id);
-            html!({ for prod.pop().map(|branch| Html::from(&branch.name)) })
+        .map(|product| match product {
+            Product::Known(id) => {
+                let mut prod = trace_product(csaf, id);
+                html!({ for prod.pop().map(|branch| Html::from(&branch.name)) })
+            }
+            Product::Invalid(id) => render_invalid_product(id),
         })
         .collect()
 }
 
 fn csaf_product_status_entry_details(csaf: &Csaf, id: &ProductIdT) -> Html {
     // for details, we show the actual component plus where it comes from
-    find_product_relations(csaf, &id.0)
+    let content = find_product_relations(csaf, &id.0)
         .map(|r| {
             let product = product_html(trace_product(csaf, &r.relates_to_product_reference.0));
             let relationship = html!(<Label label={rela_cat_str(&r.category)} compact=true />);
@@ -345,7 +364,18 @@ fn csaf_product_status_entry_details(csaf: &Csaf, id: &ProductIdT) -> Html {
                 { component } {" "} { relationship } {" "} { product }  
             </>)
         })
-        .collect()
+        .collect::<Vec<_>>();
+
+    if content.is_empty() {
+        render_invalid_product(&id.0)
+    } else {
+        Html::from_iter(content)
+    }
+}
+
+fn render_invalid_product(id: &str) -> Html {
+    let title = format!(r#"Invalid product ID: "{}""#, id);
+    html!(<Alert {title} r#type={AlertType::Warning} plain=true inline=true />)
 }
 
 fn product_html(mut branches: Vec<&Branch>) -> Html {
