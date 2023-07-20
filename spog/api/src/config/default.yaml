@@ -140,3 +140,23 @@ vexination:
             label: OpenShift Container Platform 4
             terms:
               - '( "cpe:/a:redhat:openshift:4" in:package )'
+
+landingPage:
+  content: |
+    <section
+      class="pf-v5-c-page__main-section pf-m-light pf-m-shadow-bottom"
+    >
+      <div class="pf-v5-l-grid pf-m-gutter">
+        <div class="pf-v5-l-grid__item pf-m-8-col">
+          <div class="pf-v5-c-content">
+            <h1 class="pf-v5-c-title pf-m-2xl">Trusted Content</h1>
+            <p class="pf-v5-u-color-200">A service for software supply chain security</p>
+          </div>
+        </div>
+      </div>
+    </section>
+    
+    <section
+      class="pf-v5-c-page__main-section"
+    >
+    </section>
