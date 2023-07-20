@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{net::TcpListener, sync::Arc};
 
 use actix_cors::Cors;
 use actix_web::{middleware::Logger, web, App, HttpServer};
@@ -52,7 +52,7 @@ impl Server {
         Self { run }
     }
 
-    pub async fn run(self, registry: &Registry) -> anyhow::Result<()> {
+    pub async fn run(self, registry: &Registry, listener: Option<TcpListener>) -> anyhow::Result<()> {
         let openapi = ApiDoc::openapi();
 
         let state = configure(&self.run)?;
@@ -64,7 +64,7 @@ impl Server {
 
         let config_configurator = config::configurator(self.run.config).await?;
 
-        HttpServer::new(move || {
+        let mut srv = HttpServer::new(move || {
             let http_metrics = http_metrics.clone();
             let state = state.clone();
             let cors = Cors::default()
@@ -86,10 +86,12 @@ impl Server {
                 .configure(config_configurator.clone())
                 //.configure(crate::vulnerability::configure())
                 .service(SwaggerUi::new("/swagger-ui/{_:.*}").url("/openapi.json", openapi.clone()))
-        })
-        .bind((self.run.bind, self.run.port))?
-        .run()
-        .await?;
+        });
+        srv = match listener {
+            Some(v) => srv.listen(v)?,
+            None => srv.bind((self.run.bind, self.run.port))?,
+        };
+        srv.run().await?;
         Ok(())
     }
 }

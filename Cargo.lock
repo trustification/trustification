@@ -3057,6 +3057,7 @@ dependencies = [
  "reqwest",
  "serde",
  "serde_json",
+ "spog-api",
  "tokio",
  "trustification-event-bus",
  "trustification-index",

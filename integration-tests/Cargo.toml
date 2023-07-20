@@ -18,6 +18,8 @@ bombastic-indexer = { path = "../bombastic/indexer" }
 vexination-api = { path = "../vexination/api" }
 vexination-indexer = { path = "../vexination/indexer" }
 
+spog-api = { path = "../spog/api" }
+
 trustification-event-bus = { path = "../event-bus" }
 trustification-infrastructure = { path = "../infrastructure" }
 trustification-storage = { path = "../storage" }
