@@ -16,7 +16,7 @@ impl Config {
     async fn retrieve(&self) -> anyhow::Result<Cow<'_, Configuration>> {
         Ok(match &self.source {
             Some(config) => {
-                // FIXME: need to cache instead reparsing every time
+                // FIXME: need to cache instead re-parsing every time
                 // TODO: when we cache the result, attach a probe to it which fails if loading fails
                 let content = tokio::fs::read(config).await?;
                 Cow::Owned(serde_yaml::from_slice(&content)?)

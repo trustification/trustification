@@ -11,6 +11,16 @@ properties:
   "$schema":
     type: string
 
+  landingPage:
+    type: object
+    additionalProperties: false
+    properties:
+      content:
+        type: string
+        description: |
+          HTML content which will be used as the main content of the page. This is only the main page content,
+          without navigation controls. It is possible to use PatternFly styles.
+
   bombastic:
     type: object
     additionalProperties: false
