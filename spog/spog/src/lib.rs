@@ -9,7 +9,7 @@ pub enum Command {
 impl Command {
     pub async fn run(self) -> anyhow::Result<ExitCode> {
         match self {
-            Self::Api(run) => run.run().await,
+            Self::Api(run) => run.run(None).await,
             // Self::Search(run) => run.run().await,
         }
     }

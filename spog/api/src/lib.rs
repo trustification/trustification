@@ -1,5 +1,5 @@
-use std::path::PathBuf;
 use std::process::ExitCode;
+use std::{net::TcpListener, path::PathBuf};
 
 use trustification_infrastructure::{Infrastructure, InfrastructureConfig};
 
@@ -18,40 +18,40 @@ mod server;
 #[command(about = "Run the api server", args_conflicts_with_subcommands = true)]
 pub struct Run {
     #[command(flatten)]
-    pub(crate) snyk: Snyk,
+    pub snyk: Snyk,
 
     #[arg(short, long, default_value = "0.0.0.0")]
-    pub(crate) bind: String,
+    pub bind: String,
 
     #[arg(short = 'p', long = "port", default_value_t = 8080)]
-    pub(crate) port: u16,
+    pub port: u16,
 
     #[arg(short = 'g', long = "guac", default_value = "http://localhost:8080/query")]
-    pub(crate) guac_url: String,
+    pub guac_url: String,
 
     #[arg(long = "sync-interval-seconds", default_value_t = 10)]
-    pub(crate) sync_interval_seconds: u64,
+    pub sync_interval_seconds: u64,
 
     #[arg(long = "bombastic-url", default_value = "http://localhost:8082")]
-    pub(crate) bombastic_url: reqwest::Url,
+    pub bombastic_url: reqwest::Url,
 
     #[arg(long = "vexination-url", default_value = "http://localhost:8081")]
-    pub(crate) vexination_url: reqwest::Url,
+    pub vexination_url: reqwest::Url,
 
     /// Path to the UI configuration file, overriding the default configuration file.
     #[arg(short, long = "config", env = "SPOG_UI_CONFIG")]
-    pub(crate) config: Option<PathBuf>,
+    pub config: Option<PathBuf>,
 
     #[command(flatten)]
-    pub(crate) infra: InfrastructureConfig,
+    pub infra: InfrastructureConfig,
 }
 
 impl Run {
-    pub async fn run(self) -> anyhow::Result<ExitCode> {
+    pub async fn run(self, listener: Option<TcpListener>) -> anyhow::Result<ExitCode> {
         Infrastructure::from(self.infra.clone())
             .run("spog-api", |metrics| async move {
                 let s = server::Server::new(self);
-                s.run(metrics.registry()).await
+                s.run(metrics.registry(), listener).await
             })
             .await?;
 
@@ -59,7 +59,7 @@ impl Run {
     }
 }
 
-#[derive(clap::Args, Debug, Clone)]
+#[derive(clap::Args, Debug, Clone, Default)]
 #[group(required = false)]
 pub struct Snyk {
     #[arg(long = "snyk-org")]

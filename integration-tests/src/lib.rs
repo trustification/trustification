@@ -28,27 +28,26 @@ where
 
             bindexer = bombastic_indexer().run() => match bindexer {
                 Err(e) => {
-                    panic!("Error running bombastic indexer: {:?}", e);
+                    panic!("Error running bombastic indexer: {e:?}");
                 }
                 Ok(code) => {
-                    println!("Bombastic indexer exited with code {:?}", code);
+                    println!("Bombastic indexer exited with code {code:?}");
                 }
             },
             bapi = bombastic_api().run(Some(listener)) => match bapi {
                 Err(e) => {
-                    panic!("Error running bombastic API: {:?}", e);
+                    panic!("Error running bombastic API: {e:?}");
                 }
                 Ok(code) => {
-                    println!("Bombastic API exited with code {:?}", code);
+                    println!("Bombastic API exited with code {code:?}");
                 }
             },
 
             _ = async move {
                 let client = reqwest::Client::new();
-                // Probe bombastic API
                 loop {
                     let response = client
-                        .get(format!("http://localhost:{}/api/v1/sbom?id=none", port))
+                        .get(format!("http://localhost:{port}/api/v1/sbom?id=none"))
                         .send()
                         .await
                         .unwrap();
@@ -88,28 +87,27 @@ where
 
             vindexer = vexination_indexer().run() => match vindexer {
                 Err(e) => {
-                    panic!("Error running vexination indexer: {:?}", e);
+                    panic!("Error running vexination indexer: {e:?}");
                 }
                 Ok(code) => {
-                    println!("Vexination indexer exited with code {:?}", code);
+                    println!("Vexination indexer exited with code {code:?}");
                 }
             },
 
             vapi = vexination_api().run(Some(listener)) => match vapi {
                 Err(e) => {
-                    panic!("Error running vexination API: {:?}", e);
+                    panic!("Error running vexination API: {e:?}");
                 }
                 Ok(code) => {
-                    println!("Vexination API exited with code {:?}", code);
+                    println!("Vexination API exited with code {code:?}");
                 }
             },
 
             _ = async move {
                 let client = reqwest::Client::new();
-                // Probe vexination API
                 loop {
                     let response = client
-                        .get(format!("http://localhost:{}/api/v1/vex?advisory=none", port))
+                        .get(format!("http://localhost:{port}/api/v1/vex?advisory=none"))
                         .send()
                         .await
                         .unwrap();
@@ -131,21 +129,59 @@ where
     }))
 }
 
-/// Run a test with trustification infrastructure. This prepares these services:
-///
-/// - Bombastic API
-/// - Bombastic Indexer
-/// - Vexination API
-/// - Vexination Indexer
-pub fn run_test<F, Fut>(timeout: Duration, test: F)
+pub fn with_spog<F, Fut>(timeout: Duration, test: F)
 where
-    F: FnOnce(u16, u16) -> Fut + Send + 'static,
+    F: FnOnce(u16) -> Fut + Send + 'static,
     Fut: Future<Output = ()>,
 {
+    let _ = env_logger::try_init();
+
+    let listener = TcpListener::bind("localhost:0").unwrap();
+    let port = listener.local_addr().unwrap().port();
+
     with_bombastic(timeout, |bport| async move {
-        thread::spawn(move || with_vexination(timeout, |vport| async move { test(bport, vport).await }))
-            .join()
-            .expect("Thread panicked")
+        thread::spawn(move || {
+            with_vexination(timeout, |vport| async move {
+                select! {
+                    biased;
+
+                    spog = spog_api(bport, vport).run(Some(listener)) => match spog {
+                        Err(e) => {
+                            panic!("Error running spog API: {e:?}");
+                        }
+                        Ok(code) => {
+                            println!("Spog API exited with code {code:?}");
+                        }
+                    },
+
+                    _ = async move {
+                        let client = reqwest::Client::new();
+                        loop {
+                            let response = client
+                                .get(format!("http://localhost:{port}/.well-known/trustification/version"))
+                                .send()
+                                .await
+                                .unwrap();
+                            if response.status() == StatusCode::OK {
+                                break;
+                            }
+                            tokio::time::sleep(Duration::from_secs(1)).await;
+                        }
+
+                        // Run test
+                        test(port).await
+                    } => {
+                        println!("Test completed");
+                    }
+
+                    _ = tokio::time::sleep(timeout) => {
+                        panic!("Test timed out");
+                    }
+                }
+            })
+        })
+        .join()
+        .expect("Thread panicked");
     })
 }
 
@@ -268,5 +304,24 @@ fn vexination_api() -> vexination_api::Run {
             enable_tracing: false,
         },
         publish_secret_token: None,
+    }
+}
+
+fn spog_api(bport: u16, vport: u16) -> spog_api::Run {
+    spog_api::Run {
+        snyk: Default::default(),
+        bind: Default::default(),
+        port: 8083,
+        guac_url: Default::default(),
+        sync_interval_seconds: 10,
+        bombastic_url: format!("http://localhost:{bport}").parse().unwrap(),
+        vexination_url: format!("http://localhost:{vport}").parse().unwrap(),
+        config: None,
+        infra: InfrastructureConfig {
+            infrastructure_enabled: false,
+            infrastructure_bind: "127.0.0.1".into(),
+            infrastructure_workers: 1,
+            enable_tracing: false,
+        },
     }
 }
