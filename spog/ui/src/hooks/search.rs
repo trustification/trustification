@@ -41,48 +41,39 @@ where
     F: FnOnce(String) -> T,
 {
     // the active query
-    let state = use_state_eq(move || {
-        // initialize with the state from history, properties, or with a reasonable default
-        gloo_utils::history()
-            .state()
-            .ok()
-            .and_then(|state| {
-                let deser = state.into_serde::<SearchViewState<T>>();
-                log::debug!("Deserialized: {deser:?}");
-                deser.ok()
-            })
-            .or_else(move || {
-                props_query.and_then(|s| {
-                    log::debug!("Initial: {s}");
-                    match s.is_empty() {
-                        true => None,
-                        false => Some(SearchViewState {
-                            search: f(s),
-                            pagination: PaginationControl {
-                                per_page: DEFAULT_PAGE_SIZE,
-                                ..Default::default()
-                            },
-                        }),
-                    }
+    let state = use_memo(
+        |()| {
+            // initialize with the state from history, properties, or with a reasonable default
+            gloo_utils::history()
+                .state()
+                .ok()
+                .and_then(|state| {
+                    let deser = state.into_serde::<SearchViewState<T>>();
+                    log::debug!("Deserialized: {deser:?}");
+                    deser.ok()
                 })
-            })
-            .unwrap_or_default()
-    });
+                .or_else(|| {
+                    props_query.and_then(|s| {
+                        log::debug!("Initial: {s}");
+                        match s.is_empty() {
+                            true => None,
+                            false => Some(SearchViewState {
+                                search: f(s),
+                                pagination: PaginationControl {
+                                    per_page: DEFAULT_PAGE_SIZE,
+                                    ..Default::default()
+                                },
+                            }),
+                        }
+                    })
+                })
+                .unwrap_or_default()
+        },
+        (),
+    );
 
-    let search_params = use_state_eq(T::default);
+    let search_params = use_state_eq(|| state.search.clone());
     let pagination = use_pagination(total, || state.pagination.clone());
-
-    // When the combined search & pagination state changed, split and update the individual state.
-    // This should only happen once.
-    {
-        let search_params = search_params.clone();
-        use_effect_with_deps(
-            move |state| {
-                search_params.set(state.search.clone());
-            },
-            (*state).clone(),
-        );
-    }
 
     // when the search params or pagination state changes, store in history API
     use_effect_with_deps(
@@ -195,6 +186,7 @@ where
                 text.set(q);
             }
             true => {
+                // TODO: this will reset the query, which should confirm first
                 search_params.set(SearchMode::default());
                 text.set(String::new());
             }
