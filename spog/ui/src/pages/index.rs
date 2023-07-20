@@ -1,5 +1,4 @@
 use crate::hooks::use_config;
-use patternfly_yew::prelude::*;
 use yew::prelude::*;
 
 #[function_component(Index)]
