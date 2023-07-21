@@ -22,6 +22,10 @@ jobs:
             bommer/bommer-ui/target/
             spog/ui/target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Install Protoc
+        uses: arduino/setup-protoc@v2
+
       - name: Compose
         run: |
           docker-compose -f deploy/compose/compose.yaml up -d
