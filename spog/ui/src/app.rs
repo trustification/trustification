@@ -1,5 +1,5 @@
 use crate::{
-    components::{backend::Backend, config::Configuration, error::Error},
+    components::{backend::Backend, config::Configuration, error::Error, theme::Themed},
     console::Console,
     hooks::use_backend::use_backend,
     pages::AppRoute,
@@ -14,13 +14,15 @@ const DEFAULT_BACKEND_URL: &str = "/.well-known/chicken/backend.json";
 #[function_component(Application)]
 pub fn app() -> Html {
     html!(
-        <ToastViewer>
-            <Backend
-                bootstrap_url={DEFAULT_BACKEND_URL}
-            >
-                <ApplicationWithBackend />
-            </Backend>
-        </ToastViewer>
+        <Themed>
+            <ToastViewer>
+                <Backend
+                    bootstrap_url={DEFAULT_BACKEND_URL}
+                >
+                    <ApplicationWithBackend />
+                </Backend>
+            </ToastViewer>
+        </Themed>
     )
 }
 

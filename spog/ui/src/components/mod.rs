@@ -14,6 +14,7 @@ pub mod search;
 pub mod severity;
 pub mod spdx;
 pub mod table_wrapper;
+pub mod theme;
 
 use patternfly_yew::prelude::*;
 use yew::prelude::*;
