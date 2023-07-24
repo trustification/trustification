@@ -83,37 +83,9 @@ services:
     volumes:
       - ./container_files/guac:/guac:z
 
-  oci-collector:
-    image: $GUAC_IMAGE
-    command: "/opt/guac/guaccollect image"
-    working_dir: /guac
-    restart: on-failure
-    depends_on:
-      guac-collectsub:
-        condition: service_healthy
-      guac-graphql:
-        condition: service_healthy
-    volumes:
-      - ./container_files/guac:/guac:z
-
-  depsdev-collector:
-    image: $GUAC_IMAGE
-    command: "/opt/guac/guaccollect deps_dev"
-    working_dir: /guac
-    restart: on-failure
-    environment:
-      - DEPS_DEV_APIKEY
-    depends_on:
-      guac-collectsub:
-        condition: service_healthy
-      guac-graphql:
-        condition: service_healthy
-    volumes:
-      - ./container_files/guac:/guac:z
-
   osv-certifier:
     image: $GUAC_IMAGE
-    command: "/opt/guac/guacone certifier osv"
+    command: "/opt/guac/guacone certifier osv --poll -i 1m"
     working_dir: /guac
     restart: on-failure
     depends_on:
