@@ -27,10 +27,37 @@ pub struct Backend {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
+pub struct OpenIdConnect {
+    pub issuer: String,
+    #[serde(default = "default::client_id")]
+    pub client_id: String,
+    #[serde(default = "default::scopes")]
+    pub scopes: Vec<String>,
+    #[serde(default = "default::after_logout")]
+    pub after_logout: String,
+}
+
+mod default {
+    pub fn client_id() -> String {
+        "frontend".to_string()
+    }
+
+    pub fn scopes() -> Vec<String> {
+        vec!["openid".to_string()]
+    }
+
+    pub fn after_logout() -> String {
+        "/notLoggedIn".to_string()
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
 pub struct Endpoints {
     pub url: Url,
     pub bombastic: Url,
     pub vexination: Url,
+
+    pub oidc: OpenIdConnect,
 }
 
 impl Endpoints {
