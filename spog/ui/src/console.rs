@@ -12,7 +12,7 @@ use patternfly_yew::prelude::*;
 use yew::prelude::*;
 use yew_more_hooks::prelude::*;
 use yew_nested_router::prelude::Switch as RouterSwitch;
-use yew_oauth2::{openid::RouterRedirect, prelude::*};
+use yew_oauth2::{openid::*, prelude::*};
 
 #[function_component(Console)]
 pub fn console() -> Html {
@@ -74,6 +74,16 @@ pub fn console() -> Html {
     let auth = use_auth_state();
     let auth = use_memo(|auth| from_auth(auth), auth);
 
+    let agent = use_auth_agent().expect("Requires OAuth2Context component in parent hierarchy");
+    let onlogout = use_callback(
+        move |_, _| {
+            if let Err(err) = agent.logout() {
+                log::warn!("Failed to logout: {err}");
+            }
+        },
+        (),
+    );
+
     let tools = html!(
         <Toolbar>
             <ToolbarContent>
@@ -112,6 +122,10 @@ pub fn console() -> Html {
                         <Raw>
                             <DarkModeEntry />
                         </Raw>
+                        <ListDivider/>
+                        <MenuAction onclick={onlogout}>
+                            { "Logout" }
+                        </MenuAction>
                     </Dropdown>
                 </ToolbarItem>
             </ToolbarContent>

@@ -47,7 +47,7 @@ mod default {
     }
 
     pub fn after_logout() -> String {
-        "/notLoggedIn".to_string()
+        "/notloggedin".to_string()
     }
 }
 
