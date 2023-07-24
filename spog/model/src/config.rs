@@ -1,15 +1,25 @@
 use serde::{de::Error, ser::SerializeMap, Deserializer, Serialize, Serializer};
 use serde_json::Value;
+use url::Url;
 
 #[derive(Clone, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Configuration {
+    #[serde(default)]
+    pub global: Global,
     #[serde(default)]
     pub landing_page: LandingPage,
     #[serde(default)]
     pub bombastic: Bombastic,
     #[serde(default)]
     pub vexination: Vexination,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Global {
+    #[serde(default)]
+    pub documentation_url: Option<Url>,
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]

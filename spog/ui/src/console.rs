@@ -1,15 +1,14 @@
+use crate::{
+    about,
+    backend::Endpoint,
+    components::common::{ExternalLinkMarker, ExternalNavLink},
+    hooks::{use_backend::use_backend, use_config},
+    pages::{self, AppRoute, View},
+};
 use patternfly_yew::prelude::*;
 use yew::prelude::*;
 use yew_more_hooks::prelude::*;
 use yew_nested_router::prelude::Switch as RouterSwitch;
-
-use crate::pages::View;
-use crate::{
-    about,
-    backend::Endpoint,
-    hooks::use_backend::use_backend,
-    pages::{self, AppRoute},
-};
 
 #[function_component(Console)]
 pub fn console() -> Html {
@@ -28,6 +27,7 @@ pub fn console() -> Html {
     );
 
     let backend = use_backend();
+    let config = use_config();
 
     let sidebar = html_nested!(
         <PageSidebar>
@@ -40,13 +40,13 @@ pub fn console() -> Html {
                     </NavExpandable>
                     <NavExpandable title="Extend">
                         if let Ok(url) = backend.join(Endpoint::Api, "/swagger-ui/") {
-                            <NavItem external=true target="_blank" to={url.to_string()}>{ "API" }</NavItem>
+                            <ExternalNavLink href={url.to_string()}>{ "API" }</ExternalNavLink>
                         }
                         if let Ok(url) = backend.join(Endpoint::Bombastic, "/swagger-ui/") {
-                            <NavItem external=true target="_blank" to={url.to_string()}>{ "SBOM API" }</NavItem>
+                            <ExternalNavLink href={url.to_string()}>{ "SBOM API" }</ExternalNavLink>
                         }
                         if let Ok(url) = backend.join(Endpoint::Vexination, "/swagger-ui/") {
-                            <NavItem external=true target="_blank" to={url.to_string()}>{ "VEX API" }</NavItem>
+                            <ExternalNavLink href={url.to_string()}>{ "VEX API" }</ExternalNavLink>
                         }
                     </NavExpandable>
                 </NavList>
@@ -58,11 +58,14 @@ pub fn console() -> Html {
 
     let backdrop = use_backdrop();
 
-    let callback_about = Callback::from(move |_| {
-        if let Some(backdrop) = &backdrop {
-            backdrop.open(html!(<about::About/>));
-        }
-    });
+    let callback_about = use_callback(
+        move |_, ()| {
+            if let Some(backdrop) = &backdrop {
+                backdrop.open(html!(<about::About/>));
+            }
+        },
+        (),
+    );
 
     let tools = html!(
         <Toolbar>
@@ -74,7 +77,16 @@ pub fn console() -> Html {
                         variant={MenuToggleVariant::Plain}
                         icon={Icon::QuestionCircle}
                     >
-                        <MenuAction text="About" onclick={callback_about} />
+                        {
+                            for config.global.documentation_url.as_ref().map(|url| html_nested!(
+                                <MenuLink href={url.to_string()} target="_blank">
+                                    { "Documentation" } <ExternalLinkMarker/>
+                                </MenuLink>
+                            ))
+                        }
+                        <MenuAction onclick={callback_about}>
+                            { "About" }
+                        </MenuAction>
                     </Dropdown>
                 </ToolbarItem>
             </ToolbarContent>
