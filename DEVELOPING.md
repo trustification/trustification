@@ -26,6 +26,12 @@ On Fedora, try:
 sudo dnf install protobuf-compiler
 ```
 
+On OSX, try:
+
+```shell
+brew install protobuf
+```
+
 ## Integration tests
 
 Trustification comes with a set of integration tests that you can run assuming dependent services are launched with the above compose configuration:
