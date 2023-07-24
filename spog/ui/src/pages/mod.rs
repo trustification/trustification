@@ -6,6 +6,7 @@ mod advisory;
 mod chicken;
 mod index;
 mod not_found;
+mod not_logged_in;
 mod package;
 mod sbom;
 mod vex;
@@ -14,6 +15,7 @@ pub use advisory::*;
 pub use chicken::*;
 pub use index::*;
 pub use not_found::*;
+pub use not_logged_in::*;
 pub use package::Package;
 pub use sbom::*;
 pub use vex::*;
@@ -22,6 +24,7 @@ pub use vex::*;
 pub enum AppRoute {
     #[target(index)]
     Index,
+    NotLoggedIn,
     Chicken,
     Package(View),
     Advisory(View),

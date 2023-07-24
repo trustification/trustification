@@ -9,6 +9,7 @@ use patternfly_yew::prelude::*;
 use yew::prelude::*;
 use yew_more_hooks::prelude::*;
 use yew_nested_router::prelude::Switch as RouterSwitch;
+use yew_oauth2::{openid::RouterRedirect, prelude::*};
 
 #[function_component(Console)]
 pub fn console() -> Html {
@@ -67,6 +68,9 @@ pub fn console() -> Html {
         (),
     );
 
+    let auth = use_auth_state();
+    let auth = use_memo(|auth| from_auth(auth), auth);
+
     let tools = html!(
         <Toolbar>
             <ToolbarContent>
@@ -89,6 +93,19 @@ pub fn console() -> Html {
                         </MenuAction>
                     </Dropdown>
                 </ToolbarItem>
+                <ToolbarItem>
+                    <Dropdown
+                        position={Position::Right}
+                        variant={MenuToggleVariant::Plain}
+                        icon={auth.avatar.clone()}
+                        text={auth.name.clone()}
+                        disabled={auth.username.is_empty()}
+                    >
+                        { for auth.account_url.as_ref().map(|url| {
+                            html_nested!(<MenuLink href={url.to_string()} >{"About"}</MenuLink>)
+                        }) }
+                    </Dropdown>
+                </ToolbarItem>
             </ToolbarContent>
         </Toolbar>
     );
@@ -100,13 +117,72 @@ pub fn console() -> Html {
     )
 }
 
+struct FromAuth {
+    avatar: Html,
+    account_url: Option<String>,
+    name: String,
+    username: String,
+}
+
+fn from_auth(auth: &Option<OAuth2Context>) -> FromAuth {
+    let (email, account_url, username, name) = match auth.as_ref().and_then(|auth| auth.claims()) {
+        Some(claims) => {
+            let account_url = {
+                let mut issuer = claims.issuer().url().clone();
+                if let Ok(mut paths) = issuer
+                    .path_segments_mut()
+                    .map_err(|_| anyhow::anyhow!("Failed to modify path"))
+                {
+                    paths.push("account");
+                }
+                issuer.to_string()
+            };
+
+            let username = claims
+                .preferred_username()
+                .map(|s| s.as_ref())
+                .unwrap_or_else(|| claims.subject().as_str())
+                .to_string();
+
+            let name = claims
+                .name()
+                .and_then(|name| name.get(None))
+                .map(|s| s.to_string())
+                .unwrap_or_else(|| username.clone());
+
+            (claims.email(), Some(account_url), username, name)
+        }
+        None => (None, None, String::default(), String::default()),
+    };
+
+    let src = email
+        .map(|email| md5::compute(email.as_bytes()))
+        .map(|hash| format!("https://www.gravatar.com/avatar/{:x}?D=mp", hash))
+        .unwrap_or_else(|| "assets/images/img_avatar.svg".into());
+
+    FromAuth {
+        avatar: html!(<Avatar {src} alt="avatar" />),
+        account_url,
+        name,
+        username,
+    }
+}
+
 fn render(route: AppRoute) -> Html {
-    match route {
+    let content = match route {
+        AppRoute::NotLoggedIn => return html!(<pages::NotLoggedIn/>),
+
         AppRoute::Index => html!(<pages::Index/>),
         AppRoute::Chicken => html!(<pages::Chicken/>),
         AppRoute::Package(View::Search { query }) => html!(<pages::Package {query} />),
         AppRoute::Package(View::Content { id }) => html!(<pages::SBOM {id} />),
         AppRoute::Advisory(View::Search { query }) => html!(<pages::Advisory {query} />),
         AppRoute::Advisory(View::Content { id }) => html!(<pages::VEX {id} />),
-    }
+    };
+
+    html!(
+        <RouterRedirect<AppRoute> logout={ AppRoute::NotLoggedIn}>
+            {content}
+        </RouterRedirect<AppRoute>>
+    )
 }

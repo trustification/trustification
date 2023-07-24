@@ -18,6 +18,7 @@ gloo-utils = { version = "0.1", features = ["serde"] }
 humansize = "2"
 itertools = "0.11"
 log = "0.4"
+md5 ="0.7"
 packageurl = "0.3"
 patternfly-yew = { version = "0.5.0-alpha.2", features = ["icons-fab", "tree"] }
 reqwest = { version = "0.11", features = ["json"] }
@@ -38,6 +39,7 @@ yew = { version = "0.20", features = ["csr"] }
 yew-hooks = "0.2"
 yew-more-hooks = { version = "0.1.2", features = ["yew-hooks"] }
 yew-nested-router = "0.2.2"
+yew-oauth2 = { version = "0.6", features = ["router", "openid"] }
 
 spog-model = "0.1.0"
 
