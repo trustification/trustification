@@ -15,10 +15,10 @@ cvss = { version = "2", features = ["serde"] }
 cyclonedx-bom = "0.4"
 gloo-net = "0.3"
 gloo-utils = { version = "0.1", features = ["serde"] }
+gloo-storage = "0.2.2"
 humansize = "2"
 itertools = "0.11"
 log = "0.4"
-md5 ="0.7"
 packageurl = "0.3"
 patternfly-yew = { version = "0.5.0-alpha.2", features = ["icons-fab", "tree"] }
 reqwest = { version = "0.11", features = ["json"] }

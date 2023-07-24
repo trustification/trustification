@@ -1,7 +1,10 @@
 use crate::{
     about,
     backend::Endpoint,
-    components::common::{ExternalLinkMarker, ExternalNavLink},
+    components::{
+        common::{ExternalLinkMarker, ExternalNavLink},
+        theme::DarkModeSwitch,
+    },
     hooks::{use_backend::use_backend, use_config},
     pages::{self, AppRoute, View},
 };
@@ -101,9 +104,14 @@ pub fn console() -> Html {
                         text={auth.name.clone()}
                         disabled={auth.username.is_empty()}
                     >
-                        { for auth.account_url.as_ref().map(|url| {
-                            html_nested!(<MenuLink href={url.to_string()} >{"About"}</MenuLink>)
+                        { for auth.account_url.as_ref().map(|url| { html_nested!(
+                            <MenuLink href={url.to_string()} target="_blank">
+                                {"Account "} <ExternalLinkMarker/>
+                            </MenuLink>)
                         }) }
+                        <Raw>
+                            <DarkModeEntry />
+                        </Raw>
                     </Dropdown>
                 </ToolbarItem>
             </ToolbarContent>
@@ -125,7 +133,7 @@ struct FromAuth {
 }
 
 fn from_auth(auth: &Option<OAuth2Context>) -> FromAuth {
-    let (email, account_url, username, name) = match auth.as_ref().and_then(|auth| auth.claims()) {
+    let (_email, account_url, username, name) = match auth.as_ref().and_then(|auth| auth.claims()) {
         Some(claims) => {
             let account_url = {
                 let mut issuer = claims.issuer().url().clone();
@@ -155,17 +163,29 @@ fn from_auth(auth: &Option<OAuth2Context>) -> FromAuth {
         None => (None, None, String::default(), String::default()),
     };
 
-    let src = email
-        .map(|email| md5::compute(email.as_bytes()))
-        .map(|hash| format!("https://www.gravatar.com/avatar/{:x}?D=mp", hash))
-        .unwrap_or_else(|| "assets/images/img_avatar.svg".into());
+    // TODO: for now use the default, consider using the profile image
+    let src = "assets/images/img_avatar.svg".to_string();
 
     FromAuth {
-        avatar: html!(<Avatar {src} alt="avatar" />),
+        avatar: html!(<Avatar {src} alt="avatar" size={AvatarSize::Small} />),
         account_url,
         name,
         username,
     }
+}
+
+#[function_component(DarkModeEntry)]
+fn dark_mode_entry() -> Html {
+    html!(
+        <div class="pf-v5-c-menu__list-item">
+            <div
+                class="pf-v5-c-menu__item"
+                role="menuitem"
+            >
+                <DarkModeSwitch/>
+            </div>
+        </div>
+    )
 }
 
 fn render(route: AppRoute) -> Html {
