@@ -76,3 +76,25 @@ pub fn card_wrapper(props: &CardWrapperProperties) -> Html {
         </Card>
     )
 }
+
+#[derive(PartialEq, Properties)]
+pub struct ExternalNavLinkProperties {
+    pub href: AttrValue,
+    pub children: Children,
+}
+
+#[function_component(ExternalNavLink)]
+pub fn ext_nav_link(props: &ExternalNavLinkProperties) -> Html {
+    html!(
+        <NavLink target="_blank" href={&props.href}>
+            { for props.children.iter() }
+            {" "}
+            <ExternalLinkMarker/>
+        </NavLink>
+    )
+}
+
+#[function_component(ExternalLinkMarker)]
+pub fn ext_link_marker() -> Html {
+    html!({ Icon::ExternalLinkAlt.with_classes(classes!("pf-v5-u-ml-sm", "pf-v5-u-color-200")) })
+}

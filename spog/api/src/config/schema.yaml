@@ -35,7 +35,19 @@ properties:
       filters:
         $ref: "#/definitions/filters"
 
+  global:
+    $ref: "#/definitions/global"
+
 definitions:
+
+  global:
+    type: object
+    additionalProperties: false
+    properties:
+      documentationUrl:
+        type: string
+        format: url
+
   filters:
     type: object
     properties:
