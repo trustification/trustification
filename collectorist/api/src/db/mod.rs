@@ -204,14 +204,14 @@ mod test {
     async fn insert_purl() -> Result<(), anyhow::Error> {
         let db = Db::new().await?;
 
-        db.insert_purl("bob".into()).await?;
-        db.insert_purl("bob".into()).await?;
-        db.insert_purl("bob".into()).await?;
-        db.insert_purl("bob".into()).await?;
-        db.insert_purl("jens".into()).await?;
-        db.insert_purl("jim".into()).await?;
-        db.insert_purl("jim".into()).await?;
-        db.insert_purl("jim".into()).await?;
+        db.insert_purl("bob").await?;
+        db.insert_purl("bob").await?;
+        db.insert_purl("bob").await?;
+        db.insert_purl("bob").await?;
+        db.insert_purl("jens").await?;
+        db.insert_purl("jim").await?;
+        db.insert_purl("jim").await?;
+        db.insert_purl("jim").await?;
 
         let result = Box::pin(db.get_purls().await);
         let purls: Vec<_> = result.collect().await;
@@ -229,7 +229,7 @@ mod test {
 
         db.insert_purl("not-scanned").await?;
         db.insert_purl("is-scanned").await?;
-        db.update_purl_scan_time(&"test-scanner", &"is-scanned").await?;
+        db.update_purl_scan_time("test-scanner", "is-scanned").await?;
 
         sleep(Duration::seconds(2).to_std()?);
 
