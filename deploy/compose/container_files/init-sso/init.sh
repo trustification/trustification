@@ -2,6 +2,8 @@
 
 set -exo pipefail
 
+# when making changes, sync everything below here with the helm charts
+
 trap break INT
 
 kcadm() { local cmd="$1" ; shift ; "$KCADM_PATH" "$cmd" --config /tmp/kcadm.config "$@" ; }
@@ -46,7 +48,7 @@ kcadm add-roles -r "${REALM}" --rname "default-roles-${REALM}" --rolename chicke
 # create clients - frontend
 ID=$(kcadm get clients -r "${REALM}" --query "clientId=frontend" --fields id --format csv --noquotes)
 CLIENT_OPTS=()
-CLIENT_OPTS+=(-s 'redirectUris=["http://localhost:*"]')
+CLIENT_OPTS+=(-s "redirectUris=${REDIRECT_URIS@Q}")
 if [[ -n "$ID" ]]; then
   # TODO: replace with update once https://github.com/keycloak/keycloak/issues/12484 is fixed
   # kcadm update "clients/${ID}" -r "${REALM}" -f /etc/init-data/client.json "${CLIENT_OPTS[@]}"
@@ -71,4 +73,4 @@ kcadm add-roles -r "${REALM}" --uusername "${CHICKEN_ADMIN}" --rolename chicken-
 ID=$(kcadm get users -r "${REALM}" --query "username=${CHICKEN_ADMIN}" --fields id --format csv --noquotes)
 kcadm update "users/${ID}/reset-password" -r "${REALM}" -s type=password -s "value=${CHICKEN_ADMIN_PASSWORD}" -s temporary=false -n
 
-echo SSO initializion complete
+echo SSO initialization complete
