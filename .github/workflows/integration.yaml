@@ -9,6 +9,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
+
       - uses: actions/cache@v3
         with:
           path: |
@@ -29,12 +30,15 @@ jobs:
       - name: Compose
         run: |
           docker-compose -f deploy/compose/compose.yaml up -d
+
       - name: Test
         run: |
           RUST_LOG=info cargo test -p integration-tests -- --nocapture
           docker-compose -f deploy/compose/compose.yaml ps
+
       - name: Print logs
         if: always()
         run: |
+          docker ps -a
           docker-compose -f deploy/compose/compose.yaml logs
           docker-compose -f deploy/compose/compose.yaml down
