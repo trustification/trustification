@@ -103,6 +103,7 @@ services:
       - INIT_DATA=/init-sso/data
       - CHICKEN_ADMIN=admin
       - CHICKEN_ADMIN_PASSWORD=admin123456
+      - REDIRECT_URIS=["http://localhost:*"]
     volumes:
       - ./container_files/init-sso:/init-sso:z
     entrypoint: /usr/bin/bash
