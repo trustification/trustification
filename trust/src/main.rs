@@ -15,6 +15,9 @@ pub enum Command {
     #[command(subcommand)]
     Collectorist(collectorist::Command),
 
+    #[command(subcommand)]
+    Collector(collector::Command),
+
     Exporter(exporter::Run),
 }
 
@@ -55,6 +58,7 @@ impl Cli {
             Command::Spog(run) => run.run().await,
             Command::Exhort(run) => run.run().await,
             Command::Collectorist(run) => run.run().await,
+            Command::Collector(run) => run.run().await,
             Command::Exporter(run) => run.run().await,
         }
     }

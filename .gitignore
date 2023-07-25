@@ -2,6 +2,7 @@
 .idea/
 *.sqlite
 .vscode/
+*.db
 
 # from the bom import
 pubring.kbx*
