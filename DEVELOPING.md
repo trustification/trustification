@@ -46,6 +46,13 @@ To see more detailed output:
 RUST_LOG=info cargo test -p integration-tests -- --nocapture
 ```
 
+## Single sign on
+
+The default credentials for single sign on are:
+
+* **Username:** `admin`
+* **Password:** `admin123456`
+
 ## APIs
 
 To run the API processes, you can use cargo:
