@@ -79,17 +79,21 @@ services:
       - "8090:8080"
     expose:
       - "8080"
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+    # FIXME: unable to define a health check: https://github.com/keycloak/keycloak/issues/21941
+    #healthcheck:
+    #  test: ["CMD", "curl", "-f", "http://localhost:8080"]
+    #  interval: 10s
+    #  timeout: 5s
+    #  retries: 5
 
   init-keycloak:
     image: quay.io/keycloak/keycloak:22.0.0
     depends_on:
-      keycloak:
-        condition: service_healthy # broken in podman, so we keep polling later on in the script
+      - keycloak
+      # keycloak:
+      # FIXME: broken in podman: https://github.com/containers/podman-compose/issues/575
+      # FIXME: even it that works, keycloak has issues too: https://github.com/keycloak/keycloak/issues/21941
+      #   condition: service_healthy
     environment:
       - KEYCLOAK_URL=http://keycloak:8080
       - KCADM_PATH=/opt/keycloak/bin/kcadm.sh
