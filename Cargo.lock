@@ -6953,6 +6953,57 @@ dependencies = [
 ]
 
 [[package]]
+name = "v11y"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "log",
+ "serde",
+ "serde_json",
+ "tokio",
+ "v11y-api",
+]
+
+[[package]]
+name = "v11y-api"
+version = "0.1.0"
+dependencies = [
+ "actix-web",
+ "anyhow",
+ "chrono",
+ "clap",
+ "derive_more",
+ "env_logger 0.10.0",
+ "futures",
+ "humantime 2.1.0",
+ "humantime-serde",
+ "log",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "tokio",
+ "trustification-infrastructure",
+ "utoipa",
+ "utoipa-swagger-ui",
+]
+
+[[package]]
+name = "v11y-client"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "humantime 2.1.0",
+ "humantime-serde",
+ "log",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "tokio",
+]
+
+[[package]]
 name = "valuable"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
