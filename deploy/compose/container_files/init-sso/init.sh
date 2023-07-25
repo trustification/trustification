@@ -30,7 +30,16 @@ REALM_OPTS+=(-s "displayName=Trusted Content")
 REALM_OPTS+=(-s registrationAllowed=true)
 REALM_OPTS+=(-s resetPasswordAllowed=true)
 REALM_OPTS+=(-s loginWithEmailAllowed=false)
-#REALM_OPTS+=(-s identityProviders='{{ mustToJson .Values.keycloak.identityProviders }}')
+
+if [[ -n "$GITHUB_CLIENT_ID" ]]; then
+  ID=$(kcadm get identity-provider/instances/github -r "${REALM}" --fields alias --format csv --noquotes)
+  if [[ -n "$ID" ]]; then
+    kcadm update "identity-provider/instances/${ID}" -r "${REALM}" -s enabled=true -s 'config.useJwksUrl="true"' -s config.clientId=$GITHUB_CLIENT_ID -s config.clientSecret=$GITHUB_CLIENT_SECRET
+  else
+    kcadm create identity-provider/instances -r "${REALM}" -s alias=github -s providerId=github -s enabled=true  -s 'config.useJwksUrl="true"' -s config.clientId=$GITHUB_CLIENT_ID -s config.clientSecret=$GITHUB_CLIENT_SECRET
+  fi
+fi
+
 if kcadm get "realms/${REALM}" &> /dev/null ; then
   # exists -> update
   kcadm update "realms/${REALM}" "${REALM_OPTS[@]}"
@@ -48,7 +57,7 @@ kcadm add-roles -r "${REALM}" --rname "default-roles-${REALM}" --rolename chicke
 # create clients - frontend
 ID=$(kcadm get clients -r "${REALM}" --query "clientId=frontend" --fields id --format csv --noquotes)
 CLIENT_OPTS=()
-CLIENT_OPTS+=(-s "redirectUris=${REDIRECT_URIS@Q}")
+CLIENT_OPTS+=(-s "redirectUris=${REDIRECT_URIS}")
 if [[ -n "$ID" ]]; then
   # TODO: replace with update once https://github.com/keycloak/keycloak/issues/12484 is fixed
   # kcadm update "clients/${ID}" -r "${REALM}" -f /etc/init-data/client.json "${CLIENT_OPTS[@]}"
