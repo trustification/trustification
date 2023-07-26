@@ -1,5 +1,6 @@
 use std::process::ExitCode;
 use std::{net::TcpListener, path::PathBuf};
+use trustification_auth::{config::AuthenticatorConfig, Authenticator};
 
 use trustification_infrastructure::{Infrastructure, InfrastructureConfig};
 
@@ -44,6 +45,9 @@ pub struct Run {
 
     #[command(flatten)]
     pub infra: InfrastructureConfig,
+
+    #[command(flatten)]
+    pub odic: AuthenticatorConfig,
 }
 
 impl Run {

@@ -11,6 +11,8 @@ actix = "*"
 actix-cors = "0.6"
 actix-rt = "*"
 actix-web = "4"
+actix-web-httpauth = "0.8"
+actix-web-extras = "0.1"
 actix-web-prom = "0.6.0"
 actix-ws = "*"
 anyhow = "1"
@@ -47,6 +49,7 @@ bombastic-model = { path = "../../bombastic/model" }
 trustification-api = { path = "../../api" }
 trustification-infrastructure = { path = "../../infrastructure" }
 trustification-version = { path = "../../version", features = ["actix-web"] }
+trustification-auth = { path = "../../auth", features = ["actix"] }
 
 [build-dependencies]
 trustification-version = { path = "../../version", features = ["build"] }
