@@ -2,12 +2,17 @@ use std::{net::TcpListener, sync::Arc};
 
 use actix_cors::Cors;
 use actix_web::{middleware::Logger, web, App, HttpServer};
+use actix_web_extras::middleware::Condition;
+use actix_web_httpauth::middleware::HttpAuthentication;
 use actix_web_prom::PrometheusMetricsBuilder;
 use anyhow::anyhow;
 use http::StatusCode;
 use prometheus::Registry;
 use spog_model::search;
 use trustification_api::{search::SearchOptions, Apply};
+use trustification_auth::actix::openid_validator;
+use trustification_auth::config::AuthenticatorConfig;
+use trustification_auth::Authenticator;
 use trustification_version::version;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
@@ -64,6 +69,8 @@ impl Server {
 
         let config_configurator = config::configurator(self.run.config).await?;
 
+        let authenticator: Option<Arc<Authenticator>> = Authenticator::from_config(self.run.odic).await?.map(Arc::new);
+
         let mut srv = HttpServer::new(move || {
             let http_metrics = http_metrics.clone();
             let state = state.clone();
@@ -74,15 +81,20 @@ impl Server {
                 .allow_any_header()
                 .max_age(3600);
 
+            let authenticator = authenticator.clone();
+
             App::new()
                 .wrap(http_metrics)
                 .wrap(Logger::default())
                 .wrap(cors)
+                .wrap(Condition::from_option(authenticator.map(move |authenticator| {
+                    HttpAuthentication::bearer(move |req, auth| openid_validator(req, auth, authenticator.clone()))
+                })))
                 .app_data(web::Data::new(state))
                 .configure(index::configure())
                 .configure(version::configurator(version!()))
-                .configure(crate::sbom::configure())
-                .configure(crate::advisory::configure())
+                .configure(sbom::configure())
+                .configure(advisory::configure())
                 .configure(config_configurator.clone())
                 //.configure(crate::vulnerability::configure())
                 .service(SwaggerUi::new("/swagger-ui/{_:.*}").url("/openapi.json", openapi.clone()))
