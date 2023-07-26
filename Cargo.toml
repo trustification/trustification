@@ -1,6 +1,7 @@
 [workspace]
 members = [
     "api",
+    "auth",
     "bombastic/bombastic",
     "bombastic/api",
     "bombastic/model",
@@ -9,6 +10,7 @@ members = [
     "bombastic/walker",
     "bommer",
     "bommer/bommer-api",
+    "common",
     "vexination/vexination",
     "vexination/api",
     "vexination/index",
@@ -41,6 +43,7 @@ members = [
     "version",
 ]
 default-members = [
+    "auth",
     "bombastic/bombastic",
     "bombastic/api",
     "bombastic/model",
@@ -48,6 +51,7 @@ default-members = [
     "bombastic/index",
     "bommer",
     "bommer/bommer-api",
+    "common",
     "vexination/vexination",
     "vexination/api",
     "vexination/index",
