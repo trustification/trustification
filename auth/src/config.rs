@@ -2,15 +2,36 @@ use clap::ArgAction;
 use serde::Deserialize;
 use std::path::PathBuf;
 
-#[derive(Clone, Debug, clap::Parser)]
-#[command(rename_all_env = "SCREAMING_SNAKE_CASE")]
+#[derive(Clone, Debug, clap::Args)]
+#[command(rename_all_env = "SCREAMING_SNAKE_CASE", next_help_heading = "Authentication")]
 pub struct AuthenticatorConfig {
     /// Flag to to disable authentication, default is on.
-    #[arg(long = "authentication-disabled", env = "AUTHENTICATION_DISABLED")]
+    #[arg(
+        id = "authentication-disabled",
+        default_value_t = false,
+        long = "authentication-disabled",
+        env = "AUTHENTICATION_DISABLED"
+    )]
     pub disabled: bool,
 
     #[command(flatten)]
     pub clients: SingleAuthenticatorClientConfig,
+}
+
+/// A structure to configure multiple clients ID in a simple way
+#[derive(Clone, Debug, Default, PartialEq, Eq, clap::Args)]
+pub struct SingleAuthenticatorClientConfig {
+    #[arg(long = "authentication-client-id", action = ArgAction::Append)]
+    pub client_ids: Vec<String>,
+
+    #[arg(long = "authentication-issuer-url", required = false)]
+    pub issuer_url: String,
+
+    #[arg(default_value_t = false, long = "authentication-tls-insecure")]
+    pub tls_insecure: bool,
+
+    #[arg(long = "authentication-tls-certificate", action = ArgAction::Append)]
+    pub tls_ca_certificates: Vec<PathBuf>,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
@@ -23,23 +44,6 @@ pub struct AuthenticatorClientConfig {
     #[serde(default)]
     pub tls_insecure: bool,
     #[serde(default)]
-    pub tls_ca_certificates: Vec<PathBuf>,
-}
-
-/// A structure to configure multiple clients ID in a simple way
-#[derive(Clone, Debug, PartialEq, Eq, clap::Parser)]
-#[command(rename_all_env = "SCREAMING_SNAKE_CASE")]
-pub struct SingleAuthenticatorClientConfig {
-    #[arg(long = "authenticator-client-id", action = ArgAction::Append)]
-    pub client_ids: Vec<String>,
-
-    #[arg(long = "authenticator-issuer-url")]
-    pub issuer_url: String,
-
-    #[arg(default_value_t = false, long = "authenticator-tls-insecure")]
-    pub tls_insecure: bool,
-
-    #[arg(long = "authenticator-tls-certificate", action = ArgAction::Append)]
     pub tls_ca_certificates: Vec<PathBuf>,
 }
 
