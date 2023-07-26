@@ -71,6 +71,10 @@ impl Server {
 
         let authenticator: Option<Arc<Authenticator>> = Authenticator::from_config(self.run.odic).await?.map(Arc::new);
 
+        if authenticator.is_none() {
+            log::warn!("Authentication is disabled");
+        }
+
         let mut srv = HttpServer::new(move || {
             let http_metrics = http_metrics.clone();
             let state = state.clone();
