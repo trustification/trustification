@@ -12,7 +12,7 @@ const DEFAULT_BIND_ADDR: &str = "localhost:9010";
 
 /// Infrastructure
 #[derive(Clone, Debug, clap::Parser)]
-#[command(rename_all_env = "SCREAMING_SNAKE_CASE")]
+#[command(rename_all_env = "SCREAMING_SNAKE_CASE", next_help_heading = "Infrastructure")]
 pub struct InfrastructureConfig {
     /// Enable the infrastructure endpoint
     #[arg(env, long)]
