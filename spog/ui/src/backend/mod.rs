@@ -4,6 +4,7 @@ pub mod data {
     pub use spog_model::prelude::*;
 }
 
+mod access_token;
 mod config;
 mod pkg;
 mod sbom;
@@ -11,6 +12,7 @@ mod search;
 mod version;
 mod vuln;
 
+pub use access_token::*;
 pub use config::*;
 pub use pkg::*;
 pub use sbom::*;

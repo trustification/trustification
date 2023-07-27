@@ -12,17 +12,18 @@ use crate::{config::AuthenticatorClientConfig, error::AuthenticatorError};
 use claims::ExtendedClaims;
 use futures_util::{stream, StreamExt, TryStreamExt};
 use openid::{biscuit::jws::Compact, Claims, Client, CompactJson, Configurable, Discovered, Empty, Jws};
+use std::ops::Deref;
 use tracing::instrument;
 use trustification_common::reqwest::ClientFactory;
 
 /// An authenticator to authenticate incoming requests.
 #[derive(Clone)]
 pub struct Authenticator {
-    clients: Vec<Client<Discovered, ExtendedClaims>>,
+    clients: Vec<AuthenticatorClient<ExtendedClaims>>,
 }
 
 impl Authenticator {
-    pub fn from_clients(clients: Vec<Client<Discovered, ExtendedClaims>>) -> Self {
+    fn from_clients(clients: Vec<AuthenticatorClient<ExtendedClaims>>) -> Self {
         Self { clients }
     }
 
@@ -50,7 +51,7 @@ impl Authenticator {
     fn find_client(
         &self,
         token: &Compact<ExtendedClaims, Empty>,
-    ) -> Result<Option<&Client<Discovered, ExtendedClaims>>, AuthenticatorError> {
+    ) -> Result<Option<&AuthenticatorClient<ExtendedClaims>>, AuthenticatorError> {
         let unverified_payload = token.unverified_payload().map_err(|err| {
             log::info!("Failed to decode token payload: {}", err);
             AuthenticatorError::Failed
@@ -98,9 +99,6 @@ impl Authenticator {
 
         log::debug!("Using client: {}", client.client_id);
 
-        // decode_token may panic if an unsupported algorithm is used. As that maybe user input,
-        // that could mean that a user could trigger a panic in this code. However, to us
-        // an unsupported algorithm simply means we reject the authentication.
         client.decode_token(&mut token).map_err(|err| {
             log::debug!("Failed to decode token: {}", err);
             AuthenticatorError::Failed
@@ -108,8 +106,8 @@ impl Authenticator {
 
         log::debug!("Token: {:?}", token);
 
-        validate::validate_token(client, &token, None).map_err(|err| {
-            log::info!("Validation failed: {}", err);
+        validate::validate_token(client, &token, client.audience.as_deref(), None).map_err(|err| {
+            log::debug!("Validation failed: {}", err);
             AuthenticatorError::Failed
         })?;
 
@@ -120,9 +118,9 @@ impl Authenticator {
     }
 }
 
-pub async fn create_client<P: CompactJson + Claims>(
+async fn create_client<P: CompactJson + Claims>(
     config: AuthenticatorClientConfig,
-) -> anyhow::Result<Client<Discovered, P>> {
+) -> anyhow::Result<AuthenticatorClient<P>> {
     let mut client = ClientFactory::new();
 
     if config.tls_insecure {
@@ -144,5 +142,28 @@ pub async fn create_client<P: CompactJson + Claims>(
 
     log::info!("Discovered OpenID: {:#?}", client.config());
 
-    Ok(client)
+    Ok(AuthenticatorClient {
+        client,
+        audience: config.required_audience,
+    })
+}
+
+#[derive(Clone)]
+struct AuthenticatorClient<P>
+where
+    P: CompactJson + Claims,
+{
+    client: Client<Discovered, P>,
+    audience: Option<String>,
+}
+
+impl<P> Deref for AuthenticatorClient<P>
+where
+    P: CompactJson + Claims,
+{
+    type Target = Client<Discovered, P>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.client
+    }
 }

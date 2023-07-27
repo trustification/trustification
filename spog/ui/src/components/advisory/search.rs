@@ -1,7 +1,7 @@
 use crate::{
     backend::{self, VexService},
     components::search::*,
-    hooks::{use_backend::use_backend, use_config, use_standard_search, UseStandardSearch},
+    hooks::{use_backend, use_config, use_standard_search, UseStandardSearch},
     utils::pagination_to_offset,
 };
 use patternfly_yew::prelude::*;

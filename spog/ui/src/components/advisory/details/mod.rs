@@ -13,7 +13,7 @@ use crate::{
         advisory::{CsafNotes, CsafProductStatus, CsafReferences},
         common::CardWrapper,
     },
-    hooks::use_backend::use_backend,
+    hooks::use_backend,
 };
 use csaf::{vulnerability::Vulnerability, Csaf};
 use patternfly_yew::prelude::*;

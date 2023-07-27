@@ -5,9 +5,10 @@ use crate::{
     backend::Endpoint,
     components::{
         common::{ExternalLinkMarker, ExternalNavLink},
-        theme::DarkModeSwitch,
+        config::Configuration,
+        theme::DarkModeEntry,
     },
-    hooks::{use_backend::use_backend, use_config},
+    hooks::{use_backend, use_config},
     pages::{self, AppRoute, View},
 };
 use patternfly_yew::prelude::*;
@@ -18,7 +19,13 @@ use yew_oauth2::{openid::*, prelude::*};
 
 #[function_component(Console)]
 pub fn console() -> Html {
-    let brand = html! (
+    html!(
+        <RouterSwitch<AppRoute> {render} default={html!(<pages::NotFound />)}/>
+    )
+}
+
+fn brand() -> Html {
+    html! (
         <MastheadBrand>
             <Brand
                 src="assets/images/chicken-svgrepo-com.svg"
@@ -30,7 +37,12 @@ pub fn console() -> Html {
                 <BrandSource srcset="assets/images/chicken-svgrepo-com.svg" />
             </Brand>
         </MastheadBrand>
-    );
+    )
+}
+
+#[function_component(AuthenticatedPage)]
+fn authenticated_page(props: &ChildrenProperties) -> Html {
+    let brand = brand();
 
     let backend = use_backend();
     let config = use_config();
@@ -136,29 +148,25 @@ pub fn console() -> Html {
 
     html!(
         <Page {brand} {sidebar} {tools}>
-            <RouterSwitch<AppRoute> {render} default={html!(<pages::NotFound />)}/>
+            { for props.children.iter() }
         </Page>
     )
 }
 
-/// Drop down switch entry for dark mode
-#[function_component(DarkModeEntry)]
-fn dark_mode_entry() -> Html {
+/// a non-authenticated page
+#[function_component(NonAuthenticatedPage)]
+fn non_authenticated_page(props: &ChildrenProperties) -> Html {
+    let brand = brand();
     html!(
-        <div class="pf-v5-c-menu__list-item">
-            <div
-                class="pf-v5-c-menu__item"
-                role="menuitem"
-            >
-                <DarkModeSwitch/>
-            </div>
-        </div>
+        <Page {brand}>
+            { for props.children.iter() }
+        </Page>
     )
 }
 
 fn render(route: AppRoute) -> Html {
     let content = match route {
-        AppRoute::NotLoggedIn => return html!(<pages::NotLoggedIn/>),
+        AppRoute::NotLoggedIn => return html!(<NonAuthenticatedPage><pages::NotLoggedIn/></NonAuthenticatedPage>),
 
         AppRoute::Index => html!(<pages::Index/>),
         AppRoute::Chicken => html!(<pages::Chicken/>),
@@ -169,8 +177,12 @@ fn render(route: AppRoute) -> Html {
     };
 
     html!(
-        <RouterRedirect<AppRoute> logout={ AppRoute::NotLoggedIn}>
-            {content}
+        <RouterRedirect<AppRoute> logout={AppRoute::NotLoggedIn}>
+            <Configuration>
+                <AuthenticatedPage>
+                    {content}
+                </AuthenticatedPage>
+            </Configuration>
         </RouterRedirect<AppRoute>>
     )
 }

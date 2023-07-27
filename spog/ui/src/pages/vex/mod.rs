@@ -7,7 +7,7 @@ use crate::{
         error::Error,
         severity::Severity,
     },
-    hooks::use_backend::use_backend,
+    hooks::use_backend,
 };
 use csaf::document::Category;
 use humansize::{format_size, BINARY};
