@@ -82,4 +82,8 @@ kcadm add-roles -r "${REALM}" --uusername "${CHICKEN_ADMIN}" --rolename chicken-
 ID=$(kcadm get users -r "${REALM}" --query "username=${CHICKEN_ADMIN}" --fields id --format csv --noquotes)
 kcadm update "users/${ID}/reset-password" -r "${REALM}" -s type=password -s "value=${CHICKEN_ADMIN_PASSWORD}" -s temporary=false -n
 
+if [[ -f "${INIT_DATA}/there-is-more.sh" ]]; then
+  . "${INIT_DATA}/there-is-more.sh"
+fi
+
 echo SSO initialization complete

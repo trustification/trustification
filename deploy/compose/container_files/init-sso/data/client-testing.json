@@ -1,0 +1,34 @@
+{
+  "clientId": "testing",
+  "clientAuthenticatorType": "client-secret",
+  "secret" : "R8A6KFeyxJsMDBhjfHbpZTIF0GWt43HP",
+  "enabled": true,
+  "publicClient": false,
+  "implicitFlowEnabled": true,
+  "standardFlowEnabled": true,
+  "directAccessGrantsEnabled": false,
+  "serviceAccountsEnabled": true,
+  "fullScopeAllowed": true,
+  "webOrigins": [
+    "*"
+  ],
+  "defaultClientScopes": [
+    "email",
+    "profile",
+    "roles",
+    "web-origins"
+  ],
+  "optionalClientScopes": [
+    "address",
+    "microprofile-jwt",
+    "offline_access",
+    "phone"
+  ],
+  "defaultRoles": [
+    "chicken-user"
+  ],
+  "attributes": {
+    "access.token.lifespan": "300",
+    "post.logout.redirect.uris": "+"
+  }
+}
