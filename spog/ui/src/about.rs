@@ -1,5 +1,7 @@
-use crate::backend::VersionService;
-use crate::hooks::use_backend;
+use crate::{
+    backend::VersionService,
+    hooks::{use_access_token, use_backend},
+};
 use patternfly_yew::prelude::*;
 use std::rc::Rc;
 use trustification_version::{version, VersionInformation};
@@ -9,11 +11,17 @@ use yew_more_hooks::hooks::*;
 #[function_component(About)]
 pub fn about() -> Html {
     let backend = use_backend();
+    let access_token = use_access_token();
 
     let version = use_memo(|()| version!(), ());
 
     let remote = use_async_with_cloned_deps(
-        |backend| async { VersionService::new(backend).get_version().await.map(Rc::new) },
+        |backend| async {
+            VersionService::new(backend, access_token)
+                .get_version()
+                .await
+                .map(Rc::new)
+        },
         backend.clone(),
     );
 

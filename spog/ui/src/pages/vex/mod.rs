@@ -7,7 +7,7 @@ use crate::{
         error::Error,
         severity::Severity,
     },
-    hooks::use_backend,
+    hooks::{use_access_token, use_backend},
 };
 use csaf::document::Category;
 use humansize::{format_size, BINARY};
@@ -24,9 +24,11 @@ pub struct VEXProperties {
 #[function_component(VEX)]
 pub fn vex(props: &VEXProperties) -> Html {
     let backend = use_backend();
+    let access_token = use_access_token();
+
     let info = use_async_with_cloned_deps(
         |(id, backend)| async move {
-            backend::VexService::new(backend.clone())
+            backend::VexService::new(backend.clone(), access_token)
                 .get(id)
                 .await
                 .map(|result| result.map(backend::Advisory::parse).map(Rc::new))
