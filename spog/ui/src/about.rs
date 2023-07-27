@@ -1,5 +1,5 @@
 use crate::backend::VersionService;
-use crate::hooks::use_backend::use_backend;
+use crate::hooks::use_backend;
 use patternfly_yew::prelude::*;
 use std::rc::Rc;
 use trustification_version::{version, VersionInformation};

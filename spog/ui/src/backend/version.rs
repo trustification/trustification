@@ -1,5 +1,6 @@
 use super::Backend;
 use crate::backend::Endpoint;
+use crate::utils::http::CheckStatus;
 use std::rc::Rc;
 use trustification_version::VersionInformation;
 use web_sys::RequestCache;
@@ -28,6 +29,7 @@ impl VersionService {
             .map_err(|err| format!("Failed to load backend information: {err}"))?;
 
         response
+            .check_status()?
             .json()
             .await
             .map_err(|err| format!("Failed to decode backend information: {err}"))

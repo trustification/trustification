@@ -5,7 +5,7 @@ use yew_more_hooks::hooks::r#async::*;
 
 use crate::backend::ConfigService;
 use crate::components::error::Error;
-use crate::hooks::use_backend::use_backend;
+use crate::hooks::{use_access_token, use_backend};
 
 #[derive(Clone, Debug, PartialEq, Properties)]
 pub struct ConfigurationProperties {
@@ -16,9 +16,15 @@ pub struct ConfigurationProperties {
 #[function_component(Configuration)]
 pub fn configuration(props: &ConfigurationProperties) -> Html {
     let backend = use_backend();
+    let access_token = use_access_token();
 
     let config = use_async_with_cloned_deps(
-        |backend| async { ConfigService::new(backend).get_config().await.map(Rc::new) },
+        |backend| async {
+            ConfigService::new(backend, access_token)
+                .get_config()
+                .await
+                .map(Rc::new)
+        },
         backend,
     );
 

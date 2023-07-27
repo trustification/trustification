@@ -27,6 +27,9 @@ pub struct SingleAuthenticatorClientConfig {
     #[arg(long = "authentication-issuer-url", required = false)]
     pub issuer_url: String,
 
+    #[arg(long = "authentication-required-audience")]
+    pub required_audience: Option<String>,
+
     #[arg(default_value_t = false, long = "authentication-tls-insecure")]
     pub tls_insecure: bool,
 
@@ -40,6 +43,8 @@ pub struct AuthenticatorClientConfig {
 
     #[serde(default)]
     pub issuer_url: String,
+    #[serde(default)]
+    pub required_audience: Option<String>,
 
     #[serde(default)]
     pub tls_insecure: bool,
@@ -56,6 +61,7 @@ impl SingleAuthenticatorClientConfig {
                 issuer_url: self.issuer_url.clone(),
                 tls_ca_certificates: self.tls_ca_certificates.clone(),
                 tls_insecure: self.tls_insecure,
+                required_audience: self.required_audience.clone(),
             })
     }
 }

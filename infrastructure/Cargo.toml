@@ -26,4 +26,4 @@ env_logger = "0.10"
 log = "0.4"
 prometheus = "0.13.3"
 
-trustification-auth = { path = "../auth" }
+trustification-auth = { path = "../auth", features = ["actix"] }

@@ -1,7 +1,7 @@
 use crate::{
-    components::{backend::Backend, config::Configuration, error::Error, theme::Themed},
+    components::{backend::Backend, error::Error, theme::Themed},
     console::Console,
-    hooks::use_backend::use_backend,
+    hooks::use_backend,
     pages::AppRoute,
 };
 use patternfly_yew::prelude::*;
@@ -54,9 +54,7 @@ fn application_with_backend() -> Html {
                     scopes={backend.endpoints.oidc.scopes.clone()}
                 >
                     <OAuth2Configured>
-                        <Configuration>
-                            <Console />
-                        </Configuration>
+                        <Console />
                     </OAuth2Configured>
                 </OAuth2>
             </BackdropViewer>

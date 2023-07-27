@@ -1,16 +1,18 @@
 use super::Backend;
-use crate::backend::Endpoint;
+use crate::backend::{ApplyAccessToken, Endpoint};
+use crate::utils::http::CheckStatus;
 use spog_model::config::Configuration;
 use std::rc::Rc;
-use web_sys::RequestCache;
+use web_sys::{RequestCache, RequestCredentials};
 
 pub struct ConfigService {
     backend: Rc<Backend>,
+    access_token: Option<String>,
 }
 
 impl ConfigService {
-    pub fn new(backend: Rc<Backend>) -> Self {
-        Self { backend }
+    pub fn new(backend: Rc<Backend>, access_token: Option<String>) -> Self {
+        Self { backend, access_token }
     }
 
     pub async fn get_config(&self) -> Result<Configuration, String> {
@@ -20,12 +22,15 @@ impl ConfigService {
             .map_err(|err| format!("Unable to build URL: {err}"))?;
 
         let response = gloo_net::http::Request::get(url.as_str())
+            .access_token(&self.access_token)
+            .credentials(RequestCredentials::Include)
             .cache(RequestCache::NoStore)
             .send()
             .await
             .map_err(|err| format!("Failed to load config: {err}"))?;
 
         response
+            .check_status()?
             .json()
             .await
             .map_err(|err| format!("Failed to decode config: {err}"))

@@ -9,7 +9,7 @@ use std::collections::HashSet;
 use crate::{
     backend::Endpoint,
     components::{common::CardWrapper, severity::Severity, table_wrapper::TableWrapper},
-    hooks::use_backend::use_backend,
+    hooks::use_backend,
     pages::{AppRoute, View},
     utils::csaf::{find_product_relations, trace_product},
 };
