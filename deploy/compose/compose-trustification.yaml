@@ -36,6 +36,7 @@ services:
       - API_URL=http://localhost:$SPOG_API_PORT
       - BOMBASTIC_URL=http://localhost:$BOMBASTIC_API_PORT
       - VEXINATION_URL=http://localhost:$VEXINATION_API_PORT
+      - ISSUER_URL=http://localhost:8090/realms/chicken
     expose:
       - "$SPOG_UI_PORT"
     ports:
