@@ -1,17 +1,15 @@
-use crate::{
-    backend::VersionService,
-    hooks::{use_access_token, use_backend},
-};
+use crate::{backend::VersionService, hooks::use_backend};
 use patternfly_yew::prelude::*;
 use std::rc::Rc;
 use trustification_version::{version, VersionInformation};
 use yew::prelude::*;
 use yew_more_hooks::hooks::*;
+use yew_oauth2::hook::use_latest_access_token;
 
 #[function_component(About)]
 pub fn about() -> Html {
     let backend = use_backend();
-    let access_token = use_access_token();
+    let access_token = use_latest_access_token();
 
     let version = use_memo(|()| version!(), ());
 

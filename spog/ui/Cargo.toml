@@ -39,7 +39,7 @@ yew = { version = "0.20", features = ["csr"] }
 yew-hooks = "0.2"
 yew-more-hooks = { version = "0.1.3", features = ["yew-hooks"] }
 yew-nested-router = "0.2.2"
-yew-oauth2 = { version = "0.6", features = ["router", "openid"] }
+yew-oauth2 = { version = "0.6.2", features = ["router", "openid"] }
 
 spog-model = "0.1.0"
 

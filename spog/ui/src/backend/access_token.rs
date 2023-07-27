@@ -1,9 +1,18 @@
 use reqwest::header;
+use yew_oauth2::context::LatestAccessToken;
 
 pub trait ApplyAccessToken: Sized {
     fn access_token(self, access_token: &Option<String>) -> Self {
         if let Some(access_token) = access_token.as_ref() {
             self.apply_access_token(access_token)
+        } else {
+            self
+        }
+    }
+
+    fn latest_access_token(self, access_token: &Option<LatestAccessToken>) -> Self {
+        if let Some(access_token) = access_token.as_ref().and_then(|l| l.access_token()) {
+            self.apply_access_token(&access_token)
         } else {
             self
         }

@@ -1,7 +1,7 @@
 use crate::{
     backend::{self, PackageService},
     components::search::*,
-    hooks::{use_access_token, use_backend, use_config, use_standard_search, UseStandardSearch},
+    hooks::{use_backend, use_config, use_standard_search, UseStandardSearch},
     utils::pagination_to_offset,
 };
 use bombastic_model::prelude::Packages;
@@ -10,6 +10,7 @@ use spog_model::prelude::*;
 use std::rc::Rc;
 use yew::prelude::*;
 use yew_more_hooks::prelude::*;
+use yew_oauth2::prelude::*;
 
 #[derive(PartialEq, Properties)]
 pub struct CatalogSearchProperties {
@@ -27,7 +28,7 @@ pub struct CatalogSearchProperties {
 #[function_component(CatalogSearch)]
 pub fn catalog_search(props: &CatalogSearchProperties) -> Html {
     let backend = use_backend();
-    let access_token = use_access_token();
+    let access_token = use_latest_access_token();
 
     let config = use_config();
 

@@ -13,6 +13,7 @@ use patternfly_yew::prelude::*;
 use std::rc::Rc;
 use yew::prelude::*;
 use yew_more_hooks::prelude::*;
+use yew_oauth2::prelude::*;
 
 #[derive(Clone, Debug, PartialEq, Properties)]
 pub struct SBOMProperties {
@@ -22,9 +23,11 @@ pub struct SBOMProperties {
 #[function_component(SBOM)]
 pub fn sbom(props: &SBOMProperties) -> Html {
     let backend = use_backend();
+    let access_token = use_latest_access_token();
+
     let info = use_async_with_cloned_deps(
         |(id, backend)| async move {
-            backend::SBOMService::new(backend.clone())
+            backend::SBOMService::new(backend.clone(), access_token)
                 .get(id)
                 .await
                 .map(|result| result.map(model::SBOM::parse).map(Rc::new))
