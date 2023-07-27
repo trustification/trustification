@@ -5,10 +5,11 @@ use std::rc::Rc;
 use trustification_api::Apply;
 
 use super::{Backend, Error};
-use crate::backend::{Endpoint, SearchParameters};
+use crate::backend::{ApplyAccessToken, Endpoint, SearchParameters};
 
 pub struct VexService {
     backend: Rc<Backend>,
+    access_token: Option<String>,
     client: reqwest::Client,
 }
 
@@ -31,9 +32,10 @@ impl Advisory {
 }
 
 impl VexService {
-    pub fn new(backend: Rc<Backend>) -> Self {
+    pub fn new(backend: Rc<Backend>, access_token: Option<String>) -> Self {
         Self {
             backend,
+            access_token,
             client: reqwest::Client::new(),
         }
     }
@@ -42,6 +44,7 @@ impl VexService {
         let response = self
             .client
             .get(self.backend.join(Endpoint::Api, &advisory.href)?)
+            .access_token(&self.access_token)
             .send()
             .await?;
 
@@ -56,7 +59,7 @@ impl VexService {
         let mut url = self.backend.join(Endpoint::Api, "/api/v1/advisory")?;
         url.query_pairs_mut().append_pair("id", id.as_ref()).finish();
 
-        let response = self.client.get(url).send().await?;
+        let response = self.client.get(url).access_token(&self.access_token).send().await?;
 
         if response.status() == StatusCode::NOT_FOUND {
             return Ok(None);
@@ -75,6 +78,7 @@ impl VexService {
             .get(self.backend.join(Endpoint::Api, "/api/v1/advisory/search")?)
             .query(&[("q", q)])
             .apply(options)
+            .access_token(&self.access_token)
             .send()
             .await?;
 
