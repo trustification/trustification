@@ -1,9 +1,9 @@
-use std::collections::{HashMap};
+use std::collections::HashMap;
 
 use crate::gatherer::collector::Collector;
+use collector_client::GatherResponse;
 use collectorist_client::CollectorConfig;
 use futures::future::join_all;
-use collector_client::GatherResponse;
 
 use crate::server::collect::CollectRequest;
 use crate::SharedState;
