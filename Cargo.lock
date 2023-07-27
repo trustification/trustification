@@ -3245,6 +3245,7 @@ dependencies = [
  "serde_json",
  "spog-api",
  "tokio",
+ "trustification-auth",
  "trustification-event-bus",
  "trustification-index",
  "trustification-infrastructure",

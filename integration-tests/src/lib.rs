@@ -2,6 +2,7 @@ use core::future::Future;
 use reqwest::StatusCode;
 use std::{net::TcpListener, thread, time::Duration};
 use tokio::{select, task::LocalSet, time::timeout};
+use trustification_auth::config::{AuthenticatorConfig, SingleAuthenticatorClientConfig};
 use trustification_event_bus::{EventBusConfig, EventBusType};
 use trustification_index::IndexConfig;
 use trustification_infrastructure::InfrastructureConfig;
@@ -9,6 +10,7 @@ use trustification_storage::StorageConfig;
 
 const STORAGE_ENDPOINT: &str = "http://localhost:9000";
 const KAFKA_BOOTSTRAP_SERVERS: &str = "localhost:9092";
+const SSO_ENDPOINT: &str = "http://localhost:8090/realms/chicken";
 
 pub fn with_bombastic<F, Fut>(timeout: Duration, test: F)
 where
@@ -322,6 +324,14 @@ fn spog_api(bport: u16, vport: u16) -> spog_api::Run {
             infrastructure_bind: "127.0.0.1".into(),
             infrastructure_workers: 1,
             enable_tracing: false,
+        },
+        odic: AuthenticatorConfig {
+            disabled: false,
+            clients: SingleAuthenticatorClientConfig {
+                client_ids: vec!["frontend".to_string()],
+                issuer_url: SSO_ENDPOINT.to_string(),
+                ..Default::default()
+            },
         },
     }
 }
