@@ -1,8 +1,9 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap};
 
 use crate::gatherer::collector::Collector;
 use collectorist_client::CollectorConfig;
 use futures::future::join_all;
+use collector_client::GatherResponse;
 
 use crate::server::collect::CollectRequest;
 use crate::SharedState;
@@ -32,7 +33,7 @@ impl Collectors {
         self.collectors.get(&id).map(|e| e.config.clone())
     }
 
-    pub async fn gather(&self, state: SharedState, request: CollectRequest) -> HashSet<String> {
+    pub async fn gather(&self, state: SharedState, request: CollectRequest) -> Vec<GatherResponse> {
         let mut futures = Vec::new();
 
         for collector in self.collectors.values() {

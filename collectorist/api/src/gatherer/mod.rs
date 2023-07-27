@@ -71,8 +71,10 @@ impl Gatherer {
     #[allow(unused)]
     pub async fn gather(&self, state: SharedState, request: CollectRequest) {
         let collectors = state.collectors.read().await;
-        for purl in collectors.gather(state.clone(), request).await {
-            state.db.insert_purl(purl.as_str()).await.ok();
+        for response in collectors.gather(state.clone(), request).await {
+            for purl in response.purls {
+                state.db.insert_purl(purl.as_str()).await.ok();
+            }
         }
     }
 
