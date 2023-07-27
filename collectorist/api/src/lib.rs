@@ -26,13 +26,16 @@ pub struct Run {
 
     #[arg(short = 'u', long = "csub-url", default_value = "http://localhost:2782/")]
     pub(crate) csub_url: String,
+
+    #[arg(short = 'g', long = "guac-url", default_value = "http://localhost:8080/query")]
+    pub(crate) guac_url: String,
 }
 
 impl Run {
     pub async fn run(self) -> anyhow::Result<ExitCode> {
         Infrastructure::from(self.infra)
             .run("collectorist-api", |_metrics| async move {
-                let state = Self::configure(self.csub_url).await?;
+                let state = Self::configure(self.csub_url, self.guac_url).await?;
                 let addr = SocketAddr::from_str(&format!("{}:{}", self.bind, self.port))?;
                 let server = server::run(state.clone(), addr);
                 let listener = state.gatherer.listen(state.clone());
@@ -47,8 +50,8 @@ impl Run {
         Ok(ExitCode::SUCCESS)
     }
 
-    async fn configure(csub_url: String) -> anyhow::Result<Arc<AppState>> {
-        let state = Arc::new(AppState::new(csub_url).await?);
+    async fn configure(csub_url: String, guac_url: String) -> anyhow::Result<Arc<AppState>> {
+        let state = Arc::new(AppState::new(csub_url, guac_url).await?);
         Ok(state)
     }
 }

@@ -1,5 +1,5 @@
 use actix_web::{delete, get, post, web, HttpResponse, Responder};
-use collectorist_client::CollectorConfig;
+use collectorist_client::{CollectorConfig, RegisterResponse};
 use log::info;
 
 use crate::SharedState;
@@ -31,7 +31,9 @@ pub(crate) async fn register_collector(
         .await
         .is_ok()
     {
-        Ok(HttpResponse::Ok().finish())
+        Ok(HttpResponse::Ok().json(RegisterResponse {
+            guac_url: state.guac_url.clone(),
+        }))
     } else {
         Ok(HttpResponse::InternalServerError().finish())
     }

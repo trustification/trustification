@@ -1,6 +1,6 @@
-use std::str::FromStr;
 use sqlx::sqlite::SqliteConnectOptions;
 use sqlx::SqlitePool;
+use std::str::FromStr;
 
 static DB_FILE_NAME: &str = "v11y.db";
 
@@ -19,7 +19,7 @@ impl Db {
                     .filename(DB_FILE_NAME)
                     .create_if_missing(true)
             })
-                .await?,
+            .await?,
         };
         db.initialize().await?;
         Ok(db)
@@ -45,16 +45,16 @@ impl Db {
                     details text,
                 )"#,
         )
-            .execute(&self.pool)
-            .await?;
+        .execute(&self.pool)
+        .await?;
 
         sqlx::query(
             r#"
             create unique index if not exists vulnerabilities_pk ON vulnerabilities ( id ) ;
             "#,
         )
-            .execute(&self.pool)
-            .await?;
+        .execute(&self.pool)
+        .await?;
 
         Ok(())
     }
@@ -67,19 +67,18 @@ impl Db {
                     score text,
                 )"#,
         )
-            .execute(&self.pool)
-            .await?;
+        .execute(&self.pool)
+        .await?;
 
         sqlx::query(
             r#"
             create index if not exists severities_pk ON severities ( vulnerability_id ) ;
             "#,
         )
-            .execute(&self.pool)
-            .await?;
+        .execute(&self.pool)
+        .await?;
 
         Ok(())
-
     }
 
     async fn create_aliases_table(&self) -> Result<(), anyhow::Error> {
@@ -89,16 +88,16 @@ impl Db {
                     alias text not null,
                 )"#,
         )
-            .execute(&self.pool)
-            .await?;
+        .execute(&self.pool)
+        .await?;
 
         sqlx::query(
             r#"
             create index if not exists alias_by_id ON aliases ( vulnerability_id ) ;
             "#,
         )
-            .execute(&self.pool)
-            .await?;
+        .execute(&self.pool)
+        .await?;
 
         Ok(())
     }
@@ -110,16 +109,16 @@ impl Db {
                     related text not null,
                 )"#,
         )
-            .execute(&self.pool)
-            .await?;
+        .execute(&self.pool)
+        .await?;
 
         sqlx::query(
             r#"
             create index if not exists related_by_id ON aliases ( vulnerability_id ) ;
             "#,
         )
-            .execute(&self.pool)
-            .await?;
+        .execute(&self.pool)
+        .await?;
 
         Ok(())
     }
@@ -131,16 +130,16 @@ impl Db {
                     event text not null,
                 )"#,
         )
-            .execute(&self.pool)
-            .await?;
+        .execute(&self.pool)
+        .await?;
 
         sqlx::query(
             r#"
             create index if not exists events_by_id ON events ( vulnerability_id ) ;
             "#,
         )
-            .execute(&self.pool)
-            .await?;
+        .execute(&self.pool)
+        .await?;
 
         Ok(())
     }
@@ -153,19 +152,17 @@ impl Db {
                     url text not null,
                 )"#,
         )
-            .execute(&self.pool)
-            .await?;
+        .execute(&self.pool)
+        .await?;
 
         sqlx::query(
             r#"
             create index if not exists references_by_id ON events ( vulnerability_id ) ;
             "#,
         )
-            .execute(&self.pool)
-            .await?;
+        .execute(&self.pool)
+        .await?;
 
         Ok(())
     }
-
-
 }

@@ -680,17 +680,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "atty"
-version = "0.2.14"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d9b39be18770d11421cdb1b9947a45dd3f37e93092cbf377614828a319d5fee8"
-dependencies = [
- "hermit-abi 0.1.19",
- "libc",
- "winapi",
-]
-
-[[package]]
 name = "autocfg"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1254,7 +1243,7 @@ dependencies = [
  "bombastic-model",
  "clap",
  "derive_more",
- "env_logger 0.10.0",
+ "env_logger",
  "futures",
  "hex",
  "log",
@@ -1279,7 +1268,7 @@ version = "0.1.0"
 dependencies = [
  "bombastic-model",
  "cyclonedx-bom",
- "env_logger 0.10.0",
+ "env_logger",
  "log",
  "packageurl",
  "serde",
@@ -1337,7 +1326,7 @@ dependencies = [
  "chrono",
  "clap",
  "csv",
- "humantime 2.1.0",
+ "humantime",
  "reqwest",
  "serde",
  "time 0.3.22",
@@ -1357,7 +1346,7 @@ dependencies = [
  "anyhow",
  "bommer-api",
  "clap",
- "env_logger 0.10.0",
+ "env_logger",
  "futures",
  "k8s-openapi",
  "kube",
@@ -1616,7 +1605,7 @@ dependencies = [
  "collectorist-api",
  "collectorist-client",
  "derive_more",
- "env_logger 0.10.0",
+ "env_logger",
  "futures",
  "guac",
  "log",
@@ -1653,10 +1642,10 @@ dependencies = [
  "collector-client",
  "collectorist-client",
  "derive_more",
- "env_logger 0.10.0",
+ "env_logger",
  "futures",
  "guac",
- "humantime 2.1.0",
+ "humantime",
  "humantime-serde",
  "log",
  "reqwest",
@@ -1674,7 +1663,7 @@ name = "collectorist-client"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "humantime 2.1.0",
+ "humantime",
  "humantime-serde",
  "log",
  "reqwest",
@@ -2338,24 +2327,11 @@ dependencies = [
 
 [[package]]
 name = "env_logger"
-version = "0.5.13"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "15b0a4d2e39f8420210be8b27eeda28029729e2fd4291019455016c348240c38"
-dependencies = [
- "atty",
- "humantime 1.3.0",
- "log",
- "regex",
- "termcolor",
-]
-
-[[package]]
-name = "env_logger"
 version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "85cdab6a89accf66733ad5a1693a4dcced6aeff64602b634530dd73c1f3ee9f0"
 dependencies = [
- "humantime 2.1.0",
+ "humantime",
  "is-terminal",
  "log",
  "regex",
@@ -2427,7 +2403,7 @@ dependencies = [
  "anyhow",
  "clap",
  "derive_more",
- "env_logger 0.10.0",
+ "env_logger",
  "futures",
  "log",
  "packageurl",
@@ -2856,14 +2832,13 @@ dependencies = [
 [[package]]
 name = "guac"
 version = "0.1.0"
-source = "git+https://github.com/dejanb/guac-rs.git?branch=main#8034420ebf88975b606f793fc89c0f271fedf996"
+source = "git+https://github.com/dejanb/guac-rs.git?branch=main#60c2a061b8f67974cca56e73ba8325c180c4714d"
 dependencies = [
  "anyhow",
  "async-nats",
  "async-std",
  "async-trait",
  "chrono",
- "env_logger 0.5.13",
  "graphql_client",
  "log",
  "openvex",
@@ -2940,15 +2915,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "95505c38b4572b2d910cecb0281560f54b440a19336cbbcb27bf6ce6adc6f5a8"
 dependencies = [
  "unicode-segmentation",
-]
-
-[[package]]
-name = "hermit-abi"
-version = "0.1.19"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "62b467343b94ba476dcb2500d242dadbb39557df889310ac77c5d99100aaac33"
-dependencies = [
- "libc",
 ]
 
 [[package]]
@@ -3050,15 +3016,6 @@ checksum = "c4a1e36c821dbe04574f602848a19f742f4fb3c98d40449f11bcad18d6b17421"
 
 [[package]]
 name = "humantime"
-version = "1.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "df004cfca50ef23c36850aaaa59ad52cc70d0e90243c3c7737a4dd32dc7a3c4f"
-dependencies = [
- "quick-error",
-]
-
-[[package]]
-name = "humantime"
 version = "2.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9a3a5bfb195931eeb336b2a7b4d761daec841b97f947d34394601737a7bba5e4"
@@ -3069,7 +3026,7 @@ version = "1.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "57a3db5ea5923d99402c94e9feb261dc5ee9b4efa158b0315f788cf549cc200c"
 dependencies = [
- "humantime 2.1.0",
+ "humantime",
  "serde",
 ]
 
@@ -3250,7 +3207,7 @@ dependencies = [
  "anyhow",
  "bombastic-api",
  "bombastic-indexer",
- "env_logger 0.10.0",
+ "env_logger",
  "lazy_static",
  "reqwest",
  "serde",
@@ -4584,12 +4541,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "quick-error"
-version = "1.2.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a1d01941d82fa2ab50be1e79e6714289dd7cde78eba4c074bc5a4374f650dfe0"
-
-[[package]]
 name = "quick-xml"
 version = "0.28.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5074,7 +5025,7 @@ dependencies = [
  "fs-err",
  "git2",
  "home",
- "humantime 2.1.0",
+ "humantime",
  "humantime-serde",
  "platforms",
  "semver",
@@ -5700,7 +5651,7 @@ dependencies = [
  "bytes",
  "chrono",
  "clap",
- "env_logger 0.10.0",
+ "env_logger",
  "futures",
  "guac",
  "http",
@@ -6715,8 +6666,8 @@ name = "trustification-index"
 version = "0.1.0"
 dependencies = [
  "clap",
- "env_logger 0.10.0",
- "humantime 2.1.0",
+ "env_logger",
+ "humantime",
  "log",
  "prometheus",
  "rand 0.8.5",
@@ -6740,7 +6691,7 @@ dependencies = [
  "actix-web-prom",
  "anyhow",
  "clap",
- "env_logger 0.10.0",
+ "env_logger",
  "futures",
  "log",
  "opentelemetry 0.19.0",
@@ -6974,9 +6925,9 @@ dependencies = [
  "chrono",
  "clap",
  "derive_more",
- "env_logger 0.10.0",
+ "env_logger",
  "futures",
- "humantime 2.1.0",
+ "humantime",
  "humantime-serde",
  "log",
  "reqwest",
@@ -6994,7 +6945,7 @@ name = "v11y-client"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "humantime 2.1.0",
+ "humantime",
  "humantime-serde",
  "log",
  "reqwest",
@@ -7090,7 +7041,7 @@ dependencies = [
  "chumsky",
  "cpe",
  "csaf",
- "env_logger 0.10.0",
+ "env_logger",
  "log",
  "serde",
  "serde_json",
@@ -7149,7 +7100,7 @@ dependencies = [
  "csaf",
  "csaf-walker",
  "hex",
- "humantime 2.1.0",
+ "humantime",
  "log",
  "packageurl",
  "prometheus",

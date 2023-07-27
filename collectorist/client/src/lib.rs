@@ -7,6 +7,11 @@ pub struct Client {
     collector_id: String,
 }
 
+#[derive(Serialize, Deserialize)]
+pub struct RegisterResponse {
+    pub guac_url: String,
+}
+
 impl Client {
     pub fn new(collector_id: String, collectorist_url: String) -> Self {
         Self {
@@ -15,13 +20,18 @@ impl Client {
         }
     }
 
-    pub async fn register(&self, config: CollectorConfig) -> Result<(), anyhow::Error> {
+    pub async fn register(&self, config: CollectorConfig) -> Result<RegisterResponse, anyhow::Error> {
         let mut register_url = self.collectorist_url.clone();
         register_url.push_str("api/v1/collector/");
         register_url.push_str(self.collector_id.as_str());
 
-        let _ = reqwest::Client::new().post(&register_url).json(&config).send().await?;
-        Ok(())
+        Ok(reqwest::Client::new()
+            .post(&register_url)
+            .json(&config)
+            .send()
+            .await?
+            .json()
+            .await?)
     }
 
     pub async fn deregister(&self) -> Result<(), anyhow::Error> {
