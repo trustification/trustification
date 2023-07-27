@@ -1,4 +1,5 @@
 mod server;
+mod db;
 
 use std::net::SocketAddr;
 use std::process::ExitCode;
@@ -41,6 +42,7 @@ impl Run {
     }
 }
 
+#[derive(Default)]
 pub struct AppState {}
 
 impl AppState {
