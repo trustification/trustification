@@ -3,6 +3,7 @@ use serde::Deserialize;
 use spog_model::prelude::*;
 use std::rc::Rc;
 use trustification_api::Apply;
+use yew_oauth2::prelude::*;
 
 use super::{Backend, Error};
 use crate::backend::{
@@ -12,13 +13,13 @@ use crate::backend::{
 
 pub struct PackageService {
     backend: Rc<Backend>,
-    access_token: Option<String>,
+    access_token: Option<LatestAccessToken>,
     client: reqwest::Client,
 }
 
 #[allow(unused)]
 impl PackageService {
-    pub fn new(backend: Rc<Backend>, access_token: Option<String>) -> Self {
+    pub fn new(backend: Rc<Backend>, access_token: Option<LatestAccessToken>) -> Self {
         Self {
             backend,
             access_token,
@@ -31,7 +32,7 @@ impl PackageService {
             .client
             .get(self.backend.join(Endpoint::Api, "/api/package")?)
             .query(&[("purl", purl.to_string())])
-            .access_token(&self.access_token)
+            .latest_access_token(&self.access_token)
             .send()
             .await?
             .error_for_status()?
@@ -70,7 +71,7 @@ impl PackageService {
             .get(self.backend.join(Endpoint::Api, "/api/v1/package/search")?)
             .query(&[("q", q)])
             .apply(options)
-            .access_token(&self.access_token)
+            .latest_access_token(&self.access_token)
             .send()
             .await?;
 
@@ -89,7 +90,7 @@ impl PackageService {
             .client
             .post(self.backend.join(Endpoint::Api, path)?)
             .json(&purls)
-            .access_token(&self.access_token)
+            .latest_access_token(&self.access_token)
             .send()
             .await?
             .error_for_status()?

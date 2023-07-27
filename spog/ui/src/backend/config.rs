@@ -4,14 +4,15 @@ use crate::utils::http::CheckStatus;
 use spog_model::config::Configuration;
 use std::rc::Rc;
 use web_sys::{RequestCache, RequestCredentials};
+use yew_oauth2::prelude::*;
 
 pub struct ConfigService {
     backend: Rc<Backend>,
-    access_token: Option<String>,
+    access_token: Option<LatestAccessToken>,
 }
 
 impl ConfigService {
-    pub fn new(backend: Rc<Backend>, access_token: Option<String>) -> Self {
+    pub fn new(backend: Rc<Backend>, access_token: Option<LatestAccessToken>) -> Self {
         Self { backend, access_token }
     }
 
@@ -22,7 +23,7 @@ impl ConfigService {
             .map_err(|err| format!("Unable to build URL: {err}"))?;
 
         let response = gloo_net::http::Request::get(url.as_str())
-            .access_token(&self.access_token)
+            .latest_access_token(&self.access_token)
             .credentials(RequestCredentials::Include)
             .cache(RequestCache::NoStore)
             .send()

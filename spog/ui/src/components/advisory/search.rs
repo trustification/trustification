@@ -1,7 +1,7 @@
 use crate::{
     backend::{self, VexService},
     components::search::*,
-    hooks::{use_access_token, use_backend, use_config, use_standard_search, UseStandardSearch},
+    hooks::{use_backend, use_config, use_standard_search, UseStandardSearch},
     utils::pagination_to_offset,
 };
 use patternfly_yew::prelude::*;
@@ -10,6 +10,7 @@ use std::rc::Rc;
 use vexination_model::prelude::Vulnerabilities;
 use yew::prelude::*;
 use yew_more_hooks::prelude::*;
+use yew_oauth2::prelude::*;
 
 #[derive(PartialEq, Properties)]
 pub struct AdvisorySearchProperties {
@@ -27,7 +28,7 @@ pub struct AdvisorySearchProperties {
 #[function_component(AdvisorySearch)]
 pub fn advisory_search(props: &AdvisorySearchProperties) -> Html {
     let backend = use_backend();
-    let access_token = use_access_token();
+    let access_token = use_latest_access_token();
 
     let config = use_config();
     let total = use_state_eq(|| None);
