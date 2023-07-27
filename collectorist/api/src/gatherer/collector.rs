@@ -31,11 +31,9 @@ impl Collector {
     pub async fn gather(&self, state: SharedState, purls: Vec<String>) -> Result<GatherResponse, anyhow::Error> {
         let collector_url = self.config.url.clone();
 
-        let response = collector_client::Client::new(collector_url).gather(
-            GatherRequest {
-                purls,
-            }
-        ).await?;
+        let response = collector_client::Client::new(collector_url)
+            .gather(GatherRequest { purls })
+            .await?;
 
         for purl in &response.purls {
             info!("[{}] scanned {}", self.id, purl);
