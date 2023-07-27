@@ -1,6 +1,6 @@
 use std::process::ExitCode;
 use std::{net::TcpListener, path::PathBuf};
-use trustification_auth::{config::AuthenticatorConfig, Authenticator};
+use trustification_auth::config::AuthenticatorConfig;
 
 use trustification_infrastructure::{Infrastructure, InfrastructureConfig};
 
