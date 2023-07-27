@@ -6826,7 +6826,10 @@ dependencies = [
 name = "trustification-infrastructure"
 version = "0.1.0"
 dependencies = [
+ "actix-cors",
  "actix-web",
+ "actix-web-extras",
+ "actix-web-httpauth",
  "actix-web-opentelemetry",
  "actix-web-prom",
  "anyhow",
@@ -6844,6 +6847,7 @@ dependencies = [
  "tracing-bunyan-formatter",
  "tracing-opentelemetry",
  "tracing-subscriber",
+ "trustification-auth",
 ]
 
 [[package]]
