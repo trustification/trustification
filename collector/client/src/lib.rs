@@ -8,6 +8,7 @@ pub struct GatherRequest {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct GatherResponse {
     pub purls: Vec<String>,
+    pub vurls: Vec<String>,
 }
 
 pub struct Client {

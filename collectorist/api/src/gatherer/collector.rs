@@ -6,12 +6,13 @@ use log::info;
 use tokio::task::JoinHandle;
 use tokio::time::sleep;
 
-use collector_client::GatherRequest;
+use collector_client::{GatherRequest, GatherResponse};
 use collectorist_client::CollectorConfig;
 
 use crate::SharedState;
 
 pub struct Collector {
+    pub(crate) id: String,
     pub(crate) config: CollectorConfig,
     pub(crate) update: JoinHandle<()>,
 }
@@ -20,24 +21,27 @@ impl Collector {
     pub fn new(state: SharedState, id: String, config: CollectorConfig) -> Self {
         let update = tokio::spawn(Collector::update(state.clone(), id.clone()));
         Self {
+            id,
             config: config.clone(),
             update,
         }
     }
 
     #[allow(unused)]
-    pub async fn gather(&self, state: SharedState, purls: Vec<String>) -> Vec<String> {
-        let client = reqwest::Client::new().post(&self.config.url).json(&purls).send();
+    pub async fn gather(&self, state: SharedState, purls: Vec<String>) -> Result<GatherResponse, anyhow::Error> {
+        let collector_url = self.config.url.clone();
 
-        if let Ok(response) = client.await {
-            if let Ok(retained) = response.json().await {
-                retained
-            } else {
-                vec![]
+        let response = collector_client::Client::new(collector_url).gather(
+            GatherRequest {
+                purls,
             }
-        } else {
-            vec![]
+        ).await?;
+
+        for purl in &response.purls {
+            info!("[{}] scanned {}", self.id, purl);
+            let _ = state.db.update_purl_scan_time(&self.id, purl).await;
         }
+        Ok(response)
     }
 
     pub async fn update(state: SharedState, id: String) {
@@ -52,13 +56,13 @@ impl Collector {
                     .collect()
                     .await;
 
-                if let Ok(response) = collector_client::Client::new(collector_url)
-                    .gather(GatherRequest { purls })
+                if let Ok(_response) = collector_client::Client::new(collector_url)
+                    .gather(GatherRequest { purls: purls.clone() })
                     .await
                 {
-                    for purl in &response.purls {
+                    for purl in purls {
                         info!("[{}] scanned {}", id, purl);
-                        let _ = state.db.update_purl_scan_time(&id, purl).await;
+                        let _ = state.db.update_purl_scan_time(&id, &purl).await;
                     }
                 }
             }

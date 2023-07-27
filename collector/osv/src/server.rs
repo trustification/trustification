@@ -2,8 +2,8 @@ use std::net::{SocketAddr, TcpListener};
 use std::sync::atomic::Ordering;
 use std::time::Duration;
 
+use actix_web::{App, HttpResponse, HttpServer, post, Responder, web};
 use actix_web::middleware::{Compress, Logger};
-use actix_web::{post, web, App, HttpResponse, HttpServer, Responder};
 use log::{info, warn};
 use tokio::time::sleep;
 use utoipa::OpenApi;
@@ -12,8 +12,8 @@ use utoipa_swagger_ui::SwaggerUi;
 use collector_client::{GatherRequest, GatherResponse};
 use collectorist_client::CollectorConfig;
 
-use crate::client::schema::Package;
 use crate::client::{OsvClient, QueryBatchRequest, QueryPackageRequest};
+use crate::client::schema::Package;
 use crate::SharedState;
 
 #[derive(OpenApi)]
@@ -41,7 +41,7 @@ pub fn config(cfg: &mut web::ServiceConfig) {
             .wrap(Compress::default())
             .service(gather),
     )
-    .service(SwaggerUi::new("/swagger-ui/{_:.*}").url("/openapi.json", ApiDoc::openapi()));
+        .service(SwaggerUi::new("/swagger-ui/{_:.*}").url("/openapi.json", ApiDoc::openapi()));
 }
 
 impl From<&GatherRequest> for QueryBatchRequest {
@@ -59,12 +59,12 @@ impl From<&GatherRequest> for QueryBatchRequest {
 }
 
 #[utoipa::path(
-    post,
-    tag = "collector-osv",
-    path = "/api/v1/gather",
-    responses(
-        (status = 200, description = "Requested pURLs gathered"),
-    ),
+post,
+tag = "collector-osv",
+path = "/api/v1/gather",
+responses(
+(status = 200, description = "Requested pURLs gathered"),
+),
 )]
 #[post("gather")]
 pub async fn gather(request: web::Json<GatherRequest>) -> impl Responder {
@@ -84,7 +84,10 @@ pub async fn gather(request: web::Json<GatherRequest>) -> impl Responder {
             .cloned()
             .collect();
 
-        let response = GatherResponse { purls };
+        let response = GatherResponse {
+            purls,
+            vurls: vec![],
+        };
 
         HttpResponse::Ok().json(response)
     } else {
