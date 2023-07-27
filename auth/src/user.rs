@@ -13,9 +13,12 @@ pub enum UserInformation {
     Anonymous,
 }
 
+#[allow(unused)]
 pub const ANONYMOUS: UserInformation = UserInformation::Anonymous;
+
 static EMPTY_ROLES: Vec<String> = vec![];
 
+#[allow(unused)]
 impl UserInformation {
     pub fn id(&self) -> Option<&str> {
         match self {
