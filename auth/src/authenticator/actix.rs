@@ -1,5 +1,5 @@
-use crate::user::UserInformation;
-use crate::Authenticator;
+use super::user::UserInformation;
+use super::Authenticator;
 use actix_http::HttpMessage;
 use actix_web::dev::ServiceRequest;
 use actix_web_httpauth::extractors::bearer::BearerAuth;

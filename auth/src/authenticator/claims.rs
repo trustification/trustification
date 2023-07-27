@@ -1,6 +1,6 @@
 //! OpenID Connect tools
 
-use crate::user::UserDetails;
+use super::user::UserDetails;
 use openid::{CompactJson, CustomClaims, StandardClaims};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
