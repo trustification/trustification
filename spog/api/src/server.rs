@@ -8,7 +8,7 @@ use http::StatusCode;
 use prometheus::Registry;
 use spog_model::search;
 use trustification_api::{search::SearchOptions, Apply};
-use trustification_auth::Authenticator;
+use trustification_auth::authenticator::Authenticator;
 use trustification_infrastructure::app::{new_app, AppOptions};
 use trustification_version::version;
 use utoipa::OpenApi;

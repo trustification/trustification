@@ -9,7 +9,7 @@ use actix_web_extras::middleware::Condition;
 use actix_web_httpauth::middleware::HttpAuthentication;
 use actix_web_prom::PrometheusMetrics;
 use std::sync::Arc;
-use trustification_auth::{actix::openid_validator, Authenticator};
+use trustification_auth::authenticator::{actix::openid_validator, Authenticator};
 
 #[derive(Default)]
 pub struct AppOptions {
