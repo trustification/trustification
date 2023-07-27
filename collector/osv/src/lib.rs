@@ -58,6 +58,7 @@ pub struct AppState {
     addr: RwLock<Option<SocketAddr>>,
     connected: AtomicBool,
     client: collectorist_client::Client,
+    guac_url: RwLock<Option<String>>,
 }
 
 impl AppState {
@@ -66,6 +67,7 @@ impl AppState {
             addr: RwLock::new(None),
             connected: AtomicBool::new(false),
             client: collectorist_client::Client::new(collector_id, collectorist_url),
+            guac_url: RwLock::new(None),
         }
     }
 }

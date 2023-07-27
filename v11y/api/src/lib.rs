@@ -1,5 +1,5 @@
-mod server;
 mod db;
+mod server;
 
 use std::net::SocketAddr;
 use std::process::ExitCode;

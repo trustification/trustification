@@ -65,20 +65,15 @@ impl OsvClient {
             .json()
             .await?;
 
-        let results: Vec<_> = request.queries.iter().zip(response.results.iter()).map( |(req, resp)| {
-            if resp.vulns.is_some() {
-                println!("##############################################################################################");
-                println!("##############################################################################################");
-                println!("##############################################################################################");
-                println!("##############################################################################################");
-                println!("{:?}", req.package);
-
-            }
-            CollatedBatchVulnerabilities {
+        let results: Vec<_> = request
+            .queries
+            .iter()
+            .zip(response.results.iter())
+            .map(|(req, resp)| CollatedBatchVulnerabilities {
                 package: req.package.clone(),
                 vulns: resp.vulns.clone(),
-            }
-        }).collect();
+            })
+            .collect();
 
         let response = CollatedQueryBatchResponse { results };
 
