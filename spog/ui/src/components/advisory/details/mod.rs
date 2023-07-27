@@ -13,7 +13,7 @@ use crate::{
         advisory::{CsafNotes, CsafProductStatus, CsafReferences},
         common::CardWrapper,
     },
-    hooks::use_backend,
+    hooks::{use_access_token, use_backend},
 };
 use csaf::{vulnerability::Vulnerability, Csaf};
 use patternfly_yew::prelude::*;
@@ -38,12 +38,14 @@ impl PartialEq for AdvisoryDetailsProps {
 #[function_component(AdvisoryDetails)]
 pub fn csaf_details(props: &AdvisoryDetailsProps) -> Html {
     let backend = use_backend();
-    let service = use_memo(|backend| VexService::new(backend.clone()), backend);
+    let access_token = use_access_token();
+
     let summary = props.advisory.clone();
 
     let fetch = {
         use_async_with_cloned_deps(
             move |summary| async move {
+                let service = VexService::new(backend.clone(), access_token);
                 service
                     .lookup(&summary)
                     .await

@@ -1,7 +1,7 @@
 use crate::{
     backend::{self, VexService},
     components::search::*,
-    hooks::{use_backend, use_config, use_standard_search, UseStandardSearch},
+    hooks::{use_access_token, use_backend, use_config, use_standard_search, UseStandardSearch},
     utils::pagination_to_offset,
 };
 use patternfly_yew::prelude::*;
@@ -27,11 +27,9 @@ pub struct AdvisorySearchProperties {
 #[function_component(AdvisorySearch)]
 pub fn advisory_search(props: &AdvisorySearchProperties) -> Html {
     let backend = use_backend();
+    let access_token = use_access_token();
 
     let config = use_config();
-
-    let service = use_memo(|backend| VexService::new(backend.clone()), backend);
-
     let total = use_state_eq(|| None);
 
     let filters = use_memo(|()| config.vexination.filters.clone(), ());
@@ -51,6 +49,7 @@ pub fn advisory_search(props: &AdvisorySearchProperties) -> Html {
         let filters = filters.clone();
         use_async_with_cloned_deps(
             move |(search_params, page, per_page)| async move {
+                let service = VexService::new(backend.clone(), access_token);
                 service
                     .search_advisories(
                         &search_params.as_str(&filters),
