@@ -4,16 +4,17 @@ use crate::utils::http::CheckStatus;
 use std::rc::Rc;
 use trustification_version::VersionInformation;
 use web_sys::RequestCache;
+use yew_oauth2::context::LatestAccessToken;
 
 #[allow(unused)]
 pub struct VersionService {
     backend: Rc<Backend>,
-    access_token: Option<String>,
+    access_token: Option<LatestAccessToken>,
 }
 
 #[allow(unused)]
 impl VersionService {
-    pub fn new(backend: Rc<Backend>, access_token: Option<String>) -> Self {
+    pub fn new(backend: Rc<Backend>, access_token: Option<LatestAccessToken>) -> Self {
         Self { backend, access_token }
     }
 
@@ -25,7 +26,7 @@ impl VersionService {
 
         let response = gloo_net::http::Request::get(url.as_str())
             .cache(RequestCache::NoStore)
-            .access_token(&self.access_token)
+            .latest_access_token(&self.access_token)
             .send()
             .await
             .map_err(|err| format!("Failed to load backend information: {err}"))?;

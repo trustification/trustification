@@ -13,13 +13,14 @@ use crate::{
         advisory::{CsafNotes, CsafProductStatus, CsafReferences},
         common::CardWrapper,
     },
-    hooks::{use_access_token, use_backend},
+    hooks::use_backend,
 };
 use csaf::{vulnerability::Vulnerability, Csaf};
 use patternfly_yew::prelude::*;
 use spog_model::prelude::*;
 use yew::prelude::*;
 use yew_more_hooks::hooks::use_async_with_cloned_deps;
+use yew_oauth2::prelude::use_latest_access_token;
 
 use crate::utils::OrNone;
 use crate::{components::common::SafeHtml, components::cvss::Cvss3};
@@ -38,7 +39,7 @@ impl PartialEq for AdvisoryDetailsProps {
 #[function_component(AdvisoryDetails)]
 pub fn csaf_details(props: &AdvisoryDetailsProps) -> Html {
     let backend = use_backend();
-    let access_token = use_access_token();
+    let access_token = use_latest_access_token();
 
     let summary = props.advisory.clone();
 
