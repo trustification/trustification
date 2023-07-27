@@ -3,8 +3,8 @@ use std::net::{SocketAddr, TcpListener};
 use std::sync::atomic::Ordering;
 use std::time::Duration;
 
-use actix_web::{App, HttpResponse, HttpServer, post, Responder, ResponseError, web};
 use actix_web::middleware::{Compress, Logger};
+use actix_web::{post, web, App, HttpResponse, HttpServer, Responder, ResponseError};
 use derive_more::Display;
 use guac::client::certify_vuln::{Metadata, Osv, Vulnerability};
 use guac::client::GuacClient;
@@ -16,8 +16,8 @@ use utoipa_swagger_ui::SwaggerUi;
 use collector_client::{GatherRequest, GatherResponse};
 use collectorist_client::CollectorConfig;
 
-use crate::client::{OsvClient, QueryBatchRequest, QueryPackageRequest};
 use crate::client::schema::Package;
+use crate::client::{OsvClient, QueryBatchRequest, QueryPackageRequest};
 use crate::SharedState;
 
 #[derive(Debug, Display)]
@@ -56,7 +56,7 @@ pub fn config(cfg: &mut web::ServiceConfig) {
             .wrap(Compress::default())
             .service(gather),
     )
-        .service(SwaggerUi::new("/swagger-ui/{_:.*}").url("/openapi.json", ApiDoc::openapi()));
+    .service(SwaggerUi::new("/swagger-ui/{_:.*}").url("/openapi.json", ApiDoc::openapi()));
 }
 
 impl From<&GatherRequest> for QueryBatchRequest {
@@ -106,8 +106,8 @@ pub async fn gather(
                     guac.ingest_osv(Osv {
                         osv_id: vuln.id.clone(),
                     })
-                        .await
-                        .map_err(|_| Error::GuacError)?;
+                    .await
+                    .map_err(|_| Error::GuacError)?;
 
                     guac.ingest_certify_vuln(
                         purl,
@@ -124,8 +124,8 @@ pub async fn gather(
                             collector: "osv".to_string(),
                         },
                     )
-                        .await
-                        .map_err(|_| Error::GuacError)?;
+                    .await
+                    .map_err(|_| Error::GuacError)?;
                 }
             }
         }
