@@ -7,8 +7,10 @@ mod validate;
 pub mod actix;
 pub mod config;
 
-use crate::config::AuthenticatorConfig;
-use crate::{config::AuthenticatorClientConfig, error::AuthenticatorError};
+use crate::{
+    config::{AuthenticatorClientConfig, AuthenticatorConfig},
+    error::AuthenticatorError,
+};
 use claims::ExtendedClaims;
 use futures_util::{stream, StreamExt, TryStreamExt};
 use openid::{biscuit::jws::Compact, Claims, Client, CompactJson, Configurable, Discovered, Empty, Jws};
