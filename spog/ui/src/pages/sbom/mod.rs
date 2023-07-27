@@ -6,7 +6,7 @@ use crate::{
         error::Error,
         spdx::*,
     },
-    hooks::use_backend::use_backend,
+    hooks::use_backend,
     model,
 };
 use patternfly_yew::prelude::*;

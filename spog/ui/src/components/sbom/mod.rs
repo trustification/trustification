@@ -1,7 +1,7 @@
 use crate::{
     backend::{self, PackageService},
     components::search::*,
-    hooks::{use_backend::use_backend, use_config, use_standard_search, UseStandardSearch},
+    hooks::{use_access_token, use_backend, use_config, use_standard_search, UseStandardSearch},
     utils::pagination_to_offset,
 };
 use bombastic_model::prelude::Packages;
@@ -27,10 +27,9 @@ pub struct CatalogSearchProperties {
 #[function_component(CatalogSearch)]
 pub fn catalog_search(props: &CatalogSearchProperties) -> Html {
     let backend = use_backend();
+    let access_token = use_access_token();
 
     let config = use_config();
-
-    let service = use_memo(|backend| PackageService::new(backend.clone()), backend);
 
     let total = use_state_eq(|| None);
 
@@ -51,6 +50,7 @@ pub fn catalog_search(props: &CatalogSearchProperties) -> Html {
         let filters = filters.clone();
         use_async_with_cloned_deps(
             move |(search_params, page, per_page)| async move {
+                let service = PackageService::new(backend.clone(), access_token);
                 service
                     .search_packages(
                         &search_params.as_str(&filters),

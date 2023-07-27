@@ -10,7 +10,7 @@ use yew_nested_router::components::Link;
 use crate::{
     backend::Endpoint,
     components::{common::SafeHtml, table_wrapper::TableWrapper},
-    hooks::use_backend::*,
+    hooks::*,
     pages::{AppRoute, View},
 };
 

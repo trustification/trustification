@@ -7,19 +7,21 @@ use trustification_api::Apply;
 use super::{Backend, Error};
 use crate::backend::{
     data::{Package, PackageDependencies, PackageDependents, PackageList, PackageRef},
-    Endpoint, SearchParameters,
+    ApplyAccessToken, Endpoint, SearchParameters,
 };
 
 pub struct PackageService {
     backend: Rc<Backend>,
+    access_token: Option<String>,
     client: reqwest::Client,
 }
 
 #[allow(unused)]
 impl PackageService {
-    pub fn new(backend: Rc<Backend>) -> Self {
+    pub fn new(backend: Rc<Backend>, access_token: Option<String>) -> Self {
         Self {
             backend,
+            access_token,
             client: reqwest::Client::new(),
         }
     }
@@ -29,6 +31,7 @@ impl PackageService {
             .client
             .get(self.backend.join(Endpoint::Api, "/api/package")?)
             .query(&[("purl", purl.to_string())])
+            .access_token(&self.access_token)
             .send()
             .await?
             .error_for_status()?
@@ -67,6 +70,7 @@ impl PackageService {
             .get(self.backend.join(Endpoint::Api, "/api/v1/package/search")?)
             .query(&[("q", q)])
             .apply(options)
+            .access_token(&self.access_token)
             .send()
             .await?;
 
@@ -85,6 +89,7 @@ impl PackageService {
             .client
             .post(self.backend.join(Endpoint::Api, path)?)
             .json(&purls)
+            .access_token(&self.access_token)
             .send()
             .await?
             .error_for_status()?

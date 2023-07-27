@@ -67,3 +67,18 @@ pub fn dark_mode_switch() -> Html {
         }
     }
 }
+
+/// Drop down switch entry for dark mode
+#[function_component(DarkModeEntry)]
+pub fn dark_mode_entry() -> Html {
+    html!(
+        <div class="pf-v5-c-menu__list-item">
+            <div
+                class="pf-v5-c-menu__item"
+                role="menuitem"
+            >
+                <DarkModeSwitch/>
+            </div>
+        </div>
+    )
+}

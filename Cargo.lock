@@ -6759,6 +6759,7 @@ dependencies = [
  "actix-web-extras",
  "actix-web-httpauth",
  "anyhow",
+ "biscuit",
  "chrono",
  "clap",
  "futures-util",
