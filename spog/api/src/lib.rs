@@ -47,7 +47,7 @@ pub struct Run {
     pub infra: InfrastructureConfig,
 
     #[command(flatten)]
-    pub odic: AuthenticatorConfig,
+    pub oidc: AuthenticatorConfig,
 }
 
 impl Run {

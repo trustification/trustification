@@ -2,7 +2,7 @@ use clap::ArgAction;
 use serde::Deserialize;
 use std::path::PathBuf;
 
-#[derive(Clone, Debug, clap::Args)]
+#[derive(Clone, Debug, Default, clap::Args)]
 #[command(rename_all_env = "SCREAMING_SNAKE_CASE", next_help_heading = "Authentication")]
 pub struct AuthenticatorConfig {
     /// Flag to to disable authentication, default is on.
