@@ -10,6 +10,7 @@ mod not_logged_in;
 mod package;
 mod sbom;
 mod scanner;
+mod search;
 mod vex;
 
 pub use advisory::*;
@@ -20,6 +21,7 @@ pub use not_logged_in::*;
 pub use package::Package;
 pub use sbom::*;
 pub use scanner::*;
+pub use search::*;
 pub use vex::*;
 
 #[derive(Clone, Debug, PartialEq, Eq, Target)]
@@ -31,6 +33,9 @@ pub enum AppRoute {
     Package(View),
     Advisory(View),
     Scanner,
+    Search {
+        terms: String,
+    },
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Target)]
