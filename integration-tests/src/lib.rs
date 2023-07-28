@@ -2,8 +2,8 @@ use core::future::Future;
 use reqwest::StatusCode;
 use std::ops::Deref;
 use std::sync::Arc;
-use std::{net::TcpListener, thread, time::Duration};
-use tokio::{select, task::LocalSet, time::timeout};
+use std::{net::TcpListener, time::Duration};
+use tokio::{select, time::timeout};
 use trustification_auth::authenticator::config::{AuthenticatorConfig, SingleAuthenticatorClientConfig};
 use trustification_auth::client::{TokenInjector, TokenProvider};
 use trustification_event_bus::{EventBusConfig, EventBusType};
@@ -30,7 +30,7 @@ impl Deref for TestingContext {
     }
 }
 
-pub fn with_bombastic<F, Fut>(context: TestingContext, timeout: Duration, test: F)
+pub async fn with_bombastic<F, Fut>(context: TestingContext, timeout: Duration, test: F)
 where
     F: FnOnce(TestingContext, u16) -> Fut,
     Fut: Future<Output = ()>,
@@ -40,57 +40,53 @@ where
     let listener = TcpListener::bind("localhost:0").unwrap();
     let port = listener.local_addr().unwrap().port();
 
-    let runtime = tokio::runtime::Runtime::new().unwrap();
-    let rt = LocalSet::new();
-    runtime.block_on(rt.run_until(async move {
-        select! {
-            biased;
+    select! {
+        biased;
 
-            bindexer = bombastic_indexer().run() => match bindexer {
-                Err(e) => {
-                    panic!("Error running bombastic indexer: {e:?}");
-                }
-                Ok(code) => {
-                    println!("Bombastic indexer exited with code {code:?}");
-                }
-            },
-            bapi = bombastic_api().run(Some(listener)) => match bapi {
-                Err(e) => {
-                    panic!("Error running bombastic API: {e:?}");
-                }
-                Ok(code) => {
-                    println!("Bombastic API exited with code {code:?}");
-                }
-            },
-
-            _ = async move {
-                let client = reqwest::Client::new();
-                loop {
-                    let response = client
-                        .get(format!("http://localhost:{port}/api/v1/sbom?id=none"))
-                        .inject_token(&context.provider).await.unwrap()
-                        .send()
-                        .await
-                        .unwrap();
-                    if response.status() == StatusCode::NOT_FOUND {
-                        break;
-                    }
-                    tokio::time::sleep(Duration::from_secs(1)).await;
-                }
-
-                // Run test
-                test(context, port).await
-            } => {
-                println!("Test completed");
+        bindexer = bombastic_indexer().run() => match bindexer {
+            Err(e) => {
+                panic!("Error running bombastic indexer: {e:?}");
             }
-            _ = tokio::time::sleep(timeout) => {
-                panic!("Test timed out");
+            Ok(code) => {
+                println!("Bombastic indexer exited with code {code:?}");
             }
+        },
+        bapi = bombastic_api().run(Some(listener)) => match bapi {
+            Err(e) => {
+                panic!("Error running bombastic API: {e:?}");
+            }
+            Ok(code) => {
+                println!("Bombastic API exited with code {code:?}");
+            }
+        },
+
+        _ = async move {
+            let client = reqwest::Client::new();
+            loop {
+                let response = client
+                    .get(format!("http://localhost:{port}/api/v1/sbom?id=none"))
+                    .inject_token(&context.provider).await.unwrap()
+                    .send()
+                    .await
+                    .unwrap();
+                if response.status() == StatusCode::NOT_FOUND {
+                    break;
+                }
+                tokio::time::sleep(Duration::from_secs(1)).await;
+            }
+
+            // Run test
+            test(context, port).await
+        } => {
+            println!("Test completed");
         }
-    }))
+        _ = tokio::time::sleep(timeout) => {
+            panic!("Test timed out");
+        }
+    }
 }
 
-pub fn with_vexination<F, Fut>(context: TestingContext, timeout: Duration, test: F)
+pub async fn with_vexination<F, Fut>(context: TestingContext, timeout: Duration, test: F)
 where
     F: FnOnce(TestingContext, u16) -> Fut,
     Fut: Future<Output = ()>,
@@ -100,58 +96,54 @@ where
     let listener = TcpListener::bind("localhost:0").unwrap();
     let port = listener.local_addr().unwrap().port();
 
-    let runtime = tokio::runtime::Runtime::new().unwrap();
-    let rt = LocalSet::new();
-    runtime.block_on(rt.run_until(async move {
-        select! {
-            biased;
+    select! {
+        biased;
 
-            vindexer = vexination_indexer().run() => match vindexer {
-                Err(e) => {
-                    panic!("Error running vexination indexer: {e:?}");
-                }
-                Ok(code) => {
-                    println!("Vexination indexer exited with code {code:?}");
-                }
-            },
-
-            vapi = vexination_api().run(Some(listener)) => match vapi {
-                Err(e) => {
-                    panic!("Error running vexination API: {e:?}");
-                }
-                Ok(code) => {
-                    println!("Vexination API exited with code {code:?}");
-                }
-            },
-
-            _ = async move {
-                let client = reqwest::Client::new();
-                loop {
-                    let response = client
-                        .get(format!("http://localhost:{port}/api/v1/vex?advisory=none"))
-                        .inject_token(&context.provider).await.unwrap()
-                        .send()
-                        .await
-                        .unwrap();
-                    if response.status() == StatusCode::NOT_FOUND {
-                        break;
-                    }
-                    tokio::time::sleep(Duration::from_secs(1)).await;
-                }
-
-                // Run test
-                test(context, port).await
-            } => {
-                println!("Test completed");
+        vindexer = vexination_indexer().run() => match vindexer {
+            Err(e) => {
+                panic!("Error running vexination indexer: {e:?}");
             }
-            _ = tokio::time::sleep(timeout) => {
-                panic!("Test timed out");
+            Ok(code) => {
+                println!("Vexination indexer exited with code {code:?}");
             }
+        },
+
+        vapi = vexination_api().run(Some(listener)) => match vapi {
+            Err(e) => {
+                panic!("Error running vexination API: {e:?}");
+            }
+            Ok(code) => {
+                println!("Vexination API exited with code {code:?}");
+            }
+        },
+
+        _ = async move {
+            let client = reqwest::Client::new();
+            loop {
+                let response = client
+                    .get(format!("http://localhost:{port}/api/v1/vex?advisory=none"))
+                    .inject_token(&context.provider).await.unwrap()
+                    .send()
+                    .await
+                    .unwrap();
+                if response.status() == StatusCode::NOT_FOUND {
+                    break;
+                }
+                tokio::time::sleep(Duration::from_secs(1)).await;
+            }
+
+            // Run test
+            test(context, port).await
+        } => {
+            println!("Test completed");
         }
-    }))
+        _ = tokio::time::sleep(timeout) => {
+            panic!("Test timed out");
+        }
+    }
 }
 
-pub fn with_spog<F, Fut>(context: TestingContext, timeout: Duration, test: F)
+pub async fn with_spog<F, Fut>(context: TestingContext, timeout: Duration, test: F)
 where
     F: FnOnce(TestingContext, u16) -> Fut + Send + 'static,
     Fut: Future<Output = ()>,
@@ -161,55 +153,49 @@ where
     let listener = TcpListener::bind("localhost:0").unwrap();
     let port = listener.local_addr().unwrap().port();
 
-    thread::spawn(move || {
-        with_bombastic(context, timeout, |context, bport| async move {
-            thread::spawn(move || {
-                with_vexination(context, timeout, |context, vport| async move {
-                    select! {
-                        biased;
+    with_bombastic(context, timeout, |context, bport| async move {
+        with_vexination(context, timeout, |context, vport| async move {
+            select! {
+                biased;
 
-                        spog = spog_api(bport, vport).run(Some(listener)) => match spog {
-                            Err(e) => {
-                                panic!("Error running spog API: {e:?}");
-                            }
-                            Ok(code) => {
-                                println!("Spog API exited with code {code:?}");
-                            }
-                        },
-
-                        _ = async move {
-                            let client = reqwest::Client::new();
-                            loop {
-                                let response = client
-                                    .get(format!("http://localhost:{port}/.well-known/trustification/version"))
-                                    .inject_token(&context.provider).await.unwrap()
-                                    .send()
-                                    .await
-                                    .unwrap();
-                                if response.status() == StatusCode::OK {
-                                    break;
-                                }
-                                tokio::time::sleep(Duration::from_secs(1)).await;
-                            }
-
-                            // Run test
-                            test(context, port).await
-                        } => {
-                            println!("Test completed");
-                        }
-
-                        _ = tokio::time::sleep(timeout) => {
-                            panic!("Test timed out");
-                        }
+                spog = spog_api(bport, vport).run(Some(listener)) => match spog {
+                    Err(e) => {
+                        panic!("Error running spog API: {e:?}");
                     }
-                })
-            })
-            .join()
-            .expect("Thread panicked");
+                    Ok(code) => {
+                        println!("Spog API exited with code {code:?}");
+                    }
+                },
+
+                _ = async move {
+                    let client = reqwest::Client::new();
+                    loop {
+                        let response = client
+                            .get(format!("http://localhost:{port}/.well-known/trustification/version"))
+                            .inject_token(&context.provider).await.unwrap()
+                            .send()
+                            .await
+                            .unwrap();
+                        if response.status() == StatusCode::OK {
+                            break;
+                        }
+                        tokio::time::sleep(Duration::from_secs(1)).await;
+                    }
+
+                    // Run test
+                    test(context, port).await
+                } => {
+                    println!("Test completed");
+                }
+
+                _ = tokio::time::sleep(timeout) => {
+                    panic!("Test timed out");
+                }
+            }
         })
+        .await;
     })
-    .join()
-    .expect("Thread panicked");
+    .await;
 }
 
 pub async fn assert_within_timeout<F: Future>(t: Duration, f: F) {
@@ -361,35 +347,26 @@ fn spog_api(bport: u16, vport: u16) -> spog_api::Run {
     }
 }
 
-pub fn with_test_context<'a, F, Fut>(test: F)
+pub async fn with_test_context<'a, F, Fut>(test: F)
 where
     F: FnOnce(TestingContext) -> Fut + Send + 'static,
     Fut: Future<Output = ()>,
 {
-    thread::spawn(move || {
-        let runtime = tokio::runtime::Runtime::new().unwrap();
-        let rt = LocalSet::new();
-        runtime.block_on(rt.run_until(async move {
-            let client = openid::Client::discover(
-                "testing".into(),
-                Some(SSO_TESTING_CLIENT_SECRET.to_string()),
-                None,
-                SSO_ENDPOINT.parse().unwrap(),
-            )
-            .await
-            .unwrap();
+    let client = openid::Client::discover(
+        "testing".into(),
+        Some(SSO_TESTING_CLIENT_SECRET.to_string()),
+        None,
+        SSO_ENDPOINT.parse().unwrap(),
+    )
+    .await
+    .unwrap();
 
-            let provider = trustification_auth::client::OpenIdTokenProvider::new(client, chrono::Duration::seconds(10));
+    let provider = trustification_auth::client::OpenIdTokenProvider::new(client, chrono::Duration::seconds(10));
 
-            // log::info!("Initial access token: {:?}", provider.provide_access_token().await);
-            println!("Initial access token: {:?}", provider.provide_access_token().await);
+    println!("Initial access token: {:?}", provider.provide_access_token().await);
 
-            test(TestingContext {
-                provider: Arc::new(provider),
-            })
-            .await;
-        }));
+    test(TestingContext {
+        provider: Arc::new(provider),
     })
-    .join()
-    .expect("Thread panicked");
+    .await;
 }

@@ -4,8 +4,8 @@ use serde_json::{json, Value};
 use std::time::Duration;
 use urlencoding::encode;
 
-#[test]
-fn test_upload() {
+#[tokio::test]
+async fn test_upload() {
     with_test_context(|context| async move {
         with_bombastic(context, Duration::from_secs(60), |_context, port| async move {
             let input = serde_json::from_str(include_str!("../../bombastic/testdata/my-sbom.json")).unwrap();
@@ -18,11 +18,13 @@ fn test_upload() {
             let output: Value = response.json().await.unwrap();
             assert_eq!(input, output);
         })
+        .await;
     })
+    .await;
 }
 
-#[test]
-fn test_delete() {
+#[tokio::test]
+async fn test_delete() {
     with_test_context(|context| async move {
         with_bombastic(context, Duration::from_secs(60), |_context, port| async move {
             let input = serde_json::from_str(include_str!("../../bombastic/testdata/my-sbom.json")).unwrap();
@@ -37,11 +39,13 @@ fn test_delete() {
             let response = client.get(url).send().await.unwrap();
             assert_eq!(response.status(), StatusCode::NOT_FOUND);
         })
+        .await;
     })
+    .await;
 }
 
-#[test]
-fn test_delete_missing() {
+#[tokio::test]
+async fn test_delete_missing() {
     with_test_context(|context| async move {
         with_bombastic(context, Duration::from_secs(60), |_context, port| async move {
             let client = reqwest::Client::new();
@@ -64,11 +68,13 @@ fn test_delete_missing() {
                 .unwrap();
             assert_eq!(response.status(), StatusCode::NO_CONTENT);
         })
+        .await;
     })
+    .await;
 }
 
-#[test]
-fn test_search() {
+#[tokio::test]
+async fn test_search() {
     with_test_context(|context| async move {
         with_bombastic(context, Duration::from_secs(60), |_context, port| async move {
             let input = serde_json::from_str(include_str!("../../bombastic/testdata/ubi9-sbom.json")).unwrap();
@@ -91,11 +97,13 @@ fn test_search() {
             })
             .await;
         })
+        .await;
     })
+    .await;
 }
 
-#[test]
-fn test_invalid_type() {
+#[tokio::test]
+async fn test_invalid_type() {
     with_test_context(|context| async move {
         with_bombastic(context, Duration::from_secs(60), |_context, port| async move {
             let response = reqwest::Client::new()
@@ -108,11 +116,13 @@ fn test_invalid_type() {
             assert_eq!(response.status(), StatusCode::BAD_REQUEST);
             assert_eq!(response.headers().get("accept").unwrap(), &"application/json");
         })
+        .await;
     })
+    .await;
 }
 
-#[test]
-fn test_invalid_encoding() {
+#[tokio::test]
+async fn test_invalid_encoding() {
     with_test_context(|context| async move {
         with_bombastic(context, Duration::from_secs(60), |_context, port| async move {
             let response = reqwest::Client::new()
@@ -126,7 +136,9 @@ fn test_invalid_encoding() {
             assert_eq!(response.status(), StatusCode::BAD_REQUEST);
             assert_eq!(response.headers().get("accept-encoding").unwrap(), &"bzip2, zstd");
         })
+        .await;
     })
+    .await;
 }
 
 async fn upload(port: u16, key: &str, input: &Value) {
