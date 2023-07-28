@@ -119,7 +119,7 @@ mod test {
 
     #[actix_web::test]
     async fn register_collector() -> Result<(), anyhow::Error> {
-        let state = SharedState::new(AppState::new("http://csub.example.com/".into()).await?);
+        let state = SharedState::new(AppState::new("http://csub.example.com/".into(), "http://guac.example.com/query".into()).await?);
 
         let request = TestRequest::post()
             .uri("/api/v1/collector/foo")
@@ -147,7 +147,7 @@ mod test {
 
     #[actix_web::test]
     async fn get_collector_config() -> Result<(), anyhow::Error> {
-        let state = SharedState::new(AppState::new("http://csub.example.com/".into()).await?);
+        let state = SharedState::new(AppState::new("http://csub.example.com/".into(), "http://guac.example.com/query".into()).await?);
         let app = test::init_service(App::new().app_data(web::Data::new(state.clone())).configure(config)).await;
 
         let request = TestRequest::post()
@@ -181,7 +181,7 @@ mod test {
 
     #[actix_web::test]
     async fn deregister_collector() -> Result<(), anyhow::Error> {
-        let state = SharedState::new(AppState::new("http://csub.example.com/".into()).await?);
+        let state = SharedState::new(AppState::new("http://csub.example.com/".into(), "http://guac.example.com/query".into()).await?);
 
         let app = test::init_service(App::new().app_data(web::Data::new(state.clone())).configure(config)).await;
 
