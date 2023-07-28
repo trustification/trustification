@@ -4,8 +4,8 @@ use serde_json::Value;
 use std::time::Duration;
 use trustification_auth::client::TokenInjector;
 
-#[test]
-fn test_version() {
+#[tokio::test]
+async fn test_version() {
     with_test_context(|context| async move {
         with_spog(context, Duration::from_secs(30), |context, port| async move {
             let response = reqwest::Client::new()
@@ -21,5 +21,7 @@ fn test_version() {
             let version: Value = response.json().await.unwrap();
             assert_eq!(version["name"], "spog-api");
         })
-    });
+        .await;
+    })
+    .await;
 }
