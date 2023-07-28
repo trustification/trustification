@@ -17,6 +17,8 @@ use derive_more::{Display, Error, From};
 use futures::TryStreamExt;
 use serde::Deserialize;
 use trustification_api::search::SearchOptions;
+use trustification_auth::authenticator::user::UserDetails;
+use trustification_auth::ROLE_MANAGER;
 use trustification_index::Error as IndexError;
 use trustification_storage::Error as StorageError;
 use utoipa::OpenApi;
@@ -219,6 +221,8 @@ async fn search_sbom(
     request_body(content = Value, description = "The SBOM to be uploaded", content_type = "application/json"),
     responses(
         (status = 200, description = "SBOM uploaded successfully"),
+        (status = 401, description = "User is not authenticated"),
+        (status = 403, description = "User is not allowed to perform operation"),
         (status = BAD_REQUEST, description = "Missing valid id"),
     ),
     params(
@@ -232,7 +236,10 @@ async fn publish_sbom(
     params: web::Query<IdentifierParams>,
     payload: web::Payload,
     content_type: Option<web::Header<ContentType>>,
+    user: UserDetails,
 ) -> actix_web::Result<impl Responder> {
+    user.require_role(ROLE_MANAGER)?;
+
     let typ = verify_type(content_type)?;
     let enc = verify_encoding(req.headers().get(CONTENT_ENCODING))?;
     let id = &params.id;
@@ -278,6 +285,8 @@ fn verify_encoding(content_encoding: Option<&HeaderValue>) -> Result<Option<&str
     path = "/api/v1/sbom",
     responses(
         (status = 204, description = "SBOM either deleted or nonexistent"),
+        (status = 401, description = "User is not authenticated"),
+        (status = 403, description = "User is not allowed to perform operation"),
         (status = BAD_REQUEST, description = "Missing id"),
     ),
     params(
@@ -288,7 +297,10 @@ fn verify_encoding(content_encoding: Option<&HeaderValue>) -> Result<Option<&str
 async fn delete_sbom(
     state: web::Data<SharedState>,
     params: web::Query<IdentifierParams>,
+    user: UserDetails,
 ) -> actix_web::Result<impl Responder> {
+    user.require_role(ROLE_MANAGER)?;
+
     let params = params.into_inner();
     let id = &params.id;
     log::trace!("Deleting SBOM using id {}", id);

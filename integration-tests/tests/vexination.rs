@@ -2,11 +2,12 @@ use integration_tests::{assert_within_timeout, with_test_context, with_vexinatio
 use reqwest::StatusCode;
 use serde_json::{Map, Value};
 use std::time::Duration;
+use trustification_auth::client::TokenInjector;
 
 #[tokio::test]
 async fn test_vexination() {
     with_test_context(|context| async move {
-        with_vexination(context, Duration::from_secs(60), |_context, port| async move {
+        with_vexination(context, Duration::from_secs(60), |context, port| async move {
             let client = reqwest::Client::new();
             let input = serde_json::from_str::<Map<String, Value>>(include_str!(
                 "../../vexination/testdata/rhsa-2023_1441.json"
@@ -15,6 +16,9 @@ async fn test_vexination() {
             let response = client
                 .post(format!("http://localhost:{port}/api/v1/vex"))
                 .json(&input)
+                .inject_token(&context.provider_manager)
+                .await
+                .unwrap()
                 .send()
                 .await
                 .unwrap();
@@ -26,6 +30,9 @@ async fn test_vexination() {
                     let response = client
                         .get(format!("http://localhost:{port}/api/v1/vex?advisory=RHSA-2023%3A1441"))
                         .header("Accept", "application/json")
+                        .inject_token(&context.provider_manager)
+                        .await
+                        .unwrap()
                         .send()
                         .await
                         .unwrap();
@@ -37,6 +44,9 @@ async fn test_vexination() {
                         // 2. Make sure we can search for the VEX (takes some time)
                         let response = client
                             .get(format!("http://localhost:{port}/api/v1/vex/search?q="))
+                            .inject_token(&context.provider_manager)
+                            .await
+                            .unwrap()
                             .send()
                             .await
                             .unwrap();

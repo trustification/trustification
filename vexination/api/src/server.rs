@@ -8,6 +8,8 @@ use actix_web::{
 };
 use serde::Deserialize;
 use trustification_api::search::SearchOptions;
+use trustification_auth::authenticator::user::UserDetails;
+use trustification_auth::ROLE_MANAGER;
 use trustification_storage::Storage;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
@@ -96,7 +98,14 @@ struct PublishParams {
     )
 )]
 #[route("/vex", method = "PUT", method = "POST")]
-async fn publish_vex(state: web::Data<SharedState>, params: web::Query<PublishParams>, data: Bytes) -> HttpResponse {
+async fn publish_vex(
+    state: web::Data<SharedState>,
+    params: web::Query<PublishParams>,
+    data: Bytes,
+    user: UserDetails,
+) -> actix_web::Result<HttpResponse> {
+    user.require_role(ROLE_MANAGER)?;
+
     let params = params.into_inner();
     let advisory = if let Some(advisory) = params.advisory {
         advisory.to_string()
@@ -105,14 +114,14 @@ async fn publish_vex(state: web::Data<SharedState>, params: web::Query<PublishPa
             Ok(data) => data.document.tracking.id,
             Err(e) => {
                 log::warn!("Unknown input format: {:?}", e);
-                return HttpResponse::BadRequest().into();
+                return Ok(HttpResponse::BadRequest().into());
             }
         }
     };
 
     let storage = state.storage.write().await;
     log::debug!("Storing new VEX with id: {advisory}");
-    match storage.put_json_slice(&advisory, &data).await {
+    Ok(match storage.put_json_slice(&advisory, &data).await {
         Ok(_) => {
             let msg = format!("VEX of size {} stored successfully", &data[..].len());
             log::trace!("{}", msg);
@@ -123,7 +132,7 @@ async fn publish_vex(state: web::Data<SharedState>, params: web::Query<PublishPa
             log::warn!("{}", msg);
             HttpResponse::InternalServerError().body(msg)
         }
-    }
+    })
 }
 
 /// Parameters for search query.
