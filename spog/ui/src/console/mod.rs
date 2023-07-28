@@ -170,6 +170,8 @@ fn render(route: AppRoute) -> Html {
         AppRoute::NotLoggedIn => return html!(<NonAuthenticatedPage><pages::NotLoggedIn/></NonAuthenticatedPage>),
 
         AppRoute::Index => html!(<pages::Index/>),
+        AppRoute::Search { terms } => html!(<pages::Search {terms} />),
+
         AppRoute::Chicken => html!(<pages::Chicken/>),
         AppRoute::Scanner => html!(<pages::Scanner/>),
 
