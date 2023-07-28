@@ -1,17 +1,17 @@
 //! Server side authentication (verification)
 
 mod claims;
-mod error;
-mod user;
 mod validate;
 
 #[cfg(feature = "actix")]
 pub mod actix;
 pub mod config;
+pub mod error;
+pub mod user;
 
 use claims::ExtendedClaims;
 use config::{AuthenticatorClientConfig, AuthenticatorConfig};
-use error::AuthenticatorError;
+use error::AuthenticationError;
 use futures_util::{stream, StreamExt, TryStreamExt};
 use openid::{biscuit::jws::Compact, Claims, Client, CompactJson, Configurable, Discovered, Empty, Jws};
 use std::ops::Deref;
@@ -53,10 +53,10 @@ impl Authenticator {
     fn find_client(
         &self,
         token: &Compact<ExtendedClaims, Empty>,
-    ) -> Result<Option<&AuthenticatorClient<ExtendedClaims>>, AuthenticatorError> {
+    ) -> Result<Option<&AuthenticatorClient<ExtendedClaims>>, AuthenticationError> {
         let unverified_payload = token.unverified_payload().map_err(|err| {
             log::info!("Failed to decode token payload: {}", err);
-            AuthenticatorError::Failed
+            AuthenticationError::Failed
         })?;
 
         let client_id = unverified_payload.standard_claims.azp.as_ref();
@@ -91,31 +91,31 @@ impl Authenticator {
 
     /// Validate a bearer token.
     #[instrument(level = "debug", skip_all, fields(token=token.as_ref()), ret)]
-    pub async fn validate_token<S: AsRef<str>>(&self, token: S) -> Result<ExtendedClaims, AuthenticatorError> {
+    pub async fn validate_token<S: AsRef<str>>(&self, token: S) -> Result<ExtendedClaims, AuthenticationError> {
         let mut token: Compact<ExtendedClaims, Empty> = Jws::new_encoded(token.as_ref());
 
         let client = self.find_client(&token)?.ok_or_else(|| {
             log::debug!("Unable to find client");
-            AuthenticatorError::Failed
+            AuthenticationError::Failed
         })?;
 
         log::debug!("Using client: {}", client.client_id);
 
         client.decode_token(&mut token).map_err(|err| {
             log::debug!("Failed to decode token: {}", err);
-            AuthenticatorError::Failed
+            AuthenticationError::Failed
         })?;
 
         log::debug!("Token: {:?}", token);
 
         validate::validate_token(client, &token, client.audience.as_deref(), None).map_err(|err| {
             log::debug!("Validation failed: {}", err);
-            AuthenticatorError::Failed
+            AuthenticationError::Failed
         })?;
 
         match token {
             Compact::Decoded { payload, .. } => Ok(payload),
-            Compact::Encoded(_) => Err(AuthenticatorError::Failed),
+            Compact::Encoded(_) => Err(AuthenticationError::Failed),
         }
     }
 }

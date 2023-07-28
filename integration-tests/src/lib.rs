@@ -1,11 +1,10 @@
 use core::future::Future;
 use reqwest::StatusCode;
-use std::ops::Deref;
 use std::sync::Arc;
 use std::{net::TcpListener, time::Duration};
 use tokio::{select, time::timeout};
 use trustification_auth::authenticator::config::{AuthenticatorConfig, SingleAuthenticatorClientConfig};
-use trustification_auth::client::{TokenInjector, TokenProvider};
+use trustification_auth::client::{OpenIdTokenProvider, TokenInjector, TokenProvider};
 use trustification_event_bus::{EventBusConfig, EventBusType};
 use trustification_index::IndexConfig;
 use trustification_infrastructure::InfrastructureConfig;
@@ -15,19 +14,12 @@ const STORAGE_ENDPOINT: &str = "http://localhost:9000";
 const KAFKA_BOOTSTRAP_SERVERS: &str = "localhost:9092";
 const SSO_ENDPOINT: &str = "http://localhost:8090/realms/chicken";
 
-/// Static client secret for testing, configured in `deploy/compose/container_files/init-sso/data/client-testing.json`
+/// Static client secret for testing, configured in `deploy/compose/container_files/init-sso/data/client-*.json`
 const SSO_TESTING_CLIENT_SECRET: &str = "R8A6KFeyxJsMDBhjfHbpZTIF0GWt43HP";
 
 pub struct TestingContext {
-    pub provider: Arc<dyn TokenProvider>,
-}
-
-impl Deref for TestingContext {
-    type Target = Arc<dyn TokenProvider>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.provider
-    }
+    pub provider_user: Arc<dyn TokenProvider>,
+    pub provider_manager: Arc<dyn TokenProvider>,
 }
 
 pub async fn with_bombastic<F, Fut>(context: TestingContext, timeout: Duration, test: F)
@@ -65,7 +57,7 @@ where
             loop {
                 let response = client
                     .get(format!("http://localhost:{port}/api/v1/sbom?id=none"))
-                    .inject_token(&context.provider).await.unwrap()
+                    .inject_token(&context.provider_user).await.unwrap()
                     .send()
                     .await
                     .unwrap();
@@ -122,7 +114,7 @@ where
             loop {
                 let response = client
                     .get(format!("http://localhost:{port}/api/v1/vex?advisory=none"))
-                    .inject_token(&context.provider).await.unwrap()
+                    .inject_token(&context.provider_user).await.unwrap()
                     .send()
                     .await
                     .unwrap();
@@ -172,7 +164,7 @@ where
                     loop {
                         let response = client
                             .get(format!("http://localhost:{port}/.well-known/trustification/version"))
-                            .inject_token(&context.provider).await.unwrap()
+                            .inject_token(&context.provider_user).await.unwrap()
                             .send()
                             .await
                             .unwrap();
@@ -259,7 +251,7 @@ fn bombastic_api() -> bombastic_api::Run {
             infrastructure_workers: 1,
             enable_tracing: false,
         },
-        publish_secret_token: None,
+        oidc: testing_oidc(),
     }
 }
 
@@ -316,7 +308,7 @@ fn vexination_api() -> vexination_api::Run {
             infrastructure_workers: 1,
             enable_tracing: false,
         },
-        publish_secret_token: None,
+        oidc: testing_oidc(),
     }
 }
 
@@ -336,13 +328,21 @@ fn spog_api(bport: u16, vport: u16) -> spog_api::Run {
             infrastructure_workers: 1,
             enable_tracing: false,
         },
-        odic: AuthenticatorConfig {
-            disabled: false,
-            clients: SingleAuthenticatorClientConfig {
-                client_ids: vec!["frontend".to_string(), "testing".to_string()],
-                issuer_url: SSO_ENDPOINT.to_string(),
-                ..Default::default()
-            },
+        oidc: testing_oidc(),
+    }
+}
+
+fn testing_oidc() -> AuthenticatorConfig {
+    AuthenticatorConfig {
+        disabled: false,
+        clients: SingleAuthenticatorClientConfig {
+            client_ids: vec![
+                "frontend".to_string(),
+                "testing-user".to_string(),
+                "testing-manager".to_string(),
+            ],
+            issuer_url: SSO_ENDPOINT.to_string(),
+            ..Default::default()
         },
     }
 }
@@ -352,8 +352,16 @@ where
     F: FnOnce(TestingContext) -> Fut + Send + 'static,
     Fut: Future<Output = ()>,
 {
-    let client = openid::Client::discover(
-        "testing".into(),
+    test(TestingContext {
+        provider_user: create_provider("testing-user").await,
+        provider_manager: create_provider("testing-manager").await,
+    })
+    .await;
+}
+
+async fn create_provider(client_id: &str) -> Arc<OpenIdTokenProvider> {
+    let client_user = openid::Client::discover(
+        client_id.into(),
         Some(SSO_TESTING_CLIENT_SECRET.to_string()),
         None,
         SSO_ENDPOINT.parse().unwrap(),
@@ -361,12 +369,9 @@ where
     .await
     .unwrap();
 
-    let provider = trustification_auth::client::OpenIdTokenProvider::new(client, chrono::Duration::seconds(10));
+    let provider = trustification_auth::client::OpenIdTokenProvider::new(client_user, chrono::Duration::seconds(10));
 
     println!("Initial access token: {:?}", provider.provide_access_token().await);
 
-    test(TestingContext {
-        provider: Arc::new(provider),
-    })
-    .await;
+    Arc::new(provider)
 }

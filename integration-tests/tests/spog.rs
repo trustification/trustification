@@ -10,7 +10,7 @@ async fn test_version() {
         with_spog(context, Duration::from_secs(30), |context, port| async move {
             let response = reqwest::Client::new()
                 .get(format!("http://localhost:{port}/.well-known/trustification/version"))
-                .inject_token(&context.provider)
+                .inject_token(&context.provider_user)
                 .await
                 .unwrap()
                 .send()

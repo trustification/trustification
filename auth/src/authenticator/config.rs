@@ -21,18 +21,23 @@ pub struct AuthenticatorConfig {
 /// A structure to configure multiple clients ID in a simple way
 #[derive(Clone, Debug, Default, PartialEq, Eq, clap::Args)]
 pub struct SingleAuthenticatorClientConfig {
+    /// The clients IDs to allow
     #[arg(long = "authentication-client-id", action = ArgAction::Append)]
     pub client_ids: Vec<String>,
 
+    /// The issuer URL of the clients.
     #[arg(long = "authentication-issuer-url", required = false)]
     pub issuer_url: String,
 
+    /// Enforce an "audience" to he present in the access token
     #[arg(long = "authentication-required-audience")]
     pub required_audience: Option<String>,
 
+    /// Allow insecure TLS connections with the SSO server (this is insecure!)
     #[arg(default_value_t = false, long = "authentication-tls-insecure")]
     pub tls_insecure: bool,
 
+    /// Enable additional TLS certificates for communication with the SSO server
     #[arg(long = "authentication-tls-certificate", action = ArgAction::Append)]
     pub tls_ca_certificates: Vec<PathBuf>,
 }

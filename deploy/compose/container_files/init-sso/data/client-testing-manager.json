@@ -1,5 +1,5 @@
 {
-  "clientId": "testing",
+  "clientId": "testing-manager",
   "clientAuthenticatorType": "client-secret",
   "secret" : "R8A6KFeyxJsMDBhjfHbpZTIF0GWt43HP",
   "enabled": true,
@@ -9,9 +9,6 @@
   "directAccessGrantsEnabled": false,
   "serviceAccountsEnabled": true,
   "fullScopeAllowed": true,
-  "webOrigins": [
-    "*"
-  ],
   "defaultClientScopes": [
     "email",
     "profile",
@@ -25,7 +22,8 @@
     "phone"
   ],
   "defaultRoles": [
-    "chicken-user"
+    "chicken-user",
+    "chicken-manager"
   ],
   "attributes": {
     "access.token.lifespan": "300",

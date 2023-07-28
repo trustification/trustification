@@ -1263,6 +1263,7 @@ dependencies = [
 name = "bombastic-api"
 version = "0.1.0"
 dependencies = [
+ "actix-cors",
  "actix-web",
  "actix-web-httpauth",
  "actix-web-prom",
@@ -1283,6 +1284,7 @@ dependencies = [
  "sha2 0.10.7",
  "tokio",
  "trustification-api",
+ "trustification-auth",
  "trustification-index",
  "trustification-infrastructure",
  "trustification-storage",
@@ -7200,6 +7202,7 @@ dependencies = [
 name = "vexination-api"
 version = "0.1.0"
 dependencies = [
+ "actix-cors",
  "actix-web",
  "actix-web-httpauth",
  "actix-web-prom",
@@ -7216,6 +7219,7 @@ dependencies = [
  "sha2 0.10.7",
  "tokio",
  "trustification-api",
+ "trustification-auth",
  "trustification-index",
  "trustification-infrastructure",
  "trustification-storage",

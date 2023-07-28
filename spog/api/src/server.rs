@@ -73,8 +73,9 @@ impl Server {
         }
 
         let mut srv = HttpServer::new(move || {
-            let http_metrics = http_metrics.clone();
             let state = state.clone();
+
+            let http_metrics = http_metrics.clone();
             let cors = Cors::permissive();
             let authenticator = authenticator.clone();
 
