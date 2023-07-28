@@ -2,6 +2,7 @@ use core::future::Future;
 use reqwest::StatusCode;
 use std::{net::TcpListener, thread, time::Duration};
 use tokio::{select, task::LocalSet, time::timeout};
+use trustification_auth::config::AuthenticatorConfig;
 use trustification_event_bus::{EventBusConfig, EventBusType};
 use trustification_index::IndexConfig;
 use trustification_infrastructure::InfrastructureConfig;
@@ -322,6 +323,10 @@ fn spog_api(bport: u16, vport: u16) -> spog_api::Run {
             infrastructure_bind: "127.0.0.1".into(),
             infrastructure_workers: 1,
             enable_tracing: false,
+        },
+        oidc: AuthenticatorConfig {
+            disabled: true,
+            ..Default::default()
         },
     }
 }
