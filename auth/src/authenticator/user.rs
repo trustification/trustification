@@ -10,6 +10,8 @@ use crate::authenticator::error::{AuthenticationError, AuthorizationError};
 ///
 /// ```rust
 /// # use actix_web::post;
+/// # use actix_web::Responder;
+/// use trustification_auth::authenticator::user::UserDetails;
 ///
 /// #[post("/api")]
 /// async fn perform_operation(
