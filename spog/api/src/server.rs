@@ -9,6 +9,7 @@ use prometheus::Registry;
 use spog_model::search;
 use trustification_api::{search::SearchOptions, Apply};
 use trustification_auth::authenticator::Authenticator;
+use trustification_auth::client::{TokenInjector, TokenProvider};
 use trustification_infrastructure::app::{new_app, AppOptions};
 use trustification_version::version;
 use utoipa::OpenApi;
@@ -112,9 +113,17 @@ impl AppState {
     pub async fn get_sbom(
         &self,
         id: &str,
+        provider: &dyn TokenProvider,
     ) -> Result<impl futures::Stream<Item = reqwest::Result<bytes::Bytes>>, anyhow::Error> {
         let url = self.bombastic.join("/api/v1/sbom")?;
-        let response = self.client.get(url).query(&[("id", id)]).send().await?;
+        let response = self
+            .client
+            .get(url)
+            .query(&[("id", id)])
+            .inject_token(provider)
+            .await?
+            .send()
+            .await?;
         if response.status() == StatusCode::OK {
             Ok(response.bytes_stream())
         } else {
@@ -131,6 +140,7 @@ impl AppState {
         offset: usize,
         limit: usize,
         options: SearchOptions,
+        provider: &dyn TokenProvider,
     ) -> Result<bombastic_model::search::SearchResult, anyhow::Error> {
         let url = self.bombastic.join("/api/v1/sbom/search")?;
         let response = self
@@ -139,6 +149,8 @@ impl AppState {
             .query(&[("q", q)])
             .query(&[("offset", offset), ("limit", limit)])
             .apply(&options)
+            .inject_token(provider)
+            .await?
             .send()
             .await?;
         if response.status() == StatusCode::OK {
@@ -154,9 +166,17 @@ impl AppState {
     pub async fn get_vex(
         &self,
         id: &str,
+        provider: &dyn TokenProvider,
     ) -> Result<impl futures::Stream<Item = reqwest::Result<bytes::Bytes>>, anyhow::Error> {
         let url = self.vexination.join("/api/v1/vex")?;
-        let response = self.client.get(url).query(&[("advisory", id)]).send().await?;
+        let response = self
+            .client
+            .get(url)
+            .query(&[("advisory", id)])
+            .inject_token(provider)
+            .await?
+            .send()
+            .await?;
         if response.status() == StatusCode::OK {
             Ok(response.bytes_stream())
         } else {
@@ -173,6 +193,7 @@ impl AppState {
         offset: usize,
         limit: usize,
         options: SearchOptions,
+        provider: &dyn TokenProvider,
     ) -> Result<vexination_model::search::SearchResult, anyhow::Error> {
         let url = self.vexination.join("/api/v1/vex/search")?;
         let response = self
@@ -181,6 +202,8 @@ impl AppState {
             .query(&[("q", q)])
             .query(&[("offset", offset), ("limit", limit)])
             .apply(&options)
+            .inject_token(provider)
+            .await?
             .send()
             .await?;
         if response.status() == StatusCode::OK {

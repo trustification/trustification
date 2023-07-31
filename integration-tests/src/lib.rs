@@ -14,8 +14,10 @@ use core::future::Future;
 use reqwest::StatusCode;
 use std::{net::TcpListener, time::Duration};
 use tokio::{select, time::timeout};
-use trustification_auth::authenticator::config::{AuthenticatorConfig, SingleAuthenticatorClientConfig};
-use trustification_auth::client::TokenInjector;
+use trustification_auth::{
+    authenticator::config::{AuthenticatorConfig, SingleAuthenticatorClientConfig},
+    client::TokenInjector,
+};
 use trustification_event_bus::{EventBusConfig, EventBusType};
 use trustification_index::IndexConfig;
 use trustification_infrastructure::InfrastructureConfig;
