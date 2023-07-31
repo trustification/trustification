@@ -16,7 +16,7 @@ use crate::authenticator::error::{AuthenticationError, AuthorizationError};
 /// #[post("/api")]
 /// async fn perform_operation(
 ///     user: UserDetails,
-/// ) -> actix_web::Result<impl Responder> {
+/// ) -> impl Responder {
 ///   // [...]
 ///   "Hello World"
 /// }
