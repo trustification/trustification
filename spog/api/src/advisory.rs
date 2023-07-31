@@ -1,4 +1,5 @@
 use actix_web::{web, web::ServiceConfig, HttpResponse, Responder};
+use actix_web_httpauth::extractors::bearer::BearerAuth;
 use http::header;
 use log::{info, trace, warn};
 use spog_model::search::{AdvisorySummary, SearchResult};
@@ -18,6 +19,7 @@ pub(crate) fn configure() -> impl FnOnce(&mut ServiceConfig) {
 #[derive(Debug, serde::Deserialize)]
 pub struct GetParams {
     pub id: String,
+    pub token: Option<String>,
 }
 
 #[utoipa::path(
@@ -31,17 +33,22 @@ pub struct GetParams {
         ("id" = String, Path, description = "Id of advisory to fetch"),
     )
 )]
-pub async fn get(state: web::Data<SharedState>, params: web::Query<GetParams>) -> impl Responder {
-    match state.get_vex(&params.id).await {
+pub async fn get(
+    state: web::Data<SharedState>,
+    web::Query(GetParams { token, id }): web::Query<GetParams>,
+    access_token: Option<BearerAuth>,
+) -> impl Responder {
+    let token = token.or_else(|| access_token.map(|s| s.token().to_string()));
+    match state.get_vex(&id, &token).await {
         Ok(stream) => {
             // TODO: should check the content type, but assume JSON for now
-            let value = format!(r#"attachment; filename="{}.json""#, params.id);
+            let value = format!(r#"attachment; filename="{}.json""#, id);
             HttpResponse::Ok()
                 .append_header((header::CONTENT_DISPOSITION, value))
                 .streaming(stream)
         }
         Err(e) => {
-            warn!("Unable to locate object with key {}: {:?}", params.id, e);
+            warn!("Unable to locate object with key {}: {:?}", id, e);
             HttpResponse::NotFound().finish()
         }
     }
@@ -63,6 +70,7 @@ pub async fn search(
     state: web::Data<SharedState>,
     params: web::Query<QueryParams>,
     options: web::Query<SearchOptions>,
+    access_token: Option<BearerAuth>,
 ) -> impl Responder {
     let params = params.into_inner();
     trace!("Querying VEX using {}", params.q);
@@ -72,6 +80,7 @@ pub async fn search(
             params.offset,
             params.limit.min(MAX_LIMIT),
             options.into_inner(),
+            &access_token,
         )
         .await;
 

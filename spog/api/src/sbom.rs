@@ -1,8 +1,10 @@
 use actix_web::{web, web::ServiceConfig, HttpResponse, Responder};
+use actix_web_httpauth::extractors::bearer::BearerAuth;
 use http::header;
 use log::{debug, trace, warn};
 use spog_model::search::{PackageSummary, SearchResult};
 use trustification_api::search::SearchOptions;
+use trustification_auth::client::TokenProvider;
 
 use crate::{search, server::SharedState};
 
@@ -16,6 +18,7 @@ pub(crate) fn configure() -> impl FnOnce(&mut ServiceConfig) {
 #[derive(Debug, serde::Deserialize)]
 pub struct GetParams {
     pub id: String,
+    pub token: Option<String>,
 }
 
 #[utoipa::path(
@@ -29,12 +32,16 @@ pub struct GetParams {
         ("id" = String, Path, description = "Id of package to fetch"),
     )
 )]
-pub async fn get(state: web::Data<SharedState>, params: web::Query<GetParams>) -> impl Responder {
-    let params = params.into_inner();
-    match state.get_sbom(&params.id).await {
+pub async fn get(
+    state: web::Data<SharedState>,
+    web::Query(GetParams { id, token }): web::Query<GetParams>,
+    access_token: Option<BearerAuth>,
+) -> impl Responder {
+    let token = token.or_else(|| access_token.map(|s| s.token().to_string()));
+    match state.get_sbom(&id, &token).await {
         Ok(response) => {
             // TODO: should check the content type, but assume JSON for now
-            let value = format!(r#"attachment; filename="{}.json""#, params.id);
+            let value = format!(r#"attachment; filename="{}.json""#, id);
             HttpResponse::Ok()
                 .append_header((header::CONTENT_DISPOSITION, value))
                 .streaming(response)
@@ -62,11 +69,18 @@ pub async fn search(
     state: web::Data<SharedState>,
     params: web::Query<search::QueryParams>,
     options: web::Query<SearchOptions>,
+    access_token: Option<BearerAuth>,
 ) -> HttpResponse {
     let params = params.into_inner();
     trace!("Querying SBOM using {}", params.q);
     match state
-        .search_sbom(&params.q, params.offset, params.limit, options.into_inner())
+        .search_sbom(
+            &params.q,
+            params.offset,
+            params.limit,
+            options.into_inner(),
+            &access_token,
+        )
         .await
     {
         Ok(data) => {
@@ -100,7 +114,7 @@ pub async fn search(
             };
 
             // TODO: Use guac to lookup advisories for each package!
-            search_advisories(state, &mut result.result).await;
+            search_advisories(state, &mut result.result, &access_token).await;
             debug!("Search result: {:?}", result);
             HttpResponse::Ok().json(result)
         }
@@ -111,10 +125,14 @@ pub async fn search(
     }
 }
 
-async fn search_advisories(state: web::Data<SharedState>, packages: &mut Vec<PackageSummary>) {
+async fn search_advisories(
+    state: web::Data<SharedState>,
+    packages: &mut Vec<PackageSummary>,
+    provider: &dyn TokenProvider,
+) {
     for package in packages {
         let q = format!("fixed:\"{}\"", package.name);
-        if let Ok(result) = state.search_vex(&q, 0, 1000, Default::default()).await {
+        if let Ok(result) = state.search_vex(&q, 0, 1000, Default::default(), provider).await {
             for summary in result.result {
                 let summary = summary.document;
                 package.advisories.push(summary.advisory_id);
