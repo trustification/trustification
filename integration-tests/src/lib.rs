@@ -162,6 +162,7 @@ fn spog_api(bport: u16, vport: u16) -> spog_api::Run {
         sync_interval_seconds: 10,
         bombastic_url: format!("http://localhost:{bport}").parse().unwrap(),
         vexination_url: format!("http://localhost:{vport}").parse().unwrap(),
+        crda_url: option_env!("CRDA_URL").map(|url| url.parse().unwrap()),
         config: None,
         infra: InfrastructureConfig {
             infrastructure_enabled: false,

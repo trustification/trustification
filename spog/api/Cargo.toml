@@ -36,6 +36,7 @@ serde_yaml = "0.9"
 snyk = { git = "https://github.com/dejanb/snyk-rs.git", branch = "main" }
 thiserror = "1"
 tokio = { version = "*", features = ["rt", "fs", "macros", "rt-multi-thread"] }
+url = "2"
 urlencoding = "2.1.2"
 utoipa = { version = "3", features = ["actix_extras"] }
 utoipa-swagger-ui = { version = "3", features = ["actix-web"] }

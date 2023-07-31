@@ -75,3 +75,32 @@ async fn test_search_forward_vexination(context: &mut SpogContext) {
     let data: Value = response.json().await.unwrap();
     println!("{data:#?}");
 }
+
+#[test_context(SpogContext)]
+#[tokio::test]
+#[ntest::timeout(60_000)]
+async fn test_crda_integration(context: &mut SpogContext) {
+    let client = reqwest::Client::new();
+
+    let sbom = include_bytes!("crda/test1.sbom.json");
+
+    let response = client
+        .post(format!(
+            "http://localhost:{port}/api/v1/crda/report",
+            port = context.port
+        ))
+        .inject_token(&context.provider.provider_user)
+        .await
+        .unwrap()
+        .body(sbom.as_slice())
+        .send()
+        .await
+        .unwrap();
+
+    let status = response.status();
+    println!("Response: {}", status);
+    let data: Value = response.json().await.unwrap();
+    println!("{data:#?}");
+
+    assert_eq!(status, StatusCode::OK);
+}

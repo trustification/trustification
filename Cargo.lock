@@ -1282,6 +1282,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2 0.10.7",
+ "thiserror",
  "tokio",
  "trustification-api",
  "trustification-auth",
@@ -1320,6 +1321,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "bombastic-index",
+ "bombastic-model",
  "clap",
  "futures",
  "hex",
@@ -1340,9 +1342,12 @@ dependencies = [
 name = "bombastic-model"
 version = "0.1.0"
 dependencies = [
+ "cyclonedx-bom",
+ "log",
  "serde",
  "serde_json",
  "sikula",
+ "spdx-rs",
  "time 0.3.23",
  "urlencoding",
  "utoipa",
@@ -5818,6 +5823,7 @@ dependencies = [
  "trustification-auth",
  "trustification-infrastructure",
  "trustification-version",
+ "url",
  "urlencoding",
  "utoipa",
  "utoipa-swagger-ui",

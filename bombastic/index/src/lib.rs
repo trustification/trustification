@@ -53,25 +53,6 @@ pub struct PackageFields {
     purl_qualifiers_values: Field,
 }
 
-pub enum SBOM {
-    CycloneDX(cyclonedx_bom::prelude::Bom),
-    SPDX(spdx_rs::models::SPDX),
-}
-
-impl SBOM {
-    pub fn parse(data: &[u8]) -> Result<Self, serde_json::Error> {
-        if let Ok(bom) = cyclonedx_bom::prelude::Bom::parse_from_json_v1_3(data) {
-            Ok(SBOM::CycloneDX(bom))
-        } else {
-            let spdx = serde_json::from_slice::<spdx_rs::models::SPDX>(data).map_err(|e| {
-                warn!("Error parsing SPDX: {:?}", e);
-                e
-            })?;
-            Ok(SBOM::SPDX(spdx))
-        }
-    }
-}
-
 struct Fields {
     sbom_id: Field,
     sbom_created: Field,
