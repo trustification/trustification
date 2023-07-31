@@ -7,11 +7,21 @@ license = "Apache-2.0"
 description = "The data model of the API"
 
 [dependencies]
-utoipa = { version = "3" }
+log = "0.4"
 serde = { version = "1", features = ["derive"] }
 sikula = { version = "0.4.0-alpha.3", features = ["time"] }
 time = { version = "0.3", features = ["serde"] }
+utoipa = { version = "3" }
 
 # required by ToSchema utopia
 serde_json = "1"
 urlencoding = "2"
+
+cyclonedx-bom = { version = "0.4.0", optional =  true }
+spdx-rs = { version = "0.5.2", optional = true }
+
+[features]
+default = ["spdx", "cyclonedx"]
+
+cyclonedx = ["cyclonedx-bom"]
+spdx = ["spdx-rs"]

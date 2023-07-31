@@ -154,9 +154,12 @@ dependencies = [
 name = "bombastic-model"
 version = "0.1.0"
 dependencies = [
+ "cyclonedx-bom",
+ "log",
  "serde",
  "serde_json",
  "sikula",
+ "spdx-rs",
  "time 0.3.23",
  "urlencoding",
  "utoipa",

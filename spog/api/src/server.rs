@@ -15,7 +15,8 @@ use trustification_version::version;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
-use crate::{advisory, config, index, sbom, Run};
+use crate::crda::CrdaClient;
+use crate::{advisory, config, crda, index, sbom, Run};
 
 pub struct Server {
     run: Run,
@@ -76,6 +77,8 @@ impl Server {
             log::warn!("Authentication is disabled");
         }
 
+        let crda = self.run.crda_url.map(|url| CrdaClient::new(url));
+
         let mut srv = HttpServer::new(move || {
             let state = state.clone();
 
@@ -83,7 +86,7 @@ impl Server {
             let cors = Cors::permissive();
             let authenticator = authenticator.clone();
 
-            new_app(AppOptions {
+            let mut app = new_app(AppOptions {
                 cors: Some(cors),
                 metrics: Some(http_metrics),
                 authenticator: authenticator.clone(),
@@ -94,8 +97,13 @@ impl Server {
             .configure(sbom::configure())
             .configure(advisory::configure())
             .configure(config_configurator.clone())
-            //.configure(crate::vulnerability::configure())
-            .service(SwaggerUi::new("/swagger-ui/{_:.*}").url("/openapi.json", openapi.clone()))
+            .service(SwaggerUi::new("/swagger-ui/{_:.*}").url("/openapi.json", openapi.clone()));
+
+            if let Some(crda) = &crda {
+                app = app.app_data(web::Data::new(crda.clone())).configure(crda::configure());
+            }
+
+            app
         });
         srv = match listener {
             Some(v) => srv.listen(v)?,

@@ -1,6 +1,7 @@
 use std::time::Duration;
 
 use bombastic_index::Index;
+use bombastic_model::data::SBOM;
 use futures::pin_mut;
 use tokio::select;
 use trustification_event_bus::EventBus;
@@ -44,7 +45,7 @@ pub async fn run(
                                             let key = data.key();
                                             match storage.get_for_event(&data).await {
                                                 Ok((k, data)) => {
-                                                    match bombastic_index::SBOM::parse(&data) {
+                                                    match SBOM::parse(&data) {
                                                         Ok(doc) => match writer.as_mut().unwrap().add_document(index.index_as_mut(), &k, &doc) {
                                                             Ok(_) => {
                                                                 log::trace!("Inserted entry into index");

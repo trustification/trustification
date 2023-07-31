@@ -10,6 +10,7 @@ mod advisory;
 mod index;
 //mod package;
 mod config;
+mod crda;
 mod sbom;
 mod search;
 mod server;
@@ -42,6 +43,9 @@ pub struct Run {
 
     #[arg(long = "vexination-url", default_value = "http://localhost:8081")]
     pub vexination_url: reqwest::Url,
+
+    #[arg(long = "crda-url", default_value = "http://localhost:8081")]
+    pub crda_url: Option<reqwest::Url>,
 
     /// Path to the UI configuration file, overriding the default configuration file.
     #[arg(short, long = "config", env = "SPOG_UI_CONFIG")]
