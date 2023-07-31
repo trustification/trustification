@@ -324,9 +324,5 @@ fn spog_api(bport: u16, vport: u16) -> spog_api::Run {
             infrastructure_workers: 1,
             enable_tracing: false,
         },
-        oidc: AuthenticatorConfig {
-            disabled: true,
-            ..Default::default()
-        },
     }
 }

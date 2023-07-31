@@ -20,7 +20,6 @@ vexination-indexer = { path = "../vexination/indexer" }
 
 spog-api = { path = "../spog/api" }
 
-trustification-auth = { path = "../auth" }
 trustification-event-bus = { path = "../event-bus" }
 trustification-infrastructure = { path = "../infrastructure" }
 trustification-storage = { path = "../storage" }
