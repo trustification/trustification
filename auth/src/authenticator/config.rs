@@ -22,23 +22,34 @@ pub struct AuthenticatorConfig {
 #[derive(Clone, Debug, Default, PartialEq, Eq, clap::Args)]
 pub struct SingleAuthenticatorClientConfig {
     /// The clients IDs to allow
-    #[arg(long = "authentication-client-id", action = ArgAction::Append)]
+    #[arg(env = "AUTHENTICATOR_OIDC_CLIENT_IDS", long = "authentication-client-id", action = ArgAction::Append)]
     pub client_ids: Vec<String>,
 
     /// The issuer URL of the clients.
-    #[arg(long = "authentication-issuer-url", required = false)]
+    #[arg(
+        env = "AUTHENTICATOR_OIDC_ISSUER_URL",
+        long = "authentication-issuer-url",
+        required = false
+    )]
     pub issuer_url: String,
 
     /// Enforce an "audience" to he present in the access token
-    #[arg(long = "authentication-required-audience")]
+    #[arg(
+        env = "AUTHENTICATOR_OIDC_REQUIRED_AUDIENCE",
+        long = "authentication-required-audience"
+    )]
     pub required_audience: Option<String>,
 
     /// Allow insecure TLS connections with the SSO server (this is insecure!)
-    #[arg(default_value_t = false, long = "authentication-tls-insecure")]
+    #[arg(
+        env = "AUTHENTICATOR_OIDC_TLS_INSECURE",
+        default_value_t = false,
+        long = "authentication-tls-insecure"
+    )]
     pub tls_insecure: bool,
 
     /// Enable additional TLS certificates for communication with the SSO server
-    #[arg(long = "authentication-tls-certificate", action = ArgAction::Append)]
+    #[arg(env= "AUTHENTICATOR_OIDC_TLS_CA_CERTIFICATES", long = "authentication-tls-certificate", action = ArgAction::Append)]
     pub tls_ca_certificates: Vec<PathBuf>,
 }
 
