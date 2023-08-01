@@ -67,7 +67,10 @@ impl Server {
 
         let config_configurator = config::configurator(self.run.config).await?;
 
-        let authenticator: Option<Arc<Authenticator>> = Authenticator::from_config(self.run.oidc).await?.map(Arc::new);
+        let authenticator: Option<Arc<Authenticator>> =
+            Authenticator::from_devmode_or_config(self.run.devmode, self.run.oidc)
+                .await?
+                .map(Arc::new);
 
         if authenticator.is_none() {
             log::warn!("Authentication is disabled");
