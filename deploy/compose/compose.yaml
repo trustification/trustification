@@ -72,7 +72,7 @@ services:
       retries: 10
 
   keycloak:
-    image: quay.io/keycloak/keycloak:22.0.0
+    image: quay.io/keycloak/keycloak:20.0.0
     command: start-dev
     environment:
       - KEYCLOAK_DB=dev-file
@@ -83,20 +83,20 @@ services:
     expose:
       - "8080"
     # FIXME: unable to define a health check: https://github.com/keycloak/keycloak/issues/21941
-    #healthcheck:
-    #  test: ["CMD", "curl", "-f", "http://localhost:8080"]
-    #  interval: 10s
-    #  timeout: 5s
-    #  retries: 5
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   init-keycloak:
-    image: quay.io/keycloak/keycloak:22.0.0
+    image: quay.io/keycloak/keycloak:20.0.0
     depends_on:
-      - keycloak
-      # keycloak:
+      # - keycloak
+      keycloak:
+        condition: service_healthy
       # FIXME: broken in podman: https://github.com/containers/podman-compose/issues/575
       # FIXME: even it that works, keycloak has issues too: https://github.com/keycloak/keycloak/issues/21941
-      #   condition: service_healthy
     environment:
       - KEYCLOAK_URL=http://keycloak:8080
       - KCADM_PATH=/opt/keycloak/bin/kcadm.sh
@@ -108,6 +108,6 @@ services:
       - CHICKEN_ADMIN_PASSWORD=admin123456
       - REDIRECT_URIS=["http://localhost:*"]
     volumes:
-      - ./container_files/init-sso:/init-sso:z
+      - ./container_files/init-sso:/init-sso
     entrypoint: /usr/bin/bash
     command: /init-sso/init.sh
