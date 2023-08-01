@@ -1,4 +1,4 @@
-use integration_tests::{assert_within_timeout, BombasticContext, upload_sbom};
+use integration_tests::{assert_within_timeout, upload_sbom, BombasticContext};
 use reqwest::StatusCode;
 use serde_json::{json, Value};
 use std::time::Duration;
