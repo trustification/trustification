@@ -73,7 +73,7 @@ fn bombastic_api() -> bombastic_api::Run {
     bombastic_api::Run {
         bind: "127.0.0.1".to_string(),
         port: 8082,
-        devmode: true,
+        devmode: false,
         index: IndexConfig {
             index: None,
             sync_interval: Duration::from_secs(2).into(),
@@ -130,7 +130,7 @@ fn vexination_api() -> vexination_api::Run {
     vexination_api::Run {
         bind: "127.0.0.1".to_string(),
         port: 8081,
-        devmode: true,
+        devmode: false,
         index: IndexConfig {
             index: None,
             sync_interval: Duration::from_secs(2).into(),
