@@ -7,13 +7,32 @@ pub use self::openid::*;
 use super::error::Error;
 use actix_web_httpauth::extractors::bearer::BearerAuth;
 use async_trait::async_trait;
+use base64::{prelude::BASE64_STANDARD, write::EncoderStringWriter};
 use std::fmt::Debug;
+use std::io::Write;
 use std::sync::Arc;
 
 #[derive(Clone, Debug)]
 pub enum Credentials {
     Bearer(String),
     Basic(String, Option<String>),
+}
+
+impl Credentials {
+    /// Turn this into a value suitable for an `Authorization` header
+    pub fn to_authorization_value(&self) -> String {
+        match self {
+            Self::Bearer(token) => format!("Bearer {token}"),
+            Self::Basic(username, password) => {
+                let mut encoder = EncoderStringWriter::new(&BASE64_STANDARD);
+                let _ = write!(encoder, "{}:", username);
+                if let Some(password) = password {
+                    let _ = write!(encoder, "{}", password);
+                }
+                encoder.into_inner()
+            }
+        }
+    }
 }
 
 /// A provider for access credentials (mostly access tokens).

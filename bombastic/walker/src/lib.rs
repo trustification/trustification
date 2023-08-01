@@ -3,6 +3,9 @@ use std::process::ExitCode;
 use crate::changes::ChangeTracker;
 use crate::shell_wrap::ScriptContext;
 use clap::{arg, command, Args};
+use trustification_auth::client::{
+    OpenIdTokenProvider, OpenIdTokenProviderConfig, OpenIdTokenProviderConfigArguments, TokenProvider,
+};
 use trustification_infrastructure::{Infrastructure, InfrastructureConfig};
 use url::Url;
 
@@ -37,13 +40,13 @@ pub struct WalkerConfig {
     #[arg(long = "bombastic-url")]
     pub(crate) bombastic: Url,
 
-    /// Bombastic key
-    #[arg(env, long = "bombastic-key")]
-    pub(crate) bombastic_key: Option<String>,
-
     /// SBOMs index URL
     #[arg(long = "changes-url")]
     pub(crate) index_source: Option<Url>,
+
+    /// OIDC client
+    #[command(flatten)]
+    pub(crate) oidc: OpenIdTokenProviderConfigArguments,
 }
 
 const CHANGE_ADDRESS: &str = "https://access.redhat.com/security/data/sbom/beta/changes.csv";
@@ -52,6 +55,11 @@ impl Run {
     pub async fn run(self) -> anyhow::Result<ExitCode> {
         Infrastructure::from(self.infra)
             .run("bombastic-walker", |_| async move {
+                let provider = match OpenIdTokenProviderConfig::from_args(self.config.oidc.clone()) {
+                    Some(oidc) => Some(OpenIdTokenProvider::with_config(oidc).await?),
+                    None => None,
+                };
+
                 let source = self
                     .config
                     .index_source
@@ -73,10 +81,10 @@ impl Run {
                     loop {
                         interval.tick().await;
 
-                        Self::call_script(&self.config, watcher.update().await?, &source);
+                        Self::call_script(&self.config, &provider, watcher.update().await?, &source).await?;
                     }
                 } else {
-                    Self::call_script(&self.config, watcher.update().await?, &source);
+                    Self::call_script(&self.config, &provider, watcher.update().await?, &source).await?;
                 }
                 Ok(())
             })
@@ -85,18 +93,27 @@ impl Run {
         Ok(ExitCode::SUCCESS)
     }
 
-    fn call_script(config: &WalkerConfig, entries: Vec<String>, sbom_path: &Url) {
+    async fn call_script<TP: TokenProvider>(
+        config: &WalkerConfig,
+        provider: &Option<TP>,
+        entries: Vec<String>,
+        sbom_path: &Url,
+    ) -> anyhow::Result<()> {
         for entry in entries {
             let mut sbom_path = sbom_path.clone();
             // craft the url to the SBOM file
             sbom_path.path_segments_mut().unwrap().extend(entry.split('/'));
 
+            let access_token = provider.provide_access_token().await?;
+
             config
                 .script_context
-                .bombastic_upload(&sbom_path, &config.bombastic, &config.bombastic_key);
+                .bombastic_upload(&sbom_path, &config.bombastic, access_token);
 
             // cleanup the url for the next run
             sbom_path.path_segments_mut().unwrap().pop().pop();
         }
+
+        Ok(())
     }
 }

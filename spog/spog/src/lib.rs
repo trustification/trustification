@@ -1,5 +1,6 @@
 use std::process::ExitCode;
 
+/// Single Pane of Glass
 #[derive(clap::Subcommand, Debug)]
 pub enum Command {
     Api(spog_api::Run),
