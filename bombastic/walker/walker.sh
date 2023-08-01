@@ -32,7 +32,7 @@ help()
 }
 
 # Get the options
-while getopts ":hk:w:" option; do
+while getopts ":hk:w:A:" option; do
    case $option in
       h) # display Help
          help
@@ -40,6 +40,9 @@ while getopts ":hk:w:" option; do
          ;;
       k) # specify API key
          AUTHZ="Authorization: Bearer $OPTARG"
+         ;;
+      A) # full authorization header
+         AUTHZ="Authorization: $OPTARG"
          ;;
       w) # specify work dir
          WORKDIR=$OPTARG

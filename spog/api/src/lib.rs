@@ -18,6 +18,7 @@ mod server;
 
 pub const DEFAULT_CRDA_PAYLOAD_LIMIT: usize = 10 * 1024 * 1024;
 
+/// Run the API server
 #[derive(clap::Args, Debug)]
 #[command(
     about = "Run the api server",
