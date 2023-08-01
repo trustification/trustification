@@ -5,6 +5,7 @@ pub mod data {
 }
 
 mod access_token;
+mod analyze;
 mod config;
 mod pkg;
 mod sbom;
@@ -13,6 +14,7 @@ mod version;
 mod vuln;
 
 pub use access_token::*;
+pub use analyze::*;
 pub use config::*;
 pub use pkg::*;
 pub use sbom::*;

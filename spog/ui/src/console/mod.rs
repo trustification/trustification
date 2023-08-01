@@ -170,6 +170,8 @@ fn render(route: AppRoute) -> Html {
 
         AppRoute::Index => html!(<pages::Index/>),
         AppRoute::Chicken => html!(<pages::Chicken/>),
+        AppRoute::Scanner => html!(<pages::Scanner/>),
+
         AppRoute::Package(View::Search { query }) => html!(<pages::Package {query} />),
         AppRoute::Package(View::Content { id }) => html!(<pages::SBOM {id} />),
         AppRoute::Advisory(View::Search { query }) => html!(<pages::Advisory {query} />),

@@ -86,7 +86,7 @@ async fn test_crda_integration(context: &mut SpogContext) {
 
     let response = client
         .post(format!(
-            "http://localhost:{port}/api/v1/crda/report",
+            "http://localhost:{port}/api/v1/analyze/report",
             port = context.port
         ))
         .inject_token(&context.provider.provider_user)
@@ -99,8 +99,8 @@ async fn test_crda_integration(context: &mut SpogContext) {
 
     let status = response.status();
     println!("Response: {}", status);
-    let data: Value = response.json().await.unwrap();
-    println!("{data:#?}");
+    let html = response.text().await;
+    println!("{html:#?}");
 
     assert_eq!(status, StatusCode::OK);
 }

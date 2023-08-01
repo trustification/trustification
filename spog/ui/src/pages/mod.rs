@@ -9,6 +9,7 @@ mod not_found;
 mod not_logged_in;
 mod package;
 mod sbom;
+mod scanner;
 mod vex;
 
 pub use advisory::*;
@@ -18,6 +19,7 @@ pub use not_found::*;
 pub use not_logged_in::*;
 pub use package::Package;
 pub use sbom::*;
+pub use scanner::*;
 pub use vex::*;
 
 #[derive(Clone, Debug, PartialEq, Eq, Target)]
@@ -28,6 +30,7 @@ pub enum AppRoute {
     Chicken,
     Package(View),
     Advisory(View),
+    Scanner,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Target)]

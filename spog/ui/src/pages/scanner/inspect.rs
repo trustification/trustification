@@ -5,7 +5,7 @@ use super::{
 use crate::{
     backend::PackageService,
     components::{count_title, deps::PackageReferences, error::Error},
-    hooks::use_backend::use_backend,
+    hooks::use_backend,
 };
 use cyclonedx_bom::prelude::Bom;
 use packageurl::PackageUrl;
@@ -59,14 +59,6 @@ pub fn inspect(props: &InspectProperties) -> Html {
         )
     };
 
-    let unknown = use_memo(
-        |(f, bom)| match f {
-            Some(data) => into_unknown(&bom, data),
-            None => vec![],
-        },
-        (fetch.data().cloned(), props.bom.clone()),
-    );
-
     match &*fetch {
         UseAsyncState::Pending | UseAsyncState::Processing => html!(
             <PageSection fill={PageSectionFill::Fill}>
@@ -79,8 +71,7 @@ pub fn inspect(props: &InspectProperties) -> Html {
 
                 <PageSection r#type={PageSectionType::Tabs} variant={PageSectionVariant::Light} sticky={[PageSectionSticky::Top]}>
                     <Tabs inset={TabInset::Page} detached=true {onselect}>
-                        <Tab label={count_title(data.len(), "Found", "Found")} />
-                        <Tab label={count_title(unknown.len(), "Unknown", "Unknown")} />
+                        <Tab label="Report" />
                         <Tab label="Raw SBOM"/>
                     </Tabs>
                 </PageSection>
@@ -89,11 +80,7 @@ pub fn inspect(props: &InspectProperties) -> Html {
                     <PackageReferences refs={data.0.clone()} />
                 </PageSection>
 
-                <PageSection hidden={*tab != 1} fill={PageSectionFill::Fill}>
-                    <UnknownPackages {unknown} />
-                </PageSection>
-
-                <PageSection hidden={*tab != 2} variant={PageSectionVariant::Light} fill={PageSectionFill::Fill}>
+                <PageSection hidden={*tab != 1} variant={PageSectionVariant::Light} fill={PageSectionFill::Fill}>
                     <CodeBlock>
                         <CodeBlockCode>
                             { &props.raw }
