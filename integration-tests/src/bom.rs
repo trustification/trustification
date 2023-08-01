@@ -72,6 +72,19 @@ pub async fn start_bombastic(provider: ProviderContext) -> BombasticContext {
     context
 }
 
+pub async fn upload_sbom(port: u16, key: &str, input: &serde_json::Value, context: &ProviderContext) {
+    let response = reqwest::Client::new()
+        .post(format!("http://localhost:{port}/api/v1/sbom?id={key}"))
+        .json(input)
+        .inject_token(&context.provider_manager)
+        .await
+        .unwrap()
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::CREATED);
+}
+
 #[async_trait]
 impl AsyncTestContext for BombasticContext {
     async fn setup() -> Self {

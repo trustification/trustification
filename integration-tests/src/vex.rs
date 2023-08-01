@@ -73,6 +73,19 @@ pub async fn start_vexination(provider: ProviderContext) -> VexinationContext {
     context
 }
 
+pub async fn upload_vex(port: u16, input: &serde_json::Value, context: &ProviderContext) {
+    let response = reqwest::Client::new()
+        .post(format!("http://localhost:{port}/api/v1/vex"))
+        .json(input)
+        .inject_token(&context.provider_manager)
+        .await
+        .unwrap()
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::CREATED);
+}
+
 #[async_trait]
 impl AsyncTestContext for VexinationContext {
     async fn setup() -> Self {
