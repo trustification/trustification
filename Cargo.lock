@@ -5819,6 +5819,7 @@ dependencies = [
  "spog-model",
  "thiserror",
  "tokio",
+ "tracing",
  "trustification-api",
  "trustification-auth",
  "trustification-infrastructure",

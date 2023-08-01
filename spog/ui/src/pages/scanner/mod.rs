@@ -1,8 +1,9 @@
 mod inspect;
-mod unknown;
+// mod unknown;
 mod upload;
 
 use crate::components::common::PageHeading;
+use bombastic_model::prelude::SBOM;
 use cyclonedx_bom::prelude::*;
 use inspect::Inspect;
 use patternfly_yew::prelude::*;
@@ -24,7 +25,7 @@ pub fn scanner() -> Html {
     let sbom = use_memo(
         |content| {
             content.as_ref().and_then(|data| {
-                Bom::parse_from_json_v1_3(data.as_bytes())
+                SBOM::parse(data.as_bytes())
                     .ok()
                     .map(|sbom| (Rc::new(data.clone()), Rc::new(sbom)))
             })
@@ -33,8 +34,8 @@ pub fn scanner() -> Html {
     );
 
     match sbom.as_ref() {
-        Some((raw, bom)) => {
-            html!(<Inspect raw={raw.clone()} bom={bom.clone()} />)
+        Some((raw, _bom)) => {
+            html!(<Inspect raw={raw.clone()} />)
         }
         None => {
             let onvalidate = Callback::from(|data: String| match Bom::parse_from_json_v1_3(data.as_bytes()) {

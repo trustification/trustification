@@ -1,4 +1,5 @@
 use actix_web::body::BoxBody;
+use actix_web::web::PayloadConfig;
 use actix_web::{
     web::{self, ServiceConfig},
     HttpResponse, ResponseError,
@@ -7,6 +8,7 @@ use bombastic_model::prelude::SBOM;
 use bytes::Bytes;
 use futures::Stream;
 use http::header;
+use tracing::instrument;
 use trustification_auth::authenticator::error::ErrorInformation;
 use url::Url;
 
@@ -51,9 +53,10 @@ impl CrdaClient {
         Self { client, url }
     }
 
+    #[instrument(skip(self, sbom), fields(sbom_size = sbom.as_bytes().map(|b|b.len())), err)]
     pub async fn analyze(
         &self,
-        sbom: impl Into<reqwest::Body>,
+        sbom: reqwest::Body,
         content_type: &str,
     ) -> Result<impl Stream<Item = reqwest::Result<Bytes>>, Error> {
         Ok(self
@@ -64,20 +67,28 @@ impl CrdaClient {
             .body(sbom)
             .send()
             .await?
-            .error_for_status()?
+            .error_for_status()
+            .map(|r| {
+                log::info!("CRDA response: {}", r.status());
+                r
+            })?
             .bytes_stream())
     }
 }
 
-pub(crate) fn configure() -> impl FnOnce(&mut ServiceConfig) {
-    |config: &mut ServiceConfig| {
-        config.service(web::resource("/api/v1/analyze/report").to(report));
+pub(crate) fn configure(payload_limit: usize) -> impl FnOnce(&mut ServiceConfig) {
+    move |config: &mut ServiceConfig| {
+        config.service(
+            web::resource("/api/v1/analyze/report")
+                .app_data(PayloadConfig::new(payload_limit))
+                .to(report),
+        );
     }
 }
 
 #[utoipa::path(
     post,
-    path = "/api/v1/crda/report",
+    path = "/api/v1/analyze/report",
     responses(
         (status = 200, description = "API", body = String),
     )
@@ -97,6 +108,6 @@ async fn run_report(data: Bytes, crda: &CrdaClient) -> Result<HttpResponse, Erro
 
     let r#type = "application/json";
 
-    let report = crda.analyze(data, r#type).await?;
+    let report = crda.analyze(data.into(), r#type).await?;
     Ok(HttpResponse::Ok().content_type("text/html").streaming(report))
 }

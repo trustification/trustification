@@ -52,10 +52,11 @@ fn authenticated_page(props: &ChildrenProperties) -> Html {
             <Nav>
                 <NavList>
                     <NavRouterItem<AppRoute> to={AppRoute::Index}>{ "Trusted Content" }</NavRouterItem<AppRoute>>
-                    <NavExpandable title="Search">
+                    <NavExpandable expanded=true title="Search">
                         <NavRouterItem<AppRoute> to={AppRoute::Package(Default::default())} predicate={AppRoute::is_package}>{ "Packages" }</NavRouterItem<AppRoute>>
                         <NavRouterItem<AppRoute> to={AppRoute::Advisory(Default::default())} predicate={AppRoute::is_advisory}>{ "Advisories" }</NavRouterItem<AppRoute>>
                     </NavExpandable>
+                    <NavRouterItem<AppRoute> to={AppRoute::Scanner}>{ "Scanner" }</NavRouterItem<AppRoute>>
                     <NavExpandable title="Extend">
                         if let Ok(url) = backend.join(Endpoint::Api, "/swagger-ui/") {
                             <ExternalNavLink href={url.to_string()}>{ "API" }</ExternalNavLink>

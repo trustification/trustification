@@ -82,6 +82,8 @@ pub fn advisory_search(props: &AdvisorySearchProperties) -> Html {
     let hidden = text.is_empty();
     let simple = search_params.is_simple();
 
+    let onchange = use_callback(|data, text| text.set(data), text.clone());
+
     html!(
         <>
 
@@ -106,7 +108,7 @@ pub fn advisory_search(props: &AdvisorySearchProperties) -> Html {
                                                     placeholder="Search"
                                                     value={(*text).clone()}
                                                     state={*filter_input_state}
-                                                    oninput={ Callback::from(move |data| text.set(data)) }
+                                                    {onchange}
                                                 />
 
                                                 if !hidden {

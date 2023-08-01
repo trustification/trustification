@@ -1,24 +1,15 @@
-use super::{
-    unknown::{into_unknown, UnknownPackages},
-    CommonHeader,
-};
-use crate::{
-    backend::PackageService,
-    components::{count_title, deps::PackageReferences, error::Error},
-    hooks::use_backend,
-};
-use cyclonedx_bom::prelude::Bom;
-use packageurl::PackageUrl;
+use super::CommonHeader;
+use crate::{backend::AnalyzeService, components::error::Error, hooks::use_backend};
 use patternfly_yew::prelude::*;
+use reqwest::Body;
 use std::rc::Rc;
-use std::str::FromStr;
 use yew::prelude::*;
 use yew_more_hooks::hooks::r#async::*;
+use yew_oauth2::hook::use_latest_access_token;
 
 #[derive(Clone, PartialEq, Properties)]
 pub struct InspectProperties {
     pub raw: Rc<String>,
-    pub bom: Rc<Bom>,
 }
 
 #[function_component(Inspect)]
@@ -31,31 +22,16 @@ pub fn inspect(props: &InspectProperties) -> Html {
         })
     };
 
-    let purls = use_memo(
-        |sbom| match &sbom.components {
-            Some(comps) => comps
-                .0
-                .iter()
-                .filter_map(|c| c.purl.as_ref().map(|p| p.to_string()))
-                .collect(),
-            None => vec![],
-        },
-        props.bom.clone(),
-    );
-
     let backend = use_backend();
-
-    let service = use_memo(|backend| PackageService::new((**backend).clone()), backend.clone());
+    let access_token = use_latest_access_token();
 
     let fetch = {
-        let service = service.clone();
         use_async_with_cloned_deps(
-            |purls| async move {
-                service
-                    .search(purls.iter().filter_map(|purl| PackageUrl::from_str(purl).ok()))
-                    .await
+            |raw| async move {
+                let service = AnalyzeService::new(backend, access_token);
+                service.report(Body::from((*raw).clone())).await
             },
-            purls.clone(),
+            props.raw.clone(),
         )
     };
 
@@ -77,7 +53,7 @@ pub fn inspect(props: &InspectProperties) -> Html {
                 </PageSection>
 
                 <PageSection hidden={*tab != 0} fill={PageSectionFill::Fill}>
-                    <PackageReferences refs={data.0.clone()} />
+                    { "Report goes here" }
                 </PageSection>
 
                 <PageSection hidden={*tab != 1} variant={PageSectionVariant::Light} fill={PageSectionFill::Fill}>
