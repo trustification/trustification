@@ -4,46 +4,62 @@ mod report;
 mod upload;
 
 use crate::components::common::PageHeading;
+use anyhow::bail;
 use bombastic_model::prelude::SBOM;
-use cyclonedx_bom::prelude::*;
 use inspect::Inspect;
 use patternfly_yew::prelude::*;
+use serde_json::Value;
 use std::rc::Rc;
 use upload::Upload;
 use yew::prelude::*;
 
+fn parse(data: &[u8]) -> Result<SBOM, anyhow::Error> {
+    let sbom = SBOM::parse(data)?;
+
+    match &sbom {
+        SBOM::CycloneDX(_bom) => {
+            // re-parse to check for the spec version
+            let json = serde_json::from_slice::<Value>(data).ok();
+            let spec_version = json.as_ref().and_then(|json| json["specVersion"].as_str());
+            match spec_version {
+                Some("1.3") => {}
+                Some(other) => bail!("Unsupported CycloneDX version: {other}"),
+                None => bail!("Unable to detect CycloneDX version"),
+            }
+        }
+        _ => {}
+    }
+
+    Ok(sbom)
+}
+
 #[function_component(Scanner)]
 pub fn scanner() -> Html {
-    let content = use_state_eq(|| None::<String>);
-
-    let onsubmit = {
-        let content = content.clone();
-        Callback::from(move |data| {
-            content.set(Some(data));
-        })
-    };
+    let content = use_state_eq(|| None::<Rc<String>>);
+    let onsubmit = use_callback(|data, content| content.set(Some(data)), content.clone());
 
     let sbom = use_memo(
         |content| {
-            content.as_ref().and_then(|data| {
-                SBOM::parse(data.as_bytes())
-                    .ok()
-                    .map(|sbom| (Rc::new(data.clone()), Rc::new(sbom)))
-            })
+            content
+                .as_ref()
+                .and_then(|data| parse(data.as_bytes()).ok().map(|sbom| (data.clone(), Rc::new(sbom))))
         },
         content.clone(),
     );
 
-    match sbom.as_ref() {
+    let onvalidate = use_callback(
+        |data: Rc<String>, ()| match parse(data.as_bytes()) {
+            Ok(_sbom) => Ok(data),
+            Err(err) => Err(format!("Failed to parse SBOM as CycloneDX 1.3: {err}")),
+        },
+        (),
+    );
+
+    match &*sbom {
         Some((raw, _bom)) => {
-            html!(<Inspect raw={raw.clone()} />)
+            html!(<Inspect raw={(*raw).clone()} />)
         }
         None => {
-            let onvalidate = Callback::from(|data: String| match Bom::parse_from_json_v1_3(data.as_bytes()) {
-                Ok(_sbom) => Ok(data),
-                Err(err) => Err(format!("Failed to parse SBOM: {err}")),
-            });
-
             html!(
                 <>
                     <CommonHeader />

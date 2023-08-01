@@ -1,4 +1,5 @@
 use patternfly_yew::prelude::*;
+use std::rc::Rc;
 use wasm_bindgen_futures::JsFuture;
 use yew::prelude::*;
 use yew_hooks::prelude::*;
@@ -8,8 +9,8 @@ use yew_more_hooks::hooks::r#async::{UseAsyncState, *};
 enum DropContent {
     None,
     Files(Vec<web_sys::File>),
-    Text(String),
-    Uri(String),
+    Text(Rc<String>),
+    Uri(Rc<String>),
 }
 
 impl From<String> for DropContent {
@@ -17,7 +18,7 @@ impl From<String> for DropContent {
         if value.is_empty() {
             Self::None
         } else {
-            Self::Text(value)
+            Self::Text(Rc::new(value))
         }
     }
 }
@@ -49,13 +50,13 @@ impl std::fmt::Display for DropContent {
 
 #[derive(Clone, PartialEq, Properties)]
 pub struct UploadProperties {
-    pub onsubmit: Callback<String>,
+    pub onsubmit: Callback<Rc<String>>,
     #[prop_or(default_validate())]
-    pub onvalidate: Callback<String, Result<String, String>>,
+    pub onvalidate: Callback<Rc<String>, Result<Rc<String>, String>>,
 }
 
-fn default_validate() -> Callback<String, Result<String, String>> {
-    Callback::from(|data| Ok(data))
+fn default_validate() -> Callback<Rc<String>, Result<Rc<String>, String>> {
+    Callback::from(Ok)
 }
 
 #[function_component(Upload)]
@@ -82,7 +83,7 @@ pub fn upload(props: &UploadProperties) -> Html {
             onuri: {
                 let drop_content = drop_content.clone();
                 Some(Box::new(move |uri, _data_transfer| {
-                    drop_content.set(DropContent::Uri(uri));
+                    drop_content.set(DropContent::Uri(Rc::new(uri)));
                 }))
             },
             ..Default::default()
@@ -99,7 +100,7 @@ pub fn upload(props: &UploadProperties) -> Html {
                             Ok(data) => content.push_str(&data.as_string().unwrap_or_default()),
                             Err(err) => {
                                 return Err((
-                                    String::new(),
+                                    Default::default(),
                                     format!(
                                         "Failed to receive content: {err}",
                                         err = err.as_string().unwrap_or_default()
@@ -108,16 +109,16 @@ pub fn upload(props: &UploadProperties) -> Html {
                             }
                         }
                     }
-                    content
+                    Rc::new(content)
                 }
-                DropContent::Text(text) => text.to_string(),
-                DropContent::Uri(uri) => uri.to_string(),
-                DropContent::None => "".to_string(),
+                DropContent::Text(text) => Rc::new(text.to_string()),
+                DropContent::Uri(uri) => Rc::new(uri.to_string()),
+                DropContent::None => Default::default(),
             };
 
             if content.is_empty() {
                 // return early if the content is empty
-                Err((String::new(), "Requires an SBOM".to_string()))
+                Err((Default::default(), "Requires an SBOM".to_string()))
             } else {
                 // return success, as validated JSON
                 onvalidate.emit(content.clone()).map_err(|err| (content, err))
@@ -138,14 +139,11 @@ pub fn upload(props: &UploadProperties) -> Html {
         .error()
         .map(|err| FormHelperText::from((err.1.to_string(), InputState::Error)));
     let state = helper_text.as_ref().map(|h| h.input_state).unwrap_or_default();
-    let content = use_memo(
-        |processing| match &**processing {
-            UseAsyncState::Ready(Ok(content)) => content.clone(),
-            UseAsyncState::Ready(Err((content, _))) => content.clone(),
-            _ => String::new(),
-        },
-        processing.clone(),
-    );
+    let content = match &*processing {
+        UseAsyncState::Ready(Ok(content)) => content.clone(),
+        UseAsyncState::Ready(Err((content, _))) => content.clone(),
+        _ => Default::default(),
+    };
 
     let onsubmit = use_callback(
         |_, (processing, onsubmit)| {
