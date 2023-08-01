@@ -61,7 +61,7 @@ impl CrdaClient {
     ) -> Result<impl Stream<Item = reqwest::Result<Bytes>>, Error> {
         Ok(self
             .client
-            .post(self.url.join("analysis")?)
+            .post(self.url.join("api/v3/analysis")?)
             .header(header::CONTENT_TYPE, content_type)
             .header(header::ACCEPT, "text/html")
             .body(sbom)
