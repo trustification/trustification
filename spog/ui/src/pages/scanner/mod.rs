@@ -16,6 +16,7 @@ use yew::prelude::*;
 fn parse(data: &[u8]) -> Result<SBOM, anyhow::Error> {
     let sbom = SBOM::parse(data)?;
 
+    #[allow(clippy::single_match)]
     match &sbom {
         SBOM::CycloneDX(_bom) => {
             // re-parse to check for the spec version

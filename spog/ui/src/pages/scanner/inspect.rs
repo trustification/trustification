@@ -24,10 +24,7 @@ pub fn inspect(props: &InspectProperties) -> Html {
         use_async_with_cloned_deps(
             |raw| async move {
                 let service = AnalyzeService::new(backend, access_token);
-                service
-                    .report(Body::from((*raw).clone()))
-                    .await
-                    .map(|data| Rc::new(data))
+                service.report(Body::from((*raw).clone())).await.map(Rc::new)
             },
             props.raw.clone(),
         )

@@ -77,7 +77,7 @@ impl Server {
             log::warn!("Authentication is disabled");
         }
 
-        let crda = self.run.crda_url.map(|url| CrdaClient::new(url));
+        let crda = self.run.crda_url.map(CrdaClient::new);
         let crda_payload_limit = self.run.crda_payload_limit;
 
         let mut srv = HttpServer::new(move || {
