@@ -76,6 +76,7 @@ async fn test_search_forward_vexination(context: &mut SpogContext) {
     println!("{data:#?}");
 }
 
+#[test_with::env(CRDA_URL)]
 #[test_context(SpogContext)]
 #[tokio::test]
 #[ntest::timeout(60_000)]
