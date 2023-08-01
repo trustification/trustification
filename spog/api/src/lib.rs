@@ -19,7 +19,11 @@ mod server;
 pub const DEFAULT_CRDA_PAYLOAD_LIMIT: usize = 10 * 1024 * 1024;
 
 #[derive(clap::Args, Debug)]
-#[command(about = "Run the api server", args_conflicts_with_subcommands = true)]
+#[command(
+    about = "Run the api server",
+    args_conflicts_with_subcommands = true,
+    rename_all_env = "SCREAMING_SNAKE_CASE"
+)]
 pub struct Run {
     #[command(flatten)]
     pub snyk: Snyk,
@@ -28,28 +32,28 @@ pub struct Run {
     #[arg(long = "devmode", default_value_t = false)]
     pub devmode: bool,
 
-    #[arg(short, long, default_value = "0.0.0.0")]
+    #[arg(short, long, env, default_value = "0.0.0.0")]
     pub bind: String,
 
-    #[arg(short = 'p', long = "port", default_value_t = 8080)]
+    #[arg(short = 'p', long = "port", env, default_value_t = 8080)]
     pub port: u16,
 
     #[arg(short = 'g', long = "guac", default_value = "http://localhost:8080/query")]
     pub guac_url: String,
 
-    #[arg(long = "sync-interval-seconds", default_value_t = 10)]
+    #[arg(long = "sync-interval-seconds", env, default_value_t = 10)]
     pub sync_interval_seconds: u64,
 
-    #[arg(long = "bombastic-url", default_value = "http://localhost:8082")]
+    #[arg(long = "bombastic-url", env, default_value = "http://localhost:8082")]
     pub bombastic_url: reqwest::Url,
 
-    #[arg(long = "vexination-url", default_value = "http://localhost:8081")]
+    #[arg(long = "vexination-url", env, default_value = "http://localhost:8081")]
     pub vexination_url: reqwest::Url,
 
-    #[arg(long = "crda-url", default_value = "http://localhost:8081")]
+    #[arg(long = "crda-url", env)]
     pub crda_url: Option<reqwest::Url>,
 
-    #[arg(long = "crda-payload-limit", default_value_t = DEFAULT_CRDA_PAYLOAD_LIMIT)]
+    #[arg(long = "crda-payload-limit", env, default_value_t = DEFAULT_CRDA_PAYLOAD_LIMIT)]
     pub crda_payload_limit: usize,
 
     /// Path to the UI configuration file, overriding the default configuration file.
