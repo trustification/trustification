@@ -20,7 +20,7 @@ Run a single instance of the Collectorist as we do, using the `trust` CLI after 
 The OSV collector is driven by the Collectorist. 
 It must be run with the collectorist URL specified, which defaults to the correct URL unless you're getting weird.
 
-    RUST_LOG=info ./target/debug/trust collectorist api
+    RUST_LOG=info ./target/debug/trust collector osv
 
 # What's going on?
 
@@ -37,7 +37,7 @@ If for instance it receives a gather request for 20 pURLs, and 19 are non-notabl
 
 # What needs to go on?
 
-Similar codepath should be invoked when an external party (such as CRDA) wants to know, for certain, everything knowablw about a given set of pURLs.
+Similar codepath should be invoked when an external party (such as CRDA) wants to know, for certain, everything know-able about a given set of pURLs.
 CRDA asks Exhort, which asks the Collectorist, which asks each collector, and *only returns and unwinds* when all collectors have completed their ingestioning.
 Then... exhort can ask GUAC everything it should pass back to CRDA.
 
