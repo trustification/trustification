@@ -100,13 +100,10 @@ async fn report(data: Bytes, crda: web::Data<CrdaClient>) -> actix_web::Result<H
 async fn run_report(data: Bytes, crda: &CrdaClient) -> Result<HttpResponse, Error> {
     let sbom = SBOM::parse(&data)?;
 
-    // FIXME: CRDA claims to request these, but in fact it must be `application/json` at the moment
-    let r#_type = match &sbom {
+    let r#type = match &sbom {
         SBOM::SPDX(_) => "application/vnd.spdx+json",
         SBOM::CycloneDX(_) => "application/vnd.cyclonedx+json",
     };
-
-    let r#type = "application/json";
 
     let report = crda.analyze(data.into(), r#type).await?;
     Ok(HttpResponse::Ok().content_type("text/html").streaming(report))
