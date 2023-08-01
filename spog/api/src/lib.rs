@@ -21,6 +21,10 @@ pub struct Run {
     #[command(flatten)]
     pub snyk: Snyk,
 
+    /// Enable developer mode
+    #[arg(long = "devmode", default_value_t = false)]
+    pub devmode: bool,
+
     #[arg(short, long, default_value = "0.0.0.0")]
     pub bind: String,
 

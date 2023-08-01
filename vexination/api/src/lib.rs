@@ -51,7 +51,9 @@ impl Run {
         let index = self.index;
         let storage = self.storage;
 
-        let authenticator: Option<Arc<Authenticator>> = Authenticator::from_config(self.oidc).await?.map(Arc::new);
+        let authenticator: Option<Arc<Authenticator>> = Authenticator::from_devmode_or_config(self.devmode, self.oidc)
+            .await?
+            .map(Arc::new);
 
         Infrastructure::from(self.infra)
             .run("vexination-api", |metrics| async move {

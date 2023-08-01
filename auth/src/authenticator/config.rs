@@ -18,6 +18,20 @@ pub struct AuthenticatorConfig {
     pub clients: SingleAuthenticatorClientConfig,
 }
 
+impl AuthenticatorConfig {
+    /// Create "devmode" configuration
+    pub fn devmode() -> Self {
+        AuthenticatorConfig {
+            disabled: false,
+            clients: SingleAuthenticatorClientConfig {
+                client_ids: vec!["frontend".to_string()],
+                issuer_url: "http://localhost:8090/realms/chicken".to_string(),
+                ..Default::default()
+            },
+        }
+    }
+}
+
 /// A structure to configure multiple clients ID in a simple way
 #[derive(Clone, Debug, Default, PartialEq, Eq, clap::Args)]
 pub struct SingleAuthenticatorClientConfig {
@@ -29,6 +43,7 @@ pub struct SingleAuthenticatorClientConfig {
     #[arg(
         env = "AUTHENTICATOR_OIDC_ISSUER_URL",
         long = "authentication-issuer-url",
+        default_value = "",
         required = false
     )]
     pub issuer_url: String,
