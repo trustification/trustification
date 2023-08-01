@@ -1,6 +1,6 @@
-use integration_tests::{assert_within_timeout, VexinationContext};
+use integration_tests::{assert_within_timeout, VexinationContext, upload_vex};
 use reqwest::StatusCode;
-use serde_json::{Map, Value};
+use serde_json::Value;
 use std::time::Duration;
 use test_context::test_context;
 use trustification_auth::client::TokenInjector;
@@ -11,18 +11,9 @@ use trustification_auth::client::TokenInjector;
 async fn test_vexination(vexination: &mut VexinationContext) {
     let client = reqwest::Client::new();
     let input =
-        serde_json::from_str::<Map<String, Value>>(include_str!("../../vexination/testdata/rhsa-2023_1441.json"))
+        serde_json::from_str(include_str!("../../vexination/testdata/rhsa-2023_1441.json"))
             .unwrap();
-    let response = client
-        .post(format!("http://localhost:{port}/api/v1/vex", port = vexination.port))
-        .json(&input)
-        .inject_token(&vexination.provider.provider_manager)
-        .await
-        .unwrap()
-        .send()
-        .await
-        .unwrap();
-    assert_eq!(response.status(), StatusCode::CREATED);
+    upload_vex(vexination.port, &input, &vexination.provider).await;
 
     assert_within_timeout(Duration::from_secs(30), async move {
         loop {
@@ -41,7 +32,7 @@ async fn test_vexination(vexination: &mut VexinationContext) {
                 .unwrap();
 
             if response.status() == StatusCode::OK {
-                let body: Map<String, Value> = response.json().await.unwrap();
+                let body: Value = response.json().await.unwrap();
                 assert_eq!(body, input);
 
                 // 2. Make sure we can search for the VEX (takes some time)
