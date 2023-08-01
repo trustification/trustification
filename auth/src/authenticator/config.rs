@@ -25,7 +25,8 @@ impl AuthenticatorConfig {
             disabled: false,
             clients: SingleAuthenticatorClientConfig {
                 client_ids: vec!["frontend".to_string()],
-                issuer_url: "http://localhost:8090/realms/chicken".to_string(),
+                issuer_url: std::env::var("ISSUER_URL")
+                    .unwrap_or_else(|_| "http://localhost:8090/realms/chicken".to_string()),
                 ..Default::default()
             },
         }
