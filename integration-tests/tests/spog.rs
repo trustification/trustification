@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use integration_tests::{SpogContext, upload_sbom, upload_vex, assert_within_timeout};
+use integration_tests::{assert_within_timeout, upload_sbom, upload_vex, SpogContext};
 use reqwest::StatusCode;
 use serde_json::{json, Value};
 use test_context::test_context;
@@ -115,15 +115,18 @@ async fn test_crda_integration(context: &mut SpogContext) {
 #[ntest::timeout(30_000)]
 async fn test_search_correlation(context: &mut SpogContext) {
     let input = serde_json::from_str(include_str!("../../bombastic/testdata/ubi9-sbom.json")).unwrap();
-    upload_sbom(context.bombastic.port, "ubi9-container", &input, &context.bombastic.provider).await;
+    upload_sbom(
+        context.bombastic.port,
+        "ubi9-container",
+        &input,
+        &context.bombastic.provider,
+    )
+    .await;
 
-    let input =
-        serde_json::from_str(include_str!("../../vexination/testdata/rhsa-2023_1441.json"))
-            .unwrap();
+    let input = serde_json::from_str(include_str!("../../vexination/testdata/rhsa-2023_1441.json")).unwrap();
     upload_vex(context.vexination.port, &input, &context.vexination.provider).await;
 
     let client = reqwest::Client::new();
-
 
     assert_within_timeout(Duration::from_secs(30), async move {
         // Ensure we can search for the data. We want to allow the
@@ -145,7 +148,8 @@ async fn test_search_correlation(context: &mut SpogContext) {
             if payload["total"].as_u64().unwrap() >= 1 {
                 assert_eq!(payload["result"][0]["name"], json!("ubi9-container"));
 
-                let data: spog_model::search::PackageSummary = serde_json::from_value(payload["result"][0].clone()).unwrap();
+                let data: spog_model::search::PackageSummary =
+                    serde_json::from_value(payload["result"][0].clone()).unwrap();
                 println!("Data: {:?}", data);
                 assert_eq!(1, data.advisories.len());
                 break;

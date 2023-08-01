@@ -1,4 +1,4 @@
-use integration_tests::{assert_within_timeout, VexinationContext, upload_vex};
+use integration_tests::{assert_within_timeout, upload_vex, VexinationContext};
 use reqwest::StatusCode;
 use serde_json::Value;
 use std::time::Duration;
@@ -10,9 +10,7 @@ use trustification_auth::client::TokenInjector;
 #[ntest::timeout(60_000)]
 async fn test_vexination(vexination: &mut VexinationContext) {
     let client = reqwest::Client::new();
-    let input =
-        serde_json::from_str(include_str!("../../vexination/testdata/rhsa-2023_1441.json"))
-            .unwrap();
+    let input = serde_json::from_str(include_str!("../../vexination/testdata/rhsa-2023_1441.json")).unwrap();
     upload_vex(vexination.port, &input, &vexination.provider).await;
 
     assert_within_timeout(Duration::from_secs(30), async move {
