@@ -1,4 +1,4 @@
-use super::CommonHeader;
+use super::{report::Report, CommonHeader};
 use crate::{backend::AnalyzeService, components::error::Error, hooks::use_backend};
 use patternfly_yew::prelude::*;
 use reqwest::Body;
@@ -15,12 +15,7 @@ pub struct InspectProperties {
 #[function_component(Inspect)]
 pub fn inspect(props: &InspectProperties) -> Html {
     let tab = use_state_eq(|| 0);
-    let onselect = {
-        let tab = tab.clone();
-        Callback::from(move |index: usize| {
-            tab.set(index);
-        })
-    };
+    let onselect = use_callback(|index, tab| tab.set(index), tab.clone());
 
     let backend = use_backend();
     let access_token = use_latest_access_token();
@@ -29,42 +24,50 @@ pub fn inspect(props: &InspectProperties) -> Html {
         use_async_with_cloned_deps(
             |raw| async move {
                 let service = AnalyzeService::new(backend, access_token);
-                service.report(Body::from((*raw).clone())).await
+                service
+                    .report(Body::from((*raw).clone()))
+                    .await
+                    .map(|data| Rc::new(data))
             },
             props.raw.clone(),
         )
     };
 
-    match &*fetch {
-        UseAsyncState::Pending | UseAsyncState::Processing => html!(
-            <PageSection fill={PageSectionFill::Fill}>
-                <Spinner />
-            </PageSection>
-        ),
-        UseAsyncState::Ready(Ok(data)) => html!(
-            <>
-                <CommonHeader />
+    html!(
+        <>
+            <CommonHeader />
+            {
+                match &*fetch {
+                    UseAsyncState::Pending | UseAsyncState::Processing => html!(
+                        <PageSection fill={PageSectionFill::Fill}>
+                            <Spinner />
+                        </PageSection>
+                    ),
+                    UseAsyncState::Ready(Ok(data)) => html!(
+                        <>
+                            <PageSection r#type={PageSectionType::Tabs} variant={PageSectionVariant::Light} sticky={[PageSectionSticky::Top]}>
+                                <Tabs inset={TabInset::Page} detached=true {onselect}>
+                                    <Tab label="Report" />
+                                    <Tab label="Raw SBOM"/>
+                                </Tabs>
+                            </PageSection>
 
-                <PageSection r#type={PageSectionType::Tabs} variant={PageSectionVariant::Light} sticky={[PageSectionSticky::Top]}>
-                    <Tabs inset={TabInset::Page} detached=true {onselect}>
-                        <Tab label="Report" />
-                        <Tab label="Raw SBOM"/>
-                    </Tabs>
-                </PageSection>
+                            <PageSection hidden={*tab != 0} variant={PageSectionVariant::Light} fill={PageSectionFill::Fill}>
+                                <Report data={data.clone()} />
+                            </PageSection>
 
-                <PageSection hidden={*tab != 0} fill={PageSectionFill::Fill}>
-                    { "Report goes here" }
-                </PageSection>
-
-                <PageSection hidden={*tab != 1} variant={PageSectionVariant::Light} fill={PageSectionFill::Fill}>
-                    <CodeBlock>
-                        <CodeBlockCode>
-                            { &props.raw }
-                        </CodeBlockCode>
-                    </CodeBlock>
-               </PageSection>
-            </>
-        ),
-        UseAsyncState::Ready(Err(err)) => html!(<Error {err} />),
-    }
+                            <PageSection hidden={*tab != 1} variant={PageSectionVariant::Light} fill={PageSectionFill::Fill}>
+                                <CodeBlock>
+                                    <CodeBlockCode>
+                                        { &props.raw }
+                                    </CodeBlockCode>
+                                </CodeBlock>
+                           </PageSection>
+                        </>
+                    ),
+                    UseAsyncState::Ready(Err(err)) => html!(<Error {err} />),
+                }
+            }
+        </>
+    )
 }

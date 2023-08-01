@@ -1,5 +1,6 @@
 mod inspect;
 // mod unknown;
+mod report;
 mod upload;
 
 use crate::components::common::PageHeading;
