@@ -41,7 +41,7 @@ impl std::fmt::Display for DropContent {
                 }
                 Ok(())
             }
-            Self::Uri(uri) => f.write_str(&uri),
+            Self::Uri(uri) => f.write_str(uri),
             Self::Text(_) => f.write_str("User Input"),
             Self::None => Ok(()),
         }
