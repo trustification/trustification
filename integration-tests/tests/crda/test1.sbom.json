@@ -1,91 +1,209 @@
 {
-  "SPDXID" : "SPDXRef-DOCUMENT",
-  "spdxVersion" : "SPDX-2.3",
-  "creationInfo" : {
-    "created" : "2023-07-31T15:07:48Z",
-    "creators" : [ "Tool: spdx-maven-plugin" ],
-    "licenseListVersion" : "3.21"
+  "bomFormat" : "CycloneDX",
+  "specVersion" : "1.3",
+  "serialNumber" : "urn:uuid:fd154fcd-fc44-4478-bc6b-e9e84fe4f2ed",
+  "version" : 1,
+  "metadata" : {
+    "timestamp" : "2023-07-31T16:18:20Z",
+    "tools" : [
+      {
+        "vendor" : "CycloneDX",
+        "name" : "CycloneDX Maven plugin",
+        "version" : "2.5.3",
+        "hashes" : [
+          {
+            "alg" : "MD5",
+            "content" : "4f7d894200ad695fc9f0aad66d7da40a"
+          },
+          {
+            "alg" : "SHA-1",
+            "content" : "c044d9b726650cbea3adeb5cc1715c67d8356c0a"
+          },
+          {
+            "alg" : "SHA-256",
+            "content" : "b9a385e430e1f5efd9b835a084c195dde4d5e1bc79e469a8187ec58275c15313"
+          },
+          {
+            "alg" : "SHA-384",
+            "content" : "d96f68ef4b8830d70dc2eb5f2de5211d96b70dd1169da641f34474265c06a5321b63d2c80fe2d82d74c767391225e480"
+          },
+          {
+            "alg" : "SHA-512",
+            "content" : "1d7d1129cdc8604772b3c454d8dff98d936f85af705c95705e3263a038c0bb58fdd58c0b90efa3f56b4ce8ef9c84d3154b74b8451e0470f856f4d688489704b0"
+          },
+          {
+            "alg" : "SHA3-256",
+            "content" : "44231962fe0c1e5501ca38ad3320f9223ea5e8d62aa8aad170577818801ce349"
+          },
+          {
+            "alg" : "SHA3-384",
+            "content" : "99659ce3e58d8416f9e28d6b87c800442a79c4a5703fb657f6a9da87495d1d9d3b9788e06a3d6ea0e1b659a4681a4c92"
+          },
+          {
+            "alg" : "SHA3-512",
+            "content" : "8d5c3f0ee5a53cc714c4d829ccc07688f951a6b6655ad1e6435b8ab1c281bc38a78073b329bdaaf4887114b6843723ac8b5176a5f954581960a43662c688a95a"
+          }
+        ]
+      }
+    ],
+    "component" : {
+      "group" : "de.dentrassi",
+      "name" : "crda-test-1",
+      "version" : "1.0.0-SNAPSHOT",
+      "licenses" : [ ],
+      "purl" : "pkg:maven/de.dentrassi/crda-test-1@1.0.0-SNAPSHOT?type=jar",
+      "type" : "library",
+      "bom-ref" : "pkg:maven/de.dentrassi/crda-test-1@1.0.0-SNAPSHOT?type=jar"
+    }
   },
-  "name" : "crda-test-1",
-  "dataLicense" : "CC0-1.0",
-  "documentNamespace" : "http://spdx.org/spdxpackages/de.dentrassi_crda-test-1-1.0.0-SNAPSHOT",
-  "packages" : [ {
-    "SPDXID" : "SPDXRef-gnrtd0",
-    "copyrightText" : "UNSPECIFIED",
-    "description" : "Netty is an asynchronous event-driven network application framework for\n    rapid development of maintainable high performance protocol servers and\n    clients.",
-    "downloadLocation" : "NOASSERTION",
-    "filesAnalyzed" : false,
-    "homepage" : "https://netty.io/netty-buffer/",
-    "licenseConcluded" : "NOASSERTION",
-    "licenseDeclared" : "Apache-2.0",
-    "name" : "Netty/Buffer",
-    "originator" : "Organization:The Netty Project",
-    "summary" : "Netty is an asynchronous event-driven network application framework for\n    rapid development of maintainable high performance protocol servers and\n    clients.",
-    "versionInfo" : "4.1.58.Final"
-  }, {
-    "SPDXID" : "SPDXRef-gnrtd1",
-    "copyrightText" : "UNSPECIFIED",
-    "description" : "Netty is an asynchronous event-driven network application framework for\n    rapid development of maintainable high performance protocol servers and\n    clients.",
-    "downloadLocation" : "NOASSERTION",
-    "filesAnalyzed" : false,
-    "homepage" : "https://netty.io/netty-common/",
-    "licenseConcluded" : "NOASSERTION",
-    "licenseDeclared" : "Apache-2.0",
-    "name" : "Netty/Common",
-    "originator" : "Organization:The Netty Project",
-    "summary" : "Netty is an asynchronous event-driven network application framework for\n    rapid development of maintainable high performance protocol servers and\n    clients.",
-    "versionInfo" : "4.1.58.Final"
-  }, {
-    "SPDXID" : "SPDXRef-gnrtd2",
-    "copyrightText" : "NOASSERTION",
-    "downloadLocation" : "NOASSERTION",
-    "filesAnalyzed" : true,
-    "licenseConcluded" : "NOASSERTION",
-    "licenseDeclared" : "NOASSERTION",
-    "licenseInfoFromFiles" : [ "NOASSERTION" ],
-    "name" : "crda-test-1",
-    "packageFileName" : "NOASSERTION",
-    "packageVerificationCode" : {
-      "packageVerificationCodeValue" : "32be1e4fecf59a483ffc0096cc9c79f84de2f219"
+  "components" : [
+    {
+      "publisher" : "The Netty Project",
+      "group" : "io.netty",
+      "name" : "netty-buffer",
+      "version" : "4.1.58.Final",
+      "description" : "Netty is an asynchronous event-driven network application framework for rapid development of maintainable high performance protocol servers and clients.",
+      "hashes" : [
+        {
+          "alg" : "MD5",
+          "content" : "2f413f06a570135207ed9674130c4b46"
+        },
+        {
+          "alg" : "SHA-1",
+          "content" : "8b522e96af4cdd5f3bd22fddfd2c351edfa07202"
+        },
+        {
+          "alg" : "SHA-256",
+          "content" : "b6ff0be3a296e48e4e1d3203f7b72abee79c888c573abbe21be45dae5da817d6"
+        },
+        {
+          "alg" : "SHA-384",
+          "content" : "be7e8f4a0ce2e33de4061f41ca75821de987cc412b222da5d3c016e673165cfac197d356275a284c212112b2eeefe265"
+        },
+        {
+          "alg" : "SHA-512",
+          "content" : "cdec60fe3de87b13d7bfec9c345257440c0930b539ec8dbe0980cb8c38b9916b492e17c0959b6045d8b798729fcdc976837082e4e2cdf764399cfe09a281bd35"
+        },
+        {
+          "alg" : "SHA3-256",
+          "content" : "efdd30e1dd85045ed5ed9fd6b3581fbcfbc898cf79edb8860e8c3f0842142693"
+        },
+        {
+          "alg" : "SHA3-384",
+          "content" : "63cff5db36e48e403582027fb8bc80816be0caaef97eed9e2a99f00600b583ca8666fece93b58382acce14af168c7669"
+        },
+        {
+          "alg" : "SHA3-512",
+          "content" : "39fa67dbaa311a7aa1ff94edd4b45164830a8ac748c496f6e08ccc55cf57b79852075bee1da8d758fccb013d74b97e30b92faae6c9ac9009ac695d7d2c537b13"
+        }
+      ],
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "Apache-2.0"
+          }
+        }
+      ],
+      "purl" : "pkg:maven/io.netty/netty-buffer@4.1.58.Final?type=jar",
+      "externalReferences" : [
+        {
+          "type" : "website",
+          "url" : "https://netty.io/"
+        },
+        {
+          "type" : "vcs",
+          "url" : "https://github.com/netty/netty"
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "pkg:maven/io.netty/netty-buffer@4.1.58.Final?type=jar"
     },
-    "primaryPackagePurpose" : "LIBRARY",
-    "versionInfo" : "1.0.0-SNAPSHOT"
-  } ],
-  "files" : [ {
-    "SPDXID" : "SPDXRef-gnrtd3",
-    "checksums" : [ {
-      "algorithm" : "SHA1",
-      "checksumValue" : "aafc520ec70dc8269e30d3afe9207b653b1c0eb3"
-    } ],
-    "copyrightText" : "NOASSERTION",
-    "fileName" : "./src/main/java/de/dentrassi/Application.java",
-    "fileTypes" : [ "SOURCE" ],
-    "licenseConcluded" : "NOASSERTION",
-    "licenseInfoInFiles" : [ "NOASSERTION" ]
-  } ],
-  "relationships" : [ {
-    "spdxElementId" : "SPDXRef-DOCUMENT",
-    "relationshipType" : "DESCRIBES",
-    "relatedSpdxElement" : "SPDXRef-gnrtd2",
-    "comment" : ""
-  }, {
-    "spdxElementId" : "SPDXRef-gnrtd2",
-    "relationshipType" : "DYNAMIC_LINK",
-    "relatedSpdxElement" : "SPDXRef-gnrtd1",
-    "comment" : "Relationship based on Maven POM file dependency information"
-  }, {
-    "spdxElementId" : "SPDXRef-gnrtd2",
-    "relationshipType" : "DYNAMIC_LINK",
-    "relatedSpdxElement" : "SPDXRef-gnrtd0",
-    "comment" : "Relationship based on Maven POM file dependency information"
-  }, {
-    "spdxElementId" : "SPDXRef-gnrtd2",
-    "relationshipType" : "CONTAINS",
-    "relatedSpdxElement" : "SPDXRef-gnrtd3"
-  }, {
-    "spdxElementId" : "SPDXRef-gnrtd3",
-    "relationshipType" : "GENERATES",
-    "relatedSpdxElement" : "SPDXRef-gnrtd2",
-    "comment" : ""
-  } ]
+    {
+      "publisher" : "The Netty Project",
+      "group" : "io.netty",
+      "name" : "netty-common",
+      "version" : "4.1.58.Final",
+      "description" : "Netty is an asynchronous event-driven network application framework for rapid development of maintainable high performance protocol servers and clients.",
+      "hashes" : [
+        {
+          "alg" : "MD5",
+          "content" : "0725427402cbe288bc48a44a0786de1b"
+        },
+        {
+          "alg" : "SHA-1",
+          "content" : "19136a93702c59df3d92d35089c8142269516257"
+        },
+        {
+          "alg" : "SHA-256",
+          "content" : "ff5ee66edaa57fc3c4a1900130e154c666bf0d8f674af6d0e3d5efbecacc386b"
+        },
+        {
+          "alg" : "SHA-384",
+          "content" : "c397eda3ca72a06b263281fdb46d76ee3dd373982a64cce8045f9b41b128813eedc0c89059609ddd0045ba2aa44ecd4e"
+        },
+        {
+          "alg" : "SHA-512",
+          "content" : "720f7d77f3837310ada8c167918b7a5b218810b0fb22512bde7d1d0235c0ecac8c6eafbb8ed0a55a2235b4c0030a71734eae19b13de2c5349a98b4f6baffec85"
+        },
+        {
+          "alg" : "SHA3-256",
+          "content" : "685ee3de7baa5b6a1b5e1473583fb0087e85b4d81f920b1af9735f79159545bd"
+        },
+        {
+          "alg" : "SHA3-384",
+          "content" : "58f8f8cc657769d43af5f190938d1c0291238de2ae83b93a551a3fb4f8285a7d7cd48b4a79b81d08e8a07193fdb31879"
+        },
+        {
+          "alg" : "SHA3-512",
+          "content" : "1de2a45f177cb694329ea00a3ce968154eebad6f93e0133a02db1097f2defeb6859d354e8ee8c3498d91fe978fd94dc316b83676fb9b27ff005e0752989fc346"
+        }
+      ],
+      "licenses" : [
+        {
+          "license" : {
+            "id" : "Apache-2.0"
+          }
+        }
+      ],
+      "purl" : "pkg:maven/io.netty/netty-common@4.1.58.Final?type=jar",
+      "externalReferences" : [
+        {
+          "type" : "website",
+          "url" : "https://netty.io/"
+        },
+        {
+          "type" : "vcs",
+          "url" : "https://github.com/netty/netty"
+        },
+        {
+          "type" : "distribution",
+          "url" : "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
+        }
+      ],
+      "type" : "library",
+      "bom-ref" : "pkg:maven/io.netty/netty-common@4.1.58.Final?type=jar"
+    }
+  ],
+  "dependencies" : [
+    {
+      "ref" : "pkg:maven/de.dentrassi/crda-test-1@1.0.0-SNAPSHOT?type=jar",
+      "dependsOn" : [
+        "pkg:maven/io.netty/netty-buffer@4.1.58.Final?type=jar"
+      ]
+    },
+    {
+      "ref" : "pkg:maven/io.netty/netty-buffer@4.1.58.Final?type=jar",
+      "dependsOn" : [
+        "pkg:maven/io.netty/netty-common@4.1.58.Final?type=jar"
+      ]
+    },
+    {
+      "ref" : "pkg:maven/io.netty/netty-common@4.1.58.Final?type=jar",
+      "dependsOn" : [ ]
+    }
+  ]
 }

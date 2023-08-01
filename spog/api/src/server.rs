@@ -15,8 +15,8 @@ use trustification_version::version;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
-use crate::crda::CrdaClient;
-use crate::{advisory, config, crda, index, sbom, Run};
+use crate::analyze::CrdaClient;
+use crate::{advisory, analyze, config, index, sbom, Run};
 
 pub struct Server {
     run: Run,
@@ -100,7 +100,9 @@ impl Server {
             .service(SwaggerUi::new("/swagger-ui/{_:.*}").url("/openapi.json", openapi.clone()));
 
             if let Some(crda) = &crda {
-                app = app.app_data(web::Data::new(crda.clone())).configure(crda::configure());
+                app = app
+                    .app_data(web::Data::new(crda.clone()))
+                    .configure(analyze::configure());
             }
 
             app

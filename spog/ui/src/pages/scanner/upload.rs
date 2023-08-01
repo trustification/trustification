@@ -1,7 +1,4 @@
-use patternfly_yew::{
-    next::{TextArea, TextInput},
-    prelude::*,
-};
+use patternfly_yew::prelude::*;
 use wasm_bindgen_futures::JsFuture;
 use yew::prelude::*;
 use yew_hooks::prelude::*;
@@ -129,13 +126,13 @@ pub fn upload(props: &UploadProperties) -> Html {
         (drop_content.clone(), props.onvalidate.clone()),
     );
 
-    let onclear = {
-        let drop_content = drop_content.clone();
-        Callback::from(move |_| {
+    let onclear = use_callback(
+        |_, drop_content| {
             // clear state
             drop_content.set(DropContent::None);
-        })
-    };
+        },
+        drop_content.clone(),
+    );
 
     let helper_text = processing
         .error()
@@ -150,30 +147,27 @@ pub fn upload(props: &UploadProperties) -> Html {
         processing.clone(),
     );
 
-    let onsubmit = {
-        let processing = processing.clone();
-        let onsubmit = props.onsubmit.clone();
-        Callback::from(move |_| {
+    let onsubmit = use_callback(
+        |_, (processing, onsubmit)| {
             if let Some(data) = processing.data() {
                 onsubmit.emit(data.clone());
             }
-        })
-    };
+        },
+        (processing.clone(), props.onsubmit.clone()),
+    );
 
     let file_input_ref = use_node_ref();
-    let onopen = {
-        let file_input_ref = file_input_ref.clone();
-        Callback::from(move |_| {
+    let onopen = use_callback(
+        |_, file_input_ref| {
             if let Some(ele) = file_input_ref.cast::<web_sys::HtmlElement>() {
                 ele.click();
             }
-        })
-    };
+        },
+        file_input_ref.clone(),
+    );
 
-    let onchange_open = {
-        let file_input_ref = file_input_ref.clone();
-        let drop_content = drop_content.clone();
-        Callback::from(move |_| {
+    let onchange_open = use_callback(
+        || {
             if let Some(ele) = file_input_ref.cast::<web_sys::HtmlInputElement>() {
                 let files = ele
                     .files()
@@ -187,66 +181,68 @@ pub fn upload(props: &UploadProperties) -> Html {
                     .unwrap_or_default();
                 drop_content.set(DropContent::Files(files));
             }
-        })
-    };
+        },
+        (file_input_ref, drop_content),
+    );
 
-    let oninput_text = {
-        let drop_content = drop_content.clone();
-        Callback::from(move |text| {
+    let oninput_text = use_callback(
+        |text, drop_content| {
             drop_content.set(DropContent::from(text));
-        })
-    };
+        },
+        drop_content.clone(),
+    );
 
     html!(
-        <Form>
-            <FormGroup
-                {helper_text}
-            >
-                <FileUpload
-                    drag_over={*drop.over}
-                    r#ref={node.clone()}
+        <div ref={node.clone()}>
+            <Form>
+                <FormGroup
+                    {helper_text}
                 >
-                    <FileUploadSelect>
-                        <InputGroup>
-                            <TextInput readonly=true value={(*drop_content).to_string()}/>
-                            <input ref={file_input_ref.clone()} style="display: none;" type="file" onchange={onchange_open} />
-                            <Button
-                                variant={ButtonVariant::Control}
-                                disabled={processing.is_processing()}
-                                onclick={onopen}
-                            >
-                                {"Open"}
-                            </Button>
-                            <Button
-                                variant={ButtonVariant::Control}
-                                disabled={state == InputState::Error}
-                                onclick={onsubmit}
-                            >
-                                {"Inspect"}
-                            </Button>
-                            <Button
-                                variant={ButtonVariant::Control}
-                                onclick={onclear}
-                                disabled={drop_content.is_none()}>
-                                {"Clear"}
-                            </Button>
-                        </InputGroup>
-                    </FileUploadSelect>
-                    <FileUploadDetails
-                        processing={processing.is_processing()}
-                        invalid={state == InputState::Error}
+                    <FileUpload
+                        drag_over={*drop.over}
                     >
-                        <TextArea
-                            value={(*content).clone()}
-                            resize={ResizeOrientation::Vertical}
-                            oninput={oninput_text}
-                            rows={20}
-                            readonly=true
-                            {state}
-                        />
-                    </FileUploadDetails>
-                </FileUpload>
-            </FormGroup>
-        </Form>
+                        <FileUploadSelect>
+                            <InputGroup>
+                                <TextInput readonly=true value={(*drop_content).to_string()}/>
+                                <input ref={file_input_ref.clone()} style="display: none;" type="file" onchange={onchange_open} />
+                                <Button
+                                    variant={ButtonVariant::Control}
+                                    disabled={processing.is_processing()}
+                                    onclick={onopen}
+                                >
+                                    {"Open"}
+                                </Button>
+                                <Button
+                                    variant={ButtonVariant::Control}
+                                    disabled={state == InputState::Error}
+                                    onclick={onsubmit}
+                                >
+                                    {"Inspect"}
+                                </Button>
+                                <Button
+                                    variant={ButtonVariant::Control}
+                                    onclick={onclear}
+                                    disabled={drop_content.is_none()}>
+                                    {"Clear"}
+                                </Button>
+                            </InputGroup>
+                        </FileUploadSelect>
+                        <FileUploadDetails
+                            processing={processing.is_processing()}
+                            invalid={state == InputState::Error}
+                        >
+                            <TextArea
+                                value={(*content).clone()}
+                                resize={ResizeOrientation::Vertical}
+                                oninput={oninput_text}
+                                rows={20}
+                                readonly=true
+                                {state}
+                            />
+                        </FileUploadDetails>
+                    </FileUpload>
+                </FormGroup>
+            </Form>
+        </div>
     )
 }
