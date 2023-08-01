@@ -312,12 +312,15 @@ impl Index {
                 value,
             )])),
 
-            Packages::Namespace(primary) => self.create_string_query(&[self.fields.sbom.purl_namespace], primary),
+            Packages::Namespace(value) => Box::new(TermSetQuery::new(vec![Term::from_field_text(
+                self.fields.sbom.purl_namespace,
+                value,
+            )])),
 
             Packages::Created(ordered) => boost(create_date_query(self.fields.sbom_created, ordered), CREATED_WEIGHT),
 
-            Packages::Version(primary) => {
-                self.create_string_query(&[self.fields.sbom.purl_version, self.fields.sbom.version], primary)
+            Packages::Version(value) => {
+                self.create_string_query(&[self.fields.sbom.version, self.fields.sbom.purl_version], value)
             }
 
             Packages::Description(primary) => self.create_text_query(&[self.fields.sbom.desc], primary),
@@ -327,7 +330,10 @@ impl Index {
                 value,
             )])),
 
-            Packages::License(primary) => self.create_string_query(&[self.fields.sbom.license], primary),
+            Packages::License(value) => Box::new(TermSetQuery::new(vec![Term::from_field_text(
+                self.fields.sbom.license,
+                value,
+            )])),
 
             Packages::Supplier(primary) => self.create_string_query(&[self.fields.sbom.supplier], primary),
 

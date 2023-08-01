@@ -6,16 +6,17 @@ pub enum Packages<'a> {
     #[search(default)]
     Package(Primary<'a>),
     Type(&'a str),
-    #[search(scope)]
-    Namespace(Primary<'a>),
+    #[search]
+    Namespace(&'a str),
     #[search(default)]
     Version(Primary<'a>),
     #[search(default)]
     Description(Primary<'a>),
+    #[search]
     Created(Ordered<time::OffsetDateTime>),
     Digest(&'a str),
     #[search(scope)]
-    License(Primary<'a>),
+    License(&'a str),
     #[search(scope)]
     Supplier(Primary<'a>),
     Qualifier(Qualified<'a, &'a str>),
