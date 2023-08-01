@@ -36,3 +36,4 @@ trustification-index = { path = "../index" }
 [dev-dependencies]
 env_logger = "0.10"
 urlencoding = "2.1.2"
+spog-model = { path = "../spog/model" }
