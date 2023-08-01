@@ -27,7 +27,6 @@ impl Collector {
         }
     }
 
-    #[allow(unused)]
     pub async fn gather(&self, state: SharedState, purls: Vec<String>) -> Result<GatherResponse, anyhow::Error> {
         let collector_url = self.config.url.clone();
 
@@ -46,7 +45,6 @@ impl Collector {
         loop {
             if let Some(config) = state.collectors.read().await.collector_config(id.clone()) {
                 let collector_url = config.url;
-                info!("polling for {} -> {}", id, collector_url);
                 let purls: Vec<String> = state
                     .db
                     .get_purls_to_scan(id.as_str(), Utc::now() - chrono::Duration::seconds(1200), 20)
@@ -54,13 +52,16 @@ impl Collector {
                     .collect()
                     .await;
 
-                if let Ok(_response) = collector_client::Client::new(collector_url)
-                    .gather(GatherRequest { purls: purls.clone() })
-                    .await
-                {
-                    for purl in purls {
-                        info!("[{}] scanned {}", id, purl);
-                        let _ = state.db.update_purl_scan_time(&id, &purl).await;
+                if !purls.is_empty() {
+                    info!("polling for {} -> {}", id, collector_url);
+                    if let Ok(_response) = collector_client::Client::new(collector_url)
+                        .gather(GatherRequest { purls: purls.clone() })
+                        .await
+                    {
+                        for purl in purls {
+                            info!("[{}] scanned {}", id, purl);
+                            let _ = state.db.update_purl_scan_time(&id, &purl).await;
+                        }
                     }
                 }
             }
