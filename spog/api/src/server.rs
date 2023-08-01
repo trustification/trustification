@@ -78,6 +78,7 @@ impl Server {
         }
 
         let crda = self.run.crda_url.map(|url| CrdaClient::new(url));
+        let crda_payload_limit = self.run.crda_payload_limit;
 
         let mut srv = HttpServer::new(move || {
             let state = state.clone();
@@ -102,7 +103,7 @@ impl Server {
             if let Some(crda) = &crda {
                 app = app
                     .app_data(web::Data::new(crda.clone()))
-                    .configure(analyze::configure());
+                    .configure(analyze::configure(crda_payload_limit));
             }
 
             app

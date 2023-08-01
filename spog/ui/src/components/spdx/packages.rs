@@ -418,7 +418,7 @@ pub fn spdx_packages(props: &SpdxPackagesProperties) -> Html {
                                 placeholder="Filter"
                                 icon={Icon::Search}
                                 value={(*filter).clone()}
-                                oninput={onsetfilter}
+                                onchange={onsetfilter}
                             />
                             if !filter.is_empty() {
                                 <TextInputGroupUtilities>

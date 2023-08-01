@@ -12,6 +12,7 @@ pub use vex::*;
 
 use core::future::Future;
 use reqwest::StatusCode;
+use spog_api::DEFAULT_CRDA_PAYLOAD_LIMIT;
 use std::{net::TcpListener, time::Duration};
 use tokio::{select, time::timeout};
 use trustification_auth::{
@@ -163,6 +164,7 @@ fn spog_api(bport: u16, vport: u16) -> spog_api::Run {
         bombastic_url: format!("http://localhost:{bport}").parse().unwrap(),
         vexination_url: format!("http://localhost:{vport}").parse().unwrap(),
         crda_url: option_env!("CRDA_URL").map(|url| url.parse().unwrap()),
+        crda_payload_limit: DEFAULT_CRDA_PAYLOAD_LIMIT,
         config: None,
         infra: InfrastructureConfig {
             infrastructure_enabled: false,

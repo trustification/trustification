@@ -16,6 +16,8 @@ mod search;
 mod server;
 // mod vulnerability;
 
+pub const DEFAULT_CRDA_PAYLOAD_LIMIT: usize = 10 * 1024 * 1024;
+
 #[derive(clap::Args, Debug)]
 #[command(about = "Run the api server", args_conflicts_with_subcommands = true)]
 pub struct Run {
@@ -46,6 +48,9 @@ pub struct Run {
 
     #[arg(long = "crda-url", default_value = "http://localhost:8081")]
     pub crda_url: Option<reqwest::Url>,
+
+    #[arg(long = "crda-payload-limit", default_value_t = DEFAULT_CRDA_PAYLOAD_LIMIT)]
+    pub crda_payload_limit: usize,
 
     /// Path to the UI configuration file, overriding the default configuration file.
     #[arg(short, long = "config", env = "SPOG_UI_CONFIG")]

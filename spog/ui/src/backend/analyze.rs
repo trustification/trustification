@@ -1,5 +1,6 @@
 use super::{Backend, Error};
 use crate::backend::{ApplyAccessToken, Endpoint};
+use reqwest::Body;
 use std::rc::Rc;
 use yew_oauth2::prelude::*;
 
@@ -19,7 +20,7 @@ impl AnalyzeService {
     }
 
     /// send SBOM to CRDA and receive back an HTML report
-    pub async fn report(&self, data: impl AsRef<str>) -> Result<String, Error> {
+    pub async fn report(&self, data: impl Into<Body>) -> Result<String, Error> {
         let url = self.backend.join(Endpoint::Api, "/api/v1/analyze/report")?;
 
         let response = self

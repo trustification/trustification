@@ -83,6 +83,8 @@ pub fn catalog_search(props: &CatalogSearchProperties) -> Html {
     let hidden = text.is_empty();
     let simple = search_params.is_simple();
 
+    let onchange = use_callback(|data, text| text.set(data), text.clone());
+
     html!(
         <>
 
@@ -107,7 +109,7 @@ pub fn catalog_search(props: &CatalogSearchProperties) -> Html {
                                                     placeholder="Search"
                                                     value={(*text).clone()}
                                                     state={*filter_input_state}
-                                                    oninput={ Callback::from(move |data| text.set(data)) }
+                                                    {onchange}
                                                 />
 
                                                 if !hidden {

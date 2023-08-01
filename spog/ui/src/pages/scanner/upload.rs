@@ -167,14 +167,14 @@ pub fn upload(props: &UploadProperties) -> Html {
     );
 
     let onchange_open = use_callback(
-        || {
+        |_, (file_input_ref, drop_content)| {
             if let Some(ele) = file_input_ref.cast::<web_sys::HtmlInputElement>() {
                 let files = ele
                     .files()
                     .map(|files| {
                         let mut r = Vec::with_capacity(files.length().try_into().unwrap_or_default());
                         for i in 0..files.length() {
-                            Extend::extend(&mut r, files.get(i));
+                            r.extend(files.get(i));
                         }
                         r
                     })
@@ -182,7 +182,7 @@ pub fn upload(props: &UploadProperties) -> Html {
                 drop_content.set(DropContent::Files(files));
             }
         },
-        (file_input_ref, drop_content),
+        (file_input_ref.clone(), drop_content.clone()),
     );
 
     let oninput_text = use_callback(
@@ -234,7 +234,7 @@ pub fn upload(props: &UploadProperties) -> Html {
                             <TextArea
                                 value={(*content).clone()}
                                 resize={ResizeOrientation::Vertical}
-                                oninput={oninput_text}
+                                onchange={oninput_text}
                                 rows={20}
                                 readonly=true
                                 {state}
