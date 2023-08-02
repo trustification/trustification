@@ -108,6 +108,9 @@ async fn test_crda_integration(context: &mut SpogContext) {
     assert_eq!(status, StatusCode::OK);
 }
 
+/*
+TODO: Disabled due to instability.
+
 /// SPoG API might enrich results from package search with related vulnerabilities. This test checks that this
 /// is working as expected for the test data.
 #[test_context(SpogContext)]
@@ -161,3 +164,4 @@ async fn test_search_correlation(context: &mut SpogContext) {
     })
     .await;
 }
+*/

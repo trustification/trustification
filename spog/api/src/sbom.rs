@@ -108,13 +108,14 @@ pub async fn search(
                 });
             }
 
-            let mut result = SearchResult::<Vec<PackageSummary>> {
+            let result = SearchResult::<Vec<PackageSummary>> {
                 total: Some(data.total),
                 result: m,
             };
 
             // TODO: Use guac to lookup advisories for each package!
-            search_advisories(state, &mut result.result, &access_token).await;
+            // TODO: Disabled until more testing
+            // search_advisories(state, &mut result.result, &access_token).await;
             debug!("Search result: {:?}", result);
             HttpResponse::Ok().json(result)
         }
@@ -125,6 +126,7 @@ pub async fn search(
     }
 }
 
+#[allow(dead_code)]
 async fn search_advisories(
     state: web::Data<SharedState>,
     packages: &mut Vec<PackageSummary>,
