@@ -108,14 +108,13 @@ pub async fn search(
                 });
             }
 
-            let result = SearchResult::<Vec<PackageSummary>> {
+            let mut result = SearchResult::<Vec<PackageSummary>> {
                 total: Some(data.total),
                 result: m,
             };
 
             // TODO: Use guac to lookup advisories for each package!
-            // TODO: Disabled until more testing
-            // search_advisories(state, &mut result.result, &access_token).await;
+            search_advisories(state, &mut result.result, &access_token).await;
             debug!("Search result: {:?}", result);
             HttpResponse::Ok().json(result)
         }
@@ -126,44 +125,18 @@ pub async fn search(
     }
 }
 
-#[allow(dead_code)]
 async fn search_advisories(
     state: web::Data<SharedState>,
     packages: &mut Vec<PackageSummary>,
     provider: &dyn TokenProvider,
 ) {
     for package in packages {
-        let mut terms = Vec::new();
-        for field in &[&package.cpe, &package.purl] {
-            terms.push(format!("fixed:\"{}\" OR affected:\"{}\"", field, field));
-        }
-
-        let q = terms.join(" OR ");
+        let q = package.advisories_query();
         if let Ok(result) = state.search_vex(&q, 0, 1000, Default::default(), provider).await {
             for summary in result.result {
                 let summary = summary.document;
                 package.advisories.push(summary.advisory_id);
             }
-        }
-        debug!(
-            "Found {} advisories related to {}",
-            package.advisories.len(),
-            package.purl
-        );
-
-        for dep in package.dependencies.iter() {
-            let q = format!("fixed:\"{}\" OR affected:\"{}\"", dep, dep);
-            if let Ok(result) = state.search_vex(&q, 0, 1000, Default::default(), provider).await {
-                for summary in result.result {
-                    let summary = summary.document;
-                    package.advisories.push(summary.advisory_id);
-                }
-            }
-            debug!(
-                "Found {} advisories related to dependency {}",
-                package.advisories.len(),
-                dep
-            );
         }
     }
 }

@@ -1,0 +1,2163 @@
+{
+  "document": {
+    "aggregate_severity": {
+      "namespace": "https://access.redhat.com/security/updates/classification/",
+      "text": "Moderate"
+    },
+    "category": "csaf_vex",
+    "csaf_version": "2.0",
+    "distribution": {
+      "text": "Copyright \u00a9 2023 Red Hat, Inc. All rights reserved.",
+      "tlp": {
+        "label": "WHITE",
+        "url": "https://www.first.org/tlp/"
+      }
+    },
+    "lang": "en",
+    "notes": [
+      {
+        "category": "summary",
+        "text": "An update is now available for Service Telemetry Framework 1.5.\n\nRed Hat Product Security has rated this update as having a security impact of Moderate. A Common Vulnerability Scoring System (CVSS) base score, which gives a detailed severity rating, is available for each vulnerability from the CVE link(s) in the References section.",
+        "title": "Topic"
+      },
+      {
+        "category": "general",
+        "text": "Service Telemetry Framework (STF) provides automated collection of measurements and data from remote clients, such as Red Hat OpenStack Platform or third-party nodes. STF then transmits the information to a centralized, receiving Red Hat OpenShift Container Platform (OCP) deployment for storage, retrieval, and monitoring.\n\nSecurity Fix(es):\n\n* golang: crypto/elliptic: IsOnCurve returns true for invalid field elements (CVE-2022-23806)\n\n* golang: math/big: uncontrolled memory consumption due to an unhandled overflow via Rat.SetString (CVE-2022-23772)\n\n* golang: cmd/go: misinterpretation of branch names can lead to incorrect access control (CVE-2022-23773)\n\n* golang: encoding/pem: fix stack overflow in Decode (CVE-2022-24675)\n\n* golang: crypto/elliptic: panic caused by oversized scalar (CVE-2022-28327)\n\n* golang: syscall: faccessat checks wrong group (CVE-2022-29526)\n\n* golang: compress/gzip: stack exhaustion in Reader.Read (CVE-2022-30631)\n\n* golang: io/fs: stack exhaustion in Glob (CVE-2022-30630)\n\n* golang: net/http: improper sanitization of Transfer-Encoding header (CVE-2022-1705)\n\n* golang: path/filepath: stack exhaustion in Glob (CVE-2022-30632)\n\n* golang: net/http: handle server errors after sending GOAWAY (CVE-2022-27664)\n\n* golang: regexp/syntax: limit memory used by parsing regexps (CVE-2022-41715)\n\n* golang: net/http: An attacker can cause excessive memory growth in a Go server accepting HTTP/2 requests (CVE-2022-41717)\n\n* golang: crypto/tls: session tickets lack random ticket_age_add (CVE-2022-30629)\n\n* golang: math/big: decoding big.Float and big.Rat types can panic if the encoded message is too short, potentially allowing a denial of service (CVE-2022-32189)\n\nFor more details about the security issue(s), including the impact, a CVSS score, and other related information, refer to the CVE page(s) listed in the References section.",
+        "title": "Details"
+      },
+      {
+        "category": "legal_disclaimer",
+        "text": "This content is licensed under the Creative Commons Attribution 4.0 International License (https://creativecommons.org/licenses/by/4.0/). If you distribute this content, or a modified version of it, you must provide attribution to Red Hat Inc. and provide a link to the original.",
+        "title": "Terms of Use"
+      }
+    ],
+    "publisher": {
+      "category": "vendor",
+      "contact_details": "https://access.redhat.com/security/team/contact/",
+      "issuing_authority": "Red Hat Product Security is responsible for vulnerability handling across all Red Hat offerings.",
+      "name": "Red Hat Product Security",
+      "namespace": "https://www.redhat.com"
+    },
+    "references": [
+      {
+        "category": "self",
+        "summary": "https://access.redhat.com/errata/RHSA-2023:1529",
+        "url": "https://access.redhat.com/errata/RHSA-2023:1529"
+      },
+      {
+        "category": "external",
+        "summary": "https://access.redhat.com/security/updates/classification/#moderate",
+        "url": "https://access.redhat.com/security/updates/classification/#moderate"
+      },
+      {
+        "category": "self",
+        "summary": "Canonical URL",
+        "url": "https://access.redhat.com/security/data/csaf/v2/advisories/2023/rhsa-2023_1529.json"
+      }
+    ],
+    "title": "Red Hat Security Advisory: Service Telemetry Framework 1.5 security update",
+    "tracking": {
+      "current_release_date": "2023-03-30T00:42:00Z",
+      "generator": {
+        "date": "2023-07-01T06:11:00Z",
+        "engine": {
+          "name": "Red Hat SDEngine",
+          "version": "3.18.0"
+        }
+      },
+      "id": "RHSA-2023:1529",
+      "initial_release_date": "2023-03-30T00:42:00Z",
+      "revision_history": [
+        {
+          "date": "2023-03-30T00:42:00Z",
+          "number": "1",
+          "summary": "Current version"
+        }
+      ],
+      "status": "final",
+      "version": "1"
+    }
+  },
+  "product_tree": {
+    "branches": [
+      {
+        "branches": [
+          {
+            "branches": [
+              {
+                "category": "product_name",
+                "name": "Service Telemetry Framework 1.5 for RHEL 8",
+                "product": {
+                  "name": "Service Telemetry Framework 1.5 for RHEL 8",
+                  "product_id": "8Base-STF-1.5",
+                  "product_identification_helper": {
+                    "cpe": "cpe:/a:redhat:service_telemetry_framework:1.5::el8"
+                  }
+                }
+              }
+            ],
+            "category": "product_family",
+            "name": "Red Hat OpenStack Platform"
+          },
+          {
+            "category": "product_version",
+            "name": "stf/prometheus-webhook-snmp-rhel8:1.5.2-2",
+            "product": {
+              "name": "stf/prometheus-webhook-snmp-rhel8:1.5.2-2",
+              "product_id": "stf/prometheus-webhook-snmp-rhel8:1.5.2-2"
+            }
+          },
+          {
+            "category": "product_version",
+            "name": "stf/service-telemetry-operator-bundle:1.5.1678301890-1",
+            "product": {
+              "name": "stf/service-telemetry-operator-bundle:1.5.1678301890-1",
+              "product_id": "stf/service-telemetry-operator-bundle:1.5.1678301890-1"
+            }
+          },
+          {
+            "category": "product_version",
+            "name": "stf/service-telemetry-rhel8-operator:1.5.1-2",
+            "product": {
+              "name": "stf/service-telemetry-rhel8-operator:1.5.1-2",
+              "product_id": "stf/service-telemetry-rhel8-operator:1.5.1-2"
+            }
+          },
+          {
+            "category": "product_version",
+            "name": "stf/sg-bridge-rhel8:1.5.0-12",
+            "product": {
+              "name": "stf/sg-bridge-rhel8:1.5.0-12",
+              "product_id": "stf/sg-bridge-rhel8:1.5.0-12"
+            }
+          },
+          {
+            "category": "product_version",
+            "name": "stf/sg-core-rhel8:5.1.1-2",
+            "product": {
+              "name": "stf/sg-core-rhel8:5.1.1-2",
+              "product_id": "stf/sg-core-rhel8:5.1.1-2"
+            }
+          },
+          {
+            "category": "product_version",
+            "name": "stf/smart-gateway-operator-bundle:5.0.1678301890-1",
+            "product": {
+              "name": "stf/smart-gateway-operator-bundle:5.0.1678301890-1",
+              "product_id": "stf/smart-gateway-operator-bundle:5.0.1678301890-1"
+            }
+          },
+          {
+            "category": "product_version",
+            "name": "stf/smart-gateway-rhel8-operator:5.0.1-3",
+            "product": {
+              "name": "stf/smart-gateway-rhel8-operator:5.0.1-3",
+              "product_id": "stf/smart-gateway-rhel8-operator:5.0.1-3"
+            }
+          }
+        ],
+        "category": "vendor",
+        "name": "Red Hat"
+      }
+    ],
+    "relationships": [
+      {
+        "category": "default_component_of",
+        "full_product_name": {
+          "name": "stf/prometheus-webhook-snmp-rhel8:1.5.2-2 as a component of Service Telemetry Framework 1.5 for RHEL 8",
+          "product_id": "8Base-STF-1.5:stf/prometheus-webhook-snmp-rhel8:1.5.2-2"
+        },
+        "product_reference": "stf/prometheus-webhook-snmp-rhel8:1.5.2-2",
+        "relates_to_product_reference": "8Base-STF-1.5"
+      },
+      {
+        "category": "default_component_of",
+        "full_product_name": {
+          "name": "stf/service-telemetry-operator-bundle:1.5.1678301890-1 as a component of Service Telemetry Framework 1.5 for RHEL 8",
+          "product_id": "8Base-STF-1.5:stf/service-telemetry-operator-bundle:1.5.1678301890-1"
+        },
+        "product_reference": "stf/service-telemetry-operator-bundle:1.5.1678301890-1",
+        "relates_to_product_reference": "8Base-STF-1.5"
+      },
+      {
+        "category": "default_component_of",
+        "full_product_name": {
+          "name": "stf/service-telemetry-rhel8-operator:1.5.1-2 as a component of Service Telemetry Framework 1.5 for RHEL 8",
+          "product_id": "8Base-STF-1.5:stf/service-telemetry-rhel8-operator:1.5.1-2"
+        },
+        "product_reference": "stf/service-telemetry-rhel8-operator:1.5.1-2",
+        "relates_to_product_reference": "8Base-STF-1.5"
+      },
+      {
+        "category": "default_component_of",
+        "full_product_name": {
+          "name": "stf/sg-bridge-rhel8:1.5.0-12 as a component of Service Telemetry Framework 1.5 for RHEL 8",
+          "product_id": "8Base-STF-1.5:stf/sg-bridge-rhel8:1.5.0-12"
+        },
+        "product_reference": "stf/sg-bridge-rhel8:1.5.0-12",
+        "relates_to_product_reference": "8Base-STF-1.5"
+      },
+      {
+        "category": "default_component_of",
+        "full_product_name": {
+          "name": "stf/sg-core-rhel8:5.1.1-2 as a component of Service Telemetry Framework 1.5 for RHEL 8",
+          "product_id": "8Base-STF-1.5:stf/sg-core-rhel8:5.1.1-2"
+        },
+        "product_reference": "stf/sg-core-rhel8:5.1.1-2",
+        "relates_to_product_reference": "8Base-STF-1.5"
+      },
+      {
+        "category": "default_component_of",
+        "full_product_name": {
+          "name": "stf/smart-gateway-operator-bundle:5.0.1678301890-1 as a component of Service Telemetry Framework 1.5 for RHEL 8",
+          "product_id": "8Base-STF-1.5:stf/smart-gateway-operator-bundle:5.0.1678301890-1"
+        },
+        "product_reference": "stf/smart-gateway-operator-bundle:5.0.1678301890-1",
+        "relates_to_product_reference": "8Base-STF-1.5"
+      },
+      {
+        "category": "default_component_of",
+        "full_product_name": {
+          "name": "stf/smart-gateway-rhel8-operator:5.0.1-3 as a component of Service Telemetry Framework 1.5 for RHEL 8",
+          "product_id": "8Base-STF-1.5:stf/smart-gateway-rhel8-operator:5.0.1-3"
+        },
+        "product_reference": "stf/smart-gateway-rhel8-operator:5.0.1-3",
+        "relates_to_product_reference": "8Base-STF-1.5"
+      }
+    ]
+  },
+  "vulnerabilities": [
+    {
+      "cve": "CVE-2022-1705",
+      "cwe": {
+        "id": "CWE-444",
+        "name": "Inconsistent Interpretation of HTTP Requests ('HTTP Request/Response Smuggling')"
+      },
+      "discovery_date": "2022-07-14T00:00:00Z",
+      "flags": [
+        {
+          "label": "component_not_present",
+          "product_ids": [
+            "8Base-STF-1.5:stf/prometheus-webhook-snmp-rhel8:1.5.2-2",
+            "8Base-STF-1.5:stf/service-telemetry-operator-bundle:1.5.1678301890-1",
+            "8Base-STF-1.5:stf/service-telemetry-rhel8-operator:1.5.1-2",
+            "8Base-STF-1.5:stf/sg-bridge-rhel8:1.5.0-12",
+            "8Base-STF-1.5:stf/smart-gateway-operator-bundle:5.0.1678301890-1",
+            "8Base-STF-1.5:stf/smart-gateway-rhel8-operator:5.0.1-3"
+          ]
+        }
+      ],
+      "ids": [
+        {
+          "system_name": "Red Hat Bugzilla",
+          "text": "https://bugzilla.redhat.com/show_bug.cgi?id=2107374"
+        }
+      ],
+      "notes": [
+        {
+          "category": "general",
+          "text": "The CVSS score(s) listed for this vulnerability do not reflect the associated product's status, and are included for informational purposes to better understand the severity of this vulnerability.",
+          "title": "CVSS score applicability"
+        },
+        {
+          "category": "description",
+          "text": "A flaw was found in golang. The HTTP/1 client accepted invalid Transfer-Encoding headers indicating \"chunked\" encoding. This issue could allow request smuggling, but only if combined with an intermediate server that also improperly accepts the header as invalid.",
+          "title": "Vulnerability description"
+        },
+        {
+          "category": "summary",
+          "text": "improper sanitization of Transfer-Encoding header",
+          "title": "Vulnerability summary"
+        }
+      ],
+      "product_status": {
+        "fixed": [
+          "8Base-STF-1.5:stf/sg-core-rhel8:5.1.1-2"
+        ],
+        "known_not_affected": [
+          "8Base-STF-1.5:stf/prometheus-webhook-snmp-rhel8:1.5.2-2",
+          "8Base-STF-1.5:stf/service-telemetry-operator-bundle:1.5.1678301890-1",
+          "8Base-STF-1.5:stf/service-telemetry-rhel8-operator:1.5.1-2",
+          "8Base-STF-1.5:stf/sg-bridge-rhel8:1.5.0-12",
+          "8Base-STF-1.5:stf/smart-gateway-operator-bundle:5.0.1678301890-1",
+          "8Base-STF-1.5:stf/smart-gateway-rhel8-operator:5.0.1-3"
+        ]
+      },
+      "references": [
+        {
+          "category": "external",
+          "summary": "https://www.cve.org/CVERecord?id=CVE-2022-1705",
+          "url": "https://www.cve.org/CVERecord?id=CVE-2022-1705"
+        },
+        {
+          "category": "external",
+          "summary": "https://nvd.nist.gov/vuln/detail/CVE-2022-1705",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2022-1705"
+        },
+        {
+          "category": "external",
+          "summary": "https://go.dev/issue/53188",
+          "url": "https://go.dev/issue/53188"
+        },
+        {
+          "category": "external",
+          "summary": "https://groups.google.com/g/golang-announce/c/nqrv9fbR0zE",
+          "url": "https://groups.google.com/g/golang-announce/c/nqrv9fbR0zE"
+        },
+        {
+          "category": "external",
+          "summary": "CVE-2022-1705",
+          "url": "https://access.redhat.com/security/cve/CVE-2022-1705"
+        },
+        {
+          "category": "external",
+          "summary": "bz#2107374: improper sanitization of Transfer-Encoding header",
+          "url": "https://bugzilla.redhat.com/show_bug.cgi?id=2107374"
+        }
+      ],
+      "release_date": "2022-07-12T00:00:00Z",
+      "remediations": [
+        {
+          "category": "vendor_fix",
+          "details": "The Service Telemetry Framework container image provided by this update can be downloaded from the Red Hat Container Registry at registry.access.redhat.com. Installation instructions for your platform are available at Red Hat Container Catalog (see References).\n\nDockerfiles and scripts should be amended either to refer to this new image specifically, or to the latest image generally.",
+          "product_ids": [
+            "8Base-STF-1.5:stf/sg-core-rhel8:5.1.1-2"
+          ],
+          "url": "https://access.redhat.com/errata/RHSA-2023:1529"
+        }
+      ],
+      "scores": [
+        {
+          "cvss_v3": {
+            "attackComplexity": "LOW",
+            "attackVector": "NETWORK",
+            "availabilityImpact": "NONE",
+            "baseScore": 6.5,
+            "baseSeverity": "MEDIUM",
+            "confidentialityImpact": "LOW",
+            "integrityImpact": "LOW",
+            "privilegesRequired": "NONE",
+            "scope": "UNCHANGED",
+            "userInteraction": "NONE",
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:N",
+            "version": "3.1"
+          },
+          "products": [
+            "8Base-STF-1.5:stf/sg-core-rhel8:5.1.1-2"
+          ]
+        }
+      ],
+      "threats": [
+        {
+          "category": "impact",
+          "date": "2022-07-14T00:00:00Z",
+          "details": "Moderate"
+        }
+      ],
+      "title": "improper sanitization of Transfer-Encoding header"
+    },
+    {
+      "cve": "CVE-2022-23772",
+      "cwe": {
+        "id": "CWE-190",
+        "name": "Integer Overflow or Wraparound"
+      },
+      "discovery_date": "2022-02-11T00:00:00Z",
+      "flags": [
+        {
+          "label": "component_not_present",
+          "product_ids": [
+            "8Base-STF-1.5:stf/prometheus-webhook-snmp-rhel8:1.5.2-2",
+            "8Base-STF-1.5:stf/service-telemetry-operator-bundle:1.5.1678301890-1",
+            "8Base-STF-1.5:stf/service-telemetry-rhel8-operator:1.5.1-2",
+            "8Base-STF-1.5:stf/sg-bridge-rhel8:1.5.0-12",
+            "8Base-STF-1.5:stf/smart-gateway-operator-bundle:5.0.1678301890-1",
+            "8Base-STF-1.5:stf/smart-gateway-rhel8-operator:5.0.1-3"
+          ]
+        }
+      ],
+      "ids": [
+        {
+          "system_name": "Red Hat Bugzilla",
+          "text": "https://bugzilla.redhat.com/show_bug.cgi?id=2053532"
+        }
+      ],
+      "notes": [
+        {
+          "category": "general",
+          "text": "The CVSS score(s) listed for this vulnerability do not reflect the associated product's status, and are included for informational purposes to better understand the severity of this vulnerability.",
+          "title": "CVSS score applicability"
+        },
+        {
+          "category": "description",
+          "text": "A flaw was found in the big package of the math library in golang. The Rat.SetString could cause an overflow, and if left unhandled, it could lead to excessive memory use. This issue could allow a remote attacker to impact the availability of the system.",
+          "title": "Vulnerability description"
+        },
+        {
+          "category": "summary",
+          "text": "golang: math/big: uncontrolled memory consumption due to an unhandled overflow via Rat.SetString",
+          "title": "Vulnerability summary"
+        }
+      ],
+      "product_status": {
+        "fixed": [
+          "8Base-STF-1.5:stf/sg-core-rhel8:5.1.1-2"
+        ],
+        "known_not_affected": [
+          "8Base-STF-1.5:stf/prometheus-webhook-snmp-rhel8:1.5.2-2",
+          "8Base-STF-1.5:stf/service-telemetry-operator-bundle:1.5.1678301890-1",
+          "8Base-STF-1.5:stf/service-telemetry-rhel8-operator:1.5.1-2",
+          "8Base-STF-1.5:stf/sg-bridge-rhel8:1.5.0-12",
+          "8Base-STF-1.5:stf/smart-gateway-operator-bundle:5.0.1678301890-1",
+          "8Base-STF-1.5:stf/smart-gateway-rhel8-operator:5.0.1-3"
+        ]
+      },
+      "references": [
+        {
+          "category": "external",
+          "summary": "https://www.cve.org/CVERecord?id=CVE-2022-23772",
+          "url": "https://www.cve.org/CVERecord?id=CVE-2022-23772"
+        },
+        {
+          "category": "external",
+          "summary": "https://nvd.nist.gov/vuln/detail/CVE-2022-23772",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2022-23772"
+        },
+        {
+          "category": "external",
+          "summary": "https://groups.google.com/g/golang-announce/c/SUsQn0aSgPQ",
+          "url": "https://groups.google.com/g/golang-announce/c/SUsQn0aSgPQ"
+        },
+        {
+          "category": "external",
+          "summary": "CVE-2022-23772",
+          "url": "https://access.redhat.com/security/cve/CVE-2022-23772"
+        },
+        {
+          "category": "external",
+          "summary": "bz#2053532: CVE-2022-23772 golang: math/big: uncontrolled memory consumption due to an unhandled overflow via Rat.SetString",
+          "url": "https://bugzilla.redhat.com/show_bug.cgi?id=2053532"
+        }
+      ],
+      "release_date": "2022-01-19T00:00:00Z",
+      "remediations": [
+        {
+          "category": "vendor_fix",
+          "details": "The Service Telemetry Framework container image provided by this update can be downloaded from the Red Hat Container Registry at registry.access.redhat.com. Installation instructions for your platform are available at Red Hat Container Catalog (see References).\n\nDockerfiles and scripts should be amended either to refer to this new image specifically, or to the latest image generally.",
+          "product_ids": [
+            "8Base-STF-1.5:stf/sg-core-rhel8:5.1.1-2"
+          ],
+          "url": "https://access.redhat.com/errata/RHSA-2023:1529"
+        }
+      ],
+      "scores": [
+        {
+          "cvss_v3": {
+            "attackComplexity": "LOW",
+            "attackVector": "NETWORK",
+            "availabilityImpact": "HIGH",
+            "baseScore": 7.5,
+            "baseSeverity": "HIGH",
+            "confidentialityImpact": "NONE",
+            "integrityImpact": "NONE",
+            "privilegesRequired": "NONE",
+            "scope": "UNCHANGED",
+            "userInteraction": "NONE",
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+            "version": "3.1"
+          },
+          "products": [
+            "8Base-STF-1.5:stf/sg-core-rhel8:5.1.1-2"
+          ]
+        }
+      ],
+      "threats": [
+        {
+          "category": "impact",
+          "date": "2022-02-11T00:00:00Z",
+          "details": "Moderate"
+        }
+      ],
+      "title": "CVE-2022-23772 golang: math/big: uncontrolled memory consumption due to an unhandled overflow via Rat.SetString"
+    },
+    {
+      "cve": "CVE-2022-23773",
+      "cwe": {
+        "id": "CWE-1220",
+        "name": "Insufficient Granularity of Access Control"
+      },
+      "discovery_date": "2022-02-11T00:00:00Z",
+      "flags": [
+        {
+          "label": "component_not_present",
+          "product_ids": [
+            "8Base-STF-1.5:stf/prometheus-webhook-snmp-rhel8:1.5.2-2",
+            "8Base-STF-1.5:stf/service-telemetry-operator-bundle:1.5.1678301890-1",
+            "8Base-STF-1.5:stf/service-telemetry-rhel8-operator:1.5.1-2",
+            "8Base-STF-1.5:stf/sg-bridge-rhel8:1.5.0-12",
+            "8Base-STF-1.5:stf/smart-gateway-operator-bundle:5.0.1678301890-1",
+            "8Base-STF-1.5:stf/smart-gateway-rhel8-operator:5.0.1-3"
+          ]
+        }
+      ],
+      "ids": [
+        {
+          "system_name": "Red Hat Bugzilla",
+          "text": "https://bugzilla.redhat.com/show_bug.cgi?id=2053541"
+        }
+      ],
+      "notes": [
+        {
+          "category": "general",
+          "text": "The CVSS score(s) listed for this vulnerability do not reflect the associated product's status, and are included for informational purposes to better understand the severity of this vulnerability.",
+          "title": "CVSS score applicability"
+        },
+        {
+          "category": "description",
+          "text": "A flaw was found in the go package of the cmd library in golang. The go command could be tricked into accepting a branch, which resembles a version tag. This issue could allow a remote unauthenticated attacker to bypass security restrictions and introduce invalid or incorrect tags, reducing the integrity of the environment.",
+          "title": "Vulnerability description"
+        },
+        {
+          "category": "summary",
+          "text": "golang: cmd/go: misinterpretation of branch names can lead to incorrect access control",
+          "title": "Vulnerability summary"
+        }
+      ],
+      "product_status": {
+        "fixed": [
+          "8Base-STF-1.5:stf/sg-core-rhel8:5.1.1-2"
+        ],
+        "known_not_affected": [
+          "8Base-STF-1.5:stf/prometheus-webhook-snmp-rhel8:1.5.2-2",
+          "8Base-STF-1.5:stf/service-telemetry-operator-bundle:1.5.1678301890-1",
+          "8Base-STF-1.5:stf/service-telemetry-rhel8-operator:1.5.1-2",
+          "8Base-STF-1.5:stf/sg-bridge-rhel8:1.5.0-12",
+          "8Base-STF-1.5:stf/smart-gateway-operator-bundle:5.0.1678301890-1",
+          "8Base-STF-1.5:stf/smart-gateway-rhel8-operator:5.0.1-3"
+        ]
+      },
+      "references": [
+        {
+          "category": "external",
+          "summary": "https://www.cve.org/CVERecord?id=CVE-2022-23773",
+          "url": "https://www.cve.org/CVERecord?id=CVE-2022-23773"
+        },
+        {
+          "category": "external",
+          "summary": "https://nvd.nist.gov/vuln/detail/CVE-2022-23773",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2022-23773"
+        },
+        {
+          "category": "external",
+          "summary": "https://groups.google.com/g/golang-announce/c/SUsQn0aSgPQ",
+          "url": "https://groups.google.com/g/golang-announce/c/SUsQn0aSgPQ"
+        },
+        {
+          "category": "external",
+          "summary": "CVE-2022-23773",
+          "url": "https://access.redhat.com/security/cve/CVE-2022-23773"
+        },
+        {
+          "category": "external",
+          "summary": "bz#2053541: CVE-2022-23773 golang: cmd/go: misinterpretation of branch names can lead to incorrect access control",
+          "url": "https://bugzilla.redhat.com/show_bug.cgi?id=2053541"
+        }
+      ],
+      "release_date": "2022-02-11T00:00:00Z",
+      "remediations": [
+        {
+          "category": "vendor_fix",
+          "details": "The Service Telemetry Framework container image provided by this update can be downloaded from the Red Hat Container Registry at registry.access.redhat.com. Installation instructions for your platform are available at Red Hat Container Catalog (see References).\n\nDockerfiles and scripts should be amended either to refer to this new image specifically, or to the latest image generally.",
+          "product_ids": [
+            "8Base-STF-1.5:stf/sg-core-rhel8:5.1.1-2"
+          ],
+          "url": "https://access.redhat.com/errata/RHSA-2023:1529"
+        }
+      ],
+      "scores": [
+        {
+          "cvss_v3": {
+            "attackComplexity": "LOW",
+            "attackVector": "NETWORK",
+            "availabilityImpact": "NONE",
+            "baseScore": 7.5,
+            "baseSeverity": "HIGH",
+            "confidentialityImpact": "NONE",
+            "integrityImpact": "HIGH",
+            "privilegesRequired": "NONE",
+            "scope": "UNCHANGED",
+            "userInteraction": "NONE",
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N",
+            "version": "3.1"
+          },
+          "products": [
+            "8Base-STF-1.5:stf/sg-core-rhel8:5.1.1-2"
+          ]
+        }
+      ],
+      "threats": [
+        {
+          "category": "impact",
+          "date": "2022-02-11T00:00:00Z",
+          "details": "Moderate"
+        }
+      ],
+      "title": "CVE-2022-23773 golang: cmd/go: misinterpretation of branch names can lead to incorrect access control"
+    },
+    {
+      "cve": "CVE-2022-23806",
+      "cwe": {
+        "id": "CWE-252",
+        "name": "Unchecked Return Value"
+      },
+      "discovery_date": "2022-02-11T00:00:00Z",
+      "flags": [
+        {
+          "label": "component_not_present",
+          "product_ids": [
+            "8Base-STF-1.5:stf/prometheus-webhook-snmp-rhel8:1.5.2-2",
+            "8Base-STF-1.5:stf/service-telemetry-operator-bundle:1.5.1678301890-1",
+            "8Base-STF-1.5:stf/service-telemetry-rhel8-operator:1.5.1-2",
+            "8Base-STF-1.5:stf/sg-bridge-rhel8:1.5.0-12",
+            "8Base-STF-1.5:stf/smart-gateway-operator-bundle:5.0.1678301890-1",
+            "8Base-STF-1.5:stf/smart-gateway-rhel8-operator:5.0.1-3"
+          ]
+        }
+      ],
+      "ids": [
+        {
+          "system_name": "Red Hat Bugzilla",
+          "text": "https://bugzilla.redhat.com/show_bug.cgi?id=2053429"
+        }
+      ],
+      "notes": [
+        {
+          "category": "general",
+          "text": "The CVSS score(s) listed for this vulnerability do not reflect the associated product's status, and are included for informational purposes to better understand the severity of this vulnerability.",
+          "title": "CVSS score applicability"
+        },
+        {
+          "category": "description",
+          "text": "A flaw was found in the elliptic package of the crypto library in golang when the IsOnCurve function could return true for invalid field elements. This flaw allows an attacker to take advantage of this undefined behavior, affecting the availability and integrity of the resource.",
+          "title": "Vulnerability description"
+        },
+        {
+          "category": "summary",
+          "text": "golang: crypto/elliptic: IsOnCurve returns true for invalid field elements",
+          "title": "Vulnerability summary"
+        }
+      ],
+      "product_status": {
+        "fixed": [
+          "8Base-STF-1.5:stf/sg-core-rhel8:5.1.1-2"
+        ],
+        "known_not_affected": [
+          "8Base-STF-1.5:stf/prometheus-webhook-snmp-rhel8:1.5.2-2",
+          "8Base-STF-1.5:stf/service-telemetry-operator-bundle:1.5.1678301890-1",
+          "8Base-STF-1.5:stf/service-telemetry-rhel8-operator:1.5.1-2",
+          "8Base-STF-1.5:stf/sg-bridge-rhel8:1.5.0-12",
+          "8Base-STF-1.5:stf/smart-gateway-operator-bundle:5.0.1678301890-1",
+          "8Base-STF-1.5:stf/smart-gateway-rhel8-operator:5.0.1-3"
+        ]
+      },
+      "references": [
+        {
+          "category": "external",
+          "summary": "https://www.cve.org/CVERecord?id=CVE-2022-23806",
+          "url": "https://www.cve.org/CVERecord?id=CVE-2022-23806"
+        },
+        {
+          "category": "external",
+          "summary": "https://nvd.nist.gov/vuln/detail/CVE-2022-23806",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2022-23806"
+        },
+        {
+          "category": "external",
+          "summary": "https://groups.google.com/g/golang-announce/c/SUsQn0aSgPQ",
+          "url": "https://groups.google.com/g/golang-announce/c/SUsQn0aSgPQ"
+        },
+        {
+          "category": "external",
+          "summary": "CVE-2022-23806",
+          "url": "https://access.redhat.com/security/cve/CVE-2022-23806"
+        },
+        {
+          "category": "external",
+          "summary": "bz#2053429: CVE-2022-23806 golang: crypto/elliptic: IsOnCurve returns true for invalid field elements",
+          "url": "https://bugzilla.redhat.com/show_bug.cgi?id=2053429"
+        }
+      ],
+      "release_date": "2022-02-11T00:00:00Z",
+      "remediations": [
+        {
+          "category": "vendor_fix",
+          "details": "The Service Telemetry Framework container image provided by this update can be downloaded from the Red Hat Container Registry at registry.access.redhat.com. Installation instructions for your platform are available at Red Hat Container Catalog (see References).\n\nDockerfiles and scripts should be amended either to refer to this new image specifically, or to the latest image generally.",
+          "product_ids": [
+            "8Base-STF-1.5:stf/sg-core-rhel8:5.1.1-2"
+          ],
+          "url": "https://access.redhat.com/errata/RHSA-2023:1529"
+        }
+      ],
+      "scores": [
+        {
+          "cvss_v3": {
+            "attackComplexity": "LOW",
+            "attackVector": "NETWORK",
+            "availabilityImpact": "HIGH",
+            "baseScore": 8.2,
+            "baseSeverity": "HIGH",
+            "confidentialityImpact": "NONE",
+            "integrityImpact": "LOW",
+            "privilegesRequired": "NONE",
+            "scope": "UNCHANGED",
+            "userInteraction": "NONE",
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:H",
+            "version": "3.1"
+          },
+          "products": [
+            "8Base-STF-1.5:stf/sg-core-rhel8:5.1.1-2"
+          ]
+        }
+      ],
+      "threats": [
+        {
+          "category": "impact",
+          "date": "2022-02-11T00:00:00Z",
+          "details": "Moderate"
+        }
+      ],
+      "title": "CVE-2022-23806 golang: crypto/elliptic: IsOnCurve returns true for invalid field elements"
+    },
+    {
+      "cve": "CVE-2022-24675",
+      "cwe": {
+        "id": "CWE-120",
+        "name": "Buffer Copy without Checking Size of Input ('Classic Buffer Overflow')"
+      },
+      "discovery_date": "2022-04-21T00:00:00Z",
+      "flags": [
+        {
+          "label": "component_not_present",
+          "product_ids": [
+            "8Base-STF-1.5:stf/prometheus-webhook-snmp-rhel8:1.5.2-2",
+            "8Base-STF-1.5:stf/service-telemetry-operator-bundle:1.5.1678301890-1",
+            "8Base-STF-1.5:stf/service-telemetry-rhel8-operator:1.5.1-2",
+            "8Base-STF-1.5:stf/sg-bridge-rhel8:1.5.0-12",
+            "8Base-STF-1.5:stf/smart-gateway-operator-bundle:5.0.1678301890-1",
+            "8Base-STF-1.5:stf/smart-gateway-rhel8-operator:5.0.1-3"
+          ]
+        }
+      ],
+      "ids": [
+        {
+          "system_name": "Red Hat Bugzilla",
+          "text": "https://bugzilla.redhat.com/show_bug.cgi?id=2077688"
+        }
+      ],
+      "notes": [
+        {
+          "category": "general",
+          "text": "The CVSS score(s) listed for this vulnerability do not reflect the associated product's status, and are included for informational purposes to better understand the severity of this vulnerability.",
+          "title": "CVSS score applicability"
+        },
+        {
+          "category": "description",
+          "text": "A buffer overflow flaw was found in Golang's library encoding/pem. This flaw allows an attacker to use a large PEM input (more than 5 MB), causing a stack overflow in Decode, which leads to a loss of availability.",
+          "title": "Vulnerability description"
+        },
+        {
+          "category": "summary",
+          "text": "fix stack overflow in Decode",
+          "title": "Vulnerability summary"
+        }
+      ],
+      "product_status": {
+        "fixed": [
+          "8Base-STF-1.5:stf/sg-core-rhel8:5.1.1-2"
+        ],
+        "known_not_affected": [
+          "8Base-STF-1.5:stf/prometheus-webhook-snmp-rhel8:1.5.2-2",
+          "8Base-STF-1.5:stf/service-telemetry-operator-bundle:1.5.1678301890-1",
+          "8Base-STF-1.5:stf/service-telemetry-rhel8-operator:1.5.1-2",
+          "8Base-STF-1.5:stf/sg-bridge-rhel8:1.5.0-12",
+          "8Base-STF-1.5:stf/smart-gateway-operator-bundle:5.0.1678301890-1",
+          "8Base-STF-1.5:stf/smart-gateway-rhel8-operator:5.0.1-3"
+        ]
+      },
+      "references": [
+        {
+          "category": "external",
+          "summary": "https://www.cve.org/CVERecord?id=CVE-2022-24675",
+          "url": "https://www.cve.org/CVERecord?id=CVE-2022-24675"
+        },
+        {
+          "category": "external",
+          "summary": "https://nvd.nist.gov/vuln/detail/CVE-2022-24675",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2022-24675"
+        },
+        {
+          "category": "external",
+          "summary": "https://groups.google.com/g/golang-announce/c/oecdBNLOml8",
+          "url": "https://groups.google.com/g/golang-announce/c/oecdBNLOml8"
+        },
+        {
+          "category": "external",
+          "summary": "CVE-2022-24675",
+          "url": "https://access.redhat.com/security/cve/CVE-2022-24675"
+        },
+        {
+          "category": "external",
+          "summary": "bz#2077688: fix stack overflow in Decode",
+          "url": "https://bugzilla.redhat.com/show_bug.cgi?id=2077688"
+        }
+      ],
+      "release_date": "2022-04-12T00:00:00Z",
+      "remediations": [
+        {
+          "category": "vendor_fix",
+          "details": "The Service Telemetry Framework container image provided by this update can be downloaded from the Red Hat Container Registry at registry.access.redhat.com. Installation instructions for your platform are available at Red Hat Container Catalog (see References).\n\nDockerfiles and scripts should be amended either to refer to this new image specifically, or to the latest image generally.",
+          "product_ids": [
+            "8Base-STF-1.5:stf/sg-core-rhel8:5.1.1-2"
+          ],
+          "url": "https://access.redhat.com/errata/RHSA-2023:1529"
+        }
+      ],
+      "scores": [
+        {
+          "cvss_v3": {
+            "attackComplexity": "LOW",
+            "attackVector": "NETWORK",
+            "availabilityImpact": "HIGH",
+            "baseScore": 7.5,
+            "baseSeverity": "HIGH",
+            "confidentialityImpact": "NONE",
+            "integrityImpact": "NONE",
+            "privilegesRequired": "NONE",
+            "scope": "UNCHANGED",
+            "userInteraction": "NONE",
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+            "version": "3.1"
+          },
+          "products": [
+            "8Base-STF-1.5:stf/sg-core-rhel8:5.1.1-2"
+          ]
+        }
+      ],
+      "threats": [
+        {
+          "category": "impact",
+          "date": "2022-04-21T00:00:00Z",
+          "details": "Moderate"
+        }
+      ],
+      "title": "fix stack overflow in Decode"
+    },
+    {
+      "cve": "CVE-2022-27664",
+      "cwe": {
+        "id": "CWE-400",
+        "name": "Uncontrolled Resource Consumption"
+      },
+      "discovery_date": "2022-09-06T00:00:00Z",
+      "flags": [
+        {
+          "label": "component_not_present",
+          "product_ids": [
+            "8Base-STF-1.5:stf/prometheus-webhook-snmp-rhel8:1.5.2-2",
+            "8Base-STF-1.5:stf/service-telemetry-operator-bundle:1.5.1678301890-1",
+            "8Base-STF-1.5:stf/service-telemetry-rhel8-operator:1.5.1-2",
+            "8Base-STF-1.5:stf/sg-bridge-rhel8:1.5.0-12",
+            "8Base-STF-1.5:stf/smart-gateway-operator-bundle:5.0.1678301890-1",
+            "8Base-STF-1.5:stf/smart-gateway-rhel8-operator:5.0.1-3"
+          ]
+        }
+      ],
+      "ids": [
+        {
+          "system_name": "Red Hat Bugzilla",
+          "text": "https://bugzilla.redhat.com/show_bug.cgi?id=2124669"
+        }
+      ],
+      "notes": [
+        {
+          "category": "general",
+          "text": "The CVSS score(s) listed for this vulnerability do not reflect the associated product's status, and are included for informational purposes to better understand the severity of this vulnerability.",
+          "title": "CVSS score applicability"
+        },
+        {
+          "category": "description",
+          "text": "A flaw was found in the golang package. In net/http in Go, attackers can cause a denial of service because an HTTP/2 connection can hang during closing if a fatal error preempts the shutdown.",
+          "title": "Vulnerability description"
+        },
+        {
+          "category": "summary",
+          "text": "handle server errors after sending GOAWAY",
+          "title": "Vulnerability summary"
+        }
+      ],
+      "product_status": {
+        "fixed": [
+          "8Base-STF-1.5:stf/sg-core-rhel8:5.1.1-2"
+        ],
+        "known_not_affected": [
+          "8Base-STF-1.5:stf/prometheus-webhook-snmp-rhel8:1.5.2-2",
+          "8Base-STF-1.5:stf/service-telemetry-operator-bundle:1.5.1678301890-1",
+          "8Base-STF-1.5:stf/service-telemetry-rhel8-operator:1.5.1-2",
+          "8Base-STF-1.5:stf/sg-bridge-rhel8:1.5.0-12",
+          "8Base-STF-1.5:stf/smart-gateway-operator-bundle:5.0.1678301890-1",
+          "8Base-STF-1.5:stf/smart-gateway-rhel8-operator:5.0.1-3"
+        ]
+      },
+      "references": [
+        {
+          "category": "external",
+          "summary": "https://www.cve.org/CVERecord?id=CVE-2022-27664",
+          "url": "https://www.cve.org/CVERecord?id=CVE-2022-27664"
+        },
+        {
+          "category": "external",
+          "summary": "https://nvd.nist.gov/vuln/detail/CVE-2022-27664",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2022-27664"
+        },
+        {
+          "category": "external",
+          "summary": "https://go.dev/issue/54658",
+          "url": "https://go.dev/issue/54658"
+        },
+        {
+          "category": "external",
+          "summary": "https://groups.google.com/g/golang-announce/c/x49AQzIVX-s/m/0tgO0pjiBQAJ",
+          "url": "https://groups.google.com/g/golang-announce/c/x49AQzIVX-s/m/0tgO0pjiBQAJ"
+        },
+        {
+          "category": "external",
+          "summary": "CVE-2022-27664",
+          "url": "https://access.redhat.com/security/cve/CVE-2022-27664"
+        },
+        {
+          "category": "external",
+          "summary": "bz#2124669: handle server errors after sending GOAWAY",
+          "url": "https://bugzilla.redhat.com/show_bug.cgi?id=2124669"
+        }
+      ],
+      "release_date": "2022-09-06T00:00:00Z",
+      "remediations": [
+        {
+          "category": "vendor_fix",
+          "details": "The Service Telemetry Framework container image provided by this update can be downloaded from the Red Hat Container Registry at registry.access.redhat.com. Installation instructions for your platform are available at Red Hat Container Catalog (see References).\n\nDockerfiles and scripts should be amended either to refer to this new image specifically, or to the latest image generally.",
+          "product_ids": [
+            "8Base-STF-1.5:stf/sg-core-rhel8:5.1.1-2"
+          ],
+          "url": "https://access.redhat.com/errata/RHSA-2023:1529"
+        }
+      ],
+      "scores": [
+        {
+          "cvss_v3": {
+            "attackComplexity": "LOW",
+            "attackVector": "NETWORK",
+            "availabilityImpact": "HIGH",
+            "baseScore": 6.5,
+            "baseSeverity": "MEDIUM",
+            "confidentialityImpact": "NONE",
+            "integrityImpact": "NONE",
+            "privilegesRequired": "LOW",
+            "scope": "UNCHANGED",
+            "userInteraction": "NONE",
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:H",
+            "version": "3.1"
+          },
+          "products": [
+            "8Base-STF-1.5:stf/sg-core-rhel8:5.1.1-2"
+          ]
+        }
+      ],
+      "threats": [
+        {
+          "category": "impact",
+          "date": "2022-09-06T00:00:00Z",
+          "details": "Moderate"
+        }
+      ],
+      "title": "handle server errors after sending GOAWAY"
+    },
+    {
+      "cve": "CVE-2022-28327",
+      "cwe": {
+        "id": "CWE-190",
+        "name": "Integer Overflow or Wraparound"
+      },
+      "discovery_date": "2022-04-21T00:00:00Z",
+      "flags": [
+        {
+          "label": "component_not_present",
+          "product_ids": [
+            "8Base-STF-1.5:stf/prometheus-webhook-snmp-rhel8:1.5.2-2",
+            "8Base-STF-1.5:stf/service-telemetry-operator-bundle:1.5.1678301890-1",
+            "8Base-STF-1.5:stf/service-telemetry-rhel8-operator:1.5.1-2",
+            "8Base-STF-1.5:stf/sg-bridge-rhel8:1.5.0-12",
+            "8Base-STF-1.5:stf/smart-gateway-operator-bundle:5.0.1678301890-1",
+            "8Base-STF-1.5:stf/smart-gateway-rhel8-operator:5.0.1-3"
+          ]
+        }
+      ],
+      "ids": [
+        {
+          "system_name": "Red Hat Bugzilla",
+          "text": "https://bugzilla.redhat.com/show_bug.cgi?id=2077689"
+        }
+      ],
+      "notes": [
+        {
+          "category": "general",
+          "text": "The CVSS score(s) listed for this vulnerability do not reflect the associated product's status, and are included for informational purposes to better understand the severity of this vulnerability.",
+          "title": "CVSS score applicability"
+        },
+        {
+          "category": "description",
+          "text": "An integer overflow flaw was found in Golang's crypto/elliptic library. This flaw allows an attacker to use a crafted scaler input longer than 32 bytes, causing P256().ScalarMult or P256().ScalarBaseMult to panic, leading to a loss of availability.",
+          "title": "Vulnerability description"
+        },
+        {
+          "category": "summary",
+          "text": "panic caused by oversized scalar",
+          "title": "Vulnerability summary"
+        }
+      ],
+      "product_status": {
+        "fixed": [
+          "8Base-STF-1.5:stf/sg-core-rhel8:5.1.1-2"
+        ],
+        "known_not_affected": [
+          "8Base-STF-1.5:stf/prometheus-webhook-snmp-rhel8:1.5.2-2",
+          "8Base-STF-1.5:stf/service-telemetry-operator-bundle:1.5.1678301890-1",
+          "8Base-STF-1.5:stf/service-telemetry-rhel8-operator:1.5.1-2",
+          "8Base-STF-1.5:stf/sg-bridge-rhel8:1.5.0-12",
+          "8Base-STF-1.5:stf/smart-gateway-operator-bundle:5.0.1678301890-1",
+          "8Base-STF-1.5:stf/smart-gateway-rhel8-operator:5.0.1-3"
+        ]
+      },
+      "references": [
+        {
+          "category": "external",
+          "summary": "https://www.cve.org/CVERecord?id=CVE-2022-28327",
+          "url": "https://www.cve.org/CVERecord?id=CVE-2022-28327"
+        },
+        {
+          "category": "external",
+          "summary": "https://nvd.nist.gov/vuln/detail/CVE-2022-28327",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2022-28327"
+        },
+        {
+          "category": "external",
+          "summary": "https://groups.google.com/g/golang-announce/c/oecdBNLOml8",
+          "url": "https://groups.google.com/g/golang-announce/c/oecdBNLOml8"
+        },
+        {
+          "category": "external",
+          "summary": "CVE-2022-28327",
+          "url": "https://access.redhat.com/security/cve/CVE-2022-28327"
+        },
+        {
+          "category": "external",
+          "summary": "bz#2077689: panic caused by oversized scalar",
+          "url": "https://bugzilla.redhat.com/show_bug.cgi?id=2077689"
+        }
+      ],
+      "release_date": "2022-04-12T00:00:00Z",
+      "remediations": [
+        {
+          "category": "vendor_fix",
+          "details": "The Service Telemetry Framework container image provided by this update can be downloaded from the Red Hat Container Registry at registry.access.redhat.com. Installation instructions for your platform are available at Red Hat Container Catalog (see References).\n\nDockerfiles and scripts should be amended either to refer to this new image specifically, or to the latest image generally.",
+          "product_ids": [
+            "8Base-STF-1.5:stf/sg-core-rhel8:5.1.1-2"
+          ],
+          "url": "https://access.redhat.com/errata/RHSA-2023:1529"
+        }
+      ],
+      "scores": [
+        {
+          "cvss_v3": {
+            "attackComplexity": "LOW",
+            "attackVector": "NETWORK",
+            "availabilityImpact": "HIGH",
+            "baseScore": 7.5,
+            "baseSeverity": "HIGH",
+            "confidentialityImpact": "NONE",
+            "integrityImpact": "NONE",
+            "privilegesRequired": "NONE",
+            "scope": "UNCHANGED",
+            "userInteraction": "NONE",
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+            "version": "3.1"
+          },
+          "products": [
+            "8Base-STF-1.5:stf/sg-core-rhel8:5.1.1-2"
+          ]
+        }
+      ],
+      "threats": [
+        {
+          "category": "impact",
+          "date": "2022-04-21T00:00:00Z",
+          "details": "Moderate"
+        }
+      ],
+      "title": "panic caused by oversized scalar"
+    },
+    {
+      "acknowledgments": [
+        {
+          "names": [
+            "Jo\u00ebl G\u00e4hwiler"
+          ],
+          "summary": "Acknowledged by upstream."
+        }
+      ],
+      "cve": "CVE-2022-29526",
+      "cwe": {
+        "id": "CWE-280",
+        "name": "Improper Handling of Insufficient Permissions or Privileges "
+      },
+      "discovery_date": "2022-05-11T00:00:00Z",
+      "flags": [
+        {
+          "label": "component_not_present",
+          "product_ids": [
+            "8Base-STF-1.5:stf/prometheus-webhook-snmp-rhel8:1.5.2-2",
+            "8Base-STF-1.5:stf/service-telemetry-operator-bundle:1.5.1678301890-1",
+            "8Base-STF-1.5:stf/service-telemetry-rhel8-operator:1.5.1-2",
+            "8Base-STF-1.5:stf/sg-bridge-rhel8:1.5.0-12",
+            "8Base-STF-1.5:stf/smart-gateway-operator-bundle:5.0.1678301890-1",
+            "8Base-STF-1.5:stf/smart-gateway-rhel8-operator:5.0.1-3"
+          ]
+        }
+      ],
+      "ids": [
+        {
+          "system_name": "Red Hat Bugzilla",
+          "text": "https://bugzilla.redhat.com/show_bug.cgi?id=2084085"
+        }
+      ],
+      "notes": [
+        {
+          "category": "general",
+          "text": "The CVSS score(s) listed for this vulnerability do not reflect the associated product's status, and are included for informational purposes to better understand the severity of this vulnerability.",
+          "title": "CVSS score applicability"
+        },
+        {
+          "category": "description",
+          "text": "A flaw was found in the syscall.Faccessat function when calling a process by checking the group. This flaw allows an attacker to check the process group permissions rather than a member of the file's group, affecting system availability.",
+          "title": "Vulnerability description"
+        },
+        {
+          "category": "summary",
+          "text": "faccessat checks wrong group",
+          "title": "Vulnerability summary"
+        }
+      ],
+      "product_status": {
+        "fixed": [
+          "8Base-STF-1.5:stf/sg-core-rhel8:5.1.1-2"
+        ],
+        "known_not_affected": [
+          "8Base-STF-1.5:stf/prometheus-webhook-snmp-rhel8:1.5.2-2",
+          "8Base-STF-1.5:stf/service-telemetry-operator-bundle:1.5.1678301890-1",
+          "8Base-STF-1.5:stf/service-telemetry-rhel8-operator:1.5.1-2",
+          "8Base-STF-1.5:stf/sg-bridge-rhel8:1.5.0-12",
+          "8Base-STF-1.5:stf/smart-gateway-operator-bundle:5.0.1678301890-1",
+          "8Base-STF-1.5:stf/smart-gateway-rhel8-operator:5.0.1-3"
+        ]
+      },
+      "references": [
+        {
+          "category": "external",
+          "summary": "https://www.cve.org/CVERecord?id=CVE-2022-29526",
+          "url": "https://www.cve.org/CVERecord?id=CVE-2022-29526"
+        },
+        {
+          "category": "external",
+          "summary": "https://nvd.nist.gov/vuln/detail/CVE-2022-29526",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2022-29526"
+        },
+        {
+          "category": "external",
+          "summary": "https://groups.google.com/g/golang-announce/c/Y5qrqw_lWdU",
+          "url": "https://groups.google.com/g/golang-announce/c/Y5qrqw_lWdU"
+        },
+        {
+          "category": "external",
+          "summary": "CVE-2022-29526",
+          "url": "https://access.redhat.com/security/cve/CVE-2022-29526"
+        },
+        {
+          "category": "external",
+          "summary": "bz#2084085: faccessat checks wrong group",
+          "url": "https://bugzilla.redhat.com/show_bug.cgi?id=2084085"
+        }
+      ],
+      "release_date": "2022-05-11T00:00:00Z",
+      "remediations": [
+        {
+          "category": "vendor_fix",
+          "details": "The Service Telemetry Framework container image provided by this update can be downloaded from the Red Hat Container Registry at registry.access.redhat.com. Installation instructions for your platform are available at Red Hat Container Catalog (see References).\n\nDockerfiles and scripts should be amended either to refer to this new image specifically, or to the latest image generally.",
+          "product_ids": [
+            "8Base-STF-1.5:stf/sg-core-rhel8:5.1.1-2"
+          ],
+          "url": "https://access.redhat.com/errata/RHSA-2023:1529"
+        }
+      ],
+      "scores": [
+        {
+          "cvss_v3": {
+            "attackComplexity": "LOW",
+            "attackVector": "LOCAL",
+            "availabilityImpact": "HIGH",
+            "baseScore": 6.2,
+            "baseSeverity": "MEDIUM",
+            "confidentialityImpact": "NONE",
+            "integrityImpact": "NONE",
+            "privilegesRequired": "NONE",
+            "scope": "UNCHANGED",
+            "userInteraction": "NONE",
+            "vectorString": "CVSS:3.1/AV:L/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+            "version": "3.1"
+          },
+          "products": [
+            "8Base-STF-1.5:stf/sg-core-rhel8:5.1.1-2"
+          ]
+        }
+      ],
+      "threats": [
+        {
+          "category": "impact",
+          "date": "2022-05-11T00:00:00Z",
+          "details": "Moderate"
+        }
+      ],
+      "title": "faccessat checks wrong group"
+    },
+    {
+      "cve": "CVE-2022-30629",
+      "cwe": {
+        "id": "CWE-331",
+        "name": "Insufficient Entropy"
+      },
+      "discovery_date": "2022-06-02T00:00:00Z",
+      "flags": [
+        {
+          "label": "component_not_present",
+          "product_ids": [
+            "8Base-STF-1.5:stf/prometheus-webhook-snmp-rhel8:1.5.2-2",
+            "8Base-STF-1.5:stf/service-telemetry-operator-bundle:1.5.1678301890-1",
+            "8Base-STF-1.5:stf/service-telemetry-rhel8-operator:1.5.1-2",
+            "8Base-STF-1.5:stf/sg-bridge-rhel8:1.5.0-12",
+            "8Base-STF-1.5:stf/smart-gateway-operator-bundle:5.0.1678301890-1",
+            "8Base-STF-1.5:stf/smart-gateway-rhel8-operator:5.0.1-3"
+          ]
+        }
+      ],
+      "ids": [
+        {
+          "system_name": "Red Hat Bugzilla",
+          "text": "https://bugzilla.redhat.com/show_bug.cgi?id=2092793"
+        }
+      ],
+      "notes": [
+        {
+          "category": "general",
+          "text": "The CVSS score(s) listed for this vulnerability do not reflect the associated product's status, and are included for informational purposes to better understand the severity of this vulnerability.",
+          "title": "CVSS score applicability"
+        },
+        {
+          "category": "description",
+          "text": "A flaw was found in the crypto/tls golang package. When session tickets are generated by crypto/tls, it is missing the ticket expiration. This issue may allow an attacker to observe the TLS handshakes to correlate successive connections during session resumption.",
+          "title": "Vulnerability description"
+        },
+        {
+          "category": "summary",
+          "text": "session tickets lack random ticket_age_add",
+          "title": "Vulnerability summary"
+        }
+      ],
+      "product_status": {
+        "fixed": [
+          "8Base-STF-1.5:stf/sg-core-rhel8:5.1.1-2"
+        ],
+        "known_not_affected": [
+          "8Base-STF-1.5:stf/prometheus-webhook-snmp-rhel8:1.5.2-2",
+          "8Base-STF-1.5:stf/service-telemetry-operator-bundle:1.5.1678301890-1",
+          "8Base-STF-1.5:stf/service-telemetry-rhel8-operator:1.5.1-2",
+          "8Base-STF-1.5:stf/sg-bridge-rhel8:1.5.0-12",
+          "8Base-STF-1.5:stf/smart-gateway-operator-bundle:5.0.1678301890-1",
+          "8Base-STF-1.5:stf/smart-gateway-rhel8-operator:5.0.1-3"
+        ]
+      },
+      "references": [
+        {
+          "category": "external",
+          "summary": "https://www.cve.org/CVERecord?id=CVE-2022-30629",
+          "url": "https://www.cve.org/CVERecord?id=CVE-2022-30629"
+        },
+        {
+          "category": "external",
+          "summary": "https://nvd.nist.gov/vuln/detail/CVE-2022-30629",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2022-30629"
+        },
+        {
+          "category": "external",
+          "summary": "https://groups.google.com/g/golang-announce/c/TzIC9-t8Ytg",
+          "url": "https://groups.google.com/g/golang-announce/c/TzIC9-t8Ytg"
+        },
+        {
+          "category": "external",
+          "summary": "CVE-2022-30629",
+          "url": "https://access.redhat.com/security/cve/CVE-2022-30629"
+        },
+        {
+          "category": "external",
+          "summary": "bz#2092793: session tickets lack random ticket_age_add",
+          "url": "https://bugzilla.redhat.com/show_bug.cgi?id=2092793"
+        }
+      ],
+      "release_date": "2022-06-02T00:00:00Z",
+      "remediations": [
+        {
+          "category": "vendor_fix",
+          "details": "The Service Telemetry Framework container image provided by this update can be downloaded from the Red Hat Container Registry at registry.access.redhat.com. Installation instructions for your platform are available at Red Hat Container Catalog (see References).\n\nDockerfiles and scripts should be amended either to refer to this new image specifically, or to the latest image generally.",
+          "product_ids": [
+            "8Base-STF-1.5:stf/sg-core-rhel8:5.1.1-2"
+          ],
+          "url": "https://access.redhat.com/errata/RHSA-2023:1529"
+        }
+      ],
+      "scores": [
+        {
+          "cvss_v3": {
+            "attackComplexity": "HIGH",
+            "attackVector": "NETWORK",
+            "availabilityImpact": "NONE",
+            "baseScore": 3.1,
+            "baseSeverity": "LOW",
+            "confidentialityImpact": "LOW",
+            "integrityImpact": "NONE",
+            "privilegesRequired": "NONE",
+            "scope": "UNCHANGED",
+            "userInteraction": "REQUIRED",
+            "vectorString": "CVSS:3.1/AV:N/AC:H/PR:N/UI:R/S:U/C:L/I:N/A:N",
+            "version": "3.1"
+          },
+          "products": [
+            "8Base-STF-1.5:stf/sg-core-rhel8:5.1.1-2"
+          ]
+        }
+      ],
+      "threats": [
+        {
+          "category": "impact",
+          "date": "2022-06-02T00:00:00Z",
+          "details": "Low"
+        }
+      ],
+      "title": "session tickets lack random ticket_age_add"
+    },
+    {
+      "cve": "CVE-2022-30630",
+      "cwe": {
+        "id": "CWE-1325",
+        "name": "Improperly Controlled Sequential Memory Allocation"
+      },
+      "discovery_date": "2022-07-14T00:00:00Z",
+      "flags": [
+        {
+          "label": "component_not_present",
+          "product_ids": [
+            "8Base-STF-1.5:stf/prometheus-webhook-snmp-rhel8:1.5.2-2",
+            "8Base-STF-1.5:stf/service-telemetry-operator-bundle:1.5.1678301890-1",
+            "8Base-STF-1.5:stf/service-telemetry-rhel8-operator:1.5.1-2",
+            "8Base-STF-1.5:stf/sg-bridge-rhel8:1.5.0-12",
+            "8Base-STF-1.5:stf/smart-gateway-operator-bundle:5.0.1678301890-1",
+            "8Base-STF-1.5:stf/smart-gateway-rhel8-operator:5.0.1-3"
+          ]
+        }
+      ],
+      "ids": [
+        {
+          "system_name": "Red Hat Bugzilla",
+          "text": "https://bugzilla.redhat.com/show_bug.cgi?id=2107371"
+        }
+      ],
+      "notes": [
+        {
+          "category": "general",
+          "text": "The CVSS score(s) listed for this vulnerability do not reflect the associated product's status, and are included for informational purposes to better understand the severity of this vulnerability.",
+          "title": "CVSS score applicability"
+        },
+        {
+          "category": "description",
+          "text": "A flaw was found in the golang standard library, io/fs. Calling Glob on a path that contains a large number of path separators can cause a panic issue due to stack exhaustion. This could allow an attacker to impact availability.",
+          "title": "Vulnerability description"
+        },
+        {
+          "category": "summary",
+          "text": "stack exhaustion in Glob",
+          "title": "Vulnerability summary"
+        }
+      ],
+      "product_status": {
+        "fixed": [
+          "8Base-STF-1.5:stf/sg-core-rhel8:5.1.1-2"
+        ],
+        "known_not_affected": [
+          "8Base-STF-1.5:stf/prometheus-webhook-snmp-rhel8:1.5.2-2",
+          "8Base-STF-1.5:stf/service-telemetry-operator-bundle:1.5.1678301890-1",
+          "8Base-STF-1.5:stf/service-telemetry-rhel8-operator:1.5.1-2",
+          "8Base-STF-1.5:stf/sg-bridge-rhel8:1.5.0-12",
+          "8Base-STF-1.5:stf/smart-gateway-operator-bundle:5.0.1678301890-1",
+          "8Base-STF-1.5:stf/smart-gateway-rhel8-operator:5.0.1-3"
+        ]
+      },
+      "references": [
+        {
+          "category": "external",
+          "summary": "https://www.cve.org/CVERecord?id=CVE-2022-30630",
+          "url": "https://www.cve.org/CVERecord?id=CVE-2022-30630"
+        },
+        {
+          "category": "external",
+          "summary": "https://nvd.nist.gov/vuln/detail/CVE-2022-30630",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2022-30630"
+        },
+        {
+          "category": "external",
+          "summary": "https://go.dev/issue/53415",
+          "url": "https://go.dev/issue/53415"
+        },
+        {
+          "category": "external",
+          "summary": "https://groups.google.com/g/golang-announce/c/nqrv9fbR0zE",
+          "url": "https://groups.google.com/g/golang-announce/c/nqrv9fbR0zE"
+        },
+        {
+          "category": "external",
+          "summary": "CVE-2022-30630",
+          "url": "https://access.redhat.com/security/cve/CVE-2022-30630"
+        },
+        {
+          "category": "external",
+          "summary": "bz#2107371: stack exhaustion in Glob",
+          "url": "https://bugzilla.redhat.com/show_bug.cgi?id=2107371"
+        }
+      ],
+      "release_date": "2022-07-12T00:00:00Z",
+      "remediations": [
+        {
+          "category": "vendor_fix",
+          "details": "The Service Telemetry Framework container image provided by this update can be downloaded from the Red Hat Container Registry at registry.access.redhat.com. Installation instructions for your platform are available at Red Hat Container Catalog (see References).\n\nDockerfiles and scripts should be amended either to refer to this new image specifically, or to the latest image generally.",
+          "product_ids": [
+            "8Base-STF-1.5:stf/sg-core-rhel8:5.1.1-2"
+          ],
+          "url": "https://access.redhat.com/errata/RHSA-2023:1529"
+        }
+      ],
+      "scores": [
+        {
+          "cvss_v3": {
+            "attackComplexity": "LOW",
+            "attackVector": "NETWORK",
+            "availabilityImpact": "HIGH",
+            "baseScore": 7.5,
+            "baseSeverity": "HIGH",
+            "confidentialityImpact": "NONE",
+            "integrityImpact": "NONE",
+            "privilegesRequired": "NONE",
+            "scope": "UNCHANGED",
+            "userInteraction": "NONE",
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+            "version": "3.1"
+          },
+          "products": [
+            "8Base-STF-1.5:stf/sg-core-rhel8:5.1.1-2"
+          ]
+        }
+      ],
+      "threats": [
+        {
+          "category": "impact",
+          "date": "2022-07-14T00:00:00Z",
+          "details": "Moderate"
+        }
+      ],
+      "title": "stack exhaustion in Glob"
+    },
+    {
+      "cve": "CVE-2022-30631",
+      "cwe": {
+        "id": "CWE-1325",
+        "name": "Improperly Controlled Sequential Memory Allocation"
+      },
+      "discovery_date": "2022-07-14T00:00:00Z",
+      "flags": [
+        {
+          "label": "component_not_present",
+          "product_ids": [
+            "8Base-STF-1.5:stf/prometheus-webhook-snmp-rhel8:1.5.2-2",
+            "8Base-STF-1.5:stf/service-telemetry-operator-bundle:1.5.1678301890-1",
+            "8Base-STF-1.5:stf/service-telemetry-rhel8-operator:1.5.1-2",
+            "8Base-STF-1.5:stf/sg-bridge-rhel8:1.5.0-12",
+            "8Base-STF-1.5:stf/smart-gateway-operator-bundle:5.0.1678301890-1",
+            "8Base-STF-1.5:stf/smart-gateway-rhel8-operator:5.0.1-3"
+          ]
+        }
+      ],
+      "ids": [
+        {
+          "system_name": "Red Hat Bugzilla",
+          "text": "https://bugzilla.redhat.com/show_bug.cgi?id=2107342"
+        }
+      ],
+      "notes": [
+        {
+          "category": "general",
+          "text": "The CVSS score(s) listed for this vulnerability do not reflect the associated product's status, and are included for informational purposes to better understand the severity of this vulnerability.",
+          "title": "CVSS score applicability"
+        },
+        {
+          "category": "description",
+          "text": "A flaw was found in golang. Calling the Reader, Read method on an archive that contains a large number of concatenated 0-length compressed files can cause a panic issue due to stack exhaustion.",
+          "title": "Vulnerability description"
+        },
+        {
+          "category": "summary",
+          "text": "stack exhaustion in Reader.Read",
+          "title": "Vulnerability summary"
+        }
+      ],
+      "product_status": {
+        "fixed": [
+          "8Base-STF-1.5:stf/sg-core-rhel8:5.1.1-2"
+        ],
+        "known_not_affected": [
+          "8Base-STF-1.5:stf/prometheus-webhook-snmp-rhel8:1.5.2-2",
+          "8Base-STF-1.5:stf/service-telemetry-operator-bundle:1.5.1678301890-1",
+          "8Base-STF-1.5:stf/service-telemetry-rhel8-operator:1.5.1-2",
+          "8Base-STF-1.5:stf/sg-bridge-rhel8:1.5.0-12",
+          "8Base-STF-1.5:stf/smart-gateway-operator-bundle:5.0.1678301890-1",
+          "8Base-STF-1.5:stf/smart-gateway-rhel8-operator:5.0.1-3"
+        ]
+      },
+      "references": [
+        {
+          "category": "external",
+          "summary": "https://www.cve.org/CVERecord?id=CVE-2022-30631",
+          "url": "https://www.cve.org/CVERecord?id=CVE-2022-30631"
+        },
+        {
+          "category": "external",
+          "summary": "https://nvd.nist.gov/vuln/detail/CVE-2022-30631",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2022-30631"
+        },
+        {
+          "category": "external",
+          "summary": "https://go.dev/issue/53168",
+          "url": "https://go.dev/issue/53168"
+        },
+        {
+          "category": "external",
+          "summary": "https://groups.google.com/g/golang-announce/c/nqrv9fbR0zE",
+          "url": "https://groups.google.com/g/golang-announce/c/nqrv9fbR0zE"
+        },
+        {
+          "category": "external",
+          "summary": "CVE-2022-30631",
+          "url": "https://access.redhat.com/security/cve/CVE-2022-30631"
+        },
+        {
+          "category": "external",
+          "summary": "bz#2107342: stack exhaustion in Reader.Read",
+          "url": "https://bugzilla.redhat.com/show_bug.cgi?id=2107342"
+        }
+      ],
+      "release_date": "2022-07-12T00:00:00Z",
+      "remediations": [
+        {
+          "category": "vendor_fix",
+          "details": "The Service Telemetry Framework container image provided by this update can be downloaded from the Red Hat Container Registry at registry.access.redhat.com. Installation instructions for your platform are available at Red Hat Container Catalog (see References).\n\nDockerfiles and scripts should be amended either to refer to this new image specifically, or to the latest image generally.",
+          "product_ids": [
+            "8Base-STF-1.5:stf/sg-core-rhel8:5.1.1-2"
+          ],
+          "url": "https://access.redhat.com/errata/RHSA-2023:1529"
+        }
+      ],
+      "scores": [
+        {
+          "cvss_v3": {
+            "attackComplexity": "LOW",
+            "attackVector": "NETWORK",
+            "availabilityImpact": "HIGH",
+            "baseScore": 7.5,
+            "baseSeverity": "HIGH",
+            "confidentialityImpact": "NONE",
+            "integrityImpact": "NONE",
+            "privilegesRequired": "NONE",
+            "scope": "UNCHANGED",
+            "userInteraction": "NONE",
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+            "version": "3.1"
+          },
+          "products": [
+            "8Base-STF-1.5:stf/sg-core-rhel8:5.1.1-2"
+          ]
+        }
+      ],
+      "threats": [
+        {
+          "category": "impact",
+          "date": "2022-07-14T00:00:00Z",
+          "details": "Moderate"
+        }
+      ],
+      "title": "stack exhaustion in Reader.Read"
+    },
+    {
+      "cve": "CVE-2022-30632",
+      "cwe": {
+        "id": "CWE-1325",
+        "name": "Improperly Controlled Sequential Memory Allocation"
+      },
+      "discovery_date": "2022-07-14T00:00:00Z",
+      "flags": [
+        {
+          "label": "component_not_present",
+          "product_ids": [
+            "8Base-STF-1.5:stf/prometheus-webhook-snmp-rhel8:1.5.2-2",
+            "8Base-STF-1.5:stf/service-telemetry-operator-bundle:1.5.1678301890-1",
+            "8Base-STF-1.5:stf/service-telemetry-rhel8-operator:1.5.1-2",
+            "8Base-STF-1.5:stf/sg-bridge-rhel8:1.5.0-12",
+            "8Base-STF-1.5:stf/smart-gateway-operator-bundle:5.0.1678301890-1",
+            "8Base-STF-1.5:stf/smart-gateway-rhel8-operator:5.0.1-3"
+          ]
+        }
+      ],
+      "ids": [
+        {
+          "system_name": "Red Hat Bugzilla",
+          "text": "https://bugzilla.redhat.com/show_bug.cgi?id=2107386"
+        }
+      ],
+      "notes": [
+        {
+          "category": "general",
+          "text": "The CVSS score(s) listed for this vulnerability do not reflect the associated product's status, and are included for informational purposes to better understand the severity of this vulnerability.",
+          "title": "CVSS score applicability"
+        },
+        {
+          "category": "description",
+          "text": "A flaw was found in golang. Calling Glob on a path that contains a large number of path separators can cause a panic issue due to stack exhaustion. This can cause an attacker to impact availability.",
+          "title": "Vulnerability description"
+        },
+        {
+          "category": "summary",
+          "text": "stack exhaustion in Glob",
+          "title": "Vulnerability summary"
+        }
+      ],
+      "product_status": {
+        "fixed": [
+          "8Base-STF-1.5:stf/sg-core-rhel8:5.1.1-2"
+        ],
+        "known_not_affected": [
+          "8Base-STF-1.5:stf/prometheus-webhook-snmp-rhel8:1.5.2-2",
+          "8Base-STF-1.5:stf/service-telemetry-operator-bundle:1.5.1678301890-1",
+          "8Base-STF-1.5:stf/service-telemetry-rhel8-operator:1.5.1-2",
+          "8Base-STF-1.5:stf/sg-bridge-rhel8:1.5.0-12",
+          "8Base-STF-1.5:stf/smart-gateway-operator-bundle:5.0.1678301890-1",
+          "8Base-STF-1.5:stf/smart-gateway-rhel8-operator:5.0.1-3"
+        ]
+      },
+      "references": [
+        {
+          "category": "external",
+          "summary": "https://www.cve.org/CVERecord?id=CVE-2022-30632",
+          "url": "https://www.cve.org/CVERecord?id=CVE-2022-30632"
+        },
+        {
+          "category": "external",
+          "summary": "https://nvd.nist.gov/vuln/detail/CVE-2022-30632",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2022-30632"
+        },
+        {
+          "category": "external",
+          "summary": "https://go.dev/issue/53416",
+          "url": "https://go.dev/issue/53416"
+        },
+        {
+          "category": "external",
+          "summary": "https://groups.google.com/g/golang-announce/c/nqrv9fbR0zE",
+          "url": "https://groups.google.com/g/golang-announce/c/nqrv9fbR0zE"
+        },
+        {
+          "category": "external",
+          "summary": "CVE-2022-30632",
+          "url": "https://access.redhat.com/security/cve/CVE-2022-30632"
+        },
+        {
+          "category": "external",
+          "summary": "bz#2107386: stack exhaustion in Glob",
+          "url": "https://bugzilla.redhat.com/show_bug.cgi?id=2107386"
+        }
+      ],
+      "release_date": "2022-07-12T00:00:00Z",
+      "remediations": [
+        {
+          "category": "vendor_fix",
+          "details": "The Service Telemetry Framework container image provided by this update can be downloaded from the Red Hat Container Registry at registry.access.redhat.com. Installation instructions for your platform are available at Red Hat Container Catalog (see References).\n\nDockerfiles and scripts should be amended either to refer to this new image specifically, or to the latest image generally.",
+          "product_ids": [
+            "8Base-STF-1.5:stf/sg-core-rhel8:5.1.1-2"
+          ],
+          "url": "https://access.redhat.com/errata/RHSA-2023:1529"
+        }
+      ],
+      "scores": [
+        {
+          "cvss_v3": {
+            "attackComplexity": "LOW",
+            "attackVector": "NETWORK",
+            "availabilityImpact": "HIGH",
+            "baseScore": 7.5,
+            "baseSeverity": "HIGH",
+            "confidentialityImpact": "NONE",
+            "integrityImpact": "NONE",
+            "privilegesRequired": "NONE",
+            "scope": "UNCHANGED",
+            "userInteraction": "NONE",
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+            "version": "3.1"
+          },
+          "products": [
+            "8Base-STF-1.5:stf/sg-core-rhel8:5.1.1-2"
+          ]
+        }
+      ],
+      "threats": [
+        {
+          "category": "impact",
+          "date": "2022-07-14T00:00:00Z",
+          "details": "Moderate"
+        }
+      ],
+      "title": "stack exhaustion in Glob"
+    },
+    {
+      "cve": "CVE-2022-32189",
+      "cwe": {
+        "id": "CWE-400",
+        "name": "Uncontrolled Resource Consumption"
+      },
+      "discovery_date": "2022-08-02T00:00:00Z",
+      "flags": [
+        {
+          "label": "component_not_present",
+          "product_ids": [
+            "8Base-STF-1.5:stf/prometheus-webhook-snmp-rhel8:1.5.2-2",
+            "8Base-STF-1.5:stf/service-telemetry-operator-bundle:1.5.1678301890-1",
+            "8Base-STF-1.5:stf/service-telemetry-rhel8-operator:1.5.1-2",
+            "8Base-STF-1.5:stf/sg-bridge-rhel8:1.5.0-12",
+            "8Base-STF-1.5:stf/smart-gateway-operator-bundle:5.0.1678301890-1",
+            "8Base-STF-1.5:stf/smart-gateway-rhel8-operator:5.0.1-3"
+          ]
+        }
+      ],
+      "ids": [
+        {
+          "system_name": "Red Hat Bugzilla",
+          "text": "https://bugzilla.redhat.com/show_bug.cgi?id=2113814"
+        }
+      ],
+      "notes": [
+        {
+          "category": "general",
+          "text": "The CVSS score(s) listed for this vulnerability do not reflect the associated product's status, and are included for informational purposes to better understand the severity of this vulnerability.",
+          "title": "CVSS score applicability"
+        },
+        {
+          "category": "description",
+          "text": "An uncontrolled resource consumption flaw was found in Golang math/big. A too-short encoded message can cause a panic in Float.GobDecode and Rat.GobDecode in math/big in Go, potentially allowing an attacker to create a denial of service, impacting availability.",
+          "title": "Vulnerability description"
+        },
+        {
+          "category": "summary",
+          "text": "decoding big.Float and big.Rat types can panic if the encoded message is too short, potentially allowing a denial of service",
+          "title": "Vulnerability summary"
+        }
+      ],
+      "product_status": {
+        "fixed": [
+          "8Base-STF-1.5:stf/sg-core-rhel8:5.1.1-2"
+        ],
+        "known_not_affected": [
+          "8Base-STF-1.5:stf/prometheus-webhook-snmp-rhel8:1.5.2-2",
+          "8Base-STF-1.5:stf/service-telemetry-operator-bundle:1.5.1678301890-1",
+          "8Base-STF-1.5:stf/service-telemetry-rhel8-operator:1.5.1-2",
+          "8Base-STF-1.5:stf/sg-bridge-rhel8:1.5.0-12",
+          "8Base-STF-1.5:stf/smart-gateway-operator-bundle:5.0.1678301890-1",
+          "8Base-STF-1.5:stf/smart-gateway-rhel8-operator:5.0.1-3"
+        ]
+      },
+      "references": [
+        {
+          "category": "external",
+          "summary": "https://www.cve.org/CVERecord?id=CVE-2022-32189",
+          "url": "https://www.cve.org/CVERecord?id=CVE-2022-32189"
+        },
+        {
+          "category": "external",
+          "summary": "https://nvd.nist.gov/vuln/detail/CVE-2022-32189",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2022-32189"
+        },
+        {
+          "category": "external",
+          "summary": "https://go.dev/issue/53871",
+          "url": "https://go.dev/issue/53871"
+        },
+        {
+          "category": "external",
+          "summary": "https://groups.google.com/g/golang-nuts/c/DCFSyTGM0wU",
+          "url": "https://groups.google.com/g/golang-nuts/c/DCFSyTGM0wU"
+        },
+        {
+          "category": "external",
+          "summary": "CVE-2022-32189",
+          "url": "https://access.redhat.com/security/cve/CVE-2022-32189"
+        },
+        {
+          "category": "external",
+          "summary": "bz#2113814: decoding big.Float and big.Rat types can panic if the encoded message is too short, potentially allowing a denial of service",
+          "url": "https://bugzilla.redhat.com/show_bug.cgi?id=2113814"
+        }
+      ],
+      "release_date": "2022-08-01T00:00:00Z",
+      "remediations": [
+        {
+          "category": "vendor_fix",
+          "details": "The Service Telemetry Framework container image provided by this update can be downloaded from the Red Hat Container Registry at registry.access.redhat.com. Installation instructions for your platform are available at Red Hat Container Catalog (see References).\n\nDockerfiles and scripts should be amended either to refer to this new image specifically, or to the latest image generally.",
+          "product_ids": [
+            "8Base-STF-1.5:stf/sg-core-rhel8:5.1.1-2"
+          ],
+          "url": "https://access.redhat.com/errata/RHSA-2023:1529"
+        }
+      ],
+      "scores": [
+        {
+          "cvss_v3": {
+            "attackComplexity": "LOW",
+            "attackVector": "NETWORK",
+            "availabilityImpact": "HIGH",
+            "baseScore": 6.5,
+            "baseSeverity": "MEDIUM",
+            "confidentialityImpact": "NONE",
+            "integrityImpact": "NONE",
+            "privilegesRequired": "LOW",
+            "scope": "UNCHANGED",
+            "userInteraction": "NONE",
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:H",
+            "version": "3.1"
+          },
+          "products": [
+            "8Base-STF-1.5:stf/sg-core-rhel8:5.1.1-2"
+          ]
+        }
+      ],
+      "threats": [
+        {
+          "category": "impact",
+          "date": "2022-08-02T00:00:00Z",
+          "details": "Low"
+        }
+      ],
+      "title": "decoding big.Float and big.Rat types can panic if the encoded message is too short, potentially allowing a denial of service"
+    },
+    {
+      "acknowledgments": [
+        {
+          "names": [
+            "Adam Korczynski"
+          ],
+          "organization": "ADA Logics"
+        },
+        {
+          "names": [
+            "OSS-Fuzz"
+          ]
+        }
+      ],
+      "cve": "CVE-2022-41715",
+      "discovery_date": "2022-10-07T00:00:00Z",
+      "flags": [
+        {
+          "label": "component_not_present",
+          "product_ids": [
+            "8Base-STF-1.5:stf/prometheus-webhook-snmp-rhel8:1.5.2-2",
+            "8Base-STF-1.5:stf/service-telemetry-operator-bundle:1.5.1678301890-1",
+            "8Base-STF-1.5:stf/service-telemetry-rhel8-operator:1.5.1-2",
+            "8Base-STF-1.5:stf/sg-bridge-rhel8:1.5.0-12",
+            "8Base-STF-1.5:stf/smart-gateway-operator-bundle:5.0.1678301890-1",
+            "8Base-STF-1.5:stf/smart-gateway-rhel8-operator:5.0.1-3"
+          ]
+        }
+      ],
+      "ids": [
+        {
+          "system_name": "Red Hat Bugzilla",
+          "text": "https://bugzilla.redhat.com/show_bug.cgi?id=2132872"
+        }
+      ],
+      "notes": [
+        {
+          "category": "general",
+          "text": "The CVSS score(s) listed for this vulnerability do not reflect the associated product's status, and are included for informational purposes to better understand the severity of this vulnerability.",
+          "title": "CVSS score applicability"
+        },
+        {
+          "category": "description",
+          "text": "A flaw was found in the golang package, where programs that compile regular expressions from untrusted sources are vulnerable to memory exhaustion or a denial of service. The parsed regexp representation is linear in the input size. Still, in some cases, the constant factor can be as high as 40,000, making a relatively small regexp consume larger amounts of memory. After the fix, each regexp being parsed is limited to a 256 MB memory footprint. Regular expressions whose representation would use more space than that are rejected. Routine use of regular expressions is unaffected.",
+          "title": "Vulnerability description"
+        },
+        {
+          "category": "summary",
+          "text": "limit memory used by parsing regexps",
+          "title": "Vulnerability summary"
+        }
+      ],
+      "product_status": {
+        "fixed": [
+          "8Base-STF-1.5:stf/sg-core-rhel8:5.1.1-2"
+        ],
+        "known_not_affected": [
+          "8Base-STF-1.5:stf/prometheus-webhook-snmp-rhel8:1.5.2-2",
+          "8Base-STF-1.5:stf/service-telemetry-operator-bundle:1.5.1678301890-1",
+          "8Base-STF-1.5:stf/service-telemetry-rhel8-operator:1.5.1-2",
+          "8Base-STF-1.5:stf/sg-bridge-rhel8:1.5.0-12",
+          "8Base-STF-1.5:stf/smart-gateway-operator-bundle:5.0.1678301890-1",
+          "8Base-STF-1.5:stf/smart-gateway-rhel8-operator:5.0.1-3"
+        ]
+      },
+      "references": [
+        {
+          "category": "external",
+          "summary": "https://www.cve.org/CVERecord?id=CVE-2022-41715",
+          "url": "https://www.cve.org/CVERecord?id=CVE-2022-41715"
+        },
+        {
+          "category": "external",
+          "summary": "https://nvd.nist.gov/vuln/detail/CVE-2022-41715",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2022-41715"
+        },
+        {
+          "category": "external",
+          "summary": "https://github.com/golang/go/issues/55949",
+          "url": "https://github.com/golang/go/issues/55949"
+        },
+        {
+          "category": "external",
+          "summary": "https://groups.google.com/g/golang-announce/c/xtuG5faxtaU?pli=1",
+          "url": "https://groups.google.com/g/golang-announce/c/xtuG5faxtaU?pli=1"
+        },
+        {
+          "category": "external",
+          "summary": "CVE-2022-41715",
+          "url": "https://access.redhat.com/security/cve/CVE-2022-41715"
+        },
+        {
+          "category": "external",
+          "summary": "bz#2132872: limit memory used by parsing regexps",
+          "url": "https://bugzilla.redhat.com/show_bug.cgi?id=2132872"
+        }
+      ],
+      "release_date": "2022-10-04T00:00:00Z",
+      "remediations": [
+        {
+          "category": "vendor_fix",
+          "details": "The Service Telemetry Framework container image provided by this update can be downloaded from the Red Hat Container Registry at registry.access.redhat.com. Installation instructions for your platform are available at Red Hat Container Catalog (see References).\n\nDockerfiles and scripts should be amended either to refer to this new image specifically, or to the latest image generally.",
+          "product_ids": [
+            "8Base-STF-1.5:stf/sg-core-rhel8:5.1.1-2"
+          ],
+          "url": "https://access.redhat.com/errata/RHSA-2023:1529"
+        }
+      ],
+      "scores": [
+        {
+          "cvss_v3": {
+            "attackComplexity": "LOW",
+            "attackVector": "NETWORK",
+            "availabilityImpact": "HIGH",
+            "baseScore": 7.5,
+            "baseSeverity": "HIGH",
+            "confidentialityImpact": "NONE",
+            "integrityImpact": "NONE",
+            "privilegesRequired": "NONE",
+            "scope": "UNCHANGED",
+            "userInteraction": "NONE",
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+            "version": "3.1"
+          },
+          "products": [
+            "8Base-STF-1.5:stf/sg-core-rhel8:5.1.1-2"
+          ]
+        }
+      ],
+      "threats": [
+        {
+          "category": "impact",
+          "date": "2022-10-07T00:00:00Z",
+          "details": "Moderate"
+        }
+      ],
+      "title": "limit memory used by parsing regexps"
+    },
+    {
+      "cve": "CVE-2022-41717",
+      "cwe": {
+        "id": "CWE-770",
+        "name": "Allocation of Resources Without Limits or Throttling"
+      },
+      "discovery_date": "2023-01-16T00:00:00Z",
+      "flags": [
+        {
+          "label": "component_not_present",
+          "product_ids": [
+            "8Base-STF-1.5:stf/prometheus-webhook-snmp-rhel8:1.5.2-2",
+            "8Base-STF-1.5:stf/service-telemetry-operator-bundle:1.5.1678301890-1",
+            "8Base-STF-1.5:stf/service-telemetry-rhel8-operator:1.5.1-2",
+            "8Base-STF-1.5:stf/sg-bridge-rhel8:1.5.0-12",
+            "8Base-STF-1.5:stf/smart-gateway-operator-bundle:5.0.1678301890-1",
+            "8Base-STF-1.5:stf/smart-gateway-rhel8-operator:5.0.1-3"
+          ]
+        }
+      ],
+      "ids": [
+        {
+          "system_name": "Red Hat Bugzilla",
+          "text": "https://bugzilla.redhat.com/show_bug.cgi?id=2161274"
+        }
+      ],
+      "notes": [
+        {
+          "category": "general",
+          "text": "The CVSS score(s) listed for this vulnerability do not reflect the associated product's status, and are included for informational purposes to better understand the severity of this vulnerability.",
+          "title": "CVSS score applicability"
+        },
+        {
+          "category": "description",
+          "text": "A flaw was found in the net/http library of the golang package. This flaw allows an attacker to cause excessive memory growth in a Go server accepting HTTP/2 requests. HTTP/2 server connections contain a cache of HTTP header keys sent by the client. While the total number of entries in this cache is capped, an attacker sending very large keys can cause the server to allocate approximately 64 MiB per open connection.",
+          "title": "Vulnerability description"
+        },
+        {
+          "category": "summary",
+          "text": "excessive memory growth in a Go server accepting HTTP/2 requests",
+          "title": "Vulnerability summary"
+        }
+      ],
+      "product_status": {
+        "fixed": [
+          "8Base-STF-1.5:stf/sg-core-rhel8:5.1.1-2"
+        ],
+        "known_not_affected": [
+          "8Base-STF-1.5:stf/prometheus-webhook-snmp-rhel8:1.5.2-2",
+          "8Base-STF-1.5:stf/service-telemetry-operator-bundle:1.5.1678301890-1",
+          "8Base-STF-1.5:stf/service-telemetry-rhel8-operator:1.5.1-2",
+          "8Base-STF-1.5:stf/sg-bridge-rhel8:1.5.0-12",
+          "8Base-STF-1.5:stf/smart-gateway-operator-bundle:5.0.1678301890-1",
+          "8Base-STF-1.5:stf/smart-gateway-rhel8-operator:5.0.1-3"
+        ]
+      },
+      "references": [
+        {
+          "category": "external",
+          "summary": "https://www.cve.org/CVERecord?id=CVE-2022-41717",
+          "url": "https://www.cve.org/CVERecord?id=CVE-2022-41717"
+        },
+        {
+          "category": "external",
+          "summary": "https://nvd.nist.gov/vuln/detail/CVE-2022-41717",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2022-41717"
+        },
+        {
+          "category": "external",
+          "summary": "https://go.dev/cl/455635",
+          "url": "https://go.dev/cl/455635"
+        },
+        {
+          "category": "external",
+          "summary": "https://go.dev/cl/455717",
+          "url": "https://go.dev/cl/455717"
+        },
+        {
+          "category": "external",
+          "summary": "https://go.dev/issue/56350",
+          "url": "https://go.dev/issue/56350"
+        },
+        {
+          "category": "external",
+          "summary": "https://groups.google.com/g/golang-announce/c/L_3rmdT0BMU/m/yZDrXjIiBQAJ",
+          "url": "https://groups.google.com/g/golang-announce/c/L_3rmdT0BMU/m/yZDrXjIiBQAJ"
+        },
+        {
+          "category": "external",
+          "summary": "https://pkg.go.dev/vuln/GO-2022-1144",
+          "url": "https://pkg.go.dev/vuln/GO-2022-1144"
+        },
+        {
+          "category": "external",
+          "summary": "CVE-2022-41717",
+          "url": "https://access.redhat.com/security/cve/CVE-2022-41717"
+        },
+        {
+          "category": "external",
+          "summary": "bz#2161274: excessive memory growth in a Go server accepting HTTP/2 requests",
+          "url": "https://bugzilla.redhat.com/show_bug.cgi?id=2161274"
+        }
+      ],
+      "release_date": "2022-11-30T00:00:00Z",
+      "remediations": [
+        {
+          "category": "vendor_fix",
+          "details": "The Service Telemetry Framework container image provided by this update can be downloaded from the Red Hat Container Registry at registry.access.redhat.com. Installation instructions for your platform are available at Red Hat Container Catalog (see References).\n\nDockerfiles and scripts should be amended either to refer to this new image specifically, or to the latest image generally.",
+          "product_ids": [
+            "8Base-STF-1.5:stf/sg-core-rhel8:5.1.1-2"
+          ],
+          "url": "https://access.redhat.com/errata/RHSA-2023:1529"
+        }
+      ],
+      "scores": [
+        {
+          "cvss_v3": {
+            "attackComplexity": "LOW",
+            "attackVector": "NETWORK",
+            "availabilityImpact": "LOW",
+            "baseScore": 5.3,
+            "baseSeverity": "MEDIUM",
+            "confidentialityImpact": "NONE",
+            "integrityImpact": "NONE",
+            "privilegesRequired": "NONE",
+            "scope": "UNCHANGED",
+            "userInteraction": "NONE",
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L",
+            "version": "3.1"
+          },
+          "products": [
+            "8Base-STF-1.5:stf/sg-core-rhel8:5.1.1-2"
+          ]
+        }
+      ],
+      "threats": [
+        {
+          "category": "impact",
+          "date": "2023-01-16T00:00:00Z",
+          "details": "Moderate"
+        }
+      ],
+      "title": "excessive memory growth in a Go server accepting HTTP/2 requests"
+    }
+  ]
+}

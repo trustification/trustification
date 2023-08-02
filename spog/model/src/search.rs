@@ -34,8 +34,8 @@ pub struct PackageSummary {
     pub id: String,
     pub name: String,
     pub version: String,
-    pub purl: String,
-    pub cpe: String,
+    pub purl: Option<String>,
+    pub cpe: Option<String>,
     pub sha256: String,
     pub license: String,
     pub snippet: String,
@@ -49,6 +49,20 @@ pub struct PackageSummary {
 
     #[serde(default, skip_serializing_if = "Value::is_null", rename = "$metadata")]
     pub metadata: Value,
+}
+
+impl PackageSummary {
+    pub fn advisories_query(&self) -> String {
+        let mut terms = Vec::new();
+        if let Some(cpe) = &self.cpe {
+            terms.push(format!("fixed:\"{}\" OR affected:\"{}\"", cpe, cpe));
+        }
+
+        if let Some(purl) = &self.purl {
+            terms.push(format!("fixed:\"{}\" OR affected:\"{}\"", purl, purl));
+        }
+        terms.join(" OR ")
+    }
 }
 
 #[derive(utoipa::ToSchema, Clone, Debug, Default, PartialEq, Eq, serde::Deserialize, serde::Serialize)]

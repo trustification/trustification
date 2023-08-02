@@ -108,25 +108,16 @@ async fn test_crda_integration(context: &mut SpogContext) {
     assert_eq!(status, StatusCode::OK);
 }
 
-/*
-TODO: Disabled due to instability.
-
 /// SPoG API might enrich results from package search with related vulnerabilities. This test checks that this
 /// is working as expected for the test data.
 #[test_context(SpogContext)]
 #[tokio::test]
-#[ntest::timeout(30_000)]
+#[ntest::timeout(60_000)]
 async fn test_search_correlation(context: &mut SpogContext) {
-    let input = serde_json::from_str(include_str!("../../bombastic/testdata/ubi9-sbom.json")).unwrap();
-    upload_sbom(
-        context.bombastic.port,
-        "ubi9-container",
-        &input,
-        &context.bombastic.provider,
-    )
-    .await;
+    let input = serde_json::from_str(include_str!("testdata/correlation/stf-1.5.json")).unwrap();
+    upload_sbom(context.bombastic.port, "stf-1.5", &input, &context.bombastic.provider).await;
 
-    let input = serde_json::from_str(include_str!("../../vexination/testdata/rhsa-2023_1441.json")).unwrap();
+    let input = serde_json::from_str(include_str!("testdata/correlation/rhsa-2023_1529.json")).unwrap();
     upload_vex(context.vexination.port, &input, &context.vexination.provider).await;
 
     let client = reqwest::Client::new();
@@ -137,7 +128,7 @@ async fn test_search_correlation(context: &mut SpogContext) {
         loop {
             let response = client
                 .get(format!(
-                    "http://localhost:{port}/api/v1/package/search?q=package%3Aubi9-container",
+                    "http://localhost:{port}/api/v1/package/search?q=package%3Astf-1.5",
                     port = context.port
                 ))
                 .inject_token(&context.provider.provider_user)
@@ -149,13 +140,14 @@ async fn test_search_correlation(context: &mut SpogContext) {
             assert_eq!(response.status(), StatusCode::OK);
             let payload: Value = response.json().await.unwrap();
             if payload["total"].as_u64().unwrap() >= 1 {
-                assert_eq!(payload["result"][0]["name"], json!("ubi9-container"));
+                assert_eq!(payload["result"][0]["name"], json!("stf-1.5"));
 
                 let data: spog_model::search::PackageSummary =
                     serde_json::from_value(payload["result"][0].clone()).unwrap();
                 // println!("Data: {:?}", data);
                 // Data might not be available until vex index is synced
                 if data.advisories.len() >= 1 {
+                    assert_eq!(data.advisories[0], "RHSA-2023:1529");
                     break;
                 }
             }
@@ -164,4 +156,3 @@ async fn test_search_correlation(context: &mut SpogContext) {
     })
     .await;
 }
-*/
