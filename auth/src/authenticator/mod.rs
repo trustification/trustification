@@ -149,7 +149,7 @@ async fn create_client<P: CompactJson + Claims>(
     )
     .await?;
 
-    log::info!("Discovered OpenID: {:#?}", client.config());
+    log::debug!("Discovered OpenID: {:#?}", client.config());
 
     Ok(AuthenticatorClient {
         client,
