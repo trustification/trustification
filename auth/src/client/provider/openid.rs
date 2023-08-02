@@ -29,18 +29,31 @@ impl Debug for OpenIdTokenProvider {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, clap::Args)]
-#[command(
-    rename_all_env = "SCREAMING_SNAKE_CASE",
-    next_help_heading = "OIDC client configuration"
-)]
+#[command(next_help_heading = "OIDC client configuration")]
 pub struct OpenIdTokenProviderConfigArguments {
-    #[arg(long = "oidc-client-id", requires("OpenIdTokenProviderConfigArguments"))]
+    #[arg(
+        long = "oidc-client-id",
+        env = "OIDC_PROVIDER_CLIENT_ID",
+        requires("OpenIdTokenProviderConfigArguments")
+    )]
     pub client_id: Option<String>,
-    #[arg(long = "oidc-client-secret", requires("OpenIdTokenProviderConfigArguments"))]
+    #[arg(
+        long = "oidc-client-secret",
+        env = "OIDC_PROVIDER_CLIENT_SECRET",
+        requires("OpenIdTokenProviderConfigArguments")
+    )]
     pub client_secret: Option<String>,
-    #[arg(long = "oidc-issuer-url", requires("OpenIdTokenProviderConfigArguments"))]
+    #[arg(
+        long = "oidc-issuer-url",
+        env = "OIDC_PROVIDER_ISSUER_URL",
+        requires("OpenIdTokenProviderConfigArguments")
+    )]
     pub issuer_url: Option<String>,
-    #[arg(long = "oidc-refresh-before", default_value = "30s")]
+    #[arg(
+        long = "oidc-refresh-before",
+        env = "OIDC_PROVIDER_REFRESH_BEFORE",
+        default_value = "30s"
+    )]
     pub refresh_before: humantime::Duration,
 }
 
