@@ -48,16 +48,18 @@ fn application_with_backend() -> Html {
         // as the backdrop viewer might host content which makes use of the router, the
         // router must also wrap the backdrop viewer
         <Router<AppRoute>>
-            <BackdropViewer>
-                <OAuth2
-                    {config}
-                    scopes={backend.endpoints.oidc.scopes.clone()}
-                >
+            // as the backdrop viewer might actually make use of the access token, the
+            // oauth2 context must also wrap the backdrop viewer
+            <OAuth2
+                {config}
+                scopes={backend.endpoints.oidc.scopes.clone()}
+            >
+                <BackdropViewer>
                     <OAuth2Configured>
                         <Console />
                     </OAuth2Configured>
-                </OAuth2>
-            </BackdropViewer>
+                </BackdropViewer>
+            </OAuth2>
         </Router<AppRoute>>
     )
 }
