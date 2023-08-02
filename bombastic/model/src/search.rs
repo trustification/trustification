@@ -41,9 +41,9 @@ pub struct SearchDocument {
     /// SBOM package version
     pub version: String,
     /// SBOM product identifier
-    pub cpe: String,
+    pub cpe: Option<String>,
     /// SBOM package URL
-    pub purl: String,
+    pub purl: Option<String>,
     /// SBOM SHA256 digest
     pub sha256: String,
     /// SBOM license

@@ -454,12 +454,12 @@ impl trustification_index::Index for Index {
         let purl = doc
             .get_first(self.fields.sbom.purl)
             .map(|s| s.as_text().unwrap_or(""))
-            .unwrap_or("N/A");
+            .map(|s| s.to_string());
 
         let cpe = doc
             .get_first(self.fields.sbom.cpe)
             .map(|s| s.as_text().unwrap_or(""))
-            .unwrap_or("N/A");
+            .map(|s| s.to_string());
 
         let version = doc
             .get_first(self.fields.sbom.version)
@@ -508,8 +508,8 @@ impl trustification_index::Index for Index {
         let document = SearchDocument {
             id: id.to_string(),
             version: version.to_string(),
-            purl: purl.to_string(),
-            cpe: cpe.to_string(),
+            purl,
+            cpe,
             name: name.to_string(),
             sha256: sha256.to_string(),
             license: license.to_string(),
