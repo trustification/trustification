@@ -80,6 +80,9 @@ else
   kcadm create clients -r "${REALM}" -f "${INIT_DATA}/client-walker.json" "${CLIENT_OPTS[@]}"
 fi
 kcadm add-roles -r "${REALM}" --uusername service-account-walker --rolename chicken-manager
+# now set the client-secret
+ID=$(kcadm get clients -r "${REALM}" --query "clientId=walker" --fields id --format csv --noquotes)
+kcadm update "clients/${ID}" -r "${REALM}" -s "secret=${WALKER_SECRET}"
 
 # create user
 ID=$(kcadm get users -r "${REALM}" --query "username=${CHICKEN_ADMIN}" --fields id --format csv --noquotes)
