@@ -68,6 +68,19 @@ else
   kcadm create clients -r "${REALM}" -f "${INIT_DATA}/client-frontend.json" "${CLIENT_OPTS[@]}"
 fi
 
+# create walker service account
+ID=$(kcadm get clients -r "${REALM}" --query "clientId=walker" --fields id --format csv --noquotes)
+CLIENT_OPTS=()
+if [[ -n "$ID" ]]; then
+  # TODO: replace with update once https://github.com/keycloak/keycloak/issues/12484 is fixed
+  # kcadm update "clients/${ID}" -r "${REALM}" -f /etc/init-data/client.json "${CLIENT_OPTS[@]}"
+  kcadm delete "clients/${ID}" -r "${REALM}"
+  kcadm create clients -r "${REALM}" -f "${INIT_DATA}/client-walker.json" "${CLIENT_OPTS[@]}"
+else
+  kcadm create clients -r "${REALM}" -f "${INIT_DATA}/client-walker.json" "${CLIENT_OPTS[@]}"
+fi
+kcadm add-roles -r "${REALM}" --uusername service-account-walker --rolename chicken-manager
+
 # create user
 ID=$(kcadm get users -r "${REALM}" --query "username=${CHICKEN_ADMIN}" --fields id --format csv --noquotes)
 if [[ -n "$ID" ]]; then
