@@ -53,6 +53,25 @@ The default credentials for single sign on are:
 * **Username:** `admin`
 * **Password:** `admin123456`
 
+When running with `--devmode`, you can request an access token using:
+
+```shell
+curl -s -d "client_id=walker" -d "client_secret=ZVzq9AMOVUdMY1lSohpx1jI3aW56QDPS" -d 'grant_type=client_credentials' \
+  'http://localhost:8090/realms/chicken/protocol/openid-connect/token' | jq -r .access_token
+```
+
+You can set an environment variable for passing to `curl` like this (just be sure to request a fresh token when it
+expired):
+
+```shell
+TOKEN=$(curl -s -d "client_id=walker" -d "client_secret=ZVzq9AMOVUdMY1lSohpx1jI3aW56QDPS" -d 'grant_type=client_credentials' \
+  'http://localhost:8090/realms/chicken/protocol/openid-connect/token' | jq -r .access_token)
+CURL_OPTS="--oauth2-bearer $TOKEN"
+echo "Access Token: $TOKEN"
+```
+
+You can then add `$CURL_OPTS` to all `curl` calls in order to use the token.
+
 ## APIs
 
 To run the API processes, you can use cargo:
@@ -73,6 +92,8 @@ RUST_LOG=info cargo run -p trust -- bombastic indexer --devmode &
 ```
 
 ## Ingesting VEX
+
+**NOTE:** If authentication is enabled, which is the default, you will need to provide an access token. See [above](#single-sign-on).
 
 At this point, you can POST and GET VEX documents with the API using the id. To ingest a VEX document:
 
@@ -102,23 +123,7 @@ RUST_LOG=info cargo run -p trust -- vexination walker --devmode -3 --source file
 
 At this point, you can POST and GET SBOMs with the API using a unique identifier for the id. To ingest a small-ish SBOM:
 
-**NOTE:** If authentication is enabled, which is the default, you will need to provide an access token.
-
-When running with `--devmode`, you can request an access token using:
-
-```shell
-curl -s -d "client_id=walker" -d "client_secret=ZVzq9AMOVUdMY1lSohpx1jI3aW56QDPS" -d 'grant_type=client_credentials' \
-  'http://localhost:8090/realms/chicken/protocol/openid-connect/token' | jq -r .access_token
-```
-
-You can set an environment variable for passing to `curl` like this (just be sure to request a fresh token when it
-expired):
-
-```shell
-TOKEN=$(curl -s -d "client_id=walker" -d "client_secret=ZVzq9AMOVUdMY1lSohpx1jI3aW56QDPS" -d 'grant_type=client_credentials' \
-  'http://localhost:8090/realms/chicken/protocol/openid-connect/token' | jq -r .access_token)
-CURL_OPTS="-H Authorization: Bearer $TOKEN"
-```
+**NOTE:** If authentication is enabled, which is the default, you will need to provide an access token. See [above](#single-sign-on).
 
 ```shell
 curl --json @bombastic/testdata/my-sbom.json http://localhost:8082/api/v1/sbom?id=my-sbom
