@@ -55,6 +55,10 @@ impl Run {
             .await?
             .map(Arc::new);
 
+        if authenticator.is_none() {
+            log::warn!("Authentication is disabled");
+        }
+
         Infrastructure::from(self.infra)
             .run("vexination-api", |metrics| async move {
                 let state = Self::configure(index, storage, metrics.registry(), self.devmode)?;
