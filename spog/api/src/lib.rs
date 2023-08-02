@@ -5,16 +5,12 @@ use trustification_auth::authenticator::config::AuthenticatorConfig;
 use trustification_infrastructure::{Infrastructure, InfrastructureConfig};
 
 mod advisory;
-//mod guac;
-//mod snyk;
-mod index;
-//mod package;
 mod analyze;
 mod config;
+mod index;
 mod sbom;
 mod search;
 mod server;
-// mod vulnerability;
 
 pub const DEFAULT_CRDA_PAYLOAD_LIMIT: usize = 10 * 1024 * 1024;
 
