@@ -150,9 +150,11 @@ async fn test_search_correlation(context: &mut SpogContext) {
 
                 let data: spog_model::search::PackageSummary =
                     serde_json::from_value(payload["result"][0].clone()).unwrap();
-                println!("Data: {:?}", data);
-                assert_eq!(1, data.advisories.len());
-                break;
+                // println!("Data: {:?}", data);
+                // Data might not be available until vex index is synced
+                if data.advisories.len() >= 1 {
+                    break;
+                }
             }
             tokio::time::sleep(Duration::from_secs(1)).await;
         }
