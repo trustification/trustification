@@ -1,3 +1,4 @@
+use collector_client::GatherResponse;
 use serde::{Deserialize, Serialize};
 
 pub mod collector;
@@ -33,7 +34,7 @@ impl Gatherer {
         let listener = async move {
             loop {
                 if let Ok(mut csub) = CollectSubClient::new(self.csub_url.clone()).await {
-                    info!("connecting to csub");
+                    info!("connected to csub");
                     let mut sleep = interval(tokio::time::Duration::from_millis(1000));
 
                     let mut since_time = SystemTime::now();
@@ -68,14 +69,15 @@ impl Gatherer {
         listener.await
     }
 
-    #[allow(unused)]
-    pub async fn gather(&self, state: SharedState, request: CollectRequest) {
+    pub async fn gather(&self, state: SharedState, request: CollectRequest) -> Vec<GatherResponse> {
         let collectors = state.collectors.read().await;
-        for response in collectors.gather(state.clone(), request).await {
-            for purl in response.purls {
+        let result = collectors.gather(state.clone(), request).await;
+        for response in &result {
+            for purl in &response.purls {
                 state.db.insert_purl(purl.as_str()).await.ok();
             }
         }
+        result
     }
 
     pub async fn add_purl(&self, state: SharedState, purl: &str) -> Result<(), anyhow::Error> {
