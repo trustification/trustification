@@ -186,3 +186,63 @@ pub fn advisory_search(props: &AdvisorySearchProperties) -> Html {
         </>
     )
 }
+
+#[derive(PartialEq, Properties)]
+pub struct SearchToolbarProperties {}
+
+#[function_component(SearchToolbar)]
+pub fn search_toolbar(props: &SearchToolbarProperties) -> Html {
+    html!(
+        <Toolbar>
+            <ToolbarContent>
+
+                { for managed.then(|| html_nested!(
+                    <ToolbarGroup variant={GroupVariant::Filter}>
+                        <ToolbarItem r#type={ToolbarItemType::SearchFilter} width={["600px".to_string()]}>
+                            <Form onsubmit={onset.reform(|_|())}>
+                                // needed to trigger submit when pressing enter in the search field
+                                <input type="submit" hidden=true formmethod="dialog" />
+                                <InputGroup>
+                                    <TextInputGroup>
+                                        <TextInput
+                                            icon={Icon::Search}
+                                            placeholder="Search"
+                                            value={(*text).clone()}
+                                            state={*filter_input_state}
+                                            {onchange}
+                                        />
+
+                                        if !hidden {
+                                            <TextInputGroupUtilities>
+                                                <Button icon={Icon::Times} variant={ButtonVariant::Plain} onclick={onclear} />
+                                            </TextInputGroupUtilities>
+                                        }
+                                    </TextInputGroup>
+                                    <InputGroupItem>
+                                        <Button
+                                            disabled={*filter_input_state == InputState::Error}
+                                            icon={Icon::ArrowRight}
+                                            variant={ButtonVariant::Control}
+                                            onclick={onset.reform(|_|())}
+                                        />
+                                    </InputGroupItem>
+                                </InputGroup>
+                            </Form>
+                        </ToolbarItem>
+
+                    </ToolbarGroup>
+                )) }
+
+                { for props.toolbar_items.iter() }
+
+                <ToolbarItem r#type={ToolbarItemType::Pagination}>
+                    <SimplePagination
+                        pagination={pagination.clone()}
+                        total={*total}
+                    />
+                </ToolbarItem>
+
+            </ToolbarContent>
+        </Toolbar>
+    )
+}

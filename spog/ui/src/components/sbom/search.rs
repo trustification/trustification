@@ -1,6 +1,6 @@
 use crate::{
     backend::{self, PackageService},
-    components::search::*,
+    components::{advisory::SearchMode, search::*},
     hooks::{use_backend, use_config, use_standard_search, UseStandardSearch},
     utils::pagination_to_offset,
 };
@@ -16,13 +16,22 @@ use yew_oauth2::prelude::*;
 pub struct SbomSearchProperties {
     pub callback: Callback<UseAsyncHandleDeps<SearchResult<Rc<Vec<PackageSummary>>>, String>>,
 
-    pub query: Option<String>,
+    pub mode: SearchMode,
 
     #[prop_or_default]
     pub toolbar_items: ChildrenWithProps<ToolbarItem>,
 
     #[prop_or_default]
     pub children: Children,
+}
+
+impl SbomSearchProperties {
+    fn props_query(&self) -> Option<String> {
+        match &self.mode {
+            SearchMode::Managed { query } => query.clone(),
+            _ => None,
+        }
+    }
 }
 
 #[function_component(SbomSearch)]
@@ -45,7 +54,7 @@ pub fn sbom_search(props: &SbomSearchProperties) -> Html {
         onset,
         ontogglesimple,
         text,
-    } = use_standard_search::<DynamicSearchParameters, Packages>(props.query.clone(), *total, filters.clone());
+    } = use_standard_search::<DynamicSearchParameters, Packages>(props.props_query(), *total, filters.clone());
 
     let search = {
         let filters = filters.clone();
@@ -84,57 +93,59 @@ pub fn sbom_search(props: &SbomSearchProperties) -> Html {
     let simple = search_params.is_simple();
 
     let onchange = use_callback(|data, text| text.set(data), text.clone());
+    let managed = matches!(&props.mode, SearchMode::Managed { .. });
 
     html!(
         <>
 
             <Grid>
                 <GridItem cols={[2]}>
-                    <SimpleModeSwitch {simple} ontoggle={ontogglesimple} />
+                    if managed {
+                        <SimpleModeSwitch {simple} ontoggle={ontogglesimple} />
+                    }
                 </GridItem>
 
                 <GridItem cols={[10]}>
 
                     <Toolbar>
                         <ToolbarContent>
-                            <ToolbarGroup variant={GroupVariant::Filter}>
-                                <ToolbarItem r#type={ToolbarItemType::SearchFilter} width={["600px".to_string()]}>
-                                    <Form onsubmit={onset.reform(|_|())}>
-                                        // needed to trigger submit when pressing enter in the search field
-                                        <input type="submit" hidden=true formmethod="dialog" />
-                                        <InputGroup>
-                                            <TextInputGroup>
-                                                <TextInput
-                                                    icon={Icon::Search}
-                                                    placeholder="Search"
-                                                    value={(*text).clone()}
-                                                    state={*filter_input_state}
-                                                    {onchange}
-                                                />
 
-                                                if !hidden {
-                                                    <TextInputGroupUtilities>
-                                                        <Button icon={Icon::Times} variant={ButtonVariant::Plain} onclick={onclear} />
-                                                    </TextInputGroupUtilities>
-                                                }
-                                            </TextInputGroup>
-                                            <InputGroupItem>
-                                                <Button
-                                                    disabled={*filter_input_state == InputState::Error}
-                                                    icon={Icon::ArrowRight}
-                                                    variant={ButtonVariant::Control}
-                                                    onclick={onset.reform(|_|())}
-                                                />
-                                            </InputGroupItem>
-                                        </InputGroup>
-                                    </Form>
-                                </ToolbarItem>
+                            { for managed.then(|| html_nested!(
+                                <ToolbarGroup variant={GroupVariant::Filter}>
+                                    <ToolbarItem r#type={ToolbarItemType::SearchFilter} width={["600px".to_string()]}>
+                                        <Form onsubmit={onset.reform(|_|())}>
+                                            // needed to trigger submit when pressing enter in the search field
+                                            <input type="submit" hidden=true formmethod="dialog" />
+                                            <InputGroup>
+                                                <TextInputGroup>
+                                                    <TextInput
+                                                        icon={Icon::Search}
+                                                        placeholder="Search"
+                                                        value={(*text).clone()}
+                                                        state={*filter_input_state}
+                                                        {onchange}
+                                                    />
 
-                                <ToolbarItem additional_class={classes!("pf-m-align-self-center")}>
-                                    <CatalogSearchHelpPopover/>
-                                </ToolbarItem>
+                                                    if !hidden {
+                                                        <TextInputGroupUtilities>
+                                                            <Button icon={Icon::Times} variant={ButtonVariant::Plain} onclick={onclear} />
+                                                        </TextInputGroupUtilities>
+                                                    }
+                                                </TextInputGroup>
+                                                <InputGroupItem>
+                                                    <Button
+                                                        disabled={*filter_input_state == InputState::Error}
+                                                        icon={Icon::ArrowRight}
+                                                        variant={ButtonVariant::Control}
+                                                        onclick={onset.reform(|_|())}
+                                                    />
+                                                </InputGroupItem>
+                                            </InputGroup>
+                                        </Form>
+                                    </ToolbarItem>
 
-                            </ToolbarGroup>
+                                </ToolbarGroup>
+                            )) }
 
                             { for props.toolbar_items.iter() }
 

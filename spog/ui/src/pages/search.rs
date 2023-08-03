@@ -1,7 +1,7 @@
 //! Unified search
 
 use crate::components::{
-    advisory::{AdvisoryResult, AdvisorySearch, SearchMode as AdvisorySearchMode},
+    advisory::{AdvisoryResult, AdvisorySearch, SearchMode},
     sbom::{PackageResult, SbomSearch},
 };
 use patternfly_yew::prelude::*;
@@ -107,7 +107,7 @@ pub fn search(props: &SearchProperties) -> Html {
 
             <PageSection hidden={*tab != 0} variant={PageSectionVariant::Light} fill={PageSectionFill::Fill}>
 
-                <AdvisorySearch callback={advisory_callback} mode={AdvisorySearchMode::Provided}>
+                <AdvisorySearch callback={advisory_callback} mode={SearchMode::Provided}>
                     <AdvisoryResult state={(*advisory_search).clone()} />
                 </AdvisorySearch>
 
@@ -115,7 +115,7 @@ pub fn search(props: &SearchProperties) -> Html {
 
             <PageSection hidden={*tab != 1} variant={PageSectionVariant::Light} fill={PageSectionFill::Fill}>
 
-                <SbomSearch callback={sbom_callback} query={(*search_terms).clone()}>
+                <SbomSearch callback={sbom_callback} mode={SearchMode::Provided}>
                     <PackageResult state={(*sbom_search).clone()} />
                 </SbomSearch>
 

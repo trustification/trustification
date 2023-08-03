@@ -200,7 +200,7 @@ where
     };
 
     html!(
-        <Accordion large=true bordered=true>
+        <Accordion large=true>
             {
                 for props.search.categories.iter().map(|cat| {
                     filter_section(
