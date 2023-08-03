@@ -31,6 +31,14 @@ REALM_OPTS+=(-s registrationAllowed=true)
 REALM_OPTS+=(-s resetPasswordAllowed=true)
 REALM_OPTS+=(-s loginWithEmailAllowed=false)
 
+if kcadm get "realms/${REALM}" &> /dev/null ; then
+  # exists -> update
+  kcadm update "realms/${REALM}" "${REALM_OPTS[@]}"
+else
+  # need to create
+  kcadm create realms -s "realm=${REALM}" "${REALM_OPTS[@]}"
+fi
+
 if [[ -n "$GITHUB_CLIENT_ID" ]]; then
   ID=$(kcadm get identity-provider/instances/github -r "${REALM}" --fields alias --format csv --noquotes)
   if [[ -n "$ID" ]]; then
@@ -38,14 +46,6 @@ if [[ -n "$GITHUB_CLIENT_ID" ]]; then
   else
     kcadm create identity-provider/instances -r "${REALM}" -s alias=github -s providerId=github -s enabled=true  -s 'config.useJwksUrl="true"' -s config.clientId=$GITHUB_CLIENT_ID -s config.clientSecret=$GITHUB_CLIENT_SECRET
   fi
-fi
-
-if kcadm get "realms/${REALM}" &> /dev/null ; then
-  # exists -> update
-  kcadm update "realms/${REALM}" "${REALM_OPTS[@]}"
-else
-  # need to create
-  kcadm create realms -s "realm=${REALM}" "${REALM_OPTS[@]}"
 fi
 
 # create realm roles
