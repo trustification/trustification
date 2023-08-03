@@ -89,9 +89,7 @@ pub fn sbom_search(props: &SbomSearchProperties) -> Html {
 
     // render
 
-    let hidden = text.is_empty();
     let simple = search_params.is_simple();
-
     let onchange = use_callback(|data, text| text.set(data), text.clone());
     let managed = matches!(&props.mode, SearchMode::Managed { .. });
 
@@ -106,59 +104,17 @@ pub fn sbom_search(props: &SbomSearchProperties) -> Html {
                 </GridItem>
 
                 <GridItem cols={[10]}>
-
-                    <Toolbar>
-                        <ToolbarContent>
-
-                            { for managed.then(|| html_nested!(
-                                <ToolbarGroup variant={GroupVariant::Filter}>
-                                    <ToolbarItem r#type={ToolbarItemType::SearchFilter} width={["600px".to_string()]}>
-                                        <Form onsubmit={onset.reform(|_|())}>
-                                            // needed to trigger submit when pressing enter in the search field
-                                            <input type="submit" hidden=true formmethod="dialog" />
-                                            <InputGroup>
-                                                <TextInputGroup>
-                                                    <TextInput
-                                                        icon={Icon::Search}
-                                                        placeholder="Search"
-                                                        value={(*text).clone()}
-                                                        state={*filter_input_state}
-                                                        {onchange}
-                                                    />
-
-                                                    if !hidden {
-                                                        <TextInputGroupUtilities>
-                                                            <Button icon={Icon::Times} variant={ButtonVariant::Plain} onclick={onclear} />
-                                                        </TextInputGroupUtilities>
-                                                    }
-                                                </TextInputGroup>
-                                                <InputGroupItem>
-                                                    <Button
-                                                        disabled={*filter_input_state == InputState::Error}
-                                                        icon={Icon::ArrowRight}
-                                                        variant={ButtonVariant::Control}
-                                                        onclick={onset.reform(|_|())}
-                                                    />
-                                                </InputGroupItem>
-                                            </InputGroup>
-                                        </Form>
-                                    </ToolbarItem>
-
-                                </ToolbarGroup>
-                            )) }
-
-                            { for props.toolbar_items.iter() }
-
-                            <ToolbarItem r#type={ToolbarItemType::Pagination}>
-                                <SimplePagination
-                                    pagination={pagination.clone()}
-                                    total={*total}
-                                />
-                            </ToolbarItem>
-
-                        </ToolbarContent>
-                    </Toolbar>
-
+                    <SearchToolbar
+                        text={(*text).clone()}
+                        {managed}
+                        pagination={pagination.clone()}
+                        total={*total}
+                        children={props.toolbar_items.clone()}
+                        {onset}
+                        {onclear}
+                        {onchange}
+                        filter_input_state={filter_input_state.clone()}
+                    />
                 </GridItem>
 
                 <GridItem cols={[2]}>
