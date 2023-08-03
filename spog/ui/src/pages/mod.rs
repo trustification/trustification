@@ -3,26 +3,26 @@
 use yew_nested_router::Target;
 
 mod advisory;
+mod advisory_search;
 mod chicken;
 mod index;
 mod not_found;
 mod not_logged_in;
-mod package;
 mod sbom;
+mod sbom_search;
 mod scanner;
 mod search;
-mod vex;
 
 pub use advisory::*;
+pub use advisory_search::*;
 pub use chicken::*;
 pub use index::*;
 pub use not_found::*;
 pub use not_logged_in::*;
-pub use package::Package;
 pub use sbom::*;
+pub use sbom_search::Package;
 pub use scanner::*;
 pub use search::*;
-pub use vex::*;
 
 #[derive(Clone, Debug, PartialEq, Eq, Target)]
 pub enum AppRoute {

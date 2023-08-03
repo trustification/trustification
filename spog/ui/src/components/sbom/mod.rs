@@ -1,189 +1,200 @@
-use crate::{
-    backend::{self, PackageService},
-    components::search::*,
-    hooks::{use_backend, use_config, use_standard_search, UseStandardSearch},
-    utils::pagination_to_offset,
-};
-use bombastic_model::prelude::Packages;
+mod search;
+
+pub use search::*;
+
+use std::rc::Rc;
+
 use patternfly_yew::prelude::*;
 use spog_model::prelude::*;
-use std::rc::Rc;
+use url::Url;
 use yew::prelude::*;
-use yew_more_hooks::prelude::*;
-use yew_oauth2::prelude::*;
+use yew_more_hooks::hooks::UseAsyncState;
+use yew_nested_router::components::Link;
+
+use crate::{
+    backend::Endpoint,
+    components::{common::SafeHtml, download::Download, table_wrapper::TableWrapper},
+    hooks::*,
+    pages::{AppRoute, View},
+};
 
 #[derive(PartialEq, Properties)]
-pub struct CatalogSearchProperties {
-    pub callback: Callback<UseAsyncHandleDeps<SearchResult<Rc<Vec<PackageSummary>>>, String>>,
-
-    pub query: Option<String>,
-
-    #[prop_or_default]
-    pub toolbar_items: ChildrenWithProps<ToolbarItem>,
-
-    #[prop_or_default]
-    pub children: Children,
+pub struct PackageResultProperties {
+    pub state: UseAsyncState<SearchResult<Rc<Vec<PackageSummary>>>, String>,
 }
 
-#[function_component(CatalogSearch)]
-pub fn catalog_search(props: &CatalogSearchProperties) -> Html {
+#[derive(Copy, Clone, PartialEq, Eq)]
+pub enum Column {
+    Name,
+    Supplier,
+    Created,
+    Download,
+    Dependencies,
+    Advisories,
+    Version,
+}
+
+#[derive(Clone)]
+pub struct PackageEntry {
+    url: Option<Url>,
+    package: PackageSummary,
+}
+
+impl PackageEntry {
+    fn package_name(&self) -> Html {
+        if self.package.name.is_empty() {
+            html!(<i>{ &self.package.id }</i>)
+        } else {
+            (&self.package.name).into()
+        }
+    }
+}
+
+impl TableEntryRenderer<Column> for PackageEntry {
+    fn render_cell(&self, context: CellContext<'_, Column>) -> Cell {
+        match context.column {
+            Column::Name => html!(
+                <Link<AppRoute>
+                    target={AppRoute::Package(View::Content{id: self.package.id.clone()})}
+                >{ self.package_name() }</Link<AppRoute>>
+            )
+            .into(),
+            Column::Supplier => html!(&self.package.supplier).into(),
+            Column::Created => html!(self.package.created.date().to_string()).into(),
+            Column::Download => html!(
+                if let Some(url) = &self.url {
+                    <Download href={url.clone()} />
+                }
+            )
+            .into(),
+            Column::Dependencies => html!(&self.package.dependencies.len()).into(),
+            Column::Advisories => {
+                let q = self.package.advisories_query();
+                html!(<Link<AppRoute>
+                          target={AppRoute::Advisory(View::Search{query: q})}
+                            >
+                        { self.package.advisories.len() }
+                    </Link<AppRoute>>
+                )
+                .into()
+            }
+            Column::Version => html!(&self.package.version).into(),
+        }
+    }
+
+    fn render_details(&self) -> Vec<Span> {
+        let html = html!(<PackageDetails package={Rc::new(self.clone())} />);
+        vec![Span::max(html)]
+    }
+
+    fn is_full_width_details(&self) -> Option<bool> {
+        Some(true)
+    }
+}
+
+#[function_component(PackageResult)]
+pub fn package_result(props: &PackageResultProperties) -> Html {
     let backend = use_backend();
-    let access_token = use_latest_access_token();
-
-    let config = use_config();
-
-    let total = use_state_eq(|| None);
-
-    let filters = use_memo(|()| config.bombastic.filters.clone(), ());
-    let search_config = use_memo(|()| convert_search(&filters), ());
-
-    let UseStandardSearch {
-        search_params,
-        pagination,
-        filter_input_state,
-        onclear,
-        onset,
-        ontogglesimple,
-        text,
-    } = use_standard_search::<DynamicSearchParameters, Packages>(props.query.clone(), *total, filters.clone());
-
-    let search = {
-        let filters = filters.clone();
-        use_async_with_cloned_deps(
-            move |(search_params, page, per_page)| async move {
-                let service = PackageService::new(backend.clone(), access_token);
-                service
-                    .search_packages(
-                        &search_params.as_str(&filters),
-                        &backend::SearchParameters {
-                            offset: Some(pagination_to_offset(page, per_page)),
-                            limit: Some(per_page),
-                            ..Default::default()
-                        },
-                    )
-                    .await
-                    .map(|result| result.map(Rc::new))
-                    .map_err(|err| err.to_string())
-            },
-            ((*search_params).clone(), pagination.page, pagination.per_page),
-        )
+    let data = match &props.state {
+        UseAsyncState::Ready(Ok(val)) => {
+            let data: Vec<PackageEntry> = val
+                .result
+                .iter()
+                .map(|pkg| {
+                    let url = backend.join(Endpoint::Api, &pkg.href).ok();
+                    PackageEntry {
+                        package: pkg.clone(),
+                        url,
+                    }
+                })
+                .collect();
+            Some(data)
+        }
+        _ => None,
     };
 
-    total.set(search.data().and_then(|d| d.total));
+    let (entries, onexpand) = use_table_data(MemoizedTableModel::new(Rc::new(data.unwrap_or_default())));
 
-    use_effect_with_deps(
-        |(callback, search)| {
-            callback.emit(search.clone());
-        },
-        (props.callback.clone(), search.clone()),
-    );
-
-    // render
-
-    let hidden = text.is_empty();
-    let simple = search_params.is_simple();
-
-    let onchange = use_callback(|data, text| text.set(data), text.clone());
+    let header = vec![
+        yew::props!(TableColumnProperties<Column> {
+            index: Column::Name,
+            label: "Name",
+            width: ColumnWidth::Percent(15)
+        }),
+        yew::props!(TableColumnProperties<Column> {
+            index: Column::Version,
+            label: "Version",
+            width: ColumnWidth::Percent(20)
+        }),
+        yew::props!(TableColumnProperties<Column> {
+            index: Column::Supplier,
+            label: "Supplier",
+            width: ColumnWidth::Percent(20)
+        }),
+        yew::props!(TableColumnProperties<Column> {
+            index: Column::Created,
+            label: "Created",
+            width: ColumnWidth::Percent(10)
+        }),
+        yew::props!(TableColumnProperties<Column> {
+            index: Column::Dependencies,
+            label: "Dependencies",
+            width: ColumnWidth::Percent(10)
+        }),
+        yew::props!(TableColumnProperties<Column> {
+            index: Column::Advisories,
+            label: "Advisories",
+            width: ColumnWidth::Percent(10)
+        }),
+        yew::props!(TableColumnProperties<Column> {
+            index: Column::Download,
+            label: "Download",
+            width: ColumnWidth::FitContent
+        }),
+    ];
 
     html!(
-        <>
-
-            <Grid>
-                <GridItem cols={[2]}>
-                    <SimpleModeSwitch {simple} ontoggle={ontogglesimple} />
-                </GridItem>
-
-                <GridItem cols={[10]}>
-
-                    <Toolbar>
-                        <ToolbarContent>
-                            <ToolbarGroup variant={GroupVariant::Filter}>
-                                <ToolbarItem r#type={ToolbarItemType::SearchFilter} width={["600px".to_string()]}>
-                                    <Form onsubmit={onset.reform(|_|())}>
-                                        // needed to trigger submit when pressing enter in the search field
-                                        <input type="submit" hidden=true formmethod="dialog" />
-                                        <InputGroup>
-                                            <TextInputGroup>
-                                                <TextInput
-                                                    icon={Icon::Search}
-                                                    placeholder="Search"
-                                                    value={(*text).clone()}
-                                                    state={*filter_input_state}
-                                                    {onchange}
-                                                />
-
-                                                if !hidden {
-                                                    <TextInputGroupUtilities>
-                                                        <Button icon={Icon::Times} variant={ButtonVariant::Plain} onclick={onclear} />
-                                                    </TextInputGroupUtilities>
-                                                }
-                                            </TextInputGroup>
-                                            <InputGroupItem>
-                                                <Button
-                                                    disabled={*filter_input_state == InputState::Error}
-                                                    icon={Icon::ArrowRight}
-                                                    variant={ButtonVariant::Control}
-                                                    onclick={onset.reform(|_|())}
-                                                />
-                                            </InputGroupItem>
-                                        </InputGroup>
-                                    </Form>
-                                </ToolbarItem>
-
-                                <ToolbarItem additional_class={classes!("pf-m-align-self-center")}>
-                                    <CatalogSearchHelpPopover/>
-                                </ToolbarItem>
-
-                            </ToolbarGroup>
-
-                            { for props.toolbar_items.iter() }
-
-                            <ToolbarItem r#type={ToolbarItemType::Pagination}>
-                                <SimplePagination
-                                    pagination={pagination.clone()}
-                                    total={*total}
-                                />
-                            </ToolbarItem>
-
-                        </ToolbarContent>
-                    </Toolbar>
-
-                </GridItem>
-
-                <GridItem cols={[2]}>
-                    <SimpleSearch<DynamicSearchParameters> search={search_config} {search_params} />
-                </GridItem>
-
-                <GridItem cols={[10]}>
-                    { for props.children.iter() }
-                </GridItem>
-
-            </Grid>
-
-            <SimplePagination
-                {pagination}
-                total={*total}
-                position={PaginationPosition::Bottom}
+        <TableWrapper<Column, UseTableData<Column, MemoizedTableModel<PackageEntry>>>
+            loading={&props.state.is_processing()}
+            error={props.state.error().cloned()}
+            empty={entries.is_empty()}
+            header={header}
+        >
+            <Table<Column, UseTableData<Column, MemoizedTableModel<PackageEntry>>>
+                mode={TableMode::Expandable}
+                {entries}
+                {onexpand}
             />
-
-        </>
+        </TableWrapper<Column, UseTableData<Column, MemoizedTableModel<PackageEntry>>>>
     )
 }
 
-#[function_component(CatalogSearchHelpPopover)]
-pub fn help() -> Html {
+#[derive(Clone, Properties)]
+pub struct PackageDetailsProps {
+    pub package: Rc<PackageEntry>,
+}
+
+impl PartialEq for PackageDetailsProps {
+    fn eq(&self, other: &Self) -> bool {
+        Rc::ptr_eq(&self.package, &other.package)
+    }
+}
+
+#[function_component(PackageDetails)]
+pub fn package_details(props: &PackageDetailsProps) -> Html {
+    let mut snippet = props.package.package.snippet.clone();
+
+    if snippet.is_empty() {
+        snippet = "No description available".to_string();
+    }
+
     html!(
-        <SearchHelpPopover>
-            <Content>
-                <p></p>
-                <p> {"The following qualifiers can be used:"} </p>
-            </Content>
-            <DescriptionList>
-                <DescriptionGroup term="type">{ Html::from_html_unchecked(r#"
-                    <p>The type of package (e.g. <code>oci</code>).</p>
-                "#.into()) }</DescriptionGroup>
-                <DescriptionGroup term="supplier">{ "The supplier of the package." }</DescriptionGroup>
-            </DescriptionList>
-        </SearchHelpPopover>
+        <Panel>
+            <PanelMain>
+                <PanelMainBody>
+                    <SafeHtml html={snippet} />
+                </PanelMainBody>
+            </PanelMain>
+        </Panel>
     )
 }
