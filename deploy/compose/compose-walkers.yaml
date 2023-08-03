@@ -10,3 +10,6 @@ services:
   bombastic-walker:
     image: $TRUST_IMAGE:${TRUST_VERSION:?}
     command: bombastic walker --bombastic-url http://bombastic-api:8080 --scripts-path /usr/bin
+    depends_on:
+      bombastic-api:
+        condition: service_healthy
