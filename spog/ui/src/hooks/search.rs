@@ -96,7 +96,7 @@ pub struct UseStandardSearch<T> {
     pub search_params: UseStateHandle<SearchMode<T>>,
     pub pagination: UsePagination,
     pub filter_input_state: Rc<InputState>,
-    pub onclear: Callback<MouseEvent>,
+    pub onclear: Callback<()>,
     pub onset: Callback<()>,
     pub ontogglesimple: Callback<bool>,
     pub text: UseStateHandle<String>,
