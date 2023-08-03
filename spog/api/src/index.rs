@@ -8,9 +8,7 @@ pub(crate) fn configure() -> impl FnOnce(&mut ServiceConfig) {
 
 const ENDPOINTS: &[&str] = &[
     "/.well-known/trustification/version",
-    "/api/package",
     "/api/v1/config",
-    "/api/vulnerability",
     "/swagger-ui/",
     "/openapi.json",
 ];

@@ -8,8 +8,10 @@ use http::StatusCode;
 use prometheus::Registry;
 use spog_model::search;
 use trustification_api::{search::SearchOptions, Apply};
-use trustification_auth::authenticator::Authenticator;
-use trustification_auth::client::{TokenInjector, TokenProvider};
+use trustification_auth::{
+    authenticator::Authenticator,
+    client::{TokenInjector, TokenProvider},
+};
 use trustification_infrastructure::app::{new_app, AppOptions};
 use trustification_version::version;
 use utoipa::OpenApi;
@@ -90,13 +92,13 @@ impl Server {
             let mut app = new_app(AppOptions {
                 cors: Some(cors),
                 metrics: Some(http_metrics),
-                authenticator: authenticator.clone(),
+                authenticator: None, // we map this explicitly
             })
             .app_data(web::Data::new(state))
             .configure(index::configure())
             .configure(version::configurator(version!()))
-            .configure(sbom::configure())
-            .configure(advisory::configure())
+            .configure(sbom::configure(authenticator.clone()))
+            .configure(advisory::configure(authenticator.clone()))
             .configure(config_configurator.clone())
             .service(SwaggerUi::new("/swagger-ui/{_:.*}").url("/openapi.json", openapi.clone()));
 
