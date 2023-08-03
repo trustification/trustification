@@ -53,8 +53,8 @@ fn authenticated_page(props: &ChildrenProperties) -> Html {
                 <NavList>
                     <NavRouterItem<AppRoute> to={AppRoute::Index}>{ "Trusted Content" }</NavRouterItem<AppRoute>>
                     <NavExpandable expanded=true title="Search">
-                        <NavRouterItem<AppRoute> to={AppRoute::Package(Default::default())} predicate={AppRoute::is_package}>{ "Packages" }</NavRouterItem<AppRoute>>
                         <NavRouterItem<AppRoute> to={AppRoute::Advisory(Default::default())} predicate={AppRoute::is_advisory}>{ "Advisories" }</NavRouterItem<AppRoute>>
+                        <NavRouterItem<AppRoute> to={AppRoute::Package(Default::default())} predicate={AppRoute::is_package}>{ "SBOMs" }</NavRouterItem<AppRoute>>
                     </NavExpandable>
                     <NavRouterItem<AppRoute> to={AppRoute::Scanner}>{ "Scanner" }</NavRouterItem<AppRoute>>
                     <NavExpandable title="Extend">
