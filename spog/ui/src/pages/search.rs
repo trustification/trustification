@@ -1,6 +1,9 @@
 //! Unified search
 
-use crate::components::{package::PackageResult, sbom::CatalogSearch};
+use crate::components::{
+    advisory::{AdvisoryResult, AdvisorySearch, SearchMode as AdvisorySearchMode},
+    sbom::{PackageResult, SbomSearch},
+};
 use patternfly_yew::prelude::*;
 use spog_model::prelude::*;
 use std::rc::Rc;
@@ -37,13 +40,27 @@ pub fn search(props: &SearchProperties) -> Html {
     let tab = use_state_eq(|| 0);
     let onselect = use_callback(|index, tab| tab.set(index), tab.clone());
 
+    // advisory search
+
     let advisory_search = use_state_eq(UseAsyncState::default);
     let advisory_callback = use_callback(
-        |state: UseAsyncHandleDeps<SearchResult<Rc<Vec<PackageSummary>>>, String>, search| {
+        |state: UseAsyncHandleDeps<SearchResult<Rc<Vec<AdvisorySummary>>>, String>, search| {
             search.set((*state).clone());
         },
         advisory_search.clone(),
     );
+
+    // sbom search
+
+    let sbom_search = use_state_eq(UseAsyncState::default);
+    let sbom_callback = use_callback(
+        |state: UseAsyncHandleDeps<SearchResult<Rc<Vec<PackageSummary>>>, String>, search| {
+            search.set((*state).clone());
+        },
+        sbom_search.clone(),
+    );
+
+    // render
 
     html!(
         <>
@@ -89,13 +106,18 @@ pub fn search(props: &SearchProperties) -> Html {
             </PageSection>
 
             <PageSection hidden={*tab != 0} variant={PageSectionVariant::Light} fill={PageSectionFill::Fill}>
+
+                <AdvisorySearch callback={advisory_callback} mode={AdvisorySearchMode::Provided}>
+                    <AdvisoryResult state={(*advisory_search).clone()} />
+                </AdvisorySearch>
+
             </PageSection>
 
             <PageSection hidden={*tab != 1} variant={PageSectionVariant::Light} fill={PageSectionFill::Fill}>
 
-                <CatalogSearch callback={advisory_callback} query={(*search_terms).clone()}>
-                    <PackageResult state={(*advisory_search).clone()} />
-                </CatalogSearch>
+                <SbomSearch callback={sbom_callback} query={(*search_terms).clone()}>
+                    <PackageResult state={(*sbom_search).clone()} />
+                </SbomSearch>
 
             </PageSection>
 
