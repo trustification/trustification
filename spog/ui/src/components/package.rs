@@ -1,18 +1,17 @@
 use std::rc::Rc;
 
+use crate::{
+    backend::Endpoint,
+    components::{common::SafeHtml, download::Download, table_wrapper::TableWrapper},
+    hooks::*,
+    pages::{AppRoute, View},
+};
 use patternfly_yew::prelude::*;
 use spog_model::prelude::*;
 use url::Url;
 use yew::prelude::*;
 use yew_more_hooks::hooks::UseAsyncState;
 use yew_nested_router::components::Link;
-
-use crate::{
-    backend::Endpoint,
-    components::{common::SafeHtml, table_wrapper::TableWrapper},
-    hooks::*,
-    pages::{AppRoute, View},
-};
 
 #[derive(PartialEq, Properties)]
 pub struct PackageResultProperties {
@@ -59,9 +58,7 @@ impl TableEntryRenderer<Column> for PackageEntry {
             Column::Created => html!(self.package.created.date().to_string()).into(),
             Column::Download => html!(
                 if let Some(url) = &self.url {
-                    <a href={url.to_string()} target="_blank">
-                        <Button icon={Icon::Download} variant={ButtonVariant::Plain} />
-                    </a>
+                    <Download href={url.clone()} />
                 }
             )
             .into(),

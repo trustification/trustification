@@ -6,16 +6,26 @@ use actix_web::{
     App, Error,
 };
 use actix_web_extras::middleware::Condition;
-use actix_web_httpauth::middleware::HttpAuthentication;
 use actix_web_prom::PrometheusMetrics;
 use std::sync::Arc;
-use trustification_auth::authenticator::{actix::openid_validator, Authenticator};
+use trustification_auth::authenticator::Authenticator;
 
 #[derive(Default)]
 pub struct AppOptions {
     pub cors: Option<Cors>,
     pub metrics: Option<PrometheusMetrics>,
     pub authenticator: Option<Arc<Authenticator>>,
+}
+
+#[macro_export]
+macro_rules! new_auth {
+    ($auth:expr) => {
+        actix_web_extras::middleware::Condition::from_option($auth.map(move |authenticator| {
+            actix_web_httpauth::middleware::HttpAuthentication::bearer(move |req, auth| {
+                trustification_auth::authenticator::actix::openid_validator(req, auth, authenticator.clone())
+            })
+        }))
+    };
 }
 
 /// Build a new HTTP app in a consistent way.
@@ -38,11 +48,7 @@ pub fn new_app(
     // following lines, read them from end to start!
     App::new()
         // Handle authentication, might fail and return early
-        .wrap(Condition::from_option(options.authenticator.map(
-            move |authenticator| {
-                HttpAuthentication::bearer(move |req, auth| openid_validator(req, auth, authenticator.clone()))
-            },
-        )))
+        .wrap(new_auth!(options.authenticator))
         // Handle CORS requests, this might finish early and not pass requests to the next entry
         .wrap(Condition::from_option(options.cors))
         // Next, record metrics for the request (should never fail)

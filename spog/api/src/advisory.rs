@@ -3,15 +3,22 @@ use actix_web_httpauth::extractors::bearer::BearerAuth;
 use http::header;
 use log::{info, trace, warn};
 use spog_model::search::{AdvisorySummary, SearchResult};
+use std::sync::Arc;
 use trustification_api::search::SearchOptions;
+use trustification_auth::authenticator::Authenticator;
+use trustification_infrastructure::new_auth;
 
 use crate::{search::QueryParams, server::SharedState};
 
 const MAX_LIMIT: usize = 1_000;
 
-pub(crate) fn configure() -> impl FnOnce(&mut ServiceConfig) {
+pub(crate) fn configure(auth: Option<Arc<Authenticator>>) -> impl FnOnce(&mut ServiceConfig) {
     |config: &mut ServiceConfig| {
-        config.service(web::resource("/api/v1/advisory/search").to(search));
+        config.service(
+            web::resource("/api/v1/advisory/search")
+                .wrap(new_auth!(auth))
+                .to(search),
+        );
         config.service(web::resource("/api/v1/advisory").to(get));
     }
 }
@@ -24,7 +31,7 @@ pub struct GetParams {
 
 #[utoipa::path(
     get,
-    path = "/api/v1/advisory",
+    path = "/public/api/v1/advisory",
     responses(
         (status = 200, description = "Advisory was found"),
         (status = NOT_FOUND, description = "Advisory was not found")

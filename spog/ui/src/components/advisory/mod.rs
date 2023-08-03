@@ -8,17 +8,16 @@ use std::collections::HashSet;
 
 use crate::{
     backend::Endpoint,
-    components::{common::CardWrapper, severity::Severity, table_wrapper::TableWrapper},
+    components::{common::CardWrapper, download::Download, severity::Severity, table_wrapper::TableWrapper},
     hooks::use_backend,
     pages::{AppRoute, View},
     utils::csaf::{find_product_relations, trace_product},
 };
-use csaf::vulnerability::RemediationCategory;
 use csaf::{
     definitions::{Branch, Note, NoteCategory, ProductIdT, Reference, ReferenceCategory},
     document::{PublisherCategory, Status},
     product_tree::RelationshipCategory,
-    vulnerability::ProductStatus,
+    vulnerability::{ProductStatus, RemediationCategory},
     Csaf,
 };
 use patternfly_yew::prelude::*;
@@ -64,9 +63,7 @@ impl TableEntryRenderer<Column> for AdvisoryEntry {
             ),
             Column::Revision => self.summary.date.date().to_string().into(),
             Column::Download => html!(if let Some(url) = &self.url {
-                <a href={url.as_str().to_string()}>
-                    <Button icon={Icon::Download} variant={ButtonVariant::Plain} />
-                </a>
+                <Download href={url.clone()} />
             }),
             Column::Vulnerabilities => {
                 let l = self.summary.cves.len();
@@ -76,13 +73,13 @@ impl TableEntryRenderer<Column> for AdvisoryEntry {
         .into()
     }
 
+    fn is_full_width_details(&self) -> Option<bool> {
+        Some(true)
+    }
+
     fn render_details(&self) -> Vec<Span> {
         let html = html!( <AdvisoryDetails advisory={Rc::new(self.summary.clone())} />);
         vec![Span::max(html)]
-    }
-
-    fn is_full_width_details(&self) -> Option<bool> {
-        Some(true)
     }
 }
 

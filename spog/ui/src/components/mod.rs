@@ -7,6 +7,7 @@ pub mod common;
 pub mod config;
 pub mod content;
 pub mod cvss;
+pub mod download;
 pub mod error;
 pub mod package;
 pub mod sbom;
