@@ -32,7 +32,10 @@ jobs:
           {
             "url": "https://api.staging.trustification.dev",
             "vexination": "https://vex.staging.trustification.dev",
-            "bombastic": "https://sbom.staging.trustification.dev"
+            "bombastic": "https://sbom.staging.trustification.dev",
+            "oidc": {
+              "issuer": "https://sso.staging.trustification.dev/realms/chicken"
+            }
           }
           EOF
 
