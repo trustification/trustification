@@ -1,4 +1,5 @@
 pub mod metadata;
+mod s3;
 
 use std::{fmt::Display, ops::Bound, path::PathBuf};
 

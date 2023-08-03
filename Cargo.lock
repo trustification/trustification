@@ -6954,6 +6954,7 @@ dependencies = [
  "log",
  "prometheus",
  "rand 0.8.5",
+ "rust-s3",
  "serde",
  "serde_json",
  "sikula",

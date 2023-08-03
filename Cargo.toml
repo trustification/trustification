@@ -88,3 +88,6 @@ default-members = [
 # also check: spog/ui/Cargo.toml
 cyclonedx-bom = { git = "https://github.com/lulf/cyclonedx-rust-cargo", branch = "trustification" }
 spdx-rs = { git = "https://github.com/lulf/spdx-rs", rev = "f3f1ea9a72e270c8434f8be6ca1d61608b25b813" }
+
+[profile.release]
+debug = true
