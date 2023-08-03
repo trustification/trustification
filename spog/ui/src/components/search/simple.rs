@@ -327,8 +327,15 @@ pub struct SimpleModeSwitchProperties {
 #[function_component(SimpleModeSwitch)]
 pub fn simple_mode_switch(props: &SimpleModeSwitchProperties) -> Html {
     html!(
-        <div style="height: 100%; display: flex; flex-direction: row; align-items: center;">
-            <Title level={Level::H2}>{ "Categories " } <Switch checked={props.simple} label="Simple" label_off="Complex" onchange={props.ontoggle.clone()}/> </Title>
-        </div>
+        <Flex>
+            <FlexItem modifiers={[FlexModifier::Column, FlexModifier::Align(Alignment::Center)]}>
+                <Title level={Level::H2}>
+                    { "Categories " }
+                </Title>
+            </FlexItem>
+            <FlexItem modifiers={[FlexModifier::Column, FlexModifier::Align(Alignment::Center)]}>
+                <Switch checked={props.simple} label="Simple" label_off="Complex" onchange={props.ontoggle.clone()}/>
+            </FlexItem>
+        </Flex>
     )
 }
