@@ -73,9 +73,6 @@ pub fn remediation_table(props: &CsafRemediationTableProperties) -> Html {
         </TableHeader<Column>>
     };
 
-    // FIXME: figure out why this is required
-    let onexpand = onexpand.reform(|x| x);
-
     html!(
         <Table<Column, UseTableData<Column, MemoizedTableModel<RemediationWrapper>>>
             {header}
