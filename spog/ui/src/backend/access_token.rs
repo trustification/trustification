@@ -1,5 +1,5 @@
 use reqwest::header;
-use url::form_urlencoded;
+use url::{form_urlencoded, Url};
 use yew_oauth2::context::LatestAccessToken;
 
 pub trait ApplyAccessToken: Sized {
@@ -24,7 +24,14 @@ pub trait ApplyAccessToken: Sized {
 
 impl<'a, T: form_urlencoded::Target> ApplyAccessToken for &mut form_urlencoded::Serializer<'a, T> {
     fn apply_access_token(self, access_token: &str) -> Self {
-        self.append_pair("access_token", access_token)
+        self.append_pair("token", access_token)
+    }
+}
+
+impl ApplyAccessToken for Url {
+    fn apply_access_token(mut self, access_token: &str) -> Self {
+        self.query_pairs_mut().apply_access_token(access_token).finish();
+        self
     }
 }
 
