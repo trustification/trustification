@@ -249,20 +249,31 @@ impl<INDEX: Index> IndexStore<INDEX> {
         Ok(())
     }
 
-    pub fn snapshot(&mut self, writer: IndexWriter) -> Result<Vec<u8>, Error> {
+    pub fn snapshot(&mut self, writer: IndexWriter) -> Result<(Vec<u8>, bool), Error> {
         if let Some(path) = &self.path {
             log::info!("Committing index to path {:?}", path);
             writer.commit()?;
             self.inner.directory_mut().sync_directory().map_err(Error::Io)?;
             let lock = self.inner.directory_mut().acquire_lock(&INDEX_WRITER_LOCK);
 
+            let managed_files = self.inner.directory().list_managed_files();
+
             let mut total_size: i64 = 0;
-            for file in self.inner.directory().list_managed_files() {
+            for file in managed_files.iter() {
+                log::trace!("Managed file: {:?}", file);
                 let sz = std::fs::metadata(file).map(|m| m.len()).unwrap_or(0);
                 total_size += sz as i64;
             }
             self.metrics.index_size_disk_bytes.set(total_size);
             self.metrics.snapshots_total.inc();
+
+            let gc_result = self.inner.directory_mut().garbage_collect(|| managed_files)?;
+            log::trace!(
+                "Gc result. Deleted: {:?}, failed: {:?}",
+                gc_result.deleted_files,
+                gc_result.failed_to_delete_files
+            );
+            let changed = !gc_result.deleted_files.is_empty();
 
             let mut out = Vec::new();
             log::info!("Creating encoder");
@@ -274,7 +285,7 @@ impl<INDEX: Index> IndexStore<INDEX> {
             log::info!("Added it all to the archive");
             drop(archive);
             drop(lock);
-            Ok(out)
+            Ok((out, changed))
         } else {
             Err(Error::NotPersisted)
         }

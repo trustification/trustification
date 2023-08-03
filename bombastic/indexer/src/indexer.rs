@@ -102,10 +102,11 @@ pub async fn run(
                 }
             },
             _ = tick => {
-                if events > 0 {
-                    log::trace!("{} new events added, pushing new index to storage", events);
-                    match index.snapshot(writer.take().unwrap()) {
-                        Ok(data) => {
+                log::trace!("{} new events added, pushing new index to storage", events);
+                match index.snapshot(writer.take().unwrap()) {
+                    Ok((data, changed)) => {
+                        if events > 0 || changed {
+                            log::info!("Index has changed, publishing new snapshot");
                             match storage.put_index(&data).await {
                                 Ok(_) => {
                                     log::trace!("Index updated successfully");
@@ -124,15 +125,14 @@ pub async fn run(
                                     log::warn!("Error updating index: {:?}", e)
                                 }
                             }
-
-                            writer.replace(index.writer()?);
+                        } else {
+                            log::trace!("No changes to index");
                         }
-                        Err(e) => {
-                            log::warn!("Error taking index snapshot: {:?}", e);
-                        }
+                        writer.replace(index.writer()?);
                     }
-                } else {
-                    log::trace!("No changes to index");
+                    Err(e) => {
+                        log::warn!("Error taking index snapshot: {:?}", e);
+                    }
                 }
             }
         }
