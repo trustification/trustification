@@ -133,12 +133,9 @@ pub async fn gather(
     let purls: Vec<_> = response
         .results
         .iter()
-        .flat_map(|e| {
-            if let Package::Purl { purl } = &e.package {
-                Some(purl)
-            } else {
-                None
-            }
+        .flat_map(|e| match (&e.package, &e.vulns) {
+            (Package::Purl { purl }, Some(v)) if !v.is_empty() => Some(purl),
+            _ => None,
         })
         .cloned()
         .collect();
