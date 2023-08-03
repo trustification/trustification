@@ -72,12 +72,7 @@ struct DetailsProps {
 #[function_component(Details)]
 fn details(props: &DetailsProps) -> Html {
     let tab = use_state_eq(|| 0);
-    let onselect = {
-        let tab = tab.clone();
-        Callback::from(move |index: usize| {
-            tab.set(index);
-        })
-    };
+    let onselect = use_callback(|index, tab| tab.set(index), tab.clone());
 
     match &*props.vex {
         Advisory::Csaf { csaf, source } => {
