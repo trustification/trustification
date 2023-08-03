@@ -85,9 +85,9 @@ services:
     # FIXME: unable to define a health check: https://github.com/keycloak/keycloak/issues/21941
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080"]
-      interval: 10s
+      interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 20
 
   init-keycloak:
     image: quay.io/keycloak/keycloak:20.0.0
