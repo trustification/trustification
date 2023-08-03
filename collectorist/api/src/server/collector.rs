@@ -39,7 +39,7 @@ pub(crate) async fn register_collector(
     }
 }
 
-/// Register a collector
+/// Return config for a collector
 #[utoipa::path(
     get,
     tag = "collectorist",
@@ -61,7 +61,7 @@ pub(crate) async fn collector_config(
     }
 }
 
-/// Register a collector
+/// De-register a collector
 #[utoipa::path(
     delete,
     tag = "collectorist",
@@ -102,7 +102,7 @@ mod test {
     use crate::state::AppState;
     use crate::SharedState;
 
-    #[test]
+    #[actix_web::test]
     async fn collector_config_round_trip() -> Result<(), anyhow::Error> {
         let json = json!(
             {

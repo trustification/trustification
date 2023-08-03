@@ -2,7 +2,6 @@ use std::time::Duration;
 
 use chrono::Utc;
 use futures::StreamExt;
-use log::info;
 use tokio::task::JoinHandle;
 use tokio::time::sleep;
 
@@ -35,7 +34,7 @@ impl Collector {
             .await?;
 
         for purl in &response.purls {
-            info!("[{}] scanned {}", self.id, purl);
+            log::debug!("[{}] scanned {}", self.id, purl);
             let _ = state.db.update_purl_scan_time(&self.id, purl).await;
         }
         Ok(response)
@@ -53,13 +52,13 @@ impl Collector {
                     .await;
 
                 if !purls.is_empty() {
-                    info!("polling for {} -> {}", id, collector_url);
+                    log::debug!("polling for {} -> {}", id, collector_url);
                     if let Ok(_response) = collector_client::Client::new(collector_url)
                         .gather(GatherRequest { purls: purls.clone() })
                         .await
                     {
                         for purl in purls {
-                            info!("[{}] scanned {}", id, purl);
+                            log::debug!("[{}] scanned {}", id, purl);
                             let _ = state.db.update_purl_scan_time(&id, &purl).await;
                         }
                     }
