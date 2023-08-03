@@ -8,8 +8,7 @@ use derive_more::{Display, Error, From};
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
-use crate::server::collector::register_collector;
-use crate::server::collector::{collector_config, deregister_collector};
+use crate::server::collector::{collector_config, deregister_collector, register_collector};
 use crate::SharedState;
 
 pub mod collect;
@@ -25,7 +24,7 @@ pub struct ApiDoc;
 
 pub async fn run<B: Into<SocketAddr>>(state: SharedState, bind: B) -> Result<(), anyhow::Error> {
     let addr = bind.into();
-    log::debug!("listening on {}", addr);
+    log::info!("listening on {}", addr);
     HttpServer::new(move || App::new().app_data(web::Data::new(state.clone())).configure(config))
         .bind(addr)?
         .run()
