@@ -5,6 +5,7 @@ use actix_web::{http::uri::Builder, middleware::Logger, web, App, HttpRequest, H
 use anyhow::Context;
 use futures::future::select_all;
 use prometheus::{Registry, TextEncoder};
+use tokio::signal;
 
 use crate::tracing::init_tracing;
 
@@ -151,7 +152,8 @@ impl Infrastructure {
         init_tracing(id, self.config.enable_tracing.into());
         let main = Box::pin(main(self.metrics.clone())) as Pin<Box<dyn Future<Output = anyhow::Result<()>>>>;
         let runner = Box::pin(self.start_internal().await?);
-        let (result, _index, _others) = select_all([runner, main]).await;
+        let sigterm = Box::pin(async { signal::ctrl_c().await.context("termination failed") });
+        let (result, _index, _others) = select_all([runner, main, sigterm]).await;
         result
     }
 }
