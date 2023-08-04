@@ -1,4 +1,4 @@
-use actix_web::{post, web, HttpResponse, Responder};
+use actix_web::{http::header::ContentType, post, web, HttpResponse, Responder};
 use serde::{Deserialize, Serialize};
 
 use crate::SharedState;
@@ -25,5 +25,6 @@ pub(crate) async fn collect(
 ) -> actix_web::Result<impl Responder> {
     let purls = input.into_inner();
     let result = state.gatherer.gather(state.get_ref().clone(), purls).await;
-    Ok(HttpResponse::Ok().json(result))
+    let pretty = serde_json::to_string_pretty(&result)?;
+    Ok(HttpResponse::Ok().content_type(ContentType::json()).body(pretty))
 }
