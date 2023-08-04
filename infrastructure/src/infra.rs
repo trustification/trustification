@@ -9,6 +9,9 @@ use tokio::signal;
 
 use crate::tracing::init_tracing;
 
+#[cfg(unix)]
+use tokio::signal::unix::{signal, SignalKind};
+
 const DEFAULT_BIND_ADDR: &str = "localhost:9010";
 
 /// Infrastructure
@@ -152,8 +155,21 @@ impl Infrastructure {
         init_tracing(id, self.config.enable_tracing.into());
         let main = Box::pin(main(self.metrics.clone())) as Pin<Box<dyn Future<Output = anyhow::Result<()>>>>;
         let runner = Box::pin(self.start_internal().await?);
-        let sigterm = Box::pin(async { signal::ctrl_c().await.context("termination failed") });
-        let (result, _index, _others) = select_all([runner, main, sigterm]).await;
+        let sigint = Box::pin(async { signal::ctrl_c().await.context("termination failed") });
+
+        #[allow(unused_mut)]
+        let mut tasks = vec![runner, main, sigint];
+
+        #[cfg(unix)]
+        {
+            let sigterm = Box::pin(async {
+                signal(SignalKind::terminate())?.recv().await;
+                Ok(())
+            });
+            tasks.push(sigterm);
+        }
+
+        let (result, _index, _others) = select_all(tasks).await;
         result
     }
 }
