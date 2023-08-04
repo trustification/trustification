@@ -7,7 +7,7 @@ pub struct GatherRequest {
     pub purls: Vec<String>,
 }
 
-type Vurls = Vec<String>;
+pub type Vurls = Vec<String>;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct GatherResponse {
