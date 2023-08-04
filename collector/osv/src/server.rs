@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::fmt::Debug;
 use std::net::{SocketAddr, TcpListener};
 use std::sync::atomic::Ordering;
@@ -27,6 +28,9 @@ pub enum Error {
 
     #[display(fmt = "GUAC error")]
     GuacError,
+
+    #[display(fmt = "OSV error")]
+    OsvError,
 }
 
 impl ResponseError for Error {}
@@ -96,7 +100,8 @@ pub async fn gather(
 
     let guac = GuacClient::new(guac_url);
     let request: QueryBatchRequest = (&*request).into();
-    let response = OsvClient::query_batch(request).await.map_err(|_| Error::GuacError)?;
+    log::debug!("osv request: {}", serde_json::to_string_pretty(&request).unwrap());
+    let response = OsvClient::query_batch(request).await.map_err(|_| Error::OsvError)?;
 
     for entry in &response.results {
         if let Some(vulns) = &entry.vulns {
@@ -130,19 +135,18 @@ pub async fn gather(
             }
         }
     }
-    let purls: Vec<_> = response
+    let purls: HashMap<_, _> = response
         .results
         .iter()
         .flat_map(|e| match (&e.package, &e.vulns) {
-            (Package::Purl { purl }, Some(v)) if !v.is_empty() => Some(purl),
+            (Package::Purl { purl }, Some(v)) if !v.is_empty() => {
+                Some((purl.clone(), v.iter().map(|x| x.id.clone()).collect()))
+            }
             _ => None,
         })
-        .cloned()
         .collect();
-
-    let response = GatherResponse { purls, vurls: vec![] };
-
-    Ok(HttpResponse::Ok().json(response))
+    log::debug!("osv response: {}", serde_json::to_string_pretty(&purls).unwrap());
+    Ok(HttpResponse::Ok().json(GatherResponse { purls }))
 }
 
 pub async fn register_with_collectorist(state: SharedState) {

@@ -33,7 +33,7 @@ impl Collector {
             .gather(GatherRequest { purls })
             .await?;
 
-        for purl in &response.purls {
+        for purl in response.purls.keys() {
             log::debug!("[{}] scanned {}", self.id, purl);
             let _ = state.db.update_purl_scan_time(&self.id, purl).await;
         }

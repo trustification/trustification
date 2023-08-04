@@ -73,7 +73,7 @@ impl Gatherer {
         let collectors = state.collectors.read().await;
         let result = collectors.gather(state.clone(), request).await;
         for response in &result {
-            for purl in &response.purls {
+            for purl in response.purls.keys() {
                 state.db.insert_purl(purl.as_str()).await.ok();
             }
         }
