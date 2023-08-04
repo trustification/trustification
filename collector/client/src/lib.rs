@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -5,10 +7,12 @@ pub struct GatherRequest {
     pub purls: Vec<String>,
 }
 
+type Vurls = Vec<String>;
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct GatherResponse {
-    pub purls: Vec<String>,
-    pub vurls: Vec<String>,
+    #[serde(flatten)]
+    pub purls: HashMap<String, Vurls>,
 }
 
 pub struct Client {
