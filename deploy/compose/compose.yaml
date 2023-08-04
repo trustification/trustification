@@ -109,6 +109,6 @@ services:
       - REDIRECT_URIS=["http://localhost:*"]
       - WALKER_SECRET=ZVzq9AMOVUdMY1lSohpx1jI3aW56QDPS
     volumes:
-      - ./container_files/init-sso:/init-sso
+      - ./container_files/init-sso:/init-sso:z
     entrypoint: /usr/bin/bash
     command: /init-sso/init.sh
