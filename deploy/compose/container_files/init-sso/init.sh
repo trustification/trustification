@@ -31,6 +31,11 @@ REALM_OPTS+=(-s registrationAllowed=true)
 REALM_OPTS+=(-s resetPasswordAllowed=true)
 REALM_OPTS+=(-s loginWithEmailAllowed=false)
 
+# if Keycloak has an internal name, set the external name here
+if [[ -n "$SSO_FRONTEND_URL" ]]; then
+REALM_OPTS+=(-s "attributes.frontendUrl=$SSO_FRONTEND_URL")
+fi
+
 if kcadm get "realms/${REALM}" &> /dev/null ; then
   # exists -> update
   kcadm update "realms/${REALM}" "${REALM_OPTS[@]}"
