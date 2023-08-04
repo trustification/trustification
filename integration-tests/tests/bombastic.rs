@@ -1,4 +1,4 @@
-use integration_tests::{assert_within_timeout, upload_sbom, BombasticContext};
+use integration_tests::{assert_within_timeout, upload_sbom, BombasticContext, get_response};
 use reqwest::StatusCode;
 use serde_json::{json, Value};
 use std::time::Duration;
@@ -180,4 +180,48 @@ async fn test_invalid_encoding(context: &mut BombasticContext) {
         .unwrap();
     assert_eq!(response.status(), StatusCode::BAD_REQUEST);
     assert_eq!(response.headers().get("accept-encoding").unwrap(), &"bzip2, zstd");
+}
+
+#[test_context(BombasticContext)]
+#[tokio::test]
+#[ntest::timeout(60_000)]
+async fn test_upload_sbom_existing_without_change(context: &mut BombasticContext) {
+    let input = serde_json::from_str(include_str!("../../bombastic/testdata/my-sbom.json")).unwrap();
+    let id = "test-upload";
+    let api_end_point: String = "api/v1/sbom?id=".to_owned()+id;
+    upload_sbom(context.port, id, &input, &context.provider).await;
+    let response: Value =  get_response(context.port, &api_end_point, StatusCode::OK, &context.provider).await;
+    assert_eq!(input, response, "First time - Input and output mismatch");
+    upload_sbom(context.port, id, &input, &context.provider).await;
+    let response: Value =  get_response(context.port, &api_end_point, StatusCode::OK, &context.provider).await;
+    assert_eq!(input, response, "Second time - Input and output mismatch");
+}
+
+#[test_context(BombasticContext)]
+#[tokio::test]
+#[ntest::timeout(60_000)]
+async fn test_upload_sbom_existing_with_change(context: &mut BombasticContext) {
+    let mut input1 = serde_json::from_str(include_str!("../../bombastic/testdata/my-sbom.json")).unwrap();
+    let id = "test-upload";
+    let api_end_point: String = "api/v1/sbom?id=".to_owned()+id;
+    upload_sbom(context.port, id, &input1, &context.provider).await;
+    let response1: Value =  get_response(context.port, &api_end_point, StatusCode::OK, &context.provider).await;
+    assert_eq!(input1, response1, "First time - Input and output mismatch");
+    input1["metadata"]["component"]["name"] = Value::String(String::from("UpdatedSBOMName"));
+    upload_sbom(context.port, id, &input1, &context.provider).await;
+    let response2: Value =  get_response(context.port, &api_end_point, StatusCode::OK, &context.provider).await;
+    assert_eq!(input1, response2, "Second time - Input and output mismatch");
+}
+
+#[test_context(BombasticContext)]
+#[tokio::test]
+#[ntest::timeout(60_000)]
+async fn test_upload_empty_sbom(context: &mut BombasticContext) {
+    let input = serde_json::from_str(include_str!("./testdata/empty.json")).unwrap();
+    let id = "empty-upload";
+    let api_end_point: String = "api/v1/sbom?id=".to_owned()+id;
+    upload_sbom(context.port, id, &input, &context.provider).await;
+    let response: Value =  get_response(context.port, &api_end_point, StatusCode::OK, &context.provider).await;
+    println!("response is {:?}",response);
+    assert_eq!(input, response, "First time - Input and output mismatch");
 }
