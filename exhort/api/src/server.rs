@@ -18,7 +18,7 @@ pub async fn run<B: Into<SocketAddr>>(state: SharedState, bind: B) -> Result<(),
     let openapi = ApiDoc::openapi();
 
     let addr = bind.into();
-    log::debug!("listening on {}", addr);
+    log::info!("listening on {}", addr);
     HttpServer::new(move || {
         App::new()
             .wrap(Logger::default())
