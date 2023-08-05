@@ -33,8 +33,8 @@ pub async fn component_analysis(
             .json(&request)
             .send()
             .await
-            .map_err(|e| ErrorInternalServerError(e))?;
-        let v = response.text().await.map_err(|e| ErrorUnprocessableEntity(e))?;
+            .map_err(ErrorInternalServerError)?;
+        let v = response.text().await.map_err(ErrorUnprocessableEntity)?;
         Ok(HttpResponse::Ok().content_type(ContentType::json()).body(v))
     } else {
         Ok(HttpResponse::BadRequest().finish())
