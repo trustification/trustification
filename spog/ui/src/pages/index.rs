@@ -49,6 +49,7 @@ pub fn index() -> Html {
                                         icon={Icon::Search}
                                         value={(*text).clone()}
                                         {onchange}
+                                        autofocus=true
                                     />
                                 </TextInputGroup>
                             </InputGroupItem>
