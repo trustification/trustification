@@ -90,7 +90,9 @@ pub fn sbom_search(props: &SbomSearchProperties) -> Html {
             <Grid>
                 <GridItem cols={[2]}>
                     if managed {
-                        <SimpleModeSwitch {simple} ontoggle={ontogglesimple} />
+                        <div style="height: 100%; display: flex;">
+                            <SimpleModeSwitch {simple} ontoggle={ontogglesimple} />
+                        </div>
                     }
                 </GridItem>
 
