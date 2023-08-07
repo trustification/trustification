@@ -12,7 +12,7 @@ use crate::{
     hooks::use_backend,
     pages::{AppRoute, View},
     utils::{
-        csaf::{find_product_relations, trace_product},
+        csaf::{find_product_relations, has_product, trace_product},
         time::date,
     },
 };
@@ -311,25 +311,27 @@ fn csaf_product_status(props: &CsafProductStatusSectionProperties) -> Html {
     )
 }
 
-fn csaf_product_status_entry_overview(csaf: &Csaf, entries: &[ProductIdT]) -> Vec<Html> {
-    // for an overview, we just show the container component
+#[derive(Debug, Eq, PartialEq, Hash)]
+enum Product<'a> {
+    Known(&'a str),
+    Invalid(&'a str),
+}
 
+fn csaf_resolve_aggregated_products<'a>(csaf: &'a Csaf, entries: &'a [ProductIdT]) -> HashSet<Product<'a>> {
     // gather unique set of products
-    let products = entries.iter().map(|id| &id.0).collect::<HashSet<_>>();
-
-    #[derive(Eq, PartialEq, Hash)]
-    enum Product<'a> {
-        Known(&'a str),
-        Invalid(&'a str),
-    }
+    let products = entries.iter().map(|id| id.0.as_str()).collect::<HashSet<_>>();
 
     // gather unique set of products they relate to
-    let products = products
+    products
         .into_iter()
         .flat_map(|id| {
-            let products = find_product_relations(csaf, id)
+            let mut products = find_product_relations(csaf, id)
                 .map(|rel| rel.relates_to_product_reference.0.as_str())
                 .collect::<Vec<_>>();
+
+            if has_product(csaf, id) {
+                products.push(id.clone());
+            }
 
             if products.is_empty() {
                 vec![Product::Invalid(id)]
@@ -337,7 +339,11 @@ fn csaf_product_status_entry_overview(csaf: &Csaf, entries: &[ProductIdT]) -> Ve
                 products.into_iter().map(Product::Known).collect::<Vec<_>>()
             }
         })
-        .collect::<HashSet<_>>();
+        .collect::<HashSet<_>>()
+}
+
+fn csaf_product_status_entry_overview(csaf: &Csaf, entries: &[ProductIdT]) -> Vec<Html> {
+    let products = csaf_resolve_aggregated_products(csaf, entries);
 
     // render out first segment of those products
     products
@@ -354,8 +360,10 @@ fn csaf_product_status_entry_overview(csaf: &Csaf, entries: &[ProductIdT]) -> Ve
 
 fn csaf_product_status_entry_details(csaf: &Csaf, id: &ProductIdT) -> Html {
     // for details, we show the actual component plus where it comes from
+    let actual = has_product(csaf, &id.0).then_some(id.0.as_str());
     let content = find_product_relations(csaf, &id.0)
         .map(|r| {
+            // add product references
             let product = product_html(trace_product(csaf, &r.relates_to_product_reference.0));
             let relationship = html!(<Label label={rela_cat_str(&r.category)} compact=true />);
             let component = product_html(trace_product(csaf, &r.product_reference.0));
@@ -364,6 +372,10 @@ fn csaf_product_status_entry_details(csaf: &Csaf, id: &ProductIdT) -> Html {
                 { component } {" "} { relationship } {" "} { product }  
             </>)
         })
+        .chain(actual.map(|product| {
+            // add the direct product
+            product_html(trace_product(csaf, product))
+        }))
         .collect::<Vec<_>>();
 
     if content.is_empty() {
@@ -431,4 +443,28 @@ fn branch_html(branches: Vec<&Branch>) -> Html {
             </>)
         })
         .collect()
+}
+
+#[cfg(test)]
+mod test {
+
+    use super::*;
+
+    #[test]
+    fn test_quarkus_product_id_1() {
+        let csaf: Csaf = serde_json::from_slice(include_bytes!("../../../test-data/quarkus1.json")).unwrap();
+
+        let vul1 = &csaf.vulnerabilities.as_ref().unwrap()[0];
+        let fixed1 = vul1.product_status.as_ref().unwrap().fixed.as_ref().unwrap();
+        let prod1 = &fixed1[0];
+        assert_eq!(prod1.0, "Red Hat build of Quarkus");
+
+        assert!(has_product(&csaf, &prod1.0));
+
+        let resolved = csaf_resolve_aggregated_products(&csaf, fixed1);
+        assert_eq!(
+            Vec::from_iter(resolved),
+            vec![Product::Known("Red Hat build of Quarkus")]
+        );
+    }
 }

@@ -1,0 +1,408 @@
+{
+  "document": {
+    "aggregate_severity": {
+      "namespace": "https://access.redhat.com/security/updates/classification/",
+      "text": "Important"
+    },
+    "category": "csaf_vex",
+    "csaf_version": "2.0",
+    "distribution": {
+      "text": "Copyright \u00a9 2023 Red Hat, Inc. All rights reserved.",
+      "tlp": {
+        "label": "WHITE",
+        "url": "https://www.first.org/tlp/"
+      }
+    },
+    "lang": "en",
+    "notes": [
+      {
+        "category": "summary",
+        "text": "An update is now available for Red Hat build of Quarkus Platform. Red Hat Product Security has rated this update as having a security impact of Important. A Common Vulnerability Scoring System (CVSS) base score, which gives a detailed severity rating, is available for each vulnerability. For more information, see the CVE links in the References section.",
+        "title": "Topic"
+      },
+      {
+        "category": "general",
+        "text": "This release of Red Hat build of Quarkus 2.7.6.SP3 includes security updates, bug fixes, and enhancements. For more information, see the release notes page listed in the References section.\n\nSecurity Fix(es):\n\n* CVE-2022-4147 quarkus-vertx-http: Security misconfiguration of CORS : OWASP A05_2021 level in Quarkus\n\n* CVE-2022-4116 quarkus_dev_ui: Dev UI Config Editor is vulnerable to drive-by localhost attacks leading to RCE\n\n* CVE-2022-45047 mina-sshd: Java unsafe deserialization vulnerability\n\nFor more details about the security issue(s), including the impact, a CVSS\nscore, acknowledgments, and other related information, refer to the CVE page(s)\nlisted in the References section.",
+        "title": "Details"
+      },
+      {
+        "category": "legal_disclaimer",
+        "text": "This content is licensed under the Creative Commons Attribution 4.0 International License (https://creativecommons.org/licenses/by/4.0/). If you distribute this content, or a modified version of it, you must provide attribution to Red Hat Inc. and provide a link to the original.",
+        "title": "Terms of Use"
+      }
+    ],
+    "publisher": {
+      "category": "vendor",
+      "contact_details": "https://access.redhat.com/security/team/contact/",
+      "issuing_authority": "Red Hat Product Security is responsible for vulnerability handling across all Red Hat offerings.",
+      "name": "Red Hat Product Security",
+      "namespace": "https://www.redhat.com"
+    },
+    "references": [
+      {
+        "category": "self",
+        "summary": "https://access.redhat.com/errata/RHSA-2022:8957",
+        "url": "https://access.redhat.com/errata/RHSA-2022:8957"
+      },
+      {
+        "category": "external",
+        "summary": "https://access.redhat.com/articles/4966181",
+        "url": "https://access.redhat.com/articles/4966181"
+      },
+      {
+        "category": "external",
+        "summary": "https://access.redhat.com/jbossnetwork/restricted/listSoftware.html?downloadType=distributions&product=redhat.quarkus&version=2.7.6.SP3",
+        "url": "https://access.redhat.com/jbossnetwork/restricted/listSoftware.html?downloadType=distributions&product=redhat.quarkus&version=2.7.6.SP3"
+      },
+      {
+        "category": "external",
+        "summary": "https://access.redhat.com/documentation/en-us/red_hat_build_of_quarkus/2.7",
+        "url": "https://access.redhat.com/documentation/en-us/red_hat_build_of_quarkus/2.7"
+      },
+      {
+        "category": "external",
+        "summary": "https://bugzilla.redhat.com/show_bug.cgi?id=2148867",
+        "url": "https://bugzilla.redhat.com/show_bug.cgi?id=2148867"
+      },
+      {
+        "category": "external",
+        "summary": "https://bugzilla.redhat.com/show_bug.cgi?id=2144748",
+        "url": "https://bugzilla.redhat.com/show_bug.cgi?id=2144748"
+      },
+      {
+        "category": "external",
+        "summary": "https://bugzilla.redhat.com/show_bug.cgi?id=2145194",
+        "url": "https://bugzilla.redhat.com/show_bug.cgi?id=2145194"
+      },
+      {
+        "category": "external",
+        "summary": "https://access.redhat.com/security/updates/classification/#important",
+        "url": "https://access.redhat.com/security/updates/classification/#important"
+      },
+      {
+        "category": "self",
+        "summary": "Canonical URL",
+        "url": "https://access.redhat.com/security/data/csaf/v2/advisories/2022/rhsa-2022_8957.json"
+      }
+    ],
+    "title": "Red Hat Security Advisory: Red Hat build of Quarkus Platform 2.7.6.SP3 and security update",
+    "tracking": {
+      "current_release_date": "2022-12-13T13:20:00Z",
+      "generator": {
+        "date": "2023-03-10T02:22:00Z",
+        "engine": {
+          "name": "Red Hat SDEngine",
+          "version": "3.12.2"
+        }
+      },
+      "id": "RHSA-2022:8957",
+      "initial_release_date": "2022-12-13T13:20:00Z",
+      "revision_history": [
+        {
+          "date": "2022-12-13T13:20:00Z",
+          "number": "1",
+          "summary": "Current version"
+        }
+      ],
+      "status": "final",
+      "version": "1"
+    }
+  },
+  "product_tree": {
+    "branches": [
+      {
+        "branches": [
+          {
+            "category": "product_family",
+            "name": "Red Hat build of Quarkus",
+            "product": {
+              "name": "Red Hat build of Quarkus",
+              "product_id": "Red Hat build of Quarkus"
+            }
+          }
+        ],
+        "category": "vendor",
+        "name": "Red Hat"
+      }
+    ]
+  },
+  "vulnerabilities": [
+    {
+      "acknowledgments": [
+        {
+          "names": [
+            "Joseph Beeton"
+          ],
+          "organization": "Contrast Security"
+        }
+      ],
+      "cve": "CVE-2022-4116",
+      "cwe": {
+        "id": "CWE-94",
+        "name": "Improper Control of Generation of Code ('Code Injection')"
+      },
+      "discovery_date": "2022-11-22T00:00:00Z",
+      "ids": [
+        {
+          "system_name": "Red Hat Bugzilla",
+          "text": "https://bugzilla.redhat.com/show_bug.cgi?id=2144748"
+        }
+      ],
+      "notes": [
+        {
+          "category": "general",
+          "text": "The CVSS score(s) listed for this vulnerability do not reflect the associated product's status, and are included for informational purposes to better understand the severity of this vulnerability.",
+          "title": "CVSS score applicability"
+        },
+        {
+          "category": "description",
+          "text": "A vulnerability was found in quarkus. This issue occurs in Dev UI Config Editor, which is vulnerable to drive-by localhost attacks leading to remote code execution.",
+          "title": "Vulnerability description"
+        },
+        {
+          "category": "summary",
+          "text": "quarkus_dev_ui: Dev UI Config Editor is vulnerable to drive-by localhost attacks leading to RCE",
+          "title": "Vulnerability summary"
+        }
+      ],
+      "product_status": {
+        "fixed": [
+          "Red Hat build of Quarkus"
+        ]
+      },
+      "references": [
+        {
+          "category": "external",
+          "summary": "CVE-2022-4116",
+          "url": "https://access.redhat.com/security/cve/CVE-2022-4116"
+        },
+        {
+          "category": "external",
+          "summary": "bz#2144748: CVE-2022-4116 quarkus_dev_ui: Dev UI Config Editor is vulnerable to drive-by localhost attacks leading to RCE",
+          "url": "https://bugzilla.redhat.com/show_bug.cgi?id=2144748"
+        }
+      ],
+      "release_date": "2022-11-22T00:00:00Z",
+      "remediations": [
+        {
+          "category": "vendor_fix",
+          "details": "Before applying this update, make sure all previously released errata\nrelevant to your system have been applied.\n\nFor details on how to apply this update, refer to:\n\nhttps://access.redhat.com/articles/11258",
+          "product_ids": [
+            "Red Hat build of Quarkus"
+          ],
+          "url": "https://access.redhat.com/errata/RHSA-2022:8957"
+        }
+      ],
+      "scores": [
+        {
+          "cvss_v3": {
+            "attackComplexity": "HIGH",
+            "attackVector": "NETWORK",
+            "availabilityImpact": "HIGH",
+            "baseScore": 7.5,
+            "baseSeverity": "HIGH",
+            "confidentialityImpact": "HIGH",
+            "integrityImpact": "HIGH",
+            "privilegesRequired": "NONE",
+            "scope": "UNCHANGED",
+            "userInteraction": "REQUIRED",
+            "vectorString": "CVSS:3.1/AV:N/AC:H/PR:N/UI:R/S:U/C:H/I:H/A:H",
+            "version": "3.1"
+          },
+          "products": [
+            "Red Hat build of Quarkus"
+          ]
+        }
+      ],
+      "threats": [
+        {
+          "category": "impact",
+          "date": "2022-11-22T00:00:00Z",
+          "details": "Important"
+        }
+      ],
+      "title": "CVE-2022-4116 quarkus_dev_ui: Dev UI Config Editor is vulnerable to drive-by localhost attacks leading to RCE"
+    },
+    {
+      "cve": "CVE-2022-4147",
+      "cwe": {
+        "id": "CWE-1026",
+        "name": "CWE-1026"
+      },
+      "discovery_date": "2022-11-28T00:00:00Z",
+      "ids": [
+        {
+          "system_name": "Red Hat Bugzilla",
+          "text": "https://bugzilla.redhat.com/show_bug.cgi?id=2148867"
+        }
+      ],
+      "notes": [
+        {
+          "category": "general",
+          "text": "The CVSS score(s) listed for this vulnerability do not reflect the associated product's status, and are included for informational purposes to better understand the severity of this vulnerability.",
+          "title": "CVSS score applicability"
+        },
+        {
+          "category": "description",
+          "text": "A vulnerability was found in Quarkus. The Quarkus CORS filter allows simple GET and POST requests with an invalid Origin to proceed. Simple GET or POST requests made with XMLHttpRequest have no event listeners registered on the object returned by the XMLHttpRequest upload property, and have no ReadableStream object used in the request.",
+          "title": "Vulnerability description"
+        },
+        {
+          "category": "summary",
+          "text": "quarkus-vertx-http: Security misconfiguration of CORS : OWASP A05_2021 level in Quarkus",
+          "title": "Vulnerability summary"
+        }
+      ],
+      "product_status": {
+        "fixed": [
+          "Red Hat build of Quarkus"
+        ]
+      },
+      "references": [
+        {
+          "category": "external",
+          "summary": "CVE-2022-4147",
+          "url": "https://access.redhat.com/security/cve/CVE-2022-4147"
+        },
+        {
+          "category": "external",
+          "summary": "bz#2148867: CVE-2022-4147 quarkus-vertx-http: Security misconfiguration of CORS : OWASP A05_2021 level in Quarkus",
+          "url": "https://bugzilla.redhat.com/show_bug.cgi?id=2148867"
+        }
+      ],
+      "release_date": "2022-11-28T00:00:00Z",
+      "remediations": [
+        {
+          "category": "vendor_fix",
+          "details": "Before applying this update, make sure all previously released errata\nrelevant to your system have been applied.\n\nFor details on how to apply this update, refer to:\n\nhttps://access.redhat.com/articles/11258",
+          "product_ids": [
+            "Red Hat build of Quarkus"
+          ],
+          "url": "https://access.redhat.com/errata/RHSA-2022:8957"
+        }
+      ],
+      "scores": [
+        {
+          "cvss_v3": {
+            "attackComplexity": "HIGH",
+            "attackVector": "NETWORK",
+            "availabilityImpact": "HIGH",
+            "baseScore": 7.5,
+            "baseSeverity": "HIGH",
+            "confidentialityImpact": "HIGH",
+            "integrityImpact": "HIGH",
+            "privilegesRequired": "NONE",
+            "scope": "UNCHANGED",
+            "userInteraction": "REQUIRED",
+            "vectorString": "CVSS:3.1/AV:N/AC:H/PR:N/UI:R/S:U/C:H/I:H/A:H",
+            "version": "3.1"
+          },
+          "products": [
+            "Red Hat build of Quarkus"
+          ]
+        }
+      ],
+      "threats": [
+        {
+          "category": "impact",
+          "date": "2022-11-28T00:00:00Z",
+          "details": "Moderate"
+        }
+      ],
+      "title": "CVE-2022-4147 quarkus-vertx-http: Security misconfiguration of CORS : OWASP A05_2021 level in Quarkus"
+    },
+    {
+      "cve": "CVE-2022-45047",
+      "cwe": {
+        "id": "CWE-502",
+        "name": "Deserialization of Untrusted Data"
+      },
+      "discovery_date": "2022-11-23T00:00:00Z",
+      "ids": [
+        {
+          "system_name": "Red Hat Bugzilla",
+          "text": "https://bugzilla.redhat.com/show_bug.cgi?id=2145194"
+        }
+      ],
+      "notes": [
+        {
+          "category": "general",
+          "text": "The CVSS score(s) listed for this vulnerability do not reflect the associated product's status, and are included for informational purposes to better understand the severity of this vulnerability.",
+          "title": "CVSS score applicability"
+        },
+        {
+          "category": "description",
+          "text": "A flaw was found in Apache MINA SSHD, when using Java deserialization to load a serialized java.security.PrivateKey. An attacker could benefit from unsafe deserialization by inserting unsecured data that may affect the application or server.",
+          "title": "Vulnerability description"
+        },
+        {
+          "category": "summary",
+          "text": "mina-sshd: Java unsafe deserialization vulnerability",
+          "title": "Vulnerability summary"
+        }
+      ],
+      "product_status": {
+        "fixed": [
+          "Red Hat build of Quarkus"
+        ]
+      },
+      "references": [
+        {
+          "category": "external",
+          "summary": "https://www.mail-archive.com/dev@mina.apache.org/msg39312.html",
+          "url": "https://www.mail-archive.com/dev@mina.apache.org/msg39312.html"
+        },
+        {
+          "category": "external",
+          "summary": "CVE-2022-45047",
+          "url": "https://access.redhat.com/security/cve/CVE-2022-45047"
+        },
+        {
+          "category": "external",
+          "summary": "bz#2145194: CVE-2022-45047 mina-sshd: Java unsafe deserialization vulnerability",
+          "url": "https://bugzilla.redhat.com/show_bug.cgi?id=2145194"
+        }
+      ],
+      "release_date": "2022-11-16T00:00:00Z",
+      "remediations": [
+        {
+          "category": "vendor_fix",
+          "details": "Before applying this update, make sure all previously released errata\nrelevant to your system have been applied.\n\nFor details on how to apply this update, refer to:\n\nhttps://access.redhat.com/articles/11258",
+          "product_ids": [
+            "Red Hat build of Quarkus"
+          ],
+          "url": "https://access.redhat.com/errata/RHSA-2022:8957"
+        }
+      ],
+      "scores": [
+        {
+          "cvss_v3": {
+            "attackComplexity": "LOW",
+            "attackVector": "NETWORK",
+            "availabilityImpact": "HIGH",
+            "baseScore": 9.8,
+            "baseSeverity": "CRITICAL",
+            "confidentialityImpact": "HIGH",
+            "integrityImpact": "HIGH",
+            "privilegesRequired": "NONE",
+            "scope": "UNCHANGED",
+            "userInteraction": "NONE",
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+            "version": "3.1"
+          },
+          "products": [
+            "Red Hat build of Quarkus"
+          ]
+        }
+      ],
+      "threats": [
+        {
+          "category": "impact",
+          "date": "2022-11-23T00:00:00Z",
+          "details": "Important"
+        }
+      ],
+      "title": "CVE-2022-45047 mina-sshd: Java unsafe deserialization vulnerability"
+    }
+  ]
+}
