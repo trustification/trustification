@@ -68,6 +68,10 @@ bombastic:
             id: is_container
             terms:
               - 'type:oci'
+          - label: Product
+            id: is_product
+            terms:
+              - 'NOT type:oci'
 
       - label: Suppliers
         options:
