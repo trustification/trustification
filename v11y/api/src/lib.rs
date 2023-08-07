@@ -1,11 +1,14 @@
-mod db;
-mod server;
-
 use std::net::SocketAddr;
 use std::process::ExitCode;
 use std::str::FromStr;
 use std::sync::Arc;
+
 use trustification_infrastructure::{Infrastructure, InfrastructureConfig};
+
+use crate::db::Db;
+
+mod db;
+mod server;
 
 #[derive(clap::Args, Debug)]
 #[command(about = "Run the api server", args_conflicts_with_subcommands = true)]
@@ -37,17 +40,19 @@ impl Run {
     }
 
     async fn configure() -> anyhow::Result<Arc<AppState>> {
-        let state = Arc::new(AppState::new());
+        let state = Arc::new(AppState::new().await?);
         Ok(state)
     }
 }
 
-#[derive(Default)]
-pub struct AppState {}
+#[allow(unused)]
+pub struct AppState {
+    db: Db,
+}
 
 impl AppState {
-    pub fn new() -> Self {
-        Self {}
+    pub async fn new() -> Result<Self, anyhow::Error> {
+        Ok(Self { db: Db::new().await? })
     }
 }
 
