@@ -1,4 +1,5 @@
 use std::io::{self};
+use std::sync::Arc;
 
 use crate::SharedState;
 use actix_web::{
@@ -9,7 +10,7 @@ use actix_web::{
         header::{self, Accept, AcceptEncoding, ContentType, HeaderValue, CONTENT_ENCODING},
         StatusCode,
     },
-    middleware::{Compress, Logger},
+    middleware::Compress,
     route, web, HttpRequest, HttpResponse, Responder,
 };
 use bombastic_model::prelude::*;
@@ -17,9 +18,12 @@ use derive_more::{Display, Error, From};
 use futures::TryStreamExt;
 use serde::Deserialize;
 use trustification_api::search::SearchOptions;
-use trustification_auth::authenticator::user::UserDetails;
-use trustification_auth::ROLE_MANAGER;
+use trustification_auth::{
+    authenticator::{user::UserDetails, Authenticator},
+    ROLE_MANAGER,
+};
 use trustification_index::Error as IndexError;
+use trustification_infrastructure::new_auth;
 use trustification_storage::Error as StorageError;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
@@ -31,10 +35,10 @@ use utoipa_swagger_ui::SwaggerUi;
 )]
 pub struct ApiDoc;
 
-pub fn config(cfg: &mut web::ServiceConfig) {
+pub fn config(cfg: &mut web::ServiceConfig, auth: Option<Arc<Authenticator>>) {
     cfg.service(
         web::scope("/api/v1")
-            .wrap(Logger::default())
+            .wrap(new_auth!(auth))
             .wrap(Compress::default())
             .service(query_sbom)
             .service(search_sbom)
