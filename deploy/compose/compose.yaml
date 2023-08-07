@@ -48,7 +48,8 @@ services:
       /usr/bin/mc admin service restart myminio;"
 
   kafka:
-    image: docker.io/bitnami/kafka:3.4
+    image: docker.io/bitnami/kafka@sha256:8fedaa492f1f570cade60f5ff09978cd841307b1e9f93fe6216136ca165fcc2d
+#    image: docker.io/bitnami/kafka:3.4
     expose:
       - "9092"
     ports:
