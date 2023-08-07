@@ -42,6 +42,11 @@ where
     }
 }
 
+/// check if we have a product in our product tree
+pub fn has_product(csaf: &Csaf, product_id: &str) -> bool {
+    !trace_product(csaf, product_id).is_empty()
+}
+
 /// find relations to a product id
 pub fn find_product_relations<'a>(csaf: &'a Csaf, product: &'a str) -> impl Iterator<Item = &'a Relationship> + 'a {
     csaf.product_tree
