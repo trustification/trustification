@@ -18,7 +18,7 @@ where
     T: ResultCount,
 {
     fn count_result(&self) -> Option<usize> {
-        match &*self {
+        match self {
             UseAsyncState::Ready(Ok(data)) => data.count_result(),
             _ => None,
         }

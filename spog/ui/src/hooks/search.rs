@@ -165,7 +165,6 @@ where
                 search_params.set(SearchMode::Complex((**text).clone()));
             }
             SearchMode::Simple(mut s) => {
-                let text = &*text;
                 *s.terms_mut() = text.split(' ').map(|s| s.to_string()).collect();
                 search_params.set(SearchMode::Simple(s));
             }
@@ -187,7 +186,7 @@ where
     let ontogglesimple = use_callback(
         |state, (text, context, search_params)| match state {
             false => {
-                let q = (*search_params).as_str(&context).to_string();
+                let q = (*search_params).as_str(context).to_string();
                 search_params.set(SearchMode::Complex(q.clone()));
                 text.set(q);
             }
