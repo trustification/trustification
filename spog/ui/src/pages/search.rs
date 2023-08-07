@@ -82,12 +82,12 @@ pub fn search(props: &SearchProperties) -> Html {
                         </Content>
                     </FlexItem>
                     <FlexItem modifiers={[FlexModifier::Align(Alignment::Right)]}>
-                        <Form {onsubmit}>
+                        <form {onsubmit}>
                             // needed to trigger submit when pressing enter in the search field
                             <input type="submit" hidden=true formmethod="dialog" />
                             <InputGroup>
                                 <InputGroupItem>
-                                    <TextInputGroup>
+                                    <TextInputGroup style="--pf-v5-c-text-input-group__text-input--MinWidth: 64ch;">
                                         <TextInputGroupMain
                                             icon={Icon::Search}
                                             value={(*text).clone()}
@@ -103,7 +103,7 @@ pub fn search(props: &SearchProperties) -> Html {
                                     />
                                 </InputGroupItem>
                             </InputGroup>
-                        </Form>
+                        </form>
                     </FlexItem>
                 </Flex>
             </PageSection>
