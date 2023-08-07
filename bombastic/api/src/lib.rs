@@ -76,10 +76,10 @@ impl Run {
                     new_app(AppOptions {
                         cors: Some(cors),
                         metrics: Some(http_metrics),
-                        authenticator: authenticator.clone(),
+                        authenticator: None,
                     })
                     .app_data(web::Data::new(state.clone()))
-                    .configure(server::config)
+                    .configure(move |svc| server::config(svc, authenticator.clone()))
                 });
                 srv = match listener {
                     Some(v) => srv.listen(v)?,

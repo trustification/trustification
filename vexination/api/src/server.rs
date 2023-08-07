@@ -1,15 +1,18 @@
 use actix_web::{
     get,
     http::header::ContentType,
-    middleware::{Compress, Logger},
     route,
     web::{self, Bytes},
     HttpResponse, Responder,
 };
 use serde::Deserialize;
+use std::sync::Arc;
 use trustification_api::search::SearchOptions;
-use trustification_auth::authenticator::user::UserDetails;
-use trustification_auth::ROLE_MANAGER;
+use trustification_auth::{
+    authenticator::{user::UserDetails, Authenticator},
+    ROLE_MANAGER,
+};
+use trustification_infrastructure::new_auth;
 use trustification_storage::Storage;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
@@ -24,11 +27,10 @@ use crate::SharedState;
 )]
 pub struct ApiDoc;
 
-pub fn config(cfg: &mut web::ServiceConfig) {
+pub fn config(cfg: &mut web::ServiceConfig, auth: Option<Arc<Authenticator>>) {
     cfg.service(
         web::scope("/api/v1")
-            .wrap(Logger::default())
-            .wrap(Compress::default())
+            .wrap(new_auth!(auth))
             .app_data(web::PayloadConfig::new(10 * 1024 * 1024))
             .service(fetch_vex)
             .service(publish_vex)
