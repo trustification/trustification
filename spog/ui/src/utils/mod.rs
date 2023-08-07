@@ -4,6 +4,7 @@ pub mod cvss;
 pub mod highlight;
 pub mod http;
 pub mod search;
+pub mod time;
 
 use yew::prelude::*;
 

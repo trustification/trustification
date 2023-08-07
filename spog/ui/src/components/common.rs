@@ -1,5 +1,6 @@
 use patternfly_yew::prelude::*;
 use yew::prelude::*;
+use yew::virtual_dom::VList;
 
 #[derive(Clone, PartialEq, Properties)]
 pub struct PageHeadingProperties {
@@ -30,15 +31,39 @@ pub fn page_heading(props: &PageHeadingProperties) -> Html {
 
 #[derive(Properties, PartialEq)]
 pub struct Props {
-    pub html: String,
+    pub html: AttrValue,
+    #[prop_or("div".into())]
+    pub element: AttrValue,
 }
 
 #[function_component(SafeHtml)]
 pub fn safe_html(props: &Props) -> Html {
-    let div = gloo_utils::document().create_element("div").unwrap();
-    div.set_inner_html(&props.html.clone());
+    let node = use_memo(
+        |(element, html)| {
+            if !html.is_empty() {
+                let div = gloo_utils::document().create_element(element).unwrap();
+                div.set_inner_html(html);
 
-    Html::VRef(div.into())
+                let mut list = vec![];
+                let children = div.children();
+                for i in 0..children.length() {
+                    let node = children.item(i);
+                    if let Some(node) = node {
+                        list.push(Html::VRef(node.into()));
+                    }
+                }
+                let mut children = VList::new();
+                children.add_children(list);
+                Html::VList(children)
+            } else {
+                // if it's empty, use the default
+                Html::default()
+            }
+        },
+        (props.element.clone(), props.html.clone()),
+    );
+
+    (*node).clone()
 }
 
 #[function_component(NotFound)]
