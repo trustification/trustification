@@ -1,6 +1,6 @@
 use crate::{
     backend::{self, PackageService},
-    components::{advisory::SearchMode, search::*},
+    components::search::*,
     hooks::{use_backend, use_config, use_standard_search, UseStandardSearch},
     utils::pagination_to_offset,
 };
@@ -16,22 +16,13 @@ use yew_oauth2::prelude::*;
 pub struct SbomSearchProperties {
     pub callback: Callback<UseAsyncHandleDeps<SearchResult<Rc<Vec<PackageSummary>>>, String>>,
 
-    pub mode: SearchMode,
+    pub mode: SearchPropertiesMode,
 
     #[prop_or_default]
     pub toolbar_items: ChildrenWithProps<ToolbarItem>,
 
     #[prop_or_default]
     pub children: Children,
-}
-
-impl SbomSearchProperties {
-    fn props_query(&self) -> Option<String> {
-        match &self.mode {
-            SearchMode::Managed { query } => query.clone(),
-            _ => None,
-        }
-    }
 }
 
 #[function_component(SbomSearch)]
@@ -54,7 +45,7 @@ pub fn sbom_search(props: &SbomSearchProperties) -> Html {
         onset,
         ontogglesimple,
         text,
-    } = use_standard_search::<DynamicSearchParameters, Packages>(props.props_query(), *total, filters.clone());
+    } = use_standard_search::<DynamicSearchParameters, Packages>(props.mode.clone(), *total, filters.clone());
 
     let search = {
         let filters = filters.clone();
@@ -91,7 +82,7 @@ pub fn sbom_search(props: &SbomSearchProperties) -> Html {
 
     let simple = search_params.is_simple();
     let onchange = use_callback(|data, text| text.set(data), text.clone());
-    let managed = matches!(&props.mode, SearchMode::Managed { .. });
+    let managed = matches!(&props.mode, SearchPropertiesMode::Managed { .. });
 
     html!(
         <>

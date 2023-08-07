@@ -32,7 +32,7 @@ pub fn vex(props: &VEXProperties) -> Html {
             backend::VexService::new(backend.clone(), access_token)
                 .get(id)
                 .await
-                .map(|result| result.map(backend::Advisory::parse).map(Rc::new))
+                .map(|result| result.map(Advisory::parse).map(Rc::new))
         },
         (props.id.clone(), backend),
     );
@@ -71,7 +71,15 @@ struct DetailsProps {
 
 #[function_component(Details)]
 fn details(props: &DetailsProps) -> Html {
-    let tab = use_state_eq(|| 0);
+    #[derive(Copy, Clone, Eq, PartialEq)]
+    enum TabIndex {
+        Overview,
+        Notes,
+        Vulnerabilities,
+        Source,
+    }
+
+    let tab = use_state_eq(|| TabIndex::Overview);
     let onselect = use_callback(|index, tab| tab.set(index), tab.clone());
 
     match &*props.vex {
@@ -79,15 +87,15 @@ fn details(props: &DetailsProps) -> Html {
             html!(
                 <>
                     <PageSection r#type={PageSectionType::Tabs} variant={PageSectionVariant::Light} sticky={[PageSectionSticky::Top]}>
-                        <Tabs inset={TabInset::Page} detached=true {onselect}>
-                            <Tab label="Overview" />
-                            <Tab label="Notes" />
-                            <Tab label="Vulnerabilities" />
-                            <Tab label="Source" />
-                        </Tabs>
+                        <Tabs<TabIndex> inset={TabInset::Page} detached=true selected={*tab} {onselect}>
+                            <Tab<TabIndex> index={TabIndex::Overview} title="Overview" />
+                            <Tab<TabIndex> index={TabIndex::Notes} title="Notes" />
+                            <Tab<TabIndex> index={TabIndex::Vulnerabilities} title="Vulnerabilities" />
+                            <Tab<TabIndex> index={TabIndex::Source} title="Source" />
+                        </Tabs<TabIndex>>
                     </PageSection>
 
-                    <PageSection hidden={*tab != 0} fill={PageSectionFill::Fill}>
+                    <PageSection hidden={*tab != TabIndex::Overview} fill={PageSectionFill::Fill}>
                         <Grid gutter=true>
                             <GridItem cols={[4]}>
                                 <CardWrapper title="Overview">
@@ -171,7 +179,7 @@ fn details(props: &DetailsProps) -> Html {
                         </Grid>
                     </PageSection>
 
-                    <PageSection hidden={*tab != 1} fill={PageSectionFill::Fill}>
+                    <PageSection hidden={*tab != TabIndex::Notes} fill={PageSectionFill::Fill}>
                         <Grid gutter=true>
                             if let Some(notes) = &csaf.document.notes {
                                 <GridItem cols={[12]}>
@@ -181,11 +189,11 @@ fn details(props: &DetailsProps) -> Html {
                         </Grid>
                     </PageSection>
 
-                    <PageSection hidden={*tab != 2} fill={PageSectionFill::Fill}>
+                    <PageSection hidden={*tab != TabIndex::Vulnerabilities} fill={PageSectionFill::Fill}>
                         <CsafVulnTable expandable=true csaf={csaf.clone()} />
                     </PageSection>
 
-                    <PageSection hidden={*tab != 3} variant={PageSectionVariant::Light} fill={PageSectionFill::Fill}>
+                    <PageSection hidden={*tab != TabIndex::Source} variant={PageSectionVariant::Light} fill={PageSectionFill::Fill}>
                         <SourceCode source={source.clone()}/>
                     </PageSection>
                 </>

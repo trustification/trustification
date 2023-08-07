@@ -22,7 +22,7 @@ pub use not_logged_in::*;
 pub use sbom::*;
 pub use sbom_search::Package;
 pub use scanner::*;
-pub use search::*;
+pub use search::Search;
 
 #[derive(Clone, Debug, PartialEq, Eq, Target)]
 pub enum AppRoute {

@@ -12,32 +12,17 @@ use yew::prelude::*;
 use yew_more_hooks::prelude::*;
 use yew_oauth2::prelude::*;
 
-#[derive(Clone, PartialEq, Eq)]
-pub enum SearchMode {
-    Managed { query: Option<String> },
-    Provided,
-}
-
 #[derive(PartialEq, Properties)]
 pub struct AdvisorySearchProperties {
     pub callback: Callback<UseAsyncHandleDeps<SearchResult<Rc<Vec<AdvisorySummary>>>, String>>,
 
-    pub mode: SearchMode,
+    pub mode: SearchPropertiesMode,
 
     #[prop_or_default]
     pub toolbar_items: ChildrenWithProps<ToolbarItem>,
 
     #[prop_or_default]
     pub children: Children,
-}
-
-impl AdvisorySearchProperties {
-    fn props_query(&self) -> Option<String> {
-        match &self.mode {
-            SearchMode::Managed { query } => query.clone(),
-            _ => None,
-        }
-    }
 }
 
 #[function_component(AdvisorySearch)]
@@ -59,7 +44,7 @@ pub fn advisory_search(props: &AdvisorySearchProperties) -> Html {
         onset,
         ontogglesimple,
         text,
-    } = use_standard_search::<DynamicSearchParameters, Vulnerabilities>(props.props_query(), *total, filters.clone());
+    } = use_standard_search::<DynamicSearchParameters, Vulnerabilities>(props.mode.clone(), *total, filters.clone());
 
     let search = {
         let filters = filters.clone();
@@ -96,7 +81,7 @@ pub fn advisory_search(props: &AdvisorySearchProperties) -> Html {
 
     let simple = search_params.is_simple();
     let onchange = use_callback(|data, text| text.set(data), text.clone());
-    let managed = matches!(&props.mode, SearchMode::Managed { .. });
+    let managed = matches!(&props.mode, SearchPropertiesMode::Managed { .. });
 
     html!(
         <>

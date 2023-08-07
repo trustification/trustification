@@ -1,7 +1,6 @@
 use std::rc::Rc;
 
-use crate::components::advisory::SearchMode;
-use crate::components::{common::PageHeading, sbom::PackageResult, sbom::SbomSearch};
+use crate::components::{common::PageHeading, sbom::PackageResult, sbom::SbomSearch, search::*};
 use patternfly_yew::prelude::*;
 use spog_model::prelude::*;
 use yew::prelude::*;
@@ -27,7 +26,7 @@ pub fn package(props: &PackageProperties) -> Html {
             <PageHeading subtitle="Search for SBOMs">{"SBOM Catalog"}</PageHeading>
 
             <PageSection variant={PageSectionVariant::Light}>
-                <SbomSearch {callback} mode={SearchMode::Managed {query}}>
+                <SbomSearch {callback} mode={SearchPropertiesMode::Managed {query}}>
                     <PackageResult state={(*search).clone()} />
                 </SbomSearch>
             </PageSection>
