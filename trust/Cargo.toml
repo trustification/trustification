@@ -11,6 +11,7 @@ exhort = { path = "../exhort/exhort"}
 collectorist = { path = "../collectorist/collectorist" }
 collector = { path = "../collector/collector" }
 exporter = { path = "../exporter" }
+v11y = { path = "../v11y/v11y"}
 
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0.68"
