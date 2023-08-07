@@ -20,39 +20,69 @@ pub struct Configuration {
 pub struct Global {
     #[serde(default)]
     pub documentation_url: Option<Url>,
-}
 
-#[derive(Clone, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
-pub struct LandingPage {
     #[serde(default)]
-    pub content: String,
+    pub support_url: Option<Url>,
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LandingPage {
+    /// Content above the search entry box section
+    #[serde(default)]
+    pub header_content: String,
+
+    /// Content directly before the entry box
+    #[serde(default)]
+    pub before_outer_content: String,
+
+    /// Content directly before the entry box
+    #[serde(default)]
+    pub before_inner_content: String,
+
+    /// Content directly after the entry box
+    #[serde(default)]
+    pub after_inner_content: String,
+
+    /// Content directly after the entry box
+    #[serde(default)]
+    pub after_outer_content: String,
+
+    /// Content below the search entry box section
+    #[serde(default)]
+    pub footer_content: String,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Bombastic {
     #[serde(default)]
     pub filters: Filters,
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Vexination {
     #[serde(default)]
     pub filters: Filters,
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Filters {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub categories: Vec<FilterCategory>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct FilterCategory {
     pub label: String,
     pub options: Vec<FilterOption>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct FilterCheckOption {
     pub id: String,
     pub label: String,

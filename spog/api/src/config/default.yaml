@@ -149,7 +149,7 @@ vexination:
               - '( "cpe:/a:redhat:openshift:4" in:package )'
 
 landingPage:
-  content: |
+  headerContent: |
     <section
       class="pf-v5-c-page__main-section pf-m-light pf-m-shadow-bottom"
     >
@@ -163,3 +163,37 @@ landingPage:
       </div>
     </section>
 
+  afterInnerContent: |
+    Search me
+
+  afterOuterContent: |
+    <div class="pf-v5-l-grid__item pf-m-6-col">
+      <div class="pf-v5-c-card pf-m-full-height">
+        <div class="pf-v5-c-card__title">
+          <h2 class="pf-v5-c-card__title-text">Scan your SBOM</h2>
+        </div>
+        <div class="pf-v5-c-card__body">
+          Load a custom SBOM and have its dependencies analyzed. The system doesn't store your SBOM.
+        </div>
+        <div class="pf-v5-c-card__body">
+          <div class="pf-v5-l-bullseye">
+            <div class="pf-v5-l-bullseye__item">
+              <a
+                class="pf-v5-c-button pf-m-primary pf-m-display-lg"
+                type="button"
+                href="/scanner"
+              >Scan SBOM</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pf-v5-l-grid__item pf-m-6-col">
+      <div class="pf-v5-c-card pf-m-full-height">
+        <div class="pf-v5-c-card__title">
+          <h2 class="pf-v5-c-card__title-text">Learn more</h2>
+        </div>
+        <div class="pf-v5-c-card__body">This content can be customized through configuration.</div>
+      </div>
+    </div>

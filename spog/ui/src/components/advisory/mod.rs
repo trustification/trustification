@@ -11,7 +11,10 @@ use crate::{
     components::{common::CardWrapper, download::Download, severity::Severity, table_wrapper::TableWrapper},
     hooks::use_backend,
     pages::{AppRoute, View},
-    utils::csaf::{find_product_relations, trace_product},
+    utils::{
+        csaf::{find_product_relations, trace_product},
+        time::date,
+    },
 };
 use csaf::{
     definitions::{Branch, Note, NoteCategory, ProductIdT, Reference, ReferenceCategory},
@@ -61,7 +64,7 @@ impl TableEntryRenderer<Column> for AdvisoryEntry {
             Column::Severity => html!(
                 <Severity severity={self.summary.severity.clone()} />
             ),
-            Column::Revision => self.summary.date.date().to_string().into(),
+            Column::Revision => date(self.summary.date),
             Column::Download => html!(if let Some(url) = &self.url {
                 <Download href={url.clone()} />
             }),

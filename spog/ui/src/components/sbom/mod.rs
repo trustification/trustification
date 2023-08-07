@@ -16,6 +16,7 @@ use crate::{
     components::{common::SafeHtml, download::Download, table_wrapper::TableWrapper},
     hooks::*,
     pages::{AppRoute, View},
+    utils::time::date,
 };
 
 #[derive(PartialEq, Properties)]
@@ -60,7 +61,7 @@ impl TableEntryRenderer<Column> for PackageEntry {
             )
             .into(),
             Column::Supplier => html!(&self.package.supplier).into(),
-            Column::Created => html!(self.package.created.date().to_string()).into(),
+            Column::Created => date(self.package.created).into(),
             Column::Download => html!(
                 if let Some(url) = &self.url {
                     <Download href={url.clone()} />
@@ -133,7 +134,7 @@ pub fn package_result(props: &PackageResultProperties) -> Html {
         }),
         yew::props!(TableColumnProperties<Column> {
             index: Column::Created,
-            label: "Created",
+            label: "Created on",
             width: ColumnWidth::Percent(10)
         }),
         yew::props!(TableColumnProperties<Column> {
