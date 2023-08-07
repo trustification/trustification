@@ -93,38 +93,17 @@ impl Run {
     }
 
     fn configure(
-        index: IndexConfig,
+        mut index: IndexConfig,
         mut storage: StorageConfig,
         registry: &Registry,
         devmode: bool,
     ) -> anyhow::Result<Arc<AppState>> {
-        let sync_interval = index.sync_interval.into();
-        let index = IndexStore::new(&index, vexination_index::Index::new(), registry)?;
+        let index = index.create(vexination_index::Index::new(), "vexination", devmode, registry)?;
         let storage = storage.create("vexination", devmode, registry)?;
 
         let state = Arc::new(AppState {
             storage: RwLock::new(storage),
             index: RwLock::new(index),
-        });
-
-        let sinker = state.clone();
-        tokio::task::spawn(async move {
-            loop {
-                if sinker.sync_index().await.is_ok() {
-                    log::info!("Initial vexination index synced");
-                    break;
-                } else {
-                    log::warn!("Vexination index not yet available");
-                }
-                tokio::time::sleep(Duration::from_secs(5)).await;
-            }
-
-            loop {
-                if let Err(e) = sinker.sync_index().await {
-                    log::info!("Unable to synchronize vexination index: {:?}", e);
-                }
-                tokio::time::sleep(sync_interval).await;
-            }
         });
 
         Ok(state)
@@ -138,17 +117,3 @@ pub struct AppState {
 }
 
 pub(crate) type SharedState = Arc<AppState>;
-
-impl AppState {
-    async fn sync_index(&self) -> Result<(), anyhow::Error> {
-        let data = {
-            let storage = self.storage.read().await;
-            storage.get_index().await?
-        };
-
-        let mut index = self.index.write().await;
-        index.reload(&data[..])?;
-        log::debug!("Vexination index reloaded");
-        Ok(())
-    }
-}

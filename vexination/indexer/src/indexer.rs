@@ -16,15 +16,8 @@ pub async fn run(
     failed_topic: &str,
     sync_interval: Duration,
 ) -> Result<(), anyhow::Error> {
-    // Load initial index from storage.
-    // TODO: Stream directly to file
-    if let Ok(data) = storage.get_index().await {
-        index.reload(&data[..])?;
-    }
-
     let mut interval = tokio::time::interval(sync_interval);
     let mut writer = Some(index.writer()?);
-    let mut events = 0;
     let consumer = bus.subscribe("indexer", &[stored_topic]).await?;
     let mut uncommitted_events = Vec::new();
     loop {
@@ -48,7 +41,6 @@ pub async fn run(
                                                         Ok(_) => {
                                                             log::debug!("Inserted entry into index");
                                                             bus.send(indexed_topic, key.as_bytes()).await?;
-                                                            events += 1;
                                                         }
                                                         Err(e) => {
                                                             log::warn!("Error inserting entry into index: {:?}", e);
@@ -94,37 +86,25 @@ pub async fn run(
                 }
             },
             _ = tick => {
-                if events > 0 {
-                    log::info!("{} new events added, pushing new index to storage", events);
-                    match index.snapshot(writer.take().unwrap()) {
-                        Ok(data) => {
-                            match storage.put_index(&data).await {
+                if let Some(w) = writer.take() {
+                    match w.commit() {
+                        Ok(_) => {
+                            log::info!("New index committed");
+                            match consumer.commit(&uncommitted_events[..]).await {
                                 Ok(_) => {
-                                    log::trace!("Index updated successfully");
-                                    match consumer.commit(&uncommitted_events[..]).await {
-                                        Ok(_) => {
-                                            log::trace!("Event committed successfully");
-                                            uncommitted_events.clear();
-                                        }
-                                        Err(e) => {
-                                            log::warn!("Error committing event: {:?}", e)
-                                        }
-                                    }
-                                    events = 0;
+                                    log::trace!("Committed {} events successfully", uncommitted_events.len());
+                                    uncommitted_events.clear();
                                 }
                                 Err(e) => {
-                                    log::warn!("Error updating index: {:?}", e)
+                                    log::warn!("Error committing event: {:?}", e)
                                 }
                             }
-
-                            writer.replace(index.writer()?);
                         }
                         Err(e) => {
-                            log::warn!("Error taking index snapshot: {:?}", e);
+                            log::warn!("Error committing index: {:?}", e);
                         }
                     }
-                } else {
-                    log::trace!("No changes to index");
+                    writer.replace(index.writer()?);
                 }
             }
         }

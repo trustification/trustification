@@ -40,7 +40,7 @@ impl Run {
     pub async fn run(mut self) -> anyhow::Result<ExitCode> {
         Infrastructure::from(self.infra)
             .run("vexination-indexer", |metrics| async move {
-                let index = IndexStore::new(&self.index, Index::new(), metrics.registry())?;
+                let index = self.index.create(vexination_index::Index::new(), "vexination", self.devmode, metrics.registry())?;
                 let storage = self.storage.create("vexination", self.devmode, metrics.registry())?;
                 let interval = self.index.sync_interval.into();
                 let bus = self.bus.create(metrics.registry()).await?;

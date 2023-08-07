@@ -1,5 +1,5 @@
 pub mod metadata;
-mod s3;
+mod s3dir;
 
 use std::{fmt::Display, ops::Bound, path::PathBuf};
 
@@ -20,18 +20,50 @@ use tantivy::{
     schema::*,
     DateTime, Directory, DocAddress, Index as SearchIndex, IndexSettings, Searcher,
 };
+pub use s3::{creds::Credentials, Region};
+use s3::{creds::error::CredentialsError, error::S3Error, Bucket};
 use time::{OffsetDateTime, UtcOffset};
 
 #[derive(Clone, Debug, clap::Parser)]
 #[command(rename_all_env = "SCREAMING_SNAKE_CASE")]
 pub struct IndexConfig {
-    /// Local folder to store index.
-    #[arg(short = 'i', long = "index-dir")]
-    pub index: Option<std::path::PathBuf>,
+    /// Bucket name to use for storing index
+    #[arg(env, long = "index-storage-bucket")]
+    pub index_bucket: Option<String>,
+
+    /// Storage region to use
+    #[arg(env, long = "index-storage-region")]
+    pub index_region: Option<Region>,
+
+    /// Storage endpoint to use
+    #[arg(env, long = "index-storage-endpoint")]
+    pub index_endpoint: Option<String>,
+
+    /// Access key for using storage
+    #[arg(env, long = "index-storage-access-key")]
+    pub index_access_key: Option<String>,
+
+    /// Secret key for using storage
+    #[arg(env, long = "index-storage-secret-key")]
+    pub index_secret_key: Option<String>,
 
     /// Synchronization interval for index persistence.
     #[arg(long = "index-sync-interval", default_value = "30s")]
     pub sync_interval: humantime::Duration,
+}
+
+
+impl IndexConfig {
+    pub fn create<INDEX: Index>(&mut self, index: INDEX, default_bucket: &str, devmode: bool, registry: &Registry) -> Result<IndexStore<INDEX>, Error> {
+        if devmode {
+            self.index_access_key = Some("admin".to_string());
+            self.index_secret_key = Some("password".to_string());
+            self.index_bucket = Some(default_bucket.to_string());
+            Ok(IndexStore::new(self, index, registry)?)
+        } else {
+            Ok(IndexStore::new(self, index, registry)?)
+        }
+    }
 }
 
 #[derive(Clone)]
@@ -97,7 +129,6 @@ impl Metrics {
 
 pub struct IndexStore<INDEX: Index> {
     inner: SearchIndex,
-    path: Option<PathBuf>,
     index: INDEX,
     metrics: Metrics,
 }
@@ -121,15 +152,27 @@ pub trait Index {
     fn doc_id_to_term(&self, id: &str) -> Term;
 }
 
-#[derive(Debug)]
+#[derive(Debug, thiserror::Error)]
 pub enum Error {
+    #[error("error opening index")]
     Open,
+    #[error("error snapshotting index")]
     Snapshot,
+    #[error("unable to locate index")]
     NotFound,
+    #[error("index is not persisted")]
     NotPersisted,
+    #[error("error parsing")]
     Parser(String),
+    #[error("error with credentials")]
+    Credentials(CredentialsError),
+    #[error("error with s3")]
+    S3(S3Error),
+    #[error("error searching")]
     Search(tantivy::TantivyError),
+    #[error("error metrics")]
     Prometheus(prometheus::Error),
+    #[error("error I/O")]
     Io(std::io::Error),
 }
 
@@ -139,22 +182,22 @@ impl From<prometheus::Error> for Error {
     }
 }
 
-impl Display for Error {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Open => write!(f, "Error opening index"),
-            Self::Snapshot => write!(f, "Error snapshotting index"),
-            Self::NotFound => write!(f, "Not found"),
-            Self::NotPersisted => write!(f, "Database is not persisted"),
-            Self::Parser(e) => write!(f, "Failed to parse query: {e}"),
-            Self::Search(e) => write!(f, "Error in search index: {:?}", e),
-            Self::Prometheus(e) => write!(f, "Error in prometheus: {:?}", e),
-            Self::Io(e) => write!(f, "I/O error: {:?}", e),
-        }
+impl From<CredentialsError> for Error {
+    fn from(e: CredentialsError) -> Self {
+        Self::Credentials(e)
     }
 }
 
-impl std::error::Error for Error {}
+impl From<S3Error> for Error {
+    fn from(e: S3Error) -> Self {
+        if let S3Error::HttpFailWithBody(status, _) = e {
+            if status == 404 {
+                return Self::NotFound;
+            }
+        }
+        Self::S3(e)
+    }
+}
 
 impl From<tantivy::TantivyError> for Error {
     fn from(e: tantivy::TantivyError) -> Self {
@@ -206,28 +249,38 @@ impl<INDEX: Index> IndexStore<INDEX> {
         Ok(Self {
             inner,
             index,
-            path: None,
             metrics: Metrics::register(&Default::default())?,
         })
     }
 
     pub fn new(config: &IndexConfig, index: INDEX, metrics_registry: &Registry) -> Result<Self, Error> {
-        let path = config.index.clone().unwrap_or_else(|| {
-            use rand::RngCore;
-            let r = rand::thread_rng().next_u32();
-            std::env::temp_dir().join(format!("index.{}", r))
+        let credentials = if let (Some(access_key), Some(secret_key)) = (&config.index_access_key, &config.index_secret_key) {
+            Credentials {
+                access_key: Some(access_key.into()),
+                secret_key: Some(secret_key.into()),
+                security_token: None,
+                session_token: None,
+                expiration: None,
+            }
+        } else {
+            Credentials::default()?
+        };
+
+        let region = config.index_region.clone().unwrap_or_else(|| Region::Custom {
+            region: "eu-central-1".to_owned(),
+            endpoint: config.index_endpoint.clone().unwrap_or("http://localhost:9000".to_string()),
         });
 
-        std::fs::create_dir(&path).map_err(|_| Error::Open)?;
+        let bucket = config.index_bucket.as_deref().expect("Required parameter bucket was not set");
+        let bucket = Bucket::new(bucket, region, credentials)?.with_path_style();
 
         let schema = index.schema();
         let settings = index.settings();
         let builder = SearchIndex::builder().schema(schema).settings(settings);
-        let dir = MmapDirectory::open(&path).map_err(|_e| Error::Open)?;
+        let dir = s3dir::S3Directory::new(bucket);
         let inner = builder.open_or_create(dir)?;
         Ok(Self {
             inner,
-            path: Some(path),
             index,
             metrics: Metrics::register(metrics_registry)?,
         })
@@ -241,15 +294,7 @@ impl<INDEX: Index> IndexStore<INDEX> {
         &mut self.index
     }
 
-    pub fn reload(&mut self, data: &[u8]) -> Result<(), Error> {
-        if let Some(path) = &self.path {
-            let dec = zstd::stream::Decoder::new(data).map_err(Error::Io)?;
-            let mut archive = tar::Archive::new(dec);
-            archive.unpack(path).map_err(Error::Io)?;
-        }
-        Ok(())
-    }
-
+    /*
     pub fn snapshot(&mut self, writer: IndexWriter) -> Result<Vec<u8>, Error> {
         if let Some(path) = &self.path {
             log::info!("Committing index to path {:?}", path);
@@ -279,7 +324,7 @@ impl<INDEX: Index> IndexStore<INDEX> {
         } else {
             Err(Error::NotPersisted)
         }
-    }
+    }*/
 
     pub fn writer(&mut self) -> Result<IndexWriter, Error> {
         let writer = self.inner.writer(100_000_000)?;

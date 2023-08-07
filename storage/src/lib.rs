@@ -111,7 +111,7 @@ impl Metrics {
 #[derive(Clone, Debug, clap::Parser)]
 #[command(rename_all_env = "SCREAMING_SNAKE_CASE")]
 pub struct StorageConfig {
-    /// Bucket name to use for storing data and index
+    /// Bucket name to use for storing data
     #[arg(env, long = "storage-bucket")]
     pub bucket: Option<String>,
 
@@ -253,7 +253,7 @@ impl Storage {
     }
 
     pub fn is_index(&self, key: &str) -> bool {
-        format!("/{}", key) == INDEX_PATH
+        format!("/{}", key).starts_with(INDEX_PATH)
     }
 
     pub fn key_from_event(record: &Record) -> Result<(Cow<str>, String), Error> {

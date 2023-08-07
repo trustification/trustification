@@ -11,11 +11,13 @@ prometheus = "0.13.3"
 rand = "0.8"
 serde_json = "1.0.68"
 sikula = { version = "0.4.0-alpha", features = ["time"] }
-tantivy = "0.19.2"
+tantivy = { version = "0.19.2", features = ["quickwit"] }
+async-trait = "0.1"
+thiserror = "1"
 tar = "0.4"
 time = "0.3"
 zstd = "0.12"
-rust-s3 = { git = "https://github.com/jcrossley3/rust-s3.git", branch = "issue-352" }
+rust-s3 = { git = "https://github.com/jcrossley3/rust-s3.git", branch = "issue-352", features = ["blocking", "tokio"] }
 
 trustification-api = { path = "../api"}
 

@@ -7,6 +7,7 @@ use tokio::select;
 use trustification_event_bus::EventBus;
 use trustification_index::IndexStore;
 use trustification_storage::{EventType, Storage};
+use tokio::task::block_in_place;
 
 pub async fn run(
     mut index: IndexStore<Index>,
@@ -17,15 +18,8 @@ pub async fn run(
     failed_topic: &str,
     sync_interval: Duration,
 ) -> Result<(), anyhow::Error> {
-    // Load initial index from storage.
-    // TODO: Stream directly to file
-    if let Ok(data) = storage.get_index().await {
-        index.reload(&data[..])?;
-    }
-
     let mut interval = tokio::time::interval(sync_interval);
-    let mut events = 0;
-    let mut writer = Some(index.writer()?);
+    let mut writer = block_in_place(|| Some(index.writer().unwrap()));
     let consumer = bus.subscribe("indexer", &[stored_topic]).await?;
     let mut uncommitted_events = Vec::new();
     loop {
@@ -46,11 +40,10 @@ pub async fn run(
                                             match storage.get_for_event(&data).await {
                                                 Ok((k, data)) => {
                                                     match SBOM::parse(&data) {
-                                                        Ok(doc) => match writer.as_mut().unwrap().add_document(index.index_as_mut(), &k, &doc) {
+                                                        Ok(doc) => match block_in_place(|| writer.as_mut().unwrap().add_document(index.index_as_mut(), &k, &doc)) {
                                                             Ok(_) => {
                                                                 log::trace!("Inserted entry into index");
                                                                 bus.send(indexed_topic, key.as_bytes()).await?;
-                                                                events += 1;
                                                             }
                                                             Err(e) => {
                                                                 let failure = serde_json::json!( {
@@ -72,15 +65,14 @@ pub async fn run(
                                                     }
                                                 }
                                                 Err(e) => {
-                                                    log::warn!("Error retrieving document event data, ignoring (error: {:?})", e);
+                                                    log::warn!("Error retrieving document event data key {:?}, ignoring (error: {:?})", key, e);
                                                 }
                                             }
                                         },
                                         EventType::Delete => {
                                             let (_, key) = Storage::key_from_event(&data)?;
-                                            writer.as_mut().unwrap().delete_document(index.index(), key.as_str());
+                                            block_in_place(|| writer.as_mut().unwrap().delete_document(index.index(), key.as_str()));
                                             log::debug!("Deleted entry {key} from index");
-                                            events += 1;
                                         }
                                         _ => log::debug!("Non (PUT | DELETE)  event ({:?}), skipping", data),
                                     }
@@ -102,37 +94,25 @@ pub async fn run(
                 }
             },
             _ = tick => {
-                if events > 0 {
-                    log::trace!("{} new events added, pushing new index to storage", events);
-                    match index.snapshot(writer.take().unwrap()) {
-                        Ok(data) => {
-                            match storage.put_index(&data).await {
+                if let Some(w) = writer.take() {
+                    match block_in_place(|| w.commit()) {
+                        Ok(_) => {
+                            log::info!("New index committed");
+                            match consumer.commit(&uncommitted_events[..]).await {
                                 Ok(_) => {
-                                    log::trace!("Index updated successfully");
-                                    match consumer.commit(&uncommitted_events[..]).await {
-                                        Ok(_) => {
-                                            log::trace!("Event committed successfully");
-                                            uncommitted_events.clear();
-                                        }
-                                        Err(e) => {
-                                            log::warn!("Error committing event: {:?}", e)
-                                        }
-                                    }
-                                    events = 0;
+                                    log::trace!("Committed {} events successfully", uncommitted_events.len());
+                                    uncommitted_events.clear();
                                 }
                                 Err(e) => {
-                                    log::warn!("Error updating index: {:?}", e)
+                                    log::warn!("Error committing event: {:?}", e)
                                 }
                             }
-
-                            writer.replace(index.writer()?);
                         }
                         Err(e) => {
-                            log::warn!("Error taking index snapshot: {:?}", e);
+                            log::warn!("Error committing index: {:?}", e);
                         }
                     }
-                } else {
-                    log::trace!("No changes to index");
+                    writer.replace(block_in_place(|| index.writer().unwrap()));
                 }
             }
         }

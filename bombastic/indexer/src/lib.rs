@@ -39,7 +39,7 @@ impl Run {
     pub async fn run(mut self) -> anyhow::Result<ExitCode> {
         Infrastructure::from(self.infra)
             .run("bombastic-indexer", |metrics| async move {
-                let index = IndexStore::new(&self.index, bombastic_index::Index::new(), metrics.registry())?;
+                let index = tokio::task::block_in_place(|| self.index.create(bombastic_index::Index::new(), "bombastic", self.devmode, metrics.registry()))?;
                 let storage = self.storage.create("bombastic", self.devmode, metrics.registry())?;
 
                 let interval = self.index.sync_interval.into();
