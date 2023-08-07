@@ -69,27 +69,29 @@ struct DetailsProps {
 
 #[function_component(Details)]
 fn details(props: &DetailsProps) -> Html {
-    let tab = use_state_eq(|| 0);
-    let onselect = {
-        let tab = tab.clone();
-        Callback::from(move |index: usize| {
-            tab.set(index);
-        })
-    };
+    #[derive(Copy, Clone, Eq, PartialEq)]
+    enum TabIndex {
+        Overview,
+        Packages,
+        Source,
+    }
+
+    let tab = use_state_eq(|| TabIndex::Overview);
+    let onselect = use_callback(|index, tab| tab.set(index), tab.clone());
 
     match &*props.sbom {
         model::SBOM::SPDX { bom, source } => {
             html!(
                 <>
                     <PageSection r#type={PageSectionType::Tabs} variant={PageSectionVariant::Light} sticky={[PageSectionSticky::Top]}>
-                        <Tabs inset={TabInset::Page} detached=true {onselect}>
-                            <Tab label="Overview" />
-                            <Tab label="Packages" />
-                            <Tab label="Source" />
-                        </Tabs>
+                        <Tabs<TabIndex> inset={TabInset::Page} detached=true selected={*tab} {onselect}>
+                            <Tab<TabIndex> index={TabIndex::Overview} title="Overview" />
+                            <Tab<TabIndex> index={TabIndex::Packages} title="Packages" />
+                            <Tab<TabIndex> index={TabIndex::Source} title="Source" />
+                        </Tabs<TabIndex>>
                     </PageSection>
 
-                    <PageSection hidden={*tab != 0} fill={PageSectionFill::Fill}>
+                    <PageSection hidden={*tab != TabIndex::Overview} fill={PageSectionFill::Fill}>
                         <Grid gutter=true>
                             <GridItem cols={[4]}>{spdx_meta(bom)}</GridItem>
                             <GridItem cols={[2]}>{spdx_creator(bom)}</GridItem>
@@ -98,12 +100,12 @@ fn details(props: &DetailsProps) -> Html {
                         </Grid>
                     </PageSection>
 
-                    <PageSection hidden={*tab != 1} fill={PageSectionFill::Fill}>
+                    <PageSection hidden={*tab != TabIndex::Packages} fill={PageSectionFill::Fill}>
                         // FIXME: use .clone() instead
                         <SpdxPackages bom={Rc::new(serde_json::from_str(source).unwrap())}/>
                     </PageSection>
 
-                    <PageSection hidden={*tab != 2} variant={PageSectionVariant::Light} fill={PageSectionFill::Fill}>
+                    <PageSection hidden={*tab != TabIndex::Source} variant={PageSectionVariant::Light} fill={PageSectionFill::Fill}>
                         <CodeBlock>
                             <CodeBlockCode> { source.clone() } </CodeBlockCode>
                         </CodeBlock>
@@ -113,18 +115,26 @@ fn details(props: &DetailsProps) -> Html {
         }
         model::SBOM::CycloneDX { bom: _, source } => {
             html!(
-                <Tabs>
-                    <Tab label="Overview">
+                <>
+                    <PageSection r#type={PageSectionType::Tabs} variant={PageSectionVariant::Light} sticky={[PageSectionSticky::Top]}>
+                        <Tabs<TabIndex> inset={TabInset::Page} detached=true selected={*tab} {onselect}>
+                            <Tab<TabIndex> index={TabIndex::Overview} title="Overview" />
+                            <Tab<TabIndex> index={TabIndex::Source} title="Source" />
+                        </Tabs<TabIndex>>
+                    </PageSection>
+
+                    <PageSection hidden={*tab != TabIndex::Overview} fill={PageSectionFill::Fill}>
                         <Grid gutter=true>
                             <GridItem cols={[2]}><Technical size={source.as_bytes().len()}/></GridItem>
                         </Grid>
-                    </Tab>
-                    <Tab label="Source">
+                    </PageSection>
+
+                    <PageSection hidden={*tab != TabIndex::Source} fill={PageSectionFill::Fill}>
                         <CodeBlock>
                             <CodeBlockCode> { source.clone() } </CodeBlockCode>
                         </CodeBlock>
-                    </Tab>
-                </Tabs>
+                    </PageSection>
+                </>
             )
         }
         model::SBOM::Unknown(source) => {

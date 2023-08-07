@@ -109,7 +109,7 @@ pub enum SearchMode<T> {
 
 impl<T> SearchMode<T>
 where
-    T: ToFilterExpression,
+    T: ToFilterExpression + SimpleProperties + Default + Clone,
 {
     pub fn is_simple(&self) -> bool {
         matches!(self, Self::Simple(_))
@@ -130,6 +130,16 @@ where
             Self::Complex(s) => s.into(),
             Self::Simple(s) => s.to_filter_expression(context).into(),
         }
+    }
+
+    pub fn set_simple_terms(&self, new_terms: Vec<String>) -> Self {
+        let mut new = match self {
+            Self::Complex(_) => T::default(),
+            Self::Simple(terms) => terms.clone(),
+        };
+
+        *new.terms_mut() = new_terms;
+        Self::Simple(new)
     }
 }
 
@@ -163,7 +173,7 @@ where
 #[function_component(SimpleSearch)]
 pub fn simple_search<T>(props: &SimpleSearchProperties<T>) -> Html
 where
-    T: PartialEq + Clone + ToFilterExpression + 'static,
+    T: Default + PartialEq + Clone + ToFilterExpression + SimpleProperties + 'static,
 {
     let filter_expansion = {
         let search = props.search.clone();
@@ -219,7 +229,7 @@ where
 
 fn render_opt<T>(props: &SimpleSearchProperties<T>, opt: &SearchOption<T>) -> Html
 where
-    T: PartialEq + Clone + ToFilterExpression + 'static,
+    T: Default + PartialEq + Clone + ToFilterExpression + SimpleProperties + 'static,
 {
     match opt {
         SearchOption::Divider => {

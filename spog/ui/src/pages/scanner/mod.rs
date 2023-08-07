@@ -97,15 +97,24 @@ fn common_header() -> Html {
 fn generate_card() -> Html {
     let maven = r#"mvn org.cyclonedx:cyclonedx-maven-plugin:2.7.7:makeAggregateBom -Dcyclonedx.skipAttach=true -DoutputFormat=json -DschemaVersion=1.3 -Dcyclonedx.verbose=false"#;
     let container = r#"syft packages <container> -o cyclonedx-json --file sbom.json"#;
-    let container_example = r#"syft packages quay.io/keycloak/keycloak:latest -o cyclonedx-json --file sbom.json"#;
+    let container_example = r#"syft packages quay.io/glassfish/server:5 -o cyclonedx-json --file sbom.json"#;
+
+    #[derive(Copy, Clone, Eq, PartialEq)]
+    enum TabIndex {
+        Container,
+        Maven,
+    }
+
+    let selected = use_state_eq(|| TabIndex::Container);
+    let onselect = use_callback(|index, selected| selected.set(index), selected.clone());
 
     html!(
         <Card
             title={html!(<Title>{"Generate"}</Title>)}
         >
             <CardBody>
-                <Tabs r#box=true>
-                    <Tab label="Container">
+                <Tabs<TabIndex> r#box=true selected={*selected} {onselect}>
+                    <Tab<TabIndex> index={TabIndex::Container} title="Container">
                         <Content>
                             <p> { "Run the following command:" } </p>
                             <p> <TextInput readonly=true value={container}  /> </p>
@@ -113,15 +122,15 @@ fn generate_card() -> Html {
                             <p> <Clipboard readonly=true code=true value={container_example} variant={ClipboardVariant::Expanded} /> </p>
                             <p> { "The SBOM will be generated as: " } <code> { "target/sbom.json" } </code> </p>
                         </Content>
-                    </Tab>
-                    <Tab label="Maven">
+                    </Tab<TabIndex>>
+                    <Tab<TabIndex> index={TabIndex::Maven} title="Maven">
                         <Content>
                             <p> { "Run the following command from the root of your project:" } </p>
                             <p> <Clipboard readonly=true code=true value={maven} variant={ClipboardVariant::Expanded} /> </p>
                             <p> { "The SBOM will be generated as: " } <code> { "sbom.json" } </code> </p>
                         </Content>
-                    </Tab>
-                </Tabs>
+                    </Tab<TabIndex>>
+                </Tabs<TabIndex>>
             </CardBody>
         </Card>
     )

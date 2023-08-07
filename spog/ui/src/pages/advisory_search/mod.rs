@@ -6,8 +6,9 @@ use yew::prelude::*;
 use yew_more_hooks::hooks::{UseAsyncHandleDeps, UseAsyncState};
 
 use crate::components::{
-    advisory::{AdvisoryResult, AdvisorySearch, SearchMode},
+    advisory::{AdvisoryResult, AdvisorySearch},
     common::PageHeading,
+    search::*,
 };
 
 #[derive(Clone, Debug, PartialEq, Eq, Properties)]
@@ -32,7 +33,7 @@ pub fn advisory(props: &AdvisoryProperties) -> Html {
             <PageHeading subtitle="Search security advisories">{"Advisories"}</PageHeading>
 
             <PageSection variant={PageSectionVariant::Light}>
-                <AdvisorySearch {callback} mode={SearchMode::Managed {query}}>
+                <AdvisorySearch {callback} mode={SearchPropertiesMode::Managed {query}}>
                     <AdvisoryResult state={(*search).clone()} />
                 </AdvisorySearch>
             </PageSection>

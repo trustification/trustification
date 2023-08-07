@@ -24,19 +24,28 @@ pub struct UnknownContentProperties {
 
 #[function_component(UnknownContent)]
 pub fn unknown_content(props: &UnknownContentProperties) -> Html {
+    #[derive(Copy, Clone, PartialEq, Eq)]
+    enum UnknownTabs {
+        Overview,
+        Source,
+    }
+
+    let selected = use_state_eq(|| UnknownTabs::Overview);
+    let onselect = use_callback(|index, selected| selected.set(index), selected.clone());
+
     html! (
-        <Tabs>
-            <Tab label="Overview">
+        <Tabs<UnknownTabs> selected={*selected} {onselect}>
+            <Tab<UnknownTabs> index={UnknownTabs::Overview} title="Overview">
                 <Grid gutter=true>
                     <GridItem cols={[2]}>
                         <Technical size={props.source.as_bytes().len()}/>
                     </GridItem>
                 </Grid>
-            </Tab>
-            <Tab label="Source">
+            </Tab<UnknownTabs>>
+            <Tab<UnknownTabs> index={UnknownTabs::Source} title="Source">
                 <SourceCode source={props.source.clone()} />
-            </Tab>
-        </Tabs>
+            </Tab<UnknownTabs>>
+        </Tabs<UnknownTabs>>
     )
 }
 

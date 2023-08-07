@@ -14,7 +14,13 @@ pub struct InspectProperties {
 
 #[function_component(Inspect)]
 pub fn inspect(props: &InspectProperties) -> Html {
-    let tab = use_state_eq(|| 0);
+    #[derive(Copy, Clone, Eq, PartialEq)]
+    enum TabIndex {
+        Report,
+        Raw,
+    }
+
+    let tab = use_state_eq(|| TabIndex::Report);
     let onselect = use_callback(|index, tab| tab.set(index), tab.clone());
 
     let backend = use_backend();
@@ -43,17 +49,17 @@ pub fn inspect(props: &InspectProperties) -> Html {
                     UseAsyncState::Ready(Ok(data)) => html!(
                         <>
                             <PageSection r#type={PageSectionType::Tabs} variant={PageSectionVariant::Light} sticky={[PageSectionSticky::Top]}>
-                                <Tabs inset={TabInset::Page} detached=true {onselect}>
-                                    <Tab label="Report" />
-                                    <Tab label="Raw SBOM"/>
-                                </Tabs>
+                                <Tabs<TabIndex> inset={TabInset::Page} detached=true selected={*tab} {onselect}>
+                                    <Tab<TabIndex> index={TabIndex::Report} title="Report" />
+                                    <Tab<TabIndex> index={TabIndex::Raw} title="Raw SBOM"/>
+                                </Tabs<TabIndex>>
                             </PageSection>
 
-                            <PageSection hidden={*tab != 0} variant={PageSectionVariant::Light} fill={PageSectionFill::Fill}>
+                            <PageSection hidden={*tab != TabIndex::Report} variant={PageSectionVariant::Light} fill={PageSectionFill::Fill}>
                                 <Report data={data.clone()} />
                             </PageSection>
 
-                            <PageSection hidden={*tab != 1} variant={PageSectionVariant::Light} fill={PageSectionFill::Fill}>
+                            <PageSection hidden={*tab != TabIndex::Raw} variant={PageSectionVariant::Light} fill={PageSectionFill::Fill}>
                                 <CodeBlock>
                                     <CodeBlockCode>
                                         { &props.raw }

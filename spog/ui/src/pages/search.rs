@@ -1,14 +1,24 @@
 //! Unified search
 
-use crate::components::{
-    advisory::{AdvisoryResult, AdvisorySearch, SearchMode},
-    sbom::{PackageResult, SbomSearch},
+use crate::{
+    components::{
+        advisory::{AdvisoryResult, AdvisorySearch},
+        sbom::{PackageResult, SbomSearch},
+        search::*,
+    },
+    utils::count::count_tab_title,
 };
 use patternfly_yew::prelude::*;
 use spog_model::prelude::*;
 use std::rc::Rc;
 use yew::prelude::*;
 use yew_more_hooks::prelude::*;
+
+#[derive(Copy, Clone, Eq, PartialEq)]
+pub enum TabIndex {
+    Advisories,
+    Sboms,
+}
 
 #[derive(PartialEq, Properties)]
 pub struct SearchProperties {
@@ -37,7 +47,7 @@ pub fn search(props: &SearchProperties) -> Html {
         (text.clone(), search_terms.clone()),
     );
 
-    let tab = use_state_eq(|| 0);
+    let tab = use_state_eq(|| TabIndex::Advisories);
     let onselect = use_callback(|index, tab| tab.set(index), tab.clone());
 
     // advisory search
@@ -99,23 +109,23 @@ pub fn search(props: &SearchProperties) -> Html {
             </PageSection>
 
             <PageSection r#type={PageSectionType::Tabs} variant={PageSectionVariant::Light} sticky={[PageSectionSticky::Top]}>
-                <Tabs inset={TabInset::Page} detached=true {onselect}>
-                    <Tab label="Advisories" />
-                    <Tab label="SBOMs"/>
-                </Tabs>
+                <Tabs<TabIndex> inset={TabInset::Page} detached=true selected={*tab} {onselect}>
+                    <Tab<TabIndex> index={TabIndex::Advisories} title={count_tab_title("Advisories", &*advisory_search)} />
+                    <Tab<TabIndex> index={TabIndex::Sboms} title={count_tab_title("SBOMs", &*sbom_search)} />
+                </Tabs<TabIndex>>
             </PageSection>
 
-            <PageSection hidden={*tab != 0} variant={PageSectionVariant::Light} fill={PageSectionFill::Fill}>
+            <PageSection hidden={*tab != TabIndex::Advisories} variant={PageSectionVariant::Light} fill={PageSectionFill::Fill}>
 
-                <AdvisorySearch callback={advisory_callback} mode={SearchMode::Provided}>
+                <AdvisorySearch callback={advisory_callback} mode={SearchPropertiesMode::Provided {terms: (*search_terms).clone()}}>
                     <AdvisoryResult state={(*advisory_search).clone()} />
                 </AdvisorySearch>
 
             </PageSection>
 
-            <PageSection hidden={*tab != 1} variant={PageSectionVariant::Light} fill={PageSectionFill::Fill}>
+            <PageSection hidden={*tab != TabIndex::Sboms} variant={PageSectionVariant::Light} fill={PageSectionFill::Fill}>
 
-                <SbomSearch callback={sbom_callback} mode={SearchMode::Provided}>
+                <SbomSearch callback={sbom_callback} mode={SearchPropertiesMode::Provided {terms: (*search_terms).clone()}}>
                     <PackageResult state={(*sbom_search).clone()} />
                 </SbomSearch>
 

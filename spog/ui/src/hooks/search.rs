@@ -1,4 +1,4 @@
-use crate::components::search::SearchMode;
+use crate::components::search::{SearchMode, SearchPropertiesMode};
 use crate::utils::search::*;
 use gloo_utils::format::JsValueSerdeExt;
 use patternfly_yew::prelude::*;
@@ -104,7 +104,7 @@ pub struct UseStandardSearch<T> {
 
 #[hook]
 pub fn use_standard_search<T, S>(
-    props_query: Option<String>,
+    mode: SearchPropertiesMode,
     total: Option<usize>,
     context: Rc<T::Context>,
 ) -> UseStandardSearch<T>
@@ -118,10 +118,11 @@ where
         + ToFilterExpression
         + SimpleProperties
         + 'static,
+    T::Context: PartialEq,
     S: sikula::prelude::Search,
 {
     let (search_params, pagination) =
-        use_search_view_state::<SearchMode<T>, _>(props_query, total, SearchMode::Complex);
+        use_search_view_state::<SearchMode<T>, _>(mode.props_query(), total, SearchMode::Complex);
 
     // the current value in the text input field
     let text = use_state_eq(|| match &*search_params {
@@ -145,53 +146,59 @@ where
     );
 
     // clear search, keep mode
-    let onclear = {
-        let text = text.clone();
-        let search_params = search_params.clone();
-        Callback::from(move |_| {
+    let onclear = use_callback(
+        |_, (text, search_params)| {
             text.set(String::new());
             // trigger empty search
-            match *search_params {
+            match **search_params {
                 SearchMode::Complex(_) => search_params.set(SearchMode::Complex(String::new())),
                 SearchMode::Simple(_) => search_params.set(SearchMode::Simple(Default::default())),
             }
-        })
-    };
+        },
+        (text.clone(), search_params.clone()),
+    );
 
     // apply text field to search
-    let onset = {
-        let search_params = search_params.clone();
-        let text = text.clone();
-        Callback::from(move |()| match (*search_params).clone() {
+    let onset = use_callback(
+        |(), (text, search_params)| match (**search_params).clone() {
             SearchMode::Complex(_) => {
-                search_params.set(SearchMode::Complex((*text).clone()));
+                search_params.set(SearchMode::Complex((**text).clone()));
             }
             SearchMode::Simple(mut s) => {
                 let text = &*text;
                 *s.terms_mut() = text.split(' ').map(|s| s.to_string()).collect();
                 search_params.set(SearchMode::Simple(s));
             }
-        })
-    };
+        },
+        (text.clone(), search_params.clone()),
+    );
 
-    let ontogglesimple = {
-        let search_params = search_params.clone();
-        let text = text.clone();
-        let context = context.clone();
+    // when the search mode changes, and is "provided", refresh the simple terms
+    use_effect_with_deps(
+        |(mode, search_params)| {
+            if let SearchPropertiesMode::Provided { terms } = mode {
+                let terms = terms.split(' ').map(|s| s.to_string()).collect();
+                search_params.set(search_params.set_simple_terms(terms));
+            }
+        },
+        (mode.clone(), search_params.clone()),
+    );
 
-        Callback::from(move |state| match state {
+    let ontogglesimple = use_callback(
+        |state, (text, context, search_params)| match state {
             false => {
                 let q = (*search_params).as_str(&context).to_string();
                 search_params.set(SearchMode::Complex(q.clone()));
                 text.set(q);
             }
             true => {
-                // TODO: this will reset the query, which should confirm first
+                // TODO: this will reset the query, which we should confirm first
                 search_params.set(SearchMode::default());
                 text.set(String::new());
             }
-        })
-    };
+        },
+        (text.clone(), context.clone(), search_params.clone()),
+    );
 
     UseStandardSearch {
         search_params,
