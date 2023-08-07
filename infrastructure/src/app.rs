@@ -1,4 +1,5 @@
 use actix_cors::Cors;
+use actix_web::middleware::Compress;
 use actix_web::{
     body::MessageBody,
     dev::{ServiceFactory, ServiceRequest, ServiceResponse},
@@ -20,8 +21,8 @@ pub struct AppOptions {
 #[macro_export]
 macro_rules! new_auth {
     ($auth:expr) => {
-        actix_web_extras::middleware::Condition::from_option($auth.map(move |authenticator| {
-            actix_web_httpauth::middleware::HttpAuthentication::bearer(move |req, auth| {
+        $crate::extras::middleware::Condition::from_option($auth.map(move |authenticator| {
+            $crate::httpauth::middleware::HttpAuthentication::bearer(move |req, auth| {
                 trustification_auth::authenticator::actix::openid_validator(req, auth, authenticator.clone())
             })
         }))
@@ -45,7 +46,8 @@ pub fn new_app(
     >,
 > {
     // The order of execution is last added becomes first to be executed. So if you read the
-    // following lines, read them from end to start!
+    // following lines, read them from end to start! Middleware for services will be executed after
+    // the middleware here.
     App::new()
         // Handle authentication, might fail and return early
         .wrap(new_auth!(options.authenticator))
@@ -53,6 +55,8 @@ pub fn new_app(
         .wrap(Condition::from_option(options.cors))
         // Next, record metrics for the request (should never fail)
         .wrap(Condition::from_option(options.metrics))
+        // Compress everything
+        .wrap(Compress::default())
         // First log the request, so that we know what happens (can't fail)
         .wrap(Logger::default())
 }
