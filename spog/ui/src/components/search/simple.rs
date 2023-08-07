@@ -209,21 +209,34 @@ where
         )
     };
 
-    html!(
-        <Accordion large=true>
-            {
-                for props.search.categories.iter().map(|cat| {
-                    filter_section(
-                        Rc::new(cat.title.clone()),
-                        html!(
-                            <List r#type={ListType::Plain}>
-                                { for cat.options.iter().map(|opt|render_opt(props, opt))}
-                            </List>
-                        ),
-                    )
-                })
+    let onclear = use_callback(
+        |_, search_params| {
+            if let SearchMode::Simple(_) = &**search_params {
+                search_params.set(SearchMode::Simple(T::default()));
             }
-        </Accordion>
+        },
+        props.search_params.clone(),
+    );
+    let canclear = props.search_params.is_simple();
+
+    html!(
+        <>
+            <Button label="Clear all filters" onclick={onclear} variant={ButtonVariant::Link} disabled={!canclear} />
+            <Accordion large=true>
+                {
+                    for props.search.categories.iter().map(|cat| {
+                        filter_section(
+                            Rc::new(cat.title.clone()),
+                            html!(
+                                <List r#type={ListType::Plain}>
+                                    { for cat.options.iter().map(|opt|render_opt(props, opt))}
+                                </List>
+                            ),
+                        )
+                    })
+                }
+            </Accordion>
+        </>
     )
 }
 
