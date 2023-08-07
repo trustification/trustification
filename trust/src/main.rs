@@ -18,6 +18,9 @@ pub enum Command {
     #[command(subcommand)]
     Collector(collector::Command),
 
+    #[command(subcommand)]
+    V11y(v11y::Command),
+
     Exporter(exporter::Run),
 }
 
@@ -60,6 +63,7 @@ impl Cli {
             Command::Collectorist(run) => run.run().await,
             Command::Collector(run) => run.run().await,
             Command::Exporter(run) => run.run().await,
+            Command::V11y(run) => run.run().await,
         }
     }
 }

@@ -6879,6 +6879,7 @@ dependencies = [
  "serde_json",
  "spog",
  "tokio",
+ "v11y",
  "vexination",
 ]
 
