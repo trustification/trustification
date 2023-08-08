@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use serde_json::Value;
 use sikula::prelude::*;
 use utoipa::ToSchema;
@@ -54,6 +56,8 @@ pub struct SearchDocument {
     pub cves: Vec<String>,
     /// Highest CVSS score in vulnerabilities matched within the advisory
     pub cvss_max: Option<f64>,
+    /// Number of severities by level
+    pub cve_severity_count: HashMap<String, u64>,
 }
 
 /// The hit describes the document, its score and optionally an explanation of why that score was given.

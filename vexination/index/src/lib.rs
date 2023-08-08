@@ -1,4 +1,4 @@
-use std::ops::Bound;
+use std::{ops::Bound, collections::{HashMap, hash_map::Entry}};
 
 use csaf::{
     definitions::{NoteCategory, ProductIdT},
@@ -6,6 +6,7 @@ use csaf::{
     Csaf,
 };
 use log::{debug, warn};
+use serde_json::{Map, Value};
 use sikula::prelude::*;
 use tantivy::{
     query::{AllQuery, TermSetQuery},
@@ -40,6 +41,8 @@ struct Fields {
     advisory_revision: Field,
     advisory_initial: Field,
     advisory_current: Field,
+
+    cve_severity_count: Field,
 
     cve_id: Field,
     cve_title: Field,
@@ -116,6 +119,8 @@ impl trustification_index::Index for Index {
             DateTime::from_timestamp_millis(csaf.document.tracking.current_release_date.timestamp_millis()),
         );
 
+        let mut cve_severities: HashMap<&str, usize> = HashMap::new();
+
         if let Some(vulns) = &csaf.vulnerabilities {
             for vuln in vulns {
                 if let Some(title) = &vuln.title {
@@ -131,6 +136,14 @@ impl trustification_index::Index for Index {
                         if let Some(cvss3) = &score.cvss_v3 {
                             document.add_f64(self.fields.cve_cvss, cvss3.score().value());
                             document.add_text(self.fields.cve_severity, cvss3.severity().as_str());
+                            match cve_severities.entry(cvss3.severity().as_str()) {
+                                Entry::Occupied(o) => {
+                                    *o.into_mut() += 1;
+                                }
+                                Entry::Vacant(v) => {
+                                    v.insert(1);
+                                }
+                            };
                         }
                     }
                 }
@@ -209,8 +222,15 @@ impl trustification_index::Index for Index {
                     );
                 }
 
-                debug!("Adding doc: {:?}", document);
             }
+
+            let mut json_severities: Map<String, Value> = Map::new();
+            for (key, value) in cve_severities.iter() {
+                json_severities.insert(key.to_string(), Value::Number((*value).into()));
+            }
+            document.add_json_object(self.fields.cve_severity_count, json_severities);
+            debug!("Adding doc: {:?}", document);
+
         }
         Ok(vec![document])
     }
@@ -280,6 +300,15 @@ impl trustification_index::Index for Index {
             }
         }
 
+        let mut cve_severity_count: HashMap<String, u64> = HashMap::new();
+        if let Some(Some(data)) = doc.get_first(self.fields.cve_severity_count).map(|d| d.as_json()) {
+            for (key, value) in data.iter() {
+                if let Value::Number(value) = value {
+                    cve_severity_count.insert(key.clone(), value.as_u64().unwrap_or(0) as u64);
+                }
+            }
+        }
+
         let document = SearchDocument {
             advisory_id: advisory_id.to_string(),
             advisory_title: advisory_title.to_string(),
@@ -289,6 +318,7 @@ impl trustification_index::Index for Index {
             advisory_desc: advisory_desc.to_string(),
             cves,
             cvss_max,
+            cve_severity_count,
         };
 
         let explanation: Option<serde_json::Value> = if options.explain {
@@ -344,6 +374,8 @@ impl Index {
         let cve_cvss = schema.add_f64_field("cve_cvss", FAST | INDEXED | STORED);
         let cve_cwe = schema.add_text_field("cve_cwe", STRING | STORED);
 
+        let cve_severity_count = schema.add_json_field("cve_severity_count", STORED);
+
         Self {
             schema: schema.build(),
             fields: Fields {
@@ -366,6 +398,7 @@ impl Index {
                 cve_fixed,
                 cve_cvss,
                 cve_cwe,
+                cve_severity_count,
             },
         }
     }
@@ -774,6 +807,16 @@ mod tests {
             let result = search(&index, "");
             // Should get all documents (1)
             assert_eq!(result.0.len(), 1);
+        });
+    }
+
+    #[tokio::test]
+    async fn test_severity_count() {
+        assert_free_form(|index| {
+            let result = search(&index, "");
+            assert_eq!(result.0.len(), 1);
+            assert_eq!(result.0[0].document.cve_severity_count.len(), 1);
+            assert_eq!(result.0[0].document.cve_severity_count["high"], 1);
         });
     }
 }
