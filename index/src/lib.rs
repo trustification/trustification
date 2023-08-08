@@ -107,7 +107,13 @@ pub trait Index {
     fn settings(&self) -> IndexSettings;
     fn schema(&self) -> Schema;
     fn prepare_query(&self, q: &str) -> Result<Box<dyn Query>, Error>;
-    fn search(&self, searcher: &Searcher, query: &dyn Query, offset: usize, limit: usize) -> Result<(Vec<(f32, DocAddress)>, usize), Error>;
+    fn search(
+        &self,
+        searcher: &Searcher,
+        query: &dyn Query,
+        offset: usize,
+        limit: usize,
+    ) -> Result<(Vec<(f32, DocAddress)>, usize), Error>;
     fn process_hit(
         &self,
         doc: DocAddress,
@@ -550,8 +556,17 @@ mod tests {
             Ok(id.unwrap_or("").to_string())
         }
 
-        fn search(&self, searcher: &Searcher, query: &dyn Query, offset: usize, limit: usize) -> Result<(Vec<(f32, DocAddress)>, usize), Error> {
-            Ok(searcher.search(query, &(TopDocs::with_limit(limit).and_offset(offset), tantivy::collector::Count))?)
+        fn search(
+            &self,
+            searcher: &Searcher,
+            query: &dyn Query,
+            offset: usize,
+            limit: usize,
+        ) -> Result<(Vec<(f32, DocAddress)>, usize), Error> {
+            Ok(searcher.search(
+                query,
+                &(TopDocs::with_limit(limit).and_offset(offset), tantivy::collector::Count),
+            )?)
         }
 
         fn index_doc(&self, id: &str, document: &Self::Document) -> Result<Vec<Document>, Error> {
