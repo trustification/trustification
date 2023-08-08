@@ -33,7 +33,7 @@ impl FromStr for Severity {
 }
 
 impl Severity {
-    pub fn to_html(&self) -> Html {
+    pub fn into_html(self) -> Html {
         let icon = |class: Classes| html!(<i class={classes!(class, "fa", "fa-shield-halved")}></i>);
 
         html!(
@@ -52,7 +52,7 @@ impl Severity {
 
 impl From<Severity> for Html {
     fn from(value: Severity) -> Self {
-        value.to_html()
+        value.into_html()
     }
 }
 

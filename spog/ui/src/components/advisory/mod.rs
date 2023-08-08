@@ -75,7 +75,7 @@ impl TableEntryRenderer<Column> for AdvisoryEntry {
                 if l == 0 {
                     "N/A".to_string().into()
                 } else {
-                    html!(<CvssMap map={self.summary.cve_severity_count.clone()} />).into()
+                    html!(<CvssMap map={self.summary.cve_severity_count.clone()} />)
                 }
             }
         }
