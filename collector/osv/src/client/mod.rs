@@ -1,5 +1,8 @@
 pub mod schema;
 
+use std::collections::HashMap;
+
+use collector_client::GatherResponse;
 use serde::{Deserialize, Serialize};
 
 use crate::client::schema::{BatchVulnerability, Package};
@@ -20,26 +23,12 @@ pub struct QueryBatchRequest {
     pub queries: Vec<QueryPackageRequest>,
 }
 
-//#[derive(Serialize, Deserialize)]
-//pub struct Package {
-//purl: String,
-//}
-
-/*
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(untagged)]
-pub enum QueryResponse {
-    Vulnerabilities { vulns: Vec<Vulnerability> },
-    NoResult(serde_json::Value),
-}
- */
-
 #[derive(Debug, Serialize, Deserialize)]
 pub struct QueryBatchResponse {
     results: Vec<BatchVulnerabilities>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Default, Debug, Serialize, Deserialize)]
 pub struct CollatedQueryBatchResponse {
     pub results: Vec<CollatedBatchVulnerabilities>,
 }
@@ -79,53 +68,78 @@ impl OsvClient {
 
         Ok(response)
     }
-    /*
-    pub async fn query(request: &GatherRequest) -> Result<GatherResponse, anyhow::Error> {
-        let requests: Vec<_> = request
-            .purls
-            .iter()
-            .map(|purl| {
-                let json_body = serde_json::to_string(&QueryPackageRequest {
-                    package: Package { purl: purl.clone() },
-                })
-                .ok()
-                .unwrap_or("".to_string());
+}
 
-                async move {
-                    (
-                        purl.clone(),
-                        reqwest::Client::new()
-                            .post(QUERY_URL)
-                            .json(&QueryPackageRequest {
-                                package: Package { purl: purl.clone() },
-                            })
-                            .send()
-                            .await,
-                    )
+impl From<CollatedQueryBatchResponse> for GatherResponse {
+    fn from(response: CollatedQueryBatchResponse) -> Self {
+        let purls: HashMap<_, _> = response
+            .results
+            .iter()
+            .flat_map(|e| match (&e.package, &e.vulns) {
+                (Package::Purl { purl }, Some(v)) if !v.is_empty() => {
+                    Some((purl.clone(), v.iter().map(|x| x.id.clone()).collect()))
                 }
+                _ => None,
             })
             .collect();
-
-        let responses = join_all(requests).await;
-
-        let mut purls = Vec::new();
-        for (purl, response) in responses {
-            if let Ok(response) = response {
-                let response: Result<QueryResponse, _> = response.json().await;
-                if let Ok(response) = response {
-                    println!("{:?}", response);
-                }
-                purls.push(purl);
-            } else {
-                println!("bogus");
-            }
-        }
-
-        Ok(GatherResponse {
-            purls,
-        })
-
-        //println!("{:?}", results);
+        Self { purls }
     }
-     */
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn empty_response() {
+        let src = CollatedQueryBatchResponse::default();
+        let tgt = GatherResponse::from(src);
+        assert!(tgt.purls.is_empty());
+    }
+
+    #[test]
+    fn no_vulns() {
+        let src = CollatedQueryBatchResponse {
+            results: vec![CollatedBatchVulnerabilities {
+                package: Package::Purl {
+                    purl: "pkg:foo".to_string(),
+                },
+                vulns: None,
+            }],
+        };
+        let tgt = GatherResponse::from(src);
+        assert!(tgt.purls.is_empty());
+    }
+
+    #[test]
+    fn empty_vulns() {
+        let src = CollatedQueryBatchResponse {
+            results: vec![CollatedBatchVulnerabilities {
+                package: Package::Purl {
+                    purl: "pkg:foo".to_string(),
+                },
+                vulns: Some(vec![]),
+            }],
+        };
+        let tgt = GatherResponse::from(src);
+        assert!(tgt.purls.is_empty());
+    }
+
+    #[test]
+    fn some_vulns() {
+        let src = CollatedQueryBatchResponse {
+            results: vec![CollatedBatchVulnerabilities {
+                package: Package::Purl {
+                    purl: "pkg:foo".to_string(),
+                },
+                vulns: Some(vec![BatchVulnerability {
+                    id: "cve".to_string(),
+                    modified: Default::default(),
+                }]),
+            }],
+        };
+        let tgt = GatherResponse::from(src);
+        assert!(!tgt.purls.is_empty());
+        assert_eq!(tgt.purls["pkg:foo"], vec!["cve"]);
+    }
 }

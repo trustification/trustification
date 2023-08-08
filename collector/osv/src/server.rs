@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::fmt::Debug;
 use std::net::{SocketAddr, TcpListener};
 use std::sync::atomic::Ordering;
@@ -78,12 +77,12 @@ impl From<&GatherRequest> for QueryBatchRequest {
 }
 
 #[utoipa::path(
-post,
-tag = "collector-osv",
-path = "/api/v1/gather",
-responses(
-(status = 200, description = "Requested pURLs gathered"),
-),
+    post,
+    tag = "collector-osv",
+    path = "/api/v1/gather",
+    responses(
+	(status = 200, description = "Requested pURLs gathered"),
+    ),
 )]
 #[post("gather")]
 pub async fn gather(
@@ -135,18 +134,9 @@ pub async fn gather(
             }
         }
     }
-    let purls: HashMap<_, _> = response
-        .results
-        .iter()
-        .flat_map(|e| match (&e.package, &e.vulns) {
-            (Package::Purl { purl }, Some(v)) if !v.is_empty() => {
-                Some((purl.clone(), v.iter().map(|x| x.id.clone()).collect()))
-            }
-            _ => None,
-        })
-        .collect();
-    log::debug!("osv response: {}", serde_json::to_string_pretty(&purls).unwrap());
-    Ok(HttpResponse::Ok().json(GatherResponse { purls }))
+    let gathered = GatherResponse::from(response);
+    log::debug!("osv response: {}", serde_json::to_string_pretty(&gathered).unwrap());
+    Ok(HttpResponse::Ok().json(gathered))
 }
 
 pub async fn register_with_collectorist(state: SharedState) {
