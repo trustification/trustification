@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use serde_json::Value;
 use std::ops::{Deref, DerefMut};
 use time::OffsetDateTime;
@@ -13,6 +14,7 @@ pub struct AdvisorySummary {
     pub cves: Vec<String>,
     pub cvss_max: Option<f64>,
     pub href: String,
+    pub cve_severity_count: HashMap<String, u64>,
 
     #[serde(default, skip_serializing_if = "Value::is_null", rename = "$metadata")]
     pub metadata: Value,

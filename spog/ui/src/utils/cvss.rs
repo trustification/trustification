@@ -1,20 +1,59 @@
 use std::str::FromStr;
 
 use spog_model::vuln::Cvss3;
-use yew::html::IntoPropValue;
+use yew::{html::IntoPropValue, prelude::*};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Cvss {
     pub score: f32,
 }
 
-#[derive(Copy, Clone, PartialEq, Eq, Ord, PartialOrd)]
+#[derive(Copy, Clone, PartialEq, Eq, Ord, PartialOrd, Hash)]
 pub enum Severity {
     None,
     Low,
     Medium,
     High,
     Critical,
+}
+
+impl FromStr for Severity {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(match s {
+            "none" => Self::None,
+            "low" => Self::Low,
+            "medium" => Self::Medium,
+            "high" => Self::High,
+            "critical" => Self::Critical,
+            _ => return Err(()),
+        })
+    }
+}
+
+impl Severity {
+    pub fn to_html(&self) -> Html {
+        let icon = |class: Classes| html!(<i class={classes!(class, "fa", "fa-shield-halved")}></i>);
+
+        html!(
+            <span class={classes!("tc-c-severity")}> {
+                match self {
+                    Self::None => icon(classes!("tc-m-severity-none")),
+                    Self::Low => icon(classes!("tc-m-severity-low")),
+                    Self::Medium => icon(classes!("tc-m-severity-moderate")),
+                    Self::High => icon(classes!("tc-m-severity-important")),
+                    Self::Critical => icon(classes!("tc-m-severity-critical")),
+                }
+            } </span>
+        )
+    }
+}
+
+impl From<Severity> for Html {
+    fn from(value: Severity) -> Self {
+        value.to_html()
+    }
 }
 
 impl TryFrom<Cvss3> for Cvss {

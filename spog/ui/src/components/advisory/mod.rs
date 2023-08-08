@@ -8,7 +8,9 @@ use std::collections::HashSet;
 
 use crate::{
     backend::Endpoint,
-    components::{common::CardWrapper, download::Download, severity::Severity, table_wrapper::TableWrapper},
+    components::{
+        common::CardWrapper, cvss::CvssMap, download::Download, severity::Severity, table_wrapper::TableWrapper,
+    },
     hooks::use_backend,
     pages::{AppRoute, View},
     utils::{
@@ -70,7 +72,11 @@ impl TableEntryRenderer<Column> for AdvisoryEntry {
             }),
             Column::Vulnerabilities => {
                 let l = self.summary.cves.len();
-                if l == 0 { "N/A".to_string() } else { l.to_string() }.into()
+                if l == 0 {
+                    "N/A".to_string().into()
+                } else {
+                    html!(<CvssMap map={self.summary.cve_severity_count.clone()} />).into()
+                }
             }
         }
         .into()
@@ -92,7 +98,7 @@ pub fn advisory_result(props: &AdvisoryResultProperties) -> Html {
 
     let data = match &props.state {
         UseAsyncState::Ready(Ok(val)) => {
-            let data: Vec<AdvisoryEntry> = val
+            let data: Vec<_> = val
                 .result
                 .iter()
                 .map(|summary| {
@@ -114,12 +120,12 @@ pub fn advisory_result(props: &AdvisoryResultProperties) -> Html {
         yew::props!(TableColumnProperties<Column> {
             index: Column::Id,
             label: "ID",
-            width: ColumnWidth::Percent(15)
+            width: ColumnWidth::Percent(10)
         }),
         yew::props!(TableColumnProperties<Column> {
             index: Column::Title,
             label: "Title",
-            width: ColumnWidth::Percent(55)
+            width: ColumnWidth::Percent(50)
         }),
         yew::props!(TableColumnProperties<Column> {
             index: Column::Severity,
@@ -134,12 +140,12 @@ pub fn advisory_result(props: &AdvisoryResultProperties) -> Html {
         yew::props!(TableColumnProperties<Column> {
             index: Column::Download,
             label: "Download",
-            width: ColumnWidth::Percent(5)
+            width: ColumnWidth::FitContent
         }),
         yew::props!(TableColumnProperties<Column> {
             index: Column::Vulnerabilities,
             label: "Vulnerabilities",
-            width: ColumnWidth::Percent(5)
+            width: ColumnWidth::Percent(20)
         }),
     ];
 
