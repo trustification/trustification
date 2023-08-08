@@ -1,4 +1,4 @@
-use crate::components::advisory::rem_cat_str;
+use crate::components::advisory::{csaf_product_status_entry_details, rem_cat_str};
 use crate::utils::OrNone;
 use csaf::vulnerability::Remediation;
 use csaf::Csaf;
@@ -13,6 +13,7 @@ pub struct CsafRemediationTableProperties {
 }
 
 struct RemediationWrapper {
+    csaf: Rc<Csaf>,
     rem: Remediation,
 }
 
@@ -43,11 +44,21 @@ impl TableEntryRenderer<Column> for RemediationWrapper {
 
     fn render_details(&self) -> Vec<Span> {
         let content = html!(
-            <>
+            <Content>
                 { self.rem.details.clone() }
-            </>
+                <Title level={Level::H4}>{ "Products" }</Title>
+                <List> {
+                    for self.rem.product_ids.iter()
+                        .flatten()
+                        .map(|prod| csaf_product_status_entry_details(&self.csaf, prod))
+                } </List>
+            </Content>
         );
         vec![Span::max(content)]
+    }
+
+    fn is_full_width_details(&self) -> Option<bool> {
+        Some(true)
     }
 }
 
@@ -58,7 +69,10 @@ pub fn remediation_table(props: &CsafRemediationTableProperties) -> Html {
             rems.clone()
                 .into_iter()
                 .flatten()
-                .map(|rem| RemediationWrapper { rem })
+                .map(|rem| RemediationWrapper {
+                    csaf: props.csaf.clone(),
+                    rem,
+                })
                 .collect::<Vec<_>>()
         },
         props.remediations.clone(),
