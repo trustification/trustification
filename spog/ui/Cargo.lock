@@ -2270,6 +2270,7 @@ name = "spog-ui"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "async-trait",
  "bombastic-model",
  "browser-panic-hook",
  "chrono",
@@ -2295,6 +2296,7 @@ dependencies = [
  "thiserror",
  "time 0.3.23",
  "trustification-api",
+ "trustification-common",
  "trustification-version",
  "url",
  "urlencoding",
@@ -2598,6 +2600,15 @@ name = "trustification-api"
 version = "0.1.0"
 dependencies = [
  "reqwest",
+ "serde",
+]
+
+[[package]]
+name = "trustification-common"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "log",
  "serde",
 ]
 
