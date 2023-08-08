@@ -14,7 +14,7 @@ use sikula::prelude::*;
 use tantivy::{
     query::{AllQuery, TermSetQuery},
     store::ZstdCompressor,
-    DocAddress, IndexSettings, Searcher, SnippetGenerator,
+    DocAddress, IndexSettings, Searcher, SnippetGenerator, collector::TopDocs,
 };
 use trustification_api::search::SearchOptions;
 use trustification_index::{
@@ -262,6 +262,10 @@ impl trustification_index::Index for Index {
 
         debug!("Processed query: {:?}", query);
         Ok(query)
+    }
+
+    fn search(&self, searcher: &Searcher, query: &dyn Query, offset: usize, limit: usize) -> Result<(Vec<(f32, DocAddress)>, usize), SearchError> {
+        Ok(searcher.search(query, &(TopDocs::with_limit(limit).and_offset(offset), tantivy::collector::Count))?)
     }
 
     fn process_hit(
