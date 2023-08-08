@@ -54,7 +54,7 @@ pub fn cvss_map(props: &CvssMapProperties) -> Html {
             // convert to BTreeMap: parse, sort, and count
             let mut result: BTreeMap<Severity, u64> = BTreeMap::new();
             for (k, v) in map {
-                let k = Severity::from_str(&k).unwrap_or(Severity::Critical);
+                let k = Severity::from_str(k).unwrap_or(Severity::Critical);
                 count += *v;
                 result.insert(k, *v);
             }
