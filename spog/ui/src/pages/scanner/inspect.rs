@@ -1,5 +1,5 @@
 use super::{report::Report, CommonHeader};
-use crate::{backend::AnalyzeService, components::error::Error, hooks::use_backend};
+use crate::{backend::AnalyzeService, hooks::use_backend};
 use patternfly_yew::prelude::*;
 use reqwest::Body;
 use std::rc::Rc;
@@ -10,6 +10,7 @@ use yew_oauth2::hook::use_latest_access_token;
 #[derive(Clone, PartialEq, Properties)]
 pub struct InspectProperties {
     pub raw: Rc<String>,
+    pub onreset: Callback<()>,
 }
 
 #[function_component(Inspect)]
@@ -38,7 +39,7 @@ pub fn inspect(props: &InspectProperties) -> Html {
 
     html!(
         <>
-            <CommonHeader />
+            <CommonHeader onreset={props.onreset.clone()}/>
             {
                 match &*fetch {
                     UseAsyncState::Pending | UseAsyncState::Processing => html!(
@@ -46,7 +47,7 @@ pub fn inspect(props: &InspectProperties) -> Html {
                             <Spinner />
                         </PageSection>
                     ),
-                    UseAsyncState::Ready(Ok(data)) => html!(
+                    UseAsyncState::Ready(state) => html!(
                         <>
                             <PageSection r#type={PageSectionType::Tabs} variant={PageSectionVariant::Light} sticky={[PageSectionSticky::Top]}>
                                 <Tabs<TabIndex> inset={TabInset::Page} detached=true selected={*tab} {onselect}>
@@ -56,7 +57,12 @@ pub fn inspect(props: &InspectProperties) -> Html {
                             </PageSection>
 
                             <PageSection hidden={*tab != TabIndex::Report} variant={PageSectionVariant::Light} fill={PageSectionFill::Fill}>
-                                <Report data={data.clone()} />
+                                {
+                                    match state {
+                                        Ok(data) => html!(<Report data={data.clone()} />),
+                                        Err(err) => err.to_html("Failed to process report"),
+                                    }
+                                }
                             </PageSection>
 
                             <PageSection hidden={*tab != TabIndex::Raw} variant={PageSectionVariant::Light} fill={PageSectionFill::Fill}>
@@ -68,7 +74,6 @@ pub fn inspect(props: &InspectProperties) -> Html {
                            </PageSection>
                         </>
                     ),
-                    UseAsyncState::Ready(Err(err)) => html!(<Error {err} />),
                 }
             }
         </>

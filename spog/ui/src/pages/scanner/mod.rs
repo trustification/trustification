@@ -3,7 +3,6 @@ mod inspect;
 mod report;
 mod upload;
 
-use crate::components::common::PageHeading;
 use anyhow::bail;
 use bombastic_model::prelude::SBOM;
 use inspect::Inspect;
@@ -56,9 +55,17 @@ pub fn scanner() -> Html {
         (),
     );
 
+    // allow resetting the form
+    let onreset = use_callback(
+        |_, content| {
+            content.set(None);
+        },
+        content.clone(),
+    );
+
     match &*sbom {
         Some((raw, _bom)) => {
-            html!(<Inspect raw={(*raw).clone()} />)
+            html!(<Inspect {onreset} raw={(*raw).clone()} />)
         }
         None => {
             html!(
@@ -86,10 +93,35 @@ pub fn scanner() -> Html {
     }
 }
 
+#[derive(PartialEq, Properties)]
+pub struct CommonHeaderProperties {
+    #[prop_or_default]
+    pub onreset: Option<Callback<()>>,
+}
+
 #[function_component(CommonHeader)]
-fn common_header() -> Html {
+fn common_header(props: &CommonHeaderProperties) -> Html {
     html!(
-        <PageHeading subtitle="Upload and analyze a custom SBOM">{"Inspect SBOM"}</PageHeading>
+        <PageSection sticky={[PageSectionSticky::Top]} variant={PageSectionVariant::Light}>
+            <Flex>
+                <FlexItem>
+                    <Content>
+                        <Title>{"Inspect SBOM"}</Title>
+                        <p>{ "Upload and analyze a custom SBOM" }</p>
+                    </Content>
+                </FlexItem>
+                <FlexItem modifiers={[FlexModifier::Align(Alignment::Right), FlexModifier::Align(Alignment::End)]}>
+                    if let Some(onreset) = &props.onreset {
+                        <Button
+                            label={"Scan another"}
+                            icon={Icon::Redo}
+                            variant={ButtonVariant::Secondary}
+                            onclick={onreset.reform(|_|())}
+                        />
+                    }
+                </FlexItem>
+            </Flex>
+        </PageSection>
     )
 }
 

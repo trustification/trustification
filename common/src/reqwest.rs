@@ -1,6 +1,5 @@
 //! Support for using `reqwest`.
 
-use crate::tls::ClientConfig;
 use reqwest::Certificate;
 use std::{
     fs::File,
@@ -64,8 +63,8 @@ pub struct ClientFactory {
     ca_certs: Vec<PathBuf>,
 }
 
-impl From<ClientConfig> for ClientFactory {
-    fn from(config: ClientConfig) -> Self {
+impl From<crate::tls::ClientConfig> for ClientFactory {
+    fn from(config: crate::tls::ClientConfig) -> Self {
         let mut factory = Self {
             insecure: false,
             ca_certs: vec![],
@@ -83,8 +82,9 @@ impl From<ClientConfig> for ClientFactory {
 
 impl ClientFactory {
     /// Create a new client factory from a default [`ClientConfig`].
+    #[cfg(feature = "tls")]
     pub fn new() -> Self {
-        ClientConfig::default().into()
+        crate::tls::ClientConfig::default().into()
     }
 
     fn dedup(&mut self) {

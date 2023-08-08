@@ -49,6 +49,7 @@ vexination-model = { path = "../../vexination/model" }
 bombastic-model = { path = "../../bombastic/model" }
 
 trustification-api = { path = "../../api" }
+trustification-common = { path = "../../common" }
 trustification-infrastructure = { path = "../../infrastructure" }
 trustification-version = { path = "../../version", features = ["actix-web"] }
 trustification-auth = { path = "../../auth", features = ["actix"] }
