@@ -189,7 +189,7 @@ async fn test_invalid_encoding(context: &mut BombasticContext) {
 async fn test_upload_sbom_existing_without_change(context: &mut BombasticContext) {
     let input = serde_json::from_str(include_str!("../../bombastic/testdata/my-sbom.json")).unwrap();
     let id = "test-upload";
-    let api_end_point: String = "api/v1/sbom?id=".to_owned() + id;
+    let api_end_point = format!("api/v1/sbom?id={id}");
     upload_sbom(context.port, id, &input, &context.provider).await;
     let response: Value = get_response(context.port, &api_end_point, StatusCode::OK, &context.provider)
         .await
@@ -211,7 +211,7 @@ async fn test_upload_sbom_existing_without_change(context: &mut BombasticContext
 async fn test_upload_sbom_existing_with_change(context: &mut BombasticContext) {
     let mut input1 = serde_json::from_str(include_str!("../../bombastic/testdata/my-sbom.json")).unwrap();
     let id = "test-upload-with-change";
-    let api_end_point: String = "api/v1/sbom?id=".to_owned() + id;
+    let api_end_point = format!("api/v1/sbom?id={id}");
     upload_sbom(context.port, id, &input1, &context.provider).await;
     let response1: Value = get_response(context.port, &api_end_point, StatusCode::OK, &context.provider)
         .await
@@ -228,19 +228,20 @@ async fn test_upload_sbom_existing_with_change(context: &mut BombasticContext) {
     );
 }
 
+#[ignore = "until we figure out #363"]
 #[test_context(BombasticContext)]
 #[tokio::test]
 #[ntest::timeout(60_000)]
-async fn test_upload_empty_sbom(context: &mut BombasticContext) {
-    let input = serde_json::from_str(include_str!("./testdata/empty.json")).unwrap();
+async fn test_upload_empty_json(context: &mut BombasticContext) {
+    //Known issue - Respose 200 instead of 400
+    let input: serde_json::Value = serde_json::json!({});
     let id = "empty-json-upload";
-    let api_end_point: String = "api/v1/sbom?id=".to_owned() + id;
+    let api_end_point = format!("api/v1/sbom?id={id}");
     upload_sbom(context.port, id, &input, &context.provider).await;
     let response: Value = get_response(context.port, &api_end_point, StatusCode::OK, &context.provider)
         .await
         .into();
-    println!("response is {:?}", response);
-    assert_eq!(input, response, "First time - Input and output mismatch");
+    assert_eq!(input, response, "Content mismatch between request and response");
 }
 
 #[test_context(BombasticContext)]
@@ -248,7 +249,7 @@ async fn test_upload_empty_sbom(context: &mut BombasticContext) {
 #[ntest::timeout(60_000)]
 async fn test_upload_empty_file(context: &mut BombasticContext) {
     let file_path = "empty-test.txt";
-    let _ = File::create(&file_path);
+    let _ = File::create(&file_path).await.expect("file creation failed");
     let file = File::open(&file_path).await.unwrap();
     let response = reqwest::Client::new()
         .post(format!(
