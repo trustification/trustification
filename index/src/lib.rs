@@ -13,7 +13,6 @@ use log::{debug, warn};
 pub use tantivy;
 pub use tantivy::schema::Document;
 use tantivy::{
-    collector::{Count, TopDocs},
     directory::{MmapDirectory, INDEX_WRITER_LOCK},
     query::{AllQuery, BooleanQuery, BoostQuery, Occur, Query, RangeQuery, RegexQuery, TermQuery},
     schema::*,
@@ -108,6 +107,7 @@ pub trait Index {
     fn settings(&self) -> IndexSettings;
     fn schema(&self) -> Schema;
     fn prepare_query(&self, q: &str) -> Result<Box<dyn Query>, Error>;
+    fn search(&self, searcher: &Searcher, query: &dyn Query, offset: usize, limit: usize) -> Result<(Vec<(f32, DocAddress)>, usize), Error>;
     fn process_hit(
         &self,
         doc: DocAddress,
@@ -303,7 +303,7 @@ impl<INDEX: Index> IndexStore<INDEX> {
         &self,
         q: &str,
         offset: usize,
-        len: usize,
+        limit: usize,
         options: SearchOptions,
     ) -> Result<(Vec<INDEX::MatchedDocument>, usize), Error> {
         let latency = self.metrics.query_latency_seconds.start_timer();
@@ -315,7 +315,7 @@ impl<INDEX: Index> IndexStore<INDEX> {
 
         debug!("Processed query: {:?}", query);
 
-        let (top_docs, count) = searcher.search(&query, &(TopDocs::with_limit(len).and_offset(offset), Count))?;
+        let (top_docs, count) = self.index.search(&searcher, &query, offset, limit)?;
 
         self.metrics.queries_total.inc();
 
@@ -491,6 +491,8 @@ pub fn field2float(doc: &Document, field: Field) -> Result<f64, Error> {
 
 #[cfg(test)]
 mod tests {
+    use tantivy::collector::TopDocs;
+
     use super::*;
 
     struct TestIndex {
@@ -546,6 +548,10 @@ mod tests {
             let d = searcher.doc(doc)?;
             let id = d.get_first(self.id).map(|v| v.as_text()).ok_or(Error::NotFound)?;
             Ok(id.unwrap_or("").to_string())
+        }
+
+        fn search(&self, searcher: &Searcher, query: &dyn Query, offset: usize, limit: usize) -> Result<(Vec<(f32, DocAddress)>, usize), Error> {
+            Ok(searcher.search(query, &(TopDocs::with_limit(limit).and_offset(offset), tantivy::collector::Count))?)
         }
 
         fn index_doc(&self, id: &str, document: &Self::Document) -> Result<Vec<Document>, Error> {

@@ -6,6 +6,7 @@ use cyclonedx_bom::models::{
     hash::HashAlgorithm,
     license::{LicenseChoice, LicenseIdentifier},
 };
+use tantivy::collector::TopDocs;
 use log::{debug, info, warn};
 use sikula::prelude::*;
 use spdx_rs::models::Algorithm;
@@ -440,6 +441,10 @@ impl trustification_index::Index for Index {
 
         debug!("Processed query: {:?}", query);
         Ok(query)
+    }
+
+    fn search(&self, searcher: &Searcher, query: &dyn Query, offset: usize, limit: usize) -> Result<(Vec<(f32, DocAddress)>, usize), SearchError> {
+        Ok(searcher.search(query, &(TopDocs::with_limit(limit).and_offset(offset), tantivy::collector::Count))?)
     }
 
     fn process_hit(
