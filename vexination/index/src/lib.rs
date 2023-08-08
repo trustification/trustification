@@ -309,7 +309,7 @@ impl trustification_index::Index for Index {
                                     }
                                 }
                                 log::trace!("CVSS score impact {} -> {}", tweaked, (score as f32) * tweaked);
-                                tweaked = (score as f32) * tweaked;
+                                tweaked *= score as f32;
 
                                 // Now look at the date, normalize score between 0 and 1 (baseline 1970)
                                 if let Ok(date_reader) = &date_reader {
@@ -326,7 +326,7 @@ impl trustification_index::Index for Index {
                                             tweaked,
                                             tweaked * (normalized as f32)
                                         );
-                                        tweaked = tweaked * (normalized as f32);
+                                        tweaked *= normalized as f32;
                                     }
                                 }
                             }
