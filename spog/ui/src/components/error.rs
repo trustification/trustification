@@ -23,10 +23,16 @@ pub fn error(props: &ErrorProperties) -> Html {
                 </GridItem>
                 <GridItem cols={[6]}>
                     <Title>{&props.title}</Title>
-                    if let Some(message)  = &props.message {
-                        { &message } {": "}
-                    }
-                    { &props.err }
+                    <Content>
+                        if let Some(message)  = &props.message {
+                            <p>{ &message }</p>
+                            <ExpandableSection>
+                                <p>{ &props.err }</p>
+                            </ExpandableSection>
+                        } else {
+                            <p>{ &props.err }</p>
+                        }
+                    </Content>
                 </GridItem>
             </Grid>
         </Bullseye>

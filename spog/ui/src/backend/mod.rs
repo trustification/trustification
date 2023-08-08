@@ -7,6 +7,7 @@ pub mod data {
 mod access_token;
 mod analyze;
 mod config;
+mod error;
 mod pkg;
 mod sbom;
 mod search;
@@ -16,14 +17,14 @@ mod vuln;
 pub use access_token::*;
 pub use analyze::*;
 pub use config::*;
+pub use error::*;
 pub use pkg::*;
 pub use sbom::*;
 pub use search::*;
 pub use version::*;
 pub use vuln::*;
 
-use url::{ParseError, Url};
-use yew::html::IntoPropValue;
+use url::Url;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Backend {
@@ -82,27 +83,7 @@ pub enum Endpoint {
 }
 
 impl Backend {
-    pub fn join(&self, endpoint: Endpoint, input: &str) -> Result<Url, Error> {
-        Ok(self.endpoints.get(endpoint).join(input)?)
-    }
-}
-
-#[derive(Debug, thiserror::Error)]
-pub enum Error {
-    #[error("Failed to parse backend URL: {0}")]
-    Url(#[from] ParseError),
-    #[error("Failed to request: {0}")]
-    Request(#[from] reqwest::Error),
-}
-
-impl IntoPropValue<String> for Error {
-    fn into_prop_value(self) -> String {
-        self.to_string()
-    }
-}
-
-impl IntoPropValue<String> for &Error {
-    fn into_prop_value(self) -> String {
-        self.to_string()
+    pub fn join(&self, endpoint: Endpoint, input: &str) -> Result<Url, url::ParseError> {
+        self.endpoints.get(endpoint).join(input)
     }
 }

@@ -4391,9 +4391,9 @@ dependencies = [
 
 [[package]]
 name = "pem"
-version = "2.0.1"
+version = "3.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6b13fe415cdf3c8e44518e18a7c95a13431d9bdf6d15367d82b23c377fdd441a"
+checksum = "ed3127afbfc30b4cad60c34aeb741fb562a808642b81142bcf4afb73142da960"
 dependencies = [
  "base64 0.21.2",
  "serde",
@@ -5857,6 +5857,7 @@ dependencies = [
  "tracing",
  "trustification-api",
  "trustification-auth",
+ "trustification-common",
  "trustification-infrastructure",
  "trustification-version",
  "url",
@@ -6925,7 +6926,7 @@ dependencies = [
  "anyhow",
  "log",
  "native-tls",
- "pem 2.0.1",
+ "pem 3.0.1",
  "reqwest",
  "serde",
 ]

@@ -1,3 +1,5 @@
+use trustification_common::error::ErrorInformation;
+
 #[derive(Debug, thiserror::Error)]
 pub enum AuthenticationError {
     #[error("Authentication failed")]
@@ -10,13 +12,6 @@ pub enum AuthorizationError {
     Failed,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
-pub struct ErrorInformation {
-    pub error: String,
-    #[serde(default, skip_serializing_if = "String::is_empty")]
-    pub message: String,
-}
-
 #[cfg(feature = "actix")]
 impl actix_web::ResponseError for AuthenticationError {
     fn error_response(&self) -> actix_web::HttpResponse<actix_http::body::BoxBody> {
@@ -24,6 +19,7 @@ impl actix_web::ResponseError for AuthenticationError {
             Self::Failed => actix_web::HttpResponse::Unauthorized().json(ErrorInformation {
                 error: "Unauthorized".to_string(),
                 message: self.to_string(),
+                details: String::default(),
             }),
         }
     }
@@ -36,6 +32,7 @@ impl actix_web::ResponseError for AuthorizationError {
             Self::Failed => actix_web::HttpResponse::Forbidden().json(ErrorInformation {
                 error: "Forbidden".to_string(),
                 message: self.to_string(),
+                details: String::default(),
             }),
         }
     }

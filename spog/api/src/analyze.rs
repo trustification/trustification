@@ -1,7 +1,6 @@
-use actix_web::body::BoxBody;
-use actix_web::web::PayloadConfig;
 use actix_web::{
-    web::{self, ServiceConfig},
+    body::BoxBody,
+    web::{self, PayloadConfig, ServiceConfig},
     HttpResponse, ResponseError,
 };
 use bombastic_model::prelude::SBOM;
@@ -9,7 +8,7 @@ use bytes::Bytes;
 use futures::Stream;
 use http::header;
 use tracing::instrument;
-use trustification_auth::authenticator::error::ErrorInformation;
+use trustification_common::error::ErrorInformation;
 use url::Url;
 
 #[derive(Debug, thiserror::Error)]
@@ -27,15 +26,18 @@ impl ResponseError for Error {
         match self {
             Error::Url(err) => HttpResponse::InternalServerError().json(ErrorInformation {
                 error: "UrlParseError".into(),
-                message: format!("Failed to build request URL: {err}"),
+                message: format!("Failed to build request URL"),
+                details: err.to_string(),
             }),
-            Error::Request(err) => HttpResponse::InternalServerError().json(ErrorInformation {
+            Error::Request(err) => HttpResponse::BadGateway().json(ErrorInformation {
                 error: "ClientRequestError".into(),
-                message: format!("Failed to perform request: {err}"),
+                message: format!("Failed to contact the analytics server"),
+                details: err.to_string(),
             }),
             Error::Data(err) => HttpResponse::BadRequest().json(ErrorInformation {
                 error: "InvalidSBOMFormat".into(),
-                message: format!("Unable to parse SBOM: {err}"),
+                message: format!("Unable to parse SBOM"),
+                details: err.to_string(),
             }),
         }
     }
@@ -90,7 +92,9 @@ pub(crate) fn configure(payload_limit: usize) -> impl FnOnce(&mut ServiceConfig)
     post,
     path = "/api/v1/analyze/report",
     responses(
-        (status = 200, description = "API", body = String),
+        (status = 200, description = "Generated CRDA report", body = String),
+        (status = 400, description = "Invalid SBOM format", body = String),
+        (status = 502, description = "Failed to communicate with CRDA backend", body = String),
     )
 )]
 async fn report(data: Bytes, crda: web::Data<CrdaClient>) -> actix_web::Result<HttpResponse> {
