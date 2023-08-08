@@ -6,6 +6,7 @@ use test_context::test_context;
 use trustification_auth::client::TokenInjector;
 use urlencoding::encode;
 
+
 #[test_context(BombasticContext)]
 #[tokio::test]
 #[ntest::timeout(60_000)]
@@ -27,6 +28,56 @@ async fn test_upload(context: &mut BombasticContext) {
     assert_eq!(response.status(), StatusCode::OK);
     let output: Value = response.json().await.unwrap();
     assert_eq!(input, output);
+}
+
+
+#[test_context(BombasticContext)]
+#[tokio::test]
+#[ntest::timeout(60_000)]
+async fn test_update(context: &mut BombasticContext) {
+    let id = "test-update";
+
+    // First upload the original SBOM
+    let input = serde_json::from_str(include_str!("../../bombastic/testdata/my-sbom.json")).unwrap();
+    upload_sbom(context.port, id, &input, &context.provider).await;
+
+    let response = reqwest::Client::new()
+        .get(format!(
+            "http://localhost:{port}/api/v1/sbom?id={id}",
+            port = context.port
+        ))
+        .inject_token(&context.provider.provider_manager)
+        .await
+        .unwrap()
+        .send()
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let output: Value = response.json().await.unwrap();
+    assert_eq!(input, output);
+    assert_eq!(output["metadata"]["component"]["name"], "seedwing-java-example");
+
+    // Upload different SBOM with same id.
+    let input = serde_json::from_str(include_str!("../../bombastic/testdata/my-other-sbom.json")).unwrap();
+    upload_sbom(context.port, id, &input, &context.provider).await;
+
+    let response = reqwest::Client::new()
+        .get(format!(
+            "http://localhost:{port}/api/v1/sbom?id={id}",
+            port = context.port
+        ))
+        .inject_token(&context.provider.provider_manager)
+        .await
+        .unwrap()
+        .send()
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let output: Value = response.json().await.unwrap();
+    assert_eq!(input, output);
+    assert_eq!(output["metadata"]["component"]["name"], "my-other-sbom");
 }
 
 #[test_context(BombasticContext)]
