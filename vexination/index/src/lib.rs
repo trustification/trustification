@@ -1,6 +1,7 @@
 use std::{
     collections::{hash_map::Entry, HashMap},
     ops::Bound,
+    time::Duration,
 };
 
 use csaf::{
@@ -12,10 +13,13 @@ use log::{debug, warn};
 use serde_json::{Map, Value};
 use sikula::prelude::*;
 use tantivy::{
+    collector::TopDocs,
     query::{AllQuery, TermSetQuery},
+    schema::NumericOptions,
     store::ZstdCompressor,
-    DocAddress, IndexSettings, Searcher, SnippetGenerator, collector::TopDocs,
+    DocAddress, DocId, IndexSettings, Score, Searcher, SegmentReader, SnippetGenerator,
 };
+use time::OffsetDateTime;
 use trustification_api::search::SearchOptions;
 use trustification_index::{
     boost, create_date_query, create_string_query, create_text_query, field2date, field2f64vec, field2str,
@@ -264,8 +268,75 @@ impl trustification_index::Index for Index {
         Ok(query)
     }
 
-    fn search(&self, searcher: &Searcher, query: &dyn Query, offset: usize, limit: usize) -> Result<(Vec<(f32, DocAddress)>, usize), SearchError> {
-        Ok(searcher.search(query, &(TopDocs::with_limit(limit).and_offset(offset), tantivy::collector::Count))?)
+    fn search(
+        &self,
+        searcher: &Searcher,
+        query: &dyn Query,
+        offset: usize,
+        limit: usize,
+    ) -> Result<(Vec<(f32, DocAddress)>, usize), SearchError> {
+        let cvss_field = self.fields.cve_cvss;
+        let advisory_current_field = self.fields.advisory_current;
+        let now = tantivy::DateTime::from_utc(OffsetDateTime::now_utc());
+        Ok(searcher.search(
+            query,
+            &(
+                TopDocs::with_limit(limit)
+                    .and_offset(offset)
+                    .tweak_score(move |segment_reader: &SegmentReader| {
+                        let cvss_reader = segment_reader.fast_fields().f64s(cvss_field);
+                        if let Err(e) = &cvss_reader {
+                            log::warn!("CVSS reader error: {:?}", e);
+                        }
+
+                        let date_reader = segment_reader.fast_fields().date(advisory_current_field);
+                        if let Err(e) = &date_reader {
+                            log::warn!("DATE reader error: {:?}", e);
+                        }
+
+                        move |doc: DocId, original_score: Score| {
+                            let mut tweaked = original_score;
+                            if let Ok(cvss_reader) = &cvss_reader {
+                                let mut vals = Vec::new();
+                                cvss_reader.get_vals(doc, &mut vals);
+
+                                // Use CVSS score directly
+                                let mut score = 0.01;
+                                for val in vals {
+                                    log::trace!("CVSS score {}", val);
+                                    if val > score {
+                                        score = val;
+                                    }
+                                }
+                                log::trace!("CVSS score impact {} -> {}", tweaked, (score as f32) * tweaked);
+                                tweaked = (score as f32) * tweaked;
+
+                                // Now look at the date, normalize score between 0 and 1 (baseline 1970)
+                                if let Ok(date_reader) = &date_reader {
+                                    let date: tantivy::DateTime = date_reader.get_val(doc);
+                                    if date < now {
+                                        let mut normalized =
+                                            date.into_timestamp_secs() as f64 / now.into_timestamp_secs() as f64;
+                                        // If it's the past month, boost it more.
+                                        if now.into_utc() - date.into_utc() < Duration::from_secs(30 * 24 * 3600) {
+                                            normalized *= 2.0;
+                                        }
+                                        log::trace!(
+                                            "DATE score impact {} -> {}",
+                                            tweaked,
+                                            tweaked * (normalized as f32)
+                                        );
+                                        tweaked = tweaked * (normalized as f32);
+                                    }
+                                }
+                            }
+                            log::trace!("Tweaking from {} to {}", original_score, tweaked);
+                            tweaked
+                        }
+                    }),
+                tantivy::collector::Count,
+            ),
+        )?)
     }
 
     fn process_hit(
@@ -376,7 +447,8 @@ impl Index {
         let cve_severity = schema.add_text_field("cve_severity", STRING | FAST);
         let cve_affected = schema.add_text_field("cve_affected", STORED | STRING);
         let cve_fixed = schema.add_text_field("cve_fixed", STORED | STRING);
-        let cve_cvss = schema.add_f64_field("cve_cvss", FAST | INDEXED | STORED);
+        let opts: NumericOptions = (FAST | INDEXED | STORED).into();
+        let cve_cvss = schema.add_f64_field("cve_cvss", opts.set_fast(tantivy::schema::Cardinality::MultiValues));
         let cve_cwe = schema.add_text_field("cve_cwe", STRING | STORED);
 
         let cve_severity_count = schema.add_json_field("cve_severity_count", STORED);
