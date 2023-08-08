@@ -68,6 +68,9 @@ fn authenticated_page(props: &ChildrenProperties) -> Html {
                             <ExternalNavLink href={url.to_string()}>{ "VEX API" }</ExternalNavLink>
                         }
                     </NavExpandable>
+                    if let Some(url) = &config.global.support_url {
+                        <ExternalNavLink href={url.to_string()}>{ "Support" }</ExternalNavLink>
+                    }
                 </NavList>
             </Nav>
         </PageSidebar>
