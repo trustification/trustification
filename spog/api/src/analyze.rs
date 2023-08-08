@@ -26,17 +26,17 @@ impl ResponseError for Error {
         match self {
             Error::Url(err) => HttpResponse::InternalServerError().json(ErrorInformation {
                 error: "UrlParseError".into(),
-                message: format!("Failed to build request URL"),
+                message: "Failed to build request URL".into(),
                 details: err.to_string(),
             }),
             Error::Request(err) => HttpResponse::BadGateway().json(ErrorInformation {
                 error: "ClientRequestError".into(),
-                message: format!("Failed to contact the analytics server"),
+                message: "Failed to contact the analytics server".into(),
                 details: err.to_string(),
             }),
             Error::Data(err) => HttpResponse::BadRequest().json(ErrorInformation {
                 error: "InvalidSBOMFormat".into(),
-                message: format!("Unable to parse SBOM"),
+                message: "Unable to parse SBOM".into(),
                 details: err.to_string(),
             }),
         }
