@@ -7244,6 +7244,7 @@ dependencies = [
  "trustification-infrastructure",
  "utoipa",
  "utoipa-swagger-ui",
+ "v11y-client",
 ]
 
 [[package]]
@@ -7251,6 +7252,7 @@ name = "v11y-client"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "chrono",
  "humantime",
  "humantime-serde",
  "log",
