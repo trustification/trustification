@@ -1,15 +1,25 @@
 
+
+
 .tc-c-severity {
+
+  // We use this for Red Hat's severity mapping, as well as for the CVSS ranking
+
+  .tc-m-severity-none {
+    color: var(--pf-v5-global--Color--light-200);
+  }
 
   .tc-m-severity-low {
     color: var(--pf-v5-global--info-color--100);
   }
 
-  .tc-m-severity-moderate {
+  .tc-m-severity-moderate,
+  .tc-m-severity-medium {
     color: var(--pf-v5-global--warning-color--100);
   }
 
-  .tc-m-severity-important {
+  .tc-m-severity-important,
+  .tc-m-severity-high {
     color: var(--pf-v5-global--danger-color--100);
   }
 

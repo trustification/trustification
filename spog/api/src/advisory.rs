@@ -113,6 +113,7 @@ pub async fn search(
             cvss_max: item.cvss_max,
             href: format!("/api/v1/advisory?id={}", item.advisory_id),
             cves: item.cves,
+            cve_severity_count: item.cve_severity_count,
             metadata,
         });
     }

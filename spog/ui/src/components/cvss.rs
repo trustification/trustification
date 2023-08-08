@@ -1,4 +1,6 @@
 use patternfly_yew::prelude::*;
+use std::collections::{BTreeMap, HashMap};
+use std::str::FromStr;
 use yew::prelude::*;
 
 use crate::utils::cvss::{Cvss, Severity};
@@ -36,4 +38,43 @@ pub fn cvss3(props: &Cvss3Properties) -> Html {
     html!(
         <CvssScore cvss={&props.cvss} />
     )
+}
+
+#[derive(PartialEq, Properties)]
+pub struct CvssMapProperties {
+    pub map: HashMap<String, u64>,
+}
+
+#[function_component(CvssMap)]
+pub fn cvss_map(props: &CvssMapProperties) -> Html {
+    let map = use_memo(
+        |map| {
+            let mut count = 0;
+
+            // convert to BTreeMap: parse, sort, and count
+            let mut result: BTreeMap<Severity, u64> = BTreeMap::new();
+            for (k, v) in map {
+                let k = Severity::from_str(&k).unwrap_or(Severity::Critical);
+                count += *v;
+                result.insert(k, *v);
+            }
+
+            html!(
+                <Flex space_items={[SpaceItems::Small]}>
+                    <FlexItem>{ count }</FlexItem>
+                    <Raw>
+                        <Divider r#type={DividerType::Hr} orientation={[DividerOrientation::Vertical]} />
+                    </Raw>
+                    <FlexItem>
+                    { for result.into_iter().rev().map(|(k, v)| { html!(
+                        <> { k } { " "} { v } { " "} </>
+                    )})}
+                    </FlexItem>
+                </Flex>
+            )
+        },
+        props.map.clone(),
+    );
+
+    (*map).clone()
 }
