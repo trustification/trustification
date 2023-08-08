@@ -192,8 +192,13 @@ fn testing_oidc() -> AuthenticatorConfig {
     }
 }
 
-pub async fn get_response(port: u16, api_endpoint: &str, exp_status: reqwest::StatusCode, context: &ProviderContext)-> Value{
-    let url = format!("http://localhost:{}/{}",port,api_endpoint);
+pub async fn get_response(
+    port: u16,
+    api_endpoint: &str,
+    exp_status: reqwest::StatusCode,
+    context: &ProviderContext,
+) -> Option<Value> {
+    let url = format!("http://localhost:{}/{}", port, api_endpoint);
     let response = reqwest::Client::new()
         .get(&url)
         .inject_token(&context.provider_manager)
@@ -202,7 +207,14 @@ pub async fn get_response(port: u16, api_endpoint: &str, exp_status: reqwest::St
         .send()
         .await
         .unwrap();
-    assert_eq!(exp_status,response.status(), "Expected response code does not match with actual response");
-    println!("status {}",response.status());
-    response.json().await.unwrap()
+    assert_eq!(
+        exp_status,
+        response.status(),
+        "Expected response code does not match with actual response"
+    );
+    if exp_status == StatusCode::BAD_REQUEST {
+        None
+    } else {
+        response.json().await.unwrap()
+    }
 }
