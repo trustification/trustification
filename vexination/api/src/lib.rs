@@ -98,12 +98,12 @@ impl Run {
         registry: &Registry,
         devmode: bool,
     ) -> anyhow::Result<Arc<AppState>> {
-        let index = index.create(vexination_index::Index::new(), "vexination", devmode, registry)?;
+        let index = tokio::task::block_in_place(|| index.create(vexination_index::Index::new(), "vexination", devmode, registry))?;
         let storage = storage.create("vexination", devmode, registry)?;
 
         let state = Arc::new(AppState {
             storage: RwLock::new(storage),
-            index: RwLock::new(index),
+            index,
         });
 
         Ok(state)
@@ -113,7 +113,7 @@ impl Run {
 pub(crate) type Index = IndexStore<vexination_index::Index>;
 pub struct AppState {
     storage: RwLock<Storage>,
-    index: RwLock<Index>,
+    index: Index,
 }
 
 pub(crate) type SharedState = Arc<AppState>;

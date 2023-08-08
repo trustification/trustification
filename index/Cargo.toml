@@ -18,6 +18,7 @@ tar = "0.4"
 time = "0.3"
 zstd = "0.12"
 rust-s3 = { git = "https://github.com/jcrossley3/rust-s3.git", branch = "issue-352", features = ["blocking", "tokio"] }
+crc32fast = "1.3.2"
 
 trustification-api = { path = "../api"}
 

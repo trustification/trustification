@@ -200,8 +200,8 @@ async fn search_vex(state: web::Data<SharedState>, params: web::Query<SearchPara
 
     log::info!("Querying VEX using {}", params.q);
 
-    let index = state.index.read().await;
-    let result = index.search(&params.q, params.offset, params.limit, (&params).into());
+    let state = state.clone();
+    let result = actix_web::web::block(move || state.index.search(&params.q, params.offset, params.limit, (&params).into())).await.unwrap();
 
     let (result, total) = match result {
         Err(e) => {

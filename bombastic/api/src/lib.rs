@@ -105,7 +105,7 @@ impl Run {
 
         let state = Arc::new(AppState {
             storage: RwLock::new(storage),
-            index: RwLock::new(index),
+            index,
         });
         Ok(state)
     }
@@ -114,7 +114,7 @@ impl Run {
 pub(crate) type Index = IndexStore<bombastic_index::Index>;
 pub struct AppState {
     storage: RwLock<Storage>,
-    index: RwLock<Index>,
+    index: Index,
 }
 
 pub(crate) type SharedState = Arc<AppState>;

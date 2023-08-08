@@ -6,6 +6,7 @@ use trustification_event_bus::EventBus;
 use trustification_index::IndexStore;
 use trustification_storage::{EventType, Storage};
 use vexination_index::Index;
+use tokio::task::block_in_place;
 
 pub async fn run(
     mut index: IndexStore<Index>,
@@ -17,7 +18,7 @@ pub async fn run(
     sync_interval: Duration,
 ) -> Result<(), anyhow::Error> {
     let mut interval = tokio::time::interval(sync_interval);
-    let mut writer = Some(index.writer()?);
+    let mut writer = block_in_place(|| Some(index.writer().unwrap()));
     let consumer = bus.subscribe("indexer", &[stored_topic]).await?;
     let mut uncommitted_events = Vec::new();
     loop {
@@ -37,7 +38,7 @@ pub async fn run(
                                         match storage.get_for_event(&data).await {
                                             Ok((_, data)) => {
                                                 match serde_json::from_slice::<csaf::Csaf>(&data) {
-                                                    Ok(doc) => match writer.as_mut().unwrap().add_document(index.index_as_mut(), &doc.document.tracking.id, &doc) {
+                                                    Ok(doc) => match block_in_place(|| writer.as_mut().unwrap().add_document(index.index_as_mut(), &doc.document.tracking.id, &doc)) {
                                                         Ok(_) => {
                                                             log::debug!("Inserted entry into index");
                                                             bus.send(indexed_topic, key.as_bytes()).await?;
@@ -87,7 +88,7 @@ pub async fn run(
             },
             _ = tick => {
                 if let Some(w) = writer.take() {
-                    match w.commit() {
+                    match block_in_place(|| w.commit()) {
                         Ok(_) => {
                             log::info!("New index committed");
                             match consumer.commit(&uncommitted_events[..]).await {
@@ -104,7 +105,7 @@ pub async fn run(
                             log::warn!("Error committing index: {:?}", e);
                         }
                     }
-                    writer.replace(index.writer()?);
+                    writer.replace(block_in_place(|| index.writer().unwrap()));
                 }
             }
         }

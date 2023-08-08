@@ -203,10 +203,10 @@ async fn search_sbom(
 
     log::info!("Querying SBOM: '{}'", params.q);
 
-    let index = state.index.read().await;
-    let (result, total) = index
+    let state = state.clone();
+    let (result, total) = actix_web::web::block(move || state.index
         .search(&params.q, params.offset, params.limit, (&params).into())
-        .map_err(Error::Index)?;
+        .map_err(Error::Index)).await.unwrap()?;
 
     Ok(HttpResponse::Ok().json(SearchResult { total, result }))
 }
