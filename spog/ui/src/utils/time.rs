@@ -1,3 +1,4 @@
+use chrono::TimeZone;
 use time::{macros::format_description, OffsetDateTime};
 use yew::prelude::*;
 
@@ -12,4 +13,10 @@ pub fn date(dt: OffsetDateTime) -> Html {
             date.to_string()
         })
         .into()
+}
+
+/// Formate a timestamp to represent a date.
+pub fn chrono_date<Tz: TimeZone>(dt: chrono::DateTime<Tz>) -> Html {
+    let date = dt.date_naive();
+    date.format("%b %d, %Y").into()
 }

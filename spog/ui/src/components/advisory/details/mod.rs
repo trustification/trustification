@@ -14,6 +14,7 @@ use crate::{
         common::CardWrapper,
     },
     hooks::use_backend,
+    utils::time::chrono_date,
 };
 use csaf::{vulnerability::Vulnerability, Csaf};
 use patternfly_yew::prelude::*;
@@ -126,8 +127,8 @@ impl TableEntryRenderer<Column> for VulnerabilityWrapper {
                 )
             }))
             .into(),
-            Column::Discovery => html!({ OrNone(self.discovery_date) }),
-            Column::Release => html!({ OrNone(self.release_date) }),
+            Column::Discovery => html!({ OrNone(self.discovery_date).map(chrono_date) }),
+            Column::Release => html!({ OrNone(self.release_date).map(chrono_date) }),
             Column::Products => html!(
                 <CsafProductStatus status={self.product_status.clone()} csaf={self.csaf.clone()} overview=true />
             ),

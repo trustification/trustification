@@ -39,9 +39,16 @@ pub fn pagination_to_offset(page: usize, per_page: usize) -> usize {
     page * per_page
 }
 
-pub struct OrNone<T>(pub Option<T>)
-where
-    T: Into<Html>;
+pub struct OrNone<T>(pub Option<T>);
+
+impl<T> OrNone<T> {
+    pub fn map<F, U>(self, f: F) -> OrNone<U>
+    where
+        F: FnOnce(T) -> U,
+    {
+        OrNone(self.0.map(f))
+    }
+}
 
 impl<T> From<OrNone<T>> for Html
 where
