@@ -1,4 +1,7 @@
-use std::{ops::Bound, collections::{HashMap, hash_map::Entry}};
+use std::{
+    collections::{hash_map::Entry, HashMap},
+    ops::Bound,
+};
 
 use csaf::{
     definitions::{NoteCategory, ProductIdT},
@@ -221,7 +224,6 @@ impl trustification_index::Index for Index {
                         DateTime::from_timestamp_millis(release_date.timestamp_millis()),
                     );
                 }
-
             }
 
             let mut json_severities: Map<String, Value> = Map::new();
@@ -230,7 +232,6 @@ impl trustification_index::Index for Index {
             }
             document.add_json_object(self.fields.cve_severity_count, json_severities);
             debug!("Adding doc: {:?}", document);
-
         }
         Ok(vec![document])
     }
