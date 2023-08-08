@@ -305,7 +305,7 @@ impl trustification_index::Index for Index {
         if let Some(Some(data)) = doc.get_first(self.fields.cve_severity_count).map(|d| d.as_json()) {
             for (key, value) in data.iter() {
                 if let Value::Number(value) = value {
-                    cve_severity_count.insert(key.clone(), value.as_u64().unwrap_or(0) as u64);
+                    cve_severity_count.insert(key.clone(), value.as_u64().unwrap_or(0));
                 }
             }
         }
