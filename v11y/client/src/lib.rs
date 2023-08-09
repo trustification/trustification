@@ -24,14 +24,15 @@ pub struct Vulnerability {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Severity {
-    r#type: ScoreType,
-    score: String,
+    pub r#type: ScoreType,
+    pub score: f32,
+    pub additional: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Range {
-    lower: Option<Version>,
-    upper: Option<Version>,
+    pub lower: Option<Version>,
+    pub upper: Option<Version>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -40,16 +41,39 @@ pub enum Version {
     Exclusive(String),
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
 pub enum ScoreType {
     Cvss3,
     Cvss4,
+    Unknown,
+}
+
+impl From<String> for ScoreType {
+    fn from(value: String) -> Self {
+        if value == "cvss3" {
+            Self::Cvss3
+        } else if value == "cvss4" {
+            Self::Cvss4
+        } else {
+            Self::Unknown
+        }
+    }
+}
+
+impl ScoreType {
+    pub fn to_string(&self) -> String {
+        match self {
+            ScoreType::Cvss3 => "cvss3".to_string(),
+            ScoreType::Cvss4 => "cvss4".to_string(),
+            _ => "unknown".to_string(),
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Event {
-    r#type: EventType,
-    event: String,
+    pub r#type: EventType,
+    pub event: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
