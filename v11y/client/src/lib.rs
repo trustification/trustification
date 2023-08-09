@@ -1,3 +1,5 @@
+use std::fmt::{Display, Formatter};
+
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
@@ -60,12 +62,18 @@ impl From<String> for ScoreType {
     }
 }
 
-impl ScoreType {
-    pub fn to_string(&self) -> String {
+impl Display for ScoreType {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            ScoreType::Cvss3 => "cvss3".to_string(),
-            ScoreType::Cvss4 => "cvss4".to_string(),
-            _ => "unknown".to_string(),
+            ScoreType::Cvss3 => {
+                write!(f, "cvss3")
+            }
+            ScoreType::Cvss4 => {
+                write!(f, "cvss4")
+            }
+            ScoreType::Unknown => {
+                write!(f, "unknown")
+            }
         }
     }
 }
