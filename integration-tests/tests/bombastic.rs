@@ -66,6 +66,15 @@ async fn test_delete(context: &mut BombasticContext) {
         .await
         .unwrap();
     assert_eq!(response.status(), StatusCode::NOT_FOUND);
+    let response = client
+        .delete(url)
+        .inject_token(&context.provider.provider_manager)
+        .await
+        .unwrap()
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::NO_CONTENT);
 }
 
 #[test_context(BombasticContext)]
@@ -238,10 +247,7 @@ async fn test_upload_empty_json(context: &mut BombasticContext) {
     let id = "empty-json-upload";
     let api_end_point = format!("api/v1/sbom?id={id}");
     upload_sbom(context.port, id, &input, &context.provider).await;
-    let response: Value = get_response(context.port, &api_end_point, StatusCode::OK, &context.provider)
-        .await
-        .into();
-    assert_eq!(input, response, "Content mismatch between request and response");
+    get_response(context.port, &api_end_point, StatusCode::BAD_REQUEST, &context.provider).await;
 }
 
 #[test_context(BombasticContext)]
@@ -265,4 +271,97 @@ async fn test_upload_empty_file(context: &mut BombasticContext) {
         .unwrap();
     remove_file(&file_path).await.unwrap();
     assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+}
+
+#[test_context(BombasticContext)]
+#[tokio::test]
+#[ntest::timeout(60_000)]
+async fn test_upload_user_not_allowed(context: &mut BombasticContext) {
+    let input: serde_json::Value = serde_json::from_str(include_str!("../../bombastic/testdata/my-sbom.json")).unwrap();
+    let id = "test-upload";
+    let api_end_point = format!("api/v1/sbom?id={id}");
+    let response = reqwest::Client::new()
+        .post(format!("http://localhost:{}/{}", context.port, api_end_point))
+        .json(&input)
+        .inject_token(&context.provider.provider_user)
+        .await
+        .unwrap()
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::FORBIDDEN);
+    println!("{:?}", response);
+}
+
+#[test_context(BombasticContext)]
+#[tokio::test]
+#[ntest::timeout(60_000)]
+async fn test_upload_unauthorized(context: &mut BombasticContext) {
+    let input: serde_json::Value = serde_json::from_str(include_str!("../../bombastic/testdata/my-sbom.json")).unwrap();
+    let id = "test-upload";
+    let api_end_point = format!("api/v1/sbom?id={id}");
+    let response = reqwest::Client::new()
+        .post(format!("http://localhost:{}/{}", context.port, api_end_point))
+        .json(&input)
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
+    println!("{:?}", response);
+}
+
+#[test_context(BombasticContext)]
+#[tokio::test]
+#[ntest::timeout(60_000)]
+async fn test_delete_user_not_allowed(context: &mut BombasticContext) {
+    let input: serde_json::Value = serde_json::from_str(include_str!("../../bombastic/testdata/my-sbom.json")).unwrap();
+    let id = "test-upload";
+    let api_end_point = format!("api/v1/sbom?id={id}");
+    upload_sbom(context.port, id, &input, &context.provider).await;
+    let response = reqwest::Client::new()
+        .delete(format!("http://localhost:{}/{}", context.port, api_end_point))
+        .json(&input)
+        .inject_token(&context.provider.provider_user)
+        .await
+        .unwrap()
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::FORBIDDEN);
+    println!("{:?}", response);
+}
+
+#[test_context(BombasticContext)]
+#[tokio::test]
+#[ntest::timeout(60_000)]
+async fn test_delete_unauthorized(context: &mut BombasticContext) {
+    let input: serde_json::Value = serde_json::from_str(include_str!("../../bombastic/testdata/my-sbom.json")).unwrap();
+    let id = "test-upload";
+    let api_end_point = format!("api/v1/sbom?id={id}");
+    upload_sbom(context.port, id, &input, &context.provider).await;
+    let response = reqwest::Client::new()
+        .delete(format!("http://localhost:{}/{}", context.port, api_end_point))
+        .json(&input)
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
+    println!("{:?}", response);
+}
+
+#[test_context(BombasticContext)]
+#[tokio::test]
+#[ntest::timeout(60_000)]
+async fn test_get_sbom_with_invalid_id(context: &mut BombasticContext) {
+    let id = "invalid-sbom-id";
+    let api_endpoint = format!("api/v1/sbom?id={id}");
+    get_response(context.port, &api_endpoint, StatusCode::NOT_FOUND, &context.provider).await;
+}
+
+#[test_context(BombasticContext)]
+#[tokio::test]
+#[ntest::timeout(60_000)]
+async fn test_get_sbom_with_missing_id(context: &mut BombasticContext) {
+    let api_endpoint = format!("api/v1/sbom?ID=test");
+    get_response(context.port, &api_endpoint, StatusCode::BAD_REQUEST, &context.provider).await;
 }

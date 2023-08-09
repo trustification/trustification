@@ -212,7 +212,7 @@ pub async fn get_response(
         response.status(),
         "Expected response code does not match with actual response"
     );
-    if exp_status == StatusCode::BAD_REQUEST {
+    if matches!(exp_status, StatusCode::BAD_REQUEST | StatusCode::NOT_FOUND) {
         None
     } else {
         response.json().await.unwrap()
