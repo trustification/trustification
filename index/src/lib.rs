@@ -1,6 +1,10 @@
 pub mod metadata;
 
-use std::{fmt::Display, ops::Bound, path::PathBuf};
+use std::{
+    fmt::{Debug, Display},
+    ops::Bound,
+    path::PathBuf,
+};
 
 use prometheus::{
     histogram_opts, opts, register_histogram_with_registry, register_int_counter_with_registry,
@@ -103,14 +107,15 @@ pub struct IndexStore<INDEX: Index> {
 pub trait Index {
     type MatchedDocument: core::fmt::Debug;
     type Document;
+    type QueryContext: core::fmt::Debug;
 
     fn settings(&self) -> IndexSettings;
     fn schema(&self) -> Schema;
-    fn prepare_query(&self, q: &str) -> Result<Box<dyn Query>, Error>;
+    fn prepare_query(&self, q: &str) -> Result<Self::QueryContext, Error>;
     fn search(
         &self,
         searcher: &Searcher,
-        query: &dyn Query,
+        query: &Self::QueryContext,
         offset: usize,
         limit: usize,
     ) -> Result<(Vec<(f32, DocAddress)>, usize), Error>;
@@ -119,7 +124,7 @@ pub trait Index {
         doc: DocAddress,
         score: f32,
         searcher: &Searcher,
-        query: &dyn Query,
+        query: &Self::QueryContext,
         options: &SearchOptions,
     ) -> Result<Self::MatchedDocument, Error>;
     fn index_doc(&self, id: &str, document: &Self::Document) -> Result<Vec<Document>, Error>;
@@ -132,6 +137,7 @@ pub enum Error {
     Snapshot,
     NotFound,
     NotPersisted,
+    InvalidSortOrder,
     Parser(String),
     Search(tantivy::TantivyError),
     Prometheus(prometheus::Error),
@@ -151,6 +157,7 @@ impl Display for Error {
             Self::Snapshot => write!(f, "Error snapshotting index"),
             Self::NotFound => write!(f, "Not found"),
             Self::NotPersisted => write!(f, "Database is not persisted"),
+            Self::InvalidSortOrder => write!(f, "Sort order is not supported"),
             Self::Parser(e) => write!(f, "Failed to parse query: {e}"),
             Self::Search(e) => write!(f, "Error in search index: {:?}", e),
             Self::Prometheus(e) => write!(f, "Error in prometheus: {:?}", e),
@@ -520,6 +527,7 @@ mod tests {
     impl Index for TestIndex {
         type MatchedDocument = String;
         type Document = String;
+        type QueryContext = Box<dyn Query>;
 
         fn settings(&self) -> IndexSettings {
             IndexSettings::default()
@@ -548,7 +556,7 @@ mod tests {
             doc: DocAddress,
             _score: f32,
             searcher: &Searcher,
-            _query: &dyn Query,
+            _query: &Box<dyn Query>,
             _options: &SearchOptions,
         ) -> Result<Self::MatchedDocument, Error> {
             let d = searcher.doc(doc)?;
@@ -559,7 +567,7 @@ mod tests {
         fn search(
             &self,
             searcher: &Searcher,
-            query: &dyn Query,
+            query: &Box<dyn Query>,
             offset: usize,
             limit: usize,
         ) -> Result<(Vec<(f32, DocAddress)>, usize), Error> {
