@@ -241,8 +241,7 @@ async fn test_upload_empty_json(context: &mut BombasticContext) {
     let response: Value = get_response(context.port, &api_end_point, StatusCode::OK, &context.provider)
         .await
         .into();
-    println!("response is {:?}", response);
-    assert_eq!(input, response, "First time - Input and output mismatch");
+    assert_eq!(input, response, "Content mismatch between request and response");
 }
 
 #[test_context(BombasticContext)]
