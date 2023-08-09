@@ -49,6 +49,9 @@ struct Fields {
     advisory_current: Field,
     advisory_current_inverse: Field,
 
+    advisory_severity_score: Field,
+    advisory_severity_score_inverse: Field,
+
     cve_severity_count: Field,
 
     cve_id: Field,
@@ -61,9 +64,7 @@ struct Fields {
     cve_fixed: Field,
     cve_affected: Field,
     cve_cwe: Field,
-
     cve_cvss_max: Field,
-    cve_cvss_max_inverse: Field,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
@@ -116,6 +117,15 @@ impl trustification_index::Index for Index {
 
         if let Some(severity) = &csaf.document.aggregate_severity {
             document.add_text(self.fields.advisory_severity, &severity.text);
+            let score = match severity.text.as_ref() {
+                "Critical" => 1.0,
+                "Important" => 0.75,
+                "Moderate" => 0.5,
+                "Low" => 0.25,
+                _ => 0.25,
+            };
+            document.add_f64(self.fields.advisory_severity_score, score);
+            document.add_f64(self.fields.advisory_severity_score_inverse, -score);
         }
 
         for revision in &csaf.document.tracking.revision_history {
@@ -262,7 +272,6 @@ impl trustification_index::Index for Index {
 
             if let Some(cvss_max) = cvss_max {
                 document.add_f64(self.fields.cve_cvss_max, cvss_max);
-                document.add_f64(self.fields.cve_cvss_max_inverse, -cvss_max);
             }
             debug!("Adding doc: {:?}", document);
         }
@@ -297,6 +306,14 @@ impl trustification_index::Index for Index {
         let mut sort_by = None;
         if let Some(f) = query.sorting.first() {
             match f.qualifier {
+                VulnerabilitiesSortable::Severity => match f.direction {
+                    Direction::Descending => {
+                        sort_by.replace(self.fields.advisory_severity_score);
+                    }
+                    Direction::Ascending => {
+                        sort_by.replace(self.fields.advisory_severity_score_inverse);
+                    }
+                },
                 VulnerabilitiesSortable::Release => match f.direction {
                     Direction::Descending => {
                         sort_by.replace(self.fields.advisory_current);
@@ -337,7 +354,7 @@ impl trustification_index::Index for Index {
             }
             Ok((hits, result.1))
         } else {
-            let cvss_field = self.fields.cve_cvss;
+            let severity_field = self.fields.advisory_severity_score;
             let advisory_current_field = self.fields.advisory_current;
             let now = tantivy::DateTime::from_utc(OffsetDateTime::now_utc());
             Ok(searcher.search(
@@ -346,30 +363,20 @@ impl trustification_index::Index for Index {
                     TopDocs::with_limit(limit)
                         .and_offset(offset)
                         .tweak_score(move |segment_reader: &SegmentReader| {
-                            let cvss_reader = segment_reader.fast_fields().f64s(cvss_field);
-                            if let Err(e) = &cvss_reader {
-                                log::warn!("CVSS reader error: {:?}", e);
+                            let severity_reader = segment_reader.fast_fields().f64(severity_field);
+                            if let Err(e) = &severity_reader {
+                                log::warn!("Severity reader error: {:?}", e);
                             }
 
                             let date_reader = segment_reader.fast_fields().date(advisory_current_field);
                             if let Err(e) = &date_reader {
-                                log::warn!("DATE reader error: {:?}", e);
+                                log::warn!("Date reader error: {:?}", e);
                             }
 
                             move |doc: DocId, original_score: Score| {
                                 let mut tweaked = original_score;
-                                if let Ok(cvss_reader) = &cvss_reader {
-                                    let mut vals = Vec::new();
-                                    cvss_reader.get_vals(doc, &mut vals);
-
-                                    // Use CVSS score directly
-                                    let mut score = 0.01;
-                                    for val in vals {
-                                        log::trace!("CVSS score {}", val);
-                                        if val > score {
-                                            score = val;
-                                        }
-                                    }
+                                if let Ok(severity_reader) = &severity_reader {
+                                    let score = severity_reader.get_val(doc);
                                     log::trace!("CVSS score impact {} -> {}", tweaked, (score as f32) * tweaked);
                                     tweaked *= score as f32;
 
@@ -377,11 +384,12 @@ impl trustification_index::Index for Index {
                                     if let Ok(date_reader) = &date_reader {
                                         let date: tantivy::DateTime = date_reader.get_val(doc);
                                         if date < now {
-                                            let mut normalized =
-                                                date.into_timestamp_secs() as f64 / now.into_timestamp_secs() as f64;
+                                            let mut normalized = 2.0
+                                                * (date.into_timestamp_secs() as f64
+                                                    / now.into_timestamp_secs() as f64);
                                             // If it's the past month, boost it more.
                                             if now.into_utc() - date.into_utc() < Duration::from_secs(30 * 24 * 3600) {
-                                                normalized *= 2.0;
+                                                normalized *= 4.0;
                                             }
                                             log::trace!(
                                                 "DATE score impact {} -> {}",
@@ -490,6 +498,8 @@ impl Index {
         let advisory_initial = schema.add_date_field("advisory_initial_date", INDEXED);
         let advisory_current = schema.add_date_field("advisory_current_date", INDEXED | FAST | STORED);
         let advisory_current_inverse = schema.add_date_field("advisory_current_date_inverse", FAST);
+        let advisory_severity_score = schema.add_f64_field("advisory_severity_score", FAST);
+        let advisory_severity_score_inverse = schema.add_f64_field("advisory_severity_score_inverse", FAST);
 
         let cve_id = schema.add_text_field("cve_id", STRING | FAST | STORED);
         let cve_title = schema.add_text_field("cve_title", TEXT | STORED);
@@ -502,7 +512,6 @@ impl Index {
         let opts: NumericOptions = (FAST | INDEXED | STORED).into();
         let cve_cvss = schema.add_f64_field("cve_cvss", opts.set_fast(tantivy::schema::Cardinality::MultiValues));
         let cve_cvss_max = schema.add_f64_field("cve_cvss_max", FAST | STORED);
-        let cve_cvss_max_inverse = schema.add_f64_field("cve_cvss_max_inverse", FAST);
         let cve_cwe = schema.add_text_field("cve_cwe", STRING | STORED);
 
         let cve_severity_count = schema.add_json_field("cve_severity_count", STORED);
@@ -519,6 +528,8 @@ impl Index {
                 advisory_initial,
                 advisory_current,
                 advisory_current_inverse,
+                advisory_severity_score,
+                advisory_severity_score_inverse,
 
                 cve_id,
                 cve_title,
@@ -530,7 +541,6 @@ impl Index {
                 cve_fixed,
                 cve_cvss,
                 cve_cvss_max,
-                cve_cvss_max_inverse,
                 cve_cwe,
                 cve_severity_count,
             },
