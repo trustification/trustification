@@ -1,0 +1,1270 @@
+{
+  "document": {
+    "aggregate_severity": {
+      "namespace": "https://access.redhat.com/security/updates/classification/",
+      "text": "Important"
+    },
+    "category": "csaf_vex",
+    "csaf_version": "2.0",
+    "distribution": {
+      "text": "Copyright \u00a9 2023 Red Hat, Inc. All rights reserved.",
+      "tlp": {
+        "label": "WHITE",
+        "url": "https://www.first.org/tlp/"
+      }
+    },
+    "lang": "en",
+    "notes": [
+      {
+        "category": "summary",
+        "text": "An update for microcode_ctl is now available for Red Hat Enterprise Linux 7.7 Extended Update Support.\n\nRed Hat Product Security has rated this update as having a security impact\nof Important. A Common Vulnerability Scoring System (CVSS) base score,\nwhich gives a detailed severity rating, is available for each vulnerability\nfrom the CVE link(s) in the References section.",
+        "title": "Topic"
+      },
+      {
+        "category": "general",
+        "text": "The microcode_ctl packages provide microcode updates for Intel.\n\nSecurity Fix(es):\n\n* hw: Special Register Buffer Data Sampling (SRBDS) (CVE-2020-0543)\n\n* hw: Vector Register Data Sampling (CVE-2020-0548)\n\n* hw: L1D Cache Eviction Sampling (CVE-2020-0549)\n\n* hw: vt-d related privilege escalation (CVE-2020-24489)\n\n* hw: improper isolation of shared resources in some Intel Processors (CVE-2020-24511)\n\n* hw: observable timing discrepancy in some Intel Processors (CVE-2020-24512)\n\n* hw: Information disclosure issue in Intel SGX via RAPL interface (CVE-2020-8695)\n\n* hw: Vector Register Leakage-Active (CVE-2020-8696)\n\n* hw: Fast forward store predictor (CVE-2020-8698)",
+        "title": "Details"
+      },
+      {
+        "category": "legal_disclaimer",
+        "text": "This content is licensed under the Creative Commons Attribution 4.0 International License (https://creativecommons.org/licenses/by/4.0/). If you distribute this content, or a modified version of it, you must provide attribution to Red Hat Inc. and provide a link to the original.",
+        "title": "Terms of Use"
+      }
+    ],
+    "publisher": {
+      "category": "vendor",
+      "contact_details": "https://access.redhat.com/security/team/contact/",
+      "issuing_authority": "Red Hat Product Security is responsible for vulnerability handling across all Red Hat offerings.",
+      "name": "Red Hat Product Security",
+      "namespace": "https://www.redhat.com"
+    },
+    "references": [
+      {
+        "category": "self",
+        "summary": "https://access.redhat.com/errata/RHSA-2021:3029",
+        "url": "https://access.redhat.com/errata/RHSA-2021:3029"
+      },
+      {
+        "category": "external",
+        "summary": "https://access.redhat.com/security/updates/classification/#important",
+        "url": "https://access.redhat.com/security/updates/classification/#important"
+      },
+      {
+        "category": "self",
+        "summary": "Canonical URL",
+        "url": "https://access.redhat.com/security/data/csaf/v2/advisories/2021/rhsa-2021_3029.json"
+      }
+    ],
+    "title": "Red Hat Security Advisory: microcode_ctl security, bug fix and enhancement update",
+    "tracking": {
+      "current_release_date": "2021-08-10T16:13:00Z",
+      "generator": {
+        "date": "2023-03-10T00:31:00Z",
+        "engine": {
+          "name": "Red Hat SDEngine",
+          "version": "3.12.2"
+        }
+      },
+      "id": "RHSA-2021:3029",
+      "initial_release_date": "2021-08-10T16:13:00Z",
+      "revision_history": [
+        {
+          "date": "2021-08-10T16:13:00Z",
+          "number": "1",
+          "summary": "Current version"
+        }
+      ],
+      "status": "final",
+      "version": "1"
+    }
+  },
+  "product_tree": {
+    "branches": [
+      {
+        "branches": [
+          {
+            "branches": [
+              {
+                "category": "product_name",
+                "name": "Red Hat Enterprise Linux ComputeNode EUS (v. 7.7)",
+                "product": {
+                  "name": "Red Hat Enterprise Linux ComputeNode EUS (v. 7.7)",
+                  "product_id": "7ComputeNode-7.7.EUS",
+                  "product_identification_helper": {
+                    "cpe": "cpe:/o:redhat:rhel_eus:7.7::computenode"
+                  }
+                }
+              },
+              {
+                "category": "product_name",
+                "name": "Red Hat Enterprise Linux Server EUS (v. 7.7)",
+                "product": {
+                  "name": "Red Hat Enterprise Linux Server EUS (v. 7.7)",
+                  "product_id": "7Server-7.7.EUS",
+                  "product_identification_helper": {
+                    "cpe": "cpe:/o:redhat:rhel_eus:7.7::server"
+                  }
+                }
+              }
+            ],
+            "category": "product_family",
+            "name": "Red Hat Enterprise Linux"
+          },
+          {
+            "branches": [
+              {
+                "category": "product_version",
+                "name": "microcode_ctl-2:2.1-53.18.el7_7.src",
+                "product": {
+                  "name": "microcode_ctl-2:2.1-53.18.el7_7.src",
+                  "product_id": "microcode_ctl-2:2.1-53.18.el7_7.src"
+                }
+              }
+            ],
+            "category": "architecture",
+            "name": "src"
+          },
+          {
+            "branches": [
+              {
+                "category": "product_version",
+                "name": "microcode_ctl-2:2.1-53.18.el7_7.x86_64",
+                "product": {
+                  "name": "microcode_ctl-2:2.1-53.18.el7_7.x86_64",
+                  "product_id": "microcode_ctl-2:2.1-53.18.el7_7.x86_64"
+                }
+              },
+              {
+                "category": "product_version",
+                "name": "microcode_ctl-debuginfo-2:2.1-53.18.el7_7.x86_64",
+                "product": {
+                  "name": "microcode_ctl-debuginfo-2:2.1-53.18.el7_7.x86_64",
+                  "product_id": "microcode_ctl-debuginfo-2:2.1-53.18.el7_7.x86_64"
+                }
+              }
+            ],
+            "category": "architecture",
+            "name": "x86_64"
+          }
+        ],
+        "category": "vendor",
+        "name": "Red Hat"
+      }
+    ],
+    "relationships": [
+      {
+        "category": "default_component_of",
+        "full_product_name": {
+          "name": "microcode_ctl-2:2.1-53.18.el7_7.src as a component of Red Hat Enterprise Linux ComputeNode EUS (v. 7.7)",
+          "product_id": "7ComputeNode-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.src"
+        },
+        "product_reference": "microcode_ctl-2:2.1-53.18.el7_7.src",
+        "relates_to_product_reference": "7ComputeNode-7.7.EUS"
+      },
+      {
+        "category": "default_component_of",
+        "full_product_name": {
+          "name": "microcode_ctl-2:2.1-53.18.el7_7.x86_64 as a component of Red Hat Enterprise Linux ComputeNode EUS (v. 7.7)",
+          "product_id": "7ComputeNode-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.x86_64"
+        },
+        "product_reference": "microcode_ctl-2:2.1-53.18.el7_7.x86_64",
+        "relates_to_product_reference": "7ComputeNode-7.7.EUS"
+      },
+      {
+        "category": "default_component_of",
+        "full_product_name": {
+          "name": "microcode_ctl-debuginfo-2:2.1-53.18.el7_7.x86_64 as a component of Red Hat Enterprise Linux ComputeNode EUS (v. 7.7)",
+          "product_id": "7ComputeNode-7.7.EUS:microcode_ctl-debuginfo-2:2.1-53.18.el7_7.x86_64"
+        },
+        "product_reference": "microcode_ctl-debuginfo-2:2.1-53.18.el7_7.x86_64",
+        "relates_to_product_reference": "7ComputeNode-7.7.EUS"
+      },
+      {
+        "category": "default_component_of",
+        "full_product_name": {
+          "name": "microcode_ctl-2:2.1-53.18.el7_7.src as a component of Red Hat Enterprise Linux Server EUS (v. 7.7)",
+          "product_id": "7Server-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.src"
+        },
+        "product_reference": "microcode_ctl-2:2.1-53.18.el7_7.src",
+        "relates_to_product_reference": "7Server-7.7.EUS"
+      },
+      {
+        "category": "default_component_of",
+        "full_product_name": {
+          "name": "microcode_ctl-2:2.1-53.18.el7_7.x86_64 as a component of Red Hat Enterprise Linux Server EUS (v. 7.7)",
+          "product_id": "7Server-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.x86_64"
+        },
+        "product_reference": "microcode_ctl-2:2.1-53.18.el7_7.x86_64",
+        "relates_to_product_reference": "7Server-7.7.EUS"
+      },
+      {
+        "category": "default_component_of",
+        "full_product_name": {
+          "name": "microcode_ctl-debuginfo-2:2.1-53.18.el7_7.x86_64 as a component of Red Hat Enterprise Linux Server EUS (v. 7.7)",
+          "product_id": "7Server-7.7.EUS:microcode_ctl-debuginfo-2:2.1-53.18.el7_7.x86_64"
+        },
+        "product_reference": "microcode_ctl-debuginfo-2:2.1-53.18.el7_7.x86_64",
+        "relates_to_product_reference": "7Server-7.7.EUS"
+      }
+    ]
+  },
+  "vulnerabilities": [
+    {
+      "acknowledgments": [
+        {
+          "names": [
+            "Intel"
+          ]
+        }
+      ],
+      "cve": "CVE-2020-0543",
+      "discovery_date": "2020-04-23T00:00:00Z",
+      "ids": [
+        {
+          "system_name": "Red Hat Bugzilla",
+          "text": "https://bugzilla.redhat.com/show_bug.cgi?id=1827165"
+        }
+      ],
+      "notes": [
+        {
+          "category": "general",
+          "text": "The CVSS score(s) listed for this vulnerability do not reflect the associated product's status, and are included for informational purposes to better understand the severity of this vulnerability.",
+          "title": "CVSS score applicability"
+        },
+        {
+          "category": "description",
+          "text": "A new domain bypass transient execution attack known as Special Register Buffer Data Sampling (SRBDS) has been found. This flaw allows data values from special internal registers to be leaked by an attacker able to execute code on any core of the CPU. An unprivileged, local attacker can use this flaw to infer values returned by affected instructions known to be commonly used during cryptographic operations that rely on uniqueness, secrecy, or both.",
+          "title": "Vulnerability description"
+        },
+        {
+          "category": "summary",
+          "text": "hw: Special Register Buffer Data Sampling (SRBDS)",
+          "title": "Vulnerability summary"
+        }
+      ],
+      "product_status": {
+        "fixed": [
+          "7ComputeNode-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.src",
+          "7ComputeNode-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.x86_64",
+          "7ComputeNode-7.7.EUS:microcode_ctl-debuginfo-2:2.1-53.18.el7_7.x86_64",
+          "7Server-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.src",
+          "7Server-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.x86_64",
+          "7Server-7.7.EUS:microcode_ctl-debuginfo-2:2.1-53.18.el7_7.x86_64"
+        ]
+      },
+      "references": [
+        {
+          "category": "external",
+          "summary": "https://access.redhat.com/solutions/5142691",
+          "url": "https://access.redhat.com/solutions/5142691"
+        },
+        {
+          "category": "external",
+          "summary": "https://access.redhat.com/solutions/5142751",
+          "url": "https://access.redhat.com/solutions/5142751"
+        },
+        {
+          "category": "external",
+          "summary": "https://blogs.intel.com/technology/2020/06/ipas-security-advisories-for-june-2020/#gs.6uyhri",
+          "url": "https://blogs.intel.com/technology/2020/06/ipas-security-advisories-for-june-2020/#gs.6uyhri"
+        },
+        {
+          "category": "external",
+          "summary": "https://software.intel.com/security-software-guidance/insights/deep-dive-special-register-buffer-data-sampling",
+          "url": "https://software.intel.com/security-software-guidance/insights/deep-dive-special-register-buffer-data-sampling"
+        },
+        {
+          "category": "external",
+          "summary": "https://xenbits.xen.org/xsa/advisory-320.html",
+          "url": "https://xenbits.xen.org/xsa/advisory-320.html"
+        },
+        {
+          "category": "external",
+          "summary": "CVE-2020-0543",
+          "url": "https://access.redhat.com/security/cve/CVE-2020-0543"
+        },
+        {
+          "category": "external",
+          "summary": "bz#1827165: CVE-2020-0543 hw: Special Register Buffer Data Sampling (SRBDS)",
+          "url": "https://bugzilla.redhat.com/show_bug.cgi?id=1827165"
+        }
+      ],
+      "release_date": "2020-06-09T17:00:00Z",
+      "remediations": [
+        {
+          "category": "vendor_fix",
+          "details": "Before applying this update, make sure all previously released errata\nrelevant to your system have been applied.\n\nFor details on how to apply this update, refer to:\n\nhttps://access.redhat.com/articles/11258",
+          "product_ids": [
+            "7ComputeNode-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.src",
+            "7ComputeNode-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.x86_64",
+            "7ComputeNode-7.7.EUS:microcode_ctl-debuginfo-2:2.1-53.18.el7_7.x86_64",
+            "7Server-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.src",
+            "7Server-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.x86_64",
+            "7Server-7.7.EUS:microcode_ctl-debuginfo-2:2.1-53.18.el7_7.x86_64"
+          ],
+          "url": "https://access.redhat.com/errata/RHSA-2021:3029"
+        }
+      ],
+      "scores": [
+        {
+          "cvss_v3": {
+            "attackComplexity": "LOW",
+            "attackVector": "LOCAL",
+            "availabilityImpact": "NONE",
+            "baseScore": 6.5,
+            "baseSeverity": "MEDIUM",
+            "confidentialityImpact": "HIGH",
+            "integrityImpact": "NONE",
+            "privilegesRequired": "LOW",
+            "scope": "CHANGED",
+            "userInteraction": "NONE",
+            "vectorString": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:C/C:H/I:N/A:N",
+            "version": "3.1"
+          },
+          "products": [
+            "7ComputeNode-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.src",
+            "7ComputeNode-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.x86_64",
+            "7ComputeNode-7.7.EUS:microcode_ctl-debuginfo-2:2.1-53.18.el7_7.x86_64",
+            "7Server-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.src",
+            "7Server-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.x86_64",
+            "7Server-7.7.EUS:microcode_ctl-debuginfo-2:2.1-53.18.el7_7.x86_64"
+          ]
+        }
+      ],
+      "threats": [
+        {
+          "category": "impact",
+          "date": "2020-04-23T00:00:00Z",
+          "details": "Moderate"
+        }
+      ],
+      "title": "CVE-2020-0543 hw: Special Register Buffer Data Sampling (SRBDS)"
+    },
+    {
+      "cve": "CVE-2020-0548",
+      "cwe": {
+        "id": "CWE-200",
+        "name": "Exposure of Sensitive Information to an Unauthorized Actor"
+      },
+      "discovery_date": "2020-01-08T00:00:00Z",
+      "ids": [
+        {
+          "system_name": "Red Hat Bugzilla",
+          "text": "https://bugzilla.redhat.com/show_bug.cgi?id=1788786"
+        }
+      ],
+      "notes": [
+        {
+          "category": "general",
+          "text": "The CVSS score(s) listed for this vulnerability do not reflect the associated product's status, and are included for informational purposes to better understand the severity of this vulnerability.",
+          "title": "CVSS score applicability"
+        },
+        {
+          "category": "description",
+          "text": "A flaw was found in Intel processors where a local attacker is able to gain information about registers used for vector calculations by observing register states from other processes running on the system. This results in a race condition where store buffers, which were not cleared, could be read by another process or a CPU sibling. The highest threat from this vulnerability is data confidentiality where an attacker could read arbitrary data as it passes through the processor.",
+          "title": "Vulnerability description"
+        },
+        {
+          "category": "summary",
+          "text": "hw: Vector Register Data Sampling",
+          "title": "Vulnerability summary"
+        }
+      ],
+      "product_status": {
+        "fixed": [
+          "7ComputeNode-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.src",
+          "7ComputeNode-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.x86_64",
+          "7ComputeNode-7.7.EUS:microcode_ctl-debuginfo-2:2.1-53.18.el7_7.x86_64",
+          "7Server-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.src",
+          "7Server-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.x86_64",
+          "7Server-7.7.EUS:microcode_ctl-debuginfo-2:2.1-53.18.el7_7.x86_64"
+        ]
+      },
+      "references": [
+        {
+          "category": "external",
+          "summary": "https://software.intel.com/security-software-guidance/software-guidance/l1d-eviction-sampling",
+          "url": "https://software.intel.com/security-software-guidance/software-guidance/l1d-eviction-sampling"
+        },
+        {
+          "category": "external",
+          "summary": "https://blogs.intel.com/technology/2020/01/ipas-intel-sa-00329/",
+          "url": "https://blogs.intel.com/technology/2020/01/ipas-intel-sa-00329/"
+        },
+        {
+          "category": "external",
+          "summary": "https://access.redhat.com/solutions/l1d-cache-eviction-and-vector-register-sampling",
+          "url": "https://access.redhat.com/solutions/l1d-cache-eviction-and-vector-register-sampling"
+        },
+        {
+          "category": "external",
+          "summary": "https://cacheoutattack.com/CacheOut.pdf",
+          "url": "https://cacheoutattack.com/CacheOut.pdf"
+        },
+        {
+          "category": "external",
+          "summary": "CVE-2020-0548",
+          "url": "https://access.redhat.com/security/cve/CVE-2020-0548"
+        },
+        {
+          "category": "external",
+          "summary": "bz#1788786: CVE-2020-0548 hw: Vector Register Data Sampling",
+          "url": "https://bugzilla.redhat.com/show_bug.cgi?id=1788786"
+        }
+      ],
+      "release_date": "2020-01-27T13:00:00Z",
+      "remediations": [
+        {
+          "category": "vendor_fix",
+          "details": "Before applying this update, make sure all previously released errata\nrelevant to your system have been applied.\n\nFor details on how to apply this update, refer to:\n\nhttps://access.redhat.com/articles/11258",
+          "product_ids": [
+            "7ComputeNode-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.src",
+            "7ComputeNode-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.x86_64",
+            "7ComputeNode-7.7.EUS:microcode_ctl-debuginfo-2:2.1-53.18.el7_7.x86_64",
+            "7Server-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.src",
+            "7Server-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.x86_64",
+            "7Server-7.7.EUS:microcode_ctl-debuginfo-2:2.1-53.18.el7_7.x86_64"
+          ],
+          "url": "https://access.redhat.com/errata/RHSA-2021:3029"
+        }
+      ],
+      "scores": [
+        {
+          "cvss_v3": {
+            "attackComplexity": "HIGH",
+            "attackVector": "LOCAL",
+            "availabilityImpact": "NONE",
+            "baseScore": 2.8,
+            "baseSeverity": "LOW",
+            "confidentialityImpact": "LOW",
+            "integrityImpact": "NONE",
+            "privilegesRequired": "LOW",
+            "scope": "CHANGED",
+            "userInteraction": "NONE",
+            "vectorString": "CVSS:3.0/AV:L/AC:H/PR:L/UI:N/S:C/C:L/I:N/A:N",
+            "version": "3.0"
+          },
+          "products": [
+            "7ComputeNode-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.src",
+            "7ComputeNode-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.x86_64",
+            "7ComputeNode-7.7.EUS:microcode_ctl-debuginfo-2:2.1-53.18.el7_7.x86_64",
+            "7Server-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.src",
+            "7Server-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.x86_64",
+            "7Server-7.7.EUS:microcode_ctl-debuginfo-2:2.1-53.18.el7_7.x86_64"
+          ]
+        }
+      ],
+      "threats": [
+        {
+          "category": "impact",
+          "date": "2020-01-08T00:00:00Z",
+          "details": "Low"
+        }
+      ],
+      "title": "CVE-2020-0548 hw: Vector Register Data Sampling"
+    },
+    {
+      "cve": "CVE-2020-0549",
+      "cwe": {
+        "id": "CWE-200",
+        "name": "Exposure of Sensitive Information to an Unauthorized Actor"
+      },
+      "discovery_date": "2020-01-08T00:00:00Z",
+      "ids": [
+        {
+          "system_name": "Red Hat Bugzilla",
+          "text": "https://bugzilla.redhat.com/show_bug.cgi?id=1788788"
+        }
+      ],
+      "notes": [
+        {
+          "category": "general",
+          "text": "The CVSS score(s) listed for this vulnerability do not reflect the associated product's status, and are included for informational purposes to better understand the severity of this vulnerability.",
+          "title": "CVSS score applicability"
+        },
+        {
+          "category": "description",
+          "text": "A microarchitectural timing flaw was found on some Intel processors. A corner case exists where data in-flight during the eviction process can end up in the \u201cfill buffers\u201d and not properly cleared by the MDS mitigations. The fill buffer contents (which were expected to be blank) can be inferred using MDS or TAA style attack methods to allow a local attacker to infer fill buffer values.",
+          "title": "Vulnerability description"
+        },
+        {
+          "category": "summary",
+          "text": "hw: L1D Cache Eviction Sampling",
+          "title": "Vulnerability summary"
+        }
+      ],
+      "product_status": {
+        "fixed": [
+          "7ComputeNode-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.src",
+          "7ComputeNode-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.x86_64",
+          "7ComputeNode-7.7.EUS:microcode_ctl-debuginfo-2:2.1-53.18.el7_7.x86_64",
+          "7Server-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.src",
+          "7Server-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.x86_64",
+          "7Server-7.7.EUS:microcode_ctl-debuginfo-2:2.1-53.18.el7_7.x86_64"
+        ]
+      },
+      "references": [
+        {
+          "category": "external",
+          "summary": "https://software.intel.com/security-software-guidance/software-guidance/l1d-eviction-sampling",
+          "url": "https://software.intel.com/security-software-guidance/software-guidance/l1d-eviction-sampling"
+        },
+        {
+          "category": "external",
+          "summary": "https://blogs.intel.com/technology/2020/01/ipas-intel-sa-00329/",
+          "url": "https://blogs.intel.com/technology/2020/01/ipas-intel-sa-00329/"
+        },
+        {
+          "category": "external",
+          "summary": "https://access.redhat.com/solutions/l1d-cache-eviction-and-vector-register-sampling",
+          "url": "https://access.redhat.com/solutions/l1d-cache-eviction-and-vector-register-sampling"
+        },
+        {
+          "category": "external",
+          "summary": "https://cacheoutattack.com/CacheOut.pdf",
+          "url": "https://cacheoutattack.com/CacheOut.pdf"
+        },
+        {
+          "category": "external",
+          "summary": "CVE-2020-0549",
+          "url": "https://access.redhat.com/security/cve/CVE-2020-0549"
+        },
+        {
+          "category": "external",
+          "summary": "bz#1788788: CVE-2020-0549 hw: L1D Cache Eviction Sampling",
+          "url": "https://bugzilla.redhat.com/show_bug.cgi?id=1788788"
+        }
+      ],
+      "release_date": "2020-01-27T13:00:00Z",
+      "remediations": [
+        {
+          "category": "vendor_fix",
+          "details": "Before applying this update, make sure all previously released errata\nrelevant to your system have been applied.\n\nFor details on how to apply this update, refer to:\n\nhttps://access.redhat.com/articles/11258",
+          "product_ids": [
+            "7ComputeNode-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.src",
+            "7ComputeNode-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.x86_64",
+            "7ComputeNode-7.7.EUS:microcode_ctl-debuginfo-2:2.1-53.18.el7_7.x86_64",
+            "7Server-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.src",
+            "7Server-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.x86_64",
+            "7Server-7.7.EUS:microcode_ctl-debuginfo-2:2.1-53.18.el7_7.x86_64"
+          ],
+          "url": "https://access.redhat.com/errata/RHSA-2021:3029"
+        }
+      ],
+      "scores": [
+        {
+          "cvss_v3": {
+            "attackComplexity": "LOW",
+            "attackVector": "LOCAL",
+            "availabilityImpact": "NONE",
+            "baseScore": 6.5,
+            "baseSeverity": "MEDIUM",
+            "confidentialityImpact": "HIGH",
+            "integrityImpact": "NONE",
+            "privilegesRequired": "LOW",
+            "scope": "CHANGED",
+            "userInteraction": "NONE",
+            "vectorString": "CVSS:3.0/AV:L/AC:L/PR:L/UI:N/S:C/C:H/I:N/A:N",
+            "version": "3.0"
+          },
+          "products": [
+            "7ComputeNode-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.src",
+            "7ComputeNode-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.x86_64",
+            "7ComputeNode-7.7.EUS:microcode_ctl-debuginfo-2:2.1-53.18.el7_7.x86_64",
+            "7Server-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.src",
+            "7Server-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.x86_64",
+            "7Server-7.7.EUS:microcode_ctl-debuginfo-2:2.1-53.18.el7_7.x86_64"
+          ]
+        }
+      ],
+      "threats": [
+        {
+          "category": "impact",
+          "date": "2020-01-08T00:00:00Z",
+          "details": "Moderate"
+        }
+      ],
+      "title": "CVE-2020-0549 hw: L1D Cache Eviction Sampling"
+    },
+    {
+      "acknowledgments": [
+        {
+          "names": [
+            "Intel"
+          ]
+        }
+      ],
+      "cve": "CVE-2020-8695",
+      "cwe": {
+        "id": "CWE-200",
+        "name": "Exposure of Sensitive Information to an Unauthorized Actor"
+      },
+      "discovery_date": "2020-04-27T00:00:00Z",
+      "ids": [
+        {
+          "system_name": "Red Hat Bugzilla",
+          "text": "https://bugzilla.redhat.com/show_bug.cgi?id=1828583"
+        }
+      ],
+      "notes": [
+        {
+          "category": "general",
+          "text": "The CVSS score(s) listed for this vulnerability do not reflect the associated product's status, and are included for informational purposes to better understand the severity of this vulnerability.",
+          "title": "CVSS score applicability"
+        },
+        {
+          "category": "description",
+          "text": "A vulnerability was found in Intel's implementation of RAPL (Running Average Power Limit).  An attacker with a local account could query the power management functionality to intelligently infer SGX enclave computation values by measuring power usage in the RAPL subsystem.",
+          "title": "Vulnerability description"
+        },
+        {
+          "category": "summary",
+          "text": "hw: Information disclosure issue in Intel SGX via RAPL interface",
+          "title": "Vulnerability summary"
+        }
+      ],
+      "product_status": {
+        "fixed": [
+          "7ComputeNode-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.src",
+          "7ComputeNode-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.x86_64",
+          "7ComputeNode-7.7.EUS:microcode_ctl-debuginfo-2:2.1-53.18.el7_7.x86_64",
+          "7Server-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.src",
+          "7Server-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.x86_64",
+          "7Server-7.7.EUS:microcode_ctl-debuginfo-2:2.1-53.18.el7_7.x86_64"
+        ]
+      },
+      "references": [
+        {
+          "category": "external",
+          "summary": "https://en.wikipedia.org/wiki/Power_analysis",
+          "url": "https://en.wikipedia.org/wiki/Power_analysis"
+        },
+        {
+          "category": "external",
+          "summary": "https://www.intel.com/content/www/us/en/security-center/advisory/intel-sa-00389.html",
+          "url": "https://www.intel.com/content/www/us/en/security-center/advisory/intel-sa-00389.html"
+        },
+        {
+          "category": "external",
+          "summary": "CVE-2020-8695",
+          "url": "https://access.redhat.com/security/cve/CVE-2020-8695"
+        },
+        {
+          "category": "external",
+          "summary": "bz#1828583: CVE-2020-8695 hw: Information disclosure issue in Intel SGX via RAPL interface",
+          "url": "https://bugzilla.redhat.com/show_bug.cgi?id=1828583"
+        }
+      ],
+      "release_date": "2020-11-10T00:00:00Z",
+      "remediations": [
+        {
+          "category": "vendor_fix",
+          "details": "Before applying this update, make sure all previously released errata\nrelevant to your system have been applied.\n\nFor details on how to apply this update, refer to:\n\nhttps://access.redhat.com/articles/11258",
+          "product_ids": [
+            "7ComputeNode-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.src",
+            "7ComputeNode-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.x86_64",
+            "7ComputeNode-7.7.EUS:microcode_ctl-debuginfo-2:2.1-53.18.el7_7.x86_64",
+            "7Server-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.src",
+            "7Server-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.x86_64",
+            "7Server-7.7.EUS:microcode_ctl-debuginfo-2:2.1-53.18.el7_7.x86_64"
+          ],
+          "url": "https://access.redhat.com/errata/RHSA-2021:3029"
+        }
+      ],
+      "scores": [
+        {
+          "cvss_v3": {
+            "attackComplexity": "HIGH",
+            "attackVector": "LOCAL",
+            "availabilityImpact": "NONE",
+            "baseScore": 5.1,
+            "baseSeverity": "MEDIUM",
+            "confidentialityImpact": "HIGH",
+            "integrityImpact": "NONE",
+            "privilegesRequired": "NONE",
+            "scope": "UNCHANGED",
+            "userInteraction": "NONE",
+            "vectorString": "CVSS:3.1/AV:L/AC:H/PR:N/UI:N/S:U/C:H/I:N/A:N",
+            "version": "3.1"
+          },
+          "products": [
+            "7ComputeNode-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.src",
+            "7ComputeNode-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.x86_64",
+            "7ComputeNode-7.7.EUS:microcode_ctl-debuginfo-2:2.1-53.18.el7_7.x86_64",
+            "7Server-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.src",
+            "7Server-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.x86_64",
+            "7Server-7.7.EUS:microcode_ctl-debuginfo-2:2.1-53.18.el7_7.x86_64"
+          ]
+        }
+      ],
+      "threats": [
+        {
+          "category": "impact",
+          "date": "2020-04-27T00:00:00Z",
+          "details": "Moderate"
+        }
+      ],
+      "title": "CVE-2020-8695 hw: Information disclosure issue in Intel SGX via RAPL interface"
+    },
+    {
+      "acknowledgments": [
+        {
+          "names": [
+            "Intel"
+          ]
+        }
+      ],
+      "cve": "CVE-2020-8696",
+      "cwe": {
+        "id": "CWE-212",
+        "name": "Improper Removal of Sensitive Information Before Storage or Transfer"
+      },
+      "discovery_date": "2020-10-22T00:00:00Z",
+      "ids": [
+        {
+          "system_name": "Red Hat Bugzilla",
+          "text": "https://bugzilla.redhat.com/show_bug.cgi?id=1890355"
+        }
+      ],
+      "notes": [
+        {
+          "category": "general",
+          "text": "The CVSS score(s) listed for this vulnerability do not reflect the associated product's status, and are included for informational purposes to better understand the severity of this vulnerability.",
+          "title": "CVSS score applicability"
+        },
+        {
+          "category": "description",
+          "text": "A flaw was found in the Intel Advanced Vector Extensions (AVX) implementation, where a local authenticated attacker with the ability to execute AVX instructions can gather the AVX register state from previous AVX executions. This vulnerability allows information disclosure of the AVX register state.",
+          "title": "Vulnerability description"
+        },
+        {
+          "category": "summary",
+          "text": "hw: Vector Register Leakage-Active",
+          "title": "Vulnerability summary"
+        }
+      ],
+      "product_status": {
+        "fixed": [
+          "7ComputeNode-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.src",
+          "7ComputeNode-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.x86_64",
+          "7ComputeNode-7.7.EUS:microcode_ctl-debuginfo-2:2.1-53.18.el7_7.x86_64",
+          "7Server-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.src",
+          "7Server-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.x86_64",
+          "7Server-7.7.EUS:microcode_ctl-debuginfo-2:2.1-53.18.el7_7.x86_64"
+        ]
+      },
+      "references": [
+        {
+          "category": "external",
+          "summary": "https://www.intel.com/content/www/us/en/security-center/advisory/intel-sa-00381.html",
+          "url": "https://www.intel.com/content/www/us/en/security-center/advisory/intel-sa-00381.html"
+        },
+        {
+          "category": "external",
+          "summary": "CVE-2020-8696",
+          "url": "https://access.redhat.com/security/cve/CVE-2020-8696"
+        },
+        {
+          "category": "external",
+          "summary": "bz#1890355: CVE-2020-8696 hw: Vector Register Leakage-Active",
+          "url": "https://bugzilla.redhat.com/show_bug.cgi?id=1890355"
+        }
+      ],
+      "release_date": "2020-11-10T13:55:00Z",
+      "remediations": [
+        {
+          "category": "vendor_fix",
+          "details": "Before applying this update, make sure all previously released errata\nrelevant to your system have been applied.\n\nFor details on how to apply this update, refer to:\n\nhttps://access.redhat.com/articles/11258",
+          "product_ids": [
+            "7ComputeNode-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.src",
+            "7ComputeNode-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.x86_64",
+            "7ComputeNode-7.7.EUS:microcode_ctl-debuginfo-2:2.1-53.18.el7_7.x86_64",
+            "7Server-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.src",
+            "7Server-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.x86_64",
+            "7Server-7.7.EUS:microcode_ctl-debuginfo-2:2.1-53.18.el7_7.x86_64"
+          ],
+          "url": "https://access.redhat.com/errata/RHSA-2021:3029"
+        }
+      ],
+      "scores": [
+        {
+          "cvss_v3": {
+            "attackComplexity": "HIGH",
+            "attackVector": "LOCAL",
+            "availabilityImpact": "NONE",
+            "baseScore": 2.8,
+            "baseSeverity": "LOW",
+            "confidentialityImpact": "LOW",
+            "integrityImpact": "NONE",
+            "privilegesRequired": "LOW",
+            "scope": "CHANGED",
+            "userInteraction": "NONE",
+            "vectorString": "CVSS:3.1/AV:L/AC:H/PR:L/UI:N/S:C/C:L/I:N/A:N",
+            "version": "3.1"
+          },
+          "products": [
+            "7ComputeNode-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.src",
+            "7ComputeNode-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.x86_64",
+            "7ComputeNode-7.7.EUS:microcode_ctl-debuginfo-2:2.1-53.18.el7_7.x86_64",
+            "7Server-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.src",
+            "7Server-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.x86_64",
+            "7Server-7.7.EUS:microcode_ctl-debuginfo-2:2.1-53.18.el7_7.x86_64"
+          ]
+        }
+      ],
+      "threats": [
+        {
+          "category": "impact",
+          "date": "2020-10-22T00:00:00Z",
+          "details": "Moderate"
+        }
+      ],
+      "title": "CVE-2020-8696 hw: Vector Register Leakage-Active"
+    },
+    {
+      "acknowledgments": [
+        {
+          "names": [
+            "Intel"
+          ]
+        }
+      ],
+      "cve": "CVE-2020-8698",
+      "cwe": {
+        "id": "CWE-212",
+        "name": "Improper Removal of Sensitive Information Before Storage or Transfer"
+      },
+      "discovery_date": "2020-10-22T00:00:00Z",
+      "ids": [
+        {
+          "system_name": "Red Hat Bugzilla",
+          "text": "https://bugzilla.redhat.com/show_bug.cgi?id=1890356"
+        }
+      ],
+      "notes": [
+        {
+          "category": "general",
+          "text": "The CVSS score(s) listed for this vulnerability do not reflect the associated product's status, and are included for informational purposes to better understand the severity of this vulnerability.",
+          "title": "CVSS score applicability"
+        },
+        {
+          "category": "description",
+          "text": "A flaw was found in the CPU microarchitecture where a local attacker is able to abuse a timing issue which may allow them to infer internal architectural state from previous executions on the CPU.",
+          "title": "Vulnerability description"
+        },
+        {
+          "category": "summary",
+          "text": "hw: Fast forward store predictor",
+          "title": "Vulnerability summary"
+        }
+      ],
+      "product_status": {
+        "fixed": [
+          "7ComputeNode-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.src",
+          "7ComputeNode-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.x86_64",
+          "7ComputeNode-7.7.EUS:microcode_ctl-debuginfo-2:2.1-53.18.el7_7.x86_64",
+          "7Server-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.src",
+          "7Server-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.x86_64",
+          "7Server-7.7.EUS:microcode_ctl-debuginfo-2:2.1-53.18.el7_7.x86_64"
+        ]
+      },
+      "references": [
+        {
+          "category": "external",
+          "summary": "https://www.intel.com/content/www/us/en/security-center/advisory/intel-sa-00381.html",
+          "url": "https://www.intel.com/content/www/us/en/security-center/advisory/intel-sa-00381.html"
+        },
+        {
+          "category": "external",
+          "summary": "CVE-2020-8698",
+          "url": "https://access.redhat.com/security/cve/CVE-2020-8698"
+        },
+        {
+          "category": "external",
+          "summary": "bz#1890356: CVE-2020-8698 hw: Fast forward store predictor",
+          "url": "https://bugzilla.redhat.com/show_bug.cgi?id=1890356"
+        }
+      ],
+      "release_date": "2020-11-10T13:55:00Z",
+      "remediations": [
+        {
+          "category": "vendor_fix",
+          "details": "Before applying this update, make sure all previously released errata\nrelevant to your system have been applied.\n\nFor details on how to apply this update, refer to:\n\nhttps://access.redhat.com/articles/11258",
+          "product_ids": [
+            "7ComputeNode-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.src",
+            "7ComputeNode-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.x86_64",
+            "7ComputeNode-7.7.EUS:microcode_ctl-debuginfo-2:2.1-53.18.el7_7.x86_64",
+            "7Server-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.src",
+            "7Server-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.x86_64",
+            "7Server-7.7.EUS:microcode_ctl-debuginfo-2:2.1-53.18.el7_7.x86_64"
+          ],
+          "url": "https://access.redhat.com/errata/RHSA-2021:3029"
+        }
+      ],
+      "scores": [
+        {
+          "cvss_v3": {
+            "attackComplexity": "LOW",
+            "attackVector": "LOCAL",
+            "availabilityImpact": "NONE",
+            "baseScore": 5.5,
+            "baseSeverity": "MEDIUM",
+            "confidentialityImpact": "HIGH",
+            "integrityImpact": "NONE",
+            "privilegesRequired": "LOW",
+            "scope": "UNCHANGED",
+            "userInteraction": "NONE",
+            "vectorString": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:N/A:N",
+            "version": "3.1"
+          },
+          "products": [
+            "7ComputeNode-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.src",
+            "7ComputeNode-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.x86_64",
+            "7ComputeNode-7.7.EUS:microcode_ctl-debuginfo-2:2.1-53.18.el7_7.x86_64",
+            "7Server-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.src",
+            "7Server-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.x86_64",
+            "7Server-7.7.EUS:microcode_ctl-debuginfo-2:2.1-53.18.el7_7.x86_64"
+          ]
+        }
+      ],
+      "threats": [
+        {
+          "category": "impact",
+          "date": "2020-10-22T00:00:00Z",
+          "details": "Moderate"
+        }
+      ],
+      "title": "CVE-2020-8698 hw: Fast forward store predictor"
+    },
+    {
+      "acknowledgments": [
+        {
+          "names": [
+            "Intel"
+          ]
+        }
+      ],
+      "cve": "CVE-2020-24489",
+      "cwe": {
+        "id": "CWE-459",
+        "name": "Incomplete Cleanup"
+      },
+      "discovery_date": "2021-05-20T00:00:00Z",
+      "ids": [
+        {
+          "system_name": "Red Hat Bugzilla",
+          "text": "https://bugzilla.redhat.com/show_bug.cgi?id=1962650"
+        }
+      ],
+      "notes": [
+        {
+          "category": "general",
+          "text": "The CVSS score(s) listed for this vulnerability do not reflect the associated product's status, and are included for informational purposes to better understand the severity of this vulnerability.",
+          "title": "CVSS score applicability"
+        },
+        {
+          "category": "description",
+          "text": "A flaw was found in Intel\u00ae VT-d products. Entries from the context cache on some types of context cache invalidations may not be properly invalidated which may allow an authenticated user to potentially enable escalation of privilege via local access. The highest threat from this vulnerability is to data confidentiality and integrity as well as system availability.",
+          "title": "Vulnerability description"
+        },
+        {
+          "category": "summary",
+          "text": "hw: vt-d related privilege escalation",
+          "title": "Vulnerability summary"
+        }
+      ],
+      "product_status": {
+        "fixed": [
+          "7ComputeNode-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.src",
+          "7ComputeNode-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.x86_64",
+          "7ComputeNode-7.7.EUS:microcode_ctl-debuginfo-2:2.1-53.18.el7_7.x86_64",
+          "7Server-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.src",
+          "7Server-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.x86_64",
+          "7Server-7.7.EUS:microcode_ctl-debuginfo-2:2.1-53.18.el7_7.x86_64"
+        ]
+      },
+      "references": [
+        {
+          "category": "external",
+          "summary": "CVE-2020-24489",
+          "url": "https://access.redhat.com/security/cve/CVE-2020-24489"
+        },
+        {
+          "category": "external",
+          "summary": "bz#1962650: CVE-2020-24489 hw: vt-d related privilege escalation",
+          "url": "https://bugzilla.redhat.com/show_bug.cgi?id=1962650"
+        }
+      ],
+      "release_date": "2021-06-08T17:00:00Z",
+      "remediations": [
+        {
+          "category": "vendor_fix",
+          "details": "Before applying this update, make sure all previously released errata\nrelevant to your system have been applied.\n\nFor details on how to apply this update, refer to:\n\nhttps://access.redhat.com/articles/11258",
+          "product_ids": [
+            "7ComputeNode-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.src",
+            "7ComputeNode-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.x86_64",
+            "7ComputeNode-7.7.EUS:microcode_ctl-debuginfo-2:2.1-53.18.el7_7.x86_64",
+            "7Server-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.src",
+            "7Server-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.x86_64",
+            "7Server-7.7.EUS:microcode_ctl-debuginfo-2:2.1-53.18.el7_7.x86_64"
+          ],
+          "url": "https://access.redhat.com/errata/RHSA-2021:3029"
+        }
+      ],
+      "scores": [
+        {
+          "cvss_v3": {
+            "attackComplexity": "LOW",
+            "attackVector": "LOCAL",
+            "availabilityImpact": "HIGH",
+            "baseScore": 8.8,
+            "baseSeverity": "HIGH",
+            "confidentialityImpact": "HIGH",
+            "integrityImpact": "HIGH",
+            "privilegesRequired": "LOW",
+            "scope": "CHANGED",
+            "userInteraction": "NONE",
+            "vectorString": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:C/C:H/I:H/A:H",
+            "version": "3.1"
+          },
+          "products": [
+            "7ComputeNode-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.src",
+            "7ComputeNode-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.x86_64",
+            "7ComputeNode-7.7.EUS:microcode_ctl-debuginfo-2:2.1-53.18.el7_7.x86_64",
+            "7Server-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.src",
+            "7Server-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.x86_64",
+            "7Server-7.7.EUS:microcode_ctl-debuginfo-2:2.1-53.18.el7_7.x86_64"
+          ]
+        }
+      ],
+      "threats": [
+        {
+          "category": "impact",
+          "date": "2021-05-20T00:00:00Z",
+          "details": "Important"
+        }
+      ],
+      "title": "CVE-2020-24489 hw: vt-d related privilege escalation"
+    },
+    {
+      "acknowledgments": [
+        {
+          "names": [
+            "Intel"
+          ]
+        }
+      ],
+      "cve": "CVE-2020-24511",
+      "cwe": {
+        "id": "CWE-200",
+        "name": "Exposure of Sensitive Information to an Unauthorized Actor"
+      },
+      "discovery_date": "2021-05-20T00:00:00Z",
+      "ids": [
+        {
+          "system_name": "Red Hat Bugzilla",
+          "text": "https://bugzilla.redhat.com/show_bug.cgi?id=1962702"
+        }
+      ],
+      "notes": [
+        {
+          "category": "general",
+          "text": "The CVSS score(s) listed for this vulnerability do not reflect the associated product's status, and are included for informational purposes to better understand the severity of this vulnerability.",
+          "title": "CVSS score applicability"
+        },
+        {
+          "category": "description",
+          "text": "Microcode misconfiguration in some Intel processors may cause EIBRS mitigation (CVE-2017-5715) to be incomplete. As a consequence, this issue may allow an authenticated user to potentially enable information disclosure via local access.",
+          "title": "Vulnerability description"
+        },
+        {
+          "category": "summary",
+          "text": "hw: improper isolation of shared resources in some Intel Processors",
+          "title": "Vulnerability summary"
+        }
+      ],
+      "product_status": {
+        "fixed": [
+          "7ComputeNode-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.src",
+          "7ComputeNode-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.x86_64",
+          "7ComputeNode-7.7.EUS:microcode_ctl-debuginfo-2:2.1-53.18.el7_7.x86_64",
+          "7Server-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.src",
+          "7Server-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.x86_64",
+          "7Server-7.7.EUS:microcode_ctl-debuginfo-2:2.1-53.18.el7_7.x86_64"
+        ]
+      },
+      "references": [
+        {
+          "category": "external",
+          "summary": "CVE-2020-24511",
+          "url": "https://access.redhat.com/security/cve/CVE-2020-24511"
+        },
+        {
+          "category": "external",
+          "summary": "bz#1962702: CVE-2020-24511 hw: improper isolation of shared resources in some Intel Processors",
+          "url": "https://bugzilla.redhat.com/show_bug.cgi?id=1962702"
+        }
+      ],
+      "release_date": "2021-06-08T17:00:00Z",
+      "remediations": [
+        {
+          "category": "vendor_fix",
+          "details": "Before applying this update, make sure all previously released errata\nrelevant to your system have been applied.\n\nFor details on how to apply this update, refer to:\n\nhttps://access.redhat.com/articles/11258",
+          "product_ids": [
+            "7ComputeNode-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.src",
+            "7ComputeNode-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.x86_64",
+            "7ComputeNode-7.7.EUS:microcode_ctl-debuginfo-2:2.1-53.18.el7_7.x86_64",
+            "7Server-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.src",
+            "7Server-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.x86_64",
+            "7Server-7.7.EUS:microcode_ctl-debuginfo-2:2.1-53.18.el7_7.x86_64"
+          ],
+          "url": "https://access.redhat.com/errata/RHSA-2021:3029"
+        }
+      ],
+      "scores": [
+        {
+          "cvss_v3": {
+            "attackComplexity": "HIGH",
+            "attackVector": "LOCAL",
+            "availabilityImpact": "NONE",
+            "baseScore": 5.6,
+            "baseSeverity": "MEDIUM",
+            "confidentialityImpact": "HIGH",
+            "integrityImpact": "NONE",
+            "privilegesRequired": "LOW",
+            "scope": "CHANGED",
+            "userInteraction": "NONE",
+            "vectorString": "CVSS:3.1/AV:L/AC:H/PR:L/UI:N/S:C/C:H/I:N/A:N",
+            "version": "3.1"
+          },
+          "products": [
+            "7ComputeNode-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.src",
+            "7ComputeNode-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.x86_64",
+            "7ComputeNode-7.7.EUS:microcode_ctl-debuginfo-2:2.1-53.18.el7_7.x86_64",
+            "7Server-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.src",
+            "7Server-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.x86_64",
+            "7Server-7.7.EUS:microcode_ctl-debuginfo-2:2.1-53.18.el7_7.x86_64"
+          ]
+        }
+      ],
+      "threats": [
+        {
+          "category": "impact",
+          "date": "2021-05-20T00:00:00Z",
+          "details": "Moderate"
+        }
+      ],
+      "title": "CVE-2020-24511 hw: improper isolation of shared resources in some Intel Processors"
+    },
+    {
+      "acknowledgments": [
+        {
+          "names": [
+            "Intel"
+          ]
+        }
+      ],
+      "cve": "CVE-2020-24512",
+      "cwe": {
+        "id": "CWE-200",
+        "name": "Exposure of Sensitive Information to an Unauthorized Actor"
+      },
+      "discovery_date": "2021-05-20T00:00:00Z",
+      "ids": [
+        {
+          "system_name": "Red Hat Bugzilla",
+          "text": "https://bugzilla.redhat.com/show_bug.cgi?id=1962722"
+        }
+      ],
+      "notes": [
+        {
+          "category": "general",
+          "text": "The CVSS score(s) listed for this vulnerability do not reflect the associated product's status, and are included for informational purposes to better understand the severity of this vulnerability.",
+          "title": "CVSS score applicability"
+        },
+        {
+          "category": "description",
+          "text": "Observable timing discrepancy in some Intel(R) Processors may allow an authenticated user to potentially enable information disclosure via local access.",
+          "title": "Vulnerability description"
+        },
+        {
+          "category": "summary",
+          "text": "hw: observable timing discrepancy in some Intel Processors",
+          "title": "Vulnerability summary"
+        }
+      ],
+      "product_status": {
+        "fixed": [
+          "7ComputeNode-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.src",
+          "7ComputeNode-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.x86_64",
+          "7ComputeNode-7.7.EUS:microcode_ctl-debuginfo-2:2.1-53.18.el7_7.x86_64",
+          "7Server-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.src",
+          "7Server-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.x86_64",
+          "7Server-7.7.EUS:microcode_ctl-debuginfo-2:2.1-53.18.el7_7.x86_64"
+        ]
+      },
+      "references": [
+        {
+          "category": "external",
+          "summary": "CVE-2020-24512",
+          "url": "https://access.redhat.com/security/cve/CVE-2020-24512"
+        },
+        {
+          "category": "external",
+          "summary": "bz#1962722: CVE-2020-24512 hw: observable timing discrepancy in some Intel Processors",
+          "url": "https://bugzilla.redhat.com/show_bug.cgi?id=1962722"
+        }
+      ],
+      "release_date": "2021-06-08T17:00:00Z",
+      "remediations": [
+        {
+          "category": "vendor_fix",
+          "details": "Before applying this update, make sure all previously released errata\nrelevant to your system have been applied.\n\nFor details on how to apply this update, refer to:\n\nhttps://access.redhat.com/articles/11258",
+          "product_ids": [
+            "7ComputeNode-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.src",
+            "7ComputeNode-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.x86_64",
+            "7ComputeNode-7.7.EUS:microcode_ctl-debuginfo-2:2.1-53.18.el7_7.x86_64",
+            "7Server-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.src",
+            "7Server-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.x86_64",
+            "7Server-7.7.EUS:microcode_ctl-debuginfo-2:2.1-53.18.el7_7.x86_64"
+          ],
+          "url": "https://access.redhat.com/errata/RHSA-2021:3029"
+        }
+      ],
+      "scores": [
+        {
+          "cvss_v3": {
+            "attackComplexity": "HIGH",
+            "attackVector": "LOCAL",
+            "availabilityImpact": "NONE",
+            "baseScore": 2.8,
+            "baseSeverity": "LOW",
+            "confidentialityImpact": "LOW",
+            "integrityImpact": "NONE",
+            "privilegesRequired": "LOW",
+            "scope": "CHANGED",
+            "userInteraction": "NONE",
+            "vectorString": "CVSS:3.1/AV:L/AC:H/PR:L/UI:N/S:C/C:L/I:N/A:N",
+            "version": "3.1"
+          },
+          "products": [
+            "7ComputeNode-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.src",
+            "7ComputeNode-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.x86_64",
+            "7ComputeNode-7.7.EUS:microcode_ctl-debuginfo-2:2.1-53.18.el7_7.x86_64",
+            "7Server-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.src",
+            "7Server-7.7.EUS:microcode_ctl-2:2.1-53.18.el7_7.x86_64",
+            "7Server-7.7.EUS:microcode_ctl-debuginfo-2:2.1-53.18.el7_7.x86_64"
+          ]
+        }
+      ],
+      "threats": [
+        {
+          "category": "impact",
+          "date": "2021-05-20T00:00:00Z",
+          "details": "Low"
+        }
+      ],
+      "title": "CVE-2020-24512 hw: observable timing discrepancy in some Intel Processors"
+    }
+  ]
+}
