@@ -1,11 +1,11 @@
-use futures::Stream;
-use futures::StreamExt;
 use std::str::FromStr;
 
+use futures::Stream;
+use futures::StreamExt;
 use sqlx::sqlite::SqliteConnectOptions;
 use sqlx::{Row, SqlitePool};
 
-use v11y_client::Vulnerability;
+use v11y_client::{ScoreType, Severity, Vulnerability};
 
 static DB_FILE_NAME: &str = "v11y.db";
 
@@ -72,8 +72,12 @@ impl Db {
         sqlx::query(
             r#"create table if not exists severities (
                     vulnerability_id text not null,
-                    type text,
-                    score text
+                    origin text not null,
+                    type text not null,
+                    score float not null,
+                    additional text,
+                    primary key (vulnerability_id, origin, type)
+
                 )"#,
         )
         .execute(&self.pool)
@@ -82,7 +86,15 @@ impl Db {
         log::debug!("create index 'severities_pk'");
         sqlx::query(
             r#"
-            create index if not exists severities_pk ON severities ( vulnerability_id ) ;
+            create index if not exists severities_pk ON severities ( vulnerability_id, origin, type ) ;
+            "#,
+        )
+        .execute(&self.pool)
+        .await?;
+
+        sqlx::query(
+            r#"
+            create index if not exists severities_pk ON severities ( vulnerability_id, origin, type ) ;
             "#,
         )
         .execute(&self.pool)
@@ -96,6 +108,7 @@ impl Db {
         sqlx::query(
             r#"create table if not exists aliases (
                     vulnerability_id text not null,
+                    origin text not null,
                     alias text not null
                 )"#,
         )
@@ -119,6 +132,7 @@ impl Db {
         sqlx::query(
             r#"create table if not exists related (
                     vulnerability_id text not null,
+                    origin text not null,
                     related text not null
                 )"#,
         )
@@ -142,6 +156,7 @@ impl Db {
         sqlx::query(
             r#"create table if not exists events (
                     vulnerability_id text not null,
+                    origin not null,
                     event text not null
                 )"#,
         )
@@ -165,6 +180,7 @@ impl Db {
         sqlx::query(
             r#"create table if not exists references (
                     vulnerability_id text not null,
+                    origin text not null,
                     type text not null,
                     url text not null
                 )"#,
@@ -185,9 +201,15 @@ impl Db {
     }
 
     pub async fn ingest(&self, vuln: &Vulnerability) -> Result<(), anyhow::Error> {
+        self.ingest_vulnerability(vuln).await?;
+        self.ingest_severities(vuln).await?;
+        Ok(())
+    }
+
+    async fn ingest_vulnerability(&self, vuln: &Vulnerability) -> Result<(), anyhow::Error> {
         sqlx::query(
             r#"
-                insert or ignore into vulnerabilities (
+                insert or replace into vulnerabilities (
                     id, origin, modified, published, withdrawn, summary, details
                 ) values (
                     $1, $2, $3, $4, $5, $6, $7
@@ -203,6 +225,32 @@ impl Db {
         .bind(vuln.details.clone())
         .execute(&self.pool)
         .await?;
+
+        Ok(())
+    }
+
+    async fn ingest_severities(&self, vuln: &Vulnerability) -> Result<(), anyhow::Error> {
+        for severity in &vuln.severities {
+            sqlx::query(
+                r#"
+            insert into severities (
+                vulnerability_id, origin, type, score, additional
+            ) values (
+                $1, $2, $3, $4, $5
+            ) on conflict (vulnerability_id, origin, type) do update
+                set
+                    score = excluded.score,
+                    additional = excluded.additional
+            "#,
+            )
+            .bind(vuln.id.clone())
+            .bind(vuln.origin.clone())
+            .bind(severity.r#type.to_string())
+            .bind(severity.score.clone())
+            .bind(severity.additional.clone())
+            .execute(&self.pool)
+            .await?;
+        }
 
         Ok(())
     }
@@ -232,12 +280,55 @@ impl Db {
                 }
             })
     }
+
+    pub async fn get_severities(&self, id: &str, origin: Option<String>) -> impl Stream<Item = (String, Severity)> {
+        let query = if let Some(origin) = origin {
+            sqlx::query(
+                r#"
+                select
+                    origin, type, score, additional
+                from
+                    severities
+                where
+                    origin = $1
+                "#,
+            )
+            .bind(origin)
+        } else {
+            sqlx::query(
+                r#"
+                select
+                    origin, type, score, additional
+                from
+                    severities
+                order by
+                    origin
+                "#,
+            )
+        };
+
+        query.fetch(&self.pool).filter_map(|row| async move {
+            if let Ok(row) = row {
+                Some((
+                    row.get::<String, _>("origin"),
+                    Severity {
+                        r#type: ScoreType::from(row.get::<String, _>("type")),
+                        score: row.get::<f32, _>("score"),
+                        additional: row.get::<Option<String>, _>("additional"),
+                    },
+                ))
+            } else {
+                None
+            }
+        })
+    }
 }
 
 #[cfg(test)]
 mod test {
     use futures::StreamExt;
-    use v11y_client::Vulnerability;
+
+    use v11y_client::{ScoreType, Severity, Vulnerability};
 
     use crate::db::Db;
 
@@ -305,8 +396,6 @@ mod test {
 
         let ids: Vec<_> = db.get_known_ids().await.collect().await;
 
-        println!("{:?}", ids);
-
         assert_eq!(2, ids.len());
         assert!(ids.contains(&"CVE-123".to_owned()));
         assert!(ids.contains(&"CVE-345".to_owned()));
@@ -316,6 +405,180 @@ mod test {
         assert_eq!(2, origins.len());
         assert!(origins.contains(&"snyk".to_owned()));
         assert!(origins.contains(&"osv".to_owned()));
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn ingest_maximal() -> Result<(), anyhow::Error> {
+        let db = Db::new().await?;
+
+        let vuln = Vulnerability {
+            origin: "osv".to_string(),
+            id: "CVE-123".to_string(),
+            modified: "2023-08-08T18:17:02Z".parse()?,
+            published: "2023-08-08T18:17:02Z".parse()?,
+            withdrawn: None,
+            summary: "Summary".to_string(),
+            details: "Some\ndetails".to_string(),
+            aliases: vec!["GHSA-foo-ghz".to_string()],
+            severities: vec![Severity {
+                r#type: ScoreType::Cvss3,
+                score: 6.8,
+                additional: Some("n:4/v:2".to_string()),
+            }],
+            ranges: vec![],
+            related: vec!["CVE-8675".to_string(), "CVE-42".to_string()],
+            references: vec![],
+        };
+
+        db.ingest(&vuln).await?;
+
+        let vuln = Vulnerability {
+            origin: "snyk".to_string(),
+            id: "CVE-123".to_string(),
+            modified: "2023-08-08T18:17:02Z".parse()?,
+            published: "2023-08-08T18:17:02Z".parse()?,
+            withdrawn: None,
+            summary: "Summary".to_string(),
+            details: "Some\ndetails".to_string(),
+            aliases: vec!["GHSA-foo-ghz".to_string()],
+            severities: vec![Severity {
+                r#type: ScoreType::Cvss3,
+                score: 7.8,
+                additional: Some("n:1/v:2".to_string()),
+            }],
+            ranges: vec![],
+            related: vec!["CVE-8675".to_string(), "CVE-42".to_string()],
+            references: vec![],
+        };
+
+        db.ingest(&vuln).await?;
+
+        let result: Vec<_> = db
+            .get_severities("CVE-123", Some("osv".to_string()))
+            .await
+            .collect()
+            .await;
+
+        assert_eq!(1, result.len());
+
+        let result = &result[0];
+
+        assert_eq!("osv", result.0);
+        assert_eq!(6.8, result.1.score);
+        assert_eq!(ScoreType::Cvss3, result.1.r#type);
+        assert_eq!(Some("n:4/v:2".to_string()), result.1.additional);
+
+        let result: Vec<_> = db
+            .get_severities("CVE-123", Some("snyk".to_string()))
+            .await
+            .collect()
+            .await;
+
+        assert_eq!(1, result.len());
+
+        let result = &result[0];
+
+        assert_eq!("snyk", result.0);
+        assert_eq!(7.8, result.1.score);
+        assert_eq!(ScoreType::Cvss3, result.1.r#type);
+        assert_eq!(Some("n:1/v:2".to_string()), result.1.additional);
+
+        let result: Vec<_> = db.get_severities("CVE-123", None).await.collect().await;
+
+        assert_eq!(2, result.len());
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn ingest_updated_severities() -> Result<(), anyhow::Error> {
+        let db = Db::new().await?;
+
+        let vuln = Vulnerability {
+            origin: "osv".to_string(),
+            id: "CVE-123".to_string(),
+            modified: "2023-08-08T18:17:02Z".parse()?,
+            published: "2023-08-08T18:17:02Z".parse()?,
+            withdrawn: None,
+            summary: "Summary".to_string(),
+            details: "Some\ndetails".to_string(),
+            aliases: vec!["GHSA-foo-ghz".to_string()],
+            severities: vec![Severity {
+                r#type: ScoreType::Cvss3,
+                score: 6.8,
+                additional: Some("n:4/v:2".to_string()),
+            }],
+            ranges: vec![],
+            related: vec!["CVE-8675".to_string(), "CVE-42".to_string()],
+            references: vec![],
+        };
+
+        db.ingest(&vuln).await?;
+
+        let result: Vec<_> = db
+            .get_severities("CVE-123", Some("osv".to_string()))
+            .await
+            .collect()
+            .await;
+
+        assert_eq!(1, result.len());
+
+        let result = &result[0];
+
+        assert_eq!("osv", result.0);
+        assert_eq!(6.8, result.1.score);
+        assert_eq!(ScoreType::Cvss3, result.1.r#type);
+        assert_eq!(Some("n:4/v:2".to_string()), result.1.additional);
+
+        let vuln = Vulnerability {
+            origin: "osv".to_string(),
+            id: "CVE-123".to_string(),
+            modified: "2023-08-08T18:17:02Z".parse()?,
+            published: "2023-08-08T18:17:02Z".parse()?,
+            withdrawn: None,
+            summary: "Summary".to_string(),
+            details: "Some\ndetails".to_string(),
+            aliases: vec!["GHSA-foo-ghz".to_string()],
+            severities: vec![
+                Severity {
+                    r#type: ScoreType::Cvss3,
+                    score: 9.8,
+                    additional: Some("n:4/v:2".to_string()),
+                },
+                Severity {
+                    r#type: ScoreType::Cvss4,
+                    score: 7.3,
+                    additional: None,
+                },
+            ],
+            ranges: vec![],
+            related: vec!["CVE-8675".to_string(), "CVE-42".to_string()],
+            references: vec![],
+        };
+
+        db.ingest(&vuln).await?;
+
+        let result: Vec<_> = db
+            .get_severities("CVE-123", Some("osv".to_string()))
+            .await
+            .collect()
+            .await;
+
+        assert_eq!(2, result.len());
+
+        for (_, severity) in result {
+            match severity.r#type {
+                ScoreType::Cvss3 => {
+                    assert_eq!(9.8, severity.score)
+                }
+                ScoreType::Cvss4 => {
+                    assert_eq!(7.3, severity.score)
+                }
+                ScoreType::Unknown => panic!("unexpected unknown"),
+            }
+        }
 
         Ok(())
     }
