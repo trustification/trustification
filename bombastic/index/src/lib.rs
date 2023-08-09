@@ -7,7 +7,7 @@ use cyclonedx_bom::models::{
     license::{LicenseChoice, LicenseIdentifier},
 };
 use log::{debug, info, warn};
-use sikula::prelude::*;
+use sikula::{mir::Direction, prelude::*};
 use spdx_rs::models::Algorithm;
 use tantivy::collector::TopDocs;
 use tantivy::query::TermSetQuery;
@@ -57,6 +57,7 @@ pub struct PackageFields {
 struct Fields {
     sbom_id: Field,
     sbom_created: Field,
+    sbom_created_inverse: Field,
     sbom_creators: Field,
     sbom_name: Field,
     sbom: PackageFields,
@@ -75,6 +76,7 @@ impl Index {
         let fields = Fields {
             sbom_id: schema.add_text_field("sbom_id", STRING | FAST | STORED),
             sbom_created: schema.add_date_field("sbom_created", INDEXED | FAST | STORED),
+            sbom_created_inverse: schema.add_date_field("sbom_created_inverse", FAST),
             sbom_creators: schema.add_text_field("sbom_creators", STRING | STORED),
             sbom_name: schema.add_text_field("sbom_name", STRING | FAST | STORED),
             sbom: PackageFields {
@@ -134,6 +136,11 @@ impl Index {
         document.add_date(
             self.fields.sbom_created,
             DateTime::from_timestamp_millis(created.timestamp_millis()),
+        );
+
+        document.add_date(
+            self.fields.sbom_created_inverse,
+            DateTime::from_timestamp_millis(-created.timestamp_millis()),
         );
 
         for package in &bom.package_information {
@@ -216,6 +223,11 @@ impl Index {
                     document.add_date(
                         self.fields.sbom_created,
                         DateTime::from_timestamp_secs(d.unix_timestamp()),
+                    );
+
+                    document.add_date(
+                        self.fields.sbom_created_inverse,
+                        DateTime::from_timestamp_secs(-d.unix_timestamp()),
                     );
                 }
             }
@@ -393,9 +405,16 @@ impl Index {
     }
 }
 
+#[derive(Debug)]
+pub struct SbomQuery {
+    query: Box<dyn Query>,
+    sort_by: Option<Field>,
+}
+
 impl trustification_index::Index for Index {
     type MatchedDocument = SearchHit;
     type Document = SBOM;
+    type QueryContext = SbomQuery;
 
     fn index_doc(&self, id: &str, doc: &SBOM) -> Result<Vec<Document>, SearchError> {
         match doc {
@@ -410,10 +429,6 @@ impl trustification_index::Index for Index {
 
     fn settings(&self) -> IndexSettings {
         IndexSettings {
-            sort_by_field: Some(tantivy::IndexSortByField {
-                field: self.schema.get_field_name(self.fields.sbom_created).to_string(),
-                order: tantivy::Order::Desc,
-            }),
             docstore_compression: tantivy::store::Compressor::Zstd(ZstdCompressor::default()),
             ..Default::default()
         }
@@ -426,9 +441,12 @@ impl trustification_index::Index for Index {
             .unwrap()
     }
 
-    fn prepare_query(&self, q: &str) -> Result<Box<dyn Query>, SearchError> {
+    fn prepare_query(&self, q: &str) -> Result<SbomQuery, SearchError> {
         if q.is_empty() {
-            return Ok(Box::new(AllQuery));
+            return Ok(SbomQuery {
+                query: Box::new(AllQuery),
+                sort_by: None,
+            });
         }
 
         let mut query = Packages::parse(q).map_err(|err| SearchError::Parser(err.to_string()))?;
@@ -437,23 +455,54 @@ impl trustification_index::Index for Index {
 
         debug!("Query: {query:?}");
 
+        let mut sort_by = None;
+        if let Some(f) = query.sorting.first() {
+            match f.qualifier {
+                PackagesSortable::Created => match f.direction {
+                    Direction::Descending => {
+                        sort_by.replace(self.fields.sbom_created);
+                    }
+                    Direction::Ascending => {
+                        sort_by.replace(self.fields.sbom_created_inverse);
+                    }
+                },
+            }
+        }
+
         let query = term2query(&query.term, &|resource| self.resource2query(resource));
 
         debug!("Processed query: {:?}", query);
-        Ok(query)
+        Ok(SbomQuery { query, sort_by })
     }
 
     fn search(
         &self,
         searcher: &Searcher,
-        query: &dyn Query,
+        query: &SbomQuery,
         offset: usize,
         limit: usize,
     ) -> Result<(Vec<(f32, DocAddress)>, usize), SearchError> {
-        Ok(searcher.search(
-            query,
-            &(TopDocs::with_limit(limit).and_offset(offset), tantivy::collector::Count),
-        )?)
+        if let Some(order_by) = query.sort_by {
+            let mut hits = Vec::new();
+            let result = searcher.search(
+                &query.query,
+                &(
+                    TopDocs::with_limit(limit)
+                        .and_offset(offset)
+                        .order_by_fast_field::<tantivy::DateTime>(order_by),
+                    tantivy::collector::Count,
+                ),
+            )?;
+            for r in result.0 {
+                hits.push((1.0, r.1));
+            }
+            Ok((hits, result.1))
+        } else {
+            Ok(searcher.search(
+                &query.query,
+                &(TopDocs::with_limit(limit).and_offset(offset), tantivy::collector::Count),
+            )?)
+        }
     }
 
     fn process_hit(
@@ -461,14 +510,14 @@ impl trustification_index::Index for Index {
         doc_address: DocAddress,
         score: f32,
         searcher: &Searcher,
-        query: &dyn Query,
+        query: &SbomQuery,
         options: &SearchOptions,
     ) -> Result<Self::MatchedDocument, SearchError> {
         let doc = searcher.doc(doc_address)?;
         let id = field2str(&doc, self.fields.sbom_id)?;
         let name = field2str(&doc, self.fields.sbom_name)?;
 
-        let snippet_generator = SnippetGenerator::create(searcher, query, self.fields.sbom.desc)?;
+        let snippet_generator = SnippetGenerator::create(searcher, &query.query, self.fields.sbom.desc)?;
         let snippet = snippet_generator.snippet_from_doc(&doc).to_html();
 
         let purl = doc
@@ -542,7 +591,7 @@ impl trustification_index::Index for Index {
         };
 
         let explanation: Option<serde_json::Value> = if options.explain {
-            match query.explain(searcher, doc_address) {
+            match query.query.explain(searcher, doc_address) {
                 Ok(explanation) => Some(serde_json::to_value(explanation).ok()).unwrap_or(None),
                 Err(e) => {
                     warn!("Error producing explanation for document {:?}: {:?}", doc_address, e);
@@ -707,6 +756,23 @@ mod tests {
         assert_search(|index| {
             let result = search(&index, "dependency:quarkus-arc");
             assert_eq!(result.0.len(), 1);
+        });
+    }
+
+    #[tokio::test]
+    async fn test_sorting() {
+        assert_search(|index| {
+            let result = search(&index, "NOT ubi9 sort:created");
+            assert_eq!(result.0.len(), 2);
+            assert_eq!(result.0[0].document.id, "my-sbom");
+            assert_eq!(result.0[1].document.id, "kmm-1");
+            assert!(result.0[0].document.created < result.0[1].document.created);
+
+            let result = search(&index, "NOT ubi9 -sort:created");
+            assert_eq!(result.0.len(), 2);
+            assert_eq!(result.0[0].document.id, "kmm-1");
+            assert_eq!(result.0[1].document.id, "my-sbom");
+            assert!(result.0[0].document.created > result.0[1].document.created);
         });
     }
 
