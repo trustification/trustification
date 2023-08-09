@@ -20,6 +20,7 @@ use serde::Deserialize;
 use trustification_api::search::SearchOptions;
 use trustification_auth::{
     authenticator::{user::UserDetails, Authenticator},
+    swagger_ui::SwaggerUiOidc,
     ROLE_MANAGER,
 };
 use trustification_index::Error as IndexError;
@@ -35,7 +36,11 @@ use utoipa_swagger_ui::SwaggerUi;
 )]
 pub struct ApiDoc;
 
-pub fn config(cfg: &mut web::ServiceConfig, auth: Option<Arc<Authenticator>>) {
+pub fn config(
+    cfg: &mut web::ServiceConfig,
+    auth: Option<Arc<Authenticator>>,
+    swagger_ui_oidc: Option<Arc<SwaggerUiOidc>>,
+) {
     cfg.service(
         web::scope("/api/v1")
             .wrap(new_auth!(auth))
@@ -45,7 +50,16 @@ pub fn config(cfg: &mut web::ServiceConfig, auth: Option<Arc<Authenticator>>) {
             .service(publish_sbom)
             .service(delete_sbom),
     )
-    .service(SwaggerUi::new("/swagger-ui/{_:.*}").url("/openapi.json", ApiDoc::openapi()));
+    .service({
+        let mut openapi = ApiDoc::openapi();
+        let mut swagger = SwaggerUi::new("/swagger-ui/{_:.*}");
+
+        if let Some(swagger_ui_oidc) = &swagger_ui_oidc {
+            swagger = swagger_ui_oidc.apply(swagger, &mut openapi);
+        }
+
+        swagger.url("/openapi.json", openapi)
+    });
 }
 
 const ACCEPT_ENCODINGS: [&str; 2] = ["bzip2", "zstd"];
@@ -193,6 +207,7 @@ impl From<&SearchParams> for SearchOptions {
     responses(
         (status = 200, description = "Search completed"),
         (status = BAD_REQUEST, description = "Bad query"),
+        (status = 401, description = "Not authenticated"),
     ),
     params(
         ("q" = String, Query, description = "Search query"),

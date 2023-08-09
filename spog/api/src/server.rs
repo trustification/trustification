@@ -11,6 +11,7 @@ use trustification_api::{search::SearchOptions, Apply};
 use trustification_auth::{
     authenticator::Authenticator,
     client::{TokenInjector, TokenProvider},
+    swagger_ui::SwaggerUiOidc,
 };
 use trustification_infrastructure::app::{new_app, AppOptions};
 use trustification_version::version;
@@ -59,8 +60,6 @@ impl Server {
     }
 
     pub async fn run(self, registry: &Registry, listener: Option<TcpListener>) -> anyhow::Result<()> {
-        let openapi = ApiDoc::openapi();
-
         let state = configure(&self.run)?;
 
         let http_metrics = PrometheusMetricsBuilder::new("spog_api")
@@ -72,6 +71,11 @@ impl Server {
 
         let authenticator: Option<Arc<Authenticator>> =
             Authenticator::from_devmode_or_config(self.run.devmode, self.run.oidc)
+                .await?
+                .map(Arc::new);
+
+        let swagger_oidc: Option<Arc<SwaggerUiOidc>> =
+            SwaggerUiOidc::from_devmode_or_config(self.run.devmode, self.run.swagger_ui_oidc)
                 .await?
                 .map(Arc::new);
 
@@ -88,6 +92,7 @@ impl Server {
             let http_metrics = http_metrics.clone();
             let cors = Cors::permissive();
             let authenticator = authenticator.clone();
+            let swagger_oidc = swagger_oidc.clone();
 
             let mut app = new_app(AppOptions {
                 cors: Some(cors),
@@ -100,7 +105,16 @@ impl Server {
             .configure(sbom::configure(authenticator.clone()))
             .configure(advisory::configure(authenticator.clone()))
             .configure(config_configurator.clone())
-            .service(SwaggerUi::new("/swagger-ui/{_:.*}").url("/openapi.json", openapi.clone()));
+            .service({
+                let mut openapi = ApiDoc::openapi();
+                let mut swagger = SwaggerUi::new("/swagger-ui/{_:.*}");
+
+                if let Some(swagger_ui_oidc) = &swagger_oidc {
+                    swagger = swagger_ui_oidc.apply(swagger, &mut openapi);
+                }
+
+                swagger.url("/openapi.json", openapi)
+            });
 
             if let Some(crda) = &crda {
                 app = app

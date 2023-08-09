@@ -15,7 +15,7 @@ log = "0.4"
 bombastic-index = { path = "../index" }
 bombastic-model = { path = "../model" }
 trustification-api = { path = "../../api" }
-trustification-auth = { path = "../../auth", features = ["actix"] }
+trustification-auth = { path = "../../auth", features = ["actix", "swagger"] }
 trustification-infrastructure = { path = "../../infrastructure" }
 trustification-storage = { path = "../../storage" }
 trustification-index = { path = "../../index" }

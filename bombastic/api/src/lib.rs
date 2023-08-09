@@ -14,6 +14,7 @@ use prometheus::Registry;
 use tokio::sync::RwLock;
 use trustification_auth::authenticator::config::AuthenticatorConfig;
 use trustification_auth::authenticator::Authenticator;
+use trustification_auth::swagger_ui::{SwaggerUiOidc, SwaggerUiOidcConfig};
 use trustification_index::{IndexConfig, IndexStore};
 use trustification_infrastructure::app::{new_app, AppOptions};
 use trustification_infrastructure::{Infrastructure, InfrastructureConfig};
@@ -45,6 +46,9 @@ pub struct Run {
 
     #[command(flatten)]
     pub oidc: AuthenticatorConfig,
+
+    #[command(flatten)]
+    pub swagger_ui_oidc: SwaggerUiOidcConfig,
 }
 
 impl Run {
@@ -55,6 +59,11 @@ impl Run {
         let authenticator: Option<Arc<Authenticator>> = Authenticator::from_devmode_or_config(self.devmode, self.oidc)
             .await?
             .map(Arc::new);
+
+        let swagger_oidc: Option<Arc<SwaggerUiOidc>> =
+            SwaggerUiOidc::from_devmode_or_config(self.devmode, self.swagger_ui_oidc)
+                .await?
+                .map(Arc::new);
 
         if authenticator.is_none() {
             log::warn!("Authentication is disabled");
@@ -72,6 +81,7 @@ impl Run {
                     let http_metrics = http_metrics.clone();
                     let cors = Cors::permissive();
                     let authenticator = authenticator.clone();
+                    let swagger_oidc = swagger_oidc.clone();
 
                     new_app(AppOptions {
                         cors: Some(cors),
@@ -79,7 +89,7 @@ impl Run {
                         authenticator: None,
                     })
                     .app_data(web::Data::new(state.clone()))
-                    .configure(move |svc| server::config(svc, authenticator.clone()))
+                    .configure(move |svc| server::config(svc, authenticator.clone(), swagger_oidc.clone()))
                 });
                 srv = match listener {
                     Some(v) => srv.listen(v)?,
