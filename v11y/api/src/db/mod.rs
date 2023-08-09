@@ -243,7 +243,8 @@ mod test {
 
     #[tokio::test]
     async fn create_db() -> Result<(), anyhow::Error> {
-        let db = Db::new().await?;
+        let _db = Db::new().await?;
+        // not failing is success
         Ok(())
     }
 
