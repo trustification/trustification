@@ -7,6 +7,7 @@ pub mod runner;
 
 pub use bom::*;
 pub use provider::*;
+use serde_json::Value;
 pub use spog::*;
 pub use vex::*;
 
@@ -188,5 +189,32 @@ fn testing_oidc() -> AuthenticatorConfig {
             issuer_url: SSO_ENDPOINT.to_string(),
             ..Default::default()
         },
+    }
+}
+
+pub async fn get_response(
+    port: u16,
+    api_endpoint: &str,
+    exp_status: reqwest::StatusCode,
+    context: &ProviderContext,
+) -> Option<Value> {
+    let url = format!("http://localhost:{}/{}", port, api_endpoint);
+    let response = reqwest::Client::new()
+        .get(&url)
+        .inject_token(&context.provider_manager)
+        .await
+        .unwrap()
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(
+        exp_status,
+        response.status(),
+        "Expected response code does not match with actual response"
+    );
+    if exp_status == StatusCode::BAD_REQUEST {
+        None
+    } else {
+        response.json().await.unwrap()
     }
 }
