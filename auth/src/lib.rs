@@ -1,5 +1,9 @@
 pub mod authenticator;
 pub mod client;
+pub mod devmode;
+
+#[cfg(feature = "swagger")]
+pub mod swagger_ui;
 
 /// A registered user
 pub const ROLE_USER: &str = "chicken-user";

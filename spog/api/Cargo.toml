@@ -52,7 +52,7 @@ trustification-api = { path = "../../api" }
 trustification-common = { path = "../../common" }
 trustification-infrastructure = { path = "../../infrastructure" }
 trustification-version = { path = "../../version", features = ["actix-web"] }
-trustification-auth = { path = "../../auth", features = ["actix"] }
+trustification-auth = { path = "../../auth", features = ["actix", "swagger"] }
 
 [build-dependencies]
 trustification-version = { path = "../../version", features = ["build"] }

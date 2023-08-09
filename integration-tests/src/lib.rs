@@ -19,6 +19,7 @@ use tokio::{select, time::timeout};
 use trustification_auth::{
     authenticator::config::{AuthenticatorConfig, SingleAuthenticatorClientConfig},
     client::TokenInjector,
+    swagger_ui::SwaggerUiOidcConfig,
 };
 use trustification_event_bus::{EventBusConfig, EventBusType};
 use trustification_index::IndexConfig;
@@ -94,6 +95,7 @@ fn bombastic_api() -> bombastic_api::Run {
             enable_tracing: false,
         },
         oidc: testing_oidc(),
+        swagger_ui_oidc: testing_swagger_ui_oidc(),
     }
 }
 
@@ -151,6 +153,7 @@ fn vexination_api() -> vexination_api::Run {
             enable_tracing: false,
         },
         oidc: testing_oidc(),
+        swagger_ui_oidc: testing_swagger_ui_oidc(),
     }
 }
 
@@ -174,6 +177,7 @@ fn spog_api(bport: u16, vport: u16) -> spog_api::Run {
             enable_tracing: false,
         },
         oidc: testing_oidc(),
+        swagger_ui_oidc: testing_swagger_ui_oidc(),
     }
 }
 
@@ -189,6 +193,13 @@ fn testing_oidc() -> AuthenticatorConfig {
             issuer_url: SSO_ENDPOINT.to_string(),
             ..Default::default()
         },
+    }
+}
+
+fn testing_swagger_ui_oidc() -> SwaggerUiOidcConfig {
+    SwaggerUiOidcConfig {
+        swagger_ui_oidc_issuer_url: Some(SSO_ENDPOINT.to_string()),
+        swagger_ui_oidc_client_id: "frontend".to_string(),
     }
 }
 

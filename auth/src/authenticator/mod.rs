@@ -21,7 +21,7 @@ use trustification_common::reqwest::ClientFactory;
 /// An authenticator to authenticate incoming requests.
 #[derive(Clone)]
 pub struct Authenticator {
-    clients: Vec<AuthenticatorClient<ExtendedClaims>>,
+    pub clients: Vec<AuthenticatorClient<ExtendedClaims>>,
 }
 
 impl Authenticator {
@@ -158,7 +158,7 @@ async fn create_client<P: CompactJson + Claims>(
 }
 
 #[derive(Clone)]
-struct AuthenticatorClient<P>
+pub struct AuthenticatorClient<P>
 where
     P: CompactJson + Claims,
 {

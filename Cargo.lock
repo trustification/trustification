@@ -6918,6 +6918,8 @@ dependencies = [
  "tracing",
  "trustification-common",
  "url",
+ "utoipa",
+ "utoipa-swagger-ui",
 ]
 
 [[package]]

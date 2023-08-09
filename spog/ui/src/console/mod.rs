@@ -58,9 +58,6 @@ fn authenticated_page(props: &ChildrenProperties) -> Html {
                     </NavExpandable>
                     <NavRouterItem<AppRoute> to={AppRoute::Scanner}>{ "Scanner" }</NavRouterItem<AppRoute>>
                     <NavExpandable title="Extend">
-                        if let Ok(url) = backend.join(Endpoint::Api, "/swagger-ui/") {
-                            <ExternalNavLink href={url.to_string()}>{ "API" }</ExternalNavLink>
-                        }
                         if let Ok(url) = backend.join(Endpoint::Bombastic, "/swagger-ui/") {
                             <ExternalNavLink href={url.to_string()}>{ "SBOM API" }</ExternalNavLink>
                         }

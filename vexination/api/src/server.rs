@@ -10,6 +10,7 @@ use std::sync::Arc;
 use trustification_api::search::SearchOptions;
 use trustification_auth::{
     authenticator::{user::UserDetails, Authenticator},
+    swagger_ui::SwaggerUiOidc,
     ROLE_MANAGER,
 };
 use trustification_infrastructure::new_auth;
@@ -27,7 +28,11 @@ use crate::SharedState;
 )]
 pub struct ApiDoc;
 
-pub fn config(cfg: &mut web::ServiceConfig, auth: Option<Arc<Authenticator>>) {
+pub fn config(
+    cfg: &mut web::ServiceConfig,
+    auth: Option<Arc<Authenticator>>,
+    swagger_ui_oidc: Option<Arc<SwaggerUiOidc>>,
+) {
     cfg.service(
         web::scope("/api/v1")
             .wrap(new_auth!(auth))
@@ -36,7 +41,16 @@ pub fn config(cfg: &mut web::ServiceConfig, auth: Option<Arc<Authenticator>>) {
             .service(publish_vex)
             .service(search_vex),
     )
-    .service(SwaggerUi::new("/swagger-ui/{_:.*}").url("/openapi.json", ApiDoc::openapi()));
+    .service({
+        let mut openapi = ApiDoc::openapi();
+        let mut swagger = SwaggerUi::new("/swagger-ui/{_:.*}");
+
+        if let Some(swagger_ui_oidc) = &swagger_ui_oidc {
+            swagger = swagger_ui_oidc.apply(swagger, &mut openapi);
+        }
+
+        swagger.url("/openapi.json", openapi)
+    });
 }
 
 async fn fetch_object(storage: &Storage, key: &str) -> HttpResponse {
