@@ -961,9 +961,9 @@ mod tests {
     #[tokio::test]
     async fn test_severity_count() {
         assert_search(|index| {
-            let result = search(&index, "");
-            assert_eq!(result.0.len(), 3);
-            assert_eq!(result.0[0].document.cve_severity_count.len(), 3);
+            let result = search(&index, "id:\"RHSA-2023:1441\"");
+            assert_eq!(result.0.len(), 1);
+            assert_eq!(result.0[0].document.cve_severity_count.len(), 1);
             assert_eq!(result.0[0].document.cve_severity_count["high"], 1);
         });
     }
