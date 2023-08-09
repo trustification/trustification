@@ -246,7 +246,7 @@ impl Db {
             .bind(vuln.id.clone())
             .bind(vuln.origin.clone())
             .bind(severity.r#type.to_string())
-            .bind(severity.score.clone())
+            .bind(severity.score)
             .bind(severity.additional.clone())
             .execute(&self.pool)
             .await?;
