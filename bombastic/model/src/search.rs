@@ -12,7 +12,7 @@ pub enum Packages<'a> {
     Version(Primary<'a>),
     #[search(default)]
     Description(Primary<'a>),
-    #[search]
+    #[search(sort)]
     Created(Ordered<time::OffsetDateTime>),
     Digest(&'a str),
     #[search(scope)]

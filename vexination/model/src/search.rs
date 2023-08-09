@@ -25,7 +25,7 @@ pub enum Vulnerabilities<'a> {
     Affected(Primary<'a>),
     #[search]
     Initial(Ordered<time::OffsetDateTime>),
-    #[search]
+    #[search(sort)]
     Release(Ordered<time::OffsetDateTime>),
     #[search]
     Discovery(Ordered<time::OffsetDateTime>),
