@@ -67,7 +67,7 @@ features = [
 #yew-nested-router = { git = "https://github.com/ctron/yew-nested-router", rev = "9689db446dee7030325884df768d0c2e84f353d6" }
 #yew-more-hooks = { git = "https://github.com/ctron/yew-more-hooks", rev = "3c943759287c59a22256a4748993d2407b9a9e9b" }
 #yew-more-hooks = { path = "../yew-more-hooks" }
-patternfly-yew = { git = "https://github.com/ctron/patternfly-yew", rev = "7a88b7fac682c27cae3cb6f39f1ac620e1420daf" } # FIXME: awaiting release
+patternfly-yew = { git = "https://github.com/ctron/patternfly-yew", rev = "e0dff63fcd4ce48eeee3747ee4eee4e71691ca29" } # FIXME: awaiting release
 #patternfly-yew = { path = "../../../patternfly-yew" }
 
 csaf = { git = "https://github.com/voteblake/csaf-rs", rev = "76cb9ede10adb1fbb495b17e5fd8d95c5cf6c900" } # FIXME: waiting for release
