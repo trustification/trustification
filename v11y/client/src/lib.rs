@@ -58,6 +58,7 @@ pub enum EventType {
     Fixed,
 }
 
+#[allow(unused)]
 pub struct V11yClient {
     url: String,
 }
