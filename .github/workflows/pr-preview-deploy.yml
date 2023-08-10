@@ -83,6 +83,6 @@ jobs:
       - name: Post URL as PR comment
         uses: mshick/add-pr-comment@v2
         with:
-          message: "🚀 Deployed Preview: http://${{steps.surge-url.outputs.result}} ✨"
+          message: "🚀 Deployed Preview: https://${{steps.surge-url.outputs.result}} ✨"
           repo-token: ${{ secrets.PREVIEW_BOT_TOKEN }}
           issue: ${{steps.issue_number.outputs.result}}
