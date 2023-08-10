@@ -12,9 +12,9 @@ use actix_web_prom::PrometheusMetricsBuilder;
 use anyhow::anyhow;
 use prometheus::Registry;
 use tokio::sync::RwLock;
-use trustification_auth::authenticator::config::AuthenticatorConfig;
 use trustification_auth::authenticator::Authenticator;
 use trustification_auth::swagger_ui::{SwaggerUiOidc, SwaggerUiOidcConfig};
+use trustification_auth::{authenticator::config::AuthenticatorConfig, authorizer::Authorizer};
 use trustification_index::{IndexConfig, IndexStore};
 use trustification_infrastructure::app::{new_app, AppOptions};
 use trustification_infrastructure::{Infrastructure, InfrastructureConfig};
@@ -87,6 +87,11 @@ impl Run {
                         cors: Some(cors),
                         metrics: Some(http_metrics),
                         authenticator: None,
+                        authorizer: if self.devmode {
+                            Authorizer::Disabled
+                        } else {
+                            Authorizer::Enabled
+                        },
                     })
                     .app_data(web::Data::new(state.clone()))
                     .configure(move |svc| server::config(svc, authenticator.clone(), swagger_oidc.clone()))

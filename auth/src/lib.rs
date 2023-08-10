@@ -1,4 +1,5 @@
 pub mod authenticator;
+pub mod authorizer;
 pub mod client;
 pub mod devmode;
 

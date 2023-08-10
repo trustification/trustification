@@ -10,6 +10,7 @@ use spog_model::search;
 use trustification_api::{search::SearchOptions, Apply};
 use trustification_auth::{
     authenticator::Authenticator,
+    authorizer::Authorizer,
     client::{TokenInjector, TokenProvider},
     swagger_ui::SwaggerUiOidc,
 };
@@ -98,6 +99,11 @@ impl Server {
                 cors: Some(cors),
                 metrics: Some(http_metrics),
                 authenticator: None, // we map this explicitly
+                authorizer: if self.run.devmode {
+                    Authorizer::Disabled
+                } else {
+                    Authorizer::Enabled
+                },
             })
             .app_data(web::Data::new(state))
             .configure(index::configure())

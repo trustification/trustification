@@ -10,6 +10,7 @@ use std::sync::Arc;
 use trustification_api::search::SearchOptions;
 use trustification_auth::{
     authenticator::{user::UserDetails, Authenticator},
+    authorizer::Authorizer,
     swagger_ui::SwaggerUiOidc,
     ROLE_MANAGER,
 };
@@ -118,9 +119,10 @@ async fn publish_vex(
     state: web::Data<SharedState>,
     params: web::Query<PublishParams>,
     data: Bytes,
-    user: UserDetails,
+    authorizer: web::Data<Authorizer>,
+    user: Option<UserDetails>,
 ) -> actix_web::Result<HttpResponse> {
-    user.require_role(ROLE_MANAGER)?;
+    authorizer.require_role(user, ROLE_MANAGER)?;
 
     let params = params.into_inner();
     let advisory = if let Some(advisory) = params.advisory {

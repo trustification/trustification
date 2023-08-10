@@ -20,6 +20,7 @@ use serde::Deserialize;
 use trustification_api::search::SearchOptions;
 use trustification_auth::{
     authenticator::{user::UserDetails, Authenticator},
+    authorizer::Authorizer,
     swagger_ui::SwaggerUiOidc,
     ROLE_MANAGER,
 };
@@ -255,9 +256,10 @@ async fn publish_sbom(
     params: web::Query<IdentifierParams>,
     payload: web::Payload,
     content_type: Option<web::Header<ContentType>>,
-    user: UserDetails,
+    authorizer: web::Data<Authorizer>,
+    user: Option<UserDetails>,
 ) -> actix_web::Result<impl Responder> {
-    user.require_role(ROLE_MANAGER)?;
+    authorizer.require_role(user, ROLE_MANAGER)?;
 
     let typ = verify_type(content_type)?;
     let enc = verify_encoding(req.headers().get(CONTENT_ENCODING))?;
@@ -316,9 +318,10 @@ fn verify_encoding(content_encoding: Option<&HeaderValue>) -> Result<Option<&str
 async fn delete_sbom(
     state: web::Data<SharedState>,
     params: web::Query<IdentifierParams>,
-    user: UserDetails,
+    authorizer: web::Data<Authorizer>,
+    user: Option<UserDetails>,
 ) -> actix_web::Result<impl Responder> {
-    user.require_role(ROLE_MANAGER)?;
+    authorizer.require_role(user, ROLE_MANAGER)?;
 
     let params = params.into_inner();
     let id = &params.id;

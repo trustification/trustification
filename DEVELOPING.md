@@ -53,7 +53,7 @@ The default credentials for single sign on are:
 * **Username:** `admin`
 * **Password:** `admin123456`
 
-When running with `--devmode`, you can request an access token using:
+When running with `--devmode` and authentication enabled, you can request an access token using:
 
 ```shell
 curl -s -d "client_id=walker" -d "client_secret=ZVzq9AMOVUdMY1lSohpx1jI3aW56QDPS" -d 'grant_type=client_credentials' \
@@ -72,6 +72,7 @@ echo "Access Token: $TOKEN"
 
 You can then add `$CURL_OPTS` to all `curl` calls in order to use the token.
 
+
 ## APIs
 
 To run the API processes, you can use cargo:
@@ -81,6 +82,8 @@ RUST_LOG=info cargo run -p trust -- vexination api --devmode -p 8081 &
 RUST_LOG=info cargo run -p trust -- bombastic api --devmode -p 8082 &
 RUST_LOG=info cargo run -p trust -- spog api --devmode -p 8083  &
 ```
+
+If you want to disable authentication (not recommended unless you are not exposing any services outside localhost), you can pass the `--authentication-disabled` flag to the above commands.
 
 ## Indexing
 
