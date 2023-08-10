@@ -285,22 +285,14 @@ impl Db {
     pub async fn get_known_ids(&self) -> impl Stream<Item = String> {
         sqlx::query(r#"select distinct id from vulnerabilities"#)
             .fetch(&self.pool)
-            .filter_map(|row| async move {
-                row.ok().map(|row| {
-                    row.get::<String, _>("id")
-                })
-            })
+            .filter_map(|row| async move { row.ok().map(|row| row.get::<String, _>("id")) })
     }
 
     #[allow(unused)]
     pub async fn get_known_origins(&self) -> impl Stream<Item = String> {
         sqlx::query(r#"select distinct origin from vulnerabilities"#)
             .fetch(&self.pool)
-            .filter_map(|row| async move {
-                row.ok().map(|row| {
-                    row.get::<String, _>("origin")
-                })
-            })
+            .filter_map(|row| async move { row.ok().map(|row| row.get::<String, _>("origin")) })
     }
 
     pub async fn get_severities<'s>(
@@ -345,7 +337,7 @@ impl Db {
                         r#type: ScoreType::from(row.get::<String, _>("type")),
                         score: row.get::<f32, _>("score"),
                         additional: row.get::<Option<String>, _>("additional"),
-                    }
+                    },
                 )
             })
         })
@@ -386,9 +378,8 @@ impl Db {
         };
 
         query.fetch(&self.pool).filter_map(|row| async move {
-            row.ok().map(|row| {
-                (row.get::<String, _>("origin"), row.get::<String, _>("related"))
-            })
+            row.ok()
+                .map(|row| (row.get::<String, _>("origin"), row.get::<String, _>("related")))
         })
     }
 }
