@@ -48,8 +48,24 @@ async fn test_search_forward_bombastic(context: &mut SpogContext) {
         .unwrap();
 
     assert_eq!(response.status(), StatusCode::OK);
-    let data: Value = response.json().await.unwrap();
-    println!("{data:#?}");
+
+    // Check forwarding of search errors
+    let client = reqwest::Client::new();
+
+    let response = client
+        .get(format!(
+            "http://localhost:{port}/api/v1/package/search",
+            port = context.port
+        ))
+        .query(&[("q", urlencoding::encode("unknown:field"))])
+        .inject_token(&context.provider.provider_user)
+        .await
+        .unwrap()
+        .send()
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::BAD_REQUEST);
 }
 
 /// SPoG is the entrypoint for the frontend. It exposes a search API, but forwards requests

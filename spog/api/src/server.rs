@@ -1,9 +1,10 @@
 use std::{net::TcpListener, sync::Arc};
 
 use actix_cors::Cors;
-use actix_web::{web, HttpServer};
+use actix_web::{http::header::ContentType, web, HttpResponse, HttpServer};
 use actix_web_prom::PrometheusMetricsBuilder;
 use anyhow::anyhow;
+use derive_more::{Display, Error, From};
 use http::StatusCode;
 use prometheus::Registry;
 use spog_model::search;
@@ -11,9 +12,10 @@ use trustification_api::{search::SearchOptions, Apply};
 use trustification_auth::{
     authenticator::Authenticator,
     authorizer::Authorizer,
-    client::{TokenInjector, TokenProvider},
+    client::{Error as AuthClientError, TokenInjector, TokenProvider},
     swagger_ui::SwaggerUiOidc,
 };
+use trustification_common::error::ErrorInformation;
 use trustification_infrastructure::app::{new_app, AppOptions};
 use trustification_version::version;
 use utoipa::OpenApi;
@@ -139,6 +141,53 @@ impl Server {
     }
 }
 
+#[derive(Debug, Display, Error, From)]
+pub enum Error {
+    #[display(fmt = "response error: {:?}", "_0")]
+    Response(StatusCode, String),
+    #[display(fmt = "request error: {:?}", "_0")]
+    Request(reqwest::Error),
+    #[display(fmt = "url parse error: {}", "_0")]
+    UrlParse(url::ParseError),
+    #[display(fmt = "authentication error: {}", "_0")]
+    AuthClient(AuthClientError),
+}
+
+impl actix_web::error::ResponseError for Error {
+    fn error_response(&self) -> HttpResponse {
+        let mut res = HttpResponse::build(self.status_code());
+        res.insert_header(ContentType::json());
+        match self {
+            Self::Response(status, error) => res.json(ErrorInformation {
+                error: format!("{}", status),
+                message: "Error response from backend service".to_string(),
+                details: error.to_string(),
+            }),
+            Self::Request(error) => res.json(ErrorInformation {
+                error: format!("{}", self.status_code()),
+                message: "Error creating request to backend service".to_string(),
+                details: error.to_string(),
+            }),
+            Self::UrlParse(error) => res.json(ErrorInformation {
+                error: format!("{}", self.status_code()),
+                message: "Error constructing url to backend service".to_string(),
+                details: error.to_string(),
+            }),
+            Self::AuthClient(error) => res.json(ErrorInformation {
+                error: format!("{}", self.status_code()),
+                message: "Error creating authentication client".to_string(),
+                details: error.to_string(),
+            }),
+        }
+    }
+    fn status_code(&self) -> StatusCode {
+        match self {
+            Self::Response(status, _) => *status,
+            _ => StatusCode::INTERNAL_SERVER_ERROR,
+        }
+    }
+}
+
 pub struct AppState {
     client: reqwest::Client,
     pub bombastic: reqwest::Url,
@@ -150,7 +199,7 @@ impl AppState {
         &self,
         id: &str,
         provider: &dyn TokenProvider,
-    ) -> Result<impl futures::Stream<Item = reqwest::Result<bytes::Bytes>>, anyhow::Error> {
+    ) -> Result<impl futures::Stream<Item = reqwest::Result<bytes::Bytes>>, Error> {
         let url = self.bombastic.join("/api/v1/sbom")?;
         let response = self
             .client
@@ -163,10 +212,11 @@ impl AppState {
         if response.status() == StatusCode::OK {
             Ok(response.bytes_stream())
         } else {
-            Err(anyhow::anyhow!(
-                "Error querying bombastic service: {:?}",
-                response.status()
-            ))
+            let status = response.status();
+            match response.text().await {
+                Ok(body) => Err(Error::Response(status, body)),
+                Err(e) => Err(Error::Request(e)),
+            }
         }
     }
 
@@ -177,7 +227,7 @@ impl AppState {
         limit: usize,
         options: SearchOptions,
         provider: &dyn TokenProvider,
-    ) -> Result<bombastic_model::search::SearchResult, anyhow::Error> {
+    ) -> Result<bombastic_model::search::SearchResult, Error> {
         let url = self.bombastic.join("/api/v1/sbom/search")?;
         let response = self
             .client
@@ -192,10 +242,11 @@ impl AppState {
         if response.status() == StatusCode::OK {
             Ok(response.json::<bombastic_model::prelude::SearchResult>().await?)
         } else {
-            Err(anyhow::anyhow!(
-                "Error querying bombastic service: {:?}",
-                response.status()
-            ))
+            let status = response.status();
+            match response.text().await {
+                Ok(body) => Err(Error::Response(status, body)),
+                Err(e) => Err(Error::Request(e)),
+            }
         }
     }
 
@@ -203,7 +254,7 @@ impl AppState {
         &self,
         id: &str,
         provider: &dyn TokenProvider,
-    ) -> Result<impl futures::Stream<Item = reqwest::Result<bytes::Bytes>>, anyhow::Error> {
+    ) -> Result<impl futures::Stream<Item = reqwest::Result<bytes::Bytes>>, Error> {
         let url = self.vexination.join("/api/v1/vex")?;
         let response = self
             .client
@@ -216,10 +267,11 @@ impl AppState {
         if response.status() == StatusCode::OK {
             Ok(response.bytes_stream())
         } else {
-            Err(anyhow::anyhow!(
-                "Error querying bombastic service: {:?}",
-                response.status()
-            ))
+            let status = response.status();
+            match response.text().await {
+                Ok(body) => Err(Error::Response(status, body)),
+                Err(e) => Err(Error::Request(e)),
+            }
         }
     }
 
@@ -230,7 +282,7 @@ impl AppState {
         limit: usize,
         options: SearchOptions,
         provider: &dyn TokenProvider,
-    ) -> Result<vexination_model::search::SearchResult, anyhow::Error> {
+    ) -> Result<vexination_model::search::SearchResult, Error> {
         let url = self.vexination.join("/api/v1/vex/search")?;
         let response = self
             .client
@@ -245,10 +297,11 @@ impl AppState {
         if response.status() == StatusCode::OK {
             Ok(response.json::<vexination_model::prelude::SearchResult>().await?)
         } else {
-            Err(anyhow::anyhow!(
-                "Error querying vexination service: {:?}",
-                response.status()
-            ))
+            let status = response.status();
+            match response.text().await {
+                Ok(body) => Err(Error::Response(status, body)),
+                Err(e) => Err(Error::Request(e)),
+            }
         }
     }
 }

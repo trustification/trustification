@@ -94,6 +94,7 @@ impl error::ResponseError for Error {
         match self {
             Self::Storage(StorageError::NotFound) => StatusCode::NOT_FOUND,
             Self::InvalidContentType | Self::InvalidContentEncoding => StatusCode::BAD_REQUEST,
+            Self::Index(IndexError::Parser(_)) => StatusCode::BAD_REQUEST,
             e => {
                 log::error!("{e:?}");
                 StatusCode::INTERNAL_SERVER_ERROR
