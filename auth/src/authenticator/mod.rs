@@ -31,7 +31,7 @@ impl Authenticator {
 
     pub async fn from_devmode_or_config(devmode: bool, config: AuthenticatorConfig) -> anyhow::Result<Option<Self>> {
         match devmode {
-            true => Self::from_config(AuthenticatorConfig::devmode()).await,
+            true => Self::from_config(AuthenticatorConfig::devmode(config.disabled)).await,
             false => Self::from_config(config).await,
         }
     }

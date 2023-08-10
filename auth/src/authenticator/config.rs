@@ -21,9 +21,9 @@ pub struct AuthenticatorConfig {
 
 impl AuthenticatorConfig {
     /// Create "devmode" configuration
-    pub fn devmode() -> Self {
+    pub fn devmode(disabled: bool) -> Self {
         AuthenticatorConfig {
-            disabled: false,
+            disabled,
             clients: SingleAuthenticatorClientConfig {
                 client_ids: devmode::CLIENT_IDS.iter().map(|s| s.to_string()).collect(),
                 issuer_url: devmode::issuer_url(),
