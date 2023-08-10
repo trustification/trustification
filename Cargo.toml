@@ -41,6 +41,8 @@ members = [
     "index",
     "infrastructure",
     "version",
+    "admin",
+    "indexer",
 ]
 default-members = [
     "auth",
@@ -79,6 +81,7 @@ default-members = [
     "index",
     "infrastructure",
     "version",
+    "indexer",
 ]
 
 [patch.crates-io]

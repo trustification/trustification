@@ -3,8 +3,23 @@ use sikula::prelude::*;
 
 #[derive(Clone, Debug, PartialEq, Search)]
 pub enum Packages<'a> {
+    /// Search package name and package reference.
+    ///
+    /// Example queries:
+    ///
+    /// ```ignore
+    /// package:openssl
+    /// ubi in:package
+    /// ```
     #[search(default)]
     Package(Primary<'a>),
+    /// Search package types based on Package URL types.
+    ///
+    /// Example queries:
+    ///
+    /// ```ignore
+    /// type:oci
+    /// ```
     Type(&'a str),
     #[search]
     Namespace(&'a str),

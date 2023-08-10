@@ -348,6 +348,20 @@ impl Storage {
         }
     }
 
+    /// List all data objects stored in this bucket
+    pub async fn list_all_objects(&self) -> Result<impl Stream<Item = Result<(String, Vec<u8>), Error>> + '_, Error> {
+        let results = self.bucket.list(DATA_PATH[1..].to_string(), None).await?;
+        let s = try_stream! {
+            for result in results {
+                for obj in result.contents {
+                    let o = self.get_object(&obj.key).await;
+                    yield (obj.key, o?);
+                }
+            }
+        };
+        Ok(s)
+    }
+
     pub async fn put_index(&self, index: &[u8]) -> Result<(), Error> {
         self.bucket.put_object(INDEX_PATH, index).await?;
         self.metrics.index_puts_total.inc();

@@ -1,6 +1,7 @@
 use std::sync::Arc;
 use std::{future::Future, pin::Pin};
 
+use actix_web::web::ServiceConfig;
 use actix_web::{http::uri::Builder, middleware::Logger, web, App, HttpRequest, HttpResponse, HttpServer, Responder};
 use anyhow::Context;
 use futures::future::select_all;
@@ -98,11 +99,14 @@ impl Infrastructure {
 
     pub async fn start(self) -> anyhow::Result<InfrastructureRunner> {
         Ok(InfrastructureRunner {
-            runner: Box::pin(self.start_internal().await?),
+            runner: Box::pin(self.start_internal(|_| {}).await?),
         })
     }
 
-    async fn start_internal(self) -> anyhow::Result<Pin<Box<dyn Future<Output = anyhow::Result<()>>>>> {
+    async fn start_internal(
+        self,
+        configurator: impl FnOnce(&mut ServiceConfig) + Send + Clone + 'static,
+    ) -> anyhow::Result<Pin<Box<dyn Future<Output = anyhow::Result<()>>>>> {
         if !self.config.infrastructure_enabled {
             log::info!("Infrastructure endpoint is disabled");
             return Ok(Box::pin(async move {
@@ -116,6 +120,7 @@ impl Infrastructure {
 
         let mut http = HttpServer::new(move || {
             let metrics_registry = self.metrics.clone();
+            let configurator = configurator.clone();
             App::new()
                 .wrap(Logger::default())
                 .app_data(web::Data::new(metrics_registry))
@@ -127,6 +132,7 @@ impl Infrastructure {
                         .service(web::resource("/startup").to(health)),
                 )
                 .service(web::resource("/metrics").to(metrics))
+                .configure(|c| configurator(c))
         });
 
         if self.config.infrastructure_workers > 0 {
@@ -147,14 +153,19 @@ impl Infrastructure {
         }))
     }
 
-    pub async fn run<F, Fut>(self, id: &str, main: F) -> anyhow::Result<()>
+    pub async fn run_with_config<F, Fut>(
+        self,
+        id: &str,
+        main: F,
+        configurator: impl FnOnce(&mut ServiceConfig) + Clone + Send + 'static,
+    ) -> anyhow::Result<()>
     where
         F: FnOnce(Arc<Metrics>) -> Fut,
         Fut: Future<Output = anyhow::Result<()>>,
     {
         init_tracing(id, self.config.enable_tracing.into());
         let main = Box::pin(main(self.metrics.clone())) as Pin<Box<dyn Future<Output = anyhow::Result<()>>>>;
-        let runner = Box::pin(self.start_internal().await?);
+        let runner = Box::pin(self.start_internal(configurator).await?);
         let sigint = Box::pin(async { signal::ctrl_c().await.context("termination failed") });
 
         #[allow(unused_mut)]
@@ -171,6 +182,14 @@ impl Infrastructure {
 
         let (result, _index, _others) = select_all(tasks).await;
         result
+    }
+
+    pub async fn run<F, Fut>(self, id: &str, main: F) -> anyhow::Result<()>
+    where
+        F: FnOnce(Arc<Metrics>) -> Fut,
+        Fut: Future<Output = anyhow::Result<()>>,
+    {
+        self.run_with_config(id, main, |_| {}).await
     }
 }
 

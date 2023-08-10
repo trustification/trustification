@@ -1333,6 +1333,7 @@ dependencies = [
  "tokio",
  "trustification-event-bus",
  "trustification-index",
+ "trustification-indexer",
  "trustification-infrastructure",
  "trustification-storage",
  "zstd",
@@ -6881,8 +6882,22 @@ dependencies = [
  "serde_json",
  "spog",
  "tokio",
+ "trustification-admin",
  "v11y",
  "vexination",
+]
+
+[[package]]
+name = "trustification-admin"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "log",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "tokio",
 ]
 
 [[package]]
@@ -6969,6 +6984,28 @@ dependencies = [
  "time 0.3.23",
  "tokio",
  "trustification-api",
+ "zstd",
+]
+
+[[package]]
+name = "trustification-indexer"
+version = "0.1.0"
+dependencies = [
+ "actix-web",
+ "anyhow",
+ "clap",
+ "futures",
+ "hex",
+ "log",
+ "prometheus",
+ "rand 0.8.5",
+ "serde",
+ "serde_json",
+ "tokio",
+ "trustification-event-bus",
+ "trustification-index",
+ "trustification-infrastructure",
+ "trustification-storage",
  "zstd",
 ]
 
@@ -7430,6 +7467,7 @@ dependencies = [
  "tokio",
  "trustification-event-bus",
  "trustification-index",
+ "trustification-indexer",
  "trustification-infrastructure",
  "trustification-storage",
  "vexination-index",
