@@ -423,6 +423,10 @@ impl trustification_index::Index for Index {
         }
     }
 
+    fn parse_doc(data: &[u8]) -> Result<SBOM, SearchError> {
+        SBOM::parse(data).map_err(|e| SearchError::DocParser(e.to_string()))
+    }
+
     fn schema(&self) -> Schema {
         self.schema.clone()
     }

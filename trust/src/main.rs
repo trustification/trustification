@@ -22,6 +22,9 @@ pub enum Command {
     V11y(v11y::Command),
 
     Exporter(exporter::Run),
+
+    #[command(subcommand)]
+    Admin(trustification_admin::Command),
 }
 
 #[derive(clap::Parser, Debug)]
@@ -64,6 +67,7 @@ impl Cli {
             Command::Collector(run) => run.run().await,
             Command::Exporter(run) => run.run().await,
             Command::V11y(run) => run.run().await,
+            Command::Admin(run) => run.run().await,
         }
     }
 }

@@ -109,6 +109,7 @@ pub trait Index {
     type Document;
     type QueryContext: core::fmt::Debug;
 
+    fn parse_doc(data: &[u8]) -> Result<Self::Document, Error>;
     fn settings(&self) -> IndexSettings;
     fn schema(&self) -> Schema;
     fn prepare_query(&self, q: &str) -> Result<Self::QueryContext, Error>;
@@ -138,6 +139,7 @@ pub enum Error {
     NotFound,
     NotPersisted,
     InvalidSortOrder,
+    DocParser(String),
     Parser(String),
     Search(tantivy::TantivyError),
     Prometheus(prometheus::Error),
@@ -158,6 +160,7 @@ impl Display for Error {
             Self::NotFound => write!(f, "Not found"),
             Self::NotPersisted => write!(f, "Database is not persisted"),
             Self::InvalidSortOrder => write!(f, "Sort order is not supported"),
+            Self::DocParser(e) => write!(f, "Failed to parse document: {e}"),
             Self::Parser(e) => write!(f, "Failed to parse query: {e}"),
             Self::Search(e) => write!(f, "Error in search index: {:?}", e),
             Self::Prometheus(e) => write!(f, "Error in prometheus: {:?}", e),
@@ -180,12 +183,7 @@ pub struct IndexWriter {
 }
 
 impl IndexWriter {
-    pub fn add_document<INDEX: Index>(
-        &mut self,
-        index: &mut INDEX,
-        id: &str,
-        raw: &INDEX::Document,
-    ) -> Result<(), Error> {
+    pub fn add_document<INDEX: Index>(&mut self, index: &INDEX, id: &str, raw: &INDEX::Document) -> Result<(), Error> {
         self.delete_document(index, id);
         let docs = index.index_doc(id, raw)?;
         for doc in docs {
@@ -535,6 +533,12 @@ mod tests {
 
         fn schema(&self) -> Schema {
             self.schema.clone()
+        }
+
+        fn parse_doc(data: &[u8]) -> Result<Self::Document, Error> {
+            core::str::from_utf8(data)
+                .map_err(|e| Error::DocParser(e.to_string()))
+                .map(|s| s.to_string())
         }
 
         fn prepare_query(&self, q: &str) -> Result<Box<dyn Query>, Error> {
