@@ -22,7 +22,7 @@ chrono = "0.4.23"
 clap = { version = "4.0.29", features = ["derive"] }
 env_logger = "0.10"
 futures = "0.3"
-guac = { git = "https://github.com/dejanb/guac-rs.git", branch = "main" }
+guac = "0.1"
 http = "*"
 log = "0.4"
 mime = "0.3.16"
