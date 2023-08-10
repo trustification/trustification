@@ -1,10 +1,12 @@
 use actix_web::{
     get,
     http::header::ContentType,
+    http::StatusCode,
     route,
     web::{self, Bytes},
-    HttpResponse, Responder,
+    HttpResponse,
 };
+use derive_more::{Display, Error, From};
 use serde::Deserialize;
 use std::sync::Arc;
 use trustification_api::search::SearchOptions;
@@ -14,7 +16,9 @@ use trustification_auth::{
     swagger_ui::SwaggerUiOidc,
     ROLE_MANAGER,
 };
+use trustification_index::Error as IndexError;
 use trustification_infrastructure::new_auth;
+use trustification_storage::Error as StorageError;
 use trustification_storage::Storage;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
@@ -60,6 +64,32 @@ async fn fetch_object(storage: &Storage, key: &str) -> HttpResponse {
         Err(e) => {
             log::warn!("Unable to locate object with key {}: {:?}", key, e);
             HttpResponse::NotFound().finish()
+        }
+    }
+}
+
+#[derive(Debug, Display, Error, From)]
+enum Error {
+    #[display(fmt = "storage error: {}", "_0")]
+    Storage(StorageError),
+    #[display(fmt = "index error: {}", "_0")]
+    Index(IndexError),
+}
+
+impl actix_web::error::ResponseError for Error {
+    fn error_response(&self) -> HttpResponse {
+        let mut res = HttpResponse::build(self.status_code());
+        res.insert_header(ContentType::plaintext());
+        res.body(self.to_string())
+    }
+    fn status_code(&self) -> StatusCode {
+        match self {
+            Self::Storage(StorageError::NotFound) => StatusCode::NOT_FOUND,
+            Self::Index(IndexError::Parser(_)) => StatusCode::BAD_REQUEST,
+            e => {
+                log::error!("{e:?}");
+                StatusCode::INTERNAL_SERVER_ERROR
+            }
         }
     }
 }
@@ -139,18 +169,10 @@ async fn publish_vex(
 
     let storage = state.storage.write().await;
     log::debug!("Storing new VEX with id: {advisory}");
-    Ok(match storage.put_json_slice(&advisory, &data).await {
-        Ok(_) => {
-            let msg = format!("VEX of size {} stored successfully", &data[..].len());
-            log::trace!("{}", msg);
-            HttpResponse::Created().body(msg)
-        }
-        Err(e) => {
-            let msg = format!("Error storing VEX: {:?}", e);
-            log::warn!("{}", msg);
-            HttpResponse::InternalServerError().body(msg)
-        }
-    })
+    storage.put_json_slice(&advisory, &data).await.map_err(Error::Storage)?;
+    let msg = format!("VEX of size {} stored successfully", &data[..].len());
+    log::trace!("{}", msg);
+    Ok(HttpResponse::Created().body(msg))
 }
 
 /// Parameters for search query.
@@ -213,21 +235,17 @@ impl From<&SearchParams> for SearchOptions {
     )
 )]
 #[get("/vex/search")]
-async fn search_vex(state: web::Data<SharedState>, params: web::Query<SearchParams>) -> impl Responder {
+async fn search_vex(
+    state: web::Data<SharedState>,
+    params: web::Query<SearchParams>,
+) -> actix_web::Result<HttpResponse> {
     let params = params.into_inner();
 
     log::info!("Querying VEX using {}", params.q);
 
     let index = state.index.read().await;
-    let result = index.search(&params.q, params.offset, params.limit, (&params).into());
-
-    let (result, total) = match result {
-        Err(e) => {
-            log::info!("Error searching: {:?}", e);
-            return HttpResponse::InternalServerError().body(e.to_string());
-        }
-        Ok(result) => result,
-    };
-
-    HttpResponse::Ok().json(SearchResult { total, result })
+    let (result, total) = index
+        .search(&params.q, params.offset, params.limit, (&params).into())
+        .map_err(Error::Index)?;
+    Ok(HttpResponse::Ok().json(SearchResult { total, result }))
 }

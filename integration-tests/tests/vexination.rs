@@ -57,6 +57,24 @@ async fn test_vexination(vexination: &mut VexinationContext) {
             }
             tokio::time::sleep(Duration::from_secs(4)).await;
         }
+
+        // Ensure get expected errors on bad queries
+        for query in &["unknown:foo", "foo sort:unknown"] {
+            let response = client
+                .get(format!(
+                    "http://localhost:{port}/api/v1/vex/search?q={}",
+                    encode(query),
+                    port = vexination.port
+                ))
+                .inject_token(&vexination.provider.provider_manager)
+                .await
+                .unwrap()
+                .send()
+                .await
+                .unwrap();
+
+            assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+        }
     })
     .await;
 }

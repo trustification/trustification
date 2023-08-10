@@ -16,6 +16,7 @@ actix-web-extras = "0.1"
 actix-web-prom = "0.6.0"
 actix-ws = "*"
 anyhow = "1"
+derive_more = "0.99"
 bytes = "1"
 chrono = "0.4.23"
 clap = { version = "4.0.29", features = ["derive"] }

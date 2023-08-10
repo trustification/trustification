@@ -1,7 +1,7 @@
-use actix_web::{web, web::ServiceConfig, HttpResponse, Responder};
+use actix_web::{web, web::ServiceConfig, HttpResponse};
 use actix_web_httpauth::extractors::bearer::BearerAuth;
 use http::header;
-use log::{debug, trace, warn};
+use log::{debug, trace};
 use spog_model::search::{PackageSummary, SearchResult};
 use std::sync::Arc;
 use trustification_api::search::SearchOptions;
@@ -39,21 +39,14 @@ pub async fn get(
     state: web::Data<SharedState>,
     web::Query(GetParams { id, token }): web::Query<GetParams>,
     access_token: Option<BearerAuth>,
-) -> impl Responder {
+) -> actix_web::Result<HttpResponse> {
     let token = token.or_else(|| access_token.map(|s| s.token().to_string()));
-    match state.get_sbom(&id, &token).await {
-        Ok(response) => {
-            // TODO: should check the content type, but assume JSON for now
-            let value = format!(r#"attachment; filename="{}.json""#, id);
-            HttpResponse::Ok()
-                .append_header((header::CONTENT_DISPOSITION, value))
-                .streaming(response)
-        }
-        Err(e) => {
-            warn!("Error lookup in bombastic: {:?}", e);
-            HttpResponse::InternalServerError().finish()
-        }
-    }
+    let response = state.get_sbom(&id, &token).await?;
+    // TODO: should check the content type, but assume JSON for now
+    let value = format!(r#"attachment; filename="{}.json""#, id);
+    Ok(HttpResponse::Ok()
+        .append_header((header::CONTENT_DISPOSITION, value))
+        .streaming(response))
 }
 
 #[utoipa::path(
@@ -73,10 +66,10 @@ pub async fn search(
     params: web::Query<search::QueryParams>,
     options: web::Query<SearchOptions>,
     access_token: Option<BearerAuth>,
-) -> HttpResponse {
+) -> actix_web::Result<HttpResponse> {
     let params = params.into_inner();
     trace!("Querying SBOM using {}", params.q);
-    match state
+    let data = state
         .search_sbom(
             &params.q,
             params.offset,
@@ -84,48 +77,40 @@ pub async fn search(
             options.into_inner(),
             &access_token,
         )
-        .await
-    {
-        Ok(data) => {
-            let mut m: Vec<PackageSummary> = Vec::with_capacity(data.result.len());
-            for item in data.result {
-                let metadata = item.metadata.unwrap_or_default();
-                let item = item.document;
-                m.push(PackageSummary {
-                    id: item.id.clone(),
-                    purl: item.purl,
-                    name: item.name,
-                    cpe: item.cpe,
-                    version: item.version,
-                    sha256: item.sha256,
-                    license: item.license,
-                    snippet: item.snippet,
-                    classifier: item.classifier,
-                    supplier: item.supplier.trim_start_matches("Organization: ").to_string(),
-                    href: format!("/api/v1/package?id={}", item.id),
-                    description: item.description,
-                    dependencies: item.dependencies,
-                    advisories: Vec::new(),
-                    created: item.created,
-                    metadata,
-                });
-            }
-
-            let mut result = SearchResult::<Vec<PackageSummary>> {
-                total: Some(data.total),
-                result: m,
-            };
-
-            // TODO: Use guac to lookup advisories for each package!
-            search_advisories(state, &mut result.result, &access_token).await;
-            debug!("Search result: {:?}", result);
-            HttpResponse::Ok().json(result)
-        }
-        Err(e) => {
-            warn!("Error querying bombastic: {:?}", e);
-            HttpResponse::InternalServerError().finish()
-        }
+        .await?;
+    let mut m: Vec<PackageSummary> = Vec::with_capacity(data.result.len());
+    for item in data.result {
+        let metadata = item.metadata.unwrap_or_default();
+        let item = item.document;
+        m.push(PackageSummary {
+            id: item.id.clone(),
+            purl: item.purl,
+            name: item.name,
+            cpe: item.cpe,
+            version: item.version,
+            sha256: item.sha256,
+            license: item.license,
+            snippet: item.snippet,
+            classifier: item.classifier,
+            supplier: item.supplier.trim_start_matches("Organization: ").to_string(),
+            href: format!("/api/v1/package?id={}", item.id),
+            description: item.description,
+            dependencies: item.dependencies,
+            advisories: Vec::new(),
+            created: item.created,
+            metadata,
+        });
     }
+
+    let mut result = SearchResult::<Vec<PackageSummary>> {
+        total: Some(data.total),
+        result: m,
+    };
+
+    // TODO: Use guac to lookup advisories for each package!
+    search_advisories(state, &mut result.result, &access_token).await;
+    debug!("Search result: {:?}", result);
+    Ok(HttpResponse::Ok().json(result))
 }
 
 async fn search_advisories(

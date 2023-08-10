@@ -145,6 +145,27 @@ async fn test_search(context: &mut BombasticContext) {
             }
             tokio::time::sleep(Duration::from_secs(1)).await;
         }
+
+        // Ensure get expected errors on bad queries
+        for query in &[
+            "unknown:ubi9-container-9.1.0-1782.testdata",
+            "ubi9-container-9.1.0-1782.testdata sort:unknown",
+        ] {
+            let query = encode(query);
+            let url = format!(
+                "http://localhost:{port}/api/v1/sbom/search?q={query}",
+                port = context.port
+            );
+            let response = reqwest::Client::new()
+                .get(url)
+                .inject_token(&context.provider.provider_manager)
+                .await
+                .unwrap()
+                .send()
+                .await
+                .unwrap();
+            assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+        }
     })
     .await;
 }

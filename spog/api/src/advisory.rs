@@ -1,7 +1,7 @@
-use actix_web::{web, web::ServiceConfig, HttpResponse, Responder};
+use actix_web::{web, web::ServiceConfig, HttpResponse};
 use actix_web_httpauth::extractors::bearer::BearerAuth;
 use http::header;
-use log::{info, trace, warn};
+use log::trace;
 use spog_model::search::{AdvisorySummary, SearchResult};
 use std::sync::Arc;
 use trustification_api::search::SearchOptions;
@@ -44,21 +44,14 @@ pub async fn get(
     state: web::Data<SharedState>,
     web::Query(GetParams { token, id }): web::Query<GetParams>,
     access_token: Option<BearerAuth>,
-) -> impl Responder {
+) -> actix_web::Result<HttpResponse> {
     let token = token.or_else(|| access_token.map(|s| s.token().to_string()));
-    match state.get_vex(&id, &token).await {
-        Ok(stream) => {
-            // TODO: should check the content type, but assume JSON for now
-            let value = format!(r#"attachment; filename="{}.json""#, id);
-            HttpResponse::Ok()
-                .append_header((header::CONTENT_DISPOSITION, value))
-                .streaming(stream)
-        }
-        Err(e) => {
-            warn!("Unable to locate object with key {}: {:?}", id, e);
-            HttpResponse::NotFound().finish()
-        }
-    }
+    let stream = state.get_vex(&id, &token).await?;
+    // TODO: should check the content type, but assume JSON for now
+    let value = format!(r#"attachment; filename="{}.json""#, id);
+    Ok(HttpResponse::Ok()
+        .append_header((header::CONTENT_DISPOSITION, value))
+        .streaming(stream))
 }
 
 #[utoipa::path(
@@ -78,7 +71,7 @@ pub async fn search(
     params: web::Query<QueryParams>,
     options: web::Query<SearchOptions>,
     access_token: Option<BearerAuth>,
-) -> impl Responder {
+) -> actix_web::Result<HttpResponse> {
     let params = params.into_inner();
     trace!("Querying VEX using {}", params.q);
     let result = state
@@ -89,15 +82,7 @@ pub async fn search(
             options.into_inner(),
             &access_token,
         )
-        .await;
-
-    let result = match result {
-        Err(e) => {
-            info!("Error searching: {:?}", e);
-            return HttpResponse::InternalServerError().body(e.to_string());
-        }
-        Ok(result) => result,
-    };
+        .await?;
 
     let mut m = Vec::with_capacity(result.result.len());
     for item in result.result {
@@ -118,8 +103,8 @@ pub async fn search(
         });
     }
 
-    HttpResponse::Ok().json(SearchResult::<Vec<AdvisorySummary>> {
+    Ok(HttpResponse::Ok().json(SearchResult::<Vec<AdvisorySummary>> {
         total: Some(result.total),
         result: m,
-    })
+    }))
 }
