@@ -245,9 +245,16 @@ async fn test_upload_empty_json(context: &mut BombasticContext) {
     //Known issue - Respose 200 instead of 400
     let input: serde_json::Value = serde_json::json!({});
     let id = "empty-json-upload";
-    let api_end_point = format!("api/v1/sbom?id={id}");
-    upload_sbom(context.port, id, &input, &context.provider).await;
-    get_response(context.port, &api_end_point, StatusCode::BAD_REQUEST, &context.provider).await;
+    let response = reqwest::Client::new()
+        .post(format!("http://localhost:{}/api/v1/sbom?id={}", context.port, &id))
+        .json(&input)
+        .inject_token(&context.provider.provider_manager)
+        .await
+        .unwrap()
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::BAD_REQUEST);
 }
 
 #[test_context(BombasticContext)]
