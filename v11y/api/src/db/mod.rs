@@ -5,7 +5,7 @@ use futures::StreamExt;
 use sqlx::sqlite::SqliteConnectOptions;
 use sqlx::{Row, SqlitePool};
 
-use v11y_client::{ScoreType, Severity, Vulnerability};
+use v11y_client::{Reference, ScoreType, Severity, Vulnerability};
 
 static DB_FILE_NAME: &str = "v11y.db";
 
@@ -35,6 +35,7 @@ impl Db {
         self.create_aliases_table().await?;
         self.create_related_table().await?;
         self.create_severities_table().await?;
+        self.create_references_table().await?;
         self.create_events_table().await?;
         Ok(())
     }
@@ -180,11 +181,12 @@ impl Db {
     async fn create_references_table(&self) -> Result<(), anyhow::Error> {
         log::debug!("create table 'references'");
         sqlx::query(
-            r#"create table if not exists references (
+            r#"create table if not exists refs (
                     vulnerability_id text not null,
                     origin text not null,
                     type text not null,
-                    url text not null
+                    url text not null,
+                    primary key (vulnerability_id, origin, type, url)
                 )"#,
         )
         .execute(&self.pool)
@@ -193,7 +195,7 @@ impl Db {
         log::debug!("create index 'references_by_id'");
         sqlx::query(
             r#"
-            create index if not exists references_by_id ON events ( vulnerability_id ) ;
+            create index if not exists references_by_id ON refs ( vulnerability_id ) ;
             "#,
         )
         .execute(&self.pool)
@@ -206,6 +208,7 @@ impl Db {
         self.ingest_vulnerability(vuln).await?;
         self.ingest_severities(vuln).await?;
         self.ingest_related(vuln).await?;
+        self.ingest_references(vuln).await?;
         Ok(())
     }
 
@@ -274,6 +277,28 @@ impl Db {
             .bind(vuln.id.clone())
             .bind(vuln.origin.clone())
             .bind(related)
+            .execute(&self.pool)
+            .await?;
+        }
+
+        Ok(())
+    }
+
+    async fn ingest_references(&self, vuln: &Vulnerability) -> Result<(), anyhow::Error> {
+        for reference in &vuln.references {
+            sqlx::query(
+                r#"
+            insert or ignore into refs (
+                vulnerability_id, origin, type, url
+            ) values (
+                $1, $2, $3, $4
+            )
+                "#,
+            )
+            .bind(vuln.id.clone())
+            .bind(vuln.origin.clone())
+            .bind(reference.r#type.clone())
+            .bind(reference.url.clone())
             .execute(&self.pool)
             .await?;
         }
@@ -382,13 +407,92 @@ impl Db {
                 .map(|row| (row.get::<String, _>("origin"), row.get::<String, _>("related")))
         })
     }
+
+    pub async fn get_references<'s>(
+        &'s self,
+        id: &'s str,
+        r#type: Option<String>,
+        origin: Option<String>,
+    ) -> impl Stream<Item = (String, Reference)> + 's {
+        let query = if let Some(origin) = origin {
+            if let Some(ty) = r#type {
+                sqlx::query(
+                    r#"
+                select
+                    origin, type, url
+                from
+                    refs
+                where
+                    vulnerability_id = $1 and origin = $2 and type = $3
+                "#,
+                )
+                .bind(id)
+                .bind(origin)
+                .bind(ty)
+            } else {
+                sqlx::query(
+                    r#"
+                select
+                    origin, type, url
+                from
+                    refs
+                where
+                    vulnerability_id = $1 and origin = $2
+                "#,
+                )
+                .bind(id)
+                .bind(origin)
+            }
+        } else if let Some(ty) = r#type {
+            sqlx::query(
+                r#"
+                select
+                    origin, type, url
+                from
+                    refs
+                where
+                    vulnerability_id = $1 and type = $2
+                order by
+                    origin
+                "#,
+            )
+            .bind(id)
+            .bind(ty)
+        } else {
+            sqlx::query(
+                r#"
+                select
+                    origin, type, url
+                from
+                    refs
+                where
+                    vulnerability_id = $1
+                order by
+                    origin
+                "#,
+            )
+            .bind(id)
+        };
+
+        query.fetch(&self.pool).filter_map(|row| async move {
+            row.ok().map(|row| {
+                (
+                    row.get::<String, _>("origin"),
+                    Reference {
+                        r#type: row.get::<String, _>("type"),
+                        url: row.get::<String, _>("url"),
+                    },
+                )
+            })
+        })
+    }
 }
 
 #[cfg(test)]
 mod test {
     use futures::StreamExt;
 
-    use v11y_client::{ScoreType, Severity, Vulnerability};
+    use v11y_client::{Reference, ScoreType, Severity, Vulnerability};
 
     use crate::db::Db;
 
@@ -489,7 +593,10 @@ mod test {
             }],
             ranges: vec![],
             related: vec!["CVE-8675".to_string()],
-            references: vec![],
+            references: vec![Reference {
+                r#type: "ADVISORY".to_string(),
+                url: "http://osv.dev/foo".to_string(),
+            }],
         };
 
         db.ingest(&vuln).await?;
@@ -510,7 +617,10 @@ mod test {
             }],
             ranges: vec![],
             related: vec!["CVE-8675".to_string(), "CVE-42".to_string()],
-            references: vec![],
+            references: vec![Reference {
+                r#type: "WEB".to_string(),
+                url: "http://snyk.com/foo".to_string(),
+            }],
         };
 
         db.ingest(&vuln).await?;
@@ -561,6 +671,29 @@ mod test {
 
         let result: Vec<_> = db.get_related("CVE-123", None).await.collect().await;
         assert_eq!(3, result.len());
+
+        let result: Vec<_> = db.get_references("CVE-123", None, None).await.collect().await;
+        assert_eq!(2, result.len());
+
+        let result: Vec<_> = db
+            .get_references("CVE-123", None, Some("osv".to_string()))
+            .await
+            .collect()
+            .await;
+        assert_eq!(1, result.len());
+
+        assert_eq!("ADVISORY", result[0].1.r#type);
+        assert_eq!("http://osv.dev/foo", result[0].1.url);
+
+        let result: Vec<_> = db
+            .get_references("CVE-123", None, Some("snyk".to_string()))
+            .await
+            .collect()
+            .await;
+        assert_eq!(1, result.len());
+
+        assert_eq!("WEB", result[0].1.r#type);
+        assert_eq!("http://snyk.com/foo", result[0].1.url);
 
         Ok(())
     }

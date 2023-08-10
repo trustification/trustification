@@ -21,7 +21,7 @@ pub struct Vulnerability {
     #[serde(skip_serializing_if = "Vec::is_empty", default = "Vec::default")]
     pub related: Vec<String>,
     #[serde(skip_serializing_if = "Vec::is_empty", default = "Vec::default")]
-    pub references: Vec<String>,
+    pub references: Vec<Reference>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -88,6 +88,12 @@ pub struct Event {
 pub enum EventType {
     Introduced,
     Fixed,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Reference {
+    pub r#type: String,
+    pub url: String,
 }
 
 #[allow(unused)]
