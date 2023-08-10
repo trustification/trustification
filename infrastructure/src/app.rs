@@ -10,12 +10,14 @@ use actix_web_extras::middleware::Condition;
 use actix_web_prom::PrometheusMetrics;
 use std::sync::Arc;
 use trustification_auth::authenticator::Authenticator;
+use trustification_auth::authorizer::Authorizer;
 
 #[derive(Default)]
 pub struct AppOptions {
     pub cors: Option<Cors>,
     pub metrics: Option<PrometheusMetrics>,
     pub authenticator: Option<Arc<Authenticator>>,
+    pub authorizer: Authorizer,
 }
 
 #[macro_export]
@@ -51,6 +53,8 @@ pub fn new_app(
     App::new()
         // Handle authentication, might fail and return early
         .wrap(new_auth!(options.authenticator))
+        // Handle authorization
+        .app_data(actix_web::web::Data::new(options.authorizer))
         // Handle CORS requests, this might finish early and not pass requests to the next entry
         .wrap(Condition::from_option(options.cors))
         // Next, record metrics for the request (should never fail)
