@@ -133,7 +133,9 @@ impl Db {
             r#"create table if not exists related (
                     vulnerability_id text not null,
                     origin text not null,
-                    related text not null
+                    related text not null,
+                    primary key (vulnerability_id, origin, related)
+
                 )"#,
         )
         .execute(&self.pool)
@@ -203,6 +205,7 @@ impl Db {
     pub async fn ingest(&self, vuln: &Vulnerability) -> Result<(), anyhow::Error> {
         self.ingest_vulnerability(vuln).await?;
         self.ingest_severities(vuln).await?;
+        self.ingest_related(vuln).await?;
         Ok(())
     }
 
@@ -255,6 +258,29 @@ impl Db {
         Ok(())
     }
 
+    async fn ingest_related(&self, vuln: &Vulnerability) -> Result<(), anyhow::Error> {
+        for related in &vuln.related {
+            sqlx::query(
+                r#"
+            insert into related (
+                vulnerability_id, origin, related
+            ) values (
+                $1, $2, $3
+            ) on conflict (vulnerability_id, origin, related) do update
+                set
+                    related = excluded.related
+                "#,
+            )
+            .bind(vuln.id.clone())
+            .bind(vuln.origin.clone())
+            .bind(related)
+            .execute(&self.pool)
+            .await?;
+        }
+
+        Ok(())
+    }
+
     #[allow(unused)]
     pub async fn get_known_ids(&self) -> impl Stream<Item = String> {
         sqlx::query(r#"select distinct id from vulnerabilities"#)
@@ -281,7 +307,11 @@ impl Db {
             })
     }
 
-    pub async fn get_severities(&self, id: &str, origin: Option<String>) -> impl Stream<Item = (String, Severity)> {
+    pub async fn get_severities<'s>(
+        &'s self,
+        id: &'s str,
+        origin: Option<String>,
+    ) -> impl Stream<Item = (String, Severity)> + 's {
         let query = if let Some(origin) = origin {
             sqlx::query(
                 r#"
@@ -290,9 +320,10 @@ impl Db {
                 from
                     severities
                 where
-                    origin = $1
+                    vulnerability_id = $1 and origin = $2
                 "#,
             )
+            .bind(id)
             .bind(origin)
         } else {
             sqlx::query(
@@ -301,10 +332,13 @@ impl Db {
                     origin, type, score, additional
                 from
                     severities
+                where
+                    vulnerability_id = $1
                 order by
                     origin
                 "#,
             )
+            .bind(id)
         };
 
         query.fetch(&self.pool).filter_map(|row| async move {
@@ -317,6 +351,49 @@ impl Db {
                         additional: row.get::<Option<String>, _>("additional"),
                     },
                 ))
+            } else {
+                None
+            }
+        })
+    }
+
+    pub async fn get_related<'s>(
+        &'s self,
+        id: &'s str,
+        origin: Option<String>,
+    ) -> impl Stream<Item = (String, String)> + 's {
+        let query = if let Some(origin) = origin {
+            sqlx::query(
+                r#"
+                select
+                    origin, related
+                from
+                    related
+                where
+                    vulnerability_id = $1 and origin = $2
+                "#,
+            )
+            .bind(id)
+            .bind(origin)
+        } else {
+            sqlx::query(
+                r#"
+                select
+                    origin, related
+                from
+                    related
+                where
+                    vulnerability_id = $1
+                order by
+                    origin
+                "#,
+            )
+            .bind(id)
+        };
+
+        query.fetch(&self.pool).filter_map(|row| async move {
+            if let Ok(row) = row {
+                Some((row.get::<String, _>("origin"), row.get::<String, _>("related")))
             } else {
                 None
             }
@@ -428,7 +505,7 @@ mod test {
                 additional: Some("n:4/v:2".to_string()),
             }],
             ranges: vec![],
-            related: vec!["CVE-8675".to_string(), "CVE-42".to_string()],
+            related: vec!["CVE-8675".to_string()],
             references: vec![],
         };
 
@@ -488,6 +565,19 @@ mod test {
         let result: Vec<_> = db.get_severities("CVE-123", None).await.collect().await;
 
         assert_eq!(2, result.len());
+
+        let result: Vec<_> = db.get_related("CVE-123", Some("osv".to_string())).await.collect().await;
+        assert_eq!(1, result.len());
+
+        let result: Vec<_> = db
+            .get_related("CVE-123", Some("snyk".to_string()))
+            .await
+            .collect()
+            .await;
+        assert_eq!(2, result.len());
+
+        let result: Vec<_> = db.get_related("CVE-123", None).await.collect().await;
+        assert_eq!(3, result.len());
 
         Ok(())
     }
