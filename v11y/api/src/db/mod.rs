@@ -286,11 +286,9 @@ impl Db {
         sqlx::query(r#"select distinct id from vulnerabilities"#)
             .fetch(&self.pool)
             .filter_map(|row| async move {
-                if let Ok(row) = row {
-                    Some(row.get::<String, _>("id"))
-                } else {
-                    None
-                }
+                row.ok().map(|row| {
+                    row.get::<String, _>("id")
+                })
             })
     }
 
@@ -299,11 +297,9 @@ impl Db {
         sqlx::query(r#"select distinct origin from vulnerabilities"#)
             .fetch(&self.pool)
             .filter_map(|row| async move {
-                if let Ok(row) = row {
-                    Some(row.get::<String, _>("origin"))
-                } else {
-                    None
-                }
+                row.ok().map(|row| {
+                    row.get::<String, _>("origin")
+                })
             })
     }
 
@@ -342,18 +338,16 @@ impl Db {
         };
 
         query.fetch(&self.pool).filter_map(|row| async move {
-            if let Ok(row) = row {
-                Some((
+            row.ok().map(|row| {
+                (
                     row.get::<String, _>("origin"),
                     Severity {
                         r#type: ScoreType::from(row.get::<String, _>("type")),
                         score: row.get::<f32, _>("score"),
                         additional: row.get::<Option<String>, _>("additional"),
-                    },
-                ))
-            } else {
-                None
-            }
+                    }
+                )
+            })
         })
     }
 
@@ -392,11 +386,9 @@ impl Db {
         };
 
         query.fetch(&self.pool).filter_map(|row| async move {
-            if let Ok(row) = row {
-                Some((row.get::<String, _>("origin"), row.get::<String, _>("related")))
-            } else {
-                None
-            }
+            row.ok().map(|row| {
+                (row.get::<String, _>("origin"), row.get::<String, _>("related"))
+            })
         })
     }
 }
