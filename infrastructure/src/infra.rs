@@ -12,7 +12,7 @@ use crate::tracing::init_tracing;
 #[cfg(unix)]
 use tokio::signal::unix::{signal, SignalKind};
 
-const DEFAULT_BIND_ADDR: &str = "localhost:9010";
+const DEFAULT_BIND_ADDR: &str = "[::1]:9010";
 
 /// Infrastructure
 #[derive(Clone, Debug, clap::Parser)]

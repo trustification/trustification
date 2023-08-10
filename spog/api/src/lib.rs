@@ -22,20 +22,17 @@ pub const DEFAULT_CRDA_PAYLOAD_LIMIT: usize = 10 * 1024 * 1024;
     rename_all_env = "SCREAMING_SNAKE_CASE"
 )]
 pub struct Run {
-    #[command(flatten)]
-    pub snyk: Snyk,
-
     /// Enable developer mode
     #[arg(long = "devmode", default_value_t = false)]
     pub devmode: bool,
 
-    #[arg(short, long, env, default_value = "0.0.0.0")]
+    #[arg(short, long, env, default_value = "::")]
     pub bind: String,
 
     #[arg(short = 'p', long = "port", env, default_value_t = 8080)]
     pub port: u16,
 
-    #[arg(short = 'g', long = "guac", default_value = "http://localhost:8080/query")]
+    #[arg(short = 'g', long = "guac", default_value = "http://localhost:8085/query")]
     pub guac_url: String,
 
     #[arg(long = "sync-interval-seconds", env, default_value_t = 10)]
@@ -78,14 +75,4 @@ impl Run {
 
         Ok(ExitCode::SUCCESS)
     }
-}
-
-#[derive(clap::Args, Debug, Clone, Default)]
-#[group(required = false)]
-pub struct Snyk {
-    #[arg(long = "snyk-org")]
-    pub(crate) org: Option<String>,
-
-    #[arg(long = "snyk-token")]
-    pub(crate) token: Option<String>,
 }
