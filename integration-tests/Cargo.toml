@@ -37,3 +37,4 @@ trustification-index = { path = "../index" }
 env_logger = "0.10"
 urlencoding = "2.1.2"
 spog-model = { path = "../spog/model" }
+prometheus = "0.13.3"
