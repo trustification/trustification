@@ -15,9 +15,9 @@ pub struct Vulnerability {
     #[serde(skip_serializing_if = "Vec::is_empty", default = "Vec::default")]
     pub aliases: Vec<String>,
     #[serde(skip_serializing_if = "Vec::is_empty", default = "Vec::default")]
-    pub severities: Vec<Severity>,
+    pub affected: Vec<Affected>,
     #[serde(skip_serializing_if = "Vec::is_empty", default = "Vec::default")]
-    pub ranges: Vec<Range>,
+    pub severities: Vec<Severity>,
     #[serde(skip_serializing_if = "Vec::is_empty", default = "Vec::default")]
     pub related: Vec<String>,
     #[serde(skip_serializing_if = "Vec::is_empty", default = "Vec::default")]
@@ -25,6 +25,13 @@ pub struct Vulnerability {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
+pub struct Affected {
+    pub package: String,
+    #[serde(skip_serializing_if = "Vec::is_empty", default = "Vec::default")]
+    pub ranges: Vec<Range>,
+}
+
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct Severity {
     pub r#type: ScoreType,
     pub score: f32,
@@ -90,7 +97,7 @@ pub enum EventType {
     Fixed,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct Reference {
     pub r#type: String,
     pub url: String,
