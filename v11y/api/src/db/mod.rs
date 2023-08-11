@@ -310,14 +310,14 @@ impl Db {
     pub async fn get_known_ids(&self) -> impl Stream<Item = String> {
         sqlx::query(r#"select distinct id from vulnerabilities"#)
             .fetch(&self.pool)
-            .filter_map(|row| async move { row.ok().map(|row| row.get::<String, _>("id")) })
+            .filter_map(|row| async move { row.ok().map(|row| row.get("id")) })
     }
 
     #[allow(unused)]
     pub async fn get_known_origins(&self) -> impl Stream<Item = String> {
         sqlx::query(r#"select distinct origin from vulnerabilities"#)
             .fetch(&self.pool)
-            .filter_map(|row| async move { row.ok().map(|row| row.get::<String, _>("origin")) })
+            .filter_map(|row| async move { row.ok().map(|row| row.get("origin")) })
     }
 
     pub async fn get_severities<'s>(
@@ -357,11 +357,11 @@ impl Db {
         query.fetch(&self.pool).filter_map(|row| async move {
             row.ok().map(|row| {
                 (
-                    row.get::<String, _>("origin"),
+                    row.get("origin"),
                     Severity {
                         r#type: ScoreType::from(row.get::<String, _>("type")),
-                        score: row.get::<f32, _>("score"),
-                        additional: row.get::<Option<String>, _>("additional"),
+                        score: row.get("score"),
+                        additional: row.get("additional"),
                     },
                 )
             })
@@ -402,10 +402,9 @@ impl Db {
             .bind(id)
         };
 
-        query.fetch(&self.pool).filter_map(|row| async move {
-            row.ok()
-                .map(|row| (row.get::<String, _>("origin"), row.get::<String, _>("related")))
-        })
+        query
+            .fetch(&self.pool)
+            .filter_map(|row| async move { row.ok().map(|row| (row.get("origin"), row.get("related"))) })
     }
 
     pub async fn get_references<'s>(
@@ -477,10 +476,10 @@ impl Db {
         query.fetch(&self.pool).filter_map(|row| async move {
             row.ok().map(|row| {
                 (
-                    row.get::<String, _>("origin"),
+                    row.get("origin"),
                     Reference {
-                        r#type: row.get::<String, _>("type"),
-                        url: row.get::<String, _>("url"),
+                        r#type: row.get("type"),
+                        url: row.get("url"),
                     },
                 )
             })
