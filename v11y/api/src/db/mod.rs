@@ -413,10 +413,9 @@ impl Db {
         r#type: Option<String>,
         origin: Option<String>,
     ) -> impl Stream<Item = (String, Reference)> + 's {
-        let query = if let Some(origin) = origin {
-            if let Some(ty) = r#type {
-                sqlx::query(
-                    r#"
+        let query = match (origin, r#type) {
+            (Some(origin), Some(ty)) => sqlx::query(
+                r#"
                 select
                     origin, type, url
                 from
@@ -424,13 +423,13 @@ impl Db {
                 where
                     vulnerability_id = $1 and origin = $2 and type = $3
                 "#,
-                )
-                .bind(id)
-                .bind(origin)
-                .bind(ty)
-            } else {
-                sqlx::query(
-                    r#"
+            )
+            .bind(id)
+            .bind(origin)
+            .bind(ty),
+
+            (Some(origin), None) => sqlx::query(
+                r#"
                 select
                     origin, type, url
                 from
@@ -438,12 +437,11 @@ impl Db {
                 where
                     vulnerability_id = $1 and origin = $2
                 "#,
-                )
-                .bind(id)
-                .bind(origin)
-            }
-        } else if let Some(ty) = r#type {
-            sqlx::query(
+            )
+            .bind(id)
+            .bind(origin),
+
+            (None, Some(ty)) => sqlx::query(
                 r#"
                 select
                     origin, type, url
@@ -456,9 +454,9 @@ impl Db {
                 "#,
             )
             .bind(id)
-            .bind(ty)
-        } else {
-            sqlx::query(
+            .bind(ty),
+
+            (None, None) => sqlx::query(
                 r#"
                 select
                     origin, type, url
@@ -470,7 +468,7 @@ impl Db {
                     origin
                 "#,
             )
-            .bind(id)
+            .bind(id),
         };
 
         query.fetch(&self.pool).filter_map(|row| async move {
