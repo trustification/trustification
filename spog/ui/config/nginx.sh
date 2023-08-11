@@ -23,6 +23,11 @@ echo "$BACKEND_JSON" | \
   jq --arg url "$ISSUER_URL" '. + {oidc: {issuer: $url}}' | \
   tee /endpoints/backend.json
 
+if [[ -n "$CLIENT_ID" ]]; then
+  jq --arg clientId "$CLIENT_ID" '. + {oidc: {client_id: $clientId}}' < /endpoints/backend.json | tee /endpoints/backend.json.tmp
+  mv /endpoints/backend.json.tmp /endpoints/backend.json
+fi
+
 echo "Final backend information:"
 echo "---"
 cat /endpoints/backend.json
