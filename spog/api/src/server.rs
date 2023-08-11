@@ -22,6 +22,7 @@ use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
 use crate::analyze::CrdaClient;
+use crate::services::guac::GuacService;
 use crate::{advisory, analyze, config, index, sbom, Run};
 
 pub struct Server {
@@ -36,7 +37,7 @@ pub struct Server {
             advisory::get,
             advisory::search,
             trustification_version::version::version_fn,
-            //vulnerability::search,
+            crate::guac::get,
         ),
         components(
             //schemas(search::PackageSummary, search::VulnSummary, search::SearchResult<Vec<search::PackageSummary>>)
@@ -94,6 +95,8 @@ impl Server {
         let crda = self.run.crda_url.map(CrdaClient::new);
         let crda_payload_limit = self.run.crda_payload_limit;
 
+        let guac = GuacService::new(self.run.guac_url);
+
         let mut srv = HttpServer::new(move || {
             let state = state.clone();
 
@@ -101,6 +104,7 @@ impl Server {
             let cors = Cors::permissive();
             let authenticator = authenticator.clone();
             let swagger_oidc = swagger_oidc.clone();
+            let guac = guac.clone();
 
             let mut app = new_app(AppOptions {
                 cors: Some(cors),
@@ -109,10 +113,12 @@ impl Server {
                 authorizer,
             })
             .app_data(web::Data::new(state))
+            .app_data(web::Data::new(guac))
             .configure(index::configure())
             .configure(version::configurator(version!()))
             .configure(sbom::configure(authenticator.clone()))
             .configure(advisory::configure(authenticator.clone()))
+            .configure(crate::guac::configure(authenticator.clone()))
             .configure(config_configurator.clone())
             .service({
                 let mut openapi = ApiDoc::openapi();

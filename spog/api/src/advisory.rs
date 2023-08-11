@@ -19,6 +19,7 @@ pub(crate) fn configure(auth: Option<Arc<Authenticator>>) -> impl FnOnce(&mut Se
                 .wrap(new_auth!(auth))
                 .to(search),
         );
+        // the get operation doesn't get the authenticator added, as we check this using the access_token query parameter
         config.service(web::resource("/api/v1/advisory").to(get));
     }
 }
@@ -31,7 +32,7 @@ pub struct GetParams {
 
 #[utoipa::path(
     get,
-    path = "/public/api/v1/advisory",
+    path = "/api/v1/advisory",
     responses(
         (status = 200, description = "Advisory was found"),
         (status = NOT_FOUND, description = "Advisory was not found")

@@ -14,6 +14,7 @@ use crate::{search, server::SharedState};
 pub(crate) fn configure(auth: Option<Arc<Authenticator>>) -> impl FnOnce(&mut ServiceConfig) {
     |config: &mut ServiceConfig| {
         config.service(web::resource("/api/v1/package/search").wrap(new_auth!(auth)).to(search));
+        // the get operation doesn't get the authenticator added, as we check this using the access_token query parameter
         config.service(web::resource("/api/v1/package").to(get));
     }
 }
@@ -26,7 +27,7 @@ pub struct GetParams {
 
 #[utoipa::path(
     get,
-    path = "/public/api/v1/package",
+    path = "/api/v1/package",
     responses(
         (status = 200, description = "Package was found"),
         (status = NOT_FOUND, description = "Package was not found")
