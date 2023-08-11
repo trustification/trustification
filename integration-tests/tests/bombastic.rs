@@ -282,16 +282,16 @@ async fn test_upload_sbom_existing_with_change(context: &mut BombasticContext) {
     );
 }
 
-#[ignore = "until we figure out #363"]
 #[test_context(BombasticContext)]
 #[tokio::test]
 #[ntest::timeout(60_000)]
 async fn test_upload_empty_json(context: &mut BombasticContext) {
-    //Known issue - Respose 200 instead of 400
     let input: serde_json::Value = serde_json::json!({});
     let id = "empty-json-upload";
-    let response = reqwest::Client::new()
-        .post(format!("http://localhost:{}/api/v1/sbom?id={}", context.port, &id))
+    let client = reqwest::Client::new();
+    let url = &format!("http://localhost:{port}/api/v1/sbom?id={id}", port = context.port);
+    let response = client
+        .post(url)
         .json(&input)
         .inject_token(&context.provider.provider_manager)
         .await
@@ -299,7 +299,13 @@ async fn test_upload_empty_json(context: &mut BombasticContext) {
         .send()
         .await
         .unwrap();
-    assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+    assert_eq!(response.status(), StatusCode::CREATED);
+    assert_within_timeout(Duration::from_secs(30), async {
+        let bus = context.config.create(&prometheus::Registry::new()).await.unwrap();
+        let consumer = bus.subscribe("test-client", &["sbom-failed"]).await.unwrap();
+        let _ = consumer.next().await;
+    })
+    .await;
 }
 
 #[test_context(BombasticContext)]

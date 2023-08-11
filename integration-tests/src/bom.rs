@@ -6,7 +6,7 @@ use test_context::AsyncTestContext;
 pub struct BombasticContext {
     pub provider: ProviderContext,
     pub port: u16,
-
+    pub config: EventBusConfig,
     _runner: Runner,
 }
 
@@ -15,12 +15,14 @@ pub async fn start_bombastic(provider: ProviderContext) -> BombasticContext {
 
     let listener = TcpListener::bind("localhost:0").unwrap();
     let port = listener.local_addr().unwrap().port();
+    let indexer = bombastic_indexer();
+    let config = indexer.bus.clone();
 
     let runner = Runner::spawn(|| async {
         select! {
             biased;
 
-            bindexer = bombastic_indexer().run() => match bindexer {
+            bindexer = indexer.run() => match bindexer {
                 Err(e) => {
                     panic!("Error running bombastic indexer: {e:?}");
                 }
@@ -46,6 +48,7 @@ pub async fn start_bombastic(provider: ProviderContext) -> BombasticContext {
     let context = BombasticContext {
         port,
         provider,
+        config,
         _runner: runner,
     };
 

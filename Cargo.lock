@@ -3276,6 +3276,7 @@ dependencies = [
  "log",
  "ntest",
  "openid",
+ "prometheus",
  "reqwest",
  "serde",
  "serde_json",
