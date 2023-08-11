@@ -1,12 +1,14 @@
 use std::process::ExitCode;
 use std::{net::TcpListener, path::PathBuf};
-use trustification_auth::authenticator::config::AuthenticatorConfig;
-use trustification_auth::swagger_ui::SwaggerUiOidcConfig;
+use trustification_auth::{authenticator::config::AuthenticatorConfig, swagger_ui::SwaggerUiOidcConfig};
 use trustification_infrastructure::{Infrastructure, InfrastructureConfig};
+
+pub mod services;
 
 mod advisory;
 mod analyze;
 mod config;
+mod guac;
 mod index;
 mod sbom;
 mod search;
