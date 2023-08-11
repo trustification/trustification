@@ -56,6 +56,11 @@ impl Run {
         let index = self.index;
         let storage = self.storage;
 
+        let authorizer = if self.oidc.disabled {
+            Authorizer::Disabled
+        } else {
+            Authorizer::Enabled
+        };
         let authenticator: Option<Arc<Authenticator>> = Authenticator::from_devmode_or_config(self.devmode, self.oidc)
             .await?
             .map(Arc::new);
@@ -87,11 +92,7 @@ impl Run {
                         cors: Some(cors),
                         metrics: Some(http_metrics),
                         authenticator: None,
-                        authorizer: if self.devmode {
-                            Authorizer::Disabled
-                        } else {
-                            Authorizer::Enabled
-                        },
+                        authorizer,
                     })
                     .app_data(web::Data::new(state.clone()))
                     .configure(move |svc| server::config(svc, authenticator.clone(), swagger_oidc.clone()))

@@ -72,6 +72,11 @@ impl Server {
 
         let config_configurator = config::configurator(self.run.config).await?;
 
+        let authorizer = if self.run.oidc.disabled {
+            Authorizer::Disabled
+        } else {
+            Authorizer::Enabled
+        };
         let authenticator: Option<Arc<Authenticator>> =
             Authenticator::from_devmode_or_config(self.run.devmode, self.run.oidc)
                 .await?
@@ -101,11 +106,7 @@ impl Server {
                 cors: Some(cors),
                 metrics: Some(http_metrics),
                 authenticator: None, // we map this explicitly
-                authorizer: if self.run.devmode {
-                    Authorizer::Disabled
-                } else {
-                    Authorizer::Enabled
-                },
+                authorizer,
             })
             .app_data(web::Data::new(state))
             .configure(index::configure())
