@@ -24,7 +24,7 @@ echo "$BACKEND_JSON" | \
   tee /endpoints/backend.json
 
 if [[ -n "$CLIENT_ID" ]]; then
-  jq --arg clientId "$CLIENT_ID" '. + {oidc: {client_id: $clientId}}' < /endpoints/backend.json | tee /endpoints/backend.json.tmp
+  jq --arg clientId "$CLIENT_ID" '. * {oidc: {client_id: $clientId}}' < /endpoints/backend.json | tee /endpoints/backend.json.tmp
   mv /endpoints/backend.json.tmp /endpoints/backend.json
 fi
 
