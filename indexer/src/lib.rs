@@ -88,7 +88,6 @@ impl<'a, INDEX: Index> Indexer<'a, INDEX> {
                             }
                         }
                         _ => {
-                            todo!()
                         }
                     }
                 }

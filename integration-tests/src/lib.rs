@@ -44,8 +44,6 @@ pub async fn assert_within_timeout<F: Future>(t: Duration, f: F) {
 // Configuration for the bombastic indexer
 fn bombastic_indexer() -> bombastic_indexer::Run {
     bombastic_indexer::Run {
-        port: 8072,
-        bind: "127.0.0.1".into(),
         stored_topic: "sbom-stored".into(),
         failed_topic: "sbom-failed".into(),
         indexed_topic: "sbom-indexed".into(),
@@ -104,8 +102,6 @@ fn bombastic_api() -> bombastic_api::Run {
 // Configuration for the vexination indexer
 fn vexination_indexer() -> vexination_indexer::Run {
     vexination_indexer::Run {
-        port: 8071,
-        bind: "127.0.0.1".into(),
         stored_topic: "vex-stored".into(),
         failed_topic: "vex-failed".into(),
         indexed_topic: "vex-indexed".into(),
