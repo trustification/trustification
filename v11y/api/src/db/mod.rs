@@ -935,8 +935,6 @@ mod test {
     async fn get_without_origin() -> Result<(), anyhow::Error> {
         let db = Db::new().await?;
 
-        let db = Db::new().await?;
-
         let vuln = Vulnerability {
             origin: "osv".to_string(),
             id: "CVE-123".to_string(),
