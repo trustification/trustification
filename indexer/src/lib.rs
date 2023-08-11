@@ -54,40 +54,36 @@ impl<'a, INDEX: Index> Indexer<'a, INDEX> {
             pin_mut!(tick);
             select! {
                 command = self.commands.recv() => {
-                    match command {
-                        Some(IndexerCommand::Reindex) => {
-                            log::info!("Reindexing all documents");
-                            let mut progress = 0;
-                            *self.status.lock().await = IndexerStatus::Reindexing { progress };
-                            match self.storage.list_all_objects().await {
-                                Ok(objects) => {
-                                    pin_mut!(objects);
-                                    while let Some(obj) = objects.next().await {
-                                        match obj {
-                                            Ok((key, obj)) => {
-                                                log::info!("Reindexing {}", key);
-                                                if let Err(e) = self.index_doc(self.index.index(), writer.as_mut().unwrap(), &key, &obj).await {
-                                                    log::warn!("(Ignored) Internal error when indexing {}: {:?}", key, e);
-                                                } else {
-                                                    progress += 1;
-                                                    *self.status.lock().await = IndexerStatus::Reindexing { progress };
-                                                }
-                                            }
-                                            Err(e) => {
-                                                log::warn!("(Ignored) Error reindexing: {:?}", e);
+                    if let Some(IndexerCommand::Reindex) = command {
+                        log::info!("Reindexing all documents");
+                        let mut progress = 0;
+                        *self.status.lock().await = IndexerStatus::Reindexing { progress };
+                        match self.storage.list_all_objects().await {
+                            Ok(objects) => {
+                                pin_mut!(objects);
+                                while let Some(obj) = objects.next().await {
+                                    match obj {
+                                        Ok((key, obj)) => {
+                                            log::info!("Reindexing {}", key);
+                                            if let Err(e) = self.index_doc(self.index.index(), writer.as_mut().unwrap(), &key, &obj).await {
+                                                log::warn!("(Ignored) Internal error when indexing {}: {:?}", key, e);
+                                            } else {
+                                                progress += 1;
+                                                *self.status.lock().await = IndexerStatus::Reindexing { progress };
                                             }
                                         }
+                                        Err(e) => {
+                                            log::warn!("(Ignored) Error reindexing: {:?}", e);
+                                        }
                                     }
-                                    log::info!("Reindexing finished");
-                                    *self.status.lock().await = IndexerStatus::Running;
                                 }
-                                Err(e) => {
-                                    log::warn!("Reindexing failed: {:?}", e);
-                                    *self.status.lock().await = IndexerStatus::Failed{ error: e.to_string() };
-                                }
+                                log::info!("Reindexing finished");
+                                *self.status.lock().await = IndexerStatus::Running;
                             }
-                        }
-                        _ => {
+                            Err(e) => {
+                                log::warn!("Reindexing failed: {:?}", e);
+                                *self.status.lock().await = IndexerStatus::Failed{ error: e.to_string() };
+                            }
                         }
                     }
                 }
