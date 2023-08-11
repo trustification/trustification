@@ -77,6 +77,8 @@ pub struct SearchDocument {
     pub created: time::OffsetDateTime,
     /// List of dependency package names that matched
     pub dependencies: Vec<String>,
+    /// Date when document was added to index
+    pub indexing_date: time::OffsetDateTime,
 }
 
 /// The hit describes the document, its score and optionally an explanation of why that score was given.

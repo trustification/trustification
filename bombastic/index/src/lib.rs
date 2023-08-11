@@ -55,6 +55,7 @@ pub struct PackageFields {
 }
 
 struct Fields {
+    indexing_date: Field,
     sbom_id: Field,
     sbom_created: Field,
     sbom_created_inverse: Field,
@@ -74,6 +75,7 @@ impl Index {
     pub fn new() -> Self {
         let mut schema = Schema::builder();
         let fields = Fields {
+            indexing_date: schema.add_date_field("indexing_date", STORED),
             sbom_id: schema.add_text_field("sbom_id", STRING | FAST | STORED),
             sbom_created: schema.add_date_field("sbom_created", INDEXED | FAST | STORED),
             sbom_created_inverse: schema.add_date_field("sbom_created_inverse", FAST),
@@ -125,6 +127,10 @@ impl Index {
 
         let mut document = doc!();
 
+        document.add_date(
+            self.fields.indexing_date,
+            DateTime::from_utc(time::OffsetDateTime::now_utc()),
+        );
         document.add_text(self.fields.sbom_id, id);
         document.add_text(self.fields.sbom_name, &bom.document_creation_information.document_name);
 
@@ -564,6 +570,15 @@ impl trustification_index::Index for Index {
             .map(|s| s.as_text().unwrap_or(name))
             .unwrap_or(name);
 
+        let indexing_date: time::OffsetDateTime = doc
+            .get_first(self.fields.indexing_date)
+            .map(|s| {
+                s.as_date()
+                    .map(|d| d.into_utc())
+                    .unwrap_or(time::OffsetDateTime::UNIX_EPOCH)
+            })
+            .unwrap_or(time::OffsetDateTime::UNIX_EPOCH);
+
         let created: time::OffsetDateTime = doc
             .get_first(self.fields.sbom_created)
             .map(|s| {
@@ -579,6 +594,7 @@ impl trustification_index::Index for Index {
             .collect();
 
         let document = SearchDocument {
+            indexing_date,
             id: id.to_string(),
             version: version.to_string(),
             purl,

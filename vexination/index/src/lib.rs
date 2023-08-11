@@ -39,6 +39,8 @@ pub struct Index {
 }
 
 struct Fields {
+    indexing_date: Field,
+
     advisory_id: Field,
     advisory_status: Field,
     advisory_title: Field,
@@ -106,6 +108,10 @@ impl trustification_index::Index for Index {
             self.fields.advisory_id => id,
             self.fields.advisory_status => document_status,
             self.fields.advisory_title => csaf.document.title.clone(),
+        );
+        document.add_date(
+            self.fields.indexing_date,
+            DateTime::from_utc(time::OffsetDateTime::now_utc()),
         );
 
         if let Some(notes) = &csaf.document.notes {
@@ -448,7 +454,17 @@ impl trustification_index::Index for Index {
             }
         }
 
+        let indexing_date: time::OffsetDateTime = doc
+            .get_first(self.fields.indexing_date)
+            .map(|s| {
+                s.as_date()
+                    .map(|d| d.into_utc())
+                    .unwrap_or(time::OffsetDateTime::UNIX_EPOCH)
+            })
+            .unwrap_or(time::OffsetDateTime::UNIX_EPOCH);
+
         let document = SearchDocument {
+            indexing_date,
             advisory_id: advisory_id.to_string(),
             advisory_title: advisory_title.to_string(),
             advisory_date,
@@ -493,6 +509,9 @@ impl Index {
     // TODO use CONST for field names
     pub fn new() -> Self {
         let mut schema = Schema::builder();
+
+        let indexing_date = schema.add_date_field("indexing_date", STORED);
+
         let advisory_id = schema.add_text_field("advisory_id", STRING | FAST | STORED);
         let advisory_status = schema.add_text_field("advisory_status", STRING);
         let advisory_title = schema.add_text_field("advisory_title", TEXT | STORED);
@@ -523,6 +542,7 @@ impl Index {
         Self {
             schema: schema.build(),
             fields: Fields {
+                indexing_date,
                 advisory_id,
                 advisory_status,
                 advisory_title,

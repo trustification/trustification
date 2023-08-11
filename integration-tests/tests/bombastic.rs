@@ -172,6 +172,59 @@ async fn test_search(context: &mut BombasticContext) {
 
 #[test_context(BombasticContext)]
 #[tokio::test]
+#[ntest::timeout(30_000)]
+async fn test_reindexing(context: &mut BombasticContext) {
+    let input = serde_json::from_str(include_str!("../../bombastic/testdata/ubi9-sbom.json")).unwrap();
+    upload_sbom(context.port, "test-search", &input, &context.provider).await;
+    assert_within_timeout(Duration::from_secs(30), async move {
+        // Ensure we can search for the SBOM. We want to allow the
+        // indexer time to do its thing, so might need to retry
+        loop {
+            let query = encode("ubi9-container-9.1.0-1782.testdata");
+            let url = format!(
+                "http://localhost:{port}/api/v1/sbom/search?q={query}",
+                port = context.port
+            );
+            let response = reqwest::Client::new()
+                .get(url)
+                .inject_token(&context.provider.provider_manager)
+                .await
+                .unwrap()
+                .send()
+                .await
+                .unwrap();
+            assert_eq!(response.status(), StatusCode::OK);
+            let payload: Value = response.json().await.unwrap();
+            if payload["total"].as_u64().unwrap() >= 1 {
+                assert_eq!(payload["result"][0]["document"]["name"], json!("ubi9-container"));
+                break;
+            }
+            tokio::time::sleep(Duration::from_secs(1)).await;
+        }
+
+        // First get the old doc
+        let query = encode("ubi9-container-9.1.0-1782.testdata");
+        let url = format!(
+            "http://localhost:{port}/api/v1/sbom/search?q={query}&metadata",
+            port = context.port
+        );
+        let response = reqwest::Client::new()
+            .get(url)
+            .inject_token(&context.provider.provider_manager)
+            .await
+            .unwrap()
+            .send()
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        let payload: Value = response.json().await.unwrap();
+        println!("METADATA: {:?}", payload);
+    })
+    .await;
+}
+
+#[test_context(BombasticContext)]
+#[tokio::test]
 #[ntest::timeout(60_000)]
 async fn test_invalid_type(context: &mut BombasticContext) {
     let response = reqwest::Client::new()

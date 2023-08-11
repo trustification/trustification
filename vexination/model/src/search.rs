@@ -59,6 +59,8 @@ pub struct SearchDocument {
     pub cvss_max: Option<f64>,
     /// Number of severities by level
     pub cve_severity_count: HashMap<String, u64>,
+    /// Date when document was added to index
+    pub indexing_date: time::OffsetDateTime,
 }
 
 /// The hit describes the document, its score and optionally an explanation of why that score was given.
