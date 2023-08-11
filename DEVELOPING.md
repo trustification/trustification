@@ -3,6 +3,8 @@
 This document describes how to run all of the trustification processes for local development. You can skip running some of the
 processes if you don't need them for developing.
 
+For creating new services in trustification, see [NEWSERVICE.md](NEWSERVICE.md).
+
 ## Dependencies
 
 ### docker-compose
