@@ -41,6 +41,33 @@ pub async fn assert_within_timeout<F: Future>(t: Duration, f: F) {
     );
 }
 
+pub async fn wait_for_event<F: Future>(t: Duration, config: &EventBusConfig, bus_name: &str, id: &str, f: F) {
+    let bus = config.create(&prometheus::Registry::new()).await.unwrap();
+    let consumer = bus.subscribe("test-client", &[bus_name]).await.unwrap();
+    assert_within_timeout(t, async {
+        f.await;
+        loop {
+            if let Ok(Some(event)) = consumer.next().await {
+                let payload = event.payload().unwrap();
+                if let Ok(v) = serde_json::from_slice::<Value>(payload) {
+                    let key = v["key"].as_str().unwrap();
+                    if key.ends_with(id) {
+                        break;
+                    }
+                } else {
+                    let key = std::str::from_utf8(payload).unwrap();
+                    if key.ends_with(id) {
+                        break;
+                    }
+                }
+            } else {
+                tokio::time::sleep(Duration::from_secs(1)).await;
+            }
+        }
+    })
+    .await;
+}
+
 // Configuration for the bombastic indexer
 fn bombastic_indexer() -> bombastic_indexer::Run {
     bombastic_indexer::Run {
