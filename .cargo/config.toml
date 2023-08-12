@@ -1,2 +1,5 @@
 [registries.crates-io]
 protocol = "sparse"
+
+[env]
+RUST_TEST_THREADS = "10"

@@ -6,7 +6,7 @@ use test_context::AsyncTestContext;
 pub struct VexinationContext {
     pub provider: ProviderContext,
     pub port: u16,
-
+    pub config: EventBusConfig,
     _runner: Runner,
 }
 
@@ -15,12 +15,14 @@ pub async fn start_vexination(provider: ProviderContext) -> VexinationContext {
 
     let listener = TcpListener::bind("localhost:0").unwrap();
     let port = listener.local_addr().unwrap().port();
+    let indexer = vexination_indexer();
+    let config = indexer.bus.clone();
 
     let runner = Runner::spawn(|| async {
         select! {
             biased;
 
-            vindexer = vexination_indexer().run() => match vindexer {
+            vindexer = indexer.run() => match vindexer {
                 Err(e) => {
                     panic!("Error running vexination indexer: {e:?}");
                 }
@@ -47,6 +49,7 @@ pub async fn start_vexination(provider: ProviderContext) -> VexinationContext {
     let context = VexinationContext {
         port,
         provider,
+        config,
         _runner: runner,
     };
 

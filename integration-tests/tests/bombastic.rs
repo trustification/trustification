@@ -1,4 +1,6 @@
-use integration_tests::{assert_within_timeout, delete_sbom, get_response, upload_sbom, BombasticContext};
+use integration_tests::{
+    assert_within_timeout, delete_sbom, get_response, upload_sbom, wait_for_event, BombasticContext,
+};
 use reqwest::StatusCode;
 use serde_json::{json, Value};
 use std::time::Duration;
@@ -290,20 +292,17 @@ async fn test_upload_empty_json(context: &mut BombasticContext) {
     let id = "empty-json-upload";
     let client = reqwest::Client::new();
     let url = &format!("http://localhost:{port}/api/v1/sbom?id={id}", port = context.port);
-    let response = client
-        .post(url)
-        .json(&input)
-        .inject_token(&context.provider.provider_manager)
-        .await
-        .unwrap()
-        .send()
-        .await
-        .unwrap();
-    assert_eq!(response.status(), StatusCode::CREATED);
-    assert_within_timeout(Duration::from_secs(30), async {
-        let bus = context.config.create(&prometheus::Registry::new()).await.unwrap();
-        let consumer = bus.subscribe("test-client", &["sbom-failed"]).await.unwrap();
-        let _ = consumer.next().await;
+    wait_for_event(Duration::from_secs(30), &context.config, "sbom-failed", id, async {
+        let response = client
+            .post(url)
+            .json(&input)
+            .inject_token(&context.provider.provider_manager)
+            .await
+            .unwrap()
+            .send()
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::CREATED);
     })
     .await;
 }
