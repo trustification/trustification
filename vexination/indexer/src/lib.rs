@@ -24,6 +24,10 @@ pub struct Run {
     #[arg(long = "devmode", default_value_t = false)]
     pub devmode: bool,
 
+    /// Reindex all documents at startup
+    #[arg(long = "reindex", default_value_t = false)]
+    pub reindex: bool,
+
     #[command(flatten)]
     pub bus: EventBusConfig,
 
@@ -53,6 +57,10 @@ impl Run {
                     let bus = self.bus.create(metrics.registry()).await?;
                     if self.devmode {
                         bus.create(&[self.stored_topic.as_str()]).await?;
+                    }
+
+                    if self.reindex {
+                        let _ = c.send(trustification_indexer::IndexerCommand::Reindex).await;
                     }
 
                     let mut indexer = Indexer {

@@ -48,6 +48,7 @@ fn bombastic_indexer() -> bombastic_indexer::Run {
         failed_topic: "sbom-failed".into(),
         indexed_topic: "sbom-indexed".into(),
         devmode: true,
+        reindex: false,
         index: IndexConfig {
             index: None,
             sync_interval: Duration::from_secs(2).into(),
@@ -106,6 +107,7 @@ fn vexination_indexer() -> vexination_indexer::Run {
         failed_topic: "vex-failed".into(),
         indexed_topic: "vex-indexed".into(),
         devmode: true,
+        reindex: false,
         index: IndexConfig {
             index: None,
             sync_interval: Duration::from_secs(2).into(),
