@@ -218,7 +218,7 @@ async fn test_invalid_encoding(context: &mut BombasticContext) {
 #[ntest::timeout(60_000)]
 async fn test_upload_sbom_existing_without_change(context: &mut BombasticContext) {
     let input = serde_json::from_str(include_str!("../../bombastic/testdata/my-sbom.json")).unwrap();
-    let id = "test-upload";
+    let id = "test-upload-without-change";
     let api_end_point = format!("api/v1/sbom?id={id}");
     upload_sbom(context.port, id, &input, &context.provider).await;
     let response: Value = get_response(context.port, &api_end_point, StatusCode::OK, &context.provider)
@@ -306,7 +306,7 @@ async fn test_upload_empty_file(context: &mut BombasticContext) {
 #[ntest::timeout(60_000)]
 async fn test_upload_user_not_allowed(context: &mut BombasticContext) {
     let input: serde_json::Value = serde_json::from_str(include_str!("../../bombastic/testdata/my-sbom.json")).unwrap();
-    let id = "test-upload";
+    let id = "test-upload-user-not-allowed";
     let api_end_point = format!("api/v1/sbom?id={id}");
     let response = reqwest::Client::new()
         .post(format!("http://localhost:{}/{}", context.port, api_end_point))
@@ -326,7 +326,7 @@ async fn test_upload_user_not_allowed(context: &mut BombasticContext) {
 #[ntest::timeout(60_000)]
 async fn test_upload_unauthorized(context: &mut BombasticContext) {
     let input: serde_json::Value = serde_json::from_str(include_str!("../../bombastic/testdata/my-sbom.json")).unwrap();
-    let id = "test-upload";
+    let id = "test-upload-unauthorized";
     let api_end_point = format!("api/v1/sbom?id={id}");
     let response = reqwest::Client::new()
         .post(format!("http://localhost:{}/{}", context.port, api_end_point))
@@ -343,7 +343,7 @@ async fn test_upload_unauthorized(context: &mut BombasticContext) {
 #[ntest::timeout(60_000)]
 async fn test_delete_user_not_allowed(context: &mut BombasticContext) {
     let input: serde_json::Value = serde_json::from_str(include_str!("../../bombastic/testdata/my-sbom.json")).unwrap();
-    let id = "test-upload";
+    let id = "test-delete-user-not-allowed";
     let api_end_point = format!("api/v1/sbom?id={id}");
     upload_sbom(context.port, id, &input, &context.provider).await;
     let response = reqwest::Client::new()
@@ -364,7 +364,7 @@ async fn test_delete_user_not_allowed(context: &mut BombasticContext) {
 #[ntest::timeout(60_000)]
 async fn test_delete_unauthorized(context: &mut BombasticContext) {
     let input: serde_json::Value = serde_json::from_str(include_str!("../../bombastic/testdata/my-sbom.json")).unwrap();
-    let id = "test-upload";
+    let id = "test-delete-unauthorized";
     let api_end_point = format!("api/v1/sbom?id={id}");
     upload_sbom(context.port, id, &input, &context.provider).await;
     let response = reqwest::Client::new()
