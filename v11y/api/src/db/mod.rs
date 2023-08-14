@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::str::FromStr;
 
 use futures::Stream;
@@ -214,8 +215,48 @@ impl Db {
     }
 
     pub async fn get(&self, id: &str, origin: Option<String>) -> Result<Vec<Vulnerability>, anyhow::Error> {
-        let vulns = sqlx::query(
-            r#"
+        let query = match origin {
+            Some(origin) => {
+                sqlx::query(
+                    r#"
+            select
+                vulnerabilities.id,
+                vulnerabilities.origin,
+                vulnerabilities.modified,
+                vulnerabilities.published,
+                vulnerabilities.withdrawn,
+                vulnerabilities.summary,
+                vulnerabilities.details,
+                aliases.alias,
+                related.related,
+                refs.type,
+                refs.url,
+                severities.type as score_type,
+                severities.score,
+                severities.additional
+            from
+                vulnerabilities
+            left join
+                aliases on aliases.vulnerability_id = vulnerabilities.id and aliases.origin = vulnerabilities.origin
+            left join
+                related on related.vulnerability_id = vulnerabilities.id and related.origin = vulnerabilities.origin
+            left join
+                refs on refs.vulnerability_id = vulnerabilities.id and refs.origin = vulnerabilities.origin
+            left join
+                severities on severities.vulnerability_id = vulnerabilities.id and severities.origin = vulnerabilities.origin
+            where
+                vulnerabilities.id = $1 and vulnerabilities.origin = $2
+            order by
+                vulnerabilities.origin
+            "#,
+                )
+                    .bind(id)
+                    .bind(origin)
+            }
+
+            None => {
+                sqlx::query(
+                    r#"
             select
                 vulnerabilities.id,
                 vulnerabilities.origin,
@@ -246,86 +287,91 @@ impl Db {
             order by
                 vulnerabilities.origin
             "#,
-        )
-        .bind(id)
-        .fetch(&self.pool)
-            .fold((vec![], None::<Vulnerability>), |(mut accum, mut cur), row| async move {
-                row.ok().map(|row| {
+                ).bind(id)
+            }
+        };
 
-                    if cur.is_none() || cur.as_ref().unwrap().origin != row.get::<String, _>("origin") {
-                        let vuln = Vulnerability {
-                            origin: row.get("origin"),
-                            id: row.get("id"),
-                            modified: row.get("modified"),
-                            published: row.get("published"),
-                            withdrawn: row.get("withdrawn"),
-                            summary: row.get("summary"),
-                            details: row.get("details"),
-                            aliases: vec![],
-                            affected: vec![],
-                            severities: vec![],
-                            related: vec![],
-                            references: vec![],
-                        };
-
-                        if let Some(cur) = cur.take() {
-                            accum.push(cur);
-                        }
-
-                        cur.replace( vuln );
-                    }
-
-                    if let Some(cur_vuln) = &mut cur {
-                        if cur_vuln.origin == row.get::<String, _>("origin") {
-                            // continue to populate
-                            let alias = row.get::<String, _>("alias");
-                            if ! alias.is_empty() && ! cur_vuln.aliases.contains(&alias) {
-                                cur_vuln.aliases.push( alias );
-                            }
-
-                            let related = row.get::<String, _>("related");
-                            if ! related.is_empty() && ! cur_vuln.related.contains(&related) {
-                                cur_vuln.related.push( related );
-                            }
-
-                            let (ty, url) = (row.get::<String, _>("type"), row.get::<String, _>("url"));
-                            if ! url.is_empty() {
-                                let reference = Reference {
-                                    r#type: ty,
-                                    url,
+        let vulns = query
+            .fetch(&self.pool)
+            .fold(
+                (vec![], None::<Vulnerability>),
+                |(mut accum, mut cur), row| async move {
+                    row.ok()
+                        .map(|row| {
+                            if cur.is_none() || cur.as_ref().unwrap().origin != row.get::<String, _>("origin") {
+                                let vuln = Vulnerability {
+                                    origin: row.get("origin"),
+                                    id: row.get("id"),
+                                    modified: row.get("modified"),
+                                    published: row.get("published"),
+                                    withdrawn: row.get("withdrawn"),
+                                    summary: row.get("summary"),
+                                    details: row.get("details"),
+                                    aliases: HashSet::default(),
+                                    affected: vec![],
+                                    severities: HashSet::default(),
+                                    related: HashSet::default(),
+                                    references: HashSet::default(),
                                 };
 
-                                if ! cur_vuln.references.contains(&reference) {
-                                    cur_vuln.references.push(reference);
+                                if let Some(cur) = cur.take() {
+                                    accum.push(cur);
                                 }
+
+                                cur.replace(vuln);
                             }
 
-                            let (ty, score, additional) = ( row.get::<String, _>("score_type"), row.get::<f32, _>("score"), row.get::<String, _>("additional"));
+                            if let Some(cur_vuln) = &mut cur {
+                                if cur_vuln.origin == row.get::<String, _>("origin") {
+                                    // continue to populate
+                                    let alias = row.get::<String, _>("alias");
+                                    if !alias.is_empty() && !cur_vuln.aliases.contains(&alias) {
+                                        cur_vuln.aliases.insert(alias);
+                                    }
 
-                            if ! ty.is_empty() {
-                                let additional = if additional.is_empty() { None } else { Some(additional)};
-                                let severity = Severity {
-                                    r#type: ScoreType::from(ty),
-                                    score,
-                                    additional
-                                };
+                                    let related = row.get::<String, _>("related");
+                                    if !related.is_empty() && !cur_vuln.related.contains(&related) {
+                                        cur_vuln.related.insert(related);
+                                    }
 
-                                if ! cur_vuln.severities.contains(&severity) {
-                                    cur_vuln.severities.push( severity )
+                                    let (ty, url) = (row.get::<String, _>("type"), row.get::<String, _>("url"));
+                                    if !url.is_empty() {
+                                        let reference = Reference { r#type: ty, url };
+
+                                        if !cur_vuln.references.contains(&reference) {
+                                            cur_vuln.references.insert(reference);
+                                        }
+                                    }
+
+                                    let (ty, score, additional) = (
+                                        row.get::<String, _>("score_type"),
+                                        row.get::<f32, _>("score"),
+                                        row.get::<String, _>("additional"),
+                                    );
+
+                                    if !ty.is_empty() {
+                                        let additional = if additional.is_empty() { None } else { Some(additional) };
+                                        let severity = Severity {
+                                            r#type: ScoreType::from(ty),
+                                            score,
+                                            additional,
+                                        };
+
+                                        if !cur_vuln.severities.contains(&severity) {
+                                            cur_vuln.severities.insert(severity);
+                                        }
+                                    }
+                                } else {
+                                    let vuln = cur.take().unwrap();
+                                    accum.push(vuln)
                                 }
                             }
-
-                        } else {
-                            let vuln = cur.take().unwrap();
-                            accum.push(vuln)
-                        }
-                    }
-
-
-
-                }).unwrap();
+                        })
+                        .unwrap();
                     (accum, cur)
-            }).await;
+                },
+            )
+            .await;
 
         let (mut vulns, cur) = vulns;
 
@@ -633,6 +679,7 @@ impl Db {
 #[cfg(test)]
 mod test {
     use futures::StreamExt;
+    use std::collections::HashSet;
 
     use v11y_client::{Reference, ScoreType, Severity, Vulnerability};
 
@@ -657,11 +704,11 @@ mod test {
             withdrawn: None,
             summary: "Summary".to_string(),
             details: "Some\ndetails".to_string(),
-            aliases: vec![],
-            severities: vec![],
+            aliases: HashSet::default(),
+            severities: HashSet::default(),
             affected: vec![],
-            related: vec![],
-            references: vec![],
+            related: HashSet::default(),
+            references: HashSet::default(),
         };
 
         db.ingest(&vuln).await?;
@@ -674,11 +721,11 @@ mod test {
             withdrawn: None,
             summary: "Summary".to_string(),
             details: "Some\ndetails".to_string(),
-            aliases: vec![],
-            severities: vec![],
+            aliases: HashSet::default(),
+            severities: HashSet::default(),
             affected: vec![],
-            related: vec![],
-            references: vec![],
+            related: HashSet::default(),
+            references: HashSet::default(),
         };
 
         db.ingest(&vuln).await?;
@@ -691,11 +738,11 @@ mod test {
             withdrawn: None,
             summary: "Summary".to_string(),
             details: "Some\ndetails".to_string(),
-            aliases: vec![],
-            severities: vec![],
+            aliases: HashSet::default(),
+            severities: HashSet::default(),
             affected: vec![],
-            related: vec![],
-            references: vec![],
+            related: HashSet::default(),
+            references: HashSet::default(),
         };
 
         db.ingest(&vuln).await?;
@@ -719,7 +766,7 @@ mod test {
     async fn ingest_maximal() -> Result<(), anyhow::Error> {
         let db = Db::new().await?;
 
-        let vuln = Vulnerability {
+        let osv_vuln = Vulnerability {
             origin: "osv".to_string(),
             id: "CVE-123".to_string(),
             modified: "2023-08-08T18:17:02Z".parse()?,
@@ -727,23 +774,27 @@ mod test {
             withdrawn: None,
             summary: "Summary".to_string(),
             details: "Some\ndetails".to_string(),
-            aliases: vec!["GHSA-foo-ghz".to_string()],
-            severities: vec![Severity {
+            aliases: HashSet::from(["GHSA-foo-ghz".to_string()]),
+            severities: HashSet::from([Severity {
                 r#type: ScoreType::Cvss3,
                 score: 6.8,
                 additional: Some("n:4/v:2".to_string()),
-            }],
+            }]),
             affected: vec![],
-            related: vec!["CVE-8675".to_string()],
-            references: vec![Reference {
+            related: HashSet::from(["CVE-8675".to_string()]),
+            references: HashSet::from([Reference {
                 r#type: "ADVISORY".to_string(),
                 url: "http://osv.dev/foo".to_string(),
-            }],
+            }]),
         };
 
-        db.ingest(&vuln).await?;
+        db.ingest(&osv_vuln).await?;
 
-        let vuln = Vulnerability {
+        let result = db.get("CVE-123", Some("osv".to_string())).await?;
+        assert_eq!(1, result.len());
+        assert_eq!(result[0], osv_vuln);
+
+        let snyk_vuln = Vulnerability {
             origin: "snyk".to_string(),
             id: "CVE-123".to_string(),
             modified: "2023-08-08T18:17:02Z".parse()?,
@@ -751,21 +802,24 @@ mod test {
             withdrawn: None,
             summary: "Summary".to_string(),
             details: "Some\ndetails".to_string(),
-            aliases: vec!["GHSA-foo-ghz".to_string()],
-            severities: vec![Severity {
+            aliases: HashSet::from(["GHSA-foo-ghz".to_string()]),
+            severities: HashSet::from([Severity {
                 r#type: ScoreType::Cvss3,
                 score: 7.8,
                 additional: Some("n:1/v:2".to_string()),
-            }],
+            }]),
             affected: vec![],
-            related: vec!["CVE-8675".to_string(), "CVE-42".to_string()],
-            references: vec![Reference {
+            related: HashSet::from(["CVE-8675".to_string(), "CVE-42".to_string()]),
+            references: HashSet::from([Reference {
                 r#type: "WEB".to_string(),
                 url: "http://snyk.com/foo".to_string(),
-            }],
+            }]),
         };
 
-        db.ingest(&vuln).await?;
+        db.ingest(&snyk_vuln).await?;
+        let result = db.get("CVE-123", Some("snyk".to_string())).await?;
+        assert_eq!(1, result.len());
+        assert_eq!(result[0], snyk_vuln);
 
         let result: Vec<_> = db
             .get_severities("CVE-123", Some("osv".to_string()))
@@ -852,15 +906,15 @@ mod test {
             withdrawn: None,
             summary: "Summary".to_string(),
             details: "Some\ndetails".to_string(),
-            aliases: vec!["GHSA-foo-ghz".to_string()],
-            severities: vec![Severity {
+            aliases: HashSet::from(["GHSA-foo-ghz".to_string()]),
+            severities: HashSet::from([Severity {
                 r#type: ScoreType::Cvss3,
                 score: 6.8,
                 additional: Some("n:4/v:2".to_string()),
-            }],
+            }]),
             affected: vec![],
-            related: vec!["CVE-8675".to_string(), "CVE-42".to_string()],
-            references: vec![],
+            related: HashSet::from(["CVE-8675".to_string(), "CVE-42".to_string()]),
+            references: HashSet::default(),
         };
 
         db.ingest(&vuln).await?;
@@ -888,8 +942,8 @@ mod test {
             withdrawn: None,
             summary: "Summary".to_string(),
             details: "Some\ndetails".to_string(),
-            aliases: vec!["GHSA-foo-ghz".to_string()],
-            severities: vec![
+            aliases: HashSet::from(["GHSA-foo-ghz".to_string()]),
+            severities: HashSet::from([
                 Severity {
                     r#type: ScoreType::Cvss3,
                     score: 9.8,
@@ -900,10 +954,10 @@ mod test {
                     score: 7.3,
                     additional: None,
                 },
-            ],
+            ]),
             affected: vec![],
-            related: vec!["CVE-8675".to_string(), "CVE-42".to_string()],
-            references: vec![],
+            related: HashSet::from(["CVE-8675".to_string(), "CVE-42".to_string()]),
+            references: HashSet::default(),
         };
 
         db.ingest(&vuln).await?;
@@ -935,7 +989,7 @@ mod test {
     async fn get_without_origin() -> Result<(), anyhow::Error> {
         let db = Db::new().await?;
 
-        let vuln = Vulnerability {
+        let osv_vuln = Vulnerability {
             origin: "osv".to_string(),
             id: "CVE-123".to_string(),
             modified: "2023-08-08T18:17:02Z".parse()?,
@@ -943,23 +997,23 @@ mod test {
             withdrawn: None,
             summary: "Summary".to_string(),
             details: "Some\ndetails".to_string(),
-            aliases: vec![],
-            severities: vec![Severity {
+            aliases: HashSet::default(),
+            severities: HashSet::from([Severity {
                 r#type: ScoreType::Cvss3,
                 score: 6.8,
                 additional: Some("n:4/v:2".to_string()),
-            }],
+            }]),
             affected: vec![],
-            related: vec!["CVE-8675".to_string()],
-            references: vec![Reference {
+            related: HashSet::from(["CVE-8675".to_string()]),
+            references: HashSet::from([Reference {
                 r#type: "ADVISORY".to_string(),
                 url: "http://osv.dev/foo".to_string(),
-            }],
+            }]),
         };
 
-        db.ingest(&vuln).await?;
+        db.ingest(&osv_vuln).await?;
 
-        let vuln = Vulnerability {
+        let snyk_vuln = Vulnerability {
             origin: "snyk".to_string(),
             id: "CVE-123".to_string(),
             modified: "2023-08-08T18:17:02Z".parse()?,
@@ -967,25 +1021,26 @@ mod test {
             withdrawn: None,
             summary: "Summary".to_string(),
             details: "Some\ndetails".to_string(),
-            aliases: vec!["GHSA-foo-ghz".to_string()],
-            severities: vec![Severity {
+            aliases: HashSet::from(["GHSA-foo-ghz".to_string()]),
+            severities: HashSet::from([Severity {
                 r#type: ScoreType::Cvss3,
                 score: 7.8,
                 additional: Some("n:1/v:2".to_string()),
-            }],
+            }]),
             affected: vec![],
-            related: vec!["CVE-8675".to_string(), "CVE-42".to_string()],
-            references: vec![Reference {
+            related: HashSet::from(["CVE-8675".to_string(), "CVE-42".to_string()]),
+            references: HashSet::from([Reference {
                 r#type: "WEB".to_string(),
                 url: "http://snyk.com/foo".to_string(),
-            }],
+            }]),
         };
 
-        db.ingest(&vuln).await?;
+        db.ingest(&snyk_vuln).await?;
 
-        let result = db.get("CVE-123", None).await;
+        let result = db.get("CVE-123", None).await?;
 
-        println!("{:?}", result);
+        assert!(result.contains(&osv_vuln));
+        assert!(result.contains(&snyk_vuln));
 
         Ok(())
     }

@@ -1,9 +1,11 @@
+use std::collections::HashSet;
 use std::fmt::{Display, Formatter};
+use std::hash::{Hash, Hasher};
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct Vulnerability {
     pub origin: String,
     pub id: String,
@@ -12,45 +14,58 @@ pub struct Vulnerability {
     pub withdrawn: Option<DateTime<Utc>>,
     pub summary: String,
     pub details: String,
-    #[serde(skip_serializing_if = "Vec::is_empty", default = "Vec::default")]
-    pub aliases: Vec<String>,
+    #[serde(skip_serializing_if = "HashSet::is_empty", default = "HashSet::default")]
+    pub aliases: HashSet<String>,
     #[serde(skip_serializing_if = "Vec::is_empty", default = "Vec::default")]
     pub affected: Vec<Affected>,
-    #[serde(skip_serializing_if = "Vec::is_empty", default = "Vec::default")]
-    pub severities: Vec<Severity>,
-    #[serde(skip_serializing_if = "Vec::is_empty", default = "Vec::default")]
-    pub related: Vec<String>,
-    #[serde(skip_serializing_if = "Vec::is_empty", default = "Vec::default")]
-    pub references: Vec<Reference>,
+    #[serde(skip_serializing_if = "HashSet::is_empty", default = "HashSet::default")]
+    pub severities: HashSet<Severity>,
+    #[serde(skip_serializing_if = "HashSet::is_empty", default = "HashSet::default")]
+    pub related: HashSet<String>,
+    #[serde(skip_serializing_if = "HashSet::is_empty", default = "HashSet::default")]
+    pub references: HashSet<Reference>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct Affected {
     pub package: String,
     #[serde(skip_serializing_if = "Vec::is_empty", default = "Vec::default")]
     pub ranges: Vec<Range>,
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Severity {
     pub r#type: ScoreType,
     pub score: f32,
     pub additional: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+impl PartialEq<Severity> for Severity {
+    fn eq(&self, other: &Self) -> bool {
+        self.r#type == other.r#type
+    }
+}
+impl Eq for Severity {}
+
+impl Hash for Severity {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.r#type.hash(state)
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct Range {
     pub lower: Option<Version>,
     pub upper: Option<Version>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub enum Version {
     Inclusive(String),
     Exclusive(String),
 }
 
-#[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Hash)]
 pub enum ScoreType {
     Cvss3,
     Cvss4,
@@ -85,19 +100,19 @@ impl Display for ScoreType {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct Event {
     pub r#type: EventType,
     pub event: String,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub enum EventType {
     Introduced,
     Fixed,
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Hash)]
 pub struct Reference {
     pub r#type: String,
     pub url: String,
