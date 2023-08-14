@@ -42,6 +42,7 @@ impl Run {
         let (command_sender, command_receiver) = mpsc::channel(1);
         let status = Arc::new(Mutex::new(IndexerStatus::Running));
         let s = status.clone();
+        let c = command_sender.clone();
         Infrastructure::from(self.infra)
             .run_with_config(
                 "vexination-indexer",
@@ -64,6 +65,7 @@ impl Run {
                         sync_interval: interval,
                         status: s.clone(),
                         commands: command_receiver,
+                        command_sender: c,
                     };
                     indexer.run().await
                 },

@@ -4,6 +4,7 @@ use futures::pin_mut;
 use futures::StreamExt;
 use std::sync::Arc;
 use tokio::sync::mpsc::Receiver;
+use tokio::sync::mpsc::Sender;
 use tokio::{select, sync::Mutex};
 use trustification_event_bus::EventBus;
 use trustification_index::{Index, IndexStore, IndexWriter};
@@ -32,6 +33,7 @@ pub struct Indexer<'a, INDEX: Index> {
     pub bus: EventBus,
     pub status: Arc<Mutex<IndexerStatus>>,
     pub commands: Receiver<IndexerCommand>,
+    pub command_sender: Sender<IndexerCommand>,
 }
 
 impl<'a, INDEX: Index> Indexer<'a, INDEX> {
