@@ -143,7 +143,7 @@ impl<'a, INDEX: Index> Indexer<'a, INDEX> {
                                             EventType::Delete => {
                                                 let (_, key) = Storage::key_from_event(&data)?;
                                                 block_in_place(|| writer.as_mut().unwrap().delete_document(self.index.index(), key.as_str()));
-                                                log::debug!("Deleted entry {key} from index");
+                                                log::debug!("Deleted entry '{key}' from index");
                                                 events += 1;
                                             }
                                             _ => log::debug!("Non (PUT | DELETE)  event ({:?}), skipping", data),
@@ -201,7 +201,7 @@ impl<'a, INDEX: Index> Indexer<'a, INDEX> {
         match INDEX::parse_doc(data) {
             Ok(doc) => match block_in_place(|| writer.add_document(index, key, &doc)) {
                 Ok(_) => {
-                    log::trace!("Inserted entry into index");
+                    log::debug!("Inserted entry '{key}' into index");
                     self.bus.send(self.indexed_topic, key.as_bytes()).await?;
                 }
                 Err(e) => {
@@ -211,11 +211,11 @@ impl<'a, INDEX: Index> Indexer<'a, INDEX> {
                     })
                     .to_string();
                     self.bus.send(self.failed_topic, failure.as_bytes()).await?;
-                    log::warn!("Error inserting entry into index: {:?}", e)
+                    log::warn!("Error inserting entry '{key}' into index: {e:?}")
                 }
             },
             Err(e) => {
-                log::warn!("Error parsing document for key {}: {:?}, ignored", key, e);
+                log::warn!("Error parsing document for key '{key}': {e:?}");
                 let failure = serde_json::json!( {
                     "key": key,
                     "error": e.to_string(),
