@@ -17,8 +17,8 @@ Trustification consists of a set of services you can use standalone or together:
 
 * [Bombastic](bombastic/README.md) - Storage and archival of SBOM documents.
 * [Vexination](vexination/README.md) - Storage and archival of VEX documents.
-* [Reservoir](reservoir/README.md) - Managing product metadata and access control.
-* [Spog](spog/README.md) - Single Pane Of Glass API and frontend.
+* [Reservoir](reservoir) - Managing product metadata and access control.
+* [Spog](spog) - Single Pane Of Glass API and frontend.
 
 Services such as Bombastic and Vexination uses S3-compatible storage for storing SBOM/VEX data and a search index. The search index is used to query data using the [sikula](https://github.com/ctron/sikula) query language.
 
