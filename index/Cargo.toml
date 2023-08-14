@@ -15,7 +15,11 @@ tantivy = "0.19.2"
 tar = "0.4"
 time = "0.3"
 zstd = "0.12"
-
+rust-s3 = { git = "https://github.com/jcrossley3/rust-s3.git", branch = "issue-352", features = ["blocking"] }
+crc32fast = "1.3.2"
+async-trait = "0.1"
+trustification-storage = { path = "../storage"}
+thiserror = "1"
 trustification-api = { path = "../api"}
 
 [dev-dependencies]

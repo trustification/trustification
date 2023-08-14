@@ -1,17 +1,19 @@
 pub mod metadata;
-
-use std::{
-    fmt::{Debug, Display},
-    ops::Bound,
-    path::PathBuf,
-};
+mod s3dir;
 
 use prometheus::{
     histogram_opts, opts, register_histogram_with_registry, register_int_counter_with_registry,
     register_int_gauge_with_registry, Histogram, IntCounter, IntGauge, Registry,
 };
+use s3dir::S3Directory;
 use sikula::prelude::{Ordered, Primary, Search};
+use std::{
+    fmt::{Debug, Display},
+    ops::Bound,
+    path::PathBuf,
+};
 use trustification_api::search::SearchOptions;
+use trustification_storage::{Storage, StorageConfig};
 // Rexport to align versions
 use log::{debug, warn};
 pub use tantivy;
@@ -29,11 +31,36 @@ use time::{OffsetDateTime, UtcOffset};
 pub struct IndexConfig {
     /// Local folder to store index.
     #[arg(short = 'i', long = "index-dir")]
-    pub index: Option<std::path::PathBuf>,
+    pub index_dir: Option<std::path::PathBuf>,
 
     /// Synchronization interval for index persistence.
     #[arg(long = "index-sync-interval", default_value = "30s")]
     pub sync_interval: humantime::Duration,
+
+    /// Synchronization interval for index persistence.
+    #[arg(long = "index-mode", default_value_t = IndexMode::File)]
+    pub mode: IndexMode,
+}
+
+#[derive(Clone, Debug, clap::ValueEnum)]
+pub enum IndexMode {
+    File,
+    S3,
+}
+
+impl Display for IndexMode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::File => write!(f, "file"),
+            Self::S3 => write!(f, "s3"),
+        }
+    }
+}
+
+impl Default for IndexMode {
+    fn default() -> Self {
+        Self::File
+    }
 }
 
 #[derive(Clone)]
@@ -132,17 +159,27 @@ pub trait Index {
     fn doc_id_to_term(&self, id: &str) -> Term;
 }
 
-#[derive(Debug)]
+#[derive(Debug, thiserror::Error)]
 pub enum Error {
+    #[error("error opening index")]
     Open,
+    #[error("error taking snapshot of index")]
     Snapshot,
+    #[error("index not found")]
     NotFound,
+    #[error("operation cannot be done because index is not persisted")]
     NotPersisted,
-    InvalidSortOrder,
+    #[error("error parsing document {0}")]
     DocParser(String),
-    Parser(String),
+    #[error("error parsing query {0}")]
+    QueryParser(String),
+    #[error("error from storage {0}")]
+    Storage(trustification_storage::Error),
+    #[error("error from search {0}")]
     Search(tantivy::TantivyError),
+    #[error("error configuring metrics {0}")]
     Prometheus(prometheus::Error),
+    #[error("I/O error {0}")]
     Io(std::io::Error),
 }
 
@@ -152,28 +189,15 @@ impl From<prometheus::Error> for Error {
     }
 }
 
-impl Display for Error {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Open => write!(f, "Error opening index"),
-            Self::Snapshot => write!(f, "Error snapshotting index"),
-            Self::NotFound => write!(f, "Not found"),
-            Self::NotPersisted => write!(f, "Database is not persisted"),
-            Self::InvalidSortOrder => write!(f, "Sort order is not supported"),
-            Self::DocParser(e) => write!(f, "Failed to parse document: {e}"),
-            Self::Parser(e) => write!(f, "Failed to parse query: {e}"),
-            Self::Search(e) => write!(f, "Error in search index: {:?}", e),
-            Self::Prometheus(e) => write!(f, "Error in prometheus: {:?}", e),
-            Self::Io(e) => write!(f, "I/O error: {:?}", e),
-        }
-    }
-}
-
-impl std::error::Error for Error {}
-
 impl From<tantivy::TantivyError> for Error {
     fn from(e: tantivy::TantivyError) -> Self {
         Self::Search(e)
+    }
+}
+
+impl From<trustification_storage::Error> for Error {
+    fn from(e: trustification_storage::Error) -> Self {
+        Self::Storage(e)
     }
 }
 
@@ -221,26 +245,49 @@ impl<INDEX: Index> IndexStore<INDEX> {
         })
     }
 
-    pub fn new(config: &IndexConfig, index: INDEX, metrics_registry: &Registry) -> Result<Self, Error> {
-        let path = config.index.clone().unwrap_or_else(|| {
-            use rand::RngCore;
-            let r = rand::thread_rng().next_u32();
-            std::env::temp_dir().join(format!("index.{}", r))
-        });
+    pub fn new(
+        storage: &StorageConfig,
+        config: &IndexConfig,
+        index: INDEX,
+        metrics_registry: &Registry,
+    ) -> Result<Self, Error> {
+        match config.mode {
+            IndexMode::File => {
+                let path = config.index_dir.clone().unwrap_or_else(|| {
+                    use rand::RngCore;
+                    let r = rand::thread_rng().next_u32();
+                    std::env::temp_dir().join(format!("index.{}", r))
+                });
 
-        std::fs::create_dir(&path).map_err(|_| Error::Open)?;
+                std::fs::create_dir(&path).map_err(|_| Error::Open)?;
 
-        let schema = index.schema();
-        let settings = index.settings();
-        let builder = SearchIndex::builder().schema(schema).settings(settings);
-        let dir = MmapDirectory::open(&path).map_err(|_e| Error::Open)?;
-        let inner = builder.open_or_create(dir)?;
-        Ok(Self {
-            inner,
-            path: Some(path),
-            index,
-            metrics: Metrics::register(metrics_registry)?,
-        })
+                let schema = index.schema();
+                let settings = index.settings();
+                let builder = SearchIndex::builder().schema(schema).settings(settings);
+                let dir = MmapDirectory::open(&path).map_err(|_e| Error::Open)?;
+                let inner = builder.open_or_create(dir)?;
+                Ok(Self {
+                    inner,
+                    path: Some(path),
+                    index,
+                    metrics: Metrics::register(metrics_registry)?,
+                })
+            }
+            IndexMode::S3 => {
+                let bucket = storage.clone().try_into()?;
+                let schema = index.schema();
+                let settings = index.settings();
+                let builder = SearchIndex::builder().schema(schema).settings(settings);
+                let dir = S3Directory::new(bucket);
+                let inner = builder.open_or_create(dir)?;
+                Ok(Self {
+                    inner,
+                    path: None,
+                    index,
+                    metrics: Metrics::register(metrics_registry)?,
+                })
+            }
+        }
     }
 
     pub fn index(&self) -> &INDEX {
@@ -260,7 +307,21 @@ impl<INDEX: Index> IndexStore<INDEX> {
         Ok(())
     }
 
-    pub fn snapshot(&mut self, writer: IndexWriter) -> Result<(Vec<u8>, bool), Error> {
+    /// Sync the index from a snapshot.
+    ///
+    /// NOTE: Only applicable for file indices.
+    pub async fn sync(&mut self, storage: &Storage) -> Result<(), Error> {
+        if self.path.is_some() {
+            let data = storage.get_index().await?;
+            self.reload(&data[..])?;
+            log::debug!("Index reloaded");
+        }
+        Ok(())
+    }
+
+    /// Take a snapshot of the index and push to object storage.
+    /// NOTE: Only applicable for file indices.
+    pub async fn snapshot(&mut self, writer: IndexWriter, storage: &mut Storage, force: bool) -> Result<(), Error> {
         if let Some(path) = &self.path {
             log::info!("Committing index to path {:?}", path);
             writer.commit()?;
@@ -287,18 +348,32 @@ impl<INDEX: Index> IndexStore<INDEX> {
             let changed = !gc_result.deleted_files.is_empty();
 
             let mut out = Vec::new();
-            log::info!("Creating encoder");
             let enc = zstd::stream::Encoder::new(&mut out, 3).map_err(Error::Io)?;
-            log::info!("Creating builder");
             let mut archive = tar::Builder::new(enc.auto_finish());
-            log::info!("Adding directories from {:?}", path);
             archive.append_dir_all("", path).map_err(Error::Io)?;
-            log::info!("Added it all to the archive");
             drop(archive);
             drop(lock);
-            Ok((out, changed))
+
+            if force || changed {
+                log::info!("Index has changed, publishing new snapshot");
+                match storage.put_index(&out).await {
+                    Ok(_) => {
+                        log::trace!("Snapshot published successfully");
+                        Ok(())
+                    }
+                    Err(e) => {
+                        log::warn!("Error updating index: {:?}", e);
+                        Err(e.into())
+                    }
+                }
+            } else {
+                log::trace!("No changes to index");
+                Ok(())
+            }
         } else {
-            Err(Error::NotPersisted)
+            log::info!("Committing index");
+            writer.commit()?;
+            Ok(())
         }
     }
 

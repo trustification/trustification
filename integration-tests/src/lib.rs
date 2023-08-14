@@ -50,7 +50,8 @@ fn bombastic_indexer() -> bombastic_indexer::Run {
         devmode: true,
         reindex: false,
         index: IndexConfig {
-            index: None,
+            index_dir: None,
+            mode: Default::default(),
             sync_interval: Duration::from_secs(2).into(),
         },
         storage: StorageConfig {
@@ -79,7 +80,8 @@ fn bombastic_api() -> bombastic_api::Run {
         port: 8082,
         devmode: false,
         index: IndexConfig {
-            index: None,
+            index_dir: None,
+            mode: Default::default(),
             sync_interval: Duration::from_secs(2).into(),
         },
         storage: StorageConfig {
@@ -109,7 +111,8 @@ fn vexination_indexer() -> vexination_indexer::Run {
         devmode: true,
         reindex: false,
         index: IndexConfig {
-            index: None,
+            index_dir: None,
+            mode: Default::default(),
             sync_interval: Duration::from_secs(2).into(),
         },
         storage: StorageConfig {
@@ -138,7 +141,8 @@ fn vexination_api() -> vexination_api::Run {
         port: 8081,
         devmode: false,
         index: IndexConfig {
-            index: None,
+            index_dir: None,
+            mode: Default::default(),
             sync_interval: Duration::from_secs(2).into(),
         },
         storage: StorageConfig {
