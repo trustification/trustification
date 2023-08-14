@@ -38,9 +38,6 @@ pub struct Run {
     #[arg(short = 'g', long = "guac", default_value = "http://localhost:8080/query")]
     pub guac_url: String,
 
-    #[arg(long = "sync-interval-seconds", env, default_value_t = 10)]
-    pub sync_interval_seconds: u64,
-
     #[arg(long = "bombastic-url", env, default_value = "http://localhost:8082")]
     pub bombastic_url: reqwest::Url,
 
