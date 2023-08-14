@@ -13608,7 +13608,7 @@
       "originator": "NOASSERTION",
       "packageFileName": "NOASSERTION",
       "supplier": "Organization: Red Hat",
-      "versionInfo": "ubi9-container-9.1.0-1782.testdata"
+      "versionInfo": "ubi9-container-9.1.0-1782.noarch"
     }
   ],
   "relationships": [

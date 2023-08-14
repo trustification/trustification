@@ -34,6 +34,7 @@ trustification-storage = { path = "../storage" }
 trustification-index = { path = "../index" }
 
 prometheus = "0.13.3"
+uuid = "1"
 
 [dev-dependencies]
 env_logger = "0.10"

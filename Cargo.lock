@@ -3291,6 +3291,7 @@ dependencies = [
  "trustification-infrastructure",
  "trustification-storage",
  "urlencoding",
+ "uuid",
  "vexination-api",
  "vexination-indexer",
 ]

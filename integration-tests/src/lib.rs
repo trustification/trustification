@@ -265,3 +265,9 @@ pub async fn get_response(
         response.json().await.unwrap()
     }
 }
+
+// Return a unique ID
+pub fn id(prefix: &str) -> String {
+    let uuid = uuid::Uuid::new_v4();
+    format!("{prefix}-{uuid}")
+}

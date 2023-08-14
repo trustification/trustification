@@ -1,5 +1,5 @@
 use integration_tests::{
-    assert_within_timeout, delete_sbom, get_response, upload_sbom, wait_for_event, BombasticContext,
+    assert_within_timeout, delete_sbom, get_response, id, upload_sbom, wait_for_event, BombasticContext,
 };
 use reqwest::StatusCode;
 use serde_json::{json, Value};
@@ -120,15 +120,20 @@ async fn test_delete_missing(context: &mut BombasticContext) {
 #[tokio::test]
 #[ntest::timeout(60_000)]
 async fn bombastic_search(context: &mut BombasticContext) {
-    let input = serde_json::from_str(include_str!("../../bombastic/testdata/ubi9-sbom.json")).unwrap();
-    let key = "test-search";
-    upload_sbom(context.port, key, &input, &context.provider).await;
+    let mut input: Value = serde_json::from_str(include_str!("../../bombastic/testdata/ubi9-sbom.json")).unwrap();
+
+    // we generate a unique id and use it as the SBOM's version for searching
+    let key = id("test-search");
+    input["packages"][617]["versionInfo"] = json!(key);
+
+    upload_sbom(context.port, &key, &input, &context.provider).await;
+
     assert_within_timeout(Duration::from_secs(30), async {
         loop {
-            let query = encode("ubi9-container-9.1.0-1782.testdata");
             let url = format!(
                 "http://localhost:{port}/api/v1/sbom/search?q={query}",
-                port = context.port
+                port = context.port,
+                query = encode(&key),
             );
             let response = reqwest::Client::new()
                 .get(url)
@@ -146,10 +151,9 @@ async fn bombastic_search(context: &mut BombasticContext) {
             }
             tokio::time::sleep(Duration::from_secs(1)).await;
         }
-
         // Ensure get expected errors on bad queries
         for query in &[
-            "unknown:ubi9-container-9.1.0-1782.testdata",
+            "unknown:ubi9-container-9.1.0-1782.noarch",
             "ubi9-container-9.1.0-1782.testdata sort:unknown",
         ] {
             let query = encode(query);
@@ -169,13 +173,14 @@ async fn bombastic_search(context: &mut BombasticContext) {
         }
     })
     .await;
-    delete_sbom(context.port, key, &context.provider).await;
+
+    delete_sbom(context.port, &key, &context.provider).await;
     assert_within_timeout(Duration::from_secs(30), async {
         loop {
-            let query = encode("ubi9-container-9.1.0-1782.testdata");
             let url = format!(
                 "http://localhost:{port}/api/v1/sbom/search?q={query}",
-                port = context.port
+                port = context.port,
+                query = encode(&key),
             );
             let response = reqwest::Client::new()
                 .get(url)
