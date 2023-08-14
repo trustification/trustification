@@ -90,8 +90,6 @@ async fn test_search_forward_vexination(context: &mut SpogContext) {
         .unwrap();
 
     assert_eq!(response.status(), StatusCode::OK);
-    let data: Value = response.json().await.unwrap();
-    println!("{data:#?}");
 }
 
 #[test_with::env(CRDA_URL)]

@@ -27,7 +27,5 @@ async fn create_provider(client_id: &str) -> Arc<OpenIdTokenProvider> {
 
     let provider = trustification_auth::client::OpenIdTokenProvider::new(client_user, chrono::Duration::seconds(10));
 
-    println!("Initial access token: {:?}", provider.provide_access_token().await);
-
     Arc::new(provider)
 }

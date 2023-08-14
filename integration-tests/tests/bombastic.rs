@@ -352,7 +352,6 @@ async fn test_upload_user_not_allowed(context: &mut BombasticContext) {
         .await
         .unwrap();
     assert_eq!(response.status(), StatusCode::FORBIDDEN);
-    println!("{:?}", response);
 }
 
 #[test_context(BombasticContext)]
@@ -369,7 +368,6 @@ async fn test_upload_unauthorized(context: &mut BombasticContext) {
         .await
         .unwrap();
     assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
-    println!("{:?}", response);
 }
 
 #[test_context(BombasticContext)]
@@ -390,7 +388,6 @@ async fn test_delete_user_not_allowed(context: &mut BombasticContext) {
         .await
         .unwrap();
     assert_eq!(response.status(), StatusCode::FORBIDDEN);
-    println!("{:?}", response);
 }
 
 #[test_context(BombasticContext)]
@@ -408,7 +405,6 @@ async fn test_delete_unauthorized(context: &mut BombasticContext) {
         .await
         .unwrap();
     assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
-    println!("{:?}", response);
 }
 
 #[test_context(BombasticContext)]
