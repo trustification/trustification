@@ -10,6 +10,7 @@ pub(crate) fn configure(auth: Option<Arc<Authenticator>>) -> impl FnOnce(&mut Se
         config.service(web::resource("/api/v1/packages").wrap(new_auth!(auth)).to(get));
         //TODO auth?
         config.service(web::resource("/api/v1/packages/dependencies").to(get_dependencies));
+        config.service(web::resource("/api/v1/packages/dependents").to(get_dependents));
     }
 }
 
@@ -59,6 +60,31 @@ pub async fn get_dependencies(
     web::Query(GetDependencies { purl }): web::Query<GetDependencies>,
 ) -> actix_web::Result<HttpResponse> {
     let deps = guac.get_dependencies(&purl).await?;
+
+    Ok(HttpResponse::Ok().json(deps))
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, serde::Deserialize)]
+pub struct GetDependents {
+    pub purl: String,
+}
+
+#[utoipa::path(
+    get,
+    path = "/api/v1/packages/dependents",
+    responses(
+        (status = 200, description = "Package was found"),
+        (status = NOT_FOUND, description = "Package was not found")
+    ),
+    params(
+        ("purl" = String, Path, description = "Package URL of the package to fetch information for"),
+    )
+)]
+pub async fn get_dependents(
+    guac: web::Data<GuacService>,
+    web::Query(GetDependencies { purl }): web::Query<GetDependencies>,
+) -> actix_web::Result<HttpResponse> {
+    let deps = guac.get_dependents(&purl).await?;
 
     Ok(HttpResponse::Ok().json(deps))
 }
