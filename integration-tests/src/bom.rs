@@ -85,6 +85,18 @@ pub async fn upload_sbom(port: u16, key: &str, input: &serde_json::Value, contex
     assert_eq!(response.status(), StatusCode::CREATED);
 }
 
+pub async fn delete_sbom(port: u16, key: &str, context: &ProviderContext) {
+    let response = reqwest::Client::new()
+        .delete(format!("http://localhost:{port}/api/v1/sbom?id={key}"))
+        .inject_token(&context.provider_manager)
+        .await
+        .unwrap()
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::NO_CONTENT);
+}
+
 #[async_trait]
 impl AsyncTestContext for BombasticContext {
     async fn setup() -> Self {
