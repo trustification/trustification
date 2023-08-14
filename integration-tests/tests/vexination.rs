@@ -187,7 +187,6 @@ async fn test_upload_vex_empty_json(context: &mut VexinationContext) {
             .send()
             .await
             .unwrap();
-        println!("{:?}", response);
         assert_eq!(response.status(), StatusCode::CREATED);
     })
     .await;
@@ -212,7 +211,6 @@ async fn test_upload_vex_empty_file(vexination: &mut VexinationContext) {
             .await
             .unwrap();
         remove_file(&file_path).await.unwrap();
-        println!("{:?}", response);
         assert_eq!(response.status(), StatusCode::CREATED);
     })
     .await;
