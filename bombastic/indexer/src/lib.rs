@@ -1,11 +1,12 @@
 use std::process::ExitCode;
 
+use std::sync::Arc;
+use tokio::sync::{mpsc, Mutex};
 use trustification_event_bus::EventBusConfig;
 use trustification_index::{IndexConfig, IndexStore};
+use trustification_indexer::{actix::configure, Indexer, IndexerStatus};
 use trustification_infrastructure::{Infrastructure, InfrastructureConfig};
 use trustification_storage::StorageConfig;
-
-mod indexer;
 
 #[derive(clap::Args, Debug)]
 #[command(about = "Run the indexer", args_conflicts_with_subcommands = true)]
@@ -37,27 +38,41 @@ pub struct Run {
 
 impl Run {
     pub async fn run(mut self) -> anyhow::Result<ExitCode> {
+        let (command_sender, command_receiver) = mpsc::channel(1);
+        let status = Arc::new(Mutex::new(IndexerStatus::Running));
+        let s = status.clone();
+        let c = command_sender.clone();
         Infrastructure::from(self.infra)
-            .run("bombastic-indexer", |metrics| async move {
-                let index = IndexStore::new(&self.index, bombastic_index::Index::new(), metrics.registry())?;
-                let storage = self.storage.create("bombastic", self.devmode, metrics.registry())?;
+            .run_with_config(
+                "bombastic-indexer",
+                |metrics| async move {
+                    let index = IndexStore::new(&self.index, bombastic_index::Index::new(), metrics.registry())?;
+                    let storage = self.storage.create("bombastic", self.devmode, metrics.registry())?;
 
-                let interval = self.index.sync_interval.into();
-                let bus = self.bus.create(metrics.registry()).await?;
-                if self.devmode {
-                    bus.create(&[self.stored_topic.as_str()]).await?;
-                }
-                indexer::run(
-                    index,
-                    storage,
-                    bus,
-                    self.stored_topic.as_str(),
-                    self.indexed_topic.as_str(),
-                    self.failed_topic.as_str(),
-                    interval,
-                )
-                .await
-            })
+                    let interval = self.index.sync_interval.into();
+                    let bus = self.bus.create(metrics.registry()).await?;
+                    if self.devmode {
+                        bus.create(&[self.stored_topic.as_str()]).await?;
+                    }
+
+                    let mut indexer = Indexer {
+                        index,
+                        storage,
+                        bus,
+                        stored_topic: self.stored_topic.as_str(),
+                        indexed_topic: self.indexed_topic.as_str(),
+                        failed_topic: self.failed_topic.as_str(),
+                        sync_interval: interval,
+                        status: s.clone(),
+                        commands: command_receiver,
+                        command_sender: c,
+                    };
+                    indexer.run().await
+                },
+                move |config| {
+                    configure(status, command_sender, config);
+                },
+            )
             .await?;
         Ok(ExitCode::SUCCESS)
     }

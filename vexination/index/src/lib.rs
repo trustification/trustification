@@ -91,6 +91,10 @@ impl trustification_index::Index for Index {
         }
     }
 
+    fn parse_doc(data: &[u8]) -> Result<Csaf, SearchError> {
+        serde_json::from_slice::<csaf::Csaf>(data).map_err(|e| SearchError::DocParser(e.to_string()))
+    }
+
     fn index_doc(&self, id: &str, csaf: &Csaf) -> Result<Vec<Document>, SearchError> {
         let document_status = match &csaf.document.tracking.status {
             csaf::document::Status::Draft => "draft",
