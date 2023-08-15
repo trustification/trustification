@@ -5,6 +5,7 @@ use futures::StreamExt;
 use std::sync::Arc;
 use tokio::sync::mpsc::Receiver;
 use tokio::sync::mpsc::Sender;
+use tokio::task::block_in_place;
 use tokio::{select, sync::Mutex};
 use trustification_event_bus::EventBus;
 use trustification_index::{Index, IndexStore, IndexWriter};
@@ -39,13 +40,12 @@ pub struct Indexer<'a, INDEX: Index> {
 impl<'a, INDEX: Index> Indexer<'a, INDEX> {
     pub async fn run(&mut self) -> Result<(), anyhow::Error> {
         // Load initial index from storage.
-        // TODO: Stream directly to file
-        if let Ok(data) = self.storage.get_index().await {
-            self.index.reload(&data[..])?;
+        if let Err(e) = self.index.sync(&self.storage).await {
+            log::info!("Error loading initial index: {:?}", e);
         }
 
         let mut interval = tokio::time::interval(self.sync_interval);
-        let mut writer = Some(self.index.writer()?);
+        let mut writer = Some(block_in_place(|| self.index.writer())?);
         let consumer = self.bus.subscribe("indexer", &[self.stored_topic]).await?;
         let mut uncommitted_events = Vec::new();
         let mut events = 0;
@@ -113,7 +113,7 @@ impl<'a, INDEX: Index> Indexer<'a, INDEX> {
                                             },
                                             EventType::Delete => {
                                                 let (_, key) = Storage::key_from_event(&data)?;
-                                                writer.as_mut().unwrap().delete_document(self.index.index(), key.as_str());
+                                                block_in_place(|| writer.as_mut().unwrap().delete_document(self.index.index(), key.as_str()));
                                                 log::debug!("Deleted entry {key} from index");
                                                 events += 1;
                                             }
@@ -138,37 +138,25 @@ impl<'a, INDEX: Index> Indexer<'a, INDEX> {
                 },
                 _ = tick => {
                     log::trace!("{} new events added, pushing new index to storage", events);
-                    match self.index.snapshot(writer.take().unwrap()) {
-                        Ok((data, changed)) => {
-                            if events > 0 || changed {
-                                log::info!("Index has changed, publishing new snapshot");
-                                match self.storage.put_index(&data).await {
-                                    Ok(_) => {
-                                        log::trace!("Index updated successfully");
-                                        match consumer.commit(&uncommitted_events[..]).await {
-                                            Ok(_) => {
-                                                log::trace!("Event committed successfully");
-                                                uncommitted_events.clear();
-                                            }
-                                            Err(e) => {
-                                                log::warn!("Error committing event: {:?}", e)
-                                            }
-                                        }
-                                        events = 0;
-                                    }
-                                    Err(e) => {
-                                        log::warn!("Error updating index: {:?}", e)
-                                    }
+                    match self.index.snapshot(writer.take().unwrap(), &mut self.storage, events > 0).await {
+                        Ok(_) => {
+                            log::trace!("Index updated successfully");
+                            match consumer.commit(&uncommitted_events[..]).await {
+                                Ok(_) => {
+                                    log::trace!("Event committed successfully");
+                                    uncommitted_events.clear();
                                 }
-                            } else {
-                                log::trace!("No changes to index");
+                                Err(e) => {
+                                    log::warn!("Error committing event: {:?}", e)
+                                }
                             }
-                            writer.replace(self.index.writer()?);
+                            events = 0;
                         }
                         Err(e) => {
                             log::warn!("Error taking index snapshot: {:?}", e);
                         }
                     }
+                    writer.replace(block_in_place(|| self.index.writer())?);
                 }
             }
         }
@@ -182,7 +170,7 @@ impl<'a, INDEX: Index> Indexer<'a, INDEX> {
         data: &[u8],
     ) -> Result<(), anyhow::Error> {
         match INDEX::parse_doc(data) {
-            Ok(doc) => match writer.add_document(index, key, &doc) {
+            Ok(doc) => match block_in_place(|| writer.add_document(index, key, &doc)) {
                 Ok(_) => {
                     log::trace!("Inserted entry into index");
                     self.bus.send(self.indexed_topic, key.as_bytes()).await?;

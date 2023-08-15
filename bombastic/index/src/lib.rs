@@ -453,7 +453,7 @@ impl trustification_index::Index for Index {
             });
         }
 
-        let mut query = Packages::parse(q).map_err(|err| SearchError::Parser(err.to_string()))?;
+        let mut query = Packages::parse(q).map_err(|err| SearchError::QueryParser(err.to_string()))?;
 
         query.term = query.term.compact();
 

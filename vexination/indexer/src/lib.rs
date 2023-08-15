@@ -2,6 +2,7 @@ use std::process::ExitCode;
 
 use std::sync::Arc;
 use tokio::sync::{mpsc, Mutex};
+use tokio::task::block_in_place;
 use trustification_event_bus::EventBusConfig;
 use trustification_index::{IndexConfig, IndexStore};
 use trustification_indexer::{actix::configure, Indexer, IndexerStatus};
@@ -32,13 +33,13 @@ pub struct Run {
     pub bus: EventBusConfig,
 
     #[command(flatten)]
-    pub index: IndexConfig,
-
-    #[command(flatten)]
     pub storage: StorageConfig,
 
     #[command(flatten)]
     pub infra: InfrastructureConfig,
+
+    #[command(flatten)]
+    pub index: IndexConfig,
 }
 
 impl Run {
@@ -51,9 +52,10 @@ impl Run {
             .run_with_config(
                 "vexination-indexer",
                 |metrics| async move {
-                    let index = IndexStore::new(&self.index, Index::new(), metrics.registry())?;
+                    let index = block_in_place(|| {
+                        IndexStore::new(&self.storage, &self.index, Index::new(), metrics.registry())
+                    })?;
                     let storage = self.storage.create("vexination", self.devmode, metrics.registry())?;
-                    let interval = self.index.sync_interval.into();
                     let bus = self.bus.create(metrics.registry()).await?;
                     if self.devmode {
                         bus.create(&[self.stored_topic.as_str()]).await?;
@@ -70,7 +72,7 @@ impl Run {
                         stored_topic: self.stored_topic.as_str(),
                         indexed_topic: self.indexed_topic.as_str(),
                         failed_topic: self.failed_topic.as_str(),
-                        sync_interval: interval,
+                        sync_interval: self.index.sync_interval.into(),
                         status: s.clone(),
                         commands: command_receiver,
                         command_sender: c,

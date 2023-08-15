@@ -85,7 +85,7 @@ impl actix_web::error::ResponseError for Error {
     fn status_code(&self) -> StatusCode {
         match self {
             Self::Storage(StorageError::NotFound) => StatusCode::NOT_FOUND,
-            Self::Index(IndexError::Parser(_)) => StatusCode::BAD_REQUEST,
+            Self::Index(IndexError::QueryParser(_)) => StatusCode::BAD_REQUEST,
             e => {
                 log::error!("{e:?}");
                 StatusCode::INTERNAL_SERVER_ERROR
@@ -243,9 +243,11 @@ async fn search_vex(
 
     log::info!("Querying VEX using {}", params.q);
 
-    let index = state.index.read().await;
-    let (result, total) = index
-        .search(&params.q, params.offset, params.limit, (&params).into())
-        .map_err(Error::Index)?;
+    let (result, total) = actix_web::web::block(move || {
+        let index = state.index.blocking_read();
+        index.search(&params.q, params.offset, params.limit, (&params).into())
+    })
+    .await?
+    .map_err(Error::Index)?;
     Ok(HttpResponse::Ok().json(SearchResult { total, result }))
 }

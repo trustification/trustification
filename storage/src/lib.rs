@@ -132,6 +132,32 @@ pub struct StorageConfig {
     pub secret_key: Option<String>,
 }
 
+impl TryInto<Bucket> for StorageConfig {
+    type Error = Error;
+    fn try_into(self) -> Result<Bucket, Error> {
+        let credentials = if let (Some(access_key), Some(secret_key)) = (&self.access_key, &self.secret_key) {
+            Credentials {
+                access_key: Some(access_key.into()),
+                secret_key: Some(secret_key.into()),
+                security_token: None,
+                session_token: None,
+                expiration: None,
+            }
+        } else {
+            Credentials::default()?
+        };
+
+        let region = self.region.clone().unwrap_or_else(|| Region::Custom {
+            region: "eu-central-1".to_owned(),
+            endpoint: self.endpoint.clone().unwrap_or("http://localhost:9000".to_string()),
+        });
+
+        let bucket = self.bucket.as_deref().expect("Required parameter bucket was not set");
+        let bucket = Bucket::new(bucket, region, credentials)?.with_path_style();
+        Ok(bucket)
+    }
+}
+
 impl StorageConfig {
     pub fn create(&mut self, default_bucket: &str, devmode: bool, registry: &Registry) -> Result<Storage, Error> {
         if devmode {
@@ -227,25 +253,7 @@ pub struct Head {
 
 impl Storage {
     pub fn new(config: &StorageConfig, registry: &Registry) -> Result<Self, Error> {
-        let credentials = if let (Some(access_key), Some(secret_key)) = (&config.access_key, &config.secret_key) {
-            Credentials {
-                access_key: Some(access_key.into()),
-                secret_key: Some(secret_key.into()),
-                security_token: None,
-                session_token: None,
-                expiration: None,
-            }
-        } else {
-            Credentials::default()?
-        };
-
-        let region = config.region.clone().unwrap_or_else(|| Region::Custom {
-            region: "eu-central-1".to_owned(),
-            endpoint: config.endpoint.clone().unwrap_or("http://localhost:9000".to_string()),
-        });
-
-        let bucket = config.bucket.as_deref().expect("Required parameter bucket was not set");
-        let bucket = Bucket::new(bucket, region, credentials)?.with_path_style();
+        let bucket = config.clone().try_into()?;
         Ok(Self {
             bucket,
             metrics: Metrics::register(registry)?,

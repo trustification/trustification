@@ -12,6 +12,7 @@ use actix_web_prom::PrometheusMetricsBuilder;
 use anyhow::anyhow;
 use prometheus::Registry;
 use tokio::sync::RwLock;
+use tokio::task::block_in_place;
 use trustification_auth::authenticator::Authenticator;
 use trustification_auth::swagger_ui::{SwaggerUiOidc, SwaggerUiOidcConfig};
 use trustification_auth::{authenticator::config::AuthenticatorConfig, authorizer::Authorizer};
@@ -111,13 +112,13 @@ impl Run {
     }
 
     fn configure(
-        index: IndexConfig,
+        index_config: IndexConfig,
         mut storage: StorageConfig,
         registry: &Registry,
         devmode: bool,
     ) -> anyhow::Result<Arc<AppState>> {
-        let sync_interval: Duration = index.sync_interval.into();
-        let index = IndexStore::new(&index, bombastic_index::Index::new(), registry)?;
+        let index =
+            block_in_place(|| IndexStore::new(&storage, &index_config, bombastic_index::Index::new(), registry))?;
         let storage = storage.create("bombastic", devmode, registry)?;
 
         let state = Arc::new(AppState {
@@ -126,6 +127,7 @@ impl Run {
         });
 
         let sinker = state.clone();
+        let sync_interval = index_config.sync_interval.into();
         tokio::task::spawn(async move {
             loop {
                 if sinker.sync_index().await.is_ok() {
@@ -159,14 +161,9 @@ pub(crate) type SharedState = Arc<AppState>;
 
 impl AppState {
     async fn sync_index(&self) -> Result<(), anyhow::Error> {
-        let data = {
-            let storage = self.storage.read().await;
-            storage.get_index().await?
-        };
-
+        let storage = self.storage.read().await;
         let mut index = self.index.write().await;
-        index.reload(&data[..])?;
-        log::debug!("Bombastic index reloaded");
+        index.sync(&storage).await?;
         Ok(())
     }
 }
