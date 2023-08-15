@@ -37,6 +37,10 @@ pub struct IndexConfig {
     #[arg(long = "index-sync-interval", default_value = "30s")]
     pub sync_interval: humantime::Duration,
 
+    /// Memory available to index writer
+    #[arg(long = "index-writer-memory-bytes", default_value_t = 32 * 1024 * 1024)]
+    pub index_writer_memory_bytes: usize,
+
     /// Synchronization interval for index persistence.
     #[arg(long = "index-mode", default_value_t = IndexMode::File)]
     pub mode: IndexMode,
@@ -128,6 +132,7 @@ pub struct IndexStore<INDEX: Index> {
     inner: SearchIndex,
     path: Option<PathBuf>,
     index: INDEX,
+    index_writer_memory_bytes: usize,
     metrics: Metrics,
 }
 
@@ -240,6 +245,7 @@ impl<INDEX: Index> IndexStore<INDEX> {
         Ok(Self {
             inner,
             index,
+            index_writer_memory_bytes: 32 * 1024 * 1024,
             path: None,
             metrics: Metrics::register(&Default::default())?,
         })
@@ -268,6 +274,7 @@ impl<INDEX: Index> IndexStore<INDEX> {
                 let inner = builder.open_or_create(dir)?;
                 Ok(Self {
                     inner,
+                    index_writer_memory_bytes: config.index_writer_memory_bytes,
                     path: Some(path),
                     index,
                     metrics: Metrics::register(metrics_registry)?,
@@ -282,6 +289,7 @@ impl<INDEX: Index> IndexStore<INDEX> {
                 let inner = builder.open_or_create(dir)?;
                 Ok(Self {
                     inner,
+                    index_writer_memory_bytes: config.index_writer_memory_bytes,
                     path: None,
                     index,
                     metrics: Metrics::register(metrics_registry)?,
@@ -378,7 +386,7 @@ impl<INDEX: Index> IndexStore<INDEX> {
     }
 
     pub fn writer(&mut self) -> Result<IndexWriter, Error> {
-        let writer = self.inner.writer(100_000_000)?;
+        let writer = self.inner.writer(self.index_writer_memory_bytes)?;
         Ok(IndexWriter {
             writer,
             metrics: self.metrics.clone(),
