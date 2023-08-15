@@ -1,6 +1,6 @@
 use crate::services::guac::GuacService;
 use actix_web::web::ServiceConfig;
-use actix_web::{web, HttpResponse, Responder};
+use actix_web::{web, HttpResponse};
 use std::sync::Arc;
 use trustification_auth::authenticator::Authenticator;
 use trustification_infrastructure::new_auth;
@@ -31,13 +31,13 @@ pub struct GetPackage {
     )
 )]
 pub async fn get(
-    _guac: web::Data<GuacService>,
+    guac: web::Data<GuacService>,
     web::Query(GetPackage { purl }): web::Query<GetPackage>,
-) -> impl Responder {
-    // FIXME: this should do something
-    HttpResponse::Ok()
-}
+) -> actix_web::Result<HttpResponse> {
+    let pkgs = guac.get_packages(&purl).await?;
 
+    Ok(HttpResponse::Ok().json(pkgs))
+}
 
 #[derive(Clone, Debug, Eq, PartialEq, serde::Deserialize)]
 pub struct GetDependencies {
