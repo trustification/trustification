@@ -1,0 +1,86 @@
+= VEX
+
+Vexination allows you to publish, retreive and search for Vulnerability EXchange (VEX) documents.
+
+Vexination supports searching VEX data using the xref:search.adoc[sikula query language].
+
+The Vexination REST API can be used to publish and retrieve a VEX document using the VEX identifier.
+
+== Publish
+
+To publish a VEX document:
+
+[source,bash]
+----
+curl --json vex.json https://vex.trustification.dev/api/v1/vex
+----
+
+NOTE: The VEX must be in the CSAF 2.0 format.
+
+If you got a `201 Created` in the response, the document was published successfully. See the link:https://vex.trustification.dev/swagger-ui/[OpenAPI] for more details on responses.
+
+NOTE: A document may take between seconds and minutes to appearch in searches.
+
+== Retrieving
+
+To retrieve a VEX document:
+
+[source,bash]
+----
+curl https://vex.trustification.dev/api/v1/vex?advisory=<identifier>
+----
+
+== Searching
+
+By default queries search through identifiers, titles and descriptions in the VEX, and returns the matching results ordered by a relevance.
+
+See the xref:search.adoc[sikula query language] for more details on the search syntax.
+
+=== Qualifiers
+
+The table below contains a list of the qualifiers you can use when searching Vexination:
+
+[cols="1,1,1,1"]
+|===
+| *Qualifier* | *Description* | *Matching* | *Example*
+| `id` | Search by VEX identifier | Exact | `id:"RHSA-2023:4517"`
+| `cve` | Search by CVE identifier | Exact | `cve:"CVE-2022-42896"`
+| `title` | Search in VEX and CVE title | Term | `title:exploit`
+| `description` | Search by VEX and CVE description | Term | `"NULL pointer" in:description`
+| `status` | Search by VEX status | Exact | `severity:Critical`
+| `cvss` | Search by CVSS score | Range | `cvss:>6.3`
+| `package` | Search by fixed or affected package or product identifier | Exact, Partial | `affected:"cpe:/a:redhat:openshift_container_storage:4.8::el8"`
+| `fixed` | Search by fixed package or product identifier | Exact, Partial | `"cpe:/a:redhat:openshift_container_storage:4.8" in:fixed`
+| `affected` | Search by affected package or product identifier | Exact, Partial | `"pkg:rpm/redhat/xz-libs@5.2.4" in:affected`
+| `initial` | Search by VEX initial date | Exact, Range | `initial:2022-01-01..2023-01-01`
+| `release` | Search by VEX release date | Exact, Range | `release:>2023-05-05`
+| `discovery` | Search by VEX discovery date | Exact, Range | `discovery:<2023-01-01`
+|===
+
+TIP: Matching can either be Exact (Contains exactly a value), Partial (Prefix matching of value), Term (Inverse index aka. text matching) or Range (for values that can match within a range)
+
+NOTE: You can also enforce an ordering on the results for the `severity` and `release` fields: `openssl sort:severity` or `openssl -sort:release`.
+
+=== Predicates
+
+The following predicates may be used to search by severity: `critical`, `high`, `medium` and `low`.
+
+=== Use cases
+
+==== Find advisories that relates to the RHEL 8 product
+
+[source,rust]
+----
+"cpe:/a:redhat:rhel_eus:8" in:package
+----
+
+==== Find all critical advisories for OpenShift on RHEL 9, released this year
+
+[source,rust]
+----
+"cpe:/a:redhat:openshift:4.13::el9" in:package release:>2023-01-01 is:critical
+----
+
+=== Reference
+
+See the full link:https://vex.trustification.dev/swagger-ui/[Vexination API documentation] for more details.
