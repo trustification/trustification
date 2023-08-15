@@ -70,23 +70,20 @@ impl<'a, INDEX: Index> Indexer<'a, INDEX> {
                                     pin_mut!(tick);
                                     select! {
                                         next = objects.next() => {
-                                            if let Some(obj) = next {
-                                                    match obj {
-                                                        Ok((key, obj)) => {
-                                                            log::info!("Reindexing {}", key);
-                                                            if let Err(e) = self.index_doc(self.index.index(), writer.as_mut().unwrap(), &key, &obj).await {
-                                                                log::warn!("(Ignored) Internal error when indexing {}: {:?}", key, e);
-                                                            } else {
-                                                                progress += 1;
-                                                                *self.status.lock().await = IndexerStatus::Reindexing { progress };
-                                                            }
-                                                        }
-                                                        Err(e) => {
-                                                            log::warn!("(Ignored) Error reindexing: {:?}", e);
-                                                        }
+                                            match next {
+                                                Some(Ok((key, obj))) => {
+                                                    log::info!("Reindexing {}", key);
+                                                    if let Err(e) = self.index_doc(self.index.index(), writer.as_mut().unwrap(), &key, &obj).await {
+                                                        log::warn!("(Ignored) Internal error when indexing {}: {:?}", key, e);
+                                                    } else {
+                                                        progress += 1;
+                                                        *self.status.lock().await = IndexerStatus::Reindexing { progress };
                                                     }
-                                            } else {
-                                                break;
+                                                }
+                                                Some(Err(e)) => {
+                                                    log::warn!("(Ignored) Error reindexing: {:?}", e);
+                                                }
+                                                _ => break,
                                             }
                                         }
                                         _ = tick => {
