@@ -36,6 +36,12 @@ impl GuacService {
         }
     }
 
+    /// Lookup related packages for a provided Package URL
+    pub async fn get_packages(&self, purl: &str) -> Result<Vec<String>, Error> {
+        let pkgs = self.client.get_packages(purl).await.map_err(Error::Guac)?;
+        Ok(pkgs)
+    }
+
     /// Lookup dependencies for a provided Package URL
     pub async fn get_dependencies(&self, purl: &str) -> Result<Vec<String>, Error> {
         let deps = self.client.is_dependency(purl).await.map_err(Error::Guac)?;
