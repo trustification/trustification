@@ -7,10 +7,17 @@ use trustification_infrastructure::new_auth;
 
 pub(crate) fn configure(auth: Option<Arc<Authenticator>>) -> impl FnOnce(&mut ServiceConfig) {
     |config: &mut ServiceConfig| {
-        config.service(web::resource("/api/v1/packages").wrap(new_auth!(auth)).to(get));
-        //TODO auth?
-        config.service(web::resource("/api/v1/packages/dependencies").to(get_dependencies));
-        config.service(web::resource("/api/v1/packages/dependents").to(get_dependents));
+        config.service(web::resource("/api/v1/packages").wrap(new_auth!(auth.clone())).to(get));
+        config.service(
+            web::resource("/api/v1/packages/dependencies")
+                .wrap(new_auth!(auth.clone()))
+                .to(get_dependencies),
+        );
+        config.service(
+            web::resource("/api/v1/packages/dependents")
+                .wrap(new_auth!(auth))
+                .to(get_dependents),
+        );
     }
 }
 

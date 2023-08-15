@@ -1,4 +1,4 @@
-use actix_web::{HttpResponse, http::header::ContentType};
+use actix_web::{http::header::ContentType, HttpResponse};
 use guac::client::GuacClient;
 use http::StatusCode;
 use trustification_common::error::ErrorInformation;
