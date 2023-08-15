@@ -3,36 +3,56 @@ use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct GatherRequest {
+pub struct CollectPackagesRequest {
     pub purls: Vec<String>,
 }
 
-pub type Vurls = Vec<String>;
-
 #[derive(Serialize, Deserialize, Debug)]
-pub struct GatherResponse {
-    #[serde(flatten)]
-    pub purls: HashMap<String, Vurls>,
+pub struct CollectVulnerabilitiesRequest {
+    pub vulnerability_ids: VulnerabilityIds,
 }
 
-pub struct Client {
+pub type VulnerabilityIds = Vec<String>;
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct CollectPackagesResponse {
+    #[serde(flatten)]
+    pub purls: HashMap<String, VulnerabilityIds>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct CollectVulnerabilitiesResponse {
+    pub vulnerability_ids: VulnerabilityIds,
+}
+
+pub struct CollectorClient {
     url: String,
 }
 
-impl Client {
+impl CollectorClient {
     pub fn new(url: String) -> Self {
         Self { url }
     }
 
-    pub async fn gather(&self, request: GatherRequest) -> Result<GatherResponse, anyhow::Error> {
-        let response = reqwest::Client::new()
-            .post(self.url.clone())
-            .json(&request)
-            .send()
-            .await?;
+    pub async fn collect_packages(
+        &self,
+        request: CollectPackagesRequest,
+    ) -> Result<CollectPackagesResponse, anyhow::Error> {
+        let mut url = self.url.clone();
+        url.push_str("/packages");
+        let response = reqwest::Client::new().post(url).json(&request).send().await?;
+        let response: CollectPackagesResponse = response.json().await?;
+        Ok(response)
+    }
 
-        let response: GatherResponse = response.json().await?;
-
+    pub async fn collect_vulnerabilities(
+        &self,
+        request: CollectVulnerabilitiesRequest,
+    ) -> Result<CollectVulnerabilitiesResponse, anyhow::Error> {
+        let mut url = self.url.clone();
+        url.push_str("/vulnerabilities");
+        let response = reqwest::Client::new().post(url).json(&request).send().await?;
+        let response: CollectVulnerabilitiesResponse = response.json().await?;
         Ok(response)
     }
 }

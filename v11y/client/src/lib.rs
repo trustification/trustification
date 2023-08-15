@@ -120,12 +120,25 @@ pub struct Reference {
 
 #[allow(unused)]
 pub struct V11yClient {
-    url: String,
+    v11y_url: String,
 }
 
 impl V11yClient {
-    pub fn new(url: &str) -> Self {
-        Self { url: url.to_owned() }
+    pub fn new(url: String) -> Self {
+        Self { v11y_url: url }
+    }
+
+    pub async fn ingest_vulnerability(&self, vuln: &Vulnerability) -> Result<(), anyhow::Error> {
+        let mut ingest_url = self.v11y_url.clone();
+        ingest_url.push_str("api/v1/vulnerability");
+
+        Ok(reqwest::Client::new()
+            .post(&ingest_url)
+            .json(&vuln)
+            .send()
+            .await?
+            .json()
+            .await?)
     }
 }
 

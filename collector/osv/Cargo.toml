@@ -11,6 +11,7 @@ trustification-infrastructure = { path = "../../infrastructure" }
 collectorist-api = { path = "../../collectorist/api"}
 collectorist-client = { path = "../../collectorist/client"}
 collector-client = { path = "../client" }
+v11y-client = { path = "../../v11y/client" }
 clap = { version = "4", features = ["derive"] }
 anyhow = "1"
 derive_more = "0.99"

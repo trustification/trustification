@@ -5,7 +5,7 @@ use futures::{Stream, StreamExt};
 use sqlx::sqlite::SqliteConnectOptions;
 use sqlx::{Row, SqlitePool};
 
-static DB_FILE_NAME: &str = "gatherer.db";
+static DB_FILE_NAME: &str = "collectorist.db";
 
 pub struct Db {
     pool: SqlitePool,
@@ -29,7 +29,7 @@ impl Db {
 
     pub async fn insert_purl(&self, purl: &str) -> Result<(), anyhow::Error> {
         sqlx::query(
-            r#"INSERT OR IGNORE INTO purls (purl) VALUES ($1)
+            r#"insert or ignore into purls (purl) values ($1)
             "#,
         )
         .bind(purl.clone())
@@ -40,9 +40,21 @@ impl Db {
         Ok(())
     }
 
+    pub async fn insert_vulnerability(&self, vuln_id: &str) -> Result<(), anyhow::Error> {
+        sqlx::query(
+            r#"insert or ignore into vulnerabilities (id) values ($1)
+            "#,
+        )
+        .bind(vuln_id.clone())
+        .execute(&self.pool)
+        .await?;
+
+        Ok(())
+    }
+
     #[allow(unused)]
     pub async fn get_purls(&self) -> impl Stream<Item = String> {
-        sqlx::query(r#"SELECT purl FROM purls"#)
+        sqlx::query(r#"select purl from purls"#)
             .fetch(&self.pool)
             .filter_map(|row| async move {
                 if let Ok(row) = row {
@@ -54,12 +66,25 @@ impl Db {
     }
 
     pub async fn update_purl_scan_time(&self, collector_id: &str, purl: &str) -> Result<(), anyhow::Error> {
-        sqlx::query(r#"REPLACE INTO collector (collector, purl, timestamp) VALUES ($1, $2, $3)"#)
+        sqlx::query(r#"replace into collector_purls (collector, purl, timestamp) VALUES ($1, $2, $3)"#)
             .bind(collector_id.clone())
             .bind(purl)
             .bind(Utc::now())
             .execute(&self.pool)
             .await?;
+
+        Ok(())
+    }
+
+    pub async fn update_vulnerability_scan_time(&self, collector_id: &str, vuln_id: &str) -> Result<(), anyhow::Error> {
+        sqlx::query(
+            r#"replace into collector_vulnerabilities (collector, vulnerability_id, timestamp) VALUES ($1, $2, $3)"#,
+        )
+        .bind(collector_id.clone())
+        .bind(vuln_id)
+        .bind(Utc::now())
+        .execute(&self.pool)
+        .await?;
 
         Ok(())
     }
@@ -72,12 +97,12 @@ impl Db {
     ) -> Result<Option<DateTime<Utc>>, anyhow::Error> {
         Ok(sqlx::query(
             r#"
-            SELECT
+            select
                 timestamp
-            FROM
-                collector
-            WHERE
-                collector = $1 AND purl = $2"#,
+            from
+                collector_purls
+            where
+                collector = $1 and purl = $2"#,
         )
         .bind(collector_id.clone())
         .bind(purl.clone())
@@ -94,41 +119,20 @@ impl Db {
     ) -> impl Stream<Item = String> + 'f {
         sqlx::query(
             r#"
-            SELECT
+            select
                 purls.purl
-            FROM
+            from
                 purls
-            LEFT JOIN
-                collector
-            ON
-                purls.purl = collector.purl
-            WHERE
-                collector.timestamp IS NULL OR collector.timestamp < $2
-            LIMIT
+            left join
+                collector_purls
+            on
+                purls.purl = collector_purls.purl
+            where
+                collector_purls.timestamp is null or collector_purls.timestamp < $2
+            limit
                 $3
             "#,
         )
-        /*
-        sqlx::query(
-            r#"
-            SELECT
-                purl, timestamp
-            FROM
-                collector
-            WHERE
-                collector = $1 AND timestamp < $2
-            UNION
-            SELECT
-                purl, 0
-            FROM
-                purls
-            ORDER BY
-                collector.timestamp ASC
-            LIMIT
-                $3
-            "#,
-        )
-        */
         .bind(collector_id)
         .bind(since)
         .bind(limit)
@@ -142,15 +146,53 @@ impl Db {
         })
     }
 
+    #[allow(unused)]
+    pub async fn get_vulnerabilities_to_scan<'f>(
+        &'f self,
+        collector_id: &'f str,
+        since: DateTime<Utc>,
+        limit: u32,
+    ) -> impl Stream<Item = String> + 'f {
+        sqlx::query(
+            r#"
+            select
+                vulnerabilities.id
+            from
+                vulnerabilities
+            left join
+                collector_vulnerabilities
+            on
+                vulnerabilities.id = collector_vulnerabilities.vulnerability_id
+            where
+                collector_vulnerabilities.timestamp is null or collector_vulnerabilities.timestamp < $2
+            limit
+                $3
+            "#,
+        )
+        .bind(collector_id)
+        .bind(since)
+        .bind(limit)
+        .fetch(&self.pool)
+        .filter_map(|row| async move {
+            if let Ok(row) = row {
+                Some(row.get::<String, _>("id"))
+            } else {
+                None
+            }
+        })
+    }
+
     async fn initialize(&self) -> Result<(), anyhow::Error> {
         self.create_purls_table().await?;
-        self.create_collector_table().await?;
+        self.create_vulnerabilities_table().await?;
+        self.create_collector_purls_table().await?;
+        self.create_collector_vulnerabilities_table().await?;
         Ok(())
     }
 
     async fn create_purls_table(&self) -> Result<(), anyhow::Error> {
         sqlx::query(
-            r#"CREATE TABLE IF NOT EXISTS purls (
+            r#"create table if not exists purls (
                     purl text
                 )"#,
         )
@@ -159,7 +201,7 @@ impl Db {
 
         sqlx::query(
             r#"
-            CREATE UNIQUE INDEX IF NOT EXISTS purl_idx ON purls ( purl ) ;
+            create unique index if not exists purl_idx on purls ( purl ) ;
             "#,
         )
         .execute(&self.pool)
@@ -168,9 +210,29 @@ impl Db {
         Ok(())
     }
 
-    async fn create_collector_table(&self) -> Result<(), anyhow::Error> {
+    async fn create_vulnerabilities_table(&self) -> Result<(), anyhow::Error> {
         sqlx::query(
-            r#"CREATE TABLE IF NOT EXISTS collector (
+            r#"create table if not exists vulnerabilities (
+                    id text
+                )"#,
+        )
+        .execute(&self.pool)
+        .await?;
+
+        sqlx::query(
+            r#"
+            create unique index if not exists vulnerability_idx on vulnerabilities ( id ) ;
+            "#,
+        )
+        .execute(&self.pool)
+        .await?;
+
+        Ok(())
+    }
+
+    async fn create_collector_purls_table(&self) -> Result<(), anyhow::Error> {
+        sqlx::query(
+            r#"create table if not exists collector_purls (
                     collector text,
                     purl text,
                     timestamp datetime
@@ -181,7 +243,29 @@ impl Db {
 
         sqlx::query(
             r#"
-            CREATE UNIQUE INDEX IF NOT EXISTS collector_idx ON collector ( purl ) ;
+            create unique index if not exists collector_purl_idx ON collector_purls ( purl ) ;
+            "#,
+        )
+        .execute(&self.pool)
+        .await?;
+
+        Ok(())
+    }
+
+    async fn create_collector_vulnerabilities_table(&self) -> Result<(), anyhow::Error> {
+        sqlx::query(
+            r#"create table if not exists collector_vulnerabilities (
+                    collector text,
+                    vulnerability_id text,
+                    timestamp datetime
+                )"#,
+        )
+        .execute(&self.pool)
+        .await?;
+
+        sqlx::query(
+            r#"
+            create unique index if not exists collector_vulnerability_idx ON collector_vulnerabilities ( vulnerability_id ) ;
             "#,
         )
         .execute(&self.pool)

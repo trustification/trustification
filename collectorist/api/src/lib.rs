@@ -7,8 +7,8 @@ use trustification_infrastructure::{Infrastructure, InfrastructureConfig};
 
 use crate::state::AppState;
 
+mod coordinator;
 mod db;
-mod gatherer;
 pub mod server;
 mod state;
 
@@ -38,7 +38,7 @@ impl Run {
                 let state = Self::configure(self.csub_url, self.guac_url).await?;
                 let addr = SocketAddr::from_str(&format!("{}:{}", self.bind, self.port))?;
                 let server = server::run(state.clone(), addr);
-                let listener = state.gatherer.listen(state.clone());
+                let listener = state.coordinator.listen(state.clone());
                 tokio::select! {
                      _ = listener => { }
                      _ = server => { }

@@ -18,7 +18,7 @@ pub mod collector;
 #[openapi(paths(
     crate::server::collector::register_collector,
     crate::server::collector::deregister_collector,
-    crate::server::collect::collect,
+    crate::server::collect::collect_packages,
 ))]
 pub struct ApiDoc;
 
@@ -40,7 +40,7 @@ pub fn config(cfg: &mut web::ServiceConfig) {
             .service(register_collector)
             .service(deregister_collector)
             .service(collector_config)
-            .service(collect::collect),
+            .service(collect::collect_packages),
     )
     .service(SwaggerUi::new("/swagger-ui/{_:.*}").url("/openapi.json", ApiDoc::openapi()));
 }

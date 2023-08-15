@@ -1,0 +1,63 @@
+use std::collections::{HashMap, HashSet};
+
+use crate::coordinator::collector::Collector;
+use collector_client::{CollectPackagesResponse, CollectVulnerabilitiesResponse};
+use collectorist_client::{CollectorConfig, Interest};
+use futures::future::join_all;
+
+use crate::server::collect::CollectRequest;
+use crate::SharedState;
+
+#[derive(Default)]
+pub struct Collectors {
+    collectors: HashMap<String, Collector>,
+}
+
+impl Collectors {
+    pub async fn register(&mut self, state: SharedState, id: String, config: CollectorConfig) -> Result<(), ()> {
+        self.collectors
+            .insert(id.clone(), Collector::new(state.clone(), id, config));
+        Ok(())
+    }
+
+    pub fn deregister(&mut self, id: String) -> Result<bool, ()> {
+        Ok(self.collectors.remove(&id).is_some())
+    }
+
+    #[allow(unused)]
+    pub fn collector_ids(&self) -> impl Iterator<Item = &String> {
+        self.collectors.keys()
+    }
+
+    pub fn collector_config(&self, id: String) -> Option<CollectorConfig> {
+        self.collectors.get(&id).map(|e| e.config.clone())
+    }
+
+    pub async fn collect_packages(&self, state: SharedState, request: CollectRequest) -> Vec<CollectPackagesResponse> {
+        let mut futures = Vec::new();
+
+        for collector in self.collectors.values() {
+            if collector.config.interests.contains(&Interest::Package) {
+                futures.push(collector.collect_packages(state.clone(), request.purls.clone()));
+            }
+        }
+
+        join_all(futures).await.into_iter().flatten().collect()
+    }
+
+    pub async fn collect_vulnerabilities(
+        &self,
+        state: SharedState,
+        vuln_ids: HashSet<String>,
+    ) -> Vec<CollectVulnerabilitiesResponse> {
+        let mut futures = Vec::new();
+
+        for collector in self.collectors.values() {
+            if collector.config.interests.contains(&Interest::Package) {
+                futures.push(collector.collect_vulnerabilities(state.clone(), vuln_ids.clone()));
+            }
+        }
+
+        join_all(futures).await.into_iter().flatten().collect()
+    }
+}

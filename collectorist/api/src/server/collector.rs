@@ -107,12 +107,14 @@ mod test {
         let json = json!(
             {
                 "url": "http://mycollector.example.com/",
-                "cadence": "12m"
+                "cadence": "12m",
+                "interests": [ "package" ]
             }
         );
 
         let config: CollectorConfig = serde_json::from_str(serde_json::to_string(&json)?.as_str())?;
         assert_eq!(config.cadence, Duration::from_secs(12 * 60));
+        assert_eq!(config.interests.len(), 1);
 
         Ok(())
     }
@@ -131,7 +133,8 @@ mod test {
             .uri("/api/v1/collector/foo")
             .set_json(json!(
                 {
-                    "url": "http://example.com/collector-endpoint"
+                    "url": "http://example.com/collector-endpoint",
+                    "interests": [ "package" ]
                 }
             ))
             .to_request();
@@ -166,7 +169,8 @@ mod test {
             .uri("/api/v1/collector/foo")
             .set_json(json!(
                 {
-                    "url": "http://example.com/collector-endpoint"
+                    "url": "http://example.com/collector-endpoint",
+                    "interests": [ "package" ]
                 }
             ))
             .to_request();
@@ -207,7 +211,8 @@ mod test {
             .uri("/api/v1/collector/foo")
             .set_json(json!(
                 {
-                    "url": "http://example.com/collector-endpoint"
+                    "url": "http://example.com/collector-endpoint",
+                    "interests": [ "package" ]
                 }
             ))
             .to_request();
