@@ -17,8 +17,6 @@ use super::pkg::PackageRef;
     }),
     packages: vec![PackageRef {
         purl: "pkg:rpm/redhat/openssl@1.1.1k-7.el8_6".to_string(),
-        href: format!("/api/package?purl={}", &urlencoding::encode("pkg:rpm/redhat/openssl@1.1.1k-7.el8_6")),
-        sbom: None,
     }
 ]
 }))]
