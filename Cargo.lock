@@ -1672,6 +1672,7 @@ dependencies = [
  "trustification-infrastructure",
  "utoipa",
  "utoipa-swagger-ui",
+ "v11y-client",
 ]
 
 [[package]]
@@ -1708,6 +1709,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sqlx",
+ "thiserror",
  "tokio",
  "trustification-infrastructure",
  "utoipa",

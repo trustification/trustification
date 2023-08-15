@@ -2,14 +2,14 @@ pub mod schema;
 
 use std::collections::HashMap;
 
-use collector_client::GatherResponse;
+use collector_client::CollectPackagesResponse;
 use serde::{Deserialize, Serialize};
 
-use crate::client::schema::{BatchVulnerability, Package};
+use crate::client::schema::{BatchVulnerability, Package, Vulnerability};
 
 //const QUERY_URL: &str = "https://api.osv.dev/v1/query";
 const QUERYBATCH_URL: &str = "https://api.osv.dev/v1/querybatch";
-//const VULNS_URL: &str = "https://api.osv.dev/v1/vulns";
+const VULNS_URL: &str = "https://api.osv.dev/v1/vulns";
 
 pub struct OsvClient {}
 
@@ -44,6 +44,7 @@ pub struct CollatedBatchVulnerabilities {
     pub vulns: Option<Vec<BatchVulnerability>>,
 }
 
+#[allow(unused)]
 impl OsvClient {
     pub async fn query_batch(request: QueryBatchRequest) -> Result<CollatedQueryBatchResponse, anyhow::Error> {
         let response: QueryBatchResponse = reqwest::Client::new()
@@ -68,9 +69,17 @@ impl OsvClient {
 
         Ok(response)
     }
+
+    pub async fn vulns(id: &str) -> Result<Vulnerability, anyhow::Error> {
+        let mut url = VULNS_URL.to_string();
+        url.push('/');
+        url.push_str(id);
+
+        Ok(reqwest::Client::new().get(url).send().await?.json().await?)
+    }
 }
 
-impl From<CollatedQueryBatchResponse> for GatherResponse {
+impl From<CollatedQueryBatchResponse> for CollectPackagesResponse {
     fn from(response: CollatedQueryBatchResponse) -> Self {
         let purls: HashMap<_, _> = response
             .results
@@ -93,7 +102,7 @@ mod tests {
     #[test]
     fn empty_response() {
         let src = CollatedQueryBatchResponse::default();
-        let tgt = GatherResponse::from(src);
+        let tgt = CollectPackagesResponse::from(src);
         assert!(tgt.purls.is_empty());
     }
 
@@ -107,7 +116,7 @@ mod tests {
                 vulns: None,
             }],
         };
-        let tgt = GatherResponse::from(src);
+        let tgt = CollectPackagesResponse::from(src);
         assert!(tgt.purls.is_empty());
     }
 
@@ -121,7 +130,7 @@ mod tests {
                 vulns: Some(vec![]),
             }],
         };
-        let tgt = GatherResponse::from(src);
+        let tgt = CollectPackagesResponse::from(src);
         assert!(tgt.purls.is_empty());
     }
 
@@ -138,8 +147,16 @@ mod tests {
                 }]),
             }],
         };
-        let tgt = GatherResponse::from(src);
+        let tgt = CollectPackagesResponse::from(src);
         assert!(!tgt.purls.is_empty());
         assert_eq!(tgt.purls["pkg:foo"], vec!["cve"]);
+    }
+
+    #[tokio::test]
+    async fn query_vuln() -> Result<(), anyhow::Error> {
+        let vuln = OsvClient::vulns("GHSA-7rjr-3q55-vv33").await?;
+        let _vuln: v11y_client::Vulnerability = vuln.into();
+
+        Ok(())
     }
 }

@@ -16,7 +16,7 @@ pub struct Run {
     #[arg(short, long, default_value = "0.0.0.0")]
     pub bind: String,
 
-    #[arg(short = 'p', long = "port", default_value_t = 0)]
+    #[arg(short = 'p', long = "port", default_value_t = 9921)]
     pub port: u16,
 
     #[command(flatten)]

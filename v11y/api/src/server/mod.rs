@@ -2,9 +2,9 @@ use std::net::SocketAddr;
 
 use actix_web::{
     middleware::{Compress, Logger},
-    web, App, HttpServer,
+    web, App, HttpServer, ResponseError,
 };
-use derive_more::{Display, Error, From};
+use derive_more::{Display, Error};
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
@@ -13,7 +13,10 @@ use crate::SharedState;
 mod vulnerability;
 
 #[derive(OpenApi)]
-#[openapi(paths(crate::server::vulnerability::add, crate::server::vulnerability::get,))]
+#[openapi(paths(
+    crate::server::vulnerability::ingest_vulnerability,
+    crate::server::vulnerability::get,
+))]
 pub struct ApiDoc;
 
 pub async fn run<B: Into<SocketAddr>>(state: SharedState, bind: B) -> Result<(), anyhow::Error> {
@@ -31,11 +34,16 @@ pub fn config(cfg: &mut web::ServiceConfig) {
         web::scope("/api/v1")
             .wrap(Logger::default())
             .wrap(Compress::default())
-            .service(vulnerability::add)
+            .service(vulnerability::ingest_vulnerability)
             .service(vulnerability::get),
     )
     .service(SwaggerUi::new("/swagger-ui/{_:.*}").url("/openapi.json", ApiDoc::openapi()));
 }
 
-#[derive(Debug, Display, Error, From)]
-enum Error {}
+#[derive(Debug, Display)]
+pub enum Error {
+    #[display(fmt = "Database error")]
+    Db,
+}
+
+impl ResponseError for Error {}

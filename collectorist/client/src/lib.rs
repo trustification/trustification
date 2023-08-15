@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
 
-pub struct Client {
+pub struct CollectoristClient {
     collectorist_url: String,
     collector_id: String,
 }
@@ -12,7 +12,7 @@ pub struct RegisterResponse {
     pub guac_url: String,
 }
 
-impl Client {
+impl CollectoristClient {
     pub fn new(collector_id: String, collectorist_url: String) -> Self {
         Self {
             collector_id,
@@ -44,11 +44,21 @@ impl Client {
     }
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+#[serde(rename_all = "kebab-case")]
+pub enum Interest {
+    Package,
+    Vulnerability,
+    Artifact,
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct CollectorConfig {
     pub url: String,
     #[serde(with = "humantime_serde", default = "default_cadence")]
     pub cadence: Duration,
+
+    pub interests: Vec<Interest>,
 }
 
 pub fn default_cadence() -> Duration {

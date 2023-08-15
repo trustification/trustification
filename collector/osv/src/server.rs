@@ -13,8 +13,10 @@ use tokio::time::sleep;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
-use collector_client::{GatherRequest, GatherResponse};
-use collectorist_client::CollectorConfig;
+use collector_client::{
+    CollectPackagesRequest, CollectPackagesResponse, CollectVulnerabilitiesRequest, CollectVulnerabilitiesResponse,
+};
+use collectorist_client::{CollectorConfig, Interest};
 
 use crate::client::schema::Package;
 use crate::client::{OsvClient, QueryBatchRequest, QueryPackageRequest};
@@ -35,7 +37,7 @@ pub enum Error {
 impl ResponseError for Error {}
 
 #[derive(OpenApi)]
-#[openapi(paths(crate::server::gather))]
+#[openapi(paths(crate::server::collect_packages))]
 pub struct ApiDoc;
 
 pub async fn run<B: Into<SocketAddr>>(state: SharedState, bind: B) -> Result<(), anyhow::Error> {
@@ -57,13 +59,14 @@ pub fn config(cfg: &mut web::ServiceConfig) {
         web::scope("/api/v1")
             .wrap(Logger::default())
             .wrap(Compress::default())
-            .service(gather),
+            .service(collect_packages)
+            .service(collect_vulnerabilities),
     )
     .service(SwaggerUi::new("/swagger-ui/{_:.*}").url("/openapi.json", ApiDoc::openapi()));
 }
 
-impl From<&GatherRequest> for QueryBatchRequest {
-    fn from(request: &GatherRequest) -> Self {
+impl From<&CollectPackagesRequest> for QueryBatchRequest {
+    fn from(request: &CollectPackagesRequest) -> Self {
         QueryBatchRequest {
             queries: request
                 .purls
@@ -79,14 +82,14 @@ impl From<&GatherRequest> for QueryBatchRequest {
 #[utoipa::path(
     post,
     tag = "collector-osv",
-    path = "/api/v1/gather",
+    path = "/api/v1/packages",
     responses(
 	(status = 200, description = "Requested pURLs gathered"),
     ),
 )]
-#[post("gather")]
-pub async fn gather(
-    request: web::Json<GatherRequest>,
+#[post("packages")]
+pub async fn collect_packages(
+    request: web::Json<CollectPackagesRequest>,
     state: web::Data<SharedState>,
 ) -> actix_web::Result<impl Responder> {
     let guac_url = state
@@ -99,7 +102,7 @@ pub async fn gather(
 
     let guac = GuacClient::new(guac_url);
     let request: QueryBatchRequest = (&*request).into();
-    log::debug!("osv request: {}", serde_json::to_string_pretty(&request).unwrap());
+    //log::debug!("osv request: {}", serde_json::to_string_pretty(&request).unwrap());
     let response = OsvClient::query_batch(request).await.map_err(|_| Error::OsvError)?;
 
     for entry in &response.results {
@@ -134,8 +137,39 @@ pub async fn gather(
             }
         }
     }
-    let gathered = GatherResponse::from(response);
+    let gathered = CollectPackagesResponse::from(response);
     log::debug!("osv response: {}", serde_json::to_string_pretty(&gathered).unwrap());
+    Ok(HttpResponse::Ok().json(gathered))
+}
+
+#[utoipa::path(
+    post,
+    tag = "collector-osv",
+    path = "/api/v1/vulnerabilities",
+    responses(
+        (status = 200, description = "Requested pURLs gathered"),
+    ),
+)]
+#[post("vulnerabilities")]
+pub async fn collect_vulnerabilities(
+    request: web::Json<CollectVulnerabilitiesRequest>,
+    state: web::Data<SharedState>,
+) -> actix_web::Result<impl Responder> {
+    let mut vulnerability_ids = Vec::default();
+
+    for vuln_id in &request.vulnerability_ids {
+        if let Ok(osv_vuln) = OsvClient::vulns(vuln_id).await {
+            vulnerability_ids.push(osv_vuln.id.clone());
+            let v11y_vuln = v11y_client::Vulnerability::from(osv_vuln);
+            println!("{:?}", v11y_vuln);
+            let result = state.v11y_client.ingest_vulnerability(&v11y_vuln).await;
+
+            println!("v11y {:?}", result);
+        }
+    }
+
+    let gathered = CollectVulnerabilitiesResponse { vulnerability_ids };
+
     Ok(HttpResponse::Ok().json(gathered))
 }
 
@@ -143,13 +177,14 @@ pub async fn register_with_collectorist(state: SharedState) {
     loop {
         if let Some(addr) = *state.addr.read().await {
             if !state.connected.load(Ordering::Relaxed) {
-                let url = format!("http://{}:{}/api/v1/gather", addr.ip(), addr.port());
+                let url = format!("http://{}:{}/api/v1", addr.ip(), addr.port());
                 info!("registering with collectorist: callback={}", url);
                 if let Ok(response) = state
-                    .client
+                    .collectorist_client
                     .register(CollectorConfig {
                         url,
                         cadence: Default::default(),
+                        interests: vec![Interest::Package, Interest::Vulnerability],
                     })
                     .await
                 {
@@ -166,7 +201,7 @@ pub async fn register_with_collectorist(state: SharedState) {
 }
 
 pub async fn deregister_with_collectorist(state: SharedState) {
-    if state.client.deregister().await.is_ok() {
+    if state.collectorist_client.deregister().await.is_ok() {
         info!("deregistered with collectorist");
     } else {
         warn!("failed to deregister with collectorist");

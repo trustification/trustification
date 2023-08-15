@@ -1,6 +1,8 @@
-use collector_client::GatherResponse;
+use collector_client::CollectPackagesResponse;
 use serde::{Deserialize, Serialize};
+use std::collections::HashSet;
 
+#[allow(clippy::module_inception)]
 pub mod collector;
 pub mod collectors;
 
@@ -21,11 +23,11 @@ use tokio::time::{interval, sleep};
 use crate::server::collect::CollectRequest;
 use crate::SharedState;
 
-pub struct Gatherer {
+pub struct Coordinator {
     csub_url: String,
 }
 
-impl Gatherer {
+impl Coordinator {
     pub fn new(csub_url: String) -> Self {
         Self { csub_url }
     }
@@ -34,7 +36,7 @@ impl Gatherer {
         let listener = async move {
             loop {
                 if let Ok(mut csub) = CollectSubClient::new(self.csub_url.clone()).await {
-                    info!("connected to csub");
+                    info!("connected to GUAC collect-sub");
                     let mut sleep = interval(tokio::time::Duration::from_millis(1000));
 
                     let mut since_time = SystemTime::now();
@@ -50,7 +52,6 @@ impl Gatherer {
                                     Entry::Git(_) => {}
                                     Entry::Oci(_) => {}
                                     Entry::Purl(purl) => {
-                                        info!("adding purl {}", purl);
                                         self.add_purl(state.clone(), purl.as_str()).await.ok();
                                     }
                                     Entry::GithubRelease(_) => {}
@@ -69,14 +70,17 @@ impl Gatherer {
         listener.await
     }
 
-    pub async fn gather(&self, state: SharedState, request: CollectRequest) -> Vec<GatherResponse> {
+    pub async fn collect_packages(&self, state: SharedState, request: CollectRequest) -> Vec<CollectPackagesResponse> {
         let collectors = state.collectors.read().await;
-        let result = collectors.gather(state.clone(), request).await;
-        for response in &result {
-            for purl in response.purls.keys() {
-                state.db.insert_purl(purl.as_str()).await.ok();
-            }
-        }
+        let result = collectors.collect_packages(state.clone(), request).await;
+
+        let vuln_ids: HashSet<_> = result
+            .iter()
+            .flat_map(|resp| resp.purls.values().flatten())
+            .cloned()
+            .collect();
+
+        collectors.collect_vulnerabilities(state.clone(), vuln_ids).await;
         result
     }
 

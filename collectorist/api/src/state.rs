@@ -1,12 +1,12 @@
 use crate::db::Db;
 use tokio::sync::RwLock;
 
-use crate::gatherer::collectors::Collectors;
-use crate::gatherer::Gatherer;
+use crate::coordinator::collectors::Collectors;
+use crate::coordinator::Coordinator;
 
 pub struct AppState {
     pub(crate) collectors: RwLock<Collectors>,
-    pub(crate) gatherer: Gatherer,
+    pub(crate) coordinator: Coordinator,
     pub(crate) db: Db,
     pub(crate) guac_url: String,
 }
@@ -16,7 +16,7 @@ impl AppState {
         Ok(Self {
             collectors: Default::default(),
             db: Db::new().await?,
-            gatherer: Gatherer::new(csub_url),
+            coordinator: Coordinator::new(csub_url),
             guac_url,
         })
     }
