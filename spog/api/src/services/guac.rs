@@ -1,6 +1,7 @@
 use actix_web::{http::header::ContentType, HttpResponse};
 use guac::client::GuacClient;
 use http::StatusCode;
+use spog_model::prelude::{PackageDependencies, PackageDependents, PackageList};
 use trustification_common::error::ErrorInformation;
 
 #[derive(Clone)]
@@ -37,20 +38,20 @@ impl GuacService {
     }
 
     /// Lookup related packages for a provided Package URL
-    pub async fn get_packages(&self, purl: &str) -> Result<Vec<String>, Error> {
+    pub async fn get_packages(&self, purl: &str) -> Result<PackageList, Error> {
         let pkgs = self.client.get_packages(purl).await.map_err(Error::Guac)?;
-        Ok(pkgs)
+        Ok(PackageList::from(pkgs))
     }
 
     /// Lookup dependencies for a provided Package URL
-    pub async fn get_dependencies(&self, purl: &str) -> Result<Vec<String>, Error> {
+    pub async fn get_dependencies(&self, purl: &str) -> Result<PackageDependencies, Error> {
         let deps = self.client.is_dependency(purl).await.map_err(Error::Guac)?;
-        Ok(deps)
+        Ok(PackageDependencies::from(deps))
     }
 
     /// Lookup dependents for a provided Package URL
-    pub async fn get_dependents(&self, purl: &str) -> Result<Vec<String>, Error> {
+    pub async fn get_dependents(&self, purl: &str) -> Result<PackageDependents, Error> {
         let deps = self.client.is_dependent(purl).await.map_err(Error::Guac)?;
-        Ok(deps)
+        Ok(PackageDependents::from(deps))
     }
 }

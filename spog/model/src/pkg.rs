@@ -11,7 +11,6 @@ use utoipa::ToSchema;
         cve: "cve-2023-0286".into(),
         href: "https://access.redhat.com/security/cve/cve-2023-0286".into()
     }],
-    snyk: None,
 }))]
 pub struct Package {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -22,8 +21,6 @@ pub struct Package {
     pub sbom: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub vulnerabilities: Vec<VulnerabilityRef>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub snyk: Option<SnykData>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, ToSchema, Serialize, Deserialize)]
@@ -39,29 +36,26 @@ pub struct VulnerabilityRef {
 #[derive(Clone, Debug, PartialEq, Eq, ToSchema, Serialize, Deserialize)]
 #[schema(example = json!(PackageRef {
     purl: "pkg:rpm/redhat/openssl@1.1.1k-7.el8_6".to_string(),
-    href: format!("/api/package?purl={}", &urlencoding::encode("pkg:rpm/redhat/openssl@1.1.1k-7.el8_6")),
-    sbom: None
 }))]
 pub struct PackageRef {
     pub purl: String,
-    pub href: String,
-    pub sbom: Option<String>,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, ToSchema, Serialize, Deserialize)]
-pub struct SnykData;
+impl From<String> for PackageRef {
+    fn from(purl: String) -> PackageRef {
+        PackageRef { purl }
+    }
+}
 
 #[derive(Clone, Debug, PartialEq, Eq, ToSchema, Serialize, Deserialize)]
 #[schema(example = json!(vec![
     PackageRef {
         purl: "pkg:maven/io.vertx/vertx-web-common@4.3.7".to_string(),
-        href: format!("/api/package?purl={}", &urlencoding::encode("pkg:maven/io.vertx/vertx-web-common@4.3.7")),
-        sbom: None,
     }
 ]))]
-pub struct PackageDependencies(pub Vec<PackageRef>);
+pub struct PackageList(pub Vec<PackageRef>);
 
-impl Deref for PackageDependencies {
+impl Deref for PackageList {
     type Target = [PackageRef];
 
     fn deref(&self) -> &Self::Target {
@@ -69,30 +63,13 @@ impl Deref for PackageDependencies {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, ToSchema, Serialize, Deserialize)]
-#[schema(example = json!(vec![
-    PackageRef {
-        purl: "pkg:maven/io.quarkus/quarkus-vertx-http@2.16.2.Final".to_string(),
-        href: format!("/api/package?purl={}", &urlencoding::encode("pkg:maven/io.quarkus/quarkus-vertx-http@2.16.2.Final")),
-        sbom: None,
-    }
-]))]
-pub struct PackageDependents(pub Vec<PackageRef>);
+pub type PackageDependencies = PackageList;
+pub type PackageDependents = PackageList;
 
-impl Deref for PackageDependents {
-    type Target = [PackageRef];
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-#[derive(Clone, Debug, PartialEq, Eq, ToSchema, Serialize, Deserialize)]
-#[schema(example = "[\"pkg:maven/io.vertx/vertx-web@4.3.7\"]")]
-pub struct PackageList(pub Vec<String>);
-
-impl PackageList {
-    pub fn list(&self) -> &Vec<String> {
-        &self.0
+impl From<Vec<String>> for PackageList {
+    fn from(value: Vec<String>) -> Self {
+        PackageList {
+            0: value.into_iter().map(|x| x.into()).collect(),
+        }
     }
 }
