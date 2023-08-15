@@ -51,6 +51,7 @@ fn bombastic_indexer() -> bombastic_indexer::Run {
         reindex: false,
         index: IndexConfig {
             index_dir: None,
+            index_writer_memory_bytes: 32 * 1024 * 1024,
             mode: Default::default(),
             sync_interval: Duration::from_secs(2).into(),
         },
@@ -81,6 +82,7 @@ fn bombastic_api() -> bombastic_api::Run {
         devmode: false,
         index: IndexConfig {
             index_dir: None,
+            index_writer_memory_bytes: 32 * 1024 * 1024,
             mode: Default::default(),
             sync_interval: Duration::from_secs(2).into(),
         },
@@ -112,6 +114,7 @@ fn vexination_indexer() -> vexination_indexer::Run {
         reindex: false,
         index: IndexConfig {
             index_dir: None,
+            index_writer_memory_bytes: 32 * 1024 * 1024,
             mode: Default::default(),
             sync_interval: Duration::from_secs(2).into(),
         },
@@ -142,6 +145,7 @@ fn vexination_api() -> vexination_api::Run {
         devmode: false,
         index: IndexConfig {
             index_dir: None,
+            index_writer_memory_bytes: 32 * 1024 * 1024,
             mode: Default::default(),
             sync_interval: Duration::from_secs(2).into(),
         },
