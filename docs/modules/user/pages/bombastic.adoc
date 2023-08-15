@@ -61,6 +61,22 @@ TIP: Matching can either be Exact (Contains exactly a value), Partial (Prefix ma
 
 NOTE: You can also enforce an ordering on the results for the `created` field: `ubi9 sort:created` or `ubi9 -sort:created`.
 
-=== Examples
+=== Use cases
+
+==== Find packages that contain openssl and has the Apache 2.0 license
+
+[source,rust]
+----
+dependency:openssl license:"Apache-2.0"
+----
+
+==== Find all container packages
+
+[source,rust]
+----
+type:oci
+----
+
+=== Reference
 
 See the full link:https://sbom.trustification.dev/swagger-ui/[Bombastic API documentation] for more details.

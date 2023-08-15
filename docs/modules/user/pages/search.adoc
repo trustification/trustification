@@ -23,6 +23,20 @@ Trustification uses the search query language based on link:https://github.com/c
 
 Referencing fields in the query string depends on the search source. In general, any free-form text query searches the default fields as set by the search index.
 
+Multiple terms can be specified, in which case a logical AND will be applied.
+
+=== Logical operators
+
+The following logical operators can be used:
+
+[cols="1,1,1,1"]
+|===
+| *Operator* | *Example*
+| OR | id:foo OR this in:that
+| AND | id:foo AND date:>2020-01-01
+| NOT | id:foo NOT type:oci
+|===
+
 === Qualifiers
 
 Using qualifiers, you can search on a particular field such as `title`. See the xref:bombastic.adoc[bombastic] or xref:vexination.adoc[vexination] list of qualifiers you can use.

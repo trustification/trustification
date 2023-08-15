@@ -63,8 +63,24 @@ NOTE: You can also enforce an ordering on the results for the `severity` and `re
 
 === Predicates
 
-The following predicates may be used to search by severity: `final`, `critical`, `high`, `medium` and `low`.
+The following predicates may be used to search by severity: `critical`, `high`, `medium` and `low`.
 
-=== Examples
+=== Use cases
+
+==== Find advisories that relates to the RHEL 8 product
+
+[source,rust]
+----
+"cpe:/a:redhat:rhel_eus:8" in:package
+----
+
+==== Find all critical advisories for OpenShift on RHEL 9, released this year
+
+[source,rust]
+----
+"cpe:/a:redhat:openshift:4.13::el9" in:package release:>2023-01-01 is:critical
+----
+
+=== Reference
 
 See the full link:https://vex.trustification.dev/swagger-ui/[Vexination API documentation] for more details.
