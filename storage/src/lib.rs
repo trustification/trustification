@@ -362,8 +362,10 @@ impl Storage {
         let s = try_stream! {
             for result in results {
                 for obj in result.contents {
-                    let o = self.get_object(&obj.key).await;
-                    yield (obj.key, o?);
+                    let o = self.get_object(&obj.key).await?;
+
+                    let key = obj.key.strip_prefix("data/").map(|s| s.to_string()).unwrap_or(obj.key.to_string());
+                    yield (key, o);
                 }
             }
         };

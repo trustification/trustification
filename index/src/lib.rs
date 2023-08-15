@@ -329,7 +329,7 @@ impl<INDEX: Index> IndexStore<INDEX> {
 
     /// Take a snapshot of the index and push to object storage.
     /// NOTE: Only applicable for file indices.
-    pub async fn snapshot(&mut self, writer: IndexWriter, storage: &mut Storage, force: bool) -> Result<(), Error> {
+    pub async fn snapshot(&mut self, writer: IndexWriter, storage: &Storage, force: bool) -> Result<(), Error> {
         if let Some(path) = &self.path {
             log::info!("Committing index to path {:?}", path);
             writer.commit()?;
