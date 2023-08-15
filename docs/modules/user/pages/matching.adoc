@@ -1,0 +1,1 @@
+TIP: Matching can either be Exact (Contains exactly a value), Partial (Prefix matching of value), Term (Inverse index aka. text matching) or Range (for values that can match within a range)

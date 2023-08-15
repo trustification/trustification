@@ -1,0 +1,65 @@
+= SBOM
+
+Bombastic allows you to publish, retreive and search for Software Bill of Materials (SBOM) documents.
+
+Bombastic supports searching SBOM data using the xref:search.adoc[sikula query language].
+
+The Bombastic REST API can be used to publish and retrieve an SBOM using an identifier such a product identifier (CPE) or package URL (pURL).
+
+== Publish
+
+To publish an SBOM:
+
+[source,bash]
+----
+curl -H "transfer-encoding: chunked" --json sbom.json https://sbom.trustification.dev/api/v1/sbom?id=my-sbom
+----
+
+NOTE: The SBOM must be in one of CycloneDX or SPDX formats.
+
+If you got a `201 Created` in the response, the document was published successfully.
+
+NOTE: A document may take between seconds and minutes to appearch in searches.
+
+== Retrieving
+
+To retrieve an SBOM:
+
+[source,bash]
+----
+curl https://sbom.trustification.dev/api/v1/sbom?id=my-sbom
+----
+
+== Searching
+
+By default queries search through identifiers, titles and descriptions in the SBOM, and returns the matching results ordered by a relevance.
+
+See the xref:search.adoc[sikula query language] for more details on the search syntax.
+
+=== Qualifiers
+
+The table below contains a list of the qualifiers you can use when searching Bombastic:
+
+[cols="1,1,1,1"]
+|===
+| *Qualifier* | *Description* | *Matching* | *Example*
+| `package` | Search in by package identifiers | Exact, Partial | `package:"pkg:maven/io.seedwing/seedwing-java-example@1.0.0-SNAPSHOT?type=jar"`
+| `type` | Search by type | Exact | `type:oci`
+| `namespace` | Search by namespace | Exact | `namespace:io.quarkus`
+| `version` | Search by version | Exact, Partial | `2.13 in:version`
+| `description` | Search by description | Term | `description:how`
+| `created` | Search by created date | Exact, Range | `created:2022-01-01..2023-01-01`
+| `digest` | Search by SBOM digest | Exact | `digest:5891b5b522d5df086d0ff0b110fbd9d21bb4fc7163af34d08286a2e846f6be03`
+| `license` | Search by license | Exact | `license:Apache-2.0`
+| `supplier` | Search by supplier | Exact, Partial | `"Red Hat" in:supplier`
+| `qualifier` | Search in package URL qualifiers | Exact | `qualifier:tag:7.9-1057`
+| `dependency` | Search in package dependencies | Exact, Partial | `dependency:openssl`
+|===
+
+TIP: Matching can either be Exact (Contains exactly a value), Partial (Prefix matching of value), Term (Inverse index aka. text matching) or Range (for values that can match within a range)
+
+NOTE: You can also enforce an ordering on the results for the `created` field: `ubi9 sort:created` or `ubi9 -sort:created`.
+
+=== Examples
+
+See the full link:https://sbom.trustification.dev/swagger-ui/[Bombastic API documentation] for more details.

@@ -1,2 +1,4 @@
 * xref:index.adoc[User Guide]
-** xref:retrieve.adoc[Search and retrieve]
+** xref:bombastic.adoc[SBOM]
+** xref:vexination.adoc[VEX]
+** xref:search.adoc[Search]
