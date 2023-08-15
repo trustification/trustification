@@ -17,7 +17,7 @@ curl --json vex.json https://vex.trustification.dev/api/v1/vex
 
 NOTE: The VEX must be in the CSAF 2.0 format.
 
-If you got a `201 Created` in the response, the document was published successfully.
+If you got a `201 Created` in the response, the document was published successfully. See the link:https://vex.trustification.dev/swagger-ui/[OpenAPI] for more details on responses.
 
 NOTE: A document may take between seconds and minutes to appearch in searches.
 

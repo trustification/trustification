@@ -17,7 +17,8 @@ curl -H "transfer-encoding: chunked" --json sbom.json https://sbom.trustificatio
 
 NOTE: The SBOM must be in one of CycloneDX or SPDX formats.
 
-If you got a `201 Created` in the response, the document was published successfully.
+If you got a `201 Created` in the response, the document was published successfully. See the link:https://sbom.trustification.dev/swagger-ui/[OpenAPI] for more details on potential responses.
+
 
 NOTE: A document may take between seconds and minutes to appearch in searches.
 
