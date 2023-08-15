@@ -63,23 +63,55 @@ impl<'a, INDEX: Index> Indexer<'a, INDEX> {
                         match self.storage.list_all_objects().await {
                             Ok(objects) => {
                                 pin_mut!(objects);
-                                while let Some(obj) = objects.next().await {
-                                    match obj {
-                                        Ok((key, obj)) => {
-                                            log::info!("Reindexing {}", key);
-                                            if let Err(e) = self.index_doc(self.index.index(), writer.as_mut().unwrap(), &key, &obj).await {
-                                                log::warn!("(Ignored) Internal error when indexing {}: {:?}", key, e);
+
+                                let mut interval = tokio::time::interval(self.sync_interval);
+                                loop {
+                                    let tick = interval.tick();
+                                    pin_mut!(tick);
+                                    select! {
+                                        next = objects.next() => {
+                                            if let Some(obj) = next {
+                                                    match obj {
+                                                        Ok((key, obj)) => {
+                                                            log::info!("Reindexing {}", key);
+                                                            if let Err(e) = self.index_doc(self.index.index(), writer.as_mut().unwrap(), &key, &obj).await {
+                                                                log::warn!("(Ignored) Internal error when indexing {}: {:?}", key, e);
+                                                            } else {
+                                                                progress += 1;
+                                                                *self.status.lock().await = IndexerStatus::Reindexing { progress };
+                                                            }
+                                                        }
+                                                        Err(e) => {
+                                                            log::warn!("(Ignored) Error reindexing: {:?}", e);
+                                                        }
+                                                    }
                                             } else {
-                                                progress += 1;
-                                                *self.status.lock().await = IndexerStatus::Reindexing { progress };
+                                                break;
                                             }
                                         }
-                                        Err(e) => {
-                                            log::warn!("(Ignored) Error reindexing: {:?}", e);
+                                        _ = tick => {
+                                            match self.index.snapshot(writer.take().unwrap(), &self.storage, true).await {
+                                                Ok(_) => {
+                                                    log::trace!("Index snapshot published");
+                                                }
+                                                Err(e) => {
+                                                    log::warn!("(Ignored) Error committing index: {:?}", e);
+                                                }
+                                            }
+                                            writer.replace(block_in_place(|| self.index.writer())?);
                                         }
                                     }
                                 }
                                 log::info!("Reindexing finished");
+                                match self.index.snapshot(writer.take().unwrap(), &self.storage, true).await {
+                                    Ok(_) => {
+                                        log::info!("Reindex index published");
+                                    }
+                                    Err(e) => {
+                                        log::warn!("(Ignored) Error committing index: {:?}", e);
+                                    }
+                                }
+                                writer.replace(block_in_place(|| self.index.writer())?);
                                 *self.status.lock().await = IndexerStatus::Running;
                             }
                             Err(e) => {
@@ -138,7 +170,7 @@ impl<'a, INDEX: Index> Indexer<'a, INDEX> {
                 },
                 _ = tick => {
                     log::trace!("{} new events added, pushing new index to storage", events);
-                    match self.index.snapshot(writer.take().unwrap(), &mut self.storage, events > 0).await {
+                    match self.index.snapshot(writer.take().unwrap(), &self.storage, events > 0).await {
                         Ok(_) => {
                             log::trace!("Index updated successfully");
                             match consumer.commit(&uncommitted_events[..]).await {
