@@ -3,6 +3,14 @@ use crate::runner::Runner;
 use async_trait::async_trait;
 use test_context::AsyncTestContext;
 
+#[async_trait]
+impl AsyncTestContext for VexinationContext {
+    async fn setup() -> Self {
+        let provider = create_provider_context().await;
+        start_vexination(provider).await
+    }
+}
+
 pub struct VexinationContext {
     pub provider: ProviderContext,
     pub port: u16,
@@ -89,10 +97,65 @@ pub async fn upload_vex(port: u16, input: &serde_json::Value, context: &Provider
     assert_eq!(response.status(), StatusCode::CREATED);
 }
 
-#[async_trait]
-impl AsyncTestContext for VexinationContext {
-    async fn setup() -> Self {
-        let provider = create_provider_context().await;
-        start_vexination(provider).await
+// Configuration for the vexination indexer
+fn vexination_indexer() -> vexination_indexer::Run {
+    vexination_indexer::Run {
+        stored_topic: "vex-stored".into(),
+        failed_topic: "vex-failed".into(),
+        indexed_topic: "vex-indexed".into(),
+        devmode: true,
+        reindex: false,
+        index: IndexConfig {
+            index_dir: None,
+            index_writer_memory_bytes: 32 * 1024 * 1024,
+            mode: Default::default(),
+            sync_interval: Duration::from_secs(2).into(),
+        },
+        storage: StorageConfig {
+            region: None,
+            bucket: Some("vexination".into()),
+            endpoint: Some(STORAGE_ENDPOINT.into()),
+            access_key: Some("admin".into()),
+            secret_key: Some("password".into()),
+        },
+        bus: EventBusConfig {
+            event_bus: EventBusType::Kafka,
+            kafka_bootstrap_servers: KAFKA_BOOTSTRAP_SERVERS.into(),
+        },
+        infra: InfrastructureConfig {
+            infrastructure_enabled: false,
+            infrastructure_bind: "127.0.0.1".into(),
+            infrastructure_workers: 1,
+            enable_tracing: false,
+        },
+    }
+}
+
+fn vexination_api() -> vexination_api::Run {
+    vexination_api::Run {
+        bind: "127.0.0.1".to_string(),
+        port: 8081,
+        devmode: false,
+        index: IndexConfig {
+            index_dir: None,
+            index_writer_memory_bytes: 32 * 1024 * 1024,
+            mode: Default::default(),
+            sync_interval: Duration::from_secs(2).into(),
+        },
+        storage: StorageConfig {
+            region: None,
+            bucket: Some("vexination".into()),
+            endpoint: Some(STORAGE_ENDPOINT.into()),
+            access_key: Some("admin".into()),
+            secret_key: Some("password".into()),
+        },
+        infra: InfrastructureConfig {
+            infrastructure_enabled: false,
+            infrastructure_bind: "127.0.0.1".into(),
+            infrastructure_workers: 1,
+            enable_tracing: false,
+        },
+        oidc: testing_oidc(),
+        swagger_ui_oidc: testing_swagger_ui_oidc(),
     }
 }
