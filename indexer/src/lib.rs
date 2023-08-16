@@ -49,6 +49,7 @@ impl<'a, INDEX: Index> Indexer<'a, INDEX> {
         let consumer = self.bus.subscribe("indexer", &[self.stored_topic]).await?;
         let mut uncommitted_events = Vec::new();
         let mut events = 0;
+        let mut indexed = Vec::new();
 
         *self.status.lock().await = IndexerStatus::Running;
         loop {
@@ -73,7 +74,8 @@ impl<'a, INDEX: Index> Indexer<'a, INDEX> {
                                             match next {
                                                 Some(Ok((key, obj))) => {
                                                     log::info!("Reindexing {}", key);
-                                                    if let Err(e) = self.index_doc(self.index.index(), writer.as_mut().unwrap(), &key, &obj).await {
+                                                    // Not sending notifications for reindexing
+                                                    if let Err(e) = self.index_doc(self.index.index(), writer.as_mut().unwrap(), &key, &obj, &mut Vec::new()).await {
                                                         log::warn!("(Ignored) Internal error when indexing {}: {:?}", key, e);
                                                     } else {
                                                         progress += 1;
@@ -130,7 +132,7 @@ impl<'a, INDEX: Index> Indexer<'a, INDEX> {
                                             EventType::Put => {
                                                 match self.storage.get_for_event(&data).await {
                                                     Ok((k, data)) => {
-                                                        if let Err(e) = self.index_doc(self.index.index(), writer.as_mut().unwrap(), &k, &data).await {
+                                                        if let Err(e) = self.index_doc(self.index.index(), writer.as_mut().unwrap(), &k, &data, &mut indexed).await {
                                                             log::warn!("(Ignored) Internal error when indexing {}: {:?}", k, e);
                                                         }
                                                         events += 1;
@@ -180,6 +182,13 @@ impl<'a, INDEX: Index> Indexer<'a, INDEX> {
                                 }
                             }
                             events = 0;
+
+                            for key in indexed.drain(..) {
+                                if let Err(e) = self.bus.send(self.indexed_topic, key.as_bytes()).await {
+                                    log::warn!("(Ignored) Error sending key {} to indexed topic {}: {:?}", key, self.indexed_topic, e);
+                                }
+                            }
+
                         }
                         Err(e) => {
                             log::warn!("Error taking index snapshot: {:?}", e);
@@ -197,12 +206,13 @@ impl<'a, INDEX: Index> Indexer<'a, INDEX> {
         writer: &mut IndexWriter,
         key: &str,
         data: &[u8],
+        indexed: &mut Vec<String>,
     ) -> Result<(), anyhow::Error> {
         match INDEX::parse_doc(data) {
             Ok(doc) => match block_in_place(|| writer.add_document(index, key, &doc)) {
                 Ok(_) => {
                     log::debug!("Inserted entry '{key}' into index");
-                    self.bus.send(self.indexed_topic, key.as_bytes()).await?;
+                    indexed.push(key.to_string());
                 }
                 Err(e) => {
                     let failure = serde_json::json!( {
