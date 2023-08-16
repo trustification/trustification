@@ -53,9 +53,9 @@ impl From<String> for PackageRef {
         purl: "pkg:maven/io.vertx/vertx-web-common@4.3.7".to_string(),
     }
 ]))]
-pub struct PackageList(pub Vec<PackageRef>);
+pub struct PackageRefList(pub Vec<PackageRef>);
 
-impl Deref for PackageList {
+impl Deref for PackageRefList {
     type Target = [PackageRef];
 
     fn deref(&self) -> &Self::Target {
@@ -63,13 +63,21 @@ impl Deref for PackageList {
     }
 }
 
-pub type PackageDependencies = PackageList;
-pub type PackageDependents = PackageList;
+pub type PackageDependencies = PackageRefList;
+pub type PackageDependents = PackageRefList;
 
-impl From<Vec<String>> for PackageList {
+impl From<Vec<String>> for PackageRefList {
     fn from(value: Vec<String>) -> Self {
-        PackageList {
-            0: value.into_iter().map(|x| x.into()).collect(),
-        }
+        PackageRefList(value.into_iter().map(|x| x.into()).collect())
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, ToSchema, Serialize, Deserialize)]
+#[schema(example = "[\"pkg:maven/io.vertx/vertx-web@4.3.7\"]")]
+pub struct PackageList(pub Vec<String>);
+
+impl PackageList {
+    pub fn list(&self) -> &Vec<String> {
+        &self.0
     }
 }

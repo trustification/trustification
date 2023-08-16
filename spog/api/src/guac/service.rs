@@ -1,7 +1,7 @@
 use actix_web::{http::header::ContentType, HttpResponse};
 use guac::client::{Error as GuacError, GuacClient};
 use http::StatusCode;
-use spog_model::prelude::{PackageDependencies, PackageDependents, PackageList};
+use spog_model::prelude::{PackageDependencies, PackageDependents, PackageRefList};
 use trustification_common::error::ErrorInformation;
 
 #[derive(Clone)]
@@ -58,9 +58,9 @@ impl GuacService {
     }
 
     /// Lookup related packages for a provided Package URL
-    pub async fn get_packages(&self, purl: &str) -> Result<PackageList, Error> {
+    pub async fn get_packages(&self, purl: &str) -> Result<PackageRefList, Error> {
         let pkgs = self.client.get_packages(purl).await?;
-        Ok(PackageList::from(pkgs))
+        Ok(PackageRefList::from(pkgs))
     }
 
     /// Lookup dependencies for a provided Package URL

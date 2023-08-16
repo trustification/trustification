@@ -22,7 +22,7 @@ use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
 use crate::analyze::CrdaClient;
-use crate::services::guac::GuacService;
+use crate::guac::service::GuacService;
 use crate::{advisory, analyze, config, index, sbom, Run};
 
 pub struct Server {
