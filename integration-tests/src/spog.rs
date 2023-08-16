@@ -3,6 +3,14 @@ use crate::runner::Runner;
 use async_trait::async_trait;
 use test_context::AsyncTestContext;
 
+#[async_trait]
+impl AsyncTestContext for SpogContext {
+    async fn setup() -> Self {
+        let provider = create_provider_context().await;
+        start_spog(provider).await
+    }
+}
+
 pub struct SpogContext {
     pub provider: ProviderContext,
     pub port: u16,
@@ -76,10 +84,24 @@ pub async fn start_spog(provider: ProviderContext) -> SpogContext {
     context
 }
 
-#[async_trait]
-impl AsyncTestContext for SpogContext {
-    async fn setup() -> Self {
-        let provider = create_provider_context().await;
-        start_spog(provider).await
+fn spog_api(bport: u16, vport: u16) -> spog_api::Run {
+    spog_api::Run {
+        devmode: false,
+        bind: Default::default(),
+        port: 8083,
+        guac_url: Default::default(),
+        bombastic_url: format!("http://localhost:{bport}").parse().unwrap(),
+        vexination_url: format!("http://localhost:{vport}").parse().unwrap(),
+        crda_url: option_env!("CRDA_URL").map(|url| url.parse().unwrap()),
+        crda_payload_limit: DEFAULT_CRDA_PAYLOAD_LIMIT,
+        config: None,
+        infra: InfrastructureConfig {
+            infrastructure_enabled: false,
+            infrastructure_bind: "127.0.0.1".into(),
+            infrastructure_workers: 1,
+            enable_tracing: false,
+        },
+        oidc: testing_oidc(),
+        swagger_ui_oidc: testing_swagger_ui_oidc(),
     }
 }
