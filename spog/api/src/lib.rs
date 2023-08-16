@@ -3,8 +3,6 @@ use std::{net::TcpListener, path::PathBuf};
 use trustification_auth::{authenticator::config::AuthenticatorConfig, swagger_ui::SwaggerUiOidcConfig};
 use trustification_infrastructure::{Infrastructure, InfrastructureConfig};
 
-pub mod services;
-
 mod advisory;
 mod analyze;
 mod config;
@@ -28,7 +26,7 @@ pub struct Run {
     #[arg(long = "devmode", default_value_t = false)]
     pub devmode: bool,
 
-    #[arg(short, long, env, default_value = "::")]
+    #[arg(short, long, env, default_value = "0.0.0.0")]
     pub bind: String,
 
     #[arg(short = 'p', long = "port", env, default_value_t = 8080)]

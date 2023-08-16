@@ -1,9 +1,11 @@
-use crate::services::guac::GuacService;
 use actix_web::web::ServiceConfig;
 use actix_web::{web, HttpResponse};
+use service::GuacService;
 use std::sync::Arc;
 use trustification_auth::authenticator::Authenticator;
 use trustification_infrastructure::new_auth;
+
+pub(crate) mod service;
 
 pub(crate) fn configure(auth: Option<Arc<Authenticator>>) -> impl FnOnce(&mut ServiceConfig) {
     |config: &mut ServiceConfig| {

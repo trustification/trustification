@@ -196,7 +196,6 @@ fn vexination_api() -> vexination_api::Run {
 
 fn spog_api(bport: u16, vport: u16) -> spog_api::Run {
     spog_api::Run {
-        snyk: Default::default(),
         devmode: false,
         bind: Default::default(),
         port: 8083,
