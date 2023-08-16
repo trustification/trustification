@@ -2896,7 +2896,7 @@ dependencies = [
 [[package]]
 name = "guac"
 version = "0.1.0"
-source = "git+https://github.com/dejanb/guac-rs.git?rev=b8f095a087194ef34d494a2da967e45b0ab73f30#b8f095a087194ef34d494a2da967e45b0ab73f30"
+source = "git+https://github.com/dejanb/guac-rs.git?rev=f74e28a6fb6881c0ecf3701efcc8e3067f0cb2d6#f74e28a6fb6881c0ecf3701efcc8e3067f0cb2d6"
 dependencies = [
  "anyhow",
  "async-nats",
@@ -2911,6 +2911,7 @@ dependencies = [
  "reqwest",
  "serde",
  "serde_json",
+ "thiserror",
  "tonic",
  "tonic-build",
  "uuid",
