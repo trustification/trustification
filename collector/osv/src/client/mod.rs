@@ -1,15 +1,32 @@
-pub mod schema;
-
 use std::collections::HashMap;
 
-use collector_client::CollectPackagesResponse;
+use reqwest::{IntoUrl};
 use serde::{Deserialize, Serialize};
+
+use collector_client::CollectPackagesResponse;
 
 use crate::client::schema::{BatchVulnerability, Package, Vulnerability};
 
-//const QUERY_URL: &str = "https://api.osv.dev/v1/query";
-const QUERYBATCH_URL: &str = "https://api.osv.dev/v1/querybatch";
-const VULNS_URL: &str = "https://api.osv.dev/v1/vulns";
+pub mod schema;
+
+struct OsvUrl(&'static str);
+
+impl OsvUrl {
+    const fn new(base: &'static str) -> Self {
+        Self(base)
+    }
+
+    pub fn querybatch(&self) -> impl IntoUrl {
+        format!("{}/querybatch", self.0)
+    }
+
+    pub fn vuln(&self, vuln_id: &str) -> impl IntoUrl {
+        format!("{}/vulns/{}", self.0, vuln_id)
+    }
+}
+
+const OSV_URL: OsvUrl = OsvUrl::new("https://api.osv.dev/v1");
+
 
 pub struct OsvClient {}
 
@@ -48,7 +65,7 @@ pub struct CollatedBatchVulnerabilities {
 impl OsvClient {
     pub async fn query_batch(request: QueryBatchRequest) -> Result<CollatedQueryBatchResponse, anyhow::Error> {
         let response: QueryBatchResponse = reqwest::Client::new()
-            .post(QUERYBATCH_URL)
+            .post( OSV_URL.querybatch() )
             .json(&request)
             .send()
             .await?
@@ -71,11 +88,7 @@ impl OsvClient {
     }
 
     pub async fn vulns(id: &str) -> Result<Vulnerability, anyhow::Error> {
-        let mut url = VULNS_URL.to_string();
-        url.push('/');
-        url.push_str(id);
-
-        Ok(reqwest::Client::new().get(url).send().await?.json().await?)
+        Ok(reqwest::Client::new().get(OSV_URL.vuln(id)).send().await?.json().await?)
     }
 }
 

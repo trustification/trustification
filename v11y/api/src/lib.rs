@@ -3,7 +3,7 @@ use std::process::ExitCode;
 use std::str::FromStr;
 use std::sync::Arc;
 
-use trustification_infrastructure::{Infrastructure, InfrastructureConfig};
+use trustification_infrastructure::{Infrastructure, InfrastructureConfig, defaults::Endpoint};
 
 use crate::db::Db;
 
@@ -16,7 +16,8 @@ pub struct Run {
     #[arg(short, long, default_value = "0.0.0.0")]
     pub bind: String,
 
-    #[arg(short = 'p', long = "port", default_value_t = 9921)]
+    //#[arg(short = 'p', long = "port", default_value_t = 9921)]
+    #[arg(short = 'p', long = "port", default_value_t = trustification_infrastructure::defaults::V11y::port())]
     pub port: u16,
 
     #[command(flatten)]
