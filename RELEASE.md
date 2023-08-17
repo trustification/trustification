@@ -29,7 +29,7 @@ git push --follow-tags
 
 ### Update Cargo.toml version
 
-All Cargo.tmol files in the repo needs updating.
+All Cargo.toml files in the repo needs updating.
 
 Once updated, commit and push:
 
