@@ -25,5 +25,6 @@ opentelemetry-jaeger = { version = "0.18.0", features = ["rt-tokio"] }
 env_logger = "0.10"
 log = "0.4"
 prometheus = "0.13.3"
+url = "2.4.0"
 
 trustification-auth = { path = "../auth", features = ["actix"] }

@@ -7056,6 +7056,7 @@ dependencies = [
  "tracing-opentelemetry",
  "tracing-subscriber",
  "trustification-auth",
+ "url",
 ]
 
 [[package]]

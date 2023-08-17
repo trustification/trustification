@@ -3,6 +3,8 @@ mod tracing;
 
 pub mod app;
 
+pub mod defaults;
+
 pub use infra::*;
 
 // re-export extras
