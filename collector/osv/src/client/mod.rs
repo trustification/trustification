@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use reqwest::{IntoUrl};
+use reqwest::IntoUrl;
 use serde::{Deserialize, Serialize};
 
 use collector_client::CollectPackagesResponse;
@@ -26,7 +26,6 @@ impl OsvUrl {
 }
 
 const OSV_URL: OsvUrl = OsvUrl::new("https://api.osv.dev/v1");
-
 
 pub struct OsvClient {}
 
@@ -65,7 +64,7 @@ pub struct CollatedBatchVulnerabilities {
 impl OsvClient {
     pub async fn query_batch(request: QueryBatchRequest) -> Result<CollatedQueryBatchResponse, anyhow::Error> {
         let response: QueryBatchResponse = reqwest::Client::new()
-            .post( OSV_URL.querybatch() )
+            .post(OSV_URL.querybatch())
             .json(&request)
             .send()
             .await?
@@ -88,7 +87,12 @@ impl OsvClient {
     }
 
     pub async fn vulns(id: &str) -> Result<Vulnerability, anyhow::Error> {
-        Ok(reqwest::Client::new().get(OSV_URL.vuln(id)).send().await?.json().await?)
+        Ok(reqwest::Client::new()
+            .get(OSV_URL.vuln(id))
+            .send()
+            .await?
+            .json()
+            .await?)
     }
 }
 

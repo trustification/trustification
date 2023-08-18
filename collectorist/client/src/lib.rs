@@ -1,32 +1,56 @@
 use std::time::Duration;
 
+use reqwest::Url;
 use serde::{Deserialize, Serialize};
 
-pub struct CollectoristClient {
-    collectorist_url: String,
+pub struct CollectoristUrl {
     collector_id: String,
+    base_url: Url,
+}
+
+impl CollectoristUrl {
+    pub fn new(base_url: Url, collector_id: String) -> Self {
+        Self { collector_id, base_url }
+    }
+
+    pub fn register_url(&self) -> Url {
+        Url::parse(&format!(
+            "{}/api/v1/collector/{}",
+            self.base_url.as_str(),
+            self.collector_id
+        ))
+        .unwrap()
+    }
+
+    pub fn deregister_url(&self) -> Url {
+        Url::parse(&format!(
+            "{}/api/v1/collector/{}",
+            self.base_url.as_str(),
+            self.collector_id
+        ))
+        .unwrap()
+    }
+}
+
+pub struct CollectoristClient {
+    collectorist_url: CollectoristUrl,
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct RegisterResponse {
-    pub guac_url: String,
+    pub guac_url: Url,
 }
 
 impl CollectoristClient {
-    pub fn new(collector_id: String, collectorist_url: String) -> Self {
+    pub fn new(collector_id: String, collectorist_url: Url) -> Self {
         Self {
-            collector_id,
-            collectorist_url,
+            collectorist_url: CollectoristUrl::new(collectorist_url, collector_id),
         }
     }
 
     pub async fn register(&self, config: CollectorConfig) -> Result<RegisterResponse, anyhow::Error> {
-        let mut register_url = self.collectorist_url.clone();
-        register_url.push_str("api/v1/collector/");
-        register_url.push_str(self.collector_id.as_str());
-
         Ok(reqwest::Client::new()
-            .post(&register_url)
+            .post(self.collectorist_url.register_url())
             .json(&config)
             .send()
             .await?
@@ -35,11 +59,10 @@ impl CollectoristClient {
     }
 
     pub async fn deregister(&self) -> Result<(), anyhow::Error> {
-        let mut deregister_url = self.collectorist_url.clone();
-        deregister_url.push_str("api/v1/collector/");
-        deregister_url.push_str(self.collector_id.as_str());
-
-        reqwest::Client::new().delete(&deregister_url).send().await?;
+        reqwest::Client::new()
+            .delete(self.collectorist_url.deregister_url())
+            .send()
+            .await?;
         Ok(())
     }
 }
@@ -54,7 +77,7 @@ pub enum Interest {
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct CollectorConfig {
-    pub url: String,
+    pub url: Url,
     #[serde(with = "humantime_serde", default = "default_cadence")]
     pub cadence: Duration,
 

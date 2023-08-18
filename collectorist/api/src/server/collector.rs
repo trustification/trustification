@@ -95,6 +95,7 @@ mod test {
     use actix_web::http::StatusCode;
     use actix_web::test::TestRequest;
     use actix_web::{test, web, App};
+    use reqwest::Url;
     use serde_json::json;
 
     use crate::server::collector::CollectorConfig;
@@ -123,8 +124,8 @@ mod test {
     async fn register_collector() -> Result<(), anyhow::Error> {
         let state = SharedState::new(
             AppState::new(
-                "http://csub.example.com/".into(),
-                "http://guac.example.com/query".into(),
+                Url::parse("http://csub.example.com/").unwrap(),
+                Url::parse("http://guac.example.com/query").unwrap(),
             )
             .await?,
         );
@@ -158,8 +159,8 @@ mod test {
     async fn get_collector_config() -> Result<(), anyhow::Error> {
         let state = SharedState::new(
             AppState::new(
-                "http://csub.example.com/".into(),
-                "http://guac.example.com/query".into(),
+                Url::parse("http://csub.example.com/").unwrap(),
+                Url::parse("http://guac.example.com/query").unwrap(),
             )
             .await?,
         );
@@ -199,8 +200,8 @@ mod test {
     async fn deregister_collector() -> Result<(), anyhow::Error> {
         let state = SharedState::new(
             AppState::new(
-                "http://csub.example.com/".into(),
-                "http://guac.example.com/query".into(),
+                Url::parse("http://csub.example.com/").unwrap(),
+                Url::parse("http://guac.example.com/query").unwrap(),
             )
             .await?,
         );

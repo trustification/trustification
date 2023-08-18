@@ -1,14 +1,17 @@
 use std::collections::HashSet;
 use std::net::SocketAddr;
 use std::process::ExitCode;
-use std::str::FromStr;
-use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
-use reqwest::Url;
+use std::sync::Arc;
 
+use reqwest::Url;
 use tokio::sync::RwLock;
 
-use trustification_infrastructure::{defaults::{self, Endpoint}, Infrastructure, InfrastructureConfig};
+use trustification_infrastructure::endpoint::{CollectorOsv, EndpointServerConfig};
+use trustification_infrastructure::{
+    endpoint::{self, Endpoint},
+    Infrastructure, InfrastructureConfig,
+};
 
 use crate::client::schema::{Reference, Vulnerability};
 use crate::server::{deregister_with_collectorist, register_with_collectorist};
@@ -19,15 +22,8 @@ mod server;
 #[derive(clap::Args, Debug)]
 #[command(about = "Run the api server", args_conflicts_with_subcommands = true)]
 pub struct Run {
-    #[arg(short, long, default_value = "0.0.0.0")]
-    pub bind: String,
-
-    #[arg(
-        short = 'p',
-        long = "port",
-        default_value_t = defaults::CollectorOsv::port()
-    )]
-    pub port: u16,
+    #[command(flatten)]
+    pub api: EndpointServerConfig<CollectorOsv>,
 
     #[command(flatten)]
     pub infra: InfrastructureConfig,
@@ -36,7 +32,7 @@ pub struct Run {
         env,
         short = 'u',
         long = "collectorist-url",
-        default_value_t = defaults::Collectorist::url()
+        default_value_t = endpoint::Collectorist::url()
     )]
     pub(crate) collectorist_url: Url,
 
@@ -44,7 +40,7 @@ pub struct Run {
         env,
         short = 'v',
         long = "v11y-url",
-        default_value_t = defaults::V11y::url()
+        default_value_t = endpoint::V11y::url()
     )]
     pub(crate) v11y_url: Url,
 }
@@ -53,9 +49,8 @@ impl Run {
     pub async fn run(self) -> anyhow::Result<ExitCode> {
         Infrastructure::from(self.infra)
             .run("collector-osv", |_metrics| async move {
-                let state = Self::configure("osv".into(), self.collectorist_url.to_string(), self.v11y_url.to_string()).await?;
-                let addr = SocketAddr::from_str(&format!("{}:{}", self.bind, self.port))?;
-                let server = server::run(state.clone(), addr);
+                let state = Self::configure("osv".into(), self.collectorist_url, self.v11y_url).await?;
+                let server = server::run(state.clone(), self.api.socket_addr()?);
                 let register = register_with_collectorist(state.clone());
 
                 tokio::select! {
@@ -71,11 +66,7 @@ impl Run {
         Ok(ExitCode::SUCCESS)
     }
 
-    async fn configure(
-        collector_id: String,
-        collectorist_url: String,
-        v11y_url: String,
-    ) -> anyhow::Result<Arc<AppState>> {
+    async fn configure(collector_id: String, collectorist_url: Url, v11y_url: Url) -> anyhow::Result<Arc<AppState>> {
         let state = Arc::new(AppState::new(collector_id, collectorist_url, v11y_url));
         Ok(state)
     }
@@ -86,11 +77,11 @@ pub struct AppState {
     connected: AtomicBool,
     collectorist_client: collectorist_client::CollectoristClient,
     v11y_client: v11y_client::V11yClient,
-    guac_url: RwLock<Option<String>>,
+    guac_url: RwLock<Option<Url>>,
 }
 
 impl AppState {
-    pub fn new(collector_id: String, collectorist_url: String, v11y_url: String) -> Self {
+    pub fn new(collector_id: String, collectorist_url: Url, v11y_url: Url) -> Self {
         Self {
             addr: RwLock::new(None),
             connected: AtomicBool::new(false),
