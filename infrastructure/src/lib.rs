@@ -3,7 +3,7 @@ mod tracing;
 
 pub mod app;
 
-pub mod defaults;
+pub mod endpoint;
 
 pub use infra::*;
 

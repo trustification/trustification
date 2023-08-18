@@ -18,24 +18,25 @@ use std::time::SystemTime;
 
 use guac::collectsub::{CollectSubClient, Entry, Filter};
 use log::{info, warn};
+use reqwest::Url;
 use tokio::time::{interval, sleep};
 
 use crate::server::collect::CollectRequest;
 use crate::SharedState;
 
 pub struct Coordinator {
-    csub_url: String,
+    csub_url: Url,
 }
 
 impl Coordinator {
-    pub fn new(csub_url: String) -> Self {
+    pub fn new(csub_url: Url) -> Self {
         Self { csub_url }
     }
 
     pub async fn listen(&self, state: SharedState) {
         let listener = async move {
             loop {
-                if let Ok(mut csub) = CollectSubClient::new(self.csub_url.clone()).await {
+                if let Ok(mut csub) = CollectSubClient::new(self.csub_url.to_string()).await {
                     info!("connected to GUAC collect-sub");
                     let mut sleep = interval(tokio::time::Duration::from_millis(1000));
 

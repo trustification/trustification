@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use reqwest::Url;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -25,22 +26,44 @@ pub struct CollectVulnerabilitiesResponse {
     pub vulnerability_ids: VulnerabilityIds,
 }
 
+pub struct CollectorUrl {
+    base_url: Url,
+}
+
+impl CollectorUrl {
+    pub fn new(base_url: Url) -> Self {
+        Self { base_url }
+    }
+
+    pub fn packages_url(&self) -> Url {
+        Url::parse(&format!("{}/packages", self.base_url)).unwrap()
+    }
+
+    pub fn vulnerabilities_url(&self) -> Url {
+        Url::parse(&format!("{}/packages", self.base_url)).unwrap()
+    }
+}
+
 pub struct CollectorClient {
-    url: String,
+    url: CollectorUrl,
 }
 
 impl CollectorClient {
-    pub fn new(url: String) -> Self {
-        Self { url }
+    pub fn new(url: Url) -> Self {
+        Self {
+            url: CollectorUrl::new(url),
+        }
     }
 
     pub async fn collect_packages(
         &self,
         request: CollectPackagesRequest,
     ) -> Result<CollectPackagesResponse, anyhow::Error> {
-        let mut url = self.url.clone();
-        url.push_str("/packages");
-        let response = reqwest::Client::new().post(url).json(&request).send().await?;
+        let response = reqwest::Client::new()
+            .post(self.url.packages_url())
+            .json(&request)
+            .send()
+            .await?;
         let response: CollectPackagesResponse = response.json().await?;
         Ok(response)
     }
@@ -49,9 +72,11 @@ impl CollectorClient {
         &self,
         request: CollectVulnerabilitiesRequest,
     ) -> Result<CollectVulnerabilitiesResponse, anyhow::Error> {
-        let mut url = self.url.clone();
-        url.push_str("/vulnerabilities");
-        let response = reqwest::Client::new().post(url).json(&request).send().await?;
+        let response = reqwest::Client::new()
+            .post(self.url.vulnerabilities_url())
+            .json(&request)
+            .send()
+            .await?;
         let response: CollectVulnerabilitiesResponse = response.json().await?;
         Ok(response)
     }

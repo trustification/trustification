@@ -1,9 +1,12 @@
-use std::net::SocketAddr;
+use reqwest::Url;
 use std::process::ExitCode;
-use std::str::FromStr;
 use std::sync::Arc;
 
-use trustification_infrastructure::{Infrastructure, InfrastructureConfig, defaults::Endpoint};
+use trustification_infrastructure::endpoint::{Collectorist, EndpointServerConfig};
+use trustification_infrastructure::{
+    endpoint::{self, Endpoint},
+    Infrastructure, InfrastructureConfig,
+};
 
 use crate::state::AppState;
 
@@ -15,20 +18,27 @@ mod state;
 #[derive(clap::Args, Debug)]
 #[command(about = "Run the api server", args_conflicts_with_subcommands = true)]
 pub struct Run {
-    #[arg(short, long, default_value = "0.0.0.0")]
-    pub bind: String,
-
-    #[arg(short = 'p', long = "port", default_value_t = trustification_infrastructure::defaults::Collectorist::port())]
-    pub port: u16,
+    #[command(flatten)]
+    pub api: EndpointServerConfig<Collectorist>,
 
     #[command(flatten)]
     pub infra: InfrastructureConfig,
 
-    #[arg(short = 'u', long = "csub-url", default_value = "http://localhost:2782/")]
-    pub(crate) csub_url: String,
+    #[arg(
+        env,
+        short = 'u',
+        long = "csub-url",
+        default_value_t = endpoint::GuacCollectSub::url()
+    )]
+    pub(crate) csub_url: Url,
 
-    #[arg(short = 'g', long = "guac-url", default_value = "http://localhost:8080/query")]
-    pub(crate) guac_url: String,
+    #[arg(
+        env,
+        short = 'g',
+        long = "guac-url",
+        default_value_t = endpoint::GuacGraphQl::url()
+    )]
+    pub(crate) guac_url: Url,
 }
 
 impl Run {
@@ -36,8 +46,7 @@ impl Run {
         Infrastructure::from(self.infra)
             .run("collectorist-api", |_metrics| async move {
                 let state = Self::configure(self.csub_url, self.guac_url).await?;
-                let addr = SocketAddr::from_str(&format!("{}:{}", self.bind, self.port))?;
-                let server = server::run(state.clone(), addr);
+                let server = server::run(state.clone(), self.api.socket_addr()?);
                 let listener = state.coordinator.listen(state.clone());
                 tokio::select! {
                      _ = listener => { }
@@ -50,7 +59,7 @@ impl Run {
         Ok(ExitCode::SUCCESS)
     }
 
-    async fn configure(csub_url: String, guac_url: String) -> anyhow::Result<Arc<AppState>> {
+    async fn configure(csub_url: Url, guac_url: Url) -> anyhow::Result<Arc<AppState>> {
         let state = Arc::new(AppState::new(csub_url, guac_url).await?);
         Ok(state)
     }

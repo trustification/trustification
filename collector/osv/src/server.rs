@@ -9,6 +9,7 @@ use derive_more::Display;
 use guac::client::certify_vuln::{Metadata, Osv, Vulnerability};
 use guac::client::GuacClient;
 use log::{info, warn};
+use reqwest::Url;
 use tokio::time::sleep;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
@@ -100,7 +101,7 @@ pub async fn collect_packages(
         .cloned()
         .ok_or(Error::Configuration)?;
 
-    let guac = GuacClient::new(guac_url);
+    let guac = GuacClient::new(guac_url.to_string());
     let request: QueryBatchRequest = (&*request).into();
     //log::debug!("osv request: {}", serde_json::to_string_pretty(&request).unwrap());
     let response = OsvClient::query_batch(request).await.map_err(|_| Error::OsvError)?;
@@ -177,7 +178,7 @@ pub async fn register_with_collectorist(state: SharedState) {
     loop {
         if let Some(addr) = *state.addr.read().await {
             if !state.connected.load(Ordering::Relaxed) {
-                let url = format!("http://{}:{}/api/v1", addr.ip(), addr.port());
+                let url = Url::parse(&format!("http://{}:{}/api/v1", addr.ip(), addr.port())).unwrap();
                 info!("registering with collectorist: callback={}", url);
                 if let Ok(response) = state
                     .collectorist_client

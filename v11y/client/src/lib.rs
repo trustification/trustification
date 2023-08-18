@@ -3,6 +3,7 @@ use std::fmt::{Display, Formatter};
 use std::hash::{Hash, Hasher};
 
 use chrono::{DateTime, Utc};
+use reqwest::Url;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
@@ -118,22 +119,35 @@ pub struct Reference {
     pub url: String,
 }
 
+pub struct V11yUrl {
+    base_url: Url,
+}
+
+impl V11yUrl {
+    pub fn new(base_url: Url) -> Self {
+        Self { base_url }
+    }
+
+    pub fn vulnerability_url(&self) -> Url {
+        Url::parse(&format!("{}/api/v1/vulnerability", self.base_url)).unwrap()
+    }
+}
+
 #[allow(unused)]
 pub struct V11yClient {
-    v11y_url: String,
+    v11y_url: V11yUrl,
 }
 
 impl V11yClient {
-    pub fn new(url: String) -> Self {
-        Self { v11y_url: url }
+    pub fn new(url: Url) -> Self {
+        Self {
+            v11y_url: V11yUrl::new(url),
+        }
     }
 
     pub async fn ingest_vulnerability(&self, vuln: &Vulnerability) -> Result<(), anyhow::Error> {
-        let mut ingest_url = self.v11y_url.clone();
-        ingest_url.push_str("api/v1/vulnerability");
-
         Ok(reqwest::Client::new()
-            .post(&ingest_url)
+            .post(self.v11y_url.vulnerability_url())
             .json(&vuln)
             .send()
             .await?
