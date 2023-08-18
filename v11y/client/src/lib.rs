@@ -129,7 +129,7 @@ impl V11yUrl {
     }
 
     pub fn vulnerability_url(&self) -> Url {
-        Url::parse(&format!("{}/api/v1/vulnerability", self.base_url)).unwrap()
+        self.base_url.join("/api/v1/vulnerability").unwrap()
     }
 }
 
@@ -150,9 +150,8 @@ impl V11yClient {
             .post(self.v11y_url.vulnerability_url())
             .json(&vuln)
             .send()
-            .await?
-            .json()
-            .await?)
+            .await
+            .map(|_| ())?)
     }
 }
 

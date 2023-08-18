@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use reqwest::IntoUrl;
+use reqwest::Url;
 use serde::{Deserialize, Serialize};
 
 use collector_client::CollectPackagesResponse;
@@ -16,12 +16,12 @@ impl OsvUrl {
         Self(base)
     }
 
-    pub fn querybatch(&self) -> impl IntoUrl {
-        format!("{}/querybatch", self.0)
+    pub fn querybatch(&self) -> Url {
+        Url::parse(&format!("{}/querybatch", self.0)).unwrap()
     }
 
-    pub fn vuln(&self, vuln_id: &str) -> impl IntoUrl {
-        format!("{}/vulns/{}", self.0, vuln_id)
+    pub fn vuln(&self, vuln_id: &str) -> Url {
+        Url::parse(&format!("{}/vulns/{}", self.0, vuln_id)).unwrap()
     }
 }
 

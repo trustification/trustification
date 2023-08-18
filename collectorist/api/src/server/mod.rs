@@ -15,11 +15,16 @@ pub mod collect;
 pub mod collector;
 
 #[derive(OpenApi)]
-#[openapi(paths(
-    crate::server::collector::register_collector,
-    crate::server::collector::deregister_collector,
-    crate::server::collect::collect_packages,
-))]
+#[openapi(
+    servers(
+        (url = "/api/v1")
+    ),
+    paths(
+        crate::server::collector::register_collector,
+        crate::server::collector::deregister_collector,
+        crate::server::collect::collect_packages,
+    )
+)]
 pub struct ApiDoc;
 
 pub async fn run<B: Into<SocketAddr>>(state: SharedState, bind: B) -> Result<(), anyhow::Error> {
