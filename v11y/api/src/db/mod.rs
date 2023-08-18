@@ -1,4 +1,3 @@
-use std::collections::HashSet;
 use std::str::FromStr;
 
 use futures::Stream;
@@ -307,11 +306,11 @@ impl Db {
                                     withdrawn: row.get("withdrawn"),
                                     summary: row.get("summary"),
                                     details: row.get("details"),
-                                    aliases: HashSet::default(),
+                                    aliases: Default::default(),
                                     affected: vec![],
-                                    severities: HashSet::default(),
-                                    related: HashSet::default(),
-                                    references: HashSet::default(),
+                                    severities: Default::default(),
+                                    related: Default::default(),
+                                    references: Default::default(),
                                 };
 
                                 if let Some(cur) = cur.take() {
@@ -326,12 +325,12 @@ impl Db {
                                     // continue to populate
                                     let alias = row.get::<String, _>("alias");
                                     if !alias.is_empty() && !cur_vuln.aliases.contains(&alias) {
-                                        cur_vuln.aliases.insert(alias);
+                                        cur_vuln.aliases.push(alias);
                                     }
 
                                     let related = row.get::<String, _>("related");
                                     if !related.is_empty() && !cur_vuln.related.contains(&related) {
-                                        cur_vuln.related.insert(related);
+                                        cur_vuln.related.push(related);
                                     }
 
                                     let (ty, url) = (row.get::<String, _>("type"), row.get::<String, _>("url"));
@@ -339,7 +338,7 @@ impl Db {
                                         let reference = Reference { r#type: ty, url };
 
                                         if !cur_vuln.references.contains(&reference) {
-                                            cur_vuln.references.insert(reference);
+                                            cur_vuln.references.push(reference);
                                         }
                                     }
 
@@ -358,7 +357,7 @@ impl Db {
                                         };
 
                                         if !cur_vuln.severities.contains(&severity) {
-                                            cur_vuln.severities.insert(severity);
+                                            cur_vuln.severities.push(severity);
                                         }
                                     }
                                 } else {
@@ -679,7 +678,6 @@ impl Db {
 #[cfg(test)]
 mod test {
     use futures::StreamExt;
-    use std::collections::HashSet;
 
     use v11y_client::{Reference, ScoreType, Severity, Vulnerability};
 
@@ -704,11 +702,11 @@ mod test {
             withdrawn: None,
             summary: "Summary".to_string(),
             details: "Some\ndetails".to_string(),
-            aliases: HashSet::default(),
-            severities: HashSet::default(),
+            aliases: Default::default(),
+            severities: Default::default(),
             affected: vec![],
-            related: HashSet::default(),
-            references: HashSet::default(),
+            related: Default::default(),
+            references: Default::default(),
         };
 
         db.ingest(&vuln).await?;
@@ -721,11 +719,11 @@ mod test {
             withdrawn: None,
             summary: "Summary".to_string(),
             details: "Some\ndetails".to_string(),
-            aliases: HashSet::default(),
-            severities: HashSet::default(),
+            aliases: Default::default(),
+            severities: Default::default(),
             affected: vec![],
-            related: HashSet::default(),
-            references: HashSet::default(),
+            related: Default::default(),
+            references: Default::default(),
         };
 
         db.ingest(&vuln).await?;
@@ -738,11 +736,11 @@ mod test {
             withdrawn: None,
             summary: "Summary".to_string(),
             details: "Some\ndetails".to_string(),
-            aliases: HashSet::default(),
-            severities: HashSet::default(),
+            aliases: Default::default(),
+            severities: Default::default(),
             affected: vec![],
-            related: HashSet::default(),
-            references: HashSet::default(),
+            related: Default::default(),
+            references: Default::default(),
         };
 
         db.ingest(&vuln).await?;
@@ -774,18 +772,18 @@ mod test {
             withdrawn: None,
             summary: "Summary".to_string(),
             details: "Some\ndetails".to_string(),
-            aliases: HashSet::from(["GHSA-foo-ghz".to_string()]),
-            severities: HashSet::from([Severity {
+            aliases: vec!["GHSA-foo-ghz".to_string()],
+            severities: vec![Severity {
                 r#type: ScoreType::Cvss3,
                 score: 6.8,
                 additional: Some("n:4/v:2".to_string()),
-            }]),
+            }],
             affected: vec![],
-            related: HashSet::from(["CVE-8675".to_string()]),
-            references: HashSet::from([Reference {
+            related: vec!["CVE-8675".to_string()],
+            references: vec![Reference {
                 r#type: "ADVISORY".to_string(),
                 url: "http://osv.dev/foo".to_string(),
-            }]),
+            }],
         };
 
         db.ingest(&osv_vuln).await?;
@@ -802,18 +800,18 @@ mod test {
             withdrawn: None,
             summary: "Summary".to_string(),
             details: "Some\ndetails".to_string(),
-            aliases: HashSet::from(["GHSA-foo-ghz".to_string()]),
-            severities: HashSet::from([Severity {
+            aliases: vec!["GHSA-foo-ghz".to_string()],
+            severities: vec![Severity {
                 r#type: ScoreType::Cvss3,
                 score: 7.8,
                 additional: Some("n:1/v:2".to_string()),
-            }]),
+            }],
             affected: vec![],
-            related: HashSet::from(["CVE-8675".to_string(), "CVE-42".to_string()]),
-            references: HashSet::from([Reference {
+            related: vec!["CVE-8675".to_string(), "CVE-42".to_string()],
+            references: vec![Reference {
                 r#type: "WEB".to_string(),
                 url: "http://snyk.com/foo".to_string(),
-            }]),
+            }],
         };
 
         db.ingest(&snyk_vuln).await?;
@@ -906,15 +904,15 @@ mod test {
             withdrawn: None,
             summary: "Summary".to_string(),
             details: "Some\ndetails".to_string(),
-            aliases: HashSet::from(["GHSA-foo-ghz".to_string()]),
-            severities: HashSet::from([Severity {
+            aliases: vec!["GHSA-foo-ghz".to_string()],
+            severities: vec![Severity {
                 r#type: ScoreType::Cvss3,
                 score: 6.8,
                 additional: Some("n:4/v:2".to_string()),
-            }]),
+            }],
             affected: vec![],
-            related: HashSet::from(["CVE-8675".to_string(), "CVE-42".to_string()]),
-            references: HashSet::default(),
+            related: vec!["CVE-8675".to_string(), "CVE-42".to_string()],
+            references: Default::default(),
         };
 
         db.ingest(&vuln).await?;
@@ -942,8 +940,8 @@ mod test {
             withdrawn: None,
             summary: "Summary".to_string(),
             details: "Some\ndetails".to_string(),
-            aliases: HashSet::from(["GHSA-foo-ghz".to_string()]),
-            severities: HashSet::from([
+            aliases: vec!["GHSA-foo-ghz".to_string()],
+            severities: vec![
                 Severity {
                     r#type: ScoreType::Cvss3,
                     score: 9.8,
@@ -954,10 +952,10 @@ mod test {
                     score: 7.3,
                     additional: None,
                 },
-            ]),
+            ],
             affected: vec![],
-            related: HashSet::from(["CVE-8675".to_string(), "CVE-42".to_string()]),
-            references: HashSet::default(),
+            related: vec!["CVE-8675".to_string(), "CVE-42".to_string()],
+            references: Default::default(),
         };
 
         db.ingest(&vuln).await?;
@@ -997,18 +995,18 @@ mod test {
             withdrawn: None,
             summary: "Summary".to_string(),
             details: "Some\ndetails".to_string(),
-            aliases: HashSet::default(),
-            severities: HashSet::from([Severity {
+            aliases: Default::default(),
+            severities: vec![Severity {
                 r#type: ScoreType::Cvss3,
                 score: 6.8,
                 additional: Some("n:4/v:2".to_string()),
-            }]),
+            }],
             affected: vec![],
-            related: HashSet::from(["CVE-8675".to_string()]),
-            references: HashSet::from([Reference {
+            related: vec!["CVE-8675".to_string()],
+            references: vec![Reference {
                 r#type: "ADVISORY".to_string(),
                 url: "http://osv.dev/foo".to_string(),
-            }]),
+            }],
         };
 
         db.ingest(&osv_vuln).await?;
@@ -1021,18 +1019,18 @@ mod test {
             withdrawn: None,
             summary: "Summary".to_string(),
             details: "Some\ndetails".to_string(),
-            aliases: HashSet::from(["GHSA-foo-ghz".to_string()]),
-            severities: HashSet::from([Severity {
+            aliases: vec!["GHSA-foo-ghz".to_string()],
+            severities: vec![Severity {
                 r#type: ScoreType::Cvss3,
                 score: 7.8,
                 additional: Some("n:1/v:2".to_string()),
-            }]),
+            }],
             affected: vec![],
-            related: HashSet::from(["CVE-8675".to_string(), "CVE-42".to_string()]),
-            references: HashSet::from([Reference {
+            related: vec!["CVE-8675".to_string(), "CVE-42".to_string()],
+            references: vec![Reference {
                 r#type: "WEB".to_string(),
                 url: "http://snyk.com/foo".to_string(),
-            }]),
+            }],
         };
 
         db.ingest(&snyk_vuln).await?;

@@ -5,8 +5,9 @@ use std::hash::{Hash, Hasher};
 use chrono::{DateTime, Utc};
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, ToSchema)]
 pub struct Vulnerability {
     pub origin: String,
     pub id: String,
@@ -15,26 +16,57 @@ pub struct Vulnerability {
     pub withdrawn: Option<DateTime<Utc>>,
     pub summary: String,
     pub details: String,
-    #[serde(skip_serializing_if = "HashSet::is_empty", default = "HashSet::default")]
-    pub aliases: HashSet<String>,
+    #[serde(skip_serializing_if = "Vec::is_empty", default = "Vec::default")]
+    pub aliases: Vec<String>,
     #[serde(skip_serializing_if = "Vec::is_empty", default = "Vec::default")]
     pub affected: Vec<Affected>,
-    #[serde(skip_serializing_if = "HashSet::is_empty", default = "HashSet::default")]
-    pub severities: HashSet<Severity>,
-    #[serde(skip_serializing_if = "HashSet::is_empty", default = "HashSet::default")]
-    pub related: HashSet<String>,
-    #[serde(skip_serializing_if = "HashSet::is_empty", default = "HashSet::default")]
-    pub references: HashSet<Reference>,
+    #[serde(skip_serializing_if = "Vec::is_empty", default = "Vec::default")]
+    pub severities: Vec<Severity>,
+    #[serde(skip_serializing_if = "Vec::is_empty", default = "Vec::default")]
+    pub related: Vec<String>,
+    #[serde(skip_serializing_if = "Vec::is_empty", default = "Vec::default")]
+    pub references: Vec<Reference>,
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+impl PartialEq for Vulnerability {
+    fn eq(&self, other: &Self) -> bool {
+        self.origin.eq(&other.origin)
+            && self.id.eq(&other.id)
+            && self.modified.eq(&other.modified)
+            && self.published.eq(&other.published)
+            && self.withdrawn.eq(&other.withdrawn)
+            && self.details.eq(&other.details)
+            && self
+                .aliases
+                .iter()
+                .collect::<HashSet<_>>()
+                .eq(&other.aliases.iter().collect::<HashSet<_>>())
+            && self
+                .severities
+                .iter()
+                .collect::<HashSet<_>>()
+                .eq(&other.severities.iter().collect::<HashSet<_>>())
+            && self
+                .related
+                .iter()
+                .collect::<HashSet<_>>()
+                .eq(&other.related.iter().collect::<HashSet<_>>())
+            && self
+                .references
+                .iter()
+                .collect::<HashSet<_>>()
+                .eq(&other.references.iter().collect::<HashSet<_>>())
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, PartialEq, ToSchema)]
 pub struct Affected {
     pub package: String,
     #[serde(skip_serializing_if = "Vec::is_empty", default = "Vec::default")]
     pub ranges: Vec<Range>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, ToSchema)]
 pub struct Severity {
     pub r#type: ScoreType,
     pub score: f32,
@@ -54,19 +86,21 @@ impl Hash for Severity {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, ToSchema)]
 pub struct Range {
     pub lower: Option<Version>,
     pub upper: Option<Version>,
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, ToSchema)]
+#[serde(rename_all = "lowercase")]
 pub enum Version {
     Inclusive(String),
     Exclusive(String),
 }
 
-#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Hash)]
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Hash, ToSchema)]
+#[serde(rename_all = "lowercase")]
 pub enum ScoreType {
     Cvss3,
     Cvss4,
@@ -113,7 +147,7 @@ pub enum EventType {
     Fixed,
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Hash)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Hash, ToSchema)]
 pub struct Reference {
     pub r#type: String,
     pub url: String,

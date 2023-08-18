@@ -7322,6 +7322,7 @@ dependencies = [
  "serde",
  "serde_json",
  "tokio",
+ "utoipa",
 ]
 
 [[package]]
