@@ -8,7 +8,7 @@ use crate::SharedState;
 #[utoipa::path(
     post,
     tag = "collectorist",
-    path = "/api/v1/collector",
+    path = "/collector/{id}",
     responses(
         (status = 200, description = "Collector registered"),
         (status = BAD_REQUEST, description = "Missing valid id"),
@@ -43,7 +43,7 @@ pub(crate) async fn register_collector(
 #[utoipa::path(
     get,
     tag = "collectorist",
-    path = "/api/v1/collector",
+    path = "/collector/{id}",
     responses(
         (status = 200, description = "Collector configuration located"),
         (status = BAD_REQUEST, description = "Missing valid id"),
@@ -65,7 +65,7 @@ pub(crate) async fn collector_config(
 #[utoipa::path(
     delete,
     tag = "collectorist",
-    path = "/api/v1/collector",
+    path = "/collector/{id}",
     responses(
         (status = 200, description = "Collector unregistered"),
         (status = NOT_FOUND, description = "Collector not found"),

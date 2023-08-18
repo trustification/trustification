@@ -36,11 +36,11 @@ impl CollectorUrl {
     }
 
     pub fn packages_url(&self) -> Url {
-        Url::parse(&format!("{}/packages", self.base_url)).unwrap()
+        self.base_url.join("packages").unwrap()
     }
 
     pub fn vulnerabilities_url(&self) -> Url {
-        Url::parse(&format!("{}/packages", self.base_url)).unwrap()
+        self.base_url.join("vulnerabilities").unwrap()
     }
 }
 

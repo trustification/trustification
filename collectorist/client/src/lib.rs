@@ -14,21 +14,15 @@ impl CollectoristUrl {
     }
 
     pub fn register_url(&self) -> Url {
-        Url::parse(&format!(
-            "{}/api/v1/collector/{}",
-            self.base_url.as_str(),
-            self.collector_id
-        ))
-        .unwrap()
+        self.base_url
+            .join(&format!("/api/v1/collector/{}", self.collector_id))
+            .unwrap()
     }
 
     pub fn deregister_url(&self) -> Url {
-        Url::parse(&format!(
-            "{}/api/v1/collector/{}",
-            self.base_url.as_str(),
-            self.collector_id
-        ))
-        .unwrap()
+        self.base_url
+            .join(&format!("/api/v1/collector/{}", self.collector_id))
+            .unwrap()
     }
 }
 

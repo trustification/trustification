@@ -178,9 +178,9 @@ pub async fn register_with_collectorist(state: SharedState) {
     loop {
         if let Some(addr) = *state.addr.read().await {
             if !state.connected.load(Ordering::Relaxed) {
-                let url = Url::parse(&format!("http://{}:{}/api/v1", addr.ip(), addr.port())).unwrap();
+                let url = Url::parse(&format!("http://{}:{}/api/v1/", addr.ip(), addr.port())).unwrap();
                 info!("registering with collectorist: callback={}", url);
-                if let Ok(response) = state
+                match state
                     .collectorist_client
                     .register(CollectorConfig {
                         url,
@@ -189,11 +189,14 @@ pub async fn register_with_collectorist(state: SharedState) {
                     })
                     .await
                 {
-                    state.guac_url.write().await.replace(response.guac_url);
-                    state.connected.store(true, Ordering::Relaxed);
-                    info!("successfully registered with collectorist")
-                } else {
-                    warn!("failed to register with collectorist")
+                    Ok(response) => {
+                        state.guac_url.write().await.replace(response.guac_url);
+                        state.connected.store(true, Ordering::Relaxed);
+                        info!("successfully registered with collectorist")
+                    }
+                    Err(e) => {
+                        warn!("failed to register with collectorist: {}", e)
+                    }
                 }
             }
         }

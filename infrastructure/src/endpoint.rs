@@ -92,7 +92,7 @@ macro_rules! endpoint {
         pub struct $name;
         impl Endpoint for $name {
             const PORT: u16 = 0;
-            const PATH: &'static str = "/";
+            const PATH: &'static str = "";
         }
     };
 
@@ -101,7 +101,7 @@ macro_rules! endpoint {
         pub struct $name;
         impl Endpoint for $name {
             const PORT: u16 = $port;
-            const PATH: &'static str = "/";
+            const PATH: &'static str = "";
         }
     };
 
