@@ -13,10 +13,29 @@ use crate::SharedState;
 mod vulnerability;
 
 #[derive(OpenApi)]
-#[openapi(paths(
-    crate::server::vulnerability::ingest_vulnerability,
-    crate::server::vulnerability::get,
-))]
+#[openapi(
+    servers(
+        (url = "/api/v1")
+    ),
+    tags(
+        (name = "v11y")
+    ),
+    paths(
+        crate::server::vulnerability::ingest_vulnerability,
+        crate::server::vulnerability::get,
+    ),
+    components(
+        schemas(
+            v11y_client::Vulnerability,
+            v11y_client::Affected,
+            v11y_client::Range,
+            v11y_client::Severity,
+            v11y_client::Version,
+            v11y_client::ScoreType,
+            v11y_client::Reference,
+        )
+    )
+)]
 pub struct ApiDoc;
 
 pub async fn run<B: Into<SocketAddr>>(state: SharedState, bind: B) -> Result<(), anyhow::Error> {

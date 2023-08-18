@@ -1,4 +1,3 @@
-use std::collections::HashSet;
 use std::net::SocketAddr;
 use std::process::ExitCode;
 use std::sync::atomic::AtomicBool;
@@ -104,11 +103,16 @@ impl From<Vulnerability> for v11y_client::Vulnerability {
             withdrawn: vuln.withdrawn,
             summary: vuln.summary.clone().unwrap_or("".to_string()),
             details: vuln.details.clone().unwrap_or("".to_string()),
-            aliases: HashSet::from_iter(vuln.aliases.clone().unwrap_or(Default::default())),
+            aliases: vuln.aliases.clone().unwrap_or(Default::default()),
             affected: vec![],
             severities: Default::default(),
-            related: HashSet::from_iter(vuln.related.clone().unwrap_or(Default::default())),
-            references: HashSet::from_iter(vuln.references.unwrap_or(Default::default()).iter().map(|e| e.into())),
+            related: vuln.related.clone().unwrap_or(Default::default()),
+            references: vuln
+                .references
+                .unwrap_or(Default::default())
+                .iter()
+                .map(|e| e.into())
+                .collect(),
         }
     }
 }
