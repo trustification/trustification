@@ -38,6 +38,11 @@ the latter, v1.0.6 or higher is required.
 
 To start all dependencies and trustification components:
 
+For Linux systems only:
+``` shell
+$ export SELINUX_VOLUME_OPTIONS=':Z'
+```
+
 First we need to start up the minio, kafka, and keycloak with podman-compose:
 ``` shell
 cd deploy/compose
