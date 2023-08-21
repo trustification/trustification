@@ -38,9 +38,21 @@ the latter, v1.0.6 or higher is required.
 
 To start all dependencies and trustification components:
 
+First we need to start up the minio, kafka, and keycloak with podman-compose:
 ``` shell
 cd deploy/compose
-podman-compose -f compose.yaml -f compose-trustification.yaml -f compose-guac.yaml -f compose-walkers.yaml up
+podman-compose -f compose.yaml up
+```
+
+After keycloak has started successfully, which can be checked by verifying that
+the following line is present in the output from the command above:
+``` shell
+[init-keycloak] | SSO initialization complete
+```
+
+After that we can start the additional containers:
+``` shell
+podman-compose -f compose-trustification.yaml -f compose-guac.yaml -f compose-walkers.yaml up
 ```
 
 If you'd like to run [a specific
