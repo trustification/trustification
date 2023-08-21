@@ -4,17 +4,16 @@ metadata:
   annotations:
     build.appstudio.openshift.io/repo: https://github.com/trustification/trustification?rev={{revision}}
     build.appstudio.redhat.com/commit_sha: '{{revision}}'
-    build.appstudio.redhat.com/pull_request_number: '{{pull_request_number}}'
     build.appstudio.redhat.com/target_branch: '{{target_branch}}'
     pipelinesascode.tekton.dev/max-keep-runs: "3"
-    pipelinesascode.tekton.dev/on-event: '[pull_request]'
+    pipelinesascode.tekton.dev/on-event: '[push]'
     pipelinesascode.tekton.dev/on-target-branch: '[main]'
   creationTimestamp: null
   labels:
     appstudio.openshift.io/application: trusted-content
-    appstudio.openshift.io/component: frontend-trustification
+    appstudio.openshift.io/component: bommer-trustification
     pipelines.appstudio.openshift.io/type: build
-  name: frontend-trustification-on-pull-request
+  name: bommer-trustification-on-push
   namespace: ulilleen-tenant
 spec:
   params:
@@ -22,12 +21,10 @@ spec:
     value: Containerfile.ui
   - name: git-url
     value: '{{repo_url}}'
-  - name: image-expires-after
-    value: 5d
   - name: output-image
-    value: quay.io/redhat-user-workloads/ulilleen-tenant/trusted-content/frontend-trustification:on-pr-{{revision}}
+    value: quay.io/redhat-user-workloads/ulilleen-tenant/trusted-content/bommer-trustification:{{revision}}
   - name: path-context
-    value: .
+    value: bommer
   - name: revision
     value: '{{revision}}'
   pipelineSpec:
