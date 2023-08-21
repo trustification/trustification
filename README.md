@@ -40,6 +40,10 @@ To start all dependencies and trustification components:
 
 ``` shell
 cd deploy/compose
+
+# Required on Linux only
+sudo chcon -R -t container_file_t ./container_files/init-sso
+
 podman-compose -f compose.yaml -f compose-trustification.yaml -f compose-guac.yaml -f compose-walkers.yaml up
 ```
 
