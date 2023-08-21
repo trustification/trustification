@@ -114,6 +114,41 @@ async fn delete_missing_sbom(context: &mut BombasticContext) {
 
 #[test_context(BombasticContext)]
 #[tokio::test]
+#[ntest::timeout(60_000)]
+async fn reject_no_auth_upload(context: &mut BombasticContext) {
+    let input: Value = serde_json::from_str(include_str!("../../bombastic/testdata/my-sbom.json")).unwrap();
+    let id = "test-upload";
+    let response = reqwest::Client::new()
+        .post(context.urlify(format!("/api/v1/sbom?id={id}")))
+        .json(&input)
+        .send()
+        .await
+        .unwrap();
+    assert!(response.status().is_client_error());
+    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
+}
+
+#[test_context(BombasticContext)]
+#[tokio::test]
+#[ntest::timeout(60_000)]
+async fn reject_non_manager_upload(context: &mut BombasticContext) {
+    let input: Value = serde_json::from_str(include_str!("../../bombastic/testdata/my-sbom.json")).unwrap();
+    let id = "test-upload";
+    let response = reqwest::Client::new()
+        .post(context.urlify(format!("/api/v1/sbom?id={id}")))
+        .inject_token(&context.provider.provider_user)
+        .await
+        .unwrap()
+        .json(&input)
+        .send()
+        .await
+        .unwrap();
+    assert!(response.status().is_client_error());
+    assert_eq!(response.status(), StatusCode::FORBIDDEN);
+}
+
+#[test_context(BombasticContext)]
+#[tokio::test]
 #[ntest::timeout(90_000)]
 async fn bombastic_search(context: &mut BombasticContext) {
     let mut input: Value = serde_json::from_str(include_str!("../../bombastic/testdata/ubi9-sbom.json")).unwrap();
