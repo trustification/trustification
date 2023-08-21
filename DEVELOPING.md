@@ -11,6 +11,11 @@ For creating new services in trustification, see [NEWSERVICE.md](NEWSERVICE.md).
 
 Requires `docker-compose` to run dependent services.
 
+For Linux systems only:
+``` shell
+$ export SELINUX_VOLUME_OPTIONS=':Z'
+```
+
 ```shell
 cd deploy/compose
 docker-compose -f compose.yaml up
