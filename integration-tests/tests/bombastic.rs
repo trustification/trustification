@@ -1,5 +1,6 @@
 use integration_tests::{
-    assert_within_timeout, delete_sbom, get_response, id, upload_sbom, wait_for_event, BombasticContext,
+    assert_within_timeout, delete_sbom, get_response, id, upload_sbom, wait_for_event, wait_for_search_result,
+    BombasticContext,
 };
 use reqwest::StatusCode;
 use serde_json::{json, Value};
@@ -120,7 +121,7 @@ async fn test_delete_missing(context: &mut BombasticContext) {
 #[test_context(BombasticContext)]
 #[tokio::test]
 #[ntest::timeout(90_000)]
-async fn bombastic_search(context: &mut BombasticContext) {
+async fn test_bombastic_search(context: &mut BombasticContext) {
     let mut input: Value = serde_json::from_str(include_str!("../../bombastic/testdata/ubi9-sbom.json")).unwrap();
 
     // we generate a unique id and use it as the SBOM's version for searching
@@ -129,30 +130,22 @@ async fn bombastic_search(context: &mut BombasticContext) {
 
     upload_sbom(context.port, &key, &input, &context.provider).await;
 
-    assert_within_timeout(Duration::from_secs(30), async {
-        loop {
-            let url = format!(
-                "http://localhost:{port}/api/v1/sbom/search?q={query}",
-                port = context.port,
-                query = encode(&key),
-            );
-            let response = reqwest::Client::new()
-                .get(url)
-                .inject_token(&context.provider.provider_manager)
-                .await
-                .unwrap()
-                .send()
-                .await
-                .unwrap();
-            assert_eq!(response.status(), StatusCode::OK);
-            let payload: Value = response.json().await.unwrap();
-            if payload["total"].as_u64().unwrap() >= 1 {
-                assert_eq!(payload["result"][0]["document"]["name"], json!("ubi9-container"));
-                break;
-            }
-            tokio::time::sleep(Duration::from_secs(1)).await;
+    wait_for_search_result(context, &[("q", &encode(&key))], Duration::from_secs(30), |response| {
+        if response["total"].as_u64().unwrap() >= 1 {
+            assert_eq!(response["result"][0]["document"]["name"], json!("ubi9-container"));
+            true
+        } else {
+            false
         }
-        // Ensure get expected errors on bad queries
+    })
+    .await;
+}
+
+#[test_context(BombasticContext)]
+#[tokio::test]
+#[ntest::timeout(90_000)]
+async fn test_bombastic_bad_search_queries(context: &mut BombasticContext) {
+    assert_within_timeout(Duration::from_secs(30), async {
         for query in &[
             "unknown:ubi9-container-9.1.0-1782.noarch",
             "ubi9-container-9.1.0-1782.testdata sort:unknown",
@@ -174,70 +167,83 @@ async fn bombastic_search(context: &mut BombasticContext) {
         }
     })
     .await;
+}
 
-    // Update and check reindex
+#[test_context(BombasticContext)]
+#[tokio::test]
+#[ntest::timeout(90_000)]
+async fn test_bombastic_reindexing(context: &mut BombasticContext) {
+    let mut input: Value = serde_json::from_str(include_str!("../../bombastic/testdata/ubi9-sbom.json")).unwrap();
+
+    // we generate a unique id and use it as the SBOM's version for searching
+    let key = id("test-reindexing");
+    input["packages"][617]["versionInfo"] = json!(key);
+
     upload_sbom(context.port, &key, &input, &context.provider).await;
+
+    wait_for_search_result(context, &[("q", &encode(&key))], Duration::from_secs(30), |response| {
+        if response["total"].as_u64().unwrap() >= 1 {
+            assert_eq!(response["result"][0]["document"]["name"], json!("ubi9-container"));
+            true
+        } else {
+            false
+        }
+    })
+    .await;
+
     let now = OffsetDateTime::now_utc();
-    assert_within_timeout(Duration::from_secs(30), async {
-        loop {
-            let url = format!(
-                "http://localhost:{port}/api/v1/sbom/search?q={query}&metadata=true",
-                port = context.port,
-                query = encode(&key)
-            );
-            let response = reqwest::Client::new()
-                .get(url)
-                .inject_token(&context.provider.provider_manager)
-                .await
-                .unwrap()
-                .send()
-                .await
-                .unwrap();
-            assert_eq!(response.status(), StatusCode::OK);
-            let payload: Value = response.json().await.unwrap();
-            if payload["total"].as_u64().unwrap() >= 1 {
+
+    // Push update and check reindex
+    upload_sbom(context.port, &key, &input, &context.provider).await;
+
+    wait_for_search_result(
+        context,
+        &[("q", &encode(&key)), ("metadata", "true")],
+        Duration::from_secs(30),
+        |response| {
+            if response["total"].as_u64().unwrap() >= 1 {
                 let format = &time::format_description::well_known::Rfc3339;
                 let ts = OffsetDateTime::parse(
-                    payload["result"][0]["$metadata"]["indexed_timestamp"]["values"][0]
+                    response["result"][0]["$metadata"]["indexed_timestamp"]["values"][0]
                         .as_str()
                         .unwrap(),
                     format,
                 )
                 .unwrap();
-                if ts > now {
-                    break;
-                } else {
-                    println!("Not yet updated, waiting");
-                }
+                ts > now
+            } else {
+                false
             }
-            tokio::time::sleep(Duration::from_secs(1)).await;
+        },
+    )
+    .await;
+}
+
+#[test_context(BombasticContext)]
+#[tokio::test]
+#[ntest::timeout(90_000)]
+async fn test_bombastic_deletion(context: &mut BombasticContext) {
+    let mut input: Value = serde_json::from_str(include_str!("../../bombastic/testdata/ubi9-sbom.json")).unwrap();
+
+    let key = id("test-index-deletion");
+    input["packages"][617]["versionInfo"] = json!(key);
+
+    upload_sbom(context.port, &key, &input, &context.provider).await;
+
+    wait_for_search_result(context, &[("q", &encode(&key))], Duration::from_secs(30), |response| {
+        if response["total"].as_u64().unwrap() >= 1 {
+            assert_eq!(response["result"][0]["document"]["name"], json!("ubi9-container"));
+            true
+        } else {
+            false
         }
     })
     .await;
 
     delete_sbom(context.port, &key, &context.provider).await;
-    assert_within_timeout(Duration::from_secs(30), async {
-        loop {
-            let url = format!(
-                "http://localhost:{port}/api/v1/sbom/search?q={query}",
-                port = context.port,
-                query = encode(&key),
-            );
-            let response = reqwest::Client::new()
-                .get(url)
-                .inject_token(&context.provider.provider_manager)
-                .await
-                .unwrap()
-                .send()
-                .await
-                .unwrap();
-            assert_eq!(response.status(), StatusCode::OK);
-            let payload: Value = response.json().await.unwrap();
-            if payload["total"].as_u64().unwrap() == 0 {
-                break;
-            }
-            tokio::time::sleep(Duration::from_secs(1)).await;
-        }
+
+    wait_for_search_result(context, &[("q", &encode(&key))], Duration::from_secs(30), |response| {
+        response["total"].as_u64().unwrap() == 1
     })
     .await;
 }

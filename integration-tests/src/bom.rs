@@ -108,6 +108,36 @@ pub async fn delete_sbom(port: u16, key: &str, context: &ProviderContext) {
     assert_eq!(response.status(), StatusCode::NO_CONTENT);
 }
 
+pub async fn wait_for_search_result<F: Fn(serde_json::Value) -> bool>(
+    context: &mut BombasticContext,
+    flags: &[(&str, &str)],
+    timeout: Duration,
+    check: F,
+) {
+    assert_within_timeout(timeout, async {
+        loop {
+            let url = format!("http://localhost:{port}/api/v1/sbom/search", port = context.port,);
+            let response = reqwest::Client::new()
+                .get(url)
+                .query(flags)
+                .inject_token(&context.provider.provider_manager)
+                .await
+                .unwrap()
+                .send()
+                .await
+                .unwrap();
+            assert_eq!(response.status(), StatusCode::OK);
+            let payload: Value = response.json().await.unwrap();
+            if check(payload) {
+                break;
+            }
+
+            tokio::time::sleep(Duration::from_secs(1)).await;
+        }
+    })
+    .await;
+}
+
 // Configuration for the bombastic indexer
 fn bombastic_indexer() -> bombastic_indexer::Run {
     bombastic_indexer::Run {
