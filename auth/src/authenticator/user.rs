@@ -27,13 +27,24 @@ use crate::authenticator::error::{AuthenticationError, AuthorizationError};
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct UserDetails {
     pub id: String,
+    pub scopes: Vec<String>,
     pub roles: Vec<String>,
 }
 
 impl UserDetails {
+    #[deprecated(note = "Should use scopes instead")]
     pub fn require_role(&self, role: impl AsRef<str>) -> Result<(), AuthorizationError> {
         let role = role.as_ref();
         if self.roles.iter().any(|r| r == role) {
+            Ok(())
+        } else {
+            Err(AuthorizationError::Failed)
+        }
+    }
+
+    pub fn require_scope(&self, scope: impl AsRef<str>) -> Result<(), AuthorizationError> {
+        let scope = scope.as_ref();
+        if self.scopes.iter().any(|r| r == scope) {
             Ok(())
         } else {
             Err(AuthorizationError::Failed)
@@ -46,15 +57,6 @@ impl UserDetails {
 pub enum UserInformation {
     Authenticated(UserDetails),
     Anonymous,
-}
-
-impl UserInformation {
-    pub fn require_role(&self, role: impl AsRef<str>) -> Result<(), AuthorizationError> {
-        match self {
-            Self::Anonymous => Err(AuthorizationError::Failed),
-            Self::Authenticated(details) => details.require_role(role),
-        }
-    }
 }
 
 #[allow(unused)]

@@ -1,11 +1,12 @@
+use crate::authenticator::claims::AccessTokenClaims;
 use biscuit::Empty;
-use chrono::Duration;
+use chrono::{Duration, Utc};
 use openid::{
-    validation::{validate_token_exp, validate_token_issuer},
-    Claims, Client, CompactJson, Configurable, Jws, Provider,
+    error::{Expiry, Mismatch, Missing, Validation},
+    Client, Config, Configurable, Jws, Provider,
 };
 
-pub type AccessToken<T> = Jws<T, Empty>;
+pub type AccessToken = Jws<AccessTokenClaims, Empty>;
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
@@ -17,9 +18,9 @@ pub enum Error {
 
 /// This is "fork" of the original [`Client::validate_token`] function, but implemented for
 /// validating access tokens.
-pub fn validate_token<C: CompactJson + Claims, P: Provider + Configurable>(
-    client: &Client<P, C>,
-    token: &AccessToken<C>,
+pub fn validate_token<P: Provider + Configurable>(
+    client: &Client<P>,
+    token: &AccessToken,
     audience: Option<&str>,
     max_age: Option<&Duration>,
 ) -> Result<(), Error> {
@@ -33,23 +34,73 @@ pub fn validate_token<C: CompactJson + Claims, P: Provider + Configurable>(
     Ok(())
 }
 
-pub fn validate_token_aud<C: Claims>(claims: &C, aud: Option<&str>) -> Result<(), Error> {
-    let aud = match aud {
-        Some(aud) => aud,
-        None => return Ok(()),
-    };
+// from `openid`
+fn validate_token_exp<'max_age>(
+    claims: &AccessTokenClaims,
+    max_age: impl Into<Option<&'max_age Duration>>,
+) -> Result<(), openid::error::Error> {
+    let now = Utc::now();
+    // Now should never be less than the time this code was written!
+    if now.timestamp() < 1504758600 {
+        panic!("chrono::Utc::now() can never be before this was written!")
+    }
+    let exp = claims.exp;
+    if exp <= now.timestamp() {
+        return Err(Validation::Expired(
+            chrono::naive::NaiveDateTime::from_timestamp_opt(exp, 0)
+                .map(Expiry::Expires)
+                .unwrap_or_else(|| Expiry::NotUnix(exp)),
+        )
+        .into());
+    }
 
-    if !claims.aud().contains(aud) {
-        return Err(Error::MissingAudience {
-            expected: aud.to_string(),
-            actual: claims
-                .aud()
-                .iter()
-                .map(|s| s.to_string())
-                .collect::<Vec<_>>()
-                .join(", "),
-        });
+    if let Some(max) = max_age.into() {
+        match claims.auth_time {
+            Some(time) => {
+                let age = chrono::Duration::seconds(now.timestamp() - time);
+                if age >= *max {
+                    return Err(Validation::Expired(Expiry::MaxAge(age)).into());
+                }
+            }
+            None => return Err(Validation::Missing(Missing::AuthTime).into()),
+        }
     }
 
     Ok(())
+}
+
+// from `openid`
+fn validate_token_issuer(claims: &AccessTokenClaims, config: &Config) -> Result<(), Error> {
+    if &claims.iss != &config.issuer {
+        let expected = config.issuer.as_str().to_string();
+        let actual = claims.iss.as_str().to_string();
+        return Err(Error::Common(
+            Validation::Mismatch(Mismatch::Issuer { expected, actual }).into(),
+        ));
+    }
+
+    Ok(())
+}
+
+pub fn validate_token_aud(claims: &AccessTokenClaims, required_aud: Option<&str>) -> Result<(), Error> {
+    let required_aud = match required_aud {
+        Some(required_aud) => required_aud,
+        None => return Ok(()),
+    };
+
+    match &claims.aud {
+        Some(aud) => {
+            if !aud.contains(required_aud) {
+                Err(Error::MissingAudience {
+                    expected: required_aud.to_string(),
+                    actual: aud.iter().map(|s| s.as_str()).collect::<Vec<_>>().join(", "),
+                })
+            } else {
+                Ok(())
+            }
+        }
+        None => Err(Error::Common(openid::error::Error::Validation(Validation::Missing(
+            Missing::Audience,
+        )))),
+    }
 }

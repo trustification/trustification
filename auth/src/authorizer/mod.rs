@@ -1,5 +1,7 @@
 use crate::authenticator::{error::AuthorizationError, user::UserDetails};
 
+pub enum Permission {}
+
 #[derive(Debug, Clone, Copy)]
 pub enum Authorizer {
     Enabled,
@@ -13,11 +15,11 @@ impl Default for Authorizer {
 }
 
 impl Authorizer {
-    pub fn require_role(&self, user: Option<UserDetails>, role: impl AsRef<str>) -> Result<(), AuthorizationError> {
+    pub fn require_scope(&self, user: Option<UserDetails>, scope: impl AsRef<str>) -> Result<(), AuthorizationError> {
         match self {
             Self::Enabled => {
                 if let Some(user) = user {
-                    user.require_role(role)
+                    user.require_scope(scope)
                 } else {
                     Err(AuthorizationError::Failed)
                 }

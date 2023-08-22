@@ -9,11 +9,12 @@ pub mod config;
 pub mod error;
 pub mod user;
 
-use claims::ExtendedClaims;
+use biscuit::jws::Compact;
+use claims::AccessTokenClaims;
 use config::{AuthenticatorClientConfig, AuthenticatorConfig};
 use error::AuthenticationError;
 use futures_util::{stream, StreamExt, TryStreamExt};
-use openid::{biscuit::jws::Compact, Claims, Client, CompactJson, Configurable, Discovered, Empty, Jws};
+use openid::{Client, Configurable, Discovered, Empty, Jws};
 use std::ops::Deref;
 use tracing::instrument;
 use trustification_common::reqwest::ClientFactory;
@@ -21,11 +22,11 @@ use trustification_common::reqwest::ClientFactory;
 /// An authenticator to authenticate incoming requests.
 #[derive(Clone)]
 pub struct Authenticator {
-    pub clients: Vec<AuthenticatorClient<ExtendedClaims>>,
+    pub clients: Vec<AuthenticatorClient>,
 }
 
 impl Authenticator {
-    fn from_clients(clients: Vec<AuthenticatorClient<ExtendedClaims>>) -> Self {
+    fn from_clients(clients: Vec<AuthenticatorClient>) -> Self {
         Self { clients }
     }
 
@@ -59,20 +60,16 @@ impl Authenticator {
 
     fn find_client(
         &self,
-        token: &Compact<ExtendedClaims, Empty>,
-    ) -> Result<Option<&AuthenticatorClient<ExtendedClaims>>, AuthenticationError> {
+        token: &Compact<AccessTokenClaims, Empty>,
+    ) -> Result<Option<&AuthenticatorClient>, AuthenticationError> {
         let unverified_payload = token.unverified_payload().map_err(|err| {
             log::info!("Failed to decode token payload: {}", err);
             AuthenticationError::Failed
         })?;
 
-        let client_id = unverified_payload.standard_claims.azp.as_ref();
+        let client_id = &unverified_payload.azp;
 
-        log::debug!(
-            "Searching client for: {} / {:?}",
-            unverified_payload.standard_claims.iss,
-            client_id
-        );
+        log::debug!("Searching client for: {} / {:?}", unverified_payload.iss, client_id);
 
         // find the client to use
 
@@ -81,7 +78,7 @@ impl Authenticator {
             let provider_id = &client.client_id;
 
             log::debug!("Checking client: {} / {}", provider_iss, provider_id);
-            if provider_iss != &unverified_payload.standard_claims.iss {
+            if provider_iss != &unverified_payload.iss {
                 return false;
             }
             if let Some(client_id) = client_id {
@@ -98,8 +95,8 @@ impl Authenticator {
 
     /// Validate a bearer token.
     #[instrument(level = "debug", skip_all, fields(token=token.as_ref()), ret)]
-    pub async fn validate_token<S: AsRef<str>>(&self, token: S) -> Result<ExtendedClaims, AuthenticationError> {
-        let mut token: Compact<ExtendedClaims, Empty> = Jws::new_encoded(token.as_ref());
+    pub async fn validate_token<S: AsRef<str>>(&self, token: S) -> Result<AccessTokenClaims, AuthenticationError> {
+        let mut token: Compact<AccessTokenClaims, Empty> = Jws::new_encoded(token.as_ref());
 
         let client = self.find_client(&token)?.ok_or_else(|| {
             log::debug!("Unable to find client");
@@ -127,9 +124,7 @@ impl Authenticator {
     }
 }
 
-async fn create_client<P: CompactJson + Claims>(
-    config: AuthenticatorClientConfig,
-) -> anyhow::Result<AuthenticatorClient<P>> {
+async fn create_client(config: AuthenticatorClientConfig) -> anyhow::Result<AuthenticatorClient> {
     let mut client = ClientFactory::new();
 
     if config.tls_insecure {
@@ -140,7 +135,7 @@ async fn create_client<P: CompactJson + Claims>(
         client = client.add_ca_cert(ca);
     }
 
-    let client = Client::<Discovered, P>::discover_with_client(
+    let client = Client::<Discovered>::discover_with_client(
         client.build()?,
         config.client_id,
         None,
@@ -158,19 +153,13 @@ async fn create_client<P: CompactJson + Claims>(
 }
 
 #[derive(Clone)]
-pub struct AuthenticatorClient<P>
-where
-    P: CompactJson + Claims,
-{
-    client: Client<Discovered, P>,
+pub struct AuthenticatorClient {
+    client: Client<Discovered>,
     audience: Option<String>,
 }
 
-impl<P> Deref for AuthenticatorClient<P>
-where
-    P: CompactJson + Claims,
-{
-    type Target = Client<Discovered, P>;
+impl Deref for AuthenticatorClient {
+    type Target = Client<Discovered>;
 
     fn deref(&self) -> &Self::Target {
         &self.client

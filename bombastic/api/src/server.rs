@@ -22,7 +22,7 @@ use trustification_auth::{
     authenticator::{user::UserDetails, Authenticator},
     authorizer::Authorizer,
     swagger_ui::SwaggerUiOidc,
-    ROLE_MANAGER,
+    Scope,
 };
 use trustification_index::Error as IndexError;
 use trustification_infrastructure::new_auth;
@@ -262,7 +262,7 @@ async fn publish_sbom(
     authorizer: web::Data<Authorizer>,
     user: Option<UserDetails>,
 ) -> actix_web::Result<impl Responder> {
-    authorizer.require_role(user, ROLE_MANAGER)?;
+    authorizer.require_scope(user, Scope::CreateDocument)?;
 
     let typ = verify_type(content_type)?;
     let enc = verify_encoding(req.headers().get(CONTENT_ENCODING))?;
@@ -324,7 +324,7 @@ async fn delete_sbom(
     authorizer: web::Data<Authorizer>,
     user: Option<UserDetails>,
 ) -> actix_web::Result<impl Responder> {
-    authorizer.require_role(user, ROLE_MANAGER)?;
+    authorizer.require_scope(user, Scope::DeleteDocument)?;
 
     let params = params.into_inner();
     let id = &params.id;
