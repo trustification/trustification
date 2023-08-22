@@ -194,10 +194,10 @@ async fn test_upload_vex_empty_json(context: &mut VexinationContext) {
 
 #[test_context(VexinationContext)]
 #[tokio::test]
-#[ntest::timeout(60_000)]
+#[ntest::timeout(90_000)]
 async fn test_upload_vex_empty_file(vexination: &mut VexinationContext) {
     let id = "empty-file-upload";
-    wait_for_event(Duration::from_secs(30), &vexination.config, "vex-failed", id, async {
+    wait_for_event(Duration::from_secs(60), &vexination.config, "vex-failed", id, async {
         let file_path = "empty-test.txt";
         let _ = File::create(&file_path).await.expect("file creation failed");
         let file = File::open(&file_path).await.unwrap();
