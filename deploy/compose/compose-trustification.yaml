@@ -30,12 +30,12 @@ services:
       OPENID_CONFIGURATION: "http://keycloak:8080/realms/chicken/.well-known/openid-configuration"
 
   vexination-indexer:
-    image: $TRUST_IMAGE:${TRUST_VERSION:?}
+    image: $TRUST_IMAGE:${TRUST_VERSION:?TRUST_VERSION is required}
     command: vexination indexer --devmode --storage-endpoint http://minio:9000 --kafka-bootstrap-servers kafka:9094
     restart: on-failure
 
   bombastic-api:
-    image: $TRUST_IMAGE:${TRUST_VERSION:?}
+    image: $TRUST_IMAGE:${TRUST_VERSION:?TRUST_VERSION is required}
     depends_on:
       - init-keycloak
     expose:
@@ -63,12 +63,12 @@ services:
       OPENID_CONFIGURATION: "http://keycloak:8080/realms/chicken/.well-known/openid-configuration"
 
   bombastic-indexer:
-    image: $TRUST_IMAGE:${TRUST_VERSION:?}
+    image: $TRUST_IMAGE:${TRUST_VERSION:?TRUST_VERSION is required}
     command: bombastic indexer --devmode --storage-endpoint http://minio:9000 --kafka-bootstrap-servers kafka:9094
     restart: on-failure
 
   spog-api:
-    image: $TRUST_IMAGE:${TRUST_VERSION:?}
+    image: $TRUST_IMAGE:${TRUST_VERSION:?TRUST_VERSION is required}
     depends_on:
       - init-keycloak
       - bombastic-api
@@ -98,7 +98,7 @@ services:
       OPENID_CONFIGURATION: "http://keycloak:8080/realms/chicken/.well-known/openid-configuration"
 
   spog-ui:
-    image: $TRUST_UI_IMAGE:${TRUST_VERSION:?}
+    image: $TRUST_UI_IMAGE:${TRUST_VERSION:?TRUST_VERSION is required}
     environment:
       - API_URL=http://localhost:$SPOG_API_PORT
       - BOMBASTIC_URL=http://localhost:$BOMBASTIC_API_PORT
