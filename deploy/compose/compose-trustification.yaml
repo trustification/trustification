@@ -11,7 +11,16 @@ services:
       - "$VEXINATION_API_PORT:8080"
         #command: vexination api --devmode --storage-endpoint http://minio:9000
     command:
-      -c 'while [[ "$$(curl --connect-timeout 2 -s -o /dev/null -w ''%{http_code}'' http://keycloak:8080/realms/chicken/.well-known/openid-configuration)" != "200" ]]; do echo waiting for keycloak...; sleep 5; done; echo keycloak is up; /trust vexination api --devmode --storage-endpoint http://minio:9000'
+      - -c
+      - |
+        while [[ "$$(curl --connect-timeout 2 \
+                  -s -o /dev/null -w ''%{http_code}'' \
+                  $$OPENID_CONFIGURATION)" != "200" ]]; do
+          echo waiting for keycloak...
+          sleep 5
+        done
+        echo keycloak is up
+        /trust vexination api --devmode --storage-endpoint http://minio:9000
     entrypoint: /usr/bin/bash
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:9010" ]
@@ -19,6 +28,7 @@ services:
     environment:
       ISSUER_URL: http://keycloak:8080/realms/chicken
       INFRASTRUCTURE_ENABLED: "true"
+      OPENID_CONFIGURATION: "http://keycloak:8080/realms/chicken/.well-known/openid-configuration"
 
   vexination-indexer:
     image: $TRUST_IMAGE:${TRUST_VERSION:?}
@@ -34,7 +44,16 @@ services:
     ports:
       - "$BOMBASTIC_API_PORT:8080"
     command:
-      -c 'while [[ "$$(curl --connect-timeout 2 -s -o /dev/null -w ''%{http_code}'' http://keycloak:8080/realms/chicken/.well-known/openid-configuration)" != "200" ]]; do echo waiting for keycloak...; sleep 5; done; echo keycloak is up; /trust bombastic api --devmode --storage-endpoint http://minio:9000'
+      - -c
+      - |
+        while [[ "$$(curl --connect-timeout 2 \
+                  -s -o /dev/null -w ''%{http_code}'' \
+                  $$OPENID_CONFIGURATION)" != "200" ]]; do
+          echo waiting for keycloak...
+          sleep 5
+        done
+        echo keycloak is up
+        /trust bombastic api --devmode --storage-endpoint http://minio:9000
     entrypoint: /usr/bin/bash
     restart: on-failure
     healthcheck:
@@ -42,6 +61,7 @@ services:
     environment:
       ISSUER_URL: http://keycloak:8080/realms/chicken
       INFRASTRUCTURE_ENABLED: "true"
+      OPENID_CONFIGURATION: "http://keycloak:8080/realms/chicken/.well-known/openid-configuration"
 
   bombastic-indexer:
     image: $TRUST_IMAGE:${TRUST_VERSION:?}
@@ -59,7 +79,16 @@ services:
     ports:
       - "$SPOG_API_PORT:8080"
     command:
-      -c 'while [[ "$$(curl --connect-timeout 2 -s -o /dev/null -w ''%{http_code}'' http://keycloak:8080/realms/chicken/.well-known/openid-configuration)" != "200" ]]; do echo waiting for keycloak...; sleep 5; done; echo keycloak is up; /trust spog api --devmode --bombastic-url http://bombastic-api:8080 --vexination-url http://vexination-api:8080'
+      - -c
+      - |
+        while [[ "$$(curl --connect-timeout 2 \
+                  -s -o /dev/null -w ''%{http_code}'' \
+                  $$OPENID_CONFIGURATION)" != "200" ]]; do
+          echo waiting for keycloak...
+          sleep 5
+        done
+        echo keycloak is up
+        /trust spog api --devmode --bombastic-url http://bombastic-api:8080 --vexination-url http://vexination-api:8080
     entrypoint: /usr/bin/bash
     restart: on-failure
     healthcheck:
@@ -67,6 +96,7 @@ services:
     environment:
       ISSUER_URL: http://keycloak:8080/realms/chicken
       INFRASTRUCTURE_ENABLED: "true"
+      OPENID_CONFIGURATION: "http://keycloak:8080/realms/chicken/.well-known/openid-configuration"
 
   spog-ui:
     image: $TRUST_UI_IMAGE:${TRUST_VERSION:?}
