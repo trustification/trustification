@@ -12,17 +12,14 @@
     "email",
     "profile",
     "roles",
-    "web-origins"
+    "web-origins",
+    "create:document"
   ],
   "optionalClientScopes": [
     "address",
     "microprofile-jwt",
     "offline_access",
     "phone"
-  ],
-  "defaultRoles": [
-    "chicken-user",
-    "chicken-manager"
   ],
   "attributes": {
     "access.token.lifespan": "300",

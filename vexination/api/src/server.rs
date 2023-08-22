@@ -14,12 +14,11 @@ use trustification_auth::{
     authenticator::{user::UserDetails, Authenticator},
     authorizer::Authorizer,
     swagger_ui::SwaggerUiOidc,
-    ROLE_MANAGER,
+    Scope,
 };
 use trustification_index::Error as IndexError;
 use trustification_infrastructure::new_auth;
-use trustification_storage::Error as StorageError;
-use trustification_storage::Storage;
+use trustification_storage::{Error as StorageError, Storage};
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 use vexination_model::prelude::*;
@@ -152,7 +151,7 @@ async fn publish_vex(
     authorizer: web::Data<Authorizer>,
     user: Option<UserDetails>,
 ) -> actix_web::Result<HttpResponse> {
-    authorizer.require_role(user, ROLE_MANAGER)?;
+    authorizer.require_scope(user, Scope::CreateDocument)?;
 
     let params = params.into_inner();
     let advisory = if let Some(advisory) = params.advisory {
@@ -243,7 +242,7 @@ async fn search_vex(
 
     log::info!("Querying VEX using {}", params.q);
 
-    let (result, total) = actix_web::web::block(move || {
+    let (result, total) = web::block(move || {
         let index = state.index.blocking_read();
         index.search(&params.q, params.offset, params.limit, (&params).into())
     })
