@@ -71,7 +71,7 @@ fn validate_token_exp<'max_age>(
 
 // from `openid`
 fn validate_token_issuer(claims: &AccessTokenClaims, config: &Config) -> Result<(), Error> {
-    if &claims.iss != &config.issuer {
+    if claims.iss != config.issuer {
         let expected = config.issuer.as_str().to_string();
         let actual = claims.iss.as_str().to_string();
         return Err(Error::Common(
