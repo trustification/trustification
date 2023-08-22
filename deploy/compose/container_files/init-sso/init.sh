@@ -53,17 +53,26 @@ if [[ -n "$GITHUB_CLIENT_ID" ]]; then
   fi
 fi
 
-# create scopes
-for i in create:document delete:document read:document; do
-kcadm create client-scopes -r "${REALM}" -s "name=$i" -s protocol=openid-connect || true
-done
-
 # create realm roles
 kcadm create roles -r "${REALM}" -s name=chicken-user || true
 kcadm create roles -r "${REALM}" -s name=chicken-manager || true
-kcadm create roles -r "${REALM}" -s name=chicken-admin || true
 # add chicken-user as default role
 kcadm add-roles -r "${REALM}" --rname "default-roles-${REALM}" --rolename chicken-user
+
+MANAGER_ID=$(kcadm get roles -r "${REALM}" --fields id,name --format csv --noquotes | grep ",chicken-manager" | awk -F ',' '{print $1}')
+
+# create scopes
+# shellcheck disable=SC2043
+for i in read:document; do
+kcadm create client-scopes -r "${REALM}" -s "name=$i" -s protocol=openid-connect || true
+done
+
+for i in create:document delete:document; do
+kcadm create client-scopes -r "${REALM}" -s "name=$i" -s protocol=openid-connect || true
+ID=$(kcadm get client-scopes -r "${REALM}" --fields id,name --format csv --noquotes | grep ",${i}" | awk -F ',' '{print $1}')
+# add all scopes to the chicken-manager
+kcadm create "client-scopes/${ID}/scope-mappings/realm" -r "${REALM}" -b '[{"name":"chicken-manager", "id":"'"${MANAGER_ID}"'"}]' || true
+done
 
 # create clients - frontend
 ID=$(kcadm get clients -r "${REALM}" --query exact=true --query "clientId=frontend" --fields id --format csv --noquotes)
@@ -103,7 +112,7 @@ else
 fi
 
 # set role
-kcadm add-roles -r "${REALM}" --uusername "${CHICKEN_ADMIN}" --rolename chicken-admin
+kcadm add-roles -r "${REALM}" --uusername "${CHICKEN_ADMIN}" --rolename chicken-manager
 
 # set password
 ID=$(kcadm get users -r "${REALM}" --query exact=true --query "username=${CHICKEN_ADMIN}" --fields id --format csv --noquotes)
