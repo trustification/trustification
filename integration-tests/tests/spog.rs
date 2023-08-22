@@ -9,7 +9,7 @@ use trustification_auth::client::TokenInjector;
 #[test_context(SpogContext)]
 #[tokio::test]
 #[ntest::timeout(30_000)]
-async fn test_version(context: &mut SpogContext) {
+async fn spog_version(context: &mut SpogContext) {
     let response = reqwest::Client::new()
         .get(context.urlify("/.well-known/trustification/version"))
         .inject_token(&context.provider.provider_user)
@@ -29,7 +29,7 @@ async fn test_version(context: &mut SpogContext) {
 #[test_context(SpogContext)]
 #[tokio::test]
 #[ntest::timeout(30_000)]
-async fn test_search_forward_bombastic(context: &mut SpogContext) {
+async fn spog_search_forward_bombastic(context: &mut SpogContext) {
     let client = reqwest::Client::new();
 
     let response = client
@@ -65,7 +65,7 @@ async fn test_search_forward_bombastic(context: &mut SpogContext) {
 #[test_context(SpogContext)]
 #[tokio::test]
 #[ntest::timeout(30_000)]
-async fn test_search_forward_vexination(context: &mut SpogContext) {
+async fn spog_search_forward_vexination(context: &mut SpogContext) {
     let client = reqwest::Client::new();
 
     let response = client
@@ -84,7 +84,7 @@ async fn test_search_forward_vexination(context: &mut SpogContext) {
 #[test_context(SpogContext)]
 #[tokio::test]
 #[ntest::timeout(60_000)]
-async fn test_crda_integration(context: &mut SpogContext) {
+async fn spog_crda_integration(context: &mut SpogContext) {
     let client = reqwest::Client::new();
 
     let sbom = include_bytes!("crda/test1.sbom.json");
@@ -112,7 +112,7 @@ async fn test_crda_integration(context: &mut SpogContext) {
 #[test_context(SpogContext)]
 #[tokio::test]
 #[ntest::timeout(60_000)]
-async fn test_search_correlation(context: &mut SpogContext) {
+async fn spog_search_correlation(context: &mut SpogContext) {
     let input = serde_json::from_str(include_str!("testdata/correlation/stf-1.5.json")).unwrap();
     upload_sbom(&context.bombastic, "stf-1.5", &input).await;
 
