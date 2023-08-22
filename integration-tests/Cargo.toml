@@ -18,6 +18,7 @@ log = "0.4"
 test-context = "0.1"
 test-with = "0.9"
 ntest = "0.9"
+time = "0.3"
 
 bombastic-api = { path = "../bombastic/api" }
 bombastic-indexer = { path = "../bombastic/indexer" }

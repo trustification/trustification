@@ -17,7 +17,7 @@ use tantivy::{
     store::ZstdCompressor,
     DocAddress, IndexSettings, Searcher, SnippetGenerator,
 };
-use time::format_description::well_known::Rfc3339;
+use time::{format_description::well_known::Rfc3339, OffsetDateTime};
 use trustification_api::search::SearchOptions;
 use trustification_index::{
     boost, create_boolean_query, create_date_query, create_string_query, create_text_query, field2str, field2strvec,
@@ -55,6 +55,7 @@ pub struct PackageFields {
 }
 
 struct Fields {
+    indexed_timestamp: Field,
     sbom_id: Field,
     sbom_created: Field,
     sbom_created_inverse: Field,
@@ -74,6 +75,7 @@ impl Index {
     pub fn new() -> Self {
         let mut schema = Schema::builder();
         let fields = Fields {
+            indexed_timestamp: schema.add_date_field("indexed_timestamp", STORED),
             sbom_id: schema.add_text_field("sbom_id", STRING | FAST | STORED),
             sbom_created: schema.add_date_field("sbom_created", INDEXED | FAST | STORED),
             sbom_created_inverse: schema.add_date_field("sbom_created_inverse", FAST),
@@ -127,6 +129,10 @@ impl Index {
 
         document.add_text(self.fields.sbom_id, id);
         document.add_text(self.fields.sbom_name, &bom.document_creation_information.document_name);
+        document.add_date(
+            self.fields.indexed_timestamp,
+            DateTime::from_utc(OffsetDateTime::now_utc()),
+        );
 
         for creators in &bom.document_creation_information.creation_info.creators {
             document.add_text(self.fields.sbom_creators, creators);
@@ -216,6 +222,10 @@ impl Index {
         let mut document = doc!();
 
         document.add_text(self.fields.sbom_id, id);
+        document.add_date(
+            self.fields.indexed_timestamp,
+            DateTime::from_utc(OffsetDateTime::now_utc()),
+        );
         if let Some(metadata) = &bom.metadata {
             if let Some(timestamp) = &metadata.timestamp {
                 let timestamp = timestamp.to_string();
@@ -619,6 +629,7 @@ impl trustification_index::Index for Index {
 
 #[cfg(test)]
 mod tests {
+    use time::format_description;
     use trustification_index::IndexStore;
 
     use super::*;
@@ -798,6 +809,32 @@ mod tests {
         assert_search(|index| {
             let result = search(&index, "\"Red Hat\" in:supplier");
             assert_eq!(result.0.len(), 2);
+        });
+    }
+
+    #[tokio::test]
+    async fn test_metadata() {
+        let now = OffsetDateTime::now_utc();
+        assert_search(|index| {
+            let result = index
+                .search(
+                    "",
+                    0,
+                    10000,
+                    SearchOptions {
+                        explain: false,
+                        metadata: true,
+                    },
+                )
+                .unwrap();
+            assert_eq!(result.0.len(), 3);
+            for result in result.0 {
+                assert!(result.metadata.is_some());
+                let indexed_date = result.metadata.as_ref().unwrap()["indexed_timestamp"].clone();
+                let value: &str = indexed_date["values"][0].as_str().unwrap();
+                let indexed_date = OffsetDateTime::parse(value, &format_description::well_known::Rfc3339).unwrap();
+                assert!(indexed_date >= now);
+            }
         });
     }
 
