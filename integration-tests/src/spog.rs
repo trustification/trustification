@@ -11,9 +11,15 @@ impl AsyncTestContext for SpogContext {
     }
 }
 
+impl Urlifier for SpogContext {
+    fn base_url(&self) -> &Url {
+        &self.url
+    }
+}
+
 pub struct SpogContext {
     pub provider: ProviderContext,
-    pub port: u16,
+    pub url: Url,
 
     pub bombastic: BombasticContext,
     pub vexination: VexinationContext,
@@ -26,18 +32,19 @@ pub async fn start_spog(provider: ProviderContext) -> SpogContext {
 
     let listener = TcpListener::bind("localhost:0").unwrap();
     let port = listener.local_addr().unwrap().port();
+    let url = Url::parse(&format!("http://localhost:{port}")).unwrap();
 
     let bombastic = start_bombastic(provider.clone()).await;
     let vexination = start_vexination(provider.clone()).await;
 
-    let bport = bombastic.port;
-    let vport = vexination.port;
+    let burl = bombastic.url.to_owned();
+    let vurl = vexination.url.to_owned();
 
     let runner = Runner::spawn(move || async move {
         select! {
             biased;
 
-            spog = spog_api(bport, vport).run(Some(listener)) => match spog {
+            spog = spog_api(burl, vurl).run(Some(listener)) => match spog {
                 Err(e) => {
                     panic!("Error running spog API: {e:?}");
                 }
@@ -54,7 +61,7 @@ pub async fn start_spog(provider: ProviderContext) -> SpogContext {
     // Create context right after spawning, as we clean up as soon as the context drops
 
     let context = SpogContext {
-        port,
+        url,
         provider,
         bombastic,
         vexination,
@@ -66,7 +73,7 @@ pub async fn start_spog(provider: ProviderContext) -> SpogContext {
     let client = reqwest::Client::new();
     loop {
         let response = client
-            .get(format!("http://localhost:{port}/api/v1/sbom?id=none"))
+            .get(context.urlify("/api/v1/sbom?id=none"))
             .inject_token(&context.provider.provider_user)
             .await
             .unwrap()
@@ -84,14 +91,14 @@ pub async fn start_spog(provider: ProviderContext) -> SpogContext {
     context
 }
 
-fn spog_api(bport: u16, vport: u16) -> spog_api::Run {
+fn spog_api(burl: Url, vurl: Url) -> spog_api::Run {
     spog_api::Run {
         devmode: false,
         bind: Default::default(),
         port: 8083,
         guac_url: Default::default(),
-        bombastic_url: format!("http://localhost:{bport}").parse().unwrap(),
-        vexination_url: format!("http://localhost:{vport}").parse().unwrap(),
+        bombastic_url: burl,
+        vexination_url: vurl,
         crda_url: option_env!("CRDA_URL").map(|url| url.parse().unwrap()),
         crda_payload_limit: DEFAULT_CRDA_PAYLOAD_LIMIT,
         config: None,

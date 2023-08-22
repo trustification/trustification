@@ -11,9 +11,15 @@ impl AsyncTestContext for VexinationContext {
     }
 }
 
+impl Urlifier for VexinationContext {
+    fn base_url(&self) -> &Url {
+        &self.url
+    }
+}
+
 pub struct VexinationContext {
+    pub url: Url,
     pub provider: ProviderContext,
-    pub port: u16,
     pub config: EventBusConfig,
     _runner: Runner,
 }
@@ -23,6 +29,7 @@ pub async fn start_vexination(provider: ProviderContext) -> VexinationContext {
 
     let listener = TcpListener::bind("localhost:0").unwrap();
     let port = listener.local_addr().unwrap().port();
+    let url = Url::parse(&format!("http://localhost:{port}")).unwrap();
     let indexer = vexination_indexer();
     let config = indexer.bus.clone();
 
@@ -55,7 +62,7 @@ pub async fn start_vexination(provider: ProviderContext) -> VexinationContext {
     // Create context right after spawning, as we clean up as soon as the context drops
 
     let context = VexinationContext {
-        port,
+        url,
         provider,
         config,
         _runner: runner,
@@ -66,7 +73,7 @@ pub async fn start_vexination(provider: ProviderContext) -> VexinationContext {
     let client = reqwest::Client::new();
     loop {
         let response = client
-            .get(format!("http://localhost:{port}/api/v1/vex?advisory=none"))
+            .get(context.urlify("/api/v1/vex?advisory=none"))
             .inject_token(&context.provider.provider_user)
             .await
             .unwrap()
@@ -84,11 +91,11 @@ pub async fn start_vexination(provider: ProviderContext) -> VexinationContext {
     context
 }
 
-pub async fn upload_vex(port: u16, input: &serde_json::Value, context: &ProviderContext) {
+pub async fn upload_vex(context: &VexinationContext, input: &serde_json::Value) {
     let response = reqwest::Client::new()
-        .post(format!("http://localhost:{port}/api/v1/vex"))
+        .post(context.urlify("/api/v1/vex"))
         .json(input)
-        .inject_token(&context.provider_manager)
+        .inject_token(&context.provider.provider_manager)
         .await
         .unwrap()
         .send()
