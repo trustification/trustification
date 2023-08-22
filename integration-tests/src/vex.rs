@@ -20,7 +20,7 @@ impl Urlifier for VexinationContext {
 pub struct VexinationContext {
     pub url: Url,
     pub provider: ProviderContext,
-    pub config: EventBusConfig,
+    pub events: EventBusConfig,
     _runner: Runner,
 }
 
@@ -31,7 +31,7 @@ pub async fn start_vexination(provider: ProviderContext) -> VexinationContext {
     let port = listener.local_addr().unwrap().port();
     let url = Url::parse(&format!("http://localhost:{port}")).unwrap();
     let indexer = vexination_indexer();
-    let config = indexer.bus.clone();
+    let events = indexer.bus.clone();
 
     let runner = Runner::spawn(|| async {
         select! {
@@ -64,7 +64,7 @@ pub async fn start_vexination(provider: ProviderContext) -> VexinationContext {
     let context = VexinationContext {
         url,
         provider,
-        config,
+        events,
         _runner: runner,
     };
 

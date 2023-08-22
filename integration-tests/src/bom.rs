@@ -21,7 +21,7 @@ impl Urlifier for BombasticContext {
 pub struct BombasticContext {
     pub url: Url,
     pub provider: ProviderContext,
-    pub config: EventBusConfig,
+    pub events: EventBusConfig,
     _runner: Runner,
 }
 
@@ -32,7 +32,7 @@ pub async fn start_bombastic(provider: ProviderContext) -> BombasticContext {
     let port = listener.local_addr().unwrap().port();
     let url = Url::parse(&format!("http://localhost:{port}")).unwrap();
     let indexer = bombastic_indexer();
-    let config = indexer.bus.clone();
+    let events = indexer.bus.clone();
 
     let runner = Runner::spawn(|| async {
         select! {
@@ -64,7 +64,7 @@ pub async fn start_bombastic(provider: ProviderContext) -> BombasticContext {
     let context = BombasticContext {
         url,
         provider,
-        config,
+        events,
         _runner: runner,
     };
 

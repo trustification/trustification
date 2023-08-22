@@ -41,8 +41,8 @@ pub async fn assert_within_timeout<F: Future>(t: Duration, f: F) {
     );
 }
 
-pub async fn wait_for_event<F: Future>(t: Duration, config: &EventBusConfig, bus_name: &str, id: &str, f: F) {
-    let bus = config.create(&prometheus::Registry::new()).await.unwrap();
+pub async fn wait_for_event<F: Future>(t: Duration, events: &EventBusConfig, bus_name: &str, id: &str, f: F) {
+    let bus = events.create(&prometheus::Registry::new()).await.unwrap();
     let consumer = bus.subscribe("test-client", &[bus_name]).await.unwrap();
     assert_within_timeout(t, async {
         f.await;
