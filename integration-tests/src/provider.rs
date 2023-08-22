@@ -10,17 +10,17 @@ pub struct ProviderContext {
 
 pub async fn create_provider_context() -> ProviderContext {
     ProviderContext {
-        provider_user: create_provider("testing-user").await,
-        provider_manager: create_provider("testing-manager").await,
+        provider_user: create_provider("testing-user", SSO_TESTING_CLIENT_SECRET, SSO_ENDPOINT).await,
+        provider_manager: create_provider("testing-manager", SSO_TESTING_CLIENT_SECRET, SSO_ENDPOINT).await,
     }
 }
 
-async fn create_provider(client_id: &str) -> Arc<OpenIdTokenProvider> {
+pub async fn create_provider(client_id: &str, secret: &str, issuer: &str) -> Arc<OpenIdTokenProvider> {
     let client_user = openid::Client::discover(
         client_id.into(),
-        Some(SSO_TESTING_CLIENT_SECRET.to_string()),
+        Some(secret.to_string()),
         None,
-        SSO_ENDPOINT.parse().unwrap(),
+        issuer.parse().unwrap(),
     )
     .await
     .unwrap();

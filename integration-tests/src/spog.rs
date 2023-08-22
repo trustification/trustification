@@ -1,13 +1,13 @@
 use super::*;
-use crate::runner::Runner;
+use crate::{config::Config, runner::Runner};
 use async_trait::async_trait;
 use test_context::AsyncTestContext;
 
 #[async_trait]
 impl AsyncTestContext for SpogContext {
     async fn setup() -> Self {
-        let provider = create_provider_context().await;
-        start_spog(provider).await
+        let config = Config::new().await;
+        start_spog(&config).await
     }
 }
 
@@ -24,18 +24,28 @@ pub struct SpogContext {
     pub bombastic: BombasticContext,
     pub vexination: VexinationContext,
 
-    _runner: Runner,
+    _runner: Option<Runner>,
 }
 
-pub async fn start_spog(provider: ProviderContext) -> SpogContext {
-    let _ = env_logger::try_init();
+pub async fn start_spog(config: &Config) -> SpogContext {
+    // If remote server is configured, use it
+    if let Some(url) = config.spog.clone() {
+        return SpogContext {
+            url,
+            provider: config.provider().await,
+            bombastic: start_bombastic(config).await,
+            vexination: start_vexination(config).await,
+            _runner: None,
+        };
+    }
 
+    // No remote server requested, so fire up spog on ephemeral port
     let listener = TcpListener::bind("localhost:0").unwrap();
     let port = listener.local_addr().unwrap().port();
     let url = Url::parse(&format!("http://localhost:{port}")).unwrap();
 
-    let bombastic = start_bombastic(provider.clone()).await;
-    let vexination = start_vexination(provider.clone()).await;
+    let bombastic = start_bombastic(config).await;
+    let vexination = start_vexination(config).await;
 
     let burl = bombastic.url.to_owned();
     let vurl = vexination.url.to_owned();
@@ -59,17 +69,15 @@ pub async fn start_spog(provider: ProviderContext) -> SpogContext {
     });
 
     // Create context right after spawning, as we clean up as soon as the context drops
-
     let context = SpogContext {
         url,
-        provider,
+        provider: config.provider().await,
         bombastic,
         vexination,
-        _runner: runner,
+        _runner: Some(runner),
     };
 
     // ensure it's initialized
-
     let client = reqwest::Client::new();
     loop {
         let response = client
@@ -87,7 +95,6 @@ pub async fn start_spog(provider: ProviderContext) -> SpogContext {
     }
 
     // return the context
-
     context
 }
 
