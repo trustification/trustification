@@ -42,7 +42,7 @@ jobs:
       matrix:
         include:
           - name: trust
-            containerfile: Containerfile.trust
+            containerfile: Containerfile
           - name: trust-ui
             containerfile: Containerfile.ui
           - name: trust-docs

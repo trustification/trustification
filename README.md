@@ -90,5 +90,5 @@ cargo build
 To use containers to build and package:
 
 ``` shell
-podman build -t trust -f Containerfile.trust .
+podman build -t trust -f Containerfile .
 ```
