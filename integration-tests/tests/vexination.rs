@@ -148,7 +148,7 @@ async fn test_vex_invalid_encoding(vexination: &mut VexinationContext) {
 #[ntest::timeout(60_0000)]
 async fn test_upload_vex_empty_json(context: &mut VexinationContext) {
     let id = "empty-file-json";
-    wait_for_event(Duration::from_secs(30), &context.config, "vex-failed", id, async {
+    wait_for_event(Duration::from_secs(30), &context.events, "vex-failed", id, async {
         let input = serde_json::json!({});
         let response = reqwest::Client::new()
             .post(context.urlify(format!("/api/v1/vex?advisory={id}")))
@@ -169,7 +169,7 @@ async fn test_upload_vex_empty_json(context: &mut VexinationContext) {
 #[ntest::timeout(90_000)]
 async fn test_upload_vex_empty_file(vexination: &mut VexinationContext) {
     let id = "empty-file-upload";
-    wait_for_event(Duration::from_secs(60), &vexination.config, "vex-failed", id, async {
+    wait_for_event(Duration::from_secs(60), &vexination.events, "vex-failed", id, async {
         let file_path = "empty-test.txt";
         let _ = File::create(&file_path).await.expect("file creation failed");
         let file = File::open(&file_path).await.unwrap();
