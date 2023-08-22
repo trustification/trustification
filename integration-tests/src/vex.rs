@@ -1,13 +1,13 @@
 use super::*;
-use crate::runner::Runner;
+use crate::{config::Config, runner::Runner};
 use async_trait::async_trait;
 use test_context::AsyncTestContext;
 
 #[async_trait]
 impl AsyncTestContext for VexinationContext {
     async fn setup() -> Self {
-        let provider = create_provider_context().await;
-        start_vexination(provider).await
+        let config = Config::new().await;
+        start_vexination(&config).await
     }
 }
 
@@ -21,12 +21,21 @@ pub struct VexinationContext {
     pub url: Url,
     pub provider: ProviderContext,
     pub events: EventBusConfig,
-    _runner: Runner,
+    _runner: Option<Runner>,
 }
 
-pub async fn start_vexination(provider: ProviderContext) -> VexinationContext {
-    let _ = env_logger::try_init();
+pub async fn start_vexination(config: &Config) -> VexinationContext {
+    // If remote server is configured, use it
+    if let Some(url) = config.vexination.clone() {
+        return VexinationContext {
+            url,
+            provider: config.provider().await,
+            events: config.events(),
+            _runner: None,
+        };
+    }
 
+    // No remote server requested, so fire up vexination on ephemeral port
     let listener = TcpListener::bind("localhost:0").unwrap();
     let port = listener.local_addr().unwrap().port();
     let url = Url::parse(&format!("http://localhost:{port}")).unwrap();
@@ -60,16 +69,15 @@ pub async fn start_vexination(provider: ProviderContext) -> VexinationContext {
     });
 
     // Create context right after spawning, as we clean up as soon as the context drops
-
+    let provider = config.provider().await;
     let context = VexinationContext {
         url,
         provider,
         events,
-        _runner: runner,
+        _runner: Some(runner),
     };
 
     // ensure it's initialized
-
     let client = reqwest::Client::new();
     loop {
         let response = client
@@ -87,7 +95,6 @@ pub async fn start_vexination(provider: ProviderContext) -> VexinationContext {
     }
 
     // return the context
-
     context
 }
 

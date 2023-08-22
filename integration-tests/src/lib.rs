@@ -1,4 +1,5 @@
 mod bom;
+mod config;
 mod provider;
 mod spog;
 mod vex;

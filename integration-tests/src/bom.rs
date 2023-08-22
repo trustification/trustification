@@ -1,5 +1,5 @@
 use super::*;
-use crate::runner::Runner;
+use crate::{config::Config, runner::Runner};
 use async_trait::async_trait;
 use reqwest::Url;
 use test_context::AsyncTestContext;
@@ -7,8 +7,8 @@ use test_context::AsyncTestContext;
 #[async_trait]
 impl AsyncTestContext for BombasticContext {
     async fn setup() -> Self {
-        let provider = create_provider_context().await;
-        start_bombastic(provider).await
+        let config = Config::new().await;
+        start_bombastic(&config).await
     }
 }
 
@@ -22,12 +22,21 @@ pub struct BombasticContext {
     pub url: Url,
     pub provider: ProviderContext,
     pub events: EventBusConfig,
-    _runner: Runner,
+    _runner: Option<Runner>,
 }
 
-pub async fn start_bombastic(provider: ProviderContext) -> BombasticContext {
-    let _ = env_logger::try_init();
+pub async fn start_bombastic(config: &Config) -> BombasticContext {
+    // If remote server is configured, use it
+    if let Some(url) = config.bombastic.clone() {
+        return BombasticContext {
+            url,
+            provider: config.provider().await,
+            events: config.events(),
+            _runner: None,
+        };
+    }
 
+    // No remote server requested, so fire up bombastic on ephemeral port
     let listener = TcpListener::bind("localhost:0").unwrap();
     let port = listener.local_addr().unwrap().port();
     let url = Url::parse(&format!("http://localhost:{port}")).unwrap();
@@ -60,16 +69,14 @@ pub async fn start_bombastic(provider: ProviderContext) -> BombasticContext {
     });
 
     // Create context right after spawning, as we clean up as soon as the context drops
-
     let context = BombasticContext {
         url,
-        provider,
+        provider: config.provider().await,
         events,
-        _runner: runner,
+        _runner: Some(runner),
     };
 
     // ensure it's initialized
-
     let client = reqwest::Client::new();
     loop {
         let response = client
@@ -87,7 +94,6 @@ pub async fn start_bombastic(provider: ProviderContext) -> BombasticContext {
     }
 
     // return the context
-
     context
 }
 
