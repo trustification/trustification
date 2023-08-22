@@ -7,6 +7,7 @@ use std::time::Duration;
 use test_context::test_context;
 use tokio::fs::{remove_file, File};
 use trustification_auth::client::TokenInjector;
+use trustification_index::tantivy::time::OffsetDateTime;
 use urlencoding::encode;
 
 #[test_context(BombasticContext)]
@@ -118,7 +119,7 @@ async fn test_delete_missing(context: &mut BombasticContext) {
 
 #[test_context(BombasticContext)]
 #[tokio::test]
-#[ntest::timeout(60_000)]
+#[ntest::timeout(90_000)]
 async fn bombastic_search(context: &mut BombasticContext) {
     let mut input: Value = serde_json::from_str(include_str!("../../bombastic/testdata/ubi9-sbom.json")).unwrap();
 
@@ -170,6 +171,46 @@ async fn bombastic_search(context: &mut BombasticContext) {
                 .await
                 .unwrap();
             assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+        }
+    })
+    .await;
+
+    // Update and check reindex
+    upload_sbom(context.port, &key, &input, &context.provider).await;
+    let now = OffsetDateTime::now_utc();
+    assert_within_timeout(Duration::from_secs(30), async {
+        loop {
+            let url = format!(
+                "http://localhost:{port}/api/v1/sbom/search?q={query}&metadata=true",
+                port = context.port,
+                query = encode(&key)
+            );
+            let response = reqwest::Client::new()
+                .get(url)
+                .inject_token(&context.provider.provider_manager)
+                .await
+                .unwrap()
+                .send()
+                .await
+                .unwrap();
+            assert_eq!(response.status(), StatusCode::OK);
+            let payload: Value = response.json().await.unwrap();
+            if payload["total"].as_u64().unwrap() >= 1 {
+                let format = &time::format_description::well_known::Rfc3339;
+                let ts = OffsetDateTime::parse(
+                    payload["result"][0]["$metadata"]["indexed_timestamp"]["values"][0]
+                        .as_str()
+                        .unwrap(),
+                    format,
+                )
+                .unwrap();
+                if ts > now {
+                    break;
+                } else {
+                    println!("Not yet updated, waiting");
+                }
+            }
+            tokio::time::sleep(Duration::from_secs(1)).await;
         }
     })
     .await;

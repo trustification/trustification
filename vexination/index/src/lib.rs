@@ -39,6 +39,8 @@ pub struct Index {
 }
 
 struct Fields {
+    indexed_timestamp: Field,
+
     advisory_id: Field,
     advisory_status: Field,
     advisory_title: Field,
@@ -106,6 +108,11 @@ impl trustification_index::Index for Index {
             self.fields.advisory_id => id,
             self.fields.advisory_status => document_status,
             self.fields.advisory_title => csaf.document.title.clone(),
+        );
+
+        document.add_date(
+            self.fields.indexed_timestamp,
+            DateTime::from_utc(OffsetDateTime::now_utc()),
         );
 
         if let Some(notes) = &csaf.document.notes {
@@ -493,6 +500,8 @@ impl Index {
     // TODO use CONST for field names
     pub fn new() -> Self {
         let mut schema = Schema::builder();
+        let indexed_timestamp = schema.add_date_field("indexed_timestamp", STORED);
+
         let advisory_id = schema.add_text_field("advisory_id", STRING | FAST | STORED);
         let advisory_status = schema.add_text_field("advisory_status", STRING);
         let advisory_title = schema.add_text_field("advisory_title", TEXT | STORED);
@@ -523,6 +532,8 @@ impl Index {
         Self {
             schema: schema.build(),
             fields: Fields {
+                indexed_timestamp,
+
                 advisory_id,
                 advisory_status,
                 advisory_title,
@@ -749,6 +760,7 @@ fn rewrite_cpe(value: &str) -> String {
 
 #[cfg(test)]
 mod tests {
+    use time::format_description;
     use trustification_index::IndexStore;
 
     use super::*;
@@ -986,6 +998,32 @@ mod tests {
             assert_eq!(result.0[0].document.advisory_id, "RHSA-2023:3408");
             assert_eq!(result.0[1].document.advisory_id, "RHSA-2023:1441");
             assert!(result.0[0].document.advisory_date > result.0[1].document.advisory_date);
+        });
+    }
+
+    #[tokio::test]
+    async fn test_metadata() {
+        let now = OffsetDateTime::now_utc();
+        assert_search(|index| {
+            let result = index
+                .search(
+                    "",
+                    0,
+                    10000,
+                    SearchOptions {
+                        explain: false,
+                        metadata: true,
+                    },
+                )
+                .unwrap();
+            assert_eq!(result.0.len(), 3);
+            for result in result.0 {
+                assert!(result.metadata.is_some());
+                let indexed_date = result.metadata.as_ref().unwrap()["indexed_timestamp"].clone();
+                let value: &str = indexed_date["values"][0].as_str().unwrap();
+                let indexed_date = OffsetDateTime::parse(value, &format_description::well_known::Rfc3339).unwrap();
+                assert!(indexed_date >= now);
+            }
         });
     }
 }
