@@ -1,6 +1,6 @@
 use integration_tests::{
     assert_within_timeout, delete_sbom, get_response, id, upload_sbom, wait_for_event, wait_for_search_result,
-    BombasticContext,
+    BombasticContext, Urlifier,
 };
 use reqwest::StatusCode;
 use serde_json::{json, Value};
@@ -17,12 +17,9 @@ use urlencoding::encode;
 async fn test_upload(context: &mut BombasticContext) {
     let input = serde_json::from_str(include_str!("../../bombastic/testdata/my-sbom.json")).unwrap();
     let id = "test-upload";
-    upload_sbom(context.port, id, &input, &context.provider).await;
+    upload_sbom(context, id, &input).await;
     let response = reqwest::Client::new()
-        .get(format!(
-            "http://localhost:{port}/api/v1/sbom?id={id}",
-            port = context.port
-        ))
+        .get(context.urlify(format!("/api/v1/sbom?id={id}")))
         .inject_token(&context.provider.provider_manager)
         .await
         .unwrap()
@@ -40,11 +37,11 @@ async fn test_upload(context: &mut BombasticContext) {
 async fn test_delete(context: &mut BombasticContext) {
     let input = serde_json::from_str(include_str!("../../bombastic/testdata/my-sbom.json")).unwrap();
     let id = "test-delete";
-    upload_sbom(context.port, id, &input, &context.provider).await;
-    let url = &format!("http://localhost:{port}/api/v1/sbom?id={id}", port = context.port);
+    upload_sbom(context, id, &input).await;
+    let url = context.urlify(format!("/api/v1/sbom?id={id}"));
     let client = reqwest::Client::new();
     let response = client
-        .get(url)
+        .get(url.clone())
         .inject_token(&context.provider.provider_manager)
         .await
         .unwrap()
@@ -53,7 +50,7 @@ async fn test_delete(context: &mut BombasticContext) {
         .unwrap();
     assert_eq!(response.status(), StatusCode::OK);
     let response = client
-        .delete(url)
+        .delete(url.clone())
         .inject_token(&context.provider.provider_manager)
         .await
         .unwrap()
@@ -62,7 +59,7 @@ async fn test_delete(context: &mut BombasticContext) {
         .unwrap();
     assert_eq!(response.status(), StatusCode::NO_CONTENT);
     let response = client
-        .get(url)
+        .get(url.clone())
         .inject_token(&context.provider.provider_manager)
         .await
         .unwrap()
@@ -71,7 +68,7 @@ async fn test_delete(context: &mut BombasticContext) {
         .unwrap();
     assert_eq!(response.status(), StatusCode::NOT_FOUND);
     let response = client
-        .delete(url)
+        .delete(url.clone())
         .inject_token(&context.provider.provider_manager)
         .await
         .unwrap()
@@ -87,7 +84,7 @@ async fn test_delete(context: &mut BombasticContext) {
 async fn test_delete_missing(context: &mut BombasticContext) {
     let client = reqwest::Client::new();
     let response = client
-        .delete(format!("http://localhost:{port}/api/v1/sbom", port = context.port))
+        .delete(context.urlify(format!("/api/v1/sbom")))
         .inject_token(&context.provider.provider_manager)
         .await
         .unwrap()
@@ -96,7 +93,7 @@ async fn test_delete_missing(context: &mut BombasticContext) {
         .unwrap();
     assert_eq!(response.status(), StatusCode::BAD_REQUEST);
     let response = client
-        .delete(format!("http://localhost:{port}/api/v1/sbom?id=", port = context.port))
+        .delete(context.urlify(format!("/api/v1/sbom?id=")))
         .inject_token(&context.provider.provider_manager)
         .await
         .unwrap()
@@ -105,10 +102,7 @@ async fn test_delete_missing(context: &mut BombasticContext) {
         .unwrap();
     assert_eq!(response.status(), StatusCode::NO_CONTENT);
     let response = client
-        .delete(format!(
-            "http://localhost:{port}/api/v1/sbom?id=missing",
-            port = context.port
-        ))
+        .delete(context.urlify(format!("/api/v1/sbom?id=missing")))
         .inject_token(&context.provider.provider_manager)
         .await
         .unwrap()
@@ -128,7 +122,7 @@ async fn test_bombastic_search(context: &mut BombasticContext) {
     let key = id("test-search");
     input["packages"][617]["versionInfo"] = json!(key);
 
-    upload_sbom(context.port, &key, &input, &context.provider).await;
+    upload_sbom(context, &key, &input).await;
 
     wait_for_search_result(context, &[("q", &encode(&key))], Duration::from_secs(30), |response| {
         if response["total"].as_u64().unwrap() >= 1 {
@@ -151,10 +145,7 @@ async fn test_bombastic_bad_search_queries(context: &mut BombasticContext) {
             "ubi9-container-9.1.0-1782.testdata sort:unknown",
         ] {
             let query = encode(query);
-            let url = format!(
-                "http://localhost:{port}/api/v1/sbom/search?q={query}",
-                port = context.port
-            );
+            let url = context.urlify(format!("/api/v1/sbom/search?q={query}"));
             let response = reqwest::Client::new()
                 .get(url)
                 .inject_token(&context.provider.provider_manager)
@@ -179,7 +170,7 @@ async fn test_bombastic_reindexing(context: &mut BombasticContext) {
     let key = id("test-reindexing");
     input["packages"][617]["versionInfo"] = json!(key);
 
-    upload_sbom(context.port, &key, &input, &context.provider).await;
+    upload_sbom(context, &key, &input).await;
 
     wait_for_search_result(context, &[("q", &encode(&key))], Duration::from_secs(30), |response| {
         if response["total"].as_u64().unwrap() >= 1 {
@@ -194,7 +185,7 @@ async fn test_bombastic_reindexing(context: &mut BombasticContext) {
     let now = OffsetDateTime::now_utc();
 
     // Push update and check reindex
-    upload_sbom(context.port, &key, &input, &context.provider).await;
+    upload_sbom(context, &key, &input).await;
 
     wait_for_search_result(
         context,
@@ -228,7 +219,7 @@ async fn test_bombastic_deletion(context: &mut BombasticContext) {
     let key = id("test-index-deletion");
     input["packages"][617]["versionInfo"] = json!(key);
 
-    upload_sbom(context.port, &key, &input, &context.provider).await;
+    upload_sbom(context, &key, &input).await;
 
     wait_for_search_result(context, &[("q", &encode(&key))], Duration::from_secs(30), |response| {
         if response["total"].as_u64().unwrap() >= 1 {
@@ -240,7 +231,7 @@ async fn test_bombastic_deletion(context: &mut BombasticContext) {
     })
     .await;
 
-    delete_sbom(context.port, &key, &context.provider).await;
+    delete_sbom(context, &key).await;
 
     wait_for_search_result(context, &[("q", &encode(&key))], Duration::from_secs(30), |response| {
         response["total"].as_u64().unwrap() == 1
@@ -253,10 +244,7 @@ async fn test_bombastic_deletion(context: &mut BombasticContext) {
 #[ntest::timeout(60_000)]
 async fn test_invalid_type(context: &mut BombasticContext) {
     let response = reqwest::Client::new()
-        .post(format!(
-            "http://localhost:{port}/api/v1/sbom?id=foo",
-            port = context.port
-        ))
+        .post(context.urlify(format!("/api/v1/sbom?id=foo")))
         .body("<foo/>")
         .header("Content-Type", "application/xml")
         .inject_token(&context.provider.provider_manager)
@@ -274,10 +262,7 @@ async fn test_invalid_type(context: &mut BombasticContext) {
 #[ntest::timeout(60_000)]
 async fn test_invalid_encoding(context: &mut BombasticContext) {
     let response = reqwest::Client::new()
-        .post(format!(
-            "http://localhost:{port}/api/v1/sbom?id=foo",
-            port = context.port
-        ))
+        .post(context.urlify(format!("/api/v1/sbom?id=foo")))
         .body("{}")
         .header("Content-Type", "application/json")
         .header("Content-Encoding", "braille")
@@ -297,14 +282,14 @@ async fn test_invalid_encoding(context: &mut BombasticContext) {
 async fn test_upload_sbom_existing_without_change(context: &mut BombasticContext) {
     let input = serde_json::from_str(include_str!("../../bombastic/testdata/my-sbom.json")).unwrap();
     let id = "test-upload-without-change";
-    let api_end_point = format!("api/v1/sbom?id={id}");
-    upload_sbom(context.port, id, &input, &context.provider).await;
-    let response: Value = get_response(context.port, &api_end_point, StatusCode::OK, &context.provider)
+    let api_end_point = context.urlify(format!("api/v1/sbom?id={id}"));
+    upload_sbom(context, id, &input).await;
+    let response: Value = get_response(&api_end_point, StatusCode::OK, &context.provider)
         .await
         .into();
     assert_eq!(input, response, "Content mismatch between request and response");
-    upload_sbom(context.port, id, &input, &context.provider).await;
-    let response: Value = get_response(context.port, &api_end_point, StatusCode::OK, &context.provider)
+    upload_sbom(context, id, &input).await;
+    let response: Value = get_response(&api_end_point, StatusCode::OK, &context.provider)
         .await
         .into();
     assert_eq!(
@@ -319,15 +304,15 @@ async fn test_upload_sbom_existing_without_change(context: &mut BombasticContext
 async fn test_upload_sbom_existing_with_change(context: &mut BombasticContext) {
     let mut input1 = serde_json::from_str(include_str!("../../bombastic/testdata/my-sbom.json")).unwrap();
     let id = "test-upload-with-change";
-    let api_end_point = format!("api/v1/sbom?id={id}");
-    upload_sbom(context.port, id, &input1, &context.provider).await;
-    let response1: Value = get_response(context.port, &api_end_point, StatusCode::OK, &context.provider)
+    let api_end_point = context.urlify(format!("api/v1/sbom?id={id}"));
+    upload_sbom(context, id, &input1).await;
+    let response1: Value = get_response(&api_end_point, StatusCode::OK, &context.provider)
         .await
         .into();
     assert_eq!(input1, response1, "Content mismatch between request and response");
     input1["metadata"]["component"]["name"] = Value::String(String::from("update-sbom-name"));
-    upload_sbom(context.port, id, &input1, &context.provider).await;
-    let response2: Value = get_response(context.port, &api_end_point, StatusCode::OK, &context.provider)
+    upload_sbom(context, id, &input1).await;
+    let response2: Value = get_response(&api_end_point, StatusCode::OK, &context.provider)
         .await
         .into();
     assert_eq!(
@@ -343,7 +328,7 @@ async fn test_upload_empty_json(context: &mut BombasticContext) {
     let input: serde_json::Value = serde_json::json!({});
     let id = "empty-json-upload";
     let client = reqwest::Client::new();
-    let url = &format!("http://localhost:{port}/api/v1/sbom?id={id}", port = context.port);
+    let url = context.urlify(format!("/api/v1/sbom?id={id}"));
     wait_for_event(Duration::from_secs(30), &context.config, "sbom-failed", id, async {
         let response = client
             .post(url)
@@ -367,10 +352,7 @@ async fn test_upload_empty_file(context: &mut BombasticContext) {
     let _ = File::create(&file_path).await.expect("file creation failed");
     let file = File::open(&file_path).await.unwrap();
     let response = reqwest::Client::new()
-        .post(format!(
-            "http://localhost:{}/api/v1/sbom?id=empty-file-upload",
-            context.port
-        ))
+        .post(context.urlify("/api/v1/sbom?id=empty-file-upload"))
         .body(file)
         .inject_token(&context.provider.provider_manager)
         .await
@@ -388,9 +370,8 @@ async fn test_upload_empty_file(context: &mut BombasticContext) {
 async fn test_upload_user_not_allowed(context: &mut BombasticContext) {
     let input: serde_json::Value = serde_json::from_str(include_str!("../../bombastic/testdata/my-sbom.json")).unwrap();
     let id = "test-upload-user-not-allowed";
-    let api_end_point = format!("api/v1/sbom?id={id}");
     let response = reqwest::Client::new()
-        .post(format!("http://localhost:{}/{}", context.port, api_end_point))
+        .post(context.urlify(format!("/api/v1/sbom?id={id}")))
         .json(&input)
         .inject_token(&context.provider.provider_user)
         .await
@@ -407,9 +388,8 @@ async fn test_upload_user_not_allowed(context: &mut BombasticContext) {
 async fn test_upload_unauthorized(context: &mut BombasticContext) {
     let input: serde_json::Value = serde_json::from_str(include_str!("../../bombastic/testdata/my-sbom.json")).unwrap();
     let id = "test-upload-unauthorized";
-    let api_end_point = format!("api/v1/sbom?id={id}");
     let response = reqwest::Client::new()
-        .post(format!("http://localhost:{}/{}", context.port, api_end_point))
+        .post(context.urlify(format!("api/v1/sbom?id={id}")))
         .json(&input)
         .send()
         .await
@@ -423,10 +403,9 @@ async fn test_upload_unauthorized(context: &mut BombasticContext) {
 async fn test_delete_user_not_allowed(context: &mut BombasticContext) {
     let input: serde_json::Value = serde_json::from_str(include_str!("../../bombastic/testdata/my-sbom.json")).unwrap();
     let id = "test-delete-user-not-allowed";
-    let api_end_point = format!("api/v1/sbom?id={id}");
-    upload_sbom(context.port, id, &input, &context.provider).await;
+    upload_sbom(context, id, &input).await;
     let response = reqwest::Client::new()
-        .delete(format!("http://localhost:{}/{}", context.port, api_end_point))
+        .delete(context.urlify(format!("api/v1/sbom?id={id}")))
         .json(&input)
         .inject_token(&context.provider.provider_user)
         .await
@@ -443,10 +422,9 @@ async fn test_delete_user_not_allowed(context: &mut BombasticContext) {
 async fn test_delete_unauthorized(context: &mut BombasticContext) {
     let input: serde_json::Value = serde_json::from_str(include_str!("../../bombastic/testdata/my-sbom.json")).unwrap();
     let id = "test-delete-unauthorized";
-    let api_end_point = format!("api/v1/sbom?id={id}");
-    upload_sbom(context.port, id, &input, &context.provider).await;
+    upload_sbom(context, id, &input).await;
     let response = reqwest::Client::new()
-        .delete(format!("http://localhost:{}/{}", context.port, api_end_point))
+        .delete(context.urlify(format!("api/v1/sbom?id={id}")))
         .json(&input)
         .send()
         .await
@@ -459,14 +437,14 @@ async fn test_delete_unauthorized(context: &mut BombasticContext) {
 #[ntest::timeout(60_000)]
 async fn test_get_sbom_with_invalid_id(context: &mut BombasticContext) {
     let id = "invalid-sbom-id";
-    let api_endpoint = format!("api/v1/sbom?id={id}");
-    get_response(context.port, &api_endpoint, StatusCode::NOT_FOUND, &context.provider).await;
+    let api_endpoint = context.urlify(format!("api/v1/sbom?id={id}"));
+    get_response(&api_endpoint, StatusCode::NOT_FOUND, &context.provider).await;
 }
 
 #[test_context(BombasticContext)]
 #[tokio::test]
 #[ntest::timeout(60_000)]
 async fn test_get_sbom_with_missing_id(context: &mut BombasticContext) {
-    let api_endpoint = format!("api/v1/sbom?ID=test");
-    get_response(context.port, &api_endpoint, StatusCode::BAD_REQUEST, &context.provider).await;
+    let api_endpoint = context.urlify(format!("api/v1/sbom?ID=test"));
+    get_response(&api_endpoint, StatusCode::BAD_REQUEST, &context.provider).await;
 }

@@ -1,6 +1,7 @@
 use super::*;
 use crate::runner::Runner;
 use async_trait::async_trait;
+use reqwest::Url;
 use test_context::AsyncTestContext;
 
 #[async_trait]
@@ -11,9 +12,15 @@ impl AsyncTestContext for BombasticContext {
     }
 }
 
+impl Urlifier for BombasticContext {
+    fn base_url(&self) -> &Url {
+        &self.url
+    }
+}
+
 pub struct BombasticContext {
+    pub url: Url,
     pub provider: ProviderContext,
-    pub port: u16,
     pub config: EventBusConfig,
     _runner: Runner,
 }
@@ -23,6 +30,7 @@ pub async fn start_bombastic(provider: ProviderContext) -> BombasticContext {
 
     let listener = TcpListener::bind("localhost:0").unwrap();
     let port = listener.local_addr().unwrap().port();
+    let url = Url::parse(&format!("http://localhost:{port}")).unwrap();
     let indexer = bombastic_indexer();
     let config = indexer.bus.clone();
 
@@ -54,7 +62,7 @@ pub async fn start_bombastic(provider: ProviderContext) -> BombasticContext {
     // Create context right after spawning, as we clean up as soon as the context drops
 
     let context = BombasticContext {
-        port,
+        url,
         provider,
         config,
         _runner: runner,
@@ -65,7 +73,7 @@ pub async fn start_bombastic(provider: ProviderContext) -> BombasticContext {
     let client = reqwest::Client::new();
     loop {
         let response = client
-            .get(format!("http://localhost:{port}/api/v1/sbom?id=none"))
+            .get(context.urlify(format!("/api/v1/sbom?id=none")))
             .inject_token(&context.provider.provider_user)
             .await
             .unwrap()
@@ -83,11 +91,11 @@ pub async fn start_bombastic(provider: ProviderContext) -> BombasticContext {
     context
 }
 
-pub async fn upload_sbom(port: u16, key: &str, input: &serde_json::Value, context: &ProviderContext) {
+pub async fn upload_sbom(context: &BombasticContext, key: &str, input: &serde_json::Value) {
     let response = reqwest::Client::new()
-        .post(format!("http://localhost:{port}/api/v1/sbom?id={key}"))
+        .post(context.urlify(format!("/api/v1/sbom?id={key}")))
         .json(input)
-        .inject_token(&context.provider_manager)
+        .inject_token(&context.provider.provider_manager)
         .await
         .unwrap()
         .send()
@@ -96,10 +104,10 @@ pub async fn upload_sbom(port: u16, key: &str, input: &serde_json::Value, contex
     assert_eq!(response.status(), StatusCode::CREATED);
 }
 
-pub async fn delete_sbom(port: u16, key: &str, context: &ProviderContext) {
+pub async fn delete_sbom(context: &BombasticContext, key: &str) {
     let response = reqwest::Client::new()
-        .delete(format!("http://localhost:{port}/api/v1/sbom?id={key}"))
-        .inject_token(&context.provider_manager)
+        .delete(context.urlify(format!("/api/v1/sbom?id={key}")))
+        .inject_token(&context.provider.provider_manager)
         .await
         .unwrap()
         .send()
@@ -116,7 +124,7 @@ pub async fn wait_for_search_result<F: Fn(serde_json::Value) -> bool>(
 ) {
     assert_within_timeout(timeout, async {
         loop {
-            let url = format!("http://localhost:{port}/api/v1/sbom/search", port = context.port,);
+            let url = context.urlify("/api/v1/sbom/search");
             let response = reqwest::Client::new()
                 .get(url)
                 .query(flags)

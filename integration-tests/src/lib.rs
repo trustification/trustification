@@ -11,7 +11,7 @@ pub use spog::*;
 pub use vex::*;
 
 use core::future::Future;
-use reqwest::StatusCode;
+use reqwest::{StatusCode, Url};
 use serde_json::Value;
 use spog_api::DEFAULT_CRDA_PAYLOAD_LIMIT;
 use std::{net::TcpListener, time::Duration};
@@ -68,15 +68,9 @@ pub async fn wait_for_event<F: Future>(t: Duration, config: &EventBusConfig, bus
     .await;
 }
 
-pub async fn get_response(
-    port: u16,
-    api_endpoint: &str,
-    exp_status: reqwest::StatusCode,
-    context: &ProviderContext,
-) -> Option<Value> {
-    let url = format!("http://localhost:{}/{}", port, api_endpoint);
+pub async fn get_response(url: &Url, exp_status: reqwest::StatusCode, context: &ProviderContext) -> Option<Value> {
     let response = reqwest::Client::new()
-        .get(&url)
+        .get(url.to_owned())
         .inject_token(&context.provider_manager)
         .await
         .unwrap()
@@ -99,6 +93,13 @@ pub async fn get_response(
 pub fn id(prefix: &str) -> String {
     let uuid = uuid::Uuid::new_v4();
     format!("{prefix}-{uuid}")
+}
+
+pub trait Urlifier {
+    fn base_url(&self) -> &Url;
+    fn urlify<S: Into<String>>(&self, path: S) -> Url {
+        self.base_url().join(&path.into()).unwrap()
+    }
 }
 
 fn testing_oidc() -> AuthenticatorConfig {

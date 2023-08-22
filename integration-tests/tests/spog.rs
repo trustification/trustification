@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use integration_tests::{assert_within_timeout, upload_sbom, upload_vex, SpogContext};
+use integration_tests::{assert_within_timeout, upload_sbom, upload_vex, SpogContext, Urlifier};
 use reqwest::StatusCode;
 use serde_json::{json, Value};
 use test_context::test_context;
@@ -11,10 +11,7 @@ use trustification_auth::client::TokenInjector;
 #[ntest::timeout(30_000)]
 async fn test_version(context: &mut SpogContext) {
     let response = reqwest::Client::new()
-        .get(format!(
-            "http://localhost:{port}/.well-known/trustification/version",
-            port = context.port
-        ))
+        .get(context.urlify("/.well-known/trustification/version"))
         .inject_token(&context.provider.provider_user)
         .await
         .unwrap()
@@ -36,10 +33,7 @@ async fn test_search_forward_bombastic(context: &mut SpogContext) {
     let client = reqwest::Client::new();
 
     let response = client
-        .get(format!(
-            "http://localhost:{port}/api/v1/package/search",
-            port = context.port
-        ))
+        .get(context.urlify("/api/v1/package/search"))
         .inject_token(&context.provider.provider_user)
         .await
         .unwrap()
@@ -53,10 +47,7 @@ async fn test_search_forward_bombastic(context: &mut SpogContext) {
     let client = reqwest::Client::new();
 
     let response = client
-        .get(format!(
-            "http://localhost:{port}/api/v1/package/search",
-            port = context.port
-        ))
+        .get(context.urlify("/api/v1/package/search"))
         .query(&[("q", urlencoding::encode("unknown:field"))])
         .inject_token(&context.provider.provider_user)
         .await
@@ -78,10 +69,7 @@ async fn test_search_forward_vexination(context: &mut SpogContext) {
     let client = reqwest::Client::new();
 
     let response = client
-        .get(format!(
-            "http://localhost:{port}/api/v1/advisory/search",
-            port = context.port
-        ))
+        .get(context.urlify("/api/v1/advisory/search"))
         .inject_token(&context.provider.provider_user)
         .await
         .unwrap()
@@ -102,10 +90,7 @@ async fn test_crda_integration(context: &mut SpogContext) {
     let sbom = include_bytes!("crda/test1.sbom.json");
 
     let response = client
-        .post(format!(
-            "http://localhost:{port}/api/v1/analyze/report",
-            port = context.port
-        ))
+        .post(context.urlify("/api/v1/analyze/report"))
         .inject_token(&context.provider.provider_user)
         .await
         .unwrap()
@@ -129,10 +114,10 @@ async fn test_crda_integration(context: &mut SpogContext) {
 #[ntest::timeout(60_000)]
 async fn test_search_correlation(context: &mut SpogContext) {
     let input = serde_json::from_str(include_str!("testdata/correlation/stf-1.5.json")).unwrap();
-    upload_sbom(context.bombastic.port, "stf-1.5", &input, &context.bombastic.provider).await;
+    upload_sbom(&context.bombastic, "stf-1.5", &input).await;
 
     let input = serde_json::from_str(include_str!("testdata/correlation/rhsa-2023_1529.json")).unwrap();
-    upload_vex(context.vexination.port, &input, &context.vexination.provider).await;
+    upload_vex(&context.vexination, &input).await;
 
     let client = reqwest::Client::new();
 
@@ -141,10 +126,7 @@ async fn test_search_correlation(context: &mut SpogContext) {
         // indexer time to do its thing, so might need to retry
         loop {
             let response = client
-                .get(format!(
-                    "http://localhost:{port}/api/v1/package/search?q=package%3Astf-1.5",
-                    port = context.port
-                ))
+                .get(context.urlify("/api/v1/package/search?q=package%3Astf-1.5"))
                 .inject_token(&context.provider.provider_user)
                 .await
                 .unwrap()
