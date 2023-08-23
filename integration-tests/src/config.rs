@@ -4,7 +4,7 @@ use trustification_event_bus::{EventBusConfig, EventBusType};
 
 use crate::{create_provider, create_provider_context, ProviderContext};
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Config {
     pub spog: Option<Url>,
     pub bombastic: Option<Url>,

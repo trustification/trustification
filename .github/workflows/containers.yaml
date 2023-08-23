@@ -47,6 +47,8 @@ jobs:
             containerfile: Containerfile.ui
           - name: trust-docs
             containerfile: Containerfile.docs
+          - name: trust-tests
+            containerfile: Containerfile.tests
 
     steps:
 

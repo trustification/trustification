@@ -14,20 +14,28 @@ pub use vex::*;
 use core::future::Future;
 use reqwest::{StatusCode, Url};
 use serde_json::Value;
-use spog_api::DEFAULT_CRDA_PAYLOAD_LIMIT;
-use std::{net::TcpListener, time::Duration};
+use std::time::Duration;
 use tokio::{select, time::timeout};
-use trustification_auth::{
-    authenticator::config::{AuthenticatorConfig, SingleAuthenticatorClientConfig},
-    client::TokenInjector,
-    swagger_ui::SwaggerUiOidcConfig,
-};
-use trustification_event_bus::{EventBusConfig, EventBusType};
-use trustification_index::IndexConfig;
-use trustification_infrastructure::InfrastructureConfig;
-use trustification_storage::StorageConfig;
+use trustification_auth::client::TokenInjector;
+use trustification_event_bus::EventBusConfig;
 
+#[cfg(feature = "with-services")]
+use {
+    spog_api::DEFAULT_CRDA_PAYLOAD_LIMIT,
+    std::net::TcpListener,
+    trustification_auth::{
+        authenticator::config::{AuthenticatorConfig, SingleAuthenticatorClientConfig},
+        swagger_ui::SwaggerUiOidcConfig,
+    },
+    trustification_event_bus::EventBusType,
+    trustification_index::IndexConfig,
+    trustification_infrastructure::InfrastructureConfig,
+    trustification_storage::StorageConfig,
+};
+
+#[cfg(feature = "with-services")]
 const STORAGE_ENDPOINT: &str = "http://localhost:9000";
+#[cfg(feature = "with-services")]
 const KAFKA_BOOTSTRAP_SERVERS: &str = "localhost:9092";
 const SSO_ENDPOINT: &str = "http://localhost:8090/realms/chicken";
 
@@ -103,6 +111,7 @@ pub trait Urlifier {
     }
 }
 
+#[cfg(feature = "with-services")]
 fn testing_oidc() -> AuthenticatorConfig {
     AuthenticatorConfig {
         disabled: false,
@@ -118,6 +127,7 @@ fn testing_oidc() -> AuthenticatorConfig {
     }
 }
 
+#[cfg(feature = "with-services")]
 fn testing_swagger_ui_oidc() -> SwaggerUiOidcConfig {
     SwaggerUiOidcConfig {
         swagger_ui_oidc_issuer_url: Some(SSO_ENDPOINT.to_string()),
