@@ -115,6 +115,18 @@ pub fn sbom_result(props: &SbomResultProperties) -> Html {
         _ => None,
     };
 
+    let on_sort_by = {
+        Some(Callback::from(move |val: TableHeaderSortBy<Column>| {
+            match val.index {
+                Column::Created => {
+                    let is_asc = val.asc;
+                    // Sort here
+                },                
+                _ => {},
+            };
+        }))
+    };
+
     let (entries, onexpand) = use_table_data(MemoizedTableModel::new(Rc::new(data.unwrap_or_default())));
 
     let header = vec![
@@ -136,7 +148,8 @@ pub fn sbom_result(props: &SbomResultProperties) -> Html {
         yew::props!(TableColumnProperties<Column> {
             index: Column::Created,
             label: "Created on",
-            width: ColumnWidth::Percent(10)
+            width: ColumnWidth::Percent(10),
+            onsort: on_sort_by.clone()
         }),
         yew::props!(TableColumnProperties<Column> {
             index: Column::Dependencies,
