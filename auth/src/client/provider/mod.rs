@@ -5,10 +5,6 @@ pub use self::access_token::*;
 pub use self::openid::*;
 
 use super::error::Error;
-
-#[cfg(feature = "actix")]
-use actix_web_httpauth::extractors::bearer::BearerAuth;
-
 use async_trait::async_trait;
 use base64::{prelude::BASE64_STANDARD, write::EncoderStringWriter};
 use std::fmt::Debug;
@@ -104,7 +100,7 @@ impl TokenProvider for String {
 
 #[cfg(feature = "actix")]
 #[async_trait]
-impl TokenProvider for BearerAuth {
+impl TokenProvider for actix_web_httpauth::extractors::bearer::BearerAuth {
     async fn provide_access_token(&self) -> Result<Option<Credentials>, Error> {
         Ok(Some(Credentials::Bearer(self.token().to_string())))
     }

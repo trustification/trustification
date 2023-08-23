@@ -13,9 +13,10 @@ use anyhow::anyhow;
 use prometheus::Registry;
 use tokio::sync::RwLock;
 use tokio::task::block_in_place;
+use trustification_auth::auth::AuthConfigArguments;
 use trustification_auth::authenticator::Authenticator;
+use trustification_auth::authorizer::Authorizer;
 use trustification_auth::swagger_ui::{SwaggerUiOidc, SwaggerUiOidcConfig};
-use trustification_auth::{authenticator::config::AuthenticatorConfig, authorizer::Authorizer};
 use trustification_index::{IndexConfig, IndexStore};
 use trustification_infrastructure::{
     app::{new_app, AppOptions},
@@ -44,7 +45,7 @@ pub struct Run {
     pub infra: InfrastructureConfig,
 
     #[command(flatten)]
-    pub oidc: AuthenticatorConfig,
+    pub auth: AuthConfigArguments,
 
     #[command(flatten)]
     pub swagger_ui_oidc: SwaggerUiOidcConfig,
@@ -58,14 +59,9 @@ impl Run {
         let index = self.index;
         let storage = self.storage;
 
-        let authorizer = if self.oidc.disabled {
-            Authorizer::Disabled
-        } else {
-            Authorizer::Enabled
-        };
-        let authenticator: Option<Arc<Authenticator>> = Authenticator::from_devmode_or_config(self.devmode, self.oidc)
-            .await?
-            .map(Arc::new);
+        let (authn, authz) = self.auth.split(self.devmode)?.unzip();
+        let authenticator: Option<Arc<Authenticator>> = Authenticator::from_config(authn).await?.map(Arc::new);
+        let authorizer = Authorizer::new(authz);
 
         let swagger_oidc: Option<Arc<SwaggerUiOidc>> =
             SwaggerUiOidc::from_devmode_or_config(self.devmode, self.swagger_ui_oidc)
@@ -87,6 +83,7 @@ impl Run {
                     let http_metrics = http_metrics.clone();
                     let cors = Cors::permissive();
                     let authenticator = authenticator.clone();
+                    let authorizer = authorizer.clone();
                     let swagger_oidc = swagger_oidc.clone();
 
                     new_app(AppOptions {

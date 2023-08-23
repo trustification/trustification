@@ -73,15 +73,9 @@ impl Server {
 
         let config_configurator = config::configurator(self.run.config).await?;
 
-        let authorizer = if self.run.oidc.disabled {
-            Authorizer::Disabled
-        } else {
-            Authorizer::Enabled
-        };
-        let authenticator: Option<Arc<Authenticator>> =
-            Authenticator::from_devmode_or_config(self.run.devmode, self.run.oidc)
-                .await?
-                .map(Arc::new);
+        let (authn, authz) = self.run.auth.split(self.run.devmode)?.unzip();
+        let authenticator: Option<Arc<Authenticator>> = Authenticator::from_config(authn).await?.map(Arc::new);
+        let authorizer = Authorizer::new(authz);
 
         let swagger_oidc: Option<Arc<SwaggerUiOidc>> =
             SwaggerUiOidc::from_devmode_or_config(self.run.devmode, self.run.swagger_ui_oidc)
@@ -103,6 +97,7 @@ impl Server {
             let http_metrics = http_metrics.clone();
             let cors = Cors::permissive();
             let authenticator = authenticator.clone();
+            let authorizer = authorizer.clone();
             let swagger_oidc = swagger_oidc.clone();
             let guac = guac.clone();
 

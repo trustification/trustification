@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use url::Url;
 
+/// An OIDC access token, containing the claims that we need.
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct AccessTokenClaims {
     #[serde(default)]
@@ -30,13 +31,18 @@ pub struct AccessTokenClaims {
 
 impl CompactJson for AccessTokenClaims {}
 
-impl From<AccessTokenClaims> for UserDetails {
-    fn from(claims: AccessTokenClaims) -> Self {
-        let scopes = claims.scope.split(' ').map(ToString::to_string).collect();
+/// A validated access token, including post-processing according to our configuration.
+#[derive(Clone, Debug)]
+pub struct ValidatedAccessToken {
+    pub access_token: AccessTokenClaims,
+    pub mapped_scopes: Vec<String>,
+}
+
+impl From<ValidatedAccessToken> for UserDetails {
+    fn from(token: ValidatedAccessToken) -> Self {
         Self {
-            id: claims.sub,
-            scopes,
-            roles: Default::default(),
+            id: token.access_token.sub,
+            scopes: token.mapped_scopes,
         }
     }
 }

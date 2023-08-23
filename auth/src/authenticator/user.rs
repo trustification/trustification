@@ -1,6 +1,6 @@
 //! Structures to work with users and identities.
 
-use crate::authenticator::error::{AuthenticationError, AuthorizationError};
+use crate::authenticator::error::AuthorizationError;
 
 /// Details of an authenticated user.
 ///
@@ -28,22 +28,13 @@ use crate::authenticator::error::{AuthenticationError, AuthorizationError};
 pub struct UserDetails {
     pub id: String,
     pub scopes: Vec<String>,
-    pub roles: Vec<String>,
 }
 
 impl UserDetails {
-    #[deprecated(note = "Should use scopes instead")]
-    pub fn require_role(&self, role: impl AsRef<str>) -> Result<(), AuthorizationError> {
-        let role = role.as_ref();
-        if self.roles.iter().any(|r| r == role) {
-            Ok(())
-        } else {
-            Err(AuthorizationError::Failed)
-        }
-    }
-
     pub fn require_scope(&self, scope: impl AsRef<str>) -> Result<(), AuthorizationError> {
         let scope = scope.as_ref();
+        log::debug!("Requiring scope: {scope}");
+
         if self.scopes.iter().any(|r| r == scope) {
             Ok(())
         } else {
@@ -62,21 +53,12 @@ pub enum UserInformation {
 #[allow(unused)]
 pub const ANONYMOUS: UserInformation = UserInformation::Anonymous;
 
-static EMPTY_ROLES: Vec<String> = vec![];
-
 #[allow(unused)]
 impl UserInformation {
     pub fn id(&self) -> Option<&str> {
         match self {
             Self::Authenticated(details) => Some(&details.id),
             Self::Anonymous => None,
-        }
-    }
-
-    pub fn roles(&self) -> &Vec<String> {
-        match self {
-            Self::Authenticated(details) => &details.roles,
-            Self::Anonymous => &EMPTY_ROLES,
         }
     }
 }
@@ -107,7 +89,7 @@ impl actix_web::FromRequest for UserDetails {
         match req.extensions().get::<UserInformation>() {
             Some(UserInformation::Authenticated(details)) => core::future::ready(Ok(details.clone())),
             Some(UserInformation::Anonymous) => core::future::ready(Err(AuthorizationError::Failed.into())),
-            None => core::future::ready(Err(AuthenticationError::Failed.into())),
+            None => core::future::ready(Err(crate::authenticator::error::AuthenticationError::Failed.into())),
         }
     }
 }

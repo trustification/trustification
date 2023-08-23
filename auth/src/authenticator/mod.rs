@@ -9,12 +9,14 @@ pub mod config;
 pub mod error;
 pub mod user;
 
+use crate::{authenticator::claims::ValidatedAccessToken, authenticator::config::AuthenticatorConfig};
 use biscuit::jws::Compact;
 use claims::AccessTokenClaims;
-use config::{AuthenticatorClientConfig, AuthenticatorConfig};
+use config::AuthenticatorClientConfig;
 use error::AuthenticationError;
 use futures_util::{stream, StreamExt, TryStreamExt};
 use openid::{Client, Configurable, Discovered, Empty, Jws};
+use std::collections::HashMap;
 use std::ops::Deref;
 use tracing::instrument;
 use trustification_common::reqwest::ClientFactory;
@@ -30,19 +32,13 @@ impl Authenticator {
         Self { clients }
     }
 
-    pub async fn from_devmode_or_config(devmode: bool, config: AuthenticatorConfig) -> anyhow::Result<Option<Self>> {
-        match devmode {
-            true => Self::from_config(AuthenticatorConfig::devmode(config.disabled)).await,
-            false => Self::from_config(config).await,
-        }
-    }
+    pub async fn from_config(config: Option<AuthenticatorConfig>) -> anyhow::Result<Option<Self>> {
+        let config = match config {
+            Some(config) => config,
+            None => return Ok(None),
+        };
 
-    pub async fn from_config(config: AuthenticatorConfig) -> anyhow::Result<Option<Self>> {
-        if config.disabled {
-            return Ok(None);
-        }
-
-        Ok(Some(Self::from_configs(config.clients.expand()).await?))
+        Ok(Some(Self::from_configs(config.clients).await?))
     }
 
     pub async fn from_configs<I>(configs: I) -> anyhow::Result<Self>
@@ -95,7 +91,7 @@ impl Authenticator {
 
     /// Validate a bearer token.
     #[instrument(level = "debug", skip_all, fields(token=token.as_ref()), ret)]
-    pub async fn validate_token<S: AsRef<str>>(&self, token: S) -> Result<AccessTokenClaims, AuthenticationError> {
+    pub async fn validate_token<S: AsRef<str>>(&self, token: S) -> Result<ValidatedAccessToken, AuthenticationError> {
         let mut token: Compact<AccessTokenClaims, Empty> = Jws::new_encoded(token.as_ref());
 
         let client = self.find_client(&token)?.ok_or_else(|| {
@@ -118,7 +114,7 @@ impl Authenticator {
         })?;
 
         match token {
-            Compact::Decoded { payload, .. } => Ok(payload),
+            Compact::Decoded { payload, .. } => Ok(client.convert_token(payload)),
             Compact::Encoded(_) => Err(AuthenticationError::Failed),
         }
     }
@@ -149,6 +145,7 @@ async fn create_client(config: AuthenticatorClientConfig) -> anyhow::Result<Auth
     Ok(AuthenticatorClient {
         client,
         audience: config.required_audience,
+        scope_mappings: config.scope_mappings,
     })
 }
 
@@ -156,6 +153,30 @@ async fn create_client(config: AuthenticatorClientConfig) -> anyhow::Result<Auth
 pub struct AuthenticatorClient {
     client: Client<Discovered>,
     audience: Option<String>,
+    scope_mappings: HashMap<String, Vec<String>>,
+}
+
+impl AuthenticatorClient {
+    /// Convert from a set of (verified!) access token claims into a [`ValidatedAccessToken`] struct.
+    pub fn convert_token(&self, access_token: AccessTokenClaims) -> ValidatedAccessToken {
+        let mapped_scopes = Self::map_scopes(&access_token.scope, &self.scope_mappings);
+        ValidatedAccessToken {
+            access_token,
+            mapped_scopes,
+        }
+    }
+
+    fn map_scopes(scopes: &str, scope_mappings: &HashMap<String, Vec<String>>) -> Vec<String> {
+        scopes
+            .split(' ')
+            .flat_map(|scope| {
+                scope_mappings
+                    .get(scope)
+                    .cloned()
+                    .unwrap_or_else(|| vec![scope.to_string()])
+            })
+            .collect()
+    }
 }
 
 impl Deref for AuthenticatorClient {
@@ -163,5 +184,34 @@ impl Deref for AuthenticatorClient {
 
     fn deref(&self) -> &Self::Target {
         &self.client
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    fn assert_scope_mapping(scopes: &str, mappings: &[(&str, &[&str])], expected: &[&str]) {
+        let mappings = mappings
+            .into_iter()
+            .map(|(k, v)| (k.to_string(), v.into_iter().map(|v| v.to_string()).collect()))
+            .collect::<HashMap<String, Vec<String>>>();
+        let expected = expected.into_iter().map(|item| item.to_string()).collect::<Vec<_>>();
+        let result = AuthenticatorClient::map_scopes(scopes, &mappings);
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn test_scope_mapping() {
+        assert_scope_mapping(
+            "foo bar baz",
+            &[("foo", &["read:foo", "read:bar"] as &[_]), ("baz", &[])],
+            &["read:foo", "read:bar", "bar"],
+        );
+    }
+
+    #[test]
+    fn test_no_scope_mapping() {
+        assert_scope_mapping("foo bar baz", &[], &["foo", "bar", "baz"]);
     }
 }

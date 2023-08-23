@@ -1,3 +1,4 @@
+#[cfg(feature = "actix")]
 use trustification_common::error::ErrorInformation;
 
 #[derive(Debug, thiserror::Error)]

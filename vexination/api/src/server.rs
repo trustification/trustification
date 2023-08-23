@@ -11,10 +11,10 @@ use serde::Deserialize;
 use std::sync::Arc;
 use trustification_api::search::SearchOptions;
 use trustification_auth::{
-    authenticator::{user::UserDetails, Authenticator},
+    authenticator::{user::UserInformation, Authenticator},
     authorizer::Authorizer,
     swagger_ui::SwaggerUiOidc,
-    Scope,
+    Permission,
 };
 use trustification_index::Error as IndexError;
 use trustification_infrastructure::new_auth;
@@ -115,9 +115,16 @@ struct QueryParams {
     )
 )]
 #[get("/vex")]
-async fn fetch_vex(state: web::Data<SharedState>, params: web::Query<QueryParams>) -> HttpResponse {
+async fn fetch_vex(
+    state: web::Data<SharedState>,
+    params: web::Query<QueryParams>,
+    authorizer: web::Data<Authorizer>,
+    user: UserInformation,
+) -> actix_web::Result<HttpResponse> {
+    authorizer.require(&user, Permission::ReadVex)?;
+
     let storage = state.storage.read().await;
-    fetch_object(&storage, &params.advisory).await
+    Ok(fetch_object(&storage, &params.advisory).await)
 }
 
 /// Parameters passed when publishing advisory.
@@ -149,9 +156,9 @@ async fn publish_vex(
     params: web::Query<PublishParams>,
     data: Bytes,
     authorizer: web::Data<Authorizer>,
-    user: Option<UserDetails>,
+    user: UserInformation,
 ) -> actix_web::Result<HttpResponse> {
-    authorizer.require_scope(user, Scope::CreateDocument)?;
+    authorizer.require(&user, Permission::CreateVex)?;
 
     let params = params.into_inner();
     let advisory = if let Some(advisory) = params.advisory {
@@ -237,7 +244,11 @@ impl From<&SearchParams> for SearchOptions {
 async fn search_vex(
     state: web::Data<SharedState>,
     params: web::Query<SearchParams>,
+    authorizer: web::Data<Authorizer>,
+    user: UserInformation,
 ) -> actix_web::Result<HttpResponse> {
+    authorizer.require(&user, Permission::ReadVex)?;
+
     let params = params.into_inner();
 
     log::info!("Querying VEX using {}", params.q);

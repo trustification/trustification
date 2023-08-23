@@ -1,33 +1,42 @@
-use crate::authenticator::{error::AuthorizationError, user::UserDetails};
+use crate::{
+    authenticator::{error::AuthorizationError, user::UserInformation},
+    Permission,
+};
 
-pub enum Permission {}
+#[derive(Clone, Debug, Default, PartialEq, Eq, serde::Deserialize, serde::Serialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct AuthorizerConfig {}
 
-#[derive(Debug, Clone, Copy)]
-pub enum Authorizer {
-    Enabled,
-    Disabled,
-}
-
-impl Default for Authorizer {
-    fn default() -> Self {
-        Self::Enabled
-    }
+#[derive(Default, Debug, Clone)]
+pub struct Authorizer {
+    config: Option<AuthorizerConfig>,
 }
 
 impl Authorizer {
-    pub fn require_scope(&self, user: Option<UserDetails>, scope: impl AsRef<str>) -> Result<(), AuthorizationError> {
-        match self {
-            Self::Enabled => {
-                if let Some(user) = user {
-                    user.require_scope(scope)
-                } else {
-                    Err(AuthorizationError::Failed)
-                }
-            }
-            Self::Disabled => {
-                log::warn!("WARNING: Authorization disabled, all permissions granted");
-                Ok(())
-            }
+    pub fn new(config: Option<AuthorizerConfig>) -> Self {
+        Self { config }
+    }
+
+    /// Require a permission from a user.
+    ///
+    /// If the user passes the check, the function will return `Ok(())`. Otherwise an error will be
+    /// returned.
+    pub fn require(&self, user: &UserInformation, permission: Permission) -> Result<(), AuthorizationError> {
+        if self.config.is_none() {
+            log::warn!("Authorization disabled, all permissions granted");
+            return Ok(());
         }
+
+        // check if the user is authenticated
+
+        let user = match user {
+            UserInformation::Authenticated(user) => user,
+            UserInformation::Anonymous => return Err(AuthorizationError::Failed),
+        };
+
+        user.require_scope(permission)?;
+
+        // we passed
+        Ok(())
     }
 }
