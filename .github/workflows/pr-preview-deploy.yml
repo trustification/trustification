@@ -13,10 +13,10 @@ jobs:
       github.event.workflow_run.conclusion == 'success'
     steps:
       - name: Download dist
-        uses: actions/github-script@v3
+        uses: actions/github-script@v6
         with:
           script: |
-            var artifacts = await github.actions.listWorkflowRunArtifacts({
+            var artifacts = await github.rest.actions.listWorkflowRunArtifacts({
                owner: context.repo.owner,
                repo: context.repo.repo,
                run_id: ${{github.event.workflow_run.id }},
@@ -24,7 +24,7 @@ jobs:
             var matchArtifact = artifacts.data.artifacts.filter((artifact) => {
               return artifact.name == "dist"
             })[0];
-            var download = await github.actions.downloadArtifact({
+            var download = await github.rest.actions.downloadArtifact({
                owner: context.repo.owner,
                repo: context.repo.repo,
                artifact_id: matchArtifact.id,
@@ -33,10 +33,10 @@ jobs:
             var fs = require('fs');
             fs.writeFileSync('${{github.workspace}}/dist.zip', Buffer.from(download.data));
       - name: Download PR number
-        uses: actions/github-script@v3
+        uses: actions/github-script@v6
         with:
           script: |
-            var artifacts = await github.actions.listWorkflowRunArtifacts({
+            var artifacts = await github.rest.actions.listWorkflowRunArtifacts({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 run_id: ${{github.event.workflow_run.id }},
@@ -44,7 +44,7 @@ jobs:
             var matchArtifact = artifacts.data.artifacts.filter((artifact) => {
               return artifact.name == "pr"
             })[0];
-            var download = await github.actions.downloadArtifact({
+            var download = await github.rest.actions.downloadArtifact({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 artifact_id: matchArtifact.id,
@@ -57,7 +57,7 @@ jobs:
       - run: unzip pr.zip
 
       - name: Generate issue_number
-        uses: actions/github-script@v3
+        uses: actions/github-script@v6
         id: issue_number
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -67,7 +67,7 @@ jobs:
           result-encoding: string
 
       - name: Generate Surge URL
-        uses: actions/github-script@v3
+        uses: actions/github-script@v6
         id: surge-url
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
