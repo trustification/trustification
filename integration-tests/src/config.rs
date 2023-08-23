@@ -30,7 +30,7 @@ impl Config {
                     .json()
                     .await
                     .unwrap();
-                let config = Config {
+                Config {
                     spog: endpoints["url"].as_str().map(Url::parse).unwrap().ok(),
                     bombastic: endpoints["bombastic"].as_str().map(Url::parse).unwrap().ok(),
                     vexination: endpoints["vexination"].as_str().map(Url::parse).unwrap().ok(),
