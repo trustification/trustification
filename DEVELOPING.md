@@ -81,6 +81,13 @@ CURL_OPTS="--oauth2-bearer $TOKEN"
 echo "Access Token: $TOKEN"
 ```
 
+Or when using `fish`:
+
+```shell
+set TOKEN $(curl -s -d "client_id=walker" -d "client_secret=ZVzq9AMOVUdMY1lSohpx1jI3aW56QDPS" -d 'grant_type=client_credentials' \
+  'http://localhost:8090/realms/chicken/protocol/openid-connect/token' | jq -r .access_token)
+```
+
 You can then add `$CURL_OPTS` to all `curl` calls in order to use the token.
 
 
