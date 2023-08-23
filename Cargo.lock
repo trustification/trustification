@@ -2898,7 +2898,6 @@ dependencies = [
 [[package]]
 name = "guac"
 version = "0.1.0"
-source = "git+https://github.com/dejanb/guac-rs.git?rev=f74e28a6fb6881c0ecf3701efcc8e3067f0cb2d6#f74e28a6fb6881c0ecf3701efcc8e3067f0cb2d6"
 dependencies = [
  "anyhow",
  "async-nats",
