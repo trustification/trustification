@@ -4,6 +4,9 @@ use crate::authenticator::error::AuthorizationError;
 
 /// Details of an authenticated user.
 ///
+/// **NOTE:** When you don't require the user to be authenticated, it is possible to use
+/// the extraction for [`UserInformation`].
+///
 /// ## Extraction
 ///
 /// This value can be extracted by `actix` like this:
@@ -44,14 +47,15 @@ impl UserDetails {
 }
 
 /// Information about the authenticated user, may be anonymous
+///
+/// ## Extraction
+///
+/// This value can be extracted from an `actix` request.
 #[derive(Clone, Debug)]
 pub enum UserInformation {
     Authenticated(UserDetails),
     Anonymous,
 }
-
-#[allow(unused)]
-pub const ANONYMOUS: UserInformation = UserInformation::Anonymous;
 
 #[allow(unused)]
 impl UserInformation {
