@@ -1,17 +1,4 @@
-FROM registry.access.redhat.com/ubi9/ubi:latest as builder
-
-RUN dnf install -y gcc openssl openssl-devel cmake gcc-c++ git curl-minimal unzip
-
-RUN curl https://sh.rustup.rs -sSf | sh -s -- -y --profile minimal
-ENV PATH "$PATH:/root/.cargo/bin"
-
-ARG protoc_version="23.4"
-RUN mkdir protoc && cd protoc && \
-    curl -sSL https://github.com/protocolbuffers/protobuf/releases/download/v${protoc_version}/protoc-${protoc_version}-linux-x86_64.zip -o protoc.zip && \
-    unzip protoc.zip && \
-    install bin/protoc /usr/local/bin && \
-    cd .. && rm -Rf protoc && \
-    protoc --version
+FROM ghcr.io/lulf/trustification-builder:latest as builder
 
 RUN mkdir /usr/src/project
 COPY . /usr/src/project

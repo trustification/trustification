@@ -140,6 +140,12 @@ jobs:
       - formatting
     uses: ./.github/workflows/integration.yaml
 
+  containers:
+      uses: ./.github/workflows/containers.yaml
+      with:
+        imageTag: latest
+        platforms: "linux/amd64"
+
   # A virtual job, referenced by the branch protection rule
   ci:
     runs-on: ubuntu-22.04
