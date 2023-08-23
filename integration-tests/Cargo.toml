@@ -10,7 +10,7 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0.68"
 env_logger = "0.10"
 lazy_static = "1.4"
-reqwest = { version = "0.11", features = ["json"] }
+reqwest = { version = "0.11", features = ["json", "stream"] }
 anyhow = "1"
 openid = "0.12"
 chrono = { version = "0.4", default-features = false }
@@ -19,25 +19,28 @@ test-context = "0.1"
 test-with = "0.9"
 ntest = "0.9"
 time = "0.3"
-
-bombastic-api = { path = "../bombastic/api" }
-bombastic-indexer = { path = "../bombastic/indexer" }
-
-vexination-api = { path = "../vexination/api" }
-vexination-indexer = { path = "../vexination/indexer" }
-
-spog-api = { path = "../spog/api" }
-
-trustification-auth = { path = "../auth" }
 trustification-event-bus = { path = "../event-bus" }
-trustification-infrastructure = { path = "../infrastructure" }
-trustification-storage = { path = "../storage" }
-trustification-index = { path = "../index" }
+trustification-auth = { path = "../auth", default-features = false, features = ["swagger"] }
+
+bombastic-api = { path = "../bombastic/api", optional = true }
+bombastic-indexer = { path = "../bombastic/indexer", optional = true }
+
+vexination-api = { path = "../vexination/api", optional = true }
+vexination-indexer = { path = "../vexination/indexer", optional = true }
+
+spog-api = { path = "../spog/api", optional = true }
+trustification-infrastructure = { path = "../infrastructure", optional = true }
+trustification-storage = { path = "../storage", optional = true }
+trustification-index = { path = "../index", optional = true }
 
 prometheus = "0.13.3"
-uuid = "1"
+uuid = { version = "1", features = ["v4"] }
 
 [dev-dependencies]
 env_logger = "0.10"
 urlencoding = "2.1.2"
 spog-model = { path = "../spog/model" }
+
+[features]
+default = ["with-services"]
+with-services = ["bombastic-api", "bombastic-indexer", "vexination-api", "vexination-indexer", "spog-api", "trustification-storage", "trustification-index", "trustification-infrastructure" ]

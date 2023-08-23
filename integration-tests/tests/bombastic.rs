@@ -6,9 +6,9 @@ use reqwest::StatusCode;
 use serde_json::{json, Value};
 use std::time::Duration;
 use test_context::test_context;
+use time::OffsetDateTime;
 use tokio::fs::{remove_file, File};
 use trustification_auth::client::TokenInjector;
-use trustification_index::tantivy::time::OffsetDateTime;
 use urlencoding::encode;
 
 #[test_context(BombasticContext)]
