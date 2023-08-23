@@ -3,8 +3,8 @@ use std::net::{SocketAddr, TcpListener};
 use std::sync::atomic::Ordering;
 use std::time::Duration;
 
-use actix_web::{App, HttpResponse, HttpServer, post, Responder, ResponseError, web};
 use actix_web::middleware::{Compress, Logger};
+use actix_web::{post, web, App, HttpResponse, HttpServer, Responder, ResponseError};
 use derive_more::Display;
 use guac::client::certify_vuln::{Metadata, Vulnerability};
 use guac::client::GuacClient;
@@ -19,8 +19,8 @@ use collector_client::{
 };
 use collectorist_client::{CollectorConfig, Interest};
 
-use crate::client::{OsvClient, QueryBatchRequest, QueryPackageRequest};
 use crate::client::schema::Package;
+use crate::client::{OsvClient, QueryBatchRequest, QueryPackageRequest};
 use crate::SharedState;
 
 #[derive(Debug, Display)]
@@ -111,12 +111,9 @@ pub async fn collect_packages(
             if let Package::Purl { purl } = &entry.package {
                 guac.ingest_package(purl).await.map_err(|_| Error::GuacError)?;
                 for vuln in vulns {
-                    guac.ingest_vulnerability(
-                        "osv",
-                        &vuln.id,
-                    )
+                    guac.ingest_vulnerability("osv", &vuln.id)
                         .await
-                        .map_err(|_|Error::GuacError)?;
+                        .map_err(|_| Error::GuacError)?;
                     guac.ingest_certify_vuln(
                         purl,
                         Vulnerability {
