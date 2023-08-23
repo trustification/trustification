@@ -88,7 +88,8 @@ default-members = [
 #sikula = { git = "https://github.com/ctron/sikula", rev = "cea7429f6b690adcdcd1ce2edb2b9e2277834e03" }
 #sikula = { path = "../sikula" }
 
-guac = { git = "https://github.com/dejanb/guac-rs.git", rev = "f74e28a6fb6881c0ecf3701efcc8e3067f0cb2d6" }
+#guac = { git = "https://github.com/dejanb/guac-rs.git", rev = "f74e28a6fb6881c0ecf3701efcc8e3067f0cb2d6" }
+guac = { path = "../guac-rs/lib" }
 
 # also check: spog/ui/Cargo.toml
 cyclonedx-bom = { git = "https://github.com/lulf/cyclonedx-rust-cargo", branch = "trustification" }

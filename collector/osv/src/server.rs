@@ -3,10 +3,10 @@ use std::net::{SocketAddr, TcpListener};
 use std::sync::atomic::Ordering;
 use std::time::Duration;
 
+use actix_web::{App, HttpResponse, HttpServer, post, Responder, ResponseError, web};
 use actix_web::middleware::{Compress, Logger};
-use actix_web::{post, web, App, HttpResponse, HttpServer, Responder, ResponseError};
 use derive_more::Display;
-use guac::client::certify_vuln::{Metadata, Osv, Vulnerability};
+use guac::client::certify_vuln::{Metadata, Vulnerability};
 use guac::client::GuacClient;
 use log::{info, warn};
 use reqwest::Url;
@@ -19,8 +19,8 @@ use collector_client::{
 };
 use collectorist_client::{CollectorConfig, Interest};
 
-use crate::client::schema::Package;
 use crate::client::{OsvClient, QueryBatchRequest, QueryPackageRequest};
+use crate::client::schema::Package;
 use crate::SharedState;
 
 #[derive(Debug, Display)]
@@ -111,17 +111,18 @@ pub async fn collect_packages(
             if let Package::Purl { purl } = &entry.package {
                 guac.ingest_package(purl).await.map_err(|_| Error::GuacError)?;
                 for vuln in vulns {
-                    guac.ingest_osv(Osv {
-                        osv_id: vuln.id.clone(),
-                    })
-                    .await
-                    .map_err(|_| Error::GuacError)?;
-
+                    guac.ingest_vulnerability(
+                        "osv",
+                        &vuln.id,
+                    )
+                        .await
+                        .map_err(|_|Error::GuacError)?;
                     guac.ingest_certify_vuln(
                         purl,
-                        Vulnerability::Osv(Osv {
-                            osv_id: vuln.id.clone(),
-                        }),
+                        Vulnerability {
+                            ty: "osv".to_string(),
+                            vulnerability_id: vuln.id.clone(),
+                        },
                         Metadata {
                             db_uri: "https://osv.dev/".to_string(),
                             db_version: "1.0".to_string(),
@@ -163,9 +164,7 @@ pub async fn collect_vulnerabilities(
             vulnerability_ids.push(osv_vuln.id.clone());
             let v11y_vuln = v11y_client::Vulnerability::from(osv_vuln);
             println!("{:?}", v11y_vuln);
-            let result = state.v11y_client.ingest_vulnerability(&v11y_vuln).await;
-
-            println!("v11y {:?}", result);
+            let _result = state.v11y_client.ingest_vulnerability(&v11y_vuln).await;
         }
     }
 
