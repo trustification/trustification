@@ -103,8 +103,8 @@ services:
       - API_URL=http://localhost:$SPOG_API_PORT
       - BOMBASTIC_URL=http://localhost:$BOMBASTIC_API_PORT
       - VEXINATION_URL=http://localhost:$VEXINATION_API_PORT
-      # the issuer URL is passed to the browser, which is running on the host, not insider the container, so the
-      # URL is "localhost"
+      # the issuer URL is passed to the browser, which is running on the host, not inside the container. So the
+      # URL is "localhost" instead.
       - ISSUER_URL=http://localhost:8090/realms/chicken
     depends_on:
       - spog-api
