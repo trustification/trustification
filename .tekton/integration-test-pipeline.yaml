@@ -1,0 +1,20 @@
+kind: Pipeline
+apiVersion: tekton.dev/v1beta1
+metadata:
+  name: trustification-integration-tests
+spec:
+  params:
+  - name: username
+    default: world
+  tasks:
+  - name: task-1
+    params:
+    - name: username
+      value: $(params.username)
+    taskSpec:
+      params:
+      - name: username
+      steps:
+      - image: alpine:3.15
+        script: |
+          echo "Hello $(params.username)!"
