@@ -36,65 +36,71 @@ pub async fn start_bombastic(config: &Config) -> BombasticContext {
         };
     }
 
-    // No remote server requested, so fire up bombastic on ephemeral port
-    let listener = TcpListener::bind("localhost:0").unwrap();
-    let port = listener.local_addr().unwrap().port();
-    let url = Url::parse(&format!("http://localhost:{port}")).unwrap();
-    let indexer = bombastic_indexer();
-    let events = indexer.bus.clone();
+    #[cfg(not(feature = "with-services"))]
+    panic!("Remote trustification server expected");
 
-    let runner = Runner::spawn(|| async {
-        select! {
-            biased;
+    #[cfg(feature = "with-services")]
+    {
+        // No remote server requested, so fire up bombastic on ephemeral port
+        let listener = TcpListener::bind("localhost:0").unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let url = Url::parse(&format!("http://localhost:{port}")).unwrap();
+        let indexer = bombastic_indexer();
+        let events = indexer.bus.clone();
 
-            bindexer = indexer.run() => match bindexer {
-                Err(e) => {
-                    panic!("Error running bombastic indexer: {e:?}");
-                }
-                Ok(code) => {
-                    println!("Bombastic indexer exited with code {code:?}");
-                }
-            },
-            bapi = bombastic_api().run(Some(listener)) => match bapi {
-                Err(e) => {
-                    panic!("Error running bombastic API: {e:?}");
-                }
-                Ok(code) => {
-                    println!("Bombastic API exited with code {code:?}");
-                }
-            },
+        let runner = Runner::spawn(|| async {
+            select! {
+                biased;
+
+                bindexer = indexer.run() => match bindexer {
+                    Err(e) => {
+                        panic!("Error running bombastic indexer: {e:?}");
+                    }
+                    Ok(code) => {
+                        println!("Bombastic indexer exited with code {code:?}");
+                    }
+                },
+                bapi = bombastic_api().run(Some(listener)) => match bapi {
+                    Err(e) => {
+                        panic!("Error running bombastic API: {e:?}");
+                    }
+                    Ok(code) => {
+                        println!("Bombastic API exited with code {code:?}");
+                    }
+                },
+            }
+
+            Ok(())
+        });
+
+        // Create context right after spawning, as we clean up as soon as the context drops
+        let context = BombasticContext {
+            url,
+            provider: config.provider().await,
+            events,
+            _runner: Some(runner),
+        };
+
+        // ensure it's initialized
+        let client = reqwest::Client::new();
+        loop {
+            let response = client
+                .get(context.urlify(format!("/api/v1/sbom?id=none")))
+                .inject_token(&context.provider.provider_user)
+                .await
+                .unwrap()
+                .send()
+                .await
+                .unwrap();
+            if response.status() == StatusCode::NOT_FOUND {
+                break;
+            }
+            tokio::time::sleep(Duration::from_secs(1)).await;
         }
 
-        Ok(())
-    });
-
-    // Create context right after spawning, as we clean up as soon as the context drops
-    let context = BombasticContext {
-        url,
-        provider: config.provider().await,
-        events,
-        _runner: Some(runner),
-    };
-
-    // ensure it's initialized
-    let client = reqwest::Client::new();
-    loop {
-        let response = client
-            .get(context.urlify(format!("/api/v1/sbom?id=none")))
-            .inject_token(&context.provider.provider_user)
-            .await
-            .unwrap()
-            .send()
-            .await
-            .unwrap();
-        if response.status() == StatusCode::NOT_FOUND {
-            break;
-        }
-        tokio::time::sleep(Duration::from_secs(1)).await;
+        // return the context
+        context
     }
-
-    // return the context
-    context
 }
 
 pub async fn upload_sbom(context: &BombasticContext, key: &str, input: &serde_json::Value) {
@@ -153,6 +159,7 @@ pub async fn wait_for_search_result<F: Fn(serde_json::Value) -> bool>(
 }
 
 // Configuration for the bombastic indexer
+#[cfg(feature = "with-services")]
 fn bombastic_indexer() -> bombastic_indexer::Run {
     bombastic_indexer::Run {
         stored_topic: "sbom-stored".into(),
@@ -186,6 +193,7 @@ fn bombastic_indexer() -> bombastic_indexer::Run {
     }
 }
 
+#[cfg(feature = "with-services")]
 fn bombastic_api() -> bombastic_api::Run {
     bombastic_api::Run {
         bind: "127.0.0.1".to_string(),

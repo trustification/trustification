@@ -5,7 +5,10 @@ pub use self::access_token::*;
 pub use self::openid::*;
 
 use super::error::Error;
+
+#[cfg(feature = "actix")]
 use actix_web_httpauth::extractors::bearer::BearerAuth;
+
 use async_trait::async_trait;
 use base64::{prelude::BASE64_STANDARD, write::EncoderStringWriter};
 use std::fmt::Debug;

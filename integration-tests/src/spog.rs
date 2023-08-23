@@ -39,65 +39,72 @@ pub async fn start_spog(config: &Config) -> SpogContext {
         };
     }
 
-    // No remote server requested, so fire up spog on ephemeral port
-    let listener = TcpListener::bind("localhost:0").unwrap();
-    let port = listener.local_addr().unwrap().port();
-    let url = Url::parse(&format!("http://localhost:{port}")).unwrap();
+    #[cfg(not(feature = "with-services"))]
+    panic!("Remote trustification server expected");
 
-    let bombastic = start_bombastic(config).await;
-    let vexination = start_vexination(config).await;
+    #[cfg(feature = "with-services")]
+    {
+        // No remote server requested, so fire up spog on ephemeral port
+        let listener = TcpListener::bind("localhost:0").unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let url = Url::parse(&format!("http://localhost:{port}")).unwrap();
 
-    let burl = bombastic.url.to_owned();
-    let vurl = vexination.url.to_owned();
+        let bombastic = start_bombastic(config).await;
+        let vexination = start_vexination(config).await;
 
-    let runner = Runner::spawn(move || async move {
-        select! {
-            biased;
+        let burl = bombastic.url.to_owned();
+        let vurl = vexination.url.to_owned();
 
-            spog = spog_api(burl, vurl).run(Some(listener)) => match spog {
-                Err(e) => {
-                    panic!("Error running spog API: {e:?}");
-                }
-                Ok(code) => {
-                    println!("Spog API exited with code {code:?}");
-                }
-            },
+        let runner = Runner::spawn(move || async move {
+            select! {
+                biased;
 
+                spog = spog_api(burl, vurl).run(Some(listener)) => match spog {
+                    Err(e) => {
+                        panic!("Error running spog API: {e:?}");
+                    }
+                    Ok(code) => {
+                        println!("Spog API exited with code {code:?}");
+                    }
+                },
+
+            }
+
+            Ok(())
+        });
+
+        // Create context right after spawning, as we clean up as soon as the context drops
+        let context = SpogContext {
+            url,
+            provider: config.provider().await,
+            bombastic,
+            vexination,
+            _runner: Some(runner),
+        };
+
+        // ensure it's initialized
+        let client = reqwest::Client::new();
+        loop {
+            let response = client
+                .get(context.urlify("/api/v1/sbom?id=none"))
+                .inject_token(&context.provider.provider_user)
+                .await
+                .unwrap()
+                .send()
+                .await
+                .unwrap();
+            if response.status() == StatusCode::NOT_FOUND {
+                break;
+            }
+            tokio::time::sleep(Duration::from_secs(1)).await;
         }
 
-        Ok(())
-    });
-
-    // Create context right after spawning, as we clean up as soon as the context drops
-    let context = SpogContext {
-        url,
-        provider: config.provider().await,
-        bombastic,
-        vexination,
-        _runner: Some(runner),
-    };
-
-    // ensure it's initialized
-    let client = reqwest::Client::new();
-    loop {
-        let response = client
-            .get(context.urlify("/api/v1/sbom?id=none"))
-            .inject_token(&context.provider.provider_user)
-            .await
-            .unwrap()
-            .send()
-            .await
-            .unwrap();
-        if response.status() == StatusCode::NOT_FOUND {
-            break;
-        }
-        tokio::time::sleep(Duration::from_secs(1)).await;
+        // return the context
+        context
     }
-
-    // return the context
-    context
 }
 
+#[cfg(feature = "with-services")]
 fn spog_api(burl: Url, vurl: Url) -> spog_api::Run {
     spog_api::Run {
         devmode: false,

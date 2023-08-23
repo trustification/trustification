@@ -34,68 +34,73 @@ pub async fn start_vexination(config: &Config) -> VexinationContext {
             _runner: None,
         };
     }
+    #[cfg(not(feature = "with-services"))]
+    panic!("Remote trustification server expected");
 
-    // No remote server requested, so fire up vexination on ephemeral port
-    let listener = TcpListener::bind("localhost:0").unwrap();
-    let port = listener.local_addr().unwrap().port();
-    let url = Url::parse(&format!("http://localhost:{port}")).unwrap();
-    let indexer = vexination_indexer();
-    let events = indexer.bus.clone();
+    #[cfg(feature = "with-services")]
+    {
+        // No remote server requested, so fire up vexination on ephemeral port
+        let listener = TcpListener::bind("localhost:0").unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let url = Url::parse(&format!("http://localhost:{port}")).unwrap();
+        let indexer = vexination_indexer();
+        let events = indexer.bus.clone();
 
-    let runner = Runner::spawn(|| async {
-        select! {
-            biased;
+        let runner = Runner::spawn(|| async {
+            select! {
+                biased;
 
-            vindexer = indexer.run() => match vindexer {
-                Err(e) => {
-                    panic!("Error running vexination indexer: {e:?}");
-                }
-                Ok(code) => {
-                    println!("Vexination indexer exited with code {code:?}");
-                }
-            },
+                vindexer = indexer.run() => match vindexer {
+                    Err(e) => {
+                        panic!("Error running vexination indexer: {e:?}");
+                    }
+                    Ok(code) => {
+                        println!("Vexination indexer exited with code {code:?}");
+                    }
+                },
 
-            vapi = vexination_api().run(Some(listener)) => match vapi {
-                Err(e) => {
-                    panic!("Error running vexination API: {e:?}");
-                }
-                Ok(code) => {
-                    println!("Vexination API exited with code {code:?}");
-                }
-            },
+                vapi = vexination_api().run(Some(listener)) => match vapi {
+                    Err(e) => {
+                        panic!("Error running vexination API: {e:?}");
+                    }
+                    Ok(code) => {
+                        println!("Vexination API exited with code {code:?}");
+                    }
+                },
+            }
+
+            Ok(())
+        });
+
+        // Create context right after spawning, as we clean up as soon as the context drops
+        let provider = config.provider().await;
+        let context = VexinationContext {
+            url,
+            provider,
+            events,
+            _runner: Some(runner),
+        };
+
+        // ensure it's initialized
+        let client = reqwest::Client::new();
+        loop {
+            let response = client
+                .get(context.urlify("/api/v1/vex?advisory=none"))
+                .inject_token(&context.provider.provider_user)
+                .await
+                .unwrap()
+                .send()
+                .await
+                .unwrap();
+            if response.status() == StatusCode::NOT_FOUND {
+                break;
+            }
+            tokio::time::sleep(Duration::from_secs(1)).await;
         }
 
-        Ok(())
-    });
-
-    // Create context right after spawning, as we clean up as soon as the context drops
-    let provider = config.provider().await;
-    let context = VexinationContext {
-        url,
-        provider,
-        events,
-        _runner: Some(runner),
-    };
-
-    // ensure it's initialized
-    let client = reqwest::Client::new();
-    loop {
-        let response = client
-            .get(context.urlify("/api/v1/vex?advisory=none"))
-            .inject_token(&context.provider.provider_user)
-            .await
-            .unwrap()
-            .send()
-            .await
-            .unwrap();
-        if response.status() == StatusCode::NOT_FOUND {
-            break;
-        }
-        tokio::time::sleep(Duration::from_secs(1)).await;
+        // return the context
+        context
     }
-
-    // return the context
-    context
 }
 
 pub async fn upload_vex(context: &VexinationContext, input: &serde_json::Value) {
@@ -112,6 +117,7 @@ pub async fn upload_vex(context: &VexinationContext, input: &serde_json::Value) 
 }
 
 // Configuration for the vexination indexer
+#[cfg(feature = "with-services")]
 fn vexination_indexer() -> vexination_indexer::Run {
     vexination_indexer::Run {
         stored_topic: "vex-stored".into(),
@@ -145,6 +151,7 @@ fn vexination_indexer() -> vexination_indexer::Run {
     }
 }
 
+#[cfg(feature = "with-services")]
 fn vexination_api() -> vexination_api::Run {
     vexination_api::Run {
         bind: "127.0.0.1".to_string(),
