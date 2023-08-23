@@ -1,5 +1,4 @@
-use crate::devmode;
-use crate::devmode::SCOPE_MAPPINGS;
+use crate::{authenticator::default_scope_mappings, devmode};
 use clap::ArgAction;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -35,12 +34,7 @@ impl AuthenticatorConfig {
                 .map(|client_id| AuthenticatorClientConfig {
                     client_id: client_id.to_string(),
                     issuer_url: devmode::issuer_url(),
-
-                    scope_mappings: SCOPE_MAPPINGS
-                        .iter()
-                        .map(|(k, v)| (k.to_string(), v.iter().map(ToString::to_string).collect()))
-                        .collect(),
-
+                    scope_mappings: default_scope_mappings(),
                     required_audience: None,
                     tls_insecure: false,
                     tls_ca_certificates: Default::default(),
@@ -134,7 +128,7 @@ impl SingleAuthenticatorClientConfig {
                 tls_ca_certificates: self.tls_ca_certificates.clone(),
                 tls_insecure: self.tls_insecure,
                 required_audience: self.required_audience.clone(),
-                scope_mappings: Default::default(),
+                scope_mappings: default_scope_mappings(),
             })
     }
 }

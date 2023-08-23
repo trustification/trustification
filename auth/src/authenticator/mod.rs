@@ -1,7 +1,10 @@
 //! Server side authentication (verification)
 
 mod claims;
+mod default;
 mod validate;
+
+pub use default::*;
 
 #[cfg(feature = "actix")]
 pub mod actix;
