@@ -1,3 +1,5 @@
+use std::env::VarError;
+
 use reqwest::Url;
 use serde_json::Value;
 use trustification_event_bus::{EventBusConfig, EventBusType};
@@ -10,9 +12,10 @@ pub struct Config {
     pub bombastic: Option<Url>,
     pub vexination: Option<Url>,
     issuer: String,
-    user: String,
-    manager: String,
-    secret: String,
+    mgr_id: String,
+    mgr_secret: String,
+    user_id: Option<String>,
+    user_secret: Option<String>,
 }
 
 impl Config {
@@ -35,20 +38,28 @@ impl Config {
                     bombastic: endpoints["bombastic"].as_str().map(Url::parse).unwrap().ok(),
                     vexination: endpoints["vexination"].as_str().map(Url::parse).unwrap().ok(),
                     issuer: endpoints["oidc"]["issuer"].as_str().unwrap().to_string(),
-                    user: std::env::var("TRUST_USER_ID").expect("TRUST_USER_ID is required"),
-                    manager: std::env::var("TRUST_MANAGER_ID").expect("TRUST_MANAGER_ID is required"),
-                    secret: std::env::var("TRUST_SECRET").expect("TRUST_SECRET is required"),
+                    mgr_id: std::env::var("TRUST_ID").expect("TRUST_ID is required"),
+                    mgr_secret: std::env::var("TRUST_SECRET").expect("TRUST_SECRET is required"),
+                    user_id: std::env::var("TRUST_USER_ID").ok(),
+                    user_secret: std::env::var("TRUST_USER_SECRET").ok(),
                 }
             }
-            _ => Config::default(),
+            Err(VarError::NotPresent) => Config::default(),
+            Err(e) => panic!("Unexpected error reading environment variable: {e}"),
         }
     }
 
     pub async fn provider(&self) -> ProviderContext {
+        // For convenience, we default the user's id/secret to that of
+        // the manager, but this will break any tests that require a
+        // user's role to be less authorized than a manager.
+        let user_id = self.user_id.as_ref().unwrap_or(&self.mgr_id);
+        let user_secret = self.user_secret.as_ref().unwrap_or(&self.mgr_secret);
+
         match self.spog {
             Some(_) => ProviderContext {
-                provider_user: create_provider(&self.user, &self.secret, &self.issuer).await,
-                provider_manager: create_provider(&self.manager, &self.secret, &self.issuer).await,
+                provider_user: create_provider(user_id, user_secret, &self.issuer).await,
+                provider_manager: create_provider(&self.mgr_id, &self.mgr_secret, &self.issuer).await,
             },
             _ => create_provider_context().await,
         }
