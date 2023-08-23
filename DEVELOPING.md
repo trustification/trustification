@@ -41,10 +41,11 @@ brew install protobuf
 
 ## Integration tests
 
-Trustification comes with a set of [integration-tests/](integration
-tests) that you can run after the required services defined in the
-[deploy/compose/compose.yaml](default compose script) are up and
-running. Once they're up, run the tests like so:
+Trustification comes with a set of [integration
+tests](./integration-tests/) that you can run after the required
+services defined in the [default compose
+script](./deploy/compose/compose.yaml) are up and running. Once
+they're up, run the tests like so:
 
 ```shell
 cargo test -p integration-tests

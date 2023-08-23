@@ -1,7 +1,7 @@
 # Integration tests
 
 By default, these tests expect the services defined in the
-[../deploy/compose/compose.yaml](default compose script) -- MinIO,
+[default compose script](../deploy/compose/compose.yaml) -- MinIO,
 Kafka, and Keycloak -- to be up and running. Once they're ready, run
 the tests like so:
 
@@ -35,7 +35,7 @@ If it's set, other env vars will be required:
     secret associated with `TRUST_USER_ID`
   * `KAFKA_BOOTSTRAP_SERVERS` -- (optional) if set, its value will be
     used to configure the event bus required by some of the
-    tests. Otherwise, [https://aws.amazon.com/sqs/](SQS) is assumed
+    tests. Otherwise, [SQS](https://aws.amazon.com/sqs/) is assumed
     and valid AWS credentials will be required.
 
 Some examples might be nice. Let's assume you're running a local
