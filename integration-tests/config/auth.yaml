@@ -1,0 +1,17 @@
+$schema: "../../auth/schema/auth.json"
+
+authentication:
+  clients:
+    - clientId: frontend
+      issuerUrl: http://localhost:8090/realms/chicken
+      scopeMappings: &scopeMappings
+        "create:document": [ "create.sbom", "create.vex" ]
+        "read:document": [ "read.sbom", "read.vex" ]
+        "update:document": [ "update.sbom", "update.vex" ]
+        "delete:document": [ "delete.sbom", "delete.vex" ]
+    - clientId: testing-user
+      issuerUrl: http://localhost:8090/realms/chicken
+      scopeMappings: *scopeMappings
+    - clientId: testing-manager
+      issuerUrl: http://localhost:8090/realms/chicken
+      scopeMappings: *scopeMappings

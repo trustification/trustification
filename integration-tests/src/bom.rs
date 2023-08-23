@@ -218,7 +218,7 @@ fn bombastic_api() -> bombastic_api::Run {
             infrastructure_workers: 1,
             enable_tracing: false,
         },
-        oidc: testing_oidc(),
+        auth: testing_auth(),
         swagger_ui_oidc: testing_swagger_ui_oidc(),
     }
 }

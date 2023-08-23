@@ -16,21 +16,14 @@ use reqwest::{StatusCode, Url};
 use serde_json::Value;
 use std::time::Duration;
 use tokio::{select, time::timeout};
-use trustification_auth::client::TokenInjector;
+use trustification_auth::{auth::AuthConfigArguments, client::TokenInjector};
 use trustification_event_bus::EventBusConfig;
 
 #[cfg(feature = "with-services")]
 use {
-    spog_api::DEFAULT_CRDA_PAYLOAD_LIMIT,
-    std::net::TcpListener,
-    trustification_auth::{
-        authenticator::config::{AuthenticatorConfig, SingleAuthenticatorClientConfig},
-        swagger_ui::SwaggerUiOidcConfig,
-    },
-    trustification_event_bus::EventBusType,
-    trustification_index::IndexConfig,
-    trustification_infrastructure::InfrastructureConfig,
-    trustification_storage::StorageConfig,
+    spog_api::DEFAULT_CRDA_PAYLOAD_LIMIT, std::net::TcpListener, trustification_auth::swagger_ui::SwaggerUiOidcConfig,
+    trustification_event_bus::EventBusType, trustification_index::IndexConfig,
+    trustification_infrastructure::InfrastructureConfig, trustification_storage::StorageConfig,
 };
 
 #[cfg(feature = "with-services")]
@@ -77,7 +70,7 @@ pub async fn wait_for_event<F: Future>(t: Duration, events: &EventBusConfig, bus
     .await;
 }
 
-pub async fn get_response(url: &Url, exp_status: reqwest::StatusCode, context: &ProviderContext) -> Option<Value> {
+pub async fn get_response(url: &Url, exp_status: StatusCode, context: &ProviderContext) -> Option<Value> {
     let response = reqwest::Client::new()
         .get(url.to_owned())
         .inject_token(&context.provider_manager)
@@ -98,7 +91,7 @@ pub async fn get_response(url: &Url, exp_status: reqwest::StatusCode, context: &
     }
 }
 
-// Return a unique ID
+/// Return a unique ID
 pub fn id(prefix: &str) -> String {
     let uuid = uuid::Uuid::new_v4();
     format!("{prefix}-{uuid}")
@@ -112,18 +105,11 @@ pub trait Urlifier {
 }
 
 #[cfg(feature = "with-services")]
-fn testing_oidc() -> AuthenticatorConfig {
-    AuthenticatorConfig {
+fn testing_auth() -> AuthConfigArguments {
+    AuthConfigArguments {
         disabled: false,
-        clients: SingleAuthenticatorClientConfig {
-            client_ids: vec![
-                "frontend".to_string(),
-                "testing-user".to_string(),
-                "testing-manager".to_string(),
-            ],
-            issuer_url: SSO_ENDPOINT.to_string(),
-            ..Default::default()
-        },
+        config: Some("config/auth.yaml".into()),
+        clients: Default::default(),
     }
 }
 

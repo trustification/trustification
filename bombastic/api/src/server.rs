@@ -19,10 +19,10 @@ use futures::TryStreamExt;
 use serde::Deserialize;
 use trustification_api::search::SearchOptions;
 use trustification_auth::{
-    authenticator::{user::UserDetails, Authenticator},
+    authenticator::{user::UserInformation, Authenticator},
     authorizer::Authorizer,
     swagger_ui::SwaggerUiOidc,
-    Scope,
+    Permission,
 };
 use trustification_index::Error as IndexError;
 use trustification_infrastructure::new_auth;
@@ -90,6 +90,7 @@ impl error::ResponseError for Error {
         }
         .body(self.to_string())
     }
+
     fn status_code(&self) -> StatusCode {
         match self {
             Self::Storage(StorageError::NotFound) => StatusCode::NOT_FOUND,
@@ -129,7 +130,11 @@ async fn query_sbom(
     state: web::Data<SharedState>,
     params: web::Query<IdentifierParams>,
     accept_encoding: web::Header<AcceptEncoding>,
+    authorizer: web::Data<Authorizer>,
+    user: UserInformation,
 ) -> actix_web::Result<impl Responder> {
+    authorizer.require(&user, Permission::ReadSbom)?;
+
     let key = params.into_inner().id;
     log::trace!("Querying SBOM using id {}", key);
     let storage = state.storage.read().await;
@@ -219,7 +224,11 @@ impl From<&SearchParams> for SearchOptions {
 async fn search_sbom(
     state: web::Data<SharedState>,
     params: web::Query<SearchParams>,
+    authorizer: web::Data<Authorizer>,
+    user: UserInformation,
 ) -> actix_web::Result<impl Responder> {
+    authorizer.require(&user, Permission::ReadSbom)?;
+
     let params = params.into_inner();
 
     log::info!("Querying SBOM: '{}'", params.q);
@@ -260,9 +269,9 @@ async fn publish_sbom(
     payload: web::Payload,
     content_type: Option<web::Header<ContentType>>,
     authorizer: web::Data<Authorizer>,
-    user: Option<UserDetails>,
+    user: UserInformation,
 ) -> actix_web::Result<impl Responder> {
-    authorizer.require_scope(user, Scope::CreateDocument)?;
+    authorizer.require(&user, Permission::CreateSbom)?;
 
     let typ = verify_type(content_type)?;
     let enc = verify_encoding(req.headers().get(CONTENT_ENCODING))?;
@@ -322,9 +331,9 @@ async fn delete_sbom(
     state: web::Data<SharedState>,
     params: web::Query<IdentifierParams>,
     authorizer: web::Data<Authorizer>,
-    user: Option<UserDetails>,
+    user: UserInformation,
 ) -> actix_web::Result<impl Responder> {
-    authorizer.require_scope(user, Scope::DeleteDocument)?;
+    authorizer.require(&user, Permission::DeleteSbom)?;
 
     let params = params.into_inner();
     let id = &params.id;
