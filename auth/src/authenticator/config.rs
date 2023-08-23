@@ -27,6 +27,7 @@ pub struct AuthenticatorConfig {
 }
 
 impl AuthenticatorConfig {
+    /// Create settings when using `--devmode`.
     pub fn devmode() -> Self {
         Self {
             clients: devmode::CLIENT_IDS
