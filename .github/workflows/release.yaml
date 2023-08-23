@@ -120,6 +120,8 @@ jobs:
 
       - name: Install Protoc
         uses: arduino/setup-protoc@v2
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install cargo-auditable
         run: cargo binstall -y cargo-auditable
