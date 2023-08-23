@@ -193,10 +193,10 @@ mod test {
 
     fn assert_scope_mapping(scopes: &str, mappings: &[(&str, &[&str])], expected: &[&str]) {
         let mappings = mappings
-            .into_iter()
-            .map(|(k, v)| (k.to_string(), v.into_iter().map(|v| v.to_string()).collect()))
+            .iter()
+            .map(|(k, v)| (k.to_string(), v.iter().map(|v| v.to_string()).collect()))
             .collect::<HashMap<String, Vec<String>>>();
-        let expected = expected.into_iter().map(|item| item.to_string()).collect::<Vec<_>>();
+        let expected = expected.iter().map(|item| item.to_string()).collect::<Vec<_>>();
         let result = AuthenticatorClient::map_scopes(scopes, &mappings);
         assert_eq!(result, expected);
     }
