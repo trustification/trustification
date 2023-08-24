@@ -1,10 +1,10 @@
 use actix_web::{
-    get,
+    delete, get,
     http::header::ContentType,
     http::StatusCode,
     route,
     web::{self, Bytes},
-    HttpResponse,
+    HttpResponse, Responder,
 };
 use derive_more::{Display, Error, From};
 use serde::Deserialize;
@@ -43,7 +43,8 @@ pub fn config(
             .app_data(web::PayloadConfig::new(10 * 1024 * 1024))
             .service(fetch_vex)
             .service(publish_vex)
-            .service(search_vex),
+            .service(search_vex)
+            .service(delete_vex),
     )
     .service({
         let mut openapi = ApiDoc::openapi();
@@ -260,4 +261,38 @@ async fn search_vex(
     .await?
     .map_err(Error::Index)?;
     Ok(HttpResponse::Ok().json(SearchResult { total, result }))
+}
+
+/// Delete a VEX doc using its identifier.
+#[utoipa::path(
+    delete,
+    tag = "vexination",
+    path = "/api/v1/vex",
+    responses(
+        (status = 204, description = "VEX either deleted or nonexistent"),
+        (status = 401, description = "User is not authenticated"),
+        (status = 403, description = "User is not allowed to perform operation"),
+        (status = BAD_REQUEST, description = "Missing id"),
+    ),
+    params(
+        ("id" = String, Query, description = "Package URL or product identifier of VEX to query"),
+    )
+)]
+#[delete("/vex")]
+async fn delete_vex(
+    state: web::Data<SharedState>,
+    params: web::Query<QueryParams>,
+    authorizer: web::Data<Authorizer>,
+    user: UserInformation,
+) -> actix_web::Result<impl Responder> {
+    authorizer.require(&user, Permission::DeleteVex)?;
+
+    let params = params.into_inner();
+    let id = &params.advisory;
+    log::trace!("Deleting VEX using id {}", id);
+    let storage = state.storage.write().await;
+
+    storage.delete(id).await.map_err(Error::Storage)?;
+
+    Ok(HttpResponse::NoContent().finish())
 }

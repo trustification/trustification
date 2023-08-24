@@ -1,6 +1,6 @@
-use integration_tests::{get_response, upload_vex, wait_for_event, Urlifier, VexinationContext};
+use integration_tests::{delete_vex, get_response, id, upload_vex, wait_for_event, Urlifier, VexinationContext};
 use reqwest::StatusCode;
-use serde_json::Value;
+use serde_json::{json, Value};
 use std::time::Duration;
 use test_context::test_context;
 use tokio::fs::{remove_file, File};
@@ -14,11 +14,13 @@ async fn vexination_roundtrip(vexination: &mut VexinationContext) {
     let client = reqwest::Client::new();
     let input = serde_json::from_str(include_str!("../../vexination/testdata/rhsa-2023_1441.json")).unwrap();
     upload_vex(vexination, &input).await;
+    let id = input["document"]["tracking"]["id"].as_str().unwrap();
+    let advisory = encode(id);
 
     loop {
         // 1. Check that we can get the VEX back
         let response = client
-            .get(vexination.urlify("/api/v1/vex?advisory=RHSA-2023%3A1441"))
+            .get(vexination.urlify(format!("/api/v1/vex?advisory={advisory}")))
             .header("Accept", "application/json")
             .inject_token(&vexination.provider.provider_manager)
             .await
@@ -33,7 +35,7 @@ async fn vexination_roundtrip(vexination: &mut VexinationContext) {
 
             // 2. Make sure we can search for the VEX (takes some time)
             let response = client
-                .get(vexination.urlify("/api/v1/vex/search?q="))
+                .get(vexination.urlify(format!("/api/v1/vex/search?q=%22{advisory}%22")))
                 .inject_token(&vexination.provider.provider_manager)
                 .await
                 .unwrap()
@@ -43,19 +45,25 @@ async fn vexination_roundtrip(vexination: &mut VexinationContext) {
 
             assert_eq!(response.status(), StatusCode::OK);
             let payload: Value = response.json().await.unwrap();
-
             if payload["total"].as_u64().unwrap() >= 1 {
+                assert_eq!(id, payload["result"][0]["document"]["advisory_id"].as_str().unwrap());
                 break;
             }
         }
         tokio::time::sleep(Duration::from_secs(4)).await;
     }
+    delete_vex(vexination, &advisory).await;
+}
 
+#[test_context(VexinationContext)]
+#[tokio::test]
+#[ntest::timeout(30_000)]
+async fn vex_bad_search_queries(context: &mut VexinationContext) {
     // Ensure get expected errors on bad queries
     for query in &["unknown:foo", "foo sort:unknown"] {
-        let response = client
-            .get(vexination.urlify(format!("/api/v1/vex/search?q={}", encode(query))))
-            .inject_token(&vexination.provider.provider_manager)
+        let response = reqwest::Client::new()
+            .get(context.urlify(format!("/api/v1/vex/search?q={}", encode(query))))
+            .inject_token(&context.provider.provider_manager)
             .await
             .unwrap()
             .send()
@@ -70,9 +78,14 @@ async fn vexination_roundtrip(vexination: &mut VexinationContext) {
 #[tokio::test]
 #[ntest::timeout(60_000)]
 async fn upload_existing_vex_without_change(vexination: &VexinationContext) {
-    let input: serde_json::Value =
+    let mut input: serde_json::Value =
         serde_json::from_str(include_str!("../../vexination/testdata/rhsa-2023_3408.json")).unwrap();
-    let id = encode(&input["document"]["tracking"]["id"].as_str().unwrap());
+
+    // we generate a unique id and use it as the VEX's id for searching
+    let key = id("test-unchanged-vex");
+    input["document"]["tracking"]["id"] = json!(key);
+
+    let id = encode(&key);
     let url = vexination.urlify(format!("api/v1/vex?advisory={id}"));
     upload_vex(vexination, &input).await;
     let response1: serde_json::Value = get_response(&url, StatusCode::OK, &vexination.provider).await.into();
@@ -83,6 +96,7 @@ async fn upload_existing_vex_without_change(vexination: &VexinationContext) {
         input, response2,
         "Content mismatch between request and response after update"
     );
+    delete_vex(vexination, &id).await;
 }
 
 #[test_context(VexinationContext)]
@@ -91,18 +105,24 @@ async fn upload_existing_vex_without_change(vexination: &VexinationContext) {
 async fn upload_existing_vex_with_change(vexination: &VexinationContext) {
     let mut input: serde_json::Value =
         serde_json::from_str(include_str!("../../vexination/testdata/rhsa-2021_3029.json")).unwrap();
-    let id = encode(&input["document"]["tracking"]["id"].as_str().unwrap());
+
+    // we generate a unique id and use it as the VEX's id for searching
+    let key = id("test-changed-vex");
+    input["document"]["tracking"]["id"] = json!(key);
+
+    let id = encode(&key);
     let url = vexination.urlify(format!("api/v1/vex?advisory={id}"));
-    upload_vex(vexination, &mut input).await;
+    upload_vex(vexination, &input).await;
     let response1: serde_json::Value = get_response(&url, StatusCode::OK, &vexination.provider).await.into();
     assert_eq!(input, response1, "Content mismatch between request and response");
     input["document"]["title"] = Value::String(String::from("Red Hat Vex Title Updated"));
-    upload_vex(vexination, &mut input).await;
+    upload_vex(vexination, &input).await;
     let response2: serde_json::Value = get_response(&url, StatusCode::OK, &vexination.provider).await.into();
     assert_eq!(
         input, response2,
         "Content mismatch between request and response after update"
     );
+    delete_vex(vexination, &id).await;
 }
 
 #[test_context(VexinationContext)]
@@ -144,7 +164,7 @@ async fn vex_invalid_encoding(vexination: &mut VexinationContext) {
 #[tokio::test]
 #[ntest::timeout(60_0000)]
 async fn upload_vex_empty_json(context: &mut VexinationContext) {
-    let id = "empty-file-json";
+    let id = "test-empty-file-json";
     wait_for_event(&context.events, "vex-failed", id, async {
         let input = serde_json::json!({});
         let response = reqwest::Client::new()
@@ -159,13 +179,14 @@ async fn upload_vex_empty_json(context: &mut VexinationContext) {
         assert_eq!(response.status(), StatusCode::CREATED);
     })
     .await;
+    delete_vex(context, id).await;
 }
 
 #[test_context(VexinationContext)]
 #[tokio::test]
 #[ntest::timeout(90_000)]
 async fn upload_vex_empty_file(vexination: &mut VexinationContext) {
-    let id = "empty-file-upload";
+    let id = "test-empty-file-upload";
     wait_for_event(&vexination.events, "vex-failed", id, async {
         let file_path = "empty-test.txt";
         let _ = File::create(&file_path).await.expect("file creation failed");
@@ -183,6 +204,7 @@ async fn upload_vex_empty_file(vexination: &mut VexinationContext) {
         assert_eq!(response.status(), StatusCode::CREATED);
     })
     .await;
+    delete_vex(vexination, id).await;
 }
 
 #[test_context(VexinationContext)]
@@ -191,7 +213,7 @@ async fn upload_vex_empty_file(vexination: &mut VexinationContext) {
 async fn vex_upload_user_not_allowed(vexination: &mut VexinationContext) {
     let input: serde_json::Value =
         serde_json::from_str(include_str!("../../vexination/testdata/rhsa-2023_1441.json")).unwrap();
-    let id = encode(&input["document"]["tracking"]["id"].as_str().unwrap());
+    let id = encode(input["document"]["tracking"]["id"].as_str().unwrap());
     let reponse = reqwest::Client::new()
         .post(vexination.urlify(format!("/api/v1/vex?advisory={id}")))
         .json(&input)
@@ -210,7 +232,7 @@ async fn vex_upload_user_not_allowed(vexination: &mut VexinationContext) {
 async fn vex_upload_unauthorized(vexination: &mut VexinationContext) {
     let input: serde_json::Value =
         serde_json::from_str(include_str!("../../vexination/testdata/rhsa-2023_1441.json")).unwrap();
-    let id = encode(&input["document"]["tracking"]["id"].as_str().unwrap());
+    let id = encode(input["document"]["tracking"]["id"].as_str().unwrap());
     let reponse = reqwest::Client::new()
         .post(vexination.urlify(format!("/api/v1/vex?advisory={id}")))
         .json(&input)
