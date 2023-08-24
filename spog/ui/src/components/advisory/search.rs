@@ -41,8 +41,11 @@ pub struct AdvisorySearchProperties {
     pub children: Children,
 }
 
-#[function_component(AdvisorySearch)]
-pub fn advisory_search(props: &AdvisorySearchProperties) -> Html {
+#[hook]
+pub fn use_advisory_search(
+    mode: SearchPropertiesMode,
+    callback: Callback<UseAsyncHandleDeps<SearchResult<Rc<Vec<AdvisorySummary>>>, String>>,
+) -> UseStandardSearch {
     let backend = use_backend();
     let access_token = use_latest_access_token();
 
@@ -51,17 +54,18 @@ pub fn advisory_search(props: &AdvisorySearchProperties) -> Html {
     let config = use_config();
     let filters = use_memo(|()| config.vexination.filters.clone(), ());
 
-    let UseStandardSearch {
-        search_params,
-        pagination,
-        filter_input_state,
-        onclear,
-        onset,
-        ontogglesimple,
-        text,
-    } = use_standard_search::<DynamicSearchParameters, Vulnerabilities>(props.mode.clone(), *total, filters.clone());
+    let search_params = use_state_eq::<SearchMode<DynamicSearchParameters>, _>(Default::default);
+    let pagination = use_pagination(*total, Default::default);
 
-    let search = {
+    let search = use_standard_search::<Vulnerabilities>(
+        search_params.clone(),
+        pagination.clone(),
+        mode,
+        filters.clone(),
+        total.clone(),
+    );
+
+    let search_op = {
         let filters = filters.clone();
         use_async_with_cloned_deps(
             move |(search_params, page, per_page)| async move {
@@ -83,19 +87,26 @@ pub fn advisory_search(props: &AdvisorySearchProperties) -> Html {
         )
     };
 
-    total.set(search.data().and_then(|d| d.total));
+    total.set(search_op.data().and_then(|d| d.total));
 
     use_effect_with_deps(
         |(callback, search)| {
             callback.emit(search.clone());
         },
-        (props.callback.clone(), search.clone()),
+        (callback.clone(), search_op.clone()),
     );
+
+    search
+}
+
+#[function_component(AdvisorySearch)]
+pub fn advisory_search(props: &AdvisorySearchProperties) -> Html {
+    let search = use_advisory_search(props.mode.clone(), props.callback.clone());
 
     // render
 
-    let simple = search_params.is_simple();
-    let onchange = use_callback(|data, text| text.set(data), text.clone());
+    let simple = search.search_params.is_simple();
+    let onchange = use_callback(|data, text| text.set(data), search.text.clone());
     let managed = matches!(&props.mode, SearchPropertiesMode::Managed { .. });
 
     html!(
@@ -105,27 +116,27 @@ pub fn advisory_search(props: &AdvisorySearchProperties) -> Html {
                 <GridItem cols={[2]}>
                     if managed {
                         <div style="height: 100%; display: flex;">
-                            <SimpleModeSwitch {simple} ontoggle={ontogglesimple} />
+                            <SimpleModeSwitch {simple} ontoggle={search.ontogglesimple} />
                         </div>
                     }
                 </GridItem>
 
                 <GridItem cols={[10]}>
                     <SearchToolbar
-                        text={(*text).clone()}
+                        text={(*search.text).clone()}
                         {managed}
-                        pagination={pagination.clone()}
-                        total={*total}
+                        pagination={search.pagination.clone()}
+                        total={*search.total}
                         children={props.toolbar_items.clone()}
-                        {onset}
-                        {onclear}
+                        onset={search.onset}
+                        onclear={search.onclear}
                         {onchange}
-                        filter_input_state={filter_input_state.clone()}
+                        filter_input_state={search.filter_input_state.clone()}
                     />
                 </GridItem>
 
                 <GridItem cols={[2]}>
-                    <AdvisorySearchControls {search_params}/>
+                    <AdvisorySearchControls search_params={search.search_params}/>
                 </GridItem>
 
                 <GridItem cols={[10]}>
@@ -135,8 +146,8 @@ pub fn advisory_search(props: &AdvisorySearchProperties) -> Html {
             </Grid>
 
             <SimplePagination
-                {pagination}
-                total={*total}
+                pagination={search.pagination}
+                total={*search.total}
                 position={PaginationPosition::Bottom}
             />
 
