@@ -18,7 +18,25 @@ impl SearchPropertiesMode {
     pub fn props_query(&self) -> Option<String> {
         match &self {
             Self::Managed { query } => query.clone(),
-            _ => None,
+            Self::Provided { terms } => Some(terms.to_string()),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_prop_query() {
+        let mode = SearchPropertiesMode::Managed {
+            query: Some("some_managed".to_string()),
+        };
+        assert_eq!(mode.props_query(), Some("some_managed".to_string()));
+
+        let mode = SearchPropertiesMode::Provided {
+            terms: "some_term".to_string(),
+        };
+        assert_eq!(mode.props_query(), Some("some_term".to_string()));
     }
 }
