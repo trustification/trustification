@@ -1,10 +1,11 @@
 //! Unified search
 
+use crate::components::sbom::use_sbom_search;
 use crate::{
     components::{
-        advisory::{AdvisoryResult, AdvisorySearch},
+        advisory::{use_advisory_search, AdvisoryResult, AdvisorySearchControls},
         common::Visible,
-        sbom::{PackageResult, SbomSearch},
+        sbom::{PackageResult, SbomSearchControls},
         search::*,
     },
     utils::count::count_tab_title,
@@ -60,6 +61,12 @@ pub fn search(props: &SearchProperties) -> Html {
         },
         advisory_search.clone(),
     );
+    let advisory = use_advisory_search(
+        SearchPropertiesMode::Provided {
+            terms: (*search_terms).clone(),
+        },
+        advisory_callback,
+    );
 
     // sbom search
 
@@ -69,6 +76,12 @@ pub fn search(props: &SearchProperties) -> Html {
             search.set((*state).clone());
         },
         sbom_search.clone(),
+    );
+    let sbom = use_sbom_search(
+        SearchPropertiesMode::Provided {
+            terms: (*search_terms).clone(),
+        },
+        sbom_callback,
     );
 
     // render
@@ -111,15 +124,18 @@ pub fn search(props: &SearchProperties) -> Html {
 
             <PageSection variant={PageSectionVariant::Default} fill={PageSectionFill::Fill}>
 
-                <Grid>
+                <Grid gutter=true>
                     <GridItem cols={[2]}>
-                        <Visible visible={*tab == TabIndex::Advisories}>
-                            <AdvisorySearch callback={advisory_callback} mode={SearchPropertiesMode::Provided {terms: (*search_terms).clone()}}/>
-                        </Visible>
-                        <Visible visible={*tab == TabIndex::Sboms}>
-                            <SbomSearch callback={sbom_callback} mode={SearchPropertiesMode::Provided {terms: (*search_terms).clone()}}/>
-                        </Visible>
+                        <div class="pf-v5-u-background-color-100">
+                            <Visible visible={*tab == TabIndex::Advisories}>
+                                <AdvisorySearchControls search_params={advisory.search_params.clone()} />
+                            </Visible>
+                            <Visible visible={*tab == TabIndex::Sboms}>
+                                <SbomSearchControls search_params={sbom.search_params.clone()} />
+                            </Visible>
+                        </div>
                     </GridItem>
+
                     <GridItem cols={[10]}>
                         <Tabs<TabIndex>
                             inset={TabInset::Page}
@@ -131,12 +147,33 @@ pub fn search(props: &SearchProperties) -> Html {
                             <Tab<TabIndex> index={TabIndex::Sboms} title={count_tab_title("SBOMs", &*sbom_search)} />
                         </Tabs<TabIndex>>
 
+                        <div class="pf-v5-u-background-color-100">
                         if *tab == TabIndex::Advisories {
+                            <SimplePagination
+                                pagination={advisory.pagination.clone()}
+                                total={*advisory.total}
+                            />
                             <AdvisoryResult state={(*advisory_search).clone()} />
+                            <SimplePagination
+                                pagination={advisory.pagination}
+                                total={*advisory.total}
+                                position={PaginationPosition::Bottom}
+                            />
                         }
                         if *tab == TabIndex::Sboms {
+                            <SimplePagination
+                                pagination={sbom.pagination.clone()}
+                                total={*sbom.total}
+                            />
                             <PackageResult state={(*sbom_search).clone()} />
+                            <SimplePagination
+                                pagination={sbom.pagination}
+                                total={*sbom.total}
+                                position={PaginationPosition::Bottom}
+                            />
                         }
+                        </div>
+
                     </GridItem>
                 </Grid>
 

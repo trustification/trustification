@@ -1,7 +1,8 @@
-use crate::components::search::{SearchMode, SearchPropertiesMode};
+use crate::components::search::{DynamicSearchParameters, SearchMode, SearchPropertiesMode};
 use crate::utils::search::*;
 use gloo_utils::format::JsValueSerdeExt;
 use patternfly_yew::prelude::*;
+use spog_model::config::Filters;
 use std::fmt::Debug;
 use std::ops::{Deref, DerefMut};
 use std::rc::Rc;
@@ -92,38 +93,29 @@ where
     (search_params, pagination)
 }
 
-pub struct UseStandardSearch<T> {
-    pub search_params: UseStateHandle<SearchMode<T>>,
+#[derive(Clone)]
+pub struct UseStandardSearch {
+    pub search_params: UseStateHandle<SearchMode<DynamicSearchParameters>>,
     pub pagination: UsePagination,
     pub filter_input_state: Rc<InputState>,
     pub onclear: Callback<()>,
     pub onset: Callback<()>,
     pub ontogglesimple: Callback<bool>,
     pub text: UseStateHandle<String>,
+    pub total: UseStateHandle<Option<usize>>,
 }
 
 #[hook]
-pub fn use_standard_search<T, S>(
+pub fn use_standard_search<S>(
+    search_params: UseStateHandle<SearchMode<DynamicSearchParameters>>,
+    pagination: UsePagination,
     mode: SearchPropertiesMode,
-    total: Option<usize>,
-    context: Rc<T::Context>,
-) -> UseStandardSearch<T>
+    context: Rc<Filters>,
+    total: UseStateHandle<Option<usize>>,
+) -> UseStandardSearch
 where
-    T: for<'de> serde::Deserialize<'de>
-        + serde::Serialize
-        + Clone
-        + Default
-        + Debug
-        + PartialEq
-        + ToFilterExpression
-        + SimpleProperties
-        + 'static,
-    T::Context: PartialEq,
     S: sikula::prelude::Search,
 {
-    let (search_params, pagination) =
-        use_search_view_state::<SearchMode<T>, _>(mode.props_query(), total, SearchMode::Complex);
-
     // the current value in the text input field
     let text = use_state_eq(|| match &*search_params {
         SearchMode::Complex(s) => s.to_string(),
@@ -207,5 +199,6 @@ where
         onset,
         onclear,
         ontogglesimple,
+        total,
     }
 }
