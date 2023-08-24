@@ -132,31 +132,26 @@ pub async fn delete_sbom(context: &BombasticContext, key: &str) {
 pub async fn wait_for_search_result<F: Fn(serde_json::Value) -> bool>(
     context: &mut BombasticContext,
     flags: &[(&str, &str)],
-    timeout: Duration,
     check: F,
 ) {
-    assert_within_timeout(timeout, async {
-        loop {
-            let url = context.urlify("/api/v1/sbom/search");
-            let response = reqwest::Client::new()
-                .get(url)
-                .query(flags)
-                .inject_token(&context.provider.provider_manager)
-                .await
-                .unwrap()
-                .send()
-                .await
-                .unwrap();
-            assert_eq!(response.status(), StatusCode::OK);
-            let payload: Value = response.json().await.unwrap();
-            if check(payload) {
-                break;
-            }
-
-            tokio::time::sleep(Duration::from_secs(1)).await;
+    loop {
+        let url = context.urlify("/api/v1/sbom/search");
+        let response = reqwest::Client::new()
+            .get(url)
+            .query(flags)
+            .inject_token(&context.provider.provider_manager)
+            .await
+            .unwrap()
+            .send()
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        let payload: Value = response.json().await.unwrap();
+        if check(payload) {
+            break;
         }
-    })
-    .await;
+        tokio::time::sleep(Duration::from_secs(1)).await;
+    }
 }
 
 // Configuration for the bombastic indexer

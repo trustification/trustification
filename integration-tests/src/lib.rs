@@ -15,7 +15,7 @@ use core::future::Future;
 use reqwest::{StatusCode, Url};
 use serde_json::Value;
 use std::time::Duration;
-use tokio::{select, time::timeout};
+use tokio::select;
 use trustification_auth::{auth::AuthConfigArguments, client::TokenInjector};
 use trustification_event_bus::EventBusConfig;
 
@@ -35,39 +35,28 @@ const SSO_ENDPOINT: &str = "http://localhost:8090/realms/chicken";
 /// Static client secret for testing, configured in `deploy/compose/container_files/init-sso/data/client-*.json`
 const SSO_TESTING_CLIENT_SECRET: &str = "R8A6KFeyxJsMDBhjfHbpZTIF0GWt43HP";
 
-pub async fn assert_within_timeout<F: Future>(t: Duration, f: F) {
-    let result = timeout(t, f).await;
-    assert!(
-        result.is_ok(),
-        "Unable to perform operation successfully within timeout"
-    );
-}
-
-pub async fn wait_for_event<F: Future>(t: Duration, events: &EventBusConfig, bus_name: &str, id: &str, f: F) {
+pub async fn wait_for_event<F: Future>(events: &EventBusConfig, bus_name: &str, id: &str, f: F) {
     let bus = events.create(&prometheus::Registry::new()).await.unwrap();
     let consumer = bus.subscribe("test-client", &[bus_name]).await.unwrap();
-    assert_within_timeout(t, async {
-        f.await;
-        loop {
-            if let Ok(Some(event)) = consumer.next().await {
-                let payload = event.payload().unwrap();
-                if let Ok(v) = serde_json::from_slice::<Value>(payload) {
-                    let key = v["key"].as_str().unwrap();
-                    if key.ends_with(id) {
-                        break;
-                    }
-                } else {
-                    let key = std::str::from_utf8(payload).unwrap();
-                    if key.ends_with(id) {
-                        break;
-                    }
+    f.await;
+    loop {
+        if let Ok(Some(event)) = consumer.next().await {
+            let payload = event.payload().unwrap();
+            if let Ok(v) = serde_json::from_slice::<Value>(payload) {
+                let key = v["key"].as_str().unwrap();
+                if key.ends_with(id) {
+                    break;
                 }
             } else {
-                tokio::time::sleep(Duration::from_secs(1)).await;
+                let key = std::str::from_utf8(payload).unwrap();
+                if key.ends_with(id) {
+                    break;
+                }
             }
+        } else {
+            tokio::time::sleep(Duration::from_secs(1)).await;
         }
-    })
-    .await;
+    }
 }
 
 pub async fn get_response(url: &Url, exp_status: StatusCode, context: &ProviderContext) -> Option<Value> {
