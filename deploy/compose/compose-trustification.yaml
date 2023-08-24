@@ -73,6 +73,7 @@ services:
       - init-keycloak
       - bombastic-api
       - vexination-api
+      - guac-graphql
     expose:
       - "$SPOG_API_PORT"
     ports:
@@ -87,7 +88,7 @@ services:
           sleep 5
         done
         echo keycloak is up
-        /trust spog api --devmode --bombastic-url http://bombastic-api:8080 --vexination-url http://vexination-api:8080
+        /trust spog api --devmode --bombastic-url http://bombastic-api:8080 --vexination-url http://vexination-api:8080 --guac http://guac-graphql:8080/query
     entrypoint: /usr/bin/bash
     restart: on-failure
     healthcheck:
