@@ -58,19 +58,32 @@ To run all the tests:
 ```shell
 TRUST_URL=http://localhost:8084 \
 TRUST_ID=testing-manager \
-TRUST_SECRET=R8A6KFeyxJsMDBhjfHbpZTIF0GWt43HP \
 TRUST_USER_ID=testing-user \
-TRUST_USER_SECRET=ZVzq9AMOVUdMY1lSohpx1jI3aW56QDPS \
+TRUST_SECRET=R8A6KFeyxJsMDBhjfHbpZTIF0GWt43HP \
 cargo test -p integration-tests 
 ```
 
-If you limit which tests run, you don't need to provide all the
-variables. For example, to run just the `bombastic_search` test, only
-these are needed:
+Note that our testing client id's share the same secret, so we can
+omit the `TRUST_USER_SECRET` variable.  Not all variables are required
+by each test, so if you limit which tests run, you can omit others. In
+fact, only a few tests require a `TRUST_USER_ID` at all.
+
+These would be enough to run, say...
 
 ```shell
-TRUST_URL=http://localhost:8084 \
-TRUST_ID=testing-manager \
-TRUST_SECRET=R8A6KFeyxJsMDBhjfHbpZTIF0GWt43HP \
+export TRUST_URL=http://localhost:8084
+export TRUST_ID=testing-manager
+export TRUST_SECRET=R8A6KFeyxJsMDBhjfHbpZTIF0GWt43HP
+```
+
+...just the `bombastic_search` test...
+
+```shell
 cargo test -p integration-tests bombastic_search
+```
+
+...or perhaps just the spog tests:
+
+```shell
+cargo test -p integration-tests --test spog
 ```
