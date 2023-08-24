@@ -1,10 +1,8 @@
 use integration_tests::{
-    assert_within_timeout, delete_sbom, get_response, id, upload_sbom, wait_for_event, wait_for_search_result,
-    BombasticContext, Urlifier,
+    delete_sbom, get_response, id, upload_sbom, wait_for_event, wait_for_search_result, BombasticContext, Urlifier,
 };
 use reqwest::StatusCode;
 use serde_json::{json, Value};
-use std::time::Duration;
 use test_context::test_context;
 use time::OffsetDateTime;
 use tokio::fs::{remove_file, File};
@@ -159,7 +157,7 @@ async fn bombastic_search(context: &mut BombasticContext) {
 
     upload_sbom(context, &key, &input).await;
 
-    wait_for_search_result(context, &[("q", &encode(&key))], Duration::from_secs(30), |response| {
+    wait_for_search_result(context, &[("q", &encode(&key))], |response| {
         if response["total"].as_u64().unwrap() >= 1 {
             assert_eq!(response["result"][0]["document"]["name"], json!("ubi9-container"));
             true
@@ -172,27 +170,24 @@ async fn bombastic_search(context: &mut BombasticContext) {
 
 #[test_context(BombasticContext)]
 #[tokio::test]
-#[ntest::timeout(90_000)]
+#[ntest::timeout(30_000)]
 async fn bombastic_bad_search_queries(context: &mut BombasticContext) {
-    assert_within_timeout(Duration::from_secs(30), async {
-        for query in &[
-            "unknown:ubi9-container-9.1.0-1782.noarch",
-            "ubi9-container-9.1.0-1782.testdata sort:unknown",
-        ] {
-            let query = encode(query);
-            let url = context.urlify(format!("/api/v1/sbom/search?q={query}"));
-            let response = reqwest::Client::new()
-                .get(url)
-                .inject_token(&context.provider.provider_manager)
-                .await
-                .unwrap()
-                .send()
-                .await
-                .unwrap();
-            assert_eq!(response.status(), StatusCode::BAD_REQUEST);
-        }
-    })
-    .await;
+    for query in &[
+        "unknown:ubi9-container-9.1.0-1782.noarch",
+        "ubi9-container-9.1.0-1782.testdata sort:unknown",
+    ] {
+        let query = encode(query);
+        let url = context.urlify(format!("/api/v1/sbom/search?q={query}"));
+        let response = reqwest::Client::new()
+            .get(url)
+            .inject_token(&context.provider.provider_manager)
+            .await
+            .unwrap()
+            .send()
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+    }
 }
 
 #[test_context(BombasticContext)]
@@ -207,7 +202,7 @@ async fn bombastic_reindexing(context: &mut BombasticContext) {
 
     upload_sbom(context, &key, &input).await;
 
-    wait_for_search_result(context, &[("q", &encode(&key))], Duration::from_secs(30), |response| {
+    wait_for_search_result(context, &[("q", &encode(&key))], |response| {
         if response["total"].as_u64().unwrap() >= 1 {
             assert_eq!(response["result"][0]["document"]["name"], json!("ubi9-container"));
             true
@@ -222,26 +217,18 @@ async fn bombastic_reindexing(context: &mut BombasticContext) {
     // Push update and check reindex
     upload_sbom(context, &key, &input).await;
 
-    wait_for_search_result(
-        context,
-        &[("q", &encode(&key)), ("metadata", "true")],
-        Duration::from_secs(30),
-        |response| {
-            if response["total"].as_u64().unwrap() >= 1 {
-                let format = &time::format_description::well_known::Rfc3339;
-                let ts = OffsetDateTime::parse(
-                    response["result"][0]["$metadata"]["indexed_timestamp"]["values"][0]
-                        .as_str()
-                        .unwrap(),
-                    format,
-                )
-                .unwrap();
-                ts > now
-            } else {
-                false
-            }
-        },
-    )
+    wait_for_search_result(context, &[("q", &encode(&key)), ("metadata", "true")], |response| {
+        assert!(response["total"].as_u64().unwrap() >= 1);
+        let format = &time::format_description::well_known::Rfc3339;
+        let ts = OffsetDateTime::parse(
+            response["result"][0]["$metadata"]["indexed_timestamp"]["values"][0]
+                .as_str()
+                .unwrap(),
+            format,
+        )
+        .unwrap();
+        ts > now
+    })
     .await;
 }
 
@@ -256,7 +243,7 @@ async fn bombastic_deletion(context: &mut BombasticContext) {
 
     upload_sbom(context, &key, &input).await;
 
-    wait_for_search_result(context, &[("q", &encode(&key))], Duration::from_secs(30), |response| {
+    wait_for_search_result(context, &[("q", &encode(&key))], |response| {
         if response["total"].as_u64().unwrap() >= 1 {
             assert_eq!(response["result"][0]["document"]["name"], json!("ubi9-container"));
             true
@@ -268,7 +255,7 @@ async fn bombastic_deletion(context: &mut BombasticContext) {
 
     delete_sbom(context, &key).await;
 
-    wait_for_search_result(context, &[("q", &encode(&key))], Duration::from_secs(30), |response| {
+    wait_for_search_result(context, &[("q", &encode(&key))], |response| {
         response["total"].as_u64().unwrap() == 1
     })
     .await;
@@ -364,7 +351,7 @@ async fn sbom_upload_empty_json(context: &mut BombasticContext) {
     let id = "empty-json-upload";
     let client = reqwest::Client::new();
     let url = context.urlify(format!("/api/v1/sbom?id={id}"));
-    wait_for_event(Duration::from_secs(30), &context.events, "sbom-failed", id, async {
+    wait_for_event(&context.events, "sbom-failed", id, async {
         let response = client
             .post(url)
             .json(&input)

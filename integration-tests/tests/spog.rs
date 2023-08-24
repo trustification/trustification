@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use integration_tests::{assert_within_timeout, upload_sbom, upload_vex, SpogContext, Urlifier};
+use integration_tests::{upload_sbom, upload_vex, SpogContext, Urlifier};
 use reqwest::StatusCode;
 use serde_json::{json, Value};
 use test_context::test_context;
@@ -121,34 +121,31 @@ async fn spog_search_correlation(context: &mut SpogContext) {
 
     let client = reqwest::Client::new();
 
-    assert_within_timeout(Duration::from_secs(30), async move {
-        // Ensure we can search for the data. We want to allow the
-        // indexer time to do its thing, so might need to retry
-        loop {
-            let response = client
-                .get(context.urlify("/api/v1/package/search?q=package%3Astf-1.5"))
-                .inject_token(&context.provider.provider_user)
-                .await
-                .unwrap()
-                .send()
-                .await
-                .unwrap();
-            assert_eq!(response.status(), StatusCode::OK);
-            let payload: Value = response.json().await.unwrap();
-            if payload["total"].as_u64().unwrap() >= 1 {
-                assert_eq!(payload["result"][0]["name"], json!("stf-1.5"));
+    // Ensure we can search for the data. We want to allow the
+    // indexer time to do its thing, so might need to retry
+    loop {
+        let response = client
+            .get(context.urlify("/api/v1/package/search?q=package%3Astf-1.5"))
+            .inject_token(&context.provider.provider_user)
+            .await
+            .unwrap()
+            .send()
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        let payload: Value = response.json().await.unwrap();
+        if payload["total"].as_u64().unwrap() >= 1 {
+            assert_eq!(payload["result"][0]["name"], json!("stf-1.5"));
 
-                let data: spog_model::search::PackageSummary =
-                    serde_json::from_value(payload["result"][0].clone()).unwrap();
-                // println!("Data: {:?}", data);
-                // Data might not be available until vex index is synced
-                if data.advisories.len() >= 1 {
-                    assert_eq!(data.advisories[0], "RHSA-2023:1529");
-                    break;
-                }
+            let data: spog_model::search::PackageSummary =
+                serde_json::from_value(payload["result"][0].clone()).unwrap();
+            // println!("Data: {:?}", data);
+            // Data might not be available until vex index is synced
+            if data.advisories.len() >= 1 {
+                assert_eq!(data.advisories[0], "RHSA-2023:1529");
+                break;
             }
-            tokio::time::sleep(Duration::from_secs(1)).await;
         }
-    })
-    .await;
+        tokio::time::sleep(Duration::from_secs(1)).await;
+    }
 }

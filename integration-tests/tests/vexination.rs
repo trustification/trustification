@@ -1,4 +1,4 @@
-use integration_tests::{assert_within_timeout, get_response, upload_vex, wait_for_event, Urlifier, VexinationContext};
+use integration_tests::{get_response, upload_vex, wait_for_event, Urlifier, VexinationContext};
 use reqwest::StatusCode;
 use serde_json::Value;
 use std::time::Duration;
@@ -9,18 +9,31 @@ use urlencoding::encode;
 
 #[test_context(VexinationContext)]
 #[tokio::test]
-#[ntest::timeout(60_000)]
+#[ntest::timeout(30_000)]
 async fn vexination_roundtrip(vexination: &mut VexinationContext) {
     let client = reqwest::Client::new();
     let input = serde_json::from_str(include_str!("../../vexination/testdata/rhsa-2023_1441.json")).unwrap();
     upload_vex(vexination, &input).await;
 
-    assert_within_timeout(Duration::from_secs(30), async move {
-        loop {
-            // 1. Check that we can get the VEX back
+    loop {
+        // 1. Check that we can get the VEX back
+        let response = client
+            .get(vexination.urlify("/api/v1/vex?advisory=RHSA-2023%3A1441"))
+            .header("Accept", "application/json")
+            .inject_token(&vexination.provider.provider_manager)
+            .await
+            .unwrap()
+            .send()
+            .await
+            .unwrap();
+
+        if response.status() == StatusCode::OK {
+            let body: Value = response.json().await.unwrap();
+            assert_eq!(body, input);
+
+            // 2. Make sure we can search for the VEX (takes some time)
             let response = client
-                .get(vexination.urlify("/api/v1/vex?advisory=RHSA-2023%3A1441"))
-                .header("Accept", "application/json")
+                .get(vexination.urlify("/api/v1/vex/search?q="))
                 .inject_token(&vexination.provider.provider_manager)
                 .await
                 .unwrap()
@@ -28,45 +41,29 @@ async fn vexination_roundtrip(vexination: &mut VexinationContext) {
                 .await
                 .unwrap();
 
-            if response.status() == StatusCode::OK {
-                let body: Value = response.json().await.unwrap();
-                assert_eq!(body, input);
+            assert_eq!(response.status(), StatusCode::OK);
+            let payload: Value = response.json().await.unwrap();
 
-                // 2. Make sure we can search for the VEX (takes some time)
-                let response = client
-                    .get(vexination.urlify("/api/v1/vex/search?q="))
-                    .inject_token(&vexination.provider.provider_manager)
-                    .await
-                    .unwrap()
-                    .send()
-                    .await
-                    .unwrap();
-
-                assert_eq!(response.status(), StatusCode::OK);
-                let payload: Value = response.json().await.unwrap();
-
-                if payload["total"].as_u64().unwrap() >= 1 {
-                    break;
-                }
+            if payload["total"].as_u64().unwrap() >= 1 {
+                break;
             }
-            tokio::time::sleep(Duration::from_secs(4)).await;
         }
+        tokio::time::sleep(Duration::from_secs(4)).await;
+    }
 
-        // Ensure get expected errors on bad queries
-        for query in &["unknown:foo", "foo sort:unknown"] {
-            let response = client
-                .get(vexination.urlify(format!("/api/v1/vex/search?q={}", encode(query))))
-                .inject_token(&vexination.provider.provider_manager)
-                .await
-                .unwrap()
-                .send()
-                .await
-                .unwrap();
+    // Ensure get expected errors on bad queries
+    for query in &["unknown:foo", "foo sort:unknown"] {
+        let response = client
+            .get(vexination.urlify(format!("/api/v1/vex/search?q={}", encode(query))))
+            .inject_token(&vexination.provider.provider_manager)
+            .await
+            .unwrap()
+            .send()
+            .await
+            .unwrap();
 
-            assert_eq!(response.status(), StatusCode::BAD_REQUEST);
-        }
-    })
-    .await;
+        assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+    }
 }
 
 #[test_context(VexinationContext)]
@@ -148,7 +145,7 @@ async fn vex_invalid_encoding(vexination: &mut VexinationContext) {
 #[ntest::timeout(60_0000)]
 async fn upload_vex_empty_json(context: &mut VexinationContext) {
     let id = "empty-file-json";
-    wait_for_event(Duration::from_secs(30), &context.events, "vex-failed", id, async {
+    wait_for_event(&context.events, "vex-failed", id, async {
         let input = serde_json::json!({});
         let response = reqwest::Client::new()
             .post(context.urlify(format!("/api/v1/vex?advisory={id}")))
@@ -169,7 +166,7 @@ async fn upload_vex_empty_json(context: &mut VexinationContext) {
 #[ntest::timeout(90_000)]
 async fn upload_vex_empty_file(vexination: &mut VexinationContext) {
     let id = "empty-file-upload";
-    wait_for_event(Duration::from_secs(60), &vexination.events, "vex-failed", id, async {
+    wait_for_event(&vexination.events, "vex-failed", id, async {
         let file_path = "empty-test.txt";
         let _ = File::create(&file_path).await.expect("file creation failed");
         let file = File::open(&file_path).await.unwrap();
