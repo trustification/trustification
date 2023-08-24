@@ -123,3 +123,23 @@ pub fn ext_nav_link(props: &ExternalNavLinkProperties) -> Html {
 pub fn ext_link_marker() -> Html {
     html!({ Icon::ExternalLinkAlt.with_classes(classes!("pf-v5-u-ml-sm", "pf-v5-u-color-200")) })
 }
+
+#[derive(PartialEq, Properties)]
+pub struct VisibleProperties {
+    pub visible: bool,
+    pub children: Children,
+}
+
+#[function_component(Visible)]
+pub fn visible(props: &VisibleProperties) -> Html {
+    let class = match props.visible {
+        true => classes!(),
+        false => classes!("pf-v5-u-display-none"),
+    };
+
+    html!(
+        <div {class}>
+            { for props.children.iter() }
+        </div>
+    )
+}

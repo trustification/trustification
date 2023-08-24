@@ -13,6 +13,22 @@ use yew_more_hooks::prelude::*;
 use yew_oauth2::prelude::*;
 
 #[derive(PartialEq, Properties)]
+pub struct AdvisorySearchControlsProperties {
+    pub search_params: UseStateHandle<SearchMode<DynamicSearchParameters>>,
+}
+
+#[function_component(AdvisorySearchControls)]
+pub fn advisory_search_controls(props: &AdvisorySearchControlsProperties) -> Html {
+    let config = use_config();
+    let filters = use_memo(|()| config.vexination.filters.clone(), ());
+    let search_config = use_memo(|()| convert_search(&filters), ());
+
+    html!(
+        <SimpleSearch<DynamicSearchParameters> search={search_config} search_params={props.search_params.clone()} />
+    )
+}
+
+#[derive(PartialEq, Properties)]
 pub struct AdvisorySearchProperties {
     pub callback: Callback<UseAsyncHandleDeps<SearchResult<Rc<Vec<AdvisorySummary>>>, String>>,
 
@@ -30,11 +46,10 @@ pub fn advisory_search(props: &AdvisorySearchProperties) -> Html {
     let backend = use_backend();
     let access_token = use_latest_access_token();
 
-    let config = use_config();
     let total = use_state_eq(|| None);
 
+    let config = use_config();
     let filters = use_memo(|()| config.vexination.filters.clone(), ());
-    let search_config = use_memo(|()| convert_search(&filters), ());
 
     let UseStandardSearch {
         search_params,
@@ -110,7 +125,7 @@ pub fn advisory_search(props: &AdvisorySearchProperties) -> Html {
                 </GridItem>
 
                 <GridItem cols={[2]}>
-                    <SimpleSearch<DynamicSearchParameters> search={search_config} {search_params} />
+                    <AdvisorySearchControls {search_params}/>
                 </GridItem>
 
                 <GridItem cols={[10]}>

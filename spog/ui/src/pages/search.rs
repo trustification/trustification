@@ -3,6 +3,7 @@
 use crate::{
     components::{
         advisory::{AdvisoryResult, AdvisorySearch},
+        common::Visible,
         sbom::{PackageResult, SbomSearch},
         search::*,
     },
@@ -108,26 +109,36 @@ pub fn search(props: &SearchProperties) -> Html {
                 </Flex>
             </PageSection>
 
-            <PageSection r#type={PageSectionType::Tabs} variant={PageSectionVariant::Light} sticky={[PageSectionSticky::Top]}>
-                <Tabs<TabIndex> inset={TabInset::Page} detached=true selected={*tab} {onselect}>
-                    <Tab<TabIndex> index={TabIndex::Advisories} title={count_tab_title("Advisories", &*advisory_search)} />
-                    <Tab<TabIndex> index={TabIndex::Sboms} title={count_tab_title("SBOMs", &*sbom_search)} />
-                </Tabs<TabIndex>>
-            </PageSection>
+            <PageSection variant={PageSectionVariant::Default} fill={PageSectionFill::Fill}>
 
-            <PageSection hidden={*tab != TabIndex::Advisories} variant={PageSectionVariant::Light} fill={PageSectionFill::Fill}>
+                <Grid>
+                    <GridItem cols={[2]}>
+                        <Visible visible={*tab == TabIndex::Advisories}>
+                            <AdvisorySearch callback={advisory_callback} mode={SearchPropertiesMode::Provided {terms: (*search_terms).clone()}}/>
+                        </Visible>
+                        <Visible visible={*tab == TabIndex::Sboms}>
+                            <SbomSearch callback={sbom_callback} mode={SearchPropertiesMode::Provided {terms: (*search_terms).clone()}}/>
+                        </Visible>
+                    </GridItem>
+                    <GridItem cols={[10]}>
+                        <Tabs<TabIndex>
+                            inset={TabInset::Page}
+                            detached=true
+                            selected={*tab} {onselect}
+                            r#box=true
+                        >
+                            <Tab<TabIndex> index={TabIndex::Advisories} title={count_tab_title("Advisories", &*advisory_search)} />
+                            <Tab<TabIndex> index={TabIndex::Sboms} title={count_tab_title("SBOMs", &*sbom_search)} />
+                        </Tabs<TabIndex>>
 
-                <AdvisorySearch callback={advisory_callback} mode={SearchPropertiesMode::Provided {terms: (*search_terms).clone()}}>
-                    <AdvisoryResult state={(*advisory_search).clone()} />
-                </AdvisorySearch>
-
-            </PageSection>
-
-            <PageSection hidden={*tab != TabIndex::Sboms} variant={PageSectionVariant::Light} fill={PageSectionFill::Fill}>
-
-                <SbomSearch callback={sbom_callback} mode={SearchPropertiesMode::Provided {terms: (*search_terms).clone()}}>
-                    <PackageResult state={(*sbom_search).clone()} />
-                </SbomSearch>
+                        if *tab == TabIndex::Advisories {
+                            <AdvisoryResult state={(*advisory_search).clone()} />
+                        }
+                        if *tab == TabIndex::Sboms {
+                            <PackageResult state={(*sbom_search).clone()} />
+                        }
+                    </GridItem>
+                </Grid>
 
             </PageSection>
 
