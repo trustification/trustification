@@ -60,7 +60,7 @@ pub struct Run {
 }
 ```
 
-Your app should configure itself in the the closure provided to the infrastructure:
+Your app should configure itself in the closure provided to the infrastructure:
 
 ```rust
     pub async fn run(mut self) -> anyhow::Result<ExitCode> {
@@ -88,7 +88,7 @@ In the same way as metrics, authentication using OIDC requires some additional c
 
 ```rust
     #[command(flatten)]
-    pub oidc: AuthenticatorConfig,
+    pub auth: AuthConfigArguments,
 ```
 
 With this you can create an authenticator in your run method and setup your Actix HTTP server:
@@ -96,11 +96,10 @@ With this you can create an authenticator in your run method and setup your Acti
 ```rust
 impl Run {
     pub async fn run(mut self) -> anyhow::Result<ExitCode> {
-    
-    
-        let authenticator: Option<Arc<Authenticator>> = Authenticator::from_devmode_or_config(self.devmode, self.oidc)
-            .await?
-            .map(Arc::new);
+
+        let (authn, authz) = self.auth.split(self.devmode)?.unzip();
+        let authenticator: Option<Arc<Authenticator>> = Authenticator::from_config(authn).await?.map(Arc::new);
+        let authorizer = Authorizer::new(authz);
 
         Infrastructure::from(self.infra)
             .run("my-service", |metrics| async move {
@@ -114,16 +113,23 @@ impl Run {
                     let http_metrics = http_metrics.clone();
                     let cors = Cors::permissive();
                     let authenticator = authenticator.clone();
+                    let authorizer = authorizer.clone();
 
                     new_app(AppOptions {
                         cors: Some(cors),
                         metrics: Some(http_metrics),
+                        // Enable authentication for all services. If you need this only for individual services, then
+                        // use `None`, and add the authenticator manually to services (see below).
                         authenticator,
-                        // Authorizer::Enabled will allow you to check roles in your API
-                        authorizer: Authorizer::Enabled
+                        authorizer,
                     })
                     // NOTE: Request will fail before invoking this handler if authentication is enabled
                     .service(hello)
+                    // Alternative way, adding authentication to only one service.
+                    .service(web::scope("/api/v1")
+                        .wrap(new_auth!(auth))
+                        .service(hello),
+                    )
                 });
 
                 Ok(())
@@ -135,7 +141,7 @@ impl Run {
 #[get("/")]
 async fn hello(
     authorizer: web::Data<Authorizer>,
-    user: Option<UserDetails>)
+    user: UserInformation)
 {
     // Fails if user does not have the manager role.
     authorizer.require_role(user, ROLE_MANAGER)?;
