@@ -1,10 +1,11 @@
 use std::time::Duration;
 
-use integration_tests::{upload_sbom, upload_vex, SpogContext, Urlifier};
+use integration_tests::{delete_sbom, delete_vex, upload_sbom, upload_vex, SpogContext, Urlifier};
 use reqwest::StatusCode;
 use serde_json::{json, Value};
 use test_context::test_context;
 use trustification_auth::client::TokenInjector;
+use urlencoding::encode;
 
 #[test_context(SpogContext)]
 #[tokio::test]
@@ -114,10 +115,12 @@ async fn spog_crda_integration(context: &mut SpogContext) {
 #[ntest::timeout(60_000)]
 async fn spog_search_correlation(context: &mut SpogContext) {
     let input = serde_json::from_str(include_str!("testdata/correlation/stf-1.5.json")).unwrap();
-    upload_sbom(&context.bombastic, "stf-1.5", &input).await;
+    let sbom_id = "test-stf-1.5";
+    upload_sbom(&context.bombastic, sbom_id, &input).await;
 
     let input = serde_json::from_str(include_str!("testdata/correlation/rhsa-2023_1529.json")).unwrap();
     upload_vex(&context.vexination, &input).await;
+    let vex_id = input["document"]["tracking"]["id"].as_str().unwrap();
 
     let client = reqwest::Client::new();
 
@@ -141,11 +144,13 @@ async fn spog_search_correlation(context: &mut SpogContext) {
                 serde_json::from_value(payload["result"][0].clone()).unwrap();
             // println!("Data: {:?}", data);
             // Data might not be available until vex index is synced
-            if data.advisories.len() >= 1 {
-                assert_eq!(data.advisories[0], "RHSA-2023:1529");
+            if !data.advisories.is_empty() {
+                assert_eq!(data.advisories[0], vex_id);
                 break;
             }
         }
         tokio::time::sleep(Duration::from_secs(1)).await;
     }
+    delete_sbom(&context.bombastic, sbom_id).await;
+    delete_vex(&context.vexination, &encode(vex_id)).await;
 }
