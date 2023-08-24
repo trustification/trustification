@@ -27,6 +27,7 @@ pub struct VexinationContext {
 pub async fn start_vexination(config: &Config) -> VexinationContext {
     // If remote server is configured, use it
     if let Some(url) = config.vexination.clone() {
+        log::debug!("Testing remote vexination: {url}");
         return VexinationContext {
             url,
             provider: config.provider().await,

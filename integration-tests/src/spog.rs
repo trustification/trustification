@@ -30,6 +30,7 @@ pub struct SpogContext {
 pub async fn start_spog(config: &Config) -> SpogContext {
     // If remote server is configured, use it
     if let Some(url) = config.spog.clone() {
+        log::debug!("Testing remote spog: {url}");
         return SpogContext {
             url,
             provider: config.provider().await,

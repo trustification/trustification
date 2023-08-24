@@ -28,6 +28,7 @@ pub struct BombasticContext {
 pub async fn start_bombastic(config: &Config) -> BombasticContext {
     // If remote server is configured, use it
     if let Some(url) = config.bombastic.clone() {
+        log::debug!("Testing remote bombastic: {url}");
         return BombasticContext {
             url,
             provider: config.provider().await,
