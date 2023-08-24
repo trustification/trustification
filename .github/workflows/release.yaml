@@ -169,7 +169,7 @@ jobs:
     runs-on: ubuntu-22.04
 
     env:
-      CONTAINERS: "trust trust-ui trust-docs"
+      CONTAINERS: "trust trust-ui trust-docs trust-tests"
 
     steps:
       - name: Checkout
