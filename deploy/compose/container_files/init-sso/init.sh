@@ -56,6 +56,7 @@ fi
 # create realm roles
 kcadm create roles -r "${REALM}" -s name=chicken-user || true
 kcadm create roles -r "${REALM}" -s name=chicken-manager || true
+kcadm create roles -r "${REALM}" -s name=chicken-admin || true
 # add chicken-user as default role
 kcadm add-roles -r "${REALM}" --rname "default-roles-${REALM}" --rolename chicken-user
 
