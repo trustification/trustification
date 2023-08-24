@@ -117,6 +117,18 @@ pub async fn upload_vex(context: &VexinationContext, input: &serde_json::Value) 
     assert_eq!(response.status(), StatusCode::CREATED);
 }
 
+pub async fn delete_vex(context: &VexinationContext, key: &str) {
+    let response = reqwest::Client::new()
+        .delete(context.urlify(format!("/api/v1/vex?advisory={key}")))
+        .inject_token(&context.provider.provider_manager)
+        .await
+        .unwrap()
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::NO_CONTENT);
+}
+
 // Configuration for the vexination indexer
 #[cfg(feature = "with-services")]
 fn vexination_indexer() -> vexination_indexer::Run {
