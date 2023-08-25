@@ -36,6 +36,7 @@ impl AuthenticatorConfig {
                     client_id: client_id.to_string(),
                     issuer_url: devmode::issuer_url(),
                     scope_mappings: default_scope_mappings(),
+                    additional_scopes: Default::default(),
                     required_audience: None,
                     tls_insecure: false,
                     tls_ca_certificates: Default::default(),
@@ -93,6 +94,7 @@ pub struct SingleAuthenticatorClientConfig {
     pub tls_ca_certificates: Vec<PathBuf>,
 }
 
+/// Configuration for OIDC client used to authenticate on the server side
 #[derive(Clone, Debug, Serialize, Deserialize, Eq, PartialEq, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct AuthenticatorClientConfig {
@@ -104,6 +106,13 @@ pub struct AuthenticatorClientConfig {
     /// Mapping table for scopes returned by the issuer to scopes which are expected by us.
     #[serde(default, skip_serializing_if = "HashMap::is_empty")]
     pub scope_mappings: HashMap<String, Vec<String>>,
+
+    /// Additional scopes which get added for client
+    ///
+    /// This can be useful if a client is considered to only provide identities which are supposed
+    /// to have certain scopes, but don't provide them.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub additional_scopes: Vec<String>,
 
     /// Enforce an audience claim (`aud`) for tokens.
     ///
@@ -130,6 +139,7 @@ impl SingleAuthenticatorClientConfig {
                 tls_insecure: self.tls_insecure,
                 required_audience: self.required_audience.clone(),
                 scope_mappings: default_scope_mappings(),
+                additional_scopes: Default::default(),
             })
     }
 }

@@ -149,6 +149,7 @@ async fn create_client(config: AuthenticatorClientConfig) -> anyhow::Result<Auth
         client,
         audience: config.required_audience,
         scope_mappings: config.scope_mappings,
+        additional_scopes: config.additional_scopes,
     })
 }
 
@@ -157,12 +158,14 @@ pub struct AuthenticatorClient {
     client: Client<Discovered>,
     audience: Option<String>,
     scope_mappings: HashMap<String, Vec<String>>,
+    additional_scopes: Vec<String>,
 }
 
 impl AuthenticatorClient {
     /// Convert from a set of (verified!) access token claims into a [`ValidatedAccessToken`] struct.
     pub fn convert_token(&self, access_token: AccessTokenClaims) -> ValidatedAccessToken {
-        let mapped_scopes = Self::map_scopes(&access_token.scope, &self.scope_mappings);
+        let mut mapped_scopes = Self::map_scopes(&access_token.scope, &self.scope_mappings);
+        mapped_scopes.extend(self.additional_scopes.clone());
         ValidatedAccessToken {
             access_token,
             mapped_scopes,
