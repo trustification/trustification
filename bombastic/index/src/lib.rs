@@ -122,7 +122,7 @@ impl Index {
         }
     }
 
-    fn index_spdx(&self, id: &str, bom: &spdx_rs::models::SPDX) -> Result<Vec<Document>, SearchError> {
+    fn index_spdx(&self, id: &str, bom: &spdx_rs::models::SPDX) -> Result<Document, SearchError> {
         debug!("Indexing SPDX document");
 
         let mut document = doc!();
@@ -162,7 +162,7 @@ impl Index {
             }
         }
         debug!("Indexed {:?}", document);
-        Ok(vec![document])
+        Ok(document)
     }
 
     fn index_spdx_package(
@@ -218,7 +218,7 @@ impl Index {
         }
     }
 
-    fn index_cyclonedx(&self, id: &str, bom: &cyclonedx_bom::prelude::Bom) -> Result<Vec<Document>, SearchError> {
+    fn index_cyclonedx(&self, id: &str, bom: &cyclonedx_bom::prelude::Bom) -> Result<Document, SearchError> {
         let mut document = doc!();
 
         document.add_text(self.fields.sbom_id, id);
@@ -253,7 +253,7 @@ impl Index {
                 Self::index_cyclonedx_component(&mut document, component, &self.fields.dep);
             }
         }
-        Ok(vec![document])
+        Ok(document)
     }
 
     fn index_cyclonedx_component(
@@ -426,7 +426,7 @@ impl trustification_index::Index for Index {
     type Document = SBOM;
     type QueryContext = SbomQuery;
 
-    fn index_doc(&self, id: &str, doc: &SBOM) -> Result<Vec<Document>, SearchError> {
+    fn index_doc(&self, id: &str, doc: &SBOM) -> Result<Document, SearchError> {
         match doc {
             SBOM::CycloneDX(bom) => self.index_cyclonedx(id, bom),
             SBOM::SPDX(bom) => self.index_spdx(id, bom),
@@ -645,16 +645,19 @@ mod tests {
         let mut writer = store.writer().unwrap();
 
         let data = std::fs::read_to_string("../testdata/ubi9-sbom.json").unwrap();
-        let sbom = SBOM::parse(data.as_bytes()).unwrap();
-        writer.add_document(store.index_as_mut(), "ubi9-sbom", &sbom).unwrap();
+        writer
+            .add_document(store.index_as_mut(), "ubi9-sbom", data.as_bytes())
+            .unwrap();
 
         let data = std::fs::read_to_string("../testdata/kmm-1.json").unwrap();
-        let sbom = SBOM::parse(data.as_bytes()).unwrap();
-        writer.add_document(store.index_as_mut(), "kmm-1", &sbom).unwrap();
+        writer
+            .add_document(store.index_as_mut(), "kmm-1", data.as_bytes())
+            .unwrap();
 
         let data = std::fs::read_to_string("../testdata/my-sbom.json").unwrap();
-        let sbom = SBOM::parse(data.as_bytes()).unwrap();
-        writer.add_document(store.index_as_mut(), "my-sbom", &sbom).unwrap();
+        writer
+            .add_document(store.index_as_mut(), "my-sbom", data.as_bytes())
+            .unwrap();
 
         writer.commit().unwrap();
 

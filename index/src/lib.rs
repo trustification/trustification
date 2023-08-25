@@ -70,6 +70,7 @@ impl Default for IndexMode {
 #[derive(Clone)]
 struct Metrics {
     indexed_total: IntCounter,
+    failed_total: IntCounter,
     snapshots_total: IntCounter,
     queries_total: IntCounter,
     index_size_disk_bytes: IntGauge,
@@ -81,6 +82,11 @@ impl Metrics {
     fn register(registry: &Registry) -> Result<Self, Error> {
         let indexed_total = register_int_counter_with_registry!(
             opts!("index_indexed_total", "Total number of indexing operations"),
+            registry
+        )?;
+
+        let failed_total = register_int_counter_with_registry!(
+            opts!("index_failed_total", "Total number of indexing operations failed"),
             registry
         )?;
 
@@ -119,6 +125,7 @@ impl Metrics {
 
         Ok(Self {
             indexed_total,
+            failed_total,
             snapshots_total,
             queries_total,
             index_size_disk_bytes,
@@ -160,7 +167,7 @@ pub trait Index {
         query: &Self::QueryContext,
         options: &SearchOptions,
     ) -> Result<Self::MatchedDocument, Error>;
-    fn index_doc(&self, id: &str, document: &Self::Document) -> Result<Vec<Document>, Error>;
+    fn index_doc(&self, id: &str, document: &Self::Document) -> Result<Document, Error>;
     fn doc_id_to_term(&self, id: &str) -> Term;
 }
 
@@ -212,15 +219,28 @@ pub struct IndexWriter {
 }
 
 impl IndexWriter {
-    pub fn add_document<INDEX: Index>(&mut self, index: &INDEX, id: &str, raw: &INDEX::Document) -> Result<(), Error> {
-        self.delete_document(index, id);
-        let docs = index.index_doc(id, raw)?;
-        for doc in docs {
-            let indexing_latency = self.metrics.indexing_latency_seconds.start_timer();
-            self.writer.add_document(doc)?;
-            indexing_latency.observe_duration();
-            self.metrics.indexed_total.inc();
+    pub fn add_document<INDEX: Index>(&mut self, index: &INDEX, id: &str, data: &[u8]) -> Result<(), Error> {
+        let indexing_latency = self.metrics.indexing_latency_seconds.start_timer();
+        match INDEX::parse_doc(data) {
+            Ok(doc) => {
+                let doc = index.index_doc(id, &doc).map_err(|e| {
+                    self.metrics.failed_total.inc();
+                    e
+                })?;
+                self.delete_document(index, id);
+                self.writer.add_document(doc).map_err(|e| {
+                    self.metrics.failed_total.inc();
+                    e
+                })?;
+                self.metrics.indexed_total.inc();
+            }
+            Err(e) => {
+                log::warn!("Error parsing document with id '{id}': {e:?}");
+                self.metrics.failed_total.inc();
+            }
         }
+        self.metrics.indexed_total.inc();
+        indexing_latency.observe_duration();
         Ok(())
     }
 
@@ -664,12 +684,12 @@ mod tests {
             )?)
         }
 
-        fn index_doc(&self, id: &str, document: &Self::Document) -> Result<Vec<Document>, Error> {
+        fn index_doc(&self, id: &str, document: &Self::Document) -> Result<Document, Error> {
             let doc = tantivy::doc!(
                 self.id => id.to_string(),
                 self.text => document.to_string()
             );
-            Ok(vec![doc])
+            Ok(doc)
         }
 
         fn doc_id_to_term(&self, id: &str) -> Term {
@@ -684,7 +704,7 @@ mod tests {
         let mut writer = store.writer().unwrap();
 
         writer
-            .add_document(store.index_as_mut(), "foo", &"Foo is great".to_string())
+            .add_document(store.index_as_mut(), "foo", b"Foo is great")
             .unwrap();
 
         writer.commit().unwrap();
@@ -713,7 +733,7 @@ mod tests {
         let mut writer = store.writer().unwrap();
 
         writer
-            .add_document(store.index_as_mut(), "foo", &"Foo is great".to_string())
+            .add_document(store.index_as_mut(), "foo", b"Foo is great")
             .unwrap();
 
         writer.commit().unwrap();
@@ -762,11 +782,11 @@ mod tests {
         let mut writer = store.writer().unwrap();
 
         writer
-            .add_document(store.index_as_mut(), "foo", &"Foo is great".to_string())
+            .add_document(store.index_as_mut(), "foo", b"Foo is great")
             .unwrap();
 
         writer
-            .add_document(store.index_as_mut(), "foo", &"Foo is great".to_string())
+            .add_document(store.index_as_mut(), "foo", b"Foo is great")
             .unwrap();
 
         writer.commit().unwrap();
@@ -790,7 +810,7 @@ mod tests {
         // Duplicates also removed if separate commits.
         let mut writer = store.writer().unwrap();
         writer
-            .add_document(store.index_as_mut(), "foo", &"Foo is great".to_string())
+            .add_document(store.index_as_mut(), "foo", b"Foo is great")
             .unwrap();
 
         writer.commit().unwrap();

@@ -208,24 +208,12 @@ impl<'a, INDEX: Index> Indexer<'a, INDEX> {
         data: &[u8],
         indexed: &mut Vec<String>,
     ) -> Result<(), anyhow::Error> {
-        match INDEX::parse_doc(data) {
-            Ok(doc) => match block_in_place(|| writer.add_document(index, key, &doc)) {
-                Ok(_) => {
-                    log::debug!("Inserted entry '{key}' into index");
-                    indexed.push(key.to_string());
-                }
-                Err(e) => {
-                    let failure = serde_json::json!( {
-                        "key": key,
-                        "error": e.to_string(),
-                    })
-                    .to_string();
-                    self.bus.send(self.failed_topic, failure.as_bytes()).await?;
-                    log::warn!("Error inserting entry '{key}' into index: {e:?}")
-                }
-            },
+        match block_in_place(|| writer.add_document(index, key, data)) {
+            Ok(_) => {
+                log::debug!("Inserted entry '{key}' into index");
+                indexed.push(key.to_string());
+            }
             Err(e) => {
-                log::warn!("Error parsing document for key '{key}': {e:?}");
                 let failure = serde_json::json!( {
                     "key": key,
                     "error": e.to_string(),
