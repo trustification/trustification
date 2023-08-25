@@ -97,7 +97,7 @@ impl trustification_index::Index for Index {
         serde_json::from_slice::<csaf::Csaf>(data).map_err(|e| SearchError::DocParser(e.to_string()))
     }
 
-    fn index_doc(&self, id: &str, csaf: &Csaf) -> Result<Vec<Document>, SearchError> {
+    fn index_doc(&self, id: &str, csaf: &Csaf) -> Result<Document, SearchError> {
         let document_status = match &csaf.document.tracking.status {
             csaf::document::Status::Draft => "draft",
             csaf::document::Status::Interim => "interim",
@@ -286,7 +286,7 @@ impl trustification_index::Index for Index {
             }
             debug!("Adding doc: {:?}", document);
         }
-        Ok(vec![document])
+        Ok(document)
     }
 
     fn doc_id_to_term(&self, id: &str) -> Term {
@@ -779,7 +779,7 @@ mod tests {
             let csaf: Csaf = serde_json::from_str(&data).unwrap();
 
             writer
-                .add_document(store.index_as_mut(), &csaf.document.tracking.id, &csaf)
+                .add_document(store.index_as_mut(), &csaf.document.tracking.id, data.as_bytes())
                 .unwrap();
         }
 
