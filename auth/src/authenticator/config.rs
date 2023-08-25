@@ -90,7 +90,7 @@ pub struct SingleAuthenticatorClientConfig {
     pub tls_insecure: bool,
 
     /// Enable additional TLS certificates for communication with the SSO server
-    #[arg(env= "AUTHENTICATOR_OIDC_TLS_CA_CERTIFICATES", long = "authentication-tls-certificate", action = ArgAction::Append)]
+    #[arg(env = "AUTHENTICATOR_OIDC_TLS_CA_CERTIFICATES", long = "authentication-tls-certificate", action = ArgAction::Append)]
     pub tls_ca_certificates: Vec<PathBuf>,
 }
 
