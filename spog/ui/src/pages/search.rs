@@ -1,10 +1,10 @@
 //! Unified search
 
-use crate::components::sbom::use_sbom_search;
 use crate::{
     components::{
         advisory::{use_advisory_search, AdvisoryResult, AdvisorySearchControls},
         common::Visible,
+        sbom::use_sbom_search,
         sbom::{PackageResult, SbomSearchControls},
         search::*,
     },
@@ -148,30 +148,16 @@ pub fn search(props: &SearchProperties) -> Html {
                         </Tabs<TabIndex>>
 
                         <div class="pf-v5-u-background-color-100">
-                        if *tab == TabIndex::Advisories {
-                            <SimplePagination
-                                pagination={advisory.pagination.clone()}
-                                total={*advisory.total}
-                            />
-                            <AdvisoryResult state={(*advisory_search).clone()} />
-                            <SimplePagination
-                                pagination={advisory.pagination}
-                                total={*advisory.total}
-                                position={PaginationPosition::Bottom}
-                            />
-                        }
-                        if *tab == TabIndex::Sboms {
-                            <SimplePagination
-                                pagination={sbom.pagination.clone()}
-                                total={*sbom.total}
-                            />
-                            <PackageResult state={(*sbom_search).clone()} />
-                            <SimplePagination
-                                pagination={sbom.pagination}
-                                total={*sbom.total}
-                                position={PaginationPosition::Bottom}
-                            />
-                        }
+                            if *tab == TabIndex::Advisories {
+                                <PaginationWrapped pagination={advisory.pagination} total={*advisory.total}>
+                                    <AdvisoryResult state={(*advisory_search).clone()} />
+                                </PaginationWrapped>
+                            }
+                            if *tab == TabIndex::Sboms {
+                                <PaginationWrapped pagination={sbom.pagination} total={*sbom.total}>
+                                    <PackageResult state={(*sbom_search).clone()} />
+                                </PaginationWrapped>
+                            }
                         </div>
 
                     </GridItem>
@@ -179,6 +165,35 @@ pub fn search(props: &SearchProperties) -> Html {
 
             </PageSection>
 
+        </>
+    )
+}
+
+#[derive(PartialEq, Properties)]
+pub struct PaginationWrappedProperties {
+    pub children: Children,
+    pub pagination: UsePagination,
+    pub total: Option<usize>,
+}
+
+#[function_component(PaginationWrapped)]
+pub fn pagination_wrapped(props: &PaginationWrappedProperties) -> Html {
+    html!(
+        <>
+            <div class="pf-v5-u-p-sm">
+                <SimplePagination
+                    pagination={props.pagination.clone()}
+                    total={props.total}
+                />
+            </div>
+            { for props.children.iter() }
+            <div class="pf-v5-u-p-sm">
+                <SimplePagination
+                    pagination={props.pagination.clone()}
+                    total={props.total}
+                    position={PaginationPosition::Bottom}
+                />
+            </div>
         </>
     )
 }
