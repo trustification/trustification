@@ -28,6 +28,11 @@ if [[ -n "$CLIENT_ID" ]]; then
   mv /endpoints/backend.json.tmp /endpoints/backend.json
 fi
 
+if [[ -n "$SCOPES" ]]; then
+  jq --arg scopes "$SCOPES" '. * {oidc: {scopes: $scopes}}' < /endpoints/backend.json | tee /endpoints/backend.json.tmp
+  mv /endpoints/backend.json.tmp /endpoints/backend.json
+fi
+
 echo "Final backend information:"
 echo "---"
 cat /endpoints/backend.json
