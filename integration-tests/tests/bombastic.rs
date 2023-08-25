@@ -340,6 +340,7 @@ async fn upload_sbom_existing_with_change(context: &mut BombasticContext) {
     delete_sbom(context, id).await;
 }
 
+#[ignore("Ignored until API can support failures so that event bus is not needed to check")]
 #[test_context(BombasticContext)]
 #[tokio::test]
 #[ntest::timeout(60_000)]

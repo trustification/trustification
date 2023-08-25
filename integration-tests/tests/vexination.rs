@@ -160,6 +160,7 @@ async fn vex_invalid_encoding(vexination: &mut VexinationContext) {
     assert_eq!(response.status(), StatusCode::BAD_REQUEST);
 }
 
+#[ignore("Ignored until API can support failures so that event bus is not needed to check")]
 #[test_context(VexinationContext)]
 #[tokio::test]
 #[ntest::timeout(60_0000)]
@@ -182,6 +183,7 @@ async fn upload_vex_empty_json(context: &mut VexinationContext) {
     delete_vex(context, id).await;
 }
 
+#[ignore("Ignored until API can support failures so that event bus is not needed to check")]
 #[test_context(VexinationContext)]
 #[tokio::test]
 #[ntest::timeout(90_000)]
