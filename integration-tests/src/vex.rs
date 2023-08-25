@@ -21,6 +21,7 @@ pub struct VexinationContext {
     pub url: Url,
     pub provider: ProviderContext,
     pub events: EventBusConfig,
+    pub failed_topic: String,
     _runner: Option<Runner>,
 }
 
@@ -32,6 +33,7 @@ pub async fn start_vexination(config: &Config) -> VexinationContext {
             url,
             provider: config.provider().await,
             events: config.events(),
+            failed_topic: config.vexination_failed_topic.clone(),
             _runner: None,
         };
     }
@@ -79,6 +81,7 @@ pub async fn start_vexination(config: &Config) -> VexinationContext {
             url,
             provider,
             events,
+            failed_topic: config.vexination_failed_topic.clone(),
             _runner: Some(runner),
         };
 

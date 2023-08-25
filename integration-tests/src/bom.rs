@@ -22,6 +22,7 @@ pub struct BombasticContext {
     pub url: Url,
     pub provider: ProviderContext,
     pub events: EventBusConfig,
+    pub failed_topic: String,
     _runner: Option<Runner>,
 }
 
@@ -33,6 +34,7 @@ pub async fn start_bombastic(config: &Config) -> BombasticContext {
             url,
             provider: config.provider().await,
             events: config.events(),
+            failed_topic: config.bombastic_failed_topic.clone(),
             _runner: None,
         };
     }
@@ -79,6 +81,7 @@ pub async fn start_bombastic(config: &Config) -> BombasticContext {
             url,
             provider: config.provider().await,
             events,
+            failed_topic: config.bombastic_failed_topic.clone(),
             _runner: Some(runner),
         };
 

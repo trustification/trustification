@@ -11,6 +11,8 @@ pub struct Config {
     pub spog: Option<Url>,
     pub bombastic: Option<Url>,
     pub vexination: Option<Url>,
+    pub bombastic_failed_topic: String,
+    pub vexination_failed_topic: String,
     issuer: String,
     mgr_id: String,
     mgr_secret: String,
@@ -42,6 +44,10 @@ impl Config {
                     mgr_secret: std::env::var("TRUST_SECRET").expect("TRUST_SECRET is required"),
                     user_id: std::env::var("TRUST_USER_ID").ok(),
                     user_secret: std::env::var("TRUST_USER_SECRET").ok(),
+                    bombastic_failed_topic: std::env::var("TRUST_BOMBASTIC_FAILED_TOPIC")
+                        .unwrap_or("sbom-failed".to_string()),
+                    vexination_failed_topic: std::env::var("TRUST_VEXINATION_FAILED_TOPIC")
+                        .unwrap_or("vex-failed".to_string()),
                 }
             }
             Err(VarError::NotPresent) => Config::default(),
