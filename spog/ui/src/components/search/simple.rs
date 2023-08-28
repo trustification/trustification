@@ -132,6 +132,9 @@ where
         }
     }
 
+    /// Set mode to simple and apply new search terms
+    ///
+    /// **NOTE:** If the search is in complex mode, this will reset it to simple mode.
     pub fn set_simple_terms(&self, new_terms: Vec<String>) -> Self {
         let mut new = match self {
             Self::Complex(_) => T::default(),

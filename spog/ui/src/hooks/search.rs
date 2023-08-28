@@ -1,4 +1,4 @@
-use crate::components::search::{DynamicSearchParameters, SearchMode, SearchPropertiesMode};
+use crate::components::search::{DynamicSearchParameters, SearchMode};
 use crate::utils::search::*;
 use gloo_utils::format::JsValueSerdeExt;
 use patternfly_yew::prelude::*;
@@ -96,29 +96,24 @@ where
 #[derive(Clone)]
 pub struct UseStandardSearch {
     pub search_params: UseStateHandle<SearchMode<DynamicSearchParameters>>,
-    pub pagination: UsePagination,
     pub filter_input_state: Rc<InputState>,
     pub onclear: Callback<()>,
     pub onset: Callback<()>,
     pub ontogglesimple: Callback<bool>,
     pub text: UseStateHandle<String>,
-    pub total: UseStateHandle<Option<usize>>,
 }
 
 #[hook]
 pub fn use_standard_search<S>(
     search_params: UseStateHandle<SearchMode<DynamicSearchParameters>>,
-    pagination: UsePagination,
-    mode: SearchPropertiesMode,
     context: Rc<Filters>,
-    total: UseStateHandle<Option<usize>>,
 ) -> UseStandardSearch
 where
     S: sikula::prelude::Search,
 {
     // the current value in the text input field
     let text = use_state_eq(|| match &*search_params {
-        SearchMode::Complex(s) => s.to_string(),
+        SearchMode::Complex(s) => s.clone(),
         SearchMode::Simple(s) => s.terms().join(" "),
     });
 
@@ -164,17 +159,6 @@ where
         (text.clone(), search_params.clone()),
     );
 
-    // when the search mode changes, and is "provided", refresh the simple terms
-    use_effect_with_deps(
-        |(mode, search_params)| {
-            if let SearchPropertiesMode::Provided { terms } = mode {
-                let terms = terms.split(' ').map(|s| s.to_string()).collect();
-                search_params.set(search_params.set_simple_terms(terms));
-            }
-        },
-        (mode.clone(), search_params.clone()),
-    );
-
     let ontogglesimple = use_callback(
         |state, (text, context, search_params)| match state {
             false => {
@@ -193,12 +177,10 @@ where
 
     UseStandardSearch {
         search_params,
-        pagination,
         text,
         filter_input_state,
         onset,
         onclear,
         ontogglesimple,
-        total,
     }
 }

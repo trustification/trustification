@@ -94,7 +94,7 @@ impl TableEntryRenderer<Column> for PackageEntry {
 }
 
 #[function_component(PackageResult)]
-pub fn package_result(props: &PackageResultProperties) -> Html {
+pub fn sbom_result(props: &PackageResultProperties) -> Html {
     let backend = use_backend();
     let data = match &props.state {
         UseAsyncState::Ready(Ok(val)) => {
