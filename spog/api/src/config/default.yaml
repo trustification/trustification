@@ -35,11 +35,13 @@ bombastic:
             id: rhel7
             terms:
               - '"cpe:/o:redhat:enterprise_linux:7"'
+              - '"cpe:/o:redhat:rhel_aus:7"'
 
           - label: Red Hat Enterprise Linux 8
             id: rhel8
             terms:
               - '"cpe:/o:redhat:enterprise_linux:8"'
+              - '"cpe:/o:redhat:rhel_e4s:8.1"'
 
           - label: Red Hat Enterprise Linux 9
             id: rhel9

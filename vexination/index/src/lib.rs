@@ -752,7 +752,7 @@ fn create_rewrite_string_query(field: Field, primary: &Primary<'_>) -> Box<dyn Q
             create_string_query(field, &Primary::Equal(&rewrite))
         }
         Primary::Partial(value) => {
-            let rewrite = rewrite_cpe(value);
+            let rewrite = rewrite_cpe_partial(value);
             create_string_query(field, &Primary::Partial(&rewrite))
         }
     }
@@ -760,6 +760,16 @@ fn create_rewrite_string_query(field: Field, primary: &Primary<'_>) -> Box<dyn Q
 
 // Attempt to parse CPE and rewrite to correctly formatted CPE
 fn rewrite_cpe(value: &str) -> String {
+    if value.starts_with("cpe:/") {
+        if let Ok(cpe) = cpe::uri::Uri::parse(value) {
+            return cpe.to_string();
+        }
+    }
+    value.to_string()
+}
+
+// Attempt to parse CPE and rewrite to partial match-friendly string
+fn rewrite_cpe_partial(value: &str) -> String {
     if value.starts_with("cpe:/") {
         if let Ok(cpe) = cpe::uri::Uri::parse(value) {
             return cpe.to_string().trim_end_matches(|x| x == ':' || x == '*').to_string();
@@ -784,7 +794,7 @@ mod tests {
         let index = Index::new();
         let mut store = IndexStore::new_in_memory(index).unwrap();
         let mut writer = store.writer().unwrap();
-        for advisory in &["rhsa-2023_1441", "rhsa-2021_3029", "rhsa-2023_3408"] {
+        for advisory in &["rhsa-2023_1441", "rhsa-2021_3029", "rhsa-2023_3408", "rhsa-2023_4378"] {
             let data = std::fs::read_to_string(format!("../testdata/{}.json", advisory)).unwrap();
             let csaf: Csaf = serde_json::from_str(&data).unwrap();
 
@@ -847,7 +857,7 @@ mod tests {
     async fn test_free_form_predicate_final() {
         assert_search(|index| {
             let result = search(&index, "is:final");
-            assert_eq!(result.0.len(), 3);
+            assert_eq!(result.0.len(), 4);
         });
     }
 
@@ -855,7 +865,7 @@ mod tests {
     async fn test_free_form_predicate_high() {
         assert_search(|index| {
             let result = search(&index, "is:high");
-            assert_eq!(result.0.len(), 3);
+            assert_eq!(result.0.len(), 4);
         });
     }
 
@@ -871,10 +881,10 @@ mod tests {
     async fn test_free_form_ranges() {
         assert_search(|index| {
             let result = search(&index, "cvss:>5");
-            assert_eq!(result.0.len(), 3);
+            assert_eq!(result.0.len(), 4);
 
             let result = search(&index, "cvss:<5");
-            assert_eq!(result.0.len(), 1);
+            assert_eq!(result.0.len(), 2);
         });
     }
 
@@ -882,22 +892,22 @@ mod tests {
     async fn test_free_form_dates() {
         assert_search(|index| {
             let result = search(&index, "initial:>2022-01-01");
-            assert_eq!(result.0.len(), 2);
+            assert_eq!(result.0.len(), 3);
 
             let result = search(&index, "discovery:>2022-01-01");
-            assert_eq!(result.0.len(), 2);
+            assert_eq!(result.0.len(), 3);
 
             let result = search(&index, "release:>2022-01-01");
-            assert_eq!(result.0.len(), 2);
+            assert_eq!(result.0.len(), 3);
 
             let result = search(&index, "release:>2023-02-08");
-            assert_eq!(result.0.len(), 2);
+            assert_eq!(result.0.len(), 3);
 
             let result = search(&index, "release:2022-01-01..2023-01-01");
-            assert_eq!(result.0.len(), 0);
+            assert_eq!(result.0.len(), 1);
 
             let result = search(&index, "release:2022-01-01..2024-01-01");
-            assert_eq!(result.0.len(), 2);
+            assert_eq!(result.0.len(), 3);
 
             let result = search(&index, "release:2023-03-23");
             assert_eq!(result.0.len(), 1);
@@ -914,16 +924,16 @@ mod tests {
     async fn test_severity() {
         assert_search(|index| {
             let result = search(&index, "severity:Important");
-            assert_eq!(result.0.len(), 2);
+            assert_eq!(result.0.len(), 3);
 
             let result = search(&index, "is:high");
-            assert_eq!(result.0.len(), 3);
+            assert_eq!(result.0.len(), 4);
 
             let result = search(&index, "is:critical");
             assert_eq!(result.0.len(), 0);
 
             let result = search(&index, "is:medium");
-            assert_eq!(result.0.len(), 2);
+            assert_eq!(result.0.len(), 3);
 
             let result = search(&index, "is:low");
             assert_eq!(result.0.len(), 1);
@@ -946,6 +956,21 @@ mod tests {
         assert_search(|index| {
             let result = search(&index, "fixed:\"cpe:/o:redhat:rhel_eus:8.6::baseos\"");
             assert_eq!(result.0.len(), 2);
+        });
+    }
+
+    // Unit test for issue #436 (https://github.com/trustification/trustification/issues/436)
+    #[tokio::test]
+    async fn test_query_and_products() {
+        assert_search(|index| {
+            let result = search(&index, "kernel");
+            assert_eq!(result.0.len(), 1);
+
+            let result = search(&index, "\"cpe:/a:redhat:enterprise_linux:9\" in:package");
+            assert_eq!(result.0.len(), 1);
+
+            let result = search(&index, "(kernel) (\"cpe:/a:redhat:enterprise_linux:9\" in:package)");
+            assert_eq!(result.0.len(), 1);
         });
     }
 
@@ -980,7 +1005,7 @@ mod tests {
         assert_search(|index| {
             let result = search(&index, "");
             // Should get all documents (1)
-            assert_eq!(result.0.len(), 3);
+            assert_eq!(result.0.len(), 4);
         });
     }
 
@@ -1026,7 +1051,7 @@ mod tests {
                     },
                 )
                 .unwrap();
-            assert_eq!(result.0.len(), 3);
+            assert_eq!(result.0.len(), 4);
             for result in result.0 {
                 assert!(result.metadata.is_some());
                 let indexed_date = result.metadata.as_ref().unwrap()["indexed_timestamp"].clone();
