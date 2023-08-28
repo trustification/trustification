@@ -537,7 +537,6 @@ pub fn create_string_query(field: Field, primary: &Primary<'_>) -> Box<dyn Query
             let pattern = format!(".*{}.*", value);
             let mut queries: Vec<Box<dyn Query>> = Vec::new();
             if let Ok(query) = RegexQuery::from_pattern(&pattern, field) {
-                println!("Created regex query: {:?}", pattern);
                 queries.push(Box::new(query));
             } else {
                 warn!("Unable to partial query from {}", pattern);
