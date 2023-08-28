@@ -37,7 +37,8 @@ impl Config {
                     spog: endpoints["url"].as_str().map(Url::parse).unwrap().ok(),
                     bombastic: endpoints["bombastic"].as_str().map(Url::parse).unwrap().ok(),
                     vexination: endpoints["vexination"].as_str().map(Url::parse).unwrap().ok(),
-                    issuer: endpoints["oidc"]["issuer"].as_str().unwrap().to_string(),
+                    issuer: std::env::var("ISSUER_URL")
+                        .unwrap_or(endpoints["oidc"]["issuer"].as_str().unwrap().to_string()),
                     mgr_id: std::env::var("TRUST_ID").expect("TRUST_ID is required"),
                     mgr_secret: std::env::var("TRUST_SECRET").expect("TRUST_SECRET is required"),
                     user_id: std::env::var("TRUST_USER_ID").ok(),
