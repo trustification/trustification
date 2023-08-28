@@ -1,5 +1,5 @@
 use std::{
-    collections::{hash_map::Entry, HashMap},
+    collections::{hash_map::Entry, HashMap, HashSet},
     ops::Bound,
     time::Duration,
 };
@@ -160,6 +160,8 @@ impl trustification_index::Index for Index {
 
         let mut cve_severities: HashMap<&str, usize> = HashMap::new();
         let mut cvss_max: Option<f64> = None;
+        let mut fixed: HashSet<String> = HashSet::new();
+        let mut affected: HashSet<String> = HashSet::new();
 
         if let Some(vulns) = &csaf.vulnerabilities {
             for vuln in vulns {
@@ -218,19 +220,19 @@ impl trustification_index::Index for Index {
                             let (pp, related_pp) = find_product_package(csaf, product);
                             if let Some(p) = pp {
                                 if let Some(cpe) = p.cpe {
-                                    document.add_text(self.fields.cve_affected, cpe);
+                                    affected.insert(cpe);
                                 }
                                 if let Some(purl) = p.purl {
-                                    document.add_text(self.fields.cve_affected, purl);
+                                    affected.insert(purl);
                                 }
                             }
 
                             if let Some(p) = related_pp {
                                 if let Some(cpe) = p.cpe {
-                                    document.add_text(self.fields.cve_affected, cpe);
+                                    affected.insert(cpe);
                                 }
                                 if let Some(purl) = p.purl {
-                                    document.add_text(self.fields.cve_affected, purl);
+                                    affected.insert(purl);
                                 }
                             }
                         }
@@ -241,19 +243,19 @@ impl trustification_index::Index for Index {
                             let (pp, related_pp) = find_product_package(csaf, product);
                             if let Some(p) = pp {
                                 if let Some(cpe) = p.cpe {
-                                    document.add_text(self.fields.cve_fixed, cpe);
+                                    fixed.insert(cpe);
                                 }
                                 if let Some(purl) = p.purl {
-                                    document.add_text(self.fields.cve_fixed, purl);
+                                    fixed.insert(purl);
                                 }
                             }
 
                             if let Some(p) = related_pp {
                                 if let Some(cpe) = p.cpe {
-                                    document.add_text(self.fields.cve_fixed, cpe);
+                                    fixed.insert(cpe);
                                 }
                                 if let Some(purl) = p.purl {
-                                    document.add_text(self.fields.cve_fixed, purl);
+                                    fixed.insert(purl);
                                 }
                             }
                         }
@@ -273,6 +275,14 @@ impl trustification_index::Index for Index {
                         DateTime::from_timestamp_millis(release_date.timestamp_millis()),
                     );
                 }
+            }
+
+            for affected in affected {
+                document.add_text(self.fields.cve_affected, affected);
+            }
+
+            for fixed in fixed {
+                document.add_text(self.fields.cve_fixed, fixed);
             }
 
             let mut json_severities: Map<String, Value> = Map::new();
