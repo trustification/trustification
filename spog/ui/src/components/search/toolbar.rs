@@ -7,7 +7,6 @@ pub struct SearchToolbarProperties {
     #[prop_or_default]
     pub children: ChildrenWithProps<ToolbarItem>,
 
-    pub managed: bool,
     pub text: String,
     pub pagination: UsePagination,
     pub total: Option<usize>,
@@ -26,42 +25,40 @@ pub fn search_toolbar(props: &SearchToolbarProperties) -> Html {
         <Toolbar>
             <ToolbarContent>
 
-                { for props.managed.then(|| html_nested!(
-                    <ToolbarGroup variant={GroupVariant::Filter}>
-                        <ToolbarItem r#type={ToolbarItemType::SearchFilter} width={["600px".to_string()]}>
-                            <Form onsubmit={props.onset.reform(|_|())}>
-                                // needed to trigger submit when pressing enter in the search field
-                                <input type="submit" hidden=true formmethod="dialog" />
-                                <InputGroup>
-                                    <TextInputGroup>
-                                        <TextInput
-                                            icon={Icon::Search}
-                                            placeholder="Search"
-                                            value={props.text.clone()}
-                                            state={*props.filter_input_state}
-                                            onchange={props.onchange.clone()}
-                                        />
+                <ToolbarGroup variant={GroupVariant::Filter}>
+                    <ToolbarItem r#type={ToolbarItemType::SearchFilter} width={["600px".to_string()]}>
+                        <Form onsubmit={props.onset.reform(|_|())}>
+                            // needed to trigger submit when pressing enter in the search field
+                            <input type="submit" hidden=true formmethod="dialog" />
+                            <InputGroup>
+                                <TextInputGroup>
+                                    <TextInput
+                                        icon={Icon::Search}
+                                        placeholder="Search"
+                                        value={props.text.clone()}
+                                        state={*props.filter_input_state}
+                                        onchange={props.onchange.clone()}
+                                    />
 
-                                        if !hidden {
-                                            <TextInputGroupUtilities>
-                                                <Button icon={Icon::Times} variant={ButtonVariant::Plain} onclick={props.onclear.reform(|_|())} />
-                                            </TextInputGroupUtilities>
-                                        }
-                                    </TextInputGroup>
-                                    <InputGroupItem>
-                                        <Button
-                                            disabled={*props.filter_input_state == InputState::Error}
-                                            icon={Icon::ArrowRight}
-                                            variant={ButtonVariant::Control}
-                                            onclick={props.onset.reform(|_|())}
-                                        />
-                                    </InputGroupItem>
-                                </InputGroup>
-                            </Form>
-                        </ToolbarItem>
+                                    if !hidden {
+                                        <TextInputGroupUtilities>
+                                            <Button icon={Icon::Times} variant={ButtonVariant::Plain} onclick={props.onclear.reform(|_|())} />
+                                        </TextInputGroupUtilities>
+                                    }
+                                </TextInputGroup>
+                                <InputGroupItem>
+                                    <Button
+                                        disabled={*props.filter_input_state == InputState::Error}
+                                        icon={Icon::ArrowRight}
+                                        variant={ButtonVariant::Control}
+                                        onclick={props.onset.reform(|_|())}
+                                    />
+                                </InputGroupItem>
+                            </InputGroup>
+                        </Form>
+                    </ToolbarItem>
 
-                    </ToolbarGroup>
-                )) }
+                </ToolbarGroup>
 
                 { for props.children.iter() }
 

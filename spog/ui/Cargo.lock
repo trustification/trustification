@@ -3071,9 +3071,9 @@ dependencies = [
 
 [[package]]
 name = "yew-more-hooks"
-version = "0.1.3"
+version = "0.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1604ca066dfb36ec5ac85e2753c80aab9bf44f43683e8588a80de967278c7c34"
+checksum = "556c3862d81a0c21a2986e0dd575609c39b37c01f3fdad9eef2c3ae44518b180"
 dependencies = [
  "gloo-utils",
  "wasm-bindgen-futures",

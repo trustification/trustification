@@ -4,9 +4,8 @@ use crate::{
     components::{
         advisory::{use_advisory_search, AdvisoryResult, AdvisorySearchControls},
         common::Visible,
-        sbom::use_sbom_search,
-        sbom::{PackageResult, SbomSearchControls},
-        search::*,
+        sbom::{use_sbom_search, PackageResult, SbomSearchControls},
+        search::{DynamicSearchParameters, SearchMode},
     },
     utils::count::count_tab_title,
 };
@@ -30,30 +29,39 @@ pub struct SearchProperties {
 #[function_component(Search)]
 pub fn search(props: &SearchProperties) -> Html {
     // active search terms
-    let search_terms = use_state_eq(|| props.terms.clone());
+
+    let search_terms = use_state_eq(|| split_terms(&props.terms));
 
     // text in the input field
+
     let text = use_state_eq(|| props.terms.clone());
     let onchange = use_callback(|new_text, text| text.set(new_text), text.clone());
 
+    // events to activate the search terms
+
     let onclick = use_callback(
         |_, (terms, search_terms)| {
-            search_terms.set((**terms).clone());
+            search_terms.set(split_terms(&*terms));
         },
         (text.clone(), search_terms.clone()),
     );
     let onsubmit = use_callback(
         |_, (terms, search_terms)| {
-            search_terms.set((**terms).clone());
+            search_terms.set(split_terms(&*terms));
         },
         (text.clone(), search_terms.clone()),
     );
+
+    // managing tabs
 
     let tab = use_state_eq(|| TabIndex::Advisories);
     let onselect = use_callback(|index, tab| tab.set(index), tab.clone());
 
     // advisory search
 
+    let advisory_search_params = use_state_eq::<SearchMode<DynamicSearchParameters>, _>(|| {
+        SearchMode::default().set_simple_terms((*search_terms).clone())
+    });
     let advisory_search = use_state_eq(UseAsyncState::default);
     let advisory_callback = use_callback(
         |state: UseAsyncHandleDeps<SearchResult<Rc<Vec<AdvisorySummary>>>, String>, search| {
@@ -61,15 +69,16 @@ pub fn search(props: &SearchProperties) -> Html {
         },
         advisory_search.clone(),
     );
-    let advisory = use_advisory_search(
-        SearchPropertiesMode::Provided {
-            terms: (*search_terms).clone(),
-        },
-        advisory_callback,
-    );
+    let advisory_total = use_state_eq(|| None);
+    advisory_total.set(advisory_search.data().and_then(|d| d.total));
+    let advisory_pagination = use_pagination(*advisory_total, Default::default);
+    let advisory = use_advisory_search(advisory_search_params, advisory_pagination.clone(), advisory_callback);
 
     // sbom search
 
+    let sbom_search_params = use_state_eq::<SearchMode<DynamicSearchParameters>, _>(|| {
+        SearchMode::default().set_simple_terms((*search_terms).clone())
+    });
     let sbom_search = use_state_eq(UseAsyncState::default);
     let sbom_callback = use_callback(
         |state: UseAsyncHandleDeps<SearchResult<Rc<Vec<PackageSummary>>>, String>, search| {
@@ -77,12 +86,27 @@ pub fn search(props: &SearchProperties) -> Html {
         },
         sbom_search.clone(),
     );
-    let sbom = use_sbom_search(
-        SearchPropertiesMode::Provided {
-            terms: (*search_terms).clone(),
-        },
-        sbom_callback,
-    );
+    let sbom_total = use_state_eq(|| None);
+    sbom_total.set(advisory_search.data().and_then(|d| d.total));
+    let sbom_pagination = use_pagination(*sbom_total, Default::default);
+    let sbom = use_sbom_search(sbom_search_params, sbom_pagination.clone(), sbom_callback);
+
+    // update search terms
+
+    {
+        use_effect_with_deps(
+            |(search_terms, advisory, sbom)| {
+                log::info!("Setting new search: {:?}", search_terms);
+                advisory.set(advisory.set_simple_terms(search_terms.clone()));
+                sbom.set(sbom.set_simple_terms(search_terms.clone()));
+            },
+            (
+                (*search_terms).clone(),
+                advisory.search_params.clone(),
+                sbom.search_params.clone(),
+            ),
+        );
+    }
 
     // render
 
@@ -149,12 +173,12 @@ pub fn search(props: &SearchProperties) -> Html {
 
                         <div class="pf-v5-u-background-color-100">
                             if *tab == TabIndex::Advisories {
-                                <PaginationWrapped pagination={advisory.pagination} total={*advisory.total}>
+                                <PaginationWrapped pagination={advisory_pagination} total={*advisory_total}>
                                     <AdvisoryResult state={(*advisory_search).clone()} />
                                 </PaginationWrapped>
                             }
                             if *tab == TabIndex::Sboms {
-                                <PaginationWrapped pagination={sbom.pagination} total={*sbom.total}>
+                                <PaginationWrapped pagination={sbom_pagination} total={*sbom_total}>
                                     <PackageResult state={(*sbom_search).clone()} />
                                 </PaginationWrapped>
                             }
@@ -167,6 +191,10 @@ pub fn search(props: &SearchProperties) -> Html {
 
         </>
     )
+}
+
+fn split_terms(terms: &str) -> Vec<String> {
+    terms.split(' ').map(ToString::to_string).collect()
 }
 
 #[derive(PartialEq, Properties)]

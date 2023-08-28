@@ -1,6 +1,6 @@
 use crate::{
     backend::{self, PackageService},
-    components::search::*,
+    components::{sbom::PackageResult, search::*},
     hooks::{use_backend, use_config, use_standard_search, UseStandardSearch},
     utils::pagination_to_offset,
 };
@@ -30,41 +30,25 @@ pub fn sbom_search_controls(props: &SbomSearchControlsProperties) -> Html {
 
 #[derive(PartialEq, Properties)]
 pub struct SbomSearchProperties {
-    pub callback: Callback<UseAsyncHandleDeps<SearchResult<Rc<Vec<PackageSummary>>>, String>>,
-
-    pub mode: SearchPropertiesMode,
+    pub query: Option<String>,
 
     #[prop_or_default]
     pub toolbar_items: ChildrenWithProps<ToolbarItem>,
-
-    #[prop_or_default]
-    pub children: Children,
 }
 
 #[hook]
 pub fn use_sbom_search(
-    mode: SearchPropertiesMode,
+    search_params: UseStateHandle<SearchMode<DynamicSearchParameters>>,
+    pagination: UsePagination,
     callback: Callback<UseAsyncHandleDeps<SearchResult<Rc<Vec<PackageSummary>>>, String>>,
 ) -> UseStandardSearch {
     let backend = use_backend();
     let access_token = use_latest_access_token();
 
     let config = use_config();
-
-    let total = use_state_eq(|| None);
-
     let filters = use_memo(|()| config.bombastic.filters.clone(), ());
 
-    let search_params = use_state_eq::<SearchMode<DynamicSearchParameters>, _>(Default::default);
-    let pagination = use_pagination(*total, Default::default);
-
-    let search = use_standard_search::<Packages>(
-        search_params.clone(),
-        pagination.clone(),
-        mode,
-        filters.clone(),
-        total.clone(),
-    );
+    let search = use_standard_search::<Packages>(search_params.clone(), filters.clone());
 
     let search_op = {
         let filters = filters.clone();
@@ -88,8 +72,6 @@ pub fn use_sbom_search(
         )
     };
 
-    total.set(search_op.data().and_then(|d| d.total));
-
     use_effect_with_deps(
         |(callback, search)| {
             callback.emit(search.clone());
@@ -102,32 +84,40 @@ pub fn use_sbom_search(
 
 #[function_component(SbomSearch)]
 pub fn sbom_search(props: &SbomSearchProperties) -> Html {
-    let search = use_sbom_search(props.mode.clone(), props.callback.clone());
+    let search_params = use_state_eq::<SearchMode<DynamicSearchParameters>, _>(Default::default);
+    let total = use_state_eq(|| None);
+    let pagination = use_pagination(*total, Default::default);
+    let state = use_state_eq(UseAsyncState::default);
+    let callback = use_callback(
+        |state: UseAsyncHandleDeps<SearchResult<Rc<_>>, String>, search| {
+            search.set((*state).clone());
+        },
+        state.clone(),
+    );
+    let search = use_sbom_search(search_params.clone(), pagination.clone(), callback.clone());
+
+    total.set(state.data().and_then(|d| d.total));
 
     // render
 
     let simple = search.search_params.is_simple();
     let onchange = use_callback(|data, text| text.set(data), search.text.clone());
-    let managed = matches!(&props.mode, SearchPropertiesMode::Managed { .. });
 
     html!(
         <>
 
             <Grid>
                 <GridItem cols={[2]}>
-                    if managed {
-                        <div style="height: 100%; display: flex;">
-                            <SimpleModeSwitch {simple} ontoggle={search.ontogglesimple} />
-                        </div>
-                    }
+                    <div style="height: 100%; display: flex;">
+                        <SimpleModeSwitch {simple} ontoggle={search.ontogglesimple} />
+                    </div>
                 </GridItem>
 
                 <GridItem cols={[10]}>
                     <SearchToolbar
                         text={(*search.text).clone()}
-                        {managed}
-                        pagination={search.pagination.clone()}
-                        total={*search.total}
+                        pagination={pagination.clone()}
+                        total={*total}
                         children={props.toolbar_items.clone()}
                         onset={search.onset}
                         onclear={search.onclear}
@@ -141,14 +131,14 @@ pub fn sbom_search(props: &SbomSearchProperties) -> Html {
                 </GridItem>
 
                 <GridItem cols={[10]}>
-                    { for props.children.iter() }
+                    <PackageResult state={(*state).clone()} />
                 </GridItem>
 
             </Grid>
 
             <SimplePagination
-                pagination={search.pagination}
-                total={*search.total}
+                pagination={pagination}
+                total={*total}
                 position={PaginationPosition::Bottom}
             />
 
