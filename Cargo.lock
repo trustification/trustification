@@ -5665,9 +5665,9 @@ dependencies = [
 
 [[package]]
 name = "sikula"
-version = "0.4.0-alpha.4"
+version = "0.4.0-alpha.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d9505ee29d952ab83995c8a30b711d0f46157f8fef92e2a025cca235d92a3d5a"
+checksum = "9c165794bf2e90fcc90f25b0013c0c8168504b4e7baf72948e1e5f75f07c9267"
 dependencies = [
  "chumsky",
  "sikula-macros",
