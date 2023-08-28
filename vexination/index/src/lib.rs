@@ -762,7 +762,7 @@ fn create_rewrite_string_query(field: Field, primary: &Primary<'_>) -> Box<dyn Q
 fn rewrite_cpe(value: &str) -> String {
     if value.starts_with("cpe:/") {
         if let Ok(cpe) = cpe::uri::Uri::parse(value) {
-            return cpe.to_string();
+            return cpe.to_string().trim_end_matches(|x| x == ':' || x == '*').to_string();
         }
     }
     value.to_string()
