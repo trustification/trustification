@@ -23,7 +23,7 @@ services:
       # monitoring port
       - "8222:8222"
     volumes:
-      - ./container_files/nats:/config/nats:z
+      - ./container_files/nats:/config/nats${SELINUX_VOLUME_OPTIONS}
     restart: on-failure
     healthcheck:
       test: ["CMD", "wget", "--spider", "http://localhost:8222/healthz"]
@@ -34,18 +34,20 @@ services:
 
   guac-collectsub:
     image: $GUAC_IMAGE
-    command: "/opt/guac/guaccsub"
+    command: "/opt/guac/guaccsub --csub-listen-port $GUAC_CSUB_PORT"
     working_dir: /guac
     restart: on-failure
+    expose:
+      - "$GUAC_CSUB_PORT"
     ports:
-      - "2782:2782"
+      - "$GUAC_CSUB_PORT:8080"
     depends_on:
       nats:
         condition: service_healthy
     volumes:
-      - ./container_files/guac:/guac:z
+      - ./container_files/guac:/guac${SELINUX_VOLUME_OPTIONS}
     healthcheck:
-      test: ["CMD", "wget", "--spider", "http://localhost:2782"]
+      test: ["CMD", "wget", "--spider", "http://localhost:$GUAC_CSUB_PORT"]
       interval: 10s
       timeout: 10s
       retries: 3
@@ -53,7 +55,7 @@ services:
 
   guac-graphql:
     image: $GUAC_IMAGE
-    command: "/opt/guac/guacgql"
+    command: "/opt/guac/guacgql --gql-listen-port $GUAC_API_PORT"
     working_dir: /guac
     restart: on-failure
     depends_on:
@@ -64,9 +66,9 @@ services:
     ports:
       - "$GUAC_API_PORT:8080"
     volumes:
-      - ./container_files/guac:/guac:z
+      - ./container_files/guac:/guac${SELINUX_VOLUME_OPTIONS}
     healthcheck:
-      test: ["CMD", "wget", "--spider", "http://localhost:8080"]
+      test: ["CMD", "wget", "--spider", "http://localhost:$GUAC_API_PORT"]
       interval: 10s
       timeout: 10s
       retries: 3
@@ -83,20 +85,7 @@ services:
       guac-graphql:
         condition: service_healthy
     volumes:
-      - ./container_files/guac:/guac:z
-
-  osv-certifier:
-    image: $GUAC_IMAGE
-    command: "/opt/guac/guacone certifier osv --poll -i 1m"
-    working_dir: /guac
-    restart: on-failure
-    depends_on:
-      guac-collectsub:
-        condition: service_healthy
-      guac-graphql:
-        condition: service_healthy
-    volumes:
-      - ./container_files/guac:/guac:z
+      - ./container_files/guac:/guac${SELINUX_VOLUME_OPTIONS}
 
   bombastic-exporter:
     image: $TRUST_IMAGE:${TRUST_VERSION:?TRUST_VERSION is required}
