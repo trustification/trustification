@@ -187,6 +187,8 @@ pub enum Error {
     QueryParser(String),
     #[error("error from storage {0}")]
     Storage(trustification_storage::Error),
+    #[error("invalid limit parameter {0}")]
+    InvalidLimitParameter(usize),
     #[error("error from search {0}")]
     Search(tantivy::TantivyError),
     #[error("error configuring metrics {0}")]
@@ -421,6 +423,10 @@ impl<INDEX: Index> IndexStore<INDEX> {
         options: SearchOptions,
     ) -> Result<(Vec<INDEX::MatchedDocument>, usize), Error> {
         let latency = self.metrics.query_latency_seconds.start_timer();
+
+        if limit == 0 {
+            return Err(Error::InvalidLimitParameter(limit));
+        }
 
         let reader = self.inner.reader()?;
         let searcher = reader.searcher();
@@ -736,6 +742,16 @@ mod tests {
         writer.commit().unwrap();
 
         assert_eq!(store.search("is", 0, 10, SearchOptions::default(),).unwrap().1, 0);
+    }
+
+    #[tokio::test]
+    async fn test_zero_limit() {
+        let _ = env_logger::try_init();
+        let store = IndexStore::new_in_memory(TestIndex::new()).unwrap();
+        assert!(matches!(
+            store.search("is", 0, 0, SearchOptions::default()),
+            Err(Error::InvalidLimitParameter(0))
+        ));
     }
 
     #[tokio::test]
