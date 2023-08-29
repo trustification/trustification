@@ -151,6 +151,9 @@ vexination:
             terms:
               - '( "cpe:/a:redhat:openshift:4" in:package )'
 
+scanner:
+  documentationUrl: https://www.trustification.io/blog/
+
 landingPage:
   headerContent: |
     <section
