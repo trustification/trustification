@@ -1,5 +1,7 @@
-use crate::components::search::{DynamicSearchParameters, SearchMode};
-use crate::utils::search::*;
+use crate::{
+    components::search::{DynamicSearchParameters, SearchMode},
+    utils::search::*,
+};
 use gloo_utils::format::JsValueSerdeExt;
 use patternfly_yew::prelude::*;
 use spog_model::config::Filters;
@@ -74,7 +76,7 @@ where
     );
 
     let search_params = use_state_eq(|| state.search.clone());
-    let pagination = use_pagination(total, || state.pagination.clone());
+    let pagination = use_pagination(total, || state.pagination);
 
     // when the search params or pagination state changes, store in history API
     use_effect_with_deps(
@@ -82,12 +84,12 @@ where
             // store changes to the state in the current history
             if let Ok(data) = JsValue::from_serde(&SearchViewState {
                 search: search_params,
-                pagination: pagination.clone(),
+                pagination: *pagination,
             }) {
                 let _ = gloo_utils::history().replace_state(&data, "");
             }
         },
-        ((*search_params).clone(), (pagination.state.control).clone()),
+        ((*search_params).clone(), pagination.state.control),
     );
 
     (search_params, pagination)

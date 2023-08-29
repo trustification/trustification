@@ -7,8 +7,8 @@ use yew::prelude::*;
 
 #[derive(Clone, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct DynamicSearchParameters {
-    terms: Vec<String>,
-    state: HashSet<(Rc<String>, Rc<String>)>,
+    pub terms: Vec<String>,
+    pub state: HashSet<(Rc<String>, Rc<String>)>,
 }
 
 impl DynamicSearchParameters {

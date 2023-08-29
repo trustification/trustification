@@ -80,16 +80,27 @@ pub struct AdvisorySearchProperties {
 
     #[prop_or_default]
     pub toolbar_items: ChildrenWithProps<ToolbarItem>,
+}
 
-    #[prop_or_default]
-    pub children: Children,
+#[derive(Clone, Debug, Default, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
+struct PageState {
+    pagination: PaginationControl,
+    search_params: SearchMode<DynamicSearchParameters>,
 }
 
 #[function_component(AdvisorySearch)]
 pub fn advisory_search(props: &AdvisorySearchProperties) -> Html {
-    let search_params = use_state_eq::<SearchMode<DynamicSearchParameters>, _>(Default::default);
+    let page_state = use_page_state(|| PageState {
+        search_params: match props.query.as_ref().filter(|s| !s.is_empty()) {
+            Some(terms) => SearchMode::Complex(terms.clone()),
+            None => Default::default(),
+        },
+        ..Default::default()
+    });
+
+    let search_params = use_state_eq::<SearchMode<DynamicSearchParameters>, _>(|| page_state.search_params.clone());
     let total = use_state_eq(|| None);
-    let pagination = use_pagination(*total, Default::default);
+    let pagination = use_pagination(*total, || page_state.pagination);
     let state = use_state_eq(UseAsyncState::default);
     let callback = use_callback(
         |state: UseAsyncHandleDeps<SearchResult<Rc<_>>, String>, search| {
@@ -100,6 +111,16 @@ pub fn advisory_search(props: &AdvisorySearchProperties) -> Html {
     let search = use_advisory_search(search_params.clone(), pagination.clone(), callback);
 
     total.set(state.data().and_then(|d| d.total));
+
+    // update page state
+
+    use_page_state_update(
+        page_state,
+        PageState {
+            pagination: **pagination,
+            search_params: (*search_params).clone(),
+        },
+    );
 
     // render
 
