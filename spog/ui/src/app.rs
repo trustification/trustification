@@ -52,7 +52,7 @@ fn application_with_backend() -> Html {
             // oauth2 context must also wrap the backdrop viewer
             <OAuth2
                 {config}
-                scopes={backend.endpoints.oidc.scopes.clone()}
+                scopes={backend.endpoints.oidc.scopes()}
             >
                 <Configuration>
                     <BackdropViewer>
