@@ -1,6 +1,6 @@
 # This is the default configuration file. It is compiled into the binary.
 
-$schema: "./schema.yaml"
+$schema: "../../../model/schema/config.json"
 
 global:
   documentationUrl: https://github.com/trustification/trustification

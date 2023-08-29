@@ -5293,6 +5293,7 @@ dependencies = [
  "schemars_derive",
  "serde",
  "serde_json",
+ "url",
 ]
 
 [[package]]
@@ -5891,7 +5892,9 @@ dependencies = [
 name = "spog-model"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "chrono",
+ "schemars",
  "serde",
  "serde_json",
  "time 0.3.23",
