@@ -210,13 +210,6 @@ pub fn upload(props: &UploadProperties) -> Html {
         (file_input_ref.clone(), drop_content.clone()),
     );
 
-    let oninput_text = use_callback(
-        |text: String, drop_content| {
-            drop_content.set(DropContent::from(text));
-        },
-        drop_content.clone(),
-    );
-
     let mut class = classes!("tc-c-editor__wrapper");
     if *drop.over {
         class.push("pf-m-drag-over")
