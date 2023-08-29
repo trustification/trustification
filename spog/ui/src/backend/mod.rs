@@ -37,9 +37,15 @@ pub struct OpenIdConnect {
     #[serde(default = "default::client_id")]
     pub client_id: String,
     #[serde(default = "default::scopes")]
-    pub scopes: Vec<String>,
+    pub scopes: String,
     #[serde(default = "default::after_logout")]
     pub after_logout: String,
+}
+
+impl OpenIdConnect {
+    pub fn scopes(&self) -> Vec<String> {
+        self.scopes.split(' ').map(|s| s.to_string()).collect()
+    }
 }
 
 mod default {
@@ -47,8 +53,8 @@ mod default {
         "frontend".to_string()
     }
 
-    pub fn scopes() -> Vec<String> {
-        vec!["openid".to_string()]
+    pub fn scopes() -> String {
+        "openid".to_string()
     }
 
     pub fn after_logout() -> String {
