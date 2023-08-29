@@ -34,6 +34,7 @@ pub fn search_toolbar(props: &SearchToolbarProperties) -> Html {
                                 <TextInputGroup>
                                     <TextInput
                                         icon={Icon::Search}
+                                        size="64"
                                         placeholder="Search"
                                         value={props.text.clone()}
                                         state={*props.filter_input_state}

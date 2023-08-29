@@ -1,5 +1,5 @@
 use crate::{
-    components::{backend::Backend, error::Error, theme::Themed},
+    components::{backend::Backend, config::Configuration, error::Error, theme::Themed},
     console::Console,
     hooks::use_backend,
     pages::AppRoute,
@@ -54,11 +54,13 @@ fn application_with_backend() -> Html {
                 {config}
                 scopes={backend.endpoints.oidc.scopes.clone()}
             >
-                <BackdropViewer>
-                    <OAuth2Configured>
-                        <Console />
-                    </OAuth2Configured>
-                </BackdropViewer>
+                <Configuration>
+                    <BackdropViewer>
+                        <OAuth2Configured>
+                            <Console />
+                        </OAuth2Configured>
+                    </BackdropViewer>
+                </Configuration>
             </OAuth2>
         </Router<AppRoute>>
     )

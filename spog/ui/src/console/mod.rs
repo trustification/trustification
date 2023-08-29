@@ -5,7 +5,6 @@ use crate::{
     backend::Endpoint,
     components::{
         common::{ExternalLinkMarker, ExternalNavLink},
-        config::Configuration,
         theme::DarkModeEntry,
     },
     hooks::{use_backend, use_config},
@@ -20,41 +19,36 @@ use yew_oauth2::{openid::*, prelude::*};
 /// The main console component
 #[function_component(Console)]
 pub fn console() -> Html {
-    html!(
-        // wrap with the configuration, as the page switch already needs that
-        <Configuration>
-            <PageSwitch/>
-        </Configuration>
-    )
-}
-
-#[function_component(PageSwitch)]
-fn page_switch() -> Html {
     let config = use_config();
     let render = move |route| render(route, &config);
 
     html!(<RouterSwitch<AppRoute> {render} default={html!(<pages::NotFound />)}/>)
 }
 
+#[function_component(Brand)]
 fn brand() -> Html {
+    let config = use_config();
+
+    let src = config.global.brand_image_src();
+
     html! (
         <MastheadBrand>
-            <Brand
-                src="assets/images/chicken-svgrepo-com.svg"
+            <patternfly_yew::prelude::Brand
+                src={src.clone()}
                 alt="Logo"
                 style={r#"
                     --pf-v5-c-brand--Height: var(--pf-v5-c-page__header-brand-link--c-brand--MaxHeight);
                 "#}
             >
-                <BrandSource srcset="assets/images/chicken-svgrepo-com.svg" />
-            </Brand>
+                <BrandSource srcset={src} />
+            </patternfly_yew::prelude::Brand>
         </MastheadBrand>
     )
 }
 
 #[function_component(AuthenticatedPage)]
 fn authenticated_page(props: &ChildrenProperties) -> Html {
-    let brand = brand();
+    let brand = html!(<Brand/>);
 
     let backend = use_backend();
     let config = use_config();
@@ -175,9 +169,8 @@ fn authenticated_page(props: &ChildrenProperties) -> Html {
 /// a non-authenticated page
 #[function_component(NonAuthenticatedPage)]
 fn non_authenticated_page(props: &ChildrenProperties) -> Html {
-    let brand = brand();
     html!(
-        <Page {brand}>
+        <Page brand={html!(<Brand/>)}>
             { for props.children.iter() }
         </Page>
     )

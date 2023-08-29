@@ -1,4 +1,7 @@
-use crate::{backend::VersionService, hooks::use_backend};
+use crate::{
+    backend::VersionService,
+    hooks::{use_backend, use_config},
+};
 use patternfly_yew::prelude::*;
 use std::rc::Rc;
 use trustification_version::{version, VersionInformation};
@@ -8,6 +11,7 @@ use yew_oauth2::hook::use_latest_access_token;
 
 #[function_component(About)]
 pub fn about() -> Html {
+    let config = use_config();
     let backend = use_backend();
     let access_token = use_latest_access_token();
 
@@ -23,13 +27,17 @@ pub fn about() -> Html {
         backend.clone(),
     );
 
+    let brand_image_src = config.global.brand_image_src();
+    let background_image_src = config.global.about_background_src();
+    let product_name = config.global.product_name();
+
     html!(
         <Bullseye plain=true>
             <AboutModal
-                brand_image_src="assets/images/chicken-svgrepo-com.svg"
-                brand_image_alt="Logo"
-                background_image_src="assets/images/pfbg-icon.svg"
-                product_name="Chicken Coop"
+                {brand_image_src}
+                brand_image_alt="Brand Logo"
+                {background_image_src}
+                {product_name}
                 trademark="Copyright © 2020, 2023 by the Chickens"
             >
                 <Content>
