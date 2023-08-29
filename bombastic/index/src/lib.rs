@@ -673,6 +673,7 @@ mod tests {
                 SearchOptions {
                     metadata: false,
                     explain: false,
+                    summaries: true,
                 },
             )
             .unwrap()
@@ -827,6 +828,7 @@ mod tests {
                     SearchOptions {
                         explain: false,
                         metadata: true,
+                        summaries: true,
                     },
                 )
                 .unwrap();
@@ -852,6 +854,7 @@ mod tests {
                     SearchOptions {
                         explain: true,
                         metadata: false,
+                        summaries: true,
                     },
                 )
                 .unwrap();

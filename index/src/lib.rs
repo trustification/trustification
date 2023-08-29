@@ -435,20 +435,25 @@ impl<INDEX: Index> IndexStore<INDEX> {
 
         log::info!("#matches={count} for query '{q}'");
 
-        let mut hits = Vec::new();
-        for hit in top_docs {
-            if let Ok(value) = self.index.process_hit(hit.1, hit.0, &searcher, &query, &options) {
-                debug!("HIT: {:?}", value);
-                hits.push(value);
-            } else {
-                warn!("Error processing hit {:?}", hit);
+        if options.summaries {
+            let mut hits = Vec::new();
+            for hit in top_docs {
+                if let Ok(value) = self.index.process_hit(hit.1, hit.0, &searcher, &query, &options) {
+                    debug!("HIT: {:?}", value);
+                    hits.push(value);
+                } else {
+                    warn!("Error processing hit {:?}", hit);
+                }
             }
+
+            debug!("Filtered to {}", hits.len());
+
+            latency.observe_duration();
+            Ok((hits, count))
+        } else {
+            latency.observe_duration();
+            Ok((Vec::new(), count))
         }
-
-        debug!("Filtered to {}", hits.len());
-
-        latency.observe_duration();
-        Ok((hits, count))
     }
 }
 
@@ -709,21 +714,7 @@ mod tests {
 
         writer.commit().unwrap();
 
-        assert_eq!(
-            store
-                .search(
-                    "is",
-                    0,
-                    10,
-                    SearchOptions {
-                        explain: false,
-                        metadata: false
-                    }
-                )
-                .unwrap()
-                .1,
-            1
-        );
+        assert_eq!(store.search("is", 0, 10, SearchOptions::default(),).unwrap().1, 1);
     }
 
     #[tokio::test]
@@ -738,41 +729,13 @@ mod tests {
 
         writer.commit().unwrap();
 
-        assert_eq!(
-            store
-                .search(
-                    "is",
-                    0,
-                    10,
-                    SearchOptions {
-                        explain: false,
-                        metadata: false
-                    }
-                )
-                .unwrap()
-                .1,
-            1
-        );
+        assert_eq!(store.search("is", 0, 10, SearchOptions::default(),).unwrap().1, 1);
 
         let writer = store.writer().unwrap();
         writer.delete_document(store.index_as_mut(), "foo");
         writer.commit().unwrap();
 
-        assert_eq!(
-            store
-                .search(
-                    "is",
-                    0,
-                    10,
-                    SearchOptions {
-                        explain: false,
-                        metadata: false
-                    }
-                )
-                .unwrap()
-                .1,
-            0
-        );
+        assert_eq!(store.search("is", 0, 10, SearchOptions::default(),).unwrap().1, 0);
     }
 
     #[tokio::test]
@@ -791,21 +754,7 @@ mod tests {
 
         writer.commit().unwrap();
 
-        assert_eq!(
-            store
-                .search(
-                    "is",
-                    0,
-                    10,
-                    SearchOptions {
-                        explain: false,
-                        metadata: false
-                    }
-                )
-                .unwrap()
-                .1,
-            1
-        );
+        assert_eq!(store.search("is", 0, 10, SearchOptions::default(),).unwrap().1, 1);
 
         // Duplicates also removed if separate commits.
         let mut writer = store.writer().unwrap();
@@ -815,20 +764,6 @@ mod tests {
 
         writer.commit().unwrap();
 
-        assert_eq!(
-            store
-                .search(
-                    "is",
-                    0,
-                    10,
-                    SearchOptions {
-                        explain: false,
-                        metadata: false
-                    }
-                )
-                .unwrap()
-                .1,
-            1
-        );
+        assert_eq!(store.search("is", 0, 10, SearchOptions::default(),).unwrap().1, 1);
     }
 }

@@ -46,7 +46,7 @@ pub struct PackageSummary {
     pub supplier: String,
     pub dependencies: Vec<String>,
     pub href: String,
-    pub advisories: Vec<String>,
+    pub advisories: u64,
     pub created: OffsetDateTime,
 
     #[serde(default, skip_serializing_if = "Value::is_null", rename = "$metadata")]

@@ -74,7 +74,7 @@ impl TableEntryRenderer<Column> for PackageEntry {
                 html!(<Link<AppRoute>
                           target={AppRoute::Advisory(View::Search{query: q})}
                             >
-                        { self.package.advisories.len() }
+                        { self.package.advisories }
                     </Link<AppRoute>>
                 )
                 .into()
