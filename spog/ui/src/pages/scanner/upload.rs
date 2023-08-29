@@ -1,3 +1,8 @@
+use crate::components::theme::ThemeContext;
+use crate::hooks::use_config;
+use monaco::api::{CodeEditorOptions, TextModel};
+use monaco::sys::editor::BuiltinTheme;
+use monaco::yew::CodeEditor;
 use patternfly_yew::prelude::*;
 use std::rc::Rc;
 use wasm_bindgen_futures::JsFuture;
@@ -62,6 +67,8 @@ fn default_validate() -> Callback<Rc<String>, Result<Rc<String>, String>> {
 #[function_component(Upload)]
 pub fn upload(props: &UploadProperties) -> Html {
     let node = use_node_ref();
+
+    let initial = use_state_eq(|| true);
 
     let drop_content = use_state(|| DropContent::None);
 
@@ -128,25 +135,44 @@ pub fn upload(props: &UploadProperties) -> Html {
     );
 
     let onclear = use_callback(
-        |_, drop_content| {
+        |_: MouseEvent, drop_content| {
             // clear state
             drop_content.set(DropContent::None);
         },
         drop_content.clone(),
     );
 
+    /*
     let helper_text = processing
         .error()
         .map(|err| FormHelperText::from((err.1.to_string(), InputState::Error)));
-    let state = helper_text.as_ref().map(|h| h.input_state).unwrap_or_default();
+     */
+    let (state, helper_text) = processing.error().map(
+        |err| (InputState::Error, html_nested!(
+            <HelperTextItem icon={HelperTextItemIcon::Visible} variant={ HelperTextItemVariant::Error }> { err.1.to_string() } </HelperTextItem>
+        )),
+    ).unzip();
+    let state = state.unwrap_or_default();
+    //let state = processing.error().is_some().then(||In).unwrap_or_default();
+
     let content = match &*processing {
         UseAsyncState::Ready(Ok(content)) => content.clone(),
         UseAsyncState::Ready(Err((content, _))) => content.clone(),
         _ => Default::default(),
     };
 
+    use_effect_with_deps(
+        |(initial, content)| {
+            if !content.is_empty() {
+                // only set the first, to remember we had some content
+                initial.set(false);
+            }
+        },
+        (initial.clone(), content.clone()),
+    );
+
     let onsubmit = use_callback(
-        |_, (processing, onsubmit)| {
+        |_: MouseEvent, (processing, onsubmit)| {
             if let Some(data) = processing.data() {
                 onsubmit.emit(data.clone());
             }
@@ -156,13 +182,14 @@ pub fn upload(props: &UploadProperties) -> Html {
 
     let file_input_ref = use_node_ref();
     let onopen = use_callback(
-        |_, file_input_ref| {
+        |_: (), file_input_ref| {
             if let Some(ele) = file_input_ref.cast::<web_sys::HtmlElement>() {
                 ele.click();
             }
         },
         file_input_ref.clone(),
     );
+    let onopen_button = use_memo(|onopen| onopen.reform(|_: MouseEvent| ()), onopen.clone());
 
     let onchange_open = use_callback(
         |_, (file_input_ref, drop_content)| {
@@ -184,63 +211,145 @@ pub fn upload(props: &UploadProperties) -> Html {
     );
 
     let oninput_text = use_callback(
-        |text, drop_content| {
+        |text: String, drop_content| {
             drop_content.set(DropContent::from(text));
         },
         drop_content.clone(),
     );
 
+    let mut class = classes!("tc-c-editor__wrapper");
+    if *drop.over {
+        class.push("pf-m-drag-over")
+    }
+
+    // build empty state actions
+
+    let load_action = Action::new("Load", onopen);
+    let mut secondaries = vec![];
+
+    let config = use_config();
+    let onlearn = use_callback(
+        |_, url| {
+            if let Some(url) = &url {
+                let _ = gloo_utils::window().open_with_url_and_target(url.as_ref(), "_blank");
+            }
+        },
+        config.scanner.documentation_url.clone(),
+    );
+    if config.scanner.documentation_url.is_some() {
+        secondaries.push(Action::new("Learn creating an SBOM", onlearn));
+    }
+
+    // render
+
     html!(
-        <div ref={node.clone()}>
-            <Form>
-                <FormGroup
-                    {helper_text}
-                >
-                    <FileUpload
-                        drag_over={*drop.over}
-                    >
-                        <FileUploadSelect>
-                            <InputGroup>
-                                <TextInput readonly=true value={(*drop_content).to_string()}/>
-                                <input ref={file_input_ref.clone()} style="display: none;" type="file" onchange={onchange_open} />
+        <div ref={node.clone()} {class}>
+            <input ref={file_input_ref.clone()} style="display: none;" type="file" onchange={onchange_open} />
+            <Stack gutter=true>
+                <StackItem fill=true>
+                    if *initial {
+                        <EmptyState
+                            title="Provide an SBOM"
+                            icon={Icon::Code}
+                            size={Size::XXXXLarge}
+                            primary={load_action}
+                            {secondaries}
+                            full_height=true
+                        >
+                            { "Drop a file here or load one to scan it." }
+                        </EmptyState>
+                    }
+                    if !*initial {
+                        <Editor content={content.clone()} />
+                    }
+                </StackItem>
+                <StackItem>
+                    if !*initial {
+                        <Flex>
+                            <FlexItem>
                                 <Button
-                                    variant={ButtonVariant::Control}
                                     disabled={processing.is_processing()}
-                                    onclick={onopen}
+                                    variant={ButtonVariant::Secondary}
+                                    onclick={(*onopen_button).clone()}
                                 >
-                                    {"Open"}
+                                    {"Load"}
                                 </Button>
+                            </FlexItem>
+                            <FlexItem>
                                 <Button
-                                    variant={ButtonVariant::Control}
+                                    variant={ButtonVariant::Primary}
                                     disabled={state == InputState::Error}
                                     onclick={onsubmit}
                                 >
-                                    {"Inspect"}
+                                    {"Scan"}
                                 </Button>
+                            </FlexItem>
+                            <FlexItem>
                                 <Button
-                                    variant={ButtonVariant::Control}
+                                    variant={ButtonVariant::Secondary}
+                                    disabled={drop_content.is_none()}
                                     onclick={onclear}
-                                    disabled={drop_content.is_none()}>
+                                >
                                     {"Clear"}
                                 </Button>
-                            </InputGroup>
-                        </FileUploadSelect>
-                        <FileUploadDetails
-                            processing={processing.is_processing()}
-                            invalid={state == InputState::Error}
-                        >
-                            <TextArea
-                                value={(*content).clone()}
-                                resize={ResizeOrientation::Vertical}
-                                onchange={oninput_text}
-                                rows={20}
-                                readonly=true
-                                {state}
-                            />
-                        </FileUploadDetails>
-                    </FileUpload>
-                </FormGroup>
-            </Form>
+                            </FlexItem>
+                            <FlexItem>
+                                if let Some(helper_text) = helper_text {
+                                    <HelperText>
+                                        { helper_text }
+                                    </HelperText>
+                                }
+                            </FlexItem>
+                        </Flex>
+                    }
+                </StackItem>
+            </Stack>
         </div>
+    )
+}
+
+#[derive(PartialEq, Properties)]
+pub struct EditorProperties {
+    pub content: Rc<String>,
+}
+
+#[function_component(Editor)]
+fn editor(props: &EditorProperties) -> Html {
+    let dark = use_context::<ThemeContext>()
+        .map(|ctx| ctx.settings.dark)
+        .unwrap_or_default();
+
+    let theme = match dark {
+        true => BuiltinTheme::VsDark,
+        false => BuiltinTheme::Vs,
+    };
+
+    let options = use_memo(
+        |theme| {
+            let options = CodeEditorOptions::default()
+                .with_scroll_beyond_last_line(false)
+                .with_language("json".to_string())
+                .with_builtin_theme(*theme)
+                .with_automatic_layout(true)
+                .to_sys_options();
+
+            options.set_read_only(Some(true));
+
+            options
+        },
+        theme,
+    );
+
+    let model = use_memo(
+        |content| TextModel::create(content, Some("json"), None).unwrap(),
+        props.content.clone(),
+    );
+
+    html!(
+        <CodeEditor
+            classes="tc-c-editor__code_editor"
+            model={(*model).clone()}
+            options={(*options).clone()}
+        />
     )
 }

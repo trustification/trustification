@@ -21,6 +21,8 @@ pub struct Configuration {
     #[serde(default)]
     pub vexination: Vexination,
     #[serde(default)]
+    pub scanner: Scanner,
+    #[serde(default)]
     pub features: Features,
 }
 
@@ -123,6 +125,15 @@ pub struct LandingPage {
     /// Content below the search entry box section
     #[serde(default)]
     pub footer_content: String,
+}
+
+/// Scanner specific configuration
+#[derive(Clone, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct Scanner {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    /// Adding a link to a blog post explaining how to create an SBOM
+    pub documentation_url: Option<Url>,
 }
 
 /// Bombastic specific configuration

@@ -55,6 +55,14 @@
         }
       ]
     },
+    "scanner": {
+      "default": {},
+      "allOf": [
+        {
+          "$ref": "#/definitions/Scanner"
+        }
+      ]
+    },
     "vexination": {
       "default": {
         "filters": {}
@@ -252,6 +260,20 @@
           "description": "Content above the search entry box section",
           "default": "",
           "type": "string"
+        }
+      }
+    },
+    "Scanner": {
+      "description": "Scanner specific configuration",
+      "type": "object",
+      "properties": {
+        "documentationUrl": {
+          "description": "Adding a link to a blog post explaining how to create an SBOM",
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "uri"
         }
       }
     },

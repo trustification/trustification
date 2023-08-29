@@ -1267,6 +1267,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "monaco"
+version = "0.3.0"
+source = "git+https://github.com/siku2/rust-monaco?rev=794a4cc7819f9ed7eb06559e24f75a41e23cf22a#794a4cc7819f9ed7eb06559e24f75a41e23cf22a"
+dependencies = [
+ "js-sys",
+ "paste",
+ "wasm-bindgen",
+ "web-sys",
+ "yew",
+]
+
+[[package]]
 name = "native-tls"
 version = "0.2.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1514,9 +1526,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "paste"
+version = "1.0.14"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "de3145af08024dea9fa9914f381a17b8fc6034dfb00f3a84013f7ff43f29ed4c"
+
+[[package]]
 name = "patternfly-yew"
 version = "0.5.0-alpha.3"
-source = "git+https://github.com/ctron/patternfly-yew?rev=4169dfb7a56588f8165d3ed0c77b5a9ad6cbf804#4169dfb7a56588f8165d3ed0c77b5a9ad6cbf804"
+source = "git+https://github.com/ctron/patternfly-yew?rev=cd1c69d29f6cc409f1cd75bf7b4b29fe334f7442#cd1c69d29f6cc409f1cd75bf7b4b29fe334f7442"
 dependencies = [
  "chrono",
  "gloo-events",
@@ -2333,6 +2351,7 @@ dependencies = [
  "humansize",
  "itertools 0.11.0",
  "log",
+ "monaco",
  "packageurl",
  "patternfly-yew",
  "reqwest",

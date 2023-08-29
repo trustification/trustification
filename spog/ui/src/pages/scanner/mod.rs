@@ -3,6 +3,7 @@ mod inspect;
 mod report;
 mod upload;
 
+use crate::hooks::use_config;
 use anyhow::bail;
 use bombastic_model::prelude::SBOM;
 use inspect::Inspect;
@@ -72,20 +73,14 @@ pub fn scanner() -> Html {
                 <>
                     <CommonHeader />
                     <PageSection variant={PageSectionVariant::Default} fill=true>
-                        <Grid gutter=true>
-                            <GridItem cols={[8]}>
-                                <Card
-                                    title={html!(<Title> {"SBOM content"} </Title>)}
-                                >
-                                    <CardBody>
-                                        <Upload {onsubmit} {onvalidate}/>
-                                    </CardBody>
-                                </Card>
-                            </GridItem>
-                            <GridItem cols={[4]}>
-                                <GenerateCard />
-                            </GridItem>
-                        </Grid>
+                        <Card
+                            title={html!(<Title> {"SBOM content"} </Title>)}
+                            full_height=true
+                        >
+                            <CardBody>
+                                <Upload {onsubmit} {onvalidate}/>
+                            </CardBody>
+                        </Card>
                     </PageSection>
                 </>
             )
@@ -101,16 +96,20 @@ pub struct CommonHeaderProperties {
 
 #[function_component(CommonHeader)]
 fn common_header(props: &CommonHeaderProperties) -> Html {
+    let config = use_config();
+
     html!(
         <PageSection sticky={[PageSectionSticky::Top]} variant={PageSectionVariant::Light}>
             <Flex>
                 <FlexItem>
                     <Content>
                         <Title>{"Inspect SBOM"}</Title>
-                        <p>{ "Upload and analyze a custom SBOM" }</p>
                     </Content>
                 </FlexItem>
                 <FlexItem modifiers={[FlexModifier::Align(Alignment::Right), FlexModifier::Align(Alignment::End)]}>
+                    if let Some(url) = &config.scanner.documentation_url {
+                        <a href={url.to_string()} target="_blank" class="pf-v5-c-button pf-m-plain">{ Icon::QuestionCircle }</a>
+                    }
                     if let Some(onreset) = &props.onreset {
                         <Button
                             label={"Scan another"}
@@ -122,48 +121,5 @@ fn common_header(props: &CommonHeaderProperties) -> Html {
                 </FlexItem>
             </Flex>
         </PageSection>
-    )
-}
-
-#[function_component(GenerateCard)]
-fn generate_card() -> Html {
-    let maven = r#"mvn org.cyclonedx:cyclonedx-maven-plugin:2.7.7:makeAggregateBom -Dcyclonedx.skipAttach=true -DoutputFormat=json -DschemaVersion=1.3 -Dcyclonedx.verbose=false"#;
-    let container = r#"syft packages <container> -o cyclonedx-json --file sbom.json"#;
-    let container_example = r#"syft packages quay.io/glassfish/server:5 -o cyclonedx-json --file sbom.json"#;
-
-    #[derive(Copy, Clone, Eq, PartialEq)]
-    enum TabIndex {
-        Container,
-        Maven,
-    }
-
-    let selected = use_state_eq(|| TabIndex::Container);
-    let onselect = use_callback(|index, selected| selected.set(index), selected.clone());
-
-    html!(
-        <Card
-            title={html!(<Title>{"Generate"}</Title>)}
-        >
-            <CardBody>
-                <Tabs<TabIndex> r#box=true selected={*selected} {onselect}>
-                    <Tab<TabIndex> index={TabIndex::Container} title="Container">
-                        <Content>
-                            <p> { "Run the following command:" } </p>
-                            <p> <TextInput readonly=true value={container}  /> </p>
-                            <p> { "Be sure to replace " } <code> {"<container>"} </code> { "with the actual name of the container, for example:" } </p>
-                            <p> <Clipboard readonly=true code=true value={container_example} variant={ClipboardVariant::Expanded} /> </p>
-                            <p> { "The SBOM will be generated as: " } <code> { "target/sbom.json" } </code> </p>
-                        </Content>
-                    </Tab<TabIndex>>
-                    <Tab<TabIndex> index={TabIndex::Maven} title="Maven">
-                        <Content>
-                            <p> { "Run the following command from the root of your project:" } </p>
-                            <p> <Clipboard readonly=true code=true value={maven} variant={ClipboardVariant::Expanded} /> </p>
-                            <p> { "The SBOM will be generated as: " } <code> { "sbom.json" } </code> </p>
-                        </Content>
-                    </Tab<TabIndex>>
-                </Tabs<TabIndex>>
-            </CardBody>
-        </Card>
     )
 }
