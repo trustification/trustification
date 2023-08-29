@@ -44,7 +44,7 @@ pub struct PackageSummary {
     pub classifier: String,
     pub description: String,
     pub supplier: String,
-    pub dependencies: Vec<String>,
+    pub dependencies: u64,
     pub href: String,
     pub advisories: u64,
     pub created: OffsetDateTime,

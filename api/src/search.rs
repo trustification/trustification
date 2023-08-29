@@ -13,8 +13,8 @@ pub struct SearchOptions {
 impl Default for SearchOptions {
     fn default() -> Self {
         Self {
-            explain: Default::default(),
-            metadata: Default::default(),
+            explain: false,
+            metadata: false,
             summaries: true,
         }
     }
@@ -32,6 +32,8 @@ impl Apply<SearchOptions> for reqwest::RequestBuilder {
 
         if !options.summaries {
             self = self.query(&[("summaries", "false")]);
+        } else {
+            self = self.query(&[("summaries", "true")]);
         }
 
         self

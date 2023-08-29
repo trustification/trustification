@@ -583,11 +583,7 @@ impl trustification_index::Index for Index {
             })
             .unwrap_or(time::OffsetDateTime::UNIX_EPOCH);
 
-        let dependencies: Vec<String> = field2strvec(&doc, self.fields.dep.purl)?
-            .iter()
-            .map(|s| s.to_string())
-            .collect();
-
+        let dependencies: u64 = doc.get_all(self.fields.dep.purl).count() as u64;
         let document = SearchDocument {
             id: id.to_string(),
             version: version.to_string(),

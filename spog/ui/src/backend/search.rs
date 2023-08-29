@@ -16,7 +16,8 @@ impl Default for SearchParameters {
             options: SearchOptions {
                 // in debug mode, we ask for metadata by default
                 metadata: default_metadata(),
-                ..Default::default()
+                summaries: true,
+                explain: false,
             },
         }
     }
