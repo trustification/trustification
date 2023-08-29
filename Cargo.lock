@@ -2049,7 +2049,7 @@ dependencies = [
 [[package]]
 name = "cyclonedx-bom"
 version = "0.4.0"
-source = "git+https://github.com/lulf/cyclonedx-rust-cargo?branch=trustification#63d912ad5a8a157820d01f15d9c81599c909f134"
+source = "git+https://github.com/trustification/cyclonedx-rust-cargo?branch=trustification#63d912ad5a8a157820d01f15d9c81599c909f134"
 dependencies = [
  "base64 0.21.2",
  "http",
@@ -2899,7 +2899,7 @@ dependencies = [
 [[package]]
 name = "guac"
 version = "0.1.0"
-source = "git+https://github.com/dejanb/guac-rs.git?rev=e1f3585af76f3ee198f5a465e97dbffb07bee8ed#e1f3585af76f3ee198f5a465e97dbffb07bee8ed"
+source = "git+https://github.com/trustification/guac-rs.git?rev=e1f3585af76f3ee198f5a465e97dbffb07bee8ed#e1f3585af76f3ee198f5a465e97dbffb07bee8ed"
 dependencies = [
  "anyhow",
  "async-nats",
@@ -5069,7 +5069,7 @@ dependencies = [
 [[package]]
 name = "rust-s3"
 version = "0.34.0-beta3"
-source = "git+https://github.com/jcrossley3/rust-s3.git?branch=issue-352#158e587e1b33039e292eb4fca9005b63d99e582c"
+source = "git+https://github.com/trustification/rust-s3.git?branch=issue-352#158e587e1b33039e292eb4fca9005b63d99e582c"
 dependencies = [
  "async-trait",
  "aws-creds",
@@ -5779,7 +5779,7 @@ dependencies = [
 [[package]]
 name = "spdx-rs"
 version = "0.5.2"
-source = "git+https://github.com/lulf/spdx-rs?rev=f3f1ea9a72e270c8434f8be6ca1d61608b25b813#f3f1ea9a72e270c8434f8be6ca1d61608b25b813"
+source = "git+https://github.com/trustification/spdx-rs?rev=f3f1ea9a72e270c8434f8be6ca1d61608b25b813#f3f1ea9a72e270c8434f8be6ca1d61608b25b813"
 dependencies = [
  "chrono",
  "log",
