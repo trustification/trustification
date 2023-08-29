@@ -79,8 +79,8 @@ packageurl = { git = "https://github.com/ctron/packageurl.rs", rev = "c9a0c192ff
 #sikula = { git = "https://github.com/ctron/sikula", rev = "65a13c415cbbc16e386b91f6b98a16a9ba3aa938"}
 
 # also check root level Cargo.toml
-cyclonedx-bom = { git = "https://github.com/lulf/cyclonedx-rust-cargo", branch = "trustification" }
-spdx-rs = { git = "https://github.com/lulf/spdx-rs", rev = "f3f1ea9a72e270c8434f8be6ca1d61608b25b813" }
+cyclonedx-bom = { git = "https://github.com/trustification/cyclonedx-rust-cargo", branch = "trustification" }
+spdx-rs = { git = "https://github.com/trustification/spdx-rs", rev = "f3f1ea9a72e270c8434f8be6ca1d61608b25b813" }
 
 # release profile settings to reduce the final binary size
 [profile.release]
