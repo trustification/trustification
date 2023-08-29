@@ -64,6 +64,36 @@ pub struct Global {
 
     #[serde(default)]
     pub support_url: Option<Url>,
+
+    #[serde(default)]
+    pub brand_image_src: Option<String>,
+
+    #[serde(default)]
+    pub about_background_src: Option<String>,
+
+    #[serde(default)]
+    pub product_name: Option<String>,
+}
+
+pub const DEFAULT_BRAND_SRC: &str = "assets/images/chicken-svgrepo-com.svg";
+pub const DEFAULT_ABOUT_BACKGROUND_SRC: &str = "assets/images/pfbg-icon.svg";
+pub const DEFAULT_PRODUCT_NAME: &str = "Chicken Coop";
+
+impl Global {
+    pub fn brand_image_src(&self) -> String {
+        self.brand_image_src.as_deref().unwrap_or(DEFAULT_BRAND_SRC).to_string()
+    }
+
+    pub fn about_background_src(&self) -> String {
+        self.about_background_src
+            .as_deref()
+            .unwrap_or(DEFAULT_ABOUT_BACKGROUND_SRC)
+            .to_string()
+    }
+
+    pub fn product_name(&self) -> String {
+        self.product_name.as_deref().unwrap_or(DEFAULT_PRODUCT_NAME).to_string()
+    }
 }
 
 /// Configuration for the landing page

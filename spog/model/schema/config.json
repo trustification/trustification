@@ -16,9 +16,9 @@
     },
     "features": {
       "default": {
-        "dedicatedSearch": false,
-        "extendSection": false,
-        "scanner": false
+        "dedicatedSearch": true,
+        "extendSection": true,
+        "scanner": true
       },
       "allOf": [
         {
@@ -28,7 +28,10 @@
     },
     "global": {
       "default": {
+        "aboutBackgroundSrc": null,
+        "brandImageSrc": null,
         "documentationUrl": null,
+        "productName": null,
         "supportUrl": null
       },
       "allOf": [
@@ -177,6 +180,20 @@
       "description": "Global values which affect the overall console",
       "type": "object",
       "properties": {
+        "aboutBackgroundSrc": {
+          "default": null,
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "brandImageSrc": {
+          "default": null,
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "documentationUrl": {
           "default": null,
           "type": [
@@ -184,6 +201,13 @@
             "null"
           ],
           "format": "uri"
+        },
+        "productName": {
+          "default": null,
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "supportUrl": {
           "default": null,
