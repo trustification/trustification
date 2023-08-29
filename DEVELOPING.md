@@ -18,7 +18,7 @@ $ export SELINUX_VOLUME_OPTIONS=':Z'
 
 ```shell
 cd deploy/compose
-docker-compose -f compose.yaml up
+docker-compose -f compose.yaml -f compose-guac.yaml up
 ```
 
 This will start MinIO and Kafka in containers and initialize them accordingly so that you don't need to configure anything. Default arguments of Vexination components will work with this setup.
@@ -230,5 +230,5 @@ docker build -f Containerfile -t trust:latest .
 Then, you can use it like
 
 ```shell
-TRUST_IMAGE=trust:latest docker-compose -f compose.yaml -f compose-trustification.yaml up --force-recreate
+TRUST_VERSION=latest docker-compose -f compose.yaml -f compose-guac.yaml -f compose-trustification.yaml up --force-recreate
 ```

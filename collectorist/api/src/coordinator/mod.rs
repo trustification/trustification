@@ -37,7 +37,7 @@ impl Coordinator {
         let listener = async move {
             loop {
                 if let Ok(mut csub) = CollectSubClient::new(self.csub_url.to_string()).await {
-                    info!("connected to GUAC collect-sub");
+                    info!("connected to GUAC collect-sub: {}", self.csub_url);
                     let mut sleep = interval(tokio::time::Duration::from_millis(1000));
 
                     let mut since_time = SystemTime::now();
@@ -62,7 +62,7 @@ impl Coordinator {
                         sleep.tick().await;
                     }
                 } else {
-                    warn!("unable to connect to collect_sub gRPC endpoint, sleeping...");
+                    warn!("unable to connect to collect_sub gRPC endpoint ({}), sleeping...", self.csub_url);
                     sleep(tokio::time::Duration::from_secs(10)).await;
                 }
             }

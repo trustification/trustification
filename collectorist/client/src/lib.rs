@@ -42,6 +42,10 @@ impl CollectoristClient {
         }
     }
 
+    pub fn register_url(&self) -> Url {
+        self.collectorist_url.register_url()
+    }
+
     pub async fn register(&self, config: CollectorConfig) -> Result<RegisterResponse, anyhow::Error> {
         Ok(reqwest::Client::new()
             .post(self.collectorist_url.register_url())
