@@ -1,8 +1,15 @@
+use schemars::schema::InstanceType;
+use schemars::{
+    gen::SchemaGenerator,
+    schema::{ObjectValidation, Schema, SchemaObject, SubschemaValidation},
+    JsonSchema,
+};
 use serde::{de::Error, ser::SerializeMap, Deserializer, Serialize, Serializer};
-use serde_json::Value;
+use serde_json::{json, Value};
 use url::Url;
 
-#[derive(Clone, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+/// SPoG UI configuration
+#[derive(Clone, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct Configuration {
     #[serde(default)]
@@ -13,9 +20,43 @@ pub struct Configuration {
     pub bombastic: Bombastic,
     #[serde(default)]
     pub vexination: Vexination,
+    #[serde(default)]
+    pub features: Features,
 }
 
-#[derive(Clone, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+/// Features for SPoG UI which can enabled/disabled.
+///
+/// By default, all features are enabled.
+#[derive(Clone, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct Features {
+    /// Enables the SBOM scanner
+    #[serde(default = "default_feature")]
+    pub scanner: bool,
+    /// Enables the "extend" section
+    #[serde(default = "default_feature")]
+    pub extend_section: bool,
+    /// Enable the dedicated search views (including the "complex" mode).
+    #[serde(default = "default_feature")]
+    pub dedicated_search: bool,
+}
+
+impl Default for Features {
+    fn default() -> Self {
+        Self {
+            extend_section: default_feature(),
+            scanner: default_feature(),
+            dedicated_search: default_feature(),
+        }
+    }
+}
+
+const fn default_feature() -> bool {
+    true
+}
+
+/// Global values which affect the overall console
+#[derive(Clone, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct Global {
     #[serde(default)]
@@ -25,7 +66,8 @@ pub struct Global {
     pub support_url: Option<Url>,
 }
 
-#[derive(Clone, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+/// Configuration for the landing page
+#[derive(Clone, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct LandingPage {
     /// Content above the search entry box section
@@ -53,46 +95,101 @@ pub struct LandingPage {
     pub footer_content: String,
 }
 
-#[derive(Clone, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+/// Bombastic specific configuration
+#[derive(Clone, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct Bombastic {
     #[serde(default)]
     pub filters: Filters,
 }
 
-#[derive(Clone, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+/// Vexination specific configuration
+#[derive(Clone, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct Vexination {
     #[serde(default)]
     pub filters: Filters,
 }
 
-#[derive(Clone, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+/// A set of customizable filters
+#[derive(Clone, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct Filters {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub categories: Vec<FilterCategory>,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+/// A filter category
+#[derive(Clone, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct FilterCategory {
     pub label: String,
     pub options: Vec<FilterOption>,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+/// Values for a filter option
+#[derive(Clone, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct FilterCheckOption {
+    /// Internal ID (must be unique)
     pub id: String,
+    /// End-user friendly label
     pub label: String,
+    /// Search terms which will be added using an OR group
     pub terms: Vec<String>,
 }
 
+/// The filter option element which can be added
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum FilterOption {
+    /// Add a checkbox option
     Check(FilterCheckOption),
+    /// Add a visual divider
     Divider,
+}
+
+impl JsonSchema for FilterOption {
+    fn schema_name() -> String {
+        "FilterOption".to_string()
+    }
+
+    fn json_schema(gen: &mut SchemaGenerator) -> Schema {
+        // divider
+
+        let divider = SchemaObject {
+            instance_type: Some(InstanceType::Object.into()),
+            object: Some(Box::new(ObjectValidation {
+                additional_properties: Some(Box::new(false.into())),
+                properties: [("divider".to_string(), {
+                    let mut schema: SchemaObject = <bool>::json_schema(gen).into();
+                    schema.const_value = Some(json!(true));
+                    schema.into()
+                })]
+                .into_iter()
+                .collect(),
+                ..Default::default()
+            })),
+            ..SchemaObject::default()
+        };
+
+        // check option
+
+        let check_option = gen.subschema_for::<FilterCheckOption>();
+
+        // one-of
+
+        let schema = SchemaObject {
+            subschemas: Some(Box::new(SubschemaValidation {
+                one_of: Some(vec![check_option, divider.into()]),
+                ..Default::default()
+            })),
+            ..Default::default()
+        };
+
+        // return
+
+        schema.into()
+    }
 }
 
 impl Serialize for FilterOption {

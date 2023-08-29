@@ -7,12 +7,13 @@ license = "Apache-2.0"
 description = "The data model of the API"
 
 [dependencies]
-utoipa = { version = "3" }
-serde = { version = "1", features = ["derive"] }
 chrono = { version = "0.4", default-features = false, features = ["serde"] }
-vexination-model = { path = "../../vexination/model" }
+schemars = { version = "0.8", features = ["url"] }
+serde = { version = "1", features = ["derive"] }
 time = { version = "0.3" }
 url = { version = "2", features = ["serde"] }
+utoipa = { version = "3" }
+vexination-model = { path = "../../vexination/model" }
 
 # required by ToSchema utopia
 serde_json = "1"
@@ -20,3 +21,4 @@ urlencoding = "2"
 
 [dev-dependencies]
 serde_json = "1"
+anyhow = "1"

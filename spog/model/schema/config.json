@@ -1,0 +1,249 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Configuration",
+  "description": "SPoG UI configuration",
+  "type": "object",
+  "properties": {
+    "bombastic": {
+      "default": {
+        "filters": {}
+      },
+      "allOf": [
+        {
+          "$ref": "#/definitions/Bombastic"
+        }
+      ]
+    },
+    "features": {
+      "default": {
+        "dedicatedSearch": false,
+        "extendSection": false,
+        "scanner": false
+      },
+      "allOf": [
+        {
+          "$ref": "#/definitions/Features"
+        }
+      ]
+    },
+    "global": {
+      "default": {
+        "documentationUrl": null,
+        "supportUrl": null
+      },
+      "allOf": [
+        {
+          "$ref": "#/definitions/Global"
+        }
+      ]
+    },
+    "landingPage": {
+      "default": {
+        "afterInnerContent": "",
+        "afterOuterContent": "",
+        "beforeInnerContent": "",
+        "beforeOuterContent": "",
+        "footerContent": "",
+        "headerContent": ""
+      },
+      "allOf": [
+        {
+          "$ref": "#/definitions/LandingPage"
+        }
+      ]
+    },
+    "vexination": {
+      "default": {
+        "filters": {}
+      },
+      "allOf": [
+        {
+          "$ref": "#/definitions/Vexination"
+        }
+      ]
+    }
+  },
+  "definitions": {
+    "Bombastic": {
+      "description": "Bombastic specific configuration",
+      "type": "object",
+      "properties": {
+        "filters": {
+          "default": {},
+          "allOf": [
+            {
+              "$ref": "#/definitions/Filters"
+            }
+          ]
+        }
+      }
+    },
+    "Features": {
+      "description": "Features for SPoG UI which can enabled/disabled.\n\nBy default, all features are enabled.",
+      "type": "object",
+      "properties": {
+        "dedicatedSearch": {
+          "description": "Enable the dedicated search views (including the \"complex\" mode).",
+          "default": true,
+          "type": "boolean"
+        },
+        "extendSection": {
+          "description": "Enables the \"extend\" section",
+          "default": true,
+          "type": "boolean"
+        },
+        "scanner": {
+          "description": "Enables the SBOM scanner",
+          "default": true,
+          "type": "boolean"
+        }
+      }
+    },
+    "FilterCategory": {
+      "description": "A filter category",
+      "type": "object",
+      "required": [
+        "label",
+        "options"
+      ],
+      "properties": {
+        "label": {
+          "type": "string"
+        },
+        "options": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/FilterOption"
+          }
+        }
+      }
+    },
+    "FilterCheckOption": {
+      "description": "Values for a filter option",
+      "type": "object",
+      "required": [
+        "id",
+        "label",
+        "terms"
+      ],
+      "properties": {
+        "id": {
+          "description": "Internal ID (must be unique)",
+          "type": "string"
+        },
+        "label": {
+          "description": "End-user friendly label",
+          "type": "string"
+        },
+        "terms": {
+          "description": "Search terms which will be added using an OR group",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "FilterOption": {
+      "oneOf": [
+        {
+          "$ref": "#/definitions/FilterCheckOption"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "divider": {
+              "type": "boolean",
+              "const": true
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "Filters": {
+      "description": "A set of customizable filters",
+      "type": "object",
+      "properties": {
+        "categories": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/FilterCategory"
+          }
+        }
+      }
+    },
+    "Global": {
+      "description": "Global values which affect the overall console",
+      "type": "object",
+      "properties": {
+        "documentationUrl": {
+          "default": null,
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "uri"
+        },
+        "supportUrl": {
+          "default": null,
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "uri"
+        }
+      }
+    },
+    "LandingPage": {
+      "description": "Configuration for the landing page",
+      "type": "object",
+      "properties": {
+        "afterInnerContent": {
+          "description": "Content directly after the entry box",
+          "default": "",
+          "type": "string"
+        },
+        "afterOuterContent": {
+          "description": "Content directly after the entry box",
+          "default": "",
+          "type": "string"
+        },
+        "beforeInnerContent": {
+          "description": "Content directly before the entry box",
+          "default": "",
+          "type": "string"
+        },
+        "beforeOuterContent": {
+          "description": "Content directly before the entry box",
+          "default": "",
+          "type": "string"
+        },
+        "footerContent": {
+          "description": "Content below the search entry box section",
+          "default": "",
+          "type": "string"
+        },
+        "headerContent": {
+          "description": "Content above the search entry box section",
+          "default": "",
+          "type": "string"
+        }
+      }
+    },
+    "Vexination": {
+      "description": "Vexination specific configuration",
+      "type": "object",
+      "properties": {
+        "filters": {
+          "default": {},
+          "allOf": [
+            {
+              "$ref": "#/definitions/Filters"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

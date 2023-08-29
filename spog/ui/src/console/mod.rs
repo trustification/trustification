@@ -17,11 +17,23 @@ use yew_more_hooks::prelude::*;
 use yew_nested_router::prelude::Switch as RouterSwitch;
 use yew_oauth2::{openid::*, prelude::*};
 
+/// The main console component
 #[function_component(Console)]
 pub fn console() -> Html {
     html!(
-        <RouterSwitch<AppRoute> {render} default={html!(<pages::NotFound />)}/>
+        // wrap with the configuration, as the page switch already needs that
+        <Configuration>
+            <PageSwitch/>
+        </Configuration>
     )
+}
+
+#[function_component(PageSwitch)]
+fn page_switch() -> Html {
+    let config = use_config();
+    let render = move |route| render(route, &config);
+
+    html!(<RouterSwitch<AppRoute> {render} default={html!(<pages::NotFound />)}/>)
 }
 
 fn brand() -> Html {
@@ -52,19 +64,25 @@ fn authenticated_page(props: &ChildrenProperties) -> Html {
             <Nav>
                 <NavList>
                     <NavRouterItem<AppRoute> to={AppRoute::Index}>{ "Trusted Content" }</NavRouterItem<AppRoute>>
-                    <NavExpandable expanded=true title="Search">
-                        <NavRouterItem<AppRoute> to={AppRoute::Advisory(Default::default())} predicate={AppRoute::is_advisory}>{ "Advisories" }</NavRouterItem<AppRoute>>
-                        <NavRouterItem<AppRoute> to={AppRoute::Package(Default::default())} predicate={AppRoute::is_package}>{ "SBOMs" }</NavRouterItem<AppRoute>>
-                    </NavExpandable>
-                    <NavRouterItem<AppRoute> to={AppRoute::Scanner}>{ "Scanner" }</NavRouterItem<AppRoute>>
-                    <NavExpandable title="Extend">
-                        if let Ok(url) = backend.join(Endpoint::Bombastic, "/swagger-ui/") {
-                            <ExternalNavLink href={url.to_string()}>{ "SBOM API" }</ExternalNavLink>
-                        }
-                        if let Ok(url) = backend.join(Endpoint::Vexination, "/swagger-ui/") {
-                            <ExternalNavLink href={url.to_string()}>{ "VEX API" }</ExternalNavLink>
-                        }
-                    </NavExpandable>
+                    if config.features.dedicated_search {
+                        <NavExpandable expanded=true title="Search">
+                            <NavRouterItem<AppRoute> to={AppRoute::Advisory(Default::default())} predicate={AppRoute::is_advisory}>{ "Advisories" }</NavRouterItem<AppRoute>>
+                            <NavRouterItem<AppRoute> to={AppRoute::Package(Default::default())} predicate={AppRoute::is_package}>{ "SBOMs" }</NavRouterItem<AppRoute>>
+                        </NavExpandable>
+                    }
+                    if config.features.scanner {
+                        <NavRouterItem<AppRoute> to={AppRoute::Scanner}>{ "Scanner" }</NavRouterItem<AppRoute>>
+                    }
+                    if config.features.extend_section {
+                        <NavExpandable title="Extend">
+                            if let Ok(url) = backend.join(Endpoint::Bombastic, "/swagger-ui/") {
+                                <ExternalNavLink href={url.to_string()}>{ "SBOM API" }</ExternalNavLink>
+                            }
+                            if let Ok(url) = backend.join(Endpoint::Vexination, "/swagger-ui/") {
+                                <ExternalNavLink href={url.to_string()}>{ "VEX API" }</ExternalNavLink>
+                            }
+                        </NavExpandable>
+                    }
                     if let Some(url) = &config.global.support_url {
                         <ExternalNavLink href={url.to_string()}>{ "Support" }</ExternalNavLink>
                     }
@@ -165,7 +183,7 @@ fn non_authenticated_page(props: &ChildrenProperties) -> Html {
     )
 }
 
-fn render(route: AppRoute) -> Html {
+fn render(route: AppRoute, config: &spog_model::config::Configuration) -> Html {
     let content = match route {
         AppRoute::NotLoggedIn => return html!(<NonAuthenticatedPage><pages::NotLoggedIn/></NonAuthenticatedPage>),
 
@@ -173,21 +191,25 @@ fn render(route: AppRoute) -> Html {
         AppRoute::Search { terms } => html!(<pages::Search {terms} />),
 
         AppRoute::Chicken => html!(<pages::Chicken/>),
-        AppRoute::Scanner => html!(<pages::Scanner/>),
+        AppRoute::Scanner if config.features.scanner => html!(<pages::Scanner/>),
 
-        AppRoute::Package(View::Search { query }) => html!(<pages::Package {query} />),
-        AppRoute::Package(View::Content { id }) => html!(<pages::SBOM {id} />),
-        AppRoute::Advisory(View::Search { query }) => html!(<pages::Advisory {query} />),
-        AppRoute::Advisory(View::Content { id }) => html!(<pages::VEX {id} />),
+        AppRoute::Package(View::Search { query }) if config.features.dedicated_search => {
+            html!(<pages::Package {query} />)
+        }
+        AppRoute::Package(View::Content { id }) if config.features.dedicated_search => html!(<pages::SBOM {id} />),
+        AppRoute::Advisory(View::Search { query }) if config.features.dedicated_search => {
+            html!(<pages::Advisory {query} />)
+        }
+        AppRoute::Advisory(View::Content { id }) if config.features.dedicated_search => html!(<pages::VEX {id} />),
+
+        _ => html!(<pages::NotFound />),
     };
 
     html!(
         <RouterRedirect<AppRoute> logout={AppRoute::NotLoggedIn}>
-            <Configuration>
-                <AuthenticatedPage>
-                    {content}
-                </AuthenticatedPage>
-            </Configuration>
+            <AuthenticatedPage>
+                {content}
+            </AuthenticatedPage>
         </RouterRedirect<AppRoute>>
     )
 }
