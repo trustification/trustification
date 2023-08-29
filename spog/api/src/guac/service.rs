@@ -1,6 +1,10 @@
+use std::str::FromStr;
+
 use actix_web::{http::header::ContentType, HttpResponse};
 use guac::client::{Error as GuacError, GuacClient};
 use http::StatusCode;
+use packageurl::PackageUrl;
+
 use spog_model::prelude::{PackageDependencies, PackageDependents, PackageRefList};
 use trustification_common::error::ErrorInformation;
 
@@ -13,6 +17,15 @@ pub struct GuacService {
 pub enum Error {
     #[error("Guac error: {0}")]
     Guac(#[from] GuacError),
+
+    #[error("Data format error: {0}")]
+    PurlFormat(packageurl::Error),
+}
+
+impl From<packageurl::Error> for Error {
+    fn from(value: packageurl::Error) -> Self {
+        Self::PurlFormat(value)
+    }
 }
 
 impl actix_web::error::ResponseError for Error {
@@ -20,23 +33,16 @@ impl actix_web::error::ResponseError for Error {
         let mut res = HttpResponse::build(self.status_code());
         res.insert_header(ContentType::json());
         match self {
-            Self::Guac(error) => match error {
-                GuacError::Purl(err) => res.json(ErrorInformation {
-                    error: format!("{}", self.status_code()),
-                    message: "Purl parsing error".to_string(),
-                    details: err.to_string(),
-                }),
-                GuacError::Http(err) => res.json(ErrorInformation {
-                    error: format!("{}", self.status_code()),
-                    message: "Purl parsing error".to_string(),
-                    details: err.to_string(),
-                }),
-                GuacError::GraphQL(msg) => res.json(ErrorInformation {
-                    error: format!("{}", self.status_code()),
-                    message: "Purl parsing error".to_string(),
-                    details: msg.to_string(),
-                }),
-            },
+            Self::Guac(error) => res.json(ErrorInformation {
+                error: format!("{}", self.status_code()),
+                message: format!("{}", error),
+                details: error.to_string(),
+            }),
+            Self::PurlFormat(err) => res.json(ErrorInformation {
+                error: format!("{}", self.status_code()),
+                message: "Purl parsing error".to_string(),
+                details: err.to_string(),
+            }),
         }
     }
 
@@ -46,6 +52,7 @@ impl actix_web::error::ResponseError for Error {
                 GuacError::Purl(_) => StatusCode::BAD_REQUEST,
                 _ => StatusCode::INTERNAL_SERVER_ERROR,
             },
+            Error::PurlFormat(_) => StatusCode::BAD_REQUEST,
         }
     }
 }
@@ -53,25 +60,46 @@ impl actix_web::error::ResponseError for Error {
 impl GuacService {
     pub fn new(url: impl Into<String>) -> Self {
         Self {
-            client: GuacClient::new(url.into()),
+            client: GuacClient::new(&url.into()),
         }
     }
 
     /// Lookup related packages for a provided Package URL
     pub async fn get_packages(&self, purl: &str) -> Result<PackageRefList, Error> {
-        let pkgs = self.client.get_packages(purl).await?;
+        let purl = PackageUrl::from_str(purl)?;
+        let packages = self.client.intrinsic().packages(&purl.into()).await?;
+
+        let mut pkgs = Vec::new();
+
+        for package in packages {
+            let purls = package.try_as_purls()?;
+            for purl in purls {
+                pkgs.push(purl.to_string())
+            }
+        }
+
         Ok(PackageRefList::from(pkgs))
     }
 
     /// Lookup dependencies for a provided Package URL
     pub async fn get_dependencies(&self, purl: &str) -> Result<PackageDependencies, Error> {
-        let deps = self.client.is_dependency(purl).await?;
-        Ok(PackageDependencies::from(deps))
+        let purl = PackageUrl::from_str(purl)?;
+
+        let deps = self.client.semantic().dependencies_of(&purl).await?;
+
+        Ok(PackageDependencies::from(
+            deps.iter().map(|e| e.to_string()).collect::<Vec<_>>(),
+        ))
     }
 
     /// Lookup dependents for a provided Package URL
     pub async fn get_dependents(&self, purl: &str) -> Result<PackageDependents, Error> {
-        let deps = self.client.is_dependent(purl).await?;
-        Ok(PackageDependents::from(deps))
+        let purl = PackageUrl::from_str(purl)?;
+
+        let deps = self.client.semantic().dependents_of(&purl).await?;
+
+        Ok(PackageDependencies::from(
+            deps.iter().map(|e| e.to_string()).collect::<Vec<_>>(),
+        ))
     }
 }

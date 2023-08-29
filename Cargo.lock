@@ -1665,6 +1665,7 @@ dependencies = [
  "futures",
  "guac",
  "log",
+ "packageurl",
  "reqwest",
  "serde",
  "serde_json",
@@ -2898,6 +2899,7 @@ dependencies = [
 [[package]]
 name = "guac"
 version = "0.1.0"
+source = "git+https://github.com/dejanb/guac-rs.git?rev=e1f3585af76f3ee198f5a465e97dbffb07bee8ed#e1f3585af76f3ee198f5a465e97dbffb07bee8ed"
 dependencies = [
  "anyhow",
  "async-nats",
