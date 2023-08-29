@@ -75,8 +75,8 @@ pub struct SearchDocument {
     /// SBOM creation time in RFC3339 format
     #[schema(value_type = String)]
     pub created: time::OffsetDateTime,
-    /// List of dependency package names that matched
-    pub dependencies: Vec<String>,
+    /// Number of dependencies with package names that matched
+    pub dependencies: u64,
 }
 
 /// The hit describes the document, its score and optionally an explanation of why that score was given.

@@ -177,6 +177,9 @@ pub struct SearchParams {
     /// Provide additional metadata from the index
     #[serde(default = "default_metadata")]
     pub metadata: bool,
+    /// Enable fetching document summaries
+    #[serde(default = "default_summaries")]
+    pub summaries: bool,
 }
 
 const fn default_offset() -> usize {
@@ -195,11 +198,16 @@ const fn default_metadata() -> bool {
     false
 }
 
+const fn default_summaries() -> bool {
+    true
+}
+
 impl From<&SearchParams> for SearchOptions {
     fn from(value: &SearchParams) -> Self {
         Self {
             explain: value.explain,
             metadata: value.metadata,
+            summaries: value.summaries,
         }
     }
 }
