@@ -20,7 +20,7 @@ use tantivy::{
 use time::{format_description::well_known::Rfc3339, OffsetDateTime};
 use trustification_api::search::SearchOptions;
 use trustification_index::{
-    boost, create_boolean_query, create_date_query, create_string_query, create_text_query, field2str, field2strvec,
+    boost, create_boolean_query, create_date_query, create_string_query, create_text_query, field2str,
     metadata::doc2metadata,
     tantivy::{
         doc,

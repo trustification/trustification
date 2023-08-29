@@ -6,8 +6,12 @@ pub struct SearchOptions {
     pub explain: bool,
     #[serde(default)]
     pub metadata: bool,
-    #[serde(default)]
+    #[serde(default = "default_summaries")]
     pub summaries: bool,
+}
+
+const fn default_summaries() -> bool {
+    true
 }
 
 impl Default for SearchOptions {
