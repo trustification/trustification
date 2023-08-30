@@ -20,7 +20,7 @@ use tantivy::{
 use time::{format_description::well_known::Rfc3339, OffsetDateTime};
 use trustification_api::search::SearchOptions;
 use trustification_index::{
-    boost, create_boolean_query, create_date_query, create_string_query, create_text_query, field2str,
+    boost, create_boolean_query, create_date_query, create_string_query, field2str,
     metadata::doc2metadata,
     tantivy::{
         doc,
@@ -340,13 +340,23 @@ impl Index {
                 value,
             )])),
 
-            Packages::Created(ordered) => boost(create_date_query(self.fields.sbom_created, ordered), CREATED_WEIGHT),
+            Packages::Created(ordered) => boost(
+                create_date_query(
+                    self.fields.sbom_created,
+                    self.schema.get_field_name(self.fields.sbom_created),
+                    ordered,
+                ),
+                CREATED_WEIGHT,
+            ),
 
             Packages::Version(value) => {
                 self.create_string_query(&[self.fields.sbom.version, self.fields.sbom.purl_version], value)
             }
 
-            Packages::Description(primary) => self.create_text_query(&[self.fields.sbom.desc], primary),
+            Packages::Description(value) => Box::new(TermSetQuery::new(vec![Term::from_field_text(
+                self.fields.sbom.desc,
+                value,
+            )])),
 
             Packages::Digest(value) => Box::new(TermSetQuery::new(vec![Term::from_field_text(
                 self.fields.sbom.sha256,
@@ -393,11 +403,6 @@ impl Index {
 
     fn create_string_query(&self, fields: &[Field], value: &Primary<'_>) -> Box<dyn Query> {
         let queries: Vec<Box<dyn Query>> = fields.iter().map(|f| create_string_query(*f, value)).collect();
-        Box::new(BooleanQuery::union(queries))
-    }
-
-    fn create_text_query(&self, fields: &[Field], value: &Primary<'_>) -> Box<dyn Query> {
-        let queries: Vec<Box<dyn Query>> = fields.iter().map(|f| create_text_query(*f, value)).collect();
         Box::new(BooleanQuery::union(queries))
     }
 
@@ -467,7 +472,7 @@ impl trustification_index::Index for Index {
 
         query.term = query.term.compact();
 
-        debug!("Query: {query:?}");
+        debug!("Query: {:?}", query.term);
 
         let mut sort_by = None;
         if let Some(f) = query.sorting.first() {
@@ -497,6 +502,7 @@ impl trustification_index::Index for Index {
         limit: usize,
     ) -> Result<(Vec<(f32, DocAddress)>, usize), SearchError> {
         if let Some(order_by) = query.sort_by {
+            let order_by = self.schema.get_field_name(order_by);
             let mut hits = Vec::new();
             let result = searcher.search(
                 &query.query,
@@ -844,7 +850,7 @@ mod tests {
         assert_search(|index| {
             let result = index
                 .search(
-                    "dependency:openssl",
+                    "(ubi in:package) OR (ubi in:description)",
                     0,
                     10000,
                     SearchOptions {

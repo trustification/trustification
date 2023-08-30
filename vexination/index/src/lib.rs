@@ -15,7 +15,6 @@ use sikula::{mir::Direction, prelude::*};
 use tantivy::{
     collector::TopDocs,
     query::{AllQuery, TermSetQuery},
-    schema::NumericOptions,
     store::ZstdCompressor,
     DocAddress, DocId, IndexSettings, Score, Searcher, SegmentReader, SnippetGenerator,
 };
@@ -360,6 +359,7 @@ impl trustification_index::Index for Index {
         limit: usize,
     ) -> Result<(Vec<(f32, DocAddress)>, usize), SearchError> {
         if let Some(order_by) = query.sort_by {
+            let order_by = self.schema.get_field_name(order_by);
             let mut hits = Vec::new();
             let result = searcher.search(
                 &query.query,
@@ -375,8 +375,11 @@ impl trustification_index::Index for Index {
             }
             Ok((hits, result.1))
         } else {
-            let severity_field = self.fields.advisory_severity_score;
-            let advisory_current_field = self.fields.advisory_current;
+            let severity_field = self
+                .schema
+                .get_field_name(self.fields.advisory_severity_score)
+                .to_string();
+            let advisory_current_field = self.schema.get_field_name(self.fields.advisory_current).to_string();
             let now = tantivy::DateTime::from_utc(OffsetDateTime::now_utc());
             Ok(searcher.search(
                 &query.query,
@@ -384,32 +387,27 @@ impl trustification_index::Index for Index {
                     TopDocs::with_limit(limit)
                         .and_offset(offset)
                         .tweak_score(move |segment_reader: &SegmentReader| {
-                            let severity_reader = segment_reader.fast_fields().f64(severity_field);
-                            if let Err(e) = &severity_reader {
-                                log::warn!("Severity reader error: {:?}", e);
-                            }
+                            let severity_reader = segment_reader.fast_fields().f64(&severity_field);
 
-                            let date_reader = segment_reader.fast_fields().date(advisory_current_field);
-                            if let Err(e) = &date_reader {
-                                log::warn!("Date reader error: {:?}", e);
-                            }
+                            let date_reader = segment_reader.fast_fields().date(&advisory_current_field);
 
                             move |doc: DocId, original_score: Score| {
+                                let severity_reader = severity_reader.clone();
+                                let date_reader = date_reader.clone();
                                 let mut tweaked = original_score;
-                                if let Ok(severity_reader) = &severity_reader {
-                                    let score = severity_reader.get_val(doc);
+                                if let Ok(Some(score)) = severity_reader.map(|s| s.first(doc)) {
                                     log::trace!("CVSS score impact {} -> {}", tweaked, (score as f32) * tweaked);
                                     tweaked *= score as f32;
 
                                     // Now look at the date, normalize score between 0 and 1 (baseline 1970)
-                                    if let Ok(date_reader) = &date_reader {
-                                        let date: tantivy::DateTime = date_reader.get_val(doc);
+                                    if let Ok(Some(date)) = date_reader.map(|s| s.first(doc)) {
                                         if date < now {
                                             let mut normalized = 2.0
                                                 * (date.into_timestamp_secs() as f64
                                                     / now.into_timestamp_secs() as f64);
                                             // If it's the past month, boost it more.
-                                            if now.into_utc() - date.into_utc() < Duration::from_secs(30 * 24 * 3600) {
+                                            if (now.into_utc() - date.into_utc()) < Duration::from_secs(30 * 24 * 3600)
+                                            {
                                                 normalized *= 4.0;
                                             }
                                             log::trace!(
@@ -532,8 +530,7 @@ impl Index {
         let cve_severity = schema.add_text_field("cve_severity", STRING | FAST);
         let cve_affected = schema.add_text_field("cve_affected", STORED | STRING);
         let cve_fixed = schema.add_text_field("cve_fixed", STORED | STRING);
-        let opts: NumericOptions = (FAST | INDEXED | STORED).into();
-        let cve_cvss = schema.add_f64_field("cve_cvss", opts.set_fast(tantivy::schema::Cardinality::MultiValues));
+        let cve_cvss = schema.add_f64_field("cve_cvss", FAST | INDEXED | STORED);
         let cve_cvss_max = schema.add_f64_field("cve_cvss_max", FAST | STORED);
         let cve_cwe = schema.add_text_field("cve_cwe", STRING | STORED);
 
@@ -646,36 +643,54 @@ impl Index {
             ])),
             Vulnerabilities::Cvss(ordered) => match ordered {
                 PartialOrdered::Less(e) => Box::new(RangeQuery::new_f64_bounds(
-                    self.fields.cve_cvss,
+                    self.schema.get_field_name(self.fields.cve_cvss).to_string(),
                     Bound::Unbounded,
                     Bound::Excluded(*e),
                 )),
                 PartialOrdered::LessEqual(e) => Box::new(RangeQuery::new_f64_bounds(
-                    self.fields.cve_cvss,
+                    self.schema.get_field_name(self.fields.cve_cvss).to_string(),
                     Bound::Unbounded,
                     Bound::Included(*e),
                 )),
                 PartialOrdered::Greater(e) => Box::new(RangeQuery::new_f64_bounds(
-                    self.fields.cve_cvss,
+                    self.schema.get_field_name(self.fields.cve_cvss).to_string(),
                     Bound::Excluded(*e),
                     Bound::Unbounded,
                 )),
                 PartialOrdered::GreaterEqual(e) => Box::new(RangeQuery::new_f64_bounds(
-                    self.fields.cve_cvss,
+                    self.schema.get_field_name(self.fields.cve_cvss).to_string(),
                     Bound::Included(*e),
                     Bound::Unbounded,
                 )),
-                PartialOrdered::Range(from, to) => {
-                    Box::new(RangeQuery::new_f64_bounds(self.fields.cve_cvss, *from, *to))
-                }
+                PartialOrdered::Range(from, to) => Box::new(RangeQuery::new_f64_bounds(
+                    self.schema.get_field_name(self.fields.cve_cvss).to_string(),
+                    *from,
+                    *to,
+                )),
             },
-            Vulnerabilities::Initial(ordered) => create_date_query(self.fields.advisory_initial, ordered),
+            Vulnerabilities::Initial(ordered) => create_date_query(
+                self.fields.advisory_initial,
+                self.schema.get_field_name(self.fields.advisory_initial),
+                ordered,
+            ),
             Vulnerabilities::Release(ordered) => {
-                let q1 = create_date_query(self.fields.advisory_current, ordered);
-                let q2 = create_date_query(self.fields.cve_release, ordered);
+                let q1 = create_date_query(
+                    self.fields.advisory_current,
+                    self.schema.get_field_name(self.fields.advisory_current),
+                    ordered,
+                );
+                let q2 = create_date_query(
+                    self.fields.cve_release,
+                    self.schema.get_field_name(self.fields.cve_release),
+                    ordered,
+                );
                 Box::new(BooleanQuery::union(vec![q1, q2]))
             }
-            Vulnerabilities::Discovery(ordered) => create_date_query(self.fields.cve_discovery, ordered),
+            Vulnerabilities::Discovery(ordered) => create_date_query(
+                self.fields.cve_discovery,
+                self.schema.get_field_name(self.fields.cve_discovery),
+                ordered,
+            ),
         }
     }
 }
