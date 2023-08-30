@@ -7040,6 +7040,7 @@ dependencies = [
  "rust-s3",
  "serde",
  "serde_json",
+ "sha2 0.10.7",
  "sikula",
  "tantivy",
  "tar",

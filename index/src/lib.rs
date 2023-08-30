@@ -16,6 +16,7 @@ use trustification_api::search::SearchOptions;
 use trustification_storage::{Storage, StorageConfig};
 // Rexport to align versions
 use log::{debug, warn};
+use sha2::{Digest, Sha256};
 pub use tantivy;
 pub use tantivy::schema::Document;
 use tantivy::{
@@ -137,7 +138,7 @@ impl Metrics {
 
 pub struct IndexStore<INDEX: Index> {
     inner: SearchIndex,
-    path: Option<PathBuf>,
+    index_dir: Option<IndexDirectory>,
     index: INDEX,
     index_writer_memory_bytes: usize,
     metrics: Metrics,
@@ -173,8 +174,8 @@ pub trait Index {
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
-    #[error("error opening index")]
-    Open,
+    #[error("error opening index {0}")]
+    Open(String),
     #[error("error taking snapshot of index")]
     Snapshot,
     #[error("index not found")]
@@ -258,6 +259,103 @@ impl IndexWriter {
     }
 }
 
+#[derive(Debug)]
+struct IndexDirectory {
+    path: PathBuf,
+    state: IndexState,
+    digest: Vec<u8>,
+}
+
+impl IndexDirectory {
+    /// Attempt to build a new index from the serialized zstd data
+    pub fn sync(&mut self, old_index: &SearchIndex, data: &[u8]) -> Result<Option<SearchIndex>, Error> {
+        let digest = Sha256::digest(data).to_vec();
+        if self.digest != digest {
+            let schema = old_index.schema();
+            let settings = old_index.settings().clone();
+            self.state = self.state.next();
+            let index = self.unpack(schema, settings, data)?;
+            self.digest = digest;
+            Ok(Some(index))
+        } else {
+            Ok(None)
+        }
+    }
+
+    pub fn new(path: &PathBuf) -> Result<IndexDirectory, Error> {
+        if path.exists() {
+            std::fs::remove_dir_all(&path).map_err(|e| Error::Open(e.to_string()))?;
+        }
+        std::fs::create_dir_all(&path).map_err(|e| Error::Open(e.to_string()))?;
+        let state = IndexState::A;
+        Ok(Self {
+            digest: Vec::new(),
+            path: path.clone(),
+            state,
+        })
+    }
+
+    pub fn build(&self, settings: IndexSettings, schema: Schema) -> Result<SearchIndex, Error> {
+        let path = self.state.directory(&self.path);
+        std::fs::create_dir_all(&path).map_err(|e| Error::Open(e.to_string()))?;
+        let dir = MmapDirectory::open(&path).map_err(|e| Error::Open(e.to_string()))?;
+        let builder = SearchIndex::builder().schema(schema).settings(settings);
+        let index = builder.open_or_create(dir).map_err(|e| Error::Open(e.to_string()))?;
+        Ok(index)
+    }
+
+    fn unpack(&mut self, schema: Schema, settings: IndexSettings, data: &[u8]) -> Result<SearchIndex, Error> {
+        let path = self.state.directory(&self.path);
+        if path.exists() {
+            std::fs::remove_dir_all(&path).map_err(|e| Error::Open(e.to_string()))?;
+        }
+        std::fs::create_dir_all(&path).map_err(|e| Error::Open(e.to_string()))?;
+
+        let dec = zstd::stream::Decoder::new(data).map_err(Error::Io)?;
+        let mut archive = tar::Archive::new(dec);
+        archive.unpack(&path).map_err(Error::Io)?;
+        log::trace!("Unpacked into {:?}", path);
+
+        let dir = MmapDirectory::open(&path).map_err(|e| Error::Open(e.to_string()))?;
+        let builder = SearchIndex::builder().schema(schema).settings(settings);
+        let inner = builder.open_or_create(dir).map_err(|e| Error::Open(e.to_string()))?;
+        Ok(inner)
+    }
+
+    pub fn pack(&mut self) -> Result<Vec<u8>, Error> {
+        let path = self.state.directory(&self.path);
+        let mut out = Vec::new();
+        let enc = zstd::stream::Encoder::new(&mut out, 3).map_err(Error::Io)?;
+        let mut archive = tar::Builder::new(enc.auto_finish());
+        log::trace!("Packing from {:?}", path);
+        archive.append_dir_all("", path).map_err(Error::Io)?;
+        drop(archive);
+        Ok(out)
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
+enum IndexState {
+    A,
+    B,
+}
+
+impl IndexState {
+    fn directory(&self, root: &PathBuf) -> PathBuf {
+        match self {
+            Self::A => root.join("a"),
+            Self::B => root.join("b"),
+        }
+    }
+
+    fn next(&self) -> Self {
+        match self {
+            Self::A => Self::B,
+            Self::B => Self::A,
+        }
+    }
+}
+
 impl<INDEX: Index> IndexStore<INDEX> {
     pub fn new_in_memory(index: INDEX) -> Result<Self, Error> {
         let schema = index.schema();
@@ -268,7 +366,7 @@ impl<INDEX: Index> IndexStore<INDEX> {
             inner,
             index,
             index_writer_memory_bytes: 32 * 1024 * 1024,
-            path: None,
+            index_dir: None,
             metrics: Metrics::register(&Default::default())?,
         })
     }
@@ -287,17 +385,15 @@ impl<INDEX: Index> IndexStore<INDEX> {
                     std::env::temp_dir().join(format!("index.{}", r))
                 });
 
-                std::fs::create_dir(&path).map_err(|_| Error::Open)?;
-
                 let schema = index.schema();
                 let settings = index.settings();
-                let builder = SearchIndex::builder().schema(schema).settings(settings);
-                let dir = MmapDirectory::open(&path).map_err(|_e| Error::Open)?;
-                let inner = builder.open_or_create(dir)?;
+
+                let index_dir = IndexDirectory::new(&path)?;
+                let inner = index_dir.build(settings, schema)?;
                 Ok(Self {
                     inner,
                     index_writer_memory_bytes: config.index_writer_memory_bytes,
-                    path: Some(path),
+                    index_dir: Some(index_dir),
                     index,
                     metrics: Metrics::register(metrics_registry)?,
                 })
@@ -312,7 +408,7 @@ impl<INDEX: Index> IndexStore<INDEX> {
                 Ok(Self {
                     inner,
                     index_writer_memory_bytes: config.index_writer_memory_bytes,
-                    path: None,
+                    index_dir: None,
                     index,
                     metrics: Metrics::register(metrics_registry)?,
                 })
@@ -328,22 +424,24 @@ impl<INDEX: Index> IndexStore<INDEX> {
         &mut self.index
     }
 
-    pub fn reload(&mut self, data: &[u8]) -> Result<(), Error> {
-        if let Some(path) = &self.path {
-            let dec = zstd::stream::Decoder::new(data).map_err(Error::Io)?;
-            let mut archive = tar::Archive::new(dec);
-            archive.unpack(path).map_err(Error::Io)?;
-        }
-        Ok(())
-    }
-
     /// Sync the index from a snapshot.
     ///
     /// NOTE: Only applicable for file indices.
     pub async fn sync(&mut self, storage: &Storage) -> Result<(), Error> {
-        if self.path.is_some() {
+        if let Some(index_dir) = &mut self.index_dir {
             let data = storage.get_index().await?;
-            self.reload(&data[..])?;
+            match index_dir.sync(&self.inner, &data) {
+                Ok(Some(index)) => {
+                    self.inner = index;
+                    log::debug!("Index reloaded");
+                }
+                Ok(None) => {
+                    // No index change
+                }
+                Err(e) => {
+                    log::warn!("Error syncing index: {:?}, keeping old", e);
+                }
+            }
             log::debug!("Index reloaded");
         }
         Ok(())
@@ -352,8 +450,7 @@ impl<INDEX: Index> IndexStore<INDEX> {
     /// Take a snapshot of the index and push to object storage.
     /// NOTE: Only applicable for file indices.
     pub async fn snapshot(&mut self, writer: IndexWriter, storage: &Storage, force: bool) -> Result<(), Error> {
-        if let Some(path) = &self.path {
-            log::info!("Committing index to path {:?}", path);
+        if let Some(dir) = &mut self.index_dir {
             writer.commit()?;
             self.inner.directory_mut().sync_directory().map_err(Error::Io)?;
             let lock = self.inner.directory_mut().acquire_lock(&INDEX_WRITER_LOCK);
@@ -376,16 +473,11 @@ impl<INDEX: Index> IndexStore<INDEX> {
                 gc_result.failed_to_delete_files
             );
             let changed = !gc_result.deleted_files.is_empty();
-
-            let mut out = Vec::new();
-            let enc = zstd::stream::Encoder::new(&mut out, 3).map_err(Error::Io)?;
-            let mut archive = tar::Builder::new(enc.auto_finish());
-            archive.append_dir_all("", path).map_err(Error::Io)?;
-            drop(archive);
-            drop(lock);
-
+            self.inner.directory_mut().sync_directory().map_err(Error::Io)?;
             if force || changed {
                 log::info!("Index has changed, publishing new snapshot");
+                let out = dir.pack()?;
+                drop(lock);
                 match storage.put_index(&out).await {
                     Ok(_) => {
                         log::trace!("Snapshot published successfully");
@@ -401,7 +493,7 @@ impl<INDEX: Index> IndexStore<INDEX> {
                 Ok(())
             }
         } else {
-            log::info!("Committing index");
+            log::trace!("Committing index");
             writer.commit()?;
             Ok(())
         }
