@@ -85,6 +85,7 @@ default-members = [
 ]
 
 [patch.crates-io]
+#tantivy = { path = "../tantivy" }
 #sikula = { git = "https://github.com/ctron/sikula", rev = "cea7429f6b690adcdcd1ce2edb2b9e2277834e03" }
 #sikula = { path = "../sikula" }
 

@@ -494,28 +494,28 @@ pub fn term2query<'m, R: Search, F: Fn(&R::Parsed<'m>) -> Box<dyn Query>>(
 }
 
 /// Crate a date query based on an ordered value
-pub fn create_date_query(field: Field, value: &Ordered<time::OffsetDateTime>) -> Box<dyn Query> {
+pub fn create_date_query(field: Field, field_str: &str, value: &Ordered<time::OffsetDateTime>) -> Box<dyn Query> {
     match value {
         Ordered::Less(e) => Box::new(RangeQuery::new_term_bounds(
-            field,
+            field_str.to_string(),
             Type::Date,
             &Bound::Unbounded,
             &Bound::Excluded(Term::from_field_date(field, DateTime::from_utc(*e))),
         )),
         Ordered::LessEqual(e) => Box::new(RangeQuery::new_term_bounds(
-            field,
+            field_str.to_string(),
             Type::Date,
             &Bound::Unbounded,
             &Bound::Included(Term::from_field_date(field, DateTime::from_utc(*e))),
         )),
         Ordered::Greater(e) => Box::new(RangeQuery::new_term_bounds(
-            field,
+            field_str.to_string(),
             Type::Date,
             &Bound::Excluded(Term::from_field_date(field, DateTime::from_utc(*e))),
             &Bound::Unbounded,
         )),
         Ordered::GreaterEqual(e) => Box::new(RangeQuery::new_term_bounds(
-            field,
+            field_str.to_string(),
             Type::Date,
             &Bound::Included(Term::from_field_date(field, DateTime::from_utc(*e))),
             &Bound::Unbounded,
@@ -529,12 +529,22 @@ pub fn create_date_query(field: Field, value: &Ordered<time::OffsetDateTime>) ->
 
             let from = Bound::Included(Term::from_field_date(field, DateTime::from_utc(theday)));
             let to = Bound::Included(Term::from_field_date(field, DateTime::from_utc(theday_after)));
-            Box::new(RangeQuery::new_term_bounds(field, Type::Date, &from, &to))
+            Box::new(RangeQuery::new_term_bounds(
+                field_str.to_string(),
+                Type::Date,
+                &from,
+                &to,
+            ))
         }
         Ordered::Range(from, to) => {
             let from = bound_map(*from, |f| Term::from_field_date(field, DateTime::from_utc(f)));
             let to = bound_map(*to, |f| Term::from_field_date(field, DateTime::from_utc(f)));
-            Box::new(RangeQuery::new_term_bounds(field, Type::Date, &from, &to))
+            Box::new(RangeQuery::new_term_bounds(
+                field_str.to_string(),
+                Type::Date,
+                &from,
+                &to,
+            ))
         }
     }
 }
