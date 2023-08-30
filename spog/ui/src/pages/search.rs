@@ -7,11 +7,12 @@ use crate::{
         sbom::{use_sbom_search, SbomResult, SbomSearchControls},
         search::{DynamicSearchParameters, SearchMode},
     },
+    hooks::UseStandardSearch,
     utils::count::count_tab_title,
 };
 use patternfly_yew::prelude::*;
 use spog_model::prelude::*;
-use std::rc::Rc;
+use std::ops::Deref;
 use yew::prelude::*;
 use yew_more_hooks::prelude::*;
 
@@ -81,39 +82,21 @@ pub fn search(props: &SearchProperties) -> Html {
 
     // advisory search
 
-    let advisory_search_params =
-        use_state_eq::<SearchMode<DynamicSearchParameters>, _>(|| page_state.advisory.search_params.clone());
-    let advisory_search = use_state_eq(UseAsyncState::default);
-    let advisory_callback = use_callback(
-        |state: UseAsyncHandleDeps<SearchResult<Rc<Vec<AdvisorySummary>>>, String>, search| {
-            search.set((*state).clone());
-        },
-        advisory_search.clone(),
-    );
-    let advisory_total = use_state_eq(|| None);
-    advisory_total.set(advisory_search.data().and_then(|d| d.total));
-    let advisory_pagination = use_pagination(*advisory_total, || page_state.advisory.pagination);
-    let advisory = use_advisory_search(
-        advisory_search_params.clone(),
-        advisory_pagination.clone(),
-        advisory_callback,
+    let advisory = use_unified_search(
+        &page_state,
+        |page_state| page_state.advisory.search_params.clone(),
+        |page_state| page_state.advisory.pagination,
+        use_advisory_search,
     );
 
     // sbom search
 
-    let sbom_search_params =
-        use_state_eq::<SearchMode<DynamicSearchParameters>, _>(|| page_state.sbom.search_params.clone());
-    let sbom_search = use_state_eq(UseAsyncState::default);
-    let sbom_callback = use_callback(
-        |state: UseAsyncHandleDeps<SearchResult<Rc<Vec<PackageSummary>>>, String>, search| {
-            search.set((*state).clone());
-        },
-        sbom_search.clone(),
+    let sbom = use_unified_search(
+        &page_state,
+        |page_state| page_state.sbom.search_params.clone(),
+        |page_state| page_state.sbom.pagination,
+        use_sbom_search,
     );
-    let sbom_total = use_state_eq(|| None);
-    sbom_total.set(sbom_search.data().and_then(|d| d.total));
-    let sbom_pagination = use_pagination(*sbom_total, || page_state.sbom.pagination);
-    let sbom = use_sbom_search(sbom_search_params.clone(), sbom_pagination.clone(), sbom_callback);
 
     // update search terms
 
@@ -139,12 +122,12 @@ pub fn search(props: &SearchProperties) -> Html {
             terms: (*search_terms).clone(),
             tab: *tab,
             advisory: TabState {
-                pagination: **advisory_pagination,
-                search_params: (*advisory_search_params).clone(),
+                pagination: **advisory.pagination,
+                search_params: (*advisory.search_params).clone(),
             },
             sbom: TabState {
-                pagination: **sbom_pagination,
-                search_params: (*sbom_search_params).clone(),
+                pagination: **sbom.pagination,
+                search_params: (*sbom.search_params).clone(),
             },
         },
     );
@@ -208,19 +191,19 @@ pub fn search(props: &SearchProperties) -> Html {
                             selected={*tab} {onselect}
                             r#box=true
                         >
-                            <Tab<TabIndex> index={TabIndex::Advisories} title={count_tab_title("Advisories", &*advisory_search)} />
-                            <Tab<TabIndex> index={TabIndex::Sboms} title={count_tab_title("SBOMs", &*sbom_search)} />
+                            <Tab<TabIndex> index={TabIndex::Advisories} title={count_tab_title("Advisories", &*advisory.state)} />
+                            <Tab<TabIndex> index={TabIndex::Sboms} title={count_tab_title("SBOMs", &*sbom.state)} />
                         </Tabs<TabIndex>>
 
                         <div class="pf-v5-u-background-color-100">
                             if *tab == TabIndex::Advisories {
-                                <PaginationWrapped pagination={advisory_pagination} total={*advisory_total}>
-                                    <AdvisoryResult state={(*advisory_search).clone()} />
+                                <PaginationWrapped pagination={advisory.pagination} total={*advisory.total}>
+                                    <AdvisoryResult state={(*advisory.state).clone()} />
                                 </PaginationWrapped>
                             }
                             if *tab == TabIndex::Sboms {
-                                <PaginationWrapped pagination={sbom_pagination} total={*sbom_total}>
-                                    <SbomResult state={(*sbom_search).clone()} />
+                                <PaginationWrapped pagination={sbom.pagination} total={*sbom.total}>
+                                    <SbomResult state={(*sbom.state).clone()} />
                                 </PaginationWrapped>
                             }
                         </div>
@@ -232,6 +215,60 @@ pub fn search(props: &SearchProperties) -> Html {
 
         </>
     )
+}
+
+pub struct UseUnifiedSearch<R> {
+    pub pagination: UsePagination,
+    pub search: UseStandardSearch,
+    pub total: UseStateHandle<Option<usize>>,
+    pub state: UseStateHandle<UseAsyncState<SearchResult<R>, String>>,
+}
+
+impl<R> Deref for UseUnifiedSearch<R> {
+    type Target = UseStandardSearch;
+
+    fn deref(&self) -> &Self::Target {
+        &self.search
+    }
+}
+
+#[hook]
+fn use_unified_search<R, IS, IP, FH, H>(
+    page_state: &UsePageState<PageState>,
+    init_search: IS,
+    init_pagination: IP,
+    use_hook: FH,
+) -> UseUnifiedSearch<R>
+where
+    R: Clone + PartialEq + 'static,
+    IS: FnOnce(&PageState) -> SearchMode<DynamicSearchParameters>,
+    IP: FnOnce(&PageState) -> PaginationControl,
+    FH: FnOnce(
+        UseStateHandle<SearchMode<DynamicSearchParameters>>,
+        UsePagination,
+        Callback<UseAsyncHandleDeps<SearchResult<R>, String>>,
+    ) -> H,
+    H: Hook<Output = UseStandardSearch>,
+{
+    let search_params = use_state_eq::<SearchMode<DynamicSearchParameters>, _>(|| init_search(page_state));
+    let state = use_state_eq(UseAsyncState::default);
+    let callback = use_callback(
+        |state: UseAsyncHandleDeps<SearchResult<R>, String>, search| {
+            search.set((*state).clone());
+        },
+        state.clone(),
+    );
+    let total = use_state_eq(|| None);
+    total.set(state.data().and_then(|d| d.total));
+    let pagination = use_pagination(*total, || init_pagination(page_state));
+    let search = use_hook(search_params.clone(), pagination.clone(), callback);
+
+    UseUnifiedSearch {
+        pagination,
+        search,
+        total,
+        state,
+    }
 }
 
 fn split_terms(terms: &str) -> Vec<String> {
