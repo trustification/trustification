@@ -10,6 +10,7 @@ pub mod cvss;
 pub mod download;
 pub mod editor;
 pub mod error;
+pub mod markdown;
 pub mod sbom;
 pub mod search;
 pub mod severity;
