@@ -166,7 +166,7 @@ services:
           sleep 5
         done
         echo keycloak is up
-        /trust v11y api -b $V11Y_API_PORT
+        /trust v11y api -p $V11Y_API_PORT
     entrypoint: /usr/bin/bash
     restart: on-failure
     healthcheck:
