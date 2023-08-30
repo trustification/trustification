@@ -162,7 +162,9 @@ pub fn sbom_result(props: &PackageResultProperties) -> Html {
             header={header}
         >
             <Table<Column, UseTableData<Column, MemoizedTableModel<PackageEntry>>>
-                mode={TableMode::Expandable}
+                // For now, we skip showing details, as we don't have good data.
+                // mode={TableMode::Expandable}
+                mode={TableMode::Default}
                 {entries}
                 {onexpand}
             />
