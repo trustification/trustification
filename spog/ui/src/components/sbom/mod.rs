@@ -20,7 +20,7 @@ use crate::{
 };
 
 #[derive(PartialEq, Properties)]
-pub struct PackageResultProperties {
+pub struct SbomResultProperties {
     pub state: UseAsyncState<SearchResult<Rc<Vec<PackageSummary>>>, String>,
 }
 
@@ -93,8 +93,8 @@ impl TableEntryRenderer<Column> for PackageEntry {
     }
 }
 
-#[function_component(PackageResult)]
-pub fn sbom_result(props: &PackageResultProperties) -> Html {
+#[function_component(SbomResult)]
+pub fn sbom_result(props: &SbomResultProperties) -> Html {
     let backend = use_backend();
     let data = match &props.state {
         UseAsyncState::Ready(Ok(val)) => {

@@ -1,7 +1,7 @@
 use crate::{
     backend::{self, PackageService},
-    components::{sbom::PackageResult, search::*},
-    hooks::{use_backend, use_config, use_standard_search, UseStandardSearch},
+    components::{sbom::SbomResult, search::*},
+    hooks::{use_config, use_generic_search, UseStandardSearch},
     utils::pagination_to_offset,
 };
 use bombastic_model::prelude::Packages;
@@ -10,7 +10,6 @@ use spog_model::prelude::*;
 use std::rc::Rc;
 use yew::prelude::*;
 use yew_more_hooks::prelude::*;
-use yew_oauth2::prelude::*;
 
 #[derive(PartialEq, Properties)]
 pub struct SbomSearchControlsProperties {
@@ -34,44 +33,28 @@ pub fn use_sbom_search(
     pagination: UsePagination,
     callback: Callback<UseAsyncHandleDeps<SearchResult<Rc<Vec<PackageSummary>>>, String>>,
 ) -> UseStandardSearch {
-    let backend = use_backend();
-    let access_token = use_latest_access_token();
-
     let config = use_config();
-    let filters = use_memo(|()| config.bombastic.filters.clone(), ());
-
-    let search = use_standard_search::<Packages>(search_params.clone(), filters.clone());
-
-    let search_op = {
-        let filters = filters.clone();
-        use_async_with_cloned_deps(
-            move |(search_params, page, per_page)| async move {
-                let service = PackageService::new(backend.clone(), access_token);
-                service
-                    .search_packages(
-                        &search_params.as_str(&filters),
-                        &backend::SearchParameters {
-                            offset: Some(pagination_to_offset(page, per_page)),
-                            limit: Some(per_page),
-                            ..Default::default()
-                        },
-                    )
-                    .await
-                    .map(|result| result.map(Rc::new))
-                    .map_err(|err| err.to_string())
-            },
-            ((*search_params).clone(), pagination.page, pagination.per_page),
-        )
-    };
-
-    use_effect_with_deps(
-        |(callback, search)| {
-            callback.emit(search.clone());
+    use_generic_search::<Packages, _, _, _, _>(
+        search_params,
+        pagination,
+        callback,
+        || config.bombastic.filters.clone(),
+        |context| async move {
+            let service = PackageService::new(context.backend, context.access_token);
+            service
+                .search_packages(
+                    &context.search_params.as_str(&context.filters),
+                    &backend::SearchParameters {
+                        offset: Some(pagination_to_offset(context.page, context.per_page)),
+                        limit: Some(context.per_page),
+                        ..Default::default()
+                    },
+                )
+                .await
+                .map(|result| result.map(Rc::new))
+                .map_err(|err| err.to_string())
         },
-        (callback.clone(), search_op.clone()),
-    );
-
-    search
+    )
 }
 
 #[derive(PartialEq, Properties)]
@@ -155,7 +138,7 @@ pub fn sbom_search(props: &SbomSearchProperties) -> Html {
                 </GridItem>
 
                 <GridItem cols={[10]}>
-                    <PackageResult state={(*state).clone()} />
+                    <SbomResult state={(*state).clone()} />
                 </GridItem>
 
             </Grid>
