@@ -1,6 +1,7 @@
 use crate::{
     backend::{self, PackageService},
     components::{sbom::SbomResult, search::*},
+    hooks::SearchOperationContext,
     hooks::{use_config, use_generic_search, UseStandardSearch},
     utils::pagination_to_offset,
 };
@@ -28,11 +29,15 @@ pub fn sbom_search_controls(props: &SbomSearchControlsProperties) -> Html {
 }
 
 #[hook]
-pub fn use_sbom_search(
+pub fn use_sbom_search<S>(
     search_params: UseStateHandle<SearchMode<DynamicSearchParameters>>,
     pagination: UsePagination,
     callback: Callback<UseAsyncHandleDeps<SearchResult<Rc<Vec<PackageSummary>>>, String>>,
-) -> UseStandardSearch {
+    f: S,
+) -> UseStandardSearch
+where
+    S: FnOnce(&SearchOperationContext) -> String + 'static,
+{
     let config = use_config();
     use_generic_search::<Packages, _, _, _, _>(
         search_params,
@@ -40,10 +45,11 @@ pub fn use_sbom_search(
         callback,
         || config.bombastic.filters.clone(),
         |context| async move {
+            let q = f(&context);
             let service = PackageService::new(context.backend, context.access_token);
             service
                 .search_packages(
-                    &context.search_params.as_str(&context.filters),
+                    &q,
                     &backend::SearchParameters {
                         offset: Some(pagination_to_offset(context.page, context.per_page)),
                         limit: Some(context.per_page),
@@ -91,7 +97,9 @@ pub fn sbom_search(props: &SbomSearchProperties) -> Html {
         },
         state.clone(),
     );
-    let search = use_sbom_search(search_params.clone(), pagination.clone(), callback);
+    let search = use_sbom_search(search_params.clone(), pagination.clone(), callback, |context| {
+        context.search_params.as_str(&context.filters)
+    });
 
     total.set(state.data().and_then(|d| d.total));
 

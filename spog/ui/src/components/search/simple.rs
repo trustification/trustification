@@ -1,6 +1,5 @@
 use crate::utils::search::*;
 use patternfly_yew::prelude::*;
-use std::borrow::Cow;
 use std::collections::HashSet;
 use std::rc::Rc;
 use yew::prelude::*;
@@ -125,10 +124,10 @@ where
         }
     }
 
-    pub fn as_str(&self, context: &T::Context) -> Cow<'_, str> {
+    pub fn as_str(&self, context: &T::Context) -> String {
         match self {
             Self::Complex(s) => s.into(),
-            Self::Simple(s) => s.to_filter_expression(context).into(),
+            Self::Simple(s) => s.to_filter_expression(context),
         }
     }
 
