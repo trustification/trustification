@@ -8,6 +8,7 @@ pub mod config;
 pub mod content;
 pub mod cvss;
 pub mod download;
+pub mod editor;
 pub mod error;
 pub mod sbom;
 pub mod search;

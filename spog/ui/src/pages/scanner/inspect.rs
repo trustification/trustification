@@ -1,5 +1,5 @@
 use super::{report::Report, CommonHeader};
-use crate::{backend::AnalyzeService, hooks::use_backend};
+use crate::{backend::AnalyzeService, components::editor::ReadonlyEditor, hooks::use_backend};
 use patternfly_yew::prelude::*;
 use reqwest::Body;
 use std::rc::Rc;
@@ -66,11 +66,7 @@ pub fn inspect(props: &InspectProperties) -> Html {
                             </PageSection>
 
                             <PageSection hidden={*tab != TabIndex::Raw} variant={PageSectionVariant::Light} fill={PageSectionFill::Fill}>
-                                <CodeBlock>
-                                    <CodeBlockCode>
-                                        { &props.raw }
-                                    </CodeBlockCode>
-                                </CodeBlock>
+                                <ReadonlyEditor content={props.raw.clone()} />
                            </PageSection>
                         </>
                     ),

@@ -1,3 +1,4 @@
+use crate::components::editor::ReadonlyEditor;
 use humansize::{format_size, BINARY};
 use patternfly_yew::prelude::*;
 use std::rc::Rc;
@@ -11,9 +12,7 @@ pub struct SourceCodeProperties {
 #[function_component(SourceCode)]
 pub fn source_code(props: &SourceCodeProperties) -> Html {
     html!(
-        <CodeBlock>
-            <CodeBlockCode> { &props.source } </CodeBlockCode>
-        </CodeBlock>
+        <ReadonlyEditor content={props.source.clone()} />
     )
 }
 
