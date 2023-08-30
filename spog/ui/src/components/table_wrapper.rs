@@ -3,10 +3,13 @@ use std::rc::Rc;
 use yew::prelude::*;
 
 #[derive(PartialEq, Properties, Clone)]
-struct SkeletonEntry {}
+struct SkeletonEntry;
 
-impl TableEntryRenderer<usize> for SkeletonEntry {
-    fn render_cell(&self, _: CellContext<'_, usize>) -> Cell {
+impl<C> TableEntryRenderer<C> for SkeletonEntry
+where
+    C: Clone + Eq + 'static,
+{
+    fn render_cell(&self, _: CellContext<'_, C>) -> Cell {
         html!(<Skeleton />).into()
     }
 }
@@ -39,42 +42,34 @@ where
     C: Clone + Eq + 'static,
     M: Clone + PartialEq + TableModel<C> + 'static,
 {
-    let header = html_nested!(
-        <TableHeader<usize>>
-            {
-                for props.header.iter().enumerate()
-                    .map(|(index, column)| {
-                        yew::props!(TableColumnProperties<usize> {
-                            index: index,
-                            label: column.label.clone(),
-                            width: column.width
-                        })
-                    })
-                    .map(|column| html_nested!(<TableColumn<usize> ..column />))
-            }
-        </TableHeader<usize>>
-    );
+    let header = || {
+        html_nested!(
+            <TableHeader<C>>
+                { for props.header.iter().map(|column| html_nested!(<TableColumn<C> ..column.clone() />)) }
+            </TableHeader<C>>
+        )
+    };
 
     let (empty_entries, _) = use_table_data(MemoizedTableModel::new(Rc::new(
-        (0..0).map(|_| SkeletonEntry {}).collect(),
+        (0..0).map(|_| SkeletonEntry).collect(),
     )));
     let (skeleton_entries, _) = use_table_data(MemoizedTableModel::new(Rc::new(
-        (0..10).map(|_| SkeletonEntry {}).collect(),
+        (0..10).map(|_| SkeletonEntry).collect(),
     )));
 
     // Loading view
     if props.loading {
         html!(
-            <Table<usize, UseTableData<usize, MemoizedTableModel<SkeletonEntry>>>
-                header={header}
+            <Table<C, UseTableData<C, MemoizedTableModel<SkeletonEntry>>>
+                header={header()}
                 entries={skeleton_entries}
             />
         )
     } else if let Some(error) = &props.error {
         html!(
             <>
-                <Table<usize, UseTableData<usize, MemoizedTableModel<SkeletonEntry>>>
-                    header={header}
+                <Table<C, UseTableData<C, MemoizedTableModel<SkeletonEntry>>>
+                    header={header()}
                     entries={empty_entries}
                 />
 
@@ -96,8 +91,8 @@ where
     } else if props.empty {
         html!(
             <>
-                <Table<usize, UseTableData<usize, MemoizedTableModel<SkeletonEntry>>>
-                    header={header}
+                <Table<C, UseTableData<C, MemoizedTableModel<SkeletonEntry>>>
+                    header={header()}
                     entries={empty_entries}
                 />
                 <div style="background-color: var(--pf-v5-global--BackgroundColor--100);">

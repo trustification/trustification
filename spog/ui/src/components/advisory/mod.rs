@@ -129,8 +129,9 @@ pub fn advisory_result(props: &AdvisoryResultProperties) -> Html {
         }),
         yew::props!(TableColumnProperties<Column> {
             index: Column::Severity,
-            label: "Severity",
-            width: ColumnWidth::Percent(10)
+            label: "Aggregated Severity",
+            width: ColumnWidth::Percent(10),
+            text_modifier: Some(TextModifier::Wrap),
         }),
         yew::props!(TableColumnProperties<Column> {
             index: Column::Revision,
@@ -138,14 +139,14 @@ pub fn advisory_result(props: &AdvisoryResultProperties) -> Html {
             width: ColumnWidth::Percent(10)
         }),
         yew::props!(TableColumnProperties<Column> {
-            index: Column::Download,
-            label: "Download",
-            width: ColumnWidth::FitContent
-        }),
-        yew::props!(TableColumnProperties<Column> {
             index: Column::Vulnerabilities,
             label: "Vulnerabilities",
             width: ColumnWidth::Percent(20)
+        }),
+        yew::props!(TableColumnProperties<Column> {
+            index: Column::Download,
+            label: "Download",
+            width: ColumnWidth::FitContent
         }),
     ];
 
