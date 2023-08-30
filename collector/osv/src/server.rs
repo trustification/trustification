@@ -190,7 +190,11 @@ pub async fn register_with_collectorist(state: SharedState) {
         if let Some(addr) = *state.addr.read().await {
             if !state.connected.load(Ordering::Relaxed) {
                 let url = Url::parse(&format!("http://{}:{}/api/v1/", addr.ip(), addr.port())).unwrap();
-                info!("registering with collectorist at {} with callback={}", state.collectorist_client.register_url(), url);
+                info!(
+                    "registering with collectorist at {} with callback={}",
+                    state.collectorist_client.register_url(),
+                    url
+                );
                 match state
                     .collectorist_client
                     .register(CollectorConfig {
