@@ -124,7 +124,7 @@ services:
     expose:
       - "$COLLECTORIST_API_PORT"
     ports:
-      - "$COLLECTORIST_API_PORT:8080"
+      - "$COLLECTORIST_API_PORT:$COLLECTORIST_API_PORT"
     command:
       - -c
       - |
@@ -141,8 +141,8 @@ services:
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:9010" ]
     environment:
-      GUAC_URL: http://localhost:$GUAC_API_PORT
-      CSUB_URL: http://localhost:$GUAC_CSUB_PORT
+      GUAC_URL: http://guac-graphql:$GUAC_API_PORT
+      CSUB_URL: http://guac-collectsub:$GUAC_CSUB_PORT
       ISSUER_URL: http://keycloak:8080/realms/chicken
       INFRASTRUCTURE_ENABLED: "true"
       OPENID_CONFIGURATION: "http://keycloak:8080/realms/chicken/.well-known/openid-configuration"
@@ -155,7 +155,7 @@ services:
     expose:
       - "$V11Y_API_PORT"
     ports:
-      - "$V11Y_API_PORT:8080"
+      - "$V11Y_API_PORT:$V11Y_API_PORT"
     command:
       - -c
       - |
@@ -185,7 +185,7 @@ services:
     expose:
       - "$COLLECTOR_OSV_API_PORT"
     ports:
-      - "$COLLECTOR_OSV_API_PORT:8080"
+      - "$COLLECTOR_OSV_API_PORT:$COLLECTOR_OSV_API_PORT"
     command:
       - -c
       - |
@@ -202,7 +202,7 @@ services:
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:9010" ]
     environment:
-      COLLECTORIST_URL: http://localhost:$COLLECTORIST_API_PORT
+      COLLECTORIST_URL: http://collectorist-api:$COLLECTORIST_API_PORT
       ISSUER_URL: http://keycloak:8080/realms/chicken
       INFRASTRUCTURE_ENABLED: "true"
       OPENID_CONFIGURATION: "http://keycloak:8080/realms/chicken/.well-known/openid-configuration"

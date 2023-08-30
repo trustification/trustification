@@ -40,7 +40,7 @@ services:
     expose:
       - "$GUAC_CSUB_PORT"
     ports:
-      - "$GUAC_CSUB_PORT:8080"
+      - "$GUAC_CSUB_PORT:$GUAC_CSUB_PORT"
     depends_on:
       nats:
         condition: service_healthy
@@ -64,7 +64,7 @@ services:
     expose:
       - "$GUAC_API_PORT"
     ports:
-      - "$GUAC_API_PORT:8080"
+      - "$GUAC_API_PORT:$GUAC_API_PORT"
     volumes:
       - ./container_files/guac:/guac${SELINUX_VOLUME_OPTIONS}
     healthcheck:
