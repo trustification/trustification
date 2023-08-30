@@ -3,13 +3,12 @@ mod search;
 
 pub use details::*;
 pub use search::*;
-use std::borrow::Cow;
-use std::collections::HashSet;
 
 use crate::{
     backend::Endpoint,
     components::{
-        common::CardWrapper, cvss::CvssMap, download::Download, severity::Severity, table_wrapper::TableWrapper,
+        common::CardWrapper, cvss::CvssMap, download::Download, markdown::Markdown, severity::Severity,
+        table_wrapper::TableWrapper,
     },
     hooks::use_backend,
     pages::{AppRoute, View},
@@ -27,6 +26,8 @@ use csaf::{
 };
 use patternfly_yew::prelude::*;
 use spog_model::prelude::*;
+use std::borrow::Cow;
+use std::collections::HashSet;
 use std::rc::Rc;
 use url::Url;
 use yew::prelude::*;
@@ -238,9 +239,17 @@ pub fn csaf_notes(props: &CsafNotesProperties) -> Html {
     html!(
         <CardWrapper plain={props.plain} title="Notes">
             <DescriptionList>
-            { for props.notes.iter().flatten().map(|note| {
-                html!( <DescriptionGroup term={note_term(note).to_string()}> { &note.text } </DescriptionGroup> )
-            })}
+                { for props.notes.iter().flatten().map(|note| {
+                    html!(
+                        <DescriptionGroup
+                            term={note_term(note).to_string()}
+                        >
+                            <Content>
+                                <Markdown content={Rc::new(note.text.clone())}/>
+                            </Content>
+                        </DescriptionGroup>
+                    )
+                })}
             </DescriptionList>
         </CardWrapper>
     )
