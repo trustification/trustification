@@ -1,7 +1,7 @@
 use crate::{
     backend::{self, VexService},
     components::{advisory::AdvisoryResult, search::*},
-    hooks::{use_backend, use_config, use_standard_search, UseStandardSearch},
+    hooks::{use_config, use_generic_search, UseStandardSearch},
     utils::pagination_to_offset,
 };
 use patternfly_yew::prelude::*;
@@ -10,7 +10,6 @@ use std::rc::Rc;
 use vexination_model::prelude::Vulnerabilities;
 use yew::prelude::*;
 use yew_more_hooks::prelude::*;
-use yew_oauth2::prelude::*;
 
 #[derive(PartialEq, Properties)]
 pub struct AdvisorySearchControlsProperties {
@@ -34,44 +33,28 @@ pub fn use_advisory_search(
     pagination: UsePagination,
     callback: Callback<UseAsyncHandleDeps<SearchResult<Rc<Vec<AdvisorySummary>>>, String>>,
 ) -> UseStandardSearch {
-    let backend = use_backend();
-    let access_token = use_latest_access_token();
-
     let config = use_config();
-    let filters = use_memo(|()| config.vexination.filters.clone(), ());
-
-    let search = use_standard_search::<Vulnerabilities>(search_params.clone(), filters.clone());
-
-    let search_op = {
-        let filters = filters.clone();
-        use_async_with_cloned_deps(
-            move |(search_params, page, per_page)| async move {
-                let service = VexService::new(backend.clone(), access_token);
-                service
-                    .search_advisories(
-                        &search_params.as_str(&filters),
-                        &backend::SearchParameters {
-                            offset: Some(pagination_to_offset(page, per_page)),
-                            limit: Some(per_page),
-                            ..Default::default()
-                        },
-                    )
-                    .await
-                    .map(|result| result.map(Rc::new))
-                    .map_err(|err| err.to_string())
-            },
-            ((*search_params).clone(), pagination.page, pagination.per_page),
-        )
-    };
-
-    use_effect_with_deps(
-        |(callback, search)| {
-            callback.emit(search.clone());
+    use_generic_search::<Vulnerabilities, _, _, _, _>(
+        search_params,
+        pagination,
+        callback,
+        || config.vexination.filters.clone(),
+        |context| async move {
+            let service = VexService::new(context.backend.clone(), context.access_token);
+            service
+                .search_advisories(
+                    &context.search_params.as_str(&context.filters),
+                    &backend::SearchParameters {
+                        offset: Some(pagination_to_offset(context.page, context.per_page)),
+                        limit: Some(context.per_page),
+                        ..Default::default()
+                    },
+                )
+                .await
+                .map(|result| result.map(Rc::new))
+                .map_err(|err| err.to_string())
         },
-        (callback.clone(), search_op.clone()),
-    );
-
-    search
+    )
 }
 
 #[derive(PartialEq, Properties)]

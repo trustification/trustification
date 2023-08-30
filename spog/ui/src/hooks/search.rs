@@ -1,11 +1,16 @@
 use crate::{
+    backend::Backend,
     components::search::{DynamicSearchParameters, SearchMode},
+    hooks::use_backend,
     utils::search::*,
 };
 use patternfly_yew::prelude::*;
 use spog_model::config::Filters;
+use std::future::Future;
 use std::rc::Rc;
 use yew::prelude::*;
+use yew_more_hooks::prelude::{use_async_with_cloned_deps, UseAsyncHandleDeps};
+use yew_oauth2::prelude::{use_latest_access_token, LatestAccessToken};
 
 #[derive(Clone)]
 pub struct UseStandardSearch {
@@ -97,4 +102,63 @@ where
         onclear,
         ontogglesimple,
     }
+}
+
+pub struct SearchOperationContext {
+    pub backend: Rc<Backend>,
+    pub access_token: Option<LatestAccessToken>,
+    pub page: usize,
+    pub per_page: usize,
+    pub search_params: SearchMode<DynamicSearchParameters>,
+    pub filters: Rc<Filters>,
+}
+
+#[hook]
+pub fn use_generic_search<S, R, F, Fut, IF>(
+    search_params: UseStateHandle<SearchMode<DynamicSearchParameters>>,
+    pagination: UsePagination,
+    callback: Callback<UseAsyncHandleDeps<R, String>>,
+    init_filter: IF,
+    f: F,
+) -> UseStandardSearch
+where
+    S: sikula::prelude::Search,
+    R: Clone + PartialEq + 'static,
+    IF: FnOnce() -> Filters,
+    F: FnOnce(SearchOperationContext) -> Fut + 'static,
+    Fut: Future<Output = Result<R, String>> + 'static,
+{
+    let backend = use_backend();
+    let access_token = use_latest_access_token();
+
+    let filters = use_memo(|()| init_filter(), ());
+
+    let search = use_standard_search::<S>(search_params.clone(), filters.clone());
+
+    let search_op = {
+        let filters = filters.clone();
+        use_async_with_cloned_deps(
+            move |(search_params, page, per_page)| async move {
+                f(SearchOperationContext {
+                    backend: backend.clone(),
+                    access_token,
+                    page,
+                    per_page,
+                    search_params,
+                    filters,
+                })
+                .await
+            },
+            ((*search_params).clone(), pagination.page, pagination.per_page),
+        )
+    };
+
+    use_effect_with_deps(
+        |(callback, search)| {
+            callback.emit(search.clone());
+        },
+        (callback.clone(), search_op.clone()),
+    );
+
+    search
 }

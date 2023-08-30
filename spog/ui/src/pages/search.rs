@@ -4,7 +4,7 @@ use crate::{
     components::{
         advisory::{use_advisory_search, AdvisoryResult, AdvisorySearchControls},
         common::Visible,
-        sbom::{use_sbom_search, PackageResult, SbomSearchControls},
+        sbom::{use_sbom_search, SbomResult, SbomSearchControls},
         search::{DynamicSearchParameters, SearchMode},
     },
     utils::count::count_tab_title,
@@ -220,7 +220,7 @@ pub fn search(props: &SearchProperties) -> Html {
                             }
                             if *tab == TabIndex::Sboms {
                                 <PaginationWrapped pagination={sbom_pagination} total={*sbom_total}>
-                                    <PackageResult state={(*sbom_search).clone()} />
+                                    <SbomResult state={(*sbom_search).clone()} />
                                 </PaginationWrapped>
                             }
                         </div>
