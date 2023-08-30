@@ -62,7 +62,10 @@ impl Coordinator {
                         sleep.tick().await;
                     }
                 } else {
-                    warn!("unable to connect to collect_sub gRPC endpoint ({}), sleeping...", self.csub_url);
+                    warn!(
+                        "unable to connect to collect_sub gRPC endpoint ({}), sleeping...",
+                        self.csub_url
+                    );
                     sleep(tokio::time::Duration::from_secs(10)).await;
                 }
             }
