@@ -1,8 +1,4 @@
-use crate::components::theme::ThemeContext;
-use crate::hooks::use_config;
-use monaco::api::{CodeEditorOptions, TextModel};
-use monaco::sys::editor::BuiltinTheme;
-use monaco::yew::CodeEditor;
+use crate::{components::editor::ReadonlyEditor, hooks::use_config};
 use patternfly_yew::prelude::*;
 use std::rc::Rc;
 use wasm_bindgen_futures::JsFuture;
@@ -63,6 +59,16 @@ pub struct UploadProperties {
 fn default_validate() -> Callback<Rc<String>, Result<Rc<String>, String>> {
     Callback::from(Ok)
 }
+
+/// The content of the empty state body.
+///
+/// **NOTE**: This must be be valid HTML and wrapped with exactly one element.
+const EMPTY_BODY_CONTENT: &str = r#"
+<div>
+    <p>By scanning your Software Bill of Materials (SBOM) file, you receive a detailed report of the dependencies and any potential vulnerabilities in your software stack.</p>
+    <p>Start by <strong>dropping a file here</strong> or clicking the <strong>Load an SBOM</strong> button. Red&nbsp;Hat does not store a copy of your SBOM.</p>
+</div>
+"#;
 
 #[function_component(Upload)]
 pub fn upload(props: &UploadProperties) -> Html {
@@ -210,14 +216,14 @@ pub fn upload(props: &UploadProperties) -> Html {
         (file_input_ref.clone(), drop_content.clone()),
     );
 
-    let mut class = classes!("tc-c-editor__wrapper");
+    let mut class = classes!("tc-c-drop-area");
     if *drop.over {
         class.push("pf-m-drag-over")
     }
 
     // build empty state actions
 
-    let load_action = Action::new("Load", onopen);
+    let load_action = Action::new("Load an SBOM", onopen);
     let mut secondaries = vec![];
 
     let config = use_config();
@@ -230,7 +236,7 @@ pub fn upload(props: &UploadProperties) -> Html {
         config.scanner.documentation_url.clone(),
     );
     if config.scanner.documentation_url.is_some() {
-        secondaries.push(Action::new("Learn creating an SBOM", onlearn));
+        secondaries.push(Action::new("Learn about creating an SBOM", onlearn));
     }
 
     // render
@@ -242,18 +248,20 @@ pub fn upload(props: &UploadProperties) -> Html {
                 <StackItem fill=true>
                     if *initial {
                         <EmptyState
-                            title="Provide an SBOM"
+                            title="Get started by loading your SBOM"
                             icon={Icon::Code}
                             size={Size::XXXXLarge}
                             primary={load_action}
                             {secondaries}
                             full_height=true
                         >
-                            { "Drop a file here or load one to scan it." }
+                            <Content>
+                                { Html::from_html_unchecked(AttrValue::from(EMPTY_BODY_CONTENT)) }
+                            </Content>
                         </EmptyState>
                     }
                     if !*initial {
-                        <Editor content={content.clone()} />
+                        <ReadonlyEditor content={content.clone()} />
                     }
                 </StackItem>
                 <StackItem>
@@ -298,51 +306,5 @@ pub fn upload(props: &UploadProperties) -> Html {
                 </StackItem>
             </Stack>
         </div>
-    )
-}
-
-#[derive(PartialEq, Properties)]
-pub struct EditorProperties {
-    pub content: Rc<String>,
-}
-
-#[function_component(Editor)]
-fn editor(props: &EditorProperties) -> Html {
-    let dark = use_context::<ThemeContext>()
-        .map(|ctx| ctx.settings.dark)
-        .unwrap_or_default();
-
-    let theme = match dark {
-        true => BuiltinTheme::VsDark,
-        false => BuiltinTheme::Vs,
-    };
-
-    let options = use_memo(
-        |theme| {
-            let options = CodeEditorOptions::default()
-                .with_scroll_beyond_last_line(false)
-                .with_language("json".to_string())
-                .with_builtin_theme(*theme)
-                .with_automatic_layout(true)
-                .to_sys_options();
-
-            options.set_read_only(Some(true));
-
-            options
-        },
-        theme,
-    );
-
-    let model = use_memo(
-        |content| TextModel::create(content, Some("json"), None).unwrap(),
-        props.content.clone(),
-    );
-
-    html!(
-        <CodeEditor
-            classes="tc-c-editor__code_editor"
-            model={(*model).clone()}
-            options={(*options).clone()}
-        />
     )
 }

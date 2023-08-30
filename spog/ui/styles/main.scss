@@ -27,16 +27,16 @@ $fa-font-path: "webfonts";
 
 // Monaco
 
-.tc-c-editor__code_editor {
+.tc-c-editor {
   height: 100%;
 }
 
-.tc-c-editor__wrapper {
+.tc-c-drop-area {
   height: 100%;
   position: relative;
 }
 
-.tc-c-editor__wrapper.pf-m-drag-over:before {
+.tc-c-drop-area.pf-m-drag-over:before {
   position: absolute;
   top: 0; right: 0; left: 0; bottom: 0;
   content: "";
@@ -44,7 +44,7 @@ $fa-font-path: "webfonts";
   border: var(--pf-v5-global--BorderWidth--sm) solid var(--pf-v5-global--primary-color--100);
 }
 
-.tc-c-editor__wrapper.pf-m-drag-over:after {
+.tc-c-drop-area.pf-m-drag-over:after {
   position: absolute;
   top: 0; right: 0; left: 0; bottom: 0;
   content: "";
