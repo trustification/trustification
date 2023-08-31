@@ -5,6 +5,7 @@ use yew_nested_router::Target;
 mod advisory;
 mod advisory_search;
 mod chicken;
+mod cve;
 mod index;
 mod not_found;
 mod not_logged_in;
@@ -16,6 +17,7 @@ mod search;
 pub use advisory::*;
 pub use advisory_search::*;
 pub use chicken::*;
+pub use cve::*;
 pub use index::*;
 pub use not_found::*;
 pub use not_logged_in::*;
@@ -35,6 +37,9 @@ pub enum AppRoute {
     Scanner,
     Search {
         terms: String,
+    },
+    Cve {
+        id: String,
     },
 }
 

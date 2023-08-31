@@ -62,6 +62,7 @@ fn authenticated_page(props: &ChildrenProperties) -> Html {
                         <NavExpandable expanded=true title="Search">
                             <NavRouterItem<AppRoute> to={AppRoute::Advisory(Default::default())} predicate={AppRoute::is_advisory}>{ "Advisories" }</NavRouterItem<AppRoute>>
                             <NavRouterItem<AppRoute> to={AppRoute::Package(Default::default())} predicate={AppRoute::is_package}>{ "SBOMs" }</NavRouterItem<AppRoute>>
+                            <NavRouterItem<AppRoute> to={AppRoute::Cve{id: Default::default()}} predicate={AppRoute::is_cve}>{ "CVEs" }</NavRouterItem<AppRoute>>
                         </NavExpandable>
                     }
                     if config.features.scanner {
@@ -194,6 +195,13 @@ fn render(route: AppRoute, config: &spog_model::config::Configuration) -> Html {
             html!(<pages::Advisory {query} />)
         }
         AppRoute::Advisory(View::Content { id }) if config.features.dedicated_search => html!(<pages::VEX {id} />),
+        AppRoute::Cve { id } if config.features.dedicated_search => {
+            let id = match id.is_empty() {
+                true => None,
+                false => Some(id),
+            };
+            html!(<pages::Cve {id} />)
+        }
 
         _ => html!(<pages::NotFound />),
     };

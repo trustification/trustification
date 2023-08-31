@@ -9,7 +9,7 @@ use trustification_auth::authenticator::Authenticator;
 use trustification_auth::client::TokenProvider;
 use trustification_infrastructure::new_auth;
 
-use crate::{search, server::SharedState};
+use crate::{search, server::AppState};
 
 pub(crate) fn configure(auth: Option<Arc<Authenticator>>) -> impl FnOnce(&mut ServiceConfig) {
     |config: &mut ServiceConfig| {
@@ -37,7 +37,7 @@ pub struct GetParams {
     )
 )]
 pub async fn get(
-    state: web::Data<SharedState>,
+    state: web::Data<AppState>,
     web::Query(GetParams { id, token }): web::Query<GetParams>,
     access_token: Option<BearerAuth>,
 ) -> actix_web::Result<HttpResponse> {
@@ -63,7 +63,7 @@ pub async fn get(
     )
 )]
 pub async fn search(
-    state: web::Data<SharedState>,
+    state: web::Data<AppState>,
     params: web::Query<search::QueryParams>,
     options: web::Query<SearchOptions>,
     access_token: Option<BearerAuth>,
@@ -115,7 +115,7 @@ pub async fn search(
 }
 
 async fn search_advisories(
-    state: web::Data<SharedState>,
+    state: web::Data<AppState>,
     packages: &mut Vec<PackageSummary>,
     provider: &dyn TokenProvider,
 ) {

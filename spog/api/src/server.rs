@@ -4,7 +4,6 @@ use actix_cors::Cors;
 use actix_web::{http::header::ContentType, web, HttpResponse, HttpServer};
 use actix_web_prom::PrometheusMetricsBuilder;
 use anyhow::anyhow;
-use derive_more::{Display, Error, From};
 use http::StatusCode;
 use prometheus::Registry;
 use spog_model::search;
@@ -23,7 +22,7 @@ use utoipa_swagger_ui::SwaggerUi;
 
 use crate::analyze::CrdaClient;
 use crate::guac::service::GuacService;
-use crate::{advisory, analyze, config, index, sbom, Run};
+use crate::{advisory, analyze, config, cve, index, sbom, Run};
 
 pub struct Server {
     run: Run,
@@ -64,7 +63,7 @@ impl Server {
     }
 
     pub async fn run(self, registry: &Registry, listener: Option<TcpListener>) -> anyhow::Result<()> {
-        let state = configure(&self.run)?;
+        let state = web::Data::new(configure(&self.run)?);
 
         let http_metrics = PrometheusMetricsBuilder::new("spog_api")
             .registry(registry.clone())
@@ -107,13 +106,14 @@ impl Server {
                 authenticator: None, // we map this explicitly
                 authorizer,
             })
-            .app_data(web::Data::new(state))
+            .app_data(state)
             .app_data(web::Data::new(guac))
             .configure(index::configure())
             .configure(version::configurator(version!()))
             .configure(sbom::configure(authenticator.clone()))
             .configure(advisory::configure(authenticator.clone()))
             .configure(crate::guac::configure(authenticator.clone()))
+            .configure(cve::configure(authenticator.clone()))
             .configure(config_configurator.clone())
             .service({
                 let mut openapi = ApiDoc::openapi();
@@ -143,16 +143,22 @@ impl Server {
     }
 }
 
-#[derive(Debug, Display, Error, From)]
+#[derive(Debug, thiserror::Error)]
 pub enum Error {
-    #[display(fmt = "response error: {:?}", "_0")]
+    #[error("response error: {0} / {1}")]
     Response(StatusCode, String),
-    #[display(fmt = "request error: {:?}", "_0")]
-    Request(reqwest::Error),
-    #[display(fmt = "url parse error: {}", "_0")]
-    UrlParse(url::ParseError),
-    #[display(fmt = "authentication error: {}", "_0")]
-    AuthClient(AuthClientError),
+    #[error("request error: {0}")]
+    Request(#[from] reqwest::Error),
+    #[error("url parse error: {0}")]
+    UrlParse(#[from] url::ParseError),
+    #[error("authentication error: {0}")]
+    AuthClient(#[from] AuthClientError),
+    #[error("guac error: {0}")]
+    Guac(#[from] crate::guac::service::Error),
+    #[error("serialization error: {0}")]
+    Serde(#[from] serde_json::error::Error),
+    #[error("processing: {0}")]
+    Processing(String),
 }
 
 impl actix_web::error::ResponseError for Error {
@@ -178,6 +184,21 @@ impl actix_web::error::ResponseError for Error {
             Self::AuthClient(error) => res.json(ErrorInformation {
                 error: format!("{}", self.status_code()),
                 message: "Error creating authentication client".to_string(),
+                details: error.to_string(),
+            }),
+            Self::Serde(error) => res.json(ErrorInformation {
+                error: "Serialization".to_string(),
+                message: "Serialization error".to_string(),
+                details: error.to_string(),
+            }),
+            Self::Guac(error) => res.json(ErrorInformation {
+                error: "Guac".to_string(),
+                message: "Error contacting GUAC".to_string(),
+                details: error.to_string(),
+            }),
+            Self::Processing(error) => res.json(ErrorInformation {
+                error: "Processing".to_string(),
+                message: "Error processing".to_string(),
                 details: error.to_string(),
             }),
         }
@@ -308,13 +329,10 @@ impl AppState {
     }
 }
 
-pub type SharedState = Arc<AppState>;
-
-pub(crate) fn configure(run: &Run) -> anyhow::Result<Arc<AppState>> {
-    let state = Arc::new(AppState {
+pub(crate) fn configure(run: &Run) -> anyhow::Result<AppState> {
+    Ok(AppState {
         client: reqwest::Client::new(),
         bombastic: run.bombastic_url.clone(),
         vexination: run.vexination_url.clone(),
-    });
-    Ok(state)
+    })
 }

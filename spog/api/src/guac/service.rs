@@ -1,6 +1,7 @@
 use std::str::FromStr;
 
 use actix_web::{http::header::ContentType, HttpResponse};
+use guac::client::intrinsic::vulnerability::{Vulnerability, VulnerabilitySpec};
 use guac::client::{Error as GuacError, GuacClient};
 use http::StatusCode;
 use packageurl::PackageUrl;
@@ -101,5 +102,18 @@ impl GuacService {
         Ok(PackageDependencies::from(
             deps.iter().map(|e| e.to_string()).collect::<Vec<_>>(),
         ))
+    }
+
+    pub async fn affected_cve(&self, id: String) -> Result<Vec<Vulnerability>, Error> {
+        Ok(self
+            .client
+            .intrinsic()
+            .vulnerabilities(&VulnerabilitySpec {
+                id: None,
+                no_vuln: None,
+                vulnerability_id: Some(id),
+                r#type: None,
+            })
+            .await?)
     }
 }

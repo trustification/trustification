@@ -7,6 +7,7 @@ pub mod data {
 mod access_token;
 mod analyze;
 mod config;
+mod cve;
 mod error;
 mod pkg;
 mod sbom;
@@ -17,6 +18,7 @@ mod vuln;
 pub use access_token::*;
 pub use analyze::*;
 pub use config::*;
+pub use cve::*;
 pub use error::*;
 pub use pkg::*;
 pub use sbom::*;
