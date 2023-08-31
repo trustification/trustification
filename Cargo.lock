@@ -5762,7 +5762,7 @@ dependencies = [
 [[package]]
 name = "spdx-rs"
 version = "0.5.2"
-source = "git+https://github.com/trustification/spdx-rs?rev=f3f1ea9a72e270c8434f8be6ca1d61608b25b813#f3f1ea9a72e270c8434f8be6ca1d61608b25b813"
+source = "git+https://github.com/trustification/spdx-rs?rev=c65be086e898dae88609f07bbc5a224ba4e0838d#c65be086e898dae88609f07bbc5a224ba4e0838d"
 dependencies = [
  "chrono",
  "log",

@@ -2332,7 +2332,6 @@ name = "spog-model"
 version = "0.1.0"
 dependencies = [
  "chrono",
- "csaf",
  "schemars",
  "serde",
  "serde_json",
