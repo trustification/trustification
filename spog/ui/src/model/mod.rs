@@ -4,12 +4,12 @@ use std::rc::Rc;
 #[derive(Debug, PartialEq)]
 pub enum SBOM {
     CycloneDX {
-        bom: cyclonedx_bom::prelude::Bom,
+        bom: Rc<cyclonedx_bom::prelude::Bom>,
         source: Rc<String>,
     },
     #[allow(clippy::upper_case_acronyms)]
     SPDX {
-        bom: spdx_rs::models::SPDX,
+        bom: Rc<spdx_rs::models::SPDX>,
         source: Rc<String>,
     },
     Unknown(Rc<String>),
@@ -19,9 +19,15 @@ impl SBOM {
     pub fn parse(source: String) -> Self {
         let source = Rc::new(source);
         if let Ok(bom) = cyclonedx_bom::prelude::Bom::parse_from_json_v1_3(source.as_bytes()) {
-            SBOM::CycloneDX { bom, source }
+            SBOM::CycloneDX {
+                bom: Rc::new(bom),
+                source,
+            }
         } else if let Ok(bom) = serde_json::from_str::<spdx_rs::models::SPDX>(&source) {
-            SBOM::SPDX { bom, source }
+            SBOM::SPDX {
+                bom: Rc::new(bom),
+                source,
+            }
         } else {
             SBOM::Unknown(source)
         }
