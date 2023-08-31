@@ -10,7 +10,7 @@ use sikula::prelude::{Ordered, Primary, Search};
 use std::{
     fmt::{Debug, Display},
     ops::Bound,
-    path::PathBuf,
+    path::{Path, PathBuf},
 };
 use trustification_api::search::SearchOptions;
 use trustification_storage::{Storage, StorageConfig};
@@ -284,9 +284,9 @@ impl IndexDirectory {
 
     pub fn new(path: &PathBuf) -> Result<IndexDirectory, Error> {
         if path.exists() {
-            std::fs::remove_dir_all(&path).map_err(|e| Error::Open(e.to_string()))?;
+            std::fs::remove_dir_all(path).map_err(|e| Error::Open(e.to_string()))?;
         }
-        std::fs::create_dir_all(&path).map_err(|e| Error::Open(e.to_string()))?;
+        std::fs::create_dir_all(path).map_err(|e| Error::Open(e.to_string()))?;
         let state = IndexState::A;
         Ok(Self {
             digest: Vec::new(),
@@ -341,7 +341,7 @@ enum IndexState {
 }
 
 impl IndexState {
-    fn directory(&self, root: &PathBuf) -> PathBuf {
+    fn directory(&self, root: &Path) -> PathBuf {
         match self {
             Self::A => root.join("a"),
             Self::B => root.join("b"),
