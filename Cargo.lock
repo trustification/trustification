@@ -5043,7 +5043,7 @@ dependencies = [
 [[package]]
 name = "rust-s3"
 version = "0.34.0-beta3"
-source = "git+https://github.com/trustification/rust-s3.git?branch=issue-352#158e587e1b33039e292eb4fca9005b63d99e582c"
+source = "git+https://github.com/trustification/rust-s3.git?branch=trustification#81b6f1721463a43a24d0798266eb4108e8081501"
 dependencies = [
  "async-trait",
  "aws-creds",
