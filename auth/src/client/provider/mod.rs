@@ -1,7 +1,7 @@
-mod access_token;
+mod bearer_token;
 mod openid;
 
-pub use self::access_token::*;
+pub use self::bearer_token::*;
 pub use self::openid::*;
 
 use super::error::Error;
