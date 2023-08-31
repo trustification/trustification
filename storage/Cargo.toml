@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-rust-s3 = { git = "https://github.com/trustification/rust-s3.git", branch = "issue-352" }
+rust-s3 = { git = "https://github.com/trustification/rust-s3.git", branch = "trustification" }
 tokio = { version = "1", features = ["full"] }
 tokio-util = { version = "0.7", features = ["io"] }
 anyhow = "1"
