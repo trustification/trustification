@@ -8,7 +8,7 @@ use trustification_api::search::SearchOptions;
 use trustification_auth::authenticator::Authenticator;
 use trustification_infrastructure::new_auth;
 
-use crate::{search::QueryParams, server::SharedState};
+use crate::{search::QueryParams, server::AppState};
 
 const MAX_LIMIT: usize = 1_000;
 
@@ -42,7 +42,7 @@ pub struct GetParams {
     )
 )]
 pub async fn get(
-    state: web::Data<SharedState>,
+    state: web::Data<AppState>,
     web::Query(GetParams { token, id }): web::Query<GetParams>,
     access_token: Option<BearerAuth>,
 ) -> actix_web::Result<HttpResponse> {
@@ -68,7 +68,7 @@ pub async fn get(
     )
 )]
 pub async fn search(
-    state: web::Data<SharedState>,
+    state: web::Data<AppState>,
     params: web::Query<QueryParams>,
     options: web::Query<SearchOptions>,
     access_token: Option<BearerAuth>,

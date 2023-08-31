@@ -8,6 +8,7 @@ description = "The data model of the API"
 
 [dependencies]
 chrono = { version = "0.4", default-features = false, features = ["serde"] }
+csaf = { version = "0.5.0", default-features = false }
 schemars = { version = "0.8", features = ["url"] }
 serde = { version = "1", features = ["derive"] }
 time = { version = "0.3" }

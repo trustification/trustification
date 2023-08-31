@@ -7,6 +7,7 @@ use trustification_infrastructure::{Infrastructure, InfrastructureConfig};
 mod advisory;
 mod analyze;
 mod config;
+mod cve;
 mod guac;
 mod index;
 mod sbom;
