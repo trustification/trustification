@@ -2,7 +2,7 @@ use crate::{
     backend,
     components::{
         common::{NotFound, PageHeading},
-        content::{Technical, UnknownContent},
+        content::{SourceCode, Technical, UnknownContent},
         error::Error,
         spdx::*,
     },
@@ -101,14 +101,11 @@ fn details(props: &DetailsProps) -> Html {
                     </PageSection>
 
                     <PageSection hidden={*tab != TabIndex::Packages} fill={PageSectionFill::Fill}>
-                        // FIXME: use .clone() instead
-                        <SpdxPackages bom={Rc::new(serde_json::from_str(source).unwrap())}/>
+                        <SpdxPackages bom={bom.clone()} />
                     </PageSection>
 
                     <PageSection hidden={*tab != TabIndex::Source} variant={PageSectionVariant::Light} fill={PageSectionFill::Fill}>
-                        <CodeBlock>
-                            <CodeBlockCode> { source.clone() } </CodeBlockCode>
-                        </CodeBlock>
+                        <SourceCode source={source.clone()} />
                     </PageSection>
                 </>
             )
@@ -130,9 +127,7 @@ fn details(props: &DetailsProps) -> Html {
                     </PageSection>
 
                     <PageSection hidden={*tab != TabIndex::Source} fill={PageSectionFill::Fill}>
-                        <CodeBlock>
-                            <CodeBlockCode> { source.clone() } </CodeBlockCode>
-                        </CodeBlock>
+                        <SourceCode source={source.clone()} />
                     </PageSection>
                 </>
             )
