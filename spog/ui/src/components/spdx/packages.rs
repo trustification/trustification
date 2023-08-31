@@ -104,9 +104,10 @@ pub fn spdx_packages(props: &SpdxPackagesProperties) -> Html {
         fn render_cell(&self, context: CellContext<'_, Column>) -> Cell {
             match &self.base {
                 PackageBase::Plain { package } => match context.column {
-                    Column::Name => highlight(&package.package_name, &self.filter.borrow()),
-                    Column::Versions => html!(package.package_version.clone().unwrap_or_default()),
-                    Column::Qualifiers => html!(),
+                    Column::Name => highlight(&package.package_name, &self.filter.borrow()).into(),
+                    Column::Versions => Cell::from(html!(package.package_version.clone().unwrap_or_default()))
+                        .text_modifier(TextModifier::Truncate),
+                    Column::Qualifiers => html!().into(),
                 },
                 PackageBase::Purl {
                     base,
@@ -121,8 +122,10 @@ pub fn spdx_packages(props: &SpdxPackagesProperties) -> Html {
                         }
                         {" "}
                         <Label compact=true label={base.ty().to_string()} color={Color::Blue} />
-                    </>),
-                    Column::Versions => versions.iter().map(Html::from).collect(),
+                    </>)
+                    .into(),
+                    Column::Versions => Cell::from(versions.iter().map(Html::from).collect::<Html>())
+                        .text_modifier(TextModifier::Truncate),
                     Column::Qualifiers => html!(
                         { for qualifiers.iter().flat_map(|(k,v)| {
                             let k = k.clone();
@@ -130,10 +133,10 @@ pub fn spdx_packages(props: &SpdxPackagesProperties) -> Html {
                                 html!(<><Label label={format!("{k}: {v}")} />{" "}</>)
                             })
                         }) }
-                    ),
+                    )
+                    .into(),
                 },
             }
-            .into()
         }
 
         fn render_details(&self) -> Vec<Span> {
@@ -204,9 +207,9 @@ pub fn spdx_packages(props: &SpdxPackagesProperties) -> Html {
 
     let header = html_nested!(
         <TableHeader<Column>>
-            <TableColumn<Column> index={Column::Name} label="Name" />
-            <TableColumn<Column> index={Column::Versions} label="Versions" />
-            <TableColumn<Column> index={Column::Qualifiers} label="Qualifiers" />
+            <TableColumn<Column> width={ColumnWidth::Percent(30)} index={Column::Name} label="Name" />
+            <TableColumn<Column> width={ColumnWidth::Percent(20)} index={Column::Versions} label="Versions" />
+            <TableColumn<Column> width={ColumnWidth::Percent(50)} index={Column::Qualifiers} label="Qualifiers" />
         </TableHeader<Column>>
     );
 
