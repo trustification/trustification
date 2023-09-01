@@ -273,8 +273,10 @@ impl IndexDirectory {
         if self.digest != digest {
             let schema = old_index.schema();
             let settings = old_index.settings().clone();
-            self.state = self.state.next();
-            let index = self.unpack(schema, settings, data)?;
+            let next = self.state.next();
+            let path = next.directory(&self.path);
+            let index = self.unpack(schema, settings, data, &path)?;
+            self.state = next;
             self.digest = digest;
             Ok(Some(index))
         } else {
@@ -304,19 +306,24 @@ impl IndexDirectory {
         Ok(index)
     }
 
-    fn unpack(&mut self, schema: Schema, settings: IndexSettings, data: &[u8]) -> Result<SearchIndex, Error> {
-        let path = self.state.directory(&self.path);
+    fn unpack(
+        &mut self,
+        schema: Schema,
+        settings: IndexSettings,
+        data: &[u8],
+        path: &Path,
+    ) -> Result<SearchIndex, Error> {
         if path.exists() {
-            std::fs::remove_dir_all(&path).map_err(|e| Error::Open(e.to_string()))?;
+            std::fs::remove_dir_all(path).map_err(|e| Error::Open(e.to_string()))?;
         }
-        std::fs::create_dir_all(&path).map_err(|e| Error::Open(e.to_string()))?;
+        std::fs::create_dir_all(path).map_err(|e| Error::Open(e.to_string()))?;
 
         let dec = zstd::stream::Decoder::new(data).map_err(Error::Io)?;
         let mut archive = tar::Archive::new(dec);
-        archive.unpack(&path).map_err(Error::Io)?;
+        archive.unpack(path).map_err(Error::Io)?;
         log::trace!("Unpacked into {:?}", path);
 
-        let dir = MmapDirectory::open(&path).map_err(|e| Error::Open(e.to_string()))?;
+        let dir = MmapDirectory::open(path).map_err(|e| Error::Open(e.to_string()))?;
         let builder = SearchIndex::builder().schema(schema).settings(settings);
         let inner = builder.open_or_create(dir).map_err(|e| Error::Open(e.to_string()))?;
         Ok(inner)
@@ -334,7 +341,7 @@ impl IndexDirectory {
     }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 enum IndexState {
     A,
     B,
@@ -718,7 +725,9 @@ pub fn field2float(doc: &Document, field: Field) -> Result<f64, Error> {
 
 #[cfg(test)]
 mod tests {
+    use rand::RngCore;
     use tantivy::collector::TopDocs;
+    use tantivy::doc;
 
     use super::*;
 
@@ -883,5 +892,39 @@ mod tests {
         writer.commit().unwrap();
 
         assert_eq!(store.search("is", 0, 10, SearchOptions::default(),).unwrap().1, 1);
+    }
+
+    #[tokio::test]
+    async fn test_directory_sync_failure() {
+        let _ = env_logger::try_init();
+
+        let mut old_schema = Schema::builder();
+        let old_id = old_schema.add_text_field("id", STRING | FAST | STORED);
+        let old_schema = old_schema.build();
+
+        let mut new_schema = Schema::builder();
+        new_schema.add_u64_field("id", INDEXED);
+        let new_schema = new_schema.build();
+
+        let r = rand::thread_rng().next_u32();
+        let dir = std::env::temp_dir().join(format!("index.{}", r));
+
+        let mut good = IndexDirectory::new(&dir.join("good")).unwrap();
+        let mut bad = IndexDirectory::new(&dir.join("bad")).unwrap();
+
+        let store = good.build(Default::default(), old_schema).unwrap();
+
+        let mut w = store.writer(10_000_000).unwrap();
+        w.add_document(doc!(old_id => "foo")).unwrap();
+        w.commit().unwrap();
+        w.wait_merging_threads().unwrap();
+
+        let snapshot = good.pack().unwrap();
+        let store = bad.build(Default::default(), new_schema).unwrap();
+
+        assert_eq!(bad.state, IndexState::A);
+        let result = bad.sync(&store, &snapshot);
+        assert!(result.is_err());
+        assert_eq!(bad.state, IndexState::A);
     }
 }
