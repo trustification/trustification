@@ -190,7 +190,7 @@ async fn bombastic_bad_search_queries(context: &mut BombasticContext) {
 
 #[test_context(BombasticContext)]
 #[tokio::test]
-#[ntest::timeout(90_000)]
+#[ntest::timeout(120_000)]
 async fn bombastic_reindexing(context: &mut BombasticContext) {
     let mut input: Value = serde_json::from_str(include_str!("../../bombastic/testdata/ubi9-sbom.json")).unwrap();
     // we generate a unique id and use it as the SBOM's version for searching

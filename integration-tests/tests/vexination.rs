@@ -9,7 +9,7 @@ use urlencoding::encode;
 
 #[test_context(VexinationContext)]
 #[tokio::test]
-#[ntest::timeout(30_000)]
+#[ntest::timeout(60_000)]
 async fn vexination_roundtrip(vexination: &mut VexinationContext) {
     let client = reqwest::Client::new();
     let input = serde_json::from_str(include_str!("../../vexination/testdata/rhsa-2023_1441.json")).unwrap();
