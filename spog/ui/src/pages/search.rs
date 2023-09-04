@@ -155,6 +155,54 @@ pub fn search(props: &SearchProperties) -> Html {
         },
     );
 
+    let onsort_advisory = {
+        let search_params_state = advisory.search_params.clone();
+        use_callback(move |sort_by: (String, bool), search_params| {                
+            match search_params {
+                SearchMode::Complex(val) => {
+                    
+                },
+                SearchMode::Simple(simple) => {
+                    let mut simple = simple.clone();
+                    simple.setSortBy(sort_by);
+                    search_params_state.set(SearchMode::Simple(simple));
+                },                
+            };
+        }, (*advisory.search_params).clone())
+    };
+
+    let onsort_sbom = {
+        let search_params_state = sbom.search_params.clone();
+        use_callback(move |sort_by: (String, bool), search_params| {                
+            match search_params {
+                SearchMode::Complex(val) => {
+                    
+                },
+                SearchMode::Simple(simple) => {
+                    let mut simple = simple.clone();
+                    simple.setSortBy(sort_by);
+                    search_params_state.set(SearchMode::Simple(simple));
+                },                
+            };
+        }, (*advisory.search_params).clone())
+    };
+
+    let onsort_sbombypackage = {
+        let search_params_state = sbom_by_dependency.search_params.clone();
+        use_callback(move |sort_by: (String, bool), search_params| {                
+            match search_params {
+                SearchMode::Complex(val) => {
+                    
+                },
+                SearchMode::Simple(simple) => {
+                    let mut simple = simple.clone();
+                    simple.setSortBy(sort_by);
+                    search_params_state.set(SearchMode::Simple(simple));
+                },                
+            };
+        }, (*advisory.search_params).clone())
+    };
+
     // render
 
     html!(
@@ -225,17 +273,17 @@ pub fn search(props: &SearchProperties) -> Html {
                         <div class="pf-v5-u-background-color-100">
                             if *tab == TabIndex::Advisories {
                                 <PaginationWrapped pagination={advisory.pagination} total={*advisory.total}>
-                                    <AdvisoryResult state={(*advisory.state).clone()} />
+                                    <AdvisoryResult state={(*advisory.state).clone()} onsort={&onsort_advisory} />
                                 </PaginationWrapped>
                             }
                             if *tab == TabIndex::Sboms {
                                 <PaginationWrapped pagination={sbom.pagination} total={*sbom.total}>
-                                    <SbomResult state={(*sbom.state).clone()} />
+                                    <SbomResult state={(*sbom.state).clone()} onsort={&onsort_sbom} />
                                 </PaginationWrapped>
                             }
                             if *tab == TabIndex::SbomsByPackage {
                                 <PaginationWrapped pagination={sbom_by_dependency.pagination} total={*sbom_by_dependency.total}>
-                                    <SbomResult state={(*sbom_by_dependency.state).clone()} />
+                                    <SbomResult state={(*sbom_by_dependency.state).clone()} onsort={&onsort_sbombypackage} />
                                 </PaginationWrapped>
                             }
                         </div>

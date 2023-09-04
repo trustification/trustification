@@ -22,6 +22,7 @@ use crate::{
 #[derive(PartialEq, Properties)]
 pub struct SbomResultProperties {
     pub state: UseAsyncState<SearchResult<Rc<Vec<PackageSummary>>>, String>,
+    pub onsort: Callback<(String, bool)>
 }
 
 #[derive(Copy, Clone, PartialEq, Eq)]
@@ -116,11 +117,11 @@ pub fn sbom_result(props: &SbomResultProperties) -> Html {
     };
 
     let on_sort_by = {
+        let onsort = props.onsort.clone();
         Some(Callback::from(move |val: TableHeaderSortBy<Column>| {
             match val.index {
                 Column::Created => {
-                    let is_asc = val.asc;
-                    // Sort here
+                    onsort.emit(("created".to_string(), val.asc));
                 },                
                 _ => {},
             };

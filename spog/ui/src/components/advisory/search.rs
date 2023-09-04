@@ -110,6 +110,22 @@ pub fn advisory_search(props: &AdvisorySearchProperties) -> Html {
     let simple = search.search_params.is_simple();
     let onchange = use_callback(|data, text| text.set(data), search.text.clone());
 
+    let onsort = {
+        let search_params_state = search_params.clone();
+        use_callback(move |sort_by: (String, bool), search_params| {                
+            match search_params {
+                SearchMode::Complex(val) => {
+                    
+                },
+                SearchMode::Simple(simple) => {
+                    let mut simple = simple.clone();
+                    simple.setSortBy(sort_by);
+                    search_params_state.set(SearchMode::Simple(simple));
+                },                
+            };
+        }, (*search_params).clone())
+    };
+    
     html!(
         <>
 
@@ -138,7 +154,7 @@ pub fn advisory_search(props: &AdvisorySearchProperties) -> Html {
                 </GridItem>
 
                 <GridItem cols={[10]}>
-                    <AdvisoryResult state={(*state).clone()} />
+                    <AdvisoryResult state={(*state).clone()} onsort={&onsort} />
                 </GridItem>
 
             </Grid>
