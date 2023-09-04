@@ -4,11 +4,11 @@ use std::collections::BTreeMap;
 pub struct CveDetails {
     pub id: String,
     pub products: BTreeMap<String, Vec<String>>,
-    pub advisories: Vec<AdvisoriesOverview>,
+    pub advisories: Vec<AdvisoryOverview>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
-pub struct AdvisoriesOverview {
+pub struct AdvisoryOverview {
     pub id: String,
     pub title: String,
 }

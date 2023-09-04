@@ -41,8 +41,8 @@ wasm-logger = "0.2"
 yew = { version = "0.20", features = ["csr"] }
 yew-hooks = "0.2"
 yew-more-hooks = "0.2.0"
-yew-nested-router = "0.2.2"
-yew-oauth2 = { version = "0.6.2", features = ["router", "openid"] }
+yew-nested-router = "0.3.0"
+yew-oauth2 = { version = "0.6.3", features = ["router", "openid"] }
 
 spog-model = "0.1.0"
 
@@ -65,11 +65,11 @@ features = [
 [workspace]
 
 [patch.crates-io]
-#yew-nested-router = { path = "../yew-nested-router" }
+#yew-nested-router = { path = "../../../yew-nested-router" }
 #yew-nested-router = { git = "https://github.com/ctron/yew-nested-router", rev = "9689db446dee7030325884df768d0c2e84f353d6" }
 #yew-more-hooks = { git = "https://github.com/ctron/yew-more-hooks", rev = "fc0af774aa925edcd5a544e562619ecb539942f8" }
 #yew-more-hooks = { path = "../../../yew-more-hooks" }
-patternfly-yew = { git = "https://github.com/ctron/patternfly-yew", rev = "49f81fd7cd9101eacffb881497f00c6b0b637f2f" } # FIXME: awaiting release
+patternfly-yew = { git = "https://github.com/ctron/patternfly-yew", rev = "fc4d4614a4ecfcd4605046d8529c09570548058b" } # FIXME: awaiting release
 #patternfly-yew = { path = "../../../patternfly-yew" }
 
 csaf = { git = "https://github.com/voteblake/csaf-rs", rev = "76cb9ede10adb1fbb495b17e5fd8d95c5cf6c900" } # FIXME: waiting for release

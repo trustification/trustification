@@ -11,7 +11,7 @@ use csaf::Csaf;
 use futures::{stream, StreamExt, TryStreamExt};
 use guac::client::GuacClient;
 use spog_model::csaf::{find_product_relations, trace_product};
-use spog_model::cve::{AdvisoriesOverview, CveDetails};
+use spog_model::cve::{AdvisoryOverview, CveDetails};
 use std::collections::{BTreeMap, BTreeSet, HashSet};
 use std::sync::Arc;
 use trustification_auth::authenticator::Authenticator;
@@ -100,7 +100,7 @@ where
             }
         }
 
-        advisories.push(AdvisoriesOverview {
+        advisories.push(AdvisoryOverview {
             id,
             title: csaf.document.title,
         })

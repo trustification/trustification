@@ -42,6 +42,10 @@ pub fn pagination_to_offset(page: usize, per_page: usize) -> usize {
 pub struct OrNone<T>(pub Option<T>);
 
 impl<T> OrNone<T> {
+    pub const DEFAULT_NA: &'static str = "n/na";
+}
+
+impl<T> OrNone<T> {
     pub fn map<F, U>(self, f: F) -> OrNone<U>
     where
         F: FnOnce(T) -> U,
@@ -57,7 +61,7 @@ where
     fn from(value: OrNone<T>) -> Self {
         match value.0 {
             Some(value) => value.into(),
-            None => html!(<i>{"n/a"}</i>),
+            None => html!(<i>{OrNone::<T>::DEFAULT_NA}</i>),
         }
     }
 }
