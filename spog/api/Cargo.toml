@@ -39,6 +39,7 @@ snyk = { git = "https://github.com/dejanb/snyk-rs.git", branch = "main" }
 thiserror = "1"
 tracing = "0.1"
 tokio = { version = "*", features = ["rt", "fs", "macros", "rt-multi-thread"] }
+uuid = { version = "1", features = ["v4"] }
 url = "2"
 urlencoding = "2.1.2"
 utoipa = { version = "3", features = ["actix_extras"] }
@@ -56,5 +57,11 @@ trustification-infrastructure = { path = "../../infrastructure" }
 trustification-version = { path = "../../version", features = ["actix-web"] }
 trustification-auth = { path = "../../auth", features = ["actix", "swagger"] }
 
+segment = { version = "0.2", optional = true }
+
 [build-dependencies]
 trustification-version = { path = "../../version", features = ["build"] }
+
+[features]
+default = []
+analytics = ["segment"]
