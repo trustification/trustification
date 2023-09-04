@@ -1,3 +1,4 @@
+use crate::analytics::{Event, SbomType, Tracker};
 use actix_web::{
     body::BoxBody,
     web::{self, PayloadConfig, ServiceConfig},
@@ -71,7 +72,7 @@ impl CrdaClient {
             .await?
             .error_for_status()
             .map(|r| {
-                log::info!("CRDA response: {}", r.status());
+                log::debug!("CRDA response: {}", r.status());
                 r
             })?
             .bytes_stream())
@@ -97,18 +98,30 @@ pub(crate) fn configure(payload_limit: usize) -> impl FnOnce(&mut ServiceConfig)
         (status = 502, description = "Failed to communicate with CRDA backend", body = String),
     )
 )]
-async fn report(data: Bytes, crda: web::Data<CrdaClient>) -> actix_web::Result<HttpResponse> {
-    Ok(run_report(data, &crda).await?)
+async fn report(
+    data: Bytes,
+    crda: web::Data<CrdaClient>,
+    tracker: web::Data<Tracker>,
+) -> actix_web::Result<HttpResponse> {
+    Ok(run_report(data, &crda, &tracker).await?)
 }
 
-async fn run_report(data: Bytes, crda: &CrdaClient) -> Result<HttpResponse, Error> {
+async fn run_report(data: Bytes, crda: &CrdaClient, tracker: &Tracker) -> Result<HttpResponse, Error> {
     let sbom = SBOM::parse(&data)?;
 
-    let r#type = match &sbom {
-        SBOM::SPDX(_) => "application/vnd.spdx+json",
-        SBOM::CycloneDX(_) => "application/vnd.cyclonedx+json",
+    let (r#type, content_type) = match &sbom {
+        SBOM::SPDX(_) => (SbomType::Spdx, "application/vnd.spdx+json"),
+        SBOM::CycloneDX(_) => (SbomType::CycloneDx, "application/vnd.cyclonedx+json"),
     };
 
-    let report = crda.analyze(data.into(), r#type).await?;
-    Ok(HttpResponse::Ok().content_type("text/html").streaming(report))
+    let report = crda.analyze(data.into(), content_type).await;
+
+    let status_code = match &report {
+        Err(Error::Request(err)) => err.status(),
+        _ => None,
+    };
+
+    tracker.track(Event::ScanSbom { r#type, status_code }).await;
+
+    Ok(HttpResponse::Ok().content_type("text/html").streaming(report?))
 }

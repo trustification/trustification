@@ -1,9 +1,12 @@
+use std::future::Future;
+use std::pin::Pin;
 use std::{net::TcpListener, sync::Arc};
 
 use actix_cors::Cors;
 use actix_web::{http::header::ContentType, web, HttpResponse, HttpServer};
 use actix_web_prom::PrometheusMetricsBuilder;
 use anyhow::anyhow;
+use futures::future::select_all;
 use http::StatusCode;
 use prometheus::Registry;
 use spog_model::search;
@@ -20,6 +23,7 @@ use trustification_version::version;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
+use crate::analytics::Tracker;
 use crate::analyze::CrdaClient;
 use crate::guac::service::GuacService;
 use crate::{advisory, analyze, config, cve, index, sbom, Run};
@@ -90,6 +94,9 @@ impl Server {
 
         let guac = GuacService::new(self.run.guac_url);
 
+        let (tracker, flusher) = Tracker::new(self.run.analytics);
+        let tracker = web::Data::from(tracker);
+
         let mut srv = HttpServer::new(move || {
             let state = state.clone();
 
@@ -99,6 +106,7 @@ impl Server {
             let authorizer = authorizer.clone();
             let swagger_oidc = swagger_oidc.clone();
             let guac = guac.clone();
+            let tracker = tracker.clone();
 
             let mut app = new_app(AppOptions {
                 cors: Some(cors),
@@ -108,6 +116,7 @@ impl Server {
             })
             .app_data(state)
             .app_data(web::Data::new(guac))
+            .app_data(tracker)
             .configure(index::configure())
             .configure(version::configurator(version!()))
             .configure(sbom::configure(authenticator.clone()))
@@ -134,12 +143,28 @@ impl Server {
 
             app
         });
+
         srv = match listener {
             Some(v) => srv.listen(v)?,
             None => srv.bind((self.run.bind, self.run.port))?,
         };
-        srv.run().await?;
-        Ok(())
+
+        let srv = Box::pin(async move {
+            srv.run().await?;
+            Ok(())
+        }) as Pin<Box<dyn Future<Output = anyhow::Result<()>>>>;
+
+        let mut tasks = vec![srv];
+
+        tasks.extend(flusher);
+
+        // run all tasks
+
+        let (result, _index, _others) = select_all(tasks).await;
+
+        // return
+
+        result
     }
 }
 

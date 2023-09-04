@@ -125,5 +125,6 @@ fn spog_api(burl: Url, vurl: Url) -> spog_api::Run {
         },
         auth: testing_auth(),
         swagger_ui_oidc: testing_swagger_ui_oidc(),
+        analytics: Default::default(),
     }
 }
