@@ -42,16 +42,13 @@ async fn cve_details(
 
 async fn build_cve_details<P>(
     app: &AppState,
-    guac: &GuacService,
+    _guac: &GuacService,
     provider: P,
     cve_id: String,
 ) -> Result<CveDetails, Error>
 where
     P: TokenProvider,
 {
-    let affected = guac.affected_cve(cve_id.clone()).await?;
-    log::info!("Affected: {affected:#?}");
-
     let q = format!(r#"cve:"{cve_id}""#);
     let advisories = app.search_vex(&q, 0, 1024, Default::default(), &provider).await?.result;
 
