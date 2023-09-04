@@ -22,7 +22,7 @@ use crate::{
 #[derive(PartialEq, Properties)]
 pub struct SbomResultProperties {
     pub state: UseAsyncState<SearchResult<Rc<Vec<PackageSummary>>>, String>,
-    pub onsort: Callback<(String, bool)>
+    pub onsort: Callback<(String, bool)>,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq)]
@@ -116,17 +116,17 @@ pub fn sbom_result(props: &SbomResultProperties) -> Html {
         _ => None,
     };
 
-    let on_sort_by = {
-        let onsort = props.onsort.clone();
-        Some(Callback::from(move |val: TableHeaderSortBy<Column>| {
+    let sortby: UseStateHandle<Option<TableHeaderSortBy<Column>>> = use_state_eq(|| None);
+    let onsort = use_callback(
+        |val: TableHeaderSortBy<Column>, (sortby, onsort)| {
+            sortby.set(Some(val.clone()));
             match val.index {
-                Column::Created => {
-                    onsort.emit(("created".to_string(), val.asc));
-                },                
-                _ => {},
+                Column::Created => onsort.emit(("created".to_string(), val.asc)),
+                _ => {}
             };
-        }))
-    };
+        },
+        (sortby.clone(), props.onsort.clone()),
+    );
 
     let (entries, onexpand) = use_table_data(MemoizedTableModel::new(Rc::new(data.unwrap_or_default())));
 
@@ -150,7 +150,8 @@ pub fn sbom_result(props: &SbomResultProperties) -> Html {
             index: Column::Created,
             label: "Created on",
             width: ColumnWidth::Percent(10),
-            onsort: on_sort_by.clone()
+            sortby: *sortby,
+            onsort: onsort.clone()
         }),
         yew::props!(TableColumnProperties<Column> {
             index: Column::Dependencies,

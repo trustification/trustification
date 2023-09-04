@@ -87,10 +87,9 @@ pub fn sbom_search(props: &SbomSearchProperties) -> Html {
         ..Default::default()
     });
 
-    // ADD Sort by here search_params
     let search_params = use_state_eq::<SearchMode<DynamicSearchParameters>, _>(|| page_state.search_params.clone());
     let total = use_state_eq(|| None);
-    let pagination = use_pagination(*total, || page_state.pagination);    
+    let pagination = use_pagination(*total, || page_state.pagination);
     let state = use_state_eq(UseAsyncState::default);
     let callback = use_callback(
         |state: UseAsyncHandleDeps<SearchResult<Rc<_>>, String>, search| {
@@ -121,18 +120,19 @@ pub fn sbom_search(props: &SbomSearchProperties) -> Html {
 
     let onsort = {
         let search_params_state = search_params.clone();
-        use_callback(move |sort_by: (String, bool), search_params| {                
-            match search_params {
-                SearchMode::Complex(val) => {
-                    
-                },
-                SearchMode::Simple(simple) => {
-                    let mut simple = simple.clone();
-                    simple.setSortBy(sort_by);
-                    search_params_state.set(SearchMode::Simple(simple));
-                },                
-            };
-        }, (*search_params).clone())
+        use_callback(
+            move |sort_by: (String, bool), search_params| {
+                match search_params {
+                    SearchMode::Simple(simple) => {
+                        let mut simple = simple.clone();
+                        simple.set_sort_by(sort_by);
+                        search_params_state.set(SearchMode::Simple(simple));
+                    }
+                    _ => {}
+                };
+            },
+            (*search_params).clone(),
+        )
     };
 
     html!(
