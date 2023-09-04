@@ -157,8 +157,6 @@ pub enum Error {
     Guac(#[from] crate::guac::service::Error),
     #[error("serialization error: {0}")]
     Serde(#[from] serde_json::error::Error),
-    #[error("processing: {0}")]
-    Processing(String),
 }
 
 impl actix_web::error::ResponseError for Error {
@@ -194,11 +192,6 @@ impl actix_web::error::ResponseError for Error {
             Self::Guac(error) => res.json(ErrorInformation {
                 error: "Guac".to_string(),
                 message: "Error contacting GUAC".to_string(),
-                details: error.to_string(),
-            }),
-            Self::Processing(error) => res.json(ErrorInformation {
-                error: "Processing".to_string(),
-                message: "Error processing".to_string(),
                 details: error.to_string(),
             }),
         }
