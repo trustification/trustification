@@ -748,7 +748,7 @@ dependencies = [
  "gloo-render",
  "gloo-storage",
  "gloo-timers",
- "gloo-utils",
+ "gloo-utils 0.1.7",
  "gloo-worker",
 ]
 
@@ -758,7 +758,7 @@ version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "82b7ce3c05debe147233596904981848862b068862e9ec3e34be446077190d3f"
 dependencies = [
- "gloo-utils",
+ "gloo-utils 0.1.7",
  "js-sys",
  "serde",
  "wasm-bindgen",
@@ -804,7 +804,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "85725d90bf0ed47063b3930ef28e863658a7905989e9929a8708aab74a1d5e7f"
 dependencies = [
  "gloo-events",
- "gloo-utils",
+ "gloo-utils 0.1.7",
  "serde",
  "serde-wasm-bindgen",
  "serde_urlencoded",
@@ -822,7 +822,7 @@ dependencies = [
  "futures-channel",
  "futures-core",
  "futures-sink",
- "gloo-utils",
+ "gloo-utils 0.1.7",
  "http",
  "js-sys",
  "pin-project",
@@ -850,7 +850,7 @@ version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5d6ab60bf5dbfd6f0ed1f7843da31b41010515c745735c970e821945ca91e480"
 dependencies = [
- "gloo-utils",
+ "gloo-utils 0.1.7",
  "js-sys",
  "serde",
  "serde_json",
@@ -883,6 +883,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "gloo-utils"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0b5555354113b18c547c1d3a98fbf7fb32a9ff4f6fa112ce823a21641a0ba3aa"
+dependencies = [
+ "js-sys",
+ "serde",
+ "serde_json",
+ "wasm-bindgen",
+ "web-sys",
+]
+
+[[package]]
 name = "gloo-worker"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -891,7 +904,7 @@ dependencies = [
  "anymap2",
  "bincode",
  "gloo-console",
- "gloo-utils",
+ "gloo-utils 0.1.7",
  "js-sys",
  "serde",
  "wasm-bindgen",
@@ -1543,12 +1556,12 @@ checksum = "de3145af08024dea9fa9914f381a17b8fc6034dfb00f3a84013f7ff43f29ed4c"
 [[package]]
 name = "patternfly-yew"
 version = "0.5.0-alpha.3"
-source = "git+https://github.com/ctron/patternfly-yew?rev=49f81fd7cd9101eacffb881497f00c6b0b637f2f#49f81fd7cd9101eacffb881497f00c6b0b637f2f"
+source = "git+https://github.com/ctron/patternfly-yew?rev=fc4d4614a4ecfcd4605046d8529c09570548058b#fc4d4614a4ecfcd4605046d8529c09570548058b"
 dependencies = [
  "chrono",
  "gloo-events",
  "gloo-timers",
- "gloo-utils",
+ "gloo-utils 0.1.7",
  "js-sys",
  "log",
  "popper-rs",
@@ -1656,7 +1669,7 @@ version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2cab16c43dd08964c40377a4533bf819c4a0a85891b7d9c7a7dd9812e205e697"
 dependencies = [
- "gloo-utils",
+ "gloo-utils 0.1.7",
  "js-sys",
  "popper-rs-sys",
  "serde",
@@ -2357,7 +2370,7 @@ dependencies = [
  "cyclonedx-bom",
  "gloo-net",
  "gloo-storage",
- "gloo-utils",
+ "gloo-utils 0.1.7",
  "humansize",
  "itertools 0.11.0",
  "log",
@@ -3148,7 +3161,7 @@ version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c68500c317b22b54bed6f502363a34766a1bfb60e488de0496145b5d66dc403c"
 dependencies = [
- "gloo-utils",
+ "gloo-utils 0.1.7",
  "serde",
  "wasm-bindgen",
  "wasm-bindgen-futures",
@@ -3159,12 +3172,13 @@ dependencies = [
 
 [[package]]
 name = "yew-nested-router"
-version = "0.2.2"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "59fe3be8edebc26bfc786035349f8392781ac5e248b7dd36074def6eca202100"
+checksum = "323c979de281d688b8b85144a01e1905889f9db1f554344c78cb19648367d842"
 dependencies = [
+ "gloo-events",
  "gloo-history",
- "gloo-utils",
+ "gloo-utils 0.2.0",
  "log",
  "urlencoding",
  "wasm-bindgen",
@@ -3175,9 +3189,9 @@ dependencies = [
 
 [[package]]
 name = "yew-nested-router-macros"
-version = "0.2.2"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "276e5a8d16323edf82b7bbbbb409cec1d08ec540dc29a53f96b77207597657b7"
+checksum = "d607bfded9ea4cdf362ee604fafb9ffb6f3ec8f34fa27d3dc1efccd4bf0ed94a"
 dependencies = [
  "convert_case",
  "darling 0.20.3",
@@ -3188,14 +3202,14 @@ dependencies = [
 
 [[package]]
 name = "yew-oauth2"
-version = "0.6.2"
+version = "0.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4726122c395abb138486f038c88ead98ac4a4eb705da6a0ee7c245e71634b2fc"
+checksum = "9d08525fefa4ec5a36cc6fa02010093dac8ee10e163a8ec8a52f9847c9382731"
 dependencies = [
  "async-trait",
  "gloo-storage",
  "gloo-timers",
- "gloo-utils",
+ "gloo-utils 0.1.7",
  "js-sys",
  "log",
  "num-traits",

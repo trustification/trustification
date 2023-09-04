@@ -1,16 +1,10 @@
-use crate::{
-    backend::CveService,
-    components::{async_state_renderer::async_content, common::PageHeading},
-    hooks::use_backend,
-    pages::AppRoute,
-};
+mod result;
+
+use crate::{components::common::PageHeading, pages::AppRoute};
 use patternfly_yew::prelude::*;
-use spog_model::prelude::CveDetails;
-use std::rc::Rc;
+use result::ResultView;
 use yew::prelude::*;
-use yew_more_hooks::hooks::use_async_with_cloned_deps;
 use yew_nested_router::prelude::*;
-use yew_oauth2::hook::use_latest_access_token;
 
 #[derive(PartialEq, Properties)]
 pub struct CveProperties {
@@ -23,46 +17,6 @@ pub fn cve(props: &CveProperties) -> Html {
         Some(id) => html!(<ResultView id={id.clone()} />),
         None => html!(<SearchView/>),
     }
-}
-
-#[derive(PartialEq, Properties)]
-pub struct ResultViewProperties {
-    pub id: String,
-}
-
-#[function_component(ResultView)]
-fn result_view(props: &ResultViewProperties) -> Html {
-    let backend = use_backend();
-    let access_token = use_latest_access_token();
-
-    let state = use_async_with_cloned_deps(
-        move |id| async move {
-            let service = CveService::new(backend.clone(), access_token.clone());
-            service.get(&id).await.map(Rc::new).map_err(|err| err.to_string())
-        },
-        props.id.clone(),
-    );
-
-    html!(
-        <>
-            <PageHeading>{&props.id}</PageHeading>
-            <PageSection>
-            {
-                async_content(&*state, |state| html!(<ResultContent state={state.clone()} />))
-            }
-            </PageSection>
-        </>
-    )
-}
-
-#[derive(PartialEq, Properties)]
-pub struct ResultContentProperties {
-    state: Rc<CveDetails>,
-}
-
-#[function_component(ResultContent)]
-fn result_content(props: &ResultContentProperties) -> Html {
-    html!()
 }
 
 #[function_component(SearchView)]

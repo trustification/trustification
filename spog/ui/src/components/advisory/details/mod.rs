@@ -14,6 +14,7 @@ use crate::{
         common::CardWrapper,
     },
     hooks::use_backend,
+    pages::AppRoute,
     utils::time::chrono_date,
 };
 use csaf::{vulnerability::Vulnerability, Csaf};
@@ -21,6 +22,7 @@ use patternfly_yew::prelude::*;
 use spog_model::prelude::*;
 use yew::prelude::*;
 use yew_more_hooks::hooks::use_async_with_cloned_deps;
+use yew_nested_router::components::Link;
 use yew_oauth2::prelude::use_latest_access_token;
 
 use crate::utils::OrNone;
@@ -109,7 +111,16 @@ impl Deref for VulnerabilityWrapper {
 impl TableEntryRenderer<Column> for VulnerabilityWrapper {
     fn render_cell(&self, context: CellContext<'_, Column>) -> Cell {
         match context.column {
-            Column::Cve => html!({ OrNone(self.cve.clone()) }),
+            Column::Cve => match &self.cve {
+                Some(cve) => html!(
+                    <Link<AppRoute>
+                        target={AppRoute::Cve{id: cve.clone()}}
+                    >
+                        {cve}
+                    </Link<AppRoute>>
+                ),
+                None => html!(OrNone::<()>::DEFAULT_NA),
+            },
             Column::Title => self.title.clone().map(Html::from).unwrap_or_default(),
             Column::Score => self
                 .scores
