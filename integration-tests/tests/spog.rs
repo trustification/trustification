@@ -143,9 +143,12 @@ async fn spog_search_correlation(context: &mut SpogContext) {
             let data: spog_model::search::PackageSummary =
                 serde_json::from_value(payload["result"][0].clone()).unwrap();
             // println!("Data: {:?}", data);
+            // we need to have some information
+            assert!(data.advisories.is_some());
             // Data might not be available until vex index is synced
-            if data.advisories > 0 {
-                assert_eq!(data.advisories, 1);
+            let advisories = data.advisories.unwrap();
+            if advisories > 0 {
+                assert_eq!(advisories, 1);
                 break;
             }
         }

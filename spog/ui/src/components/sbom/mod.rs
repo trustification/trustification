@@ -69,16 +69,17 @@ impl TableEntryRenderer<Column> for PackageEntry {
             )
             .into(),
             Column::Dependencies => html!(&self.package.dependencies).into(),
-            Column::Advisories => {
-                let q = self.package.advisories_query();
-                html!(<Link<AppRoute>
-                          target={AppRoute::Advisory(View::Search{query: q})}
-                            >
+            Column::Advisories => match self.package.advisories_query() {
+                Some(query) => html!(
+                    <Link<AppRoute>
+                        target={AppRoute::Advisory(View::Search{query})}
+                    >
                         { self.package.advisories }
                     </Link<AppRoute>>
-                )
-                .into()
+                ),
+                None => html!(),
             }
+            .into(),
             Column::Version => html!(&self.package.version).into(),
         }
     }

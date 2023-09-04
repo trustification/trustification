@@ -46,7 +46,7 @@ pub struct PackageSummary {
     pub supplier: String,
     pub dependencies: u64,
     pub href: String,
-    pub advisories: u64,
+    pub advisories: Option<u64>,
     pub created: OffsetDateTime,
 
     #[serde(default, skip_serializing_if = "Value::is_null", rename = "$metadata")]
@@ -54,7 +54,7 @@ pub struct PackageSummary {
 }
 
 impl PackageSummary {
-    pub fn advisories_query(&self) -> String {
+    pub fn advisories_query(&self) -> Option<String> {
         let mut terms = Vec::new();
         if let Some(cpe) = &self.cpe {
             terms.push(format!("fixed:\"{}\" OR affected:\"{}\"", cpe, cpe));
@@ -63,7 +63,11 @@ impl PackageSummary {
         if let Some(purl) = &self.purl {
             terms.push(format!("fixed:\"{}\" OR affected:\"{}\"", purl, purl));
         }
-        terms.join(" OR ")
+
+        match terms.is_empty() {
+            true => None,
+            false => Some(terms.join(" OR ")),
+        }
     }
 }
 

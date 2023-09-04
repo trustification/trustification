@@ -97,7 +97,7 @@ pub async fn search(
             href: format!("/api/v1/package?id={}", item.id),
             description: item.description,
             dependencies: item.dependencies,
-            advisories: 0,
+            advisories: None,
             created: item.created,
             metadata,
         });
@@ -120,22 +120,23 @@ async fn search_advisories(
     provider: &dyn TokenProvider,
 ) {
     for package in packages {
-        let q = package.advisories_query();
-        if let Ok(result) = state
-            .search_vex(
-                &q,
-                0,
-                100000,
-                SearchOptions {
-                    explain: false,
-                    metadata: false,
-                    summaries: false,
-                },
-                provider,
-            )
-            .await
-        {
-            package.advisories = result.total as u64;
+        if let Some(q) = package.advisories_query() {
+            if let Ok(result) = state
+                .search_vex(
+                    &q,
+                    0,
+                    100000,
+                    SearchOptions {
+                        explain: false,
+                        metadata: false,
+                        summaries: false,
+                    },
+                    provider,
+                )
+                .await
+            {
+                package.advisories = Some(result.total as u64);
+            }
         }
     }
 }
