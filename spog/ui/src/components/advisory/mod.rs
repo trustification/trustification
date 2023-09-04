@@ -43,7 +43,7 @@ pub struct AdvisoryEntry {
 #[derive(PartialEq, Properties)]
 pub struct AdvisoryResultProperties {
     pub state: UseAsyncState<SearchResult<Rc<Vec<AdvisorySummary>>>, String>,
-    pub onsort: Callback<(String, bool)>
+    pub onsort: Callback<(String, bool)>,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq)]
@@ -116,17 +116,17 @@ pub fn advisory_result(props: &AdvisoryResultProperties) -> Html {
         _ => None,
     };
 
-    let on_sort_by = {
-        let onsort = props.onsort.clone();
-        Some(Callback::from(move |val: TableHeaderSortBy<Column>| {
+    let sortby: UseStateHandle<Option<TableHeaderSortBy<Column>>> = use_state_eq(|| None);
+    let onsort = use_callback(
+        |val: TableHeaderSortBy<Column>, (sortby, onsort)| {
+            sortby.set(Some(val.clone()));
             match val.index {
-                Column::Severity => {
-                    onsort.emit(("severity".to_string(), val.asc));
-                },                
-                _ => {},
+                Column::Severity => onsort.emit(("severity".to_string(), val.asc)),
+                _ => {}
             };
-        }))
-    };
+        },
+        (sortby.clone(), props.onsort.clone()),
+    );
 
     let (entries, onexpand) = use_table_data(MemoizedTableModel::new(Rc::new(data.unwrap_or_default())));
 
@@ -146,7 +146,8 @@ pub fn advisory_result(props: &AdvisoryResultProperties) -> Html {
             label: "Aggregated Severity",
             width: ColumnWidth::Percent(10),
             text_modifier: Some(TextModifier::Wrap),
-            onsort: on_sort_by.clone()
+            sortby: *sortby,
+            onsort: onsort.clone()
         }),
         yew::props!(TableColumnProperties<Column> {
             index: Column::Revision,

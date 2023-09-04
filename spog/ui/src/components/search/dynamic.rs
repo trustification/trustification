@@ -9,7 +9,7 @@ use yew::prelude::*;
 pub struct DynamicSearchParameters {
     pub terms: Vec<String>,
     pub state: HashSet<(Rc<String>, Rc<String>)>,
-    pub sort: Option<(String, bool)> // Column name and whether or not is ASC
+    pub sort: Option<(String, bool)>, // Column name and whether or not is ASC
 }
 
 impl DynamicSearchParameters {
@@ -25,7 +25,7 @@ impl DynamicSearchParameters {
         }
     }
 
-    pub fn setSortBy(&mut self, sort: (String, bool)) {
+    pub fn set_sort_by(&mut self, sort: (String, bool)) {
         self.sort = Some(sort);
     }
 }
@@ -63,7 +63,7 @@ impl ToFilterExpression for DynamicSearchParameters {
             Some(sort) => {
                 let sort_prefix = if sort.1 { "" } else { "-" };
                 terms.push(format!("{sort_prefix}sort:{}", sort.0));
-            },
+            }
             _ => {}
         }
 
