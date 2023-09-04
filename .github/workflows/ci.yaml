@@ -31,6 +31,8 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
+      - uses: ./.github/actions/install-rust
+        if: ${{ env.ACT }}
 
       - name: Check formatting
         run: |
@@ -44,6 +46,13 @@ jobs:
       - formatting
     steps:
       - uses: actions/checkout@v3
+      - uses: ./.github/actions/install-rust
+        if: ${{ env.ACT }}
+      - uses: jwlawson/actions-setup-cmake@v1.13
+        if: ${{ env.ACT }}
+        with:
+          # Version installed on ubuntu-22.04
+          cmake-version: '3.27.3'
       - run: rustup component add clippy
       - uses: actions/cache@v3
         with:
@@ -79,6 +88,8 @@ jobs:
       - formatting
     steps:
       - uses: actions/checkout@v3
+      - uses: ./.github/actions/install-rust
+        if: ${{ env.ACT }}
       - run: rustup component add clippy
       - run: rustup target add wasm32-unknown-unknown
       - uses: actions/cache@v3
@@ -116,6 +127,8 @@ jobs:
       - formatting
     steps:
       - uses: actions/checkout@v3
+      - uses: ./.github/actions/install-rust
+        if: ${{ env.ACT }}
       - uses: actions/cache@v3
         with:
           path: |

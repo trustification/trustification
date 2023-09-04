@@ -9,6 +9,21 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
+      - uses: ./.github/actions/install-rust
+        if: ${{ env.ACT }}
+      - uses: jwlawson/actions-setup-cmake@v1.13
+        if: ${{ env.ACT }}
+        with:
+          # Version installed on ubuntu-22.04
+          cmake-version: '3.27.3'
+      - uses: KengoTODA/actions-setup-docker-compose@v1
+        if: ${{ env.ACT }}
+        with:
+          # Version installed on ubuntu-22.04. There's also v2.20.3 installed
+          # but it fails with:
+          #   network compose_default was found but has incorrect label
+          #   com.docker.compose.network set to ""
+          version: '1.29.2'
 
       - uses: actions/cache@v3
         with:

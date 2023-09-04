@@ -1,0 +1,20 @@
+name: Install Rust toolchain
+description: Install Rust toolchain
+inputs:
+  profile:
+    description: rustup profile
+    required: false
+    default: minimal
+  force:
+    description: Force the installation
+    required: false
+    default: false
+runs:
+  using: composite
+  steps:
+    - run: |
+        if ! command -v rustup >/dev/null 2>&1 || [ "${{ inputs.force }}" = true ]; then
+          curl --proto '=https' --tlsv1.2 https://sh.rustup.rs -sSf | sh -s -- -y --profile ${{ inputs.profile }}
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+        fi
+      shell: bash

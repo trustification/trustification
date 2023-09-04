@@ -253,3 +253,127 @@ Then, you can use it like
 ```shell
 TRUST_IMAGE=trust TRUST_VERSION=latest docker-compose -f compose.yaml -f compose-guac.yaml -f compose-trustification.yaml -f compose-collectors.yaml up --force-recreate
 ```
+
+## Testing `.github/workflows` locally with `act`
+
+[`act`](https://github.com/nektos/act) is a tool for testing GitHub actions and
+workflows locally on your system. This is quite useful since GitHub CI budget
+limitations.
+
+### Installing `act`
+
+#### Fedora
+
+```shell
+sudo dnf copr enable rubemlrm/act-cli
+sudo dnf install act-cli
+```
+
+then, since `act` supports only `docker`
+(see [discussion](https://github.com/nektos/act/issues/303)), you must enable
+the `podman` socket
+(see [this comment](https://github.com/nektos/act/issues/303#issuecomment-882069025)):
+
+```shell
+systemctl enable --now --user podman.socket
+systemctl start --user podman.socket
+
+export DOCKER_HOST=unix://$XDG_RUNTIME_DIR/podman/podman.sock
+```
+
+#### OSX
+
+```shell
+brew install act
+```
+
+For other installation possibilities, see
+[`act`'s installation instructions](https://github.com/nektos/act#installation).
+
+### Running workflows and jobs locally
+
+**WARNING** Be sure you have enough space on your disk! Running workflows
+locally eats a lot of space. Containers, Rust compiler products, and `act`
+cache... all of these contribute significantly to shrinking yours disk's free
+space. Thus it is better to run just one job per `act` session. Also don't
+forget to check your system before and after each `act` run (see the
+[Disk space hygiene](#disk-space-hygiene) section below).
+
+During the first run, `act` asks you which image it should use. There are three
+types of images:
+* Micro (approximately 200MB, contains only Node.js)
+* Medium (approximately 1.5GB, contains most used tools)
+* Large (over 20G, contains all software like official Ubuntu images provided by
+  GitHub)
+
+Make your choice depending on your machine's resources. The recommended and
+default image is Medium.
+
+To run all your workflows locally, type:
+
+```shell
+# OSX
+act
+
+# Fedora
+act --bind --container-daemon-socket $XDG_RUNTIME_DIR/podman/podman.sock
+```
+
+To run a particular workflow (here `ci.yaml`), type:
+
+```shell
+# OSX
+act -W .github/workflows/ci.yaml
+
+# Fedora
+act --bind --container-daemon-socket $XDG_RUNTIME_DIR/podman/podman.sock -W .github/workflows/ci.yaml
+```
+
+To run a particular job (here `integration`) from a particular workflow (here
+`ci.yaml`), type:
+
+```shell
+# OSX
+act -W .github/workflows/ci.yaml -j integration
+
+# Fedora
+act --bind --container-daemon-socket $XDG_RUNTIME_DIR/podman/podman.sock -W .github/workflows/ci.yaml -j integration
+```
+
+### Disk space hygiene
+
+Testing `trustification` consumes a lot of resources. You can run out of free
+disk space very easily while testing CI jobs using `act`. To prevent this, there
+are three places to focus on:
+1. **Rust leftovers.** During a test run Rust compiles tests and their
+   dependencies that are also fetched by `cargo` and cached. All of it happens
+   inside a directory with cloned `trustification` repository. To see how much
+   space is occupied, run this command from the repository's root directory:
+   ```shell
+   du -hs .
+   ```
+   In case the repository occupies too much space (units or tens of gigabytes)
+   you can clean all ignored files and directories with this command (also invoked
+   from the repository's root directory):
+   ```shell
+   git clean -dfX
+   ```
+1. **`act` cache.** Check the size of `act` cache:
+   ```shell
+   du -h ~/.cache/actcache/cache
+   ```
+   Focus on files which names are composed from decimal digits only, like
+   `~/.cache/actcache/cache/01`. If they are too big, feel free to remove them.
+1. **Containers storage.** Check how many space is occupied by containers:
+   ```shell
+   docker unshare du -hs ~/.local/share/containers/storage/overlay
+   ```
+   You can prune dangling storage with:
+   ```shell
+   docker system prune -af
+   ```
+   If it does not help (there is a [whole issue](https://github.com/containers/podman/issues/3799)
+   dedicated to this), stop all running containers and try the total cleanup:
+   ```shell
+   docker system reset -f
+   ```
