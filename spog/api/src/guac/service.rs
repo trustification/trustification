@@ -104,6 +104,7 @@ impl GuacService {
         ))
     }
 
+    #[allow(unused)]
     pub async fn affected_cve(&self, id: String) -> Result<Vec<Vulnerability>, Error> {
         Ok(self
             .client
