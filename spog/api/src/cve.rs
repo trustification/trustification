@@ -5,11 +5,10 @@ use actix_web::{
     HttpResponse,
 };
 use actix_web_httpauth::extractors::bearer::BearerAuth;
-use bytes::{Bytes, BytesMut};
+use bytes::BytesMut;
 use csaf::definitions::ProductIdT;
 use csaf::Csaf;
-use futures::{stream, StreamExt, TryStreamExt};
-use guac::client::GuacClient;
+use futures::TryStreamExt;
 use spog_model::csaf::{find_product_relations, trace_product};
 use spog_model::cve::{AdvisoryOverview, CveDetails};
 use std::collections::{BTreeMap, BTreeSet, HashSet};
@@ -50,10 +49,8 @@ async fn build_cve_details<P>(
 where
     P: TokenProvider,
 {
-    /*
     let affected = guac.affected_cve(cve_id.clone()).await?;
     log::info!("Affected: {affected:#?}");
-    */
 
     let q = format!(r#"cve:"{cve_id}""#);
     let advisories = app.search_vex(&q, 0, 1024, Default::default(), &provider).await?.result;
@@ -122,7 +119,7 @@ fn extend_products<'a>(
     target: &mut BTreeMap<&'a str, BTreeSet<String>>,
     key: &'a str,
 ) {
-    let result = collect_products(&csaf, products);
+    let result = collect_products(csaf, products);
     if !result.is_empty() {
         target.entry(key).or_default().extend(result);
     }
