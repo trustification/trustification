@@ -1,31 +1,40 @@
-use http::StatusCode;
+use serde_json::Value;
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
+use uuid::Uuid;
 
+mod config;
 #[cfg(feature = "analytics")]
-pub mod segment;
+mod segment;
 
-#[derive(Copy, Clone, serde::Deserialize, serde::Serialize)]
-pub enum SbomType {
-    CycloneDx,
-    Spdx,
+pub use config::*;
+
+pub enum User<'a> {
+    /// We know that's a user, but we don't know who it is.
+    ///
+    /// The difference to [`User::Unknown`] is, that we know it's a specific user, we just don't
+    /// know how it is. In the case of "unknown", it could be a different user every time.
+    Anonymous(Uuid),
+    /// We know exactly who it is
+    Known(&'a str),
+    /// We don't know anything about the user
+    Unknown,
 }
 
-pub enum Event {
-    ScanSbom {
-        r#type: SbomType,
-        status_code: Option<StatusCode>,
-    },
-}
+pub trait TrackingEvent {
+    /// The name of the event
+    fn name(&self) -> &str;
 
-#[derive(Clone, Debug, Default, clap::Args)]
-#[command(next_help_heading = "segment.io configuration")]
-pub struct AnalyticsConfig {
-    /// The segment.io write key. If not present, tracking will be disabled.
-    #[cfg(feature = "analytics")]
-    #[arg(long = "segment-write-key", env = "SEGMENT_WRITE_KEY")]
-    pub write_key: Option<String>,
+    /// The user associated with the event
+    fn user(&self) -> &User {
+        &User::Unknown
+    }
+
+    /// Additional payload
+    fn payload(&self) -> Value {
+        Default::default()
+    }
 }
 
 pub struct Tracker {
@@ -60,8 +69,8 @@ impl Tracker {
         (tracker, Some(flusher))
     }
 
-    pub async fn track(&self, event: Event) {
-        self.segment.track(event).await;
+    pub async fn track(&self, event: impl TrackingEvent) {
+        self.segment.push(event).await;
     }
 }
 
@@ -71,5 +80,5 @@ impl Tracker {
         (Arc::new(Self {}), None)
     }
 
-    pub async fn track(&self, _event: Event) {}
+    pub async fn track(&self, _event: impl TrackingEvent) {}
 }

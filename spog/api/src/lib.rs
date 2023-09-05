@@ -1,5 +1,6 @@
 use std::process::ExitCode;
 use std::{net::TcpListener, path::PathBuf};
+use trustification_analytics::AnalyticsConfig;
 use trustification_auth::{auth::AuthConfigArguments, swagger_ui::SwaggerUiOidcConfig};
 use trustification_infrastructure::{Infrastructure, InfrastructureConfig};
 
@@ -63,7 +64,7 @@ pub struct Run {
     pub swagger_ui_oidc: SwaggerUiOidcConfig,
 
     #[command(flatten)]
-    pub analytics: analytics::AnalyticsConfig,
+    pub analytics: AnalyticsConfig,
 }
 
 impl Run {

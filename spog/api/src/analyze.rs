@@ -1,4 +1,4 @@
-use crate::analytics::{Event, SbomType, Tracker};
+use crate::analytics::{SbomType, ScanSbom};
 use actix_web::{
     body::BoxBody,
     web::{self, PayloadConfig, ServiceConfig},
@@ -7,8 +7,9 @@ use actix_web::{
 use bombastic_model::prelude::SBOM;
 use bytes::Bytes;
 use futures::Stream;
-use http::header;
+use http::{header, StatusCode};
 use tracing::instrument;
+use trustification_analytics::Tracker;
 use trustification_common::error::ErrorInformation;
 use url::Url;
 
@@ -121,7 +122,12 @@ async fn run_report(data: Bytes, crda: &CrdaClient, tracker: &Tracker) -> Result
         _ => None,
     };
 
-    tracker.track(Event::ScanSbom { r#type, status_code }).await;
+    tracker
+        .track(ScanSbom {
+            r#type,
+            status_code: status_code.map(|s| StatusCode::as_u16(&s)),
+        })
+        .await;
 
     Ok(HttpResponse::Ok().content_type("text/html").streaming(report?))
 }

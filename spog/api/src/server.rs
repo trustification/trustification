@@ -2,6 +2,13 @@ use std::future::Future;
 use std::pin::Pin;
 use std::{net::TcpListener, sync::Arc};
 
+use crate::{
+    advisory,
+    analyze::{self, CrdaClient},
+    config, cve,
+    guac::service::GuacService,
+    index, sbom, Run,
+};
 use actix_cors::Cors;
 use actix_web::{http::header::ContentType, web, HttpResponse, HttpServer};
 use actix_web_prom::PrometheusMetricsBuilder;
@@ -10,6 +17,7 @@ use futures::future::select_all;
 use http::StatusCode;
 use prometheus::Registry;
 use spog_model::search;
+use trustification_analytics::Tracker;
 use trustification_api::{search::SearchOptions, Apply};
 use trustification_auth::{
     authenticator::Authenticator,
@@ -22,11 +30,6 @@ use trustification_infrastructure::app::{new_app, AppOptions};
 use trustification_version::version;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
-
-use crate::analytics::Tracker;
-use crate::analyze::CrdaClient;
-use crate::guac::service::GuacService;
-use crate::{advisory, analyze, config, cve, index, sbom, Run};
 
 pub struct Server {
     run: Run,
