@@ -91,7 +91,7 @@ default-members = [
 
 csaf = { git = "https://github.com/voteblake/csaf-rs", rev = "76cb9ede10adb1fbb495b17e5fd8d95c5cf6c900" } # FIXME: waiting for release
 
-guac = { git = "https://github.com/trustification/guac-rs.git", rev = "e1f3585af76f3ee198f5a465e97dbffb07bee8ed" }
+guac = { git = "https://github.com/trustification/guac-rs.git", rev = "eb12ad7bb4a0f11de35debd895a704f0306831f5" }
 #guac = { path = "../guac-rs/lib" }
 
 # also check: spog/ui/Cargo.toml
