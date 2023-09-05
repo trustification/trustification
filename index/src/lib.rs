@@ -433,10 +433,6 @@ impl<INDEX: Index> IndexStore<INDEX> {
     /// Sync the index from a snapshot.
     ///
     /// NOTE: Only applicable for file indices.
-    ///
-    /// # Safety
-    ///
-    /// Only a single thread should call this method at a time. If not, it will panic while acquiring the RefCell
     pub async fn sync(&self, storage: &Storage) -> Result<(), Error> {
         if let Some(index_dir) = &self.index_dir {
             let data = storage.get_index().await?;
