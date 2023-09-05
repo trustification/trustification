@@ -110,13 +110,13 @@ impl Run {
 
     fn configure(
         index_config: IndexConfig,
-        mut storage: StorageConfig,
+        storage: StorageConfig,
         registry: &Registry,
         devmode: bool,
     ) -> anyhow::Result<Arc<AppState>> {
         let index =
             block_in_place(|| IndexStore::new(&storage, &index_config, vexination_index::Index::new(), registry))?;
-        let storage = storage.create("vexination", devmode, registry)?;
+        let storage = Storage::new(storage.process("vexination", devmode), registry)?;
 
         let state = Arc::new(AppState {
             storage: RwLock::new(storage),

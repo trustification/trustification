@@ -31,19 +31,19 @@ use time::{OffsetDateTime, UtcOffset};
 #[command(rename_all_env = "SCREAMING_SNAKE_CASE")]
 pub struct IndexConfig {
     /// Local folder to store index.
-    #[arg(short = 'i', long = "index-dir")]
+    #[arg(env = "INDEX_DIR", short = 'i', long = "index-dir")]
     pub index_dir: Option<std::path::PathBuf>,
 
     /// Synchronization interval for index persistence.
-    #[arg(long = "index-sync-interval", default_value = "30s")]
+    #[arg(env = "INDEX_SYNC_INTERVAL", long = "index-sync-interval", default_value = "30s")]
     pub sync_interval: humantime::Duration,
 
     /// Memory available to index writer
-    #[arg(long = "index-writer-memory-bytes", default_value_t = 32 * 1024 * 1024)]
+    #[arg(env = "INDEX_WRITER_MEMORY_BYTES", long = "index-writer-memory-bytes", default_value_t = 32 * 1024 * 1024)]
     pub index_writer_memory_bytes: usize,
 
     /// Synchronization interval for index persistence.
-    #[arg(long = "index-mode", default_value_t = IndexMode::File)]
+    #[arg(env = "INDEX_MODE", long = "index-mode", default_value_t = IndexMode::File)]
     pub mode: IndexMode,
 }
 

@@ -166,6 +166,8 @@ fn vexination_indexer() -> vexination_indexer::Run {
 
 #[cfg(feature = "with-services")]
 fn vexination_api() -> vexination_api::Run {
+    use trustification_storage::Region;
+
     vexination_api::Run {
         bind: "127.0.0.1".to_string(),
         port: 8081,
@@ -177,7 +179,10 @@ fn vexination_api() -> vexination_api::Run {
             sync_interval: Duration::from_secs(2).into(),
         },
         storage: StorageConfig {
-            region: None,
+            region: Some(Region::Custom {
+                endpoint: STORAGE_ENDPOINT.into(),
+                region: Region::EuCentral1.to_string(),
+            }),
             bucket: Some("vexination".into()),
             endpoint: Some(STORAGE_ENDPOINT.into()),
             access_key: Some("admin".into()),

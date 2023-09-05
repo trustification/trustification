@@ -112,61 +112,74 @@ impl Metrics {
 #[command(rename_all_env = "SCREAMING_SNAKE_CASE")]
 pub struct StorageConfig {
     /// Bucket name to use for storing data and index
-    #[arg(env, long = "storage-bucket")]
+    #[arg(env = "STORAGE_BUCKET", long = "storage-bucket")]
     pub bucket: Option<String>,
 
     /// Storage region to use
-    #[arg(env, long = "storage-region")]
+    #[arg(env = "STORAGE_REGION", long = "storage-region")]
     pub region: Option<Region>,
 
     /// Storage endpoint to use
-    #[arg(env, long = "storage-endpoint")]
+    #[arg(env = "STORAGE_ENDPOINT", long = "storage-endpoint")]
     pub endpoint: Option<String>,
 
     /// Access key for using storage
-    #[arg(env, long = "storage-access-key")]
+    #[arg(env = "STORAGE_ACCESS_KEY", long = "storage-access-key")]
     pub access_key: Option<String>,
 
     /// Secret key for using storage
-    #[arg(env, long = "storage-secret-key")]
+    #[arg(env = "STORAGE_SECRET_KEY", long = "storage-secret-key")]
     pub secret_key: Option<String>,
 }
 
 impl TryInto<Bucket> for StorageConfig {
     type Error = Error;
     fn try_into(self) -> Result<Bucket, Error> {
-        let credentials = if let (Some(access_key), Some(secret_key)) = (&self.access_key, &self.secret_key) {
-            Credentials {
-                access_key: Some(access_key.into()),
-                secret_key: Some(secret_key.into()),
-                security_token: None,
-                session_token: None,
-                expiration: None,
-            }
-        } else {
-            Credentials::default()?
+        let access_key = self.access_key.ok_or(Error::MissingParameter("access-key".into()))?;
+        let secret_key = self.secret_key.ok_or(Error::MissingParameter("secret-key".into()))?;
+        let credentials = Credentials {
+            access_key: Some(access_key),
+            secret_key: Some(secret_key),
+            security_token: None,
+            session_token: None,
+            expiration: None,
         };
-
-        let region = self.region.clone().unwrap_or_else(|| Region::Custom {
-            region: "eu-central-1".to_owned(),
-            endpoint: self.endpoint.clone().unwrap_or("http://localhost:9000".to_string()),
-        });
-
-        let bucket = self.bucket.as_deref().expect("Required parameter bucket was not set");
-        let bucket = Bucket::new(bucket, region, credentials)?.with_path_style();
+        let region = self.region.ok_or(Error::MissingParameter("region".into()))?;
+        let bucket = self.bucket.ok_or(Error::MissingParameter("bucket".into()))?;
+        let bucket = Bucket::new(&bucket, region, credentials)?.with_path_style();
         Ok(bucket)
     }
 }
 
 impl StorageConfig {
-    pub fn create(&mut self, default_bucket: &str, devmode: bool, registry: &Registry) -> Result<Storage, Error> {
+    pub fn process(mut self, default_bucket: &str, devmode: bool) -> StorageConfig {
         if devmode {
-            self.access_key = Some("admin".to_string());
-            self.secret_key = Some("password".to_string());
-            self.bucket = Some(default_bucket.to_string());
-            Ok(Storage::new(self, registry)?)
+            if self.access_key.is_none() {
+                self.access_key = Some("admin".to_string());
+            }
+
+            if self.secret_key.is_none() {
+                self.secret_key = Some("password".to_string());
+            }
+
+            if self.bucket.is_none() {
+                self.bucket = Some(default_bucket.to_string());
+            }
+
+            if self.region.is_none() {
+                self.region = Some(Region::Custom {
+                    region: Region::EuCentral1.to_string(),
+                    endpoint: self.endpoint.clone().unwrap_or("http://localhost:9000".into()),
+                });
+            }
+
+            if self.endpoint.is_none() {
+                self.endpoint = Some("http://localhost:9000".into());
+            }
+            println!("Update config to {:#?}", self);
+            self
         } else {
-            Ok(Storage::new(self, registry)?)
+            self
         }
     }
 }
@@ -177,6 +190,8 @@ pub enum Error {
     Internal,
     #[error("object not found")]
     NotFound,
+    #[error("missing configuration parameter {0}")]
+    MissingParameter(String),
     #[error("error with credentials")]
     Credentials(CredentialsError),
     #[error("error with s3 backend {0}")]
@@ -252,8 +267,8 @@ pub struct Head {
 }
 
 impl Storage {
-    pub fn new(config: &StorageConfig, registry: &Registry) -> Result<Self, Error> {
-        let bucket = config.clone().try_into()?;
+    pub fn new(config: StorageConfig, registry: &Registry) -> Result<Self, Error> {
+        let bucket = config.try_into()?;
         Ok(Self {
             bucket,
             metrics: Metrics::register(registry)?,

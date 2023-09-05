@@ -191,6 +191,7 @@ fn bombastic_indexer() -> bombastic_indexer::Run {
 
 #[cfg(feature = "with-services")]
 fn bombastic_api() -> bombastic_api::Run {
+    use trustification_storage::Region;
     bombastic_api::Run {
         bind: "127.0.0.1".to_string(),
         port: 8082,
@@ -202,7 +203,10 @@ fn bombastic_api() -> bombastic_api::Run {
             sync_interval: Duration::from_secs(2).into(),
         },
         storage: StorageConfig {
-            region: None,
+            region: Some(Region::Custom {
+                endpoint: STORAGE_ENDPOINT.into(),
+                region: Region::EuCentral1.to_string(),
+            }),
             bucket: Some("bombastic".into()),
             endpoint: Some(STORAGE_ENDPOINT.into()),
             access_key: Some("admin".into()),

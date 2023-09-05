@@ -7,7 +7,7 @@ use trustification_event_bus::EventBusConfig;
 use trustification_index::{IndexConfig, IndexStore};
 use trustification_indexer::{actix::configure, Indexer, IndexerStatus};
 use trustification_infrastructure::{Infrastructure, InfrastructureConfig};
-use trustification_storage::StorageConfig;
+use trustification_storage::{Storage, StorageConfig};
 use vexination_index::Index;
 
 #[derive(clap::Args, Debug)]
@@ -43,11 +43,12 @@ pub struct Run {
 }
 
 impl Run {
-    pub async fn run(mut self) -> anyhow::Result<ExitCode> {
+    pub async fn run(self) -> anyhow::Result<ExitCode> {
         let (command_sender, command_receiver) = mpsc::channel(1);
         let status = Arc::new(Mutex::new(IndexerStatus::Running));
         let s = status.clone();
         let c = command_sender.clone();
+        let storage = self.storage.clone();
         Infrastructure::from(self.infra)
             .run_with_config(
                 "vexination-indexer",
@@ -55,7 +56,7 @@ impl Run {
                     let index = block_in_place(|| {
                         IndexStore::new(&self.storage, &self.index, Index::new(), metrics.registry())
                     })?;
-                    let storage = self.storage.create("vexination", self.devmode, metrics.registry())?;
+                    let storage = Storage::new(storage.process("vexination", self.devmode), metrics.registry())?;
                     let bus = self.bus.create(metrics.registry()).await?;
                     if self.devmode {
                         bus.create(&[self.stored_topic.as_str()]).await?;
