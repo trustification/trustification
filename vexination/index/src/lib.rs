@@ -356,21 +356,40 @@ impl trustification_index::Index for Index {
         limit: usize,
     ) -> Result<(Vec<(f32, DocAddress)>, usize), SearchError> {
         if let Some(order_by) = query.sort_by {
-            let order_by = self.schema.get_field_name(order_by);
+            let order_by_str = self.schema.get_field_name(order_by);
             let mut hits = Vec::new();
-            let result = searcher.search(
-                &query.query,
-                &(
-                    TopDocs::with_limit(limit)
-                        .and_offset(offset)
-                        .order_by_fast_field::<tantivy::DateTime>(order_by),
-                    tantivy::collector::Count,
-                ),
-            )?;
-            for r in result.0 {
-                hits.push((1.0, r.1));
-            }
-            Ok((hits, result.1))
+            let total = if order_by == self.fields.advisory_severity_score
+                || order_by == self.fields.advisory_severity_score_inverse
+            {
+                let result = searcher.search(
+                    &query.query,
+                    &(
+                        TopDocs::with_limit(limit)
+                            .and_offset(offset)
+                            .order_by_fast_field::<f64>(order_by_str),
+                        tantivy::collector::Count,
+                    ),
+                )?;
+                for r in result.0 {
+                    hits.push((r.0 as f32, r.1));
+                }
+                result.1
+            } else {
+                let result = searcher.search(
+                    &query.query,
+                    &(
+                        TopDocs::with_limit(limit)
+                            .and_offset(offset)
+                            .order_by_fast_field::<tantivy::DateTime>(order_by_str),
+                        tantivy::collector::Count,
+                    ),
+                )?;
+                for r in result.0 {
+                    hits.push((1.0, r.1));
+                }
+                result.1
+            };
+            Ok((hits, total))
         } else {
             let severity_field = self
                 .schema
@@ -1024,13 +1043,13 @@ mod tests {
     #[tokio::test]
     async fn test_sorting() {
         assert_search(|index| {
-            let result = search(&index, "openssl sort:release");
+            let result = search(&index, "openssl -sort:severity");
             assert_eq!(result.0.len(), 2);
             assert_eq!(result.0[0].document.advisory_id, "RHSA-2023:1441");
             assert_eq!(result.0[1].document.advisory_id, "RHSA-2023:3408");
             assert!(result.0[0].document.advisory_date < result.0[1].document.advisory_date);
 
-            let result = search(&index, "openssl -sort:release");
+            let result = search(&index, "openssl sort:severity");
             assert_eq!(result.0.len(), 2);
             assert_eq!(result.0[0].document.advisory_id, "RHSA-2023:3408");
             assert_eq!(result.0[1].document.advisory_id, "RHSA-2023:1441");
