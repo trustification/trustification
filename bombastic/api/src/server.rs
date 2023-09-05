@@ -137,7 +137,7 @@ async fn query_sbom(
 
     let key = params.into_inner().id;
     log::trace!("Querying SBOM using id {}", key);
-    let storage = state.storage.read().await;
+    let storage = &state.storage;
     // determine the encoding of the stored object, if any
     let encoding = storage.get_head(&key).await.ok().and_then(|head| {
         head.content_encoding.and_then(|ref e| {
@@ -284,12 +284,12 @@ async fn publish_sbom(
     let typ = verify_type(content_type)?;
     let enc = verify_encoding(req.headers().get(CONTENT_ENCODING))?;
     let id = &params.id;
-    let storage = state.storage.write().await;
     let mut payload = payload.map_err(|e| match e {
         PayloadError::Io(e) => e,
         _ => io::Error::new(io::ErrorKind::Other, e),
     });
-    let size = storage
+    let size = state
+        .storage
         .put_stream(id, typ.as_ref(), enc, &mut payload)
         .await
         .map_err(Error::Storage)?;
@@ -346,9 +346,7 @@ async fn delete_sbom(
     let params = params.into_inner();
     let id = &params.id;
     log::trace!("Deleting SBOM using id {}", id);
-    let storage = state.storage.write().await;
-
-    storage.delete(id).await.map_err(Error::Storage)?;
+    state.storage.delete(id).await.map_err(Error::Storage)?;
 
     Ok(HttpResponse::NoContent().finish())
 }

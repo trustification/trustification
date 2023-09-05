@@ -119,7 +119,7 @@ impl Run {
         let storage = Storage::new(storage.process("vexination", devmode), registry)?;
 
         let state = Arc::new(AppState {
-            storage: RwLock::new(storage),
+            storage,
             index: RwLock::new(index),
         });
 
@@ -150,7 +150,7 @@ impl Run {
 
 pub(crate) type Index = IndexStore<vexination_index::Index>;
 pub struct AppState {
-    storage: RwLock<Storage>,
+    storage: Storage,
     index: RwLock<Index>,
 }
 
@@ -158,9 +158,9 @@ pub(crate) type SharedState = Arc<AppState>;
 
 impl AppState {
     async fn sync_index(&self) -> Result<(), anyhow::Error> {
-        let storage = self.storage.read().await;
+        let storage = &self.storage;
         let mut index = self.index.write().await;
-        index.sync(&storage).await?;
+        index.sync(storage).await?;
         Ok(())
     }
 }
