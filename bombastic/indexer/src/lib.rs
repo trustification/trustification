@@ -7,7 +7,7 @@ use trustification_event_bus::EventBusConfig;
 use trustification_index::{IndexConfig, IndexStore};
 use trustification_indexer::{actix::configure, Indexer, IndexerStatus};
 use trustification_infrastructure::{Infrastructure, InfrastructureConfig};
-use trustification_storage::StorageConfig;
+use trustification_storage::{Storage, StorageConfig};
 
 #[derive(clap::Args, Debug)]
 #[command(about = "Run the indexer", args_conflicts_with_subcommands = true)]
@@ -42,11 +42,12 @@ pub struct Run {
 }
 
 impl Run {
-    pub async fn run(mut self) -> anyhow::Result<ExitCode> {
+    pub async fn run(self) -> anyhow::Result<ExitCode> {
         let (command_sender, command_receiver) = mpsc::channel(1);
         let status = Arc::new(Mutex::new(IndexerStatus::Running));
         let s = status.clone();
         let c = command_sender.clone();
+        let storage = self.storage.clone();
         Infrastructure::from(self.infra)
             .run_with_config(
                 "bombastic-indexer",
@@ -59,7 +60,7 @@ impl Run {
                             metrics.registry(),
                         )
                     })?;
-                    let storage = self.storage.create("bombastic", self.devmode, metrics.registry())?;
+                    let storage = Storage::new(storage.process("bombastic", self.devmode), metrics.registry())?;
 
                     let bus = self.bus.create(metrics.registry()).await?;
                     if self.devmode {

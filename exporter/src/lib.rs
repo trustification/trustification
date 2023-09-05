@@ -4,7 +4,7 @@ use guac::collector::emitter::NatsEmitter;
 use strum_macros::Display;
 use trustification_event_bus::EventBusConfig;
 use trustification_infrastructure::{Infrastructure, InfrastructureConfig};
-use trustification_storage::StorageConfig;
+use trustification_storage::{Storage, StorageConfig};
 
 pub mod exporter;
 
@@ -56,7 +56,7 @@ pub struct Run {
 }
 
 impl Run {
-    pub async fn run(mut self) -> anyhow::Result<ExitCode> {
+    pub async fn run(self) -> anyhow::Result<ExitCode> {
         Infrastructure::from(self.infra)
             .run("guac-exporter", |metrics| async move {
                 let (bucket, topic) = match self.document_type {
@@ -75,7 +75,7 @@ impl Run {
                     bucket,
                     topic
                 );
-                let storage = self.storage.create(&bucket, self.devmode, metrics.registry())?;
+                let storage = Storage::new(self.storage.process(&bucket, self.devmode), metrics.registry())?;
                 let bus = self.bus.create(metrics.registry()).await?;
                 let emitter = NatsEmitter::new(&self.guac_url).await?;
                 if self.devmode {

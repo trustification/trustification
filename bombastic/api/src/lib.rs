@@ -110,13 +110,13 @@ impl Run {
 
     fn configure(
         index_config: IndexConfig,
-        mut storage: StorageConfig,
+        storage: StorageConfig,
         registry: &Registry,
         devmode: bool,
     ) -> anyhow::Result<Arc<AppState>> {
         let index =
             block_in_place(|| IndexStore::new(&storage, &index_config, bombastic_index::Index::new(), registry))?;
-        let storage = storage.create("bombastic", devmode, registry)?;
+        let storage = Storage::new(storage.process("bombastic", devmode), registry)?;
 
         let state = Arc::new(AppState {
             storage: RwLock::new(storage),
