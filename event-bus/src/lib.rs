@@ -172,7 +172,7 @@ impl<'d> EventConsumer<'d> {
 #[command(rename_all_env = "SCREAMING_SNAKE_CASE")]
 pub struct EventBusConfig {
     /// Event bus to configure
-    #[arg(env = "EVENT_BUS_TYPE", long = "event-bus", value_enum, default_value = "kafka")]
+    #[arg(env = "EVENT_BUS", long = "event-bus", value_enum, default_value = "kafka")]
     pub event_bus: EventBusType,
 
     /// Access key if using SQS event bus
