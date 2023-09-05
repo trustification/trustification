@@ -48,10 +48,6 @@ impl SegmentTracker {
         Self { batcher }
     }
 
-    pub fn is_enabled(&self) -> bool {
-        self.batcher.is_some()
-    }
-
     pub async fn track(&self, event: Event) {
         if let Some(batcher) = &self.batcher {
             if let Err(err) = batcher.lock().await.push(event).await {
