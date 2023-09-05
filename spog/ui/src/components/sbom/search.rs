@@ -122,13 +122,10 @@ pub fn sbom_search(props: &SbomSearchProperties) -> Html {
         let search_params_state = search_params.clone();
         use_callback(
             move |sort_by: (String, bool), search_params| {
-                match search_params {
-                    SearchMode::Simple(simple) => {
-                        let mut simple = simple.clone();
-                        simple.set_sort_by(sort_by);
-                        search_params_state.set(SearchMode::Simple(simple));
-                    }
-                    _ => {}
+                if let SearchMode::Simple(simple) = search_params {
+                    let mut simple = simple.clone();
+                    simple.set_sort_by(sort_by);
+                    search_params_state.set(SearchMode::Simple(simple));
                 };
             },
             (*search_params).clone(),
