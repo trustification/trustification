@@ -17,6 +17,7 @@ use trustification_storage::{Storage, StorageConfig};
 // Rexport to align versions
 use log::{debug, warn};
 use sha2::{Digest, Sha256};
+use std::sync::RwLock;
 pub use tantivy;
 pub use tantivy::schema::Document;
 use tantivy::{
@@ -137,8 +138,8 @@ impl Metrics {
 }
 
 pub struct IndexStore<INDEX: Index> {
-    inner: SearchIndex,
-    index_dir: Option<IndexDirectory>,
+    inner: RwLock<SearchIndex>,
+    index_dir: Option<RwLock<IndexDirectory>>,
     index: INDEX,
     index_writer_memory_bytes: usize,
     metrics: Metrics,
@@ -268,11 +269,9 @@ struct IndexDirectory {
 
 impl IndexDirectory {
     /// Attempt to build a new index from the serialized zstd data
-    pub fn sync(&mut self, old_index: &SearchIndex, data: &[u8]) -> Result<Option<SearchIndex>, Error> {
+    pub fn sync(&mut self, schema: Schema, settings: IndexSettings, data: &[u8]) -> Result<Option<SearchIndex>, Error> {
         let digest = Sha256::digest(data).to_vec();
         if self.digest != digest {
-            let schema = old_index.schema();
-            let settings = old_index.settings().clone();
             let next = self.state.next();
             let path = next.directory(&self.path);
             let index = self.unpack(schema, settings, data, &path)?;
@@ -370,7 +369,7 @@ impl<INDEX: Index> IndexStore<INDEX> {
         let builder = SearchIndex::builder().schema(schema).settings(settings);
         let inner = builder.create_in_ram()?;
         Ok(Self {
-            inner,
+            inner: RwLock::new(inner),
             index,
             index_writer_memory_bytes: 32 * 1024 * 1024,
             index_dir: None,
@@ -398,9 +397,9 @@ impl<INDEX: Index> IndexStore<INDEX> {
                 let index_dir = IndexDirectory::new(&path)?;
                 let inner = index_dir.build(settings, schema)?;
                 Ok(Self {
-                    inner,
+                    inner: RwLock::new(inner),
                     index_writer_memory_bytes: config.index_writer_memory_bytes,
-                    index_dir: Some(index_dir),
+                    index_dir: Some(RwLock::new(index_dir)),
                     index,
                     metrics: Metrics::register(metrics_registry)?,
                 })
@@ -413,7 +412,7 @@ impl<INDEX: Index> IndexStore<INDEX> {
                 let dir = S3Directory::new(bucket);
                 let inner = builder.open_or_create(dir)?;
                 Ok(Self {
-                    inner,
+                    inner: RwLock::new(inner),
                     index_writer_memory_bytes: config.index_writer_memory_bytes,
                     index_dir: None,
                     index,
@@ -434,12 +433,17 @@ impl<INDEX: Index> IndexStore<INDEX> {
     /// Sync the index from a snapshot.
     ///
     /// NOTE: Only applicable for file indices.
-    pub async fn sync(&mut self, storage: &Storage) -> Result<(), Error> {
-        if let Some(index_dir) = &mut self.index_dir {
+    ///
+    /// # Safety
+    ///
+    /// Only a single thread should call this method at a time. If not, it will panic while acquiring the RefCell
+    pub async fn sync(&self, storage: &Storage) -> Result<(), Error> {
+        if let Some(index_dir) = &self.index_dir {
             let data = storage.get_index().await?;
-            match index_dir.sync(&self.inner, &data) {
+            let mut index_dir = index_dir.write().unwrap();
+            match index_dir.sync(self.index.schema(), self.index.settings(), &data) {
                 Ok(Some(index)) => {
-                    self.inner = index;
+                    *self.inner.write().unwrap() = index;
                     log::debug!("Index reloaded");
                 }
                 Ok(None) => {
@@ -455,14 +459,22 @@ impl<INDEX: Index> IndexStore<INDEX> {
     }
 
     /// Take a snapshot of the index and push to object storage.
+    ///
     /// NOTE: Only applicable for file indices.
+    ///
+    ///
+    // Disable the lint due to a [bug in clippy](https://github.com/rust-lang/rust-clippy/issues/6446).
+    #[allow(clippy::await_holding_lock)]
     pub async fn snapshot(&mut self, writer: IndexWriter, storage: &Storage, force: bool) -> Result<(), Error> {
-        if let Some(dir) = &mut self.index_dir {
+        if let Some(index_dir) = &self.index_dir {
             writer.commit()?;
-            self.inner.directory_mut().sync_directory().map_err(Error::Io)?;
-            let lock = self.inner.directory_mut().acquire_lock(&INDEX_WRITER_LOCK);
 
-            let managed_files = self.inner.directory().list_managed_files();
+            let mut dir = index_dir.write().unwrap();
+            let mut inner = self.inner.write().unwrap();
+            inner.directory_mut().sync_directory().map_err(Error::Io)?;
+            let lock = inner.directory_mut().acquire_lock(&INDEX_WRITER_LOCK);
+
+            let managed_files = inner.directory().list_managed_files();
 
             let mut total_size: i64 = 0;
             for file in managed_files.iter() {
@@ -473,18 +485,20 @@ impl<INDEX: Index> IndexStore<INDEX> {
             self.metrics.index_size_disk_bytes.set(total_size);
             self.metrics.snapshots_total.inc();
 
-            let gc_result = self.inner.directory_mut().garbage_collect(|| managed_files)?;
+            let gc_result = inner.directory_mut().garbage_collect(|| managed_files)?;
             log::trace!(
                 "Gc result. Deleted: {:?}, failed: {:?}",
                 gc_result.deleted_files,
                 gc_result.failed_to_delete_files
             );
             let changed = !gc_result.deleted_files.is_empty();
-            self.inner.directory_mut().sync_directory().map_err(Error::Io)?;
+            inner.directory_mut().sync_directory().map_err(Error::Io)?;
             if force || changed {
                 log::info!("Index has changed, publishing new snapshot");
                 let out = dir.pack()?;
                 drop(lock);
+                drop(inner);
+                drop(dir);
                 match storage.put_index(&out).await {
                     Ok(_) => {
                         log::trace!("Snapshot published successfully");
@@ -507,7 +521,7 @@ impl<INDEX: Index> IndexStore<INDEX> {
     }
 
     pub fn writer(&mut self) -> Result<IndexWriter, Error> {
-        let writer = self.inner.writer(self.index_writer_memory_bytes)?;
+        let writer = self.inner.write().unwrap().writer(self.index_writer_memory_bytes)?;
         Ok(IndexWriter {
             writer,
             metrics: self.metrics.clone(),
@@ -527,7 +541,8 @@ impl<INDEX: Index> IndexStore<INDEX> {
             return Err(Error::InvalidLimitParameter(limit));
         }
 
-        let reader = self.inner.reader()?;
+        let inner = self.inner.read().unwrap();
+        let reader = inner.reader()?;
         let searcher = reader.searcher();
 
         let query = self.index.prepare_query(q)?;
@@ -921,9 +936,11 @@ mod tests {
 
         let snapshot = good.pack().unwrap();
         let store = bad.build(Default::default(), new_schema).unwrap();
+        let schema = store.schema();
+        let settings = store.settings();
 
         assert_eq!(bad.state, IndexState::A);
-        let result = bad.sync(&store, &snapshot);
+        let result = bad.sync(schema, settings.clone(), &snapshot);
         assert!(result.is_err());
         assert_eq!(bad.state, IndexState::A);
     }

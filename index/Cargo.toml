@@ -22,6 +22,7 @@ async-trait = "0.1"
 trustification-storage = { path = "../storage"}
 thiserror = "1"
 trustification-api = { path = "../api"}
+tokio = { version = "1", features = ["sync"] }
 
 [dev-dependencies]
 tokio = { version = "1", features = ["full"] }
