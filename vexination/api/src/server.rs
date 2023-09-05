@@ -265,8 +265,9 @@ async fn search_vex(
     log::info!("Querying VEX using {}", params.q);
 
     let (result, total) = web::block(move || {
-        let index = state.index.blocking_read();
-        index.search(&params.q, params.offset, params.limit, (&params).into())
+        state
+            .index
+            .search(&params.q, params.offset, params.limit, (&params).into())
     })
     .await?
     .map_err(Error::Index)?;

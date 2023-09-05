@@ -242,8 +242,9 @@ async fn search_sbom(
     log::info!("Querying SBOM: '{}'", params.q);
 
     let (result, total) = actix_web::web::block(move || {
-        let index = state.index.blocking_read();
-        index.search(&params.q, params.offset, params.limit, (&params).into())
+        state
+            .index
+            .search(&params.q, params.offset, params.limit, (&params).into())
     })
     .await?
     .map_err(Error::Index)?;

@@ -11,7 +11,6 @@ use actix_web::{web, HttpServer};
 use actix_web_prom::PrometheusMetricsBuilder;
 use anyhow::anyhow;
 use prometheus::Registry;
-use tokio::sync::RwLock;
 use tokio::task::block_in_place;
 use trustification_auth::auth::AuthConfigArguments;
 use trustification_auth::authenticator::Authenticator;
@@ -118,10 +117,7 @@ impl Run {
             block_in_place(|| IndexStore::new(&storage, &index_config, bombastic_index::Index::new(), registry))?;
         let storage = Storage::new(storage.process("bombastic", devmode), registry)?;
 
-        let state = Arc::new(AppState {
-            storage,
-            index: RwLock::new(index),
-        });
+        let state = Arc::new(AppState { storage, index });
 
         let sinker = state.clone();
         let sync_interval = index_config.sync_interval.into();
@@ -151,7 +147,7 @@ impl Run {
 pub(crate) type Index = IndexStore<bombastic_index::Index>;
 pub struct AppState {
     storage: Storage,
-    index: RwLock<Index>,
+    index: Index,
 }
 
 pub(crate) type SharedState = Arc<AppState>;
@@ -159,7 +155,7 @@ pub(crate) type SharedState = Arc<AppState>;
 impl AppState {
     async fn sync_index(&self) -> Result<(), anyhow::Error> {
         let storage = &self.storage;
-        let mut index = self.index.write().await;
+        let index = &self.index;
         index.sync(storage).await?;
         Ok(())
     }
