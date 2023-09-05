@@ -1,6 +1,9 @@
-use aws_config::meta::region::RegionProviderChain;
+use aws_config::SdkConfig;
+use aws_credential_types::credential_fn::provide_credentials_fn;
+use aws_credential_types::provider::SharedCredentialsProvider;
+use aws_sdk_sqs::config::Region;
 use aws_sdk_sqs::{
-    config::Region, operation::receive_message::ReceiveMessageOutput, types::Message, Client, Error as SqsSdkError,
+    config::Credentials, operation::receive_message::ReceiveMessageOutput, types::Message, Client, Error as SqsSdkError,
 };
 use thiserror::Error;
 
@@ -24,9 +27,16 @@ pub struct SqsEventBus {
 }
 
 impl SqsEventBus {
-    pub(crate) async fn new() -> Result<Self, anyhow::Error> {
-        let region_provider = RegionProviderChain::default_provider().or_else(Region::new("eu-west-1"));
-        let config = aws_config::from_env().region(region_provider).load().await;
+    pub(crate) async fn new(access_key: String, secret_key: String, region: String) -> Result<Self, anyhow::Error> {
+        let creds = Credentials::new(access_key, secret_key, None, None, "trustification");
+        let region = Region::new(region);
+        let config = SdkConfig::builder()
+            .region(region)
+            .credentials_provider(SharedCredentialsProvider::new(provide_credentials_fn(move || {
+                let creds = creds.clone();
+                async { Ok(creds) }
+            })))
+            .build();
         let client = Client::new(&config);
         Ok(Self { client })
     }

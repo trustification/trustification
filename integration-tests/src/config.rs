@@ -1,5 +1,6 @@
 use std::env::VarError;
 
+use clap::Parser;
 use reqwest::Url;
 use serde_json::Value;
 use trustification_event_bus::{EventBusConfig, EventBusType};
@@ -71,11 +72,9 @@ impl Config {
             Ok(v) => EventBusConfig {
                 event_bus: EventBusType::Kafka,
                 kafka_bootstrap_servers: v,
+                ..Default::default()
             },
-            _ => EventBusConfig {
-                event_bus: EventBusType::Sqs,
-                kafka_bootstrap_servers: String::new(),
-            },
+            _ => EventBusConfig::parse(),
         }
     }
 }

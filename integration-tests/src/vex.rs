@@ -154,6 +154,7 @@ fn vexination_indexer() -> vexination_indexer::Run {
         bus: EventBusConfig {
             event_bus: EventBusType::Kafka,
             kafka_bootstrap_servers: KAFKA_BOOTSTRAP_SERVERS.into(),
+            ..Default::default()
         },
         infra: InfrastructureConfig {
             infrastructure_enabled: false,
