@@ -119,10 +119,9 @@ pub fn advisory_result(props: &AdvisoryResultProperties) -> Html {
     let sortby: UseStateHandle<Option<TableHeaderSortBy<Column>>> = use_state_eq(|| None);
     let onsort = use_callback(
         |val: TableHeaderSortBy<Column>, (sortby, onsort)| {
-            sortby.set(Some(val.clone()));
-            match val.index {
-                Column::Severity => onsort.emit(("severity".to_string(), val.asc)),
-                _ => {}
+            sortby.set(Some(val));
+            if val.index == Column::Severity {
+                onsort.emit(("severity".to_string(), val.asc));
             };
         },
         (sortby.clone(), props.onsort.clone()),

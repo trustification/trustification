@@ -59,13 +59,10 @@ impl ToFilterExpression for DynamicSearchParameters {
             terms.extend(or_group(cat_terms));
         }
 
-        match self.sort.clone() {
-            Some(sort) => {
-                let sort_prefix = if sort.1 { "" } else { "-" };
-                terms.push(format!("{sort_prefix}sort:{}", sort.0));
-            }
-            _ => {}
-        }
+        if let Some(sort) = self.sort.clone() {
+            let sort_prefix = if sort.1 { "" } else { "-" };
+            terms.push(format!("{sort_prefix}sort:{}", sort.0));
+        };
 
         terms.join(" ")
     }
