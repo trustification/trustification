@@ -30,6 +30,12 @@ impl<'m> Event<'m> {
     }
 }
 
+#[derive(Debug, thiserror::Error)]
+pub enum Error {
+    #[error("missing parameter: {0}")]
+    MissingParameter(String),
+}
+
 /// Represents an event bus instance.
 pub struct EventBus {
     metrics: Metrics,
@@ -162,15 +168,31 @@ impl<'d> EventConsumer<'d> {
     }
 }
 
-#[derive(Clone, Debug, clap::Parser)]
+#[derive(Clone, Debug, clap::Parser, Default)]
 #[command(rename_all_env = "SCREAMING_SNAKE_CASE")]
 pub struct EventBusConfig {
     /// Event bus to configure
-    #[arg(long = "event-bus", value_enum, default_value = "kafka")]
+    #[arg(env = "EVENT_BUS_TYPE", long = "event-bus", value_enum, default_value = "kafka")]
     pub event_bus: EventBusType,
 
+    /// Access key if using SQS event bus
+    #[arg(env = "SQS_ACCESS_KEY", long = "sqs-access-key")]
+    pub sqs_access_key: Option<String>,
+
+    /// Secret key if using SQS event bus
+    #[arg(env = "SQS_SECRET_KEY", long = "sqs-secret-key")]
+    pub sqs_secret_key: Option<String>,
+
+    /// Secret key if using SQS event bus
+    #[arg(env = "SQS_REGION", long = "sqs-region")]
+    pub sqs_region: Option<String>,
+
     /// Kafka bootstrap servers if using Kafka event bus
-    #[arg(long = "kafka-bootstrap-servers", default_value = "localhost:9092")]
+    #[arg(
+        env = "KAFKA_BOOTSTRAP_SERVERS",
+        long = "kafka-bootstrap-servers",
+        default_value = "localhost:9092"
+    )]
     pub kafka_bootstrap_servers: String,
 }
 
@@ -187,7 +209,19 @@ impl EventBusConfig {
                 })
             }
             EventBusType::Sqs => {
-                let bus = sqs::SqsEventBus::new().await?;
+                let access_key = self
+                    .sqs_access_key
+                    .clone()
+                    .ok_or(Error::MissingParameter("sqs-access-key".into()))?;
+                let secret_key = self
+                    .sqs_secret_key
+                    .clone()
+                    .ok_or(Error::MissingParameter("sqs-secret-key".into()))?;
+                let region = self
+                    .sqs_region
+                    .clone()
+                    .ok_or(Error::MissingParameter("sqs-region".into()))?;
+                let bus = sqs::SqsEventBus::new(access_key, secret_key, region).await?;
                 Ok(EventBus {
                     metrics: Metrics::register(registry)?,
                     inner: InnerBus::Sqs(bus),
@@ -203,4 +237,10 @@ pub enum EventBusType {
     Kafka,
     #[clap(name = "sqs")]
     Sqs,
+}
+
+impl Default for EventBusType {
+    fn default() -> Self {
+        Self::Kafka
+    }
 }

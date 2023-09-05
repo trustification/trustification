@@ -33,6 +33,8 @@ trustification-infrastructure = { path = "../infrastructure", optional = true }
 trustification-storage = { path = "../storage", optional = true }
 trustification-index = { path = "../index", optional = true }
 
+clap = { version = "4", features = ["derive"] }
+
 prometheus = "0.13.3"
 uuid = { version = "1", features = ["v4"] }
 
