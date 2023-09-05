@@ -310,13 +310,6 @@ impl trustification_index::Index for Index {
     }
 
     fn prepare_query(&self, q: &str) -> Result<VexQuery, SearchError> {
-        if q.is_empty() {
-            return Ok(VexQuery {
-                query: Box::new(AllQuery),
-                sort_by: None,
-            });
-        }
-
         let mut query = Vulnerabilities::parse(q).map_err(|err| SearchError::QueryParser(err.to_string()))?;
 
         query.term = query.term.compact();
@@ -345,7 +338,11 @@ impl trustification_index::Index for Index {
             }
         }
 
-        let query = term2query(&query.term, &|resource| self.resource2query(resource));
+        let query = if query.term.is_empty() {
+            Box::new(AllQuery)
+        } else {
+            term2query(&query.term, &|resource| self.resource2query(resource))
+        };
 
         debug!("Processed query: {:?}", query);
         Ok(VexQuery { query, sort_by })
@@ -1037,6 +1034,27 @@ mod tests {
             assert_eq!(result.0.len(), 2);
             assert_eq!(result.0[0].document.advisory_id, "RHSA-2023:3408");
             assert_eq!(result.0[1].document.advisory_id, "RHSA-2023:1441");
+            assert!(result.0[0].document.advisory_date > result.0[1].document.advisory_date);
+        });
+    }
+
+    #[tokio::test]
+    async fn test_sorting_noterms() {
+        assert_search(|index| {
+            let result = search(&index, "sort:release");
+            assert_eq!(result.0.len(), 4);
+            assert_eq!(result.0[0].document.advisory_id, "RHSA-2021:3029");
+            assert_eq!(result.0[1].document.advisory_id, "RHSA-2023:1441");
+            assert_eq!(result.0[2].document.advisory_id, "RHSA-2023:3408");
+            assert_eq!(result.0[3].document.advisory_id, "RHSA-2023:4378");
+            assert!(result.0[0].document.advisory_date < result.0[1].document.advisory_date);
+
+            let result = search(&index, "-sort:release");
+            assert_eq!(result.0.len(), 4);
+            assert_eq!(result.0[0].document.advisory_id, "RHSA-2023:4378");
+            assert_eq!(result.0[1].document.advisory_id, "RHSA-2023:3408");
+            assert_eq!(result.0[2].document.advisory_id, "RHSA-2023:1441");
+            assert_eq!(result.0[3].document.advisory_id, "RHSA-2021:3029");
             assert!(result.0[0].document.advisory_date > result.0[1].document.advisory_date);
         });
     }

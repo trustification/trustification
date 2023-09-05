@@ -461,15 +461,7 @@ impl trustification_index::Index for Index {
     }
 
     fn prepare_query(&self, q: &str) -> Result<SbomQuery, SearchError> {
-        if q.is_empty() {
-            return Ok(SbomQuery {
-                query: Box::new(AllQuery),
-                sort_by: None,
-            });
-        }
-
         let mut query = Packages::parse(q).map_err(|err| SearchError::QueryParser(err.to_string()))?;
-
         query.term = query.term.compact();
 
         debug!("Query: {:?}", query.term);
@@ -488,7 +480,11 @@ impl trustification_index::Index for Index {
             }
         }
 
-        let query = term2query(&query.term, &|resource| self.resource2query(resource));
+        let query = if query.term.is_empty() {
+            Box::new(AllQuery)
+        } else {
+            term2query(&query.term, &|resource| self.resource2query(resource))
+        };
 
         debug!("Processed query: {:?}", query);
         Ok(SbomQuery { query, sort_by })
@@ -777,6 +773,25 @@ mod tests {
         assert_search(|index| {
             let result = search(&index, "dependency:quarkus-arc");
             assert_eq!(result.0.len(), 1);
+        });
+    }
+
+    #[tokio::test]
+    async fn test_sorting_noterms() {
+        assert_search(|index| {
+            let result = search(&index, "sort:created");
+            assert_eq!(result.0.len(), 3);
+            assert_eq!(result.0[0].document.id, "my-sbom");
+            assert_eq!(result.0[1].document.id, "ubi9-sbom");
+            assert_eq!(result.0[2].document.id, "kmm-1");
+            assert!(result.0[0].document.created < result.0[1].document.created);
+
+            let result = search(&index, "-sort:created");
+            assert_eq!(result.0.len(), 3);
+            assert_eq!(result.0[0].document.id, "kmm-1");
+            assert_eq!(result.0[1].document.id, "ubi9-sbom");
+            assert_eq!(result.0[2].document.id, "my-sbom");
+            assert!(result.0[0].document.created > result.0[1].document.created);
         });
     }
 
