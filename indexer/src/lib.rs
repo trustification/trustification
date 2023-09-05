@@ -130,10 +130,10 @@ impl<'a, INDEX: Index> Indexer<'a, INDEX> {
                                     } else {
                                         match data.event_type() {
                                             EventType::Put => {
-                                                match self.storage.get_for_event(&data).await {
-                                                    Ok((k, data)) => {
-                                                        if let Err(e) = self.index_doc(self.index.index(), writer.as_mut().unwrap(), &k, &data, &mut indexed).await {
-                                                            log::warn!("(Ignored) Internal error when indexing {}: {:?}", k, e);
+                                                match self.storage.get_for_event(&data, true).await {
+                                                    Ok(res) => {
+                                                        if let Err(e) = self.index_doc(self.index.index(), writer.as_mut().unwrap(), &res.key, &res.data, &mut indexed).await {
+                                                            log::warn!("(Ignored) Internal error when indexing {}: {:?}", res.key, e);
                                                         }
                                                         events += 1;
                                                     }

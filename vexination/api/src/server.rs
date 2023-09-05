@@ -49,7 +49,7 @@ pub fn config(
 }
 
 async fn fetch_object(storage: &Storage, key: &str) -> HttpResponse {
-    match storage.get_decoded_stream(key).await {
+    match storage.get_decoded_stream(&Storage::path(key)).await {
         Ok(stream) => HttpResponse::Ok().content_type(ContentType::json()).streaming(stream),
         Err(e) => {
             log::warn!("Unable to locate object with key {}: {:?}", key, e);
