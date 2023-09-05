@@ -1,5 +1,6 @@
 [workspace]
 members = [
+    "analytics",
     "api",
     "auth",
     "bombastic/bombastic",
@@ -45,6 +46,7 @@ members = [
     "indexer",
 ]
 default-members = [
+    "analytics",
     "auth",
     "bombastic/bombastic",
     "bombastic/api",

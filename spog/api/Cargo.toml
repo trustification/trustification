@@ -51,17 +51,16 @@ spog-model = { path = "../model" }
 vexination-model = { path = "../../vexination/model" }
 bombastic-model = { path = "../../bombastic/model" }
 
+trustification-analytics = { path = "../../analytics" }
 trustification-api = { path = "../../api" }
 trustification-common = { path = "../../common" }
 trustification-infrastructure = { path = "../../infrastructure" }
 trustification-version = { path = "../../version", features = ["actix-web"] }
 trustification-auth = { path = "../../auth", features = ["actix", "swagger"] }
 
-segment = { version = "0.2", optional = true }
-
 [build-dependencies]
 trustification-version = { path = "../../version", features = ["build"] }
 
 [features]
 default = []
-analytics = ["segment"]
+analytics = ["trustification-analytics/analytics"]

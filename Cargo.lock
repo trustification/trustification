@@ -5885,7 +5885,6 @@ dependencies = [
  "prometheus",
  "rand 0.8.5",
  "reqwest",
- "segment",
  "serde",
  "serde_json",
  "serde_yaml",
@@ -5894,6 +5893,7 @@ dependencies = [
  "thiserror",
  "tokio",
  "tracing",
+ "trustification-analytics",
  "trustification-api",
  "trustification-auth",
  "trustification-common",
@@ -6993,6 +6993,20 @@ dependencies = [
  "serde",
  "serde_json",
  "tokio",
+]
+
+[[package]]
+name = "trustification-analytics"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "log",
+ "segment",
+ "serde",
+ "serde_json",
+ "tokio",
+ "uuid",
 ]
 
 [[package]]
