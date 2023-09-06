@@ -116,12 +116,7 @@ pub fn upload(props: &UploadProperties) -> Html {
                     drop_content.set(DropContent::from(text));
                 }))
             },
-            onuri: {
-                let drop_content = drop_content.clone();
-                Some(Box::new(move |_uri, data_transfer| {
-                    data_transfer.set_drop_effect("none");
-                }))
-            },
+            onuri: Some(Box::new(move |_uri, _data_transfer| {})),
             ..Default::default()
         },
     );
@@ -184,19 +179,38 @@ pub fn upload(props: &UploadProperties) -> Html {
     );
 
     let onclear = use_callback(
-        |_: MouseEvent, drop_content| {
+        |_: MouseEvent, (drop_content, analytics)| {
             // clear state
             drop_content.set(DropContent::None);
+            analytics.track("Cleared SBOM content");
         },
-        drop_content.clone(),
+        (drop_content.clone(), analytics.clone()),
     );
 
-    let (state, helper_text) = processing.error().map(
-        |err| (InputState::Error, html_nested!(
-            <HelperTextItem icon={HelperTextItemIcon::Visible} variant={ HelperTextItemVariant::Error }> { err.1.to_string() } </HelperTextItem>
+    let state = processing.error().map(
+        |(_, err)| (InputState::Error, err.clone(), html_nested!(
+            <HelperTextItem icon={HelperTextItemIcon::Visible} variant={ HelperTextItemVariant::Error }> { err } </HelperTextItem>
         )),
-    ).unzip();
+    );
+    let (state, error_reason, helper_text) = match state {
+        Some((state, error_reason, helper_text)) => (Some(state), Some(error_reason), Some(helper_text)),
+        None => (None, None, None),
+    };
     let state = state.unwrap_or_default();
+
+    use_effect_with_deps(
+        |(analytics, reason)| {
+            if let Some(reason) = reason {
+                analytics.track((
+                    "SBOM parsing failed",
+                    json!({
+                        "reason": reason,
+                    }),
+                ));
+            }
+        },
+        (analytics.clone(), error_reason.clone()),
+    );
 
     let content = match &*processing {
         UseAsyncState::Ready(Ok(content)) => content.clone(),
