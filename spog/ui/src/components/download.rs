@@ -1,5 +1,7 @@
+use crate::analytics::use_wrap_tracking;
 use crate::backend::ApplyAccessToken;
 use patternfly_yew::prelude::*;
+use serde_json::json;
 use url::Url;
 use yew::prelude::*;
 use yew_oauth2::hook::use_latest_access_token;
@@ -23,6 +25,13 @@ pub fn download(props: &DownloadProperties) -> Html {
         },
         props.href.clone(),
     );
+
+    let onclick = use_wrap_tracking(
+        onclick,
+        |_, href| ("Download File", json!({"href": href})),
+        props.href.clone(),
+    );
+
     html!(
         <Button
             icon={Icon::Download}

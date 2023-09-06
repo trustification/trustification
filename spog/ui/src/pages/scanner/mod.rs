@@ -3,15 +3,32 @@ mod inspect;
 mod report;
 mod upload;
 
+use crate::analytics::use_tracking;
 use crate::hooks::use_config;
+use analytics_next::TrackingEvent;
 use anyhow::bail;
 use bombastic_model::prelude::SBOM;
+use gloo_utils::window;
 use inspect::Inspect;
 use patternfly_yew::prelude::*;
-use serde_json::Value;
+use serde_json::{json, Value};
 use std::rc::Rc;
 use upload::Upload;
 use yew::prelude::*;
+
+pub struct ClickLearn;
+
+impl From<ClickLearn> for TrackingEvent<'static> {
+    fn from(_: ClickLearn) -> Self {
+        (
+            "Click SBOM scanner learn",
+            json!({
+                "page": window().location().href().ok(),
+            }),
+        )
+            .into()
+    }
+}
 
 fn parse(data: &[u8]) -> Result<SBOM, anyhow::Error> {
     let sbom = SBOM::parse(data)?;
@@ -98,6 +115,8 @@ pub struct CommonHeaderProperties {
 fn common_header(props: &CommonHeaderProperties) -> Html {
     let config = use_config();
 
+    let onlearn = use_tracking(|_, _| ClickLearn, ());
+
     html!(
         <PageSection sticky={[PageSectionSticky::Top]} variant={PageSectionVariant::Light}>
             <Flex>
@@ -108,7 +127,13 @@ fn common_header(props: &CommonHeaderProperties) -> Html {
                 </FlexItem>
                 <FlexItem modifiers={[FlexModifier::Align(Alignment::Right), FlexModifier::Align(Alignment::End)]}>
                     if let Some(url) = &config.scanner.documentation_url {
-                        <a href={url.to_string()} target="_blank" class="pf-v5-c-button pf-m-plain">{ Icon::QuestionCircle }</a>
+                        <a
+                            href={url.to_string()} target="_blank"
+                            class="pf-v5-c-button pf-m-plain"
+                            onclick={onlearn}
+                        >
+                            { Icon::QuestionCircle }
+                        </a>
                     }
                     if let Some(onreset) = &props.onreset {
                         <Button
