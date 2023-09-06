@@ -122,7 +122,7 @@ fn common_header(props: &CommonHeaderProperties) -> Html {
             <Flex>
                 <FlexItem>
                     <Content>
-                        <Title>{"Inspect SBOM"}</Title>
+                        <Title>{"Scan an SBOM"}</Title>
                     </Content>
                 </FlexItem>
                 <FlexItem modifiers={[FlexModifier::Align(Alignment::Right), FlexModifier::Align(Alignment::End)]}>
