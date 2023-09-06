@@ -155,48 +155,6 @@ pub fn search(props: &SearchProperties) -> Html {
         },
     );
 
-    // let onsort_advisory = {
-    //     let search_params_state = advisory.search_params.clone();
-    //     use_callback(
-    //         move |sort_by: (String, bool), search_params| {
-    //             if let SearchMode::Simple(simple) = search_params {
-    //                 let mut simple = simple.clone();
-    //                 simple.set_sort_by(sort_by);
-    //                 search_params_state.set(SearchMode::Simple(simple));
-    //             };
-    //         },
-    //         (*advisory.search_params).clone(),
-    //     )
-    // };
-
-    // let onsort_sbom = {
-    //     let search_params_state = sbom.search_params.clone();
-    //     use_callback(
-    //         move |sort_by: (String, bool), search_params| {
-    //             if let SearchMode::Simple(simple) = search_params {
-    //                 let mut simple = simple.clone();
-    //                 simple.set_sort_by(sort_by);
-    //                 search_params_state.set(SearchMode::Simple(simple));
-    //             };
-    //         },
-    //         (*sbom.search_params).clone(),
-    //     )
-    // };
-
-    // let onsort_sbombypackage = {
-    //     let search_params_state = sbom_by_dependency.search_params.clone();
-    //     use_callback(
-    //         move |sort_by: (String, bool), search_params| {
-    //             if let SearchMode::Simple(simple) = search_params {
-    //                 let mut simple = simple.clone();
-    //                 simple.set_sort_by(sort_by);
-    //                 search_params_state.set(SearchMode::Simple(simple));
-    //             };
-    //         },
-    //         (*sbom_by_dependency.search_params).clone(),
-    //     )
-    // };
-
     // render
 
     html!(
