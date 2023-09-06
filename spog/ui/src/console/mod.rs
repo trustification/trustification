@@ -58,16 +58,18 @@ fn authenticated_page(props: &ChildrenProperties) -> Html {
         <PageSidebar>
             <Nav>
                 <NavList>
-                    <NavRouterItem<AppRoute> to={AppRoute::Index}>{ "Trusted Content" }</NavRouterItem<AppRoute>>
+                    <NavRouterItem<AppRoute> to={AppRoute::Index}>{ "Home" }</NavRouterItem<AppRoute>>
                     if config.features.dedicated_search {
                         <NavExpandable expanded=true title="Search">
                             <NavRouterItem<AppRoute> to={AppRoute::Advisory(Default::default())} predicate={AppRoute::is_advisory}>{ "Advisories" }</NavRouterItem<AppRoute>>
                             <NavRouterItem<AppRoute> to={AppRoute::Package(Default::default())} predicate={AppRoute::is_package}>{ "SBOMs" }</NavRouterItem<AppRoute>>
                             <NavRouterItem<AppRoute> to={AppRoute::Cve{id: Default::default()}} predicate={AppRoute::is_cve}>{ "CVEs" }</NavRouterItem<AppRoute>>
                         </NavExpandable>
+                    } else {
+                        <NavRouterItem<AppRoute> to={AppRoute::Search{terms: String::new()}}>{ "Search" }</NavRouterItem<AppRoute>>
                     }
                     if config.features.scanner {
-                        <NavRouterItem<AppRoute> to={AppRoute::Scanner}>{ "Scanner" }</NavRouterItem<AppRoute>>
+                        <NavRouterItem<AppRoute> to={AppRoute::Scanner}>{ "Scan SBOM" }</NavRouterItem<AppRoute>>
                     }
                     if config.features.extend_section {
                         <NavExpandable title="Extend">
