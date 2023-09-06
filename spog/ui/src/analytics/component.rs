@@ -1,3 +1,4 @@
+use crate::{components::common::SafeHtml, hooks::use_config};
 use patternfly_yew::prelude::*;
 use yew::prelude::*;
 use yew_consent::prelude::*;
@@ -62,6 +63,7 @@ pub struct ConsentModalProperties {
 
 #[function_component(ConsentModal)]
 pub fn consent_modal(props: &ConsentModalProperties) -> Html {
+    let config = use_config();
     let context = use_consent_context().expect("Should be wrapped by the Consent component");
 
     let onyes = use_callback(|_, consent| consent.set(ConsentState::Yes(())), context.clone());
@@ -69,8 +71,8 @@ pub fn consent_modal(props: &ConsentModalProperties) -> Html {
 
     let footer = html!(
         <>
-            <Button variant={ButtonVariant::Primary} label="Yes" onclick={onyes} />
-            <Button variant={ButtonVariant::Secondary} label="No" onclick={onno} />
+            <Button variant={ButtonVariant::Primary} label={config.consent.action_yes.as_deref().unwrap_or("Allow").to_string()} onclick={onyes} />
+            <Button variant={ButtonVariant::Secondary} label={config.consent.action_no.as_deref().unwrap_or("Deny").to_string()} onclick={onno} />
         </>
     );
 
@@ -84,12 +86,12 @@ pub fn consent_modal(props: &ConsentModalProperties) -> Html {
             show_close={props.can_close}
             disable_close_escape={!props.can_close}
             disable_close_click_outside={!props.can_close}
-            title="Tracking consent"
+            title={config.consent.title.as_deref().unwrap_or("Tracking consent").to_string()}
             variant={ModalVariant::Medium}
             {footer}
         >
             <Content>
-                <p> {"We would like to track your behavior on this site."} </p>
+                <SafeHtml html={config.consent.description.as_deref().unwrap_or("We would like to track your behavior on this site.").to_string()} />
                 if props.show_current {
                     <p> {"Current state: "} <i>{ state } </i> </p>
                 }
