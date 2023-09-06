@@ -121,39 +121,6 @@ services:
     ports:
       - "$SPOG_UI_PORT:8080"
 
-  collectorist-api:
-    image: $TRUST_IMAGE:${TRUST_VERSION:?TRUST_VERSION is required}
-    depends_on:
-      - init-keycloak
-      - guac-collectsub
-      - guac-graphql
-    expose:
-      - "$COLLECTORIST_API_PORT"
-    ports:
-      - "$COLLECTORIST_API_PORT:$COLLECTORIST_API_PORT"
-    command:
-      - -c
-      - |
-        while [[ "$$(curl --connect-timeout 2 \
-                  -s -o /dev/null -w ''%{http_code}'' \
-                  $$OPENID_CONFIGURATION)" != "200" ]]; do
-          echo waiting for keycloak...
-          sleep 5
-        done
-        echo keycloak is up
-        /trust collectorist api -p $COLLECTORIST_API_PORT
-    entrypoint: /usr/bin/bash
-    restart: on-failure
-    healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:9010" ]
-    environment:
-      GUAC_URL: http://guac-graphql:$GUAC_API_PORT
-      CSUB_URL: http://guac-collectsub:$GUAC_CSUB_PORT
-      ISSUER_URL: http://keycloak:8080/realms/chicken
-      INFRASTRUCTURE_ENABLED: "true"
-      OPENID_CONFIGURATION: "http://keycloak:8080/realms/chicken/.well-known/openid-configuration"
-
-
   v11y-api:
     image: $TRUST_IMAGE:${TRUST_VERSION:?TRUST_VERSION is required}
     depends_on:
@@ -182,33 +149,3 @@ services:
       INFRASTRUCTURE_ENABLED: "true"
       OPENID_CONFIGURATION: "http://keycloak:8080/realms/chicken/.well-known/openid-configuration"
 
-  collector-osv:
-    image: $TRUST_IMAGE:${TRUST_VERSION:?TRUST_VERSION is required}
-    depends_on:
-      - init-keycloak
-      - collectorist-api
-      - v11y-api
-    expose:
-      - "$COLLECTOR_OSV_API_PORT"
-    ports:
-      - "$COLLECTOR_OSV_API_PORT:$COLLECTOR_OSV_API_PORT"
-    command:
-      - -c
-      - |
-        while [[ "$$(curl --connect-timeout 2 \
-                  -s -o /dev/null -w ''%{http_code}'' \
-                  $$OPENID_CONFIGURATION)" != "200" ]]; do
-          echo waiting for keycloak...
-          sleep 5
-        done
-        echo keycloak is up
-        /trust collector osv -p $COLLECTOR_OSV_API_PORT
-    entrypoint: /usr/bin/bash
-    restart: on-failure
-    healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:9010" ]
-    environment:
-      COLLECTORIST_URL: http://collectorist-api:$COLLECTORIST_API_PORT
-      ISSUER_URL: http://keycloak:8080/realms/chicken
-      INFRASTRUCTURE_ENABLED: "true"
-      OPENID_CONFIGURATION: "http://keycloak:8080/realms/chicken/.well-known/openid-configuration"

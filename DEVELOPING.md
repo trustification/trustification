@@ -230,5 +230,5 @@ docker build -f Containerfile -t trust:latest .
 Then, you can use it like
 
 ```shell
-TRUST_IMAGE=trust TRUST_VERSION=latest docker-compose -f compose.yaml -f compose-guac.yaml -f compose-trustification.yaml up --force-recreate
+TRUST_IMAGE=trust TRUST_VERSION=latest docker-compose -f compose.yaml -f compose-guac.yaml -f compose-trustification.yaml -f compose-collectors.yaml up --force-recreate
 ```
