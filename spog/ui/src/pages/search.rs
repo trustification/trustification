@@ -155,47 +155,47 @@ pub fn search(props: &SearchProperties) -> Html {
         },
     );
 
-    let onsort_advisory = {
-        let search_params_state = advisory.search_params.clone();
-        use_callback(
-            move |sort_by: (String, bool), search_params| {
-                if let SearchMode::Simple(simple) = search_params {
-                    let mut simple = simple.clone();
-                    simple.set_sort_by(sort_by);
-                    search_params_state.set(SearchMode::Simple(simple));
-                };
-            },
-            (*advisory.search_params).clone(),
-        )
-    };
+    // let onsort_advisory = {
+    //     let search_params_state = advisory.search_params.clone();
+    //     use_callback(
+    //         move |sort_by: (String, bool), search_params| {
+    //             if let SearchMode::Simple(simple) = search_params {
+    //                 let mut simple = simple.clone();
+    //                 simple.set_sort_by(sort_by);
+    //                 search_params_state.set(SearchMode::Simple(simple));
+    //             };
+    //         },
+    //         (*advisory.search_params).clone(),
+    //     )
+    // };
 
-    let onsort_sbom = {
-        let search_params_state = sbom.search_params.clone();
-        use_callback(
-            move |sort_by: (String, bool), search_params| {
-                if let SearchMode::Simple(simple) = search_params {
-                    let mut simple = simple.clone();
-                    simple.set_sort_by(sort_by);
-                    search_params_state.set(SearchMode::Simple(simple));
-                };
-            },
-            (*advisory.search_params).clone(),
-        )
-    };
+    // let onsort_sbom = {
+    //     let search_params_state = sbom.search_params.clone();
+    //     use_callback(
+    //         move |sort_by: (String, bool), search_params| {
+    //             if let SearchMode::Simple(simple) = search_params {
+    //                 let mut simple = simple.clone();
+    //                 simple.set_sort_by(sort_by);
+    //                 search_params_state.set(SearchMode::Simple(simple));
+    //             };
+    //         },
+    //         (*sbom.search_params).clone(),
+    //     )
+    // };
 
-    let onsort_sbombypackage = {
-        let search_params_state = sbom_by_dependency.search_params.clone();
-        use_callback(
-            move |sort_by: (String, bool), search_params| {
-                if let SearchMode::Simple(simple) = search_params {
-                    let mut simple = simple.clone();
-                    simple.set_sort_by(sort_by);
-                    search_params_state.set(SearchMode::Simple(simple));
-                };
-            },
-            (*advisory.search_params).clone(),
-        )
-    };
+    // let onsort_sbombypackage = {
+    //     let search_params_state = sbom_by_dependency.search_params.clone();
+    //     use_callback(
+    //         move |sort_by: (String, bool), search_params| {
+    //             if let SearchMode::Simple(simple) = search_params {
+    //                 let mut simple = simple.clone();
+    //                 simple.set_sort_by(sort_by);
+    //                 search_params_state.set(SearchMode::Simple(simple));
+    //             };
+    //         },
+    //         (*sbom_by_dependency.search_params).clone(),
+    //     )
+    // };
 
     // render
 
@@ -267,17 +267,17 @@ pub fn search(props: &SearchProperties) -> Html {
                         <div class="pf-v5-u-background-color-100">
                             if *tab == TabIndex::Advisories {
                                 <PaginationWrapped pagination={advisory.pagination} total={*advisory.total}>
-                                    <AdvisoryResult state={(*advisory.state).clone()} onsort={&onsort_advisory} />
+                                    <AdvisoryResult state={(*advisory.state).clone()} onsort={&advisory.onsort} />
                                 </PaginationWrapped>
                             }
                             if *tab == TabIndex::Sboms {
                                 <PaginationWrapped pagination={sbom.pagination} total={*sbom.total}>
-                                    <SbomResult state={(*sbom.state).clone()} onsort={&onsort_sbom} />
+                                    <SbomResult state={(*sbom.state).clone()} onsort={&sbom.onsort} />
                                 </PaginationWrapped>
                             }
                             if *tab == TabIndex::SbomsByPackage {
                                 <PaginationWrapped pagination={sbom_by_dependency.pagination} total={*sbom_by_dependency.total}>
-                                    <SbomResult state={(*sbom_by_dependency.state).clone()} onsort={&onsort_sbombypackage} />
+                                    <SbomResult state={(*sbom_by_dependency.state).clone()} onsort={&sbom_by_dependency.onsort} />
                                 </PaginationWrapped>
                             }
                         </div>
@@ -296,6 +296,7 @@ pub struct UseUnifiedSearch<R> {
     pub search: UseStandardSearch,
     pub total: UseStateHandle<Option<usize>>,
     pub state: UseStateHandle<UseAsyncState<SearchResult<R>, String>>,
+    pub onsort: Callback<(String, bool)>,
 }
 
 impl<R> Deref for UseUnifiedSearch<R> {
@@ -337,11 +338,26 @@ where
     let pagination = use_pagination(*total, || init_pagination(page_state));
     let search = use_hook(search_params.clone(), pagination.clone(), callback);
 
+    let onsort = {
+        let search_params_state = search_params.clone();
+        use_callback(
+            move |sort_by: (String, bool), search_params| {
+                if let SearchMode::Simple(simple) = search_params {
+                    let mut simple = simple.clone();
+                    simple.set_sort_by(sort_by);
+                    search_params_state.set(SearchMode::Simple(simple));
+                };
+            },
+            (*search_params).clone(),
+        )
+    };
+
     UseUnifiedSearch {
         pagination,
         search,
         total,
         state,
+        onsort,
     }
 }
 
