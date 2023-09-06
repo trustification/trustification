@@ -297,13 +297,12 @@ where
     let search = use_hook(search_params.clone(), pagination.clone(), callback);
 
     let onsort = {
-        let search_params_state = search_params.clone();
         use_callback(
             move |sort_by: (String, bool), search_params| {
                 if let SearchMode::Simple(simple) = &**search_params {
                     let mut simple = simple.clone();
                     simple.set_sort_by(sort_by);
-                    search_params_state.set(SearchMode::Simple(simple));
+                    search_params.set(SearchMode::Simple(simple));
                 };
             },
             search_params.clone(),
