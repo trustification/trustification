@@ -42,13 +42,13 @@ jobs:
       matrix:
         include:
           - name: trust
-            containerfile: Containerfile
+            containerfile: trust/Containerfile
           - name: trust-ui
-            containerfile: Containerfile.ui
+            containerfile: spog/ui/Containerfile
           - name: trust-docs
-            containerfile: Containerfile.docs
+            containerfile: docs/Containerfile
           - name: trust-tests
-            containerfile: Containerfile.tests
+            containerfile: integration-tests/Containerfile
 
     steps:
 
