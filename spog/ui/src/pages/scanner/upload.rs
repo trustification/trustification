@@ -4,6 +4,7 @@ use crate::{
     hooks::use_config,
     pages::ClickLearn,
 };
+use analytics_next::TrackingEvent;
 use patternfly_yew::prelude::*;
 use serde_json::json;
 use std::rc::Rc;
@@ -12,12 +13,27 @@ use yew::prelude::*;
 use yew_hooks::prelude::*;
 use yew_more_hooks::hooks::r#async::{UseAsyncState, *};
 
+struct LoadFiles(u32);
+impl From<LoadFiles> for TrackingEvent<'static> {
+    fn from(value: LoadFiles) -> Self {
+        ("Loading files", json!({"numerOfFiles": value.0})).into()
+    }
+}
+
+struct SubmitSbom {
+    size: usize,
+}
+impl From<SubmitSbom> for TrackingEvent<'static> {
+    fn from(value: SubmitSbom) -> Self {
+        ("Submit SBOM", json!({"size": value.size})).into()
+    }
+}
+
 #[derive(Clone, Debug, PartialEq)]
 enum DropContent {
     None,
     Files(Vec<web_sys::File>),
     Text(Rc<String>),
-    Uri(Rc<String>),
 }
 
 impl From<String> for DropContent {
@@ -48,7 +64,6 @@ impl std::fmt::Display for DropContent {
                 }
                 Ok(())
             }
-            Self::Uri(uri) => f.write_str(uri),
             Self::Text(_) => f.write_str("User Input"),
             Self::None => Ok(()),
         }
@@ -103,12 +118,33 @@ pub fn upload(props: &UploadProperties) -> Html {
             },
             onuri: {
                 let drop_content = drop_content.clone();
-                Some(Box::new(move |uri, _data_transfer| {
-                    drop_content.set(DropContent::Uri(Rc::new(uri)));
+                Some(Box::new(move |_uri, data_transfer| {
+                    data_transfer.set_drop_effect("none");
                 }))
             },
             ..Default::default()
         },
+    );
+
+    use_effect_with_deps(
+        |(drop_content, analytics)| match &**drop_content {
+            DropContent::Files(files) => analytics.track((
+                "Dropped SBOM",
+                json!({
+                    "type": "files",
+                    "numberOfFiles":  files.len(),
+                }),
+            )),
+            DropContent::Text(content) => analytics.track((
+                "Dropped SBOM",
+                json!({
+                    "type": "text",
+                    "size": content.len()
+                }),
+            )),
+            DropContent::None => {}
+        },
+        (drop_content.clone(), analytics.clone()),
     );
 
     let processing = use_async_with_cloned_deps(
@@ -133,7 +169,6 @@ pub fn upload(props: &UploadProperties) -> Html {
                     Rc::new(content)
                 }
                 DropContent::Text(text) => Rc::new(text.to_string()),
-                DropContent::Uri(uri) => Rc::new(uri.to_string()),
                 DropContent::None => Default::default(),
             };
 
@@ -182,12 +217,7 @@ pub fn upload(props: &UploadProperties) -> Html {
     let onsubmit = use_callback(
         |_: MouseEvent, (processing, onsubmit, analytics)| {
             if let Some(data) = processing.data() {
-                analytics.track((
-                    "Submit SBOM",
-                    json!({
-                        "size": data.len()
-                    }),
-                ));
+                analytics.track(SubmitSbom { size: data.len() });
                 onsubmit.emit(data.clone());
             }
         },
@@ -202,16 +232,17 @@ pub fn upload(props: &UploadProperties) -> Html {
                 ele.click();
             }
         },
-        (file_input_ref.clone(), analytics),
+        (file_input_ref.clone(), analytics.clone()),
     );
     let onopen_button = use_memo(|onopen| onopen.reform(|_: MouseEvent| ()), onopen.clone());
 
     let onchange_open = use_callback(
-        |_, (file_input_ref, drop_content)| {
+        |_, (file_input_ref, drop_content, analytics)| {
             if let Some(ele) = file_input_ref.cast::<web_sys::HtmlInputElement>() {
                 let files = ele
                     .files()
                     .map(|files| {
+                        analytics.track(LoadFiles(files.length()));
                         let mut r = Vec::with_capacity(files.length().try_into().unwrap_or_default());
                         for i in 0..files.length() {
                             r.extend(files.get(i));
@@ -222,7 +253,7 @@ pub fn upload(props: &UploadProperties) -> Html {
                 drop_content.set(DropContent::Files(files));
             }
         },
-        (file_input_ref.clone(), drop_content.clone()),
+        (file_input_ref.clone(), drop_content.clone(), analytics.clone()),
     );
 
     let mut class = classes!("tc-c-drop-area");
