@@ -123,18 +123,23 @@ fn common_header(props: &CommonHeaderProperties) -> Html {
                 <FlexItem>
                     <Content>
                         <Title>{"Scan an SBOM"}</Title>
+                        <p>
+                            {"Load an existing CycloneDX 1.3 or SPDX 2.2 file"}
+                            if let Some(url) = &config.scanner.documentation_url {
+                                {" or "}
+                                <a
+                                    href={url.to_string()} target="_blank"
+                                    class="pf-v5-c-button pf-m-link pf-m-inline"
+                                    onclick={onlearn}
+                                >
+                                    {"learn about creating an SBOM"}
+                                </a>
+                            }
+                            { "." }
+                        </p>
                     </Content>
                 </FlexItem>
                 <FlexItem modifiers={[FlexModifier::Align(Alignment::Right), FlexModifier::Align(Alignment::End)]}>
-                    if let Some(url) = &config.scanner.documentation_url {
-                        <a
-                            href={url.to_string()} target="_blank"
-                            class="pf-v5-c-button pf-m-plain"
-                            onclick={onlearn}
-                        >
-                            { Icon::QuestionCircle }
-                        </a>
-                    }
                     if let Some(onreset) = &props.onreset {
                         <Button
                             label={"Scan another"}
