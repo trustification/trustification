@@ -106,40 +106,37 @@ pub fn upload(props: &UploadProperties) -> Html {
         UseDropOptions {
             onfiles: {
                 let drop_content = drop_content.clone();
+                let analytics = analytics.clone();
                 Some(Box::new(move |files, _data_transfer| {
+                    analytics.track((
+                        "Dropped SBOM",
+                        json!({
+                            "type": "files",
+                            "numberOfFiles": files.len(),
+                        }),
+                    ));
+
                     drop_content.set(DropContent::Files(files));
                 }))
             },
             ontext: {
                 let drop_content = drop_content.clone();
+                let analytics = analytics.clone();
                 Some(Box::new(move |text, _data_transfer| {
+                    analytics.track((
+                        "Dropped SBOM",
+                        json!({
+                            "type": "text",
+                            "size": text.len()
+                        }),
+                    ));
+
                     drop_content.set(DropContent::from(text));
                 }))
             },
             onuri: Some(Box::new(move |_uri, _data_transfer| {})),
             ..Default::default()
         },
-    );
-
-    use_effect_with_deps(
-        |(drop_content, analytics)| match &**drop_content {
-            DropContent::Files(files) => analytics.track((
-                "Dropped SBOM",
-                json!({
-                    "type": "files",
-                    "numberOfFiles":  files.len(),
-                }),
-            )),
-            DropContent::Text(content) => analytics.track((
-                "Dropped SBOM",
-                json!({
-                    "type": "text",
-                    "size": content.len()
-                }),
-            )),
-            DropContent::None => {}
-        },
-        (drop_content.clone(), analytics.clone()),
     );
 
     let processing = use_async_with_cloned_deps(
@@ -199,7 +196,11 @@ pub fn upload(props: &UploadProperties) -> Html {
     let state = state.unwrap_or_default();
 
     use_effect_with_deps(
-        |(analytics, reason)| {
+        |(analytics, reason, initial)| {
+            if *initial {
+                // we ignore any errors if the content is empty
+                return;
+            }
             if let Some(reason) = reason {
                 analytics.track((
                     "SBOM parsing failed",
@@ -209,7 +210,7 @@ pub fn upload(props: &UploadProperties) -> Html {
                 ));
             }
         },
-        (analytics.clone(), error_reason.clone()),
+        (analytics.clone(), error_reason.clone(), *initial),
     );
 
     let content = match &*processing {
@@ -220,10 +221,7 @@ pub fn upload(props: &UploadProperties) -> Html {
 
     use_effect_with_deps(
         |(initial, content)| {
-            if !content.is_empty() {
-                // only set the first, to remember we had some content
-                initial.set(false);
-            }
+            initial.set(content.is_empty());
         },
         (initial.clone(), content.clone()),
     );
