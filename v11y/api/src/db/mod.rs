@@ -1,11 +1,18 @@
+use derive_more::{Display, Error, From};
 use std::str::FromStr;
 
 use futures::Stream;
 use futures::StreamExt;
 use sqlx::sqlite::SqliteConnectOptions;
-use sqlx::{Row, SqlitePool};
+use sqlx::{Error, Row, SqlitePool};
 
 use v11y_client::{Reference, ScoreType, Severity, Vulnerability};
+
+#[derive(Debug, Display, Error, From)]
+pub enum DbError {
+    #[display(fmt = "sql error: {}", "_0")]
+    Sql(Error),
+}
 
 static DB_FILE_NAME: &str = "v11y.db";
 
@@ -213,7 +220,7 @@ impl Db {
         Ok(())
     }
 
-    pub async fn get(&self, id: &str, origin: Option<String>) -> Result<Vec<Vulnerability>, anyhow::Error> {
+    pub async fn get(&self, id: &str, origin: Option<String>) -> Result<Vec<Vulnerability>, DbError> {
         let query = match origin {
             Some(origin) => {
                 sqlx::query(
