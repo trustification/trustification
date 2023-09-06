@@ -48,6 +48,15 @@ fn application_with_backend() -> Html {
 
     let ask = use_callback(|_, ()| html!(<AskConsent />), ());
 
+    let consent = |main: Html| match backend.endpoints.segment_write_key.is_some() {
+        true => html!(
+            <Consent<()> {ask}>
+                { main }
+            </Consent<()>>
+        ),
+        false => main,
+    };
+
     html!(
         // as the backdrop viewer might host content which makes use of the router, the
         // router must also wrap the backdrop viewer
@@ -59,7 +68,7 @@ fn application_with_backend() -> Html {
                 scopes={backend.endpoints.oidc.scopes()}
             >
                 <Configuration>
-                    <Consent<()> {ask}>
+                    { consent(html!(
                         <BackdropViewer>
                             <Segment write_key={backend.endpoints.segment_write_key.clone()}>
                                 <SegmentIdentify />
@@ -68,7 +77,7 @@ fn application_with_backend() -> Html {
                                 </OAuth2Configured>
                             </Segment>
                         </BackdropViewer>
-                    </Consent<()>>
+                    )) }
                 </Configuration>
             </OAuth2>
         </Router<AppRoute>>

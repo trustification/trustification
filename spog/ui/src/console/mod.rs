@@ -12,6 +12,7 @@ use crate::{
 };
 use patternfly_yew::prelude::*;
 use yew::prelude::*;
+use yew_consent::hook::use_consent_context;
 use yew_more_hooks::prelude::*;
 use yew_nested_router::prelude::Switch as RouterSwitch;
 use yew_oauth2::{openid::*, prelude::*};
@@ -113,6 +114,7 @@ fn authenticated_page(props: &ChildrenProperties) -> Html {
     );
 
     let onconsent = use_consent_dialog();
+    let manage_consent = use_consent_context::<()>().is_some();
 
     let tools = html!(
         <Toolbar>
@@ -153,9 +155,15 @@ fn authenticated_page(props: &ChildrenProperties) -> Html {
                             <DarkModeEntry />
                         </Raw>
                         <ListDivider/>
-                        <MenuAction onclick={onconsent}>
-                            { "User consent" }
-                        </MenuAction>
+
+                        { manage_consent.then(|| {
+                            html_nested!(
+                                <MenuAction onclick={onconsent}>
+                                    { "User consent" }
+                                </MenuAction>
+                            )
+                        }) }
+
                         <MenuAction onclick={onlogout}>
                             { "Logout" }
                         </MenuAction>
