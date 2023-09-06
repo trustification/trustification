@@ -153,11 +153,7 @@ pub fn segment_identify() -> Html {
             let claims = claims(state);
             let current = match claims {
                 Some(claims) => User {
-                    id: Some(format!(
-                        "{}#{}",
-                        claims.issuer().to_string(),
-                        claims.subject().to_string()
-                    )),
+                    id: Some(format!("{}#{}", **claims.issuer(), **claims.subject())),
                     traits: json!({
                         "preferred_username": claims.preferred_username(),
                         "name": claims.name().get(),
