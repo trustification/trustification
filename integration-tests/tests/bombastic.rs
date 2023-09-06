@@ -365,6 +365,7 @@ async fn sbom_upload_empty_json(context: &mut BombasticContext) {
     delete_sbom(context, id).await;
 }
 
+#[ignore = "until API can support failures so that event bus is not needed to check"]
 #[test_context(BombasticContext)]
 #[tokio::test]
 #[ntest::timeout(60_000)]
