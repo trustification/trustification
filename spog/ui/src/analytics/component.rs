@@ -9,6 +9,9 @@ pub struct AskConsentProperties {}
 #[function_component(AskConsent)]
 pub fn ask_consent() -> Html {
     html!(
+        // We require our own backdrop viewer here, as the modal will be opened on the backdrop
+        // which must be wrapped by the consent component. The main application's backdrop isn't
+        // available yet at this point.
         <BackdropViewer>
             <AskConsentModal />
         </BackdropViewer>

@@ -49,29 +49,29 @@ fn application_with_backend() -> Html {
     let ask = use_callback(|_, ()| html!(<AskConsent />), ());
 
     html!(
-        <Consent<()> {ask}>
-            <Segment write_key={backend.endpoints.segment_write_key.clone()}>
-                // as the backdrop viewer might host content which makes use of the router, the
-                // router must also wrap the backdrop viewer
-                <Router<AppRoute>>
-                    // as the backdrop viewer might actually make use of the access token, the
-                    // oauth2 context must also wrap the backdrop viewer
-                    <OAuth2
-                        {config}
-                        scopes={backend.endpoints.oidc.scopes()}
-                    >
-                        <SegmentIdentify />
-                        <Configuration>
-                            <BackdropViewer>
+        // as the backdrop viewer might host content which makes use of the router, the
+        // router must also wrap the backdrop viewer
+        <Router<AppRoute>>
+            // as the backdrop viewer might actually make use of the access token, the
+            // oauth2 context must also wrap the backdrop viewer
+            <OAuth2
+                {config}
+                scopes={backend.endpoints.oidc.scopes()}
+            >
+                <Configuration>
+                    <Consent<()> {ask}>
+                        <BackdropViewer>
+                            <Segment write_key={backend.endpoints.segment_write_key.clone()}>
+                                <SegmentIdentify />
                                 <OAuth2Configured>
                                     <Console />
                                 </OAuth2Configured>
-                            </BackdropViewer>
-                        </Configuration>
-                    </OAuth2>
-                </Router<AppRoute>>
-            </Segment>
-        </Consent<()>>
+                            </Segment>
+                        </BackdropViewer>
+                    </Consent<()>>
+                </Configuration>
+            </OAuth2>
+        </Router<AppRoute>>
     )
 }
 
