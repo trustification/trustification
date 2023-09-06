@@ -76,7 +76,7 @@ services:
 
   guac-ingestor:
     image: $GUAC_IMAGE
-    command: "/opt/guac/guacingest --async-ingest=false"
+    command: "/opt/guac/guacingest --async-ingest=false --gql-addr http://guac-graphql:$GUAC_API_PORT/query --csub-addr guac-collectsub:$GUAC_CSUB_PORT"
     working_dir: /guac
     restart: on-failure
     depends_on:
@@ -89,8 +89,12 @@ services:
 
   bombastic-exporter:
     image: $TRUST_IMAGE:${TRUST_VERSION:?TRUST_VERSION is required}
-    command: exporter --devmode --document-type sbom --storage-endpoint http://minio:9000 --kafka-bootstrap-servers kafka:9094 --guac-url nats:4222
+    command: exporter --devmode --document-type sbom --kafka-bootstrap-servers kafka:9094 --guac-url nats:4222
+    environment:
+     STORAGE_ENDPOINT: http://minio:9000
 
   vexination-exporter:
     image: $TRUST_IMAGE:${TRUST_VERSION:?TRUST_VERSION is required}
-    command: exporter --devmode --document-type vex --storage-endpoint http://minio:9000 --kafka-bootstrap-servers kafka:9094 --guac-url nats:4222
+    command: exporter --devmode --document-type vex --kafka-bootstrap-servers kafka:9094 --guac-url nats:4222
+    environment:
+     STORAGE_ENDPOINT: http://minio:9000
