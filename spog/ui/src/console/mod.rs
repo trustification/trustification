@@ -1,7 +1,6 @@
-mod auth;
-
 use crate::{
     about,
+    analytics::use_consent_dialog,
     backend::Endpoint,
     components::{
         common::{ExternalLinkMarker, ExternalNavLink},
@@ -9,6 +8,7 @@ use crate::{
     },
     hooks::{use_backend, use_config},
     pages::{self, AppRoute, View},
+    utils::auth::from_auth,
 };
 use patternfly_yew::prelude::*;
 use yew::prelude::*;
@@ -100,7 +100,7 @@ fn authenticated_page(props: &ChildrenProperties) -> Html {
     );
 
     let auth = use_auth_state();
-    let auth = use_memo(auth::from_auth, auth);
+    let auth = use_memo(from_auth, auth);
 
     let agent = use_auth_agent().expect("Requires OAuth2Context component in parent hierarchy");
     let onlogout = use_callback(
@@ -111,6 +111,8 @@ fn authenticated_page(props: &ChildrenProperties) -> Html {
         },
         (),
     );
+
+    let onconsent = use_consent_dialog();
 
     let tools = html!(
         <Toolbar>
@@ -151,6 +153,9 @@ fn authenticated_page(props: &ChildrenProperties) -> Html {
                             <DarkModeEntry />
                         </Raw>
                         <ListDivider/>
+                        <MenuAction onclick={onconsent}>
+                            { "User consent" }
+                        </MenuAction>
                         <MenuAction onclick={onlogout}>
                             { "Logout" }
                         </MenuAction>

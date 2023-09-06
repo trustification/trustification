@@ -1,5 +1,8 @@
 #![recursion_limit = "1024"]
 
+#[cfg(feature = "analytics")]
+mod analytics;
+
 mod about;
 mod app;
 mod backend;

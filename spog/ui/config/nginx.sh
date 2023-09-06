@@ -33,6 +33,11 @@ if [[ -n "$SCOPES" ]]; then
   mv /endpoints/backend.json.tmp /endpoints/backend.json
 fi
 
+if [[ -n "$WRITE_KEY" ]]; then
+  jq --arg writeKey "$WRITE_KEY" '. + {segment_write_key: $writeKey}' < /endpoints/backend.json | tee /endpoints/backend.json.tmp
+  mv /endpoints/backend.json.tmp /endpoints/backend.json
+fi
+
 echo "Final backend information:"
 echo "---"
 cat /endpoints/backend.json

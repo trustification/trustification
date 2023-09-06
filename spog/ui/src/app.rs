@@ -1,4 +1,5 @@
 use crate::{
+    analytics::{AskConsent, Segment, SegmentIdentify},
     components::{backend::Backend, config::Configuration, error::Error, theme::Themed},
     console::Console,
     hooks::use_backend,
@@ -6,6 +7,7 @@ use crate::{
 };
 use patternfly_yew::prelude::*;
 use yew::prelude::*;
+use yew_consent::prelude::*;
 use yew_nested_router::prelude::*;
 use yew_oauth2::{openid::*, prelude::*};
 
@@ -44,25 +46,32 @@ fn application_with_backend() -> Html {
         },
     };
 
+    let ask = use_callback(|_, ()| html!(<AskConsent />), ());
+
     html!(
-        // as the backdrop viewer might host content which makes use of the router, the
-        // router must also wrap the backdrop viewer
-        <Router<AppRoute>>
-            // as the backdrop viewer might actually make use of the access token, the
-            // oauth2 context must also wrap the backdrop viewer
-            <OAuth2
-                {config}
-                scopes={backend.endpoints.oidc.scopes()}
-            >
-                <Configuration>
-                    <BackdropViewer>
-                        <OAuth2Configured>
-                            <Console />
-                        </OAuth2Configured>
-                    </BackdropViewer>
-                </Configuration>
-            </OAuth2>
-        </Router<AppRoute>>
+        <Consent<()> {ask}>
+            <Segment write_key={backend.endpoints.segment_write_key.clone()}>
+                // as the backdrop viewer might host content which makes use of the router, the
+                // router must also wrap the backdrop viewer
+                <Router<AppRoute>>
+                    // as the backdrop viewer might actually make use of the access token, the
+                    // oauth2 context must also wrap the backdrop viewer
+                    <OAuth2
+                        {config}
+                        scopes={backend.endpoints.oidc.scopes()}
+                    >
+                        <SegmentIdentify />
+                        <Configuration>
+                            <BackdropViewer>
+                                <OAuth2Configured>
+                                    <Console />
+                                </OAuth2Configured>
+                            </BackdropViewer>
+                        </Configuration>
+                    </OAuth2>
+                </Router<AppRoute>>
+            </Segment>
+        </Consent<()>>
     )
 }
 

@@ -9,8 +9,12 @@ pub struct FromAuth {
     pub username: String,
 }
 
+pub fn claims(auth: &Option<OAuth2Context>) -> Option<&Claims> {
+    auth.as_ref().and_then(|auth| auth.claims())
+}
+
 pub fn from_auth(auth: &Option<OAuth2Context>) -> FromAuth {
-    let (_email, account_url, username, name) = match auth.as_ref().and_then(|auth| auth.claims()) {
+    let (_email, account_url, username, name) = match claims(auth) {
         Some(claims) => {
             let account_url = {
                 let mut issuer = claims.issuer().url().clone();

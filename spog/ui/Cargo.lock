@@ -38,6 +38,31 @@ dependencies = [
 ]
 
 [[package]]
+name = "analytics-next"
+version = "0.1.0-alpha.2"
+source = "git+https://github.com/ctron/analytics-next-rs?rev=9c95122f4e6dc308c90b945bd0f1925faf7cb828#9c95122f4e6dc308c90b945bd0f1925faf7cb828"
+dependencies = [
+ "analytics-next-sys",
+ "gloo-utils 0.2.0",
+ "js-sys",
+ "serde",
+ "serde_json",
+ "wasm-bindgen",
+ "web-sys",
+]
+
+[[package]]
+name = "analytics-next-sys"
+version = "0.1.0-alpha.2"
+source = "git+https://github.com/ctron/analytics-next-rs?rev=9c95122f4e6dc308c90b945bd0f1925faf7cb828#9c95122f4e6dc308c90b945bd0f1925faf7cb828"
+dependencies = [
+ "js-sys",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
+]
+
+[[package]]
 name = "android-tzdata"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -741,12 +766,12 @@ checksum = "28999cda5ef6916ffd33fb4a7b87e1de633c47c0dc6d97905fee1cdaa142b94d"
 dependencies = [
  "gloo-console",
  "gloo-dialogs",
- "gloo-events",
+ "gloo-events 0.1.2",
  "gloo-file",
  "gloo-history",
  "gloo-net",
  "gloo-render",
- "gloo-storage",
+ "gloo-storage 0.2.2",
  "gloo-timers",
  "gloo-utils 0.1.7",
  "gloo-worker",
@@ -786,12 +811,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "gloo-events"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "27c26fb45f7c385ba980f5fa87ac677e363949e065a083722697ef1b2cc91e41"
+dependencies = [
+ "wasm-bindgen",
+ "web-sys",
+]
+
+[[package]]
 name = "gloo-file"
 version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a8d5564e570a38b43d78bdc063374a0c3098c4f0d64005b12f9bbe87e869b6d7"
 dependencies = [
- "gloo-events",
+ "gloo-events 0.1.2",
  "js-sys",
  "wasm-bindgen",
  "web-sys",
@@ -803,7 +838,7 @@ version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "85725d90bf0ed47063b3930ef28e863658a7905989e9929a8708aab74a1d5e7f"
 dependencies = [
- "gloo-events",
+ "gloo-events 0.1.2",
  "gloo-utils 0.1.7",
  "serde",
  "serde-wasm-bindgen",
@@ -851,6 +886,21 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5d6ab60bf5dbfd6f0ed1f7843da31b41010515c745735c970e821945ca91e480"
 dependencies = [
  "gloo-utils 0.1.7",
+ "js-sys",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "wasm-bindgen",
+ "web-sys",
+]
+
+[[package]]
+name = "gloo-storage"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fbc8031e8c92758af912f9bc08fbbadd3c6f3cfcbf6b64cdf3d6a81f0139277a"
+dependencies = [
+ "gloo-utils 0.2.0",
  "js-sys",
  "serde",
  "serde_json",
@@ -1559,7 +1609,7 @@ version = "0.5.0-alpha.3"
 source = "git+https://github.com/ctron/patternfly-yew?rev=fc4d4614a4ecfcd4605046d8529c09570548058b#fc4d4614a4ecfcd4605046d8529c09570548058b"
 dependencies = [
  "chrono",
- "gloo-events",
+ "gloo-events 0.1.2",
  "gloo-timers",
  "gloo-utils 0.1.7",
  "js-sys",
@@ -2360,6 +2410,7 @@ dependencies = [
 name = "spog-ui"
 version = "0.1.0"
 dependencies = [
+ "analytics-next",
  "anyhow",
  "async-trait",
  "bombastic-model",
@@ -2368,14 +2419,16 @@ dependencies = [
  "csaf",
  "cvss",
  "cyclonedx-bom",
+ "gloo-events 0.2.0",
  "gloo-net",
- "gloo-storage",
+ "gloo-storage 0.2.2",
  "gloo-utils 0.1.7",
  "humansize",
  "itertools 0.11.0",
  "log",
  "markdown",
  "monaco",
+ "openidconnect",
  "packageurl",
  "patternfly-yew",
  "reqwest",
@@ -2388,6 +2441,7 @@ dependencies = [
  "strum 0.25.0",
  "thiserror",
  "time 0.3.25",
+ "trustification-analytics",
  "trustification-api",
  "trustification-common",
  "trustification-version",
@@ -2399,6 +2453,7 @@ dependencies = [
  "wasm-logger",
  "web-sys",
  "yew",
+ "yew-consent",
  "yew-hooks",
  "yew-more-hooks",
  "yew-nested-router",
@@ -2687,6 +2742,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0955b8137a1df6f1a2e9a37d8a6656291ff0297c1a97c24e0d8425fe2312f79a"
 dependencies = [
  "once_cell",
+]
+
+[[package]]
+name = "trustification-analytics"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "log",
+ "serde",
+ "serde_json",
+ "tokio",
+ "uuid",
 ]
 
 [[package]]
@@ -3125,6 +3192,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "yew-consent"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "579cb79a7926ffa198174e7982e34cda4bfdb701fc17a5f7c230ab3bbe89e500"
+dependencies = [
+ "gloo-storage 0.3.0",
+ "serde",
+ "serde_json",
+ "web-sys",
+ "yew",
+]
+
+[[package]]
 name = "yew-hooks"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3172,11 +3252,11 @@ dependencies = [
 
 [[package]]
 name = "yew-nested-router"
-version = "0.3.0"
+version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "323c979de281d688b8b85144a01e1905889f9db1f554344c78cb19648367d842"
+checksum = "2b8c00cd4cdd59a67f2d27a6478a7d9a6df38a1e83ac32c1eadec43e5abb4dce"
 dependencies = [
- "gloo-events",
+ "gloo-events 0.1.2",
  "gloo-history",
  "gloo-utils 0.2.0",
  "log",
@@ -3207,7 +3287,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9d08525fefa4ec5a36cc6fa02010093dac8ee10e163a8ec8a52f9847c9382731"
 dependencies = [
  "async-trait",
- "gloo-storage",
+ "gloo-storage 0.2.2",
  "gloo-timers",
  "gloo-utils 0.1.7",
  "js-sys",

@@ -5,14 +5,17 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1"
-clap = { version = "4", features = ["derive", "env"] }
 log = "0.4"
-segment = { version = "0.2", optional = true }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 tokio = { version = "1" }
 uuid = { version = "1", features = ["v4"] }
 
+clap = { version = "4", features = ["derive", "env"], optional = true }
+
+segment = { version = "0.2", optional = true }
+
 [features]
 default = []
 analytics = ["segment"]
+tracker = ["clap"]

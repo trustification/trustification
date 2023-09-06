@@ -71,6 +71,9 @@ pub struct Endpoints {
     pub vexination: Url,
 
     pub oidc: OpenIdConnect,
+
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub segment_write_key: Option<String>,
 }
 
 impl Endpoints {

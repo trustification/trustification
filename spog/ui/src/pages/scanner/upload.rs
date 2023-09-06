@@ -1,5 +1,11 @@
-use crate::{components::editor::ReadonlyEditor, hooks::use_config};
+use crate::{
+    analytics::{use_analytics, use_wrap_tracking},
+    components::editor::ReadonlyEditor,
+    hooks::use_config,
+    pages::ClickLearn,
+};
 use patternfly_yew::prelude::*;
+use serde_json::json;
 use std::rc::Rc;
 use wasm_bindgen_futures::JsFuture;
 use yew::prelude::*;
@@ -73,6 +79,8 @@ const EMPTY_BODY_CONTENT: &str = r#"
 #[function_component(Upload)]
 pub fn upload(props: &UploadProperties) -> Html {
     let node = use_node_ref();
+
+    let analytics = use_analytics();
 
     let initial = use_state_eq(|| true);
 
@@ -148,18 +156,12 @@ pub fn upload(props: &UploadProperties) -> Html {
         drop_content.clone(),
     );
 
-    /*
-    let helper_text = processing
-        .error()
-        .map(|err| FormHelperText::from((err.1.to_string(), InputState::Error)));
-     */
     let (state, helper_text) = processing.error().map(
         |err| (InputState::Error, html_nested!(
             <HelperTextItem icon={HelperTextItemIcon::Visible} variant={ HelperTextItemVariant::Error }> { err.1.to_string() } </HelperTextItem>
         )),
     ).unzip();
     let state = state.unwrap_or_default();
-    //let state = processing.error().is_some().then(||In).unwrap_or_default();
 
     let content = match &*processing {
         UseAsyncState::Ready(Ok(content)) => content.clone(),
@@ -178,22 +180,29 @@ pub fn upload(props: &UploadProperties) -> Html {
     );
 
     let onsubmit = use_callback(
-        |_: MouseEvent, (processing, onsubmit)| {
+        |_: MouseEvent, (processing, onsubmit, analytics)| {
             if let Some(data) = processing.data() {
+                analytics.track((
+                    "Submit SBOM",
+                    json!({
+                        "size": data.len()
+                    }),
+                ));
                 onsubmit.emit(data.clone());
             }
         },
-        (processing.clone(), props.onsubmit.clone()),
+        (processing.clone(), props.onsubmit.clone(), analytics.clone()),
     );
 
     let file_input_ref = use_node_ref();
     let onopen = use_callback(
-        |_: (), file_input_ref| {
+        |_: (), (file_input_ref, analytics)| {
+            analytics.track(("Click load button", None));
             if let Some(ele) = file_input_ref.cast::<web_sys::HtmlElement>() {
                 ele.click();
             }
         },
-        file_input_ref.clone(),
+        (file_input_ref.clone(), analytics),
     );
     let onopen_button = use_memo(|onopen| onopen.reform(|_: MouseEvent| ()), onopen.clone());
 
@@ -235,6 +244,8 @@ pub fn upload(props: &UploadProperties) -> Html {
         },
         config.scanner.documentation_url.clone(),
     );
+    let onlearn = use_wrap_tracking(onlearn, |_, _| ClickLearn, ());
+
     if config.scanner.documentation_url.is_some() {
         secondaries.push(Action::new("Learn about creating an SBOM", onlearn));
     }
