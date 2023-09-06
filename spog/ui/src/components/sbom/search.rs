@@ -103,6 +103,20 @@ pub fn sbom_search(props: &SbomSearchProperties) -> Html {
 
     total.set(state.data().and_then(|d| d.total));
 
+    let onsort = {
+        let search_params_state = search_params.clone();
+        use_callback(
+            move |sort_by: (String, bool), search_params| {
+                if let SearchMode::Simple(simple) = search_params {
+                    let mut simple = simple.clone();
+                    simple.set_sort_by(sort_by);
+                    search_params_state.set(SearchMode::Simple(simple));
+                };
+            },
+            (*search_params).clone(),
+        )
+    };
+
     // update page state
 
     use_page_state_update(
@@ -117,20 +131,6 @@ pub fn sbom_search(props: &SbomSearchProperties) -> Html {
 
     let simple = search.search_params.is_simple();
     let onchange = use_callback(|data, text| text.set(data), search.text.clone());
-
-    let onsort = {
-        let search_params_state = search_params.clone();
-        use_callback(
-            move |sort_by: (String, bool), search_params| {
-                if let SearchMode::Simple(simple) = search_params {
-                    let mut simple = simple.clone();
-                    simple.set_sort_by(sort_by);
-                    search_params_state.set(SearchMode::Simple(simple));
-                };
-            },
-            (*search_params).clone(),
-        )
-    };
 
     html!(
         <>
