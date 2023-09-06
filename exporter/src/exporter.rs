@@ -27,7 +27,7 @@ pub async fn run<M: Emitter + Send + Sync>(
                                                     blob: res.data,
                                                     r#type: DocumentType::UNKNOWN,
                                                     format: FormatType::UNKNOWN,
-                                                    encoding: EncodingType::from(res.encoding),
+                                                    encoding: EncodingType::from(res.encoding.clone()),
                                                     source_information: SourceInformation {
                                                         collector: "S3Collector".into(),
                                                         source: res.key.to_string(),
@@ -35,7 +35,7 @@ pub async fn run<M: Emitter + Send + Sync>(
                                                 };
                                                 match emitter.publish(document).await {
                                                     Ok(_) => {
-                                                        log::debug!("Successfully exported the document {}", res.key);
+                                                        log::info!("Successfully exported the document {} encoded as {}", res.key, res.encoding.unwrap_or("None".to_string()));
                                                     }
                                                     Err(e) => {
                                                         log::warn!("Error exporting entry: {:?}", e)
