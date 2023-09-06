@@ -24,6 +24,22 @@ pub struct Configuration {
     pub scanner: Scanner,
     #[serde(default)]
     pub features: Features,
+    #[serde(default)]
+    pub consent: Consent,
+}
+
+/// Configuration for the consent dialog
+#[derive(Clone, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct Consent {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub title: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub action_yes: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub action_no: Option<String>,
 }
 
 /// Features for SPoG UI which can enabled/disabled.

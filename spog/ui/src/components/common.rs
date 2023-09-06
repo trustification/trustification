@@ -44,17 +44,23 @@ pub fn safe_html(props: &Props) -> Html {
                 let div = gloo_utils::document().create_element(element).unwrap();
                 div.set_inner_html(html);
 
-                let mut list = vec![];
                 let children = div.children();
-                for i in 0..children.length() {
-                    let node = children.item(i);
-                    if let Some(node) = node {
-                        list.push(Html::VRef(node.into()));
+                let len = children.length();
+
+                let mut content = VList::new();
+                match len > 0 {
+                    true => {
+                        for i in 0..len {
+                            let node = children.item(i);
+                            if let Some(node) = node {
+                                content.add_child(Html::VRef(node.into()));
+                            }
+                        }
                     }
-                }
-                let mut children = VList::new();
-                children.add_children(list);
-                Html::VList(children)
+                    false => content.add_child(Html::VRef(div.into())),
+                };
+
+                Html::VList(content)
             } else {
                 // if it's empty, use the default
                 Html::default()
