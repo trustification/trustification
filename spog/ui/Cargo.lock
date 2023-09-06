@@ -2441,7 +2441,6 @@ dependencies = [
  "strum 0.25.0",
  "thiserror",
  "time 0.3.25",
- "trustification-analytics",
  "trustification-api",
  "trustification-common",
  "trustification-version",
@@ -2742,18 +2741,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0955b8137a1df6f1a2e9a37d8a6656291ff0297c1a97c24e0d8425fe2312f79a"
 dependencies = [
  "once_cell",
-]
-
-[[package]]
-name = "trustification-analytics"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "log",
- "serde",
- "serde_json",
- "tokio",
- "uuid",
 ]
 
 [[package]]

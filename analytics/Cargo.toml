@@ -16,6 +16,6 @@ clap = { version = "4", features = ["derive", "env"], optional = true }
 segment = { version = "0.2", optional = true }
 
 [features]
-default = []
+default = ["analytics", "tracker"]
 analytics = ["segment"]
 tracker = ["clap"]
