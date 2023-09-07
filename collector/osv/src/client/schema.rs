@@ -231,7 +231,9 @@ pub enum ReferenceType {
 //impl ReferenceType {
 impl Display for ReferenceType {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}",
+        write!(
+            f,
+            "{}",
             match self {
                 ReferenceType::Undefined => "NONE",
                 ReferenceType::Web => "WEB",
