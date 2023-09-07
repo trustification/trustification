@@ -13,14 +13,13 @@ use trustification_api::search::SearchOptions;
 use trustification_auth::{
     authenticator::{user::UserInformation, Authenticator},
     authorizer::Authorizer,
-    swagger_ui::SwaggerUiOidc,
+    swagger_ui::{swagger_ui_with_auth, SwaggerUiOidc},
     Permission,
 };
 use trustification_index::Error as IndexError;
 use trustification_infrastructure::new_auth;
 use trustification_storage::{Error as StorageError, Storage};
 use utoipa::OpenApi;
-use utoipa_swagger_ui::SwaggerUi;
 use vexination_model::prelude::*;
 
 use crate::SharedState;
@@ -46,16 +45,7 @@ pub fn config(
             .service(search_vex)
             .service(delete_vex),
     )
-    .service({
-        let mut openapi = ApiDoc::openapi();
-        let mut swagger = SwaggerUi::new("/swagger-ui/{_:.*}");
-
-        if let Some(swagger_ui_oidc) = &swagger_ui_oidc {
-            swagger = swagger_ui_oidc.apply(swagger, &mut openapi);
-        }
-
-        swagger.url("/openapi.json", openapi)
-    });
+    .service(swagger_ui_with_auth(ApiDoc::openapi(), swagger_ui_oidc));
 }
 
 async fn fetch_object(storage: &Storage, key: &str) -> HttpResponse {
