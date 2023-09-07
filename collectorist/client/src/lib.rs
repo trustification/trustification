@@ -1,7 +1,7 @@
-use std::time::Duration;
-
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
+use std::time::Duration;
+use trustification_auth::client::{TokenInjector, TokenProvider};
 
 pub struct CollectoristUrl {
     collector_id: String,
@@ -28,6 +28,8 @@ impl CollectoristUrl {
 
 pub struct CollectoristClient {
     collectorist_url: CollectoristUrl,
+    client: reqwest::Client,
+    provider: Box<dyn TokenProvider>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -36,9 +38,14 @@ pub struct RegisterResponse {
 }
 
 impl CollectoristClient {
-    pub fn new(collector_id: String, collectorist_url: Url) -> Self {
+    pub fn new<P>(collector_id: String, collectorist_url: Url, provider: P) -> Self
+    where
+        P: TokenProvider + 'static,
+    {
         Self {
             collectorist_url: CollectoristUrl::new(collectorist_url, collector_id),
+            client: reqwest::Client::new(),
+            provider: Box::new(provider),
         }
     }
 
@@ -47,8 +54,11 @@ impl CollectoristClient {
     }
 
     pub async fn register(&self, config: CollectorConfig) -> Result<RegisterResponse, anyhow::Error> {
-        Ok(reqwest::Client::new()
+        Ok(self
+            .client
             .post(self.collectorist_url.register_url())
+            .inject_token(self.provider.as_ref())
+            .await?
             .json(&config)
             .send()
             .await?
@@ -57,8 +67,10 @@ impl CollectoristClient {
     }
 
     pub async fn deregister(&self) -> Result<(), anyhow::Error> {
-        reqwest::Client::new()
+        self.client
             .delete(self.collectorist_url.deregister_url())
+            .inject_token(self.provider.as_ref())
+            .await?
             .send()
             .await?;
         Ok(())

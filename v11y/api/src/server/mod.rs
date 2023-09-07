@@ -1,9 +1,6 @@
 use crate::SharedState;
 use actix_cors::Cors;
-use actix_web::{
-    middleware::{Compress, Logger},
-    web, HttpServer, ResponseError,
-};
+use actix_web::{web, HttpServer, ResponseError};
 use actix_web_prom::PrometheusMetricsBuilder;
 use anyhow::anyhow;
 use derive_more::{Display, Error};
@@ -94,8 +91,6 @@ pub fn config(
     cfg.service(
         web::scope("/api/v1")
             .wrap(new_auth!(auth))
-            .wrap(Logger::default())
-            .wrap(Compress::default())
             .service(vulnerability::ingest_vulnerability)
             .service(vulnerability::get),
     )

@@ -140,7 +140,12 @@ mod test {
             ))
             .to_request();
 
-        let app = test::init_service(App::new().app_data(web::Data::new(state.clone())).configure(config)).await;
+        let app = test::init_service(
+            App::new()
+                .app_data(web::Data::new(state.clone()))
+                .configure(|cfg| config(cfg, None, None)),
+        )
+        .await;
 
         test::call_service(&app, request).await;
 
@@ -164,7 +169,12 @@ mod test {
             )
             .await?,
         );
-        let app = test::init_service(App::new().app_data(web::Data::new(state.clone())).configure(config)).await;
+        let app = test::init_service(
+            App::new()
+                .app_data(web::Data::new(state.clone()))
+                .configure(|cfg| config(cfg, None, None)),
+        )
+        .await;
 
         let request = TestRequest::post()
             .uri("/api/v1/collector/foo")
@@ -206,7 +216,12 @@ mod test {
             .await?,
         );
 
-        let app = test::init_service(App::new().app_data(web::Data::new(state.clone())).configure(config)).await;
+        let app = test::init_service(
+            App::new()
+                .app_data(web::Data::new(state.clone()))
+                .configure(|cfg| config(cfg, None, None)),
+        )
+        .await;
 
         let request = TestRequest::post()
             .uri("/api/v1/collector/foo")
