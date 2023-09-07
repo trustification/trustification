@@ -1,10 +1,18 @@
-use std::net::SocketAddr;
-
+use actix_cors::Cors;
 use actix_web::{
     middleware::{Compress, Logger},
-    web, App, HttpServer, ResponseError,
+    web, HttpServer, ResponseError,
 };
+use actix_web_prom::PrometheusMetricsBuilder;
+use anyhow::anyhow;
 use derive_more::{Display, Error};
+use std::net::SocketAddr;
+use std::sync::Arc;
+use trustification_auth::{authenticator::Authenticator, authorizer::Authorizer, swagger_ui::SwaggerUiOidc};
+use trustification_infrastructure::{
+    app::{new_app, AppOptions},
+    new_auth, Metrics,
+};
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
@@ -38,25 +46,67 @@ mod vulnerability;
 )]
 pub struct ApiDoc;
 
-pub async fn run<B: Into<SocketAddr>>(state: SharedState, bind: B) -> Result<(), anyhow::Error> {
+pub async fn run<B: Into<SocketAddr>>(
+    state: SharedState,
+    bind: B,
+    metrics: Arc<Metrics>,
+    authenticator: Option<Arc<Authenticator>>,
+    authorizer: Authorizer,
+    swagger_oidc: Option<Arc<SwaggerUiOidc>>,
+) -> Result<(), anyhow::Error> {
     let addr = bind.into();
-    log::info!("listening on {}", addr);
-    HttpServer::new(move || App::new().app_data(web::Data::new(state.clone())).configure(config))
-        .bind(addr)?
-        .run()
-        .await?;
+    log::debug!("listening on {}", addr);
+
+    let http_metrics = PrometheusMetricsBuilder::new("bombastic_api")
+        .registry(metrics.registry().clone())
+        .build()
+        .map_err(|_| anyhow!("Error registering HTTP metrics"))?;
+
+    HttpServer::new(move || {
+        let http_metrics = http_metrics.clone();
+        let cors = Cors::permissive();
+        let authenticator = authenticator.clone();
+        let authorizer = authorizer.clone();
+        let swagger_oidc = swagger_oidc.clone();
+
+        new_app(AppOptions {
+            cors: Some(cors),
+            metrics: Some(http_metrics),
+            authenticator: None,
+            authorizer,
+        })
+        .app_data(web::Data::new(state.clone()))
+        .configure(|cfg| config(cfg, authenticator, swagger_oidc))
+    })
+    .bind(addr)?
+    .run()
+    .await?;
     Ok(())
 }
 
-pub fn config(cfg: &mut web::ServiceConfig) {
+pub fn config(
+    cfg: &mut web::ServiceConfig,
+    auth: Option<Arc<Authenticator>>,
+    swagger_ui_oidc: Option<Arc<SwaggerUiOidc>>,
+) {
     cfg.service(
         web::scope("/api/v1")
+            .wrap(new_auth!(auth))
             .wrap(Logger::default())
             .wrap(Compress::default())
             .service(vulnerability::ingest_vulnerability)
             .service(vulnerability::get),
     )
-    .service(SwaggerUi::new("/swagger-ui/{_:.*}").url("/openapi.json", ApiDoc::openapi()));
+    .service({
+        let mut openapi = ApiDoc::openapi();
+        let mut swagger = SwaggerUi::new("/swagger-ui/{_:.*}");
+
+        if let Some(swagger_ui_oidc) = &swagger_ui_oidc {
+            swagger = swagger_ui_oidc.apply(swagger, &mut openapi);
+        }
+
+        swagger.url("/openapi.json", openapi)
+    });
 }
 
 #[derive(Debug, Display)]

@@ -99,6 +99,7 @@ To run the API processes, you can use cargo:
 RUST_LOG=info cargo run -p trust -- vexination api --devmode -p 8081 &
 RUST_LOG=info cargo run -p trust -- bombastic api --devmode -p 8082 &
 RUST_LOG=info cargo run -p trust -- spog api --devmode -p 8083  &
+RUST_LOG=info cargo run -p trust -- v11y api --devmode -p 8087 &
 ```
 
 If you want to disable authentication (not recommended unless you are not exposing any services outside localhost), you can pass the `--authentication-disabled` flag to the above commands.
