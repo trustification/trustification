@@ -176,7 +176,9 @@ impl StorageConfig {
             if self.endpoint.is_none() {
                 self.endpoint = Some("http://localhost:9000".into());
             }
-            println!("Update config to {:#?}", self);
+
+            log::info!("Update config to {:#?}", self);
+
             self
         } else {
             self
