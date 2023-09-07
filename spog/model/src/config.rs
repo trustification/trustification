@@ -159,7 +159,7 @@ pub struct Scanner {
 #[derive(Clone, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct Hint {
-    /// The title to show
+    /// The title to show. Must be valid HTML.
     pub title: String,
     /// The body content of the hint. Must be valid HTML.
     pub body: String,
