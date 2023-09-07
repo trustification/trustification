@@ -3,9 +3,8 @@ mod inspect;
 mod report;
 mod upload;
 
-use crate::analytics::use_tracking;
 use crate::hints::Hints;
-use crate::hooks::use_config;
+use crate::{analytics::use_tracking, components::hint::Hint, hooks::use_config};
 use analytics_next::TrackingEvent;
 use anyhow::bail;
 use bombastic_model::prelude::SBOM;
@@ -16,7 +15,6 @@ use serde_json::{json, Value};
 use std::rc::Rc;
 use upload::Upload;
 use yew::prelude::*;
-use yew_hooks::use_local_storage;
 
 pub struct ClickLearn;
 
@@ -83,6 +81,8 @@ pub fn scanner() -> Html {
         content.clone(),
     );
 
+    let config = use_config();
+
     match &*sbom {
         Some((raw, _bom)) => {
             html!(<Inspect {onreset} raw={(*raw).clone()} />)
@@ -92,7 +92,9 @@ pub fn scanner() -> Html {
                 <>
                     <CommonHeader />
 
-                    <WelcomeHint />
+                    if let Some(hint) = &config.scanner.welcome_hint {
+                        <Hint hint_key={Hints::ScannerWelcome} hint={hint.clone()} />
+                    }
 
                     <PageSection variant={PageSectionVariant::Light} fill=true>
                         <Card
@@ -109,52 +111,6 @@ pub fn scanner() -> Html {
             )
         }
     }
-}
-
-#[function_component(WelcomeHint)]
-fn welcome_hint() -> Html {
-    let hint_state = use_local_storage::<bool>(Hints::ScannerWelcome.to_string());
-
-    let hide = (*hint_state).unwrap_or_default();
-
-    let onhide = use_callback(
-        |_, hint_state| {
-            hint_state.set(true);
-        },
-        hint_state.clone(),
-    );
-
-    let title = html!(<Title>{ "Receive a detailed summary of your SBOM stack including:" }</Title>);
-    let actions = Some(html!(
-        <Button onclick={onhide} variant={ButtonVariant::Plain}> { Icon::Times } </Button>
-    ));
-
-    html!(
-        if !hide {
-            <PageSection
-                variant={PageSectionVariant::Light}
-                r#type={PageSectionType::Breadcrumbs}
-            >
-                <Card {actions} {title}
-                    style="--pf-v5-c-card--BackgroundColor: var(--pf-v5-global--BackgroundColor--200);"
-                >
-                    <CardBody>
-                        <Flex>
-                            <FlexItem>
-                                {"Security issues"}
-                            </FlexItem>
-                            <FlexItem>
-                                {"Licenses"}
-                            </FlexItem>
-                            <FlexItem>
-                                {"Dependency details"}
-                            </FlexItem>
-                        </Flex>
-                    </CardBody>
-                </Card>
-            </PageSection>
-        }
-    )
 }
 
 #[derive(PartialEq, Properties)]

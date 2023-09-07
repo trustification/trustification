@@ -14,6 +14,14 @@
         }
       ]
     },
+    "consent": {
+      "default": {},
+      "allOf": [
+        {
+          "$ref": "#/definitions/Consent"
+        }
+      ]
+    },
     "features": {
       "default": {
         "dedicatedSearch": true,
@@ -85,6 +93,36 @@
             {
               "$ref": "#/definitions/Filters"
             }
+          ]
+        }
+      }
+    },
+    "Consent": {
+      "description": "Configuration for the consent dialog",
+      "type": "object",
+      "properties": {
+        "actionNo": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "actionYes": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "description": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "title": {
+          "type": [
+            "string",
+            "null"
           ]
         }
       }
@@ -227,6 +265,24 @@
         }
       }
     },
+    "Hint": {
+      "description": "A hint configuration",
+      "type": "object",
+      "required": [
+        "body",
+        "title"
+      ],
+      "properties": {
+        "body": {
+          "description": "The body content of the hint. Must be valid HTML.",
+          "type": "string"
+        },
+        "title": {
+          "description": "The title to show",
+          "type": "string"
+        }
+      }
+    },
     "LandingPage": {
       "description": "Configuration for the landing page",
       "type": "object",
@@ -274,6 +330,17 @@
             "null"
           ],
           "format": "uri"
+        },
+        "welcomeHint": {
+          "description": "The welcome hint section. If `None`, then no hint is shown.",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Hint"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       }
     },
