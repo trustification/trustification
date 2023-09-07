@@ -3,9 +3,7 @@ use std::process::ExitCode;
 use crate::changes::ChangeTracker;
 use crate::shell_wrap::ScriptContext;
 use clap::{arg, command, Args};
-use trustification_auth::client::{
-    OpenIdTokenProvider, OpenIdTokenProviderConfig, OpenIdTokenProviderConfigArguments, TokenProvider,
-};
+use trustification_auth::client::{OpenIdTokenProviderConfigArguments, TokenProvider};
 use trustification_infrastructure::{Infrastructure, InfrastructureConfig};
 use url::Url;
 
@@ -55,10 +53,7 @@ impl Run {
     pub async fn run(self) -> anyhow::Result<ExitCode> {
         Infrastructure::from(self.infra)
             .run("bombastic-walker", |_| async move {
-                let provider = match OpenIdTokenProviderConfig::from_args(self.config.oidc.clone()) {
-                    Some(oidc) => Some(OpenIdTokenProvider::with_config(oidc).await?),
-                    None => None,
-                };
+                let provider = self.config.oidc.clone().into_provider().await?;
 
                 let source = self
                     .config
@@ -95,7 +90,7 @@ impl Run {
 
     async fn call_script<TP: TokenProvider>(
         config: &WalkerConfig,
-        provider: &Option<TP>,
+        provider: &TP,
         entries: Vec<String>,
         sbom_path: &Url,
     ) -> anyhow::Result<()> {

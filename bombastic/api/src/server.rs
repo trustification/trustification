@@ -10,7 +10,6 @@ use actix_web::{
         header::{self, Accept, AcceptEncoding, ContentType, HeaderValue, CONTENT_ENCODING},
         StatusCode,
     },
-    middleware::Compress,
     route, web, HttpRequest, HttpResponse, Responder,
 };
 use bombastic_model::prelude::*;
@@ -44,7 +43,6 @@ pub fn config(
     cfg.service(
         web::scope("/api/v1")
             .wrap(new_auth!(auth))
-            .wrap(Compress::default())
             .service(query_sbom)
             .service(search_sbom)
             .service(publish_sbom)

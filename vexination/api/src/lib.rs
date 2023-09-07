@@ -12,10 +12,12 @@ use actix_web_prom::PrometheusMetricsBuilder;
 use anyhow::anyhow;
 use prometheus::Registry;
 use tokio::task::block_in_place;
-use trustification_auth::auth::AuthConfigArguments;
-use trustification_auth::authenticator::Authenticator;
-use trustification_auth::authorizer::Authorizer;
-use trustification_auth::swagger_ui::{SwaggerUiOidc, SwaggerUiOidcConfig};
+use trustification_auth::{
+    auth::AuthConfigArguments,
+    authenticator::Authenticator,
+    authorizer::Authorizer,
+    swagger_ui::{SwaggerUiOidc, SwaggerUiOidcConfig},
+};
 use trustification_index::{IndexConfig, IndexStore};
 use trustification_infrastructure::{
     app::{new_app, AppOptions},
