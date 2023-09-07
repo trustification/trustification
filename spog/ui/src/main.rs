@@ -6,6 +6,7 @@ mod app;
 mod backend;
 mod components;
 mod console;
+mod hints;
 mod hooks;
 mod model;
 mod pages;

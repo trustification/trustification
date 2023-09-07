@@ -6,6 +6,7 @@ use crate::{
         common::{ExternalLinkMarker, ExternalNavLink},
         theme::DarkModeEntry,
     },
+    hints::clear_hints,
     hooks::{use_backend, use_config},
     pages::{self, AppRoute, View},
     utils::auth::from_auth,
@@ -118,6 +119,8 @@ fn authenticated_page(props: &ChildrenProperties) -> Html {
     let onconsent = use_consent_dialog();
     let manage_consent = use_consent_context::<()>().is_some();
 
+    let onclearhints = use_callback(|_, _| clear_hints(), ());
+
     let tools = html!(
         <Toolbar>
             <ToolbarContent>
@@ -156,6 +159,9 @@ fn authenticated_page(props: &ChildrenProperties) -> Html {
                         <Raw>
                             <DarkModeEntry />
                         </Raw>
+                        <MenuAction onclick={onclearhints}>
+                            { "Clear hints" }
+                        </MenuAction>
                         <ListDivider/>
 
                         { manage_consent.then(|| {

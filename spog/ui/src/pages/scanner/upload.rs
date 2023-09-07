@@ -296,7 +296,7 @@ pub fn upload(props: &UploadProperties) -> Html {
     // render
 
     html!(
-        <div ref={node.clone()} {class}>
+        <div ref={node.clone()} {class} style="background-color: var(--pf-v5-global--BackgroundColor--100);">
             <input ref={file_input_ref.clone()} style="display: none;" type="file" onchange={onchange_open} />
             <Stack gutter=true>
                 <StackItem fill=true>
