@@ -85,7 +85,7 @@ impl AppState {
             addr: RwLock::new(None),
             connected: AtomicBool::new(false),
             collectorist_client: collectorist_client::CollectoristClient::new(collector_id, collectorist_url),
-            v11y_client: v11y_client::V11yClient::new(v11y_url),
+            v11y_client: v11y_client::V11yClient::new(v11y_url, ()),
             guac_url: RwLock::new(None),
         }
     }
