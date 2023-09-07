@@ -55,7 +55,12 @@ pub struct Run {
 }
 
 impl Run {
-    pub async fn run(self) -> anyhow::Result<ExitCode> {
+    pub async fn run(mut self) -> anyhow::Result<ExitCode> {
+        if self.devmode {
+            self.guac_url = Url::parse("http://localhost:8085").unwrap();
+            self.csub_url = Url::parse("http://localhost:8086").unwrap();
+        }
+
         let (authn, authz) = self.auth.split(self.devmode)?.unzip();
         let authenticator: Option<Arc<Authenticator>> = Authenticator::from_config(authn).await?.map(Arc::new);
         let authorizer = Authorizer::new(authz);
