@@ -1,3 +1,4 @@
+use crate::SharedState;
 use actix_cors::Cors;
 use actix_web::{
     middleware::{Compress, Logger},
@@ -8,15 +9,16 @@ use anyhow::anyhow;
 use derive_more::{Display, Error};
 use std::net::SocketAddr;
 use std::sync::Arc;
-use trustification_auth::{authenticator::Authenticator, authorizer::Authorizer, swagger_ui::SwaggerUiOidc};
+use trustification_auth::{
+    authenticator::Authenticator,
+    authorizer::Authorizer,
+    swagger_ui::{swagger_ui_with_auth, SwaggerUiOidc},
+};
 use trustification_infrastructure::{
     app::{new_app, AppOptions},
     new_auth, Metrics,
 };
 use utoipa::OpenApi;
-use utoipa_swagger_ui::SwaggerUi;
-
-use crate::SharedState;
 
 mod vulnerability;
 
@@ -97,16 +99,7 @@ pub fn config(
             .service(vulnerability::ingest_vulnerability)
             .service(vulnerability::get),
     )
-    .service({
-        let mut openapi = ApiDoc::openapi();
-        let mut swagger = SwaggerUi::new("/swagger-ui/{_:.*}");
-
-        if let Some(swagger_ui_oidc) = &swagger_ui_oidc {
-            swagger = swagger_ui_oidc.apply(swagger, &mut openapi);
-        }
-
-        swagger.url("/openapi.json", openapi)
-    });
+    .service(swagger_ui_with_auth(ApiDoc::openapi(), swagger_ui_oidc));
 }
 
 #[derive(Debug, Display)]
