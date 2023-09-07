@@ -192,12 +192,12 @@ pub async fn register_with_collectorist(state: SharedState) {
                 let url = Url::parse(&format!("http://{}:{}/api/v1/", addr.ip(), addr.port())).unwrap();
                 info!(
                     "registering with collectorist at {} with callback={}",
-                    state.collectorist_client.register_url(),
+                    state.collectorist_client.register_collector_url(),
                     url
                 );
                 match state
                     .collectorist_client
-                    .register(CollectorConfig {
+                    .register_collector(CollectorConfig {
                         url,
                         cadence: Default::default(),
                         interests: vec![Interest::Package, Interest::Vulnerability],
@@ -220,7 +220,7 @@ pub async fn register_with_collectorist(state: SharedState) {
 }
 
 pub async fn deregister_with_collectorist(state: SharedState) {
-    if state.collectorist_client.deregister().await.is_ok() {
+    if state.collectorist_client.deregister_collector().await.is_ok() {
         info!("deregistered with collectorist");
     } else {
         warn!("failed to deregister with collectorist");

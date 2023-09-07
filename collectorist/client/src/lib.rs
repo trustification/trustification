@@ -13,16 +13,24 @@ impl CollectoristUrl {
         Self { collector_id, base_url }
     }
 
-    pub fn register_url(&self) -> Url {
+    pub fn register_collector_url(&self) -> Url {
         self.base_url
             .join(&format!("/api/v1/collector/{}", self.collector_id))
             .unwrap()
     }
 
-    pub fn deregister_url(&self) -> Url {
+    pub fn deregister_collector_url(&self) -> Url {
         self.base_url
             .join(&format!("/api/v1/collector/{}", self.collector_id))
             .unwrap()
+    }
+
+    pub fn collect_packages_url(&self) -> Url {
+        self.base_url.join("/api/v1/packages").unwrap()
+    }
+
+    pub fn collect_vulnerabilities_url(&self) -> Url {
+        self.base_url.join("/api/v1/vulnerabilities").unwrap()
     }
 }
 
@@ -42,13 +50,13 @@ impl CollectoristClient {
         }
     }
 
-    pub fn register_url(&self) -> Url {
-        self.collectorist_url.register_url()
+    pub fn register_collector_url(&self) -> Url {
+        self.collectorist_url.register_collector_url()
     }
 
-    pub async fn register(&self, config: CollectorConfig) -> Result<RegisterResponse, anyhow::Error> {
+    pub async fn register_collector(&self, config: CollectorConfig) -> Result<RegisterResponse, anyhow::Error> {
         Ok(reqwest::Client::new()
-            .post(self.collectorist_url.register_url())
+            .post(self.collectorist_url.register_collector_url())
             .json(&config)
             .send()
             .await?
@@ -56,13 +64,41 @@ impl CollectoristClient {
             .await?)
     }
 
-    pub async fn deregister(&self) -> Result<(), anyhow::Error> {
+    pub async fn deregister_collector(&self) -> Result<(), anyhow::Error> {
         reqwest::Client::new()
-            .delete(self.collectorist_url.deregister_url())
+            .delete(self.collectorist_url.deregister_collector_url())
             .send()
             .await?;
         Ok(())
     }
+
+    pub async fn collect_packages(&self, purls: Vec<String>) -> Result<(), anyhow::Error> {
+        reqwest::Client::new()
+            .post(self.collectorist_url.collect_packages_url())
+            .json(&CollectPackagesRequest { purls })
+            .send()
+            .await?;
+        Ok(())
+    }
+
+    pub async fn collect_vulnerabilities(&self, vuln_ids: Vec<String>) -> Result<(), anyhow::Error> {
+        reqwest::Client::new()
+            .post(self.collectorist_url.collect_vulnerabilities_url())
+            .json(&CollectVulnerabilitiesRequest { vuln_ids })
+            .send()
+            .await?;
+        Ok(())
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct CollectPackagesRequest {
+    pub purls: Vec<String>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct CollectVulnerabilitiesRequest {
+    pub vuln_ids: Vec<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]

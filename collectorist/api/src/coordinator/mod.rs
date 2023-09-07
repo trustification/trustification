@@ -16,12 +16,12 @@ pub enum RateLimit {
 
 use std::time::SystemTime;
 
+use collectorist_client::{CollectPackagesRequest, CollectVulnerabilitiesRequest};
 use guac::collectsub::{CollectSubClient, Entry, Filter};
 use log::{info, warn};
 use reqwest::Url;
 use tokio::time::{interval, sleep};
 
-use crate::server::collect::CollectRequest;
 use crate::SharedState;
 
 pub struct Coordinator {
@@ -74,7 +74,11 @@ impl Coordinator {
         listener.await
     }
 
-    pub async fn collect_packages(&self, state: SharedState, request: CollectRequest) -> Vec<CollectPackagesResponse> {
+    pub async fn collect_packages(
+        &self,
+        state: SharedState,
+        request: CollectPackagesRequest,
+    ) -> Vec<CollectPackagesResponse> {
         let collectors = state.collectors.read().await;
         let result = collectors.collect_packages(state.clone(), request).await;
 
@@ -86,6 +90,13 @@ impl Coordinator {
 
         collectors.collect_vulnerabilities(state.clone(), vuln_ids).await;
         result
+    }
+
+    pub async fn collect_vulnerabilities(&self, state: SharedState, request: CollectVulnerabilitiesRequest) {
+        let collectors = state.collectors.read().await;
+        collectors
+            .collect_vulnerabilities(state.clone(), request.vuln_ids.iter().cloned().collect::<HashSet<_>>())
+            .await;
     }
 
     pub async fn add_purl(&self, state: SharedState, purl: &str) -> Result<(), anyhow::Error> {

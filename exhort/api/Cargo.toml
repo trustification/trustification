@@ -7,8 +7,10 @@ edition = "2021"
 
 [dependencies]
 actix-web = "4"
+### this seems completely wrong, but Cargo seems to also require way too many ../ for this
+### wtf am I doing wrong?
+collectorist-client = { path = " ../../../../collectorist/client" }
 trustification-infrastructure = { path = "../../infrastructure" }
-collectorist-api = { path = "../../collectorist/api" }
 reqwest = "0.11.18"
 clap = { version = "4", features = ["derive"] }
 anyhow = "1"

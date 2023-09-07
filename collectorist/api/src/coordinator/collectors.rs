@@ -2,10 +2,9 @@ use std::collections::{HashMap, HashSet};
 
 use crate::coordinator::collector::Collector;
 use collector_client::{CollectPackagesResponse, CollectVulnerabilitiesResponse};
-use collectorist_client::{CollectorConfig, Interest};
+use collectorist_client::{CollectPackagesRequest, CollectorConfig, Interest};
 use futures::future::join_all;
 
-use crate::server::collect::CollectRequest;
 use crate::SharedState;
 
 #[derive(Default)]
@@ -33,7 +32,11 @@ impl Collectors {
         self.collectors.get(&id).map(|e| e.config.clone())
     }
 
-    pub async fn collect_packages(&self, state: SharedState, request: CollectRequest) -> Vec<CollectPackagesResponse> {
+    pub async fn collect_packages(
+        &self,
+        state: SharedState,
+        request: CollectPackagesRequest,
+    ) -> Vec<CollectPackagesResponse> {
         let mut futures = Vec::new();
 
         for collector in self.collectors.values() {
@@ -53,7 +56,9 @@ impl Collectors {
         let mut futures = Vec::new();
 
         for collector in self.collectors.values() {
-            if collector.config.interests.contains(&Interest::Package) {
+            log::info!("check {}", collector.id);
+            if collector.config.interests.contains(&Interest::Vulnerability) {
+                log::info!("dispatch {}", collector.id);
                 futures.push(collector.collect_vulnerabilities(state.clone(), vuln_ids.clone()));
             }
         }

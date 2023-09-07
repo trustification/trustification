@@ -40,7 +40,7 @@ pub struct ApiDoc;
 
 pub async fn run<B: Into<SocketAddr>>(state: SharedState, bind: B) -> Result<(), anyhow::Error> {
     let addr = bind.into();
-    log::debug!("listening on {}", addr);
+    log::info!("listening on {}", addr);
     HttpServer::new(move || App::new().app_data(web::Data::new(state.clone())).configure(config))
         .bind(addr)?
         .run()
