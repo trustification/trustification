@@ -278,7 +278,7 @@
           "type": "string"
         },
         "title": {
-          "description": "The title to show",
+          "description": "The title to show. Must be valid HTML.",
           "type": "string"
         }
       }

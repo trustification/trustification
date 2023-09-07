@@ -42,7 +42,7 @@ pub fn hint(props: &HintProperties) -> Html {
         (hint_state.clone(), analytics, props.hint_key.clone()),
     );
 
-    let title = html!(<Title>{ &props.hint.title }</Title>);
+    let title = html!(<SafeHtml html={props.hint.title.clone()} />);
     let actions = Some(html!(
         <Button onclick={onhide} variant={ButtonVariant::Plain}> { Icon::Times } </Button>
     ));
