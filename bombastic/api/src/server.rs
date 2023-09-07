@@ -88,7 +88,11 @@ impl error::ResponseError for Error {
             )),
             _ => &mut res,
         }
-        .body(self.to_string())
+        .body(if self.status_code() == StatusCode::INTERNAL_SERVER_ERROR {
+            "Internal server error".to_string()
+        } else {
+            self.to_string()
+        })
     }
 
     fn status_code(&self) -> StatusCode {

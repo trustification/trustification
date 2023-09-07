@@ -80,7 +80,11 @@ impl actix_web::error::ResponseError for Error {
     fn error_response(&self) -> HttpResponse {
         let mut res = HttpResponse::build(self.status_code());
         res.insert_header(ContentType::plaintext());
-        res.body(self.to_string())
+        res.body(if self.status_code() == StatusCode::INTERNAL_SERVER_ERROR {
+            "Internal server error".to_string()
+        } else {
+            self.to_string()
+        })
     }
     fn status_code(&self) -> StatusCode {
         match self {
