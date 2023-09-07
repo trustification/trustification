@@ -21,14 +21,13 @@ use trustification_api::search::SearchOptions;
 use trustification_auth::{
     authenticator::{user::UserInformation, Authenticator},
     authorizer::Authorizer,
-    swagger_ui::SwaggerUiOidc,
+    swagger_ui::{swagger_ui_with_auth, SwaggerUiOidc},
     Permission,
 };
 use trustification_index::Error as IndexError;
 use trustification_infrastructure::new_auth;
 use trustification_storage::Error as StorageError;
 use utoipa::OpenApi;
-use utoipa_swagger_ui::SwaggerUi;
 
 #[derive(OpenApi)]
 #[openapi(
@@ -51,16 +50,7 @@ pub fn config(
             .service(publish_sbom)
             .service(delete_sbom),
     )
-    .service({
-        let mut openapi = ApiDoc::openapi();
-        let mut swagger = SwaggerUi::new("/swagger-ui/{_:.*}");
-
-        if let Some(swagger_ui_oidc) = &swagger_ui_oidc {
-            swagger = swagger_ui_oidc.apply(swagger, &mut openapi);
-        }
-
-        swagger.url("/openapi.json", openapi)
-    });
+    .service(swagger_ui_with_auth(ApiDoc::openapi(), swagger_ui_oidc));
 }
 
 const ACCEPT_ENCODINGS: [&str; 2] = ["bzip2", "zstd"];

@@ -1,5 +1,7 @@
 use crate::devmode::{self, SWAGGER_UI_CLIENT_ID};
+use actix_web::dev::HttpServiceFactory;
 use openid::{Client, Discovered, Provider, StandardClaims};
+use std::sync::Arc;
 use url::Url;
 use utoipa::openapi::{
     security::{AuthorizationCode, Flow, OAuth2, Scopes, SecurityScheme},
@@ -92,4 +94,19 @@ impl SwaggerUiOidc {
                 .use_pkce_with_authorization_code_grant(true),
         )
     }
+}
+
+/// Create an [`HttpServiceFactory`] for Swagger UI with OIDC authentication
+#[cfg(feature = "actix")]
+pub fn swagger_ui_with_auth(
+    mut openapi: utoipa::openapi::OpenApi,
+    swagger_ui_oidc: Option<Arc<SwaggerUiOidc>>,
+) -> impl HttpServiceFactory {
+    let mut swagger = SwaggerUi::new("/swagger-ui/{_:.*}");
+
+    if let Some(swagger_ui_oidc) = &swagger_ui_oidc {
+        swagger = swagger_ui_oidc.apply(swagger, &mut openapi);
+    }
+
+    swagger.url("/openapi.json", openapi)
 }
