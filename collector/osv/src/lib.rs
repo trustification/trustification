@@ -147,7 +147,7 @@ impl From<Vulnerability> for v11y_client::Vulnerability {
 impl From<&Reference> for v11y_client::Reference {
     fn from(reference: &Reference) -> Self {
         Self {
-            r#type: serde_json::to_string(&reference.reference_type).unwrap_or("unknown".to_string()),
+            r#type: reference.reference_type.to_string(),
             url: reference.url.clone(),
         }
     }

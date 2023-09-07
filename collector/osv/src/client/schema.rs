@@ -1,6 +1,7 @@
-use serde::{Deserialize, Serialize};
+use std::fmt::{Display, Formatter};
 
 use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 
 /// Package identifies the code library or command that
 /// is potentially affected by a particular vulnerability.
@@ -225,6 +226,27 @@ pub enum ReferenceType {
     Introduced,
     Evidence,
     Git,
+}
+
+//impl ReferenceType {
+impl Display for ReferenceType {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}",
+            match self {
+                ReferenceType::Undefined => "NONE",
+                ReferenceType::Web => "WEB",
+                ReferenceType::Advisory => "ADVISORY",
+                ReferenceType::Report => "REPORT",
+                ReferenceType::Fix => "FIX",
+                ReferenceType::Package => "PACKAGE",
+                ReferenceType::Article => "ARTICLE",
+                ReferenceType::Detection => "DETECTION",
+                ReferenceType::Introduced => "INTRODUCED",
+                ReferenceType::Evidence => "EVIDENCE",
+                ReferenceType::Git => "GIT",
+            }
+        )
+    }
 }
 
 /// Reference to additional information about the vulnerability.
