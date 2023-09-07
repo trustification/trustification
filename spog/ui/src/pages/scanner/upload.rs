@@ -13,6 +13,15 @@ use yew::prelude::*;
 use yew_hooks::prelude::*;
 use yew_more_hooks::hooks::r#async::{UseAsyncState, *};
 
+/// The content of the empty state body.
+///
+/// **NOTE**: This must be be valid HTML and wrapped with exactly one element.
+const EMPTY_BODY_CONTENT: &str = r#"
+<div>
+    <p>Start by <strong>dragging and dropping a file here</strong> or clicking the <strong>Load an SBOM</strong> button. Red&nbsp;Hat does not store a copy of your SBOM.</p>
+</div>
+"#;
+
 struct LoadFiles(u32);
 impl From<LoadFiles> for TrackingEvent<'static> {
     fn from(value: LoadFiles) -> Self {
@@ -80,16 +89,6 @@ pub struct UploadProperties {
 fn default_validate() -> Callback<Rc<String>, Result<Rc<String>, String>> {
     Callback::from(Ok)
 }
-
-/// The content of the empty state body.
-///
-/// **NOTE**: This must be be valid HTML and wrapped with exactly one element.
-const EMPTY_BODY_CONTENT: &str = r#"
-<div>
-    <p>By scanning your Software Bill of Materials (SBOM) file, you receive a detailed report of the dependencies and any potential vulnerabilities in your software stack.</p>
-    <p>Start by <strong>dropping a file here</strong> or clicking the <strong>Load an SBOM</strong> button. Red&nbsp;Hat does not store a copy of your SBOM.</p>
-</div>
-"#;
 
 #[function_component(Upload)]
 pub fn upload(props: &UploadProperties) -> Html {

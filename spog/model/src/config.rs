@@ -150,6 +150,19 @@ pub struct Scanner {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     /// Adding a link to a blog post explaining how to create an SBOM
     pub documentation_url: Option<Url>,
+    /// The welcome hint section. If `None`, then no hint is shown.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub welcome_hint: Option<Hint>,
+}
+
+/// A hint configuration
+#[derive(Clone, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct Hint {
+    /// The title to show
+    pub title: String,
+    /// The body content of the hint. Must be valid HTML.
+    pub body: String,
 }
 
 /// Bombastic specific configuration

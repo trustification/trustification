@@ -36,6 +36,7 @@ pub struct Props {
     pub element: AttrValue,
 }
 
+/// Inject HTML that **is supposed to be safe**.
 #[function_component(SafeHtml)]
 pub fn safe_html(props: &Props) -> Html {
     let node = use_memo(
