@@ -23,6 +23,9 @@ pub struct Run {
 #[derive(Clone, Debug, clap::Parser)]
 #[command(rename_all_env = "SCREAMING_SNAKE_CASE")]
 pub struct WalkerConfig {
+    #[arg(long = "devmode", default_value_t = false)]
+    pub devmode: bool,
+
     #[command(flatten)]
     pub script_context: ScriptContext,
 
@@ -53,7 +56,12 @@ impl Run {
     pub async fn run(self) -> anyhow::Result<ExitCode> {
         Infrastructure::from(self.infra)
             .run("bombastic-walker", |_| async move {
-                let provider = self.config.oidc.clone().into_provider().await?;
+                let provider = self
+                    .config
+                    .oidc
+                    .clone()
+                    .into_provider_or_devmode(self.config.devmode)
+                    .await?;
 
                 let source = self
                     .config

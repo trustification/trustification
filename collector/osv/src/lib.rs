@@ -25,6 +25,9 @@ pub struct Run {
     #[command(flatten)]
     pub api: EndpointServerConfig<CollectorOsv>,
 
+    #[arg(long = "devmode", default_value_t = false)]
+    pub devmode: bool,
+
     #[command(flatten)]
     pub infra: InfrastructureConfig,
 
@@ -52,7 +55,7 @@ impl Run {
     pub async fn run(self) -> anyhow::Result<ExitCode> {
         Infrastructure::from(self.infra)
             .run("collector-osv", |_metrics| async move {
-                let provider = self.oidc.into_provider().await?;
+                let provider = self.oidc.into_provider_or_devmode(self.devmode).await?;
                 let state = Self::configure("osv".into(), self.collectorist_url, self.v11y_url, provider).await?;
                 let server = server::run(state.clone(), self.api.socket_addr()?);
                 let register = register_with_collectorist(state.clone());

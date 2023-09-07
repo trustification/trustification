@@ -16,7 +16,7 @@ use reqwest::{StatusCode, Url};
 use serde_json::Value;
 use std::time::Duration;
 use tokio::select;
-use trustification_auth::{auth::AuthConfigArguments, client::TokenInjector};
+use trustification_auth::{auth::AuthConfigArguments, client::TokenInjector, devmode};
 use trustification_event_bus::EventBusConfig;
 
 #[cfg(feature = "with-services")]
@@ -30,10 +30,6 @@ use {
 const STORAGE_ENDPOINT: &str = "http://localhost:9000";
 #[cfg(feature = "with-services")]
 const KAFKA_BOOTSTRAP_SERVERS: &str = "localhost:9092";
-const SSO_ENDPOINT: &str = "http://localhost:8090/realms/chicken";
-
-/// Static client secret for testing, configured in `deploy/compose/container_files/init-sso/data/client-*.json`
-const SSO_TESTING_CLIENT_SECRET: &str = "R8A6KFeyxJsMDBhjfHbpZTIF0GWt43HP";
 
 pub async fn wait_for_event<F: Future>(events: &EventBusConfig, bus_name: &str, id: &str, f: F) {
     let bus = events.create(&prometheus::Registry::new()).await.unwrap();
@@ -105,7 +101,7 @@ fn testing_auth() -> AuthConfigArguments {
 #[cfg(feature = "with-services")]
 fn testing_swagger_ui_oidc() -> SwaggerUiOidcConfig {
     SwaggerUiOidcConfig {
-        swagger_ui_oidc_issuer_url: Some(SSO_ENDPOINT.to_string()),
+        swagger_ui_oidc_issuer_url: Some(devmode::issuer_url()),
         swagger_ui_oidc_client_id: "frontend".to_string(),
     }
 }

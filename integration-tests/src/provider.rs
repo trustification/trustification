@@ -1,6 +1,6 @@
-use super::{SSO_ENDPOINT, SSO_TESTING_CLIENT_SECRET};
 use std::sync::Arc;
 use trustification_auth::client::{OpenIdTokenProvider, TokenProvider};
+use trustification_auth::devmode;
 
 #[derive(Clone)]
 pub struct ProviderContext {
@@ -10,17 +10,17 @@ pub struct ProviderContext {
 
 pub async fn create_provider_context() -> ProviderContext {
     ProviderContext {
-        provider_user: create_provider("testing-user", SSO_TESTING_CLIENT_SECRET, SSO_ENDPOINT).await,
-        provider_manager: create_provider("testing-manager", SSO_TESTING_CLIENT_SECRET, SSO_ENDPOINT).await,
+        provider_user: create_provider("testing-user", devmode::SSO_CLIENT_SECRET, devmode::issuer_url()).await,
+        provider_manager: create_provider("testing-manager", devmode::SSO_CLIENT_SECRET, devmode::issuer_url()).await,
     }
 }
 
-pub async fn create_provider(client_id: &str, secret: &str, issuer: &str) -> Arc<OpenIdTokenProvider> {
+pub async fn create_provider(client_id: &str, secret: &str, issuer: impl AsRef<str>) -> Arc<OpenIdTokenProvider> {
     let client_user = openid::Client::discover(
         client_id.into(),
         Some(secret.to_string()),
         None,
-        issuer.parse().unwrap(),
+        issuer.as_ref().parse().unwrap(),
     )
     .await
     .unwrap();
