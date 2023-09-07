@@ -2,8 +2,10 @@ use super::{
     super::{error::Error, Expires},
     {Credentials, TokenProvider},
 };
+use crate::devmode;
 use anyhow::Context;
 use core::fmt::{self, Debug, Formatter};
+use std::time::Duration;
 use std::{ops::Deref, sync::Arc};
 use tokio::sync::RwLock;
 use url::Url;
@@ -41,6 +43,15 @@ impl OpenIdTokenProviderConfigArguments {
     pub async fn into_provider(self) -> anyhow::Result<Arc<dyn TokenProvider>> {
         OpenIdTokenProviderConfig::new_provider(OpenIdTokenProviderConfig::from_args(self)).await
     }
+
+    pub async fn into_provider_or_devmode(self, devmode: bool) -> anyhow::Result<Arc<dyn TokenProvider>> {
+        let config = match devmode {
+            true => Some(OpenIdTokenProviderConfig::devmode()),
+            false => OpenIdTokenProviderConfig::from_args(self),
+        };
+
+        OpenIdTokenProviderConfig::new_provider(config).await
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, clap::Args)]
@@ -52,6 +63,15 @@ pub struct OpenIdTokenProviderConfig {
 }
 
 impl OpenIdTokenProviderConfig {
+    pub fn devmode() -> Self {
+        Self {
+            issuer_url: devmode::issuer_url(),
+            client_id: devmode::SERVICE_CLIENT_ID.to_string(),
+            client_secret: devmode::SSO_CLIENT_SECRET.to_string(),
+            refresh_before: Duration::from_secs(30).into(),
+        }
+    }
+
     pub async fn new_provider(config: Option<Self>) -> anyhow::Result<Arc<dyn TokenProvider>> {
         Ok(match config {
             Some(config) => Arc::new(OpenIdTokenProvider::with_config(config).await?),
