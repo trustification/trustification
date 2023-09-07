@@ -79,6 +79,13 @@ impl TokenProvider for NoTokenProvider {
 }
 
 #[async_trait]
+impl TokenProvider for () {
+    async fn provide_access_token(&self) -> Result<Option<Credentials>, Error> {
+        Ok(None)
+    }
+}
+
+#[async_trait]
 impl<T> TokenProvider for Option<T>
 where
     T: TokenProvider + Sync,
