@@ -76,7 +76,7 @@ services:
 
   guac-ingestor:
     image: $GUAC_IMAGE
-    command: "/opt/guac/guacingest --async-ingest=false --gql-addr http://guac-graphql:$GUAC_API_PORT/query --csub-addr guac-collectsub:$GUAC_CSUB_PORT"
+    command: "/opt/guac/guacingest --gql-addr http://guac-graphql:$GUAC_API_PORT/query --csub-addr guac-collectsub:$GUAC_CSUB_PORT"
     working_dir: /guac
     restart: on-failure
     depends_on:
