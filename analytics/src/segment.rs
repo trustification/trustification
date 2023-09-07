@@ -41,43 +41,37 @@ where
 
 #[derive(Debug)]
 pub struct SegmentTracker {
-    batcher: Option<Mutex<AutoBatcher>>,
+    batcher: Mutex<AutoBatcher>,
 }
 
 impl SegmentTracker {
-    pub fn new(write_key: impl Into<Option<String>>) -> Self {
-        let batcher = write_key.into().map(|write_key| {
-            let context = Some(json!({
-                "library": {
-                    "name": "https://github.com/meilisearch/segment",
-                }
-            }));
+    pub fn new(write_key: impl Into<String>) -> Self {
+        let context = Some(json!({
+            "library": {
+                "name": "https://github.com/meilisearch/segment",
+            }
+        }));
 
-            Mutex::new(AutoBatcher::new(
-                segment::HttpClient::default(),
-                Batcher::new(context),
-                write_key,
-            ))
-        });
+        let batcher = Mutex::new(AutoBatcher::new(
+            segment::HttpClient::default(),
+            Batcher::new(context),
+            write_key.into(),
+        ));
 
         Self { batcher }
     }
 
     pub async fn push(&self, event: impl IntoMessage) {
-        if let Some(batcher) = &self.batcher {
-            if let Err(err) = batcher.lock().await.push(event.into_message()).await {
-                // FIXME: track errors with metrics
-                log::warn!("Failed to push analytics batch: {err}");
-            }
+        if let Err(err) = self.batcher.lock().await.push(event.into_message()).await {
+            // FIXME: track errors with metrics
+            log::warn!("Failed to push analytics batch: {err}");
         }
     }
 
     pub async fn flush(&self) {
-        if let Some(batcher) = &self.batcher {
-            if let Err(err) = batcher.lock().await.flush().await {
-                // FIXME: track errors with metrics
-                log::warn!("Failed to flush analytics batch: {err}");
-            }
+        if let Err(err) = self.batcher.lock().await.flush().await {
+            // FIXME: track errors with metrics
+            log::warn!("Failed to flush analytics batch: {err}");
         }
     }
 }

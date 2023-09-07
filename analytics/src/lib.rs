@@ -1,14 +1,10 @@
 use serde_json::Value;
 use uuid::Uuid;
 
-#[cfg(feature = "tracker")]
+mod segment;
 mod tracker;
 
-#[cfg(feature = "tracker")]
 pub use tracker::*;
-
-#[cfg(feature = "analytics")]
-mod segment;
 
 pub enum User<'a> {
     /// We know that's a user, but we don't know who it is.
