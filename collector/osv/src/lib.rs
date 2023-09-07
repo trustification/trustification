@@ -8,8 +8,7 @@ use tokio::sync::RwLock;
 
 use trustification_auth::client::{OpenIdTokenProviderConfigArguments, TokenProvider};
 use trustification_infrastructure::{
-    endpoint::{self, Endpoint},
-    endpoint::{CollectorOsv, EndpointServerConfig},
+    endpoint::{self, CollectorOsv, Endpoint, EndpointServerConfig},
     Infrastructure, InfrastructureConfig,
 };
 
@@ -52,7 +51,12 @@ pub struct Run {
 }
 
 impl Run {
-    pub async fn run(self) -> anyhow::Result<ExitCode> {
+    pub async fn run(mut self) -> anyhow::Result<ExitCode> {
+        if self.devmode {
+            self.v11y_url = Url::parse("http://localhost:8087").unwrap();
+            self.collectorist_url = Url::parse("http://localhost:8088").unwrap();
+        }
+
         Infrastructure::from(self.infra)
             .run("collector-osv", |_metrics| async move {
                 let provider = self.oidc.into_provider_or_devmode(self.devmode).await?;
