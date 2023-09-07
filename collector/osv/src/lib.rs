@@ -6,9 +6,10 @@ use std::sync::Arc;
 use reqwest::Url;
 use tokio::sync::RwLock;
 
-use trustification_infrastructure::endpoint::{CollectorOsv, EndpointServerConfig};
+use trustification_auth::client::{OpenIdTokenProviderConfigArguments, TokenProvider};
 use trustification_infrastructure::{
     endpoint::{self, Endpoint},
+    endpoint::{CollectorOsv, EndpointServerConfig},
     Infrastructure, InfrastructureConfig,
 };
 
@@ -42,13 +43,17 @@ pub struct Run {
         default_value_t = endpoint::V11y::url()
     )]
     pub(crate) v11y_url: Url,
+
+    #[command(flatten)]
+    pub(crate) oidc: OpenIdTokenProviderConfigArguments,
 }
 
 impl Run {
     pub async fn run(self) -> anyhow::Result<ExitCode> {
         Infrastructure::from(self.infra)
             .run("collector-osv", |_metrics| async move {
-                let state = Self::configure("osv".into(), self.collectorist_url, self.v11y_url).await?;
+                let provider = self.oidc.into_provider().await?;
+                let state = Self::configure("osv".into(), self.collectorist_url, self.v11y_url, provider).await?;
                 let server = server::run(state.clone(), self.api.socket_addr()?);
                 let register = register_with_collectorist(state.clone());
 
@@ -65,8 +70,16 @@ impl Run {
         Ok(ExitCode::SUCCESS)
     }
 
-    async fn configure(collector_id: String, collectorist_url: Url, v11y_url: Url) -> anyhow::Result<Arc<AppState>> {
-        let state = Arc::new(AppState::new(collector_id, collectorist_url, v11y_url));
+    async fn configure<P>(
+        collector_id: String,
+        collectorist_url: Url,
+        v11y_url: Url,
+        provider: P,
+    ) -> anyhow::Result<Arc<AppState>>
+    where
+        P: TokenProvider + Clone + 'static,
+    {
+        let state = Arc::new(AppState::new(collector_id, collectorist_url, v11y_url, provider));
         Ok(state)
     }
 }
@@ -80,12 +93,19 @@ pub struct AppState {
 }
 
 impl AppState {
-    pub fn new(collector_id: String, collectorist_url: Url, v11y_url: Url) -> Self {
+    pub fn new<P>(collector_id: String, collectorist_url: Url, v11y_url: Url, provider: P) -> Self
+    where
+        P: TokenProvider + Clone + 'static,
+    {
         Self {
             addr: RwLock::new(None),
             connected: AtomicBool::new(false),
-            collectorist_client: collectorist_client::CollectoristClient::new(collector_id, collectorist_url),
-            v11y_client: v11y_client::V11yClient::new(v11y_url, ()),
+            collectorist_client: collectorist_client::CollectoristClient::new(
+                collector_id,
+                collectorist_url,
+                provider.clone(),
+            ),
+            v11y_client: v11y_client::V11yClient::new(v11y_url, provider),
             guac_url: RwLock::new(None),
         }
     }

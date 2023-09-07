@@ -8,26 +8,6 @@ use std::{ops::Deref, sync::Arc};
 use tokio::sync::RwLock;
 use url::Url;
 
-/// A provider which provides access tokens for clients.
-#[derive(Clone)]
-pub struct OpenIdTokenProvider {
-    pub client: Arc<openid::Client>,
-    current_token: Arc<RwLock<Option<openid::Bearer>>>,
-    refresh_before: chrono::Duration,
-}
-
-impl Debug for OpenIdTokenProvider {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        f.debug_struct("TokenProvider")
-            .field(
-                "client",
-                &format!("{} / {:?}", self.client.client_id, self.client.http_client),
-            )
-            .field("current_token", &"...")
-            .finish()
-    }
-}
-
 #[derive(Clone, Debug, PartialEq, Eq, clap::Args)]
 #[command(next_help_heading = "OIDC client configuration")]
 pub struct OpenIdTokenProviderConfigArguments {
@@ -57,6 +37,12 @@ pub struct OpenIdTokenProviderConfigArguments {
     pub refresh_before: humantime::Duration,
 }
 
+impl OpenIdTokenProviderConfigArguments {
+    pub async fn into_provider(self) -> anyhow::Result<Arc<dyn TokenProvider>> {
+        OpenIdTokenProviderConfig::new_provider(OpenIdTokenProviderConfig::from_args(self)).await
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Eq, clap::Args)]
 pub struct OpenIdTokenProviderConfig {
     pub client_id: String,
@@ -66,6 +52,13 @@ pub struct OpenIdTokenProviderConfig {
 }
 
 impl OpenIdTokenProviderConfig {
+    pub async fn new_provider(config: Option<Self>) -> anyhow::Result<Arc<dyn TokenProvider>> {
+        Ok(match config {
+            Some(config) => Arc::new(OpenIdTokenProvider::with_config(config).await?),
+            None => Arc::new(()),
+        })
+    }
+
     pub fn from_args(arguments: OpenIdTokenProviderConfigArguments) -> Option<Self> {
         match (arguments.client_id, arguments.client_secret, arguments.issuer_url) {
             (Some(client_id), Some(client_secret), Some(issuer_url)) => Some(OpenIdTokenProviderConfig {
@@ -82,6 +75,26 @@ impl OpenIdTokenProviderConfig {
 impl From<OpenIdTokenProviderConfigArguments> for Option<OpenIdTokenProviderConfig> {
     fn from(value: OpenIdTokenProviderConfigArguments) -> Self {
         OpenIdTokenProviderConfig::from_args(value)
+    }
+}
+
+/// A provider which provides access tokens for clients.
+#[derive(Clone)]
+pub struct OpenIdTokenProvider {
+    client: Arc<openid::Client>,
+    current_token: Arc<RwLock<Option<openid::Bearer>>>,
+    refresh_before: chrono::Duration,
+}
+
+impl Debug for OpenIdTokenProvider {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        f.debug_struct("TokenProvider")
+            .field(
+                "client",
+                &format!("{} / {:?}", self.client.client_id, self.client.http_client),
+            )
+            .field("current_token", &"...")
+            .finish()
     }
 }
 
