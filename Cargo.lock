@@ -2451,7 +2451,7 @@ dependencies = [
  "actix-web",
  "anyhow",
  "clap",
- "collectorist-api",
+ "collectorist-client",
  "derive_more",
  "env_logger",
  "futures",
