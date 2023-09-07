@@ -5,6 +5,7 @@ use std::hash::{Hash, Hasher};
 use chrono::{DateTime, Utc};
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
+use trustification_auth::client::{TokenInjector, TokenProvider};
 use utoipa::ToSchema;
 
 #[derive(Serialize, Deserialize, Debug, ToSchema)]
@@ -170,18 +171,25 @@ impl V11yUrl {
 #[allow(unused)]
 pub struct V11yClient {
     v11y_url: V11yUrl,
+    provider: Box<dyn TokenProvider>,
 }
 
 impl V11yClient {
-    pub fn new(url: Url) -> Self {
+    pub fn new<P: TokenProvider>(url: Url, provider: P) -> Self
+    where
+        P: TokenProvider + 'static,
+    {
         Self {
             v11y_url: V11yUrl::new(url),
+            provider: Box::new(provider),
         }
     }
 
     pub async fn ingest_vulnerability(&self, vuln: &Vulnerability) -> Result<(), anyhow::Error> {
         Ok(reqwest::Client::new()
             .post(self.v11y_url.vulnerability_url())
+            .inject_token(self.provider.as_ref())
+            .await?
             .json(&vuln)
             .send()
             .await

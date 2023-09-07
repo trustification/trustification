@@ -7426,6 +7426,7 @@ dependencies = [
  "serde",
  "serde_json",
  "tokio",
+ "trustification-auth",
  "utoipa",
 ]
 
