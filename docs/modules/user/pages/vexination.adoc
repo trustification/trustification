@@ -1,48 +1,72 @@
-= VEX
+[id="vex"]
+= Vulnerability Exploitability eXchange
 
-Vexination allows you to publish, retreive and search for Vulnerability EXchange (VEX) documents.
+A Vulnerability Exploitability eXchange (VEX) document is a security advisory that is machine readable, and supports integration for existing security tools and platforms.
+The Vexination service allows you to publish, retrieve, and search for VEX documents by using a REST API.
+Vexination supports searching VEX data by using the xref:search.adoc[sikula simple query language].
+Publishing and retrieving VEX documents uses the VEX identifier.
 
-Vexination supports searching VEX data using the xref:search.adoc[sikula query language].
+[id="publishing-a-vex-doc"]
+== Publishing a Vulnerability Exploitability eXchange document
 
-The Vexination REST API can be used to publish and retrieve a VEX document using the VEX identifier.
+You can publish VEX documents by using the Common Security Advisory Framework (CSAF) 2.0 format, and the VEX document must be in a JSON file format.
 
-== Publish
+NOTE: A document can take between a few seconds to minutes before appearing in search results.
 
-To publish a VEX document:
+.Prerequisites
+* A VEX document.
 
+.Procedure
+. To publish an VEX document to Trustification:
++
+.Example
 [source,bash]
 ----
-curl --json vex.json https://vex.trustification.dev/api/v1/vex
+$ curl --json vex-example.json https://vex.trustification.dev/api/v1/vex
+----
++
+A `201 Created` response means the document was successfully published.
+
+.Additional resources
+See the link:https://vex.trustification.dev/swagger-ui/[OpenAPI] for more details on responses.
+
+[id="retrieving-a-vex-doc"]
+== Retrieving a Vulnerability Exploitability eXchange document
+
+You can retrieve VEX documents by specifying a VEX identifier.
+
+.Prerequisites
+* A VEX identifier.
+
+.Procedure
+. To retrieve a VEX document from Trustification:
++
+.Syntax
+[source,bash,subs="verbatim,quotes"]
+----
+curl https://vex.trustification.dev/api/v1/vex?advisory=_VEX_IDENTIFIER_
+----
++
+.Example
+----
+$ curl https://vex.trustification.dev/api/v1/vex?advisory=RHSA-2023:3923
 ----
 
-NOTE: The VEX must be in the CSAF 2.0 format.
+[id="search-for-a-vex-doc"]
+== Search for a Vulnerability Exploitability eXchange document
 
-If you got a `201 Created` in the response, the document was published successfully. See the link:https://vex.trustification.dev/swagger-ui/[OpenAPI] for more details on responses.
+By default, queries search for identifiers, titles, and descriptions within the VEX document, and returns the matching results ordered by relevance.
 
-NOTE: A document may take between seconds and minutes to appearch in searches.
+See the xref:search.adoc[sikula simple query language] for more details on the search syntax.
 
-== Retrieving
+[id="search-qualifiers"]
+=== Search qualifiers
 
-To retrieve a VEX document:
-
-[source,bash]
-----
-curl https://vex.trustification.dev/api/v1/vex?advisory=<identifier>
-----
-
-== Searching
-
-By default queries search through identifiers, titles and descriptions in the VEX, and returns the matching results ordered by a relevance.
-
-See the xref:search.adoc[sikula query language] for more details on the search syntax.
-
-=== Qualifiers
-
-The table below contains a list of the qualifiers you can use when searching Vexination:
+The following table has a list of the search qualifiers you can use when searching the Vexination service.
 
 [cols="1,1,1,1"]
 |===
-| *Qualifier* | *Description* | *Matching* | *Example*
+| *Qualifier* | *Description* | *Matching Type* | *Example*
 | `id` | Search by VEX identifier | Exact | `id:"RHSA-2023:4517"`
 | `cve` | Search by CVE identifier | Exact | `cve:"CVE-2022-42896"`
 | `title` | Search in VEX and CVE title | Term | `title:exploit`
@@ -57,30 +81,43 @@ The table below contains a list of the qualifiers you can use when searching Vex
 | `discovery` | Search by VEX discovery date | Exact, Range | `discovery:<2023-01-01`
 |===
 
-TIP: Matching can either be Exact (Contains exactly a value), Partial (Prefix matching of value), Term (Inverse index aka. text matching) or Range (for values that can match within a range)
+The four matching types are:
+* An **Exact** match has the exact value.
+* A **Partial** match is a prefix value.
+* A **Term** match is text matching.
+* A **Range** match is values within a range.
 
-NOTE: You can also enforce an ordering on the results for the `severity` and `release` fields: `openssl sort:severity` or `openssl -sort:release`.
+NOTE: You can also enforce an ordering on the results for the `created` field, for example, `ubi9 sort:created` or `ubi9 -sort:created`.
 
+[id="vex-predicates"]
 === Predicates
 
-The following predicates may be used to search by severity: `critical`, `high`, `medium` and `low`.
+You can use the following predicates to search by severity: `critical`, `high`, `medium` and `low`.
 
+[id="vex-use-cases"]
 === Use cases
 
-==== Find advisories that relates to the RHEL 8 product
+The following uses cases illustrate how you can link:https://trustification.dev/advisory/search/[search Trustification] to find VEX documents.
 
+IMPORTANT: Enable **Complex** searching before running these queries.
+
+==== Find advisories that relates to the Red Hat Enterprise Linux 8 product
+
+.Example
 [source,rust]
 ----
 "cpe:/a:redhat:rhel_eus:8" in:package
 ----
 
-==== Find all critical advisories for OpenShift on RHEL 9, released this year
+==== Find all critical advisories for OpenShift on Red Hat Enterprise Linux 9, released this year
 
+.Example
 [source,rust]
 ----
 "cpe:/a:redhat:openshift:4.13::el9" in:package release:>2023-01-01 is:critical
 ----
 
+[id="vex-reference"]
 === Reference
 
 See the full link:https://vex.trustification.dev/swagger-ui/[Vexination API documentation] for more details.
