@@ -82,10 +82,10 @@ impl Db {
                     vulnerability_id text not null,
                     origin text not null,
                     type text not null,
+                    source text,
                     score float not null,
                     additional text,
-                    primary key (vulnerability_id, origin, type)
-
+                    primary key (vulnerability_id, origin, source, type)
                 )"#,
         )
         .execute(&self.pool)
@@ -349,8 +349,9 @@ impl Db {
                                         }
                                     }
 
-                                    let (ty, score, additional) = (
+                                    let (ty, source, score, additional) = (
                                         row.get::<String, _>("score_type"),
+                                        row.get::<String, _>("source"),
                                         row.get::<f32, _>("score"),
                                         row.get::<String, _>("additional"),
                                     );
@@ -359,6 +360,7 @@ impl Db {
                                         let additional = if additional.is_empty() { None } else { Some(additional) };
                                         let severity = Severity {
                                             r#type: ScoreType::from(ty),
+                                            source,
                                             score,
                                             additional,
                                         };
@@ -558,6 +560,7 @@ impl Db {
                     Severity {
                         r#type: ScoreType::from(row.get::<String, _>("type")),
                         score: row.get("score"),
+                        source: row.get("source"),
                         additional: row.get("additional"),
                     },
                 )
@@ -782,6 +785,7 @@ mod test {
             aliases: vec!["GHSA-foo-ghz".to_string()],
             severities: vec![Severity {
                 r#type: ScoreType::Cvss3,
+                source: "CVE".to_string(),
                 score: 6.8,
                 additional: Some("n:4/v:2".to_string()),
             }],
@@ -810,6 +814,7 @@ mod test {
             aliases: vec!["GHSA-foo-ghz".to_string()],
             severities: vec![Severity {
                 r#type: ScoreType::Cvss3,
+                source: "CVE".to_string(),
                 score: 7.8,
                 additional: Some("n:1/v:2".to_string()),
             }],
@@ -914,6 +919,7 @@ mod test {
             aliases: vec!["GHSA-foo-ghz".to_string()],
             severities: vec![Severity {
                 r#type: ScoreType::Cvss3,
+                source: "CVE".to_string(),
                 score: 6.8,
                 additional: Some("n:4/v:2".to_string()),
             }],
@@ -952,11 +958,13 @@ mod test {
                 Severity {
                     r#type: ScoreType::Cvss3,
                     score: 9.8,
+                    source: "CVE".to_string(),
                     additional: Some("n:4/v:2".to_string()),
                 },
                 Severity {
                     r#type: ScoreType::Cvss4,
                     score: 7.3,
+                    source: "CVE".to_string(),
                     additional: None,
                 },
             ],
@@ -984,6 +992,7 @@ mod test {
                     assert_eq!(7.3, severity.score)
                 }
                 ScoreType::Unknown => panic!("unexpected unknown"),
+                _ => {}
             }
         }
 
@@ -1005,6 +1014,7 @@ mod test {
             aliases: Default::default(),
             severities: vec![Severity {
                 r#type: ScoreType::Cvss3,
+                source: "CVE".to_string(),
                 score: 6.8,
                 additional: Some("n:4/v:2".to_string()),
             }],
@@ -1029,6 +1039,7 @@ mod test {
             aliases: vec!["GHSA-foo-ghz".to_string()],
             severities: vec![Severity {
                 r#type: ScoreType::Cvss3,
+                source: "CVE".to_string(),
                 score: 7.8,
                 additional: Some("n:1/v:2".to_string()),
             }],

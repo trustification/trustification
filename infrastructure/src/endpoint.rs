@@ -118,6 +118,7 @@ macro_rules! endpoint {
 endpoint!(V11y, 9091);
 endpoint!(Collectorist, 9919);
 endpoint!(CollectorOsv);
+endpoint!(CollectorSnyk);
 
 endpoint!(GuacGraphQl, 8080, "/query");
 endpoint!(GuacCollectSub, 2782);

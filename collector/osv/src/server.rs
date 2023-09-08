@@ -43,7 +43,12 @@ pub enum Error {
 impl ResponseError for Error {}
 
 #[derive(OpenApi)]
-#[openapi(paths(crate::server::collect_packages))]
+#[openapi(
+    paths(
+        crate::server::collect_packages,
+        crate::server::collect_vulnerabilities,
+    )
+)]
 pub struct ApiDoc;
 
 pub async fn run<B: Into<SocketAddr>>(state: Arc<AppState>, bind: B) -> Result<(), anyhow::Error> {
