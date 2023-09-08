@@ -133,7 +133,7 @@ NOTE: Syft supports many types of container image sources. See the official supp
 .Syntax
 [source,bash,subs="verbatim,quotes"]
 ----
-syft dir\:_DIRECTORY_PATH_ -o cyclonedx-json
+syft dir: _DIRECTORY_PATH_ -o cyclonedx-json
 syft file: _FILE_PATH_ -o cyclonedx-json
 ----
 +
