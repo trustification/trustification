@@ -18,7 +18,7 @@ use trustification_auth::{
 };
 use trustification_index::Error as IndexError;
 use trustification_infrastructure::new_auth;
-use trustification_storage::{Error as StorageError, Storage};
+use trustification_storage::{Error as StorageError, S3Path, Storage};
 use utoipa::OpenApi;
 use vexination_model::prelude::*;
 
@@ -49,7 +49,7 @@ pub fn config(
 }
 
 async fn fetch_object(storage: &Storage, key: &str) -> HttpResponse {
-    match storage.get_decoded_stream(key).await {
+    match storage.get_decoded_stream(S3Path::from_key(key)).await {
         Ok(stream) => HttpResponse::Ok().content_type(ContentType::json()).streaming(stream),
         Err(e) => {
             log::warn!("Unable to locate object with key {}: {:?}", key, e);

@@ -1,4 +1,4 @@
-use guac::collector::{emitter::Emitter, Document, DocumentType, FormatType, SourceInformation};
+use guac::collector::{emitter::Emitter, Document, DocumentType, EncodingType, FormatType, SourceInformation};
 use tokio::select;
 use trustification_event_bus::EventBus;
 use trustification_storage::{EventType, Storage};
@@ -21,21 +21,21 @@ pub async fn run<M: Emitter + Send + Sync>(
                                     if storage.is_index(data.key()) {
                                         log::trace!("It's an index event, ignoring");
                                     } else {
-                                        let key = data.key();
-                                        match storage.get_for_event(&data).await {
-                                            Ok((_, data)) => {
+                                        match storage.get_for_event(&data, false).await {
+                                            Ok(res) => {
                                                 let document = Document {
-                                                    blob: data,
+                                                    blob: res.data,
                                                     r#type: DocumentType::UNKNOWN,
                                                     format: FormatType::UNKNOWN,
+                                                    encoding: EncodingType::from(res.encoding.clone()),
                                                     source_information: SourceInformation {
                                                         collector: "S3Collector".into(),
-                                                        source: key.to_string(),
+                                                        source: res.key.to_string(),
                                                     },
                                                 };
                                                 match emitter.publish(document).await {
                                                     Ok(_) => {
-                                                        log::debug!("Successfully exported the document {}", key);
+                                                        log::info!("Successfully exported the document {} encoded as {}", res.key, res.encoding.unwrap_or("None".to_string()));
                                                     }
                                                     Err(e) => {
                                                         log::warn!("Error exporting entry: {:?}", e)
