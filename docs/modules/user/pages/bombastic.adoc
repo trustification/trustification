@@ -1,49 +1,79 @@
-= SBOM
+[id="sbom"]
+= Software Bill of Materials
 
-Bombastic allows you to publish, retreive and search for Software Bill of Materials (SBOM) documents.
+Software Bill of Materials (SBOM) is a manifest of software components and dependencies that makes up an application.
+The Bombastic service allows you to publish, retrieve, and search for SBOM documents by using a REST API.
+Bombastic supports searching SBOM data by using the xref:search.adoc[sikula simple query language].
+Publishing and retrieving an SBOM document uses a product's identification in the Common Platform Enumeration (CPE) format, or by a package URL (pURL).
 
-Bombastic supports searching SBOM data using the xref:search.adoc[sikula query language].
+[id="publishing-an-sbom-doc"]
+== Publishing a Software Bill of Materials document
 
-The Bombastic REST API can be used to publish and retrieve an SBOM using an identifier such a product identifier (CPE) or package URL (pURL).
+You can publish SBOM documents by using CycloneDX version 1.3, or Software Package Data Exchange (SPDX) version 2.2 formats, and the SBOM document must be in a JSON file format.
 
-== Publish
+NOTE: A document can take between a few seconds to minutes before appearing in search results.
 
-To publish an SBOM:
+.Prerequisite
+* An SBOM document.
 
+.Procedure
+. To publish an SBOM document to Trustification:
++
+.Syntax
+[source,bash,subs="verbatim,quotes"]
+----
+curl -H "transfer-encoding: chunked" --json _FILE_NAME_ https://sbom.trustification.dev/api/v1/sbom?id=_SBOM_NAME_
+----
++
+.Example
 [source,bash]
 ----
-curl -H "transfer-encoding: chunked" --json sbom.json https://sbom.trustification.dev/api/v1/sbom?id=my-sbom
+$ curl -H "transfer-encoding: chunked" --json sbom-example.json https://sbom.trustification.dev/api/v1/sbom?id=my-sbom-example
 ----
++
+A `201 Created` response means the document was successfully published.
 
-NOTE: The SBOM must be in one of CycloneDX or SPDX formats.
+.Additional resources
+* See the link:https://sbom.trustification.dev/swagger-ui/[OpenAPI] documentation for more details on potential responses.
 
-If you got a `201 Created` in the response, the document was published successfully. See the link:https://sbom.trustification.dev/swagger-ui/[OpenAPI] for more details on potential responses.
+[id="retrieving-an-sbom"]
+== Retrieving a Software Bill of Materials
 
+You can retrieve SBOM documents by specifying a product's identification.
 
-NOTE: A document may take between seconds and minutes to appearch in searches.
+.Prerequisite
+* A CPE identifier or pURL. 
 
-== Retrieving
-
-To retrieve an SBOM:
-
+.Procedure
+. To retrieve an SBOM document from Trustification:
++
+.Syntax
+[source,bash,subs="verbatim,quotes"]
+----
+curl https://sbom.trustification.dev/api/v1/sbom?id=_SBOM_NAME_
+----
++
+.Example
 [source,bash]
 ----
-curl https://sbom.trustification.dev/api/v1/sbom?id=my-sbom
+$ curl https://sbom.trustification.dev/api/v1/sbom?id=my-sbom-example
 ----
 
-== Searching
+[id="search-for-an-sbom-doc"]
+== Search for Software Bill of Materials document
 
-By default queries search through identifiers, titles and descriptions in the SBOM, and returns the matching results ordered by a relevance.
+By default, queries search for identifiers, titles, and descriptions within the SBOM document, and returns the matching results ordered by relevance.
 
-See the xref:search.adoc[sikula query language] for more details on the search syntax.
+See the xref:search.adoc[sikula simple query language] for more details on the search syntax.
 
-=== Qualifiers
+[id="search-qualifiers"]
+=== Search qualifiers
 
-The table below contains a list of the qualifiers you can use when searching Bombastic:
+The following table has a list of the search qualifiers you can use when searching the Bombastic service.
 
 [cols="1,1,1,1"]
 |===
-| *Qualifier* | *Description* | *Matching* | *Example*
+| *Qualifier* | *Description* | *Matching Type* | *Example*
 | `package` | Search in by package identifiers | Exact, Partial | `package:"pkg:maven/io.seedwing/seedwing-java-example@1.0.0-SNAPSHOT?type=jar"`
 | `type` | Search by type | Exact | `type:oci`
 | `namespace` | Search by namespace | Exact | `namespace:io.quarkus`
@@ -57,26 +87,38 @@ The table below contains a list of the qualifiers you can use when searching Bom
 | `dependency` | Search in package dependencies | Exact, Partial | `dependency:openssl`
 |===
 
-TIP: Matching can either be Exact (Contains exactly a value), Partial (Prefix matching of value), Term (Inverse index aka. text matching) or Range (for values that can match within a range)
+The four matching types are:
+* An **Exact** match has the exact value.
+* A **Partial** match is a prefix value.
+* A **Term** match is text matching.
+* A **Range** match is values within a range.
 
-NOTE: You can also enforce an ordering on the results for the `created` field: `ubi9 sort:created` or `ubi9 -sort:created`.
+NOTE: You can also enforce an ordering on the results for the `created` field, for example, `ubi9 sort:created` or `ubi9 -sort:created`.
 
+[id="sbom-use-cases"]
 === Use cases
 
-==== Find packages that contain openssl and has the Apache 2.0 license
+The following uses cases illustrate how you can link:https://trustification.dev/package/search/[search Trustification] to find SBOM documents.
 
+IMPORTANT: Enable **Complex** searching before running these queries.
+
+==== Searching for packages that contain `openssl` and has the Apache 2.0 license
+
+.Example
 [source,rust]
 ----
 dependency:openssl license:"Apache-2.0"
 ----
 
-==== Find all container packages
+==== Searching for all container packages
 
+.Example
 [source,rust]
 ----
 type:oci
 ----
 
+[id="sbom-reference"]
 === Reference
 
 See the full link:https://sbom.trustification.dev/swagger-ui/[Bombastic API documentation] for more details.

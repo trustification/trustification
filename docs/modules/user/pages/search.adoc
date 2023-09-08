@@ -1,59 +1,69 @@
+[id="search"]
 = Search
 
-Several Trustification services allow you to search for documents using a simple query language named sikula. The sikula language is similar to what you find when searching GitHub issues.
+Several of the Trustification services give you the ability to search for documents by using a simple query language.
+Trustification uses the link:https://lib.rs/crates/sikula[sikula] simple query language, which is similar to the query language used when searching GitHub issues.
 
+[id="the-single-pane-of-glass-user-interface"]
 == The Single Pane of Glass user interface
 
-The Single Pane of Glass (SPoG) UI can search link:https://trustification.dev/advisory/search/[advisories] or link:https://trustification.dev/package/search/[packages] for vulnerability data.
-For example, from the _Advisories_ page, type **openssl** in the search field and see the results.
-You can refine your search criteria by filtering based on the **Severity**, and by **Products**.
+The Single Pane of Glass (SPoG) UI is where you can search for vulnerability information in link:https://trustification.dev/advisory/search/[advisories], or link:https://trustification.dev/package/search/[packages].
+You can also search for Common Vulnerability Exposure link:https://trustification.dev/cve/[(CVE)] information.
+If you have an Software Bill of Materials (SBOM) for your application, you can use the SPoG UI to scan your SBOM for vulnerability information within your application stack.
 
 You can start searching at link:https://trustification.dev[trustification.dev].
+From the _Advisories_ page, try searching by typing **openssl** in the search field, and you can see the results.
+You can also refine your search criteria by filtering based on the **Severity**, and by **Products**.
 
-== REST APIs
+[id="trustification-rest-apis"]
+== Trustification REST APIs
 
-Trustification has two REST APIs that you can use for searching. They differ in what data they search and the qualifiers they permit:
+Trustification has two REST APIs that you can use for searching.
+They differ in what kind of data they search for, and the qualifiers they permit:
 
 * xref:bombastic.adoc[Bombastic] - This API searches SBOM data.
 * xref:vexination.adoc[Vexination] - This API searches VEX data.
 
+[id="search-syntax"]
 == Search syntax
 
-Trustification uses the search query language based on link:https://github.com/ctron/sikula[Sikula].
-
-Referencing fields in the query string depends on the search source. In general, any free-form text query searches the default fields as set by the search index.
-
-Multiple terms can be specified, in which case a logical AND will be applied.
+Referencing fields in the query string depends on the search source.
+You can use free-form text query to do searches in the default fields as set by the search index.
+When specifying multiple terms a logical AND applies.
 
 === Logical operators
 
-The following logical operators can be used:
+You can use the following logical operators:
 
 [cols="1,1,1,1"]
 |===
 | *Operator* | *Example*
-| OR | id:foo OR this in:that
-| AND | id:foo AND date:>2020-01-01
-| NOT | id:foo NOT type:oci
+| OR | `id:foo OR this in:that`
+| AND | `id:foo AND date:>2020-01-01`
+| NOT | `id:foo NOT type:oci`
 |===
 
 === Qualifiers
 
-Using qualifiers, you can search on a particular field such as `title`. See the xref:bombastic.adoc[bombastic] or xref:vexination.adoc[vexination] list of qualifiers you can use.
+Using qualifiers, you can search on a particular field such as `title`.
+See the xref:bombastic.adoc#search-qualifiers[bombastic] or xref:vexination.adoc[vexination] list of qualifiers you can use.
 
-There are four different types of matching that can be done for a qualifier. Which matching type depends on the qualifier, but the possible types are:
+A qualifer can have four different types of matching.
+Which matching type depends on the qualifier, but the possible types are:
 
-* Exact - Contains exactly a value
-* Partial - Prefix matching of a value
-* Term - Inverse index aka. text matching
+* Exact - Has an exact value.
+* Partial - Prefix matching of a value.
+* Term - Inverse index, also known as text matching.
 * Range - Matches within a range of values
 
-You can use ranges for the date fields: `release:2022-01-01..2022-12-31`.
+You can use ranges for the date fields.
+For example, `release:2022-01-01..2022-12-31`.
 
-TIP: If your search term contains a reserved character, such as `:`, you can add quotes.
+TIP: If the search term has a reserved character, such as `:`, you can add quotes.
 
-IMPORTANT: When using the REST API, make sure your query is properly URL-encoded.
+IMPORTANT: When making Trustification REST API calls, verify your query is properly URL-encoded.
 
 === Predicates
 
-If defined, an index may define a set of short-hand predicates that you can use on the form `is:<predicate>`. Like qualifiers, the possible predicates depends on the service.
+If defined, an index can define a set of short-hand predicates that you can use in the form of `is:<predicate>`.
+Such as qualifiers, the possible predicates depend on the Trustification service.
