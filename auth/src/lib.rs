@@ -26,6 +26,9 @@ pub enum Permission {
     UpdateVex,
     #[serde(rename = "delete.vex")]
     DeleteVex,
+
+    #[serde(rename = "create.vulnerability")]
+    IngestVulnerability,
 }
 
 impl AsRef<str> for Permission {
@@ -40,6 +43,8 @@ impl AsRef<str> for Permission {
             Self::ReadVex => "read.vex",
             Self::UpdateVex => "update.vex",
             Self::DeleteVex => "delete.vex",
+
+            Self::IngestVulnerability => "create.vulnerability",
         }
     }
 }

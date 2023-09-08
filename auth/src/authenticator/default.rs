@@ -7,7 +7,10 @@ use std::collections::HashMap;
 /// This should be aligned with the default Keycloak configuration we use for local deployments.
 /// It can be overridden by configuration.
 pub const DEFAULT_SCOPE_MAPPINGS: &[(&str, &[&str])] = &[
-    ("create:document", &["create.sbom", "create.vex"]),
+    (
+        "create:document",
+        &["create.sbom", "create.vex", "create.vulnerability"],
+    ),
     ("read:document", &["read.sbom", "read.vex"]),
     ("update:document", &["update.sbom", "update.vex"]),
     ("delete:document", &["delete.sbom", "delete.vex"]),
