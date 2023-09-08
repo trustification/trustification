@@ -80,3 +80,85 @@ type:oci
 === Reference
 
 See the full link:https://sbom.trustification.dev/swagger-ui/[Bombastic API documentation] for more details.
+
+[id="creating-an-sbom-manifest-file"]
+== Creating an SBOM manifest file
+
+Trustification can analyze both CycloneDX and Software Package Data Exchange (SPDX) SBOM formats using the JSON file format.
+Many open-source tools are available to you for creating Software Bill of Materials (SBOM) manifest files from container images, or for your application.
+For this procedure we are going to use the Syft tool.
+
+IMPORTANT: Currently, Trustification only supports CycloneDX version 1.3, and SPDX version 2.2.
+
+.Prerequisites
+* Install link:https://github.com/anchore/syft#installation[Syft] for your workstation platform.
+
+.Procedure
+. To create an SBOM by using a container image.
++
+**CycloneDX format:**
++
+.Syntax
+[source,bash,subs="verbatim,quotes"]
+----
+syft _IMAGE_PATH_ -o cyclonedx-json
+----
++
+.Example
+[source,bash]
+----
+$ syft registry:example/image:tag -o cyclonedx-json
+----
++
+**SPDX format:**
++
+.Syntax
+[source,bash,subs="verbatim,quotes"]
+----
+syft _IMAGE_PATH_ -o spdx-json
+----
++
+.Example
+[source,bash]
+----
+$ syft registry:example/image:tag -o spdx-json
+----
++
+NOTE: Syft supports many types of container image sources. See the official supported source list on Syft’s GitHub site.
+
+. To create an SBOM by scanning the local file system.
++
+**CycloneDX format:**
++
+.Syntax
+[source,bash,subs="verbatim,quotes"]
+----
+syft dir\:_DIRECTORY_PATH_ -o cyclonedx-json
+syft file: _FILE_PATH_ -o cyclonedx-json
+----
++
+.Example
+[source,bash]
+----
+$ syft dir:. -o cyclonedx-json
+$ syft file:/example-binary -o cyclonedx-json
+----
++
+**SPDX format:**
++
+.Syntax
+[source,bash,subs="verbatim,quotes"]
+----
+syft dir: _DIRECTORY_PATH_ -o spdx-json
+syft file: _FILE_PATH_ -o spdx-json
+----
++
+.Example
+[source,bash]
+----
+$ syft dir:. -o spdx-json
+$ syft file:/example-binary -o spdx-json
+----
+
+.Additional resources
+* National Telecommunications and Information Administration’s (NTIA) link:https://www.ntia.gov/files/ntia/publications/howto_guide_for_sbom_generation_v1.pdf[How-to Guide on SBOM generation].
