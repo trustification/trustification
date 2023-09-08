@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use trustification_auth::client::{TokenInjector, TokenProvider};
 use utoipa::ToSchema;
 
-#[derive(Serialize, Deserialize, Debug, ToSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug, ToSchema)]
 pub struct Vulnerability {
     pub origin: String,
     pub id: String,
@@ -60,16 +60,17 @@ impl PartialEq for Vulnerability {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, ToSchema)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, ToSchema)]
 pub struct Affected {
     pub package: String,
     #[serde(skip_serializing_if = "Vec::is_empty", default = "Vec::default")]
     pub ranges: Vec<Range>,
 }
 
-#[derive(Serialize, Deserialize, Debug, ToSchema)]
+#[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
 pub struct Severity {
     pub r#type: ScoreType,
+    pub source: String,
     pub score: f32,
     pub additional: Option<String>,
 }
@@ -87,25 +88,45 @@ impl Hash for Severity {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, ToSchema)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, ToSchema)]
 pub struct Range {
     pub lower: Option<Version>,
     pub upper: Option<Version>,
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, ToSchema)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, ToSchema)]
 #[serde(rename_all = "lowercase")]
 pub enum Version {
     Inclusive(String),
     Exclusive(String),
 }
 
-#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Hash, ToSchema)]
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Hash, Copy, Clone, ToSchema)]
 #[serde(rename_all = "lowercase")]
 pub enum ScoreType {
+    Cvss2,
     Cvss3,
     Cvss4,
     Unknown,
+}
+
+impl ScoreType {
+    pub fn from_vector(vector: &Option<String>) -> Self {
+        if let Some(vector) = vector {
+            if vector.starts_with( "CVSS:2") {
+                Self::Cvss2
+            } else if vector.starts_with("CVSS:3") {
+                Self::Cvss3
+            } else if vector.starts_with("CVSS:4") {
+                Self::Cvss4
+            } else {
+                Self::Unknown
+            }
+        } else {
+            Self::Unknown
+        }
+    }
+
 }
 
 impl From<String> for ScoreType {
@@ -123,6 +144,9 @@ impl From<String> for ScoreType {
 impl Display for ScoreType {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
+            ScoreType::Cvss2 => {
+                write!(f, "cvss2")
+            }
             ScoreType::Cvss3 => {
                 write!(f, "cvss3")
             }
@@ -148,7 +172,7 @@ pub enum EventType {
     Fixed,
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Hash, ToSchema)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Hash, Clone, ToSchema)]
 pub struct Reference {
     pub r#type: String,
     pub url: String,
