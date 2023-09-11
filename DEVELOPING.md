@@ -227,7 +227,7 @@ curl "http://localhost:8081/api/v1/vex/search?q=openssl"
 If you need to build an image locally, you can do that by running
 
 ```shell
-docker build -f Containerfile -t trust:latest .
+docker build -f trust/Containerfile -t trust:latest .
 ```
 
 Then, you can use it like
