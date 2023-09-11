@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use reqwest::Url;
+use reqwest::{StatusCode, Url};
 use serde::{Deserialize, Serialize};
 
 use collector_client::CollectPackagesResponse;
@@ -16,18 +16,21 @@ impl OsvUrl {
         Self(base)
     }
 
-    pub fn querybatch(&self) -> Url {
-        Url::parse(&format!("{}/querybatch", self.0)).unwrap()
+    pub fn querybatch(&self) -> anyhow::Result<Url> {
+        Ok(Url::parse(&format!("{}/querybatch", self.0))?)
     }
 
-    pub fn vuln(&self, vuln_id: &str) -> Url {
-        Url::parse(&format!("{}/vulns/{}", self.0, vuln_id)).unwrap()
+    pub fn vuln(&self, vuln_id: &str) -> anyhow::Result<Url> {
+        Ok(Url::parse(&format!("{}/vulns/{}", self.0, vuln_id))?)
     }
 }
 
 const OSV_URL: OsvUrl = OsvUrl::new("https://api.osv.dev/v1");
 
-pub struct OsvClient {}
+#[derive(Clone, Debug)]
+pub struct OsvClient {
+    client: reqwest::Client,
+}
 
 #[derive(Serialize, Deserialize)]
 pub struct QueryPackageRequest {
@@ -62,12 +65,20 @@ pub struct CollatedBatchVulnerabilities {
 
 #[allow(unused)]
 impl OsvClient {
-    pub async fn query_batch(request: QueryBatchRequest) -> Result<CollatedQueryBatchResponse, anyhow::Error> {
-        let response: QueryBatchResponse = reqwest::Client::new()
-            .post(OSV_URL.querybatch())
+    pub fn new() -> Self {
+        Self {
+            client: reqwest::Client::new(),
+        }
+    }
+
+    pub async fn query_batch(&self, request: QueryBatchRequest) -> Result<CollatedQueryBatchResponse, anyhow::Error> {
+        let response: QueryBatchResponse = self
+            .client
+            .post(OSV_URL.querybatch()?)
             .json(&request)
             .send()
             .await?
+            .error_for_status()?
             .json()
             .await?;
 
@@ -86,13 +97,13 @@ impl OsvClient {
         Ok(response)
     }
 
-    pub async fn vulns(id: &str) -> Result<Vulnerability, anyhow::Error> {
-        Ok(reqwest::Client::new()
-            .get(OSV_URL.vuln(id))
-            .send()
-            .await?
-            .json()
-            .await?)
+    pub async fn vulns(&self, id: &str) -> Result<Option<Vulnerability>, anyhow::Error> {
+        let response = self.client.get(OSV_URL.vuln(id)?).send().await?;
+
+        match response.status() {
+            StatusCode::NOT_FOUND => Ok(None),
+            _ => Ok(response.error_for_status()?.json().await?),
+        }
     }
 }
 
@@ -171,7 +182,7 @@ mod tests {
 
     #[tokio::test]
     async fn query_vuln() -> Result<(), anyhow::Error> {
-        let vuln = OsvClient::vulns("GHSA-7rjr-3q55-vv33").await?;
+        let vuln = OsvClient::new().vulns("GHSA-7rjr-3q55-vv33").await?;
         let _vuln: v11y_client::Vulnerability = vuln.into();
 
         Ok(())
