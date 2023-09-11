@@ -3,7 +3,6 @@
 [![CI](https://github.com/trustification/trustification/workflows/CI/badge.svg)](https://github.com/trustification/trustification/actions?query=workflow%3A%22CI%22)
 [![GitHub release (latest SemVer)](https://img.shields.io/github/v/tag/trustification/trustification?sort=semver)](https://github.com/trustification/trustification/releases)
 
-
 Trustification is a collection of software that allow you to store bill of materials (SBOM), vulnerability information (VEX) for your organization and use that information to learn impact of vulnerabilities and dependency changes.
 
 With Trustification you can:
@@ -17,7 +16,8 @@ Trustification consists of a set of services you can use standalone or together:
 
 * [Bombastic](bombastic/README.md) - Storage and archival of SBOM documents.
 * [Vexination](vexination/README.md) - Storage and archival of VEX documents.
-* [Reservoir](reservoir) - Managing product metadata and access control.
+* [V11y](v11y) - Storing and lookup information about a vulnerability.
+* [Collectorist](collectorist) - A process that drives polling and populating of [GUAC](https://github.com/guacsec/guac) and V11y.
 * [Spog](spog) - Single Pane Of Glass API and frontend.
 
 Services such as Bombastic and Vexination uses S3-compatible storage for storing SBOM/VEX data and a search index. The search index is used to query data using the [sikula](https://github.com/ctron/sikula) query language.
