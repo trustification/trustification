@@ -292,72 +292,87 @@ pub fn upload(props: &UploadProperties) -> Html {
         secondaries.push(Action::new("Learn about creating an SBOM", onlearn));
     }
 
+    let footer = html!(
+        <Flex>
+            <FlexItem>
+                <Button
+                    disabled={processing.is_processing()}
+                    variant={ButtonVariant::Secondary}
+                    onclick={(*onopen_button).clone()}
+                >
+                    {"Load"}
+                </Button>
+            </FlexItem>
+            <FlexItem>
+                <Button
+                    variant={ButtonVariant::Primary}
+                    disabled={state == InputState::Error}
+                    onclick={onsubmit}
+                >
+                    {"Scan"}
+                </Button>
+            </FlexItem>
+            <FlexItem>
+                <Button
+                    variant={ButtonVariant::Secondary}
+                    disabled={drop_content.is_none()}
+                    onclick={onclear}
+                >
+                    {"Clear"}
+                </Button>
+            </FlexItem>
+            <FlexItem>
+                if let Some(helper_text) = helper_text {
+                    <HelperText>
+                        { helper_text }
+                    </HelperText>
+                }
+            </FlexItem>
+        </Flex>
+    );
+
     // render
 
     html!(
-        <div ref={node.clone()} {class} style="background-color: var(--pf-v5-global--BackgroundColor--100);">
-            <input ref={file_input_ref.clone()} style="display: none;" type="file" onchange={onchange_open} />
+        <>
             <Stack gutter=true>
                 <StackItem fill=true>
-                    if *initial {
-                        <EmptyState
-                            title="Get started by loading your SBOM"
-                            icon={Icon::Code}
-                            size={Size::XXXXLarge}
-                            primary={load_action}
-                            {secondaries}
-                            full_height=true
-                        >
-                            <Content>
-                                { Html::from_html_unchecked(AttrValue::from(EMPTY_BODY_CONTENT)) }
-                            </Content>
-                        </EmptyState>
-                    }
-                    if !*initial {
-                        <ReadonlyEditor content={content.clone()} />
-                    }
+                    <Card
+                        full_height=true
+                        plain=true
+                        style="--pf-v5-c-card--BackgroundColor: var(--pf-v5-global--BackgroundColor--200);"
+                        compact=true
+                    >
+                        <CardBody>
+                            <div ref={node.clone()} {class} style="background-color: var(--pf-v5-global--BackgroundColor--100);">
+                                <input ref={file_input_ref.clone()} style="display: none;" type="file" onchange={onchange_open} />
+                                if *initial {
+                                    <EmptyState
+                                        title="Get started by loading your SBOM"
+                                        icon={Icon::Code}
+                                        size={Size::XXXXLarge}
+                                        primary={load_action}
+                                        {secondaries}
+                                        full_height=true
+                                    >
+                                        <Content>
+                                            { Html::from_html_unchecked(AttrValue::from(EMPTY_BODY_CONTENT)) }
+                                        </Content>
+                                    </EmptyState>
+                                }
+                                if !*initial {
+                                    <ReadonlyEditor content={content.clone()} />
+                                }
+                            </div>
+                        </CardBody>
+                    </Card>
                 </StackItem>
                 <StackItem>
-                    if !*initial {
-                        <Flex>
-                            <FlexItem>
-                                <Button
-                                    disabled={processing.is_processing()}
-                                    variant={ButtonVariant::Secondary}
-                                    onclick={(*onopen_button).clone()}
-                                >
-                                    {"Load"}
-                                </Button>
-                            </FlexItem>
-                            <FlexItem>
-                                <Button
-                                    variant={ButtonVariant::Primary}
-                                    disabled={state == InputState::Error}
-                                    onclick={onsubmit}
-                                >
-                                    {"Scan"}
-                                </Button>
-                            </FlexItem>
-                            <FlexItem>
-                                <Button
-                                    variant={ButtonVariant::Secondary}
-                                    disabled={drop_content.is_none()}
-                                    onclick={onclear}
-                                >
-                                    {"Clear"}
-                                </Button>
-                            </FlexItem>
-                            <FlexItem>
-                                if let Some(helper_text) = helper_text {
-                                    <HelperText>
-                                        { helper_text }
-                                    </HelperText>
-                                }
-                            </FlexItem>
-                        </Flex>
-                    }
+                    {footer}
                 </StackItem>
             </Stack>
-        </div>
+
+        </>
+
     )
 }
