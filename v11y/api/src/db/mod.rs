@@ -1,6 +1,6 @@
-use derive_more::{Display, Error, From};
 use std::str::FromStr;
 
+use derive_more::{Display, Error, From};
 use futures::Stream;
 use futures::StreamExt;
 use sqlx::sqlite::SqliteConnectOptions;
@@ -418,10 +418,10 @@ impl Db {
             sqlx::query(
                 r#"
             insert into severities (
-                vulnerability_id, origin, type, score, additional
+                vulnerability_id, origin, source, type, score, additional
             ) values (
-                $1, $2, $3, $4, $5
-            ) on conflict (vulnerability_id, origin, type) do update
+                $1, $2, $3, $4, $5, $6
+            ) on conflict (vulnerability_id, origin, source, type) do update
                 set
                     score = excluded.score,
                     additional = excluded.additional
@@ -429,6 +429,7 @@ impl Db {
             )
             .bind(vuln.id.clone())
             .bind(vuln.origin.clone())
+            .bind(severity.source.clone())
             .bind(severity.r#type.to_string())
             .bind(severity.score)
             .bind(severity.additional.clone())
