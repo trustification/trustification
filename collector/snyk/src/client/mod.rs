@@ -1,4 +1,3 @@
-use derive_more;
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
 
@@ -123,7 +122,6 @@ impl SnykClient {
 
 #[cfg(test)]
 mod test {
-    use test_with;
 
     use crate::client::SnykClient;
 
