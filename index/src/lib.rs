@@ -307,8 +307,8 @@ impl IndexDirectory {
     }
 
     fn build_new(&self, settings: IndexSettings, schema: Schema, path: &Path) -> Result<SearchIndex, Error> {
-        std::fs::create_dir_all(&path).map_err(|e| Error::Open(e.to_string()))?;
-        let dir = MmapDirectory::open(&path).map_err(|e| Error::Open(e.to_string()))?;
+        std::fs::create_dir_all(path).map_err(|e| Error::Open(e.to_string()))?;
+        let dir = MmapDirectory::open(path).map_err(|e| Error::Open(e.to_string()))?;
         let builder = SearchIndex::builder().schema(schema).settings(settings);
         let index = builder.open_or_create(dir).map_err(|e| Error::Open(e.to_string()))?;
         Ok(index)
