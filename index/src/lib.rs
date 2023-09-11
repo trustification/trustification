@@ -296,13 +296,27 @@ impl IndexDirectory {
         })
     }
 
-    pub fn build(&self, settings: IndexSettings, schema: Schema) -> Result<SearchIndex, Error> {
-        let path = self.state.directory(&self.path);
+    pub fn reset(&self, settings: IndexSettings, schema: Schema) -> Result<SearchIndex, Error> {
+        let next = self.state.next();
+        let path = next.directory(&self.path);
+        if path.exists() {
+            std::fs::remove_dir_all(&path).map_err(|e| Error::Open(e.to_string()))?;
+        }
+        std::fs::create_dir_all(&path).map_err(|e| Error::Open(e.to_string()))?;
+        self.build_new(settings, schema, &path)
+    }
+
+    fn build_new(&self, settings: IndexSettings, schema: Schema, path: &Path) -> Result<SearchIndex, Error> {
         std::fs::create_dir_all(&path).map_err(|e| Error::Open(e.to_string()))?;
         let dir = MmapDirectory::open(&path).map_err(|e| Error::Open(e.to_string()))?;
         let builder = SearchIndex::builder().schema(schema).settings(settings);
         let index = builder.open_or_create(dir).map_err(|e| Error::Open(e.to_string()))?;
         Ok(index)
+    }
+
+    pub fn build(&self, settings: IndexSettings, schema: Schema) -> Result<SearchIndex, Error> {
+        let path = self.state.directory(&self.path);
+        self.build_new(settings, schema, &path)
     }
 
     fn unpack(
@@ -451,6 +465,22 @@ impl<INDEX: Index> IndexStore<INDEX> {
             }
             log::debug!("Index reloaded");
         }
+        Ok(())
+    }
+
+    // Reset the index to an empty state.
+    pub fn reset(&mut self) -> Result<(), Error> {
+        if let Some(index_dir) = &self.index_dir {
+            let index_dir = index_dir.write().unwrap();
+            let index = index_dir.reset(self.index.settings(), self.index.schema())?;
+            let mut inner = self.inner.write().unwrap();
+            *inner = index;
+        }
+        Ok(())
+    }
+
+    pub fn commit(&mut self, writer: IndexWriter) -> Result<(), Error> {
+        writer.commit()?;
         Ok(())
     }
 
@@ -939,5 +969,33 @@ mod tests {
         let result = bad.sync(schema, settings.clone(), &snapshot);
         assert!(result.is_err());
         assert_eq!(bad.state, IndexState::A);
+    }
+
+    #[tokio::test]
+    async fn test_index_dir_reset() {
+        let _ = env_logger::try_init();
+
+        let mut schema = Schema::builder();
+        let id = schema.add_text_field("id", STRING | FAST | STORED);
+        let schema = schema.build();
+
+        let r = rand::thread_rng().next_u32();
+        let dir = std::env::temp_dir().join(format!("index.{}", r));
+
+        let good = IndexDirectory::new(&dir.join("good")).unwrap();
+
+        let store = good.build(Default::default(), schema).unwrap();
+        let schema = store.schema();
+        let settings = store.settings();
+
+        let mut w = store.writer(10_000_000).unwrap();
+        w.add_document(doc!(id => "foo")).unwrap();
+        w.commit().unwrap();
+        w.wait_merging_threads().unwrap();
+        assert_eq!(store.reader().unwrap().searcher().num_docs(), 1);
+
+        let clean = good.reset(settings.clone(), schema).unwrap();
+        assert_eq!(store.reader().unwrap().searcher().num_docs(), 1);
+        assert_eq!(clean.reader().unwrap().searcher().num_docs(), 0);
     }
 }
