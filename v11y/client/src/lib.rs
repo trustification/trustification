@@ -113,7 +113,7 @@ pub enum ScoreType {
 impl ScoreType {
     pub fn from_vector(vector: &Option<String>) -> Self {
         if let Some(vector) = vector {
-            if vector.starts_with( "CVSS:2") {
+            if vector.starts_with("CVSS:2") {
                 Self::Cvss2
             } else if vector.starts_with("CVSS:3") {
                 Self::Cvss3
@@ -126,7 +126,6 @@ impl ScoreType {
             Self::Unknown
         }
     }
-
 }
 
 impl From<String> for ScoreType {

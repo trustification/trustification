@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Response<Inner> {
     pub errors: Option<Vec<Error>>,
-    pub data: Option<Inner>
+    pub data: Option<Inner>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -15,7 +15,6 @@ pub struct Error {
     pub code: String,
     pub title: String,
     pub detail: String,
-
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -1,10 +1,10 @@
-pub mod schema;
-
+use derive_more;
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
+
 use crate::client::schema::{Issue, Response};
 
-use derive_more;
+pub mod schema;
 
 #[derive(Debug, derive_more::Display, Serialize, Deserialize)]
 pub enum Error {
@@ -13,14 +13,10 @@ pub enum Error {
     #[display(fmt = "Serialization error")]
     Serialization,
     #[display(fmt = "Snyk error")]
-    Snyk(Vec<schema::Error>)
+    Snyk(Vec<schema::Error>),
 }
 
-impl std::error::Error for Error {
-
-}
-
-
+impl std::error::Error for Error {}
 
 struct SnykUrl(&'static str);
 
@@ -29,9 +25,11 @@ impl SnykUrl {
         Self(base)
     }
 
+    /*
     pub fn batch_issues(&self, org_id: &str) -> Url {
         Url::parse(&format!("{}/orgs/{}/packages/issues", self.0, org_id)).unwrap()
     }
+     */
 
     pub fn issues(&self, org_id: &str, purl: &str) -> Url {
         Url::parse(&format!(
@@ -63,6 +61,7 @@ pub struct IssuesRequestAttributes {
 pub struct SnykClient {
     org_id: String,
     token: String,
+    client: reqwest::Client,
 }
 
 impl SnykClient {
@@ -70,9 +69,11 @@ impl SnykClient {
         Self {
             org_id: org_id.to_string(),
             token: token.to_string(),
+            client: reqwest::Client::new(),
         }
     }
 
+    /*
     pub async fn batch_issues(&self, purls: Vec<String>) -> Result<(), anyhow::Error> {
         println!("{}", SNYK_URL.batch_issues(&self.org_id));
         let result: serde_json::Map<_, _> = reqwest::Client::new()
@@ -96,44 +97,44 @@ impl SnykClient {
 
         Ok(())
     }
+     */
 
     pub async fn issues(&self, purl: &str) -> Result<Vec<Issue>, Error> {
-        println!("{}", SNYK_URL.issues(&self.org_id, purl));
-        println!("token {}", self.token);
-        println!("org {}", self.org_id);
-        let result: Response<Vec<Issue>> = reqwest::Client::new()
+        let result: Response<Vec<Issue>> = self
+            .client
             .get(SNYK_URL.issues(&self.org_id, purl))
             .header("Authorization", format!("token {}", &self.token))
             .header("Content-Type", "application/vnd.api+json")
             .query(&[("version", "2023-08-31~beta")])
             .send()
-            .await.map_err(|_| Error::Http)?
+            .await
+            .map_err(|_| Error::Http)?
             .json()
-            .await.map_err(|_| Error::Serialization)?;
+            .await
+            .map_err(|_| Error::Serialization)?;
 
         if let Some(issues) = result.data {
             Ok(issues)
         } else {
-            Err( Error::Snyk(result.errors.unwrap_or( vec![] ) ) )
+            Err(Error::Snyk(result.errors.unwrap_or(vec![])))
         }
     }
 }
 
 #[cfg(test)]
 mod test {
-    use crate::client::SnykClient;
     use test_with;
+
+    use crate::client::SnykClient;
 
     pub fn client() -> Result<SnykClient, anyhow::Error> {
         let org_id = std::env::var("SNYK_ORG_ID")?;
         let token = std::env::var("SNYK_TOKEN")?;
 
-        Ok(SnykClient::new(
-            &org_id,
-            &token,
-        ))
+        Ok(SnykClient::new(&org_id, &token))
     }
 
+    /*
     #[test_with::env(SNYK_ORG_ID,SNYK_TOKEN)]
     #[tokio::test]
     async fn batch() -> Result<(), anyhow::Error> {
@@ -143,11 +144,12 @@ mod test {
         Ok(())
     }
 
-    #[test_with::env(SNYK_ORG_ID,SNYK_TOKEN)]
+     */
+
+    #[test_with::env(SNYK_ORG_ID, SNYK_TOKEN)]
     #[tokio::test]
     async fn single() -> Result<(), anyhow::Error> {
         client()?
-            //.issues("pkg:maven/org.apache.logging.log4j/log4j-core")
             .issues("pkg:maven/org.apache.logging.log4j/log4j-core@2.13.3")
             .await?;
         Ok(())

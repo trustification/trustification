@@ -1,17 +1,26 @@
 use std::net::{SocketAddr, TcpListener};
+use std::str::FromStr;
 use std::sync::atomic::Ordering;
 use std::time::Duration;
-use actix_web::{App, HttpResponse, HttpServer, post, Responder, ResponseError, web};
+
 use actix_web::middleware::{Compress, Logger};
+use actix_web::{post, web, App, HttpResponse, HttpServer, Responder, ResponseError};
+use derive_more::Display;
+use guac::client::intrinsic::certify_vuln::ScanMetadataInput;
+use guac::client::intrinsic::vulnerability::VulnerabilityInputSpec;
+use guac::client::GuacClient;
 use log::{info, warn};
+use packageurl::PackageUrl;
 use reqwest::Url;
 use tokio::time::sleep;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
-use collector_client::{CollectPackagesRequest, CollectVulnerabilitiesRequest};
+
+use collector_client::CollectPackagesRequest;
 use collectorist_client::{CollectorConfig, Interest};
 use v11y_client::Vulnerability;
-use crate::client::{Error, SnykClient};
+
+use crate::client::SnykClient;
 use crate::SharedState;
 
 #[derive(OpenApi)]
@@ -28,9 +37,22 @@ use crate::SharedState;
 )]
 pub struct ApiDoc;
 
-impl ResponseError for Error {
+#[derive(Debug, Display)]
+pub enum Error {
+    #[display(fmt = "Configuration error")]
+    Configuration,
 
+    #[display(fmt = "GUAC error")]
+    GuacError,
+
+    #[display(fmt = "Snyk error")]
+    SnykError,
+
+    #[display(fmt = "Internal error")]
+    InternalError,
 }
+
+impl ResponseError for Error {}
 
 pub async fn run<B: Into<SocketAddr>>(state: SharedState, bind: B) -> Result<(), anyhow::Error> {
     let listener = TcpListener::bind(bind.into())?;
@@ -57,42 +79,77 @@ pub async fn collect_packages(
     request: web::Json<CollectPackagesRequest>,
     state: web::Data<SharedState>,
 ) -> actix_web::Result<impl Responder> {
+    let client = SnykClient::new(&state.snyk_org_id, &state.snyk_token);
 
-    let client = SnykClient::new(
-        &state.snyk_org_id,
-        &state.snyk_token,
-    );
+    let guac_url = state
+        .guac_url
+        .read()
+        .await
+        .as_ref()
+        .cloned()
+        .ok_or(Error::Configuration)?;
 
-    let mut vulns: Vec<v11y_client::Vulnerability> = Vec::new();
+    let guac = GuacClient::new(guac_url.as_str());
 
     for purl in &request.purls {
-        println!("snyk query {}", purl);
-        for issue in client.issues(purl).await? {
-            println!("snyk issue {:#?}", issue);
-            let issue_vulns: Vec<Vulnerability> = issue.into();
-            println!("v11y vulns {}", issue_vulns.len());
-            vulns.extend_from_slice(
-                &issue_vulns
-            )
-        }
-    }
+        let mut vulns: Vec<v11y_client::Vulnerability> = Vec::new();
 
-    for vuln in vulns {
-        println!("{:#?}", vuln);
+        for issue in client.issues(purl).await.map_err(|_| Error::SnykError)? {
+            let issue_vulns: Vec<Vulnerability> = issue.into();
+            vulns.extend_from_slice(&issue_vulns)
+        }
+
+        if !vulns.is_empty() {
+            guac.intrinsic()
+                .ingest_package(&PackageUrl::from_str(purl).map_err(|_| Error::InternalError)?.into())
+                .await
+                .map_err(|_| Error::GuacError)?;
+
+            for vuln in &vulns {
+                guac.intrinsic()
+                    .ingest_vulnerability(&VulnerabilityInputSpec {
+                        r#type: "snyk".to_string(),
+                        vulnerability_id: vuln.id.clone(),
+                    })
+                    .await
+                    .map_err(|_| Error::GuacError)?;
+
+                guac.intrinsic()
+                    .ingest_certify_vuln(
+                        &PackageUrl::from_str(purl).map_err(|_| Error::InternalError)?.into(),
+                        &VulnerabilityInputSpec {
+                            r#type: "snyk".to_string(),
+                            vulnerability_id: vuln.id.clone(),
+                        },
+                        &ScanMetadataInput {
+                            db_uri: "https://api.snyk.io/".to_string(),
+                            db_version: "1.0".to_string(),
+                            scanner_uri: "https://trustification.io/".to_string(),
+                            scanner_version: "1.0".to_string(),
+                            time_scanned: Default::default(),
+                            origin: "snyk".to_string(),
+                            collector: "snyk".to_string(),
+                        },
+                    )
+                    .await
+                    .map_err(|_| Error::GuacError)?;
+
+                state.v11y_client.ingest_vulnerability(vuln).await.ok();
+            }
+        }
     }
 
     Ok(HttpResponse::Ok().finish())
 }
-
 
 pub fn config(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/api/v1")
             .wrap(Logger::default())
             .wrap(Compress::default())
-            .service(collect_packages)
+            .service(collect_packages),
     )
-        .service(SwaggerUi::new("/swagger-ui/{_:.*}").url("/openapi.json", ApiDoc::openapi()));
+    .service(SwaggerUi::new("/swagger-ui/{_:.*}").url("/openapi.json", ApiDoc::openapi()));
 }
 
 pub async fn register_with_collectorist(state: SharedState) {
