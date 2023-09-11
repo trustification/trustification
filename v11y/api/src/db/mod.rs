@@ -542,7 +542,7 @@ impl Db {
             sqlx::query(
                 r#"
                 select
-                    origin, type, score, additional
+                    origin, source, type, score, additional
                 from
                     severities
                 where
