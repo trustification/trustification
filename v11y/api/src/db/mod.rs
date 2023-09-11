@@ -239,6 +239,7 @@ impl Db {
                 refs.url,
                 severities.type as score_type,
                 severities.score,
+                severities.source,
                 severities.additional
             from
                 vulnerabilities
@@ -276,6 +277,7 @@ impl Db {
                 refs.type,
                 refs.url,
                 severities.type as score_type,
+                severities.source,
                 severities.score,
                 severities.additional
             from
@@ -529,7 +531,7 @@ impl Db {
             sqlx::query(
                 r#"
                 select
-                    origin, type, score, additional
+                    origin, source, type, score, additional
                 from
                     severities
                 where
