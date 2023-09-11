@@ -6,6 +6,7 @@ use std::sync::Arc;
 use reqwest::Url;
 use tokio::sync::RwLock;
 
+use crate::client::OsvClient;
 use trustification_auth::client::{OpenIdTokenProviderConfigArguments, TokenProvider};
 use trustification_infrastructure::{
     endpoint::{self, CollectorOsv, Endpoint, EndpointServerConfig},
@@ -62,14 +63,14 @@ impl Run {
                 let provider = self.oidc.into_provider_or_devmode(self.devmode).await?;
                 let state = Self::configure("osv".into(), self.collectorist_url, self.v11y_url, provider).await?;
                 let server = server::run(state.clone(), self.api.socket_addr()?);
-                let register = register_with_collectorist(state.clone());
+                let register = register_with_collectorist(&state);
 
                 tokio::select! {
                      _ = server => { }
                      _ = register => { }
                 }
 
-                deregister_with_collectorist(state.clone()).await;
+                deregister_with_collectorist(&state).await;
                 Ok(())
             })
             .await?;
@@ -97,6 +98,7 @@ pub struct AppState {
     collectorist_client: collectorist_client::CollectoristClient,
     v11y_client: v11y_client::V11yClient,
     guac_url: RwLock<Option<Url>>,
+    osv: OsvClient,
 }
 
 impl AppState {
@@ -114,11 +116,10 @@ impl AppState {
             ),
             v11y_client: v11y_client::V11yClient::new(v11y_url, provider),
             guac_url: RwLock::new(None),
+            osv: OsvClient::new(),
         }
     }
 }
-
-pub(crate) type SharedState = Arc<AppState>;
 
 impl From<Vulnerability> for v11y_client::Vulnerability {
     fn from(vuln: Vulnerability) -> Self {

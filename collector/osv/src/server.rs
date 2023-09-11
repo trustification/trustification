@@ -1,11 +1,13 @@
-use std::fmt::Debug;
-use std::net::{SocketAddr, TcpListener};
-use std::str::FromStr;
-use std::sync::atomic::Ordering;
-use std::time::Duration;
-
+use crate::{
+    client::{schema::Package, QueryBatchRequest, QueryPackageRequest},
+    AppState,
+};
 use actix_web::middleware::{Compress, Logger};
 use actix_web::{post, web, App, HttpResponse, HttpServer, Responder, ResponseError};
+use collector_client::{
+    CollectPackagesRequest, CollectPackagesResponse, CollectVulnerabilitiesRequest, CollectVulnerabilitiesResponse,
+};
+use collectorist_client::{CollectorConfig, Interest};
 use derive_more::Display;
 use guac::client::intrinsic::certify_vuln::ScanMetadataInput;
 use guac::client::intrinsic::vulnerability::VulnerabilityInputSpec;
@@ -13,18 +15,15 @@ use guac::client::GuacClient;
 use log::{info, warn};
 use packageurl::PackageUrl;
 use reqwest::Url;
+use std::fmt::Debug;
+use std::net::{SocketAddr, TcpListener};
+use std::str::FromStr;
+use std::sync::atomic::Ordering;
+use std::sync::Arc;
+use std::time::Duration;
 use tokio::time::sleep;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
-
-use collector_client::{
-    CollectPackagesRequest, CollectPackagesResponse, CollectVulnerabilitiesRequest, CollectVulnerabilitiesResponse,
-};
-use collectorist_client::{CollectorConfig, Interest};
-
-use crate::client::schema::Package;
-use crate::client::{OsvClient, QueryBatchRequest, QueryPackageRequest};
-use crate::SharedState;
 
 #[derive(Debug, Display)]
 pub enum Error {
@@ -47,14 +46,16 @@ impl ResponseError for Error {}
 #[openapi(paths(crate::server::collect_packages))]
 pub struct ApiDoc;
 
-pub async fn run<B: Into<SocketAddr>>(state: SharedState, bind: B) -> Result<(), anyhow::Error> {
+pub async fn run<B: Into<SocketAddr>>(state: Arc<AppState>, bind: B) -> Result<(), anyhow::Error> {
     let listener = TcpListener::bind(bind.into())?;
     let addr = listener.local_addr()?;
     log::debug!("listening on {}", addr);
 
+    let state = web::Data::from(state);
+
     state.addr.write().await.replace(addr);
 
-    HttpServer::new(move || App::new().app_data(web::Data::new(state.clone())).configure(config))
+    HttpServer::new(move || App::new().app_data(state.clone()).configure(config))
         .listen(listener)?
         .run()
         .await?;
@@ -91,13 +92,13 @@ impl From<&CollectPackagesRequest> for QueryBatchRequest {
     tag = "collector-osv",
     path = "/api/v1/packages",
     responses(
-	(status = 200, description = "Requested pURLs gathered"),
+        (status = 200, description = "Requested pURLs gathered"),
     ),
 )]
 #[post("packages")]
 pub async fn collect_packages(
     request: web::Json<CollectPackagesRequest>,
-    state: web::Data<SharedState>,
+    state: web::Data<AppState>,
 ) -> actix_web::Result<impl Responder> {
     let guac_url = state
         .guac_url
@@ -110,7 +111,7 @@ pub async fn collect_packages(
     let guac = GuacClient::new(guac_url.as_str());
     let request: QueryBatchRequest = (&*request).into();
     //log::debug!("osv request: {}", serde_json::to_string_pretty(&request).unwrap());
-    let response = OsvClient::query_batch(request).await.map_err(|_| Error::OsvError)?;
+    let response = state.osv.query_batch(request).await.map_err(|_| Error::OsvError)?;
 
     for entry in &response.results {
         if let Some(vulns) = &entry.vulns {
@@ -167,25 +168,37 @@ pub async fn collect_packages(
 #[post("vulnerabilities")]
 pub async fn collect_vulnerabilities(
     request: web::Json<CollectVulnerabilitiesRequest>,
-    state: web::Data<SharedState>,
+    state: web::Data<AppState>,
 ) -> actix_web::Result<impl Responder> {
     let mut vulnerability_ids = Vec::default();
 
     for vuln_id in &request.vulnerability_ids {
-        if let Ok(osv_vuln) = OsvClient::vulns(vuln_id).await {
-            vulnerability_ids.push(osv_vuln.id.clone());
-            let v11y_vuln = v11y_client::Vulnerability::from(osv_vuln);
-            println!("{:?}", v11y_vuln);
-            let _result = state.v11y_client.ingest_vulnerability(&v11y_vuln).await;
+        match state.osv.vulns(vuln_id).await {
+            Ok(Some(osv_vuln)) => {
+                vulnerability_ids.push(osv_vuln.id.clone());
+                let v11y_vuln = v11y_client::Vulnerability::from(osv_vuln);
+                log::debug!("{:?}", v11y_vuln);
+                if let Err(err) = state.v11y_client.ingest_vulnerability(&v11y_vuln).await {
+                    log::warn!("Failed to store in v11y: {err}");
+                }
+            }
+            Ok(None) => {
+                // not found
+            }
+            Err(err) => {
+                log::warn!("Failed to query OSV: {err}");
+            }
         }
     }
 
     let gathered = CollectVulnerabilitiesResponse { vulnerability_ids };
 
+    log::info!("Gathered information: {gathered:?}");
+
     Ok(HttpResponse::Ok().json(gathered))
 }
 
-pub async fn register_with_collectorist(state: SharedState) {
+pub async fn register_with_collectorist(state: &AppState) {
     loop {
         if let Some(addr) = *state.addr.read().await {
             if !state.connected.load(Ordering::Relaxed) {
@@ -219,7 +232,7 @@ pub async fn register_with_collectorist(state: SharedState) {
     }
 }
 
-pub async fn deregister_with_collectorist(state: SharedState) {
+pub async fn deregister_with_collectorist(state: &AppState) {
     if state.collectorist_client.deregister_collector().await.is_ok() {
         info!("deregistered with collectorist");
     } else {
