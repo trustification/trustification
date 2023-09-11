@@ -166,10 +166,19 @@ impl V11yUrl {
     pub fn vulnerability_url(&self) -> Url {
         self.base_url.join("/api/v1/vulnerability").unwrap()
     }
+
+    pub fn get_vulnerability_url(&self, id: impl AsRef<str>) -> Url {
+        self.base_url
+            .join("/api/v1/vulnerability/")
+            .unwrap()
+            .join(id.as_ref())
+            .unwrap()
+    }
 }
 
 #[allow(unused)]
 pub struct V11yClient {
+    client: reqwest::Client,
     v11y_url: V11yUrl,
     provider: Box<dyn TokenProvider>,
 }
@@ -180,13 +189,15 @@ impl V11yClient {
         P: TokenProvider + 'static,
     {
         Self {
+            client: reqwest::Client::new(),
             v11y_url: V11yUrl::new(url),
             provider: Box::new(provider),
         }
     }
 
     pub async fn ingest_vulnerability(&self, vuln: &Vulnerability) -> Result<(), anyhow::Error> {
-        Ok(reqwest::Client::new()
+        Ok(self
+            .client
             .post(self.v11y_url.vulnerability_url())
             .inject_token(self.provider.as_ref())
             .await?
@@ -194,6 +205,19 @@ impl V11yClient {
             .send()
             .await
             .map(|_| ())?)
+    }
+
+    pub async fn get_vulnerability(&self, id: &str) -> Result<Vec<Vulnerability>, anyhow::Error> {
+        Ok(self
+            .client
+            .get(self.v11y_url.get_vulnerability_url(id))
+            .inject_token(self.provider.as_ref())
+            .await?
+            .send()
+            .await?
+            .error_for_status()?
+            .json()
+            .await?)
     }
 }
 

@@ -2,6 +2,7 @@ use super::*;
 use crate::{config::Config, runner::Runner};
 use async_trait::async_trait;
 use test_context::AsyncTestContext;
+use trustification_auth::client::OpenIdTokenProviderConfigArguments;
 
 #[async_trait]
 impl AsyncTestContext for SpogContext {
@@ -116,6 +117,9 @@ fn spog_api(burl: Url, vurl: Url) -> spog_api::Run {
         vexination_url: vurl,
         crda_url: option_env!("CRDA_URL").map(|url| url.parse().unwrap()),
         crda_payload_limit: DEFAULT_CRDA_PAYLOAD_LIMIT,
+        collectorist_url: None,
+        v11y_url: None,
+        oidc: OpenIdTokenProviderConfigArguments::devmode(),
         config: None,
         infra: InfrastructureConfig {
             infrastructure_enabled: false,

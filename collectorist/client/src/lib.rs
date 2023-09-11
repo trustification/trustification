@@ -85,20 +85,26 @@ impl CollectoristClient {
     }
 
     pub async fn collect_packages(&self, purls: Vec<String>) -> Result<(), anyhow::Error> {
-        reqwest::Client::new()
+        self.client
             .post(self.collectorist_url.collect_packages_url())
+            .inject_token(self.provider.as_ref())
+            .await?
             .json(&CollectPackagesRequest { purls })
             .send()
-            .await?;
+            .await?
+            .error_for_status()?;
         Ok(())
     }
 
     pub async fn collect_vulnerabilities(&self, vuln_ids: Vec<String>) -> Result<(), anyhow::Error> {
-        reqwest::Client::new()
+        self.client
             .post(self.collectorist_url.collect_vulnerabilities_url())
+            .inject_token(self.provider.as_ref())
+            .await?
             .json(&CollectVulnerabilitiesRequest { vuln_ids })
             .send()
-            .await?;
+            .await?
+            .error_for_status()?;
         Ok(())
     }
 }

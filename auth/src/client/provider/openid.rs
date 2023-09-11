@@ -14,29 +14,44 @@ use url::Url;
 #[command(next_help_heading = "OIDC client configuration")]
 pub struct OpenIdTokenProviderConfigArguments {
     #[arg(
+        id = "oidc_client_id",
         long = "oidc-client-id",
         env = "OIDC_PROVIDER_CLIENT_ID",
         requires("OpenIdTokenProviderConfigArguments")
     )]
     pub client_id: Option<String>,
     #[arg(
+        id = "oidc_client_secret",
         long = "oidc-client-secret",
         env = "OIDC_PROVIDER_CLIENT_SECRET",
         requires("OpenIdTokenProviderConfigArguments")
     )]
     pub client_secret: Option<String>,
     #[arg(
+        id = "oidc_issuer_url",
         long = "oidc-issuer-url",
         env = "OIDC_PROVIDER_ISSUER_URL",
         requires("OpenIdTokenProviderConfigArguments")
     )]
     pub issuer_url: Option<String>,
     #[arg(
+        id = "oidc_refresh_before",
         long = "oidc-refresh-before",
         env = "OIDC_PROVIDER_REFRESH_BEFORE",
         default_value = "30s"
     )]
     pub refresh_before: humantime::Duration,
+}
+
+impl OpenIdTokenProviderConfigArguments {
+    pub fn devmode() -> OpenIdTokenProviderConfigArguments {
+        Self {
+            issuer_url: Some(devmode::issuer_url()),
+            client_id: Some(devmode::SERVICE_CLIENT_ID.to_string()),
+            client_secret: Some(devmode::SSO_CLIENT_SECRET.to_string()),
+            refresh_before: Duration::from_secs(30).into(),
+        }
+    }
 }
 
 impl OpenIdTokenProviderConfigArguments {

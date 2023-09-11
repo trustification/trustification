@@ -1,5 +1,7 @@
 use crate::guac::service::GuacService;
 use crate::server::{AppState, Error};
+use crate::service::collectorist::CollectoristService;
+use crate::service::v11y::V11yService;
 use actix_web::{
     web::{self, ServiceConfig},
     HttpResponse,
@@ -11,6 +13,7 @@ use csaf::Csaf;
 use futures::TryStreamExt;
 use spog_model::csaf::{find_product_relations, trace_product};
 use spog_model::cve::{AdvisoryOverview, CveDetails};
+use spog_model::prelude::Details;
 use std::collections::{BTreeMap, BTreeSet, HashSet};
 use std::sync::Arc;
 use trustification_auth::authenticator::Authenticator;
@@ -28,6 +31,8 @@ async fn cve_details(
     guac: web::Data<GuacService>,
     id: web::Path<String>,
     access_token: BearerAuth,
+    collectorist: web::Data<CollectoristService>,
+    v11y: web::Data<V11yService>,
 ) -> actix_web::Result<HttpResponse> {
     let id = id.into_inner();
 
@@ -37,7 +42,7 @@ async fn cve_details(
         token: access_token.token().to_string(),
     };
 
-    Ok(HttpResponse::Ok().json(build_cve_details(&app_state, &guac, provider, id).await?))
+    Ok(HttpResponse::Ok().json(build_cve_details(&app_state, &guac, provider, id, &collectorist, &v11y).await?))
 }
 
 async fn build_cve_details<P>(
@@ -45,10 +50,20 @@ async fn build_cve_details<P>(
     _guac: &GuacService,
     provider: P,
     cve_id: String,
+    collectorist: &CollectoristService,
+    v11y: &V11yService,
 ) -> Result<CveDetails, Error>
 where
     P: TokenProvider,
 {
+    // TODO: trigger collectorist
+    // TODO: fetch from v11y
+
+    collectorist.trigger_vulnerability(&cve_id).await?;
+    let mut details = v11y.fetch(&cve_id).await?;
+
+    // fetch from index
+
     let q = format!(r#"cve:"{cve_id}""#);
     let advisories = app.search_vex(&q, 0, 1024, Default::default(), &provider).await?.result;
 
@@ -100,6 +115,16 @@ where
         })
     }
 
+    log::info!("Details: {details:#?}");
+
+    let details = details
+        .pop()
+        .map(|vuln| Details {
+            summary: vuln.summary,
+            details: vuln.details,
+        })
+        .unwrap_or_default();
+
     Ok(CveDetails {
         id: cve_id,
         products: products
@@ -107,6 +132,7 @@ where
             .map(|(k, v)| (k.to_string(), v.into_iter().collect()))
             .collect(),
         advisories,
+        details,
     })
 }
 
