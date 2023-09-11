@@ -59,6 +59,7 @@ impl<'a, INDEX: Index> Indexer<'a, INDEX> {
                 command = self.commands.recv() => {
                     if let Some(IndexerCommand::Reindex) = command {
                         log::info!("Reindexing all documents");
+                        self.index.reset()?;
                         let mut progress = 0;
                         *self.status.lock().await = IndexerStatus::Reindexing { progress };
                         match self.storage.list_all_objects().await {
@@ -89,9 +90,9 @@ impl<'a, INDEX: Index> Indexer<'a, INDEX> {
                                             }
                                         }
                                         _ = tick => {
-                                            match self.index.snapshot(writer.take().unwrap(), &self.storage, true).await {
+                                            match self.index.commit(writer.take().unwrap()) {
                                                 Ok(_) => {
-                                                    log::trace!("Index snapshot published");
+                                                    log::trace!("Index committed");
                                                 }
                                                 Err(e) => {
                                                     log::warn!("(Ignored) Error committing index: {:?}", e);
@@ -104,10 +105,10 @@ impl<'a, INDEX: Index> Indexer<'a, INDEX> {
                                 log::info!("Reindexing finished");
                                 match self.index.snapshot(writer.take().unwrap(), &self.storage, true).await {
                                     Ok(_) => {
-                                        log::info!("Reindex index published");
+                                        log::info!("Reindexed index published");
                                     }
                                     Err(e) => {
-                                        log::warn!("(Ignored) Error committing index: {:?}", e);
+                                        log::warn!("(Ignored) Error publishing index: {:?}", e);
                                     }
                                 }
                                 writer.replace(block_in_place(|| self.index.writer())?);
