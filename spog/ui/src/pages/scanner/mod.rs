@@ -97,15 +97,7 @@ pub fn scanner() -> Html {
                     }
 
                     <PageSection variant={PageSectionVariant::Light} fill=true>
-                        <Card
-                            full_height=true
-                            style="--pf-v5-c-card--BackgroundColor: var(--pf-v5-global--BackgroundColor--200);"
-                            compact=true
-                        >
-                            <CardBody>
-                                <Upload {onsubmit} {onvalidate} />
-                            </CardBody>
-                        </Card>
+                        <Upload {onsubmit} {onvalidate} />
                     </PageSection>
                 </>
             )
