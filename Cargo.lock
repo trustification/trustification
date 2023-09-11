@@ -5915,6 +5915,7 @@ dependencies = [
  "bytes",
  "chrono",
  "clap",
+ "collectorist-client",
  "csaf",
  "derive_more",
  "env_logger",
@@ -5947,6 +5948,7 @@ dependencies = [
  "utoipa",
  "utoipa-swagger-ui",
  "uuid",
+ "v11y-client",
  "vexination-model",
  "zstd",
 ]

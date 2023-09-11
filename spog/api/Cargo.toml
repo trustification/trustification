@@ -53,10 +53,12 @@ bombastic-model = { path = "../../bombastic/model" }
 
 trustification-analytics = { path = "../../analytics" }
 trustification-api = { path = "../../api" }
+trustification-auth = { path = "../../auth", features = ["actix", "swagger"] }
+collectorist-client = { path = "../../collectorist/client" }
 trustification-common = { path = "../../common" }
 trustification-infrastructure = { path = "../../infrastructure" }
+v11y-client = { path = "../../v11y/client" }
 trustification-version = { path = "../../version", features = ["actix-web"] }
-trustification-auth = { path = "../../auth", features = ["actix", "swagger"] }
 
 [build-dependencies]
 trustification-version = { path = "../../version", features = ["build"] }

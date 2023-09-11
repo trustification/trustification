@@ -2,12 +2,15 @@ use std::future::Future;
 use std::pin::Pin;
 use std::{net::TcpListener, sync::Arc};
 
+use crate::service::{collectorist, v11y};
 use crate::{
     advisory,
     analyze::{self, CrdaClient},
     config, cve,
     guac::service::GuacService,
-    index, sbom, Run,
+    index, sbom,
+    service::{collectorist::CollectoristService, v11y::V11yService},
+    Run,
 };
 use actix_cors::Cors;
 use actix_web::{http::header::ContentType, web, HttpResponse, HttpServer};
@@ -92,10 +95,15 @@ impl Server {
             log::warn!("Authentication is disabled");
         }
 
+        let provider = self.run.oidc.into_provider_or_devmode(self.run.devmode).await?;
+
         let crda = self.run.crda_url.map(CrdaClient::new);
         let crda_payload_limit = self.run.crda_payload_limit;
 
         let guac = GuacService::new(self.run.guac_url);
+
+        let v11y = web::Data::new(V11yService::new(self.run.v11y_url, provider.clone()));
+        let collectorist = web::Data::new(CollectoristService::new(self.run.collectorist_url, provider.clone()));
 
         let (tracker, flusher) = Tracker::new(self.run.analytics);
         let tracker = web::Data::from(tracker);
@@ -110,6 +118,8 @@ impl Server {
             let swagger_oidc = swagger_oidc.clone();
             let guac = guac.clone();
             let tracker = tracker.clone();
+            let v11y = v11y.clone();
+            let collectorist = collectorist.clone();
 
             let mut app = new_app(AppOptions {
                 cors: Some(cors),
@@ -120,6 +130,8 @@ impl Server {
             .app_data(state)
             .app_data(web::Data::new(guac))
             .app_data(tracker)
+            .app_data(v11y)
+            .app_data(collectorist)
             .configure(index::configure())
             .configure(version::configurator(version!()))
             .configure(sbom::configure(authenticator.clone()))
@@ -185,6 +197,10 @@ pub enum Error {
     Guac(#[from] crate::guac::service::Error),
     #[error("serialization error: {0}")]
     Serde(#[from] serde_json::error::Error),
+    #[error("collectorist error: {0}")]
+    Collectorist(#[from] collectorist::Error),
+    #[error("v11y error: {0}")]
+    V11y(#[from] v11y::Error),
 }
 
 impl actix_web::error::ResponseError for Error {
@@ -220,6 +236,16 @@ impl actix_web::error::ResponseError for Error {
             Self::Guac(error) => res.json(ErrorInformation {
                 error: "Guac".to_string(),
                 message: "Error contacting GUAC".to_string(),
+                details: error.to_string(),
+            }),
+            Self::Collectorist(error) => res.json(ErrorInformation {
+                error: "collectorist".to_string(),
+                message: "Error contacting collectorist".to_string(),
+                details: error.to_string(),
+            }),
+            Self::V11y(error) => res.json(ErrorInformation {
+                error: "v11y".to_string(),
+                message: "Error contacting v11y".to_string(),
                 details: error.to_string(),
             }),
         }
