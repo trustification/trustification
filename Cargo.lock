@@ -1620,6 +1620,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "clap",
+ "collector-nvd",
  "collector-osv",
  "collector-snyk",
  "log",
@@ -1637,6 +1638,36 @@ dependencies = [
  "reqwest",
  "serde",
  "serde_json",
+]
+
+[[package]]
+name = "collector-nvd"
+version = "0.1.0"
+dependencies = [
+ "actix-web",
+ "anyhow",
+ "chrono",
+ "clap",
+ "collector-client",
+ "collectorist-api",
+ "collectorist-client",
+ "derive_more",
+ "env_logger",
+ "futures",
+ "guac",
+ "libtest-with",
+ "log",
+ "packageurl",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "test-with 0.10.3",
+ "tokio",
+ "trustification-auth",
+ "trustification-infrastructure",
+ "utoipa",
+ "utoipa-swagger-ui",
+ "v11y-client",
 ]
 
 [[package]]
