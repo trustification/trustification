@@ -481,7 +481,7 @@ impl<INDEX: Index> IndexStore<INDEX> {
         Ok(())
     }
 
-    pub fn commit(&mut self, writer: IndexWriter) -> Result<(), Error> {
+    pub fn commit(&self, writer: IndexWriter) -> Result<(), Error> {
         writer.commit()?;
         Ok(())
     }
