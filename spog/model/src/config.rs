@@ -1,11 +1,3 @@
-use schemars::schema::InstanceType;
-use schemars::{
-    gen::SchemaGenerator,
-    schema::{ObjectValidation, Schema, SchemaObject, SubschemaValidation},
-    JsonSchema,
-};
-use serde::{de::Error, ser::SerializeMap, Deserializer, Serialize, Serializer};
-use serde_json::{json, Value};
 use url::Url;
 
 /// SPoG UI configuration
@@ -209,93 +201,39 @@ pub struct FilterCheckOption {
     pub terms: Vec<String>,
 }
 
+/// Select style choice (one of)
+#[derive(Clone, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct FilterSelectOption {
+    /// Internal ID (groups radio options)
+    pub group: String,
+    /// Search terms which will be added using an OR group
+    pub options: Vec<FilterSelectItem>,
+}
+
+/// Item of a [`FilterSelectOption`]
+#[derive(Clone, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct FilterSelectItem {
+    /// Internal ID (must be unique for a radio group)
+    pub id: String,
+    /// End-user friendly label
+    pub label: String,
+    /// Search terms which will be added using an OR group
+    pub terms: Vec<String>,
+}
+
 /// The filter option element which can be added
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase")]
+#[serde(tag = "type")]
 pub enum FilterOption {
     /// Add a checkbox option
     Check(FilterCheckOption),
+    /// Add a select/radio button
+    Select(FilterSelectOption),
     /// Add a visual divider
     Divider,
-}
-
-impl JsonSchema for FilterOption {
-    fn schema_name() -> String {
-        "FilterOption".to_string()
-    }
-
-    fn json_schema(gen: &mut SchemaGenerator) -> Schema {
-        // divider
-
-        let divider = SchemaObject {
-            instance_type: Some(InstanceType::Object.into()),
-            object: Some(Box::new(ObjectValidation {
-                additional_properties: Some(Box::new(false.into())),
-                properties: [("divider".to_string(), {
-                    let mut schema: SchemaObject = <bool>::json_schema(gen).into();
-                    schema.const_value = Some(json!(true));
-                    schema.into()
-                })]
-                .into_iter()
-                .collect(),
-                ..Default::default()
-            })),
-            ..SchemaObject::default()
-        };
-
-        // check option
-
-        let check_option = gen.subschema_for::<FilterCheckOption>();
-
-        // one-of
-
-        let schema = SchemaObject {
-            subschemas: Some(Box::new(SubschemaValidation {
-                one_of: Some(vec![check_option, divider.into()]),
-                ..Default::default()
-            })),
-            ..Default::default()
-        };
-
-        // return
-
-        schema.into()
-    }
-}
-
-impl Serialize for FilterOption {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        match self {
-            FilterOption::Divider => {
-                let mut map = serializer.serialize_map(Some(1))?;
-                map.serialize_entry("divider", &true)?;
-                map.end()
-            }
-
-            FilterOption::Check(opt) => opt.serialize(serializer),
-        }
-    }
-}
-
-impl<'de> serde::Deserialize<'de> for FilterOption {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let value: Value = Value::deserialize(deserializer)?;
-        if let Some(divider) = value.get("divider").and_then(|v| v.as_bool()) {
-            match divider {
-                true => Ok(FilterOption::Divider),
-                false => Err(Error::custom("the field 'divider' must have a value of 'true'")),
-            }
-        } else {
-            Ok(FilterOption::Check(
-                FilterCheckOption::deserialize(value).map_err(Error::custom)?,
-            ))
-        }
-    }
 }
 
 #[cfg(test)]
@@ -313,6 +251,24 @@ mod test {
 
     fn mock_check(id: impl Into<String>, label: impl Into<String>) -> FilterOption {
         FilterOption::Check(mock_check_option(id, label))
+    }
+
+    fn mock_select(
+        id: impl Into<String>,
+        label: impl Into<String>,
+        options: impl IntoIterator<Item = (impl Into<String>, impl Into<String>)>,
+    ) -> FilterOption {
+        FilterOption::Select(FilterSelectOption {
+            id: id.into(),
+            options: options
+                .into_iter()
+                .map(|(id, label)| FilterSelectItem {
+                    id: id.into(),
+                    label: label.into(),
+                    terms: vec![],
+                })
+                .collect(),
+        })
     }
 
     #[test]
@@ -378,15 +334,27 @@ mod test {
     fn test_ensure_eq() {
         let options = serde_json::from_value::<Vec<FilterOption>>(json!([
             {
+                "type": "check",
                 "id": "id1",
                 "label": "label1",
                 "terms": [],
             },
-            { "divider": true },
+            { "type": "divider" },
             {
+                "type": "check",
                 "id": "id2",
                 "label": "label2",
                 "terms": [],
+            },
+            {
+                "type": "select",
+                "id": "id3",
+                "label": "label3",
+                "options": [
+                    { "id": "a", "label": "A", "terms": [] },
+                    { "id": "b", "label": "B", "terms": [] },
+                    { "id": "c", "label": "C", "terms": [] },
+                ],
             },
         ]))
         .unwrap();
@@ -408,7 +376,8 @@ mod test {
                     options: vec![
                         mock_check("id1", "label1"),
                         FilterOption::Divider,
-                        mock_check("id2", "label2")
+                        mock_check("id2", "label2"),
+                        mock_select("id3", "label3", [("a", "A"), ("b", "B"), ("c", "C")])
                     ]
                 }]
             }
