@@ -1620,6 +1620,7 @@ dependencies = [
  "anyhow",
  "clap",
  "collector-osv",
+ "collector-snyk",
  "log",
  "serde",
  "serde_json",
@@ -1660,6 +1661,37 @@ dependencies = [
  "tokio",
  "trustification-auth",
  "trustification-infrastructure",
+ "utoipa",
+ "utoipa-swagger-ui",
+ "v11y-client",
+]
+
+[[package]]
+name = "collector-snyk"
+version = "0.1.0"
+dependencies = [
+ "actix-web",
+ "anyhow",
+ "chrono",
+ "clap",
+ "collector-client",
+ "collectorist-api",
+ "collectorist-client",
+ "derive_more",
+ "env_logger",
+ "futures",
+ "guac",
+ "libtest-with",
+ "log",
+ "packageurl",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "test-with 0.10.3",
+ "tokio",
+ "trustification-auth",
+ "trustification-infrastructure",
+ "url-escape",
  "utoipa",
  "utoipa-swagger-ui",
  "v11y-client",
@@ -3300,7 +3332,7 @@ dependencies = [
  "spog-api",
  "spog-model",
  "test-context",
- "test-with",
+ "test-with 0.9.7",
  "time",
  "tokio",
  "trustification-auth",
@@ -3620,6 +3652,24 @@ dependencies = [
  "openssl-sys",
  "pkg-config",
  "vcpkg",
+]
+
+[[package]]
+name = "libtest-with"
+version = "0.6.1-1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d2c78f24e8862da3cb15c726d01371b3924a2879de67b4e0382c28432fe0bfff"
+dependencies = [
+ "byte-unit",
+ "clap",
+ "num_cpus",
+ "ping",
+ "reqwest",
+ "sysinfo",
+ "termcolor",
+ "threadpool",
+ "users",
+ "which",
 ]
 
 [[package]]
@@ -6557,6 +6607,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "test-with"
+version = "0.10.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6e00e00a77a5e512edb229bc0f005f3d70ebc60114e06e458598414561c8a93b"
+dependencies = [
+ "byte-unit",
+ "num_cpus",
+ "ping",
+ "proc-macro-error",
+ "proc-macro2",
+ "quote",
+ "regex",
+ "reqwest",
+ "syn 2.0.32",
+ "sysinfo",
+ "users",
+ "which",
+]
+
+[[package]]
 name = "thiserror"
 version = "1.0.48"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -7337,6 +7407,15 @@ dependencies = [
  "idna 0.4.0",
  "percent-encoding",
  "serde",
+]
+
+[[package]]
+name = "url-escape"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "44e0ce4d1246d075ca5abec4b41d33e87a6054d08e2366b63205665e950db218"
+dependencies = [
+ "percent-encoding",
 ]
 
 [[package]]
