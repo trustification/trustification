@@ -119,6 +119,7 @@ endpoint!(V11y, 9091);
 endpoint!(Collectorist, 9919);
 endpoint!(CollectorOsv);
 endpoint!(CollectorSnyk);
+endpoint!(CollectorNvd);
 
 endpoint!(GuacGraphQl, 8080, "/query");
 endpoint!(GuacCollectSub, 2782);
