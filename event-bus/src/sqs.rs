@@ -52,7 +52,7 @@ impl SqsEventBus {
 
     pub(crate) async fn subscribe(&self, _group: &str, topics: &[&str]) -> Result<SqsConsumer, anyhow::Error> {
         Ok(SqsConsumer {
-            client: &self.client,
+            client: self.client.clone(),
             queues: topics.iter().map(|s| s.to_string()).collect(),
         })
     }
@@ -69,13 +69,13 @@ impl SqsEventBus {
     }
 }
 
-pub struct SqsConsumer<'m> {
-    client: &'m Client,
+pub struct SqsConsumer {
+    client: Client,
     queues: Vec<String>,
 }
 
-impl<'d> SqsConsumer<'d> {
-    pub(crate) async fn next<'m>(&'m self) -> Result<Option<SqsEvent<'m>>, anyhow::Error> {
+impl SqsConsumer {
+    pub(crate) async fn next(&self) -> Result<Option<SqsEvent<'_>>, anyhow::Error> {
         let queue_futs: Vec<_> = self
             .queues
             .iter()

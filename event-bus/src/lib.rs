@@ -86,7 +86,7 @@ impl EventBus {
     /// Subscribe to a set of topics using a provided group id.
     ///
     /// For Kafka, the group id maps to a consumer group, while for SQS it is ignored.
-    pub async fn subscribe(&self, group: &str, topics: &[&str]) -> Result<EventConsumer<'_>, anyhow::Error> {
+    pub async fn subscribe(&self, group: &str, topics: &[&str]) -> Result<EventConsumer, anyhow::Error> {
         match &self.inner {
             InnerBus::Kafka(bus) => {
                 let consumer = bus.subscribe(group, topics).await?;
@@ -119,25 +119,25 @@ impl EventBus {
 }
 
 /// An event consumer belongs to a group and consumes events from multiple topics.
-pub struct EventConsumer<'d> {
+pub struct EventConsumer {
     metrics: Metrics,
-    inner: InnerConsumer<'d>,
+    inner: InnerConsumer,
 }
 
-impl<'d> EventConsumer<'d> {
-    fn new(inner: InnerConsumer<'d>, metrics: Metrics) -> Self {
+impl EventConsumer {
+    fn new(inner: InnerConsumer, metrics: Metrics) -> Self {
         Self { inner, metrics }
     }
 }
 
-enum InnerConsumer<'d> {
+enum InnerConsumer {
     Kafka(kafka::KafkaConsumer),
-    Sqs(sqs::SqsConsumer<'d>),
+    Sqs(sqs::SqsConsumer),
 }
 
-impl<'d> EventConsumer<'d> {
+impl EventConsumer {
     /// Wait for the next available event on this consumers topics.
-    pub async fn next<'m>(&'m self) -> Result<Option<Event<'m>>, anyhow::Error> {
+    pub async fn next(&self) -> Result<Option<Event<'_>>, anyhow::Error> {
         let event = match &self.inner {
             InnerConsumer::Kafka(consumer) => {
                 let event = consumer.next().await?;
