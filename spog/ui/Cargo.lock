@@ -39,8 +39,9 @@ dependencies = [
 
 [[package]]
 name = "analytics-next"
-version = "0.1.0-alpha.2"
-source = "git+https://github.com/ctron/analytics-next-rs?rev=9c95122f4e6dc308c90b945bd0f1925faf7cb828#9c95122f4e6dc308c90b945bd0f1925faf7cb828"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d11ed5ffb460ae293f9039580e672e85b91a67669eefa38efafcf2ef3ea6c496"
 dependencies = [
  "analytics-next-sys",
  "gloo-utils 0.2.0",
@@ -53,8 +54,9 @@ dependencies = [
 
 [[package]]
 name = "analytics-next-sys"
-version = "0.1.0-alpha.2"
-source = "git+https://github.com/ctron/analytics-next-rs?rev=9c95122f4e6dc308c90b945bd0f1925faf7cb828#9c95122f4e6dc308c90b945bd0f1925faf7cb828"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dcb69a04d306a3d10dc33029a2ea21c70801d6265b1bdf4e11e7657db9d286a4"
 dependencies = [
  "js-sys",
  "wasm-bindgen",
@@ -1606,7 +1608,7 @@ checksum = "de3145af08024dea9fa9914f381a17b8fc6034dfb00f3a84013f7ff43f29ed4c"
 [[package]]
 name = "patternfly-yew"
 version = "0.5.0-alpha.3"
-source = "git+https://github.com/ctron/patternfly-yew?rev=5ca949a9ed37294a394f7d8f8bebd365a17426a8#5ca949a9ed37294a394f7d8f8bebd365a17426a8"
+source = "git+https://github.com/ctron/patternfly-yew?rev=2958f879b08fd265c3385ae889dfca5ed7b8103c#2958f879b08fd265c3385ae889dfca5ed7b8103c"
 dependencies = [
  "chrono",
  "gloo-events 0.1.2",
