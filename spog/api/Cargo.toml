@@ -23,7 +23,7 @@ clap = { version = "4.0.29", features = ["derive"] }
 csaf = "0.5"
 env_logger = "0.10"
 futures = "0.3"
-guac = "0.1"
+guac = { workspace = true }
 http = "*"
 log = "0.4"
 mime = "0.3.16"
@@ -46,7 +46,6 @@ utoipa = { version = "3", features = ["actix_extras"] }
 utoipa-swagger-ui = { version = "3", features = ["actix-web"] }
 zstd = "0.12"
 
-#guac = { path = "../guac-rs/lib" }
 spog-model = { path = "../model" }
 vexination-model = { path = "../../vexination/model" }
 bombastic-model = { path = "../../bombastic/model" }
