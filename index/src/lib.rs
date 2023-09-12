@@ -296,14 +296,16 @@ impl IndexDirectory {
         })
     }
 
-    pub fn reset(&self, settings: IndexSettings, schema: Schema) -> Result<SearchIndex, Error> {
+    pub fn reset(&mut self, settings: IndexSettings, schema: Schema) -> Result<SearchIndex, Error> {
         let next = self.state.next();
         let path = next.directory(&self.path);
         if path.exists() {
             std::fs::remove_dir_all(&path).map_err(|e| Error::Open(e.to_string()))?;
         }
         std::fs::create_dir_all(&path).map_err(|e| Error::Open(e.to_string()))?;
-        self.build_new(settings, schema, &path)
+        let index = self.build_new(settings, schema, &path)?;
+        self.state = next;
+        Ok(index)
     }
 
     fn build_new(&self, settings: IndexSettings, schema: Schema, path: &Path) -> Result<SearchIndex, Error> {
@@ -471,7 +473,7 @@ impl<INDEX: Index> IndexStore<INDEX> {
     // Reset the index to an empty state.
     pub fn reset(&mut self) -> Result<(), Error> {
         if let Some(index_dir) = &self.index_dir {
-            let index_dir = index_dir.write().unwrap();
+            let mut index_dir = index_dir.write().unwrap();
             let index = index_dir.reset(self.index.settings(), self.index.schema())?;
             let mut inner = self.inner.write().unwrap();
             *inner = index;
@@ -982,7 +984,7 @@ mod tests {
         let r = rand::thread_rng().next_u32();
         let dir = std::env::temp_dir().join(format!("index.{}", r));
 
-        let good = IndexDirectory::new(&dir.join("good")).unwrap();
+        let mut good = IndexDirectory::new(&dir.join("good")).unwrap();
 
         let store = good.build(Default::default(), schema).unwrap();
         let schema = store.schema();
@@ -994,7 +996,9 @@ mod tests {
         w.wait_merging_threads().unwrap();
         assert_eq!(store.reader().unwrap().searcher().num_docs(), 1);
 
+        assert_eq!(good.state, IndexState::A);
         let clean = good.reset(settings.clone(), schema).unwrap();
+        assert_eq!(good.state, IndexState::B);
         assert_eq!(store.reader().unwrap().searcher().num_docs(), 1);
         assert_eq!(clean.reader().unwrap().searcher().num_docs(), 0);
     }
