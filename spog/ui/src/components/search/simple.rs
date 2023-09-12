@@ -60,6 +60,7 @@ pub type SearchOptionSetter<T> = Rc<dyn Fn(&mut T, bool)>;
 #[derive(Clone)]
 pub enum SearchOption<T> {
     Check(SearchOptionCheck<T>),
+    Select(SearchOptionSelect<T>),
     Divider,
 }
 
@@ -68,6 +69,18 @@ pub struct SearchOptionCheck<T> {
     pub label: LabelProvider,
     pub getter: SearchOptionGetter<T>,
     pub setter: SearchOptionSetter<T>,
+}
+
+#[derive(Clone)]
+pub struct SearchOptionSelectItem<T> {
+    pub label: LabelProvider,
+    pub getter: SearchOptionGetter<T>,
+    pub setter: SearchOptionSetter<T>,
+}
+
+#[derive(Clone)]
+pub struct SearchOptionSelect<T> {
+    pub options: Vec<SearchOptionSelectItem<T>>,
 }
 
 impl<T> SearchOption<T> {
@@ -263,6 +276,27 @@ where
                     { &opt.label }
                 </Check>
             )
+        }
+        SearchOption::Select(select) => {
+            let active = props.search_params.is_simple();
+            let select = select.clone();
+
+            select
+                .options
+                .iter()
+                .map(|opt| {
+                    let opt = opt.clone();
+                    html!(
+                        <Radio
+                            checked={(*props.search_params).map_bool(|s|(opt.getter)(s))}
+                            onchange={search_set(props.search_params.clone(), move |s, _state|(opt.setter)(s, true)).reform(|_|true)}
+                            disabled={!active}
+                        >
+                            { &opt.label }
+                        </Radio>
+                    )
+                })
+                .collect::<Html>()
         }
     }
 }

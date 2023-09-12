@@ -1,25 +1,27 @@
-use crate::components::search::{Search, SearchCategory, SearchOption, SearchOptionCheck};
+use crate::components::search::{
+    Search, SearchCategory, SearchOption, SearchOptionCheck, SearchOptionSelect, SearchOptionSelectItem,
+};
 use crate::utils::search::{escape_terms, or_group, SimpleProperties, ToFilterExpression};
 use spog_model::prelude::*;
-use std::collections::HashSet;
+use std::collections::HashMap;
 use std::rc::Rc;
 use yew::prelude::*;
 
 #[derive(Clone, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct DynamicSearchParameters {
     pub terms: Vec<String>,
-    pub state: HashSet<(Rc<String>, Rc<String>)>,
+    pub state: HashMap<(Rc<String>, Rc<String>), Rc<String>>,
     pub sort: Option<(String, bool)>, // Column name and whether or not is ASC
 }
 
 impl DynamicSearchParameters {
-    pub fn get(&self, cat: Rc<String>, id: Rc<String>) -> bool {
-        self.state.contains(&(cat, id))
+    pub fn get(&self, cat: Rc<String>, id: Rc<String>) -> Option<Rc<String>> {
+        self.state.get(&(cat, id)).cloned()
     }
 
-    pub fn set(&mut self, cat: Rc<String>, id: Rc<String>, value: bool) {
-        if value {
-            self.state.insert((cat, id));
+    pub fn set(&mut self, cat: Rc<String>, id: Rc<String>, value: Option<Rc<String>>) {
+        if let Some(value) = value {
+            self.state.insert((cat, id), value);
         } else {
             self.state.remove(&(cat, id));
         }
@@ -49,10 +51,23 @@ impl ToFilterExpression for DynamicSearchParameters {
         for cat in &context.categories {
             let mut cat_terms = vec![];
             for opt in &cat.options {
-                // skip over dividers
-                if let FilterOption::Check(opt) = opt {
-                    if self.get(Rc::new(cat.label.clone()), Rc::new(opt.id.clone())) {
-                        cat_terms.extend(opt.terms.clone());
+                match opt {
+                    FilterOption::Divider => {
+                        // skip over dividers
+                    }
+                    FilterOption::Check(opt) => {
+                        if self.get(Rc::new(cat.label.clone()), Rc::new(opt.id.clone())).is_some() {
+                            cat_terms.extend(opt.terms.clone());
+                        }
+                    }
+                    FilterOption::Select(opt) => {
+                        if let Some(id) = self.get(Rc::new(cat.label.clone()), Rc::new(opt.group.clone())) {
+                            for o in &opt.options {
+                                if o.id == *id {
+                                    cat_terms.extend(o.terms.clone());
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -94,9 +109,47 @@ fn convert_option(cat_id: &str, opt: &FilterOption) -> SearchOption<DynamicSearc
                 getter: {
                     let cat_id = cat_id.clone();
                     let id = id.clone();
-                    Rc::new(move |state| state.get(cat_id.clone(), id.clone()))
+                    Rc::new(move |state| state.get(cat_id.clone(), id.clone()).is_some())
                 },
-                setter: { Rc::new(move |state, value| state.set(cat_id.clone(), id.clone(), value)) },
+                setter: {
+                    Rc::new(move |state, value| {
+                        state.set(cat_id.clone(), id.clone(), value.then(|| Rc::new(String::new())))
+                    })
+                },
+            })
+        }
+        FilterOption::Select(select) => {
+            let group = Rc::new(select.group.clone());
+            SearchOption::Select(SearchOptionSelect::<DynamicSearchParameters> {
+                options: select
+                    .options
+                    .iter()
+                    .map(|option| {
+                        let cat_id = cat_id.clone();
+                        let group = group.clone();
+                        let id = Rc::new(option.id.clone());
+                        let label = format!("<div>{}</div>", option.label);
+                        SearchOptionSelectItem {
+                            label: Html::from_html_unchecked(AttrValue::from(label)).into(),
+                            getter: {
+                                let cat_id = cat_id.clone();
+                                let group = group.clone();
+                                let id = id.clone();
+                                Rc::new(move |state: &DynamicSearchParameters| {
+                                    state.get(cat_id.clone(), group.clone()).as_deref() == Some(&*id)
+                                })
+                            },
+                            setter: {
+                                Rc::new(move |state, event_value| {
+                                    if event_value {
+                                        // we only set the radio button which got set to true, which is the only even we get anyway
+                                        state.set(cat_id.clone(), group.clone(), Some(id.clone()));
+                                    }
+                                })
+                            },
+                        }
+                    })
+                    .collect(),
             })
         }
     }

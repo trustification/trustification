@@ -167,8 +167,89 @@
         }
       }
     },
-    "FilterCheckOption": {
-      "description": "Values for a filter option",
+    "FilterOption": {
+      "description": "The filter option element which can be added",
+      "oneOf": [
+        {
+          "description": "Add a checkbox option",
+          "type": "object",
+          "required": [
+            "id",
+            "label",
+            "terms",
+            "type"
+          ],
+          "properties": {
+            "id": {
+              "description": "Internal ID (must be unique)",
+              "type": "string"
+            },
+            "label": {
+              "description": "End-user friendly label",
+              "type": "string"
+            },
+            "terms": {
+              "description": "Search terms which will be added using an OR group",
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "type": {
+              "type": "string",
+              "enum": [
+                "check"
+              ]
+            }
+          }
+        },
+        {
+          "description": "Add a select/radio button",
+          "type": "object",
+          "required": [
+            "group",
+            "options",
+            "type"
+          ],
+          "properties": {
+            "group": {
+              "description": "Internal ID (groups radio options)",
+              "type": "string"
+            },
+            "options": {
+              "description": "Search terms which will be added using an OR group",
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/FilterSelectItem"
+              }
+            },
+            "type": {
+              "type": "string",
+              "enum": [
+                "select"
+              ]
+            }
+          }
+        },
+        {
+          "description": "Add a visual divider",
+          "type": "object",
+          "required": [
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "divider"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "FilterSelectItem": {
+      "description": "Item of a [`FilterSelectOption`]",
       "type": "object",
       "required": [
         "id",
@@ -177,7 +258,7 @@
       ],
       "properties": {
         "id": {
-          "description": "Internal ID (must be unique)",
+          "description": "Internal ID (must be unique for a radio group)",
           "type": "string"
         },
         "label": {
@@ -192,23 +273,6 @@
           }
         }
       }
-    },
-    "FilterOption": {
-      "oneOf": [
-        {
-          "$ref": "#/definitions/FilterCheckOption"
-        },
-        {
-          "type": "object",
-          "properties": {
-            "divider": {
-              "type": "boolean",
-              "const": true
-            }
-          },
-          "additionalProperties": false
-        }
-      ]
     },
     "Filters": {
       "description": "A set of customizable filters",
