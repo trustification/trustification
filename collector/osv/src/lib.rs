@@ -39,6 +39,9 @@ pub struct Run {
     )]
     pub(crate) collectorist_url: Url,
 
+    #[arg(env, long = "advertise")]
+    pub(crate) advertise: Option<Url>,
+
     #[arg(
         env,
         short = 'v',
@@ -58,7 +61,7 @@ impl Run {
                 let provider = self.oidc.into_provider_or_devmode(self.devmode).await?;
                 let state = Self::configure("osv".into(), self.collectorist_url, self.v11y_url, provider).await?;
                 let server = server::run(state.clone(), self.api.socket_addr()?);
-                let register = register_with_collectorist(&state);
+                let register = register_with_collectorist(&state, self.advertise);
 
                 tokio::select! {
                      _ = server => { }

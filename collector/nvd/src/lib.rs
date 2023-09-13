@@ -41,6 +41,9 @@ pub struct Run {
     )]
     pub(crate) collectorist_url: Url,
 
+    #[arg(env, long = "advertise")]
+    pub(crate) advertise: Option<Url>,
+
     #[arg(
         env,
         short = 'v',
@@ -70,7 +73,7 @@ impl Run {
                 )
                 .await?;
                 let server = server::run(state.clone(), self.api.socket_addr()?);
-                let register = register_with_collectorist(&state);
+                let register = register_with_collectorist(&state, self.advertise);
 
                 tokio::select! {
                      _ = server => { }
