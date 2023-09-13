@@ -98,62 +98,63 @@ bombastic:
 
       - label: Created on
         options:
-          - type: check
-            id: last-week
-            label: Last 7 days
-            script: |
-              const end = new Date();
-              const start = new Date(end.getTime() - (7 * 24 * 60 * 60 * 1000));
-              [
-                "created:" + 
-                start.toLocaleString("default", { year: "numeric" }) + "-" +
-                start.toLocaleString("default", { month: "2-digit" }) + "-" +
-                start.toLocaleString("default", { day: "2-digit" }) + ".." +
-                end.toLocaleString("default", { year: "numeric" }) + "-" +
-                end.toLocaleString("default", { month: "2-digit" }) + "-" +
-                end.toLocaleString("default", { day: "2-digit" })
-              ];
-          - type: check
-            id: last-month
-            label: Last 30 days
-            script: |
-              const end = new Date();
-              const start = new Date(end.getTime() - (30 * 24 * 60 * 60 * 1000));
-              [
-                "created:" + 
-                start.toLocaleString("default", { year: "numeric" }) + "-" +
-                start.toLocaleString("default", { month: "2-digit" }) + "-" +
-                start.toLocaleString("default", { day: "2-digit" }) + ".." +
-                end.toLocaleString("default", { year: "numeric" }) + "-" +
-                end.toLocaleString("default", { month: "2-digit" }) + "-" +
-                end.toLocaleString("default", { day: "2-digit" })
-              ];
-          - type: check
-            id: this-year
-            label: This year
-            script: |
-              const date = new Date();
-              const start = new Date(date.getFullYear(), 0, 1);
-              const end = new Date(date.getFullYear()+1, 0, 1);
-              [
-                "created:" + 
-                start.toLocaleString("default", { year: "numeric" }) + "-" +
-                start.toLocaleString("default", { month: "2-digit" }) + "-" +
-                start.toLocaleString("default", { day: "2-digit" }) + ".." +
-                end.toLocaleString("default", { year: "numeric" }) + "-" +
-                end.toLocaleString("default", { month: "2-digit" }) + "-" +
-                end.toLocaleString("default", { day: "2-digit" })
-              ];
-          - type: check
-            id: "2022"
-            label: "2022"
-            terms:
-              - 'created:2022-01-01..2023-01-01'
-          - type: check
-            id: "2021"
-            label: "2021"
-            terms:
-              - 'created:2021-01-01..2022-01-01'
+          - type: select
+            group: created-on
+            default: any
+            options:
+              - id: last-week
+                label: Last 7 days
+                script: |
+                  const end = new Date();
+                  const start = new Date(end.getTime() - (7 * 24 * 60 * 60 * 1000));
+                  [
+                    "created:" + 
+                    start.toLocaleString("default", { year: "numeric" }) + "-" +
+                    start.toLocaleString("default", { month: "2-digit" }) + "-" +
+                    start.toLocaleString("default", { day: "2-digit" }) + ".." +
+                    end.toLocaleString("default", { year: "numeric" }) + "-" +
+                    end.toLocaleString("default", { month: "2-digit" }) + "-" +
+                    end.toLocaleString("default", { day: "2-digit" })
+                  ];
+              - id: last-month
+                label: Last 30 days
+                script: |
+                  const end = new Date();
+                  const start = new Date(end.getTime() - (30 * 24 * 60 * 60 * 1000));
+                  [
+                    "created:" + 
+                    start.toLocaleString("default", { year: "numeric" }) + "-" +
+                    start.toLocaleString("default", { month: "2-digit" }) + "-" +
+                    start.toLocaleString("default", { day: "2-digit" }) + ".." +
+                    end.toLocaleString("default", { year: "numeric" }) + "-" +
+                    end.toLocaleString("default", { month: "2-digit" }) + "-" +
+                    end.toLocaleString("default", { day: "2-digit" })
+                  ];
+              - id: this-year
+                label: This year
+                script: |
+                  const date = new Date();
+                  const start = new Date(date.getFullYear(), 0, 1);
+                  const end = new Date(date.getFullYear()+1, 0, 1);
+                  [
+                    "created:" + 
+                    start.toLocaleString("default", { year: "numeric" }) + "-" +
+                    start.toLocaleString("default", { month: "2-digit" }) + "-" +
+                    start.toLocaleString("default", { day: "2-digit" }) + ".." +
+                    end.toLocaleString("default", { year: "numeric" }) + "-" +
+                    end.toLocaleString("default", { month: "2-digit" }) + "-" +
+                    end.toLocaleString("default", { day: "2-digit" })
+                  ];
+              - id: "2022"
+                label: "2022"
+                terms:
+                  - 'created:2022-01-01..2023-01-01'
+              - id: "2021"
+                label: "2021"
+                terms:
+                  - 'created:2021-01-01..2022-01-01'
+              - id: "any"
+                label: "Any time"
 
 vexination:
 
@@ -238,62 +239,63 @@ vexination:
 
       - label: Revisions
         options:
-          - type: check
-            id: last-week
-            label: Last 7 days
-            script: |
-              const end = new Date();
-              const start = new Date(end.getTime() - (7 * 24 * 60 * 60 * 1000));
-              [
-                "release:" + 
-                start.toLocaleString("default", { year: "numeric" }) + "-" +
-                start.toLocaleString("default", { month: "2-digit" }) + "-" +
-                start.toLocaleString("default", { day: "2-digit" }) + ".." +
-                end.toLocaleString("default", { year: "numeric" }) + "-" +
-                end.toLocaleString("default", { month: "2-digit" }) + "-" +
-                end.toLocaleString("default", { day: "2-digit" })
-              ];
-          - type: check
-            id: last-month
-            label: Last 30 days
-            script: |
-              const end = new Date();
-              const start = new Date(end.getTime() - (30 * 24 * 60 * 60 * 1000));
-              [
-                "release:" + 
-                start.toLocaleString("default", { year: "numeric" }) + "-" +
-                start.toLocaleString("default", { month: "2-digit" }) + "-" +
-                start.toLocaleString("default", { day: "2-digit" }) + ".." +
-                end.toLocaleString("default", { year: "numeric" }) + "-" +
-                end.toLocaleString("default", { month: "2-digit" }) + "-" +
-                end.toLocaleString("default", { day: "2-digit" })
-              ];
-          - type: check
-            id: this-year
-            label: This year
-            script: |
-              const date = new Date();
-              const start = new Date(date.getFullYear(), 0, 1);
-              const end = new Date(date.getFullYear()+1, 0, 1);
-              [
-                "release:" + 
-                start.toLocaleString("default", { year: "numeric" }) + "-" +
-                start.toLocaleString("default", { month: "2-digit" }) + "-" +
-                start.toLocaleString("default", { day: "2-digit" }) + ".." +
-                end.toLocaleString("default", { year: "numeric" }) + "-" +
-                end.toLocaleString("default", { month: "2-digit" }) + "-" +
-                end.toLocaleString("default", { day: "2-digit" })
-              ];
-          - type: check
-            id: "2022"
-            label: "2022"
-            terms:
-              - 'release:2022-01-01..2023-01-01'
-          - type: check
-            id: "2021"
-            label: "2021"
-            terms:
-              - 'release:2021-01-01..2022-01-01'
+          - type: select
+            group: release
+            default: any
+            options:
+              - id: last-week
+                label: Last 7 days
+                script: |
+                  const end = new Date();
+                  const start = new Date(end.getTime() - (7 * 24 * 60 * 60 * 1000));
+                  [
+                    "release:" + 
+                    start.toLocaleString("default", { year: "numeric" }) + "-" +
+                    start.toLocaleString("default", { month: "2-digit" }) + "-" +
+                    start.toLocaleString("default", { day: "2-digit" }) + ".." +
+                    end.toLocaleString("default", { year: "numeric" }) + "-" +
+                    end.toLocaleString("default", { month: "2-digit" }) + "-" +
+                    end.toLocaleString("default", { day: "2-digit" })
+                  ];
+              - id: last-month
+                label: Last 30 days
+                script: |
+                  const end = new Date();
+                  const start = new Date(end.getTime() - (30 * 24 * 60 * 60 * 1000));
+                  [
+                    "release:" + 
+                    start.toLocaleString("default", { year: "numeric" }) + "-" +
+                    start.toLocaleString("default", { month: "2-digit" }) + "-" +
+                    start.toLocaleString("default", { day: "2-digit" }) + ".." +
+                    end.toLocaleString("default", { year: "numeric" }) + "-" +
+                    end.toLocaleString("default", { month: "2-digit" }) + "-" +
+                    end.toLocaleString("default", { day: "2-digit" })
+                  ];
+              - id: this-year
+                label: This year
+                script: |
+                  const date = new Date();
+                  const start = new Date(date.getFullYear(), 0, 1);
+                  const end = new Date(date.getFullYear()+1, 0, 1);
+                  [
+                    "release:" + 
+                    start.toLocaleString("default", { year: "numeric" }) + "-" +
+                    start.toLocaleString("default", { month: "2-digit" }) + "-" +
+                    start.toLocaleString("default", { day: "2-digit" }) + ".." +
+                    end.toLocaleString("default", { year: "numeric" }) + "-" +
+                    end.toLocaleString("default", { month: "2-digit" }) + "-" +
+                    end.toLocaleString("default", { day: "2-digit" })
+                  ];
+              - id: "2022"
+                label: "2022"
+                terms:
+                  - 'release:2022-01-01..2023-01-01'
+              - id: "2021"
+                label: "2021"
+                terms:
+                  - 'release:2021-01-01..2022-01-01'
+              - id: "any"
+                label: "Any time"
 
 scanner:
   documentationUrl: https://www.trustification.io/blog/
