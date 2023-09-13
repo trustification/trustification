@@ -297,6 +297,7 @@ mod test {
         assert_eq!(
             serde_json::from_value::<Vec<FilterOption>>(json!([
                 {
+                    "type": "check",
                     "id": "id1",
                     "label": "label1",
                     "terms": [],
@@ -312,12 +313,14 @@ mod test {
         assert_eq!(
             serde_json::from_value::<Vec<FilterOption>>(json!([
                 {
+                    "type": "check",
                     "id": "id1",
                     "label": "label1",
                     "terms": [],
                 },
-                { "divider": true },
+                { "type": "divider" },
                 {
+                    "type": "check",
                     "id": "id2",
                     "label": "label2",
                     "terms": [],
@@ -330,24 +333,6 @@ mod test {
                 mock_check("id2", "label2")
             ],
         )
-    }
-
-    #[test]
-    fn test_deserialize_options_3() {
-        assert!(serde_json::from_value::<Vec<FilterOption>>(json!([
-            {
-                "id": "id1",
-                "label": "label1",
-                "terms": [],
-            },
-            { "divider": false }, // error
-            {
-                "id": "id2",
-                "label": "label2",
-                "terms": [],
-            },
-        ]))
-        .is_err(),)
     }
 
     /// ensure that re-encoding the content keeps it equal
@@ -369,8 +354,7 @@ mod test {
             },
             {
                 "type": "select",
-                "id": "id3",
-                "label": "label3",
+                "group": "id3",
                 "options": [
                     { "id": "a", "label": "A", "terms": [] },
                     { "id": "b", "label": "B", "terms": [] },
