@@ -215,6 +215,13 @@
             "type"
           ],
           "properties": {
+            "default": {
+              "description": "The ID of the option which should be selected by default",
+              "type": [
+                "string",
+                "null"
+              ]
+            },
             "group": {
               "description": "Internal ID (groups radio options)",
               "type": "string"

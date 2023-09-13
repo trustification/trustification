@@ -227,6 +227,9 @@ pub struct FilterCheckOption {
 pub struct FilterSelectOption {
     /// Internal ID (groups radio options)
     pub group: String,
+    /// The ID of the option which should be selected by default
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub default: Option<String>,
     /// Search terms which will be added using an OR group
     pub options: Vec<FilterSelectItem>,
 }

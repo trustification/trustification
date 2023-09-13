@@ -1,17 +1,48 @@
+use crate::components::search::DynamicSearchParameters;
 use crate::utils::search::*;
 use patternfly_yew::prelude::*;
 use std::collections::HashSet;
 use std::rc::Rc;
 use yew::prelude::*;
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct DefaultEntry {
+    pub category: Rc<String>,
+    pub id: Rc<String>,
+    pub value: Rc<String>,
+}
+
 #[derive(Clone)]
 pub struct Search<T> {
     pub categories: Vec<SearchCategory<T>>,
+    pub defaults: Vec<DefaultEntry>,
 }
 
 impl<T> Search<T> {
     pub fn category_labels(&self) -> impl Iterator<Item = &str> {
         self.categories.iter().map(|cat| cat.title.as_str())
+    }
+}
+
+impl<T> Search<T> {
+    /// Apply the current set of defaults to a search state
+    ///
+    /// NOTE: We might consider pulling out a trait for handling any `T`. Right now, we don't need it.
+    pub fn apply_defaults(&self, handle: &UseStateHandle<SearchMode<DynamicSearchParameters>>) {
+        if self.defaults.is_empty() {
+            // early return
+            return;
+        }
+
+        let mut state = (**handle).clone();
+
+        if let SearchMode::Simple(state) = &mut state {
+            for DefaultEntry { category, id, value } in self.defaults.clone() {
+                state.set(category, id, Some(value));
+            }
+        }
+
+        handle.set(state);
     }
 }
 
