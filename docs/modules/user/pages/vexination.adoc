@@ -76,9 +76,10 @@ The following table has a list of the search qualifiers you can use when searchi
 | `package` | Search by fixed or affected package or product identifier | Exact, Partial | `affected:"cpe:/a:redhat:openshift_container_storage:4.8::el8"`
 | `fixed` | Search by fixed package or product identifier | Exact, Partial | `"cpe:/a:redhat:openshift_container_storage:4.8" in:fixed`
 | `affected` | Search by affected package or product identifier | Exact, Partial | `"pkg:rpm/redhat/xz-libs@5.2.4" in:affected`
-| `initial` | Search by VEX initial date | Exact, Range | `initial:2022-01-01..2023-01-01`
-| `release` | Search by VEX release date | Exact, Range | `release:>2023-05-05`
-| `discovery` | Search by VEX discovery date | Exact, Range | `discovery:<2023-01-01`
+| `advisoryInitial` | Search by VEX initial date | Exact, Range | `advisoryInitial:2022-01-01..2023-01-01`
+| `advisoryRelease` | Search by VEX release date | Exact, Range | `advisoryRelease:>2023-05-05`
+| `cveRelease` | Search by CVE release date | Exact, Range | `cveRelease:>2023-05-05`
+| `cveDiscovery` | Search by CVE discovery date | Exact, Range | `cveDiscovery:<2023-01-01`
 |===
 
 The four matching types are:
@@ -114,7 +115,7 @@ IMPORTANT: Enable **Complex** searching before running these queries.
 .Example
 [source,rust]
 ----
-"cpe:/a:redhat:openshift:4.13::el9" in:package release:>2023-01-01 is:critical
+"cpe:/a:redhat:openshift:4.13::el9" in:package advisoryRelease:>2023-01-01 is:critical
 ----
 
 [id="vex-reference"]

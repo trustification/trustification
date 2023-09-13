@@ -249,7 +249,7 @@ vexination:
                   const end = new Date();
                   const start = new Date(end.getTime() - (7 * 24 * 60 * 60 * 1000));
                   [
-                    "release:" + 
+                    "advisoryRelease:" +
                     start.toLocaleString("default", { year: "numeric" }) + "-" +
                     start.toLocaleString("default", { month: "2-digit" }) + "-" +
                     start.toLocaleString("default", { day: "2-digit" }) + ".." +
@@ -263,7 +263,7 @@ vexination:
                   const end = new Date();
                   const start = new Date(end.getTime() - (30 * 24 * 60 * 60 * 1000));
                   [
-                    "release:" + 
+                    "advisoryRelease:" +
                     start.toLocaleString("default", { year: "numeric" }) + "-" +
                     start.toLocaleString("default", { month: "2-digit" }) + "-" +
                     start.toLocaleString("default", { day: "2-digit" }) + ".." +
@@ -278,7 +278,7 @@ vexination:
                   const start = new Date(date.getFullYear(), 0, 1);
                   const end = new Date(date.getFullYear()+1, 0, 1);
                   [
-                    "release:" + 
+                    "advisoryRelease:" +
                     start.toLocaleString("default", { year: "numeric" }) + "-" +
                     start.toLocaleString("default", { month: "2-digit" }) + "-" +
                     start.toLocaleString("default", { day: "2-digit" }) + ".." +
@@ -289,11 +289,11 @@ vexination:
               - id: "2022"
                 label: "2022"
                 terms:
-                  - 'release:2022-01-01..2023-01-01'
+                  - 'advisoryRelease:2022-01-01..2023-01-01'
               - id: "2021"
                 label: "2021"
                 terms:
-                  - 'release:2021-01-01..2022-01-01'
+                  - 'advisoryRelease:2021-01-01..2022-01-01'
               - id: "any"
                 label: "Any time"
 

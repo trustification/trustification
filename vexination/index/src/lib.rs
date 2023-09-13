@@ -327,7 +327,7 @@ impl trustification_index::Index for Index {
                         sort_by.replace(self.fields.advisory_severity_score_inverse);
                     }
                 },
-                VulnerabilitiesSortable::Release => match f.direction {
+                VulnerabilitiesSortable::AdvisoryRelease => match f.direction {
                     Direction::Descending => {
                         sort_by.replace(self.fields.advisory_current);
                     }
@@ -684,25 +684,22 @@ impl Index {
                     *to,
                 )),
             },
-            Vulnerabilities::Initial(ordered) => create_date_query(
+            Vulnerabilities::AdvisoryInitial(ordered) => create_date_query(
                 self.fields.advisory_initial,
                 self.schema.get_field_name(self.fields.advisory_initial),
                 ordered,
             ),
-            Vulnerabilities::Release(ordered) => {
-                let q1 = create_date_query(
-                    self.fields.advisory_current,
-                    self.schema.get_field_name(self.fields.advisory_current),
-                    ordered,
-                );
-                let q2 = create_date_query(
-                    self.fields.cve_release,
-                    self.schema.get_field_name(self.fields.cve_release),
-                    ordered,
-                );
-                Box::new(BooleanQuery::union(vec![q1, q2]))
-            }
-            Vulnerabilities::Discovery(ordered) => create_date_query(
+            Vulnerabilities::AdvisoryRelease(ordered) => create_date_query(
+                self.fields.advisory_current,
+                self.schema.get_field_name(self.fields.advisory_current),
+                ordered,
+            ),
+            Vulnerabilities::CveRelease(ordered) => create_date_query(
+                self.fields.cve_release,
+                self.schema.get_field_name(self.fields.cve_release),
+                ordered,
+            ),
+            Vulnerabilities::CveDiscovery(ordered) => create_date_query(
                 self.fields.cve_discovery,
                 self.schema.get_field_name(self.fields.cve_discovery),
                 ordered,
@@ -912,31 +909,31 @@ mod tests {
     #[tokio::test]
     async fn test_free_form_dates() {
         assert_search(|index| {
-            let result = search(&index, "initial:>2022-01-01");
+            let result = search(&index, "advisoryInitial:>2022-01-01");
             assert_eq!(result.0.len(), 3);
 
-            let result = search(&index, "discovery:>2022-01-01");
+            let result = search(&index, "cveDiscovery:>2022-01-01");
             assert_eq!(result.0.len(), 3);
 
-            let result = search(&index, "release:>2022-01-01");
+            let result = search(&index, "advisoryRelease:>2022-01-01");
             assert_eq!(result.0.len(), 3);
 
-            let result = search(&index, "release:>2023-02-08");
+            let result = search(&index, "advisoryRelease:>2023-02-08");
             assert_eq!(result.0.len(), 3);
 
-            let result = search(&index, "release:2022-01-01..2023-01-01");
-            assert_eq!(result.0.len(), 1);
-
-            let result = search(&index, "release:2022-01-01..2024-01-01");
-            assert_eq!(result.0.len(), 3);
-
-            let result = search(&index, "release:2023-03-23");
-            assert_eq!(result.0.len(), 1);
-
-            let result = search(&index, "release:2023-03-24");
+            let result = search(&index, "advisoryRelease:2022-01-01..2023-01-01");
             assert_eq!(result.0.len(), 0);
 
-            let result = search(&index, "release:2023-03-22");
+            let result = search(&index, "advisoryRelease:2022-01-01..2024-01-01");
+            assert_eq!(result.0.len(), 3);
+
+            let result = search(&index, "advisoryRelease:2023-03-23");
+            assert_eq!(result.0.len(), 1);
+
+            let result = search(&index, "advisoryRelease:2023-03-24");
+            assert_eq!(result.0.len(), 0);
+
+            let result = search(&index, "advisoryRelease:2023-03-22");
             assert_eq!(result.0.len(), 0);
         });
     }
@@ -1060,7 +1057,7 @@ mod tests {
     #[tokio::test]
     async fn test_sorting_noterms() {
         assert_search(|index| {
-            let result = search(&index, "sort:release");
+            let result = search(&index, "sort:advisoryRelease");
             assert_eq!(result.0.len(), 4);
             assert_eq!(result.0[0].document.advisory_id, "RHSA-2021:3029");
             assert_eq!(result.0[1].document.advisory_id, "RHSA-2023:1441");
@@ -1068,7 +1065,7 @@ mod tests {
             assert_eq!(result.0[3].document.advisory_id, "RHSA-2023:4378");
             assert!(result.0[0].document.advisory_date < result.0[1].document.advisory_date);
 
-            let result = search(&index, "-sort:release");
+            let result = search(&index, "-sort:advisoryRelease");
             assert_eq!(result.0.len(), 4);
             assert_eq!(result.0[0].document.advisory_id, "RHSA-2023:4378");
             assert_eq!(result.0[1].document.advisory_id, "RHSA-2023:3408");
