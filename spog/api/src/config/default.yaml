@@ -14,74 +14,146 @@ bombastic:
       - label: Products
         options:
 
-          - label: UBI 7
+          - type: check
+            label: UBI 7
             id: ubi7
             terms:
               - '"pkg:oci/redhat/ubi7"'
 
-          - label: UBI 8
+          - type: check
+            label: UBI 8
             id: ubi8
             terms:
               - '"pkg:oci/redhat/ubi8"'
 
-          - label: UBI 9
+          - type: check
+            label: UBI 9
             id: ubi9
             terms:
               - '"pkg:oci/redhat/ubi9"'
 
-          - divider: true
+          - type: divider
 
-          - label: Red Hat Enterprise Linux 7
+          - type: check
+            label: Red Hat Enterprise Linux 7
             id: rhel7
             terms:
               - '"cpe:/o:redhat:enterprise_linux:7"'
               - '"cpe:/o:redhat:rhel_aus:7"'
 
-          - label: Red Hat Enterprise Linux 8
+          - type: check
+            label: Red Hat Enterprise Linux 8
             id: rhel8
             terms:
               - '"cpe:/o:redhat:enterprise_linux:8"'
               - '"cpe:/o:redhat:rhel_e4s:8.1"'
 
-          - label: Red Hat Enterprise Linux 9
+          - type: check
+            label: Red Hat Enterprise Linux 9
             id: rhel9
             terms:
               - '"cpe:/o:redhat:enterprise_linux:9"'
 
-          - divider: true
+          - type: divider
 
-          - label: Ansible
+          - type: check
+            label: Ansible
             id: ansible
             terms:
               - '"cpe:/a:redhat:ansible_automation_platform"'
 
-          - label: AMQ
+          - type: check
+            label: AMQ
             id: amq
             terms:
               - '"cpe:/a:redhat:amq" OR "amq-"'
 
-          - label: Quarkus
+          - type: check
+            label: Quarkus
             id: quarkus
             terms:
               - '"quarkus"'
 
       - label: Type
         options:
-          - label: Container
+          - type: check
+            label: Container
             id: is_container
             terms:
               - 'type:oci'
-          - label: Product
+
+          - type: check
+            label: Product
             id: is_product
             terms:
               - 'NOT type:oci'
 
       - label: Suppliers
         options:
-          - label: Red Hat
+          - type: check
+            label: Red Hat
             id: supplier_redhat
             terms:
               - 'supplier:"Organization: Red Hat"'
+
+      - label: Created on
+        options:
+          - type: check
+            id: last-week
+            label: Last 7 days
+            script: |
+              const end = new Date();
+              const start = new Date(end.getTime() - (7 * 24 * 60 * 60 * 1000));
+              [
+                "created:" + 
+                start.toLocaleString("default", { year: "numeric" }) + "-" +
+                start.toLocaleString("default", { month: "2-digit" }) + "-" +
+                start.toLocaleString("default", { day: "2-digit" }) + ".." +
+                end.toLocaleString("default", { year: "numeric" }) + "-" +
+                end.toLocaleString("default", { month: "2-digit" }) + "-" +
+                end.toLocaleString("default", { day: "2-digit" })
+              ];
+          - type: check
+            id: last-month
+            label: Last 30 days
+            script: |
+              const end = new Date();
+              const start = new Date(end.getTime() - (30 * 24 * 60 * 60 * 1000));
+              [
+                "created:" + 
+                start.toLocaleString("default", { year: "numeric" }) + "-" +
+                start.toLocaleString("default", { month: "2-digit" }) + "-" +
+                start.toLocaleString("default", { day: "2-digit" }) + ".." +
+                end.toLocaleString("default", { year: "numeric" }) + "-" +
+                end.toLocaleString("default", { month: "2-digit" }) + "-" +
+                end.toLocaleString("default", { day: "2-digit" })
+              ];
+          - type: check
+            id: this-year
+            label: This year
+            script: |
+              const date = new Date();
+              const start = new Date(date.getFullYear(), 0, 1);
+              const end = new Date(date.getFullYear()+1, 0, 1);
+              [
+                "created:" + 
+                start.toLocaleString("default", { year: "numeric" }) + "-" +
+                start.toLocaleString("default", { month: "2-digit" }) + "-" +
+                start.toLocaleString("default", { day: "2-digit" }) + ".." +
+                end.toLocaleString("default", { year: "numeric" }) + "-" +
+                end.toLocaleString("default", { month: "2-digit" }) + "-" +
+                end.toLocaleString("default", { day: "2-digit" })
+              ];
+          - type: check
+            id: "2022"
+            label: "2022"
+            terms:
+              - 'created:2022-01-01..2023-01-01'
+          - type: check
+            id: "2021"
+            label: "2021"
+            terms:
+              - 'created:2021-01-01..2022-01-01'
 
 vexination:
 
@@ -89,7 +161,8 @@ vexination:
     categories:
       - label: Severity
         options:
-          - id: low
+          - type: check
+            id: low
             label: |
               <span class="tc-c-severity">
                   <span class="tc-c-severity__icon"> <span class="tc-m-severity-low"> <i class="fa fa-shield-halved"></i> </span></span>
@@ -97,7 +170,9 @@ vexination:
               </span>
             terms:
               - "severity:Low"
-          - id: moderate
+
+          - type: check
+            id: moderate
             label: |
               <span class="tc-c-severity">
                   <span class="tc-c-severity__icon"> <span class="tc-m-severity-moderate"> <i class="fa fa-shield-halved"></i> </span></span>
@@ -105,7 +180,9 @@ vexination:
               </span>
             terms:
               - "severity:Moderate"
-          - id: important
+
+          - type: check
+            id: important
             label: |
               <span class="tc-c-severity">
                   <span class="tc-c-severity__icon"> <span class="tc-m-severity-important"> <i class="fa fa-shield-halved"></i> </span></span>
@@ -113,7 +190,9 @@ vexination:
               </span>
             terms:
               - "severity:Important"
-          - id: critical
+
+          - type: check
+            id: critical
             label: |
               <span class="tc-c-severity">
                   <span class="tc-c-severity__icon"> <span class="tc-m-severity-critical"> <i class="fa fa-shield-halved"></i> </span></span>
@@ -124,32 +203,97 @@ vexination:
 
       - label: Products
         options:
-          - id: rhel7
+
+          - type: check
+            id: rhel7
             label: Red Hat Enterprise Linux 7
             terms:
               - '( "cpe:/o:redhat:rhel_eus:7" in:package )'
 
-          - id: rhel8
+          - type: check
+            id: rhel8
             label: Red Hat Enterprise Linux 8
             terms:
               - '( "cpe:/o:redhat:rhel_eus:8" in:package )'
 
-          - id: rhel9
+          - type: check
+            id: rhel9
             label: Red Hat Enterprise Linux 9
             terms:
               - '( "cpe:/a:redhat:enterprise_linux:9" in:package )'
 
-          - divider: true
+          - type: divider
 
-          - id: ocp3
+          - type: check
+            id: ocp3
             label: OpenShift Container Platform 3
             terms:
               - '( "cpe:/a:redhat:openshift:3" in:package )'
 
-          - id: ocp4
+          - type: check
+            id: ocp4
             label: OpenShift Container Platform 4
             terms:
               - '( "cpe:/a:redhat:openshift:4" in:package )'
+
+      - label: Revisions
+        options:
+          - type: check
+            id: last-week
+            label: Last 7 days
+            script: |
+              const end = new Date();
+              const start = new Date(end.getTime() - (7 * 24 * 60 * 60 * 1000));
+              [
+                "release:" + 
+                start.toLocaleString("default", { year: "numeric" }) + "-" +
+                start.toLocaleString("default", { month: "2-digit" }) + "-" +
+                start.toLocaleString("default", { day: "2-digit" }) + ".." +
+                end.toLocaleString("default", { year: "numeric" }) + "-" +
+                end.toLocaleString("default", { month: "2-digit" }) + "-" +
+                end.toLocaleString("default", { day: "2-digit" })
+              ];
+          - type: check
+            id: last-month
+            label: Last 30 days
+            script: |
+              const end = new Date();
+              const start = new Date(end.getTime() - (30 * 24 * 60 * 60 * 1000));
+              [
+                "release:" + 
+                start.toLocaleString("default", { year: "numeric" }) + "-" +
+                start.toLocaleString("default", { month: "2-digit" }) + "-" +
+                start.toLocaleString("default", { day: "2-digit" }) + ".." +
+                end.toLocaleString("default", { year: "numeric" }) + "-" +
+                end.toLocaleString("default", { month: "2-digit" }) + "-" +
+                end.toLocaleString("default", { day: "2-digit" })
+              ];
+          - type: check
+            id: this-year
+            label: This year
+            script: |
+              const date = new Date();
+              const start = new Date(date.getFullYear(), 0, 1);
+              const end = new Date(date.getFullYear()+1, 0, 1);
+              [
+                "release:" + 
+                start.toLocaleString("default", { year: "numeric" }) + "-" +
+                start.toLocaleString("default", { month: "2-digit" }) + "-" +
+                start.toLocaleString("default", { day: "2-digit" }) + ".." +
+                end.toLocaleString("default", { year: "numeric" }) + "-" +
+                end.toLocaleString("default", { month: "2-digit" }) + "-" +
+                end.toLocaleString("default", { day: "2-digit" })
+              ];
+          - type: check
+            id: "2022"
+            label: "2022"
+            terms:
+              - 'release:2022-01-01..2023-01-01'
+          - type: check
+            id: "2021"
+            label: "2021"
+            terms:
+              - 'release:2021-01-01..2022-01-01'
 
 scanner:
   documentationUrl: https://www.trustification.io/blog/

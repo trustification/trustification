@@ -2,6 +2,7 @@ use crate::components::search::{
     Search, SearchCategory, SearchOption, SearchOptionCheck, SearchOptionSelect, SearchOptionSelectItem,
 };
 use crate::utils::search::{escape_terms, or_group, SimpleProperties, ToFilterExpression};
+use gloo_utils::format::JsValueSerdeExt;
 use spog_model::prelude::*;
 use std::collections::HashMap;
 use std::rc::Rc;
@@ -42,6 +43,30 @@ impl SimpleProperties for DynamicSearchParameters {
     }
 }
 
+fn extend_terms(cat_terms: &mut Vec<String>, terms: &Terms) {
+    // extend specific terms
+    cat_terms.extend(terms.terms.clone());
+
+    // extend evaluated terms
+    if !terms.script.is_empty() {
+        log::debug!("Eval terms: {}", terms.script);
+        match js_sys::eval(&terms.script) {
+            Ok(result) => match result.into_serde::<Vec<String>>() {
+                Ok(terms) => {
+                    log::debug!("Result: {terms:?}");
+                    cat_terms.extend(terms);
+                }
+                Err(err) => {
+                    log::warn!("Failed to deserialize result: {err}");
+                }
+            },
+            Err(err) => {
+                log::warn!("Failed to eval terms: {:?}", err.as_string());
+            }
+        }
+    }
+}
+
 impl ToFilterExpression for DynamicSearchParameters {
     type Context = Filters;
 
@@ -57,14 +82,14 @@ impl ToFilterExpression for DynamicSearchParameters {
                     }
                     FilterOption::Check(opt) => {
                         if self.get(Rc::new(cat.label.clone()), Rc::new(opt.id.clone())).is_some() {
-                            cat_terms.extend(opt.terms.clone());
+                            extend_terms(&mut cat_terms, &opt.terms);
                         }
                     }
                     FilterOption::Select(opt) => {
                         if let Some(id) = self.get(Rc::new(cat.label.clone()), Rc::new(opt.group.clone())) {
                             for o in &opt.options {
                                 if o.id == *id {
-                                    cat_terms.extend(o.terms.clone());
+                                    extend_terms(&mut cat_terms, &o.terms);
                                 }
                             }
                         }

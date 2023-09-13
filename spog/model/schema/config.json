@@ -176,7 +176,6 @@
           "required": [
             "id",
             "label",
-            "terms",
             "type"
           ],
           "properties": {
@@ -188,8 +187,12 @@
               "description": "End-user friendly label",
               "type": "string"
             },
+            "script": {
+              "description": "A JavaScript snippet to execute, gathering search terms.\n\nThe result must be an array of strings. For example:\n\n```yaml script: | [\"foo:bar\", \"bar:baz\"] ```",
+              "type": "string"
+            },
             "terms": {
-              "description": "Search terms which will be added using an OR group",
+              "description": "A list of search terms",
               "type": "array",
               "items": {
                 "type": "string"
@@ -253,8 +256,7 @@
       "type": "object",
       "required": [
         "id",
-        "label",
-        "terms"
+        "label"
       ],
       "properties": {
         "id": {
@@ -265,8 +267,12 @@
           "description": "End-user friendly label",
           "type": "string"
         },
+        "script": {
+          "description": "A JavaScript snippet to execute, gathering search terms.\n\nThe result must be an array of strings. For example:\n\n```yaml script: | [\"foo:bar\", \"bar:baz\"] ```",
+          "type": "string"
+        },
         "terms": {
-          "description": "Search terms which will be added using an OR group",
+          "description": "A list of search terms",
           "type": "array",
           "items": {
             "type": "string"
