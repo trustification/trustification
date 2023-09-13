@@ -1,5 +1,5 @@
 use crate::components::search::{
-    Search, SearchCategory, SearchOption, SearchOptionCheck, SearchOptionSelect, SearchOptionSelectItem,
+    DefaultEntry, Search, SearchCategory, SearchOption, SearchOptionCheck, SearchOptionSelect, SearchOptionSelectItem,
 };
 use crate::utils::search::{escape_terms, or_group, SimpleProperties, ToFilterExpression};
 use gloo_utils::format::JsValueSerdeExt;
@@ -109,19 +109,29 @@ impl ToFilterExpression for DynamicSearchParameters {
 }
 
 pub fn convert_search(filters: &Filters) -> Search<DynamicSearchParameters> {
+    let mut defaults = vec![];
+
     let categories = filters
         .categories
         .iter()
         .map(|cat| SearchCategory {
             title: cat.label.clone(),
-            options: cat.options.iter().map(|opt| convert_option(&cat.label, opt)).collect(),
+            options: cat
+                .options
+                .iter()
+                .map(|opt| convert_option(&cat.label, opt, &mut defaults))
+                .collect(),
         })
         .collect();
 
-    Search { categories }
+    Search { categories, defaults }
 }
 
-fn convert_option(cat_id: &str, opt: &FilterOption) -> SearchOption<DynamicSearchParameters> {
+fn convert_option(
+    cat_id: &str,
+    opt: &FilterOption,
+    defaults: &mut Vec<DefaultEntry>,
+) -> SearchOption<DynamicSearchParameters> {
     let cat_id = Rc::new(cat_id.to_string());
 
     match opt {
@@ -145,6 +155,15 @@ fn convert_option(cat_id: &str, opt: &FilterOption) -> SearchOption<DynamicSearc
         }
         FilterOption::Select(select) => {
             let group = Rc::new(select.group.clone());
+
+            if let Some(default) = &select.default {
+                defaults.push(DefaultEntry {
+                    category: cat_id.clone(),
+                    id: group.clone(),
+                    value: Rc::new(default.clone()),
+                });
+            }
+
             SearchOption::Select(SearchOptionSelect::<DynamicSearchParameters> {
                 options: select
                     .options

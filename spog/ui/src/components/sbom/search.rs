@@ -21,7 +21,14 @@ pub struct SbomSearchControlsProperties {
 pub fn sbom_search_controls(props: &SbomSearchControlsProperties) -> Html {
     let config = use_config();
     let filters = use_memo(|()| config.bombastic.filters.clone(), ());
-    let search_config = use_memo(|()| convert_search(&filters), ());
+    let search_config = use_memo(
+        |()| {
+            let search = convert_search(&filters);
+            search.apply_defaults(&props.search_params);
+            search
+        },
+        (),
+    );
 
     html!(
         <SimpleSearch<DynamicSearchParameters> search={search_config} search_params={props.search_params.clone()} />
