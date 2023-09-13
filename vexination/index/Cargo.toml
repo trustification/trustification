@@ -10,7 +10,7 @@ log = "0.4"
 csaf = "0.5"
 zstd = "0.12"
 tar = "0.4"
-sikula = { version = "0.4.0-alpha.6", features = ["time"] }
+sikula = { version = "0.4.0", features = ["time"] }
 chumsky = "1.0.0-alpha.4"
 time = "0.3"
 trustification-api = { path = "../../api" }
