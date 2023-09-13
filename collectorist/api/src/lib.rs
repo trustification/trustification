@@ -2,13 +2,13 @@ use crate::state::AppState;
 use reqwest::Url;
 use std::process::ExitCode;
 use std::sync::Arc;
+use trustification_auth::client::OpenIdTokenProviderConfigArguments;
 use trustification_auth::{
     auth::AuthConfigArguments,
     authenticator::Authenticator,
     authorizer::Authorizer,
     swagger_ui::{SwaggerUiOidc, SwaggerUiOidcConfig},
 };
-use trustification_auth::client::OpenIdTokenProviderConfigArguments;
 use trustification_infrastructure::{
     endpoint::{self, Endpoint},
     endpoint::{Collectorist, EndpointServerConfig},
