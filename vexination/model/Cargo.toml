@@ -10,7 +10,7 @@ description = "The data model of the API"
 utoipa = { version = "3" }
 serde = { version = "1", features = ["derive"] }
 time = { version = "0.3", features = ["serde"] }
-sikula = { version = "0.4.0-alpha.6", features = ["time"] }
+sikula = { version = "0.4.0", features = ["time"] }
 
 # required by ToSchema utopia
 serde_json = "1"
