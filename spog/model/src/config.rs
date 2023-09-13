@@ -189,7 +189,7 @@ pub struct FilterCategory {
     pub options: Vec<FilterOption>,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize, schemars::JsonSchema)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct Terms {
     /// A list of search terms
@@ -267,7 +267,7 @@ mod test {
         FilterCheckOption {
             id: id.into(),
             label: label.into(),
-            terms: vec![],
+            terms: Terms::default(),
         }
     }
 
@@ -276,18 +276,17 @@ mod test {
     }
 
     fn mock_select(
-        id: impl Into<String>,
-        label: impl Into<String>,
+        group: impl Into<String>,
         options: impl IntoIterator<Item = (impl Into<String>, impl Into<String>)>,
     ) -> FilterOption {
         FilterOption::Select(FilterSelectOption {
-            id: id.into(),
+            group: group.into(),
             options: options
                 .into_iter()
                 .map(|(id, label)| FilterSelectItem {
                     id: id.into(),
                     label: label.into(),
-                    terms: vec![],
+                    terms: Terms::default(),
                 })
                 .collect(),
         })
@@ -399,7 +398,7 @@ mod test {
                         mock_check("id1", "label1"),
                         FilterOption::Divider,
                         mock_check("id2", "label2"),
-                        mock_select("id3", "label3", [("a", "A"), ("b", "B"), ("c", "C")])
+                        mock_select("id3", [("a", "A"), ("b", "B"), ("c", "C")])
                     ]
                 }]
             }
