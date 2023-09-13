@@ -9,8 +9,8 @@ use cyclonedx_bom::models::{
 use log::{debug, info, warn};
 use sikula::{mir::Direction, prelude::*};
 use spdx_rs::models::Algorithm;
-use tantivy::collector::TopDocs;
 use tantivy::query::TermSetQuery;
+use tantivy::{collector::TopDocs, Order};
 use tantivy::{
     query::{AllQuery, BooleanQuery},
     schema::INDEXED,
@@ -58,7 +58,6 @@ struct Fields {
     indexed_timestamp: Field,
     sbom_id: Field,
     sbom_created: Field,
-    sbom_created_inverse: Field,
     sbom_creators: Field,
     sbom_name: Field,
     sbom: PackageFields,
@@ -78,7 +77,6 @@ impl Index {
             indexed_timestamp: schema.add_date_field("indexed_timestamp", STORED),
             sbom_id: schema.add_text_field("sbom_id", STRING | FAST | STORED),
             sbom_created: schema.add_date_field("sbom_created", INDEXED | FAST | STORED),
-            sbom_created_inverse: schema.add_date_field("sbom_created_inverse", FAST),
             sbom_creators: schema.add_text_field("sbom_creators", STRING | STORED),
             sbom_name: schema.add_text_field("sbom_name", STRING | FAST | STORED),
             sbom: PackageFields {
@@ -142,11 +140,6 @@ impl Index {
         document.add_date(
             self.fields.sbom_created,
             DateTime::from_timestamp_millis(created.timestamp_millis()),
-        );
-
-        document.add_date(
-            self.fields.sbom_created_inverse,
-            DateTime::from_timestamp_millis(-created.timestamp_millis()),
         );
 
         for package in &bom.package_information {
@@ -233,11 +226,6 @@ impl Index {
                     document.add_date(
                         self.fields.sbom_created,
                         DateTime::from_timestamp_secs(d.unix_timestamp()),
-                    );
-
-                    document.add_date(
-                        self.fields.sbom_created_inverse,
-                        DateTime::from_timestamp_secs(-d.unix_timestamp()),
                     );
                 }
             }
@@ -423,7 +411,7 @@ impl Index {
 #[derive(Debug)]
 pub struct SbomQuery {
     query: Box<dyn Query>,
-    sort_by: Option<Field>,
+    sort_by: Option<(Field, Order)>,
 }
 
 impl trustification_index::Index for Index {
@@ -471,10 +459,10 @@ impl trustification_index::Index for Index {
             match f.qualifier {
                 PackagesSortable::Created => match f.direction {
                     Direction::Descending => {
-                        sort_by.replace(self.fields.sbom_created);
+                        sort_by.replace((self.fields.sbom_created, Order::Desc));
                     }
                     Direction::Ascending => {
-                        sort_by.replace(self.fields.sbom_created_inverse);
+                        sort_by.replace((self.fields.sbom_created, Order::Asc));
                     }
                 },
             }
@@ -497,15 +485,15 @@ impl trustification_index::Index for Index {
         offset: usize,
         limit: usize,
     ) -> Result<(Vec<(f32, DocAddress)>, usize), SearchError> {
-        if let Some(order_by) = query.sort_by {
-            let order_by = self.schema.get_field_name(order_by);
+        if let Some((field, order)) = &query.sort_by {
+            let order_by = self.schema.get_field_name(*field);
             let mut hits = Vec::new();
             let result = searcher.search(
                 &query.query,
                 &(
                     TopDocs::with_limit(limit)
                         .and_offset(offset)
-                        .order_by_fast_field::<tantivy::DateTime>(order_by),
+                        .order_by_fast_field::<tantivy::DateTime>(order_by, order.clone()),
                     tantivy::collector::Count,
                 ),
             )?;
