@@ -152,11 +152,13 @@ pub fn config(cfg: &mut web::ServiceConfig) {
     .service(SwaggerUi::new("/swagger-ui/{_:.*}").url("/openapi.json", ApiDoc::openapi()));
 }
 
-pub async fn register_with_collectorist(state: SharedState) {
+pub async fn register_with_collectorist(state: SharedState, advertise: Option<Url>) {
     loop {
         if let Some(addr) = *state.addr.read().await {
             if !state.connected.load(Ordering::Relaxed) {
-                let url = Url::parse(&format!("http://{}:{}/api/v1/", addr.ip(), addr.port())).unwrap();
+                let url = advertise
+                    .clone()
+                    .unwrap_or_else(|| Url::parse(&format!("http://{}:{}/api/v1/", addr.ip(), addr.port())).unwrap());
                 info!(
                     "registering with collectorist at {} with callback={}",
                     state.collectorist_client.register_collector_url(),

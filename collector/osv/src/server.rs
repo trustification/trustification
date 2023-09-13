@@ -198,11 +198,13 @@ pub async fn collect_vulnerabilities(
     Ok(HttpResponse::Ok().json(gathered))
 }
 
-pub async fn register_with_collectorist(state: &AppState) {
+pub async fn register_with_collectorist(state: &AppState, advertise: Option<Url>) {
     loop {
         if let Some(addr) = *state.addr.read().await {
             if !state.connected.load(Ordering::Relaxed) {
-                let url = Url::parse(&format!("http://{}:{}/api/v1/", addr.ip(), addr.port())).unwrap();
+                let url = advertise
+                    .clone()
+                    .unwrap_or_else(|| Url::parse(&format!("http://{}:{}/api/v1/", addr.ip(), addr.port())).unwrap());
                 info!(
                     "registering with collectorist at {} with callback={}",
                     state.collectorist_client.register_collector_url(),
