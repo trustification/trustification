@@ -909,7 +909,7 @@ mod tests {
     #[tokio::test]
     async fn test_free_form_dates() {
         assert_search(|index| {
-            let result = search(&index, "advisoryInitial:>2022-01-01");
+            let result = search(&index, "initial:>2022-01-01");
             assert_eq!(result.0.len(), 3);
 
             let result = search(&index, "cveDiscovery:>2022-01-01");
