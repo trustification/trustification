@@ -284,6 +284,7 @@ mod test {
     ) -> FilterOption {
         FilterOption::Select(FilterSelectOption {
             group: group.into(),
+            default: None,
             options: options
                 .into_iter()
                 .map(|(id, label)| FilterSelectItem {
