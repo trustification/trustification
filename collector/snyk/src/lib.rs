@@ -51,7 +51,7 @@ pub struct Run {
     )]
     pub(crate) v11y_url: Url,
 
-    #[arg(env, long = "snyk-org_id")]
+    #[arg(env, long = "snyk-org-id")]
     pub(crate) snyk_org_id: String,
 
     #[arg(env, long = "snyk-token")]
@@ -62,12 +62,7 @@ pub struct Run {
 }
 
 impl Run {
-    pub async fn run(mut self) -> anyhow::Result<ExitCode> {
-        if self.devmode {
-            self.v11y_url = Url::parse("http://localhost:8087").unwrap();
-            self.collectorist_url = Url::parse("http://localhost:8088").unwrap();
-        }
-
+    pub async fn run(self) -> anyhow::Result<ExitCode> {
         Infrastructure::from(self.infra)
             .run("collector-osv", |_metrics| async move {
                 let provider = self.oidc.into_provider_or_devmode(self.devmode).await?;

@@ -8,6 +8,7 @@ use trustification_auth::{
     authorizer::Authorizer,
     swagger_ui::{SwaggerUiOidc, SwaggerUiOidcConfig},
 };
+use trustification_auth::client::OpenIdTokenProviderConfigArguments;
 use trustification_infrastructure::{
     endpoint::{self, Endpoint},
     endpoint::{Collectorist, EndpointServerConfig},
@@ -52,6 +53,9 @@ pub struct Run {
 
     #[command(flatten)]
     pub swagger_ui_oidc: SwaggerUiOidcConfig,
+
+    #[command(flatten)]
+    pub(crate) oidc: OpenIdTokenProviderConfigArguments,
 }
 
 impl Run {

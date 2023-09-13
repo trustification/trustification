@@ -222,6 +222,24 @@ curl "http://localhost:8082/api/v1/sbom/search?q=openssl"
 curl "http://localhost:8081/api/v1/vex/search?q=openssl"
 ```
 
+## Collectors requiring credentials
+
+Several collectors use third-party services and require credentials.
+
+### Snyk
+
+| Variable      |Value|
+|---------------|-----|
+| `SNYK_ORG_ID` |Your Snyk organization ID|
+| `SNYK_TOKEN`  |Your Snyk API token|
+
+### NVD
+
+| Variable      | Value               |
+|---------------|---------------------|
+| `NVD_API_KEY` | Your NIST NVD API key |
+
+
 ## Working with local images
 
 If you need to build an image locally, you can do that by running

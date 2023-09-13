@@ -50,6 +50,7 @@ pub async fn run<B: Into<SocketAddr>>(state: SharedState, bind: B) -> Result<(),
     let listener = TcpListener::bind(bind.into())?;
     let addr = listener.local_addr()?;
     log::info!("listening on {}", addr);
+    log::info!("collectorist at {}", state.collectorist_client.register_collector_url());
 
     state.addr.write().await.replace(addr);
 
