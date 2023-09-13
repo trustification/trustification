@@ -1661,7 +1661,7 @@ dependencies = [
  "reqwest",
  "serde",
  "serde_json",
- "test-with 0.10.3",
+ "test-with",
  "tokio",
  "trustification-auth",
  "trustification-infrastructure",
