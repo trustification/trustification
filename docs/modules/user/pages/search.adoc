@@ -57,7 +57,7 @@ Which matching type depends on the qualifier, but the possible types are:
 * Range - Matches within a range of values
 
 You can use ranges for the date fields.
-For example, `advisoryRelease:2022-01-01..2022-12-31`.
+For example, `release:2022-01-01..2022-12-31`.
 
 TIP: If the search term has a reserved character, such as `:`, you can add quotes.
 
