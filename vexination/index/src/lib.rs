@@ -16,7 +16,7 @@ use tantivy::{
     collector::TopDocs,
     query::{AllQuery, TermSetQuery},
     store::ZstdCompressor,
-    DocAddress, DocId, IndexSettings, Score, Searcher, SegmentReader, SnippetGenerator,
+    DocAddress, DocId, IndexSettings, Order, Score, Searcher, SegmentReader, SnippetGenerator,
 };
 use time::OffsetDateTime;
 use trustification_api::search::SearchOptions;
@@ -48,10 +48,8 @@ struct Fields {
     advisory_revision: Field,
     advisory_initial: Field,
     advisory_current: Field,
-    advisory_current_inverse: Field,
 
     advisory_severity_score: Field,
-    advisory_severity_score_inverse: Field,
 
     cve_severity_count: Field,
 
@@ -77,7 +75,7 @@ struct ProductPackage {
 #[derive(Debug)]
 pub struct VexQuery {
     query: Box<dyn Query>,
-    sort_by: Option<Field>,
+    sort_by: Option<(Field, Order)>,
 }
 
 impl trustification_index::Index for Index {
@@ -135,7 +133,6 @@ impl trustification_index::Index for Index {
                 _ => 0.25,
             };
             document.add_f64(self.fields.advisory_severity_score, score);
-            document.add_f64(self.fields.advisory_severity_score_inverse, -score);
         }
 
         for revision in &csaf.document.tracking.revision_history {
@@ -150,11 +147,6 @@ impl trustification_index::Index for Index {
         document.add_date(
             self.fields.advisory_current,
             DateTime::from_timestamp_millis(csaf.document.tracking.current_release_date.timestamp_millis()),
-        );
-
-        document.add_date(
-            self.fields.advisory_current_inverse,
-            DateTime::from_timestamp_millis(-csaf.document.tracking.current_release_date.timestamp_millis()),
         );
 
         let mut cve_severities: HashMap<&str, usize> = HashMap::new();
@@ -321,18 +313,18 @@ impl trustification_index::Index for Index {
             match f.qualifier {
                 VulnerabilitiesSortable::Severity => match f.direction {
                     Direction::Descending => {
-                        sort_by.replace(self.fields.advisory_severity_score);
+                        sort_by.replace((self.fields.advisory_severity_score, Order::Desc));
                     }
                     Direction::Ascending => {
-                        sort_by.replace(self.fields.advisory_severity_score_inverse);
+                        sort_by.replace((self.fields.advisory_severity_score, Order::Asc));
                     }
                 },
                 VulnerabilitiesSortable::Release => match f.direction {
                     Direction::Descending => {
-                        sort_by.replace(self.fields.advisory_current);
+                        sort_by.replace((self.fields.advisory_current, Order::Desc));
                     }
                     Direction::Ascending => {
-                        sort_by.replace(self.fields.advisory_current_inverse);
+                        sort_by.replace((self.fields.advisory_current, Order::Asc));
                     }
                 },
             }
@@ -355,18 +347,16 @@ impl trustification_index::Index for Index {
         offset: usize,
         limit: usize,
     ) -> Result<(Vec<(f32, DocAddress)>, usize), SearchError> {
-        if let Some(order_by) = query.sort_by {
-            let order_by_str = self.schema.get_field_name(order_by);
+        if let Some((field, order)) = query.sort_by.as_ref() {
+            let order_by_str = self.schema.get_field_name(*field);
             let mut hits = Vec::new();
-            let total = if order_by == self.fields.advisory_severity_score
-                || order_by == self.fields.advisory_severity_score_inverse
-            {
+            let total = if *field == self.fields.advisory_severity_score {
                 let result = searcher.search(
                     &query.query,
                     &(
                         TopDocs::with_limit(limit)
                             .and_offset(offset)
-                            .order_by_fast_field::<f64>(order_by_str),
+                            .order_by_fast_field::<f64>(order_by_str, order.clone()),
                         tantivy::collector::Count,
                     ),
                 )?;
@@ -380,7 +370,7 @@ impl trustification_index::Index for Index {
                     &(
                         TopDocs::with_limit(limit)
                             .and_offset(offset)
-                            .order_by_fast_field::<tantivy::DateTime>(order_by_str),
+                            .order_by_fast_field::<tantivy::DateTime>(order_by_str, order.clone()),
                         tantivy::collector::Count,
                     ),
                 )?;
@@ -534,9 +524,7 @@ impl Index {
         let advisory_severity = schema.add_text_field("advisory_severity", STRING | STORED);
         let advisory_initial = schema.add_date_field("advisory_initial_date", INDEXED);
         let advisory_current = schema.add_date_field("advisory_current_date", INDEXED | FAST | STORED);
-        let advisory_current_inverse = schema.add_date_field("advisory_current_date_inverse", FAST);
         let advisory_severity_score = schema.add_f64_field("advisory_severity_score", FAST);
-        let advisory_severity_score_inverse = schema.add_f64_field("advisory_severity_score_inverse", FAST);
 
         let cve_id = schema.add_text_field("cve_id", STRING | FAST | STORED);
         let cve_title = schema.add_text_field("cve_title", TEXT | STORED);
@@ -565,9 +553,7 @@ impl Index {
                 advisory_severity,
                 advisory_initial,
                 advisory_current,
-                advisory_current_inverse,
                 advisory_severity_score,
-                advisory_severity_score_inverse,
 
                 cve_id,
                 cve_title,
