@@ -39,8 +39,9 @@ dependencies = [
 
 [[package]]
 name = "analytics-next"
-version = "0.1.0-alpha.2"
-source = "git+https://github.com/ctron/analytics-next-rs?rev=9c95122f4e6dc308c90b945bd0f1925faf7cb828#9c95122f4e6dc308c90b945bd0f1925faf7cb828"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d11ed5ffb460ae293f9039580e672e85b91a67669eefa38efafcf2ef3ea6c496"
 dependencies = [
  "analytics-next-sys",
  "gloo-utils 0.2.0",
@@ -53,8 +54,9 @@ dependencies = [
 
 [[package]]
 name = "analytics-next-sys"
-version = "0.1.0-alpha.2"
-source = "git+https://github.com/ctron/analytics-next-rs?rev=9c95122f4e6dc308c90b945bd0f1925faf7cb828#9c95122f4e6dc308c90b945bd0f1925faf7cb828"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dcb69a04d306a3d10dc33029a2ea21c70801d6265b1bdf4e11e7657db9d286a4"
 dependencies = [
  "js-sys",
  "wasm-bindgen",
@@ -769,7 +771,7 @@ dependencies = [
  "gloo-events 0.1.2",
  "gloo-file",
  "gloo-history",
- "gloo-net",
+ "gloo-net 0.3.1",
  "gloo-render",
  "gloo-storage 0.2.2",
  "gloo-timers",
@@ -858,6 +860,27 @@ dependencies = [
  "futures-core",
  "futures-sink",
  "gloo-utils 0.1.7",
+ "http",
+ "js-sys",
+ "pin-project",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
+]
+
+[[package]]
+name = "gloo-net"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8ac9e8288ae2c632fa9f8657ac70bfe38a1530f345282d7ba66a1f70b72b7dc4"
+dependencies = [
+ "futures-channel",
+ "futures-core",
+ "futures-sink",
+ "gloo-utils 0.2.0",
  "http",
  "js-sys",
  "pin-project",
@@ -2420,9 +2443,9 @@ dependencies = [
  "cvss",
  "cyclonedx-bom",
  "gloo-events 0.2.0",
- "gloo-net",
- "gloo-storage 0.2.2",
- "gloo-utils 0.1.7",
+ "gloo-net 0.4.0",
+ "gloo-storage 0.3.0",
+ "gloo-utils 0.2.0",
  "humansize",
  "itertools 0.11.0",
  "log",

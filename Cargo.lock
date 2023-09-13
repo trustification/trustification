@@ -265,14 +265,15 @@ dependencies = [
 
 [[package]]
 name = "actix-web-prom"
-version = "0.6.0"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9df3127d20a5d01c9fc9aceb969a38d31a6767e1b48a54d55a8f56c769a84923"
+checksum = "f23f332a652836b8f3a6876103c70c9ed436d0e69fa779ab5d7f57b1d5c8d488"
 dependencies = [
  "actix-web",
  "futures-core",
  "pin-project-lite",
  "prometheus",
+ "regex",
 ]
 
 [[package]]
@@ -1687,7 +1688,7 @@ dependencies = [
  "reqwest",
  "serde",
  "serde_json",
- "test-with 0.10.3",
+ "test-with",
  "tokio",
  "trustification-auth",
  "trustification-infrastructure",
@@ -2006,17 +2007,19 @@ dependencies = [
 
 [[package]]
 name = "csaf-walker"
-version = "0.1.4"
+version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8935c389acd04d8a508cd1555c8b6ee2731a88d705e096e135293f1ac81f15d7"
+checksum = "5f9ce772519e8e806c7b068eed7fae011082205c61acd7cccaebc367cdc9d3d5"
 dependencies = [
  "anyhow",
  "async-trait",
  "bytes",
  "chrono",
+ "csv",
  "digest 0.10.7",
  "filetime",
  "futures",
+ "humantime",
  "log",
  "reqwest",
  "sequoia-openpgp",
@@ -3332,7 +3335,7 @@ dependencies = [
  "spog-api",
  "spog-model",
  "test-context",
- "test-with 0.9.7",
+ "test-with",
  "time",
  "tokio",
  "trustification-auth",
@@ -6584,26 +6587,6 @@ checksum = "8901a55b0a7a06ebc4a674dcca925170da8e613fa3b163a1df804ed10afb154d"
 dependencies = [
  "quote",
  "syn 1.0.109",
-]
-
-[[package]]
-name = "test-with"
-version = "0.9.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ca3e3e1275a1442b99772321d4a35e0622f7abc04f6af49bd801c7119645bc9e"
-dependencies = [
- "byte-unit",
- "num_cpus",
- "ping",
- "proc-macro-error",
- "proc-macro2",
- "quote",
- "regex",
- "reqwest",
- "syn 2.0.32",
- "sysinfo",
- "users",
- "which",
 ]
 
 [[package]]

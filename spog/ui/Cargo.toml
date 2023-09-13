@@ -7,7 +7,7 @@ license = "Apache-2"
 description = "Single Pane of Glass"
 
 [dependencies]
-analytics-next = "0.1.0-alpha.2"
+analytics-next = "0.1.0"
 anyhow = "1"
 async-trait = "0.1"
 browser-panic-hook = "0.2.0"
@@ -16,9 +16,9 @@ csaf = { version = "0.5.0", default-features = false }
 cvss = { version = "2", features = ["serde"] }
 cyclonedx-bom = "0.4"
 gloo-events = "0.2"
-gloo-net = "0.3"
-gloo-storage = "0.2.2"
-gloo-utils = { version = "0.1", features = ["serde"] }
+gloo-net = "0.4.0"
+gloo-storage = "0.3.0"
+gloo-utils = { version = "0.2.0", features = ["serde"] }
 humansize = "2"
 itertools = "0.11"
 log = "0.4"
@@ -76,7 +76,7 @@ features = [
 patternfly-yew = { git = "https://github.com/ctron/patternfly-yew", rev = "5ca949a9ed37294a394f7d8f8bebd365a17426a8" } # FIXME: awaiting release
 #patternfly-yew = { path = "../../../patternfly-yew" }
 
-analytics-next = { git = "https://github.com/ctron/analytics-next-rs", rev = "9c95122f4e6dc308c90b945bd0f1925faf7cb828" } # FIXME: awaiting release
+#analytics-next = { git = "https://github.com/ctron/analytics-next-rs", rev = "9c95122f4e6dc308c90b945bd0f1925faf7cb828" } # FIXME: awaiting release
 #analytics-next = { path = "../../../analytics-next" }
 
 csaf = { git = "https://github.com/voteblake/csaf-rs", rev = "76cb9ede10adb1fbb495b17e5fd8d95c5cf6c900" } # FIXME: waiting for release
