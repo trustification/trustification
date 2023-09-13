@@ -70,3 +70,14 @@ pub(crate) async fn configurator(source: Option<PathBuf>) -> anyhow::Result<impl
             .service(web::resource("/api/v1/config").to(get_config));
     })
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    /// ensure that the default configuration parses
+    fn parse_default() {
+        let _config: Configuration = serde_yaml::from_slice(include_bytes!("default.yaml")).unwrap();
+    }
+}
