@@ -25,11 +25,13 @@ pub enum Vulnerabilities<'a> {
     #[search(scope)]
     Affected(Primary<'a>),
     #[search]
-    Initial(Ordered<time::OffsetDateTime>),
+    AdvisoryInitial(Ordered<time::OffsetDateTime>),
     #[search(sort)]
-    Release(Ordered<time::OffsetDateTime>),
+    AdvisoryRelease(Ordered<time::OffsetDateTime>),
     #[search]
-    Discovery(Ordered<time::OffsetDateTime>),
+    CveRelease(Ordered<time::OffsetDateTime>),
+    #[search]
+    CveDiscovery(Ordered<time::OffsetDateTime>),
     Final,
     Critical,
     High,
