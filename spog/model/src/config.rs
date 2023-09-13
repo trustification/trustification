@@ -189,6 +189,24 @@ pub struct FilterCategory {
     pub options: Vec<FilterOption>,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct Terms {
+    /// A list of search terms
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub terms: Vec<String>,
+    /// A JavaScript snippet to execute, gathering search terms.
+    ///
+    /// The result must be an array of strings. For example:
+    ///
+    /// ```yaml
+    /// script: |
+    ///   ["foo:bar", "bar:baz"]
+    /// ```
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub script: String,
+}
+
 /// Values for a filter option
 #[derive(Clone, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
@@ -197,8 +215,10 @@ pub struct FilterCheckOption {
     pub id: String,
     /// End-user friendly label
     pub label: String,
+
     /// Search terms which will be added using an OR group
-    pub terms: Vec<String>,
+    #[serde(flatten)]
+    pub terms: Terms,
 }
 
 /// Select style choice (one of)
@@ -219,8 +239,10 @@ pub struct FilterSelectItem {
     pub id: String,
     /// End-user friendly label
     pub label: String,
+
     /// Search terms which will be added using an OR group
-    pub terms: Vec<String>,
+    #[serde(flatten)]
+    pub terms: Terms,
 }
 
 /// The filter option element which can be added
