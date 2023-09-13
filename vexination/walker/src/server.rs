@@ -55,13 +55,17 @@ pub async fn run(
     .with_options(options);
 
     if let Ok(path) = source.to_file_path() {
-        let source = FileSource::new(path)?;
+        let source = FileSource::new(path, None)?;
         Walker::new(source.clone())
             .walk(RetrievingVisitor::new(source.clone(), validation))
             .await?;
     } else {
         log::info!("Walking VEX docs: source='{source}' workers={workers}");
-        let source = HttpSource { url: source, fetcher };
+        let source = HttpSource {
+            url: source,
+            fetcher,
+            options: Default::default(),
+        };
         Walker::new(source.clone())
             .walk_parallel(workers, RetrievingVisitor::new(source.clone(), validation))
             .await?;

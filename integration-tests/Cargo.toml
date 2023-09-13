@@ -16,7 +16,7 @@ openid = "0.12"
 chrono = { version = "0.4", default-features = false }
 log = "0.4"
 test-context = "0.1"
-test-with = "0.9"
+test-with = "0.10.2"
 ntest = "0.9"
 time = "0.3"
 trustification-event-bus = { path = "../event-bus" }
