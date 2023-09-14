@@ -20,31 +20,53 @@ const DEFAULT_ADDR: SocketAddr = SocketAddr::new(IpAddr::V6(Ipv6Addr::new(0, 0, 
 #[command(rename_all_env = "SCREAMING_SNAKE_CASE", next_help_heading = "HTTP endpoint")]
 pub struct HttpServerConfig {
     /// The number of worker threads, defaults to zero, which falls back to the number of cores.
-    #[arg(id = "http-server-workers", long, env)]
+    #[arg(id = "http-server-workers", long, env = "HTTP_SERVER_WORKERS")]
     pub workers: usize,
 
     /// The bind address
-    #[arg(id = "http-server-bind", long, env, default_value = "[::1]:8080")]
+    #[arg(
+        id = "http-server-bind",
+        long,
+        env,
+        default_value = "[::1]:8080",
+        env = "HTTP_SERVER_BIND_ADDR"
+    )]
     pub bind_addr: String,
 
     /// The overall request limit
-    #[arg(id = "http-server-request-limit", long, env, default_value = "256KiB")]
+    #[arg(
+        id = "http-server-request-limit",
+        long,
+        env,
+        default_value = "256KiB",
+        env = "HTTP_SERVER_REQUEST_LIMIT"
+    )]
     pub request_limit: bytesize::ByteSize,
 
     /// The JSON request limit
-    #[arg(id = "http-server-json-limit", long, env, default_value = "2MiB")]
+    #[arg(
+        id = "http-server-json-limit",
+        long,
+        env,
+        default_value = "2MiB",
+        env = "HTTP_SERVER_JSON_LIMIT"
+    )]
     pub json_limit: bytesize::ByteSize,
 
     /// Enable TLS
-    #[arg(id = "http-server-tls-enabled", long, env)]
+    #[arg(id = "http-server-tls-enabled", long, env = "HTTP_SERVER_TLS_ENABLED")]
     pub tls_enabled: bool,
 
     /// The path to the TLS key file in PEM format
-    #[arg(id = "http-server-tls-key-file", long, env)]
+    #[arg(id = "http-server-tls-key-file", long, env = "HTTP_SERVER_TLS_KEY_FILE")]
     pub tls_key_file: Option<PathBuf>,
 
     /// The path to the TLS certificate in PEM format
-    #[arg(id = "http-server-tls-certificate-file", long, env)]
+    #[arg(
+        id = "http-server-tls-certificate-file",
+        long,
+        env = "HTTP_SERVER_TLS_CERTIFICATE_FILE"
+    )]
     pub tls_certificate_file: Option<PathBuf>,
 }
 
