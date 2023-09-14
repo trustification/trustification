@@ -149,7 +149,7 @@ async fn query_sbom(
         // otherwise, decode the stream
         None => Ok(HttpResponse::Ok()
             .content_type(ContentType::json())
-            .streaming(storage.get_decoded_stream(path).await.map_err(Error::Storage)?)),
+            .streaming(storage.get_decoded_stream(&path).await.map_err(Error::Storage)?)),
     }
 }
 

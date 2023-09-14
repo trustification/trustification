@@ -9,7 +9,7 @@ use tokio::task::block_in_place;
 use tokio::{select, sync::Mutex};
 use trustification_event_bus::EventBus;
 use trustification_index::{Index, IndexStore, IndexWriter};
-use trustification_storage::{EventType, Storage};
+use trustification_storage::{Error as StorageError, EventType, Storage};
 
 pub mod actix;
 
@@ -195,8 +195,34 @@ impl<'a, INDEX: Index> Indexer<'a, INDEX> {
                                 *self.status.lock().await = IndexerStatus::Reindexing { progress };
                             }
                         }
-                        Some(Err(e)) => {
-                            log::warn!("Error reindexing: {:?}", e);
+                        Some(Err((key, StorageError::S3(e)))) => {
+                            let mut retries = 10;
+                            loop {
+                                retries -= 1;
+                                log::info!("Retrying {:?} (attempts left: {}) after error: {:?}", key, retries, e);
+                                match self.storage.get_object(&key).await {
+                                    Ok(obj) => {
+                                        if let Err(e) = self.index_doc(self.index.index(), writer.as_mut().unwrap(), key.key(), &obj, &mut Vec::new()).await {
+                                            log::warn!("(Ignored) Internal error when indexing {:?}: {:?}", key, e);
+                                        } else {
+                                            progress += 1;
+                                            *self.status.lock().await = IndexerStatus::Reindexing { progress };
+                                        }
+                                        break;
+                                    }
+                                    Err(e) => {
+                                        if retries == 0 {
+                                            log::warn!("Error retrieving {:?}: {:?}", key, e);
+                                            return Err(e)?;
+                                        } else {
+                                            tokio::time::sleep(Duration::from_secs(2)).await;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        Some(Err((key, e))) => {
+                            log::warn!("Error reindexing {:?}: {:?}", key, e);
                             return Err(e.into());
                         }
                         _ => return Ok(()),
