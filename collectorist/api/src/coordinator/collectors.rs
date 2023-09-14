@@ -1,11 +1,12 @@
 use std::collections::{HashMap, HashSet};
+use std::sync::Arc;
 
 use crate::coordinator::collector::Collector;
 use collector_client::{CollectPackagesResponse, CollectVulnerabilitiesResponse};
 use collectorist_client::{CollectPackagesRequest, CollectorConfig, Interest};
 use futures::future::join_all;
 
-use crate::SharedState;
+use crate::state::AppState;
 
 #[derive(Default)]
 pub struct Collectors {
@@ -13,9 +14,8 @@ pub struct Collectors {
 }
 
 impl Collectors {
-    pub async fn register(&mut self, state: SharedState, id: String, config: CollectorConfig) -> Result<(), ()> {
-        self.collectors
-            .insert(id.clone(), Collector::new(state.clone(), id, config));
+    pub async fn register(&mut self, state: Arc<AppState>, id: String, config: CollectorConfig) -> Result<(), ()> {
+        self.collectors.insert(id.clone(), Collector::new(state, id, config));
         Ok(())
     }
 
@@ -34,7 +34,7 @@ impl Collectors {
 
     pub async fn collect_packages(
         &self,
-        state: SharedState,
+        state: &AppState,
         request: CollectPackagesRequest,
     ) -> Vec<CollectPackagesResponse> {
         let mut futures = Vec::new();
@@ -50,7 +50,7 @@ impl Collectors {
 
     pub async fn collect_vulnerabilities(
         &self,
-        state: SharedState,
+        state: &AppState,
         vuln_ids: HashSet<String>,
     ) -> Vec<CollectVulnerabilitiesResponse> {
         let mut futures = Vec::new();

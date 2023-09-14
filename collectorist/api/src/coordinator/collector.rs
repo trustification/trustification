@@ -1,5 +1,6 @@
 use std::collections::HashSet;
 use std::fmt::Debug;
+use std::sync::Arc;
 use std::time::Duration;
 
 use chrono::Utc;
@@ -13,7 +14,7 @@ use collector_client::{
 };
 use collectorist_client::{CollectorConfig, Interest};
 
-use crate::SharedState;
+use crate::state::AppState;
 
 #[derive(Debug, thiserror::Error)]
 #[error("No configuration for collector")]
@@ -32,8 +33,8 @@ pub struct Collector {
 }
 
 impl Collector {
-    pub fn new(state: SharedState, id: String, config: CollectorConfig) -> Self {
-        let update = tokio::spawn(Collector::update(state.clone(), id.clone()));
+    pub fn new(state: Arc<AppState>, id: String, config: CollectorConfig) -> Self {
+        let update = tokio::spawn(Collector::update(state, id.clone()));
         Self {
             id,
             config: config.clone(),
@@ -43,7 +44,7 @@ impl Collector {
 
     pub async fn collect_packages(
         &self,
-        state: SharedState,
+        state: &AppState,
         purls: Vec<String>,
     ) -> Result<CollectPackagesResponse, anyhow::Error> {
         Self::collect_packages_internal(
@@ -57,7 +58,7 @@ impl Collector {
     }
 
     async fn collect_packages_internal(
-        state: SharedState,
+        state: &AppState,
         id: String,
         config: &CollectorConfig,
         purls: Vec<String>,
@@ -87,14 +88,14 @@ impl Collector {
 
     pub async fn collect_vulnerabilities(
         &self,
-        state: SharedState,
+        state: &AppState,
         vulnerability_ids: HashSet<String>,
     ) -> Result<CollectVulnerabilitiesResponse, anyhow::Error> {
         Self::collect_vulnerabilities_internal(state, self.id.clone(), &self.config, vulnerability_ids).await
     }
 
     async fn collect_vulnerabilities_internal(
-        state: SharedState,
+        state: &AppState,
         id: String,
         config: &CollectorConfig,
         vulnerability_ids: HashSet<String>,
@@ -116,7 +117,7 @@ impl Collector {
         Ok(response)
     }
 
-    pub async fn update(state: SharedState, id: String) {
+    pub async fn update(state: Arc<AppState>, id: String) {
         loop {
             if let Some(config) = state.collectors.read().await.collector_config(id.clone()) {
                 let collector_url = config.url.clone();
@@ -130,14 +131,9 @@ impl Collector {
 
                     if !purls.is_empty() {
                         log::debug!("polling packages for {} -> {}", id, collector_url);
-                        if let Ok(response) = Self::collect_packages_internal(
-                            state.clone(),
-                            id.clone(),
-                            &config,
-                            purls,
-                            RetentionMode::All,
-                        )
-                        .await
+                        if let Ok(response) =
+                            Self::collect_packages_internal(&state, id.clone(), &config, purls, RetentionMode::All)
+                                .await
                         {
                             // during normal re-scan, we did indeed discover some vulns, make sure they are in the DB.
                             let vuln_ids: HashSet<_> = response.purls.values().flatten().collect();
@@ -159,7 +155,7 @@ impl Collector {
 
                     if !vuln_ids.is_empty() {
                         log::debug!("polling vulnerabilities for {} -> {}", id, collector_url);
-                        Self::collect_vulnerabilities_internal(state.clone(), id.clone(), &config, vuln_ids)
+                        Self::collect_vulnerabilities_internal(&state, id.clone(), &config, vuln_ids)
                             .await
                             .ok();
                     }

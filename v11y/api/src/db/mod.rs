@@ -1,3 +1,4 @@
+use std::path::Path;
 use std::str::FromStr;
 
 use derive_more::{Display, Error, From};
@@ -22,13 +23,13 @@ pub struct Db {
 
 #[allow(unused)]
 impl Db {
-    pub async fn new() -> Result<Self, anyhow::Error> {
+    pub async fn new(base: impl AsRef<Path>) -> Result<Self, anyhow::Error> {
         let db = Self {
             pool: SqlitePool::connect_with(if cfg!(test) {
                 SqliteConnectOptions::from_str(":memory:")?
             } else {
                 SqliteConnectOptions::default()
-                    .filename(DB_FILE_NAME)
+                    .filename(base.as_ref().join(DB_FILE_NAME))
                     .create_if_missing(true)
             })
             .await?,
@@ -698,14 +699,14 @@ mod test {
 
     #[tokio::test]
     async fn create_db() -> Result<(), anyhow::Error> {
-        let _db = Db::new().await?;
+        let _db = Db::new(".").await?;
         // not failing is success
         Ok(())
     }
 
     #[tokio::test]
     async fn ingest_minimal() -> Result<(), anyhow::Error> {
-        let db = Db::new().await?;
+        let db = Db::new(".").await?;
 
         let vuln = Vulnerability {
             origin: "osv".to_string(),
@@ -775,7 +776,7 @@ mod test {
 
     #[tokio::test]
     async fn ingest_maximal() -> Result<(), anyhow::Error> {
-        let db = Db::new().await?;
+        let db = Db::new(".").await?;
 
         let osv_vuln = Vulnerability {
             origin: "osv".to_string(),
@@ -909,7 +910,7 @@ mod test {
 
     #[tokio::test]
     async fn ingest_updated_severities() -> Result<(), anyhow::Error> {
-        let db = Db::new().await?;
+        let db = Db::new(".").await?;
 
         let vuln = Vulnerability {
             origin: "osv".to_string(),
@@ -1004,7 +1005,7 @@ mod test {
 
     #[tokio::test]
     async fn get_without_origin() -> Result<(), anyhow::Error> {
-        let db = Db::new().await?;
+        let db = Db::new(".").await?;
 
         let osv_vuln = Vulnerability {
             origin: "osv".to_string(),

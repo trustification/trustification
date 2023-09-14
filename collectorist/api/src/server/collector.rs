@@ -2,7 +2,7 @@ use actix_web::{delete, get, post, web, HttpResponse, Responder};
 use collectorist_client::{CollectorConfig, RegisterResponse};
 use log::info;
 
-use crate::SharedState;
+use crate::state::AppState;
 
 /// Register a collector
 #[utoipa::path(
@@ -16,18 +16,20 @@ use crate::SharedState;
 )]
 #[post("/collector/{id}")]
 pub(crate) async fn register_collector(
-    state: web::Data<SharedState>,
+    state: web::Data<AppState>,
     id: web::Path<String>,
     config: web::Json<CollectorConfig>,
 ) -> actix_web::Result<impl Responder> {
     info!("registered collector {} at {}", id, config.url.clone());
     info!("--> {:?}", config);
+
+    let state = state.into_inner();
+
     if state
-        .clone()
         .collectors
         .write()
         .await
-        .register(state.get_ref().clone(), (*id).clone(), (*config).clone())
+        .register(state.clone(), (*id).clone(), (*config).clone())
         .await
         .is_ok()
     {
@@ -51,7 +53,7 @@ pub(crate) async fn register_collector(
 )]
 #[get("/collector/{id}")]
 pub(crate) async fn collector_config(
-    state: web::Data<SharedState>,
+    state: web::Data<AppState>,
     id: web::Path<String>,
 ) -> actix_web::Result<impl Responder> {
     if let Some(config) = state.collectors.read().await.collector_config(id.clone()) {
@@ -74,7 +76,7 @@ pub(crate) async fn collector_config(
 )]
 #[delete("/collector/{id}")]
 pub(crate) async fn deregister_collector(
-    state: web::Data<SharedState>,
+    state: web::Data<AppState>,
     id: web::Path<String>,
 ) -> actix_web::Result<impl Responder> {
     if let Ok(result) = state.collectors.write().await.deregister((*id).clone()) {
@@ -90,6 +92,7 @@ pub(crate) async fn deregister_collector(
 
 #[cfg(test)]
 mod test {
+    use std::sync::Arc;
     use std::time::Duration;
 
     use actix_web::http::StatusCode;
@@ -101,7 +104,6 @@ mod test {
     use crate::server::collector::CollectorConfig;
     use crate::server::config;
     use crate::state::AppState;
-    use crate::SharedState;
 
     #[actix_web::test]
     async fn collector_config_round_trip() -> Result<(), anyhow::Error> {
@@ -122,8 +124,9 @@ mod test {
 
     #[actix_web::test]
     async fn register_collector() -> Result<(), anyhow::Error> {
-        let state = SharedState::new(
+        let state = Arc::new(
             AppState::new(
+                ".",
                 Url::parse("http://csub.example.com/").unwrap(),
                 Url::parse("http://guac.example.com/query").unwrap(),
             )
@@ -142,7 +145,7 @@ mod test {
 
         let app = test::init_service(
             App::new()
-                .app_data(web::Data::new(state.clone()))
+                .app_data(web::Data::from(state.clone()))
                 .configure(|cfg| config(cfg, None, None)),
         )
         .await;
@@ -162,8 +165,9 @@ mod test {
 
     #[actix_web::test]
     async fn get_collector_config() -> Result<(), anyhow::Error> {
-        let state = SharedState::new(
+        let state = Arc::new(
             AppState::new(
+                ".",
                 Url::parse("http://csub.example.com/").unwrap(),
                 Url::parse("http://guac.example.com/query").unwrap(),
             )
@@ -171,7 +175,7 @@ mod test {
         );
         let app = test::init_service(
             App::new()
-                .app_data(web::Data::new(state.clone()))
+                .app_data(web::Data::from(state.clone()))
                 .configure(|cfg| config(cfg, None, None)),
         )
         .await;
@@ -208,8 +212,9 @@ mod test {
 
     #[actix_web::test]
     async fn deregister_collector() -> Result<(), anyhow::Error> {
-        let state = SharedState::new(
+        let state = Arc::new(
             AppState::new(
+                ".",
                 Url::parse("http://csub.example.com/").unwrap(),
                 Url::parse("http://guac.example.com/query").unwrap(),
             )
@@ -218,7 +223,7 @@ mod test {
 
         let app = test::init_service(
             App::new()
-                .app_data(web::Data::new(state.clone()))
+                .app_data(web::Data::from(state.clone()))
                 .configure(|cfg| config(cfg, None, None)),
         )
         .await;

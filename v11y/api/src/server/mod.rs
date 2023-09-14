@@ -1,4 +1,4 @@
-use crate::SharedState;
+use crate::AppState;
 use actix_cors::Cors;
 use actix_web::{web, HttpServer, ResponseError};
 use actix_web_prom::PrometheusMetricsBuilder;
@@ -46,7 +46,7 @@ mod vulnerability;
 pub struct ApiDoc;
 
 pub async fn run<B: Into<SocketAddr>>(
-    state: SharedState,
+    state: Arc<AppState>,
     bind: B,
     metrics: Arc<Metrics>,
     authenticator: Option<Arc<Authenticator>>,
@@ -74,7 +74,7 @@ pub async fn run<B: Into<SocketAddr>>(
             authenticator: None,
             authorizer,
         })
-        .app_data(web::Data::new(state.clone()))
+        .app_data(web::Data::from(state.clone()))
         .configure(|cfg| config(cfg, authenticator, swagger_oidc))
     })
     .bind(addr)?

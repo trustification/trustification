@@ -1,5 +1,6 @@
 use crate::db::Db;
 use reqwest::Url;
+use std::path::Path;
 use tokio::sync::RwLock;
 
 use crate::coordinator::collectors::Collectors;
@@ -13,10 +14,10 @@ pub struct AppState {
 }
 
 impl AppState {
-    pub async fn new(csub_url: Url, guac_url: Url) -> Result<Self, anyhow::Error> {
+    pub async fn new(base: impl AsRef<Path>, csub_url: Url, guac_url: Url) -> Result<Self, anyhow::Error> {
         Ok(Self {
             collectors: Default::default(),
-            db: Db::new().await?,
+            db: Db::new(base).await?,
             coordinator: Coordinator::new(csub_url),
             guac_url,
         })

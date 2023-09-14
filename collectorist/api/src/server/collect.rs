@@ -6,7 +6,7 @@ use collector_client::CollectPackagesResponse;
 use collectorist_client::CollectPackagesRequest;
 use collectorist_client::CollectVulnerabilitiesRequest;
 
-use crate::SharedState;
+use crate::state::AppState;
 
 /// Post a list of purls to be "gathered"
 #[utoipa::path(
@@ -20,11 +20,11 @@ use crate::SharedState;
 )]
 #[post("/packages")]
 pub(crate) async fn collect_packages(
-    state: web::Data<SharedState>,
+    state: web::Data<AppState>,
     input: web::Json<CollectPackagesRequest>,
 ) -> actix_web::Result<impl Responder> {
     let purls = input.into_inner();
-    let results = state.coordinator.collect_packages(state.get_ref().clone(), purls).await;
+    let results = state.coordinator.collect_packages(&state, purls).await;
     let mut purls = HashMap::<String, Vec<String>>::new();
     for gr in results {
         for k in gr.purls.keys() {
@@ -47,13 +47,10 @@ pub(crate) async fn collect_packages(
 )]
 #[post("/vulnerabilities")]
 pub(crate) async fn collect_vulnerabilities(
-    state: web::Data<SharedState>,
+    state: web::Data<AppState>,
     input: web::Json<CollectVulnerabilitiesRequest>,
 ) -> actix_web::Result<impl Responder> {
     let request = input.into_inner();
-    state
-        .coordinator
-        .collect_vulnerabilities(state.get_ref().clone(), request)
-        .await;
+    state.coordinator.collect_vulnerabilities(&state, request).await;
     Ok(HttpResponse::Ok().finish())
 }

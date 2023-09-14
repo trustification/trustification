@@ -1,4 +1,5 @@
 use std::net::SocketAddr;
+use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 use std::str::FromStr;
 use std::sync::Arc;
@@ -23,6 +24,10 @@ pub struct Run {
 
     #[arg(long = "devmode", default_value_t = false)]
     pub devmode: bool,
+
+    /// Base path to the database store. Defaults to the local directory.
+    #[arg(env, short = 'b', long = "storage-base")]
+    pub(crate) storage_base: Option<PathBuf>,
 
     #[command(flatten)]
     pub infra: InfrastructureConfig,
@@ -51,7 +56,7 @@ impl Run {
 
         Infrastructure::from(self.infra)
             .run("v11y", |metrics| async move {
-                let state = Self::configure().await?;
+                let state = Self::configure(self.storage_base).await?;
                 let addr = SocketAddr::from_str(&format!("{}:{}", self.api.bind, self.api.port))?;
                 let server = server::run(state.clone(), addr, metrics, authenticator, authorizer, swagger_oidc);
 
@@ -63,8 +68,9 @@ impl Run {
         Ok(ExitCode::SUCCESS)
     }
 
-    async fn configure() -> anyhow::Result<Arc<AppState>> {
-        let state = Arc::new(AppState::new().await?);
+    async fn configure(base: Option<PathBuf>) -> anyhow::Result<Arc<AppState>> {
+        let base = base.unwrap_or_else(|| ".".into());
+        let state = Arc::new(AppState::new(base).await?);
         Ok(state)
     }
 }
@@ -75,9 +81,9 @@ pub struct AppState {
 }
 
 impl AppState {
-    pub async fn new() -> Result<Self, anyhow::Error> {
-        Ok(Self { db: Db::new().await? })
+    pub async fn new(base: impl AsRef<Path>) -> Result<Self, anyhow::Error> {
+        Ok(Self {
+            db: Db::new(base).await?,
+        })
     }
 }
-
-pub(crate) type SharedState = Arc<AppState>;

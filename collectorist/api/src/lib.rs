@@ -1,5 +1,6 @@
 use crate::state::AppState;
 use reqwest::Url;
+use std::path::PathBuf;
 use std::process::ExitCode;
 use std::sync::Arc;
 use trustification_auth::client::OpenIdTokenProviderConfigArguments;
@@ -48,6 +49,10 @@ pub struct Run {
     )]
     pub(crate) guac_url: Url,
 
+    /// Base path to the database store. Defaults to the local directory.
+    #[arg(env, short = 'b', long = "storage-base")]
+    pub(crate) storage_base: Option<PathBuf>,
+
     #[command(flatten)]
     pub auth: AuthConfigArguments,
 
@@ -80,7 +85,7 @@ impl Run {
 
         Infrastructure::from(self.infra)
             .run("collectorist-api", |metrics| async move {
-                let state = Self::configure(self.csub_url, self.guac_url).await?;
+                let state = Self::configure(self.storage_base, self.csub_url, self.guac_url).await?;
                 let server = server::run(
                     state.clone(),
                     self.api.socket_addr()?,
@@ -89,7 +94,7 @@ impl Run {
                     authorizer,
                     swagger_oidc,
                 );
-                let listener = state.coordinator.listen(state.clone());
+                let listener = state.coordinator.listen(&state);
                 tokio::select! {
                      _ = listener => { }
                      _ = server => { }
@@ -101,10 +106,9 @@ impl Run {
         Ok(ExitCode::SUCCESS)
     }
 
-    async fn configure(csub_url: Url, guac_url: Url) -> anyhow::Result<Arc<AppState>> {
-        let state = Arc::new(AppState::new(csub_url, guac_url).await?);
+    async fn configure(base: Option<PathBuf>, csub_url: Url, guac_url: Url) -> anyhow::Result<Arc<AppState>> {
+        let base = base.unwrap_or_else(|| ".".into());
+        let state = Arc::new(AppState::new(base, csub_url, guac_url).await?);
         Ok(state)
     }
 }
-
-pub(crate) type SharedState = Arc<AppState>;

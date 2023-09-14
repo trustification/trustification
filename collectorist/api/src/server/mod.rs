@@ -1,7 +1,5 @@
-use crate::{
-    server::collector::{collector_config, deregister_collector, register_collector},
-    SharedState,
-};
+use crate::server::collector::{collector_config, deregister_collector, register_collector};
+use crate::state::AppState;
 use actix_cors::Cors;
 use actix_web::{web, HttpServer};
 use actix_web_prom::PrometheusMetricsBuilder;
@@ -38,7 +36,7 @@ pub mod collector;
 pub struct ApiDoc;
 
 pub async fn run<B: Into<SocketAddr>>(
-    state: SharedState,
+    state: Arc<AppState>,
     bind: B,
     metrics: Arc<Metrics>,
     authenticator: Option<Arc<Authenticator>>,
@@ -66,7 +64,7 @@ pub async fn run<B: Into<SocketAddr>>(
             authenticator: None,
             authorizer,
         })
-        .app_data(web::Data::new(state.clone()))
+        .app_data(web::Data::from(state.clone()))
         .configure(|cfg| config(cfg, authenticator, swagger_ui_oidc))
     })
     .bind(addr)?

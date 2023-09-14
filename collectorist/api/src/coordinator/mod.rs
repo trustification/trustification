@@ -22,7 +22,7 @@ use log::{info, warn};
 use reqwest::Url;
 use tokio::time::{interval, sleep};
 
-use crate::SharedState;
+use crate::state::AppState;
 
 pub struct Coordinator {
     csub_url: Url,
@@ -33,7 +33,7 @@ impl Coordinator {
         Self { csub_url }
     }
 
-    pub async fn listen(&self, state: SharedState) {
+    pub async fn listen(&self, state: &AppState) {
         let listener = async move {
             loop {
                 if let Ok(mut csub) = CollectSubClient::new(self.csub_url.to_string()).await {
@@ -76,7 +76,7 @@ impl Coordinator {
 
     pub async fn collect_packages(
         &self,
-        state: SharedState,
+        state: &AppState,
         request: CollectPackagesRequest,
     ) -> Vec<CollectPackagesResponse> {
         let collectors = state.collectors.read().await;
@@ -92,14 +92,14 @@ impl Coordinator {
         result
     }
 
-    pub async fn collect_vulnerabilities(&self, state: SharedState, request: CollectVulnerabilitiesRequest) {
+    pub async fn collect_vulnerabilities(&self, state: &AppState, request: CollectVulnerabilitiesRequest) {
         let collectors = state.collectors.read().await;
         collectors
             .collect_vulnerabilities(state.clone(), request.vuln_ids.iter().cloned().collect::<HashSet<_>>())
             .await;
     }
 
-    pub async fn add_purl(&self, state: SharedState, purl: &str) -> Result<(), anyhow::Error> {
+    pub async fn add_purl(&self, state: &AppState, purl: &str) -> Result<(), anyhow::Error> {
         state.db.insert_purl(purl).await
     }
 }

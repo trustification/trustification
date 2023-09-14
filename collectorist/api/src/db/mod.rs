@@ -1,3 +1,4 @@
+use std::path::Path;
 use std::str::FromStr;
 
 use chrono::{DateTime, Utc};
@@ -12,13 +13,13 @@ pub struct Db {
 }
 
 impl Db {
-    pub async fn new() -> Result<Self, anyhow::Error> {
+    pub async fn new(base: impl AsRef<Path>) -> Result<Self, anyhow::Error> {
         let db = Self {
             pool: SqlitePool::connect_with(if cfg!(test) {
                 SqliteConnectOptions::from_str(":memory:")?
             } else {
                 SqliteConnectOptions::default()
-                    .filename(DB_FILE_NAME)
+                    .filename(base.as_ref().join(DB_FILE_NAME))
                     .create_if_missing(true)
             })
             .await?,
@@ -286,7 +287,7 @@ mod test {
 
     #[actix_web::test]
     async fn insert_purl() -> Result<(), anyhow::Error> {
-        let db = Db::new().await?;
+        let db = Db::new(".").await?;
 
         db.insert_purl("bob").await?;
         db.insert_purl("bob").await?;
@@ -309,7 +310,7 @@ mod test {
 
     #[actix_web::test]
     async fn update_purl_scan_time() -> Result<(), anyhow::Error> {
-        let db = Db::new().await?;
+        let db = Db::new(".").await?;
 
         db.insert_purl("not-scanned").await?;
         db.insert_purl("is-scanned").await?;
