@@ -6004,12 +6004,10 @@ name = "spog-api"
 version = "0.1.0"
 dependencies = [
  "actix",
- "actix-cors",
  "actix-rt",
  "actix-web",
  "actix-web-extras",
  "actix-web-httpauth",
- "actix-web-prom",
  "actix-ws",
  "anyhow",
  "bombastic-model",
