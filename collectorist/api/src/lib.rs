@@ -1,9 +1,10 @@
-use crate::state::AppState;
-use reqwest::Url;
 use std::path::PathBuf;
 use std::process::ExitCode;
 use std::sync::Arc;
-use trustification_auth::client::OpenIdTokenProviderConfigArguments;
+
+use reqwest::Url;
+
+use trustification_auth::client::{OpenIdTokenProviderConfigArguments, TokenProvider};
 use trustification_auth::{
     auth::AuthConfigArguments,
     authenticator::Authenticator,
@@ -16,6 +17,8 @@ use trustification_infrastructure::{
     endpoint::{Collectorist, EndpointServerConfig},
     Infrastructure, InfrastructureConfig,
 };
+
+use crate::state::AppState;
 
 mod coordinator;
 mod db;
@@ -65,12 +68,7 @@ pub struct Run {
 }
 
 impl Run {
-    pub async fn run(mut self) -> anyhow::Result<ExitCode> {
-        if self.devmode {
-            self.guac_url = Url::parse("http://localhost:8085").unwrap();
-            self.csub_url = Url::parse("http://localhost:8086").unwrap();
-        }
-
+    pub async fn run(self) -> anyhow::Result<ExitCode> {
         let (authn, authz) = self.auth.split(self.devmode)?.unzip();
         let authenticator: Option<Arc<Authenticator>> = Authenticator::from_config(authn).await?.map(Arc::new);
         let authorizer = Authorizer::new(authz);
@@ -89,7 +87,8 @@ impl Run {
                 "collectorist-api",
                 |_context| async { Ok(()) },
                 |context| async move {
-                    let state = Self::configure(self.storage_base, self.csub_url, self.guac_url).await?;
+                    let provider = self.oidc.into_provider_or_devmode(self.devmode).await?;
+                    let state = Self::configure(self.storage_base, self.csub_url, self.guac_url, provider).await?;
 
                     let (probe, check) = Probe::new("Not connected to CSUB");
 
@@ -116,9 +115,17 @@ impl Run {
         Ok(ExitCode::SUCCESS)
     }
 
-    async fn configure(base: Option<PathBuf>, csub_url: Url, guac_url: Url) -> anyhow::Result<Arc<AppState>> {
+    async fn configure<P>(
+        base: Option<PathBuf>,
+        csub_url: Url,
+        guac_url: Url,
+        provider: P,
+    ) -> anyhow::Result<Arc<AppState>>
+    where
+        P: TokenProvider + Clone + 'static,
+    {
         let base = base.unwrap_or_else(|| ".".into());
-        let state = Arc::new(AppState::new(base, csub_url, guac_url).await?);
+        let state = Arc::new(AppState::new(base, csub_url, guac_url, provider).await?);
         Ok(state)
     }
 }

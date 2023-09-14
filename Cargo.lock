@@ -1638,12 +1638,14 @@ dependencies = [
  "reqwest",
  "serde",
  "serde_json",
+ "trustification-auth",
 ]
 
 [[package]]
 name = "collector-nvd"
 version = "0.1.0"
 dependencies = [
+ "actix-cors",
  "actix-web",
  "anyhow",
  "chrono",
@@ -1674,6 +1676,7 @@ dependencies = [
 name = "collector-osv"
 version = "0.1.0"
 dependencies = [
+ "actix-cors",
  "actix-web",
  "anyhow",
  "chrono",
@@ -1702,6 +1705,7 @@ dependencies = [
 name = "collector-snyk"
 version = "0.1.0"
 dependencies = [
+ "actix-cors",
  "actix-web",
  "anyhow",
  "chrono",

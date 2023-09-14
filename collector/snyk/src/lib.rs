@@ -6,8 +6,9 @@ use std::sync::Arc;
 use reqwest::Url;
 use tokio::sync::RwLock;
 
-use crate::client::schema::{Issue, IssueAttributes, Reference, Severity};
-use crate::server::{deregister_with_collectorist, register_with_collectorist};
+use trustification_auth::auth::AuthConfigArguments;
+use trustification_auth::authenticator::Authenticator;
+use trustification_auth::authorizer::Authorizer;
 use trustification_auth::client::{OpenIdTokenProviderConfigArguments, TokenProvider};
 use trustification_infrastructure::endpoint::CollectorSnyk;
 use trustification_infrastructure::health::checks::AtomicBoolStateCheck;
@@ -16,6 +17,9 @@ use trustification_infrastructure::{
     Infrastructure, InfrastructureConfig,
 };
 use v11y_client::{ScoreType, Vulnerability};
+
+use crate::client::schema::{Issue, IssueAttributes, Reference, Severity};
+use crate::server::{deregister_with_collectorist, register_with_collectorist};
 
 //use crate::client::schema::{Reference, Vulnerability};
 //use crate::server::{deregister_with_collectorist, register_with_collectorist};
@@ -62,14 +66,20 @@ pub struct Run {
     pub(crate) snyk_token: String,
 
     #[command(flatten)]
+    pub auth: AuthConfigArguments,
+
+    #[command(flatten)]
     pub(crate) oidc: OpenIdTokenProviderConfigArguments,
 }
 
 impl Run {
-    pub async fn run(mut self) -> anyhow::Result<ExitCode> {
-        if self.devmode {
-            self.v11y_url = Url::parse("http://localhost:8087").unwrap();
-            self.collectorist_url = Url::parse("http://localhost:8088").unwrap();
+    pub async fn run(self) -> anyhow::Result<ExitCode> {
+        let (authn, authz) = self.auth.split(self.devmode)?.unzip();
+        let authenticator: Option<Arc<Authenticator>> = Authenticator::from_config(authn).await?.map(Arc::new);
+        let authorizer = Authorizer::new(authz);
+
+        if authenticator.is_none() {
+            log::warn!("Authentication is disabled");
         }
 
         Infrastructure::from(self.infra)
@@ -101,7 +111,7 @@ impl Run {
                         )
                         .await;
 
-                    let server = server::run(state.clone(), self.api.socket_addr()?);
+                    let server = server::run(state.clone(), self.api.socket_addr()?, authenticator, authorizer);
                     let register = register_with_collectorist(state.clone(), self.advertise);
 
                     tokio::select! {

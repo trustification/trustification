@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use trustification_auth::client::{TokenInjector, TokenProvider};
 
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
@@ -46,12 +47,17 @@ impl CollectorUrl {
 
 pub struct CollectorClient {
     url: CollectorUrl,
+    provider: Box<dyn TokenProvider>,
 }
 
 impl CollectorClient {
-    pub fn new(url: Url) -> Self {
+    pub fn new<P>(url: Url, provider: P) -> Self
+    where
+        P: TokenProvider + 'static,
+    {
         Self {
             url: CollectorUrl::new(url),
+            provider: Box::new(provider),
         }
     }
 
@@ -61,6 +67,8 @@ impl CollectorClient {
     ) -> Result<CollectPackagesResponse, anyhow::Error> {
         let response = reqwest::Client::new()
             .post(self.url.packages_url())
+            .inject_token(self.provider.as_ref())
+            .await?
             .json(&request)
             .send()
             .await?;
@@ -74,6 +82,8 @@ impl CollectorClient {
     ) -> Result<CollectVulnerabilitiesResponse, anyhow::Error> {
         let response = reqwest::Client::new()
             .post(self.url.vulnerabilities_url())
+            .inject_token(self.provider.as_ref())
+            .await?
             .json(&request)
             .send()
             .await?;
