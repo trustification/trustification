@@ -1,20 +1,11 @@
-use crate::AppState;
-use actix_cors::Cors;
-use actix_web::{web, HttpServer, ResponseError};
-use actix_web_prom::PrometheusMetricsBuilder;
-use anyhow::anyhow;
+use actix_web::{web, ResponseError};
 use derive_more::{Display, Error};
-use std::net::SocketAddr;
 use std::sync::Arc;
 use trustification_auth::{
     authenticator::Authenticator,
-    authorizer::Authorizer,
     swagger_ui::{swagger_ui_with_auth, SwaggerUiOidc},
 };
-use trustification_infrastructure::{
-    app::{new_app, AppOptions},
-    new_auth, Metrics,
-};
+use trustification_infrastructure::new_auth;
 use utoipa::OpenApi;
 
 mod vulnerability;
@@ -44,44 +35,6 @@ mod vulnerability;
     )
 )]
 pub struct ApiDoc;
-
-pub async fn run<B: Into<SocketAddr>>(
-    state: Arc<AppState>,
-    bind: B,
-    metrics: Arc<Metrics>,
-    authenticator: Option<Arc<Authenticator>>,
-    authorizer: Authorizer,
-    swagger_oidc: Option<Arc<SwaggerUiOidc>>,
-) -> Result<(), anyhow::Error> {
-    let addr = bind.into();
-    log::debug!("listening on {}", addr);
-
-    let http_metrics = PrometheusMetricsBuilder::new("bombastic_api")
-        .registry(metrics.registry().clone())
-        .build()
-        .map_err(|_| anyhow!("Error registering HTTP metrics"))?;
-
-    HttpServer::new(move || {
-        let http_metrics = http_metrics.clone();
-        let cors = Cors::permissive();
-        let authenticator = authenticator.clone();
-        let authorizer = authorizer.clone();
-        let swagger_oidc = swagger_oidc.clone();
-
-        new_app(AppOptions {
-            cors: Some(cors),
-            metrics: Some(http_metrics),
-            authenticator: None,
-            authorizer,
-        })
-        .app_data(web::Data::from(state.clone()))
-        .configure(|cfg| config(cfg, authenticator, swagger_oidc))
-    })
-    .bind(addr)?
-    .run()
-    .await?;
-    Ok(())
-}
 
 pub fn config(
     cfg: &mut web::ServiceConfig,

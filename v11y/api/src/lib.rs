@@ -1,13 +1,13 @@
-use std::net::SocketAddr;
+use actix_web::web;
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
-use std::str::FromStr;
 use std::sync::Arc;
 use trustification_auth::auth::AuthConfigArguments;
 use trustification_auth::authenticator::Authenticator;
 use trustification_auth::authorizer::Authorizer;
 use trustification_auth::swagger_ui::{SwaggerUiOidc, SwaggerUiOidcConfig};
 
+use trustification_infrastructure::app::http::{HttpServerBuilder, HttpServerConfig};
 use trustification_infrastructure::endpoint::{EndpointServerConfig, V11y};
 use trustification_infrastructure::{Infrastructure, InfrastructureConfig};
 
@@ -37,6 +37,9 @@ pub struct Run {
 
     #[command(flatten)]
     pub swagger_ui_oidc: SwaggerUiOidcConfig,
+
+    #[command(flatten)]
+    pub http: HttpServerConfig,
 }
 
 impl Run {
@@ -60,18 +63,19 @@ impl Run {
                 |_context| async { Ok(()) },
                 |context| async move {
                     let state = Self::configure(self.storage_base).await?;
-                    let addr = SocketAddr::from_str(&format!("{}:{}", self.api.bind, self.api.port))?;
-                    let server = server::run(
-                        state.clone(),
-                        addr,
-                        context.metrics,
-                        authenticator,
-                        authorizer,
-                        swagger_oidc,
-                    );
 
-                    server.await?;
-                    Ok(())
+                    let http = HttpServerBuilder::try_from(self.http)?
+                        .metrics(context.metrics.registry().clone(), "v11y_api")
+                        .authorizer(authorizer.clone())
+                        .configure(move |svc| {
+                            let authenticator = authenticator.clone();
+                            let swagger_oidc = swagger_oidc.clone();
+
+                            svc.app_data(web::Data::from(state.clone()))
+                                .configure(|cfg| server::config(cfg, authenticator, swagger_oidc));
+                        });
+
+                    http.run().await
                 },
             )
             .await?;
