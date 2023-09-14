@@ -30,6 +30,14 @@ pub struct EndpointServerConfig<E: Endpoint> {
 }
 
 impl<E: Endpoint> EndpointServerConfig<E> {
+    pub fn new(bind: &str, port: u16) -> Self {
+        Self {
+            bind: bind.to_string(),
+            port,
+            _marker: Default::default(),
+        }
+    }
+
     pub fn socket_addr(&self) -> Result<SocketAddr, AddrParseError> {
         SocketAddr::from_str(&format!("{}:{}", self.bind, self.port))
     }
