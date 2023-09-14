@@ -1,13 +1,16 @@
 use std::fmt::Debug;
-use std::net::{SocketAddr, TcpListener};
+use std::net::TcpListener;
 use std::str::FromStr;
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
 use std::time::Duration;
 
-use actix_cors::Cors;
 use actix_web::middleware::{Compress, Logger};
-use actix_web::{post, web, HttpResponse, HttpServer, Responder, ResponseError};
+use actix_web::{post, web, HttpResponse, Responder, ResponseError};
+use collector_client::{
+    CollectPackagesRequest, CollectPackagesResponse, CollectVulnerabilitiesRequest, CollectVulnerabilitiesResponse,
+};
+use collectorist_client::{CollectorConfig, Interest};
 use derive_more::Display;
 use guac::client::intrinsic::certify_vuln::ScanMetadataInput;
 use guac::client::intrinsic::vulnerability::VulnerabilityInputSpec;
@@ -16,17 +19,12 @@ use log::{info, warn};
 use packageurl::PackageUrl;
 use reqwest::Url;
 use tokio::time::sleep;
-use utoipa::OpenApi;
-use utoipa_swagger_ui::SwaggerUi;
-
-use collector_client::{
-    CollectPackagesRequest, CollectPackagesResponse, CollectVulnerabilitiesRequest, CollectVulnerabilitiesResponse,
-};
-use collectorist_client::{CollectorConfig, Interest};
 use trustification_auth::authenticator::Authenticator;
 use trustification_auth::authorizer::Authorizer;
-use trustification_infrastructure::app::{new_app, AppOptions};
-use trustification_infrastructure::new_auth;
+use trustification_infrastructure::app::http::{HttpServerBuilder, HttpServerConfig};
+use trustification_infrastructure::{new_auth, MainContext};
+use utoipa::OpenApi;
+use utoipa_swagger_ui::SwaggerUi;
 
 use crate::{
     client::{schema::Package, QueryBatchRequest, QueryPackageRequest},
@@ -54,37 +52,30 @@ impl ResponseError for Error {}
 #[openapi(paths(crate::server::collect_packages, crate::server::collect_vulnerabilities,))]
 pub struct ApiDoc;
 
-pub async fn run<B: Into<SocketAddr>>(
+pub async fn run(
+    context: MainContext<()>,
     state: Arc<AppState>,
-    bind: B,
+    http: HttpServerConfig,
     authenticator: Option<Arc<Authenticator>>,
     authorizer: Authorizer,
 ) -> Result<(), anyhow::Error> {
-    let listener = TcpListener::bind(bind.into())?;
+    let listener = TcpListener::bind(&http.bind_addr)?;
     let addr = listener.local_addr()?;
-    log::debug!("listening on {}", addr);
-
-    let state = web::Data::from(state);
+    log::info!("listening on {}", addr);
+    log::info!("collectorist at {}", state.collectorist_client.register_collector_url());
 
     state.addr.write().await.replace(addr);
 
-    HttpServer::new(move || {
-        let cors = Cors::permissive();
-        let authenticator = authenticator.clone();
-        let authorizer = authorizer.clone();
-        new_app(AppOptions {
-            cors: Some(cors),
-            metrics: None,
-            authenticator: None,
-            authorizer,
+    HttpServerBuilder::try_from(http)?
+        .authorizer(authorizer)
+        .metrics(context.metrics.registry().clone(), "collector_osv")
+        .configure(move |svc| {
+            svc.app_data(web::Data::from(state.clone()));
+            config(svc, authenticator.clone());
         })
-        .app_data(state.clone())
-        .configure(|cfg| config(cfg, authenticator))
-    })
-    .listen(listener)?
-    .run()
-    .await?;
-    Ok(())
+        .listen(listener)
+        .run()
+        .await
 }
 
 pub fn config(cfg: &mut web::ServiceConfig, auth: Option<Arc<Authenticator>>) {

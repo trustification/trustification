@@ -1,28 +1,25 @@
-use actix_cors::Cors;
-use std::net::{SocketAddr, TcpListener};
+use std::net::TcpListener;
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
 use std::time::Duration;
 
+use crate::AppState;
 use actix_web::middleware::{Compress, Logger};
-use actix_web::{post, web, HttpResponse, HttpServer, Responder, ResponseError};
+use actix_web::{post, web, HttpResponse, Responder, ResponseError};
+use collector_client::CollectVulnerabilitiesRequest;
+use collectorist_client::{CollectorConfig, Interest};
 use derive_more::Display;
 use guac::client::intrinsic::vulnerability::VulnerabilityInputSpec;
 use guac::client::GuacClient;
 use log::{info, warn};
 use reqwest::Url;
 use tokio::time::sleep;
-use utoipa::OpenApi;
-use utoipa_swagger_ui::SwaggerUi;
-
-use collector_client::CollectVulnerabilitiesRequest;
-use collectorist_client::{CollectorConfig, Interest};
 use trustification_auth::authenticator::Authenticator;
 use trustification_auth::authorizer::Authorizer;
-use trustification_infrastructure::app::{new_app, AppOptions};
-use trustification_infrastructure::new_auth;
-
-use crate::SharedState;
+use trustification_infrastructure::app::http::{HttpServerBuilder, HttpServerConfig};
+use trustification_infrastructure::{new_auth, MainContext};
+use utoipa::OpenApi;
+use utoipa_swagger_ui::SwaggerUi;
 
 #[derive(OpenApi)]
 #[openapi(
@@ -52,37 +49,30 @@ pub enum Error {
 
 impl ResponseError for Error {}
 
-pub async fn run<B: Into<SocketAddr>>(
-    state: SharedState,
-    bind: B,
+pub async fn run(
+    context: MainContext<()>,
+    state: Arc<AppState>,
+    http: HttpServerConfig,
     authenticator: Option<Arc<Authenticator>>,
     authorizer: Authorizer,
 ) -> Result<(), anyhow::Error> {
-    let listener = TcpListener::bind(bind.into())?;
+    let listener = TcpListener::bind(&http.bind_addr)?;
     let addr = listener.local_addr()?;
     log::info!("listening on {}", addr);
     log::info!("collectorist at {}", state.collectorist_client.register_collector_url());
 
     state.addr.write().await.replace(addr);
 
-    HttpServer::new(move || {
-        let cors = Cors::permissive();
-        let authenticator = authenticator.clone();
-        let authorizer = authorizer.clone();
-
-        new_app(AppOptions {
-            cors: Some(cors),
-            metrics: None,
-            authenticator: None,
-            authorizer,
+    HttpServerBuilder::try_from(http)?
+        .authorizer(authorizer)
+        .metrics(context.metrics.registry().clone(), "collector_nvd")
+        .configure(move |svc| {
+            svc.app_data(web::Data::from(state.clone()));
+            config(svc, authenticator.clone());
         })
-        .app_data(web::Data::new(state.clone()))
-        .configure(|cfg| config(cfg, authenticator))
-    })
-    .listen(listener)?
-    .run()
-    .await?;
-    Ok(())
+        .listen(listener)
+        .run()
+        .await
 }
 
 #[utoipa::path(
@@ -94,7 +84,7 @@ pub async fn run<B: Into<SocketAddr>>(
 #[post("vulnerabilities")]
 pub async fn collect_vulnerabilities(
     request: web::Json<CollectVulnerabilitiesRequest>,
-    state: web::Data<SharedState>,
+    state: web::Data<AppState>,
 ) -> actix_web::Result<impl Responder> {
     let guac_url = state
         .guac_url
@@ -134,7 +124,7 @@ pub fn config(cfg: &mut web::ServiceConfig, auth: Option<Arc<Authenticator>>) {
     .service(SwaggerUi::new("/swagger-ui/{_:.*}").url("/openapi.json", ApiDoc::openapi()));
 }
 
-pub async fn register_with_collectorist(state: &SharedState, advertise: Option<Url>) {
+pub async fn register_with_collectorist(state: &AppState, advertise: Option<Url>) {
     loop {
         if let Some(addr) = *state.addr.read().await {
             if !state.connected.load(Ordering::Relaxed) {
@@ -170,7 +160,7 @@ pub async fn register_with_collectorist(state: &SharedState, advertise: Option<U
     }
 }
 
-pub async fn deregister_with_collectorist(state: &SharedState) {
+pub async fn deregister_with_collectorist(state: &AppState) {
     if state.collectorist_client.deregister_collector().await.is_ok() {
         info!("deregistered with collectorist");
     } else {

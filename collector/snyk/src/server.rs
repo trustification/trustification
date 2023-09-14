@@ -1,12 +1,11 @@
-use std::net::{SocketAddr, TcpListener};
+use std::net::TcpListener;
 use std::str::FromStr;
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
 use std::time::Duration;
 
-use actix_cors::Cors;
 use actix_web::middleware::{Compress, Logger};
-use actix_web::{post, web, HttpResponse, HttpServer, Responder, ResponseError};
+use actix_web::{post, web, HttpResponse, Responder, ResponseError};
 use derive_more::Display;
 use guac::client::intrinsic::certify_vuln::ScanMetadataInput;
 use guac::client::intrinsic::vulnerability::VulnerabilityInputSpec;
@@ -22,12 +21,12 @@ use collector_client::CollectPackagesRequest;
 use collectorist_client::{CollectorConfig, Interest};
 use trustification_auth::authenticator::Authenticator;
 use trustification_auth::authorizer::Authorizer;
-use trustification_infrastructure::app::{new_app, AppOptions};
-use trustification_infrastructure::new_auth;
+use trustification_infrastructure::app::http::{HttpServerBuilder, HttpServerConfig};
+use trustification_infrastructure::{new_auth, MainContext};
 use v11y_client::Vulnerability;
 
 use crate::client::SnykClient;
-use crate::SharedState;
+use crate::{AppState, SharedState};
 
 #[derive(OpenApi)]
 #[openapi(
@@ -60,36 +59,30 @@ pub enum Error {
 
 impl ResponseError for Error {}
 
-pub async fn run<B: Into<SocketAddr>>(
-    state: SharedState,
-    bind: B,
+pub async fn run(
+    context: MainContext<()>,
+    state: Arc<AppState>,
+    http: HttpServerConfig,
     authenticator: Option<Arc<Authenticator>>,
     authorizer: Authorizer,
 ) -> Result<(), anyhow::Error> {
-    let listener = TcpListener::bind(bind.into())?;
+    let listener = TcpListener::bind(&http.bind_addr)?;
     let addr = listener.local_addr()?;
     log::info!("listening on {}", addr);
+    log::info!("collectorist at {}", state.collectorist_client.register_collector_url());
 
     state.addr.write().await.replace(addr);
 
-    HttpServer::new(move || {
-        let cors = Cors::permissive();
-        let authenticator = authenticator.clone();
-        let authorizer = authorizer.clone();
-
-        new_app(AppOptions {
-            cors: Some(cors),
-            metrics: None,
-            authenticator: None,
-            authorizer,
+    HttpServerBuilder::try_from(http)?
+        .authorizer(authorizer)
+        .metrics(context.metrics.registry().clone(), "collector_snyk")
+        .configure(move |svc| {
+            svc.app_data(web::Data::from(state.clone()));
+            config(svc, authenticator.clone());
         })
-        .app_data(web::Data::new(state.clone()))
-        .configure(|cfg| config(cfg, authenticator))
-    })
-    .listen(listener)?
-    .run()
-    .await?;
-    Ok(())
+        .listen(listener)
+        .run()
+        .await
 }
 
 #[utoipa::path(
