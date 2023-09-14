@@ -52,6 +52,7 @@ impl Run {
         Infrastructure::from(self.infra)
             .run_with_config(
                 "vexination-indexer",
+                |_context| async { Ok(()) },
                 |context| async move {
                     let index = block_in_place(|| {
                         IndexStore::new(&self.storage, &self.index, Index::new(), context.metrics.registry())

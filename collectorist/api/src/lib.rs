@@ -10,6 +10,7 @@ use trustification_auth::{
     authorizer::Authorizer,
     swagger_ui::{SwaggerUiOidc, SwaggerUiOidcConfig},
 };
+use trustification_infrastructure::health::checks::Probe;
 use trustification_infrastructure::{
     endpoint::{self, Endpoint},
     endpoint::{Collectorist, EndpointServerConfig},
@@ -50,7 +51,7 @@ pub struct Run {
     pub(crate) guac_url: Url,
 
     /// Base path to the database store. Defaults to the local directory.
-    #[arg(env, short = 'b', long = "storage-base")]
+    #[arg(env, long = "storage-base")]
     pub(crate) storage_base: Option<PathBuf>,
 
     #[command(flatten)]
@@ -84,23 +85,32 @@ impl Run {
         }
 
         Infrastructure::from(self.infra)
-            .run("collectorist-api", |context| async move {
-                let state = Self::configure(self.storage_base, self.csub_url, self.guac_url).await?;
-                let server = server::run(
-                    state.clone(),
-                    self.api.socket_addr()?,
-                    context.metrics,
-                    authenticator,
-                    authorizer,
-                    swagger_oidc,
-                );
-                let listener = state.coordinator.listen(&state);
-                tokio::select! {
-                     _ = listener => { }
-                     _ = server => { }
-                }
-                Ok(())
-            })
+            .run(
+                "collectorist-api",
+                |_context| async { Ok(()) },
+                |context| async move {
+                    let state = Self::configure(self.storage_base, self.csub_url, self.guac_url).await?;
+
+                    let (probe, check) = Probe::new("Not connected to CSUB");
+
+                    context.health.readiness.register("connected.collectSub", check).await;
+
+                    let server = server::run(
+                        state.clone(),
+                        self.api.socket_addr()?,
+                        context.metrics,
+                        authenticator,
+                        authorizer,
+                        swagger_oidc,
+                    );
+                    let listener = state.coordinator.listen(&state, probe);
+                    tokio::select! {
+                         _ = listener => { }
+                         _ = server => { }
+                    }
+                    Ok(())
+                },
+            )
             .await?;
 
         Ok(ExitCode::SUCCESS)

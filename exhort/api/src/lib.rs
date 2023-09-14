@@ -28,12 +28,16 @@ pub struct Run {
 
 impl Run {
     pub async fn run(self) -> anyhow::Result<ExitCode> {
-        let infra = Infrastructure::from(self.infra).run("exhort-api", |_metrics| async move {
-            let state = Self::configure(self.collectorist_url)?;
-            let addr = SocketAddr::from_str(&format!("{}:{}", self.bind, self.port))?;
+        let infra = Infrastructure::from(self.infra).run(
+            "exhort-api",
+            |_context| async { Ok(()) },
+            |_context| async move {
+                let state = Self::configure(self.collectorist_url)?;
+                let addr = SocketAddr::from_str(&format!("{}:{}", self.bind, self.port))?;
 
-            server::run(state, addr).await
-        });
+                server::run(state, addr).await
+            },
+        );
 
         infra.await?;
 

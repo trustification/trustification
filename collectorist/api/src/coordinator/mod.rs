@@ -21,6 +21,7 @@ use guac::collectsub::{CollectSubClient, Entry, Filter};
 use log::{info, warn};
 use reqwest::Url;
 use tokio::time::{interval, sleep};
+use trustification_infrastructure::health::checks::Probe;
 
 use crate::state::AppState;
 
@@ -33,11 +34,12 @@ impl Coordinator {
         Self { csub_url }
     }
 
-    pub async fn listen(&self, state: &AppState) {
+    pub async fn listen(&self, state: &AppState, probe: Probe) {
         let listener = async move {
             loop {
                 if let Ok(mut csub) = CollectSubClient::new(self.csub_url.to_string()).await {
                     info!("connected to GUAC collect-sub: {}", self.csub_url);
+                    probe.set(true);
                     let mut sleep = interval(tokio::time::Duration::from_millis(1000));
 
                     let mut since_time = SystemTime::now();

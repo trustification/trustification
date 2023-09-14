@@ -7255,6 +7255,7 @@ dependencies = [
  "actix-web-opentelemetry",
  "actix-web-prom",
  "anyhow",
+ "async-trait",
  "clap",
  "env_logger",
  "futures",

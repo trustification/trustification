@@ -55,42 +55,46 @@ const CHANGE_ADDRESS: &str = "https://access.redhat.com/security/data/sbom/beta/
 impl Run {
     pub async fn run(self) -> anyhow::Result<ExitCode> {
         Infrastructure::from(self.infra)
-            .run("bombastic-walker", |_| async move {
-                let provider = self
-                    .config
-                    .oidc
-                    .clone()
-                    .into_provider_or_devmode(self.config.devmode)
-                    .await?;
+            .run(
+                "bombastic-walker",
+                |_context| async { Ok(()) },
+                |_| async move {
+                    let provider = self
+                        .config
+                        .oidc
+                        .clone()
+                        .into_provider_or_devmode(self.config.devmode)
+                        .await?;
 
-                let source = self
-                    .config
-                    .index_source
-                    .clone()
-                    .unwrap_or(Url::parse(CHANGE_ADDRESS).unwrap());
-                let mut watcher = ChangeTracker::new(source.clone());
+                    let source = self
+                        .config
+                        .index_source
+                        .clone()
+                        .unwrap_or(Url::parse(CHANGE_ADDRESS).unwrap());
+                    let mut watcher = ChangeTracker::new(source.clone());
 
-                // remove the "change.csv" segment from the URL
-                let mut source = source;
-                source.path_segments_mut().unwrap().pop();
+                    // remove the "change.csv" segment from the URL
+                    let mut source = source;
+                    source.path_segments_mut().unwrap().pop();
 
-                // add ProdSec signing key to trusted gpg keys
-                self.config
-                    .script_context
-                    .setup_gpg(self.config.signing_key_source.as_ref())?;
+                    // add ProdSec signing key to trusted gpg keys
+                    self.config
+                        .script_context
+                        .setup_gpg(self.config.signing_key_source.as_ref())?;
 
-                if let Some(sync_interval) = self.config.scan_interval {
-                    let mut interval = tokio::time::interval(sync_interval.into());
-                    loop {
-                        interval.tick().await;
+                    if let Some(sync_interval) = self.config.scan_interval {
+                        let mut interval = tokio::time::interval(sync_interval.into());
+                        loop {
+                            interval.tick().await;
 
+                            Self::call_script(&self.config, &provider, watcher.update().await?, &source).await?;
+                        }
+                    } else {
                         Self::call_script(&self.config, &provider, watcher.update().await?, &source).await?;
                     }
-                } else {
-                    Self::call_script(&self.config, &provider, watcher.update().await?, &source).await?;
-                }
-                Ok(())
-            })
+                    Ok(())
+                },
+            )
             .await?;
 
         Ok(ExitCode::SUCCESS)

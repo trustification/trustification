@@ -8,6 +8,7 @@ use tokio::sync::RwLock;
 
 use trustification_auth::client::{OpenIdTokenProviderConfigArguments, TokenProvider};
 use trustification_infrastructure::endpoint::CollectorNvd;
+use trustification_infrastructure::health::checks::AtomicBoolStateCheck;
 use trustification_infrastructure::{
     endpoint::{self, Endpoint, EndpointServerConfig},
     Infrastructure, InfrastructureConfig,
@@ -60,29 +61,52 @@ pub struct Run {
 }
 
 impl Run {
-    pub async fn run(self) -> anyhow::Result<ExitCode> {
+    pub async fn run(mut self) -> anyhow::Result<ExitCode> {
+        if self.devmode {
+            self.v11y_url = Url::parse("http://localhost:8087").unwrap();
+            self.collectorist_url = Url::parse("http://localhost:8088").unwrap();
+        }
+
         Infrastructure::from(self.infra)
-            .run("collector-nvd", |_metrics| async move {
-                let provider = self.oidc.into_provider_or_devmode(self.devmode).await?;
-                let state = Self::configure(
-                    "nvd".into(),
-                    self.collectorist_url,
-                    self.v11y_url,
-                    self.nvd_api_key,
-                    provider,
-                )
-                .await?;
-                let server = server::run(state.clone(), self.api.socket_addr()?);
-                let register = register_with_collectorist(&state, self.advertise);
+            .run(
+                "collector-nvd",
+                |_context| async { Ok(()) },
+                |context| async move {
+                    let provider = self.oidc.into_provider_or_devmode(self.devmode).await?;
+                    let state = Self::configure(
+                        "nvd".into(),
+                        self.collectorist_url,
+                        self.v11y_url,
+                        self.nvd_api_key,
+                        provider,
+                    )
+                    .await?;
 
-                tokio::select! {
-                     _ = server => { }
-                     _ = register => { }
-                }
+                    context
+                        .health
+                        .readiness
+                        .register(
+                            "collectorist.registered",
+                            AtomicBoolStateCheck::new(
+                                state.clone(),
+                                |state| &state.connected,
+                                "Not registered with collectorist",
+                            ),
+                        )
+                        .await;
 
-                deregister_with_collectorist(&state).await;
-                Ok(())
-            })
+                    let server = server::run(state.clone(), self.api.socket_addr()?);
+                    let register = register_with_collectorist(&state, self.advertise);
+
+                    tokio::select! {
+                         _ = server => { }
+                         _ = register => { }
+                    }
+
+                    deregister_with_collectorist(&state).await;
+                    Ok(())
+                },
+            )
             .await?;
 
         Ok(ExitCode::SUCCESS)
