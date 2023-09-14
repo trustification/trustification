@@ -74,26 +74,22 @@ impl TryFrom<HttpServerConfig> for HttpServerBuilder {
     type Error = anyhow::Error;
 
     fn try_from(value: HttpServerConfig) -> Result<Self, Self::Error> {
-        let result = HttpServerBuilder::new().workers(value.workers);
-
-        let addr = SocketAddr::from_str(&value.bind_addr).context("parse bind address")?;
-
-        let result = match value.tls_enabled {
-            true => result.bind(addr),
-            false => result.bind_tls(
-                addr,
-                value.tls_key_file.ok_or_else(|| {
-                    anyhow!("TLS enabled but no key file configured (use --http-server-tls-key-file)")
-                })?,
-                value.tls_certificate_file.ok_or_else(|| {
-                    anyhow!("TLS enabled but no certificate file configured (use --http-server-tls-certificate-file)")
-                })?,
-            ),
-        };
-
-        let result = result
+        let mut result = HttpServerBuilder::new()
+            .workers(value.workers)
+            .bind(SocketAddr::from_str(&value.bind_addr).context("parse bind address")?)
             .request_limit(value.request_limit.0 as _)
             .json_limit(value.json_limit.0 as _);
+
+        if value.tls_enabled {
+            result = result.tls(TlsConfiguration {
+                key: value.tls_key_file.ok_or_else(|| {
+                    anyhow!("TLS enabled but no key file configured (use --http-server-tls-key-file)")
+                })?,
+                certificate: value.tls_certificate_file.ok_or_else(|| {
+                    anyhow!("TLS enabled but no certificate file configured (use --http-server-tls-certificate-file)")
+                })?,
+            });
+        }
 
         Ok(result)
     }
@@ -104,6 +100,8 @@ pub type ConfiguratorFn = dyn Fn(&mut ServiceConfig) + Send + Sync;
 pub struct HttpServerBuilder {
     configurator: Option<Arc<ConfiguratorFn>>,
     bind: Bind,
+    tls: Option<TlsConfiguration>,
+
     metrics_factory: Option<Arc<dyn Fn() -> anyhow::Result<PrometheusMetrics> + Send + Sync>>,
     cors_factory: Option<Arc<dyn Fn() -> Cors + Send + Sync>>,
     authenticator: Option<Arc<Authenticator>>,
@@ -114,14 +112,14 @@ pub struct HttpServerBuilder {
     request_limit: Option<usize>,
 }
 
+pub struct TlsConfiguration {
+    certificate: PathBuf,
+    key: PathBuf,
+}
+
 pub enum Bind {
     Listener(TcpListener),
     Plain(SocketAddr),
-    Tls {
-        address: SocketAddr,
-        certificate: PathBuf,
-        key: PathBuf,
-    },
 }
 
 impl Default for HttpServerBuilder {
@@ -135,6 +133,7 @@ impl HttpServerBuilder {
         Self {
             configurator: None,
             bind: Bind::Plain(DEFAULT_ADDR),
+            tls: None,
             metrics_factory: None,
             cors_factory: Some(Arc::new(Cors::permissive)),
             authenticator: None,
@@ -211,17 +210,8 @@ impl HttpServerBuilder {
         self
     }
 
-    pub fn bind_tls(
-        mut self,
-        addr: impl Into<SocketAddr>,
-        key: impl Into<PathBuf>,
-        certificate: impl Into<PathBuf>,
-    ) -> Self {
-        self.bind = Bind::Tls {
-            address: addr.into(),
-            certificate: certificate.into(),
-            key: key.into(),
-        };
+    pub fn tls(mut self, tls: impl Into<Option<TlsConfiguration>>) -> Self {
+        self.tls = tls.into();
         self
     }
 
@@ -277,28 +267,30 @@ impl HttpServerBuilder {
             http = http.workers(self.workers);
         }
 
+        let tls = match self.tls {
+            Some(tls) => {
+                let mut acceptor = SslAcceptor::mozilla_modern_v5(SslMethod::tls_server())?;
+                acceptor.set_certificate_chain_file(tls.certificate)?;
+                acceptor.set_private_key_file(tls.key, SslFiletype::PEM)?;
+                Some(acceptor)
+            }
+            None => None,
+        };
+
         match self.bind {
             Bind::Listener(listener) => {
                 log::info!("Binding to provided listener: {listener:?}");
-                http = http.listen(listener).context("Binding to listener")?;
+                http = match tls {
+                    Some(tls) => http.listen_openssl(listener, tls)?,
+                    None => http.listen(listener)?,
+                };
             }
             Bind::Plain(addr) => {
-                log::info!("Binding to (plain): {addr}");
-
-                http = http.bind(addr)?;
-            }
-            Bind::Tls {
-                address,
-                key,
-                certificate,
-            } => {
-                log::info!("Binding to (TLS): {address}");
-
-                let mut acceptor = SslAcceptor::mozilla_modern_v5(SslMethod::tls_server())?;
-                acceptor.set_certificate_chain_file(certificate)?;
-                acceptor.set_private_key_file(key, SslFiletype::PEM)?;
-
-                http = http.bind_openssl(address, acceptor)?;
+                log::info!("Binding to: {addr}");
+                http = match tls {
+                    Some(tls) => http.bind_openssl(addr, tls)?,
+                    None => http.bind(addr)?,
+                };
             }
         }
 

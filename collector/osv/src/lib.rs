@@ -11,6 +11,7 @@ use trustification_auth::authorizer::Authorizer;
 
 use crate::client::OsvClient;
 use trustification_auth::client::{OpenIdTokenProviderConfigArguments, TokenProvider};
+use trustification_infrastructure::app::http::HttpServerConfig;
 use trustification_infrastructure::{
     endpoint::{self, CollectorOsv, Endpoint, EndpointServerConfig},
     health::checks::AtomicBoolStateCheck,
@@ -59,6 +60,9 @@ pub struct Run {
 
     #[command(flatten)]
     pub(crate) oidc: OpenIdTokenProviderConfigArguments,
+
+    #[command(flatten)]
+    pub(crate) http: HttpServerConfig,
 }
 
 impl Run {
@@ -92,7 +96,7 @@ impl Run {
                         )
                         .await;
 
-                    let server = server::run(state.clone(), self.api.socket_addr()?, authenticator, authorizer);
+                    let server = server::run(context, state.clone(), self.http, authenticator, authorizer);
                     let register = register_with_collectorist(&state, self.advertise);
 
                     tokio::select! {
