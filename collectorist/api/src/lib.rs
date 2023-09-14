@@ -1,24 +1,22 @@
+use crate::state::AppState;
+use actix_web::web;
+use reqwest::Url;
 use std::path::PathBuf;
 use std::process::ExitCode;
 use std::sync::Arc;
-
-use reqwest::Url;
-
-use trustification_auth::client::{OpenIdTokenProviderConfigArguments, TokenProvider};
 use trustification_auth::{
     auth::AuthConfigArguments,
     authenticator::Authenticator,
     authorizer::Authorizer,
+    client::{OpenIdTokenProviderConfigArguments, TokenProvider},
     swagger_ui::{SwaggerUiOidc, SwaggerUiOidcConfig},
 };
-use trustification_infrastructure::health::checks::Probe;
 use trustification_infrastructure::{
-    endpoint::{self, Endpoint},
-    endpoint::{Collectorist, EndpointServerConfig},
+    app::http::{HttpServerBuilder, HttpServerConfig},
+    endpoint::{self, Collectorist, Endpoint, EndpointServerConfig},
+    health::checks::Probe,
     Infrastructure, InfrastructureConfig,
 };
-
-use crate::state::AppState;
 
 mod coordinator;
 mod db;
@@ -65,6 +63,9 @@ pub struct Run {
 
     #[command(flatten)]
     pub(crate) oidc: OpenIdTokenProviderConfigArguments,
+
+    #[command(flatten)]
+    pub http: HttpServerConfig,
 }
 
 impl Run {
@@ -94,14 +95,24 @@ impl Run {
 
                     context.health.readiness.register("connected.collectSub", check).await;
 
-                    let server = server::run(
-                        state.clone(),
-                        self.api.socket_addr()?,
-                        context.metrics,
-                        authenticator,
-                        authorizer,
-                        swagger_oidc,
-                    );
+                    let server = {
+                        let state = state.clone();
+                        async move {
+                            let http = HttpServerBuilder::try_from(self.http)?
+                                .metrics(context.metrics.registry().clone(), "v11y_api")
+                                .authorizer(authorizer.clone())
+                                .configure(move |svc| {
+                                    let authenticator = authenticator.clone();
+                                    let swagger_oidc = swagger_oidc.clone();
+
+                                    svc.app_data(web::Data::from(state.clone()))
+                                        .configure(|cfg| server::config(cfg, authenticator, swagger_oidc));
+                                });
+
+                            http.run().await
+                        }
+                    };
+
                     let listener = state.coordinator.listen(&state, probe);
                     tokio::select! {
                          _ = listener => { }
