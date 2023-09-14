@@ -44,6 +44,10 @@ impl Default for InfrastructureConfig {
     }
 }
 
+pub struct InfrastructureContext {
+    pub metrics: Arc<Metrics>,
+}
+
 pub async fn index(req: HttpRequest) -> HttpResponse {
     let conn = req.connection_info();
 
@@ -160,11 +164,15 @@ impl Infrastructure {
         configurator: impl FnOnce(&mut ServiceConfig) + Clone + Send + 'static,
     ) -> anyhow::Result<()>
     where
-        F: FnOnce(Arc<Metrics>) -> Fut,
+        F: FnOnce(InfrastructureContext) -> Fut,
         Fut: Future<Output = anyhow::Result<()>>,
     {
+        let context = InfrastructureContext {
+            metrics: self.metrics.clone(),
+        };
+
         init_tracing(id, self.config.enable_tracing.into());
-        let main = Box::pin(main(self.metrics.clone())) as Pin<Box<dyn Future<Output = anyhow::Result<()>>>>;
+        let main = Box::pin(main(context)) as Pin<Box<dyn Future<Output = anyhow::Result<()>>>>;
         let runner = Box::pin(self.start_internal(configurator).await?);
         let sigint = Box::pin(async { signal::ctrl_c().await.context("termination failed") });
 
@@ -186,7 +194,7 @@ impl Infrastructure {
 
     pub async fn run<F, Fut>(self, id: &str, main: F) -> anyhow::Result<()>
     where
-        F: FnOnce(Arc<Metrics>) -> Fut,
+        F: FnOnce(InfrastructureContext) -> Fut,
         Fut: Future<Output = anyhow::Result<()>>,
     {
         self.run_with_config(id, main, |_| {}).await

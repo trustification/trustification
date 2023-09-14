@@ -51,18 +51,18 @@ impl Run {
         Infrastructure::from(self.infra)
             .run_with_config(
                 "bombastic-indexer",
-                |metrics| async move {
+                |context| async move {
                     let index = block_in_place(|| {
                         IndexStore::new(
                             &self.storage,
                             &self.index,
                             bombastic_index::Index::new(),
-                            metrics.registry(),
+                            context.metrics.registry(),
                         )
                     })?;
-                    let storage = Storage::new(storage.process("bombastic", self.devmode), metrics.registry())?;
+                    let storage = Storage::new(storage.process("bombastic", self.devmode), context.metrics.registry())?;
 
-                    let bus = self.bus.create(metrics.registry()).await?;
+                    let bus = self.bus.create(context.metrics.registry()).await?;
                     if self.devmode {
                         bus.create(&[self.stored_topic.as_str()]).await?;
                     }

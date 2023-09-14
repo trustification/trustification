@@ -52,12 +52,13 @@ impl Run {
         Infrastructure::from(self.infra)
             .run_with_config(
                 "vexination-indexer",
-                |metrics| async move {
+                |context| async move {
                     let index = block_in_place(|| {
-                        IndexStore::new(&self.storage, &self.index, Index::new(), metrics.registry())
+                        IndexStore::new(&self.storage, &self.index, Index::new(), context.metrics.registry())
                     })?;
-                    let storage = Storage::new(storage.process("vexination", self.devmode), metrics.registry())?;
-                    let bus = self.bus.create(metrics.registry()).await?;
+                    let storage =
+                        Storage::new(storage.process("vexination", self.devmode), context.metrics.registry())?;
+                    let bus = self.bus.create(context.metrics.registry()).await?;
                     if self.devmode {
                         bus.create(&[self.stored_topic.as_str()]).await?;
                     }

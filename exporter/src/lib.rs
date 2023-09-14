@@ -58,7 +58,7 @@ pub struct Run {
 impl Run {
     pub async fn run(self) -> anyhow::Result<ExitCode> {
         Infrastructure::from(self.infra)
-            .run("guac-exporter", |metrics| async move {
+            .run("guac-exporter", |context| async move {
                 let (bucket, topic) = match self.document_type {
                     DocumentType::SBOM => (
                         self.storage.bucket.clone().unwrap_or("bombastic".into()),
@@ -75,8 +75,8 @@ impl Run {
                     bucket,
                     topic
                 );
-                let storage = Storage::new(self.storage.process(&bucket, self.devmode), metrics.registry())?;
-                let bus = self.bus.create(metrics.registry()).await?;
+                let storage = Storage::new(self.storage.process(&bucket, self.devmode), context.metrics.registry())?;
+                let bus = self.bus.create(context.metrics.registry()).await?;
                 let emitter = NatsEmitter::new(&self.guac_url).await?;
                 if self.devmode {
                     bus.create(&[topic.as_str()]).await?;

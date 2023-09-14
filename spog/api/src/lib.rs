@@ -87,9 +87,9 @@ impl Run {
         }
 
         Infrastructure::from(self.infra.clone())
-            .run("spog-api", |metrics| async move {
+            .run("spog-api", |context| async move {
                 let s = server::Server::new(self);
-                s.run(metrics.registry(), listener).await
+                s.run(context.metrics.registry(), listener).await
             })
             .await?;
 

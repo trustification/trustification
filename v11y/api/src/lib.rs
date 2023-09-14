@@ -55,10 +55,17 @@ impl Run {
         }
 
         Infrastructure::from(self.infra)
-            .run("v11y", |metrics| async move {
+            .run("v11y", |context| async move {
                 let state = Self::configure(self.storage_base).await?;
                 let addr = SocketAddr::from_str(&format!("{}:{}", self.api.bind, self.api.port))?;
-                let server = server::run(state.clone(), addr, metrics, authenticator, authorizer, swagger_oidc);
+                let server = server::run(
+                    state.clone(),
+                    addr,
+                    context.metrics,
+                    authenticator,
+                    authorizer,
+                    swagger_oidc,
+                );
 
                 server.await?;
                 Ok(())
