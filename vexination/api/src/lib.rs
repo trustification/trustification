@@ -1,16 +1,6 @@
-use actix_cors::Cors;
-use std::{
-    net::{SocketAddr, TcpListener},
-    process::ExitCode,
-    str::FromStr,
-    sync::Arc,
-    time::Duration,
-};
-
-use actix_web::{web, HttpServer};
-use actix_web_prom::PrometheusMetricsBuilder;
-use anyhow::anyhow;
+use actix_web::web;
 use prometheus::Registry;
+use std::{net::TcpListener, process::ExitCode, sync::Arc, time::Duration};
 use tokio::task::block_in_place;
 use trustification_auth::{
     auth::AuthConfigArguments,
@@ -19,9 +9,9 @@ use trustification_auth::{
     swagger_ui::{SwaggerUiOidc, SwaggerUiOidcConfig},
 };
 use trustification_index::{IndexConfig, IndexStore};
-use trustification_infrastructure::endpoint::{EndpointServerConfig, Vexination};
 use trustification_infrastructure::{
-    app::{new_app, AppOptions},
+    app::http::{HttpServerBuilder, HttpServerConfig},
+    endpoint::{EndpointServerConfig, Vexination},
     health::checks::Probe,
     Infrastructure, InfrastructureConfig,
 };
@@ -52,6 +42,9 @@ pub struct Run {
 
     #[command(flatten)]
     pub index: IndexConfig,
+
+    #[command(flatten)]
+    pub http: HttpServerConfig,
 }
 
 impl Run {
@@ -80,34 +73,23 @@ impl Run {
                     let (probe, check) = Probe::new("Index not synced");
                     context.health.readiness.register("available.index", check).await;
                     let state = Self::configure(index, storage, probe, context.metrics.registry(), self.devmode)?;
-                    let http_metrics = PrometheusMetricsBuilder::new("vexination_api")
-                        .registry(context.metrics.registry().clone())
-                        .build()
-                        .map_err(|_| anyhow!("Error registering HTTP metrics"))?;
-                    let mut srv = HttpServer::new(move || {
-                        let http_metrics = http_metrics.clone();
-                        let cors = Cors::permissive();
-                        let authenticator = authenticator.clone();
-                        let authorizer = authorizer.clone();
-                        let swagger_oidc = swagger_oidc.clone();
+                    let mut http = HttpServerBuilder::try_from(self.http)?
+                        .metrics(context.metrics.registry().clone(), "vexination_api")
+                        .authorizer(authorizer.clone())
+                        .configure(move |svc| {
+                            let authenticator = authenticator.clone();
+                            let swagger_oidc = swagger_oidc.clone();
 
-                        new_app(AppOptions {
-                            cors: Some(cors),
-                            metrics: Some(http_metrics),
-                            authenticator: None,
-                            authorizer,
-                        })
-                        .app_data(web::Data::new(state.clone()))
-                        .configure(move |svc| server::config(svc, authenticator.clone(), swagger_oidc.clone()))
-                    });
-                    srv = match listener {
-                        Some(v) => srv.listen(v)?,
-                        None => {
-                            let addr = SocketAddr::from_str(&format!("{}:{}", self.api.bind, self.api.port))?;
-                            srv.bind(addr)?
-                        }
-                    };
-                    srv.run().await.map_err(anyhow::Error::msg)
+                            svc.app_data(web::Data::new(state.clone()))
+                                .configure(move |svc| server::config(svc, authenticator.clone(), swagger_oidc.clone()));
+                        });
+
+                    if let Some(v) = listener {
+                        // override with provided listener
+                        http = http.listen(v);
+                    }
+
+                    http.run().await
                 },
             )
             .await?;
