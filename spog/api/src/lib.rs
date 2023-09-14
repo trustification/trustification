@@ -3,6 +3,7 @@ use std::{net::TcpListener, path::PathBuf};
 use trustification_analytics::AnalyticsConfig;
 use trustification_auth::client::OpenIdTokenProviderConfigArguments;
 use trustification_auth::{auth::AuthConfigArguments, swagger_ui::SwaggerUiOidcConfig};
+use trustification_infrastructure::app::http::HttpServerConfig;
 use trustification_infrastructure::{Infrastructure, InfrastructureConfig};
 use url::Url;
 
@@ -31,12 +32,6 @@ pub struct Run {
     /// Enable developer mode
     #[arg(long = "devmode", default_value_t = false)]
     pub devmode: bool,
-
-    #[arg(short, long, env, default_value = "0.0.0.0")]
-    pub bind: String,
-
-    #[arg(short = 'p', long = "port", env, default_value_t = 8080)]
-    pub port: u16,
 
     #[arg(short = 'g', long = "guac", default_value = "http://localhost:8085/query")]
     pub guac_url: String,
@@ -77,6 +72,9 @@ pub struct Run {
 
     #[command(flatten)]
     pub analytics: AnalyticsConfig,
+
+    #[command(flatten)]
+    pub http: HttpServerConfig,
 }
 
 impl Run {
@@ -92,7 +90,7 @@ impl Run {
                 |_context| async { Ok(()) },
                 |context| async move {
                     let s = server::Server::new(self);
-                    s.run(context.metrics.registry(), listener).await
+                    s.run(context, listener).await
                 },
             )
             .await?;

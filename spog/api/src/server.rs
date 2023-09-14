@@ -2,23 +2,18 @@ use std::future::Future;
 use std::pin::Pin;
 use std::{net::TcpListener, sync::Arc};
 
-use crate::service::{collectorist, v11y};
 use crate::{
     advisory,
     analyze::{self, CrdaClient},
     config, cve,
     guac::service::GuacService,
     index, sbom,
-    service::{collectorist::CollectoristService, v11y::V11yService},
+    service::{collectorist, collectorist::CollectoristService, v11y, v11y::V11yService},
     Run,
 };
-use actix_cors::Cors;
-use actix_web::{http::header::ContentType, web, HttpResponse, HttpServer};
-use actix_web_prom::PrometheusMetricsBuilder;
-use anyhow::anyhow;
+use actix_web::{http::header::ContentType, web, HttpResponse};
 use futures::future::select_all;
 use http::StatusCode;
-use prometheus::Registry;
 use spog_model::search;
 use trustification_analytics::Tracker;
 use trustification_api::{search::SearchOptions, Apply};
@@ -29,7 +24,7 @@ use trustification_auth::{
     swagger_ui::SwaggerUiOidc,
 };
 use trustification_common::error::ErrorInformation;
-use trustification_infrastructure::app::{new_app, AppOptions};
+use trustification_infrastructure::{app::http::HttpServerBuilder, MainContext};
 use trustification_version::version;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
@@ -72,13 +67,8 @@ impl Server {
         Self { run }
     }
 
-    pub async fn run(self, registry: &Registry, listener: Option<TcpListener>) -> anyhow::Result<()> {
+    pub async fn run(self, context: MainContext<()>, listener: Option<TcpListener>) -> anyhow::Result<()> {
         let state = web::Data::new(configure(&self.run)?);
-
-        let http_metrics = PrometheusMetricsBuilder::new("spog_api")
-            .registry(registry.clone())
-            .build()
-            .map_err(|_| anyhow!("Error registering HTTP metrics"))?;
 
         let config_configurator = config::configurator(self.run.config).await?;
 
@@ -97,10 +87,10 @@ impl Server {
 
         let provider = self.run.oidc.into_provider_or_devmode(self.run.devmode).await?;
 
-        let crda = self.run.crda_url.map(CrdaClient::new);
+        let crda = self.run.crda_url.map(CrdaClient::new).map(web::Data::new);
         let crda_payload_limit = self.run.crda_payload_limit;
 
-        let guac = GuacService::new(self.run.guac_url);
+        let guac = web::Data::new(GuacService::new(self.run.guac_url));
 
         let v11y = web::Data::new(V11yService::new(self.run.v11y_url, provider.clone()));
         let collectorist = web::Data::new(CollectoristService::new(self.run.collectorist_url, provider.clone()));
@@ -108,68 +98,51 @@ impl Server {
         let (tracker, flusher) = Tracker::new(self.run.analytics);
         let tracker = web::Data::from(tracker);
 
-        let mut srv = HttpServer::new(move || {
-            let state = state.clone();
+        let mut http = HttpServerBuilder::try_from(self.run.http)?
+            .metrics(context.metrics.registry().clone(), "vexination_api")
+            .authorizer(authorizer.clone())
+            .configure(move |svc| {
+                svc.app_data(web::Data::new(state.clone()))
+                    .app_data(state.clone())
+                    .app_data(guac.clone())
+                    .app_data(tracker.clone())
+                    .app_data(v11y.clone())
+                    .app_data(collectorist.clone())
+                    .configure(index::configure())
+                    .configure(version::configurator(version!()))
+                    .configure(sbom::configure(authenticator.clone()))
+                    .configure(advisory::configure(authenticator.clone()))
+                    .configure(crate::guac::configure(authenticator.clone()))
+                    .configure(cve::configure(authenticator.clone()))
+                    .configure(config_configurator.clone())
+                    .service({
+                        let mut openapi = ApiDoc::openapi();
+                        let mut swagger = SwaggerUi::new("/swagger-ui/{_:.*}");
 
-            let http_metrics = http_metrics.clone();
-            let cors = Cors::permissive();
-            let authenticator = authenticator.clone();
-            let authorizer = authorizer.clone();
-            let swagger_oidc = swagger_oidc.clone();
-            let guac = guac.clone();
-            let tracker = tracker.clone();
-            let v11y = v11y.clone();
-            let collectorist = collectorist.clone();
+                        if let Some(swagger_ui_oidc) = &swagger_oidc {
+                            swagger = swagger_ui_oidc.apply(swagger, &mut openapi);
+                        }
 
-            let mut app = new_app(AppOptions {
-                cors: Some(cors),
-                metrics: Some(http_metrics),
-                authenticator: None, // we map this explicitly
-                authorizer,
-            })
-            .app_data(state)
-            .app_data(web::Data::new(guac))
-            .app_data(tracker)
-            .app_data(v11y)
-            .app_data(collectorist)
-            .configure(index::configure())
-            .configure(version::configurator(version!()))
-            .configure(sbom::configure(authenticator.clone()))
-            .configure(advisory::configure(authenticator.clone()))
-            .configure(crate::guac::configure(authenticator.clone()))
-            .configure(cve::configure(authenticator.clone()))
-            .configure(config_configurator.clone())
-            .service({
-                let mut openapi = ApiDoc::openapi();
-                let mut swagger = SwaggerUi::new("/swagger-ui/{_:.*}");
+                        swagger.url("/openapi.json", openapi)
+                    });
 
-                if let Some(swagger_ui_oidc) = &swagger_oidc {
-                    swagger = swagger_ui_oidc.apply(swagger, &mut openapi);
+                if let Some(crda) = &crda {
+                    svc.app_data(crda.clone())
+                        .configure(analyze::configure(crda_payload_limit));
                 }
-
-                swagger.url("/openapi.json", openapi)
             });
 
-            if let Some(crda) = &crda {
-                app = app
-                    .app_data(web::Data::new(crda.clone()))
-                    .configure(analyze::configure(crda_payload_limit));
-            }
+        if let Some(v) = listener {
+            // override with provided listener
+            http = http.listen(v);
+        }
 
-            app
-        });
-
-        srv = match listener {
-            Some(v) => srv.listen(v)?,
-            None => srv.bind((self.run.bind, self.run.port))?,
-        };
-
-        let srv = Box::pin(async move {
-            srv.run().await?;
+        let http = Box::pin(async move {
+            http.run().await?;
             Ok(())
         }) as Pin<Box<dyn Future<Output = anyhow::Result<()>>>>;
 
-        let mut tasks = vec![srv];
+        let mut tasks = vec![http];
 
         tasks.extend(flusher);
 

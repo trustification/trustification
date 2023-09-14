@@ -8,12 +8,10 @@ description = "An API server for trusted content"
 
 [dependencies]
 actix = "*"
-actix-cors = "0.6"
 actix-rt = "*"
 actix-web = "4"
 actix-web-httpauth = "0.8"
 actix-web-extras = "0.1"
-actix-web-prom = "0.7.0"
 actix-ws = "*"
 anyhow = "1"
 derive_more = "0.99"
