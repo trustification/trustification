@@ -100,6 +100,7 @@ mod test {
     use actix_web::{test, web, App};
     use reqwest::Url;
     use serde_json::json;
+    use trustification_auth::client::NoTokenProvider;
 
     use crate::server::collector::CollectorConfig;
     use crate::server::config;
@@ -129,6 +130,7 @@ mod test {
                 ".",
                 Url::parse("http://csub.example.com/").unwrap(),
                 Url::parse("http://guac.example.com/query").unwrap(),
+                NoTokenProvider,
             )
             .await?,
         );
@@ -170,6 +172,7 @@ mod test {
                 ".",
                 Url::parse("http://csub.example.com/").unwrap(),
                 Url::parse("http://guac.example.com/query").unwrap(),
+                NoTokenProvider,
             )
             .await?,
         );
@@ -217,6 +220,7 @@ mod test {
                 ".",
                 Url::parse("http://csub.example.com/").unwrap(),
                 Url::parse("http://guac.example.com/query").unwrap(),
+                NoTokenProvider,
             )
             .await?,
         );

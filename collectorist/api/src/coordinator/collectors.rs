@@ -5,17 +5,28 @@ use crate::coordinator::collector::Collector;
 use collector_client::{CollectPackagesResponse, CollectVulnerabilitiesResponse};
 use collectorist_client::{CollectPackagesRequest, CollectorConfig, Interest};
 use futures::future::join_all;
+use trustification_auth::client::TokenProvider;
 
 use crate::state::AppState;
 
-#[derive(Default)]
 pub struct Collectors {
     collectors: HashMap<String, Collector>,
+    provider: Arc<dyn TokenProvider>,
 }
 
 impl Collectors {
+    pub fn new<P>(provider: P) -> Self
+    where
+        P: TokenProvider + 'static,
+    {
+        Self {
+            collectors: Default::default(),
+            provider: Arc::new(provider),
+        }
+    }
     pub async fn register(&mut self, state: Arc<AppState>, id: String, config: CollectorConfig) -> Result<(), ()> {
-        self.collectors.insert(id.clone(), Collector::new(state, id, config));
+        self.collectors
+            .insert(id.clone(), Collector::new(state, id, config, self.provider.clone()));
         Ok(())
     }
 

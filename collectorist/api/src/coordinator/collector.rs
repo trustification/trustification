@@ -13,6 +13,7 @@ use collector_client::{
     CollectorClient,
 };
 use collectorist_client::{CollectorConfig, Interest};
+use trustification_auth::client::TokenProvider;
 
 use crate::state::AppState;
 
@@ -30,15 +31,21 @@ pub struct Collector {
     pub(crate) id: String,
     pub(crate) config: CollectorConfig,
     pub(crate) update: JoinHandle<()>,
+    pub(crate) client: Arc<CollectorClient>,
 }
 
 impl Collector {
-    pub fn new(state: Arc<AppState>, id: String, config: CollectorConfig) -> Self {
-        let update = tokio::spawn(Collector::update(state, id.clone()));
+    pub fn new<P>(state: Arc<AppState>, id: String, config: CollectorConfig, provider: P) -> Self
+    where
+        P: TokenProvider + 'static,
+    {
+        let client = Arc::new(CollectorClient::new(config.url.clone(), provider));
+        let update = tokio::spawn(Collector::update(client.clone(), state, id.clone()));
         Self {
             id,
             config: config.clone(),
             update,
+            client,
         }
     }
 
@@ -48,9 +55,9 @@ impl Collector {
         purls: Vec<String>,
     ) -> Result<CollectPackagesResponse, anyhow::Error> {
         Self::collect_packages_internal(
+            &self.client,
             state,
             self.id.clone(),
-            &self.config,
             purls,
             RetentionMode::InterestingOnly,
         )
@@ -58,14 +65,13 @@ impl Collector {
     }
 
     async fn collect_packages_internal(
+        client: &CollectorClient,
         state: &AppState,
         id: String,
-        config: &CollectorConfig,
         purls: Vec<String>,
         mode: RetentionMode,
     ) -> Result<CollectPackagesResponse, anyhow::Error> {
         //log::info!("{} scan {:?}", id, purls);
-        let client = CollectorClient::new(config.url.clone());
 
         let response = client
             .collect_packages(CollectPackagesRequest { purls: purls.clone() })
@@ -91,17 +97,15 @@ impl Collector {
         state: &AppState,
         vulnerability_ids: HashSet<String>,
     ) -> Result<CollectVulnerabilitiesResponse, anyhow::Error> {
-        Self::collect_vulnerabilities_internal(state, self.id.clone(), &self.config, vulnerability_ids).await
+        Self::collect_vulnerabilities_internal(&self.client, state, self.id.clone(), vulnerability_ids).await
     }
 
     async fn collect_vulnerabilities_internal(
+        client: &CollectorClient,
         state: &AppState,
         id: String,
-        config: &CollectorConfig,
         vulnerability_ids: HashSet<String>,
     ) -> Result<CollectVulnerabilitiesResponse, anyhow::Error> {
-        let client = CollectorClient::new(config.url.clone());
-
         let response = client
             .collect_vulnerabilities(CollectVulnerabilitiesRequest {
                 vulnerability_ids: Vec::from_iter(vulnerability_ids.iter().cloned()),
@@ -117,7 +121,7 @@ impl Collector {
         Ok(response)
     }
 
-    pub async fn update(state: Arc<AppState>, id: String) {
+    pub async fn update(client: Arc<CollectorClient>, state: Arc<AppState>, id: String) {
         loop {
             if let Some(config) = state.collectors.read().await.collector_config(id.clone()) {
                 let collector_url = config.url.clone();
@@ -132,7 +136,7 @@ impl Collector {
                     if !purls.is_empty() {
                         log::debug!("polling packages for {} -> {}", id, collector_url);
                         if let Ok(response) =
-                            Self::collect_packages_internal(&state, id.clone(), &config, purls, RetentionMode::All)
+                            Self::collect_packages_internal(&client, &state, id.clone(), purls, RetentionMode::All)
                                 .await
                         {
                             // during normal re-scan, we did indeed discover some vulns, make sure they are in the DB.
@@ -155,7 +159,7 @@ impl Collector {
 
                     if !vuln_ids.is_empty() {
                         log::debug!("polling vulnerabilities for {} -> {}", id, collector_url);
-                        Self::collect_vulnerabilities_internal(&state, id.clone(), &config, vuln_ids)
+                        Self::collect_vulnerabilities_internal(&client, &state, id.clone(), vuln_ids)
                             .await
                             .ok();
                     }
