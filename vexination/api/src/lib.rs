@@ -19,6 +19,7 @@ use trustification_auth::{
     swagger_ui::{SwaggerUiOidc, SwaggerUiOidcConfig},
 };
 use trustification_index::{IndexConfig, IndexStore};
+use trustification_infrastructure::endpoint::{EndpointServerConfig, Vexination};
 use trustification_infrastructure::{
     app::{new_app, AppOptions},
     Infrastructure, InfrastructureConfig,
@@ -30,11 +31,8 @@ mod server;
 #[derive(clap::Args, Debug)]
 #[command(about = "Run the api server", args_conflicts_with_subcommands = true)]
 pub struct Run {
-    #[arg(short, long, default_value = "0.0.0.0")]
-    pub bind: String,
-
-    #[arg(short = 'p', long = "port", default_value_t = 8080)]
-    pub port: u16,
+    #[command(flatten)]
+    pub api: EndpointServerConfig<Vexination>,
 
     #[arg(long = "devmode", default_value_t = false)]
     pub devmode: bool,
@@ -102,7 +100,7 @@ impl Run {
                     srv = match listener {
                         Some(v) => srv.listen(v)?,
                         None => {
-                            let addr = SocketAddr::from_str(&format!("{}:{}", self.bind, self.port))?;
+                            let addr = SocketAddr::from_str(&format!("{}:{}", self.api.bind, self.api.port))?;
                             srv.bind(addr)?
                         }
                     };

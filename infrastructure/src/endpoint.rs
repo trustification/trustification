@@ -115,11 +115,14 @@ macro_rules! endpoint {
     };
 }
 
-endpoint!(V11y, 9091);
-endpoint!(Collectorist, 9919);
-endpoint!(CollectorOsv);
-endpoint!(CollectorSnyk);
-endpoint!(CollectorNvd);
-
-endpoint!(GuacGraphQl, 8080, "/query");
-endpoint!(GuacCollectSub, 2782);
+endpoint!(Vexination, 8081);
+endpoint!(Bombastic, 8082);
+endpoint!(SpogApi, 8083);
+endpoint!(SpogUi, 8084);
+endpoint!(GuacGraphQl, 8085, "/query");
+endpoint!(GuacCollectSub, 8086);
+endpoint!(V11y, 8087);
+endpoint!(Collectorist, 8180);
+endpoint!(CollectorOsv, 8181);
+endpoint!(CollectorSnyk, 8182);
+endpoint!(CollectorNvd, 8183);
