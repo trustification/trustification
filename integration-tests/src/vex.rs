@@ -2,6 +2,7 @@ use super::*;
 use crate::{config::Config, runner::Runner};
 use async_trait::async_trait;
 use test_context::AsyncTestContext;
+use trustification_infrastructure::endpoint::EndpointServerConfig;
 
 #[async_trait]
 impl AsyncTestContext for VexinationContext {
@@ -170,8 +171,7 @@ fn vexination_api() -> vexination_api::Run {
     use trustification_storage::Region;
 
     vexination_api::Run {
-        bind: "127.0.0.1".to_string(),
-        port: 8081,
+        api: EndpointServerConfig::new("127.0.0.1", 8081),
         devmode: false,
         index: IndexConfig {
             index_dir: None,

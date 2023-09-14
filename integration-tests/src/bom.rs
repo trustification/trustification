@@ -3,6 +3,7 @@ use crate::{config::Config, runner::Runner};
 use async_trait::async_trait;
 use reqwest::Url;
 use test_context::AsyncTestContext;
+use trustification_infrastructure::endpoint::EndpointServerConfig;
 
 #[async_trait]
 impl AsyncTestContext for BombasticContext {
@@ -194,8 +195,7 @@ fn bombastic_indexer() -> bombastic_indexer::Run {
 fn bombastic_api() -> bombastic_api::Run {
     use trustification_storage::Region;
     bombastic_api::Run {
-        bind: "127.0.0.1".to_string(),
-        port: 8082,
+        api: EndpointServerConfig::new("127.0.0.1", 8082),
         devmode: false,
         index: IndexConfig {
             index_dir: None,
