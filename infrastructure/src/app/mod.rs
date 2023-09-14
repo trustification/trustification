@@ -1,8 +1,10 @@
+pub mod http;
+
 use actix_cors::Cors;
-use actix_web::middleware::Compress;
 use actix_web::{
     body::MessageBody,
     dev::{ServiceFactory, ServiceRequest, ServiceResponse},
+    middleware::Compress,
     middleware::Logger,
     App, Error,
 };
