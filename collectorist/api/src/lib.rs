@@ -84,12 +84,12 @@ impl Run {
         }
 
         Infrastructure::from(self.infra)
-            .run("collectorist-api", |metrics| async move {
+            .run("collectorist-api", |context| async move {
                 let state = Self::configure(self.storage_base, self.csub_url, self.guac_url).await?;
                 let server = server::run(
                     state.clone(),
                     self.api.socket_addr()?,
-                    metrics,
+                    context.metrics,
                     authenticator,
                     authorizer,
                     swagger_oidc,

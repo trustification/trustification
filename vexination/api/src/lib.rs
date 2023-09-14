@@ -74,10 +74,10 @@ impl Run {
         }
 
         Infrastructure::from(self.infra)
-            .run("vexination-api", |metrics| async move {
-                let state = Self::configure(index, storage, metrics.registry(), self.devmode)?;
+            .run("vexination-api", |context| async move {
+                let state = Self::configure(index, storage, context.metrics.registry(), self.devmode)?;
                 let http_metrics = PrometheusMetricsBuilder::new("vexination_api")
-                    .registry(metrics.registry().clone())
+                    .registry(context.metrics.registry().clone())
                     .build()
                     .map_err(|_| anyhow!("Error registering HTTP metrics"))?;
                 let mut srv = HttpServer::new(move || {
