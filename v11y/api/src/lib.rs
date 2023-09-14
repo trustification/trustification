@@ -26,7 +26,7 @@ pub struct Run {
     pub devmode: bool,
 
     /// Base path to the database store. Defaults to the local directory.
-    #[arg(env, short = 'b', long = "storage-base")]
+    #[arg(env, long = "storage-base")]
     pub(crate) storage_base: Option<PathBuf>,
 
     #[command(flatten)]
@@ -55,21 +55,25 @@ impl Run {
         }
 
         Infrastructure::from(self.infra)
-            .run("v11y", |context| async move {
-                let state = Self::configure(self.storage_base).await?;
-                let addr = SocketAddr::from_str(&format!("{}:{}", self.api.bind, self.api.port))?;
-                let server = server::run(
-                    state.clone(),
-                    addr,
-                    context.metrics,
-                    authenticator,
-                    authorizer,
-                    swagger_oidc,
-                );
+            .run(
+                "v11y",
+                |_context| async { Ok(()) },
+                |context| async move {
+                    let state = Self::configure(self.storage_base).await?;
+                    let addr = SocketAddr::from_str(&format!("{}:{}", self.api.bind, self.api.port))?;
+                    let server = server::run(
+                        state.clone(),
+                        addr,
+                        context.metrics,
+                        authenticator,
+                        authorizer,
+                        swagger_oidc,
+                    );
 
-                server.await?;
-                Ok(())
-            })
+                    server.await?;
+                    Ok(())
+                },
+            )
             .await?;
 
         Ok(ExitCode::SUCCESS)

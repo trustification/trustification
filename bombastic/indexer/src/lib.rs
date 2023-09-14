@@ -51,6 +51,7 @@ impl Run {
         Infrastructure::from(self.infra)
             .run_with_config(
                 "bombastic-indexer",
+                |_context| async { Ok(()) },
                 |context| async move {
                     let index = block_in_place(|| {
                         IndexStore::new(

@@ -74,37 +74,41 @@ impl Run {
         }
 
         Infrastructure::from(self.infra)
-            .run("vexination-api", |context| async move {
-                let state = Self::configure(index, storage, context.metrics.registry(), self.devmode)?;
-                let http_metrics = PrometheusMetricsBuilder::new("vexination_api")
-                    .registry(context.metrics.registry().clone())
-                    .build()
-                    .map_err(|_| anyhow!("Error registering HTTP metrics"))?;
-                let mut srv = HttpServer::new(move || {
-                    let http_metrics = http_metrics.clone();
-                    let cors = Cors::permissive();
-                    let authenticator = authenticator.clone();
-                    let authorizer = authorizer.clone();
-                    let swagger_oidc = swagger_oidc.clone();
+            .run(
+                "vexination-api",
+                |_context| async { Ok(()) },
+                |context| async move {
+                    let state = Self::configure(index, storage, context.metrics.registry(), self.devmode)?;
+                    let http_metrics = PrometheusMetricsBuilder::new("vexination_api")
+                        .registry(context.metrics.registry().clone())
+                        .build()
+                        .map_err(|_| anyhow!("Error registering HTTP metrics"))?;
+                    let mut srv = HttpServer::new(move || {
+                        let http_metrics = http_metrics.clone();
+                        let cors = Cors::permissive();
+                        let authenticator = authenticator.clone();
+                        let authorizer = authorizer.clone();
+                        let swagger_oidc = swagger_oidc.clone();
 
-                    new_app(AppOptions {
-                        cors: Some(cors),
-                        metrics: Some(http_metrics),
-                        authenticator: None,
-                        authorizer,
-                    })
-                    .app_data(web::Data::new(state.clone()))
-                    .configure(move |svc| server::config(svc, authenticator.clone(), swagger_oidc.clone()))
-                });
-                srv = match listener {
-                    Some(v) => srv.listen(v)?,
-                    None => {
-                        let addr = SocketAddr::from_str(&format!("{}:{}", self.bind, self.port))?;
-                        srv.bind(addr)?
-                    }
-                };
-                srv.run().await.map_err(anyhow::Error::msg)
-            })
+                        new_app(AppOptions {
+                            cors: Some(cors),
+                            metrics: Some(http_metrics),
+                            authenticator: None,
+                            authorizer,
+                        })
+                        .app_data(web::Data::new(state.clone()))
+                        .configure(move |svc| server::config(svc, authenticator.clone(), swagger_oidc.clone()))
+                    });
+                    srv = match listener {
+                        Some(v) => srv.listen(v)?,
+                        None => {
+                            let addr = SocketAddr::from_str(&format!("{}:{}", self.bind, self.port))?;
+                            srv.bind(addr)?
+                        }
+                    };
+                    srv.run().await.map_err(anyhow::Error::msg)
+                },
+            )
             .await?;
         Ok(ExitCode::SUCCESS)
     }

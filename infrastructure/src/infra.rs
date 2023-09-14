@@ -10,6 +10,7 @@ use tokio::signal;
 
 use crate::tracing::init_tracing;
 
+use crate::health::{Checks, HealthChecks};
 #[cfg(unix)]
 use tokio::signal::unix::{signal, SignalKind};
 
@@ -44,8 +45,15 @@ impl Default for InfrastructureConfig {
     }
 }
 
-pub struct InfrastructureContext {
+pub struct InitContext {
     pub metrics: Arc<Metrics>,
+    pub health: Arc<HealthChecks>,
+}
+
+pub struct MainContext<T> {
+    pub metrics: Arc<Metrics>,
+    pub health: Arc<HealthChecks>,
+    pub init_data: T,
 }
 
 pub async fn index(req: HttpRequest) -> HttpResponse {
@@ -67,8 +75,27 @@ pub async fn index(req: HttpRequest) -> HttpResponse {
     HttpResponse::Ok().json(apis)
 }
 
-async fn health() -> impl Responder {
-    HttpResponse::Ok()
+async fn startup(health: web::Data<HealthChecks>) -> impl Responder {
+    run_checks(&health.startup).await
+}
+
+async fn liveness(health: web::Data<HealthChecks>) -> impl Responder {
+    run_checks(&health.liveness).await
+}
+
+async fn readiness(health: web::Data<HealthChecks>) -> impl Responder {
+    run_checks(&health.readiness).await
+}
+
+async fn run_checks(checks: &Checks) -> impl Responder {
+    let checks = checks.run().await;
+
+    let mut result = match checks.all_up() {
+        true => HttpResponse::Ok(),
+        false => HttpResponse::InternalServerError(),
+    };
+
+    result.json(checks.results)
 }
 
 async fn metrics(metrics: web::Data<Arc<Metrics>>) -> HttpResponse {
@@ -84,6 +111,7 @@ async fn metrics(metrics: web::Data<Arc<Metrics>>) -> HttpResponse {
 pub struct Infrastructure {
     config: InfrastructureConfig,
     metrics: Arc<Metrics>,
+    health: Arc<HealthChecks>,
 }
 
 impl From<InfrastructureConfig> for Infrastructure {
@@ -91,6 +119,7 @@ impl From<InfrastructureConfig> for Infrastructure {
         Self {
             config,
             metrics: Default::default(),
+            health: Default::default(),
         }
     }
 }
@@ -124,16 +153,18 @@ impl Infrastructure {
 
         let mut http = HttpServer::new(move || {
             let metrics_registry = self.metrics.clone();
+            let health = self.health.clone();
             let configurator = configurator.clone();
             App::new()
                 .wrap(Logger::default())
                 .app_data(web::Data::new(metrics_registry))
+                .app_data(web::Data::from(health.clone()))
                 .service(web::resource("/").to(index))
                 .service(
                     web::scope("/health")
-                        .service(web::resource("/live").to(health))
-                        .service(web::resource("/ready").to(health))
-                        .service(web::resource("/startup").to(health)),
+                        .service(web::resource("/live").to(liveness))
+                        .service(web::resource("/ready").to(readiness))
+                        .service(web::resource("/startup").to(startup)),
                 )
                 .service(web::resource("/metrics").to(metrics))
                 .configure(|c| configurator(c))
@@ -157,22 +188,31 @@ impl Infrastructure {
         }))
     }
 
-    pub async fn run_with_config<F, Fut>(
+    pub async fn run_with_config<I, IFut, M, MFut, D>(
         self,
         id: &str,
-        main: F,
+        init: I,
+        main: M,
         configurator: impl FnOnce(&mut ServiceConfig) + Clone + Send + 'static,
     ) -> anyhow::Result<()>
     where
-        F: FnOnce(InfrastructureContext) -> Fut,
-        Fut: Future<Output = anyhow::Result<()>>,
+        I: FnOnce(InitContext) -> IFut,
+        IFut: Future<Output = anyhow::Result<D>>,
+        M: FnOnce(MainContext<D>) -> MFut,
+        MFut: Future<Output = anyhow::Result<()>>,
     {
-        let context = InfrastructureContext {
+        let init_data = init(InitContext {
             metrics: self.metrics.clone(),
-        };
+            health: self.health.clone(),
+        })
+        .await?;
 
         init_tracing(id, self.config.enable_tracing.into());
-        let main = Box::pin(main(context)) as Pin<Box<dyn Future<Output = anyhow::Result<()>>>>;
+        let main = Box::pin(main(MainContext {
+            init_data,
+            metrics: self.metrics.clone(),
+            health: self.health.clone(),
+        })) as Pin<Box<dyn Future<Output = anyhow::Result<()>>>>;
         let runner = Box::pin(self.start_internal(configurator).await?);
         let sigint = Box::pin(async { signal::ctrl_c().await.context("termination failed") });
 
@@ -192,12 +232,19 @@ impl Infrastructure {
         result
     }
 
-    pub async fn run<F, Fut>(self, id: &str, main: F) -> anyhow::Result<()>
+    /// Run the main application with a set of infrastructure services.
+    ///
+    /// If configured, this will enable infrastructure services, such as metrics and health checks.
+    /// It will then run the `main` application until it exits. The `init` function is guaranteed to
+    /// the executed before the `main` function, allowing for some initialization.
+    pub async fn run<I, IFut, M, MFut, D>(self, id: &str, init: I, main: M) -> anyhow::Result<()>
     where
-        F: FnOnce(InfrastructureContext) -> Fut,
-        Fut: Future<Output = anyhow::Result<()>>,
+        I: FnOnce(InitContext) -> IFut,
+        IFut: Future<Output = anyhow::Result<D>>,
+        M: FnOnce(MainContext<D>) -> MFut,
+        MFut: Future<Output = anyhow::Result<()>>,
     {
-        self.run_with_config(id, main, |_| {}).await
+        self.run_with_config(id, init, main, |_| {}).await
     }
 }
 

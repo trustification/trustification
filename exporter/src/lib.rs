@@ -58,31 +58,36 @@ pub struct Run {
 impl Run {
     pub async fn run(self) -> anyhow::Result<ExitCode> {
         Infrastructure::from(self.infra)
-            .run("guac-exporter", |context| async move {
-                let (bucket, topic) = match self.document_type {
-                    DocumentType::SBOM => (
-                        self.storage.bucket.clone().unwrap_or("bombastic".into()),
-                        self.stored_topic.unwrap_or("sbom-stored".into()),
-                    ),
-                    DocumentType::VEX => (
-                        self.storage.bucket.clone().unwrap_or("vexination".into()),
-                        self.stored_topic.unwrap_or("vex-stored".into()),
-                    ),
-                };
-                log::info!(
-                    "Starting {} exporter using bucket '{}' and topic '{}'",
-                    self.document_type,
-                    bucket,
-                    topic
-                );
-                let storage = Storage::new(self.storage.process(&bucket, self.devmode), context.metrics.registry())?;
-                let bus = self.bus.create(context.metrics.registry()).await?;
-                let emitter = NatsEmitter::new(&self.guac_url).await?;
-                if self.devmode {
-                    bus.create(&[topic.as_str()]).await?;
-                }
-                exporter::run(storage, bus, emitter, topic.as_str()).await
-            })
+            .run(
+                "guac-exporter",
+                |_context| async { Ok(()) },
+                |context| async move {
+                    let (bucket, topic) = match self.document_type {
+                        DocumentType::SBOM => (
+                            self.storage.bucket.clone().unwrap_or("bombastic".into()),
+                            self.stored_topic.unwrap_or("sbom-stored".into()),
+                        ),
+                        DocumentType::VEX => (
+                            self.storage.bucket.clone().unwrap_or("vexination".into()),
+                            self.stored_topic.unwrap_or("vex-stored".into()),
+                        ),
+                    };
+                    log::info!(
+                        "Starting {} exporter using bucket '{}' and topic '{}'",
+                        self.document_type,
+                        bucket,
+                        topic
+                    );
+                    let storage =
+                        Storage::new(self.storage.process(&bucket, self.devmode), context.metrics.registry())?;
+                    let bus = self.bus.create(context.metrics.registry()).await?;
+                    let emitter = NatsEmitter::new(&self.guac_url).await?;
+                    if self.devmode {
+                        bus.create(&[topic.as_str()]).await?;
+                    }
+                    exporter::run(storage, bus, emitter, topic.as_str()).await
+                },
+            )
             .await?;
         Ok(ExitCode::SUCCESS)
     }

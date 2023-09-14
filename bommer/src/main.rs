@@ -79,13 +79,18 @@ async fn main() -> anyhow::Result<()> {
     let config = ServerConfig { bind_addr };
 
     Infrastructure::from(cli.infra)
-        .run("bommber", |_metrics| async {
-            let server = server::run(config, map);
+        .run(
+            "bommber",
+            |_| async { Ok(()) },
+            |_context| async {
+                let server = server::run(config, map);
 
-            let (result, _, _) =
-                futures::future::select_all([server.boxed_local(), runner.boxed_local(), runner2.boxed_local()]).await;
+                let (result, _, _) =
+                    futures::future::select_all([server.boxed_local(), runner.boxed_local(), runner2.boxed_local()])
+                        .await;
 
-            result
-        })
+                result
+            },
+        )
         .await
 }
