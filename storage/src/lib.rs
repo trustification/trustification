@@ -349,7 +349,7 @@ impl Storage {
         if let Ok((decoded, key)) = Self::key_from_event(record) {
             let path: S3Path = S3Path::from_path(&decoded);
             if decode {
-                let data = self.get_object(path).await?;
+                let data = self.get_object(&path).await?;
                 Ok(S3Result {
                     key,
                     data,
@@ -370,14 +370,16 @@ impl Storage {
     }
 
     /// List all data objects stored in this bucket
-    pub async fn list_all_objects(&self) -> Result<impl Stream<Item = Result<(String, Vec<u8>), Error>> + '_, Error> {
+    pub async fn list_all_objects(
+        &self,
+    ) -> Result<impl Stream<Item = Result<(String, Vec<u8>), (S3Path, Error)>> + '_, Error> {
         let results = self.bucket.list(DATA_PATH[1..].to_string(), None).await?;
         let s = try_stream! {
             for result in results {
                 for obj in result.contents {
-                    let o = self.get_object(S3Path::from_path(&obj.key)).await?;
-
                     let key = obj.key.strip_prefix("data/").map(|s| s.to_string()).unwrap_or(obj.key.to_string());
+                    let path = S3Path::from_path(&obj.key);
+                    let o = self.get_object(&path).await.map_err(|e| (path, e))?;
                     yield (key, o);
                 }
             }
@@ -402,7 +404,7 @@ impl Storage {
 
     // Expects the actual S3 path
     // This will load the entire S3 object into memory
-    async fn get_object(&self, path: S3Path) -> Result<Vec<u8>, Error> {
+    pub async fn get_object(&self, path: &S3Path) -> Result<Vec<u8>, Error> {
         self.get_object_from_stream(self.get_decoded_stream(path).await?).await
     }
 
@@ -424,11 +426,11 @@ impl Storage {
     }
 
     // Expects the actual S3 path and returns a JSON stream
-    pub async fn get_decoded_stream(&self, path: S3Path) -> Result<impl Stream<Item = Result<Bytes, Error>>, Error> {
+    pub async fn get_decoded_stream(&self, path: &S3Path) -> Result<impl Stream<Item = Result<Bytes, Error>>, Error> {
         self.metrics.gets_total.inc();
         let res = {
             let (head, _status) = self.bucket.head_object(path.path.clone()).await?;
-            let mut s = self.bucket.get_object_stream(path.path).await?;
+            let mut s = self.bucket.get_object_stream(path.path.clone()).await?;
             let stream = try_stream! {
                 while let Some(chunk) = s.bytes().next().await {
                     yield chunk?;
@@ -510,7 +512,7 @@ impl Record {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct S3Path {
     path: String,
 }
@@ -525,6 +527,10 @@ impl S3Path {
         S3Path {
             path: format!("{}{}", DATA_PATH, key),
         }
+    }
+    // Key without prefix
+    pub fn key(&self) -> &str {
+        self.path.strip_prefix(DATA_PATH).unwrap_or(&self.path)
     }
 }
 
