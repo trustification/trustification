@@ -17,8 +17,11 @@ use trustification_auth::authenticator::Authenticator;
 use trustification_auth::authorizer::Authorizer;
 use trustification_auth::swagger_ui::{SwaggerUiOidc, SwaggerUiOidcConfig};
 use trustification_index::{IndexConfig, IndexStore};
-use trustification_infrastructure::app::{new_app, AppOptions};
-use trustification_infrastructure::endpoint::{Bombastic, EndpointServerConfig};
+use trustification_infrastructure::{
+    app::{new_app, AppOptions},
+    endpoint::{Bombastic, EndpointServerConfig},
+    health::checks::Probe,
+};
 use trustification_infrastructure::{Infrastructure, InfrastructureConfig};
 use trustification_storage::{Storage, StorageConfig};
 
@@ -73,7 +76,9 @@ impl Run {
                 "bombastic-api",
                 |_context| async { Ok(()) },
                 |context| async move {
-                    let state = Self::configure(index, storage, context.metrics.registry(), self.devmode)?;
+                    let (probe, check) = Probe::new("Index not synced");
+                    context.health.readiness.register("available.index", check).await;
+                    let state = Self::configure(index, storage, probe, context.metrics.registry(), self.devmode)?;
                     let http_metrics = PrometheusMetricsBuilder::new("bombastic_api")
                         .registry(context.metrics.registry().clone())
                         .build()
@@ -112,6 +117,7 @@ impl Run {
     fn configure(
         index_config: IndexConfig,
         storage: StorageConfig,
+        probe: Probe,
         registry: &Registry,
         devmode: bool,
     ) -> anyhow::Result<Arc<AppState>> {
@@ -133,6 +139,7 @@ impl Run {
                 }
                 tokio::time::sleep(Duration::from_secs(5)).await;
             }
+            probe.set(true);
 
             loop {
                 if let Err(e) = sinker.sync_index().await {

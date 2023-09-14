@@ -463,6 +463,7 @@ impl<INDEX: Index> IndexStore<INDEX> {
                 }
                 Err(e) => {
                     log::warn!("Error syncing index: {:?}, keeping old", e);
+                    return Err(e);
                 }
             }
             log::debug!("Index reloaded");
