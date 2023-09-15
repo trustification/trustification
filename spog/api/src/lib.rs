@@ -1,10 +1,12 @@
 use std::process::ExitCode;
 use std::{net::TcpListener, path::PathBuf};
 use trustification_analytics::AnalyticsConfig;
-use trustification_auth::client::OpenIdTokenProviderConfigArguments;
-use trustification_auth::{auth::AuthConfigArguments, swagger_ui::SwaggerUiOidcConfig};
-use trustification_infrastructure::app::http::HttpServerConfig;
-use trustification_infrastructure::{Infrastructure, InfrastructureConfig};
+use trustification_auth::{
+    auth::AuthConfigArguments, client::OpenIdTokenProviderConfigArguments, swagger_ui::SwaggerUiOidcConfig,
+};
+use trustification_infrastructure::{
+    app::http::HttpServerConfig, endpoint::SpogApi, Infrastructure, InfrastructureConfig,
+};
 use url::Url;
 
 mod advisory;
@@ -74,7 +76,7 @@ pub struct Run {
     pub analytics: AnalyticsConfig,
 
     #[command(flatten)]
-    pub http: HttpServerConfig,
+    pub http: HttpServerConfig<SpogApi>,
 }
 
 impl Run {

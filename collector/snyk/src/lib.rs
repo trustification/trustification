@@ -6,15 +6,17 @@ use std::sync::Arc;
 use reqwest::Url;
 use tokio::sync::RwLock;
 
-use trustification_auth::auth::AuthConfigArguments;
-use trustification_auth::authenticator::Authenticator;
-use trustification_auth::authorizer::Authorizer;
-use trustification_auth::client::{OpenIdTokenProviderConfigArguments, TokenProvider};
-use trustification_infrastructure::app::http::HttpServerConfig;
-use trustification_infrastructure::endpoint::CollectorSnyk;
-use trustification_infrastructure::health::checks::AtomicBoolStateCheck;
+use trustification_auth::{
+    auth::AuthConfigArguments,
+    authenticator::Authenticator,
+    authorizer::Authorizer,
+    client::{OpenIdTokenProviderConfigArguments, TokenProvider},
+};
 use trustification_infrastructure::{
-    endpoint::{self, Endpoint, EndpointServerConfig},
+    app::http::HttpServerConfig,
+    endpoint::CollectorSnyk,
+    endpoint::{self, Endpoint},
+    health::checks::AtomicBoolStateCheck,
     Infrastructure, InfrastructureConfig,
 };
 use v11y_client::{ScoreType, Vulnerability};
@@ -32,9 +34,6 @@ mod server;
 #[derive(clap::Args, Debug)]
 #[command(about = "Run the api server", args_conflicts_with_subcommands = true)]
 pub struct Run {
-    #[command(flatten)]
-    pub api: EndpointServerConfig<CollectorSnyk>,
-
     #[arg(long = "devmode", default_value_t = false)]
     pub devmode: bool,
 
@@ -73,7 +72,7 @@ pub struct Run {
     pub(crate) oidc: OpenIdTokenProviderConfigArguments,
 
     #[command(flatten)]
-    pub(crate) http: HttpServerConfig,
+    pub(crate) http: HttpServerConfig<CollectorSnyk>,
 }
 
 impl Run {

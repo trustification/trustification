@@ -110,8 +110,6 @@ pub async fn start_spog(config: &Config) -> SpogContext {
 fn spog_api(burl: Url, vurl: Url) -> spog_api::Run {
     spog_api::Run {
         devmode: false,
-        bind: Default::default(),
-        port: 8083,
         guac_url: Default::default(),
         bombastic_url: burl,
         vexination_url: vurl,
@@ -130,5 +128,6 @@ fn spog_api(burl: Url, vurl: Url) -> spog_api::Run {
         auth: testing_auth(),
         swagger_ui_oidc: testing_swagger_ui_oidc(),
         analytics: Default::default(),
+        http: Default::default(),
     }
 }

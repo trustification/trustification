@@ -1,14 +1,20 @@
 use crate::app::{new_app, AppOptions};
+use crate::endpoint::Endpoint;
 use actix_cors::Cors;
 use actix_tls::{accept::openssl::reexports::SslAcceptor, connect::openssl::reexports::SslMethod};
-use actix_web::web::JsonConfig;
-use actix_web::{web, web::ServiceConfig, HttpServer};
+use actix_web::{
+    web::{self, JsonConfig, ServiceConfig},
+    HttpServer,
+};
 use actix_web_prom::{PrometheusMetrics, PrometheusMetricsBuilder};
 use anyhow::{anyhow, Context};
+use bytesize::ByteSize;
 use openssl::ssl::SslFiletype;
 use prometheus::Registry;
-use std::fmt::Debug;
+use std::fmt::{Debug, Display, Formatter};
+use std::marker::PhantomData;
 use std::net::{IpAddr, Ipv6Addr, SocketAddr, TcpListener};
+use std::ops::{Deref, DerefMut};
 use std::path::PathBuf;
 use std::str::FromStr;
 use std::sync::Arc;
@@ -16,45 +22,91 @@ use trustification_auth::{authenticator::Authenticator, authorizer::Authorizer};
 
 const DEFAULT_ADDR: SocketAddr = SocketAddr::new(IpAddr::V6(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0x1)), 8080);
 
+#[derive(Copy, Clone, Debug, PartialEq, PartialOrd, Eq, Ord, Hash, Default)]
+pub struct BinaryByteSize(pub ByteSize);
+
+impl Deref for BinaryByteSize {
+    type Target = ByteSize;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for BinaryByteSize {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
+impl Display for BinaryByteSize {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.0.to_string_as(true))
+    }
+}
+
+impl FromStr for BinaryByteSize {
+    type Err = <ByteSize as FromStr>::Err;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        ByteSize::from_str(s).map(BinaryByteSize)
+    }
+}
+
 #[derive(Clone, Debug, clap::Args)]
 #[command(rename_all_env = "SCREAMING_SNAKE_CASE", next_help_heading = "HTTP endpoint")]
-pub struct HttpServerConfig {
+pub struct HttpServerConfig<E>
+where
+    E: Endpoint + Send + Sync,
+{
     /// The number of worker threads, defaults to zero, which falls back to the number of cores.
-    #[arg(id = "http-server-workers", long, env = "HTTP_SERVER_WORKERS")]
+    #[arg(id = "http-server-workers", long, env = "HTTP_SERVER_WORKERS", default_value_t = 0)]
     pub workers: usize,
 
-    /// The bind address
+    /// The address to listen on
     #[arg(
-        id = "http-server-bind",
+        id = "http-server-bind-address",
         long,
-        env,
-        default_value = "[::1]:8080",
+        default_value_t = default::bind_addr(),
         env = "HTTP_SERVER_BIND_ADDR"
     )]
     pub bind_addr: String,
+
+    /// The port to listen on
+    #[arg(
+        id = "http-server-bind-port",
+        long,
+        env = "HTTP_SERVER_BIND_PORT",
+        default_value_t = E::PORT
+    )]
+    pub bind_port: u16,
 
     /// The overall request limit
     #[arg(
         id = "http-server-request-limit",
         long,
-        env,
-        default_value = "256KiB",
+        default_value_t = default::request_limit(),
         env = "HTTP_SERVER_REQUEST_LIMIT"
     )]
-    pub request_limit: bytesize::ByteSize,
+    pub request_limit: BinaryByteSize,
 
     /// The JSON request limit
     #[arg(
         id = "http-server-json-limit",
         long,
-        env,
-        default_value = "2MiB",
+        default_value_t = default::json_limit(),
         env = "HTTP_SERVER_JSON_LIMIT"
     )]
-    pub json_limit: bytesize::ByteSize,
+    pub json_limit: BinaryByteSize,
 
     /// Enable TLS
-    #[arg(id = "http-server-tls-enabled", long, env = "HTTP_SERVER_TLS_ENABLED")]
+    #[arg(
+        id = "http-server-tls-enabled",
+        long,
+        env = "HTTP_SERVER_TLS_ENABLED",
+        default_value_t = false,
+        action = clap::ArgAction::Set
+    )]
     pub tls_enabled: bool,
 
     /// The path to the TLS key file in PEM format
@@ -68,17 +120,73 @@ pub struct HttpServerConfig {
         env = "HTTP_SERVER_TLS_CERTIFICATE_FILE"
     )]
     pub tls_certificate_file: Option<PathBuf>,
+
+    #[arg(skip)]
+    _marker: Marker<E>,
 }
 
-impl TryFrom<HttpServerConfig> for HttpServerBuilder {
+mod default {
+    use super::*;
+
+    pub fn bind_addr() -> String {
+        "[::1]".to_string()
+    }
+
+    pub const fn request_limit() -> BinaryByteSize {
+        BinaryByteSize(ByteSize::kib(256))
+    }
+
+    pub const fn json_limit() -> BinaryByteSize {
+        BinaryByteSize(ByteSize::mib(2))
+    }
+}
+
+impl<E: Endpoint> Default for HttpServerConfig<E>
+where
+    E: Endpoint + Send + Sync,
+{
+    fn default() -> Self {
+        Self {
+            workers: 0,
+            bind_addr: default::bind_addr().to_string(),
+            bind_port: E::PORT,
+            request_limit: default::request_limit(),
+            json_limit: default::json_limit(),
+            tls_enabled: false,
+            tls_key_file: None,
+            tls_certificate_file: None,
+            _marker: Default::default(),
+        }
+    }
+}
+
+#[derive(Debug)]
+struct Marker<E>(PhantomData<E>);
+
+impl<E> Default for Marker<E> {
+    fn default() -> Self {
+        Self(Default::default())
+    }
+}
+
+impl<E> Clone for Marker<E> {
+    fn clone(&self) -> Self {
+        Default::default()
+    }
+}
+
+impl<E> TryFrom<HttpServerConfig<E>> for HttpServerBuilder
+where
+    E: Endpoint + Send + Sync,
+{
     type Error = anyhow::Error;
 
-    fn try_from(value: HttpServerConfig) -> Result<Self, Self::Error> {
+    fn try_from(value: HttpServerConfig<E>) -> Result<Self, Self::Error> {
         let mut result = HttpServerBuilder::new()
             .workers(value.workers)
             .bind(SocketAddr::from_str(&value.bind_addr).context("parse bind address")?)
-            .request_limit(value.request_limit.0 as _)
-            .json_limit(value.json_limit.0 as _);
+            .request_limit(value.request_limit.0 .0 as _)
+            .json_limit(value.json_limit.0 .0 as _);
 
         if value.tls_enabled {
             result = result.tls(TlsConfiguration {
@@ -118,8 +226,10 @@ pub struct TlsConfiguration {
 }
 
 pub enum Bind {
+    /// Use the provided listener
     Listener(TcpListener),
-    Plain(SocketAddr),
+    /// Bind to the provided address and port
+    Address(SocketAddr),
 }
 
 impl Default for HttpServerBuilder {
@@ -132,7 +242,7 @@ impl HttpServerBuilder {
     pub fn new() -> Self {
         Self {
             configurator: None,
-            bind: Bind::Plain(DEFAULT_ADDR),
+            bind: Bind::Address(DEFAULT_ADDR),
             tls: None,
             metrics_factory: None,
             cors_factory: Some(Arc::new(Cors::permissive)),
@@ -206,7 +316,7 @@ impl HttpServerBuilder {
     }
 
     pub fn bind(mut self, addr: impl Into<SocketAddr>) -> Self {
-        self.bind = Bind::Plain(addr.into());
+        self.bind = Bind::Address(addr.into());
         self
     }
 
@@ -285,7 +395,7 @@ impl HttpServerBuilder {
                     None => http.listen(listener)?,
                 };
             }
-            Bind::Plain(addr) => {
+            Bind::Address(addr) => {
                 log::info!("Binding to: {addr}");
                 http = match tls {
                     Some(tls) => http.bind_openssl(addr, tls)?,

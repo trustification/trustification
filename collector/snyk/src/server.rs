@@ -22,6 +22,7 @@ use collectorist_client::{CollectorConfig, Interest};
 use trustification_auth::authenticator::Authenticator;
 use trustification_auth::authorizer::Authorizer;
 use trustification_infrastructure::app::http::{HttpServerBuilder, HttpServerConfig};
+use trustification_infrastructure::endpoint::CollectorSnyk;
 use trustification_infrastructure::{new_auth, MainContext};
 use v11y_client::Vulnerability;
 
@@ -62,7 +63,7 @@ impl ResponseError for Error {}
 pub async fn run(
     context: MainContext<()>,
     state: Arc<AppState>,
-    http: HttpServerConfig,
+    http: HttpServerConfig<CollectorSnyk>,
     authenticator: Option<Arc<Authenticator>>,
     authorizer: Authorizer,
 ) -> Result<(), anyhow::Error> {

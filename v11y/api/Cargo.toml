@@ -27,8 +27,6 @@ humantime = "2"
 humantime-serde = "1.1.1"
 prometheus = "0.13.3"
 actix-web-httpauth = "0.8.0"
-actix-web-prom = "0.7.0"
-actix-cors = "0.6"
 
 [dev-dependencies]
 env_logger = "0.10"

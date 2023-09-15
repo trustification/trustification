@@ -22,9 +22,6 @@ mod server;
 #[derive(clap::Args, Debug)]
 #[command(about = "Run the api server", args_conflicts_with_subcommands = true)]
 pub struct Run {
-    #[command(flatten)]
-    pub api: EndpointServerConfig<Bombastic>,
-
     #[arg(long = "devmode", default_value_t = false)]
     pub devmode: bool,
 
@@ -44,7 +41,7 @@ pub struct Run {
     pub swagger_ui_oidc: SwaggerUiOidcConfig,
 
     #[command(flatten)]
-    pub http: HttpServerConfig,
+    pub http: HttpServerConfig<Bombastic>,
 }
 
 impl Run {

@@ -2,14 +2,17 @@ use actix_web::web;
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 use std::sync::Arc;
-use trustification_auth::auth::AuthConfigArguments;
-use trustification_auth::authenticator::Authenticator;
-use trustification_auth::authorizer::Authorizer;
-use trustification_auth::swagger_ui::{SwaggerUiOidc, SwaggerUiOidcConfig};
-
-use trustification_infrastructure::app::http::{HttpServerBuilder, HttpServerConfig};
-use trustification_infrastructure::endpoint::{EndpointServerConfig, V11y};
-use trustification_infrastructure::{Infrastructure, InfrastructureConfig};
+use trustification_auth::{
+    auth::AuthConfigArguments,
+    authenticator::Authenticator,
+    authorizer::Authorizer,
+    swagger_ui::{SwaggerUiOidc, SwaggerUiOidcConfig},
+};
+use trustification_infrastructure::{
+    app::http::{HttpServerBuilder, HttpServerConfig},
+    endpoint::V11y,
+    Infrastructure, InfrastructureConfig,
+};
 
 use crate::db::Db;
 
@@ -19,9 +22,6 @@ mod server;
 #[derive(clap::Args, Debug)]
 #[command(about = "Run the api server", args_conflicts_with_subcommands = true)]
 pub struct Run {
-    #[command(flatten)]
-    pub api: EndpointServerConfig<V11y>,
-
     #[arg(long = "devmode", default_value_t = false)]
     pub devmode: bool,
 
@@ -39,7 +39,7 @@ pub struct Run {
     pub swagger_ui_oidc: SwaggerUiOidcConfig,
 
     #[command(flatten)]
-    pub http: HttpServerConfig,
+    pub http: HttpServerConfig<V11y>,
 }
 
 impl Run {

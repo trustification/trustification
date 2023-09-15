@@ -7,7 +7,6 @@ edition = "2021"
 
 [dependencies]
 actix-web = "4"
-actix-cors = "0.6"
 trustification-auth = { path = "../../auth", features = ["swagger"] }
 trustification-infrastructure = { path = "../../infrastructure" }
 collectorist-client = { path = "../client" }
@@ -31,7 +30,6 @@ humantime-serde = "1.1.1"
 thiserror = "1.0.44"
 prometheus = "0.13.3"
 actix-web-httpauth = "0.8.0"
-actix-web-prom = "0.7.0"
 
 [dev-dependencies]
 env_logger = "0.10"
