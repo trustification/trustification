@@ -7,7 +7,7 @@ use tokio::sync::mpsc::Receiver;
 use tokio::sync::mpsc::Sender;
 use tokio::task::block_in_place;
 use tokio::{select, sync::Mutex};
-use trustification_event_bus::EventBus;
+use trustification_event_bus::{Error as BusError, EventBus};
 use trustification_index::{Index, IndexStore, IndexWriter};
 use trustification_storage::{Error as StorageError, EventType, Storage};
 
@@ -134,6 +134,10 @@ impl<'a, INDEX: Index> Indexer<'a, INDEX> {
                     }
                     Ok(None) => {
                         log::debug!("Polling returned no events, retrying");
+                    }
+                    Err(BusError::Critical(s)) => {
+                        log::warn!("Critical error while polling, exiting: {:?}", s);
+                        return Err(anyhow::anyhow!(s));
                     }
                     Err(e) => {
                         log::warn!("Error polling for event: {:?}", e);

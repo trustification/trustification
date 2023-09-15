@@ -1,23 +1,18 @@
+use crate::Event;
 use aws_config::SdkConfig;
 use aws_credential_types::credential_fn::provide_credentials_fn;
 use aws_credential_types::provider::SharedCredentialsProvider;
 use aws_sdk_sqs::config::Region;
 use aws_sdk_sqs::{
-    config::Credentials, operation::receive_message::ReceiveMessageOutput, types::Message, Client, Error as SqsSdkError,
+    config::Credentials, operation::receive_message::ReceiveMessageOutput, types::Message, Client, Error,
 };
-use thiserror::Error;
 
-use crate::Event;
-
-#[derive(Debug, Error)]
-pub enum SqsError {
-    #[error("Error from SQS: {0}")]
-    Sqs(SqsSdkError),
-}
-
-impl From<SqsSdkError> for SqsError {
-    fn from(e: SqsSdkError) -> Self {
-        Self::Sqs(e)
+impl From<aws_sdk_sqs::Error> for crate::Error {
+    fn from(e: aws_sdk_sqs::Error) -> Self {
+        match e {
+            aws_sdk_sqs::Error::Unhandled(_) => Self::Critical(e.to_string()),
+            _ => Self::Transient(e.to_string()),
+        }
     }
 }
 
@@ -27,7 +22,7 @@ pub struct SqsEventBus {
 }
 
 impl SqsEventBus {
-    pub(crate) async fn new(access_key: String, secret_key: String, region: String) -> Result<Self, anyhow::Error> {
+    pub(crate) async fn new(access_key: String, secret_key: String, region: String) -> Result<Self, Error> {
         let creds = Credentials::new(access_key, secret_key, None, None, "trustification");
         let region = Region::new(region);
         let config = SdkConfig::builder()
@@ -43,21 +38,21 @@ impl SqsEventBus {
 }
 
 impl SqsEventBus {
-    pub(crate) async fn create(&self, topics: &[&str]) -> Result<(), anyhow::Error> {
+    pub(crate) async fn create(&self, topics: &[&str]) -> Result<(), Error> {
         for topic in topics.iter() {
             self.client.create_queue().queue_name(topic.to_string()).send().await?;
         }
         Ok(())
     }
 
-    pub(crate) async fn subscribe(&self, _group: &str, topics: &[&str]) -> Result<SqsConsumer, anyhow::Error> {
+    pub(crate) async fn subscribe(&self, _group: &str, topics: &[&str]) -> Result<SqsConsumer, Error> {
         Ok(SqsConsumer {
             client: self.client.clone(),
             queues: topics.iter().map(|s| s.to_string()).collect(),
         })
     }
 
-    pub(crate) async fn send(&self, topic: &str, data: &[u8]) -> Result<(), anyhow::Error> {
+    pub(crate) async fn send(&self, topic: &str, data: &[u8]) -> Result<(), Error> {
         let s = core::str::from_utf8(data).unwrap();
         self.client
             .send_message()
@@ -75,7 +70,7 @@ pub struct SqsConsumer {
 }
 
 impl SqsConsumer {
-    pub(crate) async fn next(&self) -> Result<Option<SqsEvent<'_>>, anyhow::Error> {
+    pub(crate) async fn next(&self) -> Result<Option<SqsEvent<'_>>, Error> {
         let queue_futs: Vec<_> = self
             .queues
             .iter()
@@ -105,7 +100,7 @@ impl SqsConsumer {
         Ok(None)
     }
 
-    pub(crate) async fn commit<'m>(&'m self, events: &[Event<'m>]) -> Result<(), anyhow::Error> {
+    pub(crate) async fn commit<'m>(&'m self, events: &[Event<'m>]) -> Result<(), Error> {
         for event in events {
             if let Event::Sqs(event) = event {
                 self.client

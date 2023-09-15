@@ -34,6 +34,10 @@ impl<'m> Event<'m> {
 pub enum Error {
     #[error("missing parameter: {0}")]
     MissingParameter(String),
+    #[error("transient error: {0}")]
+    Transient(String),
+    #[error("critical error: {0}")]
+    Critical(String),
 }
 
 /// Represents an event bus instance.
@@ -86,7 +90,7 @@ impl EventBus {
     /// Subscribe to a set of topics using a provided group id.
     ///
     /// For Kafka, the group id maps to a consumer group, while for SQS it is ignored.
-    pub async fn subscribe(&self, group: &str, topics: &[&str]) -> Result<EventConsumer, anyhow::Error> {
+    pub async fn subscribe(&self, group: &str, topics: &[&str]) -> Result<EventConsumer, Error> {
         match &self.inner {
             InnerBus::Kafka(bus) => {
                 let consumer = bus.subscribe(group, topics).await?;
@@ -100,15 +104,15 @@ impl EventBus {
     }
 
     /// Create a set of topics on the event bus. This assumes authorization is already setup for this to be allowed.
-    pub async fn create(&self, topics: &[&str]) -> Result<(), anyhow::Error> {
+    pub async fn create(&self, topics: &[&str]) -> Result<(), Error> {
         match &self.inner {
             InnerBus::Kafka(bus) => bus.create(topics).await,
-            InnerBus::Sqs(bus) => bus.create(topics).await,
+            InnerBus::Sqs(bus) => bus.create(topics).await.map_err(|e| e.into()),
         }
     }
 
     /// Send a message to a topic on the event bus.
-    pub async fn send(&self, topic: &str, data: &[u8]) -> Result<(), anyhow::Error> {
+    pub async fn send(&self, topic: &str, data: &[u8]) -> Result<(), Error> {
         match &self.inner {
             InnerBus::Kafka(bus) => bus.send(topic, data).await?,
             InnerBus::Sqs(bus) => bus.send(topic, data).await?,
@@ -137,7 +141,7 @@ enum InnerConsumer {
 
 impl EventConsumer {
     /// Wait for the next available event on this consumers topics.
-    pub async fn next(&self) -> Result<Option<Event<'_>>, anyhow::Error> {
+    pub async fn next(&self) -> Result<Option<Event<'_>>, Error> {
         let event = match &self.inner {
             InnerConsumer::Kafka(consumer) => {
                 let event = consumer.next().await?;
@@ -157,13 +161,13 @@ impl EventConsumer {
     /// Update the status of events that was previously received.
     ///
     /// This will ensure that the consumer will start from the offset after these events.
-    pub async fn commit<'m>(&'m self, events: &[Event<'m>]) -> Result<(), anyhow::Error> {
+    pub async fn commit<'m>(&'m self, events: &[Event<'m>]) -> Result<(), Error> {
         for event in events {
             self.metrics.committed_total.with_label_values(&[event.topic()]).inc();
         }
         match &self.inner {
             InnerConsumer::Kafka(consumer) => consumer.commit(events).await,
-            InnerConsumer::Sqs(consumer) => consumer.commit(events).await,
+            InnerConsumer::Sqs(consumer) => consumer.commit(events).await.map_err(|e| e.into()),
         }
     }
 }
