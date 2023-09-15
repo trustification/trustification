@@ -7,10 +7,15 @@ edition = "2021"
 
 [dependencies]
 actix-web = "4"
+actix-cors = "0.6.4"
+guac = { workspace = true }
 ### this seems completely wrong, but Cargo seems to also require way too many ../ for this
 ### wtf am I doing wrong?
 collectorist-client = { path = " ../../../../collectorist/client" }
+v11y-client = { path = "../../v11y/client"}
+trustification-common = { path = "../../common"}
 trustification-infrastructure = { path = "../../infrastructure" }
+trustification-auth = { path = "../../auth" }
 reqwest = "0.11.18"
 clap = { version = "4", features = ["derive"] }
 anyhow = "1"

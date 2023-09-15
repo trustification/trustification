@@ -1,4 +1,5 @@
 use crate::server::collector::{collector_config, deregister_collector, register_collector};
+use actix_web::middleware::{Compress, Logger};
 use actix_web::web;
 use derive_more::{Display, Error, From};
 use std::sync::Arc;
@@ -33,6 +34,8 @@ pub fn config(
 ) {
     cfg.service(
         web::scope("/api/v1")
+            .wrap(Logger::default())
+            .wrap(Compress::default())
             .wrap(new_auth!(auth))
             .service(register_collector)
             .service(deregister_collector)

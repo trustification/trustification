@@ -139,12 +139,13 @@ services:
           sleep 5
         done
         echo keycloak is up
-        /trust v11y api -p $V11Y_API_PORT
+        /trust v11y api -p $V11Y_API_PORT --devmode
     entrypoint: /usr/bin/bash
     restart: on-failure
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:9010" ]
     environment:
+      HTTP_SERVER_BIND_ADDR: "::"
       ISSUER_URL: http://keycloak:8080/realms/chicken
       INFRASTRUCTURE_ENABLED: "true"
       OPENID_CONFIGURATION: "http://keycloak:8080/realms/chicken/.well-known/openid-configuration"

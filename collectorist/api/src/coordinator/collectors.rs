@@ -55,7 +55,9 @@ impl Collectors {
         let mut futures = Vec::new();
 
         for collector in self.collectors.values() {
+            log::info!("check pkgs {}", collector.id);
             if collector.config.interests.contains(&Interest::Package) {
+                log::info!("dispatch pkgs {}", collector.id);
                 futures.push(collector.collect_packages(state.clone(), request.purls.clone()));
             }
         }
@@ -71,9 +73,9 @@ impl Collectors {
         let mut futures = Vec::new();
 
         for collector in self.collectors.values() {
-            log::info!("check {}", collector.id);
+            log::info!("check vulns {}", collector.id);
             if collector.config.interests.contains(&Interest::Vulnerability) {
-                log::info!("dispatch {}", collector.id);
+                log::info!("dispatch vulns {}", collector.id);
                 futures.push(collector.collect_vulnerabilities(state.clone(), vuln_ids.clone()));
             }
         }

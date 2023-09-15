@@ -130,6 +130,7 @@ endpoint!(SpogUi, 8084);
 endpoint!(GuacGraphQl, 8085, "/query");
 endpoint!(GuacCollectSub, 8086);
 endpoint!(V11y, 8087);
+endpoint!(Exhort, 8088);
 endpoint!(Collectorist, 8180);
 endpoint!(CollectorOsv, 8181);
 endpoint!(CollectorSnyk, 8182);
