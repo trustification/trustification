@@ -1,5 +1,7 @@
 use std::time::Duration;
 
+use crate::Error;
+use crate::Event;
 use rdkafka::{
     admin::{AdminClient, AdminOptions, NewTopic},
     config::ClientConfig,
@@ -10,16 +12,23 @@ use rdkafka::{
     Message,
 };
 
-use crate::Event;
-
 #[allow(unused)]
 pub struct KafkaEventBus {
     brokers: String,
     producer: FutureProducer,
 }
 
+impl From<KafkaError> for Error {
+    fn from(e: KafkaError) -> Self {
+        match e {
+            KafkaError::Subscription(_) => Self::Critical(e.to_string()),
+            _ => Self::Transient(e.to_string()),
+        }
+    }
+}
+
 impl KafkaEventBus {
-    pub(crate) fn new(brokers: String) -> Result<Self, KafkaError> {
+    pub(crate) fn new(brokers: String) -> Result<Self, Error> {
         let producer: FutureProducer = ClientConfig::new()
             .set("message.timeout.ms", "5000")
             .set("bootstrap.servers", &brokers)
@@ -27,7 +36,7 @@ impl KafkaEventBus {
         Ok(Self { brokers, producer })
     }
 
-    pub(crate) async fn create(&self, topics: &[&str]) -> Result<(), anyhow::Error> {
+    pub(crate) async fn create(&self, topics: &[&str]) -> Result<(), Error> {
         let admin: AdminClient<_> = ClientConfig::new().set("bootstrap.servers", &self.brokers).create()?;
         let topics: Vec<NewTopic> = topics
             .iter()
@@ -37,7 +46,7 @@ impl KafkaEventBus {
         Ok(())
     }
 
-    pub(crate) async fn subscribe(&self, group: &str, topics: &[&str]) -> Result<KafkaConsumer, anyhow::Error> {
+    pub(crate) async fn subscribe(&self, group: &str, topics: &[&str]) -> Result<KafkaConsumer, Error> {
         let consumer: StreamConsumer = ClientConfig::new()
             .set("group.id", group)
             .set("bootstrap.servers", &self.brokers)
@@ -51,7 +60,7 @@ impl KafkaEventBus {
         Ok(KafkaConsumer { consumer })
     }
 
-    pub(crate) async fn send(&self, topic: &str, data: &[u8]) -> Result<(), anyhow::Error> {
+    pub(crate) async fn send(&self, topic: &str, data: &[u8]) -> Result<(), Error> {
         let record = FutureRecord::to(topic).payload(data);
         self.producer
             .send::<(), _, _>(record, Duration::from_secs(10))
@@ -66,12 +75,12 @@ pub struct KafkaConsumer {
 }
 
 impl KafkaConsumer {
-    pub(crate) async fn next(&self) -> Result<Option<KafkaEvent>, anyhow::Error> {
+    pub(crate) async fn next(&self) -> Result<Option<KafkaEvent>, Error> {
         let message = self.consumer.recv().await?;
         Ok(Some(KafkaEvent { message }))
     }
 
-    pub(crate) async fn commit<'m>(&'m self, events: &[Event<'m>]) -> Result<(), anyhow::Error> {
+    pub(crate) async fn commit<'m>(&'m self, events: &[Event<'m>]) -> Result<(), Error> {
         let mut position = self.consumer.position()?;
         for event in events {
             if let Event::Kafka(event) = event {
