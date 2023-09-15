@@ -1,6 +1,41 @@
 version: '3'
 
 services:
+  exhort-api:
+    image: $TRUST_IMAGE:${TRUST_VERSION:?TRUST_VERSION is required}
+    depends_on:
+      - init-keycloak
+      - collectorist-api
+      - v11y-api
+      - guac-graphql
+    expose:
+      - "$EXHORT_API_PORT"
+    ports:
+      - "$EXHORT_API_PORT:$EXHORT_API_PORT"
+    command:
+      - -c
+      - |
+        while [[ "$$(curl --connect-timeout 2 \
+                  -s -o /dev/null -w ''%{http_code}'' \
+                  $$OPENID_CONFIGURATION)" != "200" ]]; do
+          echo waiting for keycloak...
+          sleep 5
+        done
+        echo keycloak is up
+        /trust exhort api -p $EXHORT_API_PORT --devmode
+    entrypoint: /usr/bin/bash
+    restart: on-failure
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:9010" ]
+    environment:
+      HTTP_SERVER_BIND_ADDR: "::"
+      COLLECTORIST_URL: http://collectorist-api:$COLLECTORIST_API_PORT
+      V11Y_URL: http://v11y-api:$V11Y_API_PORT
+      GUAC_URL: http://guac-graphql:$GUAC_API_PORT/query
+      ISSUER_URL: http://keycloak:8080/realms/chicken
+      INFRASTRUCTURE_ENABLED: "true"
+      OPENID_CONFIGURATION: "http://keycloak:8080/realms/chicken/.well-known/openid-configuration"
+
   collectorist-api:
     image: $TRUST_IMAGE:${TRUST_VERSION:?TRUST_VERSION is required}
     depends_on:
@@ -27,7 +62,8 @@ services:
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:9010" ]
     environment:
-      GUAC_URL: http://guac-graphql:$GUAC_API_PORT
+      HTTP_SERVER_BIND_ADDR: "::"
+      GUAC_URL: http://guac-graphql:$GUAC_API_PORT/query
       CSUB_URL: http://guac-collectsub:$GUAC_CSUB_PORT
       ISSUER_URL: http://keycloak:8080/realms/chicken
       INFRASTRUCTURE_ENABLED: "true"
@@ -53,13 +89,18 @@ services:
           sleep 5
         done
         echo keycloak is up
-        /trust collector osv -p $COLLECTOR_OSV_API_PORT --devmode
+        /trust collector osv \
+          -p $COLLECTOR_OSV_API_PORT \
+          --advertise http://collector-osv:$COLLECTOR_OSV_API_PORT/api/v1/ \
+          --devmode
     entrypoint: /usr/bin/bash
     restart: on-failure
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:9010" ]
     environment:
+      HTTP_SERVER_BIND_ADDR: "::"
       COLLECTORIST_URL: http://collectorist-api:$COLLECTORIST_API_PORT
+      V11Y_URL: http://v11y-api:$V11Y_API_PORT/
       ISSUER_URL: http://keycloak:8080/realms/chicken
       INFRASTRUCTURE_ENABLED: "true"
       OPENID_CONFIGURATION: "http://keycloak:8080/realms/chicken/.well-known/openid-configuration"
@@ -85,12 +126,18 @@ services:
           sleep 5
         done
         echo keycloak is up
-        /trust collector snyk -p $COLLECTOR_SNYK_API_PORT --snyk-org-id $SNYK_ORG_ID --snyk-token $SNYK_TOKEN --devmode
+        /trust collector snyk \
+          -p $COLLECTOR_SNYK_API_PORT \
+          --snyk-org-id $SNYK_ORG_ID \
+          --snyk-token $SNYK_TOKEN \
+          --advertise http://collector-snyk:$COLLECTOR_SNYK_API_PORT/api/v1/ \
+          --devmode
     entrypoint: /usr/bin/bash
     restart: on-failure
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:9010" ]
     environment:
+      HTTP_SERVER_BIND_ADDR: "::"
       COLLECTORIST_URL: http://collectorist-api:$COLLECTORIST_API_PORT
       ISSUER_URL: http://keycloak:8080/realms/chicken
       INFRASTRUCTURE_ENABLED: "true"
@@ -116,13 +163,19 @@ services:
           sleep 5
         done
         echo keycloak is up
-        /trust collector nvd -p $COLLECTOR_NVD_API_PORT --nvd-api-key $NVD_API_KEY --devmode
+        /trust collector nvd \
+          -p $COLLECTOR_NVD_API_PORT \
+          --nvd-api-key $NVD_API_KEY \
+          --advertise http://collector-nvd:$COLLECTOR_NVD_API_PORT/api/v1/ \
+          --devmode
     entrypoint: /usr/bin/bash
     restart: on-failure
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:9010" ]
     environment:
+      HTTP_SERVER_BIND_ADDR: "::"
       COLLECTORIST_URL: http://collectorist-api:$COLLECTORIST_API_PORT
+      V11Y_URL: http://v11y-api:$V11Y_API_PORT
       ISSUER_URL: http://keycloak:8080/realms/chicken
       INFRASTRUCTURE_ENABLED: "true"
       OPENID_CONFIGURATION: "http://keycloak:8080/realms/chicken/.well-known/openid-configuration"

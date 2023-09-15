@@ -110,6 +110,7 @@ pub async fn collect_packages(
     request: web::Json<CollectPackagesRequest>,
     state: web::Data<AppState>,
 ) -> actix_web::Result<impl Responder> {
+    log::info!("-- collect packages");
     let guac_url = state
         .guac_url
         .read()
@@ -124,6 +125,7 @@ pub async fn collect_packages(
     let response = state.osv.query_batch(request).await.map_err(|_| Error::OsvError)?;
 
     for entry in &response.results {
+        log::info!("-- entry");
         if let Some(vulns) = &entry.vulns {
             if let Package::Purl { purl } = &entry.package {
                 guac.intrinsic()
@@ -131,6 +133,7 @@ pub async fn collect_packages(
                     .await
                     .map_err(|_| Error::GuacError)?;
                 for vuln in vulns {
+                    log::info!("ingest vulnerability {} on purl {}", vuln.id, purl);
                     guac.intrinsic()
                         //.ingest_vulnerability("osv", &vuln.id)
                         .ingest_vulnerability(&VulnerabilityInputSpec {

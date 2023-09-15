@@ -2555,6 +2555,7 @@ dependencies = [
 name = "exhort-api"
 version = "0.1.0"
 dependencies = [
+ "actix-cors",
  "actix-web",
  "anyhow",
  "clap",
@@ -2562,15 +2563,19 @@ dependencies = [
  "derive_more",
  "env_logger",
  "futures",
+ "guac",
  "log",
  "packageurl",
  "reqwest",
  "serde",
  "serde_json",
  "tonic-build",
+ "trustification-auth",
+ "trustification-common",
  "trustification-infrastructure",
  "utoipa",
  "utoipa-swagger-ui",
+ "v11y-client",
 ]
 
 [[package]]

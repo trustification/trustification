@@ -293,12 +293,12 @@ impl Db {
 
         match id {
             GetBy::Id(id) => {
-                builder.push("                vulnerabilities.id = ");
-                builder.push_bind(id);
+                builder.push("                lower(vulnerabilities.id) = ");
+                builder.push_bind(id.to_lowercase());
             }
             GetBy::Alias(alias) => {
-                builder.push("                aliases.alias = ");
-                builder.push_bind(alias);
+                builder.push("                lower(aliases.alias) = ");
+                builder.push_bind(alias.to_lowercase());
             }
         }
 
