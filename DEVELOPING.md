@@ -44,8 +44,9 @@ brew install protobuf
 Trustification comes with a set of [integration
 tests](./integration-tests/) that you can run after the required
 services defined in the [default compose
-script](./deploy/compose/compose.yaml) are up and running. Once
-they're up, run the tests like so:
+script](./deploy/compose/compose.yaml) 
+and [Guac compose script](./deploy/compose/compose-guac.yaml) are up and running. 
+Once they're up, run the tests like so:
 
 ```shell
 cargo test -p integration-tests

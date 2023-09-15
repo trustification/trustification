@@ -157,3 +157,70 @@ async fn spog_search_correlation(context: &mut SpogContext) {
     delete_sbom(&context.bombastic, sbom_id).await;
     delete_vex(&context.vexination, &encode(vex_id)).await;
 }
+
+/// SPoG is the entrypoint for the frontend. It exposes an dependencies API, but forwards requests
+/// to Guac. This test is here to test this.
+#[test_context(SpogContext)]
+#[tokio::test]
+#[ntest::timeout(30_000)]
+async fn spog_dependencies(context: &mut SpogContext) {
+    let input = serde_json::from_str(include_str!("testdata/correlation/stf-1.5.json")).unwrap();
+    let sbom_id = "test-stf-1.5";
+    upload_sbom(&context.bombastic, sbom_id, &input).await;
+
+    let client = reqwest::Client::new();
+
+    let purl: &str = "pkg:rpm/redhat/json-c@0.13.1-0.4.el8";
+
+    let mut attempt = 1;
+    loop {
+        let response = client
+            .get(context.urlify("/api/v1/packages"))
+            .query(&[("purl", purl)])
+            .inject_token(&context.provider.provider_user)
+            .await
+            .unwrap()
+            .send()
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let payload: Value = response.json().await.unwrap();
+        if payload.as_array().unwrap().len() == 1 {
+            break;
+        }
+
+        attempt += 1;
+        assert!(attempt < 10, "Guac ingestion failed, no packages available");
+        // wait a bit until the SBOM gets ingested into Guac
+        tokio::time::sleep(Duration::from_secs(1)).await;
+    }
+
+    let response = client
+        .get(context.urlify("/api/v1/packages/dependents"))
+        .query(&[("purl", purl)])
+        .inject_token(&context.provider.provider_user)
+        .await
+        .unwrap()
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    let payload: Value = response.json().await.unwrap();
+    // this can vary depending on the SBOMs ingested by the previous tests
+    assert!(payload.as_array().unwrap().len() >= 5);
+
+    let purl: &str = "pkg:rpm/redhat/python-zope-event@4.2.0-9.2.el8stf";
+    let response = client
+        .get(context.urlify("/api/v1/packages/dependencies"))
+        .query(&[("purl", purl)])
+        .inject_token(&context.provider.provider_user)
+        .await
+        .unwrap()
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    let payload: Value = response.json().await.unwrap();
+    assert_eq!(3, payload.as_array().unwrap().len());
+}

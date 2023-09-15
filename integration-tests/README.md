@@ -1,9 +1,10 @@
 # Integration tests
 
 By default, these tests expect the services defined in the
-[default compose script](../deploy/compose/compose.yaml) -- MinIO,
-Kafka, and Keycloak -- to be up and running. Once they're ready, run
-the tests like so:
+[default compose script](../deploy/compose/compose.yaml) 
+and [Guac compose script](../deploy/compose/compose-guac.yaml) 
+-- MinIO, Kafka, and Keycloak -- to be up and running.
+Once they're ready, run the tests like so:
 
 ```shell
 cargo test -p integration-tests
