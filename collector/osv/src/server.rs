@@ -1,17 +1,20 @@
 use std::fmt::Debug;
+use std::future::Future;
 use std::net::{IpAddr, SocketAddr, TcpListener};
+use std::process::Output;
 use std::str::FromStr;
-use std::sync::atomic::Ordering;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
 
 use actix_web::middleware::{Compress, Logger};
 use actix_web::{post, web, HttpResponse, Responder, ResponseError};
 use anyhow::Context;
+use async_trait::async_trait;
 use collector_client::{
     CollectPackagesRequest, CollectPackagesResponse, CollectVulnerabilitiesRequest, CollectVulnerabilitiesResponse,
 };
-use collectorist_client::{CollectorConfig, Interest};
+use collectorist_client::{CollectorConfig, CollectoristClient, Interest};
 use derive_more::Display;
 use guac::client::intrinsic::certify_vuln::ScanMetadataInput;
 use guac::client::intrinsic::vulnerability::VulnerabilityInputSpec;
@@ -19,6 +22,7 @@ use guac::client::GuacClient;
 use log::{info, warn};
 use packageurl::PackageUrl;
 use reqwest::Url;
+use tokio::sync::RwLock;
 use tokio::time::sleep;
 use trustification_auth::authenticator::Authenticator;
 use trustification_auth::authorizer::Authorizer;
@@ -220,7 +224,63 @@ pub async fn collect_vulnerabilities(
     Ok(HttpResponse::Ok().json(gathered))
 }
 
-pub async fn register_with_collectorist(state: &AppState, advertise: Option<Url>) -> anyhow::Result<()> {
+pub struct CollectorState {
+    addr: RwLock<Option<SocketAddr>>,
+    connected: AtomicBool,
+}
+
+impl CollectorState {
+    pub fn new() -> Self {
+        Self {
+            addr: RwLock::new(None),
+            connected: AtomicBool::new(false),
+        }
+    }
+}
+
+#[async_trait]
+pub trait CollectorStateHandler {
+    async fn registered(&self);
+    async fn unregistered(&self);
+}
+
+pub struct FnCollectorStateHandler<R, RFut, U, UFut>
+where
+    R: Fn() -> RFut,
+    RFut: Future<Output = ()>,
+    U: Fn() -> UFut,
+    UFut: Future<Output = ()>,
+{
+    registered: R,
+    unregistered: U,
+}
+
+#[async_trait]
+impl<R, RFut, U, UFut> CollectorStateHandler for FnCollectorStateHandler<R, RFut, U, UFut>
+where
+    R: Fn() -> RFut,
+    RFut: Future<Output = ()>,
+    U: Fn() -> UFut,
+    UFut: Future<Output = ()>,
+{
+    async fn registered(&self) {
+        (self.registered)().await
+    }
+
+    async fn unregistered(&self) {
+        (self.unregistered).await
+    }
+}
+
+pub async fn register_with_collectorist<H>(
+    state: &CollectorState,
+    client: CollectoristClient,
+    advertise: Option<Url>,
+    handler: H,
+) -> anyhow::Result<()>
+where
+    H: CollectorStateHandler,
+{
     log::info!("Starting collectorist loop - advertise: {advertise:?}");
 
     loop {
@@ -234,11 +294,10 @@ pub async fn register_with_collectorist(state: &AppState, advertise: Option<Url>
                 };
                 info!(
                     "registering with collectorist at {} with callback={}",
-                    state.collectorist_client.register_collector_url(),
+                    client.register_collector_url(),
                     url
                 );
-                match state
-                    .collectorist_client
+                match client
                     .register_collector(CollectorConfig {
                         url,
                         cadence: Default::default(),
@@ -261,8 +320,8 @@ pub async fn register_with_collectorist(state: &AppState, advertise: Option<Url>
     }
 }
 
-pub async fn deregister_with_collectorist(state: &AppState) {
-    if state.collectorist_client.deregister_collector().await.is_ok() {
+pub async fn deregister_with_collectorist<H>(state: &CollectorState, client: &CollectoristClient, handler: H) {
+    if client.deregister_collector().await.is_ok() {
         info!("deregistered with collectorist");
     } else {
         warn!("failed to deregister with collectorist");

@@ -125,8 +125,6 @@ impl Run {
 }
 
 pub struct AppState {
-    addr: RwLock<Option<SocketAddr>>,
-    connected: AtomicBool,
     collectorist_client: collectorist_client::CollectoristClient,
     v11y_client: v11y_client::V11yClient,
     guac_url: RwLock<Option<Url>>,
@@ -139,8 +137,6 @@ impl AppState {
         P: TokenProvider + Clone + 'static,
     {
         Self {
-            addr: RwLock::new(None),
-            connected: AtomicBool::new(false),
             collectorist_client: collectorist_client::CollectoristClient::new(
                 collector_id,
                 collectorist_url,
