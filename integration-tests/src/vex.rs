@@ -2,7 +2,6 @@ use super::*;
 use crate::{config::Config, runner::Runner};
 use async_trait::async_trait;
 use test_context::AsyncTestContext;
-use trustification_infrastructure::endpoint::EndpointServerConfig;
 
 #[async_trait]
 impl AsyncTestContext for VexinationContext {
@@ -168,6 +167,7 @@ fn vexination_indexer() -> vexination_indexer::Run {
 
 #[cfg(feature = "with-services")]
 fn vexination_api() -> vexination_api::Run {
+    use trustification_infrastructure::endpoint::EndpointServerConfig;
     use trustification_storage::Region;
 
     vexination_api::Run {
