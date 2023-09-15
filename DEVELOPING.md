@@ -102,6 +102,8 @@ RUST_LOG=info cargo run -p trust -- spog api --devmode  &
 RUST_LOG=info cargo run -p trust -- v11y api --devmode &
 RUST_LOG=info cargo run -p trust -- collectorist api --devmode &
 RUST_LOG=info cargo run -p trust -- collector osv --devmode &
+RUST_LOG=info cargo run -p trust -- collector nvd --devmode &
+RUST_LOG=info cargo run -p trust -- collector snyk --devmode &
 ```
 
 If you want to disable authentication (not recommended unless you are not exposing any services outside localhost), you can pass the `--authentication-disabled` flag to the above commands.
