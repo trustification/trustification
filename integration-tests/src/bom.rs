@@ -192,7 +192,6 @@ fn bombastic_indexer() -> bombastic_indexer::Run {
 
 #[cfg(feature = "with-services")]
 fn bombastic_api() -> bombastic_api::Run {
-    use trustification_infrastructure::endpoint::EndpointServerConfig;
     use trustification_storage::Region;
     bombastic_api::Run {
         devmode: false,
