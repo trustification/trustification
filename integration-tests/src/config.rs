@@ -24,6 +24,7 @@ impl Config {
         let _ = env_logger::try_init();
         match std::env::var("TRUST_URL") {
             Ok(base) => {
+                #[allow(clippy::expect_fun_call)]
                 let url = Url::parse(&base)
                     .expect(&format!("Invalid TRUST_URL: '{base}'"))
                     .join("/endpoints/backend.json")

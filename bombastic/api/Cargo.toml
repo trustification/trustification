@@ -28,7 +28,6 @@ futures = "0.3"
 derive_more = "0.99"
 prometheus = "0.13.3"
 actix-web-httpauth = "0.8.0"
-actix-web-prom = "0.7.0"
 thiserror = "1"
 
 utoipa = { version = "3", features = ["actix_extras"] }

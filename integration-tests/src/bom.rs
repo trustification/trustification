@@ -86,7 +86,7 @@ pub async fn start_bombastic(config: &Config) -> BombasticContext {
         let client = reqwest::Client::new();
         loop {
             let response = client
-                .get(context.urlify(format!("/api/v1/sbom?id=none")))
+                .get(context.urlify("/api/v1/sbom?id=none"))
                 .inject_token(&context.provider.provider_user)
                 .await
                 .unwrap()
@@ -195,7 +195,6 @@ fn bombastic_api() -> bombastic_api::Run {
     use trustification_infrastructure::endpoint::EndpointServerConfig;
     use trustification_storage::Region;
     bombastic_api::Run {
-        api: EndpointServerConfig::new("127.0.0.1", 8082),
         devmode: false,
         index: IndexConfig {
             index_dir: None,
@@ -221,5 +220,6 @@ fn bombastic_api() -> bombastic_api::Run {
         },
         auth: testing_auth(),
         swagger_ui_oidc: testing_swagger_ui_oidc(),
+        http: Default::default(),
     }
 }

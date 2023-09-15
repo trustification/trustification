@@ -14,10 +14,12 @@ use guac::client::GuacClient;
 use log::{info, warn};
 use reqwest::Url;
 use tokio::time::sleep;
-use trustification_auth::authenticator::Authenticator;
-use trustification_auth::authorizer::Authorizer;
-use trustification_infrastructure::app::http::{HttpServerBuilder, HttpServerConfig};
-use trustification_infrastructure::{new_auth, MainContext};
+use trustification_auth::{authenticator::Authenticator, authorizer::Authorizer};
+use trustification_infrastructure::{
+    app::http::{HttpServerBuilder, HttpServerConfig},
+    endpoint::CollectorNvd,
+    new_auth, MainContext,
+};
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
@@ -52,7 +54,7 @@ impl ResponseError for Error {}
 pub async fn run(
     context: MainContext<()>,
     state: Arc<AppState>,
-    http: HttpServerConfig,
+    http: HttpServerConfig<CollectorNvd>,
     authenticator: Option<Arc<Authenticator>>,
     authorizer: Authorizer,
 ) -> Result<(), anyhow::Error> {

@@ -13,7 +13,7 @@ use trustification_auth::{
 };
 use trustification_infrastructure::{
     app::http::{HttpServerBuilder, HttpServerConfig},
-    endpoint::{self, Collectorist, Endpoint, EndpointServerConfig},
+    endpoint::{self, Collectorist, Endpoint},
     health::checks::Probe,
     Infrastructure, InfrastructureConfig,
 };
@@ -26,9 +26,6 @@ mod state;
 #[derive(clap::Args, Debug)]
 #[command(about = "Run the api server", args_conflicts_with_subcommands = true)]
 pub struct Run {
-    #[command(flatten)]
-    pub api: EndpointServerConfig<Collectorist>,
-
     #[arg(long = "devmode", default_value_t = false)]
     pub devmode: bool,
 
@@ -65,7 +62,7 @@ pub struct Run {
     pub(crate) oidc: OpenIdTokenProviderConfigArguments,
 
     #[command(flatten)]
-    pub http: HttpServerConfig,
+    pub http: HttpServerConfig<Collectorist>,
 }
 
 impl Run {

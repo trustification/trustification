@@ -248,7 +248,7 @@ async fn vex_upload_unauthorized(vexination: &mut VexinationContext) {
 #[tokio::test]
 #[ntest::timeout(60_000)]
 async fn get_vex_with_missing_qualifier(vexination: &mut VexinationContext) {
-    let api_endpoint = vexination.urlify(format!("api/v1/vex?id=missing_qualifier"));
+    let api_endpoint = vexination.urlify("api/v1/vex?id=missing_qualifier");
     get_response(&api_endpoint, StatusCode::BAD_REQUEST, &vexination.provider).await;
 }
 
@@ -256,6 +256,6 @@ async fn get_vex_with_missing_qualifier(vexination: &mut VexinationContext) {
 #[tokio::test]
 #[ntest::timeout(60_000)]
 async fn get_vex_invalid_advisory(vexination: &mut VexinationContext) {
-    let api_endpoint = vexination.urlify(format!("api/v1/vex?advisory=invalid_vex"));
+    let api_endpoint = vexination.urlify("api/v1/vex?advisory=invalid_vex");
     get_response(&api_endpoint, StatusCode::NOT_FOUND, &vexination.provider).await;
 }

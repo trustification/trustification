@@ -171,7 +171,6 @@ fn vexination_api() -> vexination_api::Run {
     use trustification_storage::Region;
 
     vexination_api::Run {
-        api: EndpointServerConfig::new("127.0.0.1", 8081),
         devmode: false,
         index: IndexConfig {
             index_dir: None,
@@ -197,5 +196,6 @@ fn vexination_api() -> vexination_api::Run {
         },
         auth: testing_auth(),
         swagger_ui_oidc: testing_swagger_ui_oidc(),
+        http: Default::default(),
     }
 }

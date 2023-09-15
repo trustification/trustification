@@ -22,6 +22,7 @@ use tokio::time::sleep;
 use trustification_auth::authenticator::Authenticator;
 use trustification_auth::authorizer::Authorizer;
 use trustification_infrastructure::app::http::{HttpServerBuilder, HttpServerConfig};
+use trustification_infrastructure::endpoint::CollectorOsv;
 use trustification_infrastructure::{new_auth, MainContext};
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
@@ -55,7 +56,7 @@ pub struct ApiDoc;
 pub async fn run(
     context: MainContext<()>,
     state: Arc<AppState>,
-    http: HttpServerConfig,
+    http: HttpServerConfig<CollectorOsv>,
     authenticator: Option<Arc<Authenticator>>,
     authorizer: Authorizer,
 ) -> Result<(), anyhow::Error> {

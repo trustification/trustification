@@ -11,7 +11,7 @@ use trustification_auth::{
 use trustification_index::{IndexConfig, IndexStore};
 use trustification_infrastructure::{
     app::http::{HttpServerBuilder, HttpServerConfig},
-    endpoint::{EndpointServerConfig, Vexination},
+    endpoint::Vexination,
     health::checks::Probe,
     Infrastructure, InfrastructureConfig,
 };
@@ -22,9 +22,6 @@ mod server;
 #[derive(clap::Args, Debug)]
 #[command(about = "Run the api server", args_conflicts_with_subcommands = true)]
 pub struct Run {
-    #[command(flatten)]
-    pub api: EndpointServerConfig<Vexination>,
-
     #[arg(long = "devmode", default_value_t = false)]
     pub devmode: bool,
 
@@ -44,7 +41,7 @@ pub struct Run {
     pub index: IndexConfig,
 
     #[command(flatten)]
-    pub http: HttpServerConfig,
+    pub http: HttpServerConfig<Vexination>,
 }
 
 impl Run {

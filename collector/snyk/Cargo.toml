@@ -7,7 +7,6 @@ edition = "2021"
 
 [dependencies]
 actix-web = "4"
-actix-cors = "0.6"
 trustification-auth = { path = "../../auth" }
 trustification-infrastructure = { path = "../../infrastructure" }
 collectorist-api = { path = "../../collectorist/api"}
@@ -29,7 +28,6 @@ packageurl = "0.3.0"
 reqwest = "0.11.18"
 chrono = "0.4.26"
 url-escape = "0.1.1"
-
 
 [dev-dependencies]
 env_logger = "0.10"

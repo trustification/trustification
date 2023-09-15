@@ -83,7 +83,7 @@ async fn delete_happy_sbom(context: &mut BombasticContext) {
 async fn delete_missing_sbom(context: &mut BombasticContext) {
     let client = reqwest::Client::new();
     let response = client
-        .delete(context.urlify(format!("/api/v1/sbom")))
+        .delete(context.urlify("/api/v1/sbom"))
         .inject_token(&context.provider.provider_manager)
         .await
         .unwrap()
@@ -92,7 +92,7 @@ async fn delete_missing_sbom(context: &mut BombasticContext) {
         .unwrap();
     assert_eq!(response.status(), StatusCode::BAD_REQUEST);
     let response = client
-        .delete(context.urlify(format!("/api/v1/sbom?id=")))
+        .delete(context.urlify("/api/v1/sbom?id="))
         .inject_token(&context.provider.provider_manager)
         .await
         .unwrap()
@@ -101,7 +101,7 @@ async fn delete_missing_sbom(context: &mut BombasticContext) {
         .unwrap();
     assert_eq!(response.status(), StatusCode::NO_CONTENT);
     let response = client
-        .delete(context.urlify(format!("/api/v1/sbom?id=missing")))
+        .delete(context.urlify("/api/v1/sbom?id=missing"))
         .inject_token(&context.provider.provider_manager)
         .await
         .unwrap()
@@ -261,7 +261,7 @@ async fn bombastic_deletion(context: &mut BombasticContext) {
 #[ntest::timeout(60_000)]
 async fn sbom_invalid_type(context: &mut BombasticContext) {
     let response = reqwest::Client::new()
-        .post(context.urlify(format!("/api/v1/sbom?id=foo")))
+        .post(context.urlify("/api/v1/sbom?id=foo"))
         .body("<foo/>")
         .header("Content-Type", "application/xml")
         .inject_token(&context.provider.provider_manager)
@@ -279,7 +279,7 @@ async fn sbom_invalid_type(context: &mut BombasticContext) {
 #[ntest::timeout(60_000)]
 async fn sbom_invalid_encoding(context: &mut BombasticContext) {
     let response = reqwest::Client::new()
-        .post(context.urlify(format!("/api/v1/sbom?id=foo")))
+        .post(context.urlify("/api/v1/sbom?id=foo"))
         .body("{}")
         .header("Content-Type", "application/json")
         .header("Content-Encoding", "braille")
@@ -467,6 +467,6 @@ async fn get_sbom_with_invalid_id(context: &mut BombasticContext) {
 #[tokio::test]
 #[ntest::timeout(60_000)]
 async fn get_sbom_with_missing_id(context: &mut BombasticContext) {
-    let api_endpoint = context.urlify(format!("api/v1/sbom?ID=test"));
+    let api_endpoint = context.urlify("api/v1/sbom?ID=test");
     get_response(&api_endpoint, StatusCode::BAD_REQUEST, &context.provider).await;
 }
