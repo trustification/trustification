@@ -3,6 +3,8 @@ use crate::{config::Config, runner::Runner};
 use async_trait::async_trait;
 use test_context::AsyncTestContext;
 use trustification_auth::client::OpenIdTokenProviderConfigArguments;
+use trustification_infrastructure::endpoint;
+use trustification_infrastructure::endpoint::Endpoint;
 
 #[async_trait]
 impl AsyncTestContext for SpogContext {
@@ -56,12 +58,15 @@ pub async fn start_spog(config: &Config) -> SpogContext {
 
         let burl = bombastic.url.to_owned();
         let vurl = vexination.url.to_owned();
+        // FIXME: use from start_* once we have it
+        let curl = endpoint::Collectorist::url();
+        let wurl = endpoint::V11y::url();
 
         let runner = Runner::spawn(move || async move {
             select! {
                 biased;
 
-                spog = spog_api(burl, vurl).run(Some(listener)) => match spog {
+                spog = spog_api(burl, vurl, curl, wurl).run(Some(listener)) => match spog {
                     Err(e) => {
                         panic!("Error running spog API: {e:?}");
                     }
@@ -107,16 +112,16 @@ pub async fn start_spog(config: &Config) -> SpogContext {
 }
 
 #[cfg(feature = "with-services")]
-fn spog_api(burl: Url, vurl: Url) -> spog_api::Run {
+fn spog_api(bombastic_url: Url, vexination_url: Url, collectorist_url: Url, v11y_url: Url) -> spog_api::Run {
     spog_api::Run {
         devmode: false,
-        guac_url: Default::default(),
-        bombastic_url: burl,
-        vexination_url: vurl,
+        guac_url: endpoint::GuacGraphQl::url(),
+        bombastic_url,
+        vexination_url,
         crda_url: option_env!("CRDA_URL").map(|url| url.parse().unwrap()),
         crda_payload_limit: DEFAULT_CRDA_PAYLOAD_LIMIT,
-        collectorist_url: None,
-        v11y_url: None,
+        collectorist_url,
+        v11y_url,
         oidc: OpenIdTokenProviderConfigArguments::devmode(),
         config: None,
         infra: InfrastructureConfig {

@@ -5,7 +5,9 @@ use trustification_auth::{
     auth::AuthConfigArguments, client::OpenIdTokenProviderConfigArguments, swagger_ui::SwaggerUiOidcConfig,
 };
 use trustification_infrastructure::{
-    app::http::HttpServerConfig, endpoint::SpogApi, Infrastructure, InfrastructureConfig,
+    app::http::HttpServerConfig,
+    endpoint::{self, Endpoint, SpogApi},
+    Infrastructure, InfrastructureConfig,
 };
 use url::Url;
 
@@ -35,23 +37,23 @@ pub struct Run {
     #[arg(long = "devmode", default_value_t = false)]
     pub devmode: bool,
 
-    #[arg(short = 'g', long = "guac", default_value = "http://localhost:8085/query")]
-    pub guac_url: String,
+    #[arg(short = 'g', long = "guac", default_value_t = endpoint::GuacGraphQl::url())]
+    pub guac_url: Url,
 
-    #[arg(long = "bombastic-url", env, default_value = "http://localhost:8082")]
+    #[arg(long = "bombastic-url", env, default_value_t = endpoint::Bombastic::url())]
     pub bombastic_url: Url,
 
-    #[arg(long = "vexination-url", env, default_value = "http://localhost:8081")]
+    #[arg(long = "vexination-url", env, default_value_t = endpoint::Vexination::url())]
     pub vexination_url: Url,
 
     #[arg(long = "crda-url", env)]
     pub crda_url: Option<Url>,
 
-    #[arg(long = "collectorist-url", env)]
-    pub collectorist_url: Option<Url>,
+    #[arg(long = "collectorist-url", env, default_value_t = endpoint::Collectorist::url())]
+    pub collectorist_url: Url,
 
-    #[arg(long = "v11y-url", env)]
-    pub v11y_url: Option<Url>,
+    #[arg(long = "v11y-url", env, default_value_t = endpoint::V11y::url())]
+    pub v11y_url: Url,
 
     #[arg(long = "crda-payload-limit", env, default_value_t = DEFAULT_CRDA_PAYLOAD_LIMIT)]
     pub crda_payload_limit: usize,
@@ -80,12 +82,7 @@ pub struct Run {
 }
 
 impl Run {
-    pub async fn run(mut self, listener: Option<TcpListener>) -> anyhow::Result<ExitCode> {
-        if self.devmode {
-            self.collectorist_url = Some(Url::parse("http://localhost:8088").unwrap());
-            self.v11y_url = Some(Url::parse("http://localhost:8087").unwrap());
-        }
-
+    pub async fn run(self, listener: Option<TcpListener>) -> anyhow::Result<ExitCode> {
         Infrastructure::from(self.infra.clone())
             .run(
                 "spog-api",
