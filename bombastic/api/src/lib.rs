@@ -10,7 +10,7 @@ use trustification_auth::swagger_ui::{SwaggerUiOidc, SwaggerUiOidcConfig};
 use trustification_index::{IndexConfig, IndexStore};
 use trustification_infrastructure::{
     app::http::{HttpServerBuilder, HttpServerConfig},
-    endpoint::{Bombastic, EndpointServerConfig},
+    endpoint::Bombastic,
     health::checks::Probe,
     Infrastructure, InfrastructureConfig,
 };
