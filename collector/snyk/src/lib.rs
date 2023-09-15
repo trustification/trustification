@@ -118,8 +118,8 @@ impl Run {
                     let register = register_with_collectorist(state.clone(), self.advertise);
 
                     tokio::select! {
-                         _ = server => { }
-                         _ = register => { }
+                         t = server => { t? }
+                         t = register => { t? }
                     }
 
                     deregister_with_collectorist(state.clone()).await;

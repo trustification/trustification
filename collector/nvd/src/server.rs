@@ -1,4 +1,5 @@
-use std::net::TcpListener;
+use std::net::{IpAddr, TcpListener};
+use std::str::FromStr;
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
 use std::time::Duration;
@@ -6,6 +7,7 @@ use std::time::Duration;
 use crate::AppState;
 use actix_web::middleware::{Compress, Logger};
 use actix_web::{post, web, HttpResponse, Responder, ResponseError};
+use anyhow::Context;
 use collector_client::CollectVulnerabilitiesRequest;
 use collectorist_client::{CollectorConfig, Interest};
 use derive_more::Display;
@@ -58,7 +60,7 @@ pub async fn run(
     authenticator: Option<Arc<Authenticator>>,
     authorizer: Authorizer,
 ) -> Result<(), anyhow::Error> {
-    let listener = TcpListener::bind(&http.bind_addr)?;
+    let listener = TcpListener::bind((IpAddr::from_str(&http.bind_addr)?, *http.bind_port))?;
     let addr = listener.local_addr()?;
     log::info!("listening on {}", addr);
     log::info!("collectorist at {}", state.collectorist_client.register_collector_url());
@@ -126,13 +128,18 @@ pub fn config(cfg: &mut web::ServiceConfig, auth: Option<Arc<Authenticator>>) {
     .service(SwaggerUi::new("/swagger-ui/{_:.*}").url("/openapi.json", ApiDoc::openapi()));
 }
 
-pub async fn register_with_collectorist(state: &AppState, advertise: Option<Url>) {
+pub async fn register_with_collectorist(state: &AppState, advertise: Option<Url>) -> anyhow::Result<()> {
+    log::info!("Starting collectorist loop - advertise: {advertise:?}");
+
     loop {
         if let Some(addr) = *state.addr.read().await {
             if !state.connected.load(Ordering::Relaxed) {
-                let url = advertise
-                    .clone()
-                    .unwrap_or_else(|| Url::parse(&format!("http://{}:{}/api/v1/", addr.ip(), addr.port())).unwrap());
+                let url = match &advertise {
+                    Some(url) => url.clone(),
+                    None => {
+                        Url::parse(&format!("http://{addr}/api/v1/")).context("Failed to build advertisement URL")?
+                    }
+                };
                 info!(
                     "registering with collectorist at {} with callback={}",
                     state.collectorist_client.register_collector_url(),
