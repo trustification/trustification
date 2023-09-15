@@ -96,11 +96,11 @@ You can then add `$CURL_OPTS` to all `curl` calls in order to use the token.
 To run the API processes, you can use cargo:
 
 ```shell
-RUST_LOG=info cargo run -p trust -- vexination api --devmode -p 8081 &
-RUST_LOG=info cargo run -p trust -- bombastic api --devmode -p 8082 &
-RUST_LOG=info cargo run -p trust -- spog api --devmode -p 8083  &
-RUST_LOG=info cargo run -p trust -- v11y api --devmode -p 8087 &
-RUST_LOG=info cargo run -p trust -- collectorist api --devmode -p 8088 &
+RUST_LOG=info cargo run -p trust -- vexination api --devmode &
+RUST_LOG=info cargo run -p trust -- bombastic api --devmode &
+RUST_LOG=info cargo run -p trust -- spog api --devmode  &
+RUST_LOG=info cargo run -p trust -- v11y api --devmode &
+RUST_LOG=info cargo run -p trust -- collectorist api --devmode &
 RUST_LOG=info cargo run -p trust -- collector osv --devmode &
 ```
 
