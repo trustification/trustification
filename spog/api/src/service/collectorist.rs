@@ -10,23 +10,18 @@ pub enum Error {
 }
 
 pub struct CollectoristService {
-    client: Option<CollectoristClient>,
+    client: CollectoristClient,
 }
 
 impl CollectoristService {
-    pub fn new(url: Option<Url>, provider: Arc<dyn TokenProvider>) -> Self {
+    pub fn new(url: Url, provider: Arc<dyn TokenProvider>) -> Self {
         Self {
-            client: url.map(|url| CollectoristClient::new("".to_string(), url, provider)),
+            client: CollectoristClient::new("".to_string(), url, provider),
         }
     }
 
     pub async fn trigger_vulnerability(&self, id: impl Into<String>) -> Result<(), Error> {
-        let client = match &self.client {
-            Some(client) => client,
-            None => return Ok(()),
-        };
-
-        client
+        self.client
             .collect_vulnerabilities(vec![id.into()])
             .await
             .map_err(Error::Any)
