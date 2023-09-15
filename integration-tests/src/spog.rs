@@ -3,8 +3,6 @@ use crate::{config::Config, runner::Runner};
 use async_trait::async_trait;
 use test_context::AsyncTestContext;
 use trustification_auth::client::OpenIdTokenProviderConfigArguments;
-use trustification_infrastructure::endpoint;
-use trustification_infrastructure::endpoint::Endpoint;
 
 #[async_trait]
 impl AsyncTestContext for SpogContext {
@@ -113,6 +111,9 @@ pub async fn start_spog(config: &Config) -> SpogContext {
 
 #[cfg(feature = "with-services")]
 fn spog_api(bombastic_url: Url, vexination_url: Url, collectorist_url: Url, v11y_url: Url) -> spog_api::Run {
+    use trustification_infrastructure::endpoint;
+    use trustification_infrastructure::endpoint::Endpoint;
+
     spog_api::Run {
         devmode: false,
         guac_url: endpoint::GuacGraphQl::url(),
