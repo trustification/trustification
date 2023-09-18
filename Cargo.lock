@@ -7204,6 +7204,7 @@ dependencies = [
  "anyhow",
  "async-trait",
  "collectorist-client",
+ "futures-executor",
  "log",
  "tokio",
  "trustification-infrastructure",

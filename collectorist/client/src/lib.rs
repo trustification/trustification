@@ -1,8 +1,10 @@
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
+use std::sync::Arc;
 use std::time::Duration;
 use trustification_auth::client::{TokenInjector, TokenProvider};
 
+#[derive(Clone, Debug)]
 pub struct CollectoristUrl {
     collector_id: String,
     base_url: Url,
@@ -34,10 +36,11 @@ impl CollectoristUrl {
     }
 }
 
+#[derive(Clone)]
 pub struct CollectoristClient {
     collectorist_url: CollectoristUrl,
     client: reqwest::Client,
-    provider: Box<dyn TokenProvider>,
+    provider: Arc<dyn TokenProvider>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -53,7 +56,7 @@ impl CollectoristClient {
         Self {
             collectorist_url: CollectoristUrl::new(collectorist_url, collector_id.into()),
             client: reqwest::Client::new(),
-            provider: Box::new(provider),
+            provider: Arc::new(provider),
         }
     }
 

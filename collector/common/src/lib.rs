@@ -12,7 +12,7 @@ use trustification_infrastructure::health::Check;
 use url::Url;
 
 #[async_trait]
-pub trait CollectorStateHandler: Send + Sync {
+pub trait CollectorStateHandler: Send + Sync + 'static {
     async fn registered(&self, response: RegisterResponse);
     async fn unregistered(&self);
 }
@@ -45,10 +45,10 @@ where
 #[async_trait]
 impl<R, RFut, U, UFut> CollectorStateHandler for FnCollectorStateHandler<R, RFut, U, UFut>
 where
-    R: Fn(RegisterResponse) -> RFut + Send + Sync,
-    RFut: Future<Output = ()> + Send + Sync,
-    U: Fn() -> UFut + Send + Sync,
-    UFut: Future<Output = ()> + Send + Sync,
+    R: Fn(RegisterResponse) -> RFut + Send + Sync + 'static,
+    RFut: Future<Output = ()> + Send + Sync + 'static,
+    U: Fn() -> UFut + Send + Sync + 'static,
+    UFut: Future<Output = ()> + Send + Sync + 'static,
 {
     async fn registered(&self, response: RegisterResponse) {
         (self.registered)(response).await
@@ -73,6 +73,8 @@ impl CollectorState {
     pub fn is_connected(&self) -> bool {
         self.connected.load(Ordering::Relaxed)
     }
+
+    pub async fn deregister(&self) {}
 }
 
 #[async_trait]
@@ -100,7 +102,7 @@ where
     config: RegistrationConfig,
     state: CollectorState,
     client: CollectoristClient,
-    handler: H,
+    handler: Option<H>,
 }
 
 impl<H> CollectorRegistration<H>
@@ -115,7 +117,7 @@ where
             },
             config,
             client,
-            handler,
+            handler: Some(handler),
         }
     }
 
@@ -149,7 +151,9 @@ where
                             .await
                         {
                             Ok(response) => {
-                                self.handler.registered(response).await;
+                                if let Some(handler) = &self.handler {
+                                    handler.registered(response).await;
+                                }
                                 self.state.connected.store(true, Ordering::Relaxed);
                                 log::info!("successfully registered with collectorist")
                             }
@@ -166,18 +170,20 @@ where
         (runner, state)
     }
 
-    async fn deregister(&self) {
-        match self.client.deregister_collector().await {
-            Ok(()) => {
-                log::info!("deregistered with collectorist");
+    pub async fn deregister(&mut self) {
+        if let Some(handler) = self.handler.take() {
+            match self.client.deregister_collector().await {
+                Ok(()) => {
+                    log::info!("deregistered with collectorist");
+                }
+                Err(err) => {
+                    log::warn!("failed to deregister with collectorist: {err}");
+                }
             }
-            Err(err) => {
-                log::warn!("failed to deregister with collectorist: {err}");
-            }
-        }
 
-        self.state.connected.store(false, Ordering::Relaxed);
-        self.handler.unregistered().await;
+            self.state.connected.store(false, Ordering::Relaxed);
+            handler.unregistered().await;
+        }
     }
 }
 
@@ -186,13 +192,7 @@ where
     H: CollectorStateHandler,
 {
     fn drop(&mut self) {
-        match tokio::runtime::Runtime::new() {
-            Ok(rt) => rt.block_on(async {
-                self.deregister().await;
-            }),
-            Err(err) => {
-                log::error!("Failed to deregister from collectorist: {err}");
-            }
-        }
+        log::info!("Unregistering from collectorist");
+        futures_executor::block_on(self.deregister())
     }
 }
