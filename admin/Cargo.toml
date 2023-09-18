@@ -11,3 +11,5 @@ log = "0.4"
 clap = { version = "4", features = ["derive"] }
 anyhow = "1"
 reqwest = { version = "0.11.16", features = ["stream"] }
+
+trustification-common = { path = "../common" }

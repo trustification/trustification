@@ -127,6 +127,7 @@ mod test {
     async fn register_collector() -> Result<(), anyhow::Error> {
         let state = Arc::new(
             AppState::new(
+                reqwest::Client::new(),
                 ".",
                 Url::parse("http://csub.example.com/").unwrap(),
                 Url::parse("http://guac.example.com/query").unwrap(),
@@ -169,6 +170,7 @@ mod test {
     async fn get_collector_config() -> Result<(), anyhow::Error> {
         let state = Arc::new(
             AppState::new(
+                reqwest::Client::new(),
                 ".",
                 Url::parse("http://csub.example.com/").unwrap(),
                 Url::parse("http://guac.example.com/query").unwrap(),
@@ -217,6 +219,7 @@ mod test {
     async fn deregister_collector() -> Result<(), anyhow::Error> {
         let state = Arc::new(
             AppState::new(
+                reqwest::Client::new(),
                 ".",
                 Url::parse("http://csub.example.com/").unwrap(),
                 Url::parse("http://guac.example.com/query").unwrap(),

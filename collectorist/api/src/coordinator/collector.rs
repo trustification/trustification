@@ -35,11 +35,17 @@ pub struct Collector {
 }
 
 impl Collector {
-    pub fn new<P>(state: Arc<AppState>, id: String, config: CollectorConfig, provider: P) -> Self
+    pub fn new<P>(
+        client: reqwest::Client,
+        state: Arc<AppState>,
+        id: String,
+        config: CollectorConfig,
+        provider: P,
+    ) -> Self
     where
         P: TokenProvider + 'static,
     {
-        let client = Arc::new(CollectorClient::new(config.url.clone(), provider));
+        let client = Arc::new(CollectorClient::new(client, config.url.clone(), provider));
         let update = tokio::spawn(Collector::update(client.clone(), state, id.clone()));
         Self {
             id,

@@ -4,7 +4,6 @@ mod tracing;
 pub mod app;
 pub mod endpoint;
 pub mod health;
-pub mod tls;
 
 pub use infra::*;
 

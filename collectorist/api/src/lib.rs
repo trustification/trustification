@@ -11,6 +11,7 @@ use trustification_auth::{
     client::{OpenIdTokenProviderConfigArguments, TokenProvider},
     swagger_ui::{SwaggerUiOidc, SwaggerUiOidcConfig},
 };
+use trustification_common::tls::ClientConfig;
 use trustification_infrastructure::{
     app::http::{HttpServerBuilder, HttpServerConfig},
     endpoint::{self, Collectorist, Endpoint},
@@ -63,6 +64,9 @@ pub struct Run {
 
     #[command(flatten)]
     pub http: HttpServerConfig<Collectorist>,
+
+    #[command(flatten)]
+    pub client: ClientConfig,
 }
 
 impl Run {
@@ -86,7 +90,14 @@ impl Run {
                 |_context| async { Ok(()) },
                 |context| async move {
                     let provider = self.oidc.into_provider_or_devmode(self.devmode).await?;
-                    let state = Self::configure(self.storage_base, self.csub_url, self.guac_url, provider).await?;
+                    let state = Self::configure(
+                        self.client.build_client()?,
+                        self.storage_base,
+                        self.csub_url,
+                        self.guac_url,
+                        provider,
+                    )
+                    .await?;
 
                     let (probe, check) = Probe::new("Not connected to CSUB");
 
@@ -124,6 +135,7 @@ impl Run {
     }
 
     async fn configure<P>(
+        client: reqwest::Client,
         base: Option<PathBuf>,
         csub_url: Url,
         guac_url: Url,
@@ -133,7 +145,7 @@ impl Run {
         P: TokenProvider + Clone + 'static,
     {
         let base = base.unwrap_or_else(|| ".".into());
-        let state = Arc::new(AppState::new(base, csub_url, guac_url, provider).await?);
+        let state = Arc::new(AppState::new(client, base, csub_url, guac_url, provider).await?);
         Ok(state)
     }
 }

@@ -207,12 +207,12 @@ pub struct V11yClient {
 }
 
 impl V11yClient {
-    pub fn new<P: TokenProvider>(url: Url, provider: P) -> Self
+    pub fn new<P: TokenProvider>(client: reqwest::Client, url: Url, provider: P) -> Self
     where
         P: TokenProvider + 'static,
     {
         Self {
-            client: reqwest::Client::new(),
+            client,
             v11y_url: V11yUrl::new(url),
             provider: Box::new(provider),
         }

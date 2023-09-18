@@ -5,22 +5,7 @@ use std::{
     fs::File,
     io::Read,
     path::{Path, PathBuf},
-    str::FromStr,
 };
-
-/// Convert the name to an HTTP method.
-///
-/// If the name is empty, [`None`] is returned. If the method is invalid, and error will be returned.
-pub fn to_method(name: &str) -> Result<Option<reqwest::Method>, String> {
-    if name.is_empty() {
-        Ok(None)
-    } else {
-        match reqwest::Method::from_str(name) {
-            Ok(m) => Ok(Some(m)),
-            Err(_) => Err(format!("Invalid HTTP method: {}", name)),
-        }
-    }
-}
 
 fn add_cert<P: AsRef<Path>>(mut client: reqwest::ClientBuilder, cert: P) -> anyhow::Result<reqwest::ClientBuilder> {
     let cert = cert.as_ref();
@@ -63,8 +48,8 @@ pub struct ClientFactory {
     ca_certs: Vec<PathBuf>,
 }
 
-impl From<crate::tls::ClientConfig> for ClientFactory {
-    fn from(config: crate::tls::ClientConfig) -> Self {
+impl From<&crate::tls::ClientConfig> for ClientFactory {
+    fn from(config: &crate::tls::ClientConfig) -> Self {
         let mut factory = Self {
             insecure: false,
             ca_certs: vec![],
@@ -84,7 +69,7 @@ impl ClientFactory {
     /// Create a new client factory from a default [`ClientConfig`].
     #[cfg(feature = "tls")]
     pub fn new() -> Self {
-        crate::tls::ClientConfig::default().into()
+        (&crate::tls::ClientConfig::default()).into()
     }
 
     fn dedup(&mut self) {

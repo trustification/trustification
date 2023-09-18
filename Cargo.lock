@@ -1694,6 +1694,7 @@ dependencies = [
  "tokio",
  "trustification-auth",
  "trustification-collector-common",
+ "trustification-common",
  "trustification-infrastructure",
  "utoipa",
  "utoipa-swagger-ui",
@@ -1724,6 +1725,7 @@ dependencies = [
  "tokio",
  "trustification-auth",
  "trustification-collector-common",
+ "trustification-common",
  "trustification-infrastructure",
  "utoipa",
  "utoipa-swagger-ui",
@@ -1756,6 +1758,7 @@ dependencies = [
  "tokio",
  "trustification-auth",
  "trustification-collector-common",
+ "trustification-common",
  "trustification-infrastructure",
  "url-escape",
  "utoipa",
@@ -1802,6 +1805,7 @@ dependencies = [
  "thiserror",
  "tokio",
  "trustification-auth",
+ "trustification-common",
  "trustification-infrastructure",
  "utoipa",
  "utoipa-swagger-ui",
@@ -7143,6 +7147,7 @@ dependencies = [
  "serde",
  "serde_json",
  "tokio",
+ "trustification-common",
 ]
 
 [[package]]
@@ -7220,6 +7225,7 @@ name = "trustification-common"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "clap",
  "log",
  "native-tls",
  "pem 3.0.2",

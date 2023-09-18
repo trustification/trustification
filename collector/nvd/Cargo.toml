@@ -9,6 +9,7 @@ edition = "2021"
 actix-web = "4"
 async-trait = "0.1"
 trustification-auth = { path = "../../auth" }
+trustification-common = { path = "../../common" }
 trustification-collector-common = { path = "../common" }
 trustification-infrastructure = { path = "../../infrastructure" }
 collectorist-api = { path = "../../collectorist/api"}

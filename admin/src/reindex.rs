@@ -1,6 +1,7 @@
 use std::process::ExitCode;
 
 use reqwest::StatusCode;
+use trustification_common::tls::ClientConfig;
 
 #[derive(clap::Subcommand, Debug)]
 pub enum Reindex {
@@ -25,11 +26,14 @@ pub struct ReindexStart {
 
     #[arg(short = 'i', long = "indexer", default_value = "http://localhost:8080/")]
     pub indexer_url: String,
+
+    #[command(flatten)]
+    pub client: ClientConfig,
 }
 
 impl ReindexStart {
     pub async fn run(self) -> anyhow::Result<ExitCode> {
-        let client = reqwest::Client::new();
+        let client = self.client.build_client()?;
         match client.post(self.indexer_url).send().await {
             Ok(response) => {
                 if response.status() == StatusCode::OK {

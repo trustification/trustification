@@ -14,9 +14,9 @@ pub struct CollectoristService {
 }
 
 impl CollectoristService {
-    pub fn new(url: Url, provider: Arc<dyn TokenProvider>) -> Self {
+    pub fn new(client: reqwest::Client, url: Url, provider: Arc<dyn TokenProvider>) -> Self {
         Self {
-            client: CollectoristClient::new("".to_string(), url, provider),
+            client: CollectoristClient::new(client, "".to_string(), url, provider),
         }
     }
 

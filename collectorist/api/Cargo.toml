@@ -8,6 +8,7 @@ edition = "2021"
 [dependencies]
 actix-web = "4"
 trustification-auth = { path = "../../auth", features = ["swagger"] }
+trustification-common = { path = "../../common" }
 trustification-infrastructure = { path = "../../infrastructure" }
 collectorist-client = { path = "../client" }
 collector-client = { path = "../../collector/client" }

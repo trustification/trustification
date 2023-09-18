@@ -14,9 +14,9 @@ pub struct V11yService {
 }
 
 impl V11yService {
-    pub fn new(url: Url, provider: Arc<dyn TokenProvider>) -> Self {
+    pub fn new(client: reqwest::Client, url: Url, provider: Arc<dyn TokenProvider>) -> Self {
         Self {
-            client: V11yClient::new(url, provider),
+            client: V11yClient::new(client, url, provider),
         }
     }
 

@@ -46,16 +46,18 @@ impl CollectorUrl {
 }
 
 pub struct CollectorClient {
+    client: reqwest::Client,
     url: CollectorUrl,
     provider: Box<dyn TokenProvider>,
 }
 
 impl CollectorClient {
-    pub fn new<P>(url: Url, provider: P) -> Self
+    pub fn new<P>(client: reqwest::Client, url: Url, provider: P) -> Self
     where
         P: TokenProvider + 'static,
     {
         Self {
+            client,
             url: CollectorUrl::new(url),
             provider: Box::new(provider),
         }
@@ -65,7 +67,8 @@ impl CollectorClient {
         &self,
         request: CollectPackagesRequest,
     ) -> Result<CollectPackagesResponse, anyhow::Error> {
-        let response = reqwest::Client::new()
+        let response = self
+            .client
             .post(self.url.packages_url())
             .inject_token(self.provider.as_ref())
             .await?
@@ -80,7 +83,8 @@ impl CollectorClient {
         &self,
         request: CollectVulnerabilitiesRequest,
     ) -> Result<CollectVulnerabilitiesResponse, anyhow::Error> {
-        let response = reqwest::Client::new()
+        let response = self
+            .client
             .post(self.url.vulnerabilities_url())
             .inject_token(self.provider.as_ref())
             .await?

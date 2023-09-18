@@ -117,6 +117,7 @@ fn spog_api(bombastic_url: Url, vexination_url: Url, collectorist_url: Url, v11y
     use trustification_infrastructure::endpoint::Endpoint;
 
     spog_api::Run {
+        client: Default::default(),
         devmode: false,
         guac_url: endpoint::GuacGraphQl::url(),
         bombastic_url,

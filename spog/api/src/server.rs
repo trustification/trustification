@@ -92,8 +92,16 @@ impl Server {
 
         let guac = web::Data::new(GuacService::new(self.run.guac_url));
 
-        let v11y = web::Data::new(V11yService::new(self.run.v11y_url, provider.clone()));
-        let collectorist = web::Data::new(CollectoristService::new(self.run.collectorist_url, provider.clone()));
+        let v11y = web::Data::new(V11yService::new(
+            self.run.client.build_client()?,
+            self.run.v11y_url,
+            provider.clone(),
+        ));
+        let collectorist = web::Data::new(CollectoristService::new(
+            self.run.client.build_client()?,
+            self.run.collectorist_url,
+            provider.clone(),
+        ));
 
         let (tracker, flusher) = Tracker::new(self.run.analytics);
         let tracker = web::Data::from(tracker);
@@ -351,7 +359,7 @@ impl AppState {
 
 pub(crate) fn configure(run: &Run) -> anyhow::Result<AppState> {
     Ok(AppState {
-        client: reqwest::Client::new(),
+        client: run.client.build_client()?,
         bombastic: run.bombastic_url.clone(),
         vexination: run.vexination_url.clone(),
     })
