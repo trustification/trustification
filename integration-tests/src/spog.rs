@@ -46,6 +46,8 @@ pub async fn start_spog(config: &Config) -> SpogContext {
 
     #[cfg(feature = "with-services")]
     {
+        use trustification_infrastructure::endpoint;
+        use trustification_infrastructure::endpoint::Endpoint;
         // No remote server requested, so fire up spog on ephemeral port
         let listener = TcpListener::bind("localhost:0").unwrap();
         let port = listener.local_addr().unwrap().port();
