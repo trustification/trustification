@@ -46,12 +46,12 @@ pub struct RegisterResponse {
 }
 
 impl CollectoristClient {
-    pub fn new<P>(collector_id: String, collectorist_url: Url, provider: P) -> Self
+    pub fn new<P>(collector_id: impl Into<String>, collectorist_url: Url, provider: P) -> Self
     where
         P: TokenProvider + 'static,
     {
         Self {
-            collectorist_url: CollectoristUrl::new(collectorist_url, collector_id),
+            collectorist_url: CollectoristUrl::new(collectorist_url, collector_id.into()),
             client: reqwest::Client::new(),
             provider: Box::new(provider),
         }
@@ -119,7 +119,7 @@ pub struct CollectVulnerabilitiesRequest {
     pub vuln_ids: Vec<String>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Copy, Clone, Debug, PartialEq)]
 #[serde(rename_all = "kebab-case")]
 pub enum Interest {
     Package,
