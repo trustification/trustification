@@ -99,18 +99,20 @@ impl Run {
                     let server = server::run(
                         context,
                         state.clone(),
-                        collector_state,
+                        collector_state.clone(),
                         self.http,
                         authenticator,
                         authorizer,
                     );
 
-                    tokio::select! {
-                         t = server => { t? }
-                         t = collector => { t? }
-                    }
+                    let r = tokio::select! {
+                         t = server => { t }
+                         t = collector => { t }
+                    };
 
-                    Ok(())
+                    collector_state.deregister().await;
+
+                    r
                 },
             )
             .await?;
