@@ -1,8 +1,8 @@
-use std::net::SocketAddr;
+use async_trait::async_trait;
 use std::process::ExitCode;
-use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
 
+use collectorist_client::{CollectoristClient, Interest, RegisterResponse};
 use reqwest::Url;
 use tokio::sync::RwLock;
 
@@ -12,17 +12,16 @@ use trustification_auth::{
     authorizer::Authorizer,
     client::{OpenIdTokenProviderConfigArguments, TokenProvider},
 };
+use trustification_collector_common::{CollectorRegistration, CollectorStateHandler, RegistrationConfig};
 use trustification_infrastructure::{
     app::http::HttpServerConfig,
     endpoint::CollectorSnyk,
     endpoint::{self, Endpoint},
-    health::checks::AtomicBoolStateCheck,
     Infrastructure, InfrastructureConfig,
 };
 use v11y_client::{ScoreType, Vulnerability};
 
 use crate::client::schema::{Issue, IssueAttributes, Reference, Severity};
-use crate::server::{deregister_with_collectorist, register_with_collectorist};
 
 //use crate::client::schema::{Reference, Vulnerability};
 //use crate::server::{deregister_with_collectorist, register_with_collectorist};
@@ -91,39 +90,43 @@ impl Run {
                 |_context| async { Ok(()) },
                 |context| async move {
                     let provider = self.oidc.into_provider_or_devmode(self.devmode).await?;
-                    let state = Self::configure(
-                        self.snyk_org_id,
-                        self.snyk_token,
-                        "snyk".into(),
-                        self.collectorist_url,
-                        self.v11y_url,
-                        provider,
+                    let state =
+                        Self::configure(self.snyk_org_id, self.snyk_token, self.v11y_url, provider.clone()).await?;
+
+                    let client = CollectoristClient::new("snyk", self.collectorist_url, provider);
+                    let (collector, collector_state) = CollectorRegistration::new(
+                        client,
+                        RegistrationConfig {
+                            interests: vec![Interest::Package],
+                            cadence: Default::default(),
+                        },
+                        state.clone(),
                     )
-                    .await?;
+                    .run(self.advertise);
 
                     context
                         .health
                         .readiness
-                        .register(
-                            "collectorist.registered",
-                            AtomicBoolStateCheck::new(
-                                state.clone(),
-                                |state| &state.connected,
-                                "Not registered with collectorist",
-                            ),
-                        )
+                        .register("collectorist.registered", collector_state.clone())
                         .await;
 
-                    let server = server::run(context, state.clone(), self.http, authenticator, authorizer);
-                    let register = register_with_collectorist(state.clone(), self.advertise);
+                    let server = server::run(
+                        context,
+                        state.clone(),
+                        collector_state.clone(),
+                        self.http,
+                        authenticator,
+                        authorizer,
+                    );
 
-                    tokio::select! {
-                         t = server => { t? }
-                         t = register => { t? }
-                    }
+                    let r = tokio::select! {
+                         t = server => { t }
+                         t = collector => { t }
+                    };
 
-                    deregister_with_collectorist(state.clone()).await;
-                    Ok(())
+                    collector_state.deregister().await;
+
+                    r
                 },
             )
             .await?;
@@ -134,30 +137,18 @@ impl Run {
     async fn configure<P>(
         snyk_org_id: String,
         snyk_token: String,
-        collector_id: String,
-        collectorist_url: Url,
         v11y_url: Url,
         provider: P,
     ) -> anyhow::Result<Arc<AppState>>
     where
         P: TokenProvider + Clone + 'static,
     {
-        let state = Arc::new(AppState::new(
-            snyk_org_id,
-            snyk_token,
-            collector_id,
-            collectorist_url,
-            v11y_url,
-            provider,
-        ));
+        let state = Arc::new(AppState::new(snyk_org_id, snyk_token, v11y_url, provider));
         Ok(state)
     }
 }
 
 pub struct AppState {
-    addr: RwLock<Option<SocketAddr>>,
-    connected: AtomicBool,
-    collectorist_client: collectorist_client::CollectoristClient,
     v11y_client: v11y_client::V11yClient,
     guac_url: RwLock<Option<Url>>,
     snyk_org_id: String,
@@ -165,25 +156,11 @@ pub struct AppState {
 }
 
 impl AppState {
-    pub fn new<P>(
-        snyk_org_id: String,
-        snyk_token: String,
-        collector_id: String,
-        collectorist_url: Url,
-        v11y_url: Url,
-        provider: P,
-    ) -> Self
+    pub fn new<P>(snyk_org_id: String, snyk_token: String, v11y_url: Url, provider: P) -> Self
     where
         P: TokenProvider + Clone + 'static,
     {
         Self {
-            addr: RwLock::new(None),
-            connected: AtomicBool::new(false),
-            collectorist_client: collectorist_client::CollectoristClient::new(
-                collector_id,
-                collectorist_url,
-                provider.clone(),
-            ),
             v11y_client: v11y_client::V11yClient::new(v11y_url, provider),
             guac_url: RwLock::new(None),
             snyk_org_id,
@@ -192,7 +169,16 @@ impl AppState {
     }
 }
 
-pub(crate) type SharedState = Arc<AppState>;
+#[async_trait]
+impl CollectorStateHandler for AppState {
+    async fn registered(&self, response: RegisterResponse) {
+        *self.guac_url.write().await = Some(response.guac_url);
+    }
+
+    async fn unregistered(&self) {
+        *self.guac_url.write().await = None;
+    }
+}
 
 impl From<Issue> for Vec<v11y_client::Vulnerability> {
     fn from(value: Issue) -> Self {
