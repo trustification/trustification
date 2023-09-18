@@ -74,7 +74,7 @@ impl Run {
         Infrastructure::from(self.infra)
             .run(
                 "collector-osv",
-                |_context| async move { Ok(()) },
+                |_context| async { Ok(()) },
                 |context| async move {
                     let provider = self.oidc.into_provider_or_devmode(self.devmode).await?;
                     let state = Self::configure(self.v11y_url, provider.clone()).await?;

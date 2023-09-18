@@ -1,8 +1,8 @@
-use std::net::SocketAddr;
+use async_trait::async_trait;
 use std::process::ExitCode;
-use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
 
+use collectorist_client::{CollectoristClient, Interest, RegisterResponse};
 use reqwest::Url;
 use tokio::sync::RwLock;
 use trustification_auth::{
@@ -11,17 +11,16 @@ use trustification_auth::{
     authorizer::Authorizer,
     client::{OpenIdTokenProviderConfigArguments, TokenProvider},
 };
+use trustification_collector_common::{CollectorRegistration, CollectorStateHandler, RegistrationConfig};
 use trustification_infrastructure::{
     app::http::HttpServerConfig,
     endpoint::{self, CollectorNvd, Endpoint},
-    health::checks::AtomicBoolStateCheck,
     Infrastructure, InfrastructureConfig,
 };
 use v11y_client::{ScoreType, Severity};
 
 use crate::client::schema::{Reference, Vulnerability};
 use crate::client::NvdClient;
-use crate::server::{deregister_with_collectorist, register_with_collectorist};
 
 mod client;
 mod server;
@@ -83,38 +82,42 @@ impl Run {
                 |_context| async { Ok(()) },
                 |context| async move {
                     let provider = self.oidc.into_provider_or_devmode(self.devmode).await?;
-                    let state = Self::configure(
-                        "nvd".into(),
-                        self.collectorist_url,
-                        self.v11y_url,
-                        self.nvd_api_key,
-                        provider,
+                    let state = Self::configure(self.v11y_url, self.nvd_api_key, provider.clone()).await?;
+
+                    let client = CollectoristClient::new("nvd", self.collectorist_url, provider);
+                    let (collector, collector_state) = CollectorRegistration::new(
+                        client,
+                        RegistrationConfig {
+                            interests: vec![Interest::Vulnerability],
+                            cadence: Default::default(),
+                        },
+                        state.clone(),
                     )
-                    .await?;
+                    .run(self.advertise);
 
                     context
                         .health
                         .readiness
-                        .register(
-                            "collectorist.registered",
-                            AtomicBoolStateCheck::new(
-                                state.clone(),
-                                |state| &state.connected,
-                                "Not registered with collectorist",
-                            ),
-                        )
+                        .register("collectorist.registered", collector_state.clone())
                         .await;
 
-                    let server = server::run(context, state.clone(), self.http, authenticator, authorizer);
-                    let register = register_with_collectorist(&state, self.advertise);
+                    let server = server::run(
+                        context,
+                        state.clone(),
+                        collector_state.clone(),
+                        self.http,
+                        authenticator,
+                        authorizer,
+                    );
 
-                    tokio::select! {
-                         t = server => { t? }
-                         t = register => { t? }
-                    }
+                    let r = tokio::select! {
+                         t = server => { t }
+                         t = collector => { t }
+                    };
 
-                    deregister_with_collectorist(&state).await;
-                    Ok(())
+                    collector_state.deregister().await;
+
+                    r
                 },
             )
             .await?;
@@ -122,49 +125,38 @@ impl Run {
         Ok(ExitCode::SUCCESS)
     }
 
-    async fn configure<P>(
-        collector_id: String,
-        collectorist_url: Url,
-        v11y_url: Url,
-        nvd_api_key: String,
-        provider: P,
-    ) -> anyhow::Result<Arc<AppState>>
+    async fn configure<P>(v11y_url: Url, nvd_api_key: String, provider: P) -> anyhow::Result<Arc<AppState>>
     where
         P: TokenProvider + Clone + 'static,
     {
-        let state = Arc::new(AppState::new(
-            collector_id,
-            collectorist_url,
-            v11y_url,
-            nvd_api_key,
-            provider,
-        ));
+        let state = Arc::new(AppState::new(v11y_url, nvd_api_key, provider));
         Ok(state)
     }
 }
 
 pub struct AppState {
-    addr: RwLock<Option<SocketAddr>>,
-    connected: AtomicBool,
-    collectorist_client: collectorist_client::CollectoristClient,
     v11y_client: v11y_client::V11yClient,
     guac_url: RwLock<Option<Url>>,
     nvd: NvdClient,
 }
 
+#[async_trait]
+impl CollectorStateHandler for AppState {
+    async fn registered(&self, response: RegisterResponse) {
+        *self.guac_url.write().await = Some(response.guac_url);
+    }
+
+    async fn unregistered(&self) {
+        *self.guac_url.write().await = None;
+    }
+}
+
 impl AppState {
-    pub fn new<P>(collector_id: String, collectorist_url: Url, v11y_url: Url, nvd_api_key: String, provider: P) -> Self
+    pub fn new<P>(v11y_url: Url, nvd_api_key: String, provider: P) -> Self
     where
         P: TokenProvider + Clone + 'static,
     {
         Self {
-            addr: RwLock::new(None),
-            connected: AtomicBool::new(false),
-            collectorist_client: collectorist_client::CollectoristClient::new(
-                collector_id,
-                collectorist_url,
-                provider.clone(),
-            ),
             v11y_client: v11y_client::V11yClient::new(v11y_url, provider),
             guac_url: RwLock::new(None),
             nvd: NvdClient::new(&nvd_api_key),

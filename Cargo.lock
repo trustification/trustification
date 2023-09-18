@@ -1674,6 +1674,7 @@ version = "0.1.0"
 dependencies = [
  "actix-web",
  "anyhow",
+ "async-trait",
  "chrono",
  "clap",
  "collector-client",
@@ -1692,6 +1693,7 @@ dependencies = [
  "test-with",
  "tokio",
  "trustification-auth",
+ "trustification-collector-common",
  "trustification-infrastructure",
  "utoipa",
  "utoipa-swagger-ui",

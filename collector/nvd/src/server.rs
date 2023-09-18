@@ -1,22 +1,16 @@
-use std::net::{IpAddr, TcpListener};
+use std::net::{IpAddr, SocketAddr, TcpListener};
 use std::str::FromStr;
-use std::sync::atomic::Ordering;
 use std::sync::Arc;
-use std::time::Duration;
 
 use crate::AppState;
 use actix_web::middleware::{Compress, Logger};
 use actix_web::{post, web, HttpResponse, Responder, ResponseError};
-use anyhow::Context;
 use collector_client::CollectVulnerabilitiesRequest;
-use collectorist_client::{CollectorConfig, Interest};
 use derive_more::Display;
 use guac::client::intrinsic::vulnerability::VulnerabilityInputSpec;
 use guac::client::GuacClient;
-use log::{info, warn};
-use reqwest::Url;
-use tokio::time::sleep;
 use trustification_auth::{authenticator::Authenticator, authorizer::Authorizer};
+use trustification_collector_common::CollectorState;
 use trustification_infrastructure::{
     app::http::{HttpServerBuilder, HttpServerConfig},
     endpoint::CollectorNvd,
@@ -56,16 +50,17 @@ impl ResponseError for Error {}
 pub async fn run(
     context: MainContext<()>,
     state: Arc<AppState>,
+    collector_state: CollectorState,
     http: HttpServerConfig<CollectorNvd>,
     authenticator: Option<Arc<Authenticator>>,
     authorizer: Authorizer,
 ) -> Result<(), anyhow::Error> {
-    let listener = TcpListener::bind((IpAddr::from_str(&http.bind_addr)?, *http.bind_port))?;
+    let addr = SocketAddr::new(IpAddr::from_str(&http.bind_addr)?, *http.bind_port);
+    let listener = TcpListener::bind(addr)?;
     let addr = listener.local_addr()?;
     log::info!("listening on {}", addr);
-    log::info!("collectorist at {}", state.collectorist_client.register_collector_url());
 
-    state.addr.write().await.replace(addr);
+    collector_state.set_addr(addr).await;
 
     HttpServerBuilder::try_from(http)?
         .authorizer(authorizer)
@@ -126,56 +121,4 @@ pub fn config(cfg: &mut web::ServiceConfig, auth: Option<Arc<Authenticator>>) {
             .service(collect_vulnerabilities),
     )
     .service(SwaggerUi::new("/swagger-ui/{_:.*}").url("/openapi.json", ApiDoc::openapi()));
-}
-
-pub async fn register_with_collectorist(state: &AppState, advertise: Option<Url>) -> anyhow::Result<()> {
-    log::info!("Starting collectorist loop - advertise: {advertise:?}");
-
-    loop {
-        if let Some(addr) = *state.addr.read().await {
-            if !state.connected.load(Ordering::Relaxed) {
-                let url = match &advertise {
-                    Some(url) => url.clone(),
-                    None => {
-                        Url::parse(&format!("http://{addr}/api/v1/")).context("Failed to build advertisement URL")?
-                    }
-                };
-                info!(
-                    "registering with collectorist at {} with callback={}",
-                    state.collectorist_client.register_collector_url(),
-                    url
-                );
-                match state
-                    .collectorist_client
-                    .register_collector(CollectorConfig {
-                        url,
-                        cadence: Default::default(),
-                        interests: vec![Interest::Vulnerability],
-                    })
-                    .await
-                {
-                    Ok(response) => {
-                        state.guac_url.write().await.replace(response.guac_url);
-                        state.connected.store(true, Ordering::Relaxed);
-                        info!("successfully registered with collectorist")
-                    }
-                    Err(e) => {
-                        warn!("failed to register with collectorist: {}", e)
-                    }
-                }
-            }
-        }
-        sleep(Duration::from_secs(10)).await;
-    }
-}
-
-pub async fn deregister_with_collectorist(state: &AppState) {
-    if state.collectorist_client.deregister_collector().await.is_ok() {
-        info!("deregistered with collectorist");
-    } else {
-        warn!("failed to deregister with collectorist");
-    }
-
-    state.connected.store(false, Ordering::Relaxed);
-    state.guac_url.write().await.take();
 }
