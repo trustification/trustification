@@ -4,6 +4,7 @@ use trustification_analytics::AnalyticsConfig;
 use trustification_auth::{
     auth::AuthConfigArguments, client::OpenIdTokenProviderConfigArguments, swagger_ui::SwaggerUiOidcConfig,
 };
+use trustification_common::tls::ClientConfig;
 use trustification_infrastructure::{
     app::http::HttpServerConfig,
     endpoint::{self, Endpoint, SpogApi},
@@ -79,6 +80,9 @@ pub struct Run {
 
     #[command(flatten)]
     pub http: HttpServerConfig<SpogApi>,
+
+    #[command(flatten)]
+    pub client: ClientConfig,
 }
 
 impl Run {

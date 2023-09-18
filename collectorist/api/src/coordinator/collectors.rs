@@ -10,23 +10,27 @@ use trustification_auth::client::TokenProvider;
 use crate::state::AppState;
 
 pub struct Collectors {
+    client: reqwest::Client,
     collectors: HashMap<String, Collector>,
     provider: Arc<dyn TokenProvider>,
 }
 
 impl Collectors {
-    pub fn new<P>(provider: P) -> Self
+    pub fn new<P>(client: reqwest::Client, provider: P) -> Self
     where
         P: TokenProvider + 'static,
     {
         Self {
+            client,
             collectors: Default::default(),
             provider: Arc::new(provider),
         }
     }
     pub async fn register(&mut self, state: Arc<AppState>, id: String, config: CollectorConfig) -> Result<(), ()> {
-        self.collectors
-            .insert(id.clone(), Collector::new(state, id, config, self.provider.clone()));
+        self.collectors.insert(
+            id.clone(),
+            Collector::new(self.client.clone(), state, id, config, self.provider.clone()),
+        );
         Ok(())
     }
 

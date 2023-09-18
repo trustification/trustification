@@ -1,5 +1,6 @@
 //! TLS tooling.
 
+use crate::reqwest::ClientFactory;
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 
@@ -7,16 +8,18 @@ use std::path::Path;
 pub const SERVICE_CA_CERT: &str = "/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt";
 
 /// A client configuration.
-#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, clap::Args)]
+#[command(rename_all_env = "SCREAMING_SNAKE_CASE", next_help_heading = "HTTP client")]
 pub struct ClientConfig {
+    /// Make the TLS client insecure, disabling all validation (DANGER!).
+    #[arg(id = "client-tls-insecure", long, env = "CLIENT_TLS_INSECURE")]
     #[serde(default)]
     pub tls_insecure: bool,
+
+    /// Additional certificates which will be added as trust anchors.
+    #[arg(id = "client-tls-ca-certificates", long, env = "CLIENT_TLS_CA_CERTIFICATES")]
     #[serde(default)]
     pub ca_certificates: Vec<String>,
-    /// A second way to provide a single certificate, works with the config crate, which
-    /// doesn't properly support lists.
-    #[serde(default)]
-    pub ca_certificate: Option<String>,
 }
 
 impl ClientConfig {
@@ -34,8 +37,20 @@ impl ClientConfig {
         self.ca_certificates
             .iter()
             .map(|s| s.as_str())
-            .chain(self.ca_certificate.iter().map(|s| s.as_str()))
             .chain(service_ca.into_iter())
+    }
+
+    /// Create a [`reqwest::Client`].
+    pub fn build_client(&self) -> anyhow::Result<reqwest::Client> {
+        ClientFactory::from(self).build()
+    }
+}
+
+impl TryFrom<&ClientConfig> for reqwest::Client {
+    type Error = anyhow::Error;
+
+    fn try_from(value: &ClientConfig) -> Result<Self, Self::Error> {
+        value.build_client()
     }
 }
 

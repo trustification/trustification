@@ -49,13 +49,13 @@ pub struct RegisterResponse {
 }
 
 impl CollectoristClient {
-    pub fn new<P>(collector_id: impl Into<String>, collectorist_url: Url, provider: P) -> Self
+    pub fn new<P>(client: reqwest::Client, collector_id: impl Into<String>, collectorist_url: Url, provider: P) -> Self
     where
         P: TokenProvider + 'static,
     {
         Self {
+            client,
             collectorist_url: CollectoristUrl::new(collectorist_url, collector_id.into()),
-            client: reqwest::Client::new(),
             provider: Arc::new(provider),
         }
     }

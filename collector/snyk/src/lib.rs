@@ -13,6 +13,7 @@ use trustification_auth::{
     client::{OpenIdTokenProviderConfigArguments, TokenProvider},
 };
 use trustification_collector_common::{CollectorRegistration, CollectorStateHandler, RegistrationConfig};
+use trustification_common::tls::ClientConfig;
 use trustification_infrastructure::{
     app::http::HttpServerConfig,
     endpoint::CollectorSnyk,
@@ -72,6 +73,9 @@ pub struct Run {
 
     #[command(flatten)]
     pub(crate) http: HttpServerConfig<CollectorSnyk>,
+
+    #[command(flatten)]
+    pub(crate) client: ClientConfig,
 }
 
 impl Run {
@@ -90,10 +94,17 @@ impl Run {
                 |_context| async { Ok(()) },
                 |context| async move {
                     let provider = self.oidc.into_provider_or_devmode(self.devmode).await?;
-                    let state =
-                        Self::configure(self.snyk_org_id, self.snyk_token, self.v11y_url, provider.clone()).await?;
+                    let state = Self::configure(
+                        self.client.build_client()?,
+                        self.snyk_org_id,
+                        self.snyk_token,
+                        self.v11y_url,
+                        provider.clone(),
+                    )
+                    .await?;
 
-                    let client = CollectoristClient::new("snyk", self.collectorist_url, provider);
+                    let client =
+                        CollectoristClient::new(self.client.build_client()?, "snyk", self.collectorist_url, provider);
                     let (collector, collector_state) = CollectorRegistration::new(
                         client,
                         RegistrationConfig {
@@ -135,6 +146,7 @@ impl Run {
     }
 
     async fn configure<P>(
+        client: reqwest::Client,
         snyk_org_id: String,
         snyk_token: String,
         v11y_url: Url,
@@ -143,7 +155,7 @@ impl Run {
     where
         P: TokenProvider + Clone + 'static,
     {
-        let state = Arc::new(AppState::new(snyk_org_id, snyk_token, v11y_url, provider));
+        let state = Arc::new(AppState::new(client, snyk_org_id, snyk_token, v11y_url, provider));
         Ok(state)
     }
 }
@@ -156,12 +168,12 @@ pub struct AppState {
 }
 
 impl AppState {
-    pub fn new<P>(snyk_org_id: String, snyk_token: String, v11y_url: Url, provider: P) -> Self
+    pub fn new<P>(client: reqwest::Client, snyk_org_id: String, snyk_token: String, v11y_url: Url, provider: P) -> Self
     where
         P: TokenProvider + Clone + 'static,
     {
         Self {
-            v11y_client: v11y_client::V11yClient::new(v11y_url, provider),
+            v11y_client: v11y_client::V11yClient::new(client, v11y_url, provider),
             guac_url: RwLock::new(None),
             snyk_org_id,
             snyk_token,

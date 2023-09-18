@@ -18,6 +18,7 @@ pub struct AppState {
 
 impl AppState {
     pub async fn new<P>(
+        client: reqwest::Client,
         base: impl AsRef<Path>,
         csub_url: Url,
         guac_url: Url,
@@ -27,7 +28,7 @@ impl AppState {
         P: TokenProvider + Clone + 'static,
     {
         Ok(Self {
-            collectors: RwLock::new(Collectors::new(provider.clone())),
+            collectors: RwLock::new(Collectors::new(client, provider.clone())),
             db: Db::new(base).await?,
             coordinator: Coordinator::new(csub_url),
             guac_url,

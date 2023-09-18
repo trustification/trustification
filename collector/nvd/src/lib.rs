@@ -12,6 +12,7 @@ use trustification_auth::{
     client::{OpenIdTokenProviderConfigArguments, TokenProvider},
 };
 use trustification_collector_common::{CollectorRegistration, CollectorStateHandler, RegistrationConfig};
+use trustification_common::tls::ClientConfig;
 use trustification_infrastructure::{
     app::http::HttpServerConfig,
     endpoint::{self, CollectorNvd, Endpoint},
@@ -64,6 +65,9 @@ pub struct Run {
 
     #[command(flatten)]
     pub(crate) http: HttpServerConfig<CollectorNvd>,
+
+    #[command(flatten)]
+    pub(crate) client: ClientConfig,
 }
 
 impl Run {
@@ -82,9 +86,16 @@ impl Run {
                 |_context| async { Ok(()) },
                 |context| async move {
                     let provider = self.oidc.into_provider_or_devmode(self.devmode).await?;
-                    let state = Self::configure(self.v11y_url, self.nvd_api_key, provider.clone()).await?;
+                    let state = Self::configure(
+                        self.client.build_client()?,
+                        self.v11y_url,
+                        self.nvd_api_key,
+                        provider.clone(),
+                    )
+                    .await?;
 
-                    let client = CollectoristClient::new("nvd", self.collectorist_url, provider);
+                    let client =
+                        CollectoristClient::new(self.client.build_client()?, "nvd", self.collectorist_url, provider);
                     let (collector, collector_state) = CollectorRegistration::new(
                         client,
                         RegistrationConfig {
@@ -125,11 +136,16 @@ impl Run {
         Ok(ExitCode::SUCCESS)
     }
 
-    async fn configure<P>(v11y_url: Url, nvd_api_key: String, provider: P) -> anyhow::Result<Arc<AppState>>
+    async fn configure<P>(
+        client: reqwest::Client,
+        v11y_url: Url,
+        nvd_api_key: String,
+        provider: P,
+    ) -> anyhow::Result<Arc<AppState>>
     where
         P: TokenProvider + Clone + 'static,
     {
-        let state = Arc::new(AppState::new(v11y_url, nvd_api_key, provider));
+        let state = Arc::new(AppState::new(client, v11y_url, nvd_api_key, provider));
         Ok(state)
     }
 }
@@ -152,12 +168,12 @@ impl CollectorStateHandler for AppState {
 }
 
 impl AppState {
-    pub fn new<P>(v11y_url: Url, nvd_api_key: String, provider: P) -> Self
+    pub fn new<P>(client: reqwest::Client, v11y_url: Url, nvd_api_key: String, provider: P) -> Self
     where
         P: TokenProvider + Clone + 'static,
     {
         Self {
-            v11y_client: v11y_client::V11yClient::new(v11y_url, provider),
+            v11y_client: v11y_client::V11yClient::new(client, v11y_url, provider),
             guac_url: RwLock::new(None),
             nvd: NvdClient::new(&nvd_api_key),
         }
