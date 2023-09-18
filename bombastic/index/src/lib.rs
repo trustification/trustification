@@ -205,7 +205,10 @@ impl Index {
             }
         }
 
-        document.add_text(fields.license, package.declared_license.to_string());
+        if let Some(license) = &package.declared_license {
+            document.add_text(fields.license, license.to_string());
+        }
+
         if let Some(supplier) = &package.package_supplier {
             document.add_text(fields.supplier, supplier);
         }

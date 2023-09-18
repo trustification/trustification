@@ -484,9 +484,15 @@ pub fn render_single_details(
                     <CardBody>
                         <DescriptionList>
                             <DescriptionGroup term="Download">{ &package.package_download_location }</DescriptionGroup>
-                            <DescriptionGroup term="Copyright">{ &package.copyright_text }</DescriptionGroup>
-                            <DescriptionGroup term="License (declared)">{ &package.declared_license }</DescriptionGroup>
-                            <DescriptionGroup term="License (concluded)">{ &package.concluded_license }</DescriptionGroup>
+                            if let Some(copright_text) = &package.copyright_text {
+                                <DescriptionGroup term="Copyright">{ copright_text }</DescriptionGroup>
+                            }
+                            if let Some(declared_license) = &package.declared_license {
+                                <DescriptionGroup term="License (declared)">{ declared_license }</DescriptionGroup>
+                            }
+                            if let Some(concluded_license) = &package.concluded_license {
+                                <DescriptionGroup term="License (concluded)">{ concluded_license }</DescriptionGroup>
+                            }
                         </DescriptionList>
                     </CardBody>
                 </Card>
