@@ -59,10 +59,13 @@ where
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct CollectorState {
     addr: Arc<RwLock<Option<SocketAddr>>>,
     connected: Arc<AtomicBool>,
+    handler: Arc<dyn CollectorStateHandler>,
+    client: CollectoristClient,
+    disposed: Arc<AtomicBool>,
 }
 
 impl CollectorState {
@@ -74,7 +77,25 @@ impl CollectorState {
         self.connected.load(Ordering::Relaxed)
     }
 
-    pub async fn deregister(&self) {}
+    pub async fn deregister(&self) {
+        if self.disposed.swap(true, Ordering::SeqCst) {
+            return;
+        }
+
+        log::info!("deregistering collector");
+
+        match self.client.deregister_collector().await {
+            Ok(()) => {
+                log::info!("deregistered with collectorist");
+            }
+            Err(err) => {
+                log::warn!("failed to deregister with collectorist: {err}");
+            }
+        }
+
+        self.connected.store(false, Ordering::Relaxed);
+        self.handler.unregistered().await;
+    }
 }
 
 #[async_trait]
@@ -95,29 +116,27 @@ pub struct RegistrationConfig {
     pub interests: Vec<Interest>,
 }
 
-pub struct CollectorRegistration<H>
-where
-    H: CollectorStateHandler,
-{
+pub struct CollectorRegistration {
     config: RegistrationConfig,
     state: CollectorState,
     client: CollectoristClient,
-    handler: Option<H>,
 }
 
-impl<H> CollectorRegistration<H>
-where
-    H: CollectorStateHandler,
-{
-    pub fn new(client: CollectoristClient, config: RegistrationConfig, handler: H) -> Self {
+impl CollectorRegistration {
+    pub fn new<H>(client: CollectoristClient, config: RegistrationConfig, handler: H) -> Self
+    where
+        H: CollectorStateHandler,
+    {
         Self {
             state: CollectorState {
+                disposed: Default::default(),
                 connected: Default::default(),
                 addr: Default::default(),
+                handler: Arc::new(handler),
+                client: client.clone(),
             },
             config,
             client,
-            handler: Some(handler),
         }
     }
 
@@ -151,9 +170,7 @@ where
                             .await
                         {
                             Ok(response) => {
-                                if let Some(handler) = &self.handler {
-                                    handler.registered(response).await;
-                                }
+                                self.state.handler.registered(response).await;
                                 self.state.connected.store(true, Ordering::Relaxed);
                                 log::info!("successfully registered with collectorist")
                             }
@@ -169,30 +186,11 @@ where
 
         (runner, state)
     }
-
-    pub async fn deregister(&mut self) {
-        if let Some(handler) = self.handler.take() {
-            match self.client.deregister_collector().await {
-                Ok(()) => {
-                    log::info!("deregistered with collectorist");
-                }
-                Err(err) => {
-                    log::warn!("failed to deregister with collectorist: {err}");
-                }
-            }
-
-            self.state.connected.store(false, Ordering::Relaxed);
-            handler.unregistered().await;
-        }
-    }
 }
 
-impl<H> Drop for CollectorRegistration<H>
-where
-    H: CollectorStateHandler,
-{
+impl Drop for CollectorRegistration {
     fn drop(&mut self) {
-        log::info!("Unregistering from collectorist");
-        futures_executor::block_on(self.deregister())
+        log::info!("dropping collector");
+        futures_executor::block_on(self.state.deregister())
     }
 }
