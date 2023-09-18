@@ -4,3 +4,11 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+async-trait = "0.1"
+log = "0.4"
+tokio = { version = "1", features = [] }
+anyhow = "1"
+url = "2"
+
+trustification-infrastructure = { path = "../../infrastructure" }
+collectorist-client = { path = "../../collectorist/client"}

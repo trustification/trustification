@@ -1,31 +1,19 @@
-use std::fmt::Debug;
-use std::future::Future;
-use std::net::{IpAddr, SocketAddr, TcpListener};
-use std::process::Output;
-use std::str::FromStr;
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Arc;
-use std::time::Duration;
-
-use actix_web::middleware::{Compress, Logger};
 use actix_web::{post, web, HttpResponse, Responder, ResponseError};
-use anyhow::Context;
-use async_trait::async_trait;
 use collector_client::{
     CollectPackagesRequest, CollectPackagesResponse, CollectVulnerabilitiesRequest, CollectVulnerabilitiesResponse,
 };
-use collectorist_client::{CollectorConfig, CollectoristClient, Interest};
 use derive_more::Display;
 use guac::client::intrinsic::certify_vuln::ScanMetadataInput;
 use guac::client::intrinsic::vulnerability::VulnerabilityInputSpec;
 use guac::client::GuacClient;
-use log::{info, warn};
 use packageurl::PackageUrl;
-use reqwest::Url;
-use tokio::sync::RwLock;
-use tokio::time::sleep;
+use std::fmt::Debug;
+use std::net::{IpAddr, SocketAddr, TcpListener};
+use std::str::FromStr;
+use std::sync::Arc;
 use trustification_auth::authenticator::Authenticator;
 use trustification_auth::authorizer::Authorizer;
+use trustification_collector_common::CollectorState;
 use trustification_infrastructure::app::http::{HttpServerBuilder, HttpServerConfig};
 use trustification_infrastructure::endpoint::CollectorOsv;
 use trustification_infrastructure::{new_auth, MainContext};
@@ -61,19 +49,17 @@ pub struct ApiDoc;
 pub async fn run(
     context: MainContext<()>,
     state: Arc<AppState>,
+    collector_state: CollectorState,
     http: HttpServerConfig<CollectorOsv>,
     authenticator: Option<Arc<Authenticator>>,
     authorizer: Authorizer,
 ) -> Result<(), anyhow::Error> {
     let addr = SocketAddr::new(IpAddr::from_str(&http.bind_addr)?, *http.bind_port);
-    log::info!("listening on {}", addr);
-
     let listener = TcpListener::bind(addr)?;
     let addr = listener.local_addr()?;
     log::info!("listening on {}", addr);
-    log::info!("collectorist at {}", state.collectorist_client.register_collector_url());
 
-    state.addr.write().await.replace(addr);
+    collector_state.set_addr(addr).await;
 
     HttpServerBuilder::try_from(http)?
         .authorizer(authorizer)
@@ -91,8 +77,6 @@ pub fn config(cfg: &mut web::ServiceConfig, auth: Option<Arc<Authenticator>>) {
     cfg.service(
         web::scope("/api/v1")
             .wrap(new_auth!(auth))
-            .wrap(Logger::default())
-            .wrap(Compress::default())
             .service(collect_packages)
             .service(collect_vulnerabilities),
     )
@@ -222,111 +206,4 @@ pub async fn collect_vulnerabilities(
     log::info!("Gathered information: {gathered:?}");
 
     Ok(HttpResponse::Ok().json(gathered))
-}
-
-pub struct CollectorState {
-    addr: RwLock<Option<SocketAddr>>,
-    connected: AtomicBool,
-}
-
-impl CollectorState {
-    pub fn new() -> Self {
-        Self {
-            addr: RwLock::new(None),
-            connected: AtomicBool::new(false),
-        }
-    }
-}
-
-#[async_trait]
-pub trait CollectorStateHandler {
-    async fn registered(&self);
-    async fn unregistered(&self);
-}
-
-pub struct FnCollectorStateHandler<R, RFut, U, UFut>
-where
-    R: Fn() -> RFut,
-    RFut: Future<Output = ()>,
-    U: Fn() -> UFut,
-    UFut: Future<Output = ()>,
-{
-    registered: R,
-    unregistered: U,
-}
-
-#[async_trait]
-impl<R, RFut, U, UFut> CollectorStateHandler for FnCollectorStateHandler<R, RFut, U, UFut>
-where
-    R: Fn() -> RFut,
-    RFut: Future<Output = ()>,
-    U: Fn() -> UFut,
-    UFut: Future<Output = ()>,
-{
-    async fn registered(&self) {
-        (self.registered)().await
-    }
-
-    async fn unregistered(&self) {
-        (self.unregistered).await
-    }
-}
-
-pub async fn register_with_collectorist<H>(
-    state: &CollectorState,
-    client: CollectoristClient,
-    advertise: Option<Url>,
-    handler: H,
-) -> anyhow::Result<()>
-where
-    H: CollectorStateHandler,
-{
-    log::info!("Starting collectorist loop - advertise: {advertise:?}");
-
-    loop {
-        if let Some(addr) = *state.addr.read().await {
-            if !state.connected.load(Ordering::Relaxed) {
-                let url = match &advertise {
-                    Some(url) => url.clone(),
-                    None => {
-                        Url::parse(&format!("http://{addr}/api/v1/")).context("Failed to build advertisement URL")?
-                    }
-                };
-                info!(
-                    "registering with collectorist at {} with callback={}",
-                    client.register_collector_url(),
-                    url
-                );
-                match client
-                    .register_collector(CollectorConfig {
-                        url,
-                        cadence: Default::default(),
-                        interests: vec![Interest::Package, Interest::Vulnerability],
-                    })
-                    .await
-                {
-                    Ok(response) => {
-                        state.guac_url.write().await.replace(response.guac_url);
-                        state.connected.store(true, Ordering::Relaxed);
-                        info!("successfully registered with collectorist")
-                    }
-                    Err(e) => {
-                        warn!("failed to register with collectorist: {}", e)
-                    }
-                }
-            }
-        }
-        sleep(Duration::from_secs(10)).await;
-    }
-}
-
-pub async fn deregister_with_collectorist<H>(state: &CollectorState, client: &CollectoristClient, handler: H) {
-    if client.deregister_collector().await.is_ok() {
-        info!("deregistered with collectorist");
-    } else {
-        warn!("failed to deregister with collectorist");
-    }
-
-    state.connected.store(false, Ordering::Relaxed);
-    state.guac_url.write().await.take();
 }

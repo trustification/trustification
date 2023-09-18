@@ -7200,6 +7200,15 @@ dependencies = [
 [[package]]
 name = "trustification-collector-common"
 version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "collectorist-client",
+ "log",
+ "tokio",
+ "trustification-infrastructure",
+ "url",
+]
 
 [[package]]
 name = "trustification-common"
