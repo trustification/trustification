@@ -103,7 +103,7 @@ pub fn cve_details(props: &CveDetailsViewProperties) -> Html {
                                 <DescriptionGroup term="Published"><Date timestamp={withdrawn} /></DescriptionGroup>
                             }
                             if let Some(cvss3) = details.severities.iter().find(|score| score.r#type == ScoreType::Cvss3) {
-                                <DescriptionGroup term="Score"></DescriptionGroup>
+                                <DescriptionGroup term="Score">{ cvss3.score }</DescriptionGroup>
                             }
                         </DescriptionList>
                     </CardBody>
