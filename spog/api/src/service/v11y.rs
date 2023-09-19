@@ -20,7 +20,12 @@ impl V11yService {
         }
     }
 
+    #[allow(unused)]
     pub async fn fetch(&self, id: &str) -> Result<Vec<Vulnerability>, Error> {
         self.client.get_vulnerability(id).await.map_err(Error::Any)
+    }
+
+    pub async fn fetch_by_alias(&self, alias: &str) -> Result<Vec<Vulnerability>, Error> {
+        self.client.get_vulnerability(alias).await.map_err(Error::Any)
     }
 }

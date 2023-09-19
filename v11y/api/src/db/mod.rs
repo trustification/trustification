@@ -9,7 +9,7 @@ use futures::StreamExt;
 use sqlx::sqlite::SqliteConnectOptions;
 use sqlx::{Error, QueryBuilder, Row, SqlitePool};
 
-use v11y_client::{Reference, ScoreType, Severity, Vulnerability};
+use v11y_model::{Reference, ScoreType, Severity, Vulnerability};
 
 #[derive(Debug, Display, Error, From)]
 pub enum DbError {
@@ -711,7 +711,7 @@ impl Db {
 mod test {
     use futures::StreamExt;
 
-    use v11y_client::{Reference, ScoreType, Severity, Vulnerability};
+    use v11y_model::{Reference, ScoreType, Severity, Vulnerability};
 
     use crate::db::{Db, GetBy};
 

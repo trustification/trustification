@@ -1,0 +1,12 @@
+[package]
+name = "v11y-model"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1"
+chrono = { version = "0.4.26", features = ["serde"] }
+log = "0.4"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0.68"
+utoipa = { version = "3", features = ["actix_extras"] }

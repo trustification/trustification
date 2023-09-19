@@ -25,13 +25,13 @@ mod vulnerability;
     ),
     components(
         schemas(
-            v11y_client::Vulnerability,
-            v11y_client::Affected,
-            v11y_client::Range,
-            v11y_client::Severity,
-            v11y_client::Version,
-            v11y_client::ScoreType,
-            v11y_client::Reference,
+            v11y_model::Vulnerability,
+            v11y_model::Affected,
+            v11y_model::Range,
+            v11y_model::Severity,
+            v11y_model::Version,
+            v11y_model::ScoreType,
+            v11y_model::Reference,
         )
     )
 )]

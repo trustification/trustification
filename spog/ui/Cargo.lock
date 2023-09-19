@@ -2529,6 +2529,7 @@ dependencies = [
  "url",
  "urlencoding",
  "utoipa",
+ "v11y-model",
  "vexination-model",
 ]
 
@@ -2982,6 +2983,7 @@ dependencies = [
  "proc-macro-error",
  "proc-macro2",
  "quote",
+ "regex",
  "syn 2.0.32",
 ]
 
@@ -2993,6 +2995,18 @@ checksum = "79daa5ed5740825c40b389c5e50312b9c86df53fccd33f281df655642b43869d"
 dependencies = [
  "getrandom",
  "wasm-bindgen",
+]
+
+[[package]]
+name = "v11y-model"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "log",
+ "serde",
+ "serde_json",
+ "utoipa",
 ]
 
 [[package]]

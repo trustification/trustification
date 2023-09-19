@@ -6070,6 +6070,7 @@ dependencies = [
  "url",
  "urlencoding",
  "utoipa",
+ "v11y-model",
  "vexination-model",
 ]
 
@@ -7592,7 +7593,7 @@ dependencies = [
  "trustification-infrastructure",
  "utoipa",
  "utoipa-swagger-ui",
- "v11y-client",
+ "v11y-model",
 ]
 
 [[package]]
@@ -7600,15 +7601,24 @@ name = "v11y-client"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "chrono",
- "humantime",
- "humantime-serde",
  "log",
  "reqwest",
  "serde",
  "serde_json",
  "tokio",
  "trustification-auth",
+ "v11y-model",
+]
+
+[[package]]
+name = "v11y-model"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "log",
+ "serde",
+ "serde_json",
  "utoipa",
 ]
 
