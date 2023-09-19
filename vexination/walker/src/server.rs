@@ -9,39 +9,36 @@ use csaf_walker::{
 };
 use serde::Deserialize;
 use tokio::sync::{Mutex, RwLock};
-use trustification_storage::Storage;
 
 pub async fn run(
     workers: usize,
-    storage: Storage,
     source: url::Url,
+    sink: url::Url,
     options: ValidationOptions,
 ) -> Result<(), anyhow::Error> {
     let fetcher = Fetcher::new(Default::default()).await?;
-    let storage = Arc::new(storage);
 
-    let validation = ValidationVisitor::new(move |advisory: Result<ValidatedAdvisory, ValidationError>| {
-        let storage = storage.clone();
+    let validation = ValidationVisitor::new(|advisory: Result<ValidatedAdvisory, ValidationError>| {
+        let sink = sink.clone();
         async move {
             match advisory {
                 Ok(ValidatedAdvisory { retrieved }) => {
                     let data = retrieved.data;
                     match serde_json::from_slice::<csaf::Csaf>(&data) {
-                        Ok(doc) => {
-                            let key = doc.document.tracking.id;
-                            match storage.put_json_slice(&key, &data).await {
-                                Ok(_) => {
-                                    let msg = format!("VEX ({}) of size {} stored successfully", key, &data[..].len());
-                                    log::info!("{}", msg);
-                                }
-                                Err(e) => {
-                                    let msg = format!("(Skipped) Error storing VEX: {:?}", e);
-                                    log::info!("{}", msg);
-                                }
+                        Ok(doc) => match reqwest::Client::new().post(sink).json(&doc).send().await {
+                            Ok(_) => {
+                                log::info!(
+                                    "VEX ({}) of size {} stored successfully",
+                                    doc.document.tracking.id,
+                                    &data[..].len()
+                                );
                             }
-                        }
+                            Err(e) => {
+                                log::warn!("(Skipped) Error storing VEX: {e:?}");
+                            }
+                        },
                         Err(e) => {
-                            log::warn!("(Ignored) Error parsing advisory to retrieve ID: {:?}", e);
+                            log::warn!("(Ignored) Error parsing advisory to retrieve ID: {e:?}");
                         }
                     }
                 }

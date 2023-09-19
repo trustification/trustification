@@ -7823,13 +7823,13 @@ dependencies = [
  "packageurl",
  "prometheus",
  "rand 0.8.5",
+ "reqwest",
  "serde",
  "serde_json",
  "sha2 0.10.7",
  "time",
  "tokio",
  "trustification-infrastructure",
- "trustification-storage",
  "url",
 ]
 
