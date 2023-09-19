@@ -12,7 +12,7 @@ use csaf_walker::validation::ValidationOptions;
 use prometheus::Registry;
 use time::{Date, Month, UtcOffset};
 use trustification_infrastructure::{Infrastructure, InfrastructureConfig};
-use trustification_storage::{Storage, StorageConfig};
+use url::Url;
 
 mod server;
 
@@ -21,7 +21,11 @@ mod server;
 pub struct Run {
     /// Source URL
     #[arg(short, long)]
-    pub(crate) source: url::Url,
+    pub(crate) source: Url,
+
+    /// Vexination upload url
+    #[arg(short, long)]
+    pub(crate) sink: Url,
 
     /// OpenPGP policy date.
     #[arg(long)]
@@ -39,9 +43,6 @@ pub struct Run {
     pub(crate) workers: usize,
 
     #[command(flatten)]
-    pub(crate) storage: StorageConfig,
-
-    #[command(flatten)]
     pub infra: InfrastructureConfig,
 }
 
@@ -52,10 +53,6 @@ impl Run {
                 "vexination-walker",
                 |_context| async { Ok(()) },
                 |context| async move {
-                    let storage = Storage::new(
-                        self.storage.process("vexination", self.devmode),
-                        context.metrics.registry(),
-                    )?;
                     let validation_date: Option<SystemTime> = match (self.policy_date, self.v3_signatures) {
                         (_, true) => Some(SystemTime::from(
                             Date::from_calendar_date(2007, Month::January, 1)
@@ -71,7 +68,7 @@ impl Run {
 
                     let options = ValidationOptions { validation_date };
 
-                    server::run(self.workers, storage, self.source, options).await
+                    server::run(self.workers, self.source, self.sink, options).await
                 },
             )
             .await?;
