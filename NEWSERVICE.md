@@ -102,37 +102,26 @@ impl Run {
         let authorizer = Authorizer::new(authz);
 
         Infrastructure::from(self.infra)
-            .run("my-service", |metrics| async move {
+            .run("my-service", |context| async move {
 
-                let http_metrics = PrometheusMetricsBuilder::new("my_api")
-                    .registry(metrics.registry().clone())
-                    .build()
-                    .map_err(|_| anyhow!("Error registering HTTP metrics"))?;
+                let mut http = HttpServerBuilder::try_from(self.http)?
+                    .metrics(context.metrics.registry().clone(), "my-service")
+                    // Enable authentication for all services. If you need this only for individual services, then
+                    // skip this call, and add the authenticator manually to services (see below).
+                    .default_authenticator() 
+                    .authorizer(authorizer.clone())
+                    .configure(move |svc| {
+                        svc
+                            // NOTE: Request will fail before invoking this handler if authentication is enabled
+                            .service(hello)
+                            // Alternative way, adding authentication to only one service.
+                            .service(web::scope("/api/v1")
+                                 .wrap(new_auth!(auth))
+                                 .service(hello),
+                            )
+                    });
 
-                let mut srv = HttpServer::new(move || {
-                    let http_metrics = http_metrics.clone();
-                    let cors = Cors::permissive();
-                    let authenticator = authenticator.clone();
-                    let authorizer = authorizer.clone();
-
-                    new_app(AppOptions {
-                        cors: Some(cors),
-                        metrics: Some(http_metrics),
-                        // Enable authentication for all services. If you need this only for individual services, then
-                        // use `None`, and add the authenticator manually to services (see below).
-                        authenticator,
-                        authorizer,
-                    })
-                    // NOTE: Request will fail before invoking this handler if authentication is enabled
-                    .service(hello)
-                    // Alternative way, adding authentication to only one service.
-                    .service(web::scope("/api/v1")
-                        .wrap(new_auth!(auth))
-                        .service(hello),
-                    )
-                });
-
-                Ok(())
+                http.run().await
             })
             .await?;
     }
