@@ -387,6 +387,32 @@ impl Storage {
         Ok(s)
     }
 
+    pub fn list_objects_from(
+        &self,
+        mut continuation_token: ContinuationToken,
+    ) -> impl Stream<Item = Result<(S3Path, Vec<u8>), (Error, ContinuationToken)>> + '_ {
+        let prefix = DATA_PATH[1..].to_string();
+
+        try_stream! {
+            loop {
+                let (result, _) = self.bucket.list_page(prefix.clone(), None, continuation_token.0.clone(), None, None).await.map_err(|e| (Error::S3(e), continuation_token.clone()))?;
+                let next_continuation_token = result.next_continuation_token.clone();
+
+                for obj in result.contents {
+                    let path = S3Path::from_path(&obj.key);
+                    let o = self.get_object(&path).await.map_err(|e| (e, continuation_token.clone()))?;
+                    yield (path, o);
+                }
+
+                if next_continuation_token.is_none() {
+                    break;
+                } else {
+                    continuation_token = ContinuationToken(next_continuation_token);
+                }
+            }
+        }
+    }
+
     pub async fn put_index(&self, index: &[u8]) -> Result<(), Error> {
         self.bucket.put_object(INDEX_PATH, index).await?;
         self.metrics.index_puts_total.inc();
@@ -466,6 +492,9 @@ impl Storage {
         Ok(res)
     }
 }
+
+#[derive(Clone, Default)]
+pub struct ContinuationToken(Option<String>);
 
 const PUT_EVENT: &str = "ObjectCreated:Put";
 const MULTIPART_PUT_EVENT: &str = "ObjectCreated:CompleteMultipartUpload";
