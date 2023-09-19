@@ -49,13 +49,20 @@ yew-more-hooks = "0.2.0"
 yew-nested-router = "0.3.1"
 yew-oauth2 = { version = "0.6.3", features = ["router", "openid"] }
 
-spog-model = "0.1.0"
+spog-model = { path = "../model" }
+v11y-model = { path = "../../v11y/model" }
 
 bombastic-model = { path = "../../bombastic/model" }
 vexination-model = { path = "../../vexination/model" }
 trustification-api = { path = "../../api" }
 trustification-common = { path = "../../common", default-features = false }
 trustification-version = { path = "../../version" }
+
+spog-ui-navigation = { path = "crates/navigation" }
+spog-ui-backend = { path = "crates/backend" }
+spog-ui-components = { path = "crates/components" }
+spog-ui-common = { path = "crates/common" }
+spog-ui-utils = { path = "crates/utils" }
 
 [build-dependencies]
 trustification-version = { path = "../../version", features = ["build"] }
@@ -68,6 +75,13 @@ features = [
 ]
 
 [workspace]
+members = [
+    "crates/backend",
+    "crates/common",
+    "crates/components",
+    "crates/navigation",
+    "crates/utils",
+]
 
 [patch.crates-io]
 #yew-nested-router = { path = "../../../yew-nested-router" }
@@ -82,8 +96,6 @@ patternfly-yew = { git = "https://github.com/ctron/patternfly-yew", rev = "2958f
 
 csaf = { git = "https://github.com/voteblake/csaf-rs", rev = "76cb9ede10adb1fbb495b17e5fd8d95c5cf6c900" } # FIXME: waiting for release
 monaco = { git = "https://github.com/siku2/rust-monaco", rev = "794a4cc7819f9ed7eb06559e24f75a41e23cf22a" } # FIXME: waiting for release
-
-spog-model = { path = "../model" }
 
 packageurl = { git = "https://github.com/ctron/packageurl.rs", rev = "c9a0c192ff0cba5d75b8cbf8be0b1e4dc14320aa" }
 

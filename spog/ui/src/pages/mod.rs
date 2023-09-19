@@ -1,7 +1,5 @@
 //! Pages in the console
 
-use yew_nested_router::Target;
-
 mod advisory;
 mod advisory_search;
 mod chicken;
@@ -25,34 +23,3 @@ pub use sbom::*;
 pub use sbom_search::Package;
 pub use scanner::*;
 pub use search::Search;
-
-#[derive(Clone, Debug, PartialEq, Eq, Target)]
-pub enum AppRoute {
-    #[target(index)]
-    Index,
-    NotLoggedIn,
-    Chicken,
-    Package(View),
-    Advisory(View),
-    Scanner,
-    Search {
-        terms: String,
-    },
-    Cve {
-        id: String,
-    },
-}
-
-#[derive(Clone, Debug, PartialEq, Eq, Target)]
-pub enum View {
-    Search { query: String },
-    Content { id: String },
-}
-
-impl Default for View {
-    fn default() -> Self {
-        Self::Search {
-            query: Default::default(),
-        }
-    }
-}

@@ -1,7 +1,7 @@
 use patternfly_yew::prelude::*;
 use yew::prelude::*;
 
-use crate::components::common::PageHeading;
+use spog_ui_components::common::PageHeading;
 
 #[function_component(Chicken)]
 pub fn chicken() -> Html {

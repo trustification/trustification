@@ -1,8 +1,6 @@
-use crate::{
-    backend::VersionService,
-    hooks::{use_backend, use_config},
-};
 use patternfly_yew::prelude::*;
+use spog_ui_backend::{use_backend, VersionService};
+use spog_ui_utils::config::use_config;
 use std::rc::Rc;
 use trustification_version::{version, VersionInformation};
 use yew::prelude::*;

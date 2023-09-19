@@ -1,0 +1,25 @@
+[package]
+name = "spog-ui-utils"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2"
+
+[dependencies]
+analytics-next = "0.1"
+gloo-storage = "0.3"
+log ="0.4.20"
+openidconnect = "3"
+patternfly-yew = "0.5.0-alpha.3"
+serde_json = "1"
+strum = { version = "0.25", features = ["derive"] }
+yew = "0.20"
+yew-consent = "0.1"
+yew-hooks = "0.2.0"
+yew-more-hooks = "0.2"
+yew-nested-router = "0.3"
+yew-oauth2 = { version = "0.6.2", features = ["openid"] }
+
+spog-model = { path = "../../../model" }
+
+spog-ui-backend = { path = "../backend" }
+spog-ui-common = { path = "../common" }

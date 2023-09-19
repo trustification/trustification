@@ -1,17 +1,14 @@
-use crate::{
-    backend::{self, Advisory},
-    components::{
-        advisory::{cat_label, tracking_status_str, CsafNotes, CsafProductInfo, CsafReferences, CsafVulnTable},
-        common::{CardWrapper, NotFound, PageHeading},
-        content::{SourceCode, UnknownContent},
-        error::Error,
-        severity::Severity,
-    },
-    hooks::use_backend,
-};
 use csaf::document::Category;
 use humansize::{format_size, BINARY};
 use patternfly_yew::prelude::*;
+use spog_ui_backend::{use_backend, Advisory, VexService};
+use spog_ui_common::error::components::Error;
+use spog_ui_components::{
+    advisory::{cat_label, tracking_status_str, CsafNotes, CsafProductInfo, CsafReferences, CsafVulnTable},
+    common::{CardWrapper, NotFound, PageHeading},
+    content::{SourceCode, UnknownContent},
+    severity::Severity,
+};
 use std::rc::Rc;
 use yew::prelude::*;
 use yew_more_hooks::prelude::*;
@@ -29,7 +26,7 @@ pub fn vex(props: &VEXProperties) -> Html {
 
     let info = use_async_with_cloned_deps(
         |(id, backend)| async move {
-            backend::VexService::new(backend.clone(), access_token)
+            VexService::new(backend.clone(), access_token)
                 .get(id)
                 .await
                 .map(|result| result.map(Advisory::parse).map(Rc::new))

@@ -1,16 +1,10 @@
 #![recursion_limit = "1024"]
 
 mod about;
-mod analytics;
 mod app;
-mod backend;
-mod components;
 mod console;
-mod hints;
-mod hooks;
 mod model;
 mod pages;
-mod utils;
 
 use browser_panic_hook::{CustomBody, IntoPanicHook};
 use wasm_bindgen::prelude::*;

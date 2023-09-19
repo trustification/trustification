@@ -1,12 +1,9 @@
-use crate::{
-    analytics::{use_analytics, use_wrap_tracking},
-    components::editor::ReadonlyEditor,
-    hooks::use_config,
-    pages::ClickLearn,
-};
+use crate::pages::ClickLearn;
 use analytics_next::TrackingEvent;
 use patternfly_yew::prelude::*;
 use serde_json::json;
+use spog_ui_components::editor::ReadonlyEditor;
+use spog_ui_utils::{analytics::*, config::*};
 use std::rc::Rc;
 use wasm_bindgen_futures::JsFuture;
 use yew::prelude::*;
