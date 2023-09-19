@@ -47,9 +47,9 @@ impl NvdClient {
             return Ok(None);
         }
 
-        let response: QueryResponse = response.json().await?;
+        let mut response: QueryResponse = response.json().await?;
 
-        Ok(Some(response.vulnerabilities[0].clone()))
+        Ok(response.vulnerabilities.pop())
     }
 }
 
