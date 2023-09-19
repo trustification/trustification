@@ -12,7 +12,9 @@ use derive_more::{Display, Error, From};
 use guac::client::intrinsic::certify_vuln::CertifyVulnSpec;
 use packageurl::PackageUrl;
 use serde::{Deserialize, Serialize};
-use utoipa::OpenApi;
+use utoipa::openapi::schema::AdditionalProperties;
+use utoipa::openapi::{ArrayBuilder, Object, ObjectBuilder, RefOr, SchemaType};
+use utoipa::{OpenApi, ToSchema};
 
 use trustification_auth::authenticator::Authenticator;
 use trustification_auth::authorizer::Authorizer;
@@ -33,7 +35,21 @@ use crate::{AppState, SharedState};
     ),
     paths(
         analyze,
+    ),
+    components(
+        schemas(
+            AnalyzeRequest,
+            AnalyzeResponse,
+            v11y_client::Vulnerability,
+            v11y_client::Affected,
+            v11y_client::Reference,
+            v11y_client::Severity,
+            v11y_client::Range,
+            v11y_client::ScoreType,
+            v11y_client::Version,
+        )
     )
+
 )]
 pub struct ApiDoc;
 
@@ -96,33 +112,28 @@ impl ResponseError for Error {}
 
 #[utoipa::path(
     post,
+    request_body = AnalyzeRequest,
     responses(
-        (status = 200, description = "Analyzed pURLs"),
+        (status = 200, body = AnalyzeResponse, description = "Analyzed pURLs"),
     ),
 )]
 #[post("analyze")]
 async fn analyze(state: web::Data<AppState>, request: web::Json<AnalyzeRequest>) -> actix_web::Result<impl Responder> {
-    println!("analyze A");
     state
         .collectorist_client
         .collect_packages(request.purls.clone())
         .await
         .map_err(|e| {
-            println!("COLLECTORIST {}", e);
             log::error!("collectorist error {}", e);
             Error::Collectorist
         })?;
 
-    println!("analyze B");
     let mut response = AnalyzeResponse::new();
 
     let mut vuln_ids = HashSet::new();
 
-    println!("analyze C");
     for purl_str in &request.purls {
-        println!("analyze D {}", purl_str);
         if let Ok(purl) = PackageUrl::from_str(purl_str) {
-            println!("analyze E");
             for vuln in state
                 .guac_client
                 .intrinsic()
@@ -132,14 +143,11 @@ async fn analyze(state: web::Data<AppState>, request: web::Json<AnalyzeRequest>)
                 })
                 .await
                 .map_err(|e| {
-                    println!("GUAC {}", e);
                     log::error!("GUAC error {}", e);
                     Error::Guac
                 })?
             {
-                println!("analyze F");
                 for vuln_id in vuln.vulnerability.vulnerability_ids {
-                    println!("analyze G");
                     response.add_package_vulnerability(purl_str, &vuln_id.vulnerability_id);
                     vuln_ids.insert(vuln_id.vulnerability_id);
                 }
@@ -147,58 +155,73 @@ async fn analyze(state: web::Data<AppState>, request: web::Json<AnalyzeRequest>)
         }
     }
 
-    println!("analyze H");
     for vuln_id in vuln_ids {
-        println!("analyze I");
         for vuln in state.v11y_client.get_vulnerability(&vuln_id).await.map_err(|e| {
-            println!("v11y {}", e);
             log::error!("v11y error {}", e);
             Error::V11y
         })? {
-            println!("analyze J");
             response.add_vulnerability(&vuln);
         }
     }
-    println!("analyze K");
     Ok(HttpResponse::Ok().json(response))
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
 pub struct AnalyzeRequest {
     pub purls: Vec<String>,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
 pub struct AnalyzeResponse {
-    pub packages: HashMap<String, Vec<String>>,
-    pub vulnerabilities: HashMap<String, Vec<Vulnerability>>,
+    #[schema(schema_with = response_affected)]
+    pub affected: HashMap<String, Vec<String>>,
+    //#[schema(additional_properties, value_type = Vulnerability)]
+    pub vulnerabilities: Vec<Vulnerability>,
+}
+
+fn response_affected() -> Object {
+    ObjectBuilder::new()
+        .schema_type(SchemaType::Object)
+        .additional_properties(Some(AdditionalProperties::RefOr(RefOr::T(
+            ArrayBuilder::new()
+                .items(
+                    ObjectBuilder::new()
+                        .schema_type(SchemaType::String)
+                        .description(Some("vulnerability ID"))
+                        .build(),
+                )
+                .build()
+                .into(),
+        ))))
+        .build()
 }
 
 impl AnalyzeResponse {
     pub fn new() -> Self {
         Self {
-            packages: Default::default(),
+            affected: Default::default(),
             vulnerabilities: Default::default(),
         }
     }
 
     pub fn add_package_vulnerability(&mut self, purl: &str, vuln_id: &str) {
-        if !self.packages.contains_key(purl) {
-            self.packages.insert(purl.to_string(), Vec::new());
+        if !self.affected.contains_key(purl) {
+            self.affected.insert(purl.to_string(), Vec::new());
         }
 
-        if let Some(inner) = self.packages.get_mut(purl) {
+        if let Some(inner) = self.affected.get_mut(purl) {
             inner.push(vuln_id.to_string());
         }
     }
 
     pub fn add_vulnerability(&mut self, vuln: &Vulnerability) {
-        if !self.vulnerabilities.contains_key(&vuln.id) {
-            self.vulnerabilities.insert(vuln.id.clone(), Vec::new());
-        }
+        self.vulnerabilities.push(vuln.clone());
+        //if !self.vulnerabilities.contains_key(&vuln.id) {
+        //self.vulnerabilities.insert(vuln.id.clone(), Vec::new());
+        //}
 
-        if let Some(inner) = self.vulnerabilities.get_mut(&vuln.id) {
-            inner.push(vuln.clone())
-        }
+        //if let Some(inner) = self.vulnerabilities.get_mut(&vuln.id) {
+        //inner.push(vuln.clone())
+        //}
     }
 }
