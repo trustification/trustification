@@ -1,8 +1,9 @@
 mod result;
 
-use crate::{components::common::PageHeading, pages::AppRoute};
 use patternfly_yew::prelude::*;
 use result::ResultView;
+use spog_ui_components::common::PageHeading;
+use spog_ui_navigation::AppRoute;
 use yew::prelude::*;
 use yew_nested_router::prelude::*;
 

@@ -1,17 +1,15 @@
 //! Unified search
 
-use crate::{
-    components::{
-        advisory::{use_advisory_search, AdvisoryResult, AdvisorySearchControls},
-        common::Visible,
-        sbom::{use_sbom_search, SbomResult, SbomSearchControls},
-        search::{DynamicSearchParameters, SearchMode},
-    },
-    hooks::UseStandardSearch,
-    utils::count::count_tab_title,
-};
 use patternfly_yew::prelude::*;
 use spog_model::prelude::*;
+use spog_ui_common::utils::count::count_tab_title;
+use spog_ui_components::{
+    advisory::{use_advisory_search, AdvisoryResult, AdvisorySearchControls},
+    common::Visible,
+    hooks::UseStandardSearch,
+    sbom::{use_sbom_search, SbomResult, SbomSearchControls},
+    search::{DynamicSearchParameters, SearchMode},
+};
 use std::ops::Deref;
 use yew::prelude::*;
 use yew_more_hooks::prelude::*;

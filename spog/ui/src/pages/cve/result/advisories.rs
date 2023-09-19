@@ -1,6 +1,6 @@
-use crate::pages::{AppRoute, View};
 use patternfly_yew::prelude::*;
 use spog_model::prelude::AdvisoryOverview;
+use spog_ui_navigation::{AppRoute, View};
 use std::rc::Rc;
 use yew::prelude::*;
 use yew_nested_router::components::Link;

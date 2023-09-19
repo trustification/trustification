@@ -1,5 +1,7 @@
-use crate::{components::common::SafeHtml, hooks::use_config, pages::AppRoute};
 use patternfly_yew::prelude::*;
+use spog_ui_common::components::SafeHtml;
+use spog_ui_navigation::AppRoute;
+use spog_ui_utils::config::use_config;
 use yew::prelude::*;
 use yew_nested_router::prelude::*;
 

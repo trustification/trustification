@@ -1,11 +1,13 @@
-use crate::{
-    analytics::{AskConsent, Segment, SegmentIdentify},
-    components::{backend::Backend, config::Configuration, error::Error, theme::Themed},
-    console::Console,
-    hooks::use_backend,
-    pages::AppRoute,
-};
+use crate::console::Console;
 use patternfly_yew::prelude::*;
+use spog_ui_backend::use_backend;
+use spog_ui_common::error::components::Error;
+use spog_ui_components::{backend::Backend, theme::Themed};
+use spog_ui_navigation::AppRoute;
+use spog_ui_utils::{
+    analytics::{AskConsent, Segment, SegmentIdentify},
+    config::components::Configuration,
+};
 use yew::prelude::*;
 use yew_consent::prelude::*;
 use yew_nested_router::prelude::*;

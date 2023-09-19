@@ -1,16 +1,14 @@
 mod advisories;
 mod products;
 
-use crate::{
-    backend::CveService,
-    components::{async_state_renderer::async_content, common::PageHeading},
-    hooks::use_backend,
-};
 use advisories::RelatedAdvisories;
 use patternfly_yew::prelude::*;
 use products::RelatedProducts;
 use spog_model::prelude::CveDetails;
+use spog_ui_backend::{use_backend, CveService};
+use spog_ui_components::{async_state_renderer::async_content, common::PageHeading, time::Date};
 use std::rc::Rc;
+use v11y_model::ScoreType;
 use yew::prelude::*;
 use yew_more_hooks::hooks::use_async_with_cloned_deps;
 use yew_oauth2::hook::use_latest_access_token;
@@ -57,6 +55,9 @@ fn result_content(props: &ResultContentProperties) -> Html {
 
     html!(
         <Grid gutter=true>
+            <GridItem cols={[12]}>
+                <CveDetailsView details={props.details.clone()} />
+            </GridItem>
             <GridItem cols={[6]}>
                 <Card title={html!(<Title>{"Related products"}</Title>)}>
                     <CardBody>
@@ -73,4 +74,41 @@ fn result_content(props: &ResultContentProperties) -> Html {
             </GridItem>
         </Grid>
     )
+}
+
+#[derive(PartialEq, Properties)]
+pub struct CveDetailsViewProperties {
+    pub details: Rc<CveDetails>,
+}
+
+#[function_component(CveDetailsView)]
+pub fn cve_details(props: &CveDetailsViewProperties) -> Html {
+    props
+        .details
+        .details
+        .iter()
+        .map(|details| {
+            html!(
+                <Card title={html!(<Title>{ details.origin.clone() }</Title>)}>
+                    <CardBody>
+                        <DescriptionList>
+                            if !details.summary.is_empty() {
+                                <DescriptionGroup term="Summary">{ details.summary.clone() }</DescriptionGroup>
+                            }
+                            if !details.details.is_empty() {
+                                <DescriptionGroup term="Details">{ details.details.clone() }</DescriptionGroup>
+                            }
+                            <DescriptionGroup term="Published"><Date timestamp={details.published} /></DescriptionGroup>
+                            if let Some(withdrawn) = details.withdrawn {
+                                <DescriptionGroup term="Published"><Date timestamp={withdrawn} /></DescriptionGroup>
+                            }
+                            if let Some(cvss3) = details.severities.iter().find(|score| score.r#type == ScoreType::Cvss3) {
+                                <DescriptionGroup term="Score"></DescriptionGroup>
+                            }
+                        </DescriptionList>
+                    </CardBody>
+                </Card>
+            )
+        })
+        .collect()
 }

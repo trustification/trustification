@@ -3,8 +3,6 @@ mod inspect;
 mod report;
 mod upload;
 
-use crate::hints::Hints;
-use crate::{analytics::use_tracking, components::hint::Hint, hooks::use_config};
 use analytics_next::TrackingEvent;
 use anyhow::bail;
 use bombastic_model::prelude::SBOM;
@@ -12,6 +10,11 @@ use gloo_utils::window;
 use inspect::Inspect;
 use patternfly_yew::prelude::*;
 use serde_json::{json, Value};
+use spog_ui_utils::{
+    analytics::*,
+    config::*,
+    hints::{Hint as HintView, Hints},
+};
 use std::rc::Rc;
 use upload::Upload;
 use yew::prelude::*;
@@ -93,7 +96,7 @@ pub fn scanner() -> Html {
                     <CommonHeader />
 
                     if let Some(hint) = &config.scanner.welcome_hint {
-                        <Hint hint_key={Hints::ScannerWelcome} hint={hint.clone()} />
+                        <HintView hint_key={Hints::ScannerWelcome} hint={hint.clone()} />
                     }
 
                     <PageSection variant={PageSectionVariant::Light} fill=true>

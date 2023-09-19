@@ -1,5 +1,5 @@
-use crate::components::{advisory::AdvisorySearch, common::PageHeading};
 use patternfly_yew::prelude::*;
+use spog_ui_components::{advisory::AdvisorySearch, common::PageHeading};
 use yew::prelude::*;
 
 #[derive(Clone, Debug, PartialEq, Eq, Properties)]

@@ -1,7 +1,8 @@
 use super::{report::Report, CommonHeader};
-use crate::{backend::AnalyzeService, components::editor::ReadonlyEditor, hooks::use_backend};
 use patternfly_yew::prelude::*;
 use reqwest::Body;
+use spog_ui_backend::{use_backend, AnalyzeService};
+use spog_ui_components::editor::ReadonlyEditor;
 use std::rc::Rc;
 use yew::prelude::*;
 use yew_more_hooks::hooks::r#async::*;
@@ -60,7 +61,7 @@ pub fn inspect(props: &InspectProperties) -> Html {
                                 {
                                     match state {
                                         Ok(data) => html!(<Report data={data.clone()} />),
-                                        Err(err) => err.to_html("Failed to process report"),
+                                        Err(err) => err.to_html( "Failed to process report"),
                                     }
                                 }
                             </PageSection>

@@ -1,17 +1,13 @@
-use crate::{
-    about,
-    analytics::use_consent_dialog,
-    backend::Endpoint,
-    components::{
-        common::{ExternalLinkMarker, ExternalNavLink},
-        theme::DarkModeEntry,
-    },
-    hints::clear_hints,
-    hooks::{use_backend, use_config},
-    pages::{self, AppRoute, View},
-    utils::auth::from_auth,
-};
+use crate::{about, pages};
 use patternfly_yew::prelude::*;
+use spog_ui_backend::{use_backend, Endpoint};
+use spog_ui_common::utils::auth::from_auth;
+use spog_ui_components::{
+    common::{ExternalLinkMarker, ExternalNavLink},
+    theme::DarkModeEntry,
+};
+use spog_ui_navigation::{AppRoute, View};
+use spog_ui_utils::{analytics::*, config::*, hints::*};
 use yew::prelude::*;
 use yew_consent::hook::use_consent_context;
 use yew_more_hooks::prelude::*;

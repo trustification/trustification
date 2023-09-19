@@ -1,0 +1,63 @@
+[package]
+name = "spog-ui-common"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2"
+
+[dependencies]
+analytics-next = "0.1.0"
+anyhow = "1"
+async-trait = "0.1"
+browser-panic-hook = "0.2.0"
+chrono = { version = "0.4", default-features = false, features = ["wasmbind"] }
+csaf = { version = "0.5.0", default-features = false }
+cvss = { version = "2", features = ["serde"] }
+cyclonedx-bom = "0.4"
+gloo-events = "0.2"
+gloo-net = "0.4.0"
+gloo-storage = "0.3.0"
+gloo-utils = { version = "0.2.0", features = ["serde"] }
+humansize = "2"
+itertools = "0.11"
+js-sys = "0.3"
+log = "0.4"
+markdown = "1.0.0-alpha.11"
+monaco = { version = "0.3", features = ["yew-components"] }
+openidconnect = "3"
+packageurl = "0.3"
+patternfly-yew = { version = "0.5.0-alpha.3", features = ["icons-fab", "tree"] }
+reqwest = { version = "0.11", features = ["json"] }
+roxmltree = "0.18"
+serde = { version = "1", features = ["derive", "rc"] }
+serde_json = "1"
+sikula = { version = "0.4.0", features = ["time"] }
+spdx-rs = "0.5.2"
+strum = { version = "0.25", features = ["derive"] }
+thiserror = "1"
+time = { version = "0.3", features = ["formatting", "macros", "wasm-bindgen"] }
+url = { version = "2", features = ["serde"] }
+urlencoding = "2"
+wasm-bindgen = "0.2"
+wasm-bindgen-futures = "0.4"
+wasm-logger = "0.2"
+yew = { version = "0.20", features = ["csr"] }
+yew-consent = "0.1"
+yew-hooks = "0.2"
+yew-more-hooks = "0.2.0"
+yew-nested-router = "0.3.1"
+yew-oauth2 = { version = "0.6.3", features = ["router", "openid"] }
+
+spog-model = { path = "../../../model" }
+
+bombastic-model = { path = "../../../../bombastic/model" }
+vexination-model = { path = "../../../../vexination/model" }
+trustification-api = { path = "../../../../api" }
+trustification-common = { path = "../../../../common", default-features = false }
+trustification-version = { path = "../../../../version" }
+
+[dependencies.web-sys]
+version = "0.3.61"
+features = [
+    "DataTransfer",
+    "File",
+]
