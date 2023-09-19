@@ -91,6 +91,35 @@ set TOKEN $(curl -s -d "client_id=walker" -d "client_secret=ZVzq9AMOVUdMY1lSohpx
 
 You can then add `$CURL_OPTS` to all `curl` calls in order to use the token.
 
+## API keys
+
+Some of the collectors require additional API keys. They can be configured through environment variables. As they are
+environment variables and shouldn't change frequently, it is possible to set them in some initialization script like
+`.bashrc`.
+
+> [!NOTE]
+> Be sure to set those API keys before starting the following services.
+
+### NVD
+
+For the `collector-nvd` service, you will need:
+
+```shell
+export NVD_API_KEY=<your-api-key>
+```
+
+You can request one [here](https://nvd.nist.gov/developers/request-an-api-key).
+
+### Snyk
+
+For the `collector-snyk` service, you will need:
+
+```shell
+export SNYK_TOKEN=<your-api-token>
+export SNYK_ORG_ID=<the-matching-org-id>
+```
+
+You can request one [here](https://docs.snyk.io/enterprise-setup/snyk-broker/snyk-broker-code-agent/setting-up-the-code-agent-broker-client-deployment/step-1-obtaining-the-required-tokens-for-the-setup-procedure/obtaining-your-snyk-api-token).
 
 ## APIs
 
@@ -224,24 +253,6 @@ You can search all the data using the `bombastic-api` or `vexination-api` endpoi
 curl "http://localhost:8082/api/v1/sbom/search?q=openssl"
 curl "http://localhost:8081/api/v1/vex/search?q=openssl"
 ```
-
-## Collectors requiring credentials
-
-Several collectors use third-party services and require credentials.
-
-### Snyk
-
-| Variable      |Value|
-|---------------|-----|
-| `SNYK_ORG_ID` |Your Snyk organization ID|
-| `SNYK_TOKEN`  |Your Snyk API token|
-
-### NVD
-
-| Variable      | Value               |
-|---------------|---------------------|
-| `NVD_API_KEY` | Your NIST NVD API key |
-
 
 ## Working with local images
 
