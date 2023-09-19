@@ -13,7 +13,6 @@ use csaf::Csaf;
 use futures::TryStreamExt;
 use spog_model::csaf::{find_product_relations, trace_product};
 use spog_model::cve::{AdvisoryOverview, CveDetails};
-use spog_model::prelude::Details;
 use std::collections::{BTreeMap, BTreeSet, HashSet};
 use std::sync::Arc;
 use trustification_auth::authenticator::Authenticator;
@@ -56,11 +55,10 @@ async fn build_cve_details<P>(
 where
     P: TokenProvider,
 {
-    // TODO: trigger collectorist
-    // TODO: fetch from v11y
-
     collectorist.trigger_vulnerability(&cve_id).await?;
-    let mut details = v11y.fetch(&cve_id).await?;
+    let details = v11y.fetch_by_alias(&cve_id).await?;
+
+    log::info!("Details: {details:#?}");
 
     // fetch from index
 
@@ -114,16 +112,6 @@ where
             title: csaf.document.title,
         })
     }
-
-    log::info!("Details: {details:#?}");
-
-    let details = details
-        .pop()
-        .map(|vuln| Details {
-            summary: vuln.summary,
-            details: vuln.details,
-        })
-        .unwrap_or_default();
 
     Ok(CveDetails {
         id: cve_id,

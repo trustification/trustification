@@ -1,21 +1,13 @@
 use std::collections::BTreeMap;
 
-#[derive(Clone, Debug, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
+#[derive(Clone, Debug, PartialEq, serde::Deserialize, serde::Serialize)]
 pub struct CveDetails {
     pub id: String,
     pub products: BTreeMap<String, Vec<String>>,
     pub advisories: Vec<AdvisoryOverview>,
 
     #[serde(default)]
-    pub details: Details,
-}
-
-#[derive(Clone, Debug, Default, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
-pub struct Details {
-    #[serde(default, skip_serializing_if = "String::is_empty")]
-    pub summary: String,
-    #[serde(default, skip_serializing_if = "String::is_empty")]
-    pub details: String,
+    pub details: Vec<v11y_model::Vulnerability>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
