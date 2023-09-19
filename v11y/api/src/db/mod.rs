@@ -1,3 +1,5 @@
+use actix_web::web;
+use std::borrow::Cow;
 use std::path::Path;
 use std::str::FromStr;
 
@@ -5,7 +7,7 @@ use derive_more::{Display, Error, From};
 use futures::Stream;
 use futures::StreamExt;
 use sqlx::sqlite::SqliteConnectOptions;
-use sqlx::{Error, Row, SqlitePool};
+use sqlx::{Error, QueryBuilder, Row, SqlitePool};
 
 use v11y_client::{Reference, ScoreType, Severity, Vulnerability};
 
@@ -19,6 +21,40 @@ static DB_FILE_NAME: &str = "v11y.db";
 
 pub struct Db {
     pool: SqlitePool,
+}
+
+pub enum GetBy<'a> {
+    Id(Cow<'a, str>),
+    Alias(Cow<'a, str>),
+}
+
+impl<'a> GetBy<'a> {
+    pub fn alias(alias: impl Into<Cow<'a, str>>) -> Self {
+        Self::Alias(alias.into())
+    }
+
+    #[allow(unused)]
+    pub fn id(id: impl Into<Cow<'a, str>>) -> Self {
+        Self::Id(id.into())
+    }
+}
+
+impl From<web::Path<String>> for GetBy<'static> {
+    fn from(value: web::Path<String>) -> Self {
+        Self::Id(value.into_inner().into())
+    }
+}
+
+impl From<String> for GetBy<'static> {
+    fn from(value: String) -> Self {
+        Self::Id(value.into())
+    }
+}
+
+impl<'a> From<&'a str> for GetBy<'a> {
+    fn from(value: &'a str) -> Self {
+        Self::Id(Cow::Borrowed(value))
+    }
 }
 
 #[allow(unused)]
@@ -221,11 +257,10 @@ impl Db {
         Ok(())
     }
 
-    pub async fn get(&self, id: &str, origin: Option<String>) -> Result<Vec<Vulnerability>, DbError> {
-        let query = match origin {
-            Some(origin) => {
-                sqlx::query(
-                    r#"
+    pub async fn get(&self, id: impl Into<GetBy<'_>>, origin: Option<String>) -> Result<Vec<Vulnerability>, DbError> {
+        let id = id.into();
+        let mut builder = QueryBuilder::new(
+            r#"
             select
                 vulnerabilities.id,
                 vulnerabilities.origin,
@@ -253,52 +288,35 @@ impl Db {
             left join
                 severities on severities.vulnerability_id = vulnerabilities.id and severities.origin = vulnerabilities.origin
             where
-                vulnerabilities.id = $1 and vulnerabilities.origin = $2
-            order by
-                vulnerabilities.origin
-            "#,
-                )
-                    .bind(id)
-                    .bind(origin)
-            }
+"#,
+        );
 
-            None => {
-                sqlx::query(
-                    r#"
-            select
-                vulnerabilities.id,
-                vulnerabilities.origin,
-                vulnerabilities.modified,
-                vulnerabilities.published,
-                vulnerabilities.withdrawn,
-                vulnerabilities.summary,
-                vulnerabilities.details,
-                aliases.alias,
-                related.related,
-                refs.type,
-                refs.url,
-                severities.type as score_type,
-                severities.source,
-                severities.score,
-                severities.additional
-            from
-                vulnerabilities
-            left join
-                aliases on aliases.vulnerability_id = vulnerabilities.id and aliases.origin = vulnerabilities.origin
-            left join
-                related on related.vulnerability_id = vulnerabilities.id and related.origin = vulnerabilities.origin
-            left join
-                refs on refs.vulnerability_id = vulnerabilities.id and refs.origin = vulnerabilities.origin
-            left join
-                severities on severities.vulnerability_id = vulnerabilities.id and severities.origin = vulnerabilities.origin
-            where
-                vulnerabilities.id = $1
-            order by
-                vulnerabilities.origin
-            "#,
-                ).bind(id)
+        match id {
+            GetBy::Id(id) => {
+                builder.push("                vulnerabilities.id = ");
+                builder.push_bind(id);
             }
-        };
+            GetBy::Alias(alias) => {
+                builder.push("                aliases.alias = ");
+                builder.push_bind(alias);
+            }
+        }
+
+        if let Some(origin) = origin {
+            builder.push("and vulnerabilities.origin = ");
+            builder.push_bind(origin);
+        }
+
+        builder.push(
+            r#"
+            order by
+                vulnerabilities.origin"#,
+        );
+
+        let query = builder.build();
+
+        use sqlx::Execute;
+        println!("SQL: {}", query.sql());
 
         let vulns = query
             .fetch(&self.pool)
@@ -695,7 +713,7 @@ mod test {
 
     use v11y_client::{Reference, ScoreType, Severity, Vulnerability};
 
-    use crate::db::Db;
+    use crate::db::{Db, GetBy};
 
     #[tokio::test]
     async fn create_db() -> Result<(), anyhow::Error> {
@@ -1057,10 +1075,19 @@ mod test {
 
         db.ingest(&snyk_vuln).await?;
 
+        // fetch by ID
+
         let result = db.get("CVE-123", None).await?;
 
         assert!(result.contains(&osv_vuln));
         assert!(result.contains(&snyk_vuln));
+
+        // we should only get the snyk one
+
+        let result = db.get(GetBy::alias("GHSA-foo-ghz"), None).await?;
+
+        assert!(result.contains(&snyk_vuln));
+        assert_eq!(result.len(), 1);
 
         Ok(())
     }
