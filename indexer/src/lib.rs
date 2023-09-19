@@ -9,7 +9,8 @@ use tokio::task::block_in_place;
 use tokio::{select, sync::Mutex};
 use trustification_event_bus::{Error as BusError, EventBus};
 use trustification_index::{Index, IndexStore, IndexWriter};
-use trustification_storage::{Error as StorageError, EventType, Storage};
+use trustification_storage::ContinuationToken;
+use trustification_storage::{EventType, Storage};
 
 pub mod actix;
 
@@ -62,9 +63,10 @@ impl<'a, INDEX: Index> Indexer<'a, INDEX> {
                         log::info!("Reindexing all documents");
                         const MAX_RETRIES: usize = 3;
                         let mut retries = MAX_RETRIES;
+                        let mut token = ContinuationToken::default();
                         loop {
                             retries -= 1;
-                            match self.reindex(&mut writer).await {
+                            match self.reindex(&mut writer, token).await {
                                 Ok(_) => {
                                     log::info!("Reindexing finished");
                                     match self.index.snapshot(writer.take().unwrap(), &self.storage, true).await {
@@ -79,7 +81,8 @@ impl<'a, INDEX: Index> Indexer<'a, INDEX> {
                                     *self.status.lock().await = IndexerStatus::Running;
                                     break;
                                 }
-                                Err(e) => {
+                                Err((e, resume_token)) => {
+                                    token = resume_token;
                                     log::warn!("Reindexing failed: {:?}. Retries: {}", e, retries);
                                     if retries == 0 {
                                         panic!("Reindexing failed after {} retries, giving up", MAX_RETRIES);
@@ -176,60 +179,43 @@ impl<'a, INDEX: Index> Indexer<'a, INDEX> {
         }
     }
 
-    async fn reindex(&mut self, writer: &mut Option<IndexWriter>) -> Result<(), IndexerError> {
+    async fn reindex(
+        &mut self,
+        writer: &mut Option<IndexWriter>,
+        resume_token: ContinuationToken,
+    ) -> Result<(), (IndexerError, ContinuationToken)> {
         let mut progress = 0;
         *self.status.lock().await = IndexerStatus::Reindexing { progress };
-        let objects = self.storage.list_all_objects().await?;
+        let objects = self.storage.list_objects_from(resume_token.clone());
         pin_mut!(objects);
 
         let mut interval = tokio::time::interval(self.sync_interval);
+
         loop {
             let tick = interval.tick();
             pin_mut!(tick);
             select! {
                 next = objects.next() => {
                     match next {
-                        Some(Ok((key, obj))) => {
-                            log::info!("Reindexing {}", key);
+                        Some(Ok((path, obj))) => {
+                            let key = path.key();
+                            log::info!("Reindexing {:?}", key);
                             // Not sending notifications for reindexing
-                            if let Err(e) = self.index_doc(self.index.index(), writer.as_mut().unwrap(), &key, &obj, &mut Vec::new()).await {
+                            if let Err(e) = self.index_doc(self.index.index(), writer.as_mut().unwrap(), key, &obj, &mut Vec::new()).await {
                                 log::warn!("(Ignored) Internal error when indexing {}: {:?}", key, e);
                             } else {
                                 progress += 1;
                                 *self.status.lock().await = IndexerStatus::Reindexing { progress };
                             }
                         }
-                        Some(Err((key, StorageError::S3(e)))) => {
-                            let mut retries = 10;
-                            loop {
-                                retries -= 1;
-                                log::info!("Retrying {:?} (attempts left: {}) after error: {:?}", key, retries, e);
-                                match self.storage.get_object(&key).await {
-                                    Ok(obj) => {
-                                        if let Err(e) = self.index_doc(self.index.index(), writer.as_mut().unwrap(), key.key(), &obj, &mut Vec::new()).await {
-                                            log::warn!("(Ignored) Internal error when indexing {:?}: {:?}", key, e);
-                                        } else {
-                                            progress += 1;
-                                            *self.status.lock().await = IndexerStatus::Reindexing { progress };
-                                        }
-                                        break;
-                                    }
-                                    Err(e) => {
-                                        if retries == 0 {
-                                            log::warn!("Error retrieving {:?}: {:?}", key, e);
-                                            return Err(e)?;
-                                        } else {
-                                            tokio::time::sleep(Duration::from_secs(2)).await;
-                                        }
-                                    }
-                                }
-                            }
+                        Some(Err((e, resume_token))) => {
+                            log::warn!("Error reindexing: {:?}", e);
+                            return Err((e.into(), resume_token));
                         }
-                        Some(Err((key, e))) => {
-                            log::warn!("Error reindexing {:?}: {:?}", key, e);
-                            return Err(e.into());
+                        None => {
+                            log::info!("All objects traversed");
+                            return Ok(());
                         }
-                        _ => return Ok(()),
                     }
                 }
                 _ = tick => {
@@ -241,7 +227,7 @@ impl<'a, INDEX: Index> Indexer<'a, INDEX> {
                             log::warn!("(Ignored) Error committing index: {:?}", e);
                         }
                     }
-                    writer.replace(block_in_place(|| self.index.writer())?);
+                    writer.replace(block_in_place(|| self.index.writer()).map_err(|e| (e.into(), resume_token.clone()))?);
                 }
             }
         }
