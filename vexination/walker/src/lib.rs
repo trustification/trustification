@@ -11,6 +11,7 @@ use std::{
 use csaf_walker::validation::ValidationOptions;
 use prometheus::Registry;
 use time::{Date, Month, UtcOffset};
+use trustification_auth::client::OpenIdTokenProviderConfigArguments;
 use trustification_infrastructure::{Infrastructure, InfrastructureConfig};
 use url::Url;
 
@@ -44,6 +45,10 @@ pub struct Run {
 
     #[command(flatten)]
     pub infra: InfrastructureConfig,
+
+    /// OIDC client
+    #[command(flatten)]
+    pub(crate) oidc: OpenIdTokenProviderConfigArguments,
 }
 
 impl Run {
@@ -53,6 +58,8 @@ impl Run {
                 "vexination-walker",
                 |_context| async { Ok(()) },
                 |context| async move {
+                    let provider = self.oidc.clone().into_provider_or_devmode(self.devmode).await?;
+
                     let validation_date: Option<SystemTime> = match (self.policy_date, self.v3_signatures) {
                         (_, true) => Some(SystemTime::from(
                             Date::from_calendar_date(2007, Month::January, 1)
@@ -68,7 +75,7 @@ impl Run {
 
                     let options = ValidationOptions { validation_date };
 
-                    server::run(self.workers, self.source, self.sink, options).await
+                    server::run(self.workers, self.source, self.sink, provider, options).await
                 },
             )
             .await?;
