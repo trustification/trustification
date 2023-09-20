@@ -172,7 +172,7 @@ RUST_LOG=info cargo run -p trust -- vexination walker --devmode --source https:/
 If you have a local copy of the data, you can also run:
 
 ```shell
-RUST_LOG=info cargo run -p trust -- vexination walker --devmode -3 --source file:///path/to/copy
+RUST_LOG=info cargo run -p trust -- vexination walker --devmode -3 --sink http://localhost:8081 --source file:///path/to/copy
 ```
 
 ## Ingesting SBOMs
