@@ -7,31 +7,47 @@ use csaf_walker::{
     validation::{ValidatedAdvisory, ValidationError, ValidationOptions, ValidationVisitor},
     walker::Walker,
 };
+use reqwest::StatusCode;
 use serde::Deserialize;
 use tokio::sync::{Mutex, RwLock};
+use trustification_auth::client::TokenInjector;
+use trustification_auth::client::TokenProvider;
 
 pub async fn run(
     workers: usize,
     source: url::Url,
     sink: url::Url,
+    provider: Arc<dyn TokenProvider>,
     options: ValidationOptions,
 ) -> Result<(), anyhow::Error> {
     let fetcher = Fetcher::new(Default::default()).await?;
 
     let validation = ValidationVisitor::new(|advisory: Result<ValidatedAdvisory, ValidationError>| {
         let sink = sink.clone();
+        let provider = provider.clone();
         async move {
             match advisory {
                 Ok(ValidatedAdvisory { retrieved }) => {
                     let data = retrieved.data;
                     match serde_json::from_slice::<csaf::Csaf>(&data) {
-                        Ok(doc) => match reqwest::Client::new().post(sink).json(&doc).send().await {
-                            Ok(_) => {
+                        Ok(doc) => match reqwest::Client::new()
+                            .post(sink)
+                            .json(&doc)
+                            .inject_token(&provider)
+                            .await
+                            .unwrap()
+                            .send()
+                            .await
+                        {
+                            Ok(r) if r.status() == StatusCode::CREATED => {
                                 log::info!(
                                     "VEX ({}) of size {} stored successfully",
                                     doc.document.tracking.id,
                                     &data[..].len()
                                 );
+                            }
+                            Ok(r) => {
+                                log::warn!("(Skipped) Error storing VEX: {}", r.status());
                             }
                             Err(e) => {
                                 log::warn!("(Skipped) Error storing VEX: {e:?}");

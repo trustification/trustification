@@ -7829,6 +7829,7 @@ dependencies = [
  "sha2 0.10.7",
  "time",
  "tokio",
+ "trustification-auth",
  "trustification-infrastructure",
  "url",
 ]
