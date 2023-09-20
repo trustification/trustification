@@ -21,16 +21,18 @@ pub async fn run(
     options: ValidationOptions,
 ) -> Result<(), anyhow::Error> {
     let fetcher = Fetcher::new(Default::default()).await?;
+    let client = Arc::new(reqwest::Client::new());
 
     let validation = ValidationVisitor::new(|advisory: Result<ValidatedAdvisory, ValidationError>| {
         let sink = sink.clone();
         let provider = provider.clone();
+        let client = client.clone();
         async move {
             match advisory {
                 Ok(ValidatedAdvisory { retrieved }) => {
                     let data = retrieved.data;
                     match serde_json::from_slice::<csaf::Csaf>(&data) {
-                        Ok(doc) => match reqwest::Client::new()
+                        Ok(doc) => match client
                             .post(sink)
                             .json(&doc)
                             .inject_token(&provider)
