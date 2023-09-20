@@ -77,3 +77,14 @@ impl Cli {
 async fn main() -> impl Termination {
     Cli::parse().run().await
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn verify_cli() {
+        use clap::CommandFactory;
+        Cli::command().debug_assert();
+    }
+}
