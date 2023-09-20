@@ -35,8 +35,6 @@ async fn cve_details(
 ) -> actix_web::Result<HttpResponse> {
     let id = id.into_inner();
 
-    log::info!("Access token: {}", access_token.token());
-
     let provider = BearerTokenProvider {
         token: access_token.token().to_string(),
     };
