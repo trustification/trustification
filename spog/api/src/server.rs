@@ -107,7 +107,7 @@ impl Server {
         let tracker = web::Data::from(tracker);
 
         let mut http = HttpServerBuilder::try_from(self.run.http)?
-            .metrics(context.metrics.registry().clone(), "vexination_api")
+            .metrics(context.metrics.registry().clone(), "spog_api")
             .authorizer(authorizer.clone())
             .configure(move |svc| {
                 svc.app_data(web::Data::new(state.clone()))
