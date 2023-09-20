@@ -549,7 +549,12 @@ pub struct S3Path {
 impl S3Path {
     // Absolute path
     pub fn from_path(path: &str) -> S3Path {
-        S3Path { path: path.to_string() }
+        let path = if path.starts_with('/') {
+            path.to_string()
+        } else {
+            format!("/{}", path)
+        };
+        S3Path { path }
     }
     // Relative to base
     pub fn from_key(key: &str) -> S3Path {
@@ -653,5 +658,20 @@ mod tests {
         assert_eq!(decoded.event_type(), EventType::Put);
         assert_eq!(decoded.key(), "index");
         assert_eq!(decoded.bucket(), "vexination");
+    }
+
+    #[test]
+    fn test_s3_path_keys() {
+        let p = S3Path::from_key("FOO");
+        assert_eq!(p.key(), "FOO");
+
+        let p = S3Path::from_path("/data/FOO");
+        assert_eq!(p.key(), "FOO");
+
+        let p = S3Path::from_path("data/FOO");
+        assert_eq!(p.key(), "FOO");
+
+        let p = S3Path::from_path("/data/foo/BAR");
+        assert_eq!(p.key(), "foo/BAR");
     }
 }
