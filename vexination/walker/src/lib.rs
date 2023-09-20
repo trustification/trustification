@@ -24,7 +24,7 @@ pub struct Run {
     pub(crate) source: Url,
 
     /// Vexination upload url
-    #[arg(short, long)]
+    #[arg(short = 'S', long)]
     pub(crate) sink: Url,
 
     /// OpenPGP policy date.
