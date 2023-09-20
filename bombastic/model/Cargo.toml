@@ -18,7 +18,7 @@ serde_json = "1"
 urlencoding = "2"
 
 cyclonedx-bom = { version = "0.4.0", optional =  true }
-spdx-rs = { version = "0.5.2", optional = true }
+spdx-rs = { version = "0.5.5", optional = true }
 
 [features]
 default = ["spdx", "cyclonedx"]

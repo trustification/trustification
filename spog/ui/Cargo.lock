@@ -2486,9 +2486,9 @@ dependencies = [
 
 [[package]]
 name = "spdx-rs"
-version = "0.5.4"
+version = "0.5.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bc0b11f31dd8c5023f54ecea2c2ba7c78ae8b229fd26b81fe9ea641ea5265ed1"
+checksum = "990870190ec8d8c64ba66e4a6746243d6e57d99353991e0e6092334833f429b1"
 dependencies = [
  "chrono",
  "log",
@@ -3600,8 +3600,3 @@ name = "zeroize"
 version = "1.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2a0956f1ba7c7909bfb66c2e9e4124ab6f6482560f6628b5aaeba39207c9aad9"
-
-[[patch.unused]]
-name = "spdx-rs"
-version = "0.5.2"
-source = "git+https://github.com/trustification/spdx-rs?rev=c65be086e898dae88609f07bbc5a224ba4e0838d#c65be086e898dae88609f07bbc5a224ba4e0838d"
