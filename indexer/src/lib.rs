@@ -36,6 +36,12 @@ pub enum ReindexMode {
     Never,
 }
 
+impl Default for ReindexMode {
+    fn default() -> Self {
+        ReindexMode::OnFailure
+    }
+}
+
 impl fmt::Display for ReindexMode {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {

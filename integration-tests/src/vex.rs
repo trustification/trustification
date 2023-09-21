@@ -137,7 +137,7 @@ fn vexination_indexer() -> vexination_indexer::Run {
         failed_topic: "vex-failed".into(),
         indexed_topic: "vex-indexed".into(),
         devmode: true,
-        reindex: false,
+        reindex: Default::default(),
         index: IndexConfig {
             index_dir: None,
             index_writer_memory_bytes: 32 * 1024 * 1024,

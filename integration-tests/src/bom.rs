@@ -162,7 +162,7 @@ fn bombastic_indexer() -> bombastic_indexer::Run {
         failed_topic: "sbom-failed".into(),
         indexed_topic: "sbom-indexed".into(),
         devmode: true,
-        reindex: false,
+        reindex: Default::default(),
         index: IndexConfig {
             index_dir: None,
             index_writer_memory_bytes: 32 * 1024 * 1024,
