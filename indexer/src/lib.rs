@@ -68,10 +68,8 @@ impl<'a, INDEX: Index> Indexer<'a, INDEX> {
             if self.reindex == ReindexMode::OnFailure || self.reindex == ReindexMode::Always {
                 self.command_sender.send(IndexerCommand::Reindex).await?;
             }
-        } else {
-            if self.reindex == ReindexMode::Always {
-                self.command_sender.send(IndexerCommand::Reindex).await?;
-            }
+        } else if self.reindex == ReindexMode::Always {
+            self.command_sender.send(IndexerCommand::Reindex).await?;
         }
 
         let mut interval = tokio::time::interval(self.sync_interval);
