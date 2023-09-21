@@ -26,20 +26,15 @@ pub enum IndexerCommand {
     Reindex,
 }
 
-#[derive(clap::ValueEnum, Clone, Debug, PartialEq)]
+#[derive(clap::ValueEnum, Default, Clone, Debug, PartialEq)]
 pub enum ReindexMode {
     #[clap(name = "always")]
     Always,
+    #[default]
     #[clap(name = "on-failure")]
     OnFailure,
     #[clap(name = "never")]
     Never,
-}
-
-impl Default for ReindexMode {
-    fn default() -> Self {
-        ReindexMode::OnFailure
-    }
 }
 
 impl fmt::Display for ReindexMode {
