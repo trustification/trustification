@@ -18,7 +18,6 @@ collector-client = { path = "../client" }
 v11y-client = { path = "../../v11y/client" }
 clap = { version = "4", features = ["derive"] }
 anyhow = "1"
-derive_more = "0.99"
 futures = "0.3"
 log = "0.4"
 utoipa = { version = "3", features = ["actix_extras"] }
@@ -38,6 +37,7 @@ chrono = "0.4.26"
 #chrono = "0.4.26"
 #humantime = "2"
 #humantime-serde = "1.1.1"
+thiserror = "1"
 
 
 [dev-dependencies]
