@@ -5,7 +5,7 @@ use tokio::sync::{mpsc, Mutex};
 use tokio::task::block_in_place;
 use trustification_event_bus::EventBusConfig;
 use trustification_index::{IndexConfig, IndexStore};
-use trustification_indexer::{actix::configure, Indexer, IndexerStatus};
+use trustification_indexer::{actix::configure, Indexer, IndexerStatus, ReindexMode};
 use trustification_infrastructure::{Infrastructure, InfrastructureConfig};
 use trustification_storage::{Storage, StorageConfig};
 use vexination_index::Index;
@@ -25,9 +25,8 @@ pub struct Run {
     #[arg(long = "devmode", default_value_t = false)]
     pub devmode: bool,
 
-    /// Reindex all documents at startup
-    #[arg(long = "reindex", default_value_t = false)]
-    pub reindex: bool,
+    #[arg(long = "reindex", default_value_t = ReindexMode::OnFailure)]
+    pub reindex: ReindexMode,
 
     #[command(flatten)]
     pub bus: EventBusConfig,
@@ -64,10 +63,6 @@ impl Run {
                         bus.create(&[self.stored_topic.as_str()]).await?;
                     }
 
-                    if self.reindex {
-                        let _ = c.send(trustification_indexer::IndexerCommand::Reindex).await;
-                    }
-
                     let mut indexer = Indexer {
                         index,
                         storage,
@@ -79,6 +74,7 @@ impl Run {
                         status: s.clone(),
                         commands: command_receiver,
                         command_sender: c,
+                        reindex: self.reindex,
                     };
                     indexer.run().await
                 },
