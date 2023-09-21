@@ -1,3 +1,4 @@
+use core::fmt;
 use std::time::Duration;
 
 use futures::pin_mut;
@@ -25,6 +26,26 @@ pub enum IndexerCommand {
     Reindex,
 }
 
+#[derive(clap::ValueEnum, Clone, Debug, PartialEq)]
+pub enum ReindexMode {
+    #[clap(name = "always")]
+    Always,
+    #[clap(name = "on-failure")]
+    OnFailure,
+    #[clap(name = "never")]
+    Never,
+}
+
+impl fmt::Display for ReindexMode {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            ReindexMode::Always => write!(f, "always"),
+            ReindexMode::OnFailure => write!(f, "on-failure"),
+            ReindexMode::Never => write!(f, "never"),
+        }
+    }
+}
+
 pub struct Indexer<'a, INDEX: Index> {
     pub stored_topic: &'a str,
     pub indexed_topic: &'a str,
@@ -36,6 +57,7 @@ pub struct Indexer<'a, INDEX: Index> {
     pub status: Arc<Mutex<IndexerStatus>>,
     pub commands: Receiver<IndexerCommand>,
     pub command_sender: Sender<IndexerCommand>,
+    pub reindex: ReindexMode,
 }
 
 impl<'a, INDEX: Index> Indexer<'a, INDEX> {
@@ -43,6 +65,13 @@ impl<'a, INDEX: Index> Indexer<'a, INDEX> {
         // Load initial index from storage.
         if let Err(e) = self.index.sync(&self.storage).await {
             log::info!("Error loading initial index: {:?}", e);
+            if self.reindex == ReindexMode::OnFailure || self.reindex == ReindexMode::Always {
+                self.command_sender.send(IndexerCommand::Reindex).await?;
+            }
+        } else {
+            if self.reindex == ReindexMode::Always {
+                self.command_sender.send(IndexerCommand::Reindex).await?;
+            }
         }
 
         let mut interval = tokio::time::interval(self.sync_interval);
