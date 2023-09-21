@@ -34,7 +34,7 @@ impl NvdClient {
         }
     }
 
-    pub async fn get_cve(&self, cve_id: &str) -> Result<Option<Vulnerability>, anyhow::Error> {
+    pub async fn get_cve(&self, cve_id: &str) -> Result<Option<Vulnerability>, reqwest::Error> {
         let response = self
             .client
             .get(NVD_URL.url())
