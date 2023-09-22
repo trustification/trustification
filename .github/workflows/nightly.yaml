@@ -47,7 +47,7 @@ jobs:
       - name: Tag it
         if: ${{ steps.getflags.outputs.need_tag == 'true' }}
         run: |
-          git config --global user.email "ci@trustification.io"
+          git config --global user.email "ci@trustification.dev"
           git config --global user.name "Trustification CI"
           git tag ${{ steps.getflags.outputs.tag }} -m 'Nightly release'
           git push --follow-tags

@@ -1,0 +1,98 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vexination-api
+  labels:
+    app.kubernetes.io/name: vexination-api
+    app.kubernetes.io/component: api
+    app.kubernetes.io/part-of: trustification
+spec:
+  replicas: {{ .Values.replicas }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: vexination-api
+      app.kubernetes.io/component: api
+      app.kubernetes.io/part-of: trustification
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: vexination-api
+        app.kubernetes.io/component: api
+        app.kubernetes.io/part-of: trustification
+        metrics: "true"
+      annotations:
+        config/checksum: {{ include (print $.Template.BasePath "/config/020-ConfigMap.yaml") . | sha256sum }}
+    spec:
+      volumes:
+        - name: data
+          emptyDir: {}
+        - name: config
+          configMap:
+            name: {{ .Values.config.name }}
+        {{ include "trustification.http-server-volumes" (dict "root" . "appName" "vexination-api") | nindent 8 }}
+      containers:
+        - image: {{ .Values.trustImage }}:{{ .Values.release }}
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          name: service
+          command: ["/trust"]
+          args:
+            - "vexination"
+            - "api"
+            - "-p"
+            - "8080"
+            - "--index-mode"
+            - "{{ .Values.vexination.indexMode }}"
+            - "--auth-configuration"
+            - "/etc/config/auth.yaml"
+          env:
+            - name: RUST_LOG
+              value: info
+            {{ include "trustification.http-server" . | nindent 12 }}
+            - name: STORAGE_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Values.vexination.credentials }}"
+                  key: aws_access_key_id
+            - name: STORAGE_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Values.vexination.credentials }}"
+                  key: aws_secret_access_key
+            - name: STORAGE_REGION
+              value: "{{ .Values.region }}"
+            - name: STORAGE_BUCKET
+              value: "{{ .Values.vexination.bucket }}"
+            - name: INFRASTRUCTURE_ENABLED
+              value: "true"
+            - name: INFRASTRUCTURE_BIND
+              value: "[::]:9010"
+            - name: SWAGGER_UI_OIDC_ISSUER_URL
+              {{ include "trustification.authentication-frontend-issuer-url" . | nindent 14 }}
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - mountPath: /etc/config
+              name: config
+            {{ include "trustification.http-server-volume-mounts" . | nindent 12 }}
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+            - containerPort: 9010
+              protocol: TCP
+              name: infra
+          resources:
+            {{- toYaml .Values.vexination.api.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: 9010
+            initialDelaySeconds: 2
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: 9010
+            initialDelaySeconds: 2
+          startupProbe:
+            httpGet:
+              path: /health/startup
+              port: 9010

@@ -1,0 +1,22 @@
+{{ if .Values.createRoutes }}
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  labels:
+    app.kubernetes.io/name: quac-graphql-server
+    app.kubernetes.io/component: graphql-server
+    app.kubernetes.io/part-of: trustification
+  name: quac-graphql-server
+spec:
+  host: "guac-gql.{{ .Values.domain }}"
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect
+  port:
+    targetPort: 8080
+  to:
+    kind: Service
+    name: graphql-server
+    weight: 100
+  wildcardPolicy: None
+{{ end }}

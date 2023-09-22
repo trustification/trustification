@@ -19,12 +19,25 @@ on:
 env:
   RELEASE_TAG: ${{ inputs.releaseTag }}
 
+permissions:
+  contents: write # for creating a release
+
 jobs:
-  tag:
+  deploy:
     runs-on: ubuntu-22.04
     steps:
-      - name: Tag it
-        env:
-          GITHUB_TOKEN: ${{ secrets.STAGING_TOKEN }}
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Install yq
         run: |
-          gh workflow -R https://github.com/trustification/trustification.dev run staging -F tag="${{ env.RELEASE_TAG }}"
+          wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O yq
+          chmod +x yq
+      - name: Update tags
+        run: |
+          ./yq e -i ".release= \"${{ inputs.releaseTag }}\"" deploy/trustification.dev/staging.yaml
+      - name: Commit and tag
+        run: |
+          git config --global user.email "ci@trustification.dev"
+          git config --global user.name "Trustification CI"
+          git commit chart/staging.yaml -m 'Update staging version'
+          git push

@@ -1,0 +1,86 @@
+release: 0.1.0-nightly.d12c5d72
+trustImage: ghcr.io/trustification/trust
+uiImage: ghcr.io/trustification/trust-ui
+docsImage: ghcr.io/trustification/trust-docs
+testsImage: ghcr.io/trustification/trust-tests
+domain: dev.trustification.dev
+replicas: 1
+imagePullPolicy: IfNotPresent
+region: eu-west-1
+enableWalkers: false
+spog:
+  uiConfig: config/dev/spog-ui.yaml
+  crdaUrl: http://alpha-exhort.apps.sssc-cl01.appeng.rhecoeng.com/
+bombastic:
+  bucket: bombastic-dev
+  credentials: bombastic-credentials-secret
+  storedTopic: sbom-stored-dev
+  indexedTopic: sbom-indexed-dev
+  failedTopic: sbom-failed-dev
+  exporterTopic: sbom-guac-dev
+  indexMode: file
+vexination:
+  bucket: vexination-dev
+  credentials: vexination-credentials-secret
+  storedTopic: vex-stored-dev
+  indexedTopic: vex-indexed-dev
+  failedTopic: vex-failed-dev
+  source: https://www.redhat.com/.well-known/csaf/provider-metadata.json
+  exporterTopic: vex-guac-dev
+  indexMode: file
+keycloak:
+  enabled: true
+  production: true
+  proxy: reencrypt
+  podSecurityContext:
+    enabled: false
+  containerSecurityContext:
+    enabled: false
+  auth:
+    adminUser: admin
+    existingSecret: sso-admin
+    passwordSecretKey: password
+  tls:
+    enabled: true
+    existingSecret: sso-tls
+    usePem: true
+  service:
+    annotations:
+      service.beta.openshift.io/serving-cert-secret-name: sso-tls
+  ingress:
+    enabled: true
+    ingressClassName: openshift-default
+    hostname: sso.dev.trustification.dev
+    servicePort: https
+    annotations:
+      route.openshift.io/termination: reencrypt
+  postgresql:
+    primary:
+      containerSecurityContext:
+        enabled: false
+      podSecurityContext:
+        enabled: false
+    auth:
+      existingSecret: sso-postgres
+keycloakRealm:
+  redirectUris:
+    - http://localhost:*
+    - https://dev.trustification.dev
+    - https://dev.trustification.dev/*
+authentication:
+  issuerUrl: https://sso.dev.trustification.dev/realms/chicken
+  clientIds:
+    - frontend
+    - walker
+oidcClients:
+  frontend:
+    issuerUrl: https://sso.dev.trustification.dev/realms/chicken
+    clientId:
+      value: frontend
+  walker:
+    issuerUrl: https://sso.dev.trustification.dev/realms/chicken
+    clientSecret:
+      valueFrom:
+        secretKeyRef:
+          name: oidc-client-walker
+          key: client-secret

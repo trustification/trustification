@@ -1,0 +1,111 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  labels:
+    role: alert-rules
+  name: trustification-alerts
+spec:
+  groups:
+  # Uptime errors
+  - name: scraping-errors
+    rules:
+    - alert: TrustificationDown
+      expr: |
+        absent(up{job="trustification-monitoring",namespace="{{ $labels.namespace }}"} == 1)
+      for: 5m
+      labels:
+        service: trustification
+        severity: medium
+      annotations:
+        message: "{{ $labels.namespace }} monitoring down"
+
+  # API errors
+  - name: api-errors
+    rules:
+
+    - alert: BombasticApiErrors
+      expr: |
+        (sum(rate(bombastic_api_http_requests_total{status !~ "5.."}[10m]))
+        /
+        sum(rate(bombastic_api_http_requests_total[10m]))) < 0.99
+      labels:
+        service: trustification-bombastic-api
+        severity: medium
+      annotations:
+        message: "{{ $labels.namespace }} request success rate below 0.99 for bombastic API"
+    - alert: VexinationApiErrors
+      expr: |
+        (sum(rate(vexination_api_http_requests_total{status !~ "5.."}[10m]))
+        /
+        sum(rate(vexination_api_http_requests_total[10m]))) < 0.99
+      labels:
+        service: trustification-vexination-api
+        severity: medium
+      annotations:
+        message: "{{ $labels.namespace }} request success rate below 0.99 for vexination API"
+    - alert: SpogApiErrors
+      expr: |
+        (sum(rate(spog_api_http_requests_total{status !~ "5.."}[10m]))
+        /
+        sum(rate(spog_api_http_requests_total[10m]))) < 0.99
+      labels:
+        service: trustification-spog-api
+        severity: medium
+      annotations:
+        message: "{{ $labels.namespace }} request success rate below 0.99 for spog API"
+  # API latencies
+  - name: api-latency
+    rules:
+    - alert: BombasticLatency
+      expr: |
+        (sum(rate(bombastic_api_http_requests_duration_seconds_bucket{exported_endpoint="/api/v1/sbom/search", status!~"5..", le="1"}[10m]))
+        /
+        sum(rate(bombastic_api_http_requests_duration_seconds_count{exported_endpoint="/api/v1/sbom/search", status!~"5.."}[10m]))) < 0.99
+      labels:
+        service: trustification-bombastic-api
+        severity: medium
+      annotations:
+        message: "{{ $labels.namespace }} bombastic requests above expected response time for API"
+    - alert: VexinationLatency
+      expr:  |
+        (sum(rate(vexination_api_http_requests_duration_seconds_bucket{exported_endpoint="/api/v1/sbom/search", status !~ "5..", le="1"}[10m]))
+        /
+        sum(rate(vexination_api_http_requests_duration_seconds_count{exported_endpoint="/api/v1/sbom/search", status !~ "5.."}[10m]))) < 0.99
+      labels:
+        service: trustification-vexination-api
+        severity: medium
+      annotations:
+        message: "{{ $labels.namespace }} vexination requests within expected response time for API"
+    - alert: SpogLatency
+      expr: |
+        (sum(rate(spog_api_http_requests_duration_seconds_bucket{exported_endpoint=~"/api/v1/.*/search", status !~ "5..", le="1"}[10m]))
+        /
+        sum(rate(spog_api_http_requests_duration_seconds_count{exported_endpoint=~"/api/v1/.*/search", status !~ "5.."}[10m]))) < 0.99
+      labels:
+        service: trustification-spog-api
+        severity: medium
+      annotations:
+        message: "{{ $labels.namespace }} spog requests above expected response time for API"
+  # Indexer errors
+  - name: indexer-errors
+    rules:
+    - alert: BombasticIndexerErrors
+      expr: |
+        (sum(rate(index_failed_total{pod=~"bombastic-indexer.*"}[10m]))
+        /
+        sum(rate(index_indexed_total{pod=~"bombastic-indexer.*"}[10m]))) > 0.01
+      labels:
+        service: trustification-bombastic-indexer
+        severity: medium
+      annotations:
+        message: "{{ $labels.namespace }} indexer failure rate above 1%"
+    - alert: VexinationIndexerErrors
+      expr: |
+        (sum(rate(index_failed_total{pod=~"vexination-indexer.*"}[10m]))
+        /
+        sum(rate(index_indexed_total{pod=~"vexination-indexer.*"}[10m]))) > 0.01
+      labels:
+        service: trustification-vexination-indexer
+        severity: medium
+      annotations:
+        message: "{{ $labels.namespace }} indexer failure rate above 1%"

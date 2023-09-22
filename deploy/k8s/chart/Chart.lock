@@ -1,0 +1,9 @@
+dependencies:
+- name: guac
+  repository: https://kusaridev.github.io/helm-charts
+  version: 0.1.5
+- name: keycloak
+  repository: https://charts.bitnami.com/bitnami
+  version: 15.1.7
+digest: sha256:70d59bdebe62cdb1b75bb771c72fd7ac3de90905eee01a9c4cea3e18232486a2
+generated: "2023-09-07T15:51:43.133399574+02:00"
