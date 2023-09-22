@@ -59,8 +59,10 @@ spec:
               value: "true"
             - name: INFRASTRUCTURE_BIND
               value: "[::]:9010"
+{{- if .Values.config.ui }}
             - name: SPOG_UI_CONFIG
               value: /etc/config/spog-ui.yaml
+{{- end }}
             {{ include "trustification.authentication-client" ( dict "root" . "clientId" "walker" ) | nindent 12 }}
             - name: SWAGGER_UI_OIDC_ISSUER_URL
               {{ include "trustification.authentication-frontend-issuer-url" . | nindent 14 }}
