@@ -1,0 +1,97 @@
+release: ${IMAGE_TAG}
+trustImage: ${BACKEND_IMAGE}
+uiImage: ${FRONTEND_IMAGE}
+testsImage: ${INTEGRATION_TESTS_IMAGE}
+domain: ${DOMAIN}
+createRoutes: false
+replicas: ${{REPLICAS}}
+imagePullPolicy: Always
+region: ${AWS_REGION}
+enableDocs: false
+enableWalkers: false
+enableTests: false
+enableMonitoring: false
+config:
+  name: ${CONFIG_NAME}
+spog:
+  branding: true
+  crdaUrl: http://alpha-exhort.apps.sssc-cl01.appeng.rhecoeng.com/
+  ui:
+    resources: ${{SPOG_UI_RESOURCES}}
+  api:
+    resources: ${{SPOG_API_RESOURCES}}
+bombastic:
+  bucket: ${BOMBASTIC_STORAGE_BUCKET}
+  credentials: ${BOMBASTIC_AWS_SECRET_NAME}
+  indexMode: file
+  exporter:
+    topic: ${BOMBASTIC_INDEXER_GUAC_TOPIC}
+  indexer:
+    reindex: false
+    topics:
+      stored: ${BOMBASTIC_INDEXER_STORED_TOPIC}
+      indexed: ${BOMBASTIC_INDEXER_INDEXED_TOPIC}
+      failed: ${BOMBASTIC_INDEXER_FAILED_TOPIC}
+    resources: ${{BOMBASTIC_INDEXER_RESOURCES}}
+  api:
+    resources: ${{BOMBASTIC_API_RESOURCES}}
+v11y:
+  enabled: false
+collectorist:
+  enabled: false
+exhort:
+  enabled: false
+collector:
+  snyk:
+    enabled: false
+  osv:
+    enabled: false
+  nvd:
+    enabled: false
+vexination:
+  bucket: ${VEXINATION_STORAGE_BUCKET}
+  credentials: ${VEXINATION_AWS_SECRET_NAME}
+  indexMode: file
+  exporter:
+    topic: ${VEXINATION_INDEXER_GUAC_TOPIC}
+  walker:
+    source: https://www.redhat.com/.well-known/csaf/provider-metadata.json
+  indexer:
+    reindex: false
+    topics:
+      stored: ${VEXINATION_INDEXER_STORED_TOPIC}
+      indexed: ${VEXINATION_INDEXER_INDEXED_TOPIC}
+      failed: ${VEXINATION_INDEXER_FAILED_TOPIC}
+    resources: ${{VEXINATION_INDEXER_RESOURCES}}
+  api:
+    resources: ${{VEXINATION_API_RESOURCES}}
+keycloak:
+  enabled: false
+guac:
+  enabled: false
+oidcClients:
+  frontend:
+    issuerUrl: ${ISSUER_URL}
+    scopes: "openid id.username"
+    clientId:
+      value: trusted-content-frontend
+  walker:
+    issuerUrl: ${ISSUER_URL}
+    scopes: "openid id.username"
+    clientId:
+      value: trusted-content-api
+    clientSecret:
+      valueFrom:
+        secretKeyRef:
+          name: ${OIDC_PROVIDER_CLIENT_SECRET_NAME}
+          key: ${OIDC_PROVIDER_CLIENT_SECRET_KEY}
+  testingManager:
+    issuerUrl: ${ISSUER_URL}
+    scopes: "openid id.username"
+    clientId:
+      value: trusted-content-api
+  testingUser:
+    issuerUrl: ${ISSUER_URL}
+    scopes: "openid id.username"
+    clientId:
+      value: trusted-content-api

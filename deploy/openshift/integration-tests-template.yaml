@@ -1,0 +1,51 @@
+apiVersion: v1
+kind: Template
+metadata:
+  name: trustification
+objects:
+- apiVersion: batch/v1
+  kind: Job
+  metadata:
+    name: integration-tests
+  spec:
+    template:
+      spec:
+        restartPolicy: Never
+        containers:
+          - image: ${IMAGE}:${IMAGE_TAG}
+            imagePullPolicy: Always
+            name: integration-tests
+            env:
+              - name: RUST_LOG
+                value: info
+              - name: TRUST_URL
+                value: "https://${DOMAIN}"
+              - name: TRUST_ID
+                value: trusted-content-api
+              - name: TRUST_USER_ID
+                value: trusted-content-api
+              - name: ISSUER_URL
+                value: "${ISSUER_URL}"
+              - name: TRUST_SECRET
+                valueFrom:
+                  secretKeyRef:
+                    name: ${OIDC_CLIENT_SECRET}
+                    key: ${OIDC_CLIENT_SECRET_KEY}
+              - name: TRUST_USER_SECRET
+                valueFrom:
+                  secretKeyRef:
+                    name: ${OIDC_CLIENT_SECRET}
+                    key: ${OIDC_CLIENT_SECRET_KEY}
+parameters:
+- name: IMAGE
+  required: true
+- name: IMAGE_TAG
+  required: true
+- name: DOMAIN
+  required: true
+- name: ISSUER_URL
+  required: true
+- name: OIDC_CLIENT_SECRET
+  required: true
+- name: OIDC_CLIENT_SECRET_KEY
+  required: true
