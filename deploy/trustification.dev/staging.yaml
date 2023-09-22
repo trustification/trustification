@@ -31,6 +31,7 @@ spog:
       limits:
         memory: "64Mi"
   api:
+    branding: false
     segmentWriteKey:
       valueFrom:
         secretKeyRef:

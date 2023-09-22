@@ -26,6 +26,7 @@ spog:
       limits:
         memory: "64Mi"
   api:
+    branding: false
     resources:
       requests:
         cpu: "100m"
