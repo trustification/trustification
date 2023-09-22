@@ -10,10 +10,10 @@ metadata:
 spec:
   host: "exhort.{{ .Values.domain }}"
   tls:
-    termination: edge
+    termination: reencrypt
     insecureEdgeTerminationPolicy: Redirect
   port:
-    targetPort: 8080
+    targetPort: endpoint
   to:
     kind: Service
     name: exhort-api
