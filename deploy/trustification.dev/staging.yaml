@@ -16,7 +16,6 @@ config:
   enable: true
   name: trustification-config
   authentication: trustification.dev/config/staging/auth.yaml
-  ui: trustification.dev/config/staging/spog-ui.yaml
 spog:
   crdaUrl: http://alpha-exhort.apps.sssc-cl01.appeng.rhecoeng.com/
   ui:
