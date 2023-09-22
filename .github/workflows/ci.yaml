@@ -38,6 +38,12 @@ jobs:
           cargo fmt --check --manifest-path bommer/bommer-ui/Cargo.toml
           cargo fmt --check --manifest-path spog/ui/Cargo.toml
 
+
+  uncommitted:
+      - uses: actions/checkout@v3
+      - name: Check if templates have uncommitted changes
+        run: make -C deploy/openshift && git diff --quiet deploy/openshift || echo "::error Uncommitted changes to deploy/openshift"
+
   ci-backend:
     runs-on: ubuntu-22.04
     needs:
