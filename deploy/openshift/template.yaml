@@ -1,0 +1,774 @@
+apiVersion: v1
+kind: Template
+metadata:
+  name: trustification
+objects:
+  - apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: spog-ui-branding
+      labels:
+        app.kubernetes.io/name: spog-ui
+        app.kubernetes.io/component: ui
+        app.kubernetes.io/part-of: trustification
+    binaryData: null
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      labels:
+        app.kubernetes.io/name: bombastic-api
+        app.kubernetes.io/component: api
+        app.kubernetes.io/part-of: trustification
+      annotations:
+        service.beta.openshift.io/serving-cert-secret-name: bombastic-api-tls
+      name: bombastic-api
+    spec:
+      ports:
+        - name: endpoint
+          port: 443
+          protocol: TCP
+          targetPort: 8080
+      selector:
+        app.kubernetes.io/name: bombastic-api
+        app.kubernetes.io/component: api
+        app.kubernetes.io/part-of: trustification
+      type: ClusterIP
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      labels:
+        app.kubernetes.io/name: trustification-monitoring
+        app.kubernetes.io/component: monitoring
+        app.kubernetes.io/part-of: trustification
+      name: trustification-monitoring
+    spec:
+      ports:
+        - name: metrics
+          port: 9010
+          protocol: TCP
+          targetPort: 9010
+      selector:
+        app.kubernetes.io/part-of: trustification
+        metrics: 'true'
+      type: ClusterIP
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      labels:
+        app.kubernetes.io/name: spog-api
+        app.kubernetes.io/component: api
+        app.kubernetes.io/part-of: trustification
+      annotations:
+        service.beta.openshift.io/serving-cert-secret-name: spog-api-tls
+      name: spog-api
+    spec:
+      ports:
+        - name: endpoint
+          port: 443
+          protocol: TCP
+          targetPort: 8080
+      selector:
+        app.kubernetes.io/name: spog-api
+        app.kubernetes.io/component: api
+        app.kubernetes.io/part-of: trustification
+      type: ClusterIP
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      labels:
+        app.kubernetes.io/name: spog-ui
+        app.kubernetes.io/component: ui
+        app.kubernetes.io/part-of: trustification
+      name: spog-ui
+    spec:
+      ports:
+        - name: endpoint
+          port: 8080
+          protocol: TCP
+          targetPort: 8080
+      selector:
+        app.kubernetes.io/name: spog-ui
+        app.kubernetes.io/component: ui
+        app.kubernetes.io/part-of: trustification
+      type: ClusterIP
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      labels:
+        app.kubernetes.io/name: vexination-api
+        app.kubernetes.io/component: api
+        app.kubernetes.io/part-of: trustification
+      annotations:
+        service.beta.openshift.io/serving-cert-secret-name: vexination-api-tls
+      name: vexination-api
+    spec:
+      ports:
+        - name: endpoint
+          port: 443
+          protocol: TCP
+          targetPort: 8080
+      selector:
+        app.kubernetes.io/name: vexination-api
+        app.kubernetes.io/component: api
+        app.kubernetes.io/part-of: trustification
+      type: ClusterIP
+  - apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: bombastic-api
+      labels:
+        app.kubernetes.io/name: bombastic-api
+        app.kubernetes.io/component: api
+        app.kubernetes.io/part-of: trustification
+    spec:
+      replicas: ${{REPLICAS}}
+      selector:
+        matchLabels:
+          app.kubernetes.io/name: bombastic-api
+          app.kubernetes.io/component: api
+          app.kubernetes.io/part-of: trustification
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: bombastic-api
+            app.kubernetes.io/component: api
+            app.kubernetes.io/part-of: trustification
+            metrics: 'true'
+          annotations:
+            config/checksum: 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
+        spec:
+          volumes:
+            - name: data
+              emptyDir: {}
+            - name: config
+              configMap:
+                name: ${CONFIG_NAME}
+            - name: tls
+              secret:
+                secretName: bombastic-api-tls
+          containers:
+            - image: ${BACKEND_IMAGE}:${IMAGE_TAG}
+              imagePullPolicy: Always
+              name: service
+              command:
+                - /trust
+              args:
+                - bombastic
+                - api
+                - -p
+                - '8080'
+                - --index-mode
+                - file
+                - --auth-configuration
+                - /etc/config/auth.yaml
+              env:
+                - name: RUST_LOG
+                  value: info
+                - name: STORAGE_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${BOMBASTIC_AWS_SECRET_NAME}
+                      key: aws_access_key_id
+                - name: STORAGE_SECRET_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${BOMBASTIC_AWS_SECRET_NAME}
+                      key: aws_secret_access_key
+                - name: STORAGE_REGION
+                  value: ${AWS_REGION}
+                - name: STORAGE_BUCKET
+                  value: ${BOMBASTIC_STORAGE_BUCKET}
+                - name: HTTP_SERVER_BIND_ADDR
+                  value: '::'
+                - name: HTTP_SERVER_TLS_ENABLED
+                  value: 'true'
+                - name: HTTP_SERVER_TLS_KEY_FILE
+                  value: /etc/tls/tls.key
+                - name: HTTP_SERVER_TLS_CERTIFICATE_FILE
+                  value: /etc/tls/tls.crt
+                - name: INFRASTRUCTURE_ENABLED
+                  value: 'true'
+                - name: INFRASTRUCTURE_BIND
+                  value: '[::]:9010'
+                - name: SWAGGER_UI_OIDC_ISSUER_URL
+                  value: ${ISSUER_URL}
+              volumeMounts:
+                - name: data
+                  mountPath: /data
+                - mountPath: /etc/config
+                  name: config
+                - mountPath: /etc/tls
+                  name: tls
+              ports:
+                - containerPort: 8080
+                  protocol: TCP
+                - containerPort: 9010
+                  protocol: TCP
+                  name: infra
+              resources: ${{BOMBASTIC_API_RESOURCES}}
+              livenessProbe:
+                httpGet:
+                  path: /health/live
+                  port: 9010
+                initialDelaySeconds: 2
+              readinessProbe:
+                httpGet:
+                  path: /health/ready
+                  port: 9010
+                initialDelaySeconds: 2
+              startupProbe:
+                httpGet:
+                  path: /health/startup
+                  port: 9010
+  - apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: bombastic-indexer
+      labels:
+        app.kubernetes.io/name: bombastic-indexer
+        app.kubernetes.io/component: indexer
+        app.kubernetes.io/part-of: trustification
+    spec:
+      replicas: 1
+      selector:
+        matchLabels:
+          app.kubernetes.io/name: bombastic-indexer
+          app.kubernetes.io/component: indexer
+          app.kubernetes.io/part-of: trustification
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: bombastic-indexer
+            app.kubernetes.io/component: indexer
+            app.kubernetes.io/part-of: trustification
+            metrics: 'true'
+        spec:
+          volumes:
+            - name: data
+              emptyDir: {}
+          containers:
+            - image: ${BACKEND_IMAGE}:${IMAGE_TAG}
+              imagePullPolicy: Always
+              name: service
+              command:
+                - /trust
+              args:
+                - bombastic
+                - indexer
+                - --event-bus
+                - sqs
+                - --stored-topic
+                - ${BOMBASTIC_INDEXER_STORED_TOPIC}
+                - --indexed-topic
+                - ${BOMBASTIC_INDEXER_INDEXED_TOPIC}
+                - --failed-topic
+                - ${BOMBASTIC_INDEXER_FAILED_TOPIC}
+                - --index-mode
+                - file
+                - --index-dir
+                - /data/index
+              env:
+                - name: RUST_LOG
+                  value: info
+                - name: STORAGE_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${BOMBASTIC_AWS_SECRET_NAME}
+                      key: aws_access_key_id
+                - name: STORAGE_SECRET_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${BOMBASTIC_AWS_SECRET_NAME}
+                      key: aws_secret_access_key
+                - name: STORAGE_REGION
+                  value: ${AWS_REGION}
+                - name: STORAGE_BUCKET
+                  value: ${BOMBASTIC_STORAGE_BUCKET}
+                - name: SQS_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${BOMBASTIC_AWS_SECRET_NAME}
+                      key: aws_access_key_id
+                - name: SQS_SECRET_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${BOMBASTIC_AWS_SECRET_NAME}
+                      key: aws_secret_access_key
+                - name: SQS_REGION
+                  value: ${AWS_REGION}
+                - name: INFRASTRUCTURE_ENABLED
+                  value: 'true'
+                - name: INFRASTRUCTURE_BIND
+                  value: '[::]:9010'
+              volumeMounts:
+                - name: data
+                  mountPath: /data
+              ports:
+                - containerPort: 9010
+                  protocol: TCP
+                  name: infra
+              resources: ${{BOMBASTIC_INDEXER_RESOURCES}}
+              livenessProbe:
+                httpGet:
+                  path: /health/live
+                  port: 9010
+                initialDelaySeconds: 2
+              readinessProbe:
+                httpGet:
+                  path: /health/ready
+                  port: 9010
+                initialDelaySeconds: 2
+              startupProbe:
+                httpGet:
+                  path: /health/startup
+                  port: 9010
+  - apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: spog-api
+      labels:
+        app.kubernetes.io/name: spog-api
+        app.kubernetes.io/component: api
+        app.kubernetes.io/part-of: trustification
+    spec:
+      replicas: ${{REPLICAS}}
+      selector:
+        matchLabels:
+          app.kubernetes.io/name: spog-api
+          app.kubernetes.io/component: api
+          app.kubernetes.io/part-of: trustification
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: spog-api
+            app.kubernetes.io/component: api
+            app.kubernetes.io/part-of: trustification
+            metrics: 'true'
+          annotations:
+            config/checksum: 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
+        spec:
+          containers:
+            - image: ${BACKEND_IMAGE}:${IMAGE_TAG}
+              imagePullPolicy: Always
+              name: service
+              command:
+                - /trust
+              args:
+                - spog
+                - api
+                - -p
+                - '8080'
+                - --bombastic-url
+                - https://bombastic-api.$(NAMESPACE).svc
+                - --vexination-url
+                - https://vexination-api.$(NAMESPACE).svc
+                - --collectorist-url
+                - https://collectorist-api.$(NAMESPACE).svc
+                - --v11y-url
+                - https://v11y-api.$(NAMESPACE).svc
+                - --crda-url
+                - http://alpha-exhort.apps.sssc-cl01.appeng.rhecoeng.com/
+                - --auth-configuration
+                - /etc/config/auth.yaml
+              env:
+                - name: RUST_LOG
+                  value: info
+                - name: NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.namespace
+                - name: HTTP_SERVER_BIND_ADDR
+                  value: '::'
+                - name: HTTP_SERVER_TLS_ENABLED
+                  value: 'true'
+                - name: HTTP_SERVER_TLS_KEY_FILE
+                  value: /etc/tls/tls.key
+                - name: HTTP_SERVER_TLS_CERTIFICATE_FILE
+                  value: /etc/tls/tls.crt
+                - name: INFRASTRUCTURE_ENABLED
+                  value: 'true'
+                - name: INFRASTRUCTURE_BIND
+                  value: '[::]:9010'
+                - name: SPOG_UI_CONFIG
+                  value: /etc/config/spog-ui.yaml
+                - name: OIDC_PROVIDER_CLIENT_ID
+                  value: trusted-content-api
+                - name: OIDC_PROVIDER_CLIENT_SECRET
+                  valueFrom:
+                    secretKeyRef:
+                      key: ${OIDC_PROVIDER_CLIENT_SECRET_KEY}
+                      name: ${OIDC_PROVIDER_CLIENT_SECRET_NAME}
+                - name: OIDC_PROVIDER_ISSUER_URL
+                  value: ${ISSUER_URL}
+                - name: SWAGGER_UI_OIDC_ISSUER_URL
+                  value: ${ISSUER_URL}
+              ports:
+                - containerPort: 8080
+                  protocol: TCP
+                - containerPort: 9010
+                  protocol: TCP
+                  name: infra
+              resources: ${{SPOG_API_RESOURCES}}
+              livenessProbe:
+                httpGet:
+                  path: /health/live
+                  port: 9010
+                initialDelaySeconds: 2
+              readinessProbe:
+                httpGet:
+                  path: /health/ready
+                  port: 9010
+                initialDelaySeconds: 2
+              startupProbe:
+                httpGet:
+                  path: /health/startup
+                  port: 9010
+              volumeMounts:
+                - mountPath: /etc/config
+                  name: config
+                - mountPath: /etc/tls
+                  name: tls
+          volumes:
+            - name: config
+              configMap:
+                name: ${CONFIG_NAME}
+            - name: tls
+              secret:
+                secretName: spog-api-tls
+  - apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: spog-ui
+      labels:
+        app.kubernetes.io/name: spog-ui
+        app.kubernetes.io/component: ui
+        app.kubernetes.io/part-of: trustification
+    spec:
+      replicas: ${{REPLICAS}}
+      selector:
+        matchLabels:
+          app.kubernetes.io/name: spog-ui
+          app.kubernetes.io/component: ui
+          app.kubernetes.io/part-of: trustification
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: spog-ui
+            app.kubernetes.io/component: ui
+            app.kubernetes.io/part-of: trustification
+        spec:
+          volumes:
+            - name: endpoints
+              emptyDir: {}
+            - name: run
+              emptyDir: {}
+            - name: branding
+              configMap:
+                name: spog-ui-branding
+          containers:
+            - image: ${FRONTEND_IMAGE}:${IMAGE_TAG}
+              imagePullPolicy: Always
+              name: service
+              env:
+                - name: API_URL
+                  value: https://api.${DOMAIN}
+                - name: BOMBASTIC_URL
+                  value: https://sbom.${DOMAIN}
+                - name: VEXINATION_URL
+                  value: https://vex.${DOMAIN}
+                - name: ISSUER_URL
+                  value: ${ISSUER_URL}
+                - name: CLIENT_ID
+                  value: trusted-content-frontend
+                - name: SCOPES
+                  value: openid id.username
+              volumeMounts:
+                - name: endpoints
+                  mountPath: /endpoints
+                - name: branding
+                  mountPath: /public/branding
+                - name: run
+                  mountPath: /run
+              ports:
+                - containerPort: 8080
+                  protocol: TCP
+              resources: ${{SPOG_UI_RESOURCES}}
+              livenessProbe:
+                httpGet:
+                  path: /
+                  port: 8080
+                initialDelaySeconds: 2
+              readinessProbe:
+                httpGet:
+                  path: /
+                  port: 8080
+                initialDelaySeconds: 2
+  - apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: vexination-api
+      labels:
+        app.kubernetes.io/name: vexination-api
+        app.kubernetes.io/component: api
+        app.kubernetes.io/part-of: trustification
+    spec:
+      replicas: ${{REPLICAS}}
+      selector:
+        matchLabels:
+          app.kubernetes.io/name: vexination-api
+          app.kubernetes.io/component: api
+          app.kubernetes.io/part-of: trustification
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: vexination-api
+            app.kubernetes.io/component: api
+            app.kubernetes.io/part-of: trustification
+            metrics: 'true'
+          annotations:
+            config/checksum: 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
+        spec:
+          volumes:
+            - name: data
+              emptyDir: {}
+            - name: config
+              configMap:
+                name: ${CONFIG_NAME}
+            - name: tls
+              secret:
+                secretName: vexination-api-tls
+          containers:
+            - image: ${BACKEND_IMAGE}:${IMAGE_TAG}
+              imagePullPolicy: Always
+              name: service
+              command:
+                - /trust
+              args:
+                - vexination
+                - api
+                - -p
+                - '8080'
+                - --index-mode
+                - file
+                - --auth-configuration
+                - /etc/config/auth.yaml
+              env:
+                - name: RUST_LOG
+                  value: info
+                - name: HTTP_SERVER_BIND_ADDR
+                  value: '::'
+                - name: HTTP_SERVER_TLS_ENABLED
+                  value: 'true'
+                - name: HTTP_SERVER_TLS_KEY_FILE
+                  value: /etc/tls/tls.key
+                - name: HTTP_SERVER_TLS_CERTIFICATE_FILE
+                  value: /etc/tls/tls.crt
+                - name: STORAGE_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${VEXINATION_AWS_SECRET_NAME}
+                      key: aws_access_key_id
+                - name: STORAGE_SECRET_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${VEXINATION_AWS_SECRET_NAME}
+                      key: aws_secret_access_key
+                - name: STORAGE_REGION
+                  value: ${AWS_REGION}
+                - name: STORAGE_BUCKET
+                  value: ${VEXINATION_STORAGE_BUCKET}
+                - name: INFRASTRUCTURE_ENABLED
+                  value: 'true'
+                - name: INFRASTRUCTURE_BIND
+                  value: '[::]:9010'
+                - name: SWAGGER_UI_OIDC_ISSUER_URL
+                  value: ${ISSUER_URL}
+              volumeMounts:
+                - name: data
+                  mountPath: /data
+                - mountPath: /etc/config
+                  name: config
+                - mountPath: /etc/tls
+                  name: tls
+              ports:
+                - containerPort: 8080
+                  protocol: TCP
+                - containerPort: 9010
+                  protocol: TCP
+                  name: infra
+              resources: ${{VEXINATION_API_RESOURCES}}
+              livenessProbe:
+                httpGet:
+                  path: /health/live
+                  port: 9010
+                initialDelaySeconds: 2
+              readinessProbe:
+                httpGet:
+                  path: /health/ready
+                  port: 9010
+                initialDelaySeconds: 2
+              startupProbe:
+                httpGet:
+                  path: /health/startup
+                  port: 9010
+  - apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: vexination-indexer
+      labels:
+        app.kubernetes.io/name: vexination-indexer
+        app.kubernetes.io/component: indexer
+        app.kubernetes.io/part-of: trustification
+    spec:
+      replicas: 1
+      selector:
+        matchLabels:
+          app.kubernetes.io/name: vexination-indexer
+          app.kubernetes.io/component: indexer
+          app.kubernetes.io/part-of: trustification
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: vexination-indexer
+            app.kubernetes.io/component: indexer
+            app.kubernetes.io/part-of: trustification
+            metrics: 'true'
+        spec:
+          volumes:
+            - name: data
+              emptyDir: {}
+          containers:
+            - image: ${BACKEND_IMAGE}:${IMAGE_TAG}
+              imagePullPolicy: Always
+              name: service
+              command:
+                - /trust
+              args:
+                - vexination
+                - indexer
+                - --event-bus
+                - sqs
+                - --stored-topic
+                - ${VEXINATION_INDEXER_STORED_TOPIC}
+                - --indexed-topic
+                - ${VEXINATION_INDEXER_INDEXED_TOPIC}
+                - --failed-topic
+                - ${VEXINATION_INDEXER_FAILED_TOPIC}
+                - --index-mode
+                - file
+                - --index-dir
+                - /data/index
+              env:
+                - name: RUST_LOG
+                  value: info
+                - name: STORAGE_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${VEXINATION_AWS_SECRET_NAME}
+                      key: aws_access_key_id
+                - name: STORAGE_SECRET_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${VEXINATION_AWS_SECRET_NAME}
+                      key: aws_secret_access_key
+                - name: STORAGE_REGION
+                  value: ${AWS_REGION}
+                - name: STORAGE_BUCKET
+                  value: ${VEXINATION_STORAGE_BUCKET}
+                - name: SQS_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${VEXINATION_AWS_SECRET_NAME}
+                      key: aws_access_key_id
+                - name: SQS_SECRET_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${VEXINATION_AWS_SECRET_NAME}
+                      key: aws_secret_access_key
+                - name: SQS_REGION
+                  value: ${AWS_REGION}
+                - name: INFRASTRUCTURE_ENABLED
+                  value: 'true'
+                - name: INFRASTRUCTURE_BIND
+                  value: '[::]:9010'
+              volumeMounts:
+                - name: data
+                  mountPath: /data
+              ports:
+                - containerPort: 9010
+                  protocol: TCP
+                  name: infra
+              resources: ${{VEXINATION_INDEXER_RESOURCES}}
+              livenessProbe:
+                httpGet:
+                  path: /health/live
+                  port: 9010
+                initialDelaySeconds: 2
+              readinessProbe:
+                httpGet:
+                  path: /health/ready
+                  port: 9010
+                initialDelaySeconds: 2
+              startupProbe:
+                httpGet:
+                  path: /health/startup
+                  port: 9010
+parameters:
+- name: BACKEND_IMAGE
+  required: true
+- name: FRONTEND_IMAGE
+  required: true
+- name: INTEGRATION_TESTS_IMAGE
+  required: true
+- name: IMAGE_TAG
+  required: true
+- name: REPLICAS
+  value: "1"
+- name: AWS_REGION
+  required: true
+- name: BOMBASTIC_STORAGE_BUCKET
+  required: true
+- name: BOMBASTIC_AWS_SECRET_NAME
+  required: true
+- name: BOMBASTIC_INDEXER_STORED_TOPIC
+  required: true
+- name: BOMBASTIC_INDEXER_INDEXED_TOPIC
+  required: true
+- name: BOMBASTIC_INDEXER_FAILED_TOPIC
+  required: true
+- name: BOMBASTIC_INDEXER_GUAC_TOPIC
+  required: true
+- name: VEXINATION_STORAGE_BUCKET
+  required: true
+- name: VEXINATION_AWS_SECRET_NAME
+  required: true
+- name: VEXINATION_INDEXER_STORED_TOPIC
+  required: true
+- name: VEXINATION_INDEXER_INDEXED_TOPIC
+  required: true
+- name: VEXINATION_INDEXER_FAILED_TOPIC
+  required: true
+- name: VEXINATION_INDEXER_GUAC_TOPIC
+  required: true
+- name: ISSUER_URL
+  required: true
+- name: CONFIG_NAME
+  required: true
+- name: DOMAIN
+  required: true
+- name: BOMBASTIC_INDEXER_RESOURCES
+  required: true
+- name: BOMBASTIC_API_RESOURCES
+  required: true
+- name: VEXINATION_API_RESOURCES
+  required: true
+- name: VEXINATION_INDEXER_RESOURCES
+  required: true
+- name: SPOG_API_RESOURCES
+  required: true
+- name: SPOG_UI_RESOURCES
+  required: true
+- name: OIDC_PROVIDER_CLIENT_SECRET_NAME
+  required: true
+- name: OIDC_PROVIDER_CLIENT_SECRET_KEY
+  required: true

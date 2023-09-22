@@ -18,6 +18,7 @@ config:
   authentication: trustification.dev/config/staging/auth.yaml
 spog:
   crdaUrl: http://alpha-exhort.apps.sssc-cl01.appeng.rhecoeng.com/
+  branding: false
   ui:
     segmentWriteKey:
       valueFrom:
@@ -31,7 +32,6 @@ spog:
       limits:
         memory: "64Mi"
   api:
-    branding: false
     segmentWriteKey:
       valueFrom:
         secretKeyRef:

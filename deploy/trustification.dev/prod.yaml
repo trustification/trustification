@@ -18,6 +18,7 @@ config:
   authentication: trustification.dev/config/prod/auth.yaml
 spog:
   crdaUrl: http://alpha-exhort.apps.sssc-cl01.appeng.rhecoeng.com/
+  branding: false
   ui:
     resources:
       requests:
@@ -26,7 +27,6 @@ spog:
       limits:
         memory: "64Mi"
   api:
-    branding: false
     resources:
       requests:
         cpu: "100m"
