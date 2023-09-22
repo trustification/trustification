@@ -40,6 +40,8 @@ jobs:
 
 
   uncommitted:
+    runs-on: ubuntu-22.04
+    steps:
       - uses: actions/checkout@v3
       - name: Check if templates have uncommitted changes
         run: make -C deploy/openshift && git diff --quiet deploy/openshift || echo "::error Uncommitted changes to deploy/openshift"
