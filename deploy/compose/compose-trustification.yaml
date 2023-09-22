@@ -96,7 +96,7 @@ services:
           sleep 5
         done
         echo keycloak is up
-        /trust spog api --devmode --bombastic-url http://bombastic-api:8080 --vexination-url http://vexination-api:8080 --guac http://guac-graphql:$GUAC_API_PORT/query
+        /trust spog api --devmode --bombastic-url http://bombastic-api:$BOMBASTIC_API_PORT --vexination-url http://vexination-api:$VEXINATION_API_PORT --guac http://guac-graphql:$GUAC_API_PORT/query
     entrypoint: /usr/bin/bash
     restart: on-failure
     healthcheck:
