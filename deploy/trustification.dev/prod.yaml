@@ -1,0 +1,179 @@
+release: 0.1.0-nightly.c8f3dbc0
+trustImage: ghcr.io/trustification/trust
+uiImage: ghcr.io/trustification/trust-ui
+docsImage: ghcr.io/trustification/trust-docs
+testsImage: ghcr.io/trustification/trust-tests
+domain: trustification.dev
+replicas: 2
+imagePullPolicy: IfNotPresent
+region: eu-west-1
+enableWalkers: false
+enableTests: true
+createRoutes: true
+enableMonitoring: true
+enableDocs: true
+config:
+  enable: true
+  name: trustification-config
+  authentication: trustification.dev/config/prod/auth.yaml
+spog:
+  crdaUrl: http://alpha-exhort.apps.sssc-cl01.appeng.rhecoeng.com/
+  ui:
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "64Mi"
+      limits:
+        memory: "64Mi"
+  api:
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "256Mi"
+      limits:
+        memory: "256Mi"
+bombastic:
+  bucket: bombastic-prod
+  credentials: bombastic-credentials-secret
+  indexMode: file
+  exporter:
+    topic: sbom-guac-prod
+  indexer:
+    topics:
+      stored: sbom-stored-prod
+      indexed: sbom-indexed-prod
+      failed: sbom-failed-prod
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "2Gi"
+      limits:
+        memory: "2Gi"
+  api:
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "1Gi"
+      limits:
+        memory: "1Gi"
+vexination:
+  bucket: vexination-prod
+  credentials: vexination-credentials-secret
+  indexMode: file
+  exporter:
+    topic: vex-guac-prod
+  indexer:
+    topics:
+      stored: vex-stored-prod
+      indexed: vex-indexed-prod
+      failed: vex-failed-prod
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "2Gi"
+      limits:
+        memory: "2Gi"
+  api:
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "1Gi"
+      limits:
+        memory: "1Gi"
+  walker:
+    source: https://www.redhat.com/.well-known/csaf/provider-metadata.json
+collectorist:
+  enabled: true
+  api:
+    resources:
+collector:
+  osv:
+    enabled: true
+    resources:
+  snyk:
+    enabled: true
+    credentials: snyk-collector-secret
+    resources:
+  nvd:
+    enabled: true
+    credentials: nvd-collector-secret
+    resources:
+v11y:
+  enabled: true
+  api:
+    resources:
+exhort:
+  enabled: true
+  api:
+    resources:
+guac:
+  enabled: true
+keycloak:
+  enabled: true
+  production: true
+  proxy: reencrypt
+  podSecurityContext:
+    enabled: false
+  containerSecurityContext:
+    enabled: false
+  auth:
+    adminUser: admin
+    existingSecret: sso-admin
+    passwordSecretKey: password
+  tls:
+    enabled: true
+    existingSecret: sso-tls
+    usePem: true
+  service:
+    annotations:
+      service.beta.openshift.io/serving-cert-secret-name: sso-tls
+  ingress:
+    enabled: true
+    ingressClassName: openshift-default
+    hostname: sso.trustification.dev
+    servicePort: https
+    annotations:
+      route.openshift.io/termination: reencrypt
+  postgresql:
+    primary:
+      containerSecurityContext:
+        enabled: false
+      podSecurityContext:
+        enabled: false
+    auth:
+      existingSecret: sso-postgres
+keycloakRealm:
+  redirectUris:
+    - http://localhost:*
+    - https://trustification.dev
+    - https://trustification.dev/*
+    - https://sbom.trustification.dev
+    - https://sbom.trustification.dev/*
+    - https://vex.trustification.dev
+    - https://vex.trustification.dev/*
+oidcClients:
+  frontend:
+    issuerUrl: https://sso.trustification.dev/realms/chicken
+    clientId:
+      value: frontend
+  walker:
+    issuerUrl: https://sso.trustification.dev/realms/chicken
+    clientSecret:
+      valueFrom:
+        secretKeyRef:
+          name: oidc-client-walker
+          key: client-secret
+  testingManager:
+    issuerUrl: https://sso.trustification.dev/realms/chicken
+    clientSecret:
+      valueFrom:
+        secretKeyRef:
+          name: oidc-client-testing-manager
+          key: client-secret
+  testingUser:
+    issuerUrl: https://sso.trustification.dev/realms/chicken
+    clientSecret:
+      valueFrom:
+        secretKeyRef:
+          name: oidc-client-testing-user
+          key: client-secret

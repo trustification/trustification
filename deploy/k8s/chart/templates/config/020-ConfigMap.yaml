@@ -1,0 +1,19 @@
+{{- if .Values.config.enable }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.config.name }}
+  labels:
+    app.kubernetes.io/name: {{ .Values.config.name }}
+    app.kubernetes.io/component: config
+    app.kubernetes.io/part-of: trustification
+data:
+{{- if .Values.config.ui }}
+  spog-ui.yaml: |-
+    {{- .Files.Get .Values.config.ui | nindent 4 }}
+{{- end }}
+{{- if .Values.config.authentication }}
+  auth.yaml: |-
+    {{- .Files.Get .Values.config.authentication | nindent 4 }}
+{{- end }}
+{{- end }}

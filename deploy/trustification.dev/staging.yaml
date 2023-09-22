@@ -1,0 +1,191 @@
+release: 0.1.0-nightly.c8f3dbc0
+trustImage: ghcr.io/trustification/trust
+uiImage: ghcr.io/trustification/trust-ui
+docsImage: ghcr.io/trustification/trust-docs
+testsImage: ghcr.io/trustification/trust-tests
+domain: staging.trustification.dev
+replicas: 1
+imagePullPolicy: IfNotPresent
+region: eu-west-1
+enableTests: true
+createRoutes: true
+enableMonitoring: true
+enableDocs: true
+enableWalkers: false
+config:
+  enable: true
+  name: trustification-config
+  authentication: trustification.dev/config/staging/auth.yaml
+spog:
+  crdaUrl: http://alpha-exhort.apps.sssc-cl01.appeng.rhecoeng.com/
+  ui:
+    segmentWriteKey:
+      valueFrom:
+        secretKeyRef:
+          name: segment-write-keys
+          key: spogUi
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "64Mi"
+      limits:
+        memory: "64Mi"
+  api:
+    segmentWriteKey:
+      valueFrom:
+        secretKeyRef:
+          name: segment-write-keys
+          key: spogApi
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "256Mi"
+      limits:
+        memory: "256Mi"
+bombastic:
+  bucket: bombastic-staging
+  credentials: bombastic-credentials-secret
+  indexMode: file
+  exporter:
+    topic: sbom-guac-staging
+  indexer:
+    topics:
+      stored: sbom-stored-staging
+      indexed: sbom-indexed-staging
+      failed: sbom-failed-staging
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "2Gi"
+      limits:
+        memory: "2Gi"
+  api:
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "1Gi"
+      limits:
+        memory: "1Gi"
+vexination:
+  bucket: vexination-staging
+  credentials: vexination-credentials-secret
+  indexMode: file
+  exporter:
+    topic: vex-guac-staging
+  indexer:
+    topics:
+      stored: vex-stored-staging
+      indexed: vex-indexed-staging
+      failed: vex-failed-staging
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "2Gi"
+      limits:
+        memory: "2Gi"
+  api:
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "1Gi"
+      limits:
+        memory: "1Gi"
+  walker:
+    source: https://www.redhat.com/.well-known/csaf/provider-metadata.json
+collectorist:
+  enabled: true
+  api:
+    resources:
+collector:
+  osv:
+    enabled: true
+    resources:
+  snyk:
+    enabled: true
+    credentials: snyk-collector-secret
+    resources:
+  nvd:
+    enabled: true
+    credentials: nvd-collector-secret
+    resources:
+v11y:
+  enabled: true
+  api:
+    resources:
+exhort:
+  enabled: true
+  api:
+    resources:
+keycloakRealm:
+  redirectUris:
+    - http://localhost:*
+    - https://staging.trustification.dev
+    - https://staging.trustification.dev/*
+    - https://sbom.staging.trustification.dev
+    - https://sbom.staging.trustification.dev/*
+    - https://vex.staging.trustification.dev
+    - https://vex.staging.trustification.dev/*
+    - https://trustification-*-preview.surge.sh
+    - https://trustification-*-preview.surge.sh/*
+oidcClients:
+  frontend:
+    issuerUrl: https://sso.staging.trustification.dev/realms/chicken
+    clientId:
+      value: frontend
+  walker:
+    issuerUrl: https://sso.staging.trustification.dev/realms/chicken
+    clientSecret:
+      valueFrom:
+        secretKeyRef:
+          name: oidc-client-walker
+          key: client-secret
+  testingManager:
+    issuerUrl: https://sso.staging.trustification.dev/realms/chicken
+    clientSecret:
+      valueFrom:
+        secretKeyRef:
+          name: oidc-client-testing-manager
+          key: client-secret
+  testingUser:
+    issuerUrl: https://sso.staging.trustification.dev/realms/chicken
+    clientSecret:
+      valueFrom:
+        secretKeyRef:
+          name: oidc-client-testing-user
+          key: client-secret
+guac:
+  enabled: true
+keycloak:
+  enabled: true
+  production: true
+  proxy: reencrypt
+  podSecurityContext:
+    enabled: false
+  containerSecurityContext:
+    enabled: false
+  auth:
+    adminUser: admin
+    existingSecret: sso-admin
+    passwordSecretKey: password
+  tls:
+    enabled: true
+    existingSecret: sso-tls
+    usePem: true
+  service:
+    annotations:
+      service.beta.openshift.io/serving-cert-secret-name: sso-tls
+  ingress:
+    enabled: true
+    ingressClassName: openshift-default
+    hostname: sso.staging.trustification.dev
+    servicePort: https
+    annotations:
+      route.openshift.io/termination: reencrypt
+  postgresql:
+    primary:
+      containerSecurityContext:
+        enabled: false
+      podSecurityContext:
+        enabled: false
+    auth:
+      existingSecret: sso-postgres

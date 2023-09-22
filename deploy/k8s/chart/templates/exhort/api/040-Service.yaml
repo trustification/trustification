@@ -1,0 +1,23 @@
+{{ if .Values.exhort.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/name: exhort-api
+    app.kubernetes.io/component: api
+    app.kubernetes.io/part-of: trustification
+  annotations:
+    service.beta.openshift.io/serving-cert-secret-name: exhort-api-tls
+  name: exhort-api
+spec:
+  ports:
+  - name: endpoint
+    port: 443
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    app.kubernetes.io/name: exhort-api
+    app.kubernetes.io/component: api
+    app.kubernetes.io/part-of: trustification
+  type: ClusterIP
+{{ end }}
