@@ -11,7 +11,8 @@ use trustification_auth::authorizer::Authorizer;
 use trustification_auth::client::{OpenIdTokenProviderConfigArguments, TokenProvider};
 use trustification_auth::swagger_ui::{SwaggerUiOidc, SwaggerUiOidcConfig};
 use trustification_common::tls::ClientConfig;
-use trustification_infrastructure::endpoint::{self, Endpoint, EndpointServerConfig, Exhort};
+use trustification_infrastructure::app::http::HttpServerConfig;
+use trustification_infrastructure::endpoint::{self, Endpoint, Exhort};
 use trustification_infrastructure::{Infrastructure, InfrastructureConfig};
 use v11y_client::V11yClient;
 
@@ -20,9 +21,6 @@ mod server;
 #[derive(clap::Args, Debug)]
 #[command(about = "Run the api server", args_conflicts_with_subcommands = true)]
 pub struct Run {
-    #[command(flatten)]
-    pub api: EndpointServerConfig<Exhort>,
-
     #[arg(long = "devmode", default_value_t = false)]
     pub devmode: bool,
 
@@ -61,6 +59,9 @@ pub struct Run {
 
     #[command(flatten)]
     pub(crate) client: ClientConfig,
+
+    #[command(flatten)]
+    pub http: HttpServerConfig<Exhort>,
 }
 
 impl Run {
@@ -78,14 +79,14 @@ impl Run {
             log::warn!("Authentication is disabled");
         }
 
-        println!("collectorist URL: {}", self.collectorist_url);
-        println!("guac URL: {}", self.guac_graphql_url);
+        log::info!("collectorist URL: {}", self.collectorist_url);
+        log::info!("guac URL: {}", self.guac_graphql_url);
 
         Infrastructure::from(self.infra)
             .run(
                 "exhort-api",
                 |_context| async { Ok(()) },
-                |_context| async move {
+                |context| async move {
                     let provider = self.oidc.into_provider_or_devmode(self.devmode).await?;
                     let state = Self::configure(
                         &self.client,
@@ -95,8 +96,7 @@ impl Run {
                         provider,
                     )?;
 
-                    server::run(state, self.api.socket_addr()?, authenticator, authorizer, swagger_oidc).await?;
-                    Ok(())
+                    server::run(state, self.http, context, authenticator, authorizer, swagger_oidc).await
                 },
             )
             .await?;
@@ -132,5 +132,3 @@ pub struct AppState {
     guac_client: GuacClient,
     v11y_client: V11yClient,
 }
-
-pub(crate) type SharedState = Arc<AppState>;
