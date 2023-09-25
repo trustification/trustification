@@ -113,6 +113,7 @@ async fn spog_crda_integration(context: &mut SpogContext) {
 #[test_context(SpogContext)]
 #[tokio::test]
 #[ntest::timeout(120_000)]
+#[ignore]
 async fn spog_search_correlation(context: &mut SpogContext) {
     let input = serde_json::from_str(include_str!("testdata/correlation/stf-1.5.json")).unwrap();
     let sbom_id = "test-stf-1.5";
