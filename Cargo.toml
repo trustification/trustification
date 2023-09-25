@@ -104,6 +104,8 @@ guac = { git = "https://github.com/trustification/guac-rs.git", rev = "5b8cad834
 #sikula = { path = "../sikula" }
 
 csaf = { git = "https://github.com/voteblake/csaf-rs", rev = "76cb9ede10adb1fbb495b17e5fd8d95c5cf6c900" } # FIXME: waiting for release
+walker-common = { git = "https://github.com/ctron/csaf-walker", rev = "08884c1b3db9d717fc0365b0df50cd4dd114a5fd" } # FIXME: waiting for release
+sbom-walker = { git = "https://github.com/ctron/csaf-walker", rev = "08884c1b3db9d717fc0365b0df50cd4dd114a5fd" } # FIXME: waiting for release
 
 # also check: spog/ui/Cargo.toml
 cyclonedx-bom = { git = "https://github.com/trustification/cyclonedx-rust-cargo", branch = "trustification" }

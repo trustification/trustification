@@ -94,6 +94,13 @@ impl OpenIdTokenProviderConfig {
         })
     }
 
+    pub fn from_args_or_devmode(arguments: OpenIdTokenProviderConfigArguments, devmode: bool) -> Option<Self> {
+        match devmode {
+            true => Some(Self::devmode()),
+            false => Self::from_args(arguments),
+        }
+    }
+
     pub fn from_args(arguments: OpenIdTokenProviderConfigArguments) -> Option<Self> {
         match (arguments.client_id, arguments.client_secret, arguments.issuer_url) {
             (Some(client_id), Some(client_secret), Some(issuer_url)) => Some(OpenIdTokenProviderConfig {
