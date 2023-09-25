@@ -1,11 +1,24 @@
 use crate::scanner::{Options, Scanner};
-use clap::{arg, command, Args};
+use anyhow::anyhow;
+use clap::{arg, command, ArgAction, Args};
 use std::process::ExitCode;
-use trustification_auth::client::{OpenIdTokenProviderConfigArguments, TokenProvider};
-use trustification_infrastructure::{Infrastructure, InfrastructureConfig};
+use std::sync::Arc;
+use std::time::SystemTime;
+use time::{Date, Month, UtcOffset};
+use trustification_auth::client::{OpenIdTokenProviderConfig, OpenIdTokenProviderConfigArguments};
+use trustification_infrastructure::{
+    endpoint::{self, Endpoint},
+    Infrastructure, InfrastructureConfig,
+};
 use url::Url;
+use walker_common::sender::provider::TokenProvider;
 
+mod processing;
 mod scanner;
+
+const DEVMODE_SOURCE: &str = "https://access.redhat.com/security/data/sbom/beta/";
+const DEVMODE_KEY: &str =
+    "https://access.redhat.com/security/data/97f5eac4.txt#77E79ABE93673533ED09EBE2DCE3823597F5EAC4";
 
 #[derive(Args, Debug)]
 #[command(
@@ -14,6 +27,7 @@ mod scanner;
     rename_all_env = "SCREAMING_SNAKE_CASE"
 )]
 pub struct Run {
+    /// Apply reasonable settings for local development. Do not use in production!
     #[arg(long = "devmode", default_value_t = false)]
     pub devmode: bool,
 
@@ -21,17 +35,29 @@ pub struct Run {
     #[arg(long = "scan-interval")]
     pub scan_interval: Option<humantime::Duration>,
 
-    /// GPG key used to sign SBOMs
-    #[arg(long = "signing-key-source")]
-    pub signing_key_source: Option<Url>,
+    /// GPG key used to sign SBOMs, use the fragment of the URL as fingerprint.
+    #[arg(long = "signing-key", env)]
+    pub signing_key: Vec<Url>,
 
-    /// Bombastic host
-    #[arg(long = "bombastic-url")]
-    pub bombastic: Url,
+    /// OpenPGP policy date.
+    #[arg(long)]
+    pub policy_date: Option<humantime::Timestamp>,
 
-    /// SBOMs index URL
-    #[arg(long = "changes-url")]
-    pub index_source: Option<Url>,
+    /// Enable OpenPGP v3 signatures. Conflicts with 'policy_date'.
+    #[arg(short = '3', long = "v3-signatures", conflicts_with = "policy_date")]
+    pub v3_signatures: bool,
+
+    /// Allowing fixing invalid SPDX license expressions by setting them to NOASSERTION.
+    #[arg(long, env, default_value_t = true, action = ArgAction::Set)]
+    pub fix_licenses: bool,
+
+    /// Bombastic
+    #[arg(long = "bombastic-url", env, default_value_t = endpoint::Bombastic::url())]
+    pub bombastic_url: Url,
+
+    /// SBOMs source URL
+    #[arg(long, env)]
+    pub source: Option<Url>,
 
     /// OIDC client
     #[command(flatten)]
@@ -41,12 +67,6 @@ pub struct Run {
     pub infra: InfrastructureConfig,
 }
 
-#[derive(Clone, Debug, clap::Parser)]
-#[command(rename_all_env = "SCREAMING_SNAKE_CASE")]
-pub struct WalkerConfig {}
-
-const CHANGE_ADDRESS: &str = "https://access.redhat.com/security/data/sbom/beta/changes.csv";
-
 impl Run {
     pub async fn run(self) -> anyhow::Result<ExitCode> {
         Infrastructure::from(self.infra)
@@ -54,19 +74,65 @@ impl Run {
                 "bombastic-walker",
                 |_context| async { Ok(()) },
                 |_| async move {
-                    let provider = self.oidc.clone().into_provider_or_devmode(self.devmode).await?;
+                    let source = self
+                        .devmode
+                        .then(|| Url::parse(DEVMODE_SOURCE).unwrap())
+                        .or(self.source)
+                        .ok_or_else(|| anyhow!("Missing source. Provider either --source <url> or --devmode"))?;
 
-                    let source = self.index_source.clone().unwrap_or(Url::parse(CHANGE_ADDRESS).unwrap());
+                    let keys = self
+                        .signing_key
+                        .into_iter()
+                        .chain(self.devmode.then(|| Url::parse(DEVMODE_KEY).unwrap()))
+                        .map(|key| key.into())
+                        .collect();
+
+                    let validation_date: Option<SystemTime> = match (self.policy_date, self.v3_signatures) {
+                        (_, true) => Some(SystemTime::from(
+                            Date::from_calendar_date(2007, Month::January, 1)
+                                .unwrap()
+                                .midnight()
+                                .assume_offset(UtcOffset::UTC),
+                        )),
+                        (Some(date), _) => Some(date.into()),
+                        _ => None,
+                    };
+
+                    log::debug!("Policy date: {validation_date:?}");
+
+                    let provider = match OpenIdTokenProviderConfig::from_args_or_devmode(self.oidc, self.devmode) {
+                        Some(OpenIdTokenProviderConfig {
+                            issuer_url,
+                            client_id,
+                            client_secret,
+                            refresh_before,
+                        }) => {
+                            let config = walker_common::sender::provider::OpenIdTokenProviderConfig {
+                                issuer_url,
+                                client_id,
+                                client_secret,
+                                refresh_before,
+                            };
+                            Arc::new(walker_common::sender::provider::OpenIdTokenProvider::with_config(config).await?)
+                                as Arc<dyn TokenProvider>
+                        }
+                        None => Arc::new(()),
+                    };
+
                     let scanner = Scanner::new(Options {
                         source,
-                        key: self.signing_key_source.as_ref(),
+                        target: self.bombastic_url.join("/api/v1/sbom")?,
+                        keys,
+                        provider,
+                        validation_date,
                     });
 
-                    if let Some(sync_interval) = self.scan_interval {
-                        scanner.run().await?;
+                    if let Some(interval) = self.scan_interval {
+                        scanner.run(interval.into()).await?;
                     } else {
                         scanner.run_once().await?;
                     }
+
                     Ok(())
                 },
             )
