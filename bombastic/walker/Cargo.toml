@@ -12,6 +12,7 @@ clap = "4.3.3"
 csv = "1.2.2"
 humantime = "2.1.0"
 reqwest = "0.11.18"
+sbom-walker = { version = "0.4.5", features = [] }
 serde = "1.0.164"
 time = "0.3.21"
 tokio = "1.28.2"
