@@ -635,8 +635,10 @@ mod tests {
         let data = std::fs::read(&path).unwrap();
         // ensure it parses
         Sbom::try_parse_any(&data).expect(&format!("failed to parse test data: {}", path.as_ref().display()));
+        let name = path.as_ref().file_name().unwrap().to_str().unwrap();
+        let name = name.rsplit_once('.').unwrap().0;
         // add to index
-        writer.add_document(store.index_as_mut(), "ubi9-sbom", &data).unwrap();
+        writer.add_document(store.index_as_mut(), name, &data).unwrap();
     }
 
     fn assert_search<F>(f: F)
