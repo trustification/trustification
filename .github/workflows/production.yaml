@@ -1,0 +1,51 @@
+name: production
+
+on:
+  workflow_call:
+    inputs:
+      releaseTag:
+        description: The release tag
+        required: true
+        type: string
+
+  workflow_dispatch:
+    inputs:
+      releaseTag:
+        description: The release tag
+        required: true
+        type: string
+        default: latest
+
+env:
+  RELEASE_TAG: ${{ inputs.releaseTag }}
+
+permissions:
+  contents: write # for creating a release
+
+jobs:
+  deploy:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Install yq
+        run: |
+          wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O yq
+          chmod +x yq
+      - name: Update branch from tag
+        run: |
+          git config --global user.email "ci@trustification.dev"
+          git config --global user.name "Trustification CI"
+          git checkout production
+          git merge v${{ inputs.releaseTag }} --no-edit -m "Updated production from main"
+      - name: Update tags
+        run: |
+          ./yq e -i ".release= \"${{ inputs.releaseTag }}\"" deploy/trustification.dev/prod.yaml
+      - name: Commit and tag
+        run: |
+          git config --global user.email "ci@trustification.dev"
+          git config --global user.name "Trustification CI"
+          git commit deploy/trustification.dev/prod.yaml -m 'Update production version'
+          git push origin production
