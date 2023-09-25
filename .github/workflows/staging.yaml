@@ -28,10 +28,18 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
       - name: Install yq
         run: |
           wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O yq
           chmod +x yq
+      - name: Update branch from tag
+        run: |
+          git config --global user.email "ci@trustification.dev"
+          git config --global user.name "Trustification CI"
+          git checkout staging
+          git merge ${{ inputs.releaseTag }} --no-edit -m "Updated staging from main"
       - name: Update tags
         run: |
           ./yq e -i ".release= \"${{ inputs.releaseTag }}\"" deploy/trustification.dev/staging.yaml
@@ -40,7 +48,4 @@ jobs:
           git config --global user.email "ci@trustification.dev"
           git config --global user.name "Trustification CI"
           git commit deploy/trustification.dev/staging.yaml -m 'Update staging version'
-      - name: Create pull request
-        run: gh pr create -B main -H update-staging --title 'Update staging environment revision' --body 'Created by Github action'
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          git push origin staging
