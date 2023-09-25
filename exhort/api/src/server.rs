@@ -1,29 +1,25 @@
 use std::collections::{HashMap, HashSet};
-use std::net::{SocketAddr, TcpListener};
 use std::str::FromStr;
 use std::sync::Arc;
 
-use actix_cors::Cors;
-use actix_web::{
-    middleware::{Compress, Logger},
-    post, web, HttpResponse, HttpServer, Responder, ResponseError,
-};
+use actix_web::{post, web, HttpResponse, Responder, ResponseError};
 use derive_more::{Display, Error, From};
 use guac::client::intrinsic::certify_vuln::CertifyVulnSpec;
 use packageurl::PackageUrl;
 use serde::{Deserialize, Serialize};
-use utoipa::openapi::schema::AdditionalProperties;
-use utoipa::openapi::{ArrayBuilder, Object, ObjectBuilder, RefOr, SchemaType};
-use utoipa::{OpenApi, ToSchema};
-
 use trustification_auth::authenticator::Authenticator;
 use trustification_auth::authorizer::Authorizer;
 use trustification_auth::swagger_ui::{swagger_ui_with_auth, SwaggerUiOidc};
-use trustification_infrastructure::app::{new_app, AppOptions};
+use trustification_infrastructure::app::http::{HttpServerBuilder, HttpServerConfig};
+use trustification_infrastructure::endpoint::Exhort;
+use trustification_infrastructure::MainContext;
+use utoipa::openapi::schema::AdditionalProperties;
+use utoipa::openapi::{ArrayBuilder, Object, ObjectBuilder, RefOr, SchemaType};
+use utoipa::{OpenApi, ToSchema};
 //use trustification_infrastructure::new_auth;
 use v11y_client::Vulnerability;
 
-use crate::{AppState, SharedState};
+use crate::AppState;
 
 #[derive(OpenApi)]
 #[openapi(
@@ -53,37 +49,28 @@ use crate::{AppState, SharedState};
 )]
 pub struct ApiDoc;
 
-pub async fn run<B: Into<SocketAddr>>(
-    state: SharedState,
-    bind: B,
+pub async fn run(
+    state: Arc<AppState>,
+    http: HttpServerConfig<Exhort>,
+    context: MainContext<()>,
     authenticator: Option<Arc<Authenticator>>,
     authorizer: Authorizer,
-    swagger_ui_oidc: Option<Arc<SwaggerUiOidc>>,
+    swagger_oidc: Option<Arc<SwaggerUiOidc>>,
 ) -> Result<(), anyhow::Error> {
-    let listener = TcpListener::bind(bind.into())?;
-    let addr = listener.local_addr()?;
-    log::info!("listening on {}", addr);
-
     let state = web::Data::from(state);
 
-    HttpServer::new(move || {
-        let cors = Cors::permissive();
-        let authenticator = authenticator.clone();
-        let authorizer = authorizer.clone();
-        let swagger_ui_oidc = swagger_ui_oidc.clone();
-        new_app(AppOptions {
-            cors: Some(cors),
-            metrics: None,
-            authenticator: None,
-            authorizer,
-        })
-        .app_data(state.clone())
-        .configure(|cfg| config(cfg, authenticator, swagger_ui_oidc))
-    })
-    .listen(listener)?
-    .run()
-    .await?;
-    Ok(())
+    let http = HttpServerBuilder::try_from(http)?
+        .metrics(context.metrics.registry().clone(), "exhort")
+        .authorizer(authorizer.clone())
+        .configure(move |svc| {
+            let authenticator = authenticator.clone();
+            let swagger_oidc = swagger_oidc.clone();
+
+            svc.app_data(state.clone())
+                .configure(|cfg| config(cfg, authenticator, swagger_oidc));
+        });
+
+    http.run().await
 }
 
 pub fn config(
@@ -93,8 +80,6 @@ pub fn config(
 ) {
     cfg.service(
         web::scope("/api/v1")
-            .wrap(Logger::default())
-            .wrap(Compress::default())
             //.wrap(new_auth!(auth))
             .service(analyze),
     )
