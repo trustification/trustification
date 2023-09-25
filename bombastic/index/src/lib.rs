@@ -634,7 +634,7 @@ mod tests {
     fn load_valid_file(store: &mut IndexStore<Index>, writer: &mut IndexWriter, path: impl AsRef<Path>) {
         let data = std::fs::read(&path).unwrap();
         // ensure it parses
-        Sbom::try_parse_any(&data).expect(&format!("failed to parse test data: {}", path.as_ref().display()));
+        Sbom::try_parse_any(&data).unwrap_or_else(|_| panic!("failed to parse test data: {}", path.as_ref().display()));
         let name = path.as_ref().file_name().unwrap().to_str().unwrap();
         let name = name.rsplit_once('.').unwrap().0;
         // add to index
