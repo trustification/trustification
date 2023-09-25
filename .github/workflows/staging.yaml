@@ -39,5 +39,5 @@ jobs:
         run: |
           git config --global user.email "ci@trustification.dev"
           git config --global user.name "Trustification CI"
-          git commit chart/staging.yaml -m 'Update staging version'
+          git commit deploy/trustification.dev/staging.yaml -m 'Update staging version'
           git push
