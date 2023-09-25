@@ -5817,9 +5817,9 @@ dependencies = [
 
 [[package]]
 name = "sikula"
-version = "0.4.0"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3c40dc0c3a935430a9649d46438319ae0ab3cc528775fdb6190c4ea466c1a130"
+checksum = "48895824a786044d7470a26a8e966029bdb87af99a546a50d99dcf084baadc86"
 dependencies = [
  "chumsky",
  "sikula-macros",
@@ -5829,9 +5829,9 @@ dependencies = [
 
 [[package]]
 name = "sikula-macros"
-version = "0.4.0"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4dfba113da17552c43ae28a519e31e114f926a16ab96aed5a3412318bc788594"
+checksum = "07dfa008eb9e6eea107056c3fbe61c2e565dba0b07ab5ac248f44e7a895cd22c"
 dependencies = [
  "convert_case 0.6.0",
  "darling 0.20.3",
@@ -7755,7 +7755,6 @@ dependencies = [
 name = "vexination-index"
 version = "0.1.0"
 dependencies = [
- "chumsky",
  "cpe",
  "csaf",
  "env_logger",
