@@ -140,6 +140,10 @@ oidcClients:
         secretKeyRef:
           name: oidc-client-walker
           key: client-secret
+  exhort:
+    issuerUrl: https://sso.staging.trustification.dev/realms/chicken
+    clientId:
+      value: testing-manager
   testingManager:
     issuerUrl: https://sso.staging.trustification.dev/realms/chicken
     clientSecret:
