@@ -18,7 +18,7 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: guac-collectsub
-        app.kubernetes.io/component: api
+        app.kubernetes.io/component: collectsub
         app.kubernetes.io/part-of: trustification
         metrics: "true"
       annotations:
