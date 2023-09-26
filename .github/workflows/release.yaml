@@ -55,13 +55,9 @@ jobs:
           echo "Latest: $LATEST"
           echo "latest=$LATEST" >> $GITHUB_OUTPUT
 
-  # check that our CI would pass
-  ci:
-    uses: ./.github/workflows/ci.yaml
-
   # now do the actual (release) builds
   build:
-    needs: [ init, ci ]
+    needs: [ init ]
 
     strategy:
       matrix:
@@ -151,7 +147,7 @@ jobs:
           if-no-files-found: error
 
   containers:
-      needs: [ init, ci ]
+      needs: [ init ]
 
       uses: ./.github/workflows/containers.yaml
       secrets: inherit
