@@ -18,7 +18,7 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: guac-graphql
-        app.kubernetes.io/component: api
+        app.kubernetes.io/component: graphql
         app.kubernetes.io/part-of: trustification
         metrics: "true"
       annotations:
