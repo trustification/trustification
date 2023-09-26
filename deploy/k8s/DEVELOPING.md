@@ -11,8 +11,8 @@ helm dependency update chart/
 ## Linting Helm charts
 
 ```shell
-helm lint chart/ -f chart/staging.yaml
-helm lint chart/ -f chart/prod.yaml
+helm lint ./chart -f ./chart/trustification.dev/staging.yaml
+helm lint ./chart -f ./chart/trustification.dev/prod.yaml
 ```
 
 ## Find that whitespace

@@ -1,0 +1,58 @@
+{{ if .Values.guac.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: guac-graphql
+  labels:
+    app.kubernetes.io/name: guac-graphql
+    app.kubernetes.io/component: graphql
+    app.kubernetes.io/part-of: trustification
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: guac-graphql
+      app.kubernetes.io/component: graphql
+      app.kubernetes.io/part-of: trustification
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: guac-graphql
+        app.kubernetes.io/component: api
+        app.kubernetes.io/part-of: trustification
+        metrics: "true"
+      annotations:
+        config/checksum: {{ include (print $.Template.BasePath "/config/020-ConfigMap.yaml") . | sha256sum }}
+    spec:
+      volumes:
+        - name: config
+          configMap:
+            name: {{ .Values.config.name }}
+        - name: guac-config
+          configMap:
+            name: guac-cm
+        {{ include "trustification.http-server-volumes" (dict "root" . "appName" "guac-graphql") | nindent 8 }}
+      containers:
+        - image: {{ .Values.guacImage }}
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          name: service
+          command: ["/opt/guac/guacgql"]
+          args: []
+          workingDir: "/guac"
+          env:
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            {{ include "trustification.http-server" . | nindent 12 }}
+          volumeMounts:
+            - name: guac-config
+              mountPath: /guac
+              readOnly: true
+            - mountPath: /etc/config
+              name: config
+            {{ include "trustification.http-server-volume-mounts" . | nindent 12 }}
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+{{ end }}
