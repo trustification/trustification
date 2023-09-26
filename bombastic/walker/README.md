@@ -1,6 +1,7 @@
 # RH prodesec SPDX crawler
 
 ## Usage
+
 ```shell
 RUST_LOG=info cargo run --bin trust bombastic walker  --bombastic-url localhost:8082
 ```

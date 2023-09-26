@@ -1,56 +1,71 @@
+use crate::scanner::{Options, Scanner};
+use anyhow::anyhow;
+use clap::{arg, command, ArgAction, Args};
 use std::process::ExitCode;
-
-use crate::changes::ChangeTracker;
-use crate::shell_wrap::ScriptContext;
-use clap::{arg, command, Args};
-use trustification_auth::client::{OpenIdTokenProviderConfigArguments, TokenProvider};
-use trustification_infrastructure::{Infrastructure, InfrastructureConfig};
+use std::sync::Arc;
+use std::time::SystemTime;
+use time::{Date, Month, UtcOffset};
+use trustification_auth::client::{OpenIdTokenProviderConfig, OpenIdTokenProviderConfigArguments};
+use trustification_infrastructure::{
+    endpoint::{self, Endpoint},
+    Infrastructure, InfrastructureConfig,
+};
 use url::Url;
+use walker_common::sender::provider::TokenProvider;
 
-mod changes;
-mod shell_wrap;
+mod processing;
+mod scanner;
+
+const DEVMODE_SOURCE: &str = "https://access.redhat.com/security/data/sbom/beta/";
+const DEVMODE_KEY: &str =
+    "https://access.redhat.com/security/data/97f5eac4.txt#77E79ABE93673533ED09EBE2DCE3823597F5EAC4";
 
 #[derive(Args, Debug)]
-#[command(about = "Run the SBOM walker", args_conflicts_with_subcommands = true)]
+#[command(
+    about = "Run the SBOM walker",
+    args_conflicts_with_subcommands = true,
+    rename_all_env = "SCREAMING_SNAKE_CASE"
+)]
 pub struct Run {
-    #[command(flatten)]
-    pub(crate) config: WalkerConfig,
-
-    #[command(flatten)]
-    pub infra: InfrastructureConfig,
-}
-
-#[derive(Clone, Debug, clap::Parser)]
-#[command(rename_all_env = "SCREAMING_SNAKE_CASE")]
-pub struct WalkerConfig {
+    /// Apply reasonable settings for local development. Do not use in production!
     #[arg(long = "devmode", default_value_t = false)]
     pub devmode: bool,
-
-    #[command(flatten)]
-    pub script_context: ScriptContext,
 
     /// Long-running mode. The index file will be scanned for changes every interval.
     #[arg(long = "scan-interval")]
     pub scan_interval: Option<humantime::Duration>,
 
-    /// GPG key used to sign SBOMs
-    #[arg(long = "signing-key-source")]
-    pub(crate) signing_key_source: Option<Url>,
+    /// GPG key used to sign SBOMs, use the fragment of the URL as fingerprint.
+    #[arg(long = "signing-key", env)]
+    pub signing_key: Vec<Url>,
 
-    /// Bombastic host
-    #[arg(long = "bombastic-url")]
-    pub(crate) bombastic: Url,
+    /// OpenPGP policy date.
+    #[arg(long)]
+    pub policy_date: Option<humantime::Timestamp>,
 
-    /// SBOMs index URL
-    #[arg(long = "changes-url")]
-    pub(crate) index_source: Option<Url>,
+    /// Enable OpenPGP v3 signatures. Conflicts with 'policy_date'.
+    #[arg(short = '3', long = "v3-signatures", conflicts_with = "policy_date")]
+    pub v3_signatures: bool,
+
+    /// Allowing fixing invalid SPDX license expressions by setting them to NOASSERTION.
+    #[arg(long, env, default_value_t = true, action = ArgAction::Set)]
+    pub fix_licenses: bool,
+
+    /// Bombastic
+    #[arg(long = "bombastic-url", env, default_value_t = endpoint::Bombastic::url())]
+    pub bombastic_url: Url,
+
+    /// SBOMs source URL
+    #[arg(long, env)]
+    pub source: Option<Url>,
 
     /// OIDC client
     #[command(flatten)]
-    pub(crate) oidc: OpenIdTokenProviderConfigArguments,
-}
+    pub oidc: OpenIdTokenProviderConfigArguments,
 
-const CHANGE_ADDRESS: &str = "https://access.redhat.com/security/data/sbom/beta/changes.csv";
+    #[command(flatten)]
+    pub infra: InfrastructureConfig,
+}
 
 impl Run {
     pub async fn run(self) -> anyhow::Result<ExitCode> {
@@ -59,68 +74,70 @@ impl Run {
                 "bombastic-walker",
                 |_context| async { Ok(()) },
                 |_| async move {
-                    let provider = self
-                        .config
-                        .oidc
-                        .clone()
-                        .into_provider_or_devmode(self.config.devmode)
-                        .await?;
-
                     let source = self
-                        .config
-                        .index_source
-                        .clone()
-                        .unwrap_or(Url::parse(CHANGE_ADDRESS).unwrap());
-                    let mut watcher = ChangeTracker::new(source.clone());
+                        .devmode
+                        .then(|| Url::parse(DEVMODE_SOURCE).unwrap())
+                        .or(self.source)
+                        .ok_or_else(|| anyhow!("Missing source. Provider either --source <url> or --devmode"))?;
 
-                    // remove the "change.csv" segment from the URL
-                    let mut source = source;
-                    source.path_segments_mut().unwrap().pop();
+                    let keys = self
+                        .signing_key
+                        .into_iter()
+                        .chain(self.devmode.then(|| Url::parse(DEVMODE_KEY).unwrap()))
+                        .map(|key| key.into())
+                        .collect();
 
-                    // add ProdSec signing key to trusted gpg keys
-                    self.config
-                        .script_context
-                        .setup_gpg(self.config.signing_key_source.as_ref())?;
+                    let validation_date: Option<SystemTime> = match (self.policy_date, self.v3_signatures) {
+                        (_, true) => Some(SystemTime::from(
+                            Date::from_calendar_date(2007, Month::January, 1)
+                                .unwrap()
+                                .midnight()
+                                .assume_offset(UtcOffset::UTC),
+                        )),
+                        (Some(date), _) => Some(date.into()),
+                        _ => None,
+                    };
 
-                    if let Some(sync_interval) = self.config.scan_interval {
-                        let mut interval = tokio::time::interval(sync_interval.into());
-                        loop {
-                            interval.tick().await;
+                    log::debug!("Policy date: {validation_date:?}");
 
-                            Self::call_script(&self.config, &provider, watcher.update().await?, &source).await?;
+                    let provider = match OpenIdTokenProviderConfig::from_args_or_devmode(self.oidc, self.devmode) {
+                        Some(OpenIdTokenProviderConfig {
+                            issuer_url,
+                            client_id,
+                            client_secret,
+                            refresh_before,
+                        }) => {
+                            let config = walker_common::sender::provider::OpenIdTokenProviderConfig {
+                                issuer_url,
+                                client_id,
+                                client_secret,
+                                refresh_before,
+                            };
+                            Arc::new(walker_common::sender::provider::OpenIdTokenProvider::with_config(config).await?)
+                                as Arc<dyn TokenProvider>
                         }
+                        None => Arc::new(()),
+                    };
+
+                    let scanner = Scanner::new(Options {
+                        source,
+                        target: self.bombastic_url.join("/api/v1/sbom")?,
+                        keys,
+                        provider,
+                        validation_date,
+                    });
+
+                    if let Some(interval) = self.scan_interval {
+                        scanner.run(interval.into()).await?;
                     } else {
-                        Self::call_script(&self.config, &provider, watcher.update().await?, &source).await?;
+                        scanner.run_once().await?;
                     }
+
                     Ok(())
                 },
             )
             .await?;
 
         Ok(ExitCode::SUCCESS)
-    }
-
-    async fn call_script<TP: TokenProvider>(
-        config: &WalkerConfig,
-        provider: &TP,
-        entries: Vec<String>,
-        sbom_path: &Url,
-    ) -> anyhow::Result<()> {
-        for entry in entries {
-            let mut sbom_path = sbom_path.clone();
-            // craft the url to the SBOM file
-            sbom_path.path_segments_mut().unwrap().extend(entry.split('/'));
-
-            let access_token = provider.provide_access_token().await?;
-
-            config
-                .script_context
-                .bombastic_upload(&sbom_path, &config.bombastic, access_token);
-
-            // cleanup the url for the next run
-            sbom_path.path_segments_mut().unwrap().pop().pop();
-        }
-
-        Ok(())
     }
 }

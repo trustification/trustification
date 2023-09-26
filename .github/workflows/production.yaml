@@ -1,4 +1,4 @@
-name: staging
+name: production
 
 on:
   workflow_call:
@@ -38,14 +38,14 @@ jobs:
         run: |
           git config --global user.email "ci@trustification.dev"
           git config --global user.name "Trustification CI"
-          git checkout staging
-          git merge v${{ inputs.releaseTag }} --no-edit -m "Updated staging from main"
+          git checkout production
+          git merge v${{ inputs.releaseTag }} --no-edit -m "Updated production from main"
       - name: Update tags
         run: |
-          ./yq e -i ".release= \"${{ inputs.releaseTag }}\"" deploy/trustification.dev/staging.yaml
+          ./yq e -i ".release= \"${{ inputs.releaseTag }}\"" deploy/trustification.dev/prod.yaml
       - name: Commit and tag
         run: |
           git config --global user.email "ci@trustification.dev"
           git config --global user.name "Trustification CI"
-          git commit deploy/trustification.dev/staging.yaml -m 'Update staging version'
-          git push origin staging
+          git commit deploy/trustification.dev/prod.yaml -m 'Update production version'
+          git push origin production

@@ -205,7 +205,10 @@ impl Index {
             }
         }
 
-        document.add_text(fields.license, package.declared_license.to_string());
+        if let Some(license) = &package.declared_license {
+            document.add_text(fields.license, license.to_string());
+        }
+
         if let Some(supplier) = &package.package_supplier {
             document.add_text(fields.supplier, supplier);
         }
@@ -615,10 +618,28 @@ impl trustification_index::Index for Index {
 
 #[cfg(test)]
 mod tests {
+    use sbom_walker::Sbom;
+    use std::path::Path;
     use time::format_description;
-    use trustification_index::IndexStore;
+    use trustification_index::{IndexStore, IndexWriter};
 
     use super::*;
+
+    const TESTDATA: &[&str] = &[
+        "../testdata/ubi9-sbom.json",
+        "../testdata/kmm-1.json",
+        "../testdata/my-sbom.json",
+    ];
+
+    fn load_valid_file(store: &mut IndexStore<Index>, writer: &mut IndexWriter, path: impl AsRef<Path>) {
+        let data = std::fs::read(&path).unwrap();
+        // ensure it parses
+        Sbom::try_parse_any(&data).unwrap_or_else(|_| panic!("failed to parse test data: {}", path.as_ref().display()));
+        let name = path.as_ref().file_name().unwrap().to_str().unwrap();
+        let name = name.rsplit_once('.').unwrap().0;
+        // add to index
+        writer.add_document(store.index_as_mut(), name, &data).unwrap();
+    }
 
     fn assert_search<F>(f: F)
     where
@@ -630,20 +651,9 @@ mod tests {
         let mut store = IndexStore::new_in_memory(index).unwrap();
         let mut writer = store.writer().unwrap();
 
-        let data = std::fs::read_to_string("../testdata/ubi9-sbom.json").unwrap();
-        writer
-            .add_document(store.index_as_mut(), "ubi9-sbom", data.as_bytes())
-            .unwrap();
-
-        let data = std::fs::read_to_string("../testdata/kmm-1.json").unwrap();
-        writer
-            .add_document(store.index_as_mut(), "kmm-1", data.as_bytes())
-            .unwrap();
-
-        let data = std::fs::read_to_string("../testdata/my-sbom.json").unwrap();
-        writer
-            .add_document(store.index_as_mut(), "my-sbom", data.as_bytes())
-            .unwrap();
+        for file in TESTDATA {
+            load_valid_file(&mut store, &mut writer, file);
+        }
 
         writer.commit().unwrap();
 

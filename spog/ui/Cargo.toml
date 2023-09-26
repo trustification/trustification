@@ -32,8 +32,8 @@ reqwest = { version = "0.11", features = ["json"] }
 roxmltree = "0.18"
 serde = { version = "1", features = ["derive", "rc"] }
 serde_json = "1"
-sikula = { version = "0.4.0", features = ["time"] }
-spdx-rs = "0.5.2"
+sikula = { version = "0.4.1", default-features = false, features = ["time"] }
+spdx-rs = "0.5.5"
 strum = { version = "0.25", features = ["derive"] }
 thiserror = "1"
 time = { version = "0.3", features = ["formatting", "macros", "wasm-bindgen"] }
@@ -75,6 +75,7 @@ features = [
 ]
 
 [workspace]
+resolver = "2"
 members = [
     "crates/backend",
     "crates/common",
@@ -103,7 +104,7 @@ packageurl = { git = "https://github.com/ctron/packageurl.rs", rev = "c9a0c192ff
 
 # also check root level Cargo.toml
 cyclonedx-bom = { git = "https://github.com/trustification/cyclonedx-rust-cargo", branch = "trustification" }
-spdx-rs = { git = "https://github.com/trustification/spdx-rs", rev = "c65be086e898dae88609f07bbc5a224ba4e0838d" }
+#spdx-rs = { git = "https://github.com/trustification/spdx-rs", rev = "c65be086e898dae88609f07bbc5a224ba4e0838d" } # FIXME: awaiting doubleopen-project/spdx-rs#/27
 
 # release profile settings to reduce the final binary size
 [profile.release]
