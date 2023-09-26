@@ -61,12 +61,7 @@ spec:
               value: "https://v11y-api.$(NAMESPACE).svc"
             - name: GUAC_URL
               value: "http://graphql-server:8080/query"
-            - name: CLIENT_ID
-            {{ include "trustification.authentication-exhort-client-id" . | nindent 14 }}
-{{- with .Values.oidcClients.frontend.scopes }}
-            - name: SCOPES
-              value: {{ . | quote }}
-{{- end }}
+            {{ include "trustification.authentication-client" ( dict "root" . "clientId" "walker" ) | nindent 12 }}
           volumeMounts:
             - mountPath: /etc/config
               name: config
