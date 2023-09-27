@@ -1,8 +1,6 @@
-use async_trait::async_trait;
 use std::process::ExitCode;
 use std::sync::Arc;
 
-use collectorist_client::{CollectoristClient, Interest, RegisterResponse};
 use reqwest::Url;
 use tokio::sync::RwLock;
 
@@ -12,7 +10,6 @@ use trustification_auth::{
     authorizer::Authorizer,
     client::{OpenIdTokenProviderConfigArguments, TokenProvider},
 };
-use trustification_collector_common::{CollectorRegistration, CollectorStateHandler, RegistrationConfig};
 use trustification_common::tls::ClientConfig;
 use trustification_infrastructure::{
     app::http::HttpServerConfig,
@@ -39,17 +36,6 @@ pub struct Run {
 
     #[command(flatten)]
     pub infra: InfrastructureConfig,
-
-    #[arg(
-        env,
-        short = 'u',
-        long = "collectorist-url",
-        default_value_t = endpoint::Collectorist::url()
-    )]
-    pub(crate) collectorist_url: Url,
-
-    #[arg(env, long = "advertise")]
-    pub(crate) advertise: Option<Url>,
 
     #[arg(
         env,
@@ -103,41 +89,7 @@ impl Run {
                     )
                     .await?;
 
-                    let client =
-                        CollectoristClient::new(self.client.build_client()?, "snyk", self.collectorist_url, provider);
-                    let (collector, collector_state) = CollectorRegistration::new(
-                        client,
-                        RegistrationConfig {
-                            interests: vec![Interest::Package],
-                            cadence: Default::default(),
-                        },
-                        state.clone(),
-                    )
-                    .run(self.advertise);
-
-                    context
-                        .health
-                        .readiness
-                        .register("collectorist.registered", collector_state.clone())
-                        .await;
-
-                    let server = server::run(
-                        context,
-                        state.clone(),
-                        collector_state.clone(),
-                        self.http,
-                        authenticator,
-                        authorizer,
-                    );
-
-                    let r = tokio::select! {
-                         t = server => { t }
-                         t = collector => { t }
-                    };
-
-                    collector_state.deregister().await;
-
-                    r
+                    server::run(context, state.clone(), self.http, authenticator, authorizer).await
                 },
             )
             .await?;
@@ -178,17 +130,6 @@ impl AppState {
             snyk_org_id,
             snyk_token,
         }
-    }
-}
-
-#[async_trait]
-impl CollectorStateHandler for AppState {
-    async fn registered(&self, response: RegisterResponse) {
-        *self.guac_url.write().await = Some(response.guac_url);
-    }
-
-    async fn unregistered(&self) {
-        *self.guac_url.write().await = None;
     }
 }
 

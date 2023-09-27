@@ -16,4 +16,8 @@ data:
   auth.yaml: |-
     {{- .Files.Get .Values.config.authentication | nindent 4 }}
 {{- end }}
+{{- if .Values.config.collectorist }}
+  collectorist.yaml: |-
+    {{- .Files.Get .Values.config.collectorist | nindent 4 }}
+{{- end }}
 {{- end }}

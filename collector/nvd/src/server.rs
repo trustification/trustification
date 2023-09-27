@@ -9,7 +9,6 @@ use collector_client::CollectVulnerabilitiesRequest;
 use guac::client::intrinsic::vulnerability::VulnerabilityInputSpec;
 use guac::client::GuacClient;
 use trustification_auth::{authenticator::Authenticator, authorizer::Authorizer};
-use trustification_collector_common::CollectorState;
 use trustification_infrastructure::{
     app::http::{HttpServerBuilder, HttpServerConfig},
     endpoint::CollectorNvd,
@@ -49,7 +48,6 @@ impl ResponseError for Error {}
 pub async fn run(
     context: MainContext<()>,
     state: Arc<AppState>,
-    collector_state: CollectorState,
     http: HttpServerConfig<CollectorNvd>,
     authenticator: Option<Arc<Authenticator>>,
     authorizer: Authorizer,
@@ -58,8 +56,6 @@ pub async fn run(
     let listener = TcpListener::bind(addr)?;
     let addr = listener.local_addr()?;
     log::info!("listening on {}", addr);
-
-    collector_state.set_addr(addr).await;
 
     HttpServerBuilder::try_from(http)?
         .authorizer(authorizer)

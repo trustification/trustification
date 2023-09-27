@@ -1,4 +1,4 @@
-use crate::server::collector::{collector_config, deregister_collector, register_collector};
+use crate::server::collector::collector_config;
 use actix_web::middleware::{Compress, Logger};
 use actix_web::web;
 use derive_more::{Display, Error, From};
@@ -19,8 +19,6 @@ pub mod collector;
         (url = "/api/v1")
     ),
     paths(
-        crate::server::collector::register_collector,
-        crate::server::collector::deregister_collector,
         crate::server::collect::collect_packages,
         crate::server::collect::collect_vulnerabilities,
     )
@@ -37,8 +35,6 @@ pub fn config(
             .wrap(Logger::default())
             .wrap(Compress::default())
             .wrap(new_auth!(auth))
-            .service(register_collector)
-            .service(deregister_collector)
             .service(collector_config)
             .service(collect::collect_packages)
             .service(collect::collect_vulnerabilities),

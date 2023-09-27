@@ -1687,8 +1687,6 @@ dependencies = [
  "chrono",
  "clap",
  "collector-client",
- "collectorist-api",
- "collectorist-client",
  "env_logger",
  "futures",
  "guac",
@@ -1702,7 +1700,6 @@ dependencies = [
  "thiserror",
  "tokio",
  "trustification-auth",
- "trustification-collector-common",
  "trustification-common",
  "trustification-infrastructure",
  "utoipa",
@@ -1720,8 +1717,6 @@ dependencies = [
  "chrono",
  "clap",
  "collector-client",
- "collectorist-api",
- "collectorist-client",
  "derive_more",
  "env_logger",
  "futures",
@@ -1733,7 +1728,6 @@ dependencies = [
  "serde_json",
  "tokio",
  "trustification-auth",
- "trustification-collector-common",
  "trustification-common",
  "trustification-infrastructure",
  "utoipa",
@@ -1751,8 +1745,6 @@ dependencies = [
  "chrono",
  "clap",
  "collector-client",
- "collectorist-api",
- "collectorist-client",
  "derive_more",
  "env_logger",
  "futures",
@@ -1766,7 +1758,6 @@ dependencies = [
  "test-with",
  "tokio",
  "trustification-auth",
- "trustification-collector-common",
  "trustification-common",
  "trustification-infrastructure",
  "url-escape",
@@ -1810,6 +1801,7 @@ dependencies = [
  "reqwest",
  "serde",
  "serde_json",
+ "serde_yaml",
  "sqlx",
  "thiserror",
  "tokio",
@@ -7304,20 +7296,6 @@ dependencies = [
  "url",
  "utoipa",
  "utoipa-swagger-ui",
-]
-
-[[package]]
-name = "trustification-collector-common"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "async-trait",
- "collectorist-client",
- "futures-executor",
- "log",
- "tokio",
- "trustification-infrastructure",
- "url",
 ]
 
 [[package]]
