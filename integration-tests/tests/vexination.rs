@@ -1,4 +1,4 @@
-use integration_tests::{delete_vex, get_response, id, upload_vex, wait_for_event, Urlifier, VexinationContext};
+use integration_tests::{get_response, id, wait_for_event, Urlifier, VexinationContext};
 use reqwest::StatusCode;
 use serde_json::{json, Value};
 use std::time::Duration;
@@ -13,7 +13,7 @@ use urlencoding::encode;
 async fn vexination_roundtrip(vexination: &mut VexinationContext) {
     let client = reqwest::Client::new();
     let input = serde_json::from_str(include_str!("../../vexination/testdata/rhsa-2023_1441.json")).unwrap();
-    upload_vex(vexination, &input).await;
+    vexination.upload_vex(&input).await;
     let id = input["document"]["tracking"]["id"].as_str().unwrap();
     let advisory = encode(id);
 
@@ -52,7 +52,6 @@ async fn vexination_roundtrip(vexination: &mut VexinationContext) {
         }
         tokio::time::sleep(Duration::from_secs(4)).await;
     }
-    delete_vex(vexination, &advisory).await;
 }
 
 #[test_context(VexinationContext)]
@@ -77,7 +76,7 @@ async fn vex_bad_search_queries(context: &mut VexinationContext) {
 #[test_context(VexinationContext)]
 #[tokio::test]
 #[ntest::timeout(60_000)]
-async fn upload_existing_vex_without_change(vexination: &VexinationContext) {
+async fn upload_existing_vex_without_change(vexination: &mut VexinationContext) {
     let mut input: serde_json::Value =
         serde_json::from_str(include_str!("../../vexination/testdata/rhsa-2023_3408.json")).unwrap();
 
@@ -87,22 +86,21 @@ async fn upload_existing_vex_without_change(vexination: &VexinationContext) {
 
     let id = encode(&key);
     let url = vexination.urlify(format!("api/v1/vex?advisory={id}"));
-    upload_vex(vexination, &input).await;
+    vexination.upload_vex(&input).await;
     let response1: serde_json::Value = get_response(&url, StatusCode::OK, &vexination.provider).await.into();
     assert_eq!(input, response1, "Content mismatch between request and response");
-    upload_vex(vexination, &input).await;
+    vexination.upload_vex(&input).await;
     let response2: serde_json::Value = get_response(&url, StatusCode::OK, &vexination.provider).await.into();
     assert_eq!(
         input, response2,
         "Content mismatch between request and response after update"
     );
-    delete_vex(vexination, &id).await;
 }
 
 #[test_context(VexinationContext)]
 #[tokio::test]
 #[ntest::timeout(60_000)]
-async fn upload_existing_vex_with_change(vexination: &VexinationContext) {
+async fn upload_existing_vex_with_change(vexination: &mut VexinationContext) {
     let mut input: serde_json::Value =
         serde_json::from_str(include_str!("../../vexination/testdata/rhsa-2021_3029.json")).unwrap();
 
@@ -112,17 +110,16 @@ async fn upload_existing_vex_with_change(vexination: &VexinationContext) {
 
     let id = encode(&key);
     let url = vexination.urlify(format!("api/v1/vex?advisory={id}"));
-    upload_vex(vexination, &input).await;
+    vexination.upload_vex(&input).await;
     let response1: serde_json::Value = get_response(&url, StatusCode::OK, &vexination.provider).await.into();
     assert_eq!(input, response1, "Content mismatch between request and response");
     input["document"]["title"] = Value::String(String::from("Red Hat Vex Title Updated"));
-    upload_vex(vexination, &input).await;
+    vexination.upload_vex(&input).await;
     let response2: serde_json::Value = get_response(&url, StatusCode::OK, &vexination.provider).await.into();
     assert_eq!(
         input, response2,
         "Content mismatch between request and response after update"
     );
-    delete_vex(vexination, &id).await;
 }
 
 #[test_context(VexinationContext)]
@@ -180,7 +177,7 @@ async fn upload_vex_empty_json(context: &mut VexinationContext) {
         assert_eq!(response.status(), StatusCode::CREATED);
     })
     .await;
-    delete_vex(context, id).await;
+    context.delete_vex(id).await;
 }
 
 #[ignore = "until API can support failures so that event bus is not needed to check"]
@@ -206,7 +203,7 @@ async fn upload_vex_empty_file(vexination: &mut VexinationContext) {
         assert_eq!(response.status(), StatusCode::CREATED);
     })
     .await;
-    delete_vex(vexination, id).await;
+    vexination.delete_vex(id).await;
 }
 
 #[test_context(VexinationContext)]

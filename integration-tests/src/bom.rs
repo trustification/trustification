@@ -10,6 +10,11 @@ impl AsyncTestContext for BombasticContext {
         let config = Config::new().await;
         start_bombastic(&config).await
     }
+    async fn teardown(self) {
+        for id in &self.fixtures {
+            self.delete_sbom(id).await;
+        }
+    }
 }
 
 impl Urlifier for BombasticContext {
@@ -23,6 +28,7 @@ pub struct BombasticContext {
     pub provider: ProviderContext,
     pub events: EventBusConfig,
     _runner: Option<Runner>,
+    fixtures: Vec<String>,
 }
 
 pub async fn start_bombastic(config: &Config) -> BombasticContext {
@@ -34,6 +40,7 @@ pub async fn start_bombastic(config: &Config) -> BombasticContext {
             provider: config.provider().await,
             events: config.events(),
             _runner: None,
+            fixtures: Vec::new(),
         };
     }
 
@@ -80,6 +87,7 @@ pub async fn start_bombastic(config: &Config) -> BombasticContext {
             provider: config.provider().await,
             events,
             _runner: Some(runner),
+            fixtures: Vec::new(),
         };
 
         // ensure it's initialized
@@ -104,29 +112,32 @@ pub async fn start_bombastic(config: &Config) -> BombasticContext {
     }
 }
 
-pub async fn upload_sbom(context: &BombasticContext, key: &str, input: &serde_json::Value) {
-    let response = reqwest::Client::new()
-        .post(context.urlify(format!("/api/v1/sbom?id={key}")))
-        .json(input)
-        .inject_token(&context.provider.provider_manager)
-        .await
-        .unwrap()
-        .send()
-        .await
-        .unwrap();
-    assert_eq!(response.status(), StatusCode::CREATED);
-}
+impl BombasticContext {
+    pub async fn upload_sbom(&mut self, key: &str, input: &serde_json::Value) {
+        let response = reqwest::Client::new()
+            .post(self.urlify(format!("/api/v1/sbom?id={key}")))
+            .json(input)
+            .inject_token(&self.provider.provider_manager)
+            .await
+            .unwrap()
+            .send()
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::CREATED);
+        self.fixtures.push(key.to_string());
+    }
 
-pub async fn delete_sbom(context: &BombasticContext, key: &str) {
-    let response = reqwest::Client::new()
-        .delete(context.urlify(format!("/api/v1/sbom?id={key}")))
-        .inject_token(&context.provider.provider_manager)
-        .await
-        .unwrap()
-        .send()
-        .await
-        .unwrap();
-    assert_eq!(response.status(), StatusCode::NO_CONTENT);
+    pub async fn delete_sbom(&self, key: &str) {
+        let response = reqwest::Client::new()
+            .delete(self.urlify(format!("/api/v1/sbom?id={key}")))
+            .inject_token(&self.provider.provider_manager)
+            .await
+            .unwrap()
+            .send()
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::NO_CONTENT);
+    }
 }
 
 pub async fn wait_for_search_result<F: Fn(serde_json::Value) -> bool>(

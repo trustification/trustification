@@ -10,6 +10,10 @@ impl AsyncTestContext for SpogContext {
         let config = Config::new().await;
         start_spog(&config).await
     }
+    async fn teardown(self) {
+        self.bombastic.teardown().await;
+        self.vexination.teardown().await;
+    }
 }
 
 impl Urlifier for SpogContext {

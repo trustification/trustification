@@ -9,6 +9,11 @@ impl AsyncTestContext for VexinationContext {
         let config = Config::new().await;
         start_vexination(&config).await
     }
+    async fn teardown(self) {
+        for id in &self.fixtures {
+            self.delete_vex(id).await;
+        }
+    }
 }
 
 impl Urlifier for VexinationContext {
@@ -22,6 +27,7 @@ pub struct VexinationContext {
     pub provider: ProviderContext,
     pub events: EventBusConfig,
     _runner: Option<Runner>,
+    fixtures: Vec<String>,
 }
 
 pub async fn start_vexination(config: &Config) -> VexinationContext {
@@ -33,6 +39,7 @@ pub async fn start_vexination(config: &Config) -> VexinationContext {
             provider: config.provider().await,
             events: config.events(),
             _runner: None,
+            fixtures: Vec::new(),
         };
     }
     #[cfg(not(feature = "with-services"))]
@@ -80,6 +87,7 @@ pub async fn start_vexination(config: &Config) -> VexinationContext {
             provider,
             events,
             _runner: Some(runner),
+            fixtures: Vec::new(),
         };
 
         // ensure it's initialized
@@ -104,31 +112,35 @@ pub async fn start_vexination(config: &Config) -> VexinationContext {
     }
 }
 
-pub async fn upload_vex(context: &VexinationContext, input: &serde_json::Value) {
-    let response = reqwest::Client::new()
-        .post(context.urlify("/api/v1/vex"))
-        .json(input)
-        .inject_token(&context.provider.provider_manager)
-        .await
-        .unwrap()
-        .send()
-        .await
-        .unwrap();
-    assert_eq!(response.status(), StatusCode::CREATED);
-}
+impl VexinationContext {
+    pub async fn upload_vex(&mut self, input: &serde_json::Value) {
+        let response = reqwest::Client::new()
+            .post(self.urlify("/api/v1/vex"))
+            .json(input)
+            .inject_token(&self.provider.provider_manager)
+            .await
+            .unwrap()
+            .send()
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::CREATED);
+        let id = input["document"]["tracking"]["id"].as_str().unwrap().to_string();
+        self.fixtures.push(id);
+    }
 
-pub async fn delete_vex(context: &VexinationContext, key: &str) {
-    let response = reqwest::Client::new()
-        .delete(context.urlify(format!("/api/v1/vex?advisory={key}")))
-        .inject_token(&context.provider.provider_manager)
-        .await
-        .unwrap()
-        .send()
-        .await
-        .unwrap();
-    assert_eq!(response.status(), StatusCode::NO_CONTENT);
+    pub async fn delete_vex(&self, key: &str) {
+        let id = urlencoding::encode(key);
+        let response = reqwest::Client::new()
+            .delete(self.urlify(format!("/api/v1/vex?advisory={id}")))
+            .inject_token(&self.provider.provider_manager)
+            .await
+            .unwrap()
+            .send()
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::NO_CONTENT);
+    }
 }
-
 // Configuration for the vexination indexer
 #[cfg(feature = "with-services")]
 fn vexination_indexer() -> vexination_indexer::Run {
