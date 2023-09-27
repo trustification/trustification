@@ -113,10 +113,9 @@ async fn spog_crda_integration(context: &mut SpogContext) {
 #[test_context(SpogContext)]
 #[tokio::test]
 #[ntest::timeout(120_000)]
-#[ignore]
 async fn spog_search_correlation(context: &mut SpogContext) {
     let input = serde_json::from_str(include_str!("testdata/correlation/stf-1.5.json")).unwrap();
-    let sbom_id = "test-stf-1.5";
+    let sbom_id = "test-stf-1.5-correlation";
     upload_sbom(&context.bombastic, sbom_id, &input).await;
 
     let input = serde_json::from_str(include_str!("testdata/correlation/rhsa-2023_1529.json")).unwrap();
@@ -129,7 +128,7 @@ async fn spog_search_correlation(context: &mut SpogContext) {
     // indexer time to do its thing, so might need to retry
     loop {
         let response = client
-            .get(context.urlify("/api/v1/package/search?q=package%3Astf-1.5"))
+            .get(context.urlify("/api/v1/package/search?q=id%3Atest-stf-1.5-correlation"))
             .inject_token(&context.provider.provider_user)
             .await
             .unwrap()
@@ -166,7 +165,7 @@ async fn spog_search_correlation(context: &mut SpogContext) {
 #[ntest::timeout(30_000)]
 async fn spog_dependencies(context: &mut SpogContext) {
     let input = serde_json::from_str(include_str!("testdata/correlation/stf-1.5.json")).unwrap();
-    let sbom_id = "test-stf-1.5";
+    let sbom_id = "test-stf-1.5-guac";
     upload_sbom(&context.bombastic, sbom_id, &input).await;
 
     let client = reqwest::Client::new();
