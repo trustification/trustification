@@ -9,7 +9,7 @@ use cyclonedx_bom::models::{
 use log::{debug, info, warn};
 use sikula::{mir::Direction, prelude::*};
 use spdx_rs::models::Algorithm;
-use tantivy::query::TermSetQuery;
+use tantivy::query::{TermQuery, TermSetQuery};
 use tantivy::{collector::TopDocs, Order};
 use tantivy::{
     query::{AllQuery, BooleanQuery},
@@ -307,6 +307,10 @@ impl Index {
         const PACKAGE_WEIGHT: f32 = 1.5;
         const CREATED_WEIGHT: f32 = 1.25;
         match resource {
+            Packages::Id(value) => Box::new(TermQuery::new(
+                Term::from_field_text(self.fields.sbom_id, value),
+                Default::default(),
+            )),
             Packages::Package(primary) => boost(
                 self.create_string_query(
                     &[

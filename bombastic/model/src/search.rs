@@ -3,6 +3,9 @@ use sikula::prelude::*;
 
 #[derive(Clone, Debug, PartialEq, Search)]
 pub enum Packages<'a> {
+    /// Search by SBOM id
+    #[search(default)]
+    Id(&'a str),
     /// Search package name and package reference.
     ///
     /// Example queries:

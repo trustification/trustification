@@ -17624,7 +17624,7 @@
       "homepage": "NOASSERTION",
       "licenseComments": "Licensing information is automatically generated and may be incomplete or incorrect.",
       "licenseConcluded": "NOASSERTION",
-      "licenseDeclared": "GPLV2+,-LGPLV2+,-MIT",
+      "licenseDeclared": "NOASSERTION",
       "name": "gobject-introspection",
       "originator": "NOASSERTION",
       "packageFileName": "gobject-introspection-1.56.1-1.el8.x86_64.rpm",
