@@ -1,11 +1,10 @@
 use std::time::Duration;
 
-use integration_tests::{delete_sbom, delete_vex, upload_sbom, upload_vex, SpogContext, Urlifier};
+use integration_tests::{SpogContext, Urlifier};
 use reqwest::StatusCode;
 use serde_json::{json, Value};
 use test_context::test_context;
 use trustification_auth::client::TokenInjector;
-use urlencoding::encode;
 
 #[test_context(SpogContext)]
 #[tokio::test]
@@ -116,14 +115,12 @@ async fn spog_crda_integration(context: &mut SpogContext) {
 async fn spog_search_correlation(context: &mut SpogContext) {
     let input = serde_json::from_str(include_str!("testdata/correlation/stf-1.5.json")).unwrap();
     let sbom_id = "test-stf-1.5-correlation";
-    upload_sbom(&context.bombastic, sbom_id, &input).await;
+    context.bombastic.upload_sbom(sbom_id, &input).await;
 
     let input = serde_json::from_str(include_str!("testdata/correlation/rhsa-2023_1529.json")).unwrap();
-    upload_vex(&context.vexination, &input).await;
-    let vex_id = input["document"]["tracking"]["id"].as_str().unwrap();
+    context.vexination.upload_vex(&input).await;
 
     let client = reqwest::Client::new();
-
     // Ensure we can search for the data. We want to allow the
     // indexer time to do its thing, so might need to retry
     loop {
@@ -154,8 +151,6 @@ async fn spog_search_correlation(context: &mut SpogContext) {
         }
         tokio::time::sleep(Duration::from_secs(1)).await;
     }
-    delete_sbom(&context.bombastic, sbom_id).await;
-    delete_vex(&context.vexination, &encode(vex_id)).await;
 }
 
 /// SPoG is the entrypoint for the frontend. It exposes an dependencies API, but forwards requests
@@ -166,7 +161,7 @@ async fn spog_search_correlation(context: &mut SpogContext) {
 async fn spog_dependencies(context: &mut SpogContext) {
     let input = serde_json::from_str(include_str!("testdata/correlation/stf-1.5.json")).unwrap();
     let sbom_id = "test-stf-1.5-guac";
-    upload_sbom(&context.bombastic, sbom_id, &input).await;
+    context.bombastic.upload_sbom(sbom_id, &input).await;
 
     let client = reqwest::Client::new();
 
