@@ -6,7 +6,6 @@ on:
     # Release candidates are tagged as `v<version>-rc<num>`, for example: "0.1.0-rc1".
     tags:
       - "v*"
-  push:
     branches:
       - main
 
