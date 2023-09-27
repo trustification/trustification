@@ -45,12 +45,8 @@ spec:
             - "8080"
             - "--auth-configuration"
             - "/etc/config/auth.yaml"
-            - "--collectorist-url"
-            - "https://collectorist-api.$(NAMESPACE).svc"
             - "--v11y-url"
             - "https://v11y-api.$(NAMESPACE).svc"
-            - "--advertise"
-            - "https://collector-snyk.$(NAMESPACE).svc/api/v1/"
           env:
             - name: RUST_LOG
               value: info

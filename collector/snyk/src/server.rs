@@ -14,7 +14,6 @@ use utoipa_swagger_ui::SwaggerUi;
 use collector_client::CollectPackagesRequest;
 use trustification_auth::authenticator::Authenticator;
 use trustification_auth::authorizer::Authorizer;
-use trustification_collector_common::CollectorState;
 use trustification_infrastructure::app::http::{HttpServerBuilder, HttpServerConfig};
 use trustification_infrastructure::endpoint::CollectorSnyk;
 use trustification_infrastructure::{new_auth, MainContext};
@@ -57,7 +56,6 @@ impl ResponseError for Error {}
 pub async fn run(
     context: MainContext<()>,
     state: Arc<AppState>,
-    collector_state: CollectorState,
     http: HttpServerConfig<CollectorSnyk>,
     authenticator: Option<Arc<Authenticator>>,
     authorizer: Authorizer,
@@ -66,8 +64,6 @@ pub async fn run(
     let listener = TcpListener::bind(addr)?;
     let addr = listener.local_addr()?;
     log::info!("listening on {}", addr);
-
-    collector_state.set_addr(addr).await;
 
     HttpServerBuilder::try_from(http)?
         .authorizer(authorizer)

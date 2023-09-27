@@ -1,0 +1,14 @@
+collectors:
+  osv:
+    url: https://collector-osv.trustification-staging.svc:8080/
+    interests:
+    - package
+    - vulnerability
+  snyk:
+    url: https://collector-snyk.trustification-staging.svc:8080/
+    interests:
+    - package
+  nvd:
+    url: https://collector-nvd.trustification-staging.svc:8080/
+    interests:
+    - vulnerability

@@ -99,7 +99,6 @@ services:
       test: [ "CMD", "curl", "-f", "http://localhost:9010" ]
     environment:
       HTTP_SERVER_BIND_ADDR: "::"
-      COLLECTORIST_URL: http://collectorist-api:$COLLECTORIST_API_PORT
       V11Y_URL: http://v11y-api:$V11Y_API_PORT/
       ISSUER_URL: http://keycloak:8080/realms/chicken
       INFRASTRUCTURE_ENABLED: "true"
@@ -138,7 +137,6 @@ services:
       test: [ "CMD", "curl", "-f", "http://localhost:9010" ]
     environment:
       HTTP_SERVER_BIND_ADDR: "::"
-      COLLECTORIST_URL: http://collectorist-api:$COLLECTORIST_API_PORT
       ISSUER_URL: http://keycloak:8080/realms/chicken
       INFRASTRUCTURE_ENABLED: "true"
       OPENID_CONFIGURATION: "http://keycloak:8080/realms/chicken/.well-known/openid-configuration"
@@ -174,7 +172,6 @@ services:
       test: [ "CMD", "curl", "-f", "http://localhost:9010" ]
     environment:
       HTTP_SERVER_BIND_ADDR: "::"
-      COLLECTORIST_URL: http://collectorist-api:$COLLECTORIST_API_PORT
       V11Y_URL: http://v11y-api:$V11Y_API_PORT
       ISSUER_URL: http://keycloak:8080/realms/chicken
       INFRASTRUCTURE_ENABLED: "true"

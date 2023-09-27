@@ -44,12 +44,12 @@ spec:
             - "8080"
             - "--csub-url"
             - "http://guac-collectsub:2782"
-            - "--guac-url"
-            - "http://guac-graphql:8080/query"
             - "--auth-configuration"
             - "/etc/config/auth.yaml"
             - "--storage-base"
             - "/data"
+            - "--collector-config"
+            - "/etc/config/collectorist.yaml"
           env:
             - name: RUST_LOG
               value: info

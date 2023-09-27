@@ -5,15 +5,13 @@ use std::time::Duration;
 
 use chrono::Utc;
 use futures::StreamExt;
-use tokio::task::JoinHandle;
 use tokio::time::sleep;
 
+use crate::config::{CollectorConfig, Interest};
 use collector_client::{
     CollectPackagesRequest, CollectPackagesResponse, CollectVulnerabilitiesRequest, CollectVulnerabilitiesResponse,
     CollectorClient,
 };
-use collectorist_client::{CollectorConfig, Interest};
-use trustification_auth::client::TokenProvider;
 
 use crate::state::AppState;
 
@@ -30,31 +28,10 @@ pub enum RetentionMode {
 pub struct Collector {
     pub(crate) id: String,
     pub(crate) config: CollectorConfig,
-    pub(crate) update: JoinHandle<()>,
     pub(crate) client: Arc<CollectorClient>,
 }
 
 impl Collector {
-    pub fn new<P>(
-        client: reqwest::Client,
-        state: Arc<AppState>,
-        id: String,
-        config: CollectorConfig,
-        provider: P,
-    ) -> Self
-    where
-        P: TokenProvider + 'static,
-    {
-        let client = Arc::new(CollectorClient::new(client, config.url.clone(), provider));
-        let update = tokio::spawn(Collector::update(client.clone(), state, id.clone()));
-        Self {
-            id,
-            config: config.clone(),
-            update,
-            client,
-        }
-    }
-
     pub async fn collect_packages(
         &self,
         state: &AppState,
@@ -129,7 +106,7 @@ impl Collector {
 
     pub async fn update(client: Arc<CollectorClient>, state: Arc<AppState>, id: String) {
         loop {
-            if let Some(config) = state.collectors.read().await.collector_config(id.clone()) {
+            if let Some(config) = state.collectors.collector_config(id.clone()) {
                 let collector_url = config.url.clone();
                 if config.interests.contains(&Interest::Package) {
                     let purls: Vec<String> = state
@@ -174,11 +151,5 @@ impl Collector {
             // TODO: configurable or smarter for rate-limiting
             sleep(Duration::from_secs(1)).await;
         }
-    }
-}
-
-impl Drop for Collector {
-    fn drop(&mut self) {
-        self.update.abort();
     }
 }

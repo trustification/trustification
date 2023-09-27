@@ -1,7 +1,6 @@
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-use std::time::Duration;
 use trustification_auth::client::{TokenInjector, TokenProvider};
 
 #[derive(Clone, Debug)]
@@ -60,33 +59,6 @@ impl CollectoristClient {
         }
     }
 
-    pub fn register_collector_url(&self) -> Url {
-        self.collectorist_url.register_collector_url()
-    }
-
-    pub async fn register_collector(&self, config: CollectorConfig) -> Result<RegisterResponse, anyhow::Error> {
-        Ok(self
-            .client
-            .post(self.collectorist_url.register_collector_url())
-            .inject_token(self.provider.as_ref())
-            .await?
-            .json(&config)
-            .send()
-            .await?
-            .json()
-            .await?)
-    }
-
-    pub async fn deregister_collector(&self) -> Result<(), anyhow::Error> {
-        self.client
-            .delete(self.collectorist_url.deregister_collector_url())
-            .inject_token(self.provider.as_ref())
-            .await?
-            .send()
-            .await?;
-        Ok(())
-    }
-
     pub async fn collect_packages(&self, purls: Vec<String>) -> Result<(), anyhow::Error> {
         self.client
             .post(self.collectorist_url.collect_packages_url())
@@ -120,25 +92,4 @@ pub struct CollectPackagesRequest {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct CollectVulnerabilitiesRequest {
     pub vuln_ids: Vec<String>,
-}
-
-#[derive(Serialize, Deserialize, Copy, Clone, Debug, PartialEq)]
-#[serde(rename_all = "kebab-case")]
-pub enum Interest {
-    Package,
-    Vulnerability,
-    Artifact,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct CollectorConfig {
-    pub url: Url,
-    #[serde(with = "humantime_serde", default = "default_cadence")]
-    pub cadence: Duration,
-
-    pub interests: Vec<Interest>,
-}
-
-pub fn default_cadence() -> Duration {
-    Duration::from_secs(30 * 60)
 }
