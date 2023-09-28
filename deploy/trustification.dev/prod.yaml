@@ -3,6 +3,7 @@ trustImage: ghcr.io/trustification/trust
 uiImage: ghcr.io/trustification/trust-ui
 docsImage: ghcr.io/trustification/trust-docs
 testsImage: ghcr.io/trustification/trust-tests
+guacImage: ghcr.io/xkcd-2347/guac:v0.1.0-nightly.20230907
 domain: trustification.dev
 replicas: 2
 imagePullPolicy: IfNotPresent
@@ -109,6 +110,8 @@ exhort:
     resources:
 guac:
   enabled: true
+  graphql:
+    debug: true
 keycloak:
   enabled: true
   production: true

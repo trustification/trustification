@@ -13,7 +13,6 @@ use std::str::FromStr;
 use std::sync::Arc;
 use trustification_auth::authenticator::Authenticator;
 use trustification_auth::authorizer::Authorizer;
-use trustification_collector_common::CollectorState;
 use trustification_infrastructure::app::http::{HttpServerBuilder, HttpServerConfig};
 use trustification_infrastructure::endpoint::CollectorOsv;
 use trustification_infrastructure::{new_auth, MainContext};
@@ -49,7 +48,6 @@ pub struct ApiDoc;
 pub async fn run(
     context: MainContext<()>,
     state: Arc<AppState>,
-    collector_state: CollectorState,
     http: HttpServerConfig<CollectorOsv>,
     authenticator: Option<Arc<Authenticator>>,
     authorizer: Authorizer,
@@ -58,8 +56,6 @@ pub async fn run(
     let listener = TcpListener::bind(addr)?;
     let addr = listener.local_addr()?;
     log::info!("listening on {}", addr);
-
-    collector_state.set_addr(addr).await;
 
     HttpServerBuilder::try_from(http)?
         .authorizer(authorizer)

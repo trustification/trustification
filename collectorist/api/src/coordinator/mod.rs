@@ -1,6 +1,7 @@
 use collector_client::CollectPackagesResponse;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
+use std::sync::Arc;
 
 #[allow(clippy::module_inception)]
 pub mod collector;
@@ -32,6 +33,10 @@ pub struct Coordinator {
 impl Coordinator {
     pub fn new(csub_url: Url) -> Self {
         Self { csub_url }
+    }
+
+    pub async fn update(&self, state: Arc<AppState>) {
+        state.collectors.update(state.clone()).await
     }
 
     pub async fn listen(&self, state: &AppState, probe: Probe) {
@@ -81,8 +86,7 @@ impl Coordinator {
         state: &AppState,
         request: CollectPackagesRequest,
     ) -> Vec<CollectPackagesResponse> {
-        let collectors = state.collectors.read().await;
-        let result = collectors.collect_packages(state.clone(), request).await;
+        let result = state.collectors.collect_packages(state.clone(), request).await;
 
         let vuln_ids: HashSet<_> = result
             .iter()
@@ -90,13 +94,13 @@ impl Coordinator {
             .cloned()
             .collect();
 
-        collectors.collect_vulnerabilities(state.clone(), vuln_ids).await;
+        state.collectors.collect_vulnerabilities(state.clone(), vuln_ids).await;
         result
     }
 
     pub async fn collect_vulnerabilities(&self, state: &AppState, request: CollectVulnerabilitiesRequest) {
-        let collectors = state.collectors.read().await;
-        collectors
+        state
+            .collectors
             .collect_vulnerabilities(state.clone(), request.vuln_ids.iter().cloned().collect::<HashSet<_>>())
             .await;
     }

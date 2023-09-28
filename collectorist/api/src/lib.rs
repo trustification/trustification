@@ -1,9 +1,11 @@
-use crate::state::AppState;
-use actix_web::web;
-use reqwest::Url;
+use std::fs::File;
 use std::path::PathBuf;
 use std::process::ExitCode;
 use std::sync::Arc;
+
+use actix_web::web;
+use reqwest::Url;
+
 use trustification_auth::{
     auth::AuthConfigArguments,
     authenticator::Authenticator,
@@ -19,6 +21,10 @@ use trustification_infrastructure::{
     Infrastructure, InfrastructureConfig,
 };
 
+use crate::config::CollectorsConfig;
+use crate::state::AppState;
+
+mod config;
 mod coordinator;
 mod db;
 pub mod server;
@@ -35,19 +41,13 @@ pub struct Run {
 
     #[arg(
         env,
-        short = 'u',
         long = "csub-url",
         default_value_t = endpoint::GuacCollectSub::url()
     )]
     pub(crate) csub_url: Url,
 
-    #[arg(
-        env,
-        short = 'g',
-        long = "guac-url",
-        default_value_t = endpoint::GuacGraphQl::url()
-    )]
-    pub(crate) guac_url: Url,
+    #[arg(env, long = "collector-config")]
+    pub(crate) collector_config: Option<PathBuf>,
 
     /// Base path to the database store. Defaults to the local directory.
     #[arg(env, long = "storage-base")]
@@ -93,8 +93,8 @@ impl Run {
                     let state = Self::configure(
                         self.client.build_client()?,
                         self.storage_base,
+                        self.collector_config,
                         self.csub_url,
-                        self.guac_url,
                         provider,
                     )
                     .await?;
@@ -121,10 +121,12 @@ impl Run {
                         }
                     };
 
+                    let updater = state.coordinator.update(state.clone());
                     let listener = state.coordinator.listen(&state, probe);
                     tokio::select! {
-                         _ = listener => { }
-                         _ = server => { }
+                        _ = listener => { }
+                        _ = server => { }
+                        _ = updater => {}
                     }
                     Ok(())
                 },
@@ -137,15 +139,29 @@ impl Run {
     async fn configure<P>(
         client: reqwest::Client,
         base: Option<PathBuf>,
+        collector_config: Option<PathBuf>,
         csub_url: Url,
-        guac_url: Url,
         provider: P,
     ) -> anyhow::Result<Arc<AppState>>
     where
         P: TokenProvider + Clone + 'static,
     {
+        let collectorist_config = collector_config.unwrap_or_else(|| "collectorist.yaml".into());
+
+        let collectorist_config = if collectorist_config.exists() {
+            serde_yaml::from_reader(File::open(collectorist_config)?)?
+        } else {
+            log::info!(
+                "configuration file {} missing, no collectors configured",
+                collectorist_config.to_str().unwrap_or("<unknown>")
+            );
+            CollectorsConfig {
+                collectors: Default::default(),
+            }
+        };
+
         let base = base.unwrap_or_else(|| ".".into());
-        let state = Arc::new(AppState::new(client, base, csub_url, guac_url, provider).await?);
+        let state = Arc::new(AppState::new(client, base, &collectorist_config, csub_url, provider).await?);
         Ok(state)
     }
 }
