@@ -23,6 +23,8 @@ parameters:
   required: true
 - name: BOMBASTIC_INDEXER_GUAC_TOPIC
   required: true
+- name: BOMBASTIC_WALKER_RESOURCES
+  required: true
 - name: VEXINATION_STORAGE_BUCKET
   required: true
 - name: VEXINATION_AWS_SECRET_NAME
