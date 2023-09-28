@@ -52,8 +52,8 @@ pub struct Run {
     pub fix_licenses: bool,
 
     /// Bombastic
-    #[arg(long = "bombastic-url", env, default_value_t = endpoint::Bombastic::url())]
-    pub bombastic_url: Url,
+    #[arg(long = "sink", env, default_value_t = endpoint::Bombastic::url())]
+    pub sink: Url,
 
     /// SBOMs source URL
     #[arg(long, env)]
@@ -121,7 +121,7 @@ impl Run {
 
                     let scanner = Scanner::new(Options {
                         source,
-                        target: self.bombastic_url.join("/api/v1/sbom")?,
+                        target: self.sink,
                         keys,
                         provider,
                         validation_date,
