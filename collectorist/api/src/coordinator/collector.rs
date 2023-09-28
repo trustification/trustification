@@ -7,12 +7,12 @@ use chrono::Utc;
 use futures::StreamExt;
 use tokio::time::sleep;
 
-use crate::config::{CollectorConfig, Interest};
 use collector_client::{
     CollectPackagesRequest, CollectPackagesResponse, CollectVulnerabilitiesRequest, CollectVulnerabilitiesResponse,
     CollectorClient,
 };
 
+use crate::config::{CollectorConfig, Interest};
 use crate::state::AppState;
 
 #[derive(Debug, thiserror::Error)]
@@ -58,21 +58,29 @@ impl Collector {
 
         let response = client
             .collect_packages(CollectPackagesRequest { purls: purls.clone() })
-            .await?;
+            .await;
 
-        for purl in response.purls.keys() {
-            log::info!("[{}] scanned {} {:?}", id, purl, response.purls.values());
-            let _ = state.db.insert_purl(purl).await.ok();
-            let _ = state.db.update_purl_scan_time(&id, purl).await.ok();
-        }
+        match response {
+            Ok(response) => {
+                for purl in response.purls.keys() {
+                    log::info!("[{}] scanned {} {:?}", id, purl, response.purls.values());
+                    let _ = state.db.insert_purl(purl).await.ok();
+                    let _ = state.db.update_purl_scan_time(&id, purl).await.ok();
+                }
 
-        if matches!(mode, RetentionMode::All) {
-            for purl in &purls {
-                let _ = state.db.update_purl_scan_time(&id, purl).await.ok();
+                if matches!(mode, RetentionMode::All) {
+                    for purl in &purls {
+                        let _ = state.db.update_purl_scan_time(&id, purl).await.ok();
+                    }
+                }
+
+                Ok(response)
+            }
+            Err(e) => {
+                log::warn!("{}", e);
+                Err(e)
             }
         }
-
-        Ok(response)
     }
 
     pub async fn collect_vulnerabilities(
@@ -93,15 +101,23 @@ impl Collector {
             .collect_vulnerabilities(CollectVulnerabilitiesRequest {
                 vulnerability_ids: Vec::from_iter(vulnerability_ids.iter().cloned()),
             })
-            .await?;
+            .await;
 
-        for vuln_id in &response.vulnerability_ids {
-            log::debug!("[{}] scanned {}", id, vuln_id);
-            let _ = state.db.insert_vulnerability(vuln_id).await;
-            let _ = state.db.update_vulnerability_scan_time(&id, vuln_id).await;
+        match response {
+            Ok(response) => {
+                for vuln_id in &response.vulnerability_ids {
+                    log::debug!("[{}] scanned {}", id, vuln_id);
+                    let _ = state.db.insert_vulnerability(vuln_id).await;
+                    let _ = state.db.update_vulnerability_scan_time(&id, vuln_id).await;
+                }
+                Ok(response)
+            }
+
+            Err(e) => {
+                log::warn!("{}", e);
+                Err(e)
+            }
         }
-
-        Ok(response)
     }
 
     pub async fn update(client: Arc<CollectorClient>, state: Arc<AppState>, id: String) {

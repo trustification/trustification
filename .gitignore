@@ -3,6 +3,7 @@
 *.sqlite
 .vscode/
 *.db
+.DS_Store
 
 # from the bom import
 pubring.kbx*

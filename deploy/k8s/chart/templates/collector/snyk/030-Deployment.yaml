@@ -47,6 +47,8 @@ spec:
             - "/etc/config/auth.yaml"
             - "--v11y-url"
             - "https://v11y-api.$(NAMESPACE).svc"
+            - "--guac-url"
+            - "https://guac-graphql.$(NAMESPACE).svc/query"
           env:
             - name: RUST_LOG
               value: info

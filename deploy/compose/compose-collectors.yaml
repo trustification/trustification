@@ -56,18 +56,22 @@ services:
           sleep 5
         done
         echo keycloak is up
-        /trust collectorist api -p $COLLECTORIST_API_PORT --devmode
+        /trust collectorist api \
+          -p $COLLECTORIST_API_PORT \
+          --collector-config /config/collectorist/collectorist.yaml \
+          --devmode
     entrypoint: /usr/bin/bash
     restart: on-failure
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:9010" ]
     environment:
       HTTP_SERVER_BIND_ADDR: "::"
-      GUAC_URL: http://guac-graphql:$GUAC_API_PORT/query
       CSUB_URL: http://guac-collectsub:$GUAC_CSUB_PORT
       ISSUER_URL: http://keycloak:8080/realms/chicken
       INFRASTRUCTURE_ENABLED: "true"
       OPENID_CONFIGURATION: "http://keycloak:8080/realms/chicken/.well-known/openid-configuration"
+    volumes:
+      - ./container_files/collectorist:/config/collectorist${SELINUX_VOLUME_OPTIONS}
 
   collector-osv:
     image: $TRUST_IMAGE:${TRUST_VERSION:?TRUST_VERSION is required}
@@ -91,7 +95,6 @@ services:
         echo keycloak is up
         /trust collector osv \
           -p $COLLECTOR_OSV_API_PORT \
-          --advertise http://collector-osv:$COLLECTOR_OSV_API_PORT/api/v1/ \
           --devmode
     entrypoint: /usr/bin/bash
     restart: on-failure
@@ -99,6 +102,7 @@ services:
       test: [ "CMD", "curl", "-f", "http://localhost:9010" ]
     environment:
       HTTP_SERVER_BIND_ADDR: "::"
+      GUAC_URL: http://guac-graphql:$GUAC_API_PORT/query
       V11Y_URL: http://v11y-api:$V11Y_API_PORT/
       ISSUER_URL: http://keycloak:8080/realms/chicken
       INFRASTRUCTURE_ENABLED: "true"
@@ -129,13 +133,13 @@ services:
           -p $COLLECTOR_SNYK_API_PORT \
           --snyk-org-id $SNYK_ORG_ID \
           --snyk-token $SNYK_TOKEN \
-          --advertise http://collector-snyk:$COLLECTOR_SNYK_API_PORT/api/v1/ \
           --devmode
     entrypoint: /usr/bin/bash
     restart: on-failure
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:9010" ]
     environment:
+      GUAC_URL: http://guac-graphql:$GUAC_API_PORT/query
       HTTP_SERVER_BIND_ADDR: "::"
       ISSUER_URL: http://keycloak:8080/realms/chicken
       INFRASTRUCTURE_ENABLED: "true"
@@ -164,7 +168,6 @@ services:
         /trust collector nvd \
           -p $COLLECTOR_NVD_API_PORT \
           --nvd-api-key $NVD_API_KEY \
-          --advertise http://collector-nvd:$COLLECTOR_NVD_API_PORT/api/v1/ \
           --devmode
     entrypoint: /usr/bin/bash
     restart: on-failure
@@ -172,6 +175,7 @@ services:
       test: [ "CMD", "curl", "-f", "http://localhost:9010" ]
     environment:
       HTTP_SERVER_BIND_ADDR: "::"
+      GUAC_URL: http://guac-graphql:$GUAC_API_PORT/query
       V11Y_URL: http://v11y-api:$V11Y_API_PORT
       ISSUER_URL: http://keycloak:8080/realms/chicken
       INFRASTRUCTURE_ENABLED: "true"
