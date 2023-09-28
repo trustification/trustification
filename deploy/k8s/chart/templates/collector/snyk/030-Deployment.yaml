@@ -48,7 +48,7 @@ spec:
             - "--v11y-url"
             - "https://v11y-api.$(NAMESPACE).svc"
             - "--guac-url"
-            - "https://guac-graphql.$(NAMESPACE).svc/query"
+            - "http://guac-graphql.$(NAMESPACE).svc:8080/query"
           env:
             - name: RUST_LOG
               value: info

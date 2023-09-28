@@ -1,14 +1,14 @@
 collectors:
   osv:
-    url: https://collector-osv.trustification-staging.svc.cluster.local:8080/api/v1/
+    url: https://collector-osv.trustification-staging.svc/api/v1/
     interests:
     - package
     - vulnerability
   snyk:
-    url: https://collector-snyk.trustification-staging.svc.cluster.local:8080/api/v1/
+    url: https://collector-snyk.trustification-staging.svc/api/v1/
     interests:
     - package
   nvd:
-    url: https://collector-nvd.trustification-staging.svc.cluster.local:8080/api/v1/
+    url: https://collector-nvd.trustification-staging.svc/api/v1/
     interests:
     - vulnerability
