@@ -33,6 +33,11 @@ bombastic:
       indexed: ${BOMBASTIC_INDEXER_INDEXED_TOPIC}
       failed: ${BOMBASTIC_INDEXER_FAILED_TOPIC}
     resources: ${{BOMBASTIC_INDEXER_RESOURCES}}
+  walker:
+    enable: true
+    source: "https://access.redhat.com/security/data/sbom/beta/"
+    signingKey: "https://access.redhat.com/security/data/97f5eac4.txt#77E79ABE93673533ED09EBE2DCE3823597F5EAC4"
+    resources: ${{BOMBASTIC_WALKER_RESOURCES}}
   api:
     resources: ${{BOMBASTIC_API_RESOURCES}}
 v11y:
@@ -69,6 +74,8 @@ keycloak:
   enabled: false
 guac:
   enabled: false
+  graphql:
+    debug: false
 oidcClients:
   frontend:
     issuerUrl: ${ISSUER_URL}
