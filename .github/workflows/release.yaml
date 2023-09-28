@@ -6,8 +6,6 @@ on:
     # Release candidates are tagged as `v<version>-rc<num>`, for example: "0.1.0-rc1".
     tags:
       - "v*"
-    branches:
-      - main
 
 permissions:
   contents: write # for creating a release
@@ -40,12 +38,10 @@ jobs:
 
       - name: Set version
         id: version
-        env:
-          COMMIT: ${{github.sha}}
         run: |
           VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
           [[ "${{ github.ref }}" == "refs/tags/"* ]] && VERSION=$(echo $VERSION | sed -e 's/^v//')
-          [ "$VERSION" == "main" ] && VERSION=$COMMIT
+          [ "$VERSION" == "main" ] && VERSION=latest
           echo "Version: $VERSION"
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
