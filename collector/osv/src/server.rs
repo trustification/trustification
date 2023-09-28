@@ -1,23 +1,24 @@
-use actix_web::{post, web, HttpResponse, Responder, ResponseError};
-use collector_client::{
-    CollectPackagesRequest, CollectPackagesResponse, CollectVulnerabilitiesRequest, CollectVulnerabilitiesResponse,
-};
-use derive_more::Display;
-use guac::client::intrinsic::certify_vuln::ScanMetadataInput;
-use guac::client::intrinsic::vulnerability::VulnerabilityInputSpec;
-use guac::client::GuacClient;
-use packageurl::PackageUrl;
 use std::fmt::Debug;
 use std::net::{IpAddr, SocketAddr, TcpListener};
 use std::str::FromStr;
 use std::sync::Arc;
+
+use actix_web::{post, web, HttpResponse, Responder, ResponseError};
+use derive_more::Display;
+use guac::client::intrinsic::certify_vuln::ScanMetadataInput;
+use guac::client::intrinsic::vulnerability::VulnerabilityInputSpec;
+use packageurl::PackageUrl;
+use utoipa::OpenApi;
+use utoipa_swagger_ui::SwaggerUi;
+
+use collector_client::{
+    CollectPackagesRequest, CollectPackagesResponse, CollectVulnerabilitiesRequest, CollectVulnerabilitiesResponse,
+};
 use trustification_auth::authenticator::Authenticator;
 use trustification_auth::authorizer::Authorizer;
 use trustification_infrastructure::app::http::{HttpServerBuilder, HttpServerConfig};
 use trustification_infrastructure::endpoint::CollectorOsv;
 use trustification_infrastructure::{new_auth, MainContext};
-use utoipa::OpenApi;
-use utoipa_swagger_ui::SwaggerUi;
 
 use crate::{
     client::{schema::Package, QueryBatchRequest, QueryPackageRequest},
@@ -26,17 +27,14 @@ use crate::{
 
 #[derive(Debug, Display)]
 pub enum Error {
-    #[display(fmt = "Configuration error")]
-    Configuration,
-
     #[display(fmt = "GUAC error")]
-    GuacError,
+    Guac,
 
     #[display(fmt = "OSV error")]
-    OsvError,
+    Osv,
 
     #[display(fmt = "Internal error")]
-    InternalError,
+    Internal,
 }
 
 impl ResponseError for Error {}
@@ -105,42 +103,40 @@ impl From<&CollectPackagesRequest> for QueryBatchRequest {
 pub async fn collect_packages(
     request: web::Json<CollectPackagesRequest>,
     state: web::Data<AppState>,
-) -> actix_web::Result<impl Responder> {
+) -> actix_web::Result<impl Responder, Error> {
     log::info!("-- collect packages");
-    let guac_url = state
-        .guac_url
-        .read()
-        .await
-        .as_ref()
-        .cloned()
-        .ok_or(Error::Configuration)?;
 
-    let guac = GuacClient::new(guac_url.as_str());
     let request: QueryBatchRequest = (&*request).into();
     //log::debug!("osv request: {}", serde_json::to_string_pretty(&request).unwrap());
-    let response = state.osv.query_batch(request).await.map_err(|_| Error::OsvError)?;
+    let response = state.osv.query_batch(request).await.map_err(|_| Error::Osv)?;
 
     for entry in &response.results {
         log::info!("-- entry");
         if let Some(vulns) = &entry.vulns {
             if let Package::Purl { purl } = &entry.package {
-                guac.intrinsic()
-                    .ingest_package(&PackageUrl::from_str(purl).map_err(|_| Error::InternalError)?.into())
+                state
+                    .guac_client
+                    .intrinsic()
+                    .ingest_package(&PackageUrl::from_str(purl).map_err(|_| Error::Internal)?.into())
                     .await
-                    .map_err(|_| Error::GuacError)?;
+                    .map_err(|_| Error::Guac)?;
                 for vuln in vulns {
                     log::info!("ingest vulnerability {} on purl {}", vuln.id, purl);
-                    guac.intrinsic()
+                    state
+                        .guac_client
+                        .intrinsic()
                         //.ingest_vulnerability("osv", &vuln.id)
                         .ingest_vulnerability(&VulnerabilityInputSpec {
                             r#type: "osv".to_string(),
                             vulnerability_id: vuln.id.clone(),
                         })
                         .await
-                        .map_err(|_| Error::GuacError)?;
-                    guac.intrinsic()
+                        .map_err(|_| Error::Guac)?;
+                    state
+                        .guac_client
+                        .intrinsic()
                         .ingest_certify_vuln(
-                            &PackageUrl::from_str(purl).map_err(|_| Error::InternalError)?.into(),
+                            &PackageUrl::from_str(purl).map_err(|_| Error::Internal)?.into(),
                             &VulnerabilityInputSpec {
                                 r#type: "osv".to_string(),
                                 vulnerability_id: vuln.id.clone(),
@@ -156,7 +152,7 @@ pub async fn collect_packages(
                             },
                         )
                         .await
-                        .map_err(|_| Error::GuacError)?;
+                        .map_err(|_| Error::Guac)?;
                 }
             }
         }

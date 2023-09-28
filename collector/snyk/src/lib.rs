@@ -1,8 +1,8 @@
+use guac::client::GuacClient;
 use std::process::ExitCode;
 use std::sync::Arc;
 
 use reqwest::Url;
-use tokio::sync::RwLock;
 
 use trustification_auth::{
     auth::AuthConfigArguments,
@@ -38,8 +38,14 @@ pub struct Run {
     pub infra: InfrastructureConfig,
 
     #[arg(
-        env,
-        short = 'v',
+        env = "GUAC_URL",
+        long = "guac-url",
+        default_value_t = endpoint::GuacGraphQl::url()
+    )]
+    pub(crate) guac_url: Url,
+
+    #[arg(
+        env = "V11Y_URL",
         long = "v11y-url",
         default_value_t = endpoint::V11y::url()
     )]
@@ -84,6 +90,7 @@ impl Run {
                         self.client.build_client()?,
                         self.snyk_org_id,
                         self.snyk_token,
+                        self.guac_url,
                         self.v11y_url,
                         provider.clone(),
                     )
@@ -101,32 +108,47 @@ impl Run {
         client: reqwest::Client,
         snyk_org_id: String,
         snyk_token: String,
+        guac_url: Url,
         v11y_url: Url,
         provider: P,
     ) -> anyhow::Result<Arc<AppState>>
     where
         P: TokenProvider + Clone + 'static,
     {
-        let state = Arc::new(AppState::new(client, snyk_org_id, snyk_token, v11y_url, provider));
+        let state = Arc::new(AppState::new(
+            client,
+            snyk_org_id,
+            snyk_token,
+            guac_url,
+            v11y_url,
+            provider,
+        ));
         Ok(state)
     }
 }
 
 pub struct AppState {
     v11y_client: v11y_client::V11yClient,
-    guac_url: RwLock<Option<Url>>,
+    guac_client: GuacClient,
     snyk_org_id: String,
     snyk_token: String,
 }
 
 impl AppState {
-    pub fn new<P>(client: reqwest::Client, snyk_org_id: String, snyk_token: String, v11y_url: Url, provider: P) -> Self
+    pub fn new<P>(
+        client: reqwest::Client,
+        snyk_org_id: String,
+        snyk_token: String,
+        guac_url: Url,
+        v11y_url: Url,
+        provider: P,
+    ) -> Self
     where
         P: TokenProvider + Clone + 'static,
     {
         Self {
             v11y_client: v11y_client::V11yClient::new(client, v11y_url, provider),
-            guac_url: RwLock::new(None),
+            guac_client: GuacClient::new(guac_url.as_str()),
             snyk_org_id,
             snyk_token,
         }

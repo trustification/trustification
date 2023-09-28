@@ -1,10 +1,10 @@
+use guac::client::GuacClient;
 use std::process::ExitCode;
 use std::sync::Arc;
 
 use crate::client::schema::{Reference, Vulnerability};
 use crate::client::OsvClient;
 use reqwest::Url;
-use tokio::sync::RwLock;
 use trustification_auth::{
     auth::AuthConfigArguments,
     authenticator::Authenticator,
@@ -31,12 +31,18 @@ pub struct Run {
     pub infra: InfrastructureConfig,
 
     #[arg(
-        env,
-        short = 'v',
+        env = "V11Y_URL",
         long = "v11y-url",
         default_value_t = endpoint::V11y::url()
     )]
     pub(crate) v11y_url: Url,
+
+    #[arg(
+        env = "GUAC_URL",
+        long = "guac-url",
+        default_value_t = endpoint::GuacGraphQl::url()
+    )]
+    pub(crate) guac_url: Url,
 
     #[command(flatten)]
     pub auth: AuthConfigArguments,
@@ -67,7 +73,13 @@ impl Run {
                 |_context| async { Ok(()) },
                 |context| async move {
                     let provider = self.oidc.into_provider_or_devmode(self.devmode).await?;
-                    let state = Self::configure(self.client.build_client()?, self.v11y_url, provider.clone()).await?;
+                    let state = Self::configure(
+                        self.client.build_client()?,
+                        self.guac_url,
+                        self.v11y_url,
+                        provider.clone(),
+                    )
+                    .await?;
 
                     server::run(context, state.clone(), self.http, authenticator, authorizer).await
                 },
@@ -77,29 +89,34 @@ impl Run {
         Ok(ExitCode::SUCCESS)
     }
 
-    async fn configure<P>(client: reqwest::Client, v11y_url: Url, provider: P) -> anyhow::Result<Arc<AppState>>
+    async fn configure<P>(
+        client: reqwest::Client,
+        guac_url: Url,
+        v11y_url: Url,
+        provider: P,
+    ) -> anyhow::Result<Arc<AppState>>
     where
         P: TokenProvider + Clone + 'static,
     {
-        let state = Arc::new(AppState::new(client, v11y_url, provider));
+        let state = Arc::new(AppState::new(client, guac_url, v11y_url, provider));
         Ok(state)
     }
 }
 
 pub struct AppState {
     v11y_client: v11y_client::V11yClient,
-    guac_url: RwLock<Option<Url>>,
+    guac_client: GuacClient,
     osv: OsvClient,
 }
 
 impl AppState {
-    pub fn new<P>(client: reqwest::Client, v11y_url: Url, provider: P) -> Self
+    pub fn new<P>(client: reqwest::Client, guac_url: Url, v11y_url: Url, provider: P) -> Self
     where
         P: TokenProvider + Clone + 'static,
     {
         Self {
             v11y_client: v11y_client::V11yClient::new(client, v11y_url, provider),
-            guac_url: RwLock::new(None),
+            guac_client: GuacClient::new(guac_url.as_str()),
             osv: OsvClient::new(),
         }
     }

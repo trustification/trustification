@@ -2,20 +2,21 @@ use std::net::{IpAddr, SocketAddr, TcpListener};
 use std::str::FromStr;
 use std::sync::Arc;
 
-use crate::AppState;
 use actix_web::middleware::{Compress, Logger};
 use actix_web::{post, web, HttpResponse, Responder, ResponseError};
-use collector_client::CollectVulnerabilitiesRequest;
 use guac::client::intrinsic::vulnerability::VulnerabilityInputSpec;
-use guac::client::GuacClient;
+use utoipa::OpenApi;
+use utoipa_swagger_ui::SwaggerUi;
+
+use collector_client::CollectVulnerabilitiesRequest;
 use trustification_auth::{authenticator::Authenticator, authorizer::Authorizer};
 use trustification_infrastructure::{
     app::http::{HttpServerBuilder, HttpServerConfig},
     endpoint::CollectorNvd,
     new_auth, MainContext,
 };
-use utoipa::OpenApi;
-use utoipa_swagger_ui::SwaggerUi;
+
+use crate::AppState;
 
 #[derive(OpenApi)]
 #[openapi(
@@ -33,9 +34,6 @@ pub struct ApiDoc;
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
-    #[error("Configuration error")]
-    Configuration,
-
     #[error("GUAC error: {0}")]
     GuacError(#[from] guac::client::Error),
 
@@ -80,19 +78,11 @@ pub async fn collect_vulnerabilities(
     request: web::Json<CollectVulnerabilitiesRequest>,
     state: web::Data<AppState>,
 ) -> Result<impl Responder, Error> {
-    let guac_url = state
-        .guac_url
-        .read()
-        .await
-        .as_ref()
-        .cloned()
-        .ok_or(Error::Configuration)?;
-
-    let guac = GuacClient::new(guac_url.as_str());
-
     for id in &request.vulnerability_ids {
         if let Some(vuln) = state.nvd.get_cve(id).await.map_err(Error::NvdError)? {
-            guac.intrinsic()
+            state
+                .guac_client
+                .intrinsic()
                 .ingest_vulnerability(&VulnerabilityInputSpec {
                     r#type: "cve".to_string(),
                     vulnerability_id: vuln.cve.id.clone(),
