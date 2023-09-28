@@ -3442,6 +3442,7 @@ dependencies = [
  "trustification-auth",
  "trustification-event-bus",
  "trustification-index",
+ "trustification-indexer",
  "trustification-infrastructure",
  "trustification-storage",
  "urlencoding",

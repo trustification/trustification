@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use integration_tests::{SpogContext, Urlifier};
+use integration_tests::{id, SpogContext, Urlifier};
 use reqwest::StatusCode;
 use serde_json::{json, Value};
 use test_context::test_context;
@@ -114,10 +114,13 @@ async fn spog_crda_integration(context: &mut SpogContext) {
 #[ntest::timeout(120_000)]
 async fn spog_search_correlation(context: &mut SpogContext) {
     let input = serde_json::from_str(include_str!("testdata/correlation/stf-1.5.json")).unwrap();
-    let sbom_id = "test-stf-1.5-correlation";
-    context.bombastic.upload_sbom(sbom_id, &input).await;
+    let sbom_id = id("test-search-correlation");
+    context.bombastic.upload_sbom(&sbom_id, &input).await;
 
-    let input = serde_json::from_str(include_str!("testdata/correlation/rhsa-2023_1529.json")).unwrap();
+    let mut input: serde_json::Value =
+        serde_json::from_str(include_str!("testdata/correlation/rhsa-2023_1529.json")).unwrap();
+    let vex_id = id("test-search-correlation");
+    input["document"]["tracking"]["id"] = json!(vex_id);
     context.vexination.upload_vex(&input).await;
 
     let client = reqwest::Client::new();
@@ -125,27 +128,27 @@ async fn spog_search_correlation(context: &mut SpogContext) {
     // indexer time to do its thing, so might need to retry
     loop {
         let response = client
-            .get(context.urlify("/api/v1/package/search?q=id%3Atest-stf-1.5-correlation"))
+            .get(context.urlify(format!("/api/v1/package/search?q=id%3A{sbom_id}")))
             .inject_token(&context.provider.provider_user)
             .await
             .unwrap()
             .send()
             .await
             .unwrap();
-        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(response.status(), StatusCode::OK, "unexpected status from search");
         let payload: Value = response.json().await.unwrap();
         if payload["total"].as_u64().unwrap() >= 1 {
-            assert_eq!(payload["result"][0]["name"], json!("stf-1.5"));
+            assert_eq!(payload["result"][0]["name"], json!("stf-1.5"), "unexpected name");
 
             let data: spog_model::search::PackageSummary =
                 serde_json::from_value(payload["result"][0].clone()).unwrap();
             // println!("Data: {:?}", data);
             // we need to have some information
-            assert!(data.advisories.is_some());
+            assert!(data.advisories.is_some(), "missing advisories");
             // Data might not be available until vex index is synced
             let advisories = data.advisories.unwrap();
             if advisories > 0 {
-                assert_eq!(advisories, 1);
+                assert_eq!(advisories, 1, "too many advisories found");
                 break;
             }
         }
