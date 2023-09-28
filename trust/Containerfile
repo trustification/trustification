@@ -25,6 +25,7 @@ FROM registry.access.redhat.com/ubi9/ubi-minimal:latest
 LABEL org.opencontainers.image.source="https://github.com/trustification/trustification"
 
 COPY --from=builder /usr/src/project/target/release/trust /
+COPY ./collectorist.yaml /
 
 ENV RUST_LOG info
 

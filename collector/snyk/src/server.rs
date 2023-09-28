@@ -6,7 +6,6 @@ use actix_web::{post, web, HttpResponse, Responder, ResponseError};
 use derive_more::Display;
 use guac::client::intrinsic::certify_vuln::ScanMetadataInput;
 use guac::client::intrinsic::vulnerability::VulnerabilityInputSpec;
-use guac::client::GuacClient;
 use packageurl::PackageUrl;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
@@ -38,17 +37,14 @@ pub struct ApiDoc;
 
 #[derive(Debug, Display)]
 pub enum Error {
-    #[display(fmt = "Configuration error")]
-    Configuration,
-
     #[display(fmt = "GUAC error")]
-    GuacError,
+    Guac,
 
     #[display(fmt = "Snyk error")]
-    SnykError,
+    Snyk,
 
     #[display(fmt = "Internal error")]
-    InternalError,
+    Internal,
 }
 
 impl ResponseError for Error {}
@@ -92,45 +88,41 @@ pub fn config(cfg: &mut web::ServiceConfig, auth: Option<Arc<Authenticator>>) {
 pub async fn collect_packages(
     request: web::Json<CollectPackagesRequest>,
     state: web::Data<AppState>,
-) -> actix_web::Result<impl Responder> {
+) -> actix_web::Result<impl Responder, Error> {
     let client = SnykClient::new(&state.snyk_org_id, &state.snyk_token);
-
-    let guac_url = state
-        .guac_url
-        .read()
-        .await
-        .as_ref()
-        .cloned()
-        .ok_or(Error::Configuration)?;
-
-    let guac = GuacClient::new(guac_url.as_str());
 
     for purl in &request.purls {
         let mut vulns: Vec<v11y_client::Vulnerability> = Vec::new();
 
-        for issue in client.issues(purl).await.map_err(|_| Error::SnykError)? {
+        for issue in client.issues(purl).await.map_err(|_| Error::Snyk)? {
             let issue_vulns: Vec<Vulnerability> = issue.into();
             vulns.extend_from_slice(&issue_vulns)
         }
 
         if !vulns.is_empty() {
-            guac.intrinsic()
-                .ingest_package(&PackageUrl::from_str(purl).map_err(|_| Error::InternalError)?.into())
+            state
+                .guac_client
+                .intrinsic()
+                .ingest_package(&PackageUrl::from_str(purl).map_err(|_| Error::Internal)?.into())
                 .await
-                .map_err(|_| Error::GuacError)?;
+                .map_err(|_| Error::Guac)?;
 
             for vuln in &vulns {
-                guac.intrinsic()
+                state
+                    .guac_client
+                    .intrinsic()
                     .ingest_vulnerability(&VulnerabilityInputSpec {
                         r#type: "snyk".to_string(),
                         vulnerability_id: vuln.id.clone(),
                     })
                     .await
-                    .map_err(|_| Error::GuacError)?;
+                    .map_err(|_| Error::Guac)?;
 
-                guac.intrinsic()
+                state
+                    .guac_client
+                    .intrinsic()
                     .ingest_certify_vuln(
-                        &PackageUrl::from_str(purl).map_err(|_| Error::InternalError)?.into(),
+                        &PackageUrl::from_str(purl).map_err(|_| Error::Internal)?.into(),
                         &VulnerabilityInputSpec {
                             r#type: "snyk".to_string(),
                             vulnerability_id: vuln.id.clone(),
@@ -146,7 +138,7 @@ pub async fn collect_packages(
                         },
                     )
                     .await
-                    .map_err(|_| Error::GuacError)?;
+                    .map_err(|_| Error::Guac)?;
 
                 state.v11y_client.ingest_vulnerability(vuln).await.ok();
             }
