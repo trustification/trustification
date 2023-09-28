@@ -32,6 +32,7 @@ spog-api = { path = "../spog/api", optional = true }
 trustification-infrastructure = { path = "../infrastructure", optional = true }
 trustification-storage = { path = "../storage", optional = true }
 trustification-index = { path = "../index", optional = true }
+trustification-indexer = { path = "../indexer", optional = true }
 
 clap = { version = "4", features = ["derive"] }
 
@@ -45,4 +46,4 @@ spog-model = { path = "../spog/model" }
 
 [features]
 default = ["with-services"]
-with-services = ["bombastic-api", "bombastic-indexer", "vexination-api", "vexination-indexer", "spog-api", "trustification-storage", "trustification-index", "trustification-infrastructure" ]
+with-services = ["bombastic-api", "bombastic-indexer", "vexination-api", "vexination-indexer", "spog-api", "trustification-storage", "trustification-index", "trustification-indexer", "trustification-infrastructure" ]

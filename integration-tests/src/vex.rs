@@ -2,6 +2,7 @@ use super::*;
 use crate::{config::Config, runner::Runner};
 use async_trait::async_trait;
 use test_context::AsyncTestContext;
+use trustification_indexer::ReindexMode;
 
 #[async_trait]
 impl AsyncTestContext for VexinationContext {
@@ -146,15 +147,14 @@ impl VexinationContext {
 fn vexination_indexer() -> vexination_indexer::Run {
     vexination_indexer::Run {
         stored_topic: "vex-stored".into(),
-        failed_topic: "vex-failed".into(),
         indexed_topic: "vex-indexed".into(),
+        failed_topic: "vex-failed".into(),
         devmode: true,
-        reindex: Default::default(),
-        index: IndexConfig {
-            index_dir: None,
-            index_writer_memory_bytes: 32 * 1024 * 1024,
-            mode: Default::default(),
-            sync_interval: Duration::from_secs(2).into(),
+        reindex: ReindexMode::Always,
+        bus: EventBusConfig {
+            event_bus: EventBusType::Kafka,
+            kafka_bootstrap_servers: KAFKA_BOOTSTRAP_SERVERS.into(),
+            ..Default::default()
         },
         storage: StorageConfig {
             region: None,
@@ -163,16 +163,17 @@ fn vexination_indexer() -> vexination_indexer::Run {
             access_key: Some("admin".into()),
             secret_key: Some("password".into()),
         },
-        bus: EventBusConfig {
-            event_bus: EventBusType::Kafka,
-            kafka_bootstrap_servers: KAFKA_BOOTSTRAP_SERVERS.into(),
-            ..Default::default()
-        },
         infra: InfrastructureConfig {
             infrastructure_enabled: false,
             infrastructure_bind: "127.0.0.1".into(),
             infrastructure_workers: 1,
             enable_tracing: false,
+        },
+        index: IndexConfig {
+            index_dir: None,
+            index_writer_memory_bytes: 32 * 1024 * 1024,
+            mode: Default::default(),
+            sync_interval: Duration::from_secs(2).into(),
         },
     }
 }
