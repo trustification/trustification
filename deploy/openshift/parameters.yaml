@@ -59,3 +59,15 @@ parameters:
   required: true
 - name: OIDC_PROVIDER_CLIENT_SECRET_KEY
   required: true
+- name: V11Y_API_RESOURCES
+  required: true
+- name: COLLECTORIST_RESOURCES
+  required: true
+- name: COLLECTOR_OSV_RESOURCES
+  required: true
+- name: COLLECTOR_SNYK_RESOURCES
+  required: true
+- name: COLLECTOR_NVD_RESOURCES
+  required: true
+- name: EXHORT_API_RESOURCES
+  required: true

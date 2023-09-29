@@ -34,25 +34,34 @@ bombastic:
       failed: ${BOMBASTIC_INDEXER_FAILED_TOPIC}
     resources: ${{BOMBASTIC_INDEXER_RESOURCES}}
   walker:
-    enable: true
+    enable: false
     source: "https://access.redhat.com/security/data/sbom/beta/"
     signingKey: "https://access.redhat.com/security/data/97f5eac4.txt#77E79ABE93673533ED09EBE2DCE3823597F5EAC4"
     resources: ${{BOMBASTIC_WALKER_RESOURCES}}
   api:
     resources: ${{BOMBASTIC_API_RESOURCES}}
 v11y:
-  enabled: false
+  enabled: true
+  api:
+    resources: ${{V11Y_API_RESOURCES}}
 collectorist:
-  enabled: false
+  enabled: true
+  api:
+    resources: ${{COLLECTORIST_RESOURCES}}
 exhort:
-  enabled: false
+  enabled: true
+  api:
+    resources: ${{EXHORT_API_RESOURCES}}
 collector:
   snyk:
     enabled: false
+    resources: ${{COLLECTOR_SNYK_RESOURCES}}
   osv:
-    enabled: false
+    enabled: true
+    resources: ${{COLLECTOR_OSV_RESOURCES}}
   nvd:
     enabled: false
+    resources: ${{COLLECTOR_NVD_RESOURCES}}
 vexination:
   bucket: ${VEXINATION_STORAGE_BUCKET}
   credentials: ${VEXINATION_AWS_SECRET_NAME}
