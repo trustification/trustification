@@ -148,7 +148,7 @@ impl<'a, INDEX: Index> Indexer<'a, INDEX> {
                                             EventType::Delete => {
                                                 let (_, key) = Storage::key_from_event(&data)?;
                                                 block_in_place(|| writer.as_mut().unwrap().delete_document(self.index.index(), key.as_str()));
-                                                log::debug!("Deleted entry '{key}' from index");
+                                                log::info!("Deleted entry '{key}' from index");
                                                 events += 1;
                                             }
                                             _ => log::debug!("Non (PUT | DELETE)  event ({:?}), skipping", data),
