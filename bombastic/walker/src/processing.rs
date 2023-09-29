@@ -28,7 +28,7 @@ where
         context: &Self::Context,
         result: Result<ValidatedSbom, ValidationError>,
     ) -> Result<(), Self::Error> {
-        let mut sbom = match result {
+        let sbom = match result {
             Ok(doc) => {
                 log::info!("Processing: {}", doc.url.path());
                 doc
@@ -39,9 +39,8 @@ where
             }
         };
 
-        let data = sbom.data.clone();
-        let name = sbom.url.path().to_string();
-        let outcome = tokio::task::spawn_blocking(move || process(data, &name)).await?;
+        let (outcome, mut sbom) =
+            tokio::task::spawn_blocking(move || (process(sbom.data.clone(), sbom.url.path()), sbom)).await?;
 
         match outcome {
             Err(err) => log::warn!("Failed to processing, moving on: {err}"),
