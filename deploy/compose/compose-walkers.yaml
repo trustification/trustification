@@ -13,7 +13,7 @@ services:
 
   bombastic-walker:
     image: $TRUST_IMAGE:${TRUST_VERSION:?TRUST_VERSION is required}
-    command: bombastic walker --devmode -3 --bombastic-url http://bombastic-api:$BOMBASTIC_API_PORT --scripts-path /usr/bin
+    command: bombastic walker --devmode -3 --sink http://bombastic-api:$BOMBASTIC_API_PORT --scripts-path /usr/bin
     depends_on:
       bombastic-api:
         condition: service_healthy
