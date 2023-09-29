@@ -4,7 +4,7 @@ use spog_ui_backend::use_backend;
 use spog_ui_common::error::components::Error;
 use spog_ui_components::{
     common::{NotFound, PageHeading},
-    content::{SourceCode, Technical, UnknownContent},
+    content::{SourceCode, Technical},
     spdx::*,
 };
 use std::rc::Rc;
@@ -131,7 +131,24 @@ fn details(props: &DetailsProps) -> Html {
         }
         model::SBOM::Unknown(source) => {
             html!(
-                <UnknownContent source={source.clone()} />
+                <>
+                    <PageSection r#type={PageSectionType::Tabs} variant={PageSectionVariant::Light} sticky={[PageSectionSticky::Top]}>
+                        <Tabs<TabIndex> inset={TabInset::Page} detached=true selected={*tab} {onselect}>
+                            <Tab<TabIndex> index={TabIndex::Overview} title="Overview" />
+                            <Tab<TabIndex> index={TabIndex::Source} title="Source" />
+                        </Tabs<TabIndex>>
+                    </PageSection>
+
+                    <PageSection hidden={*tab != TabIndex::Overview} fill={PageSectionFill::Fill}>
+                        <Grid gutter=true>
+                            <GridItem cols={[2]}><Technical size={source.as_bytes().len()}/></GridItem>
+                        </Grid>
+                    </PageSection>
+
+                    <PageSection hidden={*tab != TabIndex::Source} fill={PageSectionFill::Fill}>
+                        <SourceCode source={source.clone()} />
+                    </PageSection>
+                </>
             )
         }
     }
