@@ -464,6 +464,8 @@ objects:
                 - file
                 - --index-dir
                 - /data/index
+                - --reindex
+                - always
               env:
                 - name: RUST_LOG
                   value: info
@@ -1510,6 +1512,8 @@ objects:
                 - file
                 - --index-dir
                 - /data/index
+                - --reindex
+                - always
               env:
                 - name: RUST_LOG
                   value: info
