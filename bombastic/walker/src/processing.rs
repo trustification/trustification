@@ -93,7 +93,7 @@ fn process(data: Bytes, name: &str) -> anyhow::Result<Option<Bytes>> {
                     let (json, changed) = fix_license(json);
                     match changed {
                         true => {
-                            let mut data = serde_json::to_vec(&json)?;
+                            let mut data = serde_json::to_vec_pretty(&json)?;
                             if compressed {
                                 data = compress(&data)?;
                             }
