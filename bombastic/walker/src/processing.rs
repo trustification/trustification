@@ -42,6 +42,7 @@ where
                     }
                     Err(err) => {
                         log::info!("Failed ({}): {}", err.url().path(), err);
+                        self.next.visit_sbom(context, Err(err)).await?;
                         return Ok(());
                     }
                 };
@@ -50,7 +51,7 @@ where
                     tokio::task::spawn_blocking(move || (process(sbom.data.clone(), sbom.url.path()), sbom)).await?;
 
                 match outcome {
-                    Err(err) => log::warn!("Failed to processing, moving on: {err}"),
+                    Err(err) => log::warn!("Failed processing, moving on: {err}"),
                     Ok(Some(data)) => {
                         log::info!("Got replacement, apply and store");
                         sbom.data = data;
