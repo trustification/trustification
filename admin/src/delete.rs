@@ -51,7 +51,7 @@ impl BombasticDelete {
         let client = reqwest::Client::new();
         let provider = self.oidc.clone().into_provider_or_devmode(false).await?;
         if let Some(id) = &self.id {
-            delete(&client, &self.url, &provider, id).await?;
+            self.delete(&client, &provider, id).await?;
         } else if let Some(matches) = &self.matches {
             let matches = regex::Regex::new(matches)?;
             self.delete_all(&client, &provider, Some(matches)).await?;
@@ -92,10 +92,10 @@ impl BombasticDelete {
                     for result in response.result.iter() {
                         if let Some(matches) = &matches {
                             if matches.is_match(&result.document.id) {
-                                delete(&client, &self.url, provider, &result.document.id).await?;
+                                self.delete(&client, provider, &result.document.id).await?;
                             }
                         } else {
-                            delete(&client, &self.url, provider, &result.document.id).await?;
+                            self.delete(&client, provider, &result.document.id).await?;
                         }
                     }
 
@@ -109,6 +109,28 @@ impl BombasticDelete {
                     log::warn!("Failed to list documents: {}", r.status());
                     break;
                 }
+            }
+        }
+        Ok(())
+    }
+
+    async fn delete(&self, client: &reqwest::Client, provider: &impl TokenProvider, id: &str) -> anyhow::Result<()> {
+        match client
+            .delete(self.url.clone())
+            .query(&[("id", urlencoding::encode(&id))])
+            .inject_token(provider)
+            .await?
+            .send()
+            .await
+        {
+            Ok(r) if r.status() == StatusCode::OK || r.status() == StatusCode::NO_CONTENT => {
+                log::info!("Deleted document {}", id);
+            }
+            Ok(r) => {
+                log::warn!("Failed to delete document {}: {}", id, r.status());
+            }
+            Err(e) => {
+                log::warn!("Failed to delete document {}: {e}", id);
             }
         }
         Ok(())
@@ -144,7 +166,7 @@ impl VexinationDelete {
         let client = reqwest::Client::new();
         let provider = self.oidc.clone().into_provider_or_devmode(false).await?;
         if let Some(id) = &self.id {
-            delete(&client, &self.url, &provider, id).await?;
+            self.delete(&client, &provider, id).await?;
         } else if let Some(matches) = &self.matches {
             let matches = regex::Regex::new(matches)?;
             self.delete_all(&client, &provider, Some(matches)).await?;
@@ -185,10 +207,10 @@ impl VexinationDelete {
                     for result in response.result.iter() {
                         if let Some(matches) = &matches {
                             if matches.is_match(&result.document.advisory_id) {
-                                delete(&client, &self.url, provider, &result.document.advisory_id).await?;
+                                self.delete(&client, provider, &result.document.advisory_id).await?;
                             }
                         } else {
-                            delete(&client, &self.url, provider, &result.document.advisory_id).await?;
+                            self.delete(&client, provider, &result.document.advisory_id).await?;
                         }
                     }
 
@@ -206,31 +228,26 @@ impl VexinationDelete {
         }
         Ok(())
     }
-}
 
-async fn delete(
-    client: &reqwest::Client,
-    url: &url::Url,
-    provider: &impl TokenProvider,
-    id: &str,
-) -> anyhow::Result<()> {
-    match client
-        .delete(url.clone())
-        .query(&[("id", urlencoding::encode(&id))])
-        .inject_token(provider)
-        .await?
-        .send()
-        .await
-    {
-        Ok(r) if r.status() == StatusCode::OK || r.status() == StatusCode::NO_CONTENT => {
-            log::info!("Deleted document {}", id);
+    async fn delete(&self, client: &reqwest::Client, provider: &impl TokenProvider, id: &str) -> anyhow::Result<()> {
+        match client
+            .delete(self.url.clone())
+            .query(&[("advisory", urlencoding::encode(&id))])
+            .inject_token(provider)
+            .await?
+            .send()
+            .await
+        {
+            Ok(r) if r.status() == StatusCode::OK || r.status() == StatusCode::NO_CONTENT => {
+                log::info!("Deleted document {}", id);
+            }
+            Ok(r) => {
+                log::warn!("Failed to delete document {}: {}", id, r.status());
+            }
+            Err(e) => {
+                log::warn!("Failed to delete document {}: {e}", id);
+            }
         }
-        Ok(r) => {
-            log::warn!("Failed to delete document {}: {}", id, r.status());
-        }
-        Err(e) => {
-            log::warn!("Failed to delete document {}: {e}", id);
-        }
+        Ok(())
     }
-    Ok(())
 }
