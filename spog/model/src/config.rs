@@ -85,7 +85,7 @@ pub struct Global {
     pub product_name: Option<String>,
 }
 
-pub const DEFAULT_BRAND_SRC: &str = "assets/images/chicken-svgrepo-com.svg";
+pub const DEFAULT_BRAND_SRC: &str = "assets/brand/trustification_logo_hori_reverse.svg";
 pub const DEFAULT_ABOUT_BACKGROUND_SRC: &str = "assets/images/pfbg-icon.svg";
 pub const DEFAULT_PRODUCT_NAME: &str = "Chicken Coop";
 

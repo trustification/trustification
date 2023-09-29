@@ -7,6 +7,11 @@ $fa-font-path: "webfonts";
 @import "../node_modules/@patternfly/patternfly/patternfly.scss";
 @import "../node_modules/@patternfly/patternfly/patternfly-addons.scss";
 
+// navbar brand
+
+header {
+  --pf-v5-c-page__header-brand-link--c-brand--MaxHeight: 2.5rem;
+}
 
 // highlight
 
