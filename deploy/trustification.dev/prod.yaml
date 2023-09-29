@@ -8,7 +8,6 @@ domain: trustification.dev
 replicas: 2
 imagePullPolicy: IfNotPresent
 region: eu-west-1
-enableWalkers: false
 enableTests: true
 createRoutes: true
 enableMonitoring: true
@@ -94,7 +93,14 @@ vexination:
       limits:
         memory: "1Gi"
   walker:
+    enable: true
     source: https://www.redhat.com/.well-known/csaf/provider-metadata.json
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "2Gi"
+      limits:
+        memory: "2Gi"
 collectorist:
   enabled: true
   api:

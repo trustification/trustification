@@ -12,7 +12,6 @@ enableTests: true
 createRoutes: true
 enableMonitoring: true
 enableDocs: true
-enableWalkers: false
 config:
   enable: true
   name: trustification-config
@@ -105,7 +104,14 @@ vexination:
       limits:
         memory: "1Gi"
   walker:
+    enable: true
     source: https://www.redhat.com/.well-known/csaf/provider-metadata.json
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "2Gi"
+      limits:
+        memory: "2Gi"
 collectorist:
   enabled: true
   api:
