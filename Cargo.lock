@@ -7234,13 +7234,21 @@ name = "trustification-admin"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "bombastic-model",
  "clap",
+ "env_logger",
+ "futures",
  "log",
+ "regex",
  "reqwest",
  "serde",
  "serde_json",
  "tokio",
+ "trustification-auth",
  "trustification-common",
+ "url",
+ "urlencoding",
+ "vexination-model",
 ]
 
 [[package]]
