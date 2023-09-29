@@ -8,7 +8,12 @@ use serde_json::Value;
 use std::io::Write;
 use walker_common::compression::decompress_opt;
 
-pub struct ProcessVisitor<V>(pub V);
+pub struct ProcessVisitor<V> {
+    /// if processing is enabled
+    pub enabled: bool,
+    /// then next visitor to call
+    pub next: V,
+}
 
 #[async_trait(?Send)]
 impl<V> ValidatedVisitor for ProcessVisitor<V>
@@ -20,7 +25,7 @@ where
     type Context = V::Context;
 
     async fn visit_context(&self, context: &ValidationContext) -> Result<Self::Context, Self::Error> {
-        Ok(self.0.visit_context(context).await?)
+        Ok(self.next.visit_context(context).await?)
     }
 
     async fn visit_sbom(
@@ -28,32 +33,39 @@ where
         context: &Self::Context,
         result: Result<ValidatedSbom, ValidationError>,
     ) -> Result<(), Self::Error> {
-        let sbom = match result {
-            Ok(doc) => {
-                log::info!("Processing: {}", doc.url.path());
-                doc
-            }
-            Err(err) => {
-                log::info!("Failed ({}): {}", err.url().path(), err);
-                return Ok(());
-            }
-        };
+        match self.enabled {
+            true => {
+                let sbom = match result {
+                    Ok(doc) => {
+                        log::info!("Processing: {}", doc.url.path());
+                        doc
+                    }
+                    Err(err) => {
+                        log::info!("Failed ({}): {}", err.url().path(), err);
+                        return Ok(());
+                    }
+                };
 
-        let (outcome, mut sbom) =
-            tokio::task::spawn_blocking(move || (process(sbom.data.clone(), sbom.url.path()), sbom)).await?;
+                let (outcome, mut sbom) =
+                    tokio::task::spawn_blocking(move || (process(sbom.data.clone(), sbom.url.path()), sbom)).await?;
 
-        match outcome {
-            Err(err) => log::warn!("Failed to processing, moving on: {err}"),
-            Ok(Some(data)) => {
-                log::info!("Got replacement, apply and store");
-                sbom.data = data;
+                match outcome {
+                    Err(err) => log::warn!("Failed to processing, moving on: {err}"),
+                    Ok(Some(data)) => {
+                        log::info!("Got replacement, apply and store");
+                        sbom.data = data;
+                    }
+                    Ok(None) => {
+                        // keep current
+                    }
+                }
+
+                self.next.visit_sbom(context, Ok(sbom)).await?;
             }
-            Ok(None) => {
-                // keep current
+            false => {
+                self.next.visit_sbom(context, result).await?;
             }
         }
-
-        self.0.visit_sbom(context, Ok(sbom)).await?;
 
         Ok(())
     }

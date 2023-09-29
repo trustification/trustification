@@ -22,6 +22,7 @@ pub struct Options {
     pub keys: Vec<Key>,
     pub provider: Arc<dyn TokenProvider>,
     pub validation_date: Option<SystemTime>,
+    pub fix_licenses: bool,
 }
 
 pub struct Scanner {
@@ -67,7 +68,10 @@ impl Scanner {
             sender,
         };
 
-        let process = ProcessVisitor(storage);
+        let process = ProcessVisitor {
+            enabled: self.options.fix_licenses,
+            next: storage,
+        };
 
         let validation = ValidationVisitor::new(process).with_options(ValidationOptions {
             validation_date: self.options.validation_date,

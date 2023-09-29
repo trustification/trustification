@@ -125,6 +125,7 @@ impl Run {
                         keys,
                         provider,
                         validation_date,
+                        fix_licenses: self.fix_licenses,
                     });
 
                     if let Some(interval) = self.scan_interval {
