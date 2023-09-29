@@ -117,7 +117,7 @@ impl BombasticDelete {
     async fn delete(&self, client: &reqwest::Client, provider: &impl TokenProvider, id: &str) -> anyhow::Result<()> {
         match client
             .delete(self.url.clone())
-            .query(&[("id", urlencoding::encode(&id))])
+            .query(&[("id", id)])
             .inject_token(provider)
             .await?
             .send()
@@ -232,7 +232,7 @@ impl VexinationDelete {
     async fn delete(&self, client: &reqwest::Client, provider: &impl TokenProvider, id: &str) -> anyhow::Result<()> {
         match client
             .delete(self.url.clone())
-            .query(&[("advisory", urlencoding::encode(&id))])
+            .query(&[("advisory", id)])
             .inject_token(provider)
             .await?
             .send()
