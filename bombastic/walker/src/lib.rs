@@ -121,7 +121,7 @@ impl Run {
 
                     let scanner = Scanner::new(Options {
                         source,
-                        target: self.sink,
+                        target: self.sink.join("/api/v1/sbom")?,
                         keys,
                         provider,
                         validation_date,

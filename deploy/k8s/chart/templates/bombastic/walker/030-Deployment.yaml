@@ -30,7 +30,7 @@ spec:
             - "bombastic"
             - "walker"
             - "--sink"
-            - "https://sbom.{{ .Values.domain }}/api/v1/sbom"
+            - "https://sbom.{{ .Values.domain }}"
             - "--source"
             - "{{ .Values.bombastic.walker.source }}"
             - "-3"
