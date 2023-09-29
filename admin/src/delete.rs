@@ -92,10 +92,10 @@ impl BombasticDelete {
                     for result in response.result.iter() {
                         if let Some(matches) = &matches {
                             if matches.is_match(&result.document.id) {
-                                self.delete(&client, provider, &result.document.id).await?;
+                                self.delete(client, provider, &result.document.id).await?;
                             }
                         } else {
-                            self.delete(&client, provider, &result.document.id).await?;
+                            self.delete(client, provider, &result.document.id).await?;
                         }
                     }
 
@@ -207,10 +207,10 @@ impl VexinationDelete {
                     for result in response.result.iter() {
                         if let Some(matches) = &matches {
                             if matches.is_match(&result.document.advisory_id) {
-                                self.delete(&client, provider, &result.document.advisory_id).await?;
+                                self.delete(client, provider, &result.document.advisory_id).await?;
                             }
                         } else {
-                            self.delete(&client, provider, &result.document.advisory_id).await?;
+                            self.delete(client, provider, &result.document.advisory_id).await?;
                         }
                     }
 
