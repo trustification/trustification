@@ -8,7 +8,6 @@ replicas: ${{REPLICAS}}
 imagePullPolicy: Always
 region: ${AWS_REGION}
 enableDocs: false
-enableWalkers: false
 enableTests: false
 enableMonitoring: false
 config:
@@ -54,13 +53,15 @@ exhort:
     resources: ${{EXHORT_API_RESOURCES}}
 collector:
   snyk:
-    enabled: false
+    enabled: true
+    credentials: snyk-collector-secret
     resources: ${{COLLECTOR_SNYK_RESOURCES}}
   osv:
     enabled: true
+    credentials: nvd-collector-secret
     resources: ${{COLLECTOR_OSV_RESOURCES}}
   nvd:
-    enabled: false
+    enabled: true
     resources: ${{COLLECTOR_NVD_RESOURCES}}
 vexination:
   bucket: ${VEXINATION_STORAGE_BUCKET}
