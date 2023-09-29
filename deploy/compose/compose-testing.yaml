@@ -1,0 +1,7 @@
+version: '3'
+services:
+  chromedriver:
+    image: $CHROMEDRIVER_IMAGE
+    ports:
+      - "4444:4444"
+    shm_size: "2G"

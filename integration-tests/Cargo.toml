@@ -40,6 +40,12 @@ prometheus = "0.13.3"
 uuid = { version = "1", features = ["v4"] }
 urlencoding = "2.1.2"
 
+thirtyfour = "0.32.0-rc.8"
+actix-web = "4"
+actix-files = "0.6.2"
+tempfile = "3"
+strum = { version = "0.25", features = ["derive"] }
+
 [dev-dependencies]
 env_logger = "0.10"
 spog-model = { path = "../spog/model" }
