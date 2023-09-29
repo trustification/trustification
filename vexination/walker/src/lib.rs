@@ -8,12 +8,12 @@ use std::{
     time::{Duration, SystemTime},
 };
 
-use csaf_walker::validation::ValidationOptions;
 use prometheus::Registry;
 use time::{Date, Month, UtcOffset};
 use trustification_auth::client::OpenIdTokenProviderConfigArguments;
 use trustification_infrastructure::{Infrastructure, InfrastructureConfig};
 use url::Url;
+use walker_common::validate::ValidationOptions;
 
 mod server;
 
