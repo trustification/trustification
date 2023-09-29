@@ -1,10 +1,9 @@
 use std::{net::SocketAddr, sync::Arc, time::Duration};
 
 use csaf_walker::{
-    fetcher::Fetcher,
     retrieve::RetrievingVisitor,
     source::{FileSource, HttpSource},
-    validation::{ValidatedAdvisory, ValidationError, ValidationOptions, ValidationVisitor},
+    validation::{ValidatedAdvisory, ValidationError, ValidationVisitor},
     walker::Walker,
 };
 use reqwest::StatusCode;
@@ -12,6 +11,10 @@ use serde::Deserialize;
 use tokio::sync::{Mutex, RwLock};
 use trustification_auth::client::TokenInjector;
 use trustification_auth::client::TokenProvider;
+use walker_common::{
+    fetcher::{Fetcher, FetcherOptions},
+    validate::ValidationOptions,
+};
 
 pub async fn run(
     workers: usize,
