@@ -37,7 +37,7 @@ spec:
             - "--signing-key"
             - "{{ .Values.bombastic.walker.signingKey }}"
             - "--scan-interval"
-            - "60s"
+            - "{{ .Values.bombastic.walker.interval }}"
             - "--fix-licenses"
             - "true"
           env:

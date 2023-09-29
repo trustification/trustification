@@ -2079,9 +2079,9 @@ dependencies = [
 
 [[package]]
 name = "csaf-walker"
-version = "0.3.1"
+version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5f9ce772519e8e806c7b068eed7fae011082205c61acd7cccaebc367cdc9d3d5"
+checksum = "6bb23ee265f176ece74d876bc9f4e853107aee5f4ba477adcddd89a6a990633c"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2102,6 +2102,7 @@ dependencies = [
  "time",
  "tokio",
  "url",
+ "walker-common",
  "xattr",
 ]
 
@@ -7909,6 +7910,7 @@ dependencies = [
  "trustification-auth",
  "trustification-infrastructure",
  "url",
+ "walker-common",
 ]
 
 [[package]]
