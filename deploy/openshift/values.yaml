@@ -58,10 +58,10 @@ collector:
     resources: ${{COLLECTOR_SNYK_RESOURCES}}
   osv:
     enabled: true
-    credentials: nvd-collector-secret
     resources: ${{COLLECTOR_OSV_RESOURCES}}
   nvd:
     enabled: true
+    credentials: nvd-collector-secret
     resources: ${{COLLECTOR_NVD_RESOURCES}}
 vexination:
   bucket: ${VEXINATION_STORAGE_BUCKET}

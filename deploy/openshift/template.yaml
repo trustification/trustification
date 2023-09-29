@@ -582,7 +582,7 @@ objects:
                 - name: NVD_API_KEY
                   valueFrom:
                     secretKeyRef:
-                      name: ''
+                      name: nvd-collector-secret
                       key: nvd_api_key
                 - name: HTTP_SERVER_BIND_ADDR
                   value: '::'
