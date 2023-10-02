@@ -8,7 +8,9 @@ use xshell::cmd;
 #[derive(Clone, Copy, Debug, strum::EnumString, strum::Display)]
 #[strum(serialize_all = "snake_case")]
 pub enum WebDriver {
+    /// Don't start any webdriver
     None,
+    /// Start chromedriver
     Chrome,
 }
 
@@ -50,10 +52,13 @@ impl Test {
         };
 
         let port = self.webdriver_port;
+        let mut features = vec![];
 
         // don't drop this until we're done with it
         let _webdriver = Shutdown(match self.ui {
             true => {
+                features.extend(["--features", "ui"]);
+
                 {
                     let _dir = sh.push_dir("spog/ui");
                     cmd!(sh, "trunk build ").run()?;
@@ -94,7 +99,7 @@ impl Test {
 
         let cmd = cmd!(
             sh,
-            "cargo test -p integration-tests -- --nocapture {threads...} {test...} {tests...}"
+            "cargo test -p integration-tests {features...} -- --nocapture {threads...} {test...} {tests...}"
         )
         .env("RUST_LOG", "tantivy=off,info");
 
