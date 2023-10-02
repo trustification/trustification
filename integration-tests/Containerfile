@@ -18,7 +18,7 @@ COPY . /usr/src/project
 WORKDIR /usr/src/project
 
 ARG tag
-RUN TAG=$tag cargo test --no-run -p integration-tests --release --features acceptance-tests
+RUN TAG=$tag cargo test --no-run -p integration-tests --release --no-default-features
 RUN mkdir -p test-binaries
 RUN find target/release/deps/ -type f ! -name "*.*" ! -name "integration_tests*" | xargs -I{} cp {} test-binaries/
 
