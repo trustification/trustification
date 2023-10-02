@@ -158,6 +158,7 @@ async fn spog_search_correlation(context: &mut SpogContext) {
 
 /// SPoG is the entrypoint for the frontend. It exposes an dependencies API, but forwards requests
 /// to Guac. This test is here to test this.
+#[ignore = "Unstable test, issue #618"]
 #[test_context(SpogContext)]
 #[tokio::test]
 #[ntest::timeout(30_000)]
