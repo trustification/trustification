@@ -53,3 +53,5 @@ spog-model = { path = "../spog/model" }
 [features]
 default = ["admin"]
 admin = []
+# UI tests
+ui = []
