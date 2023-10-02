@@ -44,10 +44,6 @@ pub async fn start_bombastic(config: &Config) -> BombasticContext {
         };
     }
 
-    #[cfg(not(feature = "with-services"))]
-    panic!("Remote trustification server expected");
-
-    #[cfg(feature = "with-services")]
     {
         // No remote server requested, so fire up bombastic on ephemeral port
         let listener = TcpListener::bind("localhost:0").unwrap();
@@ -166,7 +162,6 @@ pub async fn wait_for_search_result<F: Fn(serde_json::Value) -> bool>(
 }
 
 // Configuration for the bombastic indexer
-#[cfg(feature = "with-services")]
 fn bombastic_indexer() -> bombastic_indexer::Run {
     bombastic_indexer::Run {
         stored_topic: "sbom-stored".into(),
@@ -201,7 +196,6 @@ fn bombastic_indexer() -> bombastic_indexer::Run {
     }
 }
 
-#[cfg(feature = "with-services")]
 fn bombastic_api() -> bombastic_api::Run {
     use trustification_storage::Region;
     bombastic_api::Run {

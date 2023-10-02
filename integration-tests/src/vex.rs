@@ -43,10 +43,7 @@ pub async fn start_vexination(config: &Config) -> VexinationContext {
             fixtures: Vec::new(),
         };
     }
-    #[cfg(not(feature = "with-services"))]
-    panic!("Remote trustification server expected");
 
-    #[cfg(feature = "with-services")]
     {
         // No remote server requested, so fire up vexination on ephemeral port
         let listener = TcpListener::bind("localhost:0").unwrap();
@@ -143,7 +140,6 @@ impl VexinationContext {
     }
 }
 // Configuration for the vexination indexer
-#[cfg(feature = "with-services")]
 fn vexination_indexer() -> vexination_indexer::Run {
     vexination_indexer::Run {
         stored_topic: "vex-stored".into(),
@@ -178,7 +174,6 @@ fn vexination_indexer() -> vexination_indexer::Run {
     }
 }
 
-#[cfg(feature = "with-services")]
 fn vexination_api() -> vexination_api::Run {
     use trustification_storage::Region;
 
