@@ -1,6 +1,7 @@
 release: ${IMAGE_TAG}
 trustImage: ${BACKEND_IMAGE}
 uiImage: ${FRONTEND_IMAGE}
+guacImage: ${GUAC_IMAGE}
 testsImage: ${INTEGRATION_TESTS_IMAGE}
 domain: ${DOMAIN}
 createRoutes: false
@@ -83,7 +84,7 @@ vexination:
 keycloak:
   enabled: false
 guac:
-  enabled: false
+  enabled: true
   graphql:
     debug: false
 oidcClients:
