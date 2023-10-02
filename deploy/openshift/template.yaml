@@ -7,7 +7,7 @@ objects:
     kind: PodDisruptionBudget
     metadata:
       name: trustification-nats
-      namespace: trustification-staging
+      namespace: ${K8S_NAMESPACE}
       labels:
         helm.sh/chart: nats-0.19.17
         app.kubernetes.io/name: nats
@@ -24,7 +24,7 @@ objects:
     kind: ServiceAccount
     metadata:
       name: trustification-nats
-      namespace: trustification-staging
+      namespace: ${K8S_NAMESPACE}
       labels:
         helm.sh/chart: nats-0.19.17
         app.kubernetes.io/name: nats
@@ -35,7 +35,7 @@ objects:
     kind: ConfigMap
     metadata:
       name: trustification-nats-config
-      namespace: trustification-staging
+      namespace: ${K8S_NAMESPACE}
       labels:
         helm.sh/chart: nats-0.19.17
         app.kubernetes.io/name: nats
@@ -85,12 +85,12 @@ objects:
 
         # Nats setup
 
-        nats-addr: nats://trustification-nats.trustification-staging.svc:4222
+        nats-addr: nats://trustification-nats.${K8S_NAMESPACE}.svc:4222
 
 
         # CSub setup
 
-        csub-addr: "guac-collectsub.trustification-staging.svc.cluster.local:2782"
+        csub-addr: "guac-collectsub.${K8S_NAMESPACE}.svc.cluster.local:2782"
 
         csub-listen-port: 2782
 
@@ -101,11 +101,11 @@ objects:
 
         gql-listen-port: 8080
 
-        gql-debug: true
+        gql-debug: false
 
         gql-test-data: false
 
-        gql-addr: http://guac-graphql.trustification-staging.svc:8080/query
+        gql-addr: http://guac-graphql.${K8S_NAMESPACE}.svc:8080/query
 
 
         # Collector behavior
@@ -156,7 +156,7 @@ objects:
     kind: Service
     metadata:
       name: trustification-nats
-      namespace: trustification-staging
+      namespace: ${K8S_NAMESPACE}
       labels:
         helm.sh/chart: nats-0.19.17
         app.kubernetes.io/name: nats
@@ -460,7 +460,7 @@ objects:
     kind: Deployment
     metadata:
       name: trustification-nats-box
-      namespace: trustification-staging
+      namespace: ${K8S_NAMESPACE}
       labels:
         app: trustification-nats-box
         chart: nats-0.19.17
@@ -1979,7 +1979,7 @@ objects:
     kind: StatefulSet
     metadata:
       name: trustification-nats
-      namespace: trustification-staging
+      namespace: ${K8S_NAMESPACE}
       labels:
         helm.sh/chart: nats-0.19.17
         app.kubernetes.io/name: nats
@@ -2000,7 +2000,7 @@ objects:
             prometheus.io/path: /metrics
             prometheus.io/port: '7777'
             prometheus.io/scrape: 'true'
-            checksum/config: 63fafe88fe2e868cfe70a37f9c5fd9f3de6d44184c921ed8f15031aea06efc2e
+            checksum/config: 2ba828bdd8e69fe3fdc0acc1d2364a66469e39962f6b2279763aa559e728afb7
           labels:
             app.kubernetes.io/name: nats
             app.kubernetes.io/instance: trustification
@@ -2223,4 +2223,6 @@ parameters:
 - name: EXHORT_API_RESOURCES
   required: true
 - name: GUAC_IMAGE
+  required: true
+- name: K8S_NAMESPACE
   required: true

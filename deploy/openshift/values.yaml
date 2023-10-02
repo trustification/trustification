@@ -86,7 +86,7 @@ keycloak:
 guac:
   enabled: true
   graphql:
-    debug: true
+    debug: false
 oidcClients:
   frontend:
     issuerUrl: ${ISSUER_URL}

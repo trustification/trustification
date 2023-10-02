@@ -5,7 +5,7 @@ DASHBOARDS ?= ../k8s/dashboards
 all: template dashboards
 
 template:
-	helm template -f values.yaml trustification $(CHART) > generated.yaml
+	helm template -f values.yaml --namespace '$${K8S_NAMESPACE}' trustification $(CHART) > generated.yaml
 	cat generated.yaml | yq -e -y -s '{ apiVersion: "v1", kind: "Template", metadata: { name: "trustification" }, objects: . }' > template.yaml
 	cat parameters.yaml >> template.yaml
 	rm -f generated.yaml
