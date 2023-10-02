@@ -2,7 +2,6 @@ mod bom;
 mod config;
 mod provider;
 mod spog;
-mod ui;
 mod vex;
 
 pub mod runner;
@@ -10,8 +9,12 @@ pub mod runner;
 pub use bom::*;
 pub use provider::*;
 pub use spog::*;
-pub use ui::*;
 pub use vex::*;
+
+#[cfg(feature = "ui")]
+mod ui;
+#[cfg(feature = "ui")]
+pub use ui::*;
 
 use core::future::Future;
 use reqwest::{StatusCode, Url};
@@ -20,7 +23,6 @@ use std::time::Duration;
 use tokio::select;
 use trustification_auth::{auth::AuthConfigArguments, client::TokenInjector, devmode};
 use trustification_event_bus::EventBusConfig;
-
 use {
     spog_api::DEFAULT_CRDA_PAYLOAD_LIMIT, std::net::TcpListener, trustification_auth::swagger_ui::SwaggerUiOidcConfig,
     trustification_event_bus::EventBusType, trustification_index::IndexConfig,
