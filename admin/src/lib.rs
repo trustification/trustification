@@ -2,6 +2,7 @@ use std::process::ExitCode;
 
 mod delete;
 mod reindex;
+mod upload;
 
 #[derive(clap::Subcommand, Debug)]
 pub enum Command {
@@ -9,6 +10,8 @@ pub enum Command {
     Reindex(reindex::Reindex),
     #[command(subcommand)]
     Delete(delete::Delete),
+    #[command(subcommand)]
+    Upload(upload::Upload),
 }
 
 impl Command {
@@ -19,6 +22,7 @@ impl Command {
         match self {
             Self::Reindex(reindex) => reindex.run().await,
             Self::Delete(delete) => delete.run().await,
+            Self::Upload(upload) => upload.run().await,
         }
     }
 }
