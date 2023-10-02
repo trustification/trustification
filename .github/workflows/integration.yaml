@@ -8,7 +8,7 @@ jobs:
   integration-tests:
     runs-on: ubuntu-22.04
     env:
-      COMPOSE_FILES: "compose.yaml compose-guac.yaml compose-testing.yaml"
+      COMPOSE_FILES: "compose.yaml compose-guac.yaml"
     steps:
       - name: Init compose file list
         run: |
@@ -42,7 +42,7 @@ jobs:
 
       - name: Test
         run: |
-          RUST_LOG=tantivy=off,info cargo test -p integration-tests -- --nocapture
+          RUST_LOG=tantivy=off,info cargo xtask test --ui
           docker-compose ${files} ps
 
       - name: Print logs

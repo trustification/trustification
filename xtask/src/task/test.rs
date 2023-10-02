@@ -1,0 +1,101 @@
+use crate::common::project_root;
+use reqwest::blocking::get;
+use std::process::{Child, Command};
+use std::thread::sleep;
+use std::time::Duration;
+use xshell::cmd;
+
+#[derive(Debug, clap::Parser)]
+pub struct Test {
+    /// Number of concurrent threads. Zero means: unbound.
+    #[arg(short, long, env, default_value_t = 0)]
+    concurrent: usize,
+
+    /// Enable UI tests
+    #[arg(long, env)]
+    ui: bool,
+
+    /// Port of the (chrome/gecko)driver
+    #[arg(long, env, default_value_t = 4444)]
+    driver_port: u16,
+
+    /// Test module
+    #[arg(long)]
+    test: Option<String>,
+
+    /// Tests to run
+    #[arg()]
+    tests: Vec<String>,
+}
+
+impl Test {
+    pub fn run(self) -> anyhow::Result<()> {
+        let sh = xshell::Shell::new()?;
+        sh.change_dir(project_root());
+
+        let threads = match self.concurrent {
+            0 => vec![],
+            n => vec!["--test-threads".to_string(), n.to_string()],
+        };
+
+        let port = self.driver_port;
+
+        let _webdriver = Shutdown(match self.ui {
+            true => {
+                {
+                    let _dir = sh.push_dir("spog/ui");
+                    cmd!(sh, "trunk build ").run()?;
+                }
+
+                let webdriver = Command::new("chromedriver").arg(format!("--port={port}")).spawn()?;
+
+                loop {
+                    println!("Checking if webdriver is up...");
+                    if get(format!("http://localhost:{port}/status"))
+                        .and_then(|r| r.error_for_status())
+                        .is_ok()
+                    {
+                        break;
+                    }
+                    sleep(Duration::from_secs(1));
+                }
+
+                Some(webdriver)
+            }
+            false => None,
+        });
+
+        // now run the tests
+
+        let tests = self.tests;
+        let test = self
+            .test
+            .iter()
+            .map(|test| vec!["--test", &test])
+            .flatten()
+            .collect::<Vec<_>>();
+
+        let cmd = cmd!(
+            sh,
+            "cargo test -p integration-tests -- --nocapture {threads...} {test...} {tests...}"
+        )
+        .env("RUST_LOG", "tantivy=off,info");
+
+        cmd.run()?;
+
+        Ok(())
+    }
+}
+
+struct Shutdown(Option<Child>);
+
+impl Drop for Shutdown {
+    fn drop(&mut self) {
+        if let Some(child) = &mut self.0 {
+            if let Err(err) = child.kill() {
+                eprintln!("Failed to kill webdriver: {err}");
+            }
+            child.wait().unwrap();
+        }
+    }
+}
