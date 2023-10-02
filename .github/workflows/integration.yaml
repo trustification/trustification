@@ -7,7 +7,14 @@ on:
 jobs:
   integration-tests:
     runs-on: ubuntu-22.04
+    env:
+      COMPOSE_FILES: "compose.yaml compose-guac.yaml compose-testing.yaml"
     steps:
+      - name: Init compose file list
+        run: |
+          files=($COMPOSE_FILES)
+          echo "files=${files[@]/#/ -f deploy/compose/}" > "$GITHUB_ENV"
+
       - uses: actions/checkout@v3
 
       - uses: actions/cache@v3
@@ -31,16 +38,16 @@ jobs:
 
       - name: Compose
         run: |
-          docker-compose -f deploy/compose/compose.yaml -f deploy/compose/compose-guac.yaml up -d
+          docker-compose ${files} up -d
 
       - name: Test
         run: |
           RUST_LOG=tantivy=off,info cargo test -p integration-tests -- --nocapture
-          docker-compose -f deploy/compose/compose.yaml -f deploy/compose/compose-guac.yaml ps
+          docker-compose ${files} ps
 
       - name: Print logs
         if: always()
         run: |
           docker ps -a
-          docker-compose -f deploy/compose/compose.yaml -f deploy/compose/compose-guac.yaml logs
-          docker-compose -f deploy/compose/compose.yaml -f deploy/compose/compose-guac.yaml down
+          docker-compose ${files} logs
+          docker-compose ${files} down
