@@ -108,6 +108,7 @@ async fn delete_missing_sbom(context: &mut BombasticContext) {
     assert_eq!(response.status(), StatusCode::NO_CONTENT);
 }
 
+#[cfg(not(feature = "acceptance-tests"))]
 #[test_context(BombasticContext)]
 #[tokio::test]
 #[ntest::timeout(60_000)]
@@ -123,6 +124,7 @@ async fn reject_no_auth_upload(context: &mut BombasticContext) {
     assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
 }
 
+#[cfg(not(feature = "acceptance-tests"))]
 #[test_context(BombasticContext)]
 #[tokio::test]
 #[ntest::timeout(60_000)]
@@ -333,6 +335,7 @@ async fn upload_sbom_existing_with_change(context: &mut BombasticContext) {
     );
 }
 
+#[cfg(not(feature = "acceptance-tests"))]
 #[ignore = "until API can support failures so that event bus is not needed to check"]
 #[test_context(BombasticContext)]
 #[tokio::test]
@@ -358,6 +361,7 @@ async fn sbom_upload_empty_json(context: &mut BombasticContext) {
     context.delete_sbom(id).await;
 }
 
+#[cfg(not(feature = "acceptance-tests"))]
 #[ignore = "until API can support failures so that event bus is not needed to check"]
 #[test_context(BombasticContext)]
 #[tokio::test]
@@ -379,6 +383,7 @@ async fn sbom_upload_empty_file(context: &mut BombasticContext) {
     assert_eq!(response.status(), StatusCode::BAD_REQUEST);
 }
 
+#[cfg(not(feature = "acceptance-tests"))]
 #[test_context(BombasticContext)]
 #[tokio::test]
 #[ntest::timeout(60_000)]
@@ -410,6 +415,7 @@ async fn sbom_upload_unauthorized(context: &mut BombasticContext) {
     assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
 }
 
+#[cfg(not(feature = "acceptance-tests"))]
 #[test_context(BombasticContext)]
 #[tokio::test]
 #[ntest::timeout(60_000)]
