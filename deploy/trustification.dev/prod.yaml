@@ -37,8 +37,8 @@ bombastic:
   bucket: bombastic-prod
   credentials: bombastic-credentials-secret
   indexMode: file
-  exporter:
-    topic: sbom-guac-prod
+  collector:
+    queue: sbom-guac-prod
   indexer:
     topics:
       stored: sbom-stored-prod

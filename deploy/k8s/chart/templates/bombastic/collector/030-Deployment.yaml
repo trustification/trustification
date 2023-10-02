@@ -1,0 +1,97 @@
+{{ if .Values.bombastic.collector.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bombastic-collector
+  labels:
+    app.kubernetes.io/name: bombastic-collector
+    app.kubernetes.io/component: collector
+    app.kubernetes.io/part-of: trustification
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: bombastic-collector
+      app.kubernetes.io/component: collector
+      app.kubernetes.io/part-of: trustification
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: bombastic-collector
+        app.kubernetes.io/component: collector
+        app.kubernetes.io/part-of: trustification
+        metrics: "true"
+    spec:
+      volumes:
+        - name: config
+          configMap:
+            name: {{ .Values.config.name }}
+        - name: guac-config
+          configMap:
+            name: guac-cm
+        {{ include "trustification.http-server-volumes" (dict "root" . "appName" "guac-collectsub") | nindent 8 }}
+      containers:
+        - image: {{ .Values.guacImage }}
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          name: service
+          # TODO
+          # command: ["/trust"]
+          # args:
+          #   - "collector"
+          #   - "--event-bus"
+          #   - "sqs"
+          #   - "--stored-topic"
+          #   - "{{ .Values.bombastic.collector.topic }}"
+          #   - "--storage-bucket"
+          #   - "{{ .Values.bombastic.bucket }}"
+          #   - "--guac-url"
+          #   - "trustification-nats:4222"
+          #   - "--document-type"
+          #   - "sbom"
+          command: ["/opt/guac/guaccollect"]
+          args: []
+          workingDir: "/guac"
+          env:
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            {{ include "trustification.http-server" . | nindent 12 }}
+            - name: STORAGE_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Values.bombastic.credentials }}"
+                  key: aws_access_key_id
+            - name: STORAGE_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Values.bombastic.credentials }}"
+                  key: aws_secret_access_key
+            - name: STORAGE_REGION
+              value: "{{ .Values.region }}"
+            - name: STORAGE_BUCKET
+              value: "{{ .Values.bombastic.bucket }}"
+            - name: SQS_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Values.bombastic.credentials }}"
+                  key: aws_access_key_id
+            - name: SQS_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Values.bombastic.credentials }}"
+                  key: aws_secret_access_key
+            - name: SQS_REGION
+              value: "{{ .Values.region }}"
+            # SQS QUEUE
+          ports:
+            - containerPort: 2782
+              protocol: TCP
+          volumeMounts:
+            - name: guac-config
+              mountPath: /guac
+              readOnly: true
+            - mountPath: /etc/config
+              name: config
+            {{ include "trustification.http-server-volume-mounts" . | nindent 12 }}
+{{ end }}

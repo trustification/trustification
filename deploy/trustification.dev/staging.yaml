@@ -48,8 +48,8 @@ bombastic:
   bucket: bombastic-staging
   credentials: bombastic-credentials-secret
   indexMode: file
-  exporter:
-    topic: sbom-guac-staging
+  collector:
+    queue: sbom-guac-staging
   indexer:
     topics:
       stored: sbom-stored-staging
@@ -83,8 +83,6 @@ vexination:
   bucket: vexination-staging
   credentials: vexination-credentials-secret
   indexMode: file
-  exporter:
-    topic: vex-guac-staging
   indexer:
     topics:
       stored: vex-stored-staging
