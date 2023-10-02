@@ -22,16 +22,17 @@ time = "0.3"
 trustification-event-bus = { path = "../event-bus" }
 trustification-auth = { path = "../auth", default-features = false, features = ["swagger"] }
 
-bombastic-api = { path = "../bombastic/api", optional = true }
-bombastic-indexer = { path = "../bombastic/indexer", optional = true }
+bombastic-api = { path = "../bombastic/api" }
+bombastic-indexer = { path = "../bombastic/indexer" }
 
-vexination-api = { path = "../vexination/api", optional = true }
-vexination-indexer = { path = "../vexination/indexer", optional = true }
+vexination-api = { path = "../vexination/api" }
+vexination-indexer = { path = "../vexination/indexer" }
 
-spog-api = { path = "../spog/api", optional = true }
-trustification-infrastructure = { path = "../infrastructure", optional = true }
-trustification-storage = { path = "../storage", optional = true }
-trustification-index = { path = "../index", optional = true }
+spog-api = { path = "../spog/api" }
+trustification-infrastructure = { path = "../infrastructure" }
+trustification-storage = { path = "../storage" }
+trustification-index = { path = "../index" }
+trustification-indexer = { path = "../indexer" }
 
 clap = { version = "4", features = ["derive"] }
 
@@ -42,7 +43,3 @@ urlencoding = "2.1.2"
 [dev-dependencies]
 env_logger = "0.10"
 spog-model = { path = "../spog/model" }
-
-[features]
-default = ["with-services"]
-with-services = ["bombastic-api", "bombastic-indexer", "vexination-api", "vexination-indexer", "spog-api", "trustification-storage", "trustification-index", "trustification-infrastructure" ]

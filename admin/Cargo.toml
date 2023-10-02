@@ -10,6 +10,15 @@ tokio = { version = "1.0", features = ["full"] }
 log = "0.4"
 clap = { version = "4", features = ["derive"] }
 anyhow = "1"
-reqwest = { version = "0.11.16", features = ["stream"] }
+env_logger = "0.10"
 
+reqwest = { version = "0.11.16", features = ["json", "stream"] }
+urlencoding = "2"
+futures = "0.3"
+regex = "1.9.5"
+
+url = { version = "2.3.1", features = ["serde"] }
+trustification-auth = { path = "../auth" }
 trustification-common = { path = "../common" }
+bombastic-model = { path = "../bombastic/model" }
+vexination-model = { path = "../vexination/model" }
