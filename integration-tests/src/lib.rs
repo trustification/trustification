@@ -19,16 +19,13 @@ use tokio::select;
 use trustification_auth::{auth::AuthConfigArguments, client::TokenInjector, devmode};
 use trustification_event_bus::EventBusConfig;
 
-#[cfg(feature = "with-services")]
 use {
     spog_api::DEFAULT_CRDA_PAYLOAD_LIMIT, std::net::TcpListener, trustification_auth::swagger_ui::SwaggerUiOidcConfig,
     trustification_event_bus::EventBusType, trustification_index::IndexConfig,
     trustification_infrastructure::InfrastructureConfig, trustification_storage::StorageConfig,
 };
 
-#[cfg(feature = "with-services")]
 const STORAGE_ENDPOINT: &str = "http://localhost:9000";
-#[cfg(feature = "with-services")]
 const KAFKA_BOOTSTRAP_SERVERS: &str = "localhost:9092";
 
 pub async fn wait_for_event<F: Future>(events: &EventBusConfig, bus_name: &str, id: &str, f: F) {
@@ -89,7 +86,6 @@ pub trait Urlifier {
     }
 }
 
-#[cfg(feature = "with-services")]
 fn testing_auth() -> AuthConfigArguments {
     AuthConfigArguments {
         disabled: false,
@@ -98,7 +94,6 @@ fn testing_auth() -> AuthConfigArguments {
     }
 }
 
-#[cfg(feature = "with-services")]
 fn testing_swagger_ui_oidc() -> SwaggerUiOidcConfig {
     SwaggerUiOidcConfig {
         swagger_ui_oidc_issuer_url: Some(devmode::issuer_url()),

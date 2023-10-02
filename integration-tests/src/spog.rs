@@ -45,10 +45,6 @@ pub async fn start_spog(config: &Config) -> SpogContext {
         };
     }
 
-    #[cfg(not(feature = "with-services"))]
-    panic!("Remote trustification server expected");
-
-    #[cfg(feature = "with-services")]
     {
         use trustification_infrastructure::endpoint;
         use trustification_infrastructure::endpoint::Endpoint;
@@ -115,7 +111,6 @@ pub async fn start_spog(config: &Config) -> SpogContext {
     }
 }
 
-#[cfg(feature = "with-services")]
 fn spog_api(bombastic_url: Url, vexination_url: Url, collectorist_url: Url, v11y_url: Url) -> spog_api::Run {
     use trustification_infrastructure::endpoint;
     use trustification_infrastructure::endpoint::Endpoint;
