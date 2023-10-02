@@ -43,6 +43,10 @@ jobs:
       - name: Install trunk
         run: cargo binstall -y trunk
 
+      - name: Install wasm32-unknown-unknown
+        run: |
+          rustup target add wasm32-unknown-unknown
+
       - name: Compose
         run: |
           docker-compose ${files} up -d
