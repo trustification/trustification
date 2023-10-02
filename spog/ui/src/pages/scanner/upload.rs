@@ -258,6 +258,7 @@ pub fn upload(props: &UploadProperties) -> Html {
                         r
                     })
                     .unwrap_or_default();
+                ele.set_value("");
                 drop_content.set(DropContent::Files(files));
             }
         },
