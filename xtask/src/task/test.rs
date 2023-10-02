@@ -61,6 +61,7 @@ impl Test {
 
                 {
                     let _dir = sh.push_dir("spog/ui");
+                    cmd!(sh, "npm ci").run()?;
                     cmd!(sh, "trunk build ").run()?;
                 }
 
