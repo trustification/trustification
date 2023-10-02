@@ -17,6 +17,7 @@ mod analytics;
 mod analyze;
 mod config;
 mod cve;
+mod endpoints;
 mod guac;
 mod index;
 mod sbom;
