@@ -5,3 +5,4 @@ services:
     ports:
       - "4444:4444"
     shm_size: "2G"
+    network_mode: host
