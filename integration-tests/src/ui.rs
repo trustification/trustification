@@ -1,6 +1,8 @@
-use crate::config::{Config, DriverKind};
-use crate::runner::Runner;
-use crate::{start_spog, SpogContext, Urlifier};
+use crate::{
+    config::{Config, DriverKind},
+    runner::Runner,
+    start_spog, SpogContext, Urlifier,
+};
 use async_trait::async_trait;
 use reqwest::{StatusCode, Url};
 use std::net::TcpListener;
@@ -8,8 +10,10 @@ use std::ops::Deref;
 use std::path::PathBuf;
 use std::time::Duration;
 use test_context::AsyncTestContext;
-use thirtyfour::components::{Component, ElementResolver};
-use thirtyfour::prelude::*;
+use thirtyfour::{
+    components::{Component, ElementResolver},
+    prelude::*,
+};
 use tokio::select;
 use trustification_infrastructure::app::http::HttpServerBuilder;
 
@@ -61,10 +65,6 @@ pub async fn start_ui(config: &Config) -> SpogUiContext {
         };
     }
 
-    #[cfg(not(feature = "with-services"))]
-    panic!("Remote trustification server expected");
-
-    #[cfg(feature = "with-services")]
     {
         // No remote server requested, so fire up UI on ephemeral port
         let listener = TcpListener::bind("localhost:0").unwrap();
@@ -120,7 +120,6 @@ pub async fn start_ui(config: &Config) -> SpogUiContext {
     }
 }
 
-#[cfg(feature = "with-services")]
 async fn spog_ui(listener: TcpListener, dist_path: PathBuf) -> anyhow::Result<()> {
     HttpServerBuilder::new()
         .listen(listener)
