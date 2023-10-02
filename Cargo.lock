@@ -8502,6 +8502,7 @@ dependencies = [
  "anyhow",
  "clap",
  "reqwest",
+ "strum 0.25.0",
  "xshell",
 ]
 

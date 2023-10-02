@@ -5,6 +5,13 @@ use std::thread::sleep;
 use std::time::Duration;
 use xshell::cmd;
 
+#[derive(Clone, Copy, Debug, strum::EnumString, strum::Display)]
+#[strum(serialize_all = "snake_case")]
+pub enum WebDriver {
+    None,
+    Chrome,
+}
+
 #[derive(Debug, clap::Parser)]
 pub struct Test {
     /// Number of concurrent threads. Zero means: unbound.
@@ -17,7 +24,11 @@ pub struct Test {
 
     /// Port of the (chrome/gecko)driver
     #[arg(long, env, default_value_t = 4444)]
-    driver_port: u16,
+    webdriver_port: u16,
+
+    /// Port of the (chrome/gecko)driver
+    #[arg(long, env, default_value = "chrome")]
+    webdriver: WebDriver,
 
     /// Test module
     #[arg(long)]
@@ -38,8 +49,9 @@ impl Test {
             n => vec!["--test-threads".to_string(), n.to_string()],
         };
 
-        let port = self.driver_port;
+        let port = self.webdriver_port;
 
+        // don't drop this until we're done with it
         let _webdriver = Shutdown(match self.ui {
             true => {
                 {
@@ -47,20 +59,25 @@ impl Test {
                     cmd!(sh, "trunk build ").run()?;
                 }
 
-                let webdriver = Command::new("chromedriver").arg(format!("--port={port}")).spawn()?;
+                match self.webdriver {
+                    WebDriver::None => None,
+                    WebDriver::Chrome => {
+                        let webdriver = Command::new("chromedriver").arg(format!("--port={port}")).spawn()?;
 
-                loop {
-                    println!("Checking if webdriver is up...");
-                    if get(format!("http://localhost:{port}/status"))
-                        .and_then(|r| r.error_for_status())
-                        .is_ok()
-                    {
-                        break;
+                        loop {
+                            println!("Checking if webdriver is up...");
+                            if get(format!("http://localhost:{port}/status"))
+                                .and_then(|r| r.error_for_status())
+                                .is_ok()
+                            {
+                                break;
+                            }
+                            sleep(Duration::from_secs(1));
+                        }
+
+                        Some(webdriver)
                     }
-                    sleep(Duration::from_secs(1));
                 }
-
-                Some(webdriver)
             }
             false => None,
         });
