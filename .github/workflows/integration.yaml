@@ -8,7 +8,7 @@ jobs:
   integration-tests:
     runs-on: ubuntu-22.04
     env:
-      COMPOSE_FILES: "compose.yaml compose-guac.yaml"
+      COMPOSE_FILES: "compose.yaml compose-guac.yaml compose-testing.yaml"
     steps:
       - name: Init compose file list
         run: |
@@ -36,13 +36,20 @@ jobs:
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Install cargo binstall
+        run: |
+          curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
+
+      - name: Install trunk
+        run: cargo binstall -y trunk
+
       - name: Compose
         run: |
           docker-compose ${files} up -d
 
       - name: Test
         run: |
-          RUST_LOG=tantivy=off,info cargo xtask test --ui
+          RUST_LOG=tantivy=off,info cargo xtask test --ui --webdriver none
           docker-compose ${files} ps
 
       - name: Print logs
