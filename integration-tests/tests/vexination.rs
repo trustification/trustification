@@ -157,6 +157,7 @@ async fn vex_invalid_encoding(vexination: &mut VexinationContext) {
     assert_eq!(response.status(), StatusCode::BAD_REQUEST);
 }
 
+#[cfg(not(feature = "acceptance-tests"))]
 #[ignore = "until API can support failures so that event bus is not needed to check"]
 #[test_context(VexinationContext)]
 #[tokio::test]
@@ -180,6 +181,7 @@ async fn upload_vex_empty_json(context: &mut VexinationContext) {
     context.delete_vex(id).await;
 }
 
+#[cfg(not(feature = "acceptance-tests"))]
 #[ignore = "until API can support failures so that event bus is not needed to check"]
 #[test_context(VexinationContext)]
 #[tokio::test]
@@ -206,6 +208,7 @@ async fn upload_vex_empty_file(vexination: &mut VexinationContext) {
     vexination.delete_vex(id).await;
 }
 
+#[cfg(not(feature = "acceptance-tests"))]
 #[test_context(VexinationContext)]
 #[tokio::test]
 #[ntest::timeout(60_000)]
