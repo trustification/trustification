@@ -32,7 +32,7 @@ spec:
             - "-3"
           env:
             - name: RUST_LOG
-              value: info
+              value: {{ default "info" .Values.vexination.walker.logLevel }}
             - name: INFRASTRUCTURE_ENABLED
               value: "true"
             - name: INFRASTRUCTURE_BIND

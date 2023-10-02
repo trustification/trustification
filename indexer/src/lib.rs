@@ -127,6 +127,7 @@ impl<'a, INDEX: Index> Indexer<'a, INDEX> {
                     Ok(Some(event)) => {
                         if let Some(payload) = event.payload() {
                             if let Ok(data) = self.storage.decode_event(payload) {
+                                log::debug!("Received {} records", data.records.len());
                                 for data in data.records {
                                     if self.storage.is_index(data.key()) {
                                         log::trace!("It's an index event, ignoring");

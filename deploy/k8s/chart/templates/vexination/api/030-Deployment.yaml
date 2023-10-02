@@ -46,7 +46,7 @@ spec:
             - "/etc/config/auth.yaml"
           env:
             - name: RUST_LOG
-              value: info
+              value: {{ default "info" .Values.vexination.api.logLevel }}
             {{ include "trustification.http-server" . | nindent 12 }}
             - name: STORAGE_ACCESS_KEY
               valueFrom:
