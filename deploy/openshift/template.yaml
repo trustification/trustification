@@ -1390,7 +1390,7 @@ objects:
               secret:
                 secretName: guac-collectsub-tls
           containers:
-            - image: null
+            - image: ${GUAC_IMAGE}
               imagePullPolicy: Always
               name: service
               command:
@@ -1457,7 +1457,7 @@ objects:
               secret:
                 secretName: guac-graphql-tls
           containers:
-            - image: null
+            - image: ${GUAC_IMAGE}
               imagePullPolicy: Always
               name: service
               command:
@@ -2221,4 +2221,6 @@ parameters:
 - name: COLLECTOR_NVD_RESOURCES
   required: true
 - name: EXHORT_API_RESOURCES
+  required: true
+- name: GUAC_IMAGE
   required: true
