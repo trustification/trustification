@@ -76,9 +76,8 @@ impl<'a, INDEX: Index> Indexer<'a, INDEX> {
         let mut interval = tokio::time::interval(self.sync_interval);
         let mut writer = Some(block_in_place(|| self.index.writer())?);
         let consumer = self.bus.subscribe("indexer", &[self.stored_topic]).await?;
-        let mut uncommitted_events = Vec::new();
+        let mut processed_events = Vec::new();
         let mut events = 0;
-        let mut indexed = Vec::new();
 
         *self.status.lock().await = IndexerStatus::Running;
         loop {
@@ -136,7 +135,7 @@ impl<'a, INDEX: Index> Indexer<'a, INDEX> {
                                             EventType::Put => {
                                                 match self.storage.get_for_event(&data, true).await {
                                                     Ok(res) => {
-                                                        if let Err(e) = self.index_doc(self.index.index(), writer.as_mut().unwrap(), &res.key, &res.data, &mut indexed).await {
+                                                        if let Err(e) = self.index_doc(self.index.index(), writer.as_mut().unwrap(), &res.key, &res.data).await {
                                                             log::warn!("(Ignored) Internal error when indexing {}: {:?}", res.key, e);
                                                         }
                                                         events += 1;
@@ -162,7 +161,7 @@ impl<'a, INDEX: Index> Indexer<'a, INDEX> {
                         } else {
                             log::warn!("No event for payload, skipping");
                         }
-                        uncommitted_events.push(event);
+                        processed_events.push(event);
                     }
                     Ok(None) => {
                         log::debug!("Polling returned no events, retrying");
@@ -180,10 +179,9 @@ impl<'a, INDEX: Index> Indexer<'a, INDEX> {
                     match self.index.snapshot(writer.take().unwrap(), &self.storage, events > 0).await {
                         Ok(_) => {
                             log::trace!("Index updated successfully");
-                            match consumer.commit(&uncommitted_events[..]).await {
+                            match consumer.commit(&processed_events[..]).await {
                                 Ok(_) => {
                                     log::trace!("Event committed successfully");
-                                    uncommitted_events.clear();
                                 }
                                 Err(e) => {
                                     log::warn!("Error committing event: {:?}", e)
@@ -191,9 +189,11 @@ impl<'a, INDEX: Index> Indexer<'a, INDEX> {
                             }
                             events = 0;
 
-                            for key in indexed.drain(..) {
-                                if let Err(e) = self.bus.send(self.indexed_topic, key.as_bytes()).await {
-                                    log::warn!("(Ignored) Error sending key {} to indexed topic {}: {:?}", key, self.indexed_topic, e);
+                            for event in processed_events.drain(..) {
+                                if let Some(payload) = event.payload() {
+                                    if let Err(e) = self.bus.send(self.indexed_topic, payload).await {
+                                        log::warn!("(Ignored) Error sending event to indexed topic {}: {:?}", self.indexed_topic, e);
+                                    }
                                 }
                             }
 
@@ -230,7 +230,7 @@ impl<'a, INDEX: Index> Indexer<'a, INDEX> {
                             let key = path.key();
                             log::info!("Reindexing {:?}", key);
                             // Not sending notifications for reindexing
-                            if let Err(e) = self.index_doc(self.index.index(), writer.as_mut().unwrap(), key, &obj, &mut Vec::new()).await {
+                            if let Err(e) = self.index_doc(self.index.index(), writer.as_mut().unwrap(), key, &obj).await {
                                 log::warn!("(Ignored) Internal error when indexing {}: {:?}", key, e);
                             } else {
                                 progress += 1;
@@ -268,12 +268,10 @@ impl<'a, INDEX: Index> Indexer<'a, INDEX> {
         writer: &mut IndexWriter,
         key: &str,
         data: &[u8],
-        indexed: &mut Vec<String>,
     ) -> Result<(), anyhow::Error> {
         match block_in_place(|| writer.add_document(index, key, data)) {
             Ok(_) => {
                 log::debug!("Inserted entry '{key}' into index");
-                indexed.push(key.to_string());
             }
             Err(e) => {
                 let failure = serde_json::json!( {
