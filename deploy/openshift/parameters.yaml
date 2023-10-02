@@ -71,3 +71,5 @@ parameters:
   required: true
 - name: EXHORT_API_RESOURCES
   required: true
+- name: GUAC_IMAGE
+  required: true
