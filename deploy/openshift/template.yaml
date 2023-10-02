@@ -3,6 +3,75 @@ kind: Template
 metadata:
   name: trustification
 objects:
+  - apiVersion: policy/v1
+    kind: PodDisruptionBudget
+    metadata:
+      name: trustification-nats
+      namespace: trustification-staging
+      labels:
+        helm.sh/chart: nats-0.19.17
+        app.kubernetes.io/name: nats
+        app.kubernetes.io/instance: trustification
+        app.kubernetes.io/version: 2.9.20
+        app.kubernetes.io/managed-by: Helm
+    spec:
+      maxUnavailable: 1
+      selector:
+        matchLabels:
+          app.kubernetes.io/name: nats
+          app.kubernetes.io/instance: trustification
+  - apiVersion: v1
+    kind: ServiceAccount
+    metadata:
+      name: trustification-nats
+      namespace: trustification-staging
+      labels:
+        helm.sh/chart: nats-0.19.17
+        app.kubernetes.io/name: nats
+        app.kubernetes.io/instance: trustification
+        app.kubernetes.io/version: 2.9.20
+        app.kubernetes.io/managed-by: Helm
+  - apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: trustification-nats-config
+      namespace: trustification-staging
+      labels:
+        helm.sh/chart: nats-0.19.17
+        app.kubernetes.io/name: nats
+        app.kubernetes.io/instance: trustification
+        app.kubernetes.io/version: 2.9.20
+        app.kubernetes.io/managed-by: Helm
+    data:
+      nats.conf: '# NATS Clients Port
+
+        port: 4222
+
+
+        # PID file shared with configuration reloader.
+
+        pid_file: "/var/run/nats/nats.pid"
+
+
+        ###############
+
+        #             #
+
+        # Monitoring  #
+
+        #             #
+
+        ###############
+
+        http: 8222
+
+        server_name: $POD_NAME
+
+        lame_duck_grace_period: 10s
+
+        lame_duck_duration: 30s
+
+        '
   - apiVersion: v1
     kind: ConfigMap
     metadata:
@@ -32,7 +101,7 @@ objects:
 
         gql-listen-port: 8080
 
-        gql-debug: false
+        gql-debug: true
 
         gql-test-data: false
 
@@ -83,6 +152,42 @@ objects:
       resources:
         requests:
           storage: 1Gi
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      name: trustification-nats
+      namespace: trustification-staging
+      labels:
+        helm.sh/chart: nats-0.19.17
+        app.kubernetes.io/name: nats
+        app.kubernetes.io/instance: trustification
+        app.kubernetes.io/version: 2.9.20
+        app.kubernetes.io/managed-by: Helm
+    spec:
+      selector:
+        app.kubernetes.io/name: nats
+        app.kubernetes.io/instance: trustification
+      clusterIP: None
+      publishNotReadyAddresses: true
+      ports:
+        - name: client
+          port: 4222
+          appProtocol: tcp
+        - name: cluster
+          port: 6222
+          appProtocol: tcp
+        - name: monitor
+          port: 8222
+          appProtocol: http
+        - name: metrics
+          port: 7777
+          appProtocol: http
+        - name: leafnodes
+          port: 7422
+          appProtocol: tcp
+        - name: gateways
+          port: 7522
+          appProtocol: tcp
   - apiVersion: v1
     kind: Service
     metadata:
@@ -213,6 +318,48 @@ objects:
     kind: Service
     metadata:
       labels:
+        app.kubernetes.io/name: guac-collectsub
+        app.kubernetes.io/component: collectsub
+        app.kubernetes.io/part-of: trustification
+      annotations:
+        service.beta.openshift.io/serving-cert-secret-name: guac-collectsub-tls
+      name: guac-collectsub
+    spec:
+      ports:
+        - name: endpoint
+          port: 2782
+          protocol: TCP
+          targetPort: 2782
+      selector:
+        app.kubernetes.io/name: guac-collectsub
+        app.kubernetes.io/component: collectsub
+        app.kubernetes.io/part-of: trustification
+      type: ClusterIP
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      labels:
+        app.kubernetes.io/name: guac-graphql
+        app.kubernetes.io/component: graphql
+        app.kubernetes.io/part-of: trustification
+      annotations:
+        service.beta.openshift.io/serving-cert-secret-name: guac-graphql-tls
+      name: guac-graphql
+    spec:
+      ports:
+        - name: endpoint
+          port: 8080
+          protocol: TCP
+          targetPort: 8080
+      selector:
+        app.kubernetes.io/name: guac-graphql
+        app.kubernetes.io/component: graphql
+        app.kubernetes.io/part-of: trustification
+      type: ClusterIP
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      labels:
         app.kubernetes.io/name: trustification-monitoring
         app.kubernetes.io/component: monitoring
         app.kubernetes.io/part-of: trustification
@@ -312,6 +459,38 @@ objects:
   - apiVersion: apps/v1
     kind: Deployment
     metadata:
+      name: trustification-nats-box
+      namespace: trustification-staging
+      labels:
+        app: trustification-nats-box
+        chart: nats-0.19.17
+    spec:
+      replicas: 1
+      selector:
+        matchLabels:
+          app: trustification-nats-box
+      template:
+        metadata:
+          labels:
+            app: trustification-nats-box
+        spec:
+          volumes: null
+          containers:
+            - name: nats-box
+              image: natsio/nats-box:0.13.8
+              imagePullPolicy: IfNotPresent
+              resources: {}
+              env:
+                - name: NATS_URL
+                  value: trustification-nats
+              command:
+                - tail
+                - -f
+                - /dev/null
+              volumeMounts: null
+  - apiVersion: apps/v1
+    kind: Deployment
+    metadata:
       name: bombastic-api
       labels:
         app.kubernetes.io/name: bombastic-api
@@ -403,6 +582,99 @@ objects:
                   protocol: TCP
                   name: infra
               resources: ${{BOMBASTIC_API_RESOURCES}}
+              livenessProbe:
+                httpGet:
+                  path: /health/live
+                  port: 9010
+                initialDelaySeconds: 2
+              readinessProbe:
+                httpGet:
+                  path: /health/ready
+                  port: 9010
+                initialDelaySeconds: 2
+              startupProbe:
+                httpGet:
+                  path: /health/startup
+                  port: 9010
+  - apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: bombastic-exporter
+      labels:
+        app.kubernetes.io/name: bombastic-exporter
+        app.kubernetes.io/component: exporter
+        app.kubernetes.io/part-of: trustification
+    spec:
+      replicas: 1
+      selector:
+        matchLabels:
+          app.kubernetes.io/name: bombastic-exporter
+          app.kubernetes.io/component: exporter
+          app.kubernetes.io/part-of: trustification
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: bombastic-exporter
+            app.kubernetes.io/component: exporter
+            app.kubernetes.io/part-of: trustification
+        spec:
+          volumes:
+            - name: data
+              emptyDir: {}
+          containers:
+            - image: ${BACKEND_IMAGE}:${IMAGE_TAG}
+              imagePullPolicy: Always
+              name: service
+              command:
+                - /trust
+              args:
+                - exporter
+                - --event-bus
+                - sqs
+                - --stored-topic
+                - ${BOMBASTIC_INDEXER_GUAC_TOPIC}
+                - --storage-bucket
+                - ${BOMBASTIC_STORAGE_BUCKET}
+                - --guac-url
+                - trustification-nats:4222
+                - --document-type
+                - sbom
+              env:
+                - name: RUST_LOG
+                  value: info
+                - name: STORAGE_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${BOMBASTIC_AWS_SECRET_NAME}
+                      key: aws_access_key_id
+                - name: STORAGE_SECRET_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${BOMBASTIC_AWS_SECRET_NAME}
+                      key: aws_secret_access_key
+                - name: STORAGE_REGION
+                  value: ${AWS_REGION}
+                - name: STORAGE_BUCKET
+                  value: ${BOMBASTIC_STORAGE_BUCKET}
+                - name: SQS_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${BOMBASTIC_AWS_SECRET_NAME}
+                      key: aws_access_key_id
+                - name: SQS_SECRET_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${BOMBASTIC_AWS_SECRET_NAME}
+                      key: aws_secret_access_key
+                - name: SQS_REGION
+                  value: ${AWS_REGION}
+                - name: INFRASTRUCTURE_ENABLED
+                  value: 'true'
+                - name: INFRASTRUCTURE_BIND
+                  value: '[::]:9010'
+              volumeMounts:
+                - name: data
+                  mountPath: /data
               livenessProbe:
                 httpGet:
                   path: /health/live
@@ -1085,6 +1357,140 @@ objects:
   - apiVersion: apps/v1
     kind: Deployment
     metadata:
+      name: guac-collectsub
+      labels:
+        app.kubernetes.io/name: guac-collectsub
+        app.kubernetes.io/component: collectsub
+        app.kubernetes.io/part-of: trustification
+    spec:
+      replicas: 1
+      selector:
+        matchLabels:
+          app.kubernetes.io/name: guac-collectsub
+          app.kubernetes.io/component: collectsub
+          app.kubernetes.io/part-of: trustification
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: guac-collectsub
+            app.kubernetes.io/component: collectsub
+            app.kubernetes.io/part-of: trustification
+            metrics: 'true'
+          annotations:
+            config/checksum: 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
+        spec:
+          volumes:
+            - name: config
+              configMap:
+                name: ${CONFIG_NAME}
+            - name: guac-config
+              configMap:
+                name: guac-cm
+            - name: tls
+              secret:
+                secretName: guac-collectsub-tls
+          containers:
+            - image: null
+              imagePullPolicy: Always
+              name: service
+              command:
+                - /opt/guac/guaccsub
+              args: []
+              workingDir: /guac
+              env:
+                - name: NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.namespace
+                - name: HTTP_SERVER_BIND_ADDR
+                  value: '::'
+                - name: HTTP_SERVER_TLS_ENABLED
+                  value: 'true'
+                - name: HTTP_SERVER_TLS_KEY_FILE
+                  value: /etc/tls/tls.key
+                - name: HTTP_SERVER_TLS_CERTIFICATE_FILE
+                  value: /etc/tls/tls.crt
+              volumeMounts:
+                - name: guac-config
+                  mountPath: /guac
+                  readOnly: true
+                - mountPath: /etc/config
+                  name: config
+                - mountPath: /etc/tls
+                  name: tls
+              ports:
+                - containerPort: 2782
+                  protocol: TCP
+  - apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: guac-graphql
+      labels:
+        app.kubernetes.io/name: guac-graphql
+        app.kubernetes.io/component: graphql
+        app.kubernetes.io/part-of: trustification
+    spec:
+      replicas: 1
+      selector:
+        matchLabels:
+          app.kubernetes.io/name: guac-graphql
+          app.kubernetes.io/component: graphql
+          app.kubernetes.io/part-of: trustification
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: guac-graphql
+            app.kubernetes.io/component: graphql
+            app.kubernetes.io/part-of: trustification
+            metrics: 'true'
+          annotations:
+            config/checksum: 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
+        spec:
+          volumes:
+            - name: config
+              configMap:
+                name: ${CONFIG_NAME}
+            - name: guac-config
+              configMap:
+                name: guac-cm
+            - name: tls
+              secret:
+                secretName: guac-graphql-tls
+          containers:
+            - image: null
+              imagePullPolicy: Always
+              name: service
+              command:
+                - /opt/guac/guacgql
+              args: []
+              workingDir: /guac
+              env:
+                - name: NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.namespace
+                - name: HTTP_SERVER_BIND_ADDR
+                  value: '::'
+                - name: HTTP_SERVER_TLS_ENABLED
+                  value: 'true'
+                - name: HTTP_SERVER_TLS_KEY_FILE
+                  value: /etc/tls/tls.key
+                - name: HTTP_SERVER_TLS_CERTIFICATE_FILE
+                  value: /etc/tls/tls.crt
+              volumeMounts:
+                - name: guac-config
+                  mountPath: /guac
+                  readOnly: true
+                - mountPath: /etc/config
+                  name: config
+                - mountPath: /etc/tls
+                  name: tls
+              ports:
+                - containerPort: 8080
+                  protocol: TCP
+  - apiVersion: apps/v1
+    kind: Deployment
+    metadata:
       name: spog-api
       labels:
         app.kubernetes.io/name: spog-api
@@ -1569,6 +1975,180 @@ objects:
                 httpGet:
                   path: /health/startup
                   port: 9010
+  - apiVersion: apps/v1
+    kind: StatefulSet
+    metadata:
+      name: trustification-nats
+      namespace: trustification-staging
+      labels:
+        helm.sh/chart: nats-0.19.17
+        app.kubernetes.io/name: nats
+        app.kubernetes.io/instance: trustification
+        app.kubernetes.io/version: 2.9.20
+        app.kubernetes.io/managed-by: Helm
+    spec:
+      selector:
+        matchLabels:
+          app.kubernetes.io/name: nats
+          app.kubernetes.io/instance: trustification
+      replicas: 1
+      serviceName: trustification-nats
+      podManagementPolicy: Parallel
+      template:
+        metadata:
+          annotations:
+            prometheus.io/path: /metrics
+            prometheus.io/port: '7777'
+            prometheus.io/scrape: 'true'
+            checksum/config: 63fafe88fe2e868cfe70a37f9c5fd9f3de6d44184c921ed8f15031aea06efc2e
+          labels:
+            app.kubernetes.io/name: nats
+            app.kubernetes.io/instance: trustification
+        spec:
+          dnsPolicy: ClusterFirst
+          volumes:
+            - name: config-volume
+              configMap:
+                name: trustification-nats-config
+            - name: pid
+              emptyDir: {}
+          serviceAccountName: trustification-nats
+          shareProcessNamespace: true
+          terminationGracePeriodSeconds: 60
+          containers:
+            - name: nats
+              image: nats:2.9.20-alpine
+              imagePullPolicy: IfNotPresent
+              resources: {}
+              ports:
+                - containerPort: 4222
+                  name: client
+                - containerPort: 6222
+                  name: cluster
+                - containerPort: 8222
+                  name: monitor
+              command:
+                - nats-server
+                - --config
+                - /etc/nats-config/nats.conf
+              env:
+                - name: POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.name
+                - name: SERVER_NAME
+                  value: $(POD_NAME)
+                - name: POD_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.namespace
+                - name: CLUSTER_ADVERTISE
+                  value: $(POD_NAME).trustification-nats.$(POD_NAMESPACE).svc.cluster.local
+              volumeMounts:
+                - name: config-volume
+                  mountPath: /etc/nats-config
+                - name: pid
+                  mountPath: /var/run/nats
+              livenessProbe:
+                failureThreshold: 3
+                httpGet:
+                  path: /
+                  port: 8222
+                initialDelaySeconds: 10
+                periodSeconds: 30
+                successThreshold: 1
+                timeoutSeconds: 5
+              readinessProbe:
+                failureThreshold: 3
+                httpGet:
+                  path: /
+                  port: 8222
+                initialDelaySeconds: 10
+                periodSeconds: 10
+                successThreshold: 1
+                timeoutSeconds: 5
+              startupProbe:
+                failureThreshold: 90
+                httpGet:
+                  path: /healthz
+                  port: 8222
+                initialDelaySeconds: 10
+                periodSeconds: 10
+                successThreshold: 1
+                timeoutSeconds: 5
+              lifecycle:
+                preStop:
+                  exec:
+                    command:
+                      - nats-server
+                      - -sl=ldm=/var/run/nats/nats.pid
+            - name: reloader
+              image: natsio/nats-server-config-reloader:0.11.0
+              imagePullPolicy: IfNotPresent
+              resources: {}
+              command:
+                - nats-server-config-reloader
+                - -pid
+                - /var/run/nats/nats.pid
+                - -config
+                - /etc/nats-config/nats.conf
+              volumeMounts:
+                - name: config-volume
+                  mountPath: /etc/nats-config
+                - name: pid
+                  mountPath: /var/run/nats
+            - name: metrics
+              image: natsio/prometheus-nats-exporter:0.12.0
+              imagePullPolicy: IfNotPresent
+              resources: {}
+              args:
+                - -connz
+                - -routez
+                - -subz
+                - -varz
+                - -prefix=nats
+                - -use_internal_server_id
+                - http://localhost:8222/
+              ports:
+                - containerPort: 7777
+                  name: metrics
+      volumeClaimTemplates: null
+  - apiVersion: v1
+    kind: Pod
+    metadata:
+      name: trustification-nats-test-request-reply
+      labels:
+        chart: nats-0.19.17
+        app: trustification-nats-test-request-reply
+      annotations:
+        helm.sh/hook: test
+    spec:
+      containers:
+        - name: nats-box
+          image: natsio/nats-box:0.13.8
+          env:
+            - name: NATS_HOST
+              value: trustification-nats
+          command:
+            - /bin/sh
+            - -ec
+            - 'nats reply -s nats://$NATS_HOST:4222 ''name.>'' --command "echo 1"
+              &
+
+              '
+            - '"&&"
+
+              '
+            - 'name=$(nats request -s nats://$NATS_HOST:4222 name.test '''' 2>/dev/null)
+
+              '
+            - '"&&"
+
+              '
+            - '[ $name = test ]
+
+              '
+      restartPolicy: Never
 parameters:
 - name: BACKEND_IMAGE
   required: true

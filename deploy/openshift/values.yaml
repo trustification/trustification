@@ -83,9 +83,9 @@ vexination:
 keycloak:
   enabled: false
 guac:
-  enabled: false
+  enabled: true
   graphql:
-    debug: false
+    debug: true
 oidcClients:
   frontend:
     issuerUrl: ${ISSUER_URL}
