@@ -539,7 +539,7 @@ objects:
                 - /etc/config/auth.yaml
               env:
                 - name: RUST_LOG
-                  value: info
+                  value: ${LOG_LEVEL}
                 - name: STORAGE_ACCESS_KEY
                   valueFrom:
                     secretKeyRef:
@@ -641,7 +641,7 @@ objects:
                 - sbom
               env:
                 - name: RUST_LOG
-                  value: info
+                  value: ${LOG_LEVEL}
                 - name: STORAGE_ACCESS_KEY
                   valueFrom:
                     secretKeyRef:
@@ -740,7 +740,7 @@ objects:
                 - always
               env:
                 - name: RUST_LOG
-                  value: info
+                  value: ${LOG_LEVEL}
                 - name: STORAGE_ACCESS_KEY
                   valueFrom:
                     secretKeyRef:
@@ -848,7 +848,7 @@ objects:
                 - http://guac-graphql.$(NAMESPACE).svc:8080/query
               env:
                 - name: RUST_LOG
-                  value: info
+                  value: ${LOG_LEVEL}
                 - name: NAMESPACE
                   valueFrom:
                     fieldRef:
@@ -964,7 +964,7 @@ objects:
                 - http://guac-graphql.$(NAMESPACE).svc:8080/query
               env:
                 - name: RUST_LOG
-                  value: info
+                  value: ${LOG_LEVEL}
                 - name: NAMESPACE
                   valueFrom:
                     fieldRef:
@@ -1075,7 +1075,7 @@ objects:
                 - http://guac-graphql.$(NAMESPACE).svc:8080/query
               env:
                 - name: RUST_LOG
-                  value: info
+                  value: ${LOG_LEVEL}
                 - name: NAMESPACE
                   valueFrom:
                     fieldRef:
@@ -1197,7 +1197,7 @@ objects:
                 - /etc/config/collectorist.yaml
               env:
                 - name: RUST_LOG
-                  value: info
+                  value: ${LOG_LEVEL}
                 - name: HTTP_SERVER_BIND_ADDR
                   value: '::'
                 - name: HTTP_SERVER_TLS_ENABLED
@@ -1296,7 +1296,7 @@ objects:
                 - /etc/config/auth.yaml
               env:
                 - name: RUST_LOG
-                  value: info
+                  value: ${LOG_LEVEL}
                 - name: NAMESPACE
                   valueFrom:
                     fieldRef:
@@ -1538,7 +1538,7 @@ objects:
                 - /etc/config/auth.yaml
               env:
                 - name: RUST_LOG
-                  value: info
+                  value: ${LOG_LEVEL}
                 - name: NAMESPACE
                   valueFrom:
                     fieldRef:
@@ -1722,7 +1722,7 @@ objects:
                 - /data
               env:
                 - name: RUST_LOG
-                  value: info
+                  value: ${LOG_LEVEL}
                 - name: HTTP_SERVER_BIND_ADDR
                   value: '::'
                 - name: HTTP_SERVER_TLS_ENABLED
@@ -1814,7 +1814,7 @@ objects:
                 - /etc/config/auth.yaml
               env:
                 - name: RUST_LOG
-                  value: info
+                  value: ${LOG_LEVEL}
                 - name: HTTP_SERVER_BIND_ADDR
                   value: '::'
                 - name: HTTP_SERVER_TLS_ENABLED
@@ -1922,7 +1922,7 @@ objects:
                 - always
               env:
                 - name: RUST_LOG
-                  value: info
+                  value: ${LOG_LEVEL}
                 - name: STORAGE_ACCESS_KEY
                   valueFrom:
                     secretKeyRef:
@@ -2226,3 +2226,6 @@ parameters:
   required: true
 - name: K8S_NAMESPACE
   required: true
+- name: LOG_LEVEL
+  required: false
+  default: "info"

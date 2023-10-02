@@ -51,7 +51,7 @@ spec:
             - "http://guac-graphql.$(NAMESPACE).svc:8080/query"
           env:
             - name: RUST_LOG
-              value: info
+              value: {{ default "info" .Values.collector.nvd.logLevel }}
             - name: NAMESPACE
               valueFrom:
                 fieldRef:

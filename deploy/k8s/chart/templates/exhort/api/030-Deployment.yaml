@@ -45,7 +45,7 @@ spec:
             - "/etc/config/auth.yaml"
           env:
             - name: RUST_LOG
-              value: info
+              value: {{ default "info" .Values.exhort.api.logLevel }}
             - name: NAMESPACE
               valueFrom:
                 fieldRef:
