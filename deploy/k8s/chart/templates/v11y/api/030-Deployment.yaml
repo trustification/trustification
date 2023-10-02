@@ -49,7 +49,7 @@ spec:
             - "/data"
           env:
             - name: RUST_LOG
-              value: info
+              value: {{ default "info" .Values.v11y.api.logLevel }}
             {{ include "trustification.http-server" . | nindent 12 }}
             - name: INFRASTRUCTURE_ENABLED
               value: "true"

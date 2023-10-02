@@ -50,7 +50,7 @@ spec:
 {{ end }}
           env:
             - name: RUST_LOG
-              value: info
+              value: {{ default "info" .Values.vexination.indexer.logLevel }}
             - name: STORAGE_ACCESS_KEY
               valueFrom:
                 secretKeyRef:

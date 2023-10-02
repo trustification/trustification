@@ -43,7 +43,7 @@ spec:
             - "sbom"
           env:
             - name: RUST_LOG
-              value: info
+              value: {{ default "info" .Values.bombastic.exporter.logLevel }}
             - name: STORAGE_ACCESS_KEY
               valueFrom:
                 secretKeyRef:

@@ -46,7 +46,7 @@ spec:
             - "/etc/config/auth.yaml"
           env:
             - name: RUST_LOG
-              value: info
+              value: {{ default "info" .Values.bombastic.api.logLevel }}
             - name: STORAGE_ACCESS_KEY
               valueFrom:
                 secretKeyRef:
