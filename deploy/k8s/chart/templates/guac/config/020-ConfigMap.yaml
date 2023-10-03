@@ -8,10 +8,6 @@ metadata:
     app.kubernetes.io/part-of: trustification
 data:
   guac.yaml: |
-
-    # Nats setup
-    nats-addr: nats://trustification-nats.{{ $.Release.Namespace }}.svc:4222
-
     # CSub setup
     csub-addr: "guac-collectsub.{{ $.Release.Namespace }}.svc.cluster.local:2782"
     csub-listen-port: 2782
