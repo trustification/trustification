@@ -1,5 +1,5 @@
 use crate::{
-    data::{Package, PackageDependencies, PackageDependents, PackageList, PackageRef},
+    data::{Package, PackageDependencies, PackageList, PackageRef},
     ApplyAccessToken, Backend, Endpoint, SearchParameters,
 };
 use packageurl::PackageUrl;
@@ -46,18 +46,42 @@ impl PackageService {
         self.batch_to_refs("/api/package", purls).await
     }
 
-    pub async fn dependencies<'a, I>(&self, purls: I) -> Result<Vec<PackageDependencies>, Error>
-    where
-        I: IntoIterator<Item = PackageUrl<'a>>,
-    {
-        self.batch_to_refs("/api/package/dependencies", purls).await
+    pub async fn related_packages(&self, purl: impl AsRef<str>) -> Result<PackageDependencies, ApiError> {
+        let url = self.backend.join(
+            Endpoint::Api,
+            &format!(
+                "/api/v1/packages?purl={purl}",
+                purl = urlencoding::encode(purl.as_ref())
+            ),
+        )?;
+
+        let response = self
+            .client
+            .get(url)
+            .latest_access_token(&self.access_token)
+            .send()
+            .await?;
+
+        Ok(response.error_for_status()?.json().await?)
     }
 
-    pub async fn dependents<'a, I>(&self, purls: I) -> Result<Vec<PackageDependents>, Error>
-    where
-        I: IntoIterator<Item = PackageUrl<'a>>,
-    {
-        self.batch_to_refs("/api/package/dependents", purls).await
+    pub async fn dependents(&self, purl: impl AsRef<str>) -> Result<PackageDependencies, ApiError> {
+        let url = self.backend.join(
+            Endpoint::Api,
+            &format!(
+                "/api/v1/packages/dependents?purl={purl}",
+                purl = urlencoding::encode(purl.as_ref())
+            ),
+        )?;
+
+        let response = self
+            .client
+            .get(url)
+            .latest_access_token(&self.access_token)
+            .send()
+            .await?;
+
+        Ok(response.error_for_status()?.json().await?)
     }
 
     pub async fn search_packages(

@@ -3,10 +3,12 @@ use packageurl::PackageUrl;
 use patternfly_yew::prelude::*;
 use spdx_rs::models::{PackageInformation, Relationship, SPDX};
 use spog_ui_common::utils::{highlight::highlight, OrNone};
+use spog_ui_navigation::AppRoute;
 use std::cell::RefCell;
 use std::collections::{hash_map, BTreeMap, BTreeSet, HashMap, HashSet};
 use std::rc::Rc;
 use yew::prelude::*;
+use yew_nested_router::components::Link;
 
 #[derive(PartialEq, Properties)]
 pub struct SpdxPackagesProperties {
@@ -115,10 +117,14 @@ pub fn spdx_packages(props: &SpdxPackagesProperties) -> Html {
                     ..
                 } => match context.column {
                     Column::Name => html!(<>
-                        { highlight(base.name(), &self.filter.borrow()) }
-                        if let Some(namespace) = base.namespace() {
-                            { " / " } { highlight(namespace, &self.filter.borrow()) }
-                        }
+                        <Link<AppRoute>
+                            target={AppRoute::Package{id: base.to_string()}}
+                        >
+                            { highlight(base.name(), &self.filter.borrow()) }
+                            if let Some(namespace) = base.namespace() {
+                                { " / " } { highlight(namespace, &self.filter.borrow()) }
+                            }
+                        </Link<AppRoute>>
                         {" "}
                         <Label compact=true label={base.ty().to_string()} color={Color::Blue} />
                     </>)

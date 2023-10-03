@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
 use super::pkg::PackageRef;
+use super::pkg::PackageRefList;
 
 #[derive(Clone, Debug, PartialEq, Eq, ToSchema, Serialize, Deserialize)]
 #[schema(example = json!(Vulnerability {
@@ -17,6 +18,7 @@ use super::pkg::PackageRef;
     }),
     packages: vec![PackageRef {
         purl: "pkg:rpm/redhat/openssl@1.1.1k-7.el8_6".to_string(),
+        children: PackageRefList(vec![])
     }
 ]
 }))]

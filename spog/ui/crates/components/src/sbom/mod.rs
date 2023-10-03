@@ -53,7 +53,7 @@ impl TableEntryRenderer<Column> for PackageEntry {
         match context.column {
             Column::Name => html!(
                 <Link<AppRoute>
-                    target={AppRoute::Package(View::Content{id: self.package.id.clone()})}
+                    target={AppRoute::Sbom(View::Content{id: self.package.id.clone()})}
                 >{ self.package_name() }</Link<AppRoute>>
             )
             .into(),
