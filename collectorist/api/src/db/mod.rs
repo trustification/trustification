@@ -192,6 +192,7 @@ impl Db {
         })
     }
 
+    #[allow(unused)]
     async fn filter_purls_as_of(
         &self,
         collector_id: &str,
