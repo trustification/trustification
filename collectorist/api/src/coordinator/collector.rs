@@ -42,6 +42,7 @@ impl Collector {
             state,
             self.id.clone(),
             purls,
+            self.config.cadence,
             RetentionMode::InterestingOnly,
         )
         .await
@@ -52,9 +53,12 @@ impl Collector {
         state: &AppState,
         id: String,
         purls: Vec<String>,
+        cadence: Duration,
         mode: RetentionMode,
     ) -> Result<CollectPackagesResponse, anyhow::Error> {
         //log::info!("{} scan {:?}", id, purls);
+
+        let purls = state.db.filter_purls_as_of(&id, purls, Utc::now() - cadence).await?;
 
         let response = client
             .collect_packages(CollectPackagesRequest { purls: purls.clone() })
@@ -127,16 +131,22 @@ impl Collector {
                 if config.interests.contains(&Interest::Package) {
                     let purls: Vec<String> = state
                         .db
-                        .get_purls_to_scan(id.as_str(), Utc::now() - chrono::Duration::seconds(1200), 20)
+                        .get_purls_to_scan(id.as_str(), Utc::now() - config.cadence, 20)
                         .await
                         .collect()
                         .await;
 
                     if !purls.is_empty() {
                         log::debug!("polling packages for {} -> {}", id, collector_url);
-                        if let Ok(response) =
-                            Self::collect_packages_internal(&client, &state, id.clone(), purls, RetentionMode::All)
-                                .await
+                        if let Ok(response) = Self::collect_packages_internal(
+                            &client,
+                            &state,
+                            id.clone(),
+                            purls,
+                            config.cadence,
+                            RetentionMode::All,
+                        )
+                        .await
                         {
                             // during normal re-scan, we did indeed discover some vulns, make sure they are in the DB.
                             let vuln_ids: HashSet<_> = response.purls.values().flatten().collect();
