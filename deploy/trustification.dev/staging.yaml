@@ -49,6 +49,7 @@ bombastic:
   credentials: bombastic-credentials-secret
   indexMode: file
   collector:
+    enabled: true
     queue: sbom-indexed-staging
   indexer:
     topics:
