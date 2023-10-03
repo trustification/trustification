@@ -203,13 +203,10 @@ impl Db {
         //
         // We need to construct a substitution $3, $4, ... $n query for binding,
         // as `sqlx` cannot expand a Vec<String> for use in an `IN` clause directly.
-        //let mut in_params = String::new();
 
-        let in_params = input
-            .iter()
-            .enumerate()
-            .map(|(i, purl)| format!("${}", i + 3))
-            .collect::<Vec<String>>()
+        let in_params = (3..(input.len() + 3))
+            .map(|i| format!("${}", i))
+            .collect::<Vec<_>>()
             .join(",");
 
         let query_string = format!(
@@ -218,10 +215,12 @@ impl Db {
             in_params
         );
 
-        // Now we must `bind(...)` each of the $3, $4, ... $n in the above-constructed
-        // query with the same number of placeholders.
+        // Bind the first two static bindings $1 and $2
+        // with collector_id and the as_of timestamp.
         let mut query = sqlx::query(&query_string).bind(collector_id).bind(as_of);
 
+        // Now we must `bind(...)` each of the $3, $4, ... $n in the above-constructed
+        // query with the same number of placeholders.
         for purl in &input {
             query = query.bind(purl);
         }
