@@ -39,9 +39,9 @@ spec:
                   value: "true"
                 - name: INFRASTRUCTURE_BIND
                   value: "[::]:9010"
-                {{ include "trustification.authentication-client" ( dict "root" . "clientId" "walker" ) | nindent 12 }}
+                {{ include "trustification.authentication-client" ( dict "root" . "clientId" "walker" ) | nindent 16 }}
               resources:
-                {{- toYaml .Values.vexination.walker.resources | nindent 12 }}
+                {{- toYaml .Values.vexination.walker.resources | nindent 16 }}
               livenessProbe:
                 httpGet:
                   path: /health/live
