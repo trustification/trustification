@@ -1,9 +1,6 @@
 dependencies:
-- name: nats
-  repository: https://nats-io.github.io/k8s/helm/charts/
-  version: 0.19.17
 - name: keycloak
   repository: https://charts.bitnami.com/bitnami
   version: 15.1.7
-digest: sha256:c60f0e6894cae8871a536c85ad3821775e905f3d3e99c1092a5f3fbacbf2f918
-generated: "2023-09-26T13:37:42.639028-04:00"
+digest: sha256:ca16d92613eb956ac008e94555f1a2c244ab7fb18a2f2fbfb31d5c6fd554a7f2
+generated: "2023-10-03T11:44:53.790569+02:00"

@@ -14,24 +14,6 @@ services:
   #     - "7474:7474"
   #     - "7687:7687"
   #   restart: on-failure
-
-  nats:
-    image: "docker.io/library/nats:2.9.17-alpine"
-    command: "--config /config/nats/js.conf -m 8222"
-    ports:
-      - "4222:4222"
-      # monitoring port
-      - "8222:8222"
-    volumes:
-      - ./container_files/nats:/config/nats${SELINUX_VOLUME_OPTIONS}
-    restart: on-failure
-    healthcheck:
-      test: ["CMD", "wget", "--spider", "http://localhost:8222/healthz"]
-      interval: 10s
-      timeout: 10s
-      retries: 3
-      start_period: 5s
-
   guac-collectsub:
     image: $GUAC_IMAGE
     command: "/opt/guac/guaccsub --csub-listen-port $GUAC_CSUB_PORT"
@@ -41,9 +23,6 @@ services:
       - "$GUAC_CSUB_PORT"
     ports:
       - "$GUAC_CSUB_PORT:$GUAC_CSUB_PORT"
-    depends_on:
-      nats:
-        condition: service_healthy
     volumes:
       - ./container_files/guac:/guac${SELINUX_VOLUME_OPTIONS}
     healthcheck:
@@ -58,9 +37,6 @@ services:
     command: "/opt/guac/guacgql --gql-listen-port $GUAC_API_PORT"
     working_dir: /guac
     restart: on-failure
-    depends_on:
-      nats:
-        condition: service_healthy
     expose:
       - "$GUAC_API_PORT"
     ports:
@@ -74,29 +50,9 @@ services:
       retries: 3
       start_period: 5s
 
-  guac-ingestor:
+  bombastic-collector:
     image: $GUAC_IMAGE
-    command: "/opt/guac/guacingest --gql-addr http://guac-graphql:$GUAC_API_PORT/query --csub-addr guac-collectsub:$GUAC_CSUB_PORT --nats-addr nats:4222"
-    working_dir: /guac
-    restart: on-failure
-    depends_on:
-      nats:
-        condition: service_healthy
-      guac-collectsub:
-        condition: service_healthy
-      guac-graphql:
-        condition: service_healthy
-    volumes:
-      - ./container_files/guac:/guac${SELINUX_VOLUME_OPTIONS}
-
-  bombastic-exporter:
-    image: $TRUST_IMAGE:${TRUST_VERSION:?TRUST_VERSION is required}
-    command: exporter --devmode --document-type sbom --kafka-bootstrap-servers kafka:9094 --guac-url nats:4222
+    command: "/opt/guac/guacone collect s3 --poll --s3-mp kafka --s3-region eu-west-1 --s3-queues sbom-indexed --s3-mp-host kafka --s3-mp-port 9094 --gql-addr http://guac-graphql:$GUAC_API_PORT/query --csub-addr guac-collectsub:$GUAC_CSUB_PORT minio 9000"
     environment:
-     STORAGE_ENDPOINT: http://minio:9000
-
-  vexination-exporter:
-    image: $TRUST_IMAGE:${TRUST_VERSION:?TRUST_VERSION is required}
-    command: exporter --devmode --document-type vex --kafka-bootstrap-servers kafka:9094 --guac-url nats:4222
-    environment:
-     STORAGE_ENDPOINT: http://minio:9000
+      AWS_ACCESS_KEY_ID: admin
+      AWS_SECRET_ACCESS_KEY: password

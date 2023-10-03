@@ -3,7 +3,7 @@ trustImage: ghcr.io/trustification/trust
 uiImage: ghcr.io/trustification/trust-ui
 docsImage: ghcr.io/trustification/trust-docs
 testsImage: ghcr.io/trustification/trust-tests
-guacImage: ghcr.io/xkcd-2347/guac:v0.1.0-nightly.20230907
+guacImage: quay.io/redhat-user-workloads/trusted-content-tenant/trustification/trustification-guac:75f5c6c00e0768054f1eb12c138cbfad65099eed
 domain: staging.trustification.dev
 replicas: 1
 imagePullPolicy: IfNotPresent
@@ -48,8 +48,8 @@ bombastic:
   bucket: bombastic-staging
   credentials: bombastic-credentials-secret
   indexMode: file
-  exporter:
-    topic: sbom-guac-staging
+  collector:
+    queue: sbom-indexed-staging
   indexer:
     topics:
       stored: sbom-stored-staging
@@ -83,8 +83,6 @@ vexination:
   bucket: vexination-staging
   credentials: vexination-credentials-secret
   indexMode: file
-  exporter:
-    topic: vex-guac-staging
   indexer:
     topics:
       stored: vex-stored-staging
