@@ -67,10 +67,19 @@ impl Db {
     }
 
     pub async fn update_purl_scan_time(&self, collector_id: &str, purl: &str) -> Result<(), anyhow::Error> {
+        self.update_purl_scan_time_as_of(collector_id, purl, Utc::now()).await
+    }
+
+    async fn update_purl_scan_time_as_of(
+        &self,
+        collector_id: &str,
+        purl: &str,
+        as_of: DateTime<Utc>,
+    ) -> Result<(), anyhow::Error> {
         sqlx::query(r#"replace into collector_purls (collector, purl, timestamp) VALUES ($1, $2, $3)"#)
             .bind(collector_id.clone())
             .bind(purl)
-            .bind(Utc::now())
+            .bind(as_of)
             .execute(&self.pool)
             .await?;
 
@@ -183,6 +192,54 @@ impl Db {
         })
     }
 
+    async fn filter_purls_as_of(
+        &self,
+        collector_id: &str,
+        input: Vec<String>,
+        as_of: DateTime<Utc>,
+    ) -> Result<Vec<String>, anyhow::Error> {
+        // Per https://stackoverflow.com/questions/70029671/how-to-query-using-an-in-clause-and-a-vec-as-parameter-in-rust-sqlx-for-mysql
+        //
+        // We need to construct a substitution $3, $4, ... $n query for binding,
+        // as `sqlx` cannot expand a Vec<String> for use in an `IN` clause directly.
+        let mut in_params = String::new();
+
+        for i in 0..input.len() {
+            in_params.push_str(&format!("${}", i + 3));
+            if i < input.len() - 1 {
+                in_params.push(',');
+            }
+        }
+
+        let query_string = format!(
+            r#"select purl from collector_purls
+                    where collector = $1 and timestamp > $2 and purl in ( {} )"#,
+            in_params
+        );
+
+        // Now we must `bind(...)` each of the $3, $4, ... $n in the above-constructed
+        // query with the same number of placeholders.
+        let mut query = sqlx::query(&query_string).bind(collector_id).bind(as_of);
+
+        for purl in &input {
+            query = query.bind(purl);
+        }
+
+        let mut exclude_purls: Vec<String> = Vec::new();
+        let result = query.fetch_all(&self.pool).await?;
+
+        for row in result {
+            exclude_purls.push(row.get("purl"))
+        }
+
+        // We only remove a purl if we have definitively scanned it and have a
+        // record in our DB. Not-recently-enough or never-scanned will continue
+        // directly from the `input` vector to the output.
+        let input = input.iter().filter(|e| !exclude_purls.contains(e)).cloned().collect();
+
+        Ok(input)
+    }
+
     async fn initialize(&self) -> Result<(), anyhow::Error> {
         self.create_purls_table().await?;
         self.create_vulnerabilities_table().await?;
@@ -278,13 +335,11 @@ impl Db {
 
 #[cfg(test)]
 mod test {
-    use std::thread::sleep;
-
     use chrono::{Duration, Utc};
     use futures::StreamExt;
+    use std::thread::sleep;
 
     use crate::db::Db;
-
     #[actix_web::test]
     async fn insert_purl() -> Result<(), anyhow::Error> {
         let db = Db::new(".").await?;
@@ -326,6 +381,49 @@ mod test {
 
         assert_eq!(1, purls.len());
         assert!(purls.contains(&"not-scanned".to_owned()));
+
+        Ok(())
+    }
+
+    #[actix_web::test]
+    async fn filter_purls_for_scan() -> Result<(), anyhow::Error> {
+        let db = Db::new(".").await?;
+
+        db.insert_purl("never-scanned").await?;
+        db.insert_purl("recently-scanned").await?;
+        db.insert_purl("old-scanned").await?;
+
+        db.update_purl_scan_time_as_of("test-scanner", "recently-scanned", Utc::now())
+            .await?;
+        db.update_purl_scan_time_as_of("test-scanner", "old-scanned", Utc::now() - Duration::minutes(30))
+            .await?;
+
+        let input_purls = vec![
+            "never-scanned".to_string(),
+            "recently-scanned".to_string(),
+            "old-scanned".to_string(),
+        ];
+
+        let purls = db
+            .filter_purls_as_of("test-scanner", input_purls.clone(), Utc::now() - Duration::minutes(10))
+            .await?;
+
+        assert_eq!(2, purls.len());
+        assert!(purls.contains(&"never-scanned".to_string()));
+        assert!(purls.contains(&"old-scanned".to_string()));
+
+        let purls = db
+            .filter_purls_as_of(
+                "another-new-scanner",
+                input_purls.clone(),
+                Utc::now() - Duration::minutes(2),
+            )
+            .await?;
+
+        assert_eq!(3, purls.len());
+        assert!(purls.contains(&"recently-scanned".to_string()));
+        assert!(purls.contains(&"never-scanned".to_string()));
+        assert!(purls.contains(&"old-scanned".to_string()));
 
         Ok(())
     }
