@@ -43,3 +43,7 @@ urlencoding = "2.1.2"
 [dev-dependencies]
 env_logger = "0.10"
 spog-model = { path = "../spog/model" }
+
+[features]
+default = ["admin"]
+admin = []
