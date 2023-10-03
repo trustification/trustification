@@ -99,7 +99,7 @@ vexination:
 keycloak:
   enabled: false
 guac:
-  enabled: true
+  enabled: false
   graphql:
     debug: false
 oidcClients:
