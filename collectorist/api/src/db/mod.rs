@@ -203,14 +203,14 @@ impl Db {
         //
         // We need to construct a substitution $3, $4, ... $n query for binding,
         // as `sqlx` cannot expand a Vec<String> for use in an `IN` clause directly.
-        let mut in_params = String::new();
+        //let mut in_params = String::new();
 
-        for i in 0..input.len() {
-            in_params.push_str(&format!("${}", i + 3));
-            if i < input.len() - 1 {
-                in_params.push(',');
-            }
-        }
+        let in_params = input
+            .iter()
+            .enumerate()
+            .map(|(i, purl)| format!("${}", i + 3))
+            .collect::<Vec<String>>()
+            .join(",");
 
         let query_string = format!(
             r#"select purl from collector_purls
