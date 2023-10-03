@@ -16,6 +16,7 @@ spec:
         app.kubernetes.io/component: walker
         app.kubernetes.io/part-of: trustification
     spec:
+      restartPolicy: OnFailure
       containers:
         - image: {{ .Values.trustImage }}:{{ .Values.release }}
           imagePullPolicy: {{ .Values.imagePullPolicy }}
