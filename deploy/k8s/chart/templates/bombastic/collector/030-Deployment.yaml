@@ -39,8 +39,6 @@ spec:
             - "collect"
             - "s3"
             - "--poll"
-            - "--s3-bucket"
-            - "{{ .Values.bombastic.bucket }}"
             - "--s3-mp"
             - "sqs"
             - "--s3-region"
@@ -72,7 +70,6 @@ spec:
                   key: aws_secret_access_key
             - name: AWS_REGION
               value: "{{ .Values.region }}"
-            # SQS QUEUE
           ports:
             - containerPort: 2782
               protocol: TCP

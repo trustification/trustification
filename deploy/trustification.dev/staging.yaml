@@ -49,7 +49,7 @@ bombastic:
   credentials: bombastic-credentials-secret
   indexMode: file
   collector:
-    queue: sbom-guac-staging
+    queue: sbom-indexed-staging
   indexer:
     topics:
       stored: sbom-stored-staging

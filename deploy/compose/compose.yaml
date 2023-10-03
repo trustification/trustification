@@ -27,6 +27,13 @@ services:
       interval: 30s
       timeout: 20s
       retries: 10
+    networks:
+      default:
+        aliases:
+          - bombastic.minio
+          - vexination.minio
+          - minio
+
 
   createbuckets:
     image: quay.io/minio/mc:RELEASE.2023-06-19T19-31-19Z
