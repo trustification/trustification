@@ -9,57 +9,59 @@ metadata:
     app.kubernetes.io/part-of: trustification
 spec:
   schedule: "0 1 * * *"
-  template:
-    metadata:
-      labels:
-        app.kubernetes.io/name: bombastic-walker
-        app.kubernetes.io/component: walker
-        app.kubernetes.io/part-of: trustification
+  jobTemplate:
     spec:
-      restartPolicy: OnFailure
-      containers:
-        - image: {{ .Values.trustImage }}:{{ .Values.release }}
-          imagePullPolicy: {{ .Values.imagePullPolicy }}
-          name: walker
-          command: ["/trust"]
-          args:
-            - "bombastic"
-            - "walker"
-            - "--sink"
-            - "https://sbom.{{ .Values.domain }}"
-            - "--source"
-            - "{{ .Values.bombastic.walker.source }}"
-            - "-3"
-            - "--signing-key"
-            - "{{ .Values.bombastic.walker.signingKey }}"
-            - "--fix-licenses"
-            - "true"
-          env:
-            - name: RUST_LOG
-              value: {{ default "info" .Values.bombastic.walker.logLevel }}
-            - name: INFRASTRUCTURE_ENABLED
-              value: "true"
-            - name: INFRASTRUCTURE_BIND
-              value: "[::]:9010"
-            {{ include "trustification.authentication-client" ( dict "root" . "clientId" "walker" ) | nindent 12 }}
-          ports:
-            - containerPort: 9010
-              protocol: TCP
-              name: infra
-          resources:
-            {{- toYaml .Values.bombastic.walker.resources | nindent 12 }}
-          livenessProbe:
-            httpGet:
-              path: /health/live
-              port: 9010
-            initialDelaySeconds: 2
-          readinessProbe:
-            httpGet:
-              path: /health/ready
-              port: 9010
-            initialDelaySeconds: 2
-          startupProbe:
-            httpGet:
-              path: /health/startup
-              port: 9010
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: bombastic-walker
+            app.kubernetes.io/component: walker
+            app.kubernetes.io/part-of: trustification
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - image: {{ .Values.trustImage }}:{{ .Values.release }}
+              imagePullPolicy: {{ .Values.imagePullPolicy }}
+              name: walker
+              command: ["/trust"]
+              args:
+                - "bombastic"
+                - "walker"
+                - "--sink"
+                - "https://sbom.{{ .Values.domain }}"
+                - "--source"
+                - "{{ .Values.bombastic.walker.source }}"
+                - "-3"
+                - "--signing-key"
+                - "{{ .Values.bombastic.walker.signingKey }}"
+                - "--fix-licenses"
+                - "true"
+              env:
+                - name: RUST_LOG
+                  value: {{ default "info" .Values.bombastic.walker.logLevel }}
+                - name: INFRASTRUCTURE_ENABLED
+                  value: "true"
+                - name: INFRASTRUCTURE_BIND
+                  value: "[::]:9010"
+                {{ include "trustification.authentication-client" ( dict "root" . "clientId" "walker" ) | nindent 12 }}
+              ports:
+                - containerPort: 9010
+                  protocol: TCP
+                  name: infra
+              resources:
+                {{- toYaml .Values.bombastic.walker.resources | nindent 12 }}
+              livenessProbe:
+                httpGet:
+                  path: /health/live
+                  port: 9010
+                initialDelaySeconds: 2
+              readinessProbe:
+                httpGet:
+                  path: /health/ready
+                  port: 9010
+                initialDelaySeconds: 2
+              startupProbe:
+                httpGet:
+                  path: /health/startup
+                  port: 9010
 {{ end }}
