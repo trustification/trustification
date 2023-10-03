@@ -12,14 +12,7 @@ objects:
         app.kubernetes.io/component: cm
         app.kubernetes.io/part-of: trustification
     data:
-      guac.yaml: '
-
-        # Nats setup
-
-        nats-addr: nats://trustification-nats.${K8S_NAMESPACE}.svc:4222
-
-
-        # CSub setup
+      guac.yaml: '# CSub setup
 
         csub-addr: "guac-collectsub.${K8S_NAMESPACE}.svc.cluster.local:2782"
 

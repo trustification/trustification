@@ -29,27 +29,28 @@ spec:
         - name: guac-config
           configMap:
             name: guac-cm
-        {{ include "trustification.http-server-volumes" (dict "root" . "appName" "guac-collectsub") | nindent 8 }}
+        {{ include "trustification.http-server-volumes" (dict "root" . "appName" "bombastic-collector") | nindent 8 }}
       containers:
         - image: {{ .Values.guacImage }}
           imagePullPolicy: {{ .Values.imagePullPolicy }}
           name: service
-          # TODO
-          # command: ["/trust"]
-          # args:
-          #   - "collector"
-          #   - "--event-bus"
-          #   - "sqs"
-          #   - "--stored-topic"
-          #   - "{{ .Values.bombastic.collector.topic }}"
-          #   - "--storage-bucket"
-          #   - "{{ .Values.bombastic.bucket }}"
-          #   - "--guac-url"
-          #   - "trustification-nats:4222"
-          #   - "--document-type"
-          #   - "sbom"
-          command: ["/opt/guac/guaccollect"]
-          args: []
+          command: ["/opt/guac/guacone"]
+          args:
+            - "collect"
+            - "s3"
+            - "--poll"
+            - "--s3-bucket"
+            - "{{ .Values.bombastic.bucket }}"
+            - "--s3-mp"
+            - "sqs"
+            - "--s3-region"
+            - "{{ .Values.region }}"
+            - "--s3-queues"
+            - "{{ .Values.bombastic.collector.queue }}"
+            - "--s3-mp-host"
+            - "sqs.{{ .Values.region }}.amazonaws.com"
+            - "--s3-mp-port"
+            - "443"
           workingDir: "/guac"
           env:
             - name: NAMESPACE
@@ -57,31 +58,17 @@ spec:
                 fieldRef:
                   fieldPath: metadata.namespace
             {{ include "trustification.http-server" . | nindent 12 }}
-            - name: STORAGE_ACCESS_KEY
+            - name: AWS_ACCESS_KEY_ID
               valueFrom:
                 secretKeyRef:
                   name: "{{ .Values.bombastic.credentials }}"
                   key: aws_access_key_id
-            - name: STORAGE_SECRET_KEY
+            - name: AWS_SECRET_ACCESS_KEY
               valueFrom:
                 secretKeyRef:
                   name: "{{ .Values.bombastic.credentials }}"
                   key: aws_secret_access_key
-            - name: STORAGE_REGION
-              value: "{{ .Values.region }}"
-            - name: STORAGE_BUCKET
-              value: "{{ .Values.bombastic.bucket }}"
-            - name: SQS_ACCESS_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: "{{ .Values.bombastic.credentials }}"
-                  key: aws_access_key_id
-            - name: SQS_SECRET_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: "{{ .Values.bombastic.credentials }}"
-                  key: aws_secret_access_key
-            - name: SQS_REGION
+            - name: AWS_REGION
               value: "{{ .Values.region }}"
             # SQS QUEUE
           ports:
