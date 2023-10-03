@@ -29,7 +29,6 @@ spec:
         - name: guac-config
           configMap:
             name: guac-cm
-        {{ include "trustification.http-server-volumes" (dict "root" . "appName" "bombastic-collector") | nindent 8 }}
       containers:
         - image: {{ .Values.guacImage }}
           imagePullPolicy: {{ .Values.imagePullPolicy }}
@@ -57,7 +56,6 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
-            {{ include "trustification.http-server" . | nindent 12 }}
             - name: AWS_ACCESS_KEY_ID
               valueFrom:
                 secretKeyRef:
@@ -79,5 +77,4 @@ spec:
               readOnly: true
             - mountPath: /etc/config
               name: config
-            {{ include "trustification.http-server-volume-mounts" . | nindent 12 }}
 {{ end }}
