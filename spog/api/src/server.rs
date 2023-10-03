@@ -83,14 +83,6 @@ impl Server {
         let authenticator: Option<Arc<Authenticator>> = Authenticator::from_config(authn).await?.map(Arc::new);
         let authorizer = Authorizer::new(authz);
 
-        let endpoints = endpoints::Endpoints {
-            vexination: String::from(self.run.vexination_url.as_str()),
-            bombastic: String::from(self.run.bombastic_url.as_str()),
-            oidc: Oidc {
-                issuer: self.run.swagger_ui_oidc.swagger_ui_oidc_issuer_url.clone(),
-            },
-        };
-
         let swagger_oidc: Option<Arc<SwaggerUiOidc>> =
             SwaggerUiOidc::from_devmode_or_config(self.run.devmode, self.run.swagger_ui_oidc)
                 .await?
@@ -131,7 +123,13 @@ impl Server {
                     .app_data(collectorist.clone())
                     .configure(index::configure())
                     .configure(version::configurator(version!()))
-                    .configure(endpoints::configurator(endpoints.clone()))
+                    .configure(endpoints::configurator(endpoints::Endpoints {
+                        vexination: String::from(self.run.vexination_url.as_str()),
+                        bombastic: String::from(self.run.bombastic_url.as_str()),
+                        oidc: Oidc {
+                            issuer: provider.issuer().map(|url| String::from(url.as_str())),
+                        },
+                    }))
                     .configure(sbom::configure(authenticator.clone()))
                     .configure(advisory::configure(authenticator.clone()))
                     .configure(crate::guac::configure(authenticator.clone()))
