@@ -43,13 +43,13 @@ spec:
                   value: "true"
                 - name: INFRASTRUCTURE_BIND
                   value: "[::]:9010"
-                {{ include "trustification.authentication-client" ( dict "root" . "clientId" "walker" ) | nindent 12 }}
+                {{ include "trustification.authentication-client" ( dict "root" . "clientId" "walker" ) | nindent 16 }}
               ports:
                 - containerPort: 9010
                   protocol: TCP
                   name: infra
               resources:
-                {{- toYaml .Values.bombastic.walker.resources | nindent 12 }}
+                {{- toYaml .Values.bombastic.walker.resources | nindent 16 }}
               livenessProbe:
                 httpGet:
                   path: /health/live
