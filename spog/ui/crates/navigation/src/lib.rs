@@ -6,13 +6,16 @@ pub enum AppRoute {
     Index,
     NotLoggedIn,
     Chicken,
-    Package(View),
+    Sbom(View),
     Advisory(View),
     Scanner,
     Search {
         terms: String,
     },
     Cve {
+        id: String,
+    },
+    Package {
         id: String,
     },
 }
