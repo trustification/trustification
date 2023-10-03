@@ -100,16 +100,11 @@ async fn upload(
     builder = builder.inject_token(provider).await?;
     builder = builder.body(data);
 
-    match builder.send().await {
-        Ok(r) if r.status() == StatusCode::OK || r.status() == StatusCode::CREATED => {
-            log::info!("Upload successful");
-        }
-        Ok(r) => {
-            log::warn!("Failed to upload document: {}", r.status());
-        }
-        Err(e) => {
-            log::warn!("Failed to upload document: {e}");
-        }
+    let r = builder.send().await?;
+    if r.status() == StatusCode::OK || r.status() == StatusCode::CREATED {
+        log::info!("Upload successful");
+        Ok(())
+    } else {
+        Err(anyhow::anyhow!("Upload failed: {}", r.status()))
     }
-    Ok(())
 }
