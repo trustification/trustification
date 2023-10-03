@@ -52,7 +52,7 @@ services:
 
   bombastic-collector:
     image: $GUAC_IMAGE
-    command: "/opt/guac/guacone collect s3 --poll --s3-mp kafka --s3-region eu-west-1 --s3-queues sbom-stored --s3-mp-host kafka --s3-mp-port 9094 --gql-addr http://guac-graphql:$GUAC_API_PORT/query --csub-addr guac-collectsub:$GUAC_CSUB_PORT minio 9000"
+    command: "/opt/guac/guacone collect s3 --poll --s3-mp kafka --s3-region eu-west-1 --s3-queues sbom-indexed --s3-mp-host kafka --s3-mp-port 9094 --gql-addr http://guac-graphql:$GUAC_API_PORT/query --csub-addr guac-collectsub:$GUAC_CSUB_PORT minio 9000"
     environment:
       AWS_ACCESS_KEY_ID: admin
       AWS_SECRET_ACCESS_KEY: password
