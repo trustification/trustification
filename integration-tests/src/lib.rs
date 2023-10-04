@@ -2,6 +2,7 @@ mod bom;
 mod config;
 mod provider;
 mod spog;
+mod ui;
 mod vex;
 
 pub mod runner;
@@ -9,12 +10,8 @@ pub mod runner;
 pub use bom::*;
 pub use provider::*;
 pub use spog::*;
-pub use vex::*;
-
-#[cfg(feature = "ui")]
-mod ui;
-#[cfg(feature = "ui")]
 pub use ui::*;
+pub use vex::*;
 
 use core::future::Future;
 use reqwest::{StatusCode, Url};
