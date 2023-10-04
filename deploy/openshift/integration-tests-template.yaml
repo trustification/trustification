@@ -6,15 +6,16 @@ objects:
 - apiVersion: batch/v1
   kind: Job
   metadata:
-    name: integration-tests
+    name: rhtc-integration-tests
   spec:
     template:
       spec:
+        backoffLimit: 5
         restartPolicy: Never
         containers:
           - image: ${IMAGE}:${IMAGE_TAG}
             imagePullPolicy: Always
-            name: integration-tests
+            name: rhtc-integration-tests
             env:
               - name: RUST_LOG
                 value: info
