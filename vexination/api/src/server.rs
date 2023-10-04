@@ -154,17 +154,18 @@ async fn publish_vex(
 ) -> actix_web::Result<HttpResponse> {
     authorizer.require(&user, Permission::CreateVex)?;
 
-    let params = params.into_inner();
-    let advisory = if let Some(advisory) = params.advisory {
-        advisory.to_string()
-    } else {
-        match serde_json::from_slice::<csaf::Csaf>(&data) {
-            Ok(data) => data.document.tracking.id,
-            Err(e) => {
-                log::warn!("Unknown input format: {:?}", e);
-                return Ok(HttpResponse::BadRequest().into());
-            }
+    let vex = match serde_json::from_slice::<csaf::Csaf>(&data) {
+        Ok(data) => data,
+        Err(e) => {
+            log::warn!("Unknown input format: {:?}", e);
+            return Ok(HttpResponse::BadRequest().into());
         }
+    };
+
+    let params = params.into_inner();
+    let advisory = match params.advisory {
+        Some(advisory) => advisory.to_string(),
+        None => vex.document.tracking.id,
     };
 
     log::debug!("Storing new VEX with id: {advisory}");
