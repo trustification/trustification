@@ -1,4 +1,6 @@
 use std::env::VarError;
+use std::path::PathBuf;
+use std::str::FromStr;
 
 use clap::Parser;
 use reqwest::Url;
@@ -7,9 +9,18 @@ use trustification_event_bus::{EventBusConfig, EventBusType};
 
 use crate::{create_provider, create_provider_context, ProviderContext};
 
+#[derive(Copy, Clone, Debug, Default, strum::EnumString, strum::Display)]
+#[strum(serialize_all = "camelCase")]
+pub enum DriverKind {
+    Firefox,
+    #[default]
+    Chrome,
+}
+
 #[derive(Default, Debug)]
 pub struct Config {
     pub spog: Option<Url>,
+    pub spog_ui: Option<Url>,
     pub bombastic: Option<Url>,
     pub vexination: Option<Url>,
     issuer: String,
@@ -17,6 +28,9 @@ pub struct Config {
     mgr_secret: String,
     user_id: Option<String>,
     user_secret: Option<String>,
+    pub(crate) ui_dist_path: Option<PathBuf>,
+    pub(crate) selenium_driver_url: Option<Url>,
+    pub(crate) selenium_driver_kind: DriverKind,
 }
 
 impl Config {
@@ -29,13 +43,14 @@ impl Config {
                     .expect(&format!("Invalid TRUST_URL: '{base}'"))
                     .join("/endpoints/backend.json")
                     .unwrap();
-                let endpoints: Value = reqwest::get(url)
+                let endpoints: Value = reqwest::get(url.clone())
                     .await
                     .expect("Missing backend endpoints")
                     .json()
                     .await
                     .unwrap();
                 Config {
+                    spog_ui: Some(url),
                     spog: endpoints["url"].as_str().map(Url::parse).unwrap().ok(),
                     bombastic: endpoints["bombastic"].as_str().map(Url::parse).unwrap().ok(),
                     vexination: endpoints["vexination"].as_str().map(Url::parse).unwrap().ok(),
@@ -45,6 +60,16 @@ impl Config {
                     mgr_secret: std::env::var("TRUST_SECRET").expect("TRUST_SECRET is required"),
                     user_id: std::env::var("TRUST_USER_ID").ok(),
                     user_secret: std::env::var("TRUST_USER_SECRET").ok(),
+                    ui_dist_path: std::env::var_os("TRUST_UI_DIST_PATH").map(PathBuf::from),
+                    selenium_driver_url: std::env::var("TRUST_SELENIUM_DRIVER_URL")
+                        .as_deref()
+                        .map(|url| Url::parse(url).unwrap())
+                        .ok(),
+                    selenium_driver_kind: std::env::var("TRUST_SELENIUM_DRIVER_KIND")
+                        .as_deref()
+                        .map(|kind| DriverKind::from_str(kind).unwrap())
+                        .ok()
+                        .unwrap_or_default(),
                 }
             }
             Err(VarError::NotPresent) => Config::default(),

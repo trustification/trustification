@@ -59,8 +59,9 @@ fn authenticated_page(props: &ChildrenProperties) -> Html {
                     if config.features.dedicated_search {
                         <NavExpandable expanded=true title="Search">
                             <NavRouterItem<AppRoute> to={AppRoute::Advisory(Default::default())} predicate={AppRoute::is_advisory}>{ "Advisories" }</NavRouterItem<AppRoute>>
-                            <NavRouterItem<AppRoute> to={AppRoute::Package(Default::default())} predicate={AppRoute::is_package}>{ "SBOMs" }</NavRouterItem<AppRoute>>
+                            <NavRouterItem<AppRoute> to={AppRoute::Sbom(Default::default())} predicate={AppRoute::is_sbom}>{ "SBOMs" }</NavRouterItem<AppRoute>>
                             <NavRouterItem<AppRoute> to={AppRoute::Cve{id: Default::default()}} predicate={AppRoute::is_cve}>{ "CVEs" }</NavRouterItem<AppRoute>>
+                            <NavRouterItem<AppRoute> to={AppRoute::Package{id: Default::default()}} predicate={AppRoute::is_package}>{ "Packages" }</NavRouterItem<AppRoute>>
                         </NavExpandable>
                     } else {
                         <NavRouterItem<AppRoute> to={AppRoute::Search{terms: String::new()}}>{ "Search" }</NavRouterItem<AppRoute>>
@@ -204,10 +205,10 @@ fn render(route: AppRoute, config: &spog_model::config::Configuration) -> Html {
         AppRoute::Chicken => html!(<pages::Chicken/>),
         AppRoute::Scanner if config.features.scanner => html!(<pages::Scanner/>),
 
-        AppRoute::Package(View::Search { query }) if config.features.dedicated_search => {
-            html!(<pages::Package {query} />)
+        AppRoute::Sbom(View::Search { query }) if config.features.dedicated_search => {
+            html!(<pages::Sbom {query} />)
         }
-        AppRoute::Package(View::Content { id }) if config.features.dedicated_search => html!(<pages::SBOM {id} />),
+        AppRoute::Sbom(View::Content { id }) if config.features.dedicated_search => html!(<pages::SBOM {id} />),
         AppRoute::Advisory(View::Search { query }) if config.features.dedicated_search => {
             html!(<pages::Advisory {query} />)
         }
@@ -218,6 +219,13 @@ fn render(route: AppRoute, config: &spog_model::config::Configuration) -> Html {
                 false => Some(id),
             };
             html!(<pages::Cve {id} />)
+        }
+        AppRoute::Package { id } if config.features.dedicated_search => {
+            let id = match id.is_empty() {
+                true => None,
+                false => Some(id),
+            };
+            html!(<pages::Package {id} />)
         }
 
         _ => html!(<pages::NotFound />),

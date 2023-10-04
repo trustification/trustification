@@ -258,6 +258,7 @@ pub fn upload(props: &UploadProperties) -> Html {
                         r
                     })
                     .unwrap_or_default();
+                ele.set_value("");
                 drop_content.set(DropContent::Files(files));
             }
         },
@@ -293,6 +294,7 @@ pub fn upload(props: &UploadProperties) -> Html {
         <Flex>
             <FlexItem>
                 <Button
+                    id="scanner-load"
                     disabled={processing.is_processing()}
                     variant={ButtonVariant::Secondary}
                     onclick={(*onopen_button).clone()}
@@ -302,6 +304,7 @@ pub fn upload(props: &UploadProperties) -> Html {
             </FlexItem>
             <FlexItem>
                 <Button
+                    id="scanner-scan"
                     variant={ButtonVariant::Primary}
                     disabled={state == InputState::Error}
                     onclick={onsubmit}
@@ -311,6 +314,7 @@ pub fn upload(props: &UploadProperties) -> Html {
             </FlexItem>
             <FlexItem>
                 <Button
+                    id="scanner-clear"
                     variant={ButtonVariant::Secondary}
                     disabled={drop_content.is_none()}
                     onclick={onclear}
@@ -320,7 +324,7 @@ pub fn upload(props: &UploadProperties) -> Html {
             </FlexItem>
             <FlexItem>
                 if let Some(helper_text) = helper_text {
-                    <HelperText>
+                    <HelperText id="scanner-help-text" live_region=true>
                         { helper_text }
                     </HelperText>
                 }

@@ -47,6 +47,7 @@ members = [
     "version",
     "admin",
     "indexer",
+    "xtask",
 ]
 default-members = [
     "analytics",

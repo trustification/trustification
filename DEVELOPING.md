@@ -58,6 +58,19 @@ To see more detailed output:
 RUST_LOG=info cargo test -p integration-tests -- --nocapture
 ```
 
+In order to run UI tests, you need a fresh build of the UI as well as a running instance of `chromedriver` on port 4444.
+By using `cargo xtask test`, you can perform this automatically:
+
+```shell
+RUST_LOG=info cargo xtask test --ui
+```
+
+It is also possible to run only a selected set of tests:
+
+```shell
+RUST_LOG=info cargo xtask test --ui --test ui issue_tc_587
+```
+
 ## Single sign on
 
 The default credentials for single sign on are:
@@ -128,7 +141,7 @@ To run the API processes, you can use cargo:
 ```shell
 RUST_LOG=info cargo run -p trust -- vexination api --devmode &
 RUST_LOG=info cargo run -p trust -- bombastic api --devmode &
-RUST_LOG=info cargo run -p trust -- spog api --devmode  &
+RUST_LOG=info cargo run -p trust -- spog api --devmode &
 RUST_LOG=info cargo run -p trust -- v11y api --devmode &
 RUST_LOG=info cargo run -p trust -- collectorist api --devmode &
 RUST_LOG=info cargo run -p trust -- collector osv --devmode &

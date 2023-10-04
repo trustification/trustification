@@ -6,10 +6,11 @@ objects:
 - apiVersion: batch/v1
   kind: Job
   metadata:
-    name: integration-tests
+    name: integration-tests-${IMAGE_TAG}
   spec:
     template:
       spec:
+        backoffLimit: 5
         restartPolicy: Never
         containers:
           - image: ${IMAGE}:${IMAGE_TAG}
