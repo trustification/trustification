@@ -1,5 +1,5 @@
 use patternfly_yew::prelude::*;
-use spog_model::prelude::{PackageDependencies, PackageRef};
+use spog_model::prelude::PackageDependencies;
 use spog_ui_backend::{use_backend, PackageService};
 use spog_ui_components::async_state_renderer::async_content;
 use std::rc::Rc;
@@ -14,6 +14,32 @@ pub struct TreeProperties {
 
 #[function_component(Tree)]
 pub fn tree(props: &TreeProperties) -> Html {
+    let expand = use_state(|| false);
+    let onclick = {
+        let expand = expand.clone();
+        Callback::from(move |_| expand.set(!*expand))
+    };
+
+    html!(
+        <div class="tc-package-tree">
+            <Accordion >
+                <AccordionItem title={props.package_id.clone()} {onclick} expanded={*expand}>
+                    if *expand {
+                        <TreeContent package_id={props.package_id.clone()} />
+                    }
+                </AccordionItem>
+            </Accordion>
+        </div>
+    )
+}
+
+#[derive(PartialEq, Properties)]
+pub struct TreeContentProperties {
+    pub package_id: String,
+}
+
+#[function_component(TreeContent)]
+pub fn tree_content(props: &TreeContentProperties) -> Html {
     let backend = use_backend();
     let access_token = use_latest_access_token();
 
@@ -32,82 +58,34 @@ pub fn tree(props: &TreeProperties) -> Html {
     html!(
         <>
             {
-                async_content(&*state, |state| html!(<ResultContent package={props.package_id.clone()} dependents={state.clone()} />))
+                async_content(&*state, |state| html!(<ResultContent dependents={state.clone()} />))
             }
         </>
     )
 }
 
-#[derive(PartialEq)]
-struct Root {
-    root: Rc<Node>,
-}
-
-#[derive(PartialEq)]
-struct Node {
-    leaf: String,
-    children: Vec<Rc<Node>>,
-}
-
-impl TreeTableModel<()> for Root {
-    fn children(&self) -> Vec<Rc<dyn TreeNode<()>>> {
-        self.root.children()
-    }
-}
-
-impl TreeNode<()> for Node {
-    fn render_cell(&self, _: CellContext<()>) -> Cell {
-        html!(<>{&self.leaf}</>).into()
-    }
-
-    fn children(&self) -> Vec<Rc<dyn TreeNode<()>>> {
-        self.children
-            .iter()
-            .map(|c| c.clone() as Rc<dyn TreeNode<()>>)
-            .collect()
-    }
-}
-
-fn packageref_to_node(package_ref: &PackageRef) -> Rc<Node> {
-    Rc::new(Node {
-        leaf: package_ref.purl.clone(),
-        children: package_ref.children.iter().map(packageref_to_node).collect(),
-    })
-}
-
 #[derive(PartialEq, Properties)]
 pub struct ResultContentProperties {
-    package: String,
     dependents: Rc<PackageDependencies>,
 }
 
 #[function_component(ResultContent)]
 fn result_content(props: &ResultContentProperties) -> Html {
-    let header = html_nested! {
-        <TreeTableHeader<()>>
-            <TableColumn<()> index={()} label="Purl"/>
-        </TreeTableHeader<()>>
-    };
-
-    let nodes: Vec<Rc<Node>> = props.dependents.iter().map(packageref_to_node).collect();
-
-    let model = Rc::new(Root {
-        root: Rc::new(Node {
-            leaf: props.package.clone(),
-            children: vec![Rc::new(Node {
-                leaf: props.package.clone(),
-                children: nodes,
-            })],
-        }),
-    });
-
     html!(
-        <Grid gutter=true>
-            <TreeTable<(), Root>
-                mode={TreeTableMode::Compact}
-                {header}
-                {model}
-            />
-        </Grid>
+        <>
+            { for props.dependents
+                .iter()
+                .map(|e| {
+                    html!(
+                        <>
+                            <Tree package_id={e.purl.clone()}/>
+                        </>
+                    )
+                })
+            }
+            if props.dependents.len() == 0 {
+                <span>{"No more children found, this is the root package"}</span>
+            }
+        </>
     )
 }

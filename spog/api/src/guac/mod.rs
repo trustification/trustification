@@ -96,7 +96,7 @@ pub async fn get_dependents(
     web::Query(GetDependencies { purl }): web::Query<GetDependencies>,
 ) -> actix_web::Result<HttpResponse> {
     // let deps = guac.get_dependents(&purl).await?;
-    let deps = dependents_recursive(&guac, &purl, -1).await;
+    let deps = dependents_recursive(&guac, &purl, 1).await;
     Ok(HttpResponse::Ok().json(deps))
 }
 
@@ -107,8 +107,10 @@ async fn dependents_recursive(guac: &web::Data<GuacService>, purl: &String, leve
         Ok(dependents) => {
             let vec = &dependents.0;
             // Some packages have point to itself when dependents are required. This is to avoid infinite children requests
-            if level == 0 || (vec.len() == 1 && &vec[0].purl == purl) {
+            if vec.len() == 1 && &vec[0].purl == purl {
                 PackageRefList(vec![])
+            } else if level == 1 {
+                dependents
             } else {
                 let mut result = vec![];
                 for dependency in dependents.iter() {
