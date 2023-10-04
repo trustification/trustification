@@ -36,11 +36,11 @@ pub fn hint(props: &HintProperties) -> Html {
     let hide = (*hint_state).unwrap_or_default();
 
     let onhide = use_callback(
+        (hint_state.clone(), analytics, props.hint_key.clone()),
         |_, (hint_state, analytics, hint_key)| {
             hint_state.set(true);
             analytics.track(HideHint(hint_key));
         },
-        (hint_state.clone(), analytics, props.hint_key.clone()),
     );
 
     let title = html!(<SafeHtml html={props.hint.title.clone()} />);

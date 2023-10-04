@@ -33,7 +33,7 @@ pub fn result_view(props: &ResultViewProperties) -> Html {
 
     html!(
         <>
-            <PageHeading>{&props.id}</PageHeading>
+            <PageHeading>{props.id.clone()}</PageHeading>
             <PageSection>
             {
                 async_content(&*state, |state| html!(<ResultContent details={state.clone()} />))
@@ -50,8 +50,8 @@ pub struct ResultContentProperties {
 
 #[function_component(ResultContent)]
 fn result_content(props: &ResultContentProperties) -> Html {
-    let advisories = use_memo(|details| details.advisories.clone(), props.details.clone());
-    let products = use_memo(|details| details.products.clone(), props.details.clone());
+    let advisories = use_memo(props.details.clone(), |details| details.advisories.clone());
+    let products = use_memo(props.details.clone(), |details| details.products.clone());
 
     html!(
         <Grid gutter=true>

@@ -59,7 +59,7 @@ impl TableEntryRenderer<Column> for AdvisoryEntry {
             Column::Id => html!(
                 <Link<AppRoute>
                     target={AppRoute::Advisory(View::Content{id: self.summary.id.clone()})}
-                >{ &self.summary.id }</Link<AppRoute>>
+                >{ self.summary.id.clone() }</Link<AppRoute>>
             ),
             Column::Title => html!(&self.summary.title),
             Column::Severity => html!(
@@ -115,13 +115,13 @@ pub fn advisory_result(props: &AdvisoryResultProperties) -> Html {
 
     let sortby: UseStateHandle<Option<TableHeaderSortBy<Column>>> = use_state_eq(|| None);
     let onsort = use_callback(
+        (sortby.clone(), props.onsort.clone()),
         |val: TableHeaderSortBy<Column>, (sortby, onsort)| {
             sortby.set(Some(val));
             if val.index == Column::Severity {
                 onsort.emit(("severity".to_string(), val.asc));
             };
         },
-        (sortby.clone(), props.onsort.clone()),
     );
 
     let (entries, onexpand) = use_table_data(MemoizedTableModel::new(Rc::new(data.unwrap_or_default())));
@@ -427,7 +427,7 @@ fn product_html(mut branches: Vec<&Branch>) -> Html {
             .join(" » ");
         html! (
             <Tooltip {text}>
-                { &first.name }
+                { first.name.clone() }
             </Tooltip>
         )
     } else {

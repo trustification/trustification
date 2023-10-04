@@ -34,19 +34,19 @@ pub fn sbom(props: &SBOMProperties) -> Html {
 
     let (heading, content) = match &*info {
         UseAsyncState::Pending | UseAsyncState::Processing => (
-            html!(<PageHeading subtitle="SBOM detail information">{ &props.id }</PageHeading>),
+            html!(<PageHeading subtitle="SBOM detail information">{ props.id.clone() }</PageHeading>),
             html!(<PageSection fill={PageSectionFill::Fill}><Spinner/></PageSection>),
         ),
         UseAsyncState::Ready(Ok(None)) => (
-            html!(<PageHeading sticky=false subtitle="SBOM detail information">{ &props.id } {" "} </PageHeading>),
+            html!(<PageHeading sticky=false subtitle="SBOM detail information">{ props.id.clone() } {" "} </PageHeading>),
             html!(<NotFound/>),
         ),
         UseAsyncState::Ready(Ok(Some(data))) => (
-            html!(<PageHeading sticky=false subtitle="SBOM detail information">{ &props.id } {" "} <Label label={data.type_name()} color={Color::Blue} /> </PageHeading>),
+            html!(<PageHeading sticky=false subtitle="SBOM detail information">{ props.id.clone() } {" "} <Label label={data.type_name()} color={Color::Blue} /> </PageHeading>),
             html!(<Details sbom={data.clone()}/> ),
         ),
         UseAsyncState::Ready(Err(err)) => (
-            html!(<PageHeading subtitle="SBOM detail information">{ &props.id }</PageHeading>),
+            html!(<PageHeading subtitle="SBOM detail information">{ props.id.clone() }</PageHeading>),
             html!(<PageSection fill={PageSectionFill::Fill}><Error err={err.to_string()} /></PageSection>),
         ),
     };
@@ -74,7 +74,7 @@ fn details(props: &DetailsProps) -> Html {
     }
 
     let tab = use_state_eq(|| TabIndex::Overview);
-    let onselect = use_callback(|index, tab| tab.set(index), tab.clone());
+    let onselect = use_callback(tab.clone(), |index, tab| tab.set(index));
 
     match &*props.sbom {
         model::SBOM::SPDX { bom, source } => {

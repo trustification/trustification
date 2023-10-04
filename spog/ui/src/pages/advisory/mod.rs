@@ -36,19 +36,19 @@ pub fn vex(props: &VEXProperties) -> Html {
 
     let (heading, content) = match &*info {
         UseAsyncState::Pending | UseAsyncState::Processing => (
-            html!(<PageHeading subtitle="Advisory detail information">{ &props.id }</PageHeading>),
+            html!(<PageHeading subtitle="Advisory detail information">{ props.id.clone() }</PageHeading>),
             html!(<PageSection fill={PageSectionFill::Fill}><Spinner/></PageSection>),
         ),
         UseAsyncState::Ready(Ok(None)) => (
-            html!(<PageHeading sticky=false subtitle="Advisory detail information">{ &props.id } {" "} </PageHeading>),
+            html!(<PageHeading sticky=false subtitle="Advisory detail information">{ props.id.clone() } {" "} </PageHeading>),
             html!(<NotFound/>),
         ),
         UseAsyncState::Ready(Ok(Some(data))) => (
-            html!(<PageHeading sticky=false subtitle="Advisory detail information">{ &props.id } {" "} </PageHeading>),
+            html!(<PageHeading sticky=false subtitle="Advisory detail information">{ props.id.clone() } {" "} </PageHeading>),
             html!(<Details vex={data.clone()}/> ),
         ),
         UseAsyncState::Ready(Err(err)) => (
-            html!(<PageHeading subtitle="Advisory detail information">{ &props.id }</PageHeading>),
+            html!(<PageHeading subtitle="Advisory detail information">{ props.id.clone() }</PageHeading>),
             html!(<PageSection fill={PageSectionFill::Fill}><Error err={err.to_string()} /></PageSection>),
         ),
     };
@@ -77,7 +77,7 @@ fn details(props: &DetailsProps) -> Html {
     }
 
     let tab = use_state_eq(|| TabIndex::Overview);
-    let onselect = use_callback(|index, tab| tab.set(index), tab.clone());
+    let onselect = use_callback(tab.clone(), |index, tab| tab.set(index));
 
     match &*props.vex {
         Advisory::Csaf { csaf, source } => {
@@ -97,7 +97,7 @@ fn details(props: &DetailsProps) -> Html {
                             <GridItem cols={[4]}>
                                 <CardWrapper title="Overview">
                                     <DescriptionList>
-                                        <DescriptionGroup term="Title">{ &csaf.document.title }</DescriptionGroup>
+                                        <DescriptionGroup term="Title">{ csaf.document.title.clone() }</DescriptionGroup>
                                         <DescriptionGroup term="Category">{ match &csaf.document.category {
                                                 Category::Base => "Base",
                                                 Category::SecurityAdvisory => "Advisory",
@@ -133,12 +133,12 @@ fn details(props: &DetailsProps) -> Html {
                                         </DescriptionGroup>
                                         if let Some(contact_details) = &csaf.document.publisher.contact_details {
                                             <DescriptionGroup term="Contact Details">
-                                                { &contact_details }
+                                                { contact_details.clone() }
                                             </DescriptionGroup>
                                         }
                                         if let Some(issuing_authority) = &csaf.document.publisher.issuing_authority {
                                             <DescriptionGroup term="Issuing Authority">
-                                                { &issuing_authority }
+                                                { issuing_authority.clone() }
                                             </DescriptionGroup>
                                         }
                                     </DescriptionList>
@@ -149,16 +149,16 @@ fn details(props: &DetailsProps) -> Html {
                                 <CardWrapper title="Tracking">
                                     <DescriptionList>
                                         <DescriptionGroup term="ID">
-                                            { &csaf.document.tracking.id }
+                                            { csaf.document.tracking.id.clone() }
                                         </DescriptionGroup>
                                         <DescriptionGroup term="Status">
                                             { tracking_status_str(&csaf.document.tracking.status) }
                                         </DescriptionGroup>
                                         <DescriptionGroup term="Initial release date">
-                                            { &csaf.document.tracking.initial_release_date }
+                                            { csaf.document.tracking.initial_release_date.to_string() }
                                         </DescriptionGroup>
                                         <DescriptionGroup term="Current release date">
-                                            { &csaf.document.tracking.current_release_date }
+                                            { csaf.document.tracking.current_release_date.to_string() }
                                         </DescriptionGroup>
                                     </DescriptionList>
                                 </CardWrapper>

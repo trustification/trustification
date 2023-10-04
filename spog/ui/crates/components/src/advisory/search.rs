@@ -21,17 +21,14 @@ pub struct AdvisorySearchControlsProperties {
 #[function_component(AdvisorySearchControls)]
 pub fn advisory_search_controls(props: &AdvisorySearchControlsProperties) -> Html {
     let config = use_config();
-    let filters = use_memo(|()| config.vexination.filters.clone(), ());
+    let filters = use_memo((), |()| config.vexination.filters.clone());
 
     let search_config = {
-        use_memo(
-            move |()| {
-                let search = convert_search(&filters);
-                search.apply_defaults(&props.search_params);
-                search
-            },
-            (),
-        )
+        use_memo((), move |()| {
+            let search = convert_search(&filters);
+            search.apply_defaults(&props.search_params);
+            search
+        })
     };
 
     html!(
@@ -98,26 +95,23 @@ pub fn advisory_search(props: &AdvisorySearchProperties) -> Html {
     let pagination = use_pagination(*total, || page_state.pagination);
     let state = use_state_eq(UseAsyncState::default);
     let callback = use_callback(
+        state.clone(),
         |state: UseAsyncHandleDeps<SearchResult<Rc<_>>, String>, search| {
             search.set((*state).clone());
         },
-        state.clone(),
     );
     let search = use_advisory_search(search_params.clone(), pagination.clone(), callback);
 
     total.set(state.data().and_then(|d| d.total));
 
     let onsort = {
-        use_callback(
-            move |sort_by: (String, bool), search_params| {
-                if let SearchMode::Simple(simple) = &**search_params {
-                    let mut simple = simple.clone();
-                    simple.set_sort_by(sort_by);
-                    search_params.set(SearchMode::Simple(simple));
-                };
-            },
-            search_params.clone(),
-        )
+        use_callback(search_params.clone(), move |sort_by: (String, bool), search_params| {
+            if let SearchMode::Simple(simple) = &**search_params {
+                let mut simple = simple.clone();
+                simple.set_sort_by(sort_by);
+                search_params.set(SearchMode::Simple(simple));
+            };
+        })
     };
 
     // update page state
@@ -133,7 +127,7 @@ pub fn advisory_search(props: &AdvisorySearchProperties) -> Html {
     // render
 
     let simple = search.search_params.is_simple();
-    let onchange = use_callback(|data, text| text.set(data), search.text.clone());
+    let onchange = use_callback(search.text.clone(), |data, text| text.set(data));
 
     html!(
         <>

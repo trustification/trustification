@@ -59,27 +59,21 @@ pub fn search(props: &SearchProperties) -> Html {
     // text in the input field
 
     let text = use_state_eq(|| page_state.terms.join(" "));
-    let onchange = use_callback(|new_text, text| text.set(new_text), text.clone());
+    let onchange = use_callback(text.clone(), |new_text, text| text.set(new_text));
 
     // events to activate the search terms
 
-    let onclick = use_callback(
-        |_, (terms, search_terms)| {
-            search_terms.set(split_terms(terms));
-        },
-        (text.clone(), search_terms.clone()),
-    );
-    let onsubmit = use_callback(
-        |_, (terms, search_terms)| {
-            search_terms.set(split_terms(terms));
-        },
-        (text.clone(), search_terms.clone()),
-    );
+    let onclick = use_callback((text.clone(), search_terms.clone()), |_, (terms, search_terms)| {
+        search_terms.set(split_terms(terms));
+    });
+    let onsubmit = use_callback((text.clone(), search_terms.clone()), |_, (terms, search_terms)| {
+        search_terms.set(split_terms(terms));
+    });
 
     // managing tabs
 
     let tab = use_state_eq(|| page_state.tab);
-    let onselect = use_callback(|index, tab| tab.set(index), tab.clone());
+    let onselect = use_callback(tab.clone(), |index, tab| tab.set(index));
 
     // advisory search
 
@@ -116,18 +110,18 @@ pub fn search(props: &SearchProperties) -> Html {
     // update search terms
 
     {
-        use_effect_with_deps(
-            |(search_terms, advisory, sbom, sbom_by_dependency)| {
-                advisory.set(advisory.set_simple_terms(search_terms.clone()));
-                sbom.set(sbom.set_simple_terms(search_terms.clone()));
-                sbom_by_dependency.set(sbom_by_dependency.set_simple_terms(search_terms.clone()));
-            },
+        use_effect_with(
             (
                 (*search_terms).clone(),
                 advisory.search_params.clone(),
                 sbom.search_params.clone(),
                 sbom_by_dependency.search_params.clone(),
             ),
+            |(search_terms, advisory, sbom, sbom_by_dependency)| {
+                advisory.set(advisory.set_simple_terms(search_terms.clone()));
+                sbom.set(sbom.set_simple_terms(search_terms.clone()));
+                sbom_by_dependency.set(sbom_by_dependency.set_simple_terms(search_terms.clone()));
+            },
         );
     }
 
@@ -284,10 +278,10 @@ where
     let search_params = use_state_eq::<SearchMode<DynamicSearchParameters>, _>(|| init_search(page_state));
     let state = use_state_eq(UseAsyncState::default);
     let callback = use_callback(
+        state.clone(),
         |state: UseAsyncHandleDeps<SearchResult<R>, String>, search| {
             search.set((*state).clone());
         },
-        state.clone(),
     );
     let total = use_state_eq(|| None);
     total.set(state.data().and_then(|d| d.total));
@@ -295,16 +289,13 @@ where
     let search = use_hook(search_params.clone(), pagination.clone(), callback);
 
     let onsort = {
-        use_callback(
-            move |sort_by: (String, bool), search_params| {
-                if let SearchMode::Simple(simple) = &**search_params {
-                    let mut simple = simple.clone();
-                    simple.set_sort_by(sort_by);
-                    search_params.set(SearchMode::Simple(simple));
-                };
-            },
-            search_params.clone(),
-        )
+        use_callback(search_params.clone(), move |sort_by: (String, bool), search_params| {
+            if let SearchMode::Simple(simple) = &**search_params {
+                let mut simple = simple.clone();
+                simple.set_sort_by(sort_by);
+                search_params.set(SearchMode::Simple(simple));
+            };
+        })
     };
 
     UseUnifiedSearch {

@@ -23,23 +23,20 @@ pub fn package(props: &PackageProperties) -> Html {
 #[function_component(SearchView)]
 fn search_view() -> Html {
     let inputtext = use_state_eq(String::new);
-    let on_inputtext_change = use_callback(|value, inputtext| inputtext.set(value), inputtext.clone());
+    let on_inputtext_change = use_callback(inputtext.clone(), |value, inputtext| inputtext.set(value));
 
     let router = use_router::<AppRoute>();
 
-    let submit = use_callback(
-        move |(), inputtext| {
-            if let Some(router) = &router {
-                router.push(AppRoute::Package {
-                    id: (**inputtext).clone(),
-                });
-            }
-        },
-        inputtext.clone(),
-    );
+    let submit = use_callback(inputtext.clone(), move |(), inputtext| {
+        if let Some(router) = &router {
+            router.push(AppRoute::Package {
+                id: (**inputtext).clone(),
+            });
+        }
+    });
 
-    let on_searchbtn_click = (*use_memo(|submit| submit.reform(|_: MouseEvent| ()), submit.clone())).clone();
-    let on_form_submit = (*use_memo(|submit| submit.reform(|_: SubmitEvent| ()), submit)).clone();
+    let on_searchbtn_click = (*use_memo(submit.clone(), |submit| submit.reform(|_: MouseEvent| ()))).clone();
+    let on_form_submit = (*use_memo(submit, |submit| submit.reform(|_: SubmitEvent| ()))).clone();
 
     html!(
         <>

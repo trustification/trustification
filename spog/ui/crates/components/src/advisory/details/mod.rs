@@ -115,7 +115,7 @@ impl TableEntryRenderer<Column> for VulnerabilityWrapper {
                     <Link<AppRoute>
                         target={AppRoute::Cve{id: cve.clone()}}
                     >
-                        {cve}
+                        {cve.clone()}
                     </Link<AppRoute>>
                 ),
                 None => html!(OrNone::<()>::DEFAULT_NA),
@@ -199,20 +199,17 @@ pub struct CsafVulnTableProperties {
 
 #[function_component(CsafVulnTable)]
 pub fn vulnerability_table(props: &CsafVulnTableProperties) -> Html {
-    let vulns = use_memo(
-        |csaf| {
-            csaf.vulnerabilities
-                .clone()
-                .into_iter()
-                .flatten()
-                .map(|vuln| VulnerabilityWrapper {
-                    vuln,
-                    csaf: csaf.clone(),
-                })
-                .collect::<Vec<_>>()
-        },
-        props.csaf.clone(),
-    );
+    let vulns = use_memo(props.csaf.clone(), |csaf| {
+        csaf.vulnerabilities
+            .clone()
+            .into_iter()
+            .flatten()
+            .map(|vuln| VulnerabilityWrapper {
+                vuln,
+                csaf: csaf.clone(),
+            })
+            .collect::<Vec<_>>()
+    });
 
     let (entries, onexpand) = use_table_data(MemoizedTableModel::new(vulns));
 

@@ -34,12 +34,12 @@ url = { version = "2", features = ["serde"] }
 urlencoding = "2"
 wasm-bindgen = "0.2"
 wasm-bindgen-futures = "0.4"
-yew = { version = "0.20", features = ["csr"] }
-yew-consent = "0.1"
-yew-hooks = "0.2"
-yew-more-hooks = "0.2.0"
-yew-nested-router = "0.3.1"
-yew-oauth2 = { version = "0.6.3", features = ["router", "openid"] }
+yew = { version = "0.21", features = ["csr"] }
+yew-consent = "0.2"
+yew-hooks = "0.3"
+yew-more-hooks = "0.3.0"
+yew-nested-router = "0.4.0"
+yew-oauth2 = { version = "0.7.0", features = ["router", "openid"] }
 
 spog-model = { path = "../../../model" }
 

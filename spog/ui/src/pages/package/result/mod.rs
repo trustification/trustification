@@ -16,7 +16,7 @@ pub struct ResultViewProperties {
 pub fn result_view(props: &ResultViewProperties) -> Html {
     html!(
         <>
-            <PageHeading>{&props.id}</PageHeading>
+            <PageHeading>{props.id.clone()}</PageHeading>
             <PageSection>
                 <Grid gutter=true>
                     <GridItem cols={[4]}>

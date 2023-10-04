@@ -43,17 +43,14 @@ impl TreeNode<()> for BranchWrapper {
 pub fn product_info(props: &CsafProperties) -> Html {
     use patternfly_yew::prelude::TableColumn;
 
-    let model = use_memo(
-        |csaf| {
-            ProductTreeWrapper(csaf.product_tree.clone().unwrap_or(ProductTree {
-                branches: None,
-                product_groups: None,
-                full_product_names: None,
-                relationships: None,
-            }))
-        },
-        props.csaf.clone(),
-    );
+    let model = use_memo(props.csaf.clone(), |csaf| {
+        ProductTreeWrapper(csaf.product_tree.clone().unwrap_or(ProductTree {
+            branches: None,
+            product_groups: None,
+            full_product_names: None,
+            relationships: None,
+        }))
+    });
 
     let header = html_nested! {
         <TreeTableHeader<()>>

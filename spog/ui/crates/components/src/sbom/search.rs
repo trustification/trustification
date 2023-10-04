@@ -21,15 +21,12 @@ pub struct SbomSearchControlsProperties {
 #[function_component(SbomSearchControls)]
 pub fn sbom_search_controls(props: &SbomSearchControlsProperties) -> Html {
     let config = use_config();
-    let filters = use_memo(|()| config.bombastic.filters.clone(), ());
-    let search_config = use_memo(
-        |()| {
-            let search = convert_search(&filters);
-            search.apply_defaults(&props.search_params);
-            search
-        },
-        (),
-    );
+    let filters = use_memo((), |()| config.bombastic.filters.clone());
+    let search_config = use_memo((), |()| {
+        let search = convert_search(&filters);
+        search.apply_defaults(&props.search_params);
+        search
+    });
 
     html!(
         <SimpleSearch<DynamicSearchParameters> search={search_config} search_params={props.search_params.clone()} />
@@ -100,10 +97,10 @@ pub fn sbom_search(props: &SbomSearchProperties) -> Html {
     let pagination = use_pagination(*total, || page_state.pagination);
     let state = use_state_eq(UseAsyncState::default);
     let callback = use_callback(
+        state.clone(),
         |state: UseAsyncHandleDeps<SearchResult<Rc<_>>, String>, search| {
             search.set((*state).clone());
         },
-        state.clone(),
     );
     let search = use_sbom_search(search_params.clone(), pagination.clone(), callback, |context| {
         context.search_params.as_str(&context.filters)
@@ -112,16 +109,13 @@ pub fn sbom_search(props: &SbomSearchProperties) -> Html {
     total.set(state.data().and_then(|d| d.total));
 
     let onsort = {
-        use_callback(
-            move |sort_by: (String, bool), search_params| {
-                if let SearchMode::Simple(simple) = &**search_params {
-                    let mut simple = simple.clone();
-                    simple.set_sort_by(sort_by);
-                    search_params.set(SearchMode::Simple(simple));
-                };
-            },
-            search_params.clone(),
-        )
+        use_callback(search_params.clone(), move |sort_by: (String, bool), search_params| {
+            if let SearchMode::Simple(simple) = &**search_params {
+                let mut simple = simple.clone();
+                simple.set_sort_by(sort_by);
+                search_params.set(SearchMode::Simple(simple));
+            };
+        })
     };
 
     // update page state
@@ -137,7 +131,7 @@ pub fn sbom_search(props: &SbomSearchProperties) -> Html {
     // render
 
     let simple = search.search_params.is_simple();
-    let onchange = use_callback(|data, text| text.set(data), search.text.clone());
+    let onchange = use_callback(search.text.clone(), |data, text| text.set(data));
 
     html!(
         <>

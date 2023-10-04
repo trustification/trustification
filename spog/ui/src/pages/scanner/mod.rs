@@ -57,32 +57,23 @@ fn parse(data: &[u8]) -> Result<SBOM, anyhow::Error> {
 #[function_component(Scanner)]
 pub fn scanner() -> Html {
     let content = use_state_eq(|| None::<Rc<String>>);
-    let onsubmit = use_callback(|data, content| content.set(Some(data)), content.clone());
+    let onsubmit = use_callback(content.clone(), |data, content| content.set(Some(data)));
 
-    let sbom = use_memo(
-        |content| {
-            content
-                .as_ref()
-                .and_then(|data| parse(data.as_bytes()).ok().map(|sbom| (data.clone(), Rc::new(sbom))))
-        },
-        content.clone(),
-    );
+    let sbom = use_memo(content.clone(), |content| {
+        content
+            .as_ref()
+            .and_then(|data| parse(data.as_bytes()).ok().map(|sbom| (data.clone(), Rc::new(sbom))))
+    });
 
-    let onvalidate = use_callback(
-        |data: Rc<String>, ()| match parse(data.as_bytes()) {
-            Ok(_sbom) => Ok(data),
-            Err(err) => Err(format!("Failed to parse SBOM as CycloneDX 1.3: {err}")),
-        },
-        (),
-    );
+    let onvalidate = use_callback((), |data: Rc<String>, ()| match parse(data.as_bytes()) {
+        Ok(_sbom) => Ok(data),
+        Err(err) => Err(format!("Failed to parse SBOM as CycloneDX 1.3: {err}")),
+    });
 
     // allow resetting the form
-    let onreset = use_callback(
-        |_, content| {
-            content.set(None);
-        },
-        content.clone(),
-    );
+    let onreset = use_callback(content.clone(), |_, content| {
+        content.set(None);
+    });
 
     let config = use_config();
 

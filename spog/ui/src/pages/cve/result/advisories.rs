@@ -23,7 +23,7 @@ impl TableEntryRenderer<Column> for AdvisoryOverview {
                 <Link<AppRoute>
                     target={AppRoute::Advisory(View::Content{id: self.id.clone()})}
                 >
-                    { &self.id }
+                    { self.id.clone() }
                 </Link<AppRoute>>
             )
             .into(),

@@ -46,34 +46,31 @@ pub struct CvssMapProperties {
 
 #[function_component(CvssMap)]
 pub fn cvss_map(props: &CvssMapProperties) -> Html {
-    let map = use_memo(
-        |map| {
-            let mut count = 0;
+    let map = use_memo(props.map.clone(), |map| {
+        let mut count = 0;
 
-            // convert to BTreeMap: parse, sort, and count
-            let mut result: BTreeMap<Severity, u64> = BTreeMap::new();
-            for (k, v) in map {
-                let k = Severity::from_str(k).unwrap_or(Severity::Critical);
-                count += *v;
-                result.insert(k, *v);
-            }
+        // convert to BTreeMap: parse, sort, and count
+        let mut result: BTreeMap<Severity, u64> = BTreeMap::new();
+        for (k, v) in map {
+            let k = Severity::from_str(k).unwrap_or(Severity::Critical);
+            count += *v;
+            result.insert(k, *v);
+        }
 
-            html!(
-                <Flex space_items={[SpaceItems::Small]}>
-                    <FlexItem>{ count }</FlexItem>
-                    <Raw>
-                        <Divider r#type={DividerType::Hr} orientation={[DividerOrientation::Vertical]} />
-                    </Raw>
-                    <FlexItem>
-                    { for result.into_iter().rev().map(|(k, v)| { html!(
-                        <> { k } { " "} { v } { " "} </>
-                    )})}
-                    </FlexItem>
-                </Flex>
-            )
-        },
-        props.map.clone(),
-    );
+        html!(
+            <Flex space_items={[SpaceItems::Small]}>
+                <FlexItem>{ count }</FlexItem>
+                <Raw>
+                    <Divider r#type={DividerType::Hr} orientation={[DividerOrientation::Vertical]} />
+                </Raw>
+                <FlexItem>
+                { for result.into_iter().rev().map(|(k, v)| { html!(
+                    <> { k } { " "} { v } { " "} </>
+                )})}
+                </FlexItem>
+            </Flex>
+        )
+    });
 
     (*map).clone()
 }
