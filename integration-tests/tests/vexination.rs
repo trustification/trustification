@@ -1,4 +1,4 @@
-use integration_tests::{get_response, id, wait_for_event, Urlifier, VexinationContext};
+use integration_tests::{get_response, id, Urlifier, VexinationContext};
 use reqwest::StatusCode;
 use serde_json::{json, Value};
 use std::time::Duration;
@@ -158,53 +158,45 @@ async fn vex_invalid_encoding(vexination: &mut VexinationContext) {
 }
 
 #[cfg(feature = "admin")]
-#[ignore = "until API can support failures so that event bus is not needed to check"]
 #[test_context(VexinationContext)]
 #[tokio::test]
 #[ntest::timeout(60_0000)]
 async fn upload_vex_empty_json(context: &mut VexinationContext) {
     let id = "test-empty-file-json";
-    wait_for_event(&context.events, "vex-failed", id, async {
-        let input = serde_json::json!({});
-        let response = reqwest::Client::new()
-            .post(context.urlify(format!("/api/v1/vex?advisory={id}")))
-            .json(&input)
-            .inject_token(&context.provider.provider_manager)
-            .await
-            .unwrap()
-            .send()
-            .await
-            .unwrap();
-        assert_eq!(response.status(), StatusCode::CREATED);
-    })
-    .await;
+    let input = serde_json::json!({});
+    let response = reqwest::Client::new()
+        .post(context.urlify(format!("/api/v1/vex?advisory={id}")))
+        .json(&input)
+        .inject_token(&context.provider.provider_manager)
+        .await
+        .unwrap()
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::BAD_REQUEST);
     context.delete_vex(id).await;
 }
 
 #[cfg(feature = "admin")]
-#[ignore = "until API can support failures so that event bus is not needed to check"]
 #[test_context(VexinationContext)]
 #[tokio::test]
 #[ntest::timeout(90_000)]
 async fn upload_vex_empty_file(vexination: &mut VexinationContext) {
     let id = "test-empty-file-upload";
-    wait_for_event(&vexination.events, "vex-failed", id, async {
-        let file_path = "empty-test.txt";
-        let _ = File::create(&file_path).await.expect("file creation failed");
-        let file = File::open(&file_path).await.unwrap();
-        let response = reqwest::Client::new()
-            .post(vexination.urlify(format!("/api/v1/vex?advisory={id}")))
-            .body(file)
-            .inject_token(&vexination.provider.provider_manager)
-            .await
-            .unwrap()
-            .send()
-            .await
-            .unwrap();
-        remove_file(&file_path).await.unwrap();
-        assert_eq!(response.status(), StatusCode::CREATED);
-    })
-    .await;
+    let file_path = "empty-test.txt";
+    let _ = File::create(&file_path).await.expect("file creation failed");
+    let file = File::open(&file_path).await.unwrap();
+    let response = reqwest::Client::new()
+        .post(vexination.urlify(format!("/api/v1/vex?advisory={id}")))
+        .body(file)
+        .inject_token(&vexination.provider.provider_manager)
+        .await
+        .unwrap()
+        .send()
+        .await
+        .unwrap();
+    remove_file(&file_path).await.unwrap();
+    assert_eq!(response.status(), StatusCode::BAD_REQUEST);
     vexination.delete_vex(id).await;
 }
 
