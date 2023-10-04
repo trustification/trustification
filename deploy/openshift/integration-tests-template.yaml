@@ -25,8 +25,6 @@ objects:
                 value: trusted-content-api
               - name: TRUST_USER_ID
                 value: trusted-content-api
-              - name: TRUST_SELENIUM_DRIVER_URL
-                value: foo
               - name: ISSUER_URL
                 value: "${ISSUER_URL}"
               - name: TRUST_SECRET
