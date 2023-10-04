@@ -7,6 +7,7 @@ use thirtyfour::prelude::{ElementQueryable, ElementWaitable};
 use thirtyfour::By;
 
 #[cfg_attr(not(feature = "ui"), ignore = "UI tests are not enabled")]
+#[test_with::env(CRDA_URL)]
 #[test_context(SpogUiContext)]
 #[tokio::test]
 #[ntest::timeout(60_000)]
