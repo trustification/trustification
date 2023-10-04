@@ -63,13 +63,11 @@ impl Config {
                     ui_dist_path: std::env::var_os("TRUST_UI_DIST_PATH").map(PathBuf::from),
                     selenium_driver_url: std::env::var("TRUST_SELENIUM_DRIVER_URL")
                         .as_deref()
-                        .map(Url::parse)
-                        .unwrap()
+                        .map(|url| Url::parse(url).unwrap())
                         .ok(),
                     selenium_driver_kind: std::env::var("TRUST_SELENIUM_DRIVER_KIND")
                         .as_deref()
-                        .map(DriverKind::from_str)
-                        .unwrap()
+                        .map(|kind| DriverKind::from_str(kind).unwrap())
                         .ok()
                         .unwrap_or_default(),
                 }
