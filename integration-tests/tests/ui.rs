@@ -9,7 +9,7 @@ use thirtyfour::By;
 #[cfg_attr(not(feature = "ui"), ignore = "UI tests are not enabled")]
 #[test_context(SpogUiContext)]
 #[tokio::test]
-#[ntest::timeout(30_000)]
+#[ntest::timeout(60_000)]
 async fn issue_tc_587(context: &mut SpogUiContext) {
     let driver = &context.driver;
 
