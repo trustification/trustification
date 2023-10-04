@@ -6,7 +6,7 @@ objects:
 - apiVersion: batch/v1
   kind: Job
   metadata:
-    name: rhtc-integration-tests
+    name: integration-tests-${IMAGE_TAG}
   spec:
     template:
       spec:
@@ -15,7 +15,7 @@ objects:
         containers:
           - image: ${IMAGE}:${IMAGE_TAG}
             imagePullPolicy: Always
-            name: rhtc-integration-tests
+            name: integration-tests
             env:
               - name: RUST_LOG
                 value: info
