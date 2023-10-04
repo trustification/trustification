@@ -91,32 +91,26 @@ fn authenticated_page(props: &ChildrenProperties) -> Html {
 
     let backdrop = use_backdrop();
 
-    let callback_about = use_callback(
-        move |_, ()| {
-            if let Some(backdrop) = &backdrop {
-                backdrop.open(html!(<about::About/>));
-            }
-        },
-        (),
-    );
+    let callback_about = use_callback((), move |_, ()| {
+        if let Some(backdrop) = &backdrop {
+            backdrop.open(html!(<about::About/>));
+        }
+    });
 
     let auth = use_auth_state();
-    let auth = use_memo(from_auth, auth);
+    let auth = use_memo(auth, from_auth);
 
     let agent = use_auth_agent().expect("Requires OAuth2Context component in parent hierarchy");
-    let onlogout = use_callback(
-        move |_, _| {
-            if let Err(err) = agent.logout() {
-                log::warn!("Failed to logout: {err}");
-            }
-        },
-        (),
-    );
+    let onlogout = use_callback((), move |_, _| {
+        if let Err(err) = agent.logout() {
+            log::warn!("Failed to logout: {err}");
+        }
+    });
 
     let onconsent = use_consent_dialog();
     let manage_consent = use_consent_context::<()>().is_some();
 
-    let onclearhints = use_callback(|_, _| clear_hints(), ());
+    let onclearhints = use_callback((), |_, _| clear_hints());
 
     let tools = html!(
         <Toolbar>

@@ -48,7 +48,7 @@ fn application_with_backend() -> Html {
         },
     };
 
-    let ask = use_callback(|_, ()| html!(<AskConsent />), ());
+    let ask = use_callback((), |_, ()| html!(<AskConsent />));
 
     let consent = |main: Html| match backend.endpoints.segment_write_key.is_some() {
         true => html!(

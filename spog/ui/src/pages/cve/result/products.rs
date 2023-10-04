@@ -14,7 +14,7 @@ pub fn related_products(props: &RelatedProductsProperties) -> Html {
         <Content>
         { for props.products.iter().map(|(state, products)| {
             html!(<>
-                <Title level={Level::H3}>{state}</Title>
+                <Title level={Level::H3}>{ state.clone() }</Title>
                 <List>
                     { for products.iter().map(Html::from) }
                 </List>

@@ -26,9 +26,9 @@ pub fn spdx_creator(bom: &SPDX) -> Html {
         <Card {title}>
             <CardBody>
                 <DescriptionList>
-                    <DescriptionGroup term="Created">{ &bom.document_creation_information.creation_info.created.to_string() }</DescriptionGroup>
+                    <DescriptionGroup term="Created">{ bom.document_creation_information.creation_info.created.to_string() }</DescriptionGroup>
                     if let Some(info) = &bom.document_creation_information.creation_info.license_list_version {
-                        <DescriptionGroup term="License List Version">{ &info.to_string() }</DescriptionGroup>
+                        <DescriptionGroup term="License List Version">{ info.to_string() }</DescriptionGroup>
                     }
                     {
                         match bom.document_creation_information.creation_info.creators.len() {
@@ -53,7 +53,7 @@ pub fn spdx_creator(bom: &SPDX) -> Html {
                 </DescriptionList>
             </CardBody>
             { bom.document_creation_information.creation_info.creator_comment.as_ref().map(|comment|{
-                html_nested!(<CardBody> { comment } </CardBody>)
+                html_nested!(<CardBody> { comment.clone() } </CardBody>)
             })}
         </Card>
     )
@@ -66,15 +66,15 @@ pub fn spdx_meta(bom: &SPDX) -> Html {
         <Card {title}>
             <CardBody>
                 <DescriptionList>
-                    <DescriptionGroup term="Name">{ &bom.document_creation_information.document_name }</DescriptionGroup>
-                    <DescriptionGroup term="ID">{ &bom.document_creation_information.spdx_identifier }</DescriptionGroup>
-                    <DescriptionGroup term="Namespace">{ &bom.document_creation_information.spdx_document_namespace }</DescriptionGroup>
-                    <DescriptionGroup term="SPDX Version">{ &bom.document_creation_information.spdx_version }</DescriptionGroup>
-                    <DescriptionGroup term="Data License">{ &bom.document_creation_information.data_license }</DescriptionGroup>
+                    <DescriptionGroup term="Name">{ bom.document_creation_information.document_name.clone() }</DescriptionGroup>
+                    <DescriptionGroup term="ID">{ bom.document_creation_information.spdx_identifier.clone() }</DescriptionGroup>
+                    <DescriptionGroup term="Namespace">{ bom.document_creation_information.spdx_document_namespace.clone() }</DescriptionGroup>
+                    <DescriptionGroup term="SPDX Version">{ bom.document_creation_information.spdx_version.clone() }</DescriptionGroup>
+                    <DescriptionGroup term="Data License">{ bom.document_creation_information.data_license.clone() }</DescriptionGroup>
                 </DescriptionList>
             </CardBody>
             { bom.document_creation_information.document_comment.as_ref().map(|comment|{
-                html_nested!(<CardBody> { comment } </CardBody>)
+                html_nested!(<CardBody> { comment.clone() } </CardBody>)
             })}
         </Card>
     )
@@ -95,7 +95,7 @@ pub fn spdx_main(bom: &SPDX) -> Html {
                 Some(package) => {
                     vec![html!(
                     <DescriptionList>
-                        <DescriptionGroup term="Name">{ &package.package_name }</DescriptionGroup>
+                        <DescriptionGroup term="Name">{ package.package_name.clone() }</DescriptionGroup>
                         <DescriptionGroup term="Version">{ OrNone(package.package_version.as_ref()) }</DescriptionGroup>
                         <DescriptionGroup term="External References"> { spdx_external_references(package)} </DescriptionGroup>
                     </DescriptionList>
@@ -105,7 +105,7 @@ pub fn spdx_main(bom: &SPDX) -> Html {
                     html!(
                             <CardBody>
                                 <DescriptionList>
-                                    <DescriptionGroup term="ID">{ &desc }</DescriptionGroup>
+                                    <DescriptionGroup term="ID">{ desc.clone() }</DescriptionGroup>
                                 </DescriptionList>
                             </CardBody>
 
@@ -165,14 +165,14 @@ pub fn spdx_external_references(package: &PackageInformation) -> Html {
 
 pub fn spdx_package_list_entry(package: &PackageInformation) -> Html {
     match get_purl(package) {
-        Some(purl) => html!(<code>{ purl }</code>),
+        Some(purl) => html!(<code>{ purl.to_string() }</code>),
         None => match &package.package_version.as_deref() {
             Some("") | None => {
                 html!(&package.package_name)
             }
             Some(version) => html!(
                 <Tooltip text={version.to_string()}>
-                    { &package.package_name }
+                    { package.package_name.clone() }
                 </Tooltip>
             ),
         },

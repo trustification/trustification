@@ -21,26 +21,22 @@ pub fn readonly_editor(props: &ReadonlyEditorProperties) -> Html {
         false => BuiltinTheme::Vs,
     };
 
-    let options = use_memo(
-        |theme| {
-            let options = CodeEditorOptions::default()
-                .with_scroll_beyond_last_line(false)
-                .with_language("json".to_string())
-                .with_builtin_theme(*theme)
-                .with_automatic_layout(true)
-                .to_sys_options();
+    let options = use_memo(theme, |theme| {
+        let options = CodeEditorOptions::default()
+            .with_scroll_beyond_last_line(false)
+            .with_language("json".to_string())
+            .with_builtin_theme(*theme)
+            .with_automatic_layout(true)
+            .to_sys_options();
 
-            options.set_read_only(Some(true));
+        options.set_read_only(Some(true));
 
-            options
-        },
-        theme,
-    );
+        options
+    });
 
-    let model = use_memo(
-        |content| TextModel::create(content, Some("json"), None).unwrap(),
-        props.content.clone(),
-    );
+    let model = use_memo(props.content.clone(), |content| {
+        TextModel::create(content, Some("json"), None).unwrap()
+    });
 
     html!(
         <CodeEditor

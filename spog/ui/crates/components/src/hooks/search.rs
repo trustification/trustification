@@ -35,6 +35,7 @@ where
 
     // parse filter
     let filter_input_state = use_memo(
+        ((*search_params).is_simple(), (*text).clone()),
         |(simple, text)| match simple {
             true => InputState::Default,
             false => match S::parse(text) {
@@ -45,24 +46,21 @@ where
                 }
             },
         },
-        ((*search_params).is_simple(), (*text).clone()),
     );
 
     // clear search, keep mode
-    let onclear = use_callback(
-        |_, (text, search_params)| {
-            text.set(String::new());
-            // trigger empty search
-            match **search_params {
-                SearchMode::Complex(_) => search_params.set(SearchMode::Complex(String::new())),
-                SearchMode::Simple(_) => search_params.set(SearchMode::Simple(Default::default())),
-            }
-        },
-        (text.clone(), search_params.clone()),
-    );
+    let onclear = use_callback((text.clone(), search_params.clone()), |_, (text, search_params)| {
+        text.set(String::new());
+        // trigger empty search
+        match **search_params {
+            SearchMode::Complex(_) => search_params.set(SearchMode::Complex(String::new())),
+            SearchMode::Simple(_) => search_params.set(SearchMode::Simple(Default::default())),
+        }
+    });
 
     // apply text field to search
     let onset = use_callback(
+        (text.clone(), search_params.clone()),
         |(), (text, search_params)| match (**search_params).clone() {
             SearchMode::Complex(_) => {
                 search_params.set(SearchMode::Complex((**text).clone()));
@@ -72,10 +70,10 @@ where
                 search_params.set(SearchMode::Simple(s));
             }
         },
-        (text.clone(), search_params.clone()),
     );
 
     let ontogglesimple = use_callback(
+        (text.clone(), context.clone(), search_params.clone()),
         |state, (text, context, search_params)| match state {
             false => {
                 let q = (*search_params).as_str(context).to_string();
@@ -88,7 +86,6 @@ where
                 text.set(String::new());
             }
         },
-        (text.clone(), context.clone(), search_params.clone()),
     );
 
     UseStandardSearch {
@@ -128,7 +125,7 @@ where
     let backend = use_backend();
     let access_token = use_latest_access_token();
 
-    let filters = use_memo(|()| init_filter(), ());
+    let filters = use_memo((), |()| init_filter());
 
     let search = use_standard_search::<S>(search_params.clone(), filters.clone());
 
@@ -150,12 +147,9 @@ where
         )
     };
 
-    use_effect_with_deps(
-        |(callback, search)| {
-            callback.emit(search.clone());
-        },
-        (callback.clone(), search_op.clone()),
-    );
+    use_effect_with((callback.clone(), search_op.clone()), |(callback, search)| {
+        callback.emit(search.clone());
+    });
 
     search
 }

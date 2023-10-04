@@ -64,19 +64,16 @@ impl TableEntryRenderer<Column> for RemediationWrapper {
 
 #[function_component(CsafRemediationTable)]
 pub fn remediation_table(props: &CsafRemediationTableProperties) -> Html {
-    let rems = use_memo(
-        |rems| {
-            rems.clone()
-                .into_iter()
-                .flatten()
-                .map(|rem| RemediationWrapper {
-                    csaf: props.csaf.clone(),
-                    rem,
-                })
-                .collect::<Vec<_>>()
-        },
-        props.remediations.clone(),
-    );
+    let rems = use_memo(props.remediations.clone(), |rems| {
+        rems.clone()
+            .into_iter()
+            .flatten()
+            .map(|rem| RemediationWrapper {
+                csaf: props.csaf.clone(),
+                rem,
+            })
+            .collect::<Vec<_>>()
+    });
 
     let (entries, onexpand) = use_table_data(MemoizedTableModel::new(rems));
 

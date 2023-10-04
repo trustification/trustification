@@ -54,7 +54,7 @@ pub struct CardWrapperProperties {
 
 #[function_component(CardWrapper)]
 pub fn card_wrapper(props: &CardWrapperProperties) -> Html {
-    let title = html!(<Title>{ &props.title }</Title>);
+    let title = html!(<Title>{ props.title.clone() }</Title>);
     html!(
         <Card plain={props.plain} {title}>
             <CardBody>

@@ -71,7 +71,7 @@ impl TableEntryRenderer<Column> for PackageEntry {
                     <Link<AppRoute>
                         target={AppRoute::Advisory(View::Search{query})}
                     >
-                        { self.package.advisories }
+                        { for self.package.advisories }
                     </Link<AppRoute>>
                 ),
                 None => html!(),
@@ -114,13 +114,13 @@ pub fn sbom_result(props: &SbomResultProperties) -> Html {
 
     let sortby: UseStateHandle<Option<TableHeaderSortBy<Column>>> = use_state_eq(|| None);
     let onsort = use_callback(
+        (sortby.clone(), props.onsort.clone()),
         |val: TableHeaderSortBy<Column>, (sortby, onsort)| {
             sortby.set(Some(val));
             if val.index == Column::Created {
                 onsort.emit(("created".to_string(), val.asc));
             };
         },
-        (sortby.clone(), props.onsort.clone()),
     );
 
     let (entries, onexpand) = use_table_data(MemoizedTableModel::new(Rc::new(data.unwrap_or_default())));
