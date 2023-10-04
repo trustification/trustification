@@ -6,7 +6,7 @@ use test_context::test_context;
 use thirtyfour::prelude::{ElementQueryable, ElementWaitable};
 use thirtyfour::By;
 
-#[cfg_attr(not(feature = "ui"), ignore)]
+#[cfg_attr(not(feature = "ui"), ignore = "UI tests are not enabled")]
 #[test_context(SpogUiContext)]
 #[tokio::test]
 #[ntest::timeout(30_000)]
