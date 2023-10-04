@@ -23,7 +23,7 @@ pub fn inspect(props: &InspectProperties) -> Html {
     }
 
     let tab = use_state_eq(|| TabIndex::Report);
-    let onselect = use_callback(|index, tab| tab.set(index), tab.clone());
+    let onselect = use_callback(tab.clone(), |index, tab| tab.set(index));
 
     let backend = use_backend();
     let access_token = use_latest_access_token();

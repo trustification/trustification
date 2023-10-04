@@ -22,7 +22,7 @@ pub fn error(props: &ErrorProperties) -> Html {
                     <img src="assets/images/chicken-svgrepo-com.svg" style="transform: scaleY(-1);"/>
                 </GridItem>
                 <GridItem cols={[6]}>
-                    <Title>{&props.title}</Title>
+                    <Title>{props.title.clone()}</Title>
                     <Content>
                         if let Some(message)  = &props.message {
                             <p>{ &message }</p>

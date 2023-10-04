@@ -3,7 +3,9 @@ use patternfly_yew::prelude::*;
 use spog_ui_common::utils::search::*;
 use std::collections::HashSet;
 use std::rc::Rc;
+use yew::html::{ChildrenRenderer, IntoPropValue};
 use yew::prelude::*;
+use yew::virtual_dom::VNode;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct DefaultEntry {
@@ -76,12 +78,12 @@ impl From<Html> for LabelProvider {
     }
 }
 
-impl From<&LabelProvider> for Html {
-    fn from(value: &LabelProvider) -> Self {
-        match value {
-            LabelProvider::Static(html) => html.clone(),
+impl IntoPropValue<ChildrenRenderer<VNode>> for LabelProvider {
+    fn into_prop_value(self) -> ChildrenRenderer<VNode> {
+        ChildrenRenderer::new(vec![match self {
+            LabelProvider::Static(html) => html,
             LabelProvider::Dynamic(f) => f(),
-        }
+        }])
     }
 }
 
@@ -255,14 +257,11 @@ where
         )
     };
 
-    let onclear = use_callback(
-        |_, search_params| {
-            if let SearchMode::Simple(_) = &**search_params {
-                search_params.set(SearchMode::Simple(T::default()));
-            }
-        },
-        props.search_params.clone(),
-    );
+    let onclear = use_callback(props.search_params.clone(), |_, search_params| {
+        if let SearchMode::Simple(_) = &**search_params {
+            search_params.set(SearchMode::Simple(T::default()));
+        }
+    });
     let canclear = props.search_params.is_simple();
 
     html!(
@@ -304,7 +303,7 @@ where
                     onchange={search_set(props.search_params.clone(), move |s, state|(opt.setter)(s, state))}
                     disabled={!active}
                 >
-                    { &opt.label }
+                    { opt.label.clone() }
                 </Check>
             )
         }
@@ -323,7 +322,7 @@ where
                             onchange={search_set(props.search_params.clone(), move |s, _state|(opt.setter)(s, true)).reform(|_|true)}
                             disabled={!active}
                         >
-                            { &opt.label }
+                            { opt.label.clone() }
                         </Radio>
                     )
                 })

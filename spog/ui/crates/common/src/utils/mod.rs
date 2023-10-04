@@ -7,7 +7,9 @@ pub mod http;
 pub mod search;
 pub mod time;
 
+use yew::html::{ChildrenRenderer, IntoPropValue};
 use yew::prelude::*;
+use yew::virtual_dom::VNode;
 
 pub trait RenderOptional: Sized {
     /// Render to HTML, or else …
@@ -64,5 +66,17 @@ where
             Some(value) => value.into(),
             None => html!(<i>{OrNone::<T>::DEFAULT_NA}</i>),
         }
+    }
+}
+
+impl<T> IntoPropValue<ChildrenRenderer<VNode>> for OrNone<T>
+where
+    T: Into<Html>,
+{
+    fn into_prop_value(self) -> ChildrenRenderer<VNode> {
+        ChildrenRenderer::new(vec![match self.0 {
+            Some(value) => value.into(),
+            None => html!(<i>{OrNone::<T>::DEFAULT_NA}</i>),
+        }])
     }
 }

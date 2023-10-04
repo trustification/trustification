@@ -218,105 +218,99 @@ pub fn spdx_packages(props: &SpdxPackagesProperties) -> Html {
         </TableHeader<Column>>
     );
 
-    let package_map = use_memo(
-        |bom| {
-            bom.package_information
-                .iter()
-                .map(|p| (p.package_spdx_identifier.clone(), p.clone()))
-                .collect::<HashMap<_, _>>()
-        },
-        props.bom.clone(),
-    );
+    let package_map = use_memo(props.bom.clone(), |bom| {
+        bom.package_information
+            .iter()
+            .map(|p| (p.package_spdx_identifier.clone(), p.clone()))
+            .collect::<HashMap<_, _>>()
+    });
 
     let package_filter_string = use_mut_ref(String::default);
 
     // convert from SBOM to package list collapsed by base PURL with qualifiers
     let packages = {
         let package_filter_string = package_filter_string.clone();
-        use_memo(
-            |(bom, package_map)| {
-                let relations = Rc::new(bom.relationships.clone());
-                let mut result = Vec::with_capacity(bom.package_information.len());
-                let mut base_map = HashMap::new();
+        use_memo((props.bom.clone(), package_map), |(bom, package_map)| {
+            let relations = Rc::new(bom.relationships.clone());
+            let mut result = Vec::with_capacity(bom.package_information.len());
+            let mut base_map = HashMap::new();
 
-                let mut duplicates = HashSet::<&str>::new();
+            let mut duplicates = HashSet::<&str>::new();
 
-                struct PurlMap {
-                    /// base purl
-                    base: PackageUrl<'static>,
-                    packages: Vec<(PackageUrl<'static>, PackageInformation)>,
+            struct PurlMap {
+                /// base purl
+                base: PackageUrl<'static>,
+                packages: Vec<(PackageUrl<'static>, PackageInformation)>,
+            }
+
+            for package in &bom.package_information {
+                if !duplicates.insert(&package.package_spdx_identifier) {
+                    continue;
                 }
 
-                for package in &bom.package_information {
-                    if !duplicates.insert(&package.package_spdx_identifier) {
-                        continue;
-                    }
-
-                    match get_purl(package) {
-                        Some(purl) => {
-                            let base = make_base(purl.clone());
-                            let base_str = base.to_string();
-                            match base_map.entry(base_str) {
-                                hash_map::Entry::Vacant(entry) => {
-                                    entry.insert(PurlMap {
-                                        base,
-                                        packages: vec![(purl, package.clone())],
-                                    });
-                                }
-                                hash_map::Entry::Occupied(mut entry) => {
-                                    entry.get_mut().packages.push((purl, package.clone()));
-                                }
+                match get_purl(package) {
+                    Some(purl) => {
+                        let base = make_base(purl.clone());
+                        let base_str = base.to_string();
+                        match base_map.entry(base_str) {
+                            hash_map::Entry::Vacant(entry) => {
+                                entry.insert(PurlMap {
+                                    base,
+                                    packages: vec![(purl, package.clone())],
+                                });
+                            }
+                            hash_map::Entry::Occupied(mut entry) => {
+                                entry.get_mut().packages.push((purl, package.clone()));
                             }
                         }
-                        None => {
-                            result.push(PackageWrapper {
-                                base: PackageBase::Plain {
-                                    package: package.clone(),
-                                },
-                                relations: relations.clone(),
-                                all_packages: package_map.clone(),
-                                filter: package_filter_string.clone(),
-                            });
-                        }
-                    };
-                }
+                    }
+                    None => {
+                        result.push(PackageWrapper {
+                            base: PackageBase::Plain {
+                                package: package.clone(),
+                            },
+                            relations: relations.clone(),
+                            all_packages: package_map.clone(),
+                            filter: package_filter_string.clone(),
+                        });
+                    }
+                };
+            }
 
-                for PurlMap { base, packages } in base_map.into_values() {
-                    let mut qualifiers = BTreeMap::<String, BTreeSet<String>>::new();
-                    let mut versions = BTreeSet::<String>::new();
-                    let mut result_packages = Vec::with_capacity(packages.len());
+            for PurlMap { base, packages } in base_map.into_values() {
+                let mut qualifiers = BTreeMap::<String, BTreeSet<String>>::new();
+                let mut versions = BTreeSet::<String>::new();
+                let mut result_packages = Vec::with_capacity(packages.len());
 
-                    for (purl, package) in packages {
-                        for (k, v) in purl.qualifiers() {
-                            qualifiers.entry(k.to_string()).or_default().insert(v.to_string());
-                        }
-
-                        if let Some(version) = &purl.version() {
-                            versions.insert(version.to_string());
-                        }
-
-                        result_packages.push(package);
+                for (purl, package) in packages {
+                    for (k, v) in purl.qualifiers() {
+                        qualifiers.entry(k.to_string()).or_default().insert(v.to_string());
                     }
 
-                    result.push(PackageWrapper {
-                        base: PackageBase::Purl {
-                            base,
-                            packages: result_packages,
-                            qualifiers,
-                            versions,
-                        },
-                        relations: relations.clone(),
-                        all_packages: package_map.clone(),
-                        filter: package_filter_string.clone(),
-                    })
+                    if let Some(version) = &purl.version() {
+                        versions.insert(version.to_string());
+                    }
+
+                    result_packages.push(package);
                 }
 
-                result.sort_unstable_by(|a, b| a.base.name().cmp(b.base.name()));
+                result.push(PackageWrapper {
+                    base: PackageBase::Purl {
+                        base,
+                        packages: result_packages,
+                        qualifiers,
+                        versions,
+                    },
+                    relations: relations.clone(),
+                    all_packages: package_map.clone(),
+                    filter: package_filter_string.clone(),
+                })
+            }
 
-                result
-            },
-            (props.bom.clone(), package_map),
-        )
+            result.sort_unstable_by(|a, b| a.base.name().cmp(b.base.name()));
+
+            result
+        })
     };
 
     let offset = use_state_eq(|| 0);
@@ -327,44 +321,41 @@ pub fn spdx_packages(props: &SpdxPackagesProperties) -> Html {
     let filtered_packages = {
         let offset = offset.clone();
         let limit = limit.clone();
-        use_memo(
-            move |(packages, filter)| {
-                let packages = packages
-                    .iter()
-                    // apply filter
-                    .filter(|p| {
-                        filter.is_empty() || {
-                            match &p.base {
-                                PackageBase::Plain { package } => package.package_name.contains(filter),
-                                // FIXME: consider caching to_string
-                                PackageBase::Purl { base, .. } => {
-                                    base.name().contains(filter)
-                                        || base.namespace().map(|s| s.contains(filter)).unwrap_or_default()
-                                }
+        use_memo((packages, (*filter).clone()), move |(packages, filter)| {
+            let packages = packages
+                .iter()
+                // apply filter
+                .filter(|p| {
+                    filter.is_empty() || {
+                        match &p.base {
+                            PackageBase::Plain { package } => package.package_name.contains(filter),
+                            // FIXME: consider caching to_string
+                            PackageBase::Purl { base, .. } => {
+                                base.name().contains(filter)
+                                    || base.namespace().map(|s| s.contains(filter)).unwrap_or_default()
                             }
                         }
-                    })
-                    // clone and collect
-                    .cloned()
-                    .collect::<Vec<_>>();
-
-                // try to cap last page, only apply once
-                if *offset > packages.len() {
-                    if *limit > packages.len() {
-                        offset.set(0);
-                    } else {
-                        offset.set(packages.len() - *limit);
                     }
+                })
+                // clone and collect
+                .cloned()
+                .collect::<Vec<_>>();
+
+            // try to cap last page, only apply once
+            if *offset > packages.len() {
+                if *limit > packages.len() {
+                    offset.set(0);
+                } else {
+                    offset.set(packages.len() - *limit);
                 }
+            }
 
-                // also update the filter value
-                *package_filter_string.borrow_mut() = filter.clone();
+            // also update the filter value
+            *package_filter_string.borrow_mut() = filter.clone();
 
-                // return result
-                packages
-            },
-            (packages, (*filter).clone()),
-        )
+            // return result
+            packages
+        })
     };
 
     // total entries must be based on the filtered list
@@ -372,6 +363,7 @@ pub fn spdx_packages(props: &SpdxPackagesProperties) -> Html {
 
     // page from the filtered entries
     let entries = use_memo(
+        (filtered_packages, *offset, *limit),
         |(filtered_packages, offset, limit)| {
             filtered_packages
                 .iter()
@@ -381,7 +373,6 @@ pub fn spdx_packages(props: &SpdxPackagesProperties) -> Html {
                 .cloned()
                 .collect::<Vec<_>>()
         },
-        (filtered_packages, *offset, *limit),
     );
 
     let (entries, onexpand) = use_table_data(MemoizedTableModel::new(entries));
@@ -489,15 +480,15 @@ pub fn render_single_details(
                 <Card plain=true title={html!(<Title>{"Information"}</Title>)}>
                     <CardBody>
                         <DescriptionList>
-                            <DescriptionGroup term="Download">{ &package.package_download_location }</DescriptionGroup>
+                            <DescriptionGroup term="Download">{ package.package_download_location.clone() }</DescriptionGroup>
                             if let Some(copright_text) = &package.copyright_text {
-                                <DescriptionGroup term="Copyright">{ copright_text }</DescriptionGroup>
+                                <DescriptionGroup term="Copyright">{ copright_text.clone() }</DescriptionGroup>
                             }
                             if let Some(declared_license) = &package.declared_license {
-                                <DescriptionGroup term="License (declared)">{ declared_license }</DescriptionGroup>
+                                <DescriptionGroup term="License (declared)">{ declared_license.to_string() }</DescriptionGroup>
                             }
                             if let Some(concluded_license) = &package.concluded_license {
-                                <DescriptionGroup term="License (concluded)">{ concluded_license }</DescriptionGroup>
+                                <DescriptionGroup term="License (concluded)">{ concluded_license.to_string() }</DescriptionGroup>
                             }
                         </DescriptionList>
                     </CardBody>

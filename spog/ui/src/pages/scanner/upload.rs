@@ -172,17 +172,17 @@ pub fn upload(props: &UploadProperties) -> Html {
     );
 
     let onclear = use_callback(
+        (drop_content.clone(), analytics.clone()),
         |_: MouseEvent, (drop_content, analytics)| {
             // clear state
             drop_content.set(DropContent::None);
             analytics.track("Cleared SBOM content");
         },
-        (drop_content.clone(), analytics.clone()),
     );
 
     let state = processing.error().map(
         |(_, err)| (InputState::Error, err.clone(), html_nested!(
-            <HelperTextItem icon={HelperTextItemIcon::Visible} variant={ HelperTextItemVariant::Error }> { err } </HelperTextItem>
+            <HelperTextItem icon={HelperTextItemIcon::Visible} variant={ HelperTextItemVariant::Error }> { err.clone() } </HelperTextItem>
         )),
     );
     let (state, error_reason, helper_text) = match state {
@@ -191,7 +191,8 @@ pub fn upload(props: &UploadProperties) -> Html {
     };
     let state = state.unwrap_or_default();
 
-    use_effect_with_deps(
+    use_effect_with(
+        (analytics.clone(), error_reason.clone(), *initial),
         |(analytics, reason, initial)| {
             if *initial {
                 // we ignore any errors if the content is empty
@@ -206,7 +207,6 @@ pub fn upload(props: &UploadProperties) -> Html {
                 ));
             }
         },
-        (analytics.clone(), error_reason.clone(), *initial),
     );
 
     let content = match &*processing {
@@ -215,36 +215,34 @@ pub fn upload(props: &UploadProperties) -> Html {
         _ => Default::default(),
     };
 
-    use_effect_with_deps(
-        |(initial, content)| {
-            initial.set(content.is_empty());
-        },
-        (initial.clone(), content.clone()),
-    );
+    use_effect_with((initial.clone(), content.clone()), |(initial, content)| {
+        initial.set(content.is_empty());
+    });
 
     let onsubmit = use_callback(
+        (processing.clone(), props.onsubmit.clone(), analytics.clone()),
         |_: MouseEvent, (processing, onsubmit, analytics)| {
             if let Some(data) = processing.data() {
                 analytics.track(SubmitSbom { size: data.len() });
                 onsubmit.emit(data.clone());
             }
         },
-        (processing.clone(), props.onsubmit.clone(), analytics.clone()),
     );
 
     let file_input_ref = use_node_ref();
     let onopen = use_callback(
+        (file_input_ref.clone(), analytics.clone()),
         |_: (), (file_input_ref, analytics)| {
             analytics.track(("Click load button", None));
             if let Some(ele) = file_input_ref.cast::<web_sys::HtmlElement>() {
                 ele.click();
             }
         },
-        (file_input_ref.clone(), analytics.clone()),
     );
-    let onopen_button = use_memo(|onopen| onopen.reform(|_: MouseEvent| ()), onopen.clone());
+    let onopen_button = use_memo(onopen.clone(), |onopen| onopen.reform(|_: MouseEvent| ()));
 
     let onchange_open = use_callback(
+        (file_input_ref.clone(), drop_content.clone(), analytics.clone()),
         |_, (file_input_ref, drop_content, analytics)| {
             if let Some(ele) = file_input_ref.cast::<web_sys::HtmlInputElement>() {
                 let files = ele
@@ -262,7 +260,6 @@ pub fn upload(props: &UploadProperties) -> Html {
                 drop_content.set(DropContent::Files(files));
             }
         },
-        (file_input_ref.clone(), drop_content.clone(), analytics.clone()),
     );
 
     let mut class = classes!("tc-c-drop-area");
@@ -276,14 +273,11 @@ pub fn upload(props: &UploadProperties) -> Html {
     let mut secondaries = vec![];
 
     let config = use_config();
-    let onlearn = use_callback(
-        |_, url| {
-            if let Some(url) = &url {
-                let _ = gloo_utils::window().open_with_url_and_target(url.as_ref(), "_blank");
-            }
-        },
-        config.scanner.documentation_url.clone(),
-    );
+    let onlearn = use_callback(config.scanner.documentation_url.clone(), |_, url| {
+        if let Some(url) = &url {
+            let _ = gloo_utils::window().open_with_url_and_target(url.as_ref(), "_blank");
+        }
+    });
     let onlearn = use_wrap_tracking(onlearn, |_, _| ClickLearn, ());
 
     if config.scanner.documentation_url.is_some() {

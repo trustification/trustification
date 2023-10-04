@@ -10,29 +10,23 @@ pub fn index() -> Html {
     let config = use_config();
 
     let text = use_state_eq(String::new);
-    let onchange = use_callback(|new_text, text| text.set(new_text), text.clone());
+    let onchange = use_callback(text.clone(), |new_text, text| text.set(new_text));
 
     let router = use_router::<AppRoute>();
-    let onclick = use_callback(
-        |_, (router, terms)| {
-            if let Some(router) = router {
-                router.push(AppRoute::Search {
-                    terms: (**terms).clone(),
-                });
-            }
-        },
-        (router.clone(), text.clone()),
-    );
-    let onsubmit = use_callback(
-        |_, (router, terms)| {
-            if let Some(router) = router {
-                router.push(AppRoute::Search {
-                    terms: (**terms).clone(),
-                });
-            }
-        },
-        (router.clone(), text.clone()),
-    );
+    let onclick = use_callback((router.clone(), text.clone()), |_, (router, terms)| {
+        if let Some(router) = router {
+            router.push(AppRoute::Search {
+                terms: (**terms).clone(),
+            });
+        }
+    });
+    let onsubmit = use_callback((router.clone(), text.clone()), |_, (router, terms)| {
+        if let Some(router) = router {
+            router.push(AppRoute::Search {
+                terms: (**terms).clone(),
+            });
+        }
+    });
 
     html!(
         <>

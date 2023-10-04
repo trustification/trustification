@@ -30,7 +30,7 @@ pub fn unknown_content(props: &UnknownContentProperties) -> Html {
     }
 
     let selected = use_state_eq(|| UnknownTabs::Overview);
-    let onselect = use_callback(|index, selected| selected.set(index), selected.clone());
+    let onselect = use_callback(selected.clone(), |index, selected| selected.set(index));
 
     html! (
         <Tabs<UnknownTabs> selected={*selected} {onselect}>

@@ -9,14 +9,11 @@ pub struct MarkdownProperties {
 
 #[function_component(Markdown)]
 pub fn markdown(props: &MarkdownProperties) -> Html {
-    let content = use_memo(
-        |content| {
-            markdown::to_html_with_options(content.as_str(), &markdown::Options::gfm())
-                .map(AttrValue::from)
-                .unwrap_or_else(|_| AttrValue::from((*props.content).clone()))
-        },
-        props.content.clone(),
-    );
+    let content = use_memo(props.content.clone(), |content| {
+        markdown::to_html_with_options(content.as_str(), &markdown::Options::gfm())
+            .map(AttrValue::from)
+            .unwrap_or_else(|_| AttrValue::from((*props.content).clone()))
+    });
 
     html!(<SafeHtml html={(*content).clone()}/>)
 }

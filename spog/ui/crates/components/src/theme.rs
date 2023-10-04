@@ -32,7 +32,7 @@ pub fn themed(props: &ChildrenProperties) -> Html {
     let settings =
         use_state_eq::<ThemeSettings, _>(|| gloo_storage::LocalStorage::get(THEME_SETTINGS_KEY).unwrap_or_default());
 
-    use_effect_with_deps(|dark| apply_theme(*dark), settings.dark);
+    use_effect_with(settings.dark, |dark| apply_theme(*dark));
 
     let context = ThemeContext { settings };
 
@@ -47,16 +47,13 @@ pub fn themed(props: &ChildrenProperties) -> Html {
 pub fn dark_mode_switch() -> Html {
     let context = use_context::<ThemeContext>();
 
-    let onchange = use_callback(
-        |dark, context| {
-            if let Some(context) = context {
-                let new_state = ThemeSettings { dark };
-                let _ = gloo_storage::LocalStorage::set(THEME_SETTINGS_KEY, &new_state);
-                context.settings.set(new_state);
-            }
-        },
-        context.clone(),
-    );
+    let onchange = use_callback(context.clone(), |dark, context| {
+        if let Some(context) = context {
+            let new_state = ThemeSettings { dark };
+            let _ = gloo_storage::LocalStorage::set(THEME_SETTINGS_KEY, &new_state);
+            context.settings.set(new_state);
+        }
+    });
 
     match context {
         Some(context) => {

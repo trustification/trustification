@@ -7,14 +7,11 @@ use yew_nested_router::prelude::use_router;
 pub fn not_found() -> Html {
     let router = use_router();
 
-    let onhome = use_callback(
-        |_, router| {
-            if let Some(router) = &router {
-                router.push(AppRoute::Index);
-            }
-        },
-        router,
-    );
+    let onhome = use_callback(router, |_, router| {
+        if let Some(router) = &router {
+            router.push(AppRoute::Index);
+        }
+    });
 
     html!(
         <Bullseye>

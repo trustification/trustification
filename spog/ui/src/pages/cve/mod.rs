@@ -23,20 +23,17 @@ pub fn cve(props: &CveProperties) -> Html {
 #[function_component(SearchView)]
 fn search_view() -> Html {
     let text = use_state_eq(String::new);
-    let onchange = use_callback(|value, text| text.set(value), text.clone());
+    let onchange = use_callback(text.clone(), |value, text| text.set(value));
 
     let router = use_router::<AppRoute>();
 
-    let submit_cb = use_callback(
-        move |(), text| {
-            if let Some(router) = &router {
-                router.push(AppRoute::Cve { id: (**text).clone() });
-            }
-        },
-        text.clone(),
-    );
-    let onclick = (*use_memo(|cb| cb.reform(|_: MouseEvent| ()), submit_cb.clone())).clone();
-    let onsubmit = (*use_memo(|cb| cb.reform(|_: SubmitEvent| ()), submit_cb)).clone();
+    let submit_cb = use_callback(text.clone(), move |(), text| {
+        if let Some(router) = &router {
+            router.push(AppRoute::Cve { id: (**text).clone() });
+        }
+    });
+    let onclick = (*use_memo(submit_cb.clone(), |cb| cb.reform(|_: MouseEvent| ()))).clone();
+    let onsubmit = (*use_memo(submit_cb, |cb| cb.reform(|_: SubmitEvent| ()))).clone();
 
     html!(
         <>

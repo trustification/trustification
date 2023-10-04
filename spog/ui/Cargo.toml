@@ -24,7 +24,7 @@ itertools = "0.11"
 js-sys = "0.3"
 log = "0.4"
 markdown = "1.0.0-alpha.11"
-monaco = { version = "0.3", features = ["yew-components"] }
+monaco = { version = "0.5", features = ["yew-components"] }
 openidconnect = "3"
 packageurl = "0.3"
 patternfly-yew = { version = "0.5.0-alpha.3", features = ["icons-fab", "tree"] }
@@ -42,12 +42,12 @@ urlencoding = "2"
 wasm-bindgen = "0.2"
 wasm-bindgen-futures = "0.4"
 wasm-logger = "0.2"
-yew = { version = "0.20", features = ["csr"] }
-yew-consent = "0.1"
-yew-hooks = "0.2"
-yew-more-hooks = "0.2.0"
-yew-nested-router = "0.3.1"
-yew-oauth2 = { version = "0.6.3", features = ["router", "openid"] }
+yew = { version = "0.21", features = ["csr"] }
+yew-consent = "0.2"
+yew-hooks = "0.3"
+yew-more-hooks = "0.3.0"
+yew-nested-router = "0.4.0"
+yew-oauth2 = { version = "0.7.0", features = ["router", "openid"] }
 
 spog-model = { path = "../model" }
 v11y-model = { path = "../../v11y/model" }
@@ -89,14 +89,14 @@ members = [
 #yew-nested-router = { git = "https://github.com/ctron/yew-nested-router", rev = "9689db446dee7030325884df768d0c2e84f353d6" }
 #yew-more-hooks = { git = "https://github.com/ctron/yew-more-hooks", rev = "fc0af774aa925edcd5a544e562619ecb539942f8" }
 #yew-more-hooks = { path = "../../../yew-more-hooks" }
-patternfly-yew = { git = "https://github.com/ctron/patternfly-yew", rev = "2958f879b08fd265c3385ae889dfca5ed7b8103c" } # FIXME: awaiting release
+patternfly-yew = { git = "https://github.com/ctron/patternfly-yew", rev = "93f953ff0fc63ac08200948b4b1df72661e674f0" } # FIXME: awaiting release
 #patternfly-yew = { path = "../../../patternfly-yew" }
 
 #analytics-next = { git = "https://github.com/ctron/analytics-next-rs", rev = "9c95122f4e6dc308c90b945bd0f1925faf7cb828" } # FIXME: awaiting release
 #analytics-next = { path = "../../../analytics-next" }
 
 csaf = { git = "https://github.com/voteblake/csaf-rs", rev = "76cb9ede10adb1fbb495b17e5fd8d95c5cf6c900" } # FIXME: waiting for release
-monaco = { git = "https://github.com/siku2/rust-monaco", rev = "794a4cc7819f9ed7eb06559e24f75a41e23cf22a" } # FIXME: waiting for release
+monaco = { git = "https://github.com/siku2/rust-monaco", rev = "8b8eb78004709058399c2d0dfa7c460d30fe62fd" } # FIXME: waiting for release 0.5.0
 
 packageurl = { git = "https://github.com/ctron/packageurl.rs", rev = "c9a0c192ff0cba5d75b8cbf8be0b1e4dc14320aa" }
 

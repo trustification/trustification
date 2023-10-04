@@ -18,13 +18,10 @@ pub struct DownloadProperties {
 pub fn download(props: &DownloadProperties) -> Html {
     let access_token = use_latest_access_token();
 
-    let onclick = use_callback(
-        move |_, href| {
-            let href = href.clone().latest_access_token(&access_token);
-            let _ = gloo_utils::window().location().set_href(href.as_str());
-        },
-        props.href.clone(),
-    );
+    let onclick = use_callback(props.href.clone(), move |_, href| {
+        let href = href.clone().latest_access_token(&access_token);
+        let _ = gloo_utils::window().location().set_href(href.as_str());
+    });
 
     let onclick = use_wrap_tracking(
         onclick,

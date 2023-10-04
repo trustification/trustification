@@ -25,18 +25,15 @@ where
     T: 'static,
 {
     let backdrop = use_backdrop();
-    use_callback(
-        |_, backdrop| {
-            if let Some(backdrop) = &backdrop {
-                backdrop.open(html!(
-                    <Bullseye>
-                        <ConsentModal can_close=true show_current=true />
-                    </Bullseye>
-                ));
-            }
-        },
-        backdrop,
-    )
+    use_callback(backdrop, |_, backdrop| {
+        if let Some(backdrop) = &backdrop {
+            backdrop.open(html!(
+                <Bullseye>
+                    <ConsentModal can_close=true show_current=true />
+                </Bullseye>
+            ));
+        }
+    })
 }
 
 #[function_component(AskConsentModal)]
@@ -70,8 +67,8 @@ pub fn consent_modal(props: &ConsentModalProperties) -> Html {
     let config = use_config();
     let context = use_consent_context().expect("Should be wrapped by the Consent component");
 
-    let onyes = use_callback(|_, consent| consent.set(ConsentState::Yes(())), context.clone());
-    let onno = use_callback(|_, consent| consent.set(ConsentState::No), context.clone());
+    let onyes = use_callback(context.clone(), |_, consent| consent.set(ConsentState::Yes(())));
+    let onno = use_callback(context.clone(), |_, consent| consent.set(ConsentState::No));
 
     let footer = html!(
         <>

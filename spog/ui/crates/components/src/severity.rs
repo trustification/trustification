@@ -46,6 +46,19 @@ impl From<Shield<RedHatSeverity>> for Html {
     }
 }
 
+impl ToHtml for Shield<RedHatSeverity> {
+    fn to_html(&self) -> Html {
+        let icon = |class: Classes| html!(<i class={classes!(class, "fa", "fa-shield-halved")}></i>);
+
+        match self.0 {
+            RedHatSeverity::Low => icon(classes!("tc-m-severity-low")),
+            RedHatSeverity::Moderate => icon(classes!("tc-m-severity-moderate")),
+            RedHatSeverity::Important => icon(classes!("tc-m-severity-important")),
+            RedHatSeverity::Critical => icon(classes!("tc-m-severity-critical")),
+        }
+    }
+}
+
 impl std::fmt::Display for RedHatSeverity {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {

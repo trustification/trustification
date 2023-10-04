@@ -99,19 +99,16 @@ pub fn segment(props: &SegmentProperties) -> Html {
 pub fn segment_page_tracker() -> Html {
     let analytics = use_analytics();
 
-    use_effect_with_deps(
-        |analytics| {
-            log::info!("Creating page tracker");
-            let analytics = analytics.clone();
+    use_effect_with(analytics, |analytics| {
+        log::info!("Creating page tracker");
+        let analytics = analytics.clone();
 
-            let listener = yew_nested_router::History::new().clone().listen(move || {
-                analytics.page();
-            });
+        let listener = yew_nested_router::History::new().clone().listen(move || {
+            analytics.page();
+        });
 
-            move || drop(listener)
-        },
-        analytics,
-    );
+        move || drop(listener)
+    });
 
     html!()
 }
@@ -148,39 +145,33 @@ pub fn segment_identify() -> Html {
 
     let user = use_state_eq(User::default);
 
-    use_effect_with_deps(
-        |(state, user)| {
-            let claims = claims(state);
-            let current = match claims {
-                Some(claims) => User {
-                    id: Some(format!("{}#{}", **claims.issuer(), **claims.subject())),
-                    traits: json!({
-                        "preferred_username": claims.preferred_username(),
-                        "name": claims.name().get(),
-                        "given_name": claims.given_name().get(),
-                        "family_name": claims.family_name().get(),
-                        "middle_name": claims.middle_name().get(),
-                        "nickname": claims.nickname().get(),
-                        "email": claims.email(),
-                        "email_verified": claims.email_verified(),
-                        "locale": claims.locale(),
-                    }),
-                    options: Value::Null,
-                },
-                None => User::default(),
-            };
-            user.set(current);
-        },
-        (state, user.clone()),
-    );
+    use_effect_with((state, user.clone()), |(state, user)| {
+        let claims = claims(state);
+        let current = match claims {
+            Some(claims) => User {
+                id: Some(format!("{}#{}", **claims.issuer(), **claims.subject())),
+                traits: json!({
+                    "preferred_username": claims.preferred_username(),
+                    "name": claims.name().get(),
+                    "given_name": claims.given_name().get(),
+                    "family_name": claims.family_name().get(),
+                    "middle_name": claims.middle_name().get(),
+                    "nickname": claims.nickname().get(),
+                    "email": claims.email(),
+                    "email_verified": claims.email_verified(),
+                    "locale": claims.locale(),
+                }),
+                options: Value::Null,
+            },
+            None => User::default(),
+        };
+        user.set(current);
+    });
 
-    use_effect_with_deps(
-        |(analytics, user)| {
-            log::info!("User changed: {user:?}");
-            analytics.identify(user.clone());
-        },
-        (analytics, (*user).clone()),
-    );
+    use_effect_with((analytics, (*user).clone()), |(analytics, user)| {
+        log::info!("User changed: {user:?}");
+        analytics.identify(user.clone());
+    });
 
     html!()
 }
@@ -205,18 +196,15 @@ where
 {
     let analytics = use_analytics();
 
-    (*use_memo(
-        |(cb, (analytics, deps))| {
-            let cb = cb.clone();
-            let analytics = analytics.clone();
-            let deps = deps.clone();
-            Callback::from(move |value| {
-                analytics.track(f(&value, &deps).into());
-                cb.emit(value)
-            })
-        },
-        (cb, (analytics, deps)),
-    ))
+    (*use_memo((cb, (analytics, deps)), |(cb, (analytics, deps))| {
+        let cb = cb.clone();
+        let analytics = analytics.clone();
+        let deps = deps.clone();
+        Callback::from(move |value| {
+            analytics.track(f(&value, &deps).into());
+            cb.emit(value)
+        })
+    }))
     .clone()
 }
 
@@ -231,12 +219,9 @@ where
 {
     let analytics = use_analytics();
 
-    use_callback(
-        move |values, (analytics, deps)| {
-            if analytics.is_active() {
-                analytics.track(f(values, deps));
-            }
-        },
-        (analytics, deps),
-    )
+    use_callback((analytics, deps), move |values, (analytics, deps)| {
+        if analytics.is_active() {
+            analytics.track(f(values, deps));
+        }
+    })
 }
