@@ -57,3 +57,9 @@ header {
   background-color: var(--pf-v5-global--primary-color--100);
   opacity: .1;
 }
+
+// Packages
+
+.tc-package-tree .pf-v5-c-accordion__expandable-content-body {
+  padding-right: 0px !important;
+}
