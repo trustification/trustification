@@ -206,6 +206,48 @@ objects:
     kind: Service
     metadata:
       labels:
+        app.kubernetes.io/name: guac-collectsub
+        app.kubernetes.io/component: collectsub
+        app.kubernetes.io/part-of: trustification
+      annotations:
+        service.beta.openshift.io/serving-cert-secret-name: guac-collectsub-tls
+      name: guac-collectsub
+    spec:
+      ports:
+        - name: endpoint
+          port: 2782
+          protocol: TCP
+          targetPort: 2782
+      selector:
+        app.kubernetes.io/name: guac-collectsub
+        app.kubernetes.io/component: collectsub
+        app.kubernetes.io/part-of: trustification
+      type: ClusterIP
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      labels:
+        app.kubernetes.io/name: guac-graphql
+        app.kubernetes.io/component: graphql
+        app.kubernetes.io/part-of: trustification
+      annotations:
+        service.beta.openshift.io/serving-cert-secret-name: guac-graphql-tls
+      name: guac-graphql
+    spec:
+      ports:
+        - name: endpoint
+          port: 8080
+          protocol: TCP
+          targetPort: 8080
+      selector:
+        app.kubernetes.io/name: guac-graphql
+        app.kubernetes.io/component: graphql
+        app.kubernetes.io/part-of: trustification
+      type: ClusterIP
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      labels:
         app.kubernetes.io/name: trustification-monitoring
         app.kubernetes.io/component: monitoring
         app.kubernetes.io/part-of: trustification
@@ -1075,6 +1117,140 @@ objects:
                 httpGet:
                   path: /health/startup
                   port: 9010
+  - apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: guac-collectsub
+      labels:
+        app.kubernetes.io/name: guac-collectsub
+        app.kubernetes.io/component: collectsub
+        app.kubernetes.io/part-of: trustification
+    spec:
+      replicas: 1
+      selector:
+        matchLabels:
+          app.kubernetes.io/name: guac-collectsub
+          app.kubernetes.io/component: collectsub
+          app.kubernetes.io/part-of: trustification
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: guac-collectsub
+            app.kubernetes.io/component: collectsub
+            app.kubernetes.io/part-of: trustification
+            metrics: 'true'
+          annotations:
+            config/checksum: 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
+        spec:
+          volumes:
+            - name: config
+              configMap:
+                name: ${CONFIG_NAME}
+            - name: guac-config
+              configMap:
+                name: guac-cm
+            - name: tls
+              secret:
+                secretName: guac-collectsub-tls
+          containers:
+            - image: ${GUAC_IMAGE}
+              imagePullPolicy: Always
+              name: service
+              command:
+                - /opt/guac/guaccsub
+              args: []
+              workingDir: /guac
+              env:
+                - name: NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.namespace
+                - name: HTTP_SERVER_BIND_ADDR
+                  value: '::'
+                - name: HTTP_SERVER_TLS_ENABLED
+                  value: 'true'
+                - name: HTTP_SERVER_TLS_KEY_FILE
+                  value: /etc/tls/tls.key
+                - name: HTTP_SERVER_TLS_CERTIFICATE_FILE
+                  value: /etc/tls/tls.crt
+              volumeMounts:
+                - name: guac-config
+                  mountPath: /guac
+                  readOnly: true
+                - mountPath: /etc/config
+                  name: config
+                - mountPath: /etc/tls
+                  name: tls
+              ports:
+                - containerPort: 2782
+                  protocol: TCP
+  - apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: guac-graphql
+      labels:
+        app.kubernetes.io/name: guac-graphql
+        app.kubernetes.io/component: graphql
+        app.kubernetes.io/part-of: trustification
+    spec:
+      replicas: 1
+      selector:
+        matchLabels:
+          app.kubernetes.io/name: guac-graphql
+          app.kubernetes.io/component: graphql
+          app.kubernetes.io/part-of: trustification
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: guac-graphql
+            app.kubernetes.io/component: graphql
+            app.kubernetes.io/part-of: trustification
+            metrics: 'true'
+          annotations:
+            config/checksum: 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
+        spec:
+          volumes:
+            - name: config
+              configMap:
+                name: ${CONFIG_NAME}
+            - name: guac-config
+              configMap:
+                name: guac-cm
+            - name: tls
+              secret:
+                secretName: guac-graphql-tls
+          containers:
+            - image: ${GUAC_IMAGE}
+              imagePullPolicy: Always
+              name: service
+              command:
+                - /opt/guac/guacgql
+              args: []
+              workingDir: /guac
+              env:
+                - name: NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.namespace
+                - name: HTTP_SERVER_BIND_ADDR
+                  value: '::'
+                - name: HTTP_SERVER_TLS_ENABLED
+                  value: 'true'
+                - name: HTTP_SERVER_TLS_KEY_FILE
+                  value: /etc/tls/tls.key
+                - name: HTTP_SERVER_TLS_CERTIFICATE_FILE
+                  value: /etc/tls/tls.crt
+              volumeMounts:
+                - name: guac-config
+                  mountPath: /guac
+                  readOnly: true
+                - mountPath: /etc/config
+                  name: config
+                - mountPath: /etc/tls
+                  name: tls
+              ports:
+                - containerPort: 8080
+                  protocol: TCP
   - apiVersion: apps/v1
     kind: Deployment
     metadata:
