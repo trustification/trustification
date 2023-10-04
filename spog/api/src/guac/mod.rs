@@ -1,8 +1,6 @@
 use actix_web::web::ServiceConfig;
 use actix_web::{web, HttpResponse};
-use async_recursion::async_recursion;
 use service::GuacService;
-use spog_model::prelude::{PackageRef, PackageRefList};
 use std::sync::Arc;
 use trustification_auth::authenticator::Authenticator;
 use trustification_infrastructure::new_auth;
@@ -95,35 +93,7 @@ pub async fn get_dependents(
     guac: web::Data<GuacService>,
     web::Query(GetDependencies { purl }): web::Query<GetDependencies>,
 ) -> actix_web::Result<HttpResponse> {
-    // let deps = guac.get_dependents(&purl).await?;
-    let deps = dependents_recursive(&guac, &purl, 1).await;
+    let deps = guac.get_dependents(&purl).await?;
+
     Ok(HttpResponse::Ok().json(deps))
-}
-
-#[async_recursion]
-async fn dependents_recursive(guac: &web::Data<GuacService>, purl: &String, level: i32) -> PackageRefList {
-    let result = guac.get_dependents(purl).await;
-    match result {
-        Ok(dependents) => {
-            let vec = &dependents.0;
-            // Some packages have point to itself when dependents are required. This is to avoid infinite children requests
-            if vec.len() == 1 && &vec[0].purl == purl {
-                PackageRefList(vec![])
-            } else if level == 1 {
-                dependents
-            } else {
-                let mut result = vec![];
-                for dependency in dependents.iter() {
-                    let children = dependents_recursive(guac, &dependency.purl, level - 1).await;
-                    result.push(PackageRef {
-                        purl: dependency.purl.clone(),
-                        children,
-                    });
-                }
-
-                PackageRefList(result)
-            }
-        }
-        Err(..) => PackageRefList(vec![]),
-    }
 }

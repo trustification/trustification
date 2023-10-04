@@ -36,19 +36,14 @@ pub struct VulnerabilityRef {
 #[derive(Clone, Debug, PartialEq, Eq, ToSchema, Serialize, Deserialize)]
 #[schema(example = json!(PackageRef {
     purl: "pkg:rpm/redhat/openssl@1.1.1k-7.el8_6".to_string(),
-    children: PackageRefList(vec![])
 }))]
 pub struct PackageRef {
     pub purl: String,
-    pub children: PackageRefList,
 }
 
 impl From<String> for PackageRef {
     fn from(purl: String) -> PackageRef {
-        PackageRef {
-            purl,
-            children: PackageRefList(vec![]),
-        }
+        PackageRef { purl }
     }
 }
 
@@ -56,7 +51,6 @@ impl From<String> for PackageRef {
 #[schema(example = json!(vec![
     PackageRef {
         purl: "pkg:maven/io.vertx/vertx-web-common@4.3.7".to_string(),
-        children: PackageRefList(vec![])
     }
 ]))]
 pub struct PackageRefList(pub Vec<PackageRef>);
