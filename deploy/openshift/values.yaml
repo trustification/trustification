@@ -15,7 +15,7 @@ config:
   name: ${CONFIG_NAME}
 spog:
   branding: true
-  crdaUrl: http://alpha-exhort.apps.sssc-cl01.appeng.rhecoeng.com/
+  crdaUrl: ${CRDA_URL}
   ui:
     resources: ${{SPOG_UI_RESOURCES}}
   api:

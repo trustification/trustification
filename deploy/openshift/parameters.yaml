@@ -77,4 +77,7 @@ parameters:
   required: true
 - name: LOG_LEVEL
   required: false
-  default: "info"
+  value: "info"
+- name: CRDA_URL
+  required: false
+  value: https://rhda.rhcloud.com/
