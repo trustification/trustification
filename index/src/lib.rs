@@ -842,7 +842,10 @@ mod tests {
             _options: &SearchOptions,
         ) -> Result<Self::MatchedDocument, Error> {
             let d = searcher.doc(doc)?;
-            let id = d.get_first(self.id).map(|v| v.as_text()).ok_or(Error::NotFound)?;
+            let id = d
+                .get_first(self.id)
+                .map(|v| v.as_text())
+                .ok_or(Error::FieldNotFound("id".to_string()))?;
             Ok(id.unwrap_or("").to_string())
         }
 
