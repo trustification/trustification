@@ -447,18 +447,18 @@ impl trustification_index::Index for Index {
         let snippet_generator = SnippetGenerator::create(searcher, &query.query, self.fields.advisory_description)?;
         let advisory_snippet = snippet_generator.snippet_from_doc(&doc).to_html();
 
-        let advisory_id = field2str(&doc, self.fields.advisory_id)?;
-        let advisory_title = field2str(&doc, self.fields.advisory_title)?;
-        let advisory_severity = field2str(&doc, self.fields.advisory_severity)?;
-        let advisory_date = field2date(&doc, self.fields.advisory_current)?;
-        let advisory_desc = field2str(&doc, self.fields.advisory_description)?;
+        let advisory_id = field2str(&self.schema, &doc, self.fields.advisory_id)?;
+        let advisory_title = field2str(&self.schema, &doc, self.fields.advisory_title)?;
+        let advisory_severity = field2str(&self.schema, &doc, self.fields.advisory_severity)?;
+        let advisory_date = field2date(&self.schema, &doc, self.fields.advisory_current)?;
+        let advisory_desc = field2str(&self.schema, &doc, self.fields.advisory_description).unwrap_or("");
 
         let cves = field2strvec(&doc, self.fields.cve_id)?
             .iter()
             .map(|s| s.to_string())
             .collect();
 
-        let cvss_max: Option<f64> = field2float(&doc, self.fields.cve_cvss_max).ok();
+        let cvss_max: Option<f64> = field2float(&self.schema, &doc, self.fields.cve_cvss_max).ok();
 
         let mut cve_severity_count: HashMap<String, u64> = HashMap::new();
         if let Some(Some(data)) = doc.get_first(self.fields.cve_severity_count).map(|d| d.as_json()) {

@@ -179,8 +179,8 @@ pub enum Error {
     Open(String),
     #[error("error taking snapshot of index")]
     Snapshot,
-    #[error("index not found")]
-    NotFound,
+    #[error("value for field {0} not found")]
+    FieldNotFound(String),
     #[error("operation cannot be done because index is not persisted")]
     NotPersisted,
     #[error("error parsing document {0}")]
@@ -587,11 +587,14 @@ impl<INDEX: Index> IndexStore<INDEX> {
         if options.summaries {
             let mut hits = Vec::new();
             for hit in top_docs {
-                if let Ok(value) = self.index.process_hit(hit.1, hit.0, &searcher, &query, &options) {
-                    debug!("HIT: {:?}", value);
-                    hits.push(value);
-                } else {
-                    warn!("Error processing hit {:?}", hit);
+                match self.index.process_hit(hit.1, hit.0, &searcher, &query, &options) {
+                    Ok(value) => {
+                        debug!("HIT: {:?}", value);
+                        hits.push(value);
+                    }
+                    Err(e) => {
+                        warn!("Error processing hit {:?}: {:?}", hit, e);
+                    }
                 }
             }
 
@@ -752,19 +755,25 @@ pub fn field2f64vec(doc: &Document, field: Field) -> Result<Vec<f64>, Error> {
     Ok(doc.get_all(field).map(|s| s.as_f64().unwrap_or_default()).collect())
 }
 
-pub fn field2str(doc: &Document, field: Field) -> Result<&str, Error> {
+pub fn field2str<'m>(schema: &'m Schema, doc: &'m Document, field: Field) -> Result<&'m str, Error> {
     let value = doc.get_first(field).map(|s| s.as_text()).unwrap_or(None);
-    value.map(Ok).unwrap_or(Err(Error::NotFound))
+    value
+        .map(Ok)
+        .unwrap_or_else(|| Err(Error::FieldNotFound(schema.get_field_name(field).to_string())))
 }
 
-pub fn field2date(doc: &Document, field: Field) -> Result<OffsetDateTime, Error> {
+pub fn field2date(schema: &Schema, doc: &Document, field: Field) -> Result<OffsetDateTime, Error> {
     let value = doc.get_first(field).map(|s| s.as_date()).unwrap_or(None);
-    value.map(|v| Ok(v.into_utc())).unwrap_or(Err(Error::NotFound))
+    value
+        .map(|v| Ok(v.into_utc()))
+        .unwrap_or_else(|| Err(Error::FieldNotFound(schema.get_field_name(field).to_string())))
 }
 
-pub fn field2float(doc: &Document, field: Field) -> Result<f64, Error> {
+pub fn field2float(schema: &Schema, doc: &Document, field: Field) -> Result<f64, Error> {
     let value = doc.get_first(field).map(|s| s.as_f64()).unwrap_or(None);
-    value.map(Ok).unwrap_or(Err(Error::NotFound))
+    value
+        .map(Ok)
+        .unwrap_or_else(|| Err(Error::FieldNotFound(schema.get_field_name(field).to_string())))
 }
 
 #[cfg(test)]
