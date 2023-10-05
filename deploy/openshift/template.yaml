@@ -1298,7 +1298,7 @@ objects:
                 - --v11y-url
                 - https://v11y-api.$(NAMESPACE).svc
                 - --crda-url
-                - http://alpha-exhort.apps.sssc-cl01.appeng.rhecoeng.com/
+                - ${CRDA_URL}
                 - --auth-configuration
                 - /etc/config/auth.yaml
               env:
@@ -1821,4 +1821,7 @@ parameters:
   required: true
 - name: LOG_LEVEL
   required: false
-  default: "info"
+  value: "info"
+- name: CRDA_URL
+  required: false
+  value: https://rhda.rhcloud.com/

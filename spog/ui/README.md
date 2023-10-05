@@ -8,8 +8,13 @@
 
 ```shell
 rustup target add wasm32-unknown-unknown
-cargo install trunk
+cargo install trunk-ng
+cargo binstall trunk-ng # if you have `cargo-binstall` installed
 ```
+
+> [!NOTE]
+> `trunk-ng` is a fork of `trunk`. Both should work at the moment, but `trunk-ng` has a bunch of fixes that `trunk` has
+> not.
 
 ### Project
 
@@ -24,13 +29,13 @@ npm ci
 Build the project:
 
 ```shell
-trunk build
+trunk-ng build
 ```
 
 If you are running on a sub-path, provide the base URL:
 
 ```shell
-trunk build --public-url https://foo/bar/baz
+trunk-ng build --public-url https://foo/bar/baz
 ```
 
 Deploy the content of the `deploy/` folder to a webserver.
@@ -57,7 +62,7 @@ that you are closer to the current `main` branch. But even that might be out of 
 Then run it locally by executing:
 
 ```shell
-trunk serve
+trunk-ng serve
 ```
 
 Navigate to: http://localhost:6030
