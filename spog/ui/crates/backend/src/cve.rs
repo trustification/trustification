@@ -39,7 +39,7 @@ impl CveService {
     pub async fn search(&self, q: &str, options: &SearchParameters) -> Result<SearchResult<Vec<CveSummary>>, Error> {
         let response = self
             .client
-            .get(self.backend.join(Endpoint::Api, "/api/v1/cve/search")?)
+            .get(self.backend.join(Endpoint::Api, "/api/v1/cve")?)
             .query(&[("q", q)])
             .apply(options)
             .latest_access_token(&self.access_token)
