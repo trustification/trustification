@@ -525,8 +525,8 @@ impl trustification_index::Index for Index {
         options: &SearchOptions,
     ) -> Result<Self::MatchedDocument, SearchError> {
         let doc = searcher.doc(doc_address)?;
-        let id = field2str(&doc, self.fields.sbom_id)?;
-        let name = field2str(&doc, self.fields.sbom_name)?;
+        let id = field2str(&self.schema, &doc, self.fields.sbom_id)?;
+        let name = field2str(&self.schema, &doc, self.fields.sbom_name)?;
 
         let snippet_generator = SnippetGenerator::create(searcher, &query.query, self.fields.sbom.desc)?;
         let snippet = snippet_generator.snippet_from_doc(&doc).to_html();
