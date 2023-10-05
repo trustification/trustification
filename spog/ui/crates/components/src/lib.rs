@@ -5,6 +5,7 @@ pub mod async_state_renderer;
 pub mod backend;
 pub mod common;
 pub mod content;
+pub mod cve;
 pub mod cvss;
 pub mod download;
 pub mod editor;

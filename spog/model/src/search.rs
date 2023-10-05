@@ -10,7 +10,7 @@ pub struct AdvisorySummary {
     pub severity: String,
     pub snippet: String,
     pub desc: String,
-    pub date: time::OffsetDateTime,
+    pub date: OffsetDateTime,
     pub cves: Vec<String>,
     pub cvss_max: Option<f64>,
     pub href: String,
@@ -19,17 +19,17 @@ pub struct AdvisorySummary {
     #[serde(default, skip_serializing_if = "Value::is_null", rename = "$metadata")]
     pub metadata: Value,
 }
-/*
+
 #[derive(utoipa::ToSchema, serde::Deserialize, serde::Serialize, Debug, PartialEq, Clone)]
-pub struct VulnSummary {
+pub struct CveSummary {
     pub id: String,
     pub title: String,
     pub desc: String,
-    pub release: time::OffsetDateTime,
+    pub release: OffsetDateTime,
     pub cvss: Option<f64>,
     pub snippet: String,
     pub advisories: Vec<String>,
-}*/
+}
 
 #[derive(utoipa::ToSchema, serde::Deserialize, serde::Serialize, Debug, PartialEq, Clone)]
 pub struct PackageSummary {
