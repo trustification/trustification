@@ -12,7 +12,7 @@ For creating new services in trustification, see [NEWSERVICE.md](NEWSERVICE.md).
 Requires `docker-compose` to run dependent services.
 
 For Linux systems only:
-``` shell
+```shell
 $ export SELINUX_VOLUME_OPTIONS=':Z'
 ```
 
@@ -179,13 +179,13 @@ curl -X GET "http://localhost:8081/api/v1/vex?advisory=RHSA-2023:1441"
 You can also crawl Red Hat security data using the walker, which will feed the S3 storage with data:
 
 ```shell
-RUST_LOG=info cargo run -p trust -- vexination walker --devmode --source https://www.redhat.com/.well-known/csaf/provider-metadata.json -3
+RUST_LOG=info cargo run -p trust -- vexination walker --devmode --sink http://localhost:8081/api/v1/vex --source https://www.redhat.com/.well-known/csaf/provider-metadata.json -3
 ```
 
 If you have a local copy of the data, you can also run:
 
 ```shell
-RUST_LOG=info cargo run -p trust -- vexination walker --devmode -3 --sink http://localhost:8081 --source file:///path/to/copy
+RUST_LOG=info cargo run -p trust -- vexination walker --devmode -3 --sink http://localhost:8081/api/v1/vex --source file:///path/to/copy
 ```
 
 ## Ingesting SBOMs
