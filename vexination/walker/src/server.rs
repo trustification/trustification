@@ -1,12 +1,14 @@
 use std::{net::SocketAddr, sync::Arc, time::Duration};
 
+use csaf_walker::discover::DiscoveredAdvisory;
+use csaf_walker::retrieve::RetrievedAdvisory;
 use csaf_walker::{
     retrieve::RetrievingVisitor,
     source::{FileSource, HttpSource},
     validation::{ValidatedAdvisory, ValidationError, ValidationVisitor},
     walker::Walker,
 };
-use reqwest::StatusCode;
+use reqwest::{header, StatusCode};
 use serde::Deserialize;
 use tokio::sync::{Mutex, RwLock};
 use trustification_auth::client::TokenInjector;
@@ -32,12 +34,20 @@ pub async fn run(
         let client = client.clone();
         async move {
             match advisory {
-                Ok(ValidatedAdvisory { retrieved }) => {
-                    let data = retrieved.data;
+                Ok(ValidatedAdvisory {
+                    retrieved:
+                        RetrievedAdvisory {
+                            data,
+                            discovered: DiscoveredAdvisory { url, .. },
+                            ..
+                        },
+                }) => {
+                    let name = url.path_segments().and_then(|s| s.last()).unwrap_or_else(|| url.path());
                     match serde_json::from_slice::<csaf::Csaf>(&data) {
                         Ok(doc) => match client
                             .post(sink)
-                            .json(&doc)
+                            .header(header::CONTENT_TYPE, "application/json")
+                            .body(data.clone())
                             .inject_token(&provider)
                             .await
                             .unwrap()
@@ -52,19 +62,19 @@ pub async fn run(
                                 );
                             }
                             Ok(r) => {
-                                log::warn!("(Skipped) Error storing VEX: {}", r.status());
+                                log::warn!("(Skipped) {name}: Error storing VEX: {}", r.status());
                             }
                             Err(e) => {
-                                log::warn!("(Skipped) Error storing VEX: {e:?}");
+                                log::warn!("(Skipped) {name}: Error storing VEX: {e:?}");
                             }
                         },
                         Err(e) => {
-                            log::warn!("(Ignored) Error parsing advisory to retrieve ID: {e:?}");
+                            log::warn!("(Ignored) {name}: Error parsing advisory to retrieve ID: {e:?}");
                         }
                     }
                 }
                 Err(e) => {
-                    log::warn!("Ignoring advisory: {:?}", e);
+                    log::warn!("Ignoring advisory {}: {:?}", e.url(), e);
                 }
             }
             Ok::<_, anyhow::Error>(())
