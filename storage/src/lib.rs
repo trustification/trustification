@@ -499,6 +499,7 @@ pub struct ContinuationToken(Option<String>);
 const PUT_EVENT: &str = "ObjectCreated:Put";
 const MULTIPART_PUT_EVENT: &str = "ObjectCreated:CompleteMultipartUpload";
 const DELETE_EVENT: &str = "ObjectRemoved:Delete";
+const DELETE_MARKER_EVENT: &str = "ObjectRemoved:DeleteMarkerCreated";
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum EventType {
@@ -525,7 +526,7 @@ impl Record {
     pub fn event_type(&self) -> EventType {
         if self.event_name.ends_with(PUT_EVENT) || self.event_name.ends_with(MULTIPART_PUT_EVENT) {
             EventType::Put
-        } else if self.event_name.ends_with(DELETE_EVENT) {
+        } else if self.event_name.ends_with(DELETE_EVENT) || self.event_name.ends_with(DELETE_MARKER_EVENT) {
             EventType::Delete
         } else {
             EventType::Other
