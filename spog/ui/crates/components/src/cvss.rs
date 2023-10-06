@@ -11,18 +11,53 @@ pub struct CvssScoreProperties {
 
 #[function_component(CvssScore)]
 pub fn cvss_information(props: &CvssScoreProperties) -> Html {
-    let label = format!("{}", props.cvss.score);
+    // let label = format!("{}", props.cvss.score);
 
-    let (color, outline) = match props.cvss.to_severity() {
-        Severity::None => (Color::Grey, true),
-        Severity::Low => (Color::Orange, true),
-        Severity::Medium => (Color::Orange, false),
-        Severity::High => (Color::Red, false),
-        Severity::Critical => (Color::Purple, false),
+    let icon = |label: &str, severity: Severity| {
+        html!(<>
+            { severity }
+            {" " }
+            { label }
+        </>)
     };
 
+    let (variant, description, style) = match props.cvss.to_severity() {
+        n @ Severity::None => (ProgressVariant::Default, icon("", n), ""),
+        n @ Severity::Low => (
+            ProgressVariant::Default,
+            icon("Low", n),
+            r#"
+            --pf-v5-c-progress__indicator--BackgroundColor: var(--pf-v5-global--info-color--100);
+            --pf-v5-c-progress__bar--before--BackgroundColor: var(--pf-v5-global--info-color--100)
+            "#,
+        ),
+        n @ Severity::Medium => (ProgressVariant::Warning, icon("Medium", n), ""),
+        n @ Severity::High => (ProgressVariant::Danger, icon("High", n), ""),
+        n @ Severity::Critical => (
+            ProgressVariant::Danger,
+            icon("Critical", n),
+            r#"
+            --pf-v5-c-progress__indicator--BackgroundColor: var(--pf-v5-global--palette--purple-400);
+            --pf-v5-c-progress__bar--before--BackgroundColor: var(--pf-v5-global--palette--purple-400)
+            "#,
+        ),
+    };
+
+    let style = format!("--pf-v5-c-progress--GridGap: 0.12rem;{style}");
+
+    let value_text = format!("{:.1}/10", props.cvss.score);
+
     html!(
-        <Label {label} {color} {outline}/>
+        <Progress
+            {variant}
+            {description}
+            range={0f64..10f64}
+            {value_text}
+            value={props.cvss.score as f64}
+            size={ProgressSize::Small}
+            no_icon=true
+            {style}
+        />
     )
 }
 
