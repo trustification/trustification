@@ -94,8 +94,7 @@ impl Test {
         let test = self
             .test
             .iter()
-            .map(|test| vec!["--test", &test])
-            .flatten()
+            .flat_map(|test| vec!["--test", test])
             .collect::<Vec<_>>();
 
         let cmd = cmd!(
