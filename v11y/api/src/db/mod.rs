@@ -1,732 +1,182 @@
-use actix_web::web;
-use std::borrow::Cow;
-use std::path::Path;
-use std::str::FromStr;
+use std::fs::File;
+use std::path::{Path, PathBuf};
 
-use derive_more::{Display, Error, From};
-use futures::Stream;
-use futures::StreamExt;
-use sqlx::sqlite::SqliteConnectOptions;
-use sqlx::{Error, QueryBuilder, Row, SqlitePool};
+use derive_more::{Display, Error};
+use serde_json::Error;
+use sha1::digest::FixedOutput;
+use sha1::{Digest, Sha1};
+use tokio::fs::create_dir_all;
 
-use v11y_model::{Reference, ScoreType, Severity, Vulnerability};
+use v11y_model::Vulnerability;
 
-#[derive(Debug, Display, Error, From)]
+#[derive(Debug, Display, Error)]
 pub enum DbError {
-    #[display(fmt = "sql error: {}", "_0")]
-    Sql(Error),
+    #[display(fmt = "I/O error: {}", "_0")]
+    Io(std::io::Error),
+
+    #[display(fmt = "Serialization error: {}", "_0")]
+    Serialization(serde_json::Error),
 }
 
-static DB_FILE_NAME: &str = "v11y.db";
+impl From<std::io::Error> for DbError {
+    fn from(inner: std::io::Error) -> Self {
+        Self::Io(inner)
+    }
+}
+
+impl From<serde_json::Error> for DbError {
+    fn from(inner: Error) -> Self {
+        Self::Serialization(inner)
+    }
+}
 
 pub struct Db {
-    pool: SqlitePool,
-}
-
-pub enum GetBy<'a> {
-    Id(Cow<'a, str>),
-    Alias(Cow<'a, str>),
-}
-
-impl<'a> GetBy<'a> {
-    pub fn alias(alias: impl Into<Cow<'a, str>>) -> Self {
-        Self::Alias(alias.into())
-    }
-
-    #[allow(unused)]
-    pub fn id(id: impl Into<Cow<'a, str>>) -> Self {
-        Self::Id(id.into())
-    }
-}
-
-impl From<web::Path<String>> for GetBy<'static> {
-    fn from(value: web::Path<String>) -> Self {
-        Self::Id(value.into_inner().into())
-    }
-}
-
-impl From<String> for GetBy<'static> {
-    fn from(value: String) -> Self {
-        Self::Id(value.into())
-    }
-}
-
-impl<'a> From<&'a str> for GetBy<'a> {
-    fn from(value: &'a str) -> Self {
-        Self::Id(Cow::Borrowed(value))
-    }
+    data_dir: PathBuf,
 }
 
 #[allow(unused)]
 impl Db {
-    pub async fn new(base: impl AsRef<Path>) -> Result<Self, anyhow::Error> {
+    pub async fn new(base: impl AsRef<Path>) -> Result<Self, DbError> {
         let db = Self {
-            pool: SqlitePool::connect_with(if cfg!(test) {
-                SqliteConnectOptions::from_str(":memory:")?
-            } else {
-                SqliteConnectOptions::default()
-                    .filename(base.as_ref().join(DB_FILE_NAME))
-                    .create_if_missing(true)
-            })
-            .await?,
+            data_dir: base.as_ref().to_owned(),
         };
         db.initialize().await?;
         Ok(db)
     }
 
-    async fn initialize(&self) -> Result<(), anyhow::Error> {
-        self.create_vulnerabilities_table().await?;
-        self.create_aliases_table().await?;
-        self.create_related_table().await?;
-        self.create_severities_table().await?;
-        self.create_references_table().await?;
-        self.create_events_table().await?;
+    async fn initialize(&self) -> Result<(), DbError> {
+        self.ensure_data_directory().await?;
         Ok(())
     }
 
-    async fn create_vulnerabilities_table(&self) -> Result<(), anyhow::Error> {
-        log::debug!("create table 'vulnerabilities'");
-        sqlx::query(
-            r#"create table if not exists vulnerabilities (
-                    id text not null,
-                    origin text not null,
-                    modified datetime not null,
-                    published datatime not null,
-                    withdrawn datetime,
-                    summary text,
-                    details text
-                )"#,
-        )
-        .execute(&self.pool)
-        .await?;
-
-        log::debug!("create index 'vulnerabilities_pk'");
-        sqlx::query(
-            r#"
-            create unique index if not exists vulnerabilities_pk ON vulnerabilities ( id, origin ) ;
-            "#,
-        )
-        .execute(&self.pool)
-        .await?;
+    async fn ensure_data_directory(&self) -> Result<(), DbError> {
+        if !self.data_dir.exists() {
+            create_dir_all(&self.data_dir).await?;
+        }
 
         Ok(())
     }
 
-    async fn create_severities_table(&self) -> Result<(), anyhow::Error> {
-        log::debug!("create table 'severities'");
-        sqlx::query(
-            r#"create table if not exists severities (
-                    vulnerability_id text not null,
-                    origin text not null,
-                    type text not null,
-                    source text,
-                    score float not null,
-                    additional text,
-                    primary key (vulnerability_id, origin, source, type)
-                )"#,
-        )
-        .execute(&self.pool)
-        .await?;
+    async fn ensure_origin_directory(&self, origin: &str) -> Result<PathBuf, DbError> {
+        let origin_dir = self.data_dir.join(origin);
+        if !origin_dir.exists() {
+            create_dir_all(&origin_dir).await?
+        }
 
-        log::debug!("create index 'severities_pk'");
-        sqlx::query(
-            r#"
-            create index if not exists severities_pk ON severities ( vulnerability_id, origin, type ) ;
-            "#,
-        )
-        .execute(&self.pool)
-        .await?;
-
-        sqlx::query(
-            r#"
-            create index if not exists severities_pk ON severities ( vulnerability_id, origin, type ) ;
-            "#,
-        )
-        .execute(&self.pool)
-        .await?;
-
-        Ok(())
+        Ok(origin_dir)
     }
 
-    async fn create_aliases_table(&self) -> Result<(), anyhow::Error> {
-        log::debug!("create table 'aliases'");
-        sqlx::query(
-            r#"create table if not exists aliases (
-                    vulnerability_id text not null,
-                    origin text not null,
-                    alias text not null
-                )"#,
-        )
-        .execute(&self.pool)
-        .await?;
+    async fn ensure_hash_directory(&self, base: &Path, id: &str) -> Result<PathBuf, DbError> {
+        let hash_dir = base.join(Self::hash_prefix_of(&id.to_lowercase()));
 
-        log::debug!("create index 'aliases_by_id'");
-        sqlx::query(
-            r#"
-            create index if not exists alias_by_id ON aliases ( vulnerability_id ) ;
-            "#,
-        )
-        .execute(&self.pool)
-        .await?;
+        if !hash_dir.exists() {
+            create_dir_all(&hash_dir).await?;
+        }
 
-        Ok(())
+        Ok(hash_dir)
     }
 
-    async fn create_related_table(&self) -> Result<(), anyhow::Error> {
-        log::debug!("create table 'related'");
-        sqlx::query(
-            r#"create table if not exists related (
-                    vulnerability_id text not null,
-                    origin text not null,
-                    related text not null,
-                    primary key (vulnerability_id, origin, related)
-
-                )"#,
-        )
-        .execute(&self.pool)
-        .await?;
-
-        log::debug!("create index 'related_by_id'");
-        sqlx::query(
-            r#"
-            create index if not exists related_by_id ON aliases ( vulnerability_id ) ;
-            "#,
-        )
-        .execute(&self.pool)
-        .await?;
-
-        Ok(())
-    }
-
-    async fn create_events_table(&self) -> Result<(), anyhow::Error> {
-        log::debug!("create table 'events'");
-        sqlx::query(
-            r#"create table if not exists events (
-                    vulnerability_id text not null,
-                    origin not null,
-                    event text not null
-                )"#,
-        )
-        .execute(&self.pool)
-        .await?;
-
-        log::debug!("create index 'events_by_id'");
-        sqlx::query(
-            r#"
-            create index if not exists events_by_id ON events ( vulnerability_id ) ;
-            "#,
-        )
-        .execute(&self.pool)
-        .await?;
-
-        Ok(())
-    }
-
-    async fn create_references_table(&self) -> Result<(), anyhow::Error> {
-        log::debug!("create table 'references'");
-        sqlx::query(
-            r#"create table if not exists refs (
-                    vulnerability_id text not null,
-                    origin text not null,
-                    type text not null,
-                    url text not null,
-                    primary key (vulnerability_id, origin, type, url)
-                )"#,
-        )
-        .execute(&self.pool)
-        .await?;
-
-        log::debug!("create index 'references_by_id'");
-        sqlx::query(
-            r#"
-            create index if not exists references_by_id ON refs ( vulnerability_id ) ;
-            "#,
-        )
-        .execute(&self.pool)
-        .await?;
-
-        Ok(())
-    }
-
-    pub async fn ingest(&self, vuln: &Vulnerability) -> Result<(), anyhow::Error> {
-        self.ingest_vulnerability(vuln).await?;
-        self.ingest_severities(vuln).await?;
-        self.ingest_related(vuln).await?;
-        self.ingest_references(vuln).await?;
-        self.ingest_aliases(vuln).await?;
-        Ok(())
-    }
-
-    pub async fn get(&self, id: impl Into<GetBy<'_>>, origin: Option<String>) -> Result<Vec<Vulnerability>, DbError> {
-        let id = id.into();
-        let mut builder = QueryBuilder::new(
-            r#"
-            select
-                vulnerabilities.id,
-                vulnerabilities.origin,
-                vulnerabilities.modified,
-                vulnerabilities.published,
-                vulnerabilities.withdrawn,
-                vulnerabilities.summary,
-                vulnerabilities.details,
-                aliases.alias,
-                related.related,
-                refs.type,
-                refs.url,
-                severities.type as score_type,
-                severities.score,
-                severities.source,
-                severities.additional
-            from
-                vulnerabilities
-            left join
-                aliases on aliases.vulnerability_id = vulnerabilities.id and aliases.origin = vulnerabilities.origin
-            left join
-                related on related.vulnerability_id = vulnerabilities.id and related.origin = vulnerabilities.origin
-            left join
-                refs on refs.vulnerability_id = vulnerabilities.id and refs.origin = vulnerabilities.origin
-            left join
-                severities on severities.vulnerability_id = vulnerabilities.id and severities.origin = vulnerabilities.origin
-            where
-"#,
-        );
-
-        match id {
-            GetBy::Id(id) => {
-                builder.push("                lower(vulnerabilities.id) = ");
-                builder.push_bind(id.to_lowercase());
+    fn get_hash_directories(&self, id: &str, origin: Option<String>) -> Vec<PathBuf> {
+        let mut dirs = Vec::new();
+        let hash_prefix = Self::hash_prefix_of(id);
+        match origin {
+            None => {
+                for origin in self.get_known_origins() {
+                    let dir = self.data_dir.join(origin).join(&hash_prefix);
+                    if dir.exists() {
+                        dirs.push(dir)
+                    }
+                }
             }
-            GetBy::Alias(alias) => {
-                builder.push("                lower(aliases.alias) = ");
-                builder.push_bind(alias.to_lowercase());
+            Some(origin) => {
+                let dir = self.data_dir.join(origin).join(hash_prefix);
+                if dir.exists() {
+                    dirs.push(dir)
+                }
             }
         }
 
-        if let Some(origin) = origin {
-            builder.push("and vulnerabilities.origin = ");
-            builder.push_bind(origin);
-        }
-
-        builder.push(
-            r#"
-            order by
-                vulnerabilities.origin"#,
-        );
-
-        let query = builder.build();
-
-        use sqlx::Execute;
-        println!("SQL: {}", query.sql());
-
-        let vulns = query
-            .fetch(&self.pool)
-            .fold(
-                (vec![], None::<Vulnerability>),
-                |(mut accum, mut cur), row| async move {
-                    row.ok()
-                        .map(|row| {
-                            if cur.is_none() || cur.as_ref().unwrap().origin != row.get::<String, _>("origin") {
-                                let vuln = Vulnerability {
-                                    origin: row.get("origin"),
-                                    id: row.get("id"),
-                                    modified: row.get("modified"),
-                                    published: row.get("published"),
-                                    withdrawn: row.get("withdrawn"),
-                                    summary: row.get("summary"),
-                                    details: row.get("details"),
-                                    aliases: Default::default(),
-                                    affected: vec![],
-                                    severities: Default::default(),
-                                    related: Default::default(),
-                                    references: Default::default(),
-                                };
-
-                                if let Some(cur) = cur.take() {
-                                    accum.push(cur);
-                                }
-
-                                cur.replace(vuln);
-                            }
-
-                            if let Some(cur_vuln) = &mut cur {
-                                if cur_vuln.origin == row.get::<String, _>("origin") {
-                                    // continue to populate
-                                    let alias = row.get::<String, _>("alias");
-                                    if !alias.is_empty() && !cur_vuln.aliases.contains(&alias) {
-                                        cur_vuln.aliases.push(alias);
-                                    }
-
-                                    let related = row.get::<String, _>("related");
-                                    if !related.is_empty() && !cur_vuln.related.contains(&related) {
-                                        cur_vuln.related.push(related);
-                                    }
-
-                                    let (ty, url) = (row.get::<String, _>("type"), row.get::<String, _>("url"));
-                                    if !url.is_empty() {
-                                        let reference = Reference { r#type: ty, url };
-
-                                        if !cur_vuln.references.contains(&reference) {
-                                            cur_vuln.references.push(reference);
-                                        }
-                                    }
-
-                                    let (ty, source, score, additional) = (
-                                        row.get::<String, _>("score_type"),
-                                        row.get::<String, _>("source"),
-                                        row.get::<f32, _>("score"),
-                                        row.get::<String, _>("additional"),
-                                    );
-
-                                    if !ty.is_empty() {
-                                        let additional = if additional.is_empty() { None } else { Some(additional) };
-                                        let severity = Severity {
-                                            r#type: ScoreType::from(ty),
-                                            source,
-                                            score,
-                                            additional,
-                                        };
-
-                                        if !cur_vuln.severities.contains(&severity) {
-                                            cur_vuln.severities.push(severity);
-                                        }
-                                    }
-                                } else {
-                                    let vuln = cur.take().unwrap();
-                                    accum.push(vuln)
-                                }
-                            }
-                        })
-                        .unwrap();
-                    (accum, cur)
-                },
-            )
-            .await;
-
-        let (mut vulns, cur) = vulns;
-
-        if let Some(cur) = cur {
-            vulns.push(cur);
-        }
-
-        Ok(vulns)
+        dirs
     }
 
-    async fn ingest_vulnerability(&self, vuln: &Vulnerability) -> Result<(), anyhow::Error> {
-        sqlx::query(
-            r#"
-                insert or replace into vulnerabilities (
-                    id, origin, modified, published, withdrawn, summary, details
-                ) values (
-                    $1, $2, $3, $4, $5, $6, $7
-                )
-            "#,
-        )
-        .bind(vuln.id.clone())
-        .bind(vuln.origin.clone())
-        .bind(vuln.modified)
-        .bind(vuln.published)
-        .bind(vuln.withdrawn)
-        .bind(vuln.summary.clone())
-        .bind(vuln.details.clone())
-        .execute(&self.pool)
-        .await?;
+    fn hash_prefix_of(id: &str) -> String {
+        let mut hasher = Sha1::default();
+        hasher.update(id.to_lowercase());
+        let output = hasher.finalize_fixed();
+        format!("{:x}{:x}{:x}{:x}", output[0], output[1], output[2], output[3])
+    }
 
+    pub async fn ingest(&self, vuln: &Vulnerability) -> Result<(), DbError> {
+        let dir = self.ensure_origin_directory(&vuln.origin).await?;
+        let hash_dir = self.ensure_hash_directory(&dir, &vuln.id).await?;
+
+        let vuln_file = hash_dir.join(format!("{}.json", vuln.id.to_lowercase()));
+
+        // todo: write to a tempfile and then rename it.
+        let file = File::create(vuln_file)?;
+        let json = serde_json::to_writer_pretty(file, vuln);
         Ok(())
     }
 
-    async fn ingest_severities(&self, vuln: &Vulnerability) -> Result<(), anyhow::Error> {
-        for severity in &vuln.severities {
-            sqlx::query(
-                r#"
-            insert into severities (
-                vulnerability_id, origin, source, type, score, additional
-            ) values (
-                $1, $2, $3, $4, $5, $6
-            ) on conflict (vulnerability_id, origin, source, type) do update
-                set
-                    score = excluded.score,
-                    additional = excluded.additional
-            "#,
-            )
-            .bind(vuln.id.clone())
-            .bind(vuln.origin.clone())
-            .bind(severity.source.clone())
-            .bind(severity.r#type.to_string())
-            .bind(severity.score)
-            .bind(severity.additional.clone())
-            .execute(&self.pool)
-            .await?;
+    pub async fn get(&self, id: &str, origin: Option<String>) -> Result<Vec<Vulnerability>, DbError> {
+        let mut vulnerabilities = Vec::new();
+
+        for dir in self.get_hash_directories(id, origin) {
+            let file = dir.join(format!("{}.json", id.to_lowercase()));
+            if file.exists() {
+                if let Ok(reader) = File::open(file.clone()) {
+                    let result = serde_json::from_reader(reader);
+
+                    match result {
+                        Ok(vuln) => vulnerabilities.push(vuln),
+                        Err(e) => {
+                            log::error!("Error reading {}", file.to_str().unwrap_or(""));
+                        }
+                    }
+                } else {
+                    log::error!("Error opening {}", file.to_str().unwrap_or(""));
+                }
+            }
         }
 
-        Ok(())
-    }
-
-    async fn ingest_related(&self, vuln: &Vulnerability) -> Result<(), anyhow::Error> {
-        for related in &vuln.related {
-            sqlx::query(
-                r#"
-            insert into related (
-                vulnerability_id, origin, related
-            ) values (
-                $1, $2, $3
-            ) on conflict (vulnerability_id, origin, related) do update
-                set
-                    related = excluded.related
-                "#,
-            )
-            .bind(vuln.id.clone())
-            .bind(vuln.origin.clone())
-            .bind(related)
-            .execute(&self.pool)
-            .await?;
-        }
-
-        Ok(())
-    }
-
-    async fn ingest_references(&self, vuln: &Vulnerability) -> Result<(), anyhow::Error> {
-        for reference in &vuln.references {
-            sqlx::query(
-                r#"
-            insert or ignore into refs (
-                vulnerability_id, origin, type, url
-            ) values (
-                $1, $2, $3, $4
-            )
-                "#,
-            )
-            .bind(vuln.id.clone())
-            .bind(vuln.origin.clone())
-            .bind(reference.r#type.clone())
-            .bind(reference.url.clone())
-            .execute(&self.pool)
-            .await?;
-        }
-
-        Ok(())
-    }
-
-    async fn ingest_aliases(&self, vuln: &Vulnerability) -> Result<(), anyhow::Error> {
-        for alias in &vuln.aliases {
-            sqlx::query(
-                r#"
-            insert or ignore into aliases (
-                vulnerability_id, origin, alias
-            ) values (
-                $1, $2, $3
-            )
-                "#,
-            )
-            .bind(vuln.id.clone())
-            .bind(vuln.origin.clone())
-            .bind(alias.clone())
-            .execute(&self.pool)
-            .await?;
-        }
-
-        Ok(())
+        Ok(vulnerabilities)
     }
 
     #[allow(unused)]
-    pub async fn get_known_ids(&self) -> impl Stream<Item = String> {
-        sqlx::query(r#"select distinct id from vulnerabilities"#)
-            .fetch(&self.pool)
-            .filter_map(|row| async move { row.ok().map(|row| row.get("id")) })
-    }
+    pub fn get_known_origins(&self) -> Vec<String> {
+        let mut origins = Vec::new();
+        if let Ok(dir) = self.data_dir.read_dir() {
+            for entry in dir.flatten() {
+                if let Some(name) = entry.file_name().to_str() {
+                    origins.push(name.to_string())
+                }
+            }
+        }
 
-    #[allow(unused)]
-    pub async fn get_known_origins(&self) -> impl Stream<Item = String> {
-        sqlx::query(r#"select distinct origin from vulnerabilities"#)
-            .fetch(&self.pool)
-            .filter_map(|row| async move { row.ok().map(|row| row.get("origin")) })
-    }
-
-    pub async fn get_severities<'s>(
-        &'s self,
-        id: &'s str,
-        origin: Option<String>,
-    ) -> impl Stream<Item = (String, Severity)> + 's {
-        let query = if let Some(origin) = origin {
-            sqlx::query(
-                r#"
-                select
-                    origin, source, type, score, additional
-                from
-                    severities
-                where
-                    vulnerability_id = $1 and origin = $2
-                "#,
-            )
-            .bind(id)
-            .bind(origin)
-        } else {
-            sqlx::query(
-                r#"
-                select
-                    origin, source, type, score, additional
-                from
-                    severities
-                where
-                    vulnerability_id = $1
-                order by
-                    origin
-                "#,
-            )
-            .bind(id)
-        };
-
-        query.fetch(&self.pool).filter_map(|row| async move {
-            row.ok().map(|row| {
-                (
-                    row.get("origin"),
-                    Severity {
-                        r#type: ScoreType::from(row.get::<String, _>("type")),
-                        score: row.get("score"),
-                        source: row.get("source"),
-                        additional: row.get("additional"),
-                    },
-                )
-            })
-        })
-    }
-
-    pub async fn get_related<'s>(
-        &'s self,
-        id: &'s str,
-        origin: Option<String>,
-    ) -> impl Stream<Item = (String, String)> + 's {
-        let query = if let Some(origin) = origin {
-            sqlx::query(
-                r#"
-                select
-                    origin, related
-                from
-                    related
-                where
-                    vulnerability_id = $1 and origin = $2
-                "#,
-            )
-            .bind(id)
-            .bind(origin)
-        } else {
-            sqlx::query(
-                r#"
-                select
-                    origin, related
-                from
-                    related
-                where
-                    vulnerability_id = $1
-                order by
-                    origin
-                "#,
-            )
-            .bind(id)
-        };
-
-        query
-            .fetch(&self.pool)
-            .filter_map(|row| async move { row.ok().map(|row| (row.get("origin"), row.get("related"))) })
-    }
-
-    pub async fn get_references<'s>(
-        &'s self,
-        id: &'s str,
-        r#type: Option<String>,
-        origin: Option<String>,
-    ) -> impl Stream<Item = (String, Reference)> + 's {
-        let query = match (origin, r#type) {
-            (Some(origin), Some(ty)) => sqlx::query(
-                r#"
-                select
-                    origin, type, url
-                from
-                    refs
-                where
-                    vulnerability_id = $1 and origin = $2 and type = $3
-                "#,
-            )
-            .bind(id)
-            .bind(origin)
-            .bind(ty),
-
-            (Some(origin), None) => sqlx::query(
-                r#"
-                select
-                    origin, type, url
-                from
-                    refs
-                where
-                    vulnerability_id = $1 and origin = $2
-                "#,
-            )
-            .bind(id)
-            .bind(origin),
-
-            (None, Some(ty)) => sqlx::query(
-                r#"
-                select
-                    origin, type, url
-                from
-                    refs
-                where
-                    vulnerability_id = $1 and type = $2
-                order by
-                    origin
-                "#,
-            )
-            .bind(id)
-            .bind(ty),
-
-            (None, None) => sqlx::query(
-                r#"
-                select
-                    origin, type, url
-                from
-                    refs
-                where
-                    vulnerability_id = $1
-                order by
-                    origin
-                "#,
-            )
-            .bind(id),
-        };
-
-        query.fetch(&self.pool).filter_map(|row| async move {
-            row.ok().map(|row| {
-                (
-                    row.get("origin"),
-                    Reference {
-                        r#type: row.get("type"),
-                        url: row.get("url"),
-                    },
-                )
-            })
-        })
+        origins
     }
 }
 
 #[cfg(test)]
 mod test {
-    use futures::StreamExt;
+    use tempdir::TempDir;
 
     use v11y_model::{Reference, ScoreType, Severity, Vulnerability};
 
-    use crate::db::{Db, GetBy};
+    use crate::db::Db;
 
-    #[tokio::test]
-    async fn create_db() -> Result<(), anyhow::Error> {
-        let _db = Db::new(".").await?;
+    async fn create_db() -> Result<Db, anyhow::Error> {
+        let dir = TempDir::new("v11y")?;
+        let db = Db::new(dir).await?;
         // not failing is success
-        Ok(())
+        Ok(db)
     }
 
     #[tokio::test]
     async fn ingest_minimal() -> Result<(), anyhow::Error> {
-        let db = Db::new(".").await?;
+        let db = create_db().await?;
 
-        let vuln = Vulnerability {
+        let vuln1 = Vulnerability {
             origin: "osv".to_string(),
             id: "CVE-123".to_string(),
             modified: "2023-08-08T18:17:02Z".parse()?,
@@ -741,9 +191,9 @@ mod test {
             references: Default::default(),
         };
 
-        db.ingest(&vuln).await?;
+        db.ingest(&vuln1).await?;
 
-        let vuln = Vulnerability {
+        let vuln2 = Vulnerability {
             origin: "snyk".to_string(),
             id: "CVE-123".to_string(),
             modified: "2023-08-08T18:17:02Z".parse()?,
@@ -758,9 +208,9 @@ mod test {
             references: Default::default(),
         };
 
-        db.ingest(&vuln).await?;
+        db.ingest(&vuln2).await?;
 
-        let vuln = Vulnerability {
+        let vuln3 = Vulnerability {
             origin: "osv".to_string(),
             id: "CVE-345".to_string(),
             modified: "2023-08-08T18:17:02Z".parse()?,
@@ -775,26 +225,31 @@ mod test {
             references: Default::default(),
         };
 
-        db.ingest(&vuln).await?;
+        db.ingest(&vuln3).await?;
 
-        let ids: Vec<_> = db.get_known_ids().await.collect().await;
+        let result = db.get("CVE-123", Some("osv".into())).await?;
+        assert_eq!(1, result.len());
+        assert_eq!(vuln1, result[0]);
 
-        assert_eq!(2, ids.len());
-        assert!(ids.contains(&"CVE-123".to_owned()));
-        assert!(ids.contains(&"CVE-345".to_owned()));
+        let result = db.get("CVE-123", Some("snyk".into())).await?;
+        assert_eq!(1, result.len());
+        assert_eq!(vuln2, result[0]);
 
-        let origins: Vec<_> = db.get_known_origins().await.collect().await;
+        let result = db.get("CVE-345", Some("osv".into())).await?;
+        assert_eq!(1, result.len());
+        assert_eq!(vuln3, result[0]);
 
-        assert_eq!(2, origins.len());
-        assert!(origins.contains(&"snyk".to_owned()));
-        assert!(origins.contains(&"osv".to_owned()));
+        let result = db.get("CVE-123", None).await?;
+        assert_eq!(2, result.len());
+        assert!(result.contains(&vuln1));
+        assert!(result.contains(&vuln2));
 
         Ok(())
     }
 
     #[tokio::test]
     async fn ingest_maximal() -> Result<(), anyhow::Error> {
-        let db = Db::new(".").await?;
+        let db = create_db().await?;
 
         let osv_vuln = Vulnerability {
             origin: "osv".to_string(),
@@ -853,82 +308,12 @@ mod test {
         assert_eq!(1, result.len());
         assert_eq!(result[0], snyk_vuln);
 
-        let result: Vec<_> = db
-            .get_severities("CVE-123", Some("osv".to_string()))
-            .await
-            .collect()
-            .await;
-
-        assert_eq!(1, result.len());
-
-        let result = &result[0];
-
-        assert_eq!("osv", result.0);
-        assert_eq!(6.8, result.1.score);
-        assert_eq!(ScoreType::Cvss3, result.1.r#type);
-        assert_eq!(Some("n:4/v:2".to_string()), result.1.additional);
-
-        let result: Vec<_> = db
-            .get_severities("CVE-123", Some("snyk".to_string()))
-            .await
-            .collect()
-            .await;
-
-        assert_eq!(1, result.len());
-
-        let result = &result[0];
-
-        assert_eq!("snyk", result.0);
-        assert_eq!(7.8, result.1.score);
-        assert_eq!(ScoreType::Cvss3, result.1.r#type);
-        assert_eq!(Some("n:1/v:2".to_string()), result.1.additional);
-
-        let result: Vec<_> = db.get_severities("CVE-123", None).await.collect().await;
-
-        assert_eq!(2, result.len());
-
-        let result: Vec<_> = db.get_related("CVE-123", Some("osv".to_string())).await.collect().await;
-        assert_eq!(1, result.len());
-
-        let result: Vec<_> = db
-            .get_related("CVE-123", Some("snyk".to_string()))
-            .await
-            .collect()
-            .await;
-        assert_eq!(2, result.len());
-
-        let result: Vec<_> = db.get_related("CVE-123", None).await.collect().await;
-        assert_eq!(3, result.len());
-
-        let result: Vec<_> = db.get_references("CVE-123", None, None).await.collect().await;
-        assert_eq!(2, result.len());
-
-        let result: Vec<_> = db
-            .get_references("CVE-123", None, Some("osv".to_string()))
-            .await
-            .collect()
-            .await;
-        assert_eq!(1, result.len());
-
-        assert_eq!("ADVISORY", result[0].1.r#type);
-        assert_eq!("http://osv.dev/foo", result[0].1.url);
-
-        let result: Vec<_> = db
-            .get_references("CVE-123", None, Some("snyk".to_string()))
-            .await
-            .collect()
-            .await;
-        assert_eq!(1, result.len());
-
-        assert_eq!("WEB", result[0].1.r#type);
-        assert_eq!("http://snyk.com/foo", result[0].1.url);
-
         Ok(())
     }
 
     #[tokio::test]
-    async fn ingest_updated_severities() -> Result<(), anyhow::Error> {
-        let db = Db::new(".").await?;
+    async fn ingest_updated_overwrite() -> Result<(), anyhow::Error> {
+        let db = create_db().await?;
 
         let vuln = Vulnerability {
             origin: "osv".to_string(),
@@ -946,26 +331,11 @@ mod test {
                 additional: Some("n:4/v:2".to_string()),
             }],
             affected: vec![],
-            related: vec!["CVE-8675".to_string(), "CVE-42".to_string()],
+            related: vec![],
             references: Default::default(),
         };
 
         db.ingest(&vuln).await?;
-
-        let result: Vec<_> = db
-            .get_severities("CVE-123", Some("osv".to_string()))
-            .await
-            .collect()
-            .await;
-
-        assert_eq!(1, result.len());
-
-        let result = &result[0];
-
-        assert_eq!("osv", result.0);
-        assert_eq!(6.8, result.1.score);
-        assert_eq!(ScoreType::Cvss3, result.1.r#type);
-        assert_eq!(Some("n:4/v:2".to_string()), result.1.additional);
 
         let vuln = Vulnerability {
             origin: "osv".to_string(),
@@ -997,97 +367,9 @@ mod test {
 
         db.ingest(&vuln).await?;
 
-        let result: Vec<_> = db
-            .get_severities("CVE-123", Some("osv".to_string()))
-            .await
-            .collect()
-            .await;
-
-        assert_eq!(2, result.len());
-
-        for (_, severity) in result {
-            match severity.r#type {
-                ScoreType::Cvss3 => {
-                    assert_eq!(9.8, severity.score)
-                }
-                ScoreType::Cvss4 => {
-                    assert_eq!(7.3, severity.score)
-                }
-                ScoreType::Unknown => panic!("unexpected unknown"),
-                _ => {}
-            }
-        }
-
-        Ok(())
-    }
-
-    #[tokio::test]
-    async fn get_without_origin() -> Result<(), anyhow::Error> {
-        let db = Db::new(".").await?;
-
-        let osv_vuln = Vulnerability {
-            origin: "osv".to_string(),
-            id: "CVE-123".to_string(),
-            modified: "2023-08-08T18:17:02Z".parse()?,
-            published: "2023-08-08T18:17:02Z".parse()?,
-            withdrawn: None,
-            summary: "Summary".to_string(),
-            details: "Some\ndetails".to_string(),
-            aliases: Default::default(),
-            severities: vec![Severity {
-                r#type: ScoreType::Cvss3,
-                source: "CVE".to_string(),
-                score: 6.8,
-                additional: Some("n:4/v:2".to_string()),
-            }],
-            affected: vec![],
-            related: vec!["CVE-8675".to_string()],
-            references: vec![Reference {
-                r#type: "ADVISORY".to_string(),
-                url: "http://osv.dev/foo".to_string(),
-            }],
-        };
-
-        db.ingest(&osv_vuln).await?;
-
-        let snyk_vuln = Vulnerability {
-            origin: "snyk".to_string(),
-            id: "CVE-123".to_string(),
-            modified: "2023-08-08T18:17:02Z".parse()?,
-            published: "2023-08-08T18:17:02Z".parse()?,
-            withdrawn: None,
-            summary: "Summary".to_string(),
-            details: "Some\ndetails".to_string(),
-            aliases: vec!["GHSA-foo-ghz".to_string()],
-            severities: vec![Severity {
-                r#type: ScoreType::Cvss3,
-                source: "CVE".to_string(),
-                score: 7.8,
-                additional: Some("n:1/v:2".to_string()),
-            }],
-            affected: vec![],
-            related: vec!["CVE-8675".to_string(), "CVE-42".to_string()],
-            references: vec![Reference {
-                r#type: "WEB".to_string(),
-                url: "http://snyk.com/foo".to_string(),
-            }],
-        };
-
-        db.ingest(&snyk_vuln).await?;
-
-        // fetch by ID
-
-        let result = db.get("CVE-123", None).await?;
-
-        assert!(result.contains(&osv_vuln));
-        assert!(result.contains(&snyk_vuln));
-
-        // we should only get the snyk one
-
-        let result = db.get(GetBy::alias("GHSA-foo-ghz"), None).await?;
-
-        assert!(result.contains(&snyk_vuln));
-        assert_eq!(result.len(), 1);
+        let result = db.get("CVE-123", Some("osv".into())).await?;
+        assert_eq!(1, result.len());
+        assert_eq!(vuln, result[0]);
 
         Ok(())
     }

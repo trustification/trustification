@@ -21,7 +21,7 @@ mod vulnerability;
     paths(
         crate::server::vulnerability::ingest_vulnerability,
         crate::server::vulnerability::get,
-        crate::server::vulnerability::get_by_alias,
+        //crate::server::vulnerability::get_by_alias,
     ),
     components(
         schemas(
@@ -46,8 +46,7 @@ pub fn config(
         web::scope("/api/v1")
             .wrap(new_auth!(auth))
             .service(vulnerability::ingest_vulnerability)
-            .service(vulnerability::get)
-            .service(vulnerability::get_by_alias),
+            .service(vulnerability::get), //.service(vulnerability::get_by_alias),
     )
     .service(swagger_ui_with_auth(ApiDoc::openapi(), swagger_ui_oidc));
 }
