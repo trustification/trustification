@@ -96,6 +96,7 @@ impl Run {
                         self.collector_config,
                         self.csub_url,
                         provider,
+                        self.devmode,
                     )
                     .await?;
 
@@ -142,6 +143,7 @@ impl Run {
         collector_config: Option<PathBuf>,
         csub_url: Url,
         provider: P,
+        devmode: bool,
     ) -> anyhow::Result<Arc<AppState>>
     where
         P: TokenProvider + Clone + 'static,
@@ -150,11 +152,14 @@ impl Run {
 
         let collectorist_config = if collectorist_config.exists() {
             serde_yaml::from_reader(File::open(collectorist_config)?)?
+        } else if devmode {
+            CollectorsConfig::devmode()
         } else {
-            log::info!(
+            log::error!(
                 "configuration file {} missing, no collectors configured",
                 collectorist_config.to_str().unwrap_or("<unknown>")
             );
+
             CollectorsConfig {
                 collectors: Default::default(),
             }
