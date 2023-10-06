@@ -1,3 +1,7 @@
+mod result;
+
+pub use result::*;
+
 use crate::Apply;
 
 #[derive(Clone, Debug, PartialEq, Eq, serde::Deserialize, serde::Serialize)]

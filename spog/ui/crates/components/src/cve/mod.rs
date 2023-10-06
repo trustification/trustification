@@ -4,22 +4,21 @@ pub use search::*;
 
 use crate::table_wrapper::TableWrapper;
 use patternfly_yew::prelude::*;
-use spog_model::prelude::*;
-use spog_ui_backend::use_backend;
 use spog_ui_navigation::AppRoute;
 use std::rc::Rc;
+use trustification_api::search::SearchResult;
 use yew::prelude::*;
 use yew_more_hooks::prelude::*;
 use yew_nested_router::components::Link;
 
 #[derive(PartialEq, Properties, Clone)]
 pub struct CveEntry {
-    summary: CveSummary,
+    vulnerability: v11y_model::Vulnerability,
 }
 
 #[derive(PartialEq, Properties)]
 pub struct CveResultProperties {
-    pub state: UseAsyncState<SearchResult<Rc<Vec<CveSummary>>>, String>,
+    pub state: UseAsyncState<SearchResult<Rc<Vec<v11y_model::Vulnerability>>>, String>,
     pub onsort: Callback<(String, bool)>,
 }
 
@@ -35,10 +34,10 @@ impl TableEntryRenderer<Column> for CveEntry {
         match context.column {
             Column::Id => html!(
                 <Link<AppRoute>
-                    target={AppRoute::Cve{id: self.summary.id.clone()}}
-                >{ self.summary.id.clone() }</Link<AppRoute>>
+                    target={AppRoute::Cve{id: self.vulnerability.id.clone()}}
+                >{ self.vulnerability.id.clone() }</Link<AppRoute>>
             ),
-            Column::Title => html!(&self.summary.title),
+            Column::Title => html!(&self.vulnerability.summary),
             Column::Severity => html!(html!()),
         }
         .into()
@@ -62,8 +61,8 @@ pub fn cve_result(props: &CveResultProperties) -> Html {
             let data: Vec<_> = val
                 .result
                 .iter()
-                .map(|summary| CveEntry {
-                    summary: summary.clone(),
+                .map(|vulnerability| CveEntry {
+                    vulnerability: vulnerability.clone(),
                 })
                 .collect();
             Some(data)

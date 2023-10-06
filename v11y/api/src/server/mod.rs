@@ -8,6 +8,7 @@ use trustification_auth::{
 use trustification_infrastructure::new_auth;
 use utoipa::OpenApi;
 
+mod search;
 mod vulnerability;
 
 #[derive(OpenApi)]
@@ -48,7 +49,8 @@ pub fn config(
             .service(vulnerability::ingest_vulnerability)
             .service(vulnerability::get)
             //.service(vulnerability::get_by_alias),
-            .service(vulnerability::search),
+            .service(vulnerability::search)
+            .service(search::search),
     )
     .service(swagger_ui_with_auth(ApiDoc::openapi(), swagger_ui_oidc));
 }

@@ -1,10 +1,7 @@
 use std::fs::File;
 use std::path::{Path, PathBuf};
 
-use derive_more::{Display, Error, From};
-use futures::stream::iter;
-use futures::Stream;
-use futures::StreamExt;
+use derive_more::{Display, Error};
 use serde_json::Error;
 use sha1::digest::FixedOutput;
 use sha1::{Digest, Sha1};
@@ -157,10 +154,6 @@ impl Db {
         }
 
         origins
-    }
-
-    pub async fn search(&self, start: Option<usize>) -> Result<Vec<String>, DbError> {
-        todo!();
     }
 }
 

@@ -47,6 +47,7 @@ yew-nested-router = "0.4.0"
 yew-oauth2 = { version = "0.7.0", features = ["router", "openid"] }
 
 spog-model = { path = "../../../model" }
+v11y-model = { path = "../../../../v11y/model" }
 
 spog-ui-backend = { path = "../backend" }
 spog-ui-common = { path = "../common" }

@@ -1,11 +1,11 @@
 use crate::hooks::{use_generic_search, UseStandardSearch};
 use crate::search::{DynamicSearchParameters, SearchMode};
 use patternfly_yew::prelude::UsePagination;
-use spog_model::{prelude::*, search::SearchResult};
 use spog_ui_backend::CveService;
 use spog_ui_common::utils::pagination_to_offset;
 use spog_ui_utils::config::use_config;
 use std::rc::Rc;
+use trustification_api::search::SearchResult;
 use vexination_model::prelude::*;
 use yew::prelude::*;
 use yew_more_hooks::prelude::*;
@@ -14,7 +14,7 @@ use yew_more_hooks::prelude::*;
 pub fn use_cve_search(
     search_params: UseStateHandle<SearchMode<DynamicSearchParameters>>,
     pagination: UsePagination,
-    callback: Callback<UseAsyncHandleDeps<SearchResult<Rc<Vec<CveSummary>>>, String>>,
+    callback: Callback<UseAsyncHandleDeps<SearchResult<Rc<Vec<v11y_model::Vulnerability>>>, String>>,
 ) -> UseStandardSearch {
     let config = use_config();
     use_generic_search::<Vulnerabilities, _, _, _, _>(

@@ -47,7 +47,7 @@ pub struct Server {
             //schemas(search::PackageSummary, search::VulnSummary, search::SearchResult<Vec<search::PackageSummary>>)
             schemas(
                 search::PackageSummary,
-                search::SearchResult<Vec<search::PackageSummary>>,
+                trustification_api::search::SearchResult<Vec<search::PackageSummary>>,
                 trustification_version::VersionInformation,
                 trustification_version::Version,
                 trustification_version::Git,

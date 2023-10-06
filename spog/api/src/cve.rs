@@ -1,4 +1,5 @@
 use crate::guac::service::GuacService;
+use crate::search;
 use crate::server::{AppState, Error};
 use crate::service::collectorist::CollectoristService;
 use crate::service::v11y::V11yService;
@@ -21,8 +22,20 @@ use trustification_infrastructure::new_auth;
 
 pub(crate) fn configure(auth: Option<Arc<Authenticator>>) -> impl FnOnce(&mut ServiceConfig) {
     |config: &mut ServiceConfig| {
-        config.service(web::resource("/api/v1/cve/{id}").wrap(new_auth!(auth)).to(cve_details));
+        config.service(
+            web::scope("/api/v1/cve")
+                .wrap(new_auth!(auth))
+                .service(web::resource("").to(cve_search))
+                .service(web::resource("/{id}").to(cve_details)),
+        );
     }
+}
+
+async fn cve_search(
+    web::Query(params): web::Query<search::QueryParams>,
+    v11y: web::Data<V11yService>,
+) -> actix_web::Result<HttpResponse> {
+    Ok(HttpResponse::Ok().json(v11y.search(params).await.map_err(Error::V11y)?))
 }
 
 async fn cve_details(

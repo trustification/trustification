@@ -31,14 +31,14 @@ yew = { version = "0.21", features = ["csr"] }
 yew-more-hooks = "0.3.0"
 yew-oauth2 = { version = "0.7.0", features = ["router", "openid"] }
 
+bombastic-model = { path = "../../../../bombastic/model" }
 spog-model = { path = "../../../model" }
 spog-ui-common = { path = "../common" }
-
-bombastic-model = { path = "../../../../bombastic/model" }
-vexination-model = { path = "../../../../vexination/model" }
 trustification-api = { path = "../../../../api" }
 trustification-common = { path = "../../../../common", default-features = false }
 trustification-version = { path = "../../../../version" }
+v11y-model = { path = "../../../../v11y/model" }
+vexination-model = { path = "../../../../vexination/model" }
 
 [dependencies.web-sys]
 version = "0.3.61"
