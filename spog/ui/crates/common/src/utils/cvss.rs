@@ -50,6 +50,12 @@ impl Severity {
     }
 }
 
+impl ToHtml for Severity {
+    fn to_html(&self) -> Html {
+        self.into_html()
+    }
+}
+
 impl From<Severity> for Html {
     fn from(value: Severity) -> Self {
         value.into_html()

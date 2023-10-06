@@ -38,7 +38,7 @@ pub fn themed(props: &ChildrenProperties) -> Html {
 
     html!(
         <ContextProvider<ThemeContext> {context}>
-            { for props.children.iter() }
+            { props.children.clone() }
         </ContextProvider<ThemeContext>>
     )
 }

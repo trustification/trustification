@@ -95,6 +95,6 @@ pub fn oauth_configured(props: &ChildrenProperties) -> Html {
         Some(OAuth2Context::Failed(err)) => {
             html!(<Error {err}/>)
         }
-        Some(_) => html!({ for props.children.iter() }),
+        Some(_) => html!({ props.children.clone() }),
     }
 }

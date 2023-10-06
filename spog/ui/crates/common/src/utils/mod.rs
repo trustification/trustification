@@ -80,3 +80,25 @@ where
         }])
     }
 }
+
+impl<T> ToHtml for OrNone<T>
+where
+    T: Into<Html> + Clone,
+{
+    fn to_html(&self) -> Html {
+        match &self.0 {
+            Some(value) => value.clone().into(),
+            None => html!(<i>{OrNone::<T>::DEFAULT_NA}</i>),
+        }
+    }
+
+    fn into_html(self) -> Html
+    where
+        Self: Sized,
+    {
+        match self.0 {
+            Some(value) => value.into(),
+            None => html!(<i>{OrNone::<T>::DEFAULT_NA}</i>),
+        }
+    }
+}
