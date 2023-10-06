@@ -868,7 +868,7 @@ data:
       "editable": true,
       "fiscalYearStartMonth": 0,
       "graphTooltip": 0,
-      "id": 5,
+      "id": 8,
       "links": [],
       "liveNow": false,
       "panels": [
@@ -877,7 +877,7 @@ data:
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "description": "Percentage of VEX documents that failed to index successfully (Lower is better).",
+          "description": "Percentage of documents that failed to index successfully (Lower is better).",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -933,8 +933,8 @@ data:
             "overrides": []
           },
           "gridPos": {
-            "h": 10,
-            "w": 12,
+            "h": 6,
+            "w": 24,
             "x": 0,
             "y": 0
           },
@@ -963,104 +963,22 @@ data:
               "legendFormat": "vexination",
               "range": true,
               "refId": "A"
-            }
-          ],
-          "title": "VEX indexing failures",
-          "type": "timeseries"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${datasource}"
-          },
-          "description": "Percentage of SBOM documents that failed to index successfully (Lower is better).",
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "palette-classic"
-              },
-              "custom": {
-                "axisCenteredZero": false,
-                "axisColorMode": "text",
-                "axisLabel": "",
-                "axisPlacement": "auto",
-                "barAlignment": 0,
-                "drawStyle": "line",
-                "fillOpacity": 0,
-                "gradientMode": "none",
-                "hideFrom": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": false
-                },
-                "lineInterpolation": "linear",
-                "lineWidth": 1,
-                "pointSize": 5,
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "showPoints": "auto",
-                "spanNulls": false,
-                "stacking": {
-                  "group": "A",
-                  "mode": "none"
-                },
-                "thresholdsStyle": {
-                  "mode": "off"
-                }
-              },
-              "mappings": [],
-              "max": 1,
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  },
-                  {
-                    "color": "red",
-                    "value": 80
-                  }
-                ]
-              },
-              "unit": "percentunit"
             },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 10,
-            "w": 12,
-            "x": 12,
-            "y": 0
-          },
-          "id": 123128,
-          "options": {
-            "legend": {
-              "calcs": [],
-              "displayMode": "list",
-              "placement": "bottom",
-              "showLegend": true
-            },
-            "tooltip": {
-              "mode": "single",
-              "sort": "none"
-            }
-          },
-          "targets": [
             {
               "datasource": {
                 "type": "prometheus",
                 "uid": "${datasource}"
               },
               "editorMode": "code",
-              "expr": "(sum by(namespace) (rate(index_failed_total{pod =~ \"bombastic-indexer.*\", namespace = \"$namespace\"}[30m]))) / (sum by(namespace) (rate(index_indexed_total{pod =~ \"bombastic-indexer.*\", namespace = \"$namespace\"}[30m])))\n",
+              "expr": "(sum by(namespace) (rate(index_failed_total{pod =~ \"bombastic-indexer.*\", namespace = \"$namespace\"}[30m]))) / (sum by(namespace) (rate(index_indexed_total{pod =~ \"bombastic-indexer.*\", namespace = \"$namespace\"}[30m])))",
+              "hide": false,
+              "interval": "",
               "legendFormat": "bombastic",
               "range": true,
-              "refId": "A"
+              "refId": "B"
             }
           ],
-          "title": "SBOM indexing failures",
+          "title": "Indexing failures",
           "type": "timeseries"
         },
         {
@@ -1124,10 +1042,10 @@ data:
             "overrides": []
           },
           "gridPos": {
-            "h": 10,
-            "w": 12,
+            "h": 7,
+            "w": 24,
             "x": 0,
-            "y": 10
+            "y": 6
           },
           "id": 123125,
           "options": {
@@ -1246,10 +1164,10 @@ data:
             "overrides": []
           },
           "gridPos": {
-            "h": 10,
-            "w": 12,
-            "x": 12,
-            "y": 10
+            "h": 7,
+            "w": 24,
+            "x": 0,
+            "y": 13
           },
           "id": 123126,
           "options": {
@@ -1332,7 +1250,7 @@ data:
           },
           {
             "current": {
-              "selected": true,
+              "selected": false,
               "text": "trustification-staging",
               "value": "trustification-staging"
             },
@@ -1393,6 +1311,6 @@ data:
       "timezone": "browser",
       "title": "Trustification SLO",
       "uid": "jKQMtPiIk",
-      "version": 5,
+      "version": 3,
       "weekStart": ""
     }
