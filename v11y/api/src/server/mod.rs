@@ -46,7 +46,9 @@ pub fn config(
         web::scope("/api/v1")
             .wrap(new_auth!(auth))
             .service(vulnerability::ingest_vulnerability)
-            .service(vulnerability::get), //.service(vulnerability::get_by_alias),
+            .service(vulnerability::get)
+            //.service(vulnerability::get_by_alias),
+            .service(vulnerability::search),
     )
     .service(swagger_ui_with_auth(ApiDoc::openapi(), swagger_ui_oidc));
 }
