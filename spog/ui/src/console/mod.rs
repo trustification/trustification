@@ -174,7 +174,7 @@ fn authenticated_page(props: &ChildrenProperties) -> Html {
 
     html!(
         <Page {brand} {sidebar} {tools}>
-            { for props.children.iter() }
+            { props.children.clone() }
         </Page>
     )
 }
@@ -184,7 +184,7 @@ fn authenticated_page(props: &ChildrenProperties) -> Html {
 fn non_authenticated_page(props: &ChildrenProperties) -> Html {
     html!(
         <Page brand={html!(<Brand/>)}>
-            { for props.children.iter() }
+            { props.children.clone() }
         </Page>
     )
 }
