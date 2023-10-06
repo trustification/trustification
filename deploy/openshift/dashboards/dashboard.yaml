@@ -868,7 +868,7 @@ data:
       "editable": true,
       "fiscalYearStartMonth": 0,
       "graphTooltip": 0,
-      "id": 4,
+      "id": 8,
       "links": [],
       "liveNow": false,
       "panels": [
@@ -933,8 +933,8 @@ data:
             "overrides": []
           },
           "gridPos": {
-            "h": 10,
-            "w": 12,
+            "h": 6,
+            "w": 24,
             "x": 0,
             "y": 0
           },
@@ -970,7 +970,7 @@ data:
                 "uid": "${datasource}"
               },
               "editorMode": "code",
-              "expr": "(sum by(namespace) (rate(index_failed_total{pod =~ \"bombastic-indexer.*\", namespace = \"$namespace\"}[30m]))) / (sum by(namespace) (rate(index_indexed_total{pod =~ \"bombastic-indexer.*\", namespace = \"$namespace\"}[30m])))\n",
+              "expr": "(sum by(namespace) (rate(index_failed_total{pod =~ \"bombastic-indexer.*\", namespace = \"$namespace\"}[30m]))) / (sum by(namespace) (rate(index_indexed_total{pod =~ \"bombastic-indexer.*\", namespace = \"$namespace\"}[30m])))",
               "hide": false,
               "interval": "",
               "legendFormat": "bombastic",
@@ -979,127 +979,6 @@ data:
             }
           ],
           "title": "Indexing failures",
-          "type": "timeseries"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${datasource}"
-          },
-          "description": "Percentage of the search request response times above 1s (Lower is better).",
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "palette-classic"
-              },
-              "custom": {
-                "axisCenteredZero": false,
-                "axisColorMode": "text",
-                "axisLabel": "",
-                "axisPlacement": "auto",
-                "barAlignment": 0,
-                "drawStyle": "line",
-                "fillOpacity": 0,
-                "gradientMode": "none",
-                "hideFrom": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": false
-                },
-                "lineInterpolation": "linear",
-                "lineWidth": 1,
-                "pointSize": 5,
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "showPoints": "auto",
-                "spanNulls": false,
-                "stacking": {
-                  "group": "A",
-                  "mode": "none"
-                },
-                "thresholdsStyle": {
-                  "mode": "off"
-                }
-              },
-              "mappings": [],
-              "max": 1,
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  },
-                  {
-                    "color": "red",
-                    "value": 80
-                  }
-                ]
-              },
-              "unit": "percentunit"
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 10,
-            "w": 12,
-            "x": 12,
-            "y": 0
-          },
-          "id": 123126,
-          "options": {
-            "legend": {
-              "calcs": [],
-              "displayMode": "list",
-              "placement": "bottom",
-              "showLegend": true
-            },
-            "tooltip": {
-              "mode": "single",
-              "sort": "none"
-            }
-          },
-          "targets": [
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "${datasource}"
-              },
-              "editorMode": "code",
-              "expr": "1.0 - (sum(rate(bombastic_api_http_requests_duration_seconds_bucket{exported_endpoint=\"/api/v1/sbom/search\", namespace = \"$namespace\", status !~ \"5..\", le=\"1\"}[10m])) by (namespace) / sum(rate(bombastic_api_http_requests_duration_seconds_count{exported_endpoint=\"/api/v1/sbom/search\", namespace = \"$namespace\", status !~ \"5..\" }[10m])) by (namespace))",
-              "hide": false,
-              "legendFormat": "bombastic",
-              "range": true,
-              "refId": "A"
-            },
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "${datasource}"
-              },
-              "editorMode": "code",
-              "expr": "1.0 - (sum(rate(vexination_api_http_requests_duration_seconds_bucket{exported_endpoint=\"/api/v1/vex/search\", namespace = \"$namespace\", status !~ \"5..\", le=\"1\"}[10m])) by (namespace) / sum(rate(vexination_api_http_requests_duration_seconds_count{exported_endpoint=\"/api/v1/vex/search\", namespace = \"$namespace\", status !~ \"5..\"}[10m])) by (namespace))",
-              "hide": false,
-              "legendFormat": "vexination",
-              "range": true,
-              "refId": "C"
-            },
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "${datasource}"
-              },
-              "editorMode": "code",
-              "expr": "1.0 - (sum(rate(spog_api_http_requests_duration_seconds_bucket{exported_endpoint=~\"/api/v1/.*/search\", namespace = \"$namespace\", status !~ \"5..\", le=\"1\"}[10m])) by (namespace) / sum(rate(spog_api_http_requests_duration_seconds_count{exported_endpoint=~\"/api/v1/.*/search\", namespace = \"$namespace\", status !~ \"5..\"}[10m])) by (namespace))",
-              "hide": false,
-              "legendFormat": "spog",
-              "range": true,
-              "refId": "B"
-            }
-          ],
-          "title": "Percentage of the search request response times above 1s",
-          "transformations": [],
           "type": "timeseries"
         },
         {
@@ -1163,10 +1042,10 @@ data:
             "overrides": []
           },
           "gridPos": {
-            "h": 10,
-            "w": 12,
+            "h": 7,
+            "w": 24,
             "x": 0,
-            "y": 10
+            "y": 6
           },
           "id": 123125,
           "options": {
@@ -1221,6 +1100,127 @@ data:
             }
           ],
           "title": "Percentage of requests that failed (status code = 5xx)",
+          "transformations": [],
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "description": "Percentage of the search request response times above 1s (Lower is better).",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 0,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "max": 1,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "percentunit"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 24,
+            "x": 0,
+            "y": 13
+          },
+          "id": 123126,
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
+              "editorMode": "code",
+              "expr": "1.0 - (sum(rate(bombastic_api_http_requests_duration_seconds_bucket{exported_endpoint=\"/api/v1/sbom/search\", namespace = \"$namespace\", status !~ \"5..\", le=\"1\"}[10m])) by (namespace) / sum(rate(bombastic_api_http_requests_duration_seconds_count{exported_endpoint=\"/api/v1/sbom/search\", namespace = \"$namespace\", status !~ \"5..\" }[10m])) by (namespace))",
+              "hide": false,
+              "legendFormat": "bombastic",
+              "range": true,
+              "refId": "A"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
+              "editorMode": "code",
+              "expr": "1.0 - (sum(rate(vexination_api_http_requests_duration_seconds_bucket{exported_endpoint=\"/api/v1/vex/search\", namespace = \"$namespace\", status !~ \"5..\", le=\"1\"}[10m])) by (namespace) / sum(rate(vexination_api_http_requests_duration_seconds_count{exported_endpoint=\"/api/v1/vex/search\", namespace = \"$namespace\", status !~ \"5..\"}[10m])) by (namespace))",
+              "hide": false,
+              "legendFormat": "vexination",
+              "range": true,
+              "refId": "C"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
+              "editorMode": "code",
+              "expr": "1.0 - (sum(rate(spog_api_http_requests_duration_seconds_bucket{exported_endpoint=~\"/api/v1/.*/search\", namespace = \"$namespace\", status !~ \"5..\", le=\"1\"}[10m])) by (namespace) / sum(rate(spog_api_http_requests_duration_seconds_count{exported_endpoint=~\"/api/v1/.*/search\", namespace = \"$namespace\", status !~ \"5..\"}[10m])) by (namespace))",
+              "hide": false,
+              "legendFormat": "spog",
+              "range": true,
+              "refId": "B"
+            }
+          ],
+          "title": "Percentage of the search request response times above 1s",
           "transformations": [],
           "type": "timeseries"
         }
@@ -1311,6 +1311,6 @@ data:
       "timezone": "browser",
       "title": "Trustification SLO",
       "uid": "jKQMtPiIk",
-      "version": 1,
+      "version": 3,
       "weekStart": ""
     }
