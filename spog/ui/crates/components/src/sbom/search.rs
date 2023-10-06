@@ -10,6 +10,7 @@ use spog_ui_backend::{self, PackageService};
 use spog_ui_common::utils::pagination_to_offset;
 use spog_ui_utils::config::use_config;
 use std::rc::Rc;
+use trustification_api::search::SearchResult;
 use yew::prelude::*;
 use yew_more_hooks::prelude::*;
 

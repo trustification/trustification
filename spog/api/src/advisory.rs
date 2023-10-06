@@ -2,9 +2,9 @@ use actix_web::{web, web::ServiceConfig, HttpResponse};
 use actix_web_httpauth::extractors::bearer::BearerAuth;
 use http::header;
 use log::trace;
-use spog_model::search::{AdvisorySummary, SearchResult};
+use spog_model::search::AdvisorySummary;
 use std::sync::Arc;
-use trustification_api::search::SearchOptions;
+use trustification_api::search::{SearchOptions, SearchResult};
 use trustification_auth::authenticator::Authenticator;
 use trustification_infrastructure::new_auth;
 

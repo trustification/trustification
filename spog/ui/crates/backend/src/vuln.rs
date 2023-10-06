@@ -4,6 +4,7 @@ use reqwest::StatusCode;
 use spog_model::prelude::*;
 use spog_ui_common::error::*;
 use std::rc::Rc;
+use trustification_api::search::SearchResult;
 use trustification_api::Apply;
 use yew_oauth2::prelude::*;
 

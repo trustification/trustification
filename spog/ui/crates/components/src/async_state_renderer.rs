@@ -1,7 +1,7 @@
 use patternfly_yew::prelude::*;
-use spog_model::search::SearchResult;
 use spog_ui_common::error::components::Error;
 use std::rc::Rc;
+use trustification_api::search::SearchResult;
 use yew::prelude::*;
 use yew_more_hooks::hooks::UseAsyncState;
 

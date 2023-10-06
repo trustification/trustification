@@ -1,7 +1,6 @@
 //! Unified search
 
 use patternfly_yew::prelude::*;
-use spog_model::prelude::*;
 use spog_ui_common::utils::count::count_tab_title;
 use spog_ui_components::{
     advisory::{use_advisory_search, AdvisoryResult, AdvisorySearchControls},
@@ -12,6 +11,7 @@ use spog_ui_components::{
     search::{DynamicSearchParameters, SearchMode},
 };
 use std::ops::Deref;
+use trustification_api::search::SearchResult;
 use yew::prelude::*;
 use yew_more_hooks::prelude::*;
 

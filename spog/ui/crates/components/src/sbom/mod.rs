@@ -2,14 +2,14 @@ mod search;
 
 pub use search::*;
 
-use std::rc::Rc;
-
 use crate::{download::Download, table_wrapper::TableWrapper};
 use patternfly_yew::prelude::*;
 use spog_model::prelude::*;
 use spog_ui_backend::{use_backend, Endpoint};
 use spog_ui_common::{components::SafeHtml, utils::time::date};
 use spog_ui_navigation::{AppRoute, View};
+use std::rc::Rc;
+use trustification_api::search::SearchResult;
 use url::Url;
 use yew::prelude::*;
 use yew_more_hooks::hooks::UseAsyncState;

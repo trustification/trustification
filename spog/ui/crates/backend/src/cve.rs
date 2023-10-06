@@ -2,7 +2,9 @@ use crate::{ApplyAccessToken, Backend, Endpoint, SearchParameters};
 use spog_model::prelude::*;
 use spog_ui_common::error::*;
 use std::rc::Rc;
+use trustification_api::search::SearchResult;
 use trustification_api::Apply;
+use v11y_model::Vulnerability;
 use yew_oauth2::prelude::*;
 
 pub struct CveService {
@@ -36,7 +38,7 @@ impl CveService {
         Ok(response.api_error_for_status().await?.json().await?)
     }
 
-    pub async fn search(&self, q: &str, options: &SearchParameters) -> Result<SearchResult<Vec<CveSummary>>, Error> {
+    pub async fn search(&self, q: &str, options: &SearchParameters) -> Result<SearchResult<Vec<Vulnerability>>, Error> {
         let response = self
             .client
             .get(self.backend.join(Endpoint::Api, "/api/v1/cve")?)

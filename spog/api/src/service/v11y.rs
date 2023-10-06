@@ -1,4 +1,7 @@
+use crate::search::QueryParams;
 use std::sync::Arc;
+use tracing::instrument;
+use trustification_api::search::SearchResult;
 use trustification_auth::client::TokenProvider;
 use url::Url;
 use v11y_client::{V11yClient, Vulnerability};
@@ -27,5 +30,13 @@ impl V11yService {
 
     pub async fn fetch_by_alias(&self, alias: &str) -> Result<Vec<Vulnerability>, Error> {
         self.client.get_vulnerability(alias).await.map_err(Error::Any)
+    }
+
+    #[instrument(skip(self), ret, err)]
+    pub async fn search(&self, query: QueryParams) -> Result<SearchResult<Vec<Vulnerability>>, Error> {
+        self.client
+            .search(&query.q, query.offset, query.limit)
+            .await
+            .map_err(Error::Any)
     }
 }

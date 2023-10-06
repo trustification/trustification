@@ -7492,6 +7492,7 @@ version = "0.1.0"
 dependencies = [
  "reqwest",
  "serde",
+ "utoipa",
 ]
 
 [[package]]
@@ -7901,6 +7902,8 @@ dependencies = [
  "sha1",
  "tempdir",
  "tokio",
+ "tracing",
+ "trustification-api",
  "trustification-auth",
  "trustification-infrastructure",
  "utoipa",
@@ -7918,6 +7921,7 @@ dependencies = [
  "serde",
  "serde_json",
  "tokio",
+ "trustification-api",
  "trustification-auth",
  "v11y-model",
 ]

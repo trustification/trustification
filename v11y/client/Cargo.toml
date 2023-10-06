@@ -12,6 +12,7 @@ reqwest = "0.11.18"
 anyhow = "1"
 v11y-model = { path = "../model" }
 
+trustification-api = { path = "../../api" }
 trustification-auth = { path = "../../auth" }
 
 [dev-dependencies]
