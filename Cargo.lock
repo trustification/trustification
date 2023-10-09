@@ -2182,6 +2182,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "cve"
+version = "0.2.0"
+source = "git+https://github.com/ctron/cve?rev=77341768d893098f1f8b1397364fecfb16b4d776#77341768d893098f1f8b1397364fecfb16b4d776"
+dependencies = [
+ "serde",
+ "serde_json",
+ "time",
+ "url",
+ "uuid",
+]
+
+[[package]]
 name = "cvss"
 version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -7928,6 +7940,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "v11y-index"
+version = "0.1.0"
+dependencies = [
+ "cve",
+ "env_logger",
+ "log",
+ "serde",
+ "serde_json",
+ "sikula",
+ "tantivy",
+ "tar",
+ "time",
+ "tokio",
+ "trustification-api",
+ "trustification-index",
+ "v11y-model",
+ "zstd",
+]
+
+[[package]]
 name = "v11y-indexer"
 version = "0.1.0"
 dependencies = [
@@ -7935,6 +7967,7 @@ dependencies = [
  "anyhow",
  "chrono",
  "clap",
+ "cve",
  "env_logger",
  "futures",
  "humantime",
@@ -7947,9 +7980,12 @@ dependencies = [
  "time",
  "tokio",
  "tracing",
- "trustification-api",
- "trustification-auth",
+ "trustification-event-bus",
+ "trustification-index",
+ "trustification-indexer",
  "trustification-infrastructure",
+ "trustification-storage",
+ "v11y-index",
  "v11y-model",
  "walkdir",
 ]
@@ -7963,6 +7999,8 @@ dependencies = [
  "log",
  "serde",
  "serde_json",
+ "sikula",
+ "time",
  "utoipa",
 ]
 

@@ -223,10 +223,14 @@ pub struct IndexWriter {
 }
 
 impl IndexWriter {
-    pub fn add_document<INDEX: Index>(&mut self, index: &INDEX, id: &str, data: &[u8]) -> Result<(), Error> {
+    pub fn add_document<INDEX: Index, F>(&mut self, index: &INDEX, data: &[u8], name: &str, id: F) -> Result<(), Error>
+    where
+        F: FnOnce(&INDEX::Document) -> String,
+    {
         let indexing_latency = self.metrics.indexing_latency_seconds.start_timer();
         match INDEX::parse_doc(data) {
             Ok(doc) => {
+                let id = &id(&doc);
                 let doc = index.index_doc(id, &doc).map_err(|e| {
                     self.metrics.failed_total.inc();
                     e
@@ -239,7 +243,7 @@ impl IndexWriter {
                 self.metrics.indexed_total.inc();
             }
             Err(e) => {
-                log::warn!("Error parsing document with id '{id}': {e:?}");
+                log::warn!("Error parsing document '{name}': {e:?}");
                 self.metrics.failed_total.inc();
             }
         }

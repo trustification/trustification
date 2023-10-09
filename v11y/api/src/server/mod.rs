@@ -49,7 +49,6 @@ pub fn config(
             .service(vulnerability::ingest_vulnerability)
             .service(vulnerability::get)
             //.service(vulnerability::get_by_alias),
-            .service(vulnerability::search)
             .service(search::search),
     )
     .service(swagger_ui_with_auth(ApiDoc::openapi(), swagger_ui_oidc));
