@@ -353,7 +353,7 @@ spec:
         - name: name
           value: sbom-json-check
         - name: bundle
-          value: quay.io/redhat-appstudio-tekton-catalog/task-sbom-json-check:0.1@sha256:c53e95c5e1e90f11ae790c26e3506c28acee1a7d422fe9d8ab8b922f8b3d9db2
+          value: quay.io/redhat-appstudio-tekton-catalog/task-sbom-json-check:0.1@sha256:d8d114daa23c299aefecc9b5c8440f6cf3106635c92788b56208b41358e8f819
         - name: kind
           value: task
         resolver: bundles
