@@ -1,4 +1,4 @@
-FROM ghcr.io/ctron/trunk:latest as builder
+FROM ghcr.io/ctron/trunk:0.4 as builder
 
 ARG tag
 
