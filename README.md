@@ -63,6 +63,13 @@ You can also run all of the trustification services via a single binary named `t
 
 You can also try out the publicly hosted instance at [https://trustification.dev](https://trustification.dev).
 
+## Running in production
+
+There is a [helm chart](deploy/k8s/chart) that you can use to deploy all Trustification services. See [this file](deploy/trustification.dev/staging.yaml) for an example deployment that is used for the `staging.trustification.dev` environment.
+
+The helm chart assumes that infrastructure such as Kafka/SQS and S3 is managed externally and that access credentials
+are injected into secrets as specified in the chart configuration.
+
 ## Developing
 
 See [DEVELOPMENT](DEVELOPING.md) for running the different components while developing.
