@@ -2692,6 +2692,7 @@ dependencies = [
  "spog-ui-backend",
  "spog-ui-common",
  "spog-ui-components",
+ "spog-ui-donut",
  "spog-ui-navigation",
  "spog-ui-utils",
  "strum 0.25.0",
@@ -2857,6 +2858,18 @@ dependencies = [
  "yew-more-hooks",
  "yew-nested-router",
  "yew-oauth2",
+]
+
+[[package]]
+name = "spog-ui-donut"
+version = "0.1.0"
+dependencies = [
+ "gloo-utils 0.2.0",
+ "js-sys",
+ "serde_json",
+ "wasm-bindgen",
+ "web-sys",
+ "yew",
 ]
 
 [[package]]
