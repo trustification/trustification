@@ -34,6 +34,6 @@ pub(crate) async fn search(
     state: web::Data<AppState>,
     query: web::Query<SearchParams>,
 ) -> actix_web::Result<impl Responder> {
-    let vuln = state.db.search(query.offset, query.limit).await?;
-    Ok(HttpResponse::Ok().json(vuln))
+    // let vuln = state.db.search(query.offset, query.limit).await?;
+    Ok(HttpResponse::Ok().json(Vec::<()>::new()))
 }

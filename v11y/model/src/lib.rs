@@ -1,3 +1,5 @@
+pub mod search;
+
 use std::collections::HashSet;
 use std::fmt::{Display, Formatter};
 use std::hash::{Hash, Hasher};

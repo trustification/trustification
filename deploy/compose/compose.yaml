@@ -21,6 +21,9 @@ services:
       MINIO_NOTIFY_KAFKA_ENABLE_VEXINATION: "on"
       MINIO_NOTIFY_KAFKA_BROKERS_VEXINATION: "kafka:9094"
       MINIO_NOTIFY_KAFKA_TOPIC_VEXINATION: "vex-stored"
+      MINIO_NOTIFY_KAFKA_ENABLE_V11Y: "on"
+      MINIO_NOTIFY_KAFKA_BROKERS_V11Y: "kafka:9094"
+      MINIO_NOTIFY_KAFKA_TOPIC_V11Y: "v11y-stored"
     restart: always
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
@@ -32,6 +35,7 @@ services:
         aliases:
           - bombastic.minio
           - vexination.minio
+          - v11y.minio
           - minio
 
 
@@ -42,17 +46,24 @@ services:
         condition: service_healthy
       kafka:
         condition: service_healthy
-    entrypoint: >
-      /bin/sh -c "
-      /usr/bin/mc config host add myminio http://minio:9000 admin password;
-      /usr/bin/mc mb myminio/bombastic || true;
-      /usr/bin/mc policy download myminio/bombastic;
-      /usr/bin/mc event add myminio/bombastic arn:minio:sqs::BOMBASTIC:kafka --event "put,delete";
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        /usr/bin/mc config host add myminio http://minio:9000 admin password;
+        /usr/bin/mc mb myminio/bombastic || true;
+        /usr/bin/mc policy download myminio/bombastic;
+        /usr/bin/mc event add myminio/bombastic arn:minio:sqs::BOMBASTIC:kafka --event "put,delete";
 
-      /usr/bin/mc mb myminio/vexination || true;
-      /usr/bin/mc policy download myminio/vexination;
-      /usr/bin/mc event add myminio/vexination arn:minio:sqs::VEXINATION:kafka --event put;
-      /usr/bin/mc admin service restart myminio;"
+        /usr/bin/mc mb myminio/vexination || true;
+        /usr/bin/mc policy download myminio/vexination;
+        /usr/bin/mc event add myminio/vexination arn:minio:sqs::VEXINATION:kafka --event put;
+        /usr/bin/mc admin service restart myminio;
+
+        /usr/bin/mc mb myminio/v11y || true;
+        /usr/bin/mc policy download myminio/v11y;
+        /usr/bin/mc event add myminio/v11y arn:minio:sqs::V11Y:kafka --event put;
+        /usr/bin/mc admin service restart myminio;
 
   kafka:
     image: docker.io/bitnami/kafka@sha256:8fedaa492f1f570cade60f5ff09978cd841307b1e9f93fe6216136ca165fcc2d
