@@ -2864,7 +2864,9 @@ dependencies = [
 name = "spog-ui-donut"
 version = "0.1.0"
 dependencies = [
+ "gloo-utils 0.2.0",
  "js-sys",
+ "serde_json",
  "wasm-bindgen",
  "web-sys",
  "yew",
@@ -3322,6 +3324,8 @@ dependencies = [
  "log",
  "serde",
  "serde_json",
+ "sikula",
+ "time",
  "utoipa",
 ]
 
