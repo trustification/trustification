@@ -3,7 +3,6 @@ use std::ops::{Deref, DerefMut};
 #[derive(utoipa::ToSchema, Clone, Debug, Default, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
 pub struct SearchResult<T> {
     pub result: T,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub total: Option<usize>,
 }
 

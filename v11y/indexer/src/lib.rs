@@ -12,13 +12,13 @@ use trustification_storage::{Storage, StorageConfig};
 #[derive(clap::Args, Debug)]
 #[command(about = "Run the indexer", args_conflicts_with_subcommands = true)]
 pub struct Run {
-    #[arg(long = "stored-topic", default_value = "sbom-stored")]
+    #[arg(long = "stored-topic", default_value = "v11y-stored")]
     pub stored_topic: String,
 
-    #[arg(long = "indexed-topic", default_value = "sbom-indexed")]
+    #[arg(long = "indexed-topic", default_value = "v11y-indexed")]
     pub indexed_topic: String,
 
-    #[arg(long = "failed-topic", default_value = "sbom-failed")]
+    #[arg(long = "failed-topic", default_value = "v11y-failed")]
     pub failed_topic: String,
 
     #[arg(long = "devmode", default_value_t = false)]

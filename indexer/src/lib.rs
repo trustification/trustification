@@ -269,7 +269,7 @@ impl<'a, INDEX: Index> Indexer<'a, INDEX> {
         key: &str,
         data: &[u8],
     ) -> Result<(), anyhow::Error> {
-        match block_in_place(|| writer.add_document(index, data, key, |_| key.to_string())) {
+        match block_in_place(|| writer.add_document(index, key, data)) {
             Ok(_) => {
                 log::debug!("Inserted entry '{key}' into index");
             }

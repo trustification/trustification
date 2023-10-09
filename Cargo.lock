@@ -7891,6 +7891,7 @@ dependencies = [
  "tokio",
  "v11y-api",
  "v11y-indexer",
+ "v11y-walker",
 ]
 
 [[package]]
@@ -7918,9 +7919,12 @@ dependencies = [
  "tracing",
  "trustification-api",
  "trustification-auth",
+ "trustification-index",
  "trustification-infrastructure",
+ "trustification-storage",
  "utoipa",
  "utoipa-swagger-ui",
+ "v11y-index",
  "v11y-model",
 ]
 
@@ -7944,6 +7948,7 @@ name = "v11y-index"
 version = "0.1.0"
 dependencies = [
  "cve",
+ "cvss",
  "env_logger",
  "log",
  "serde",
@@ -8002,6 +8007,24 @@ dependencies = [
  "sikula",
  "time",
  "utoipa",
+]
+
+[[package]]
+name = "v11y-walker"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "env_logger",
+ "log",
+ "prometheus",
+ "serde",
+ "serde_json",
+ "tokio",
+ "trustification-storage",
+ "v11y-api",
+ "v11y-indexer",
+ "walkdir",
 ]
 
 [[package]]

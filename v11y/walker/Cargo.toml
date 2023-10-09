@@ -1,0 +1,21 @@
+[package]
+name = "v11y-walker"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1"
+clap = { version = "4", features = ["derive"] }
+env_logger = "0.10"
+log = "0.4"
+prometheus = "0.13.3"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0.68"
+tokio = { version = "1.0", features = ["full"] }
+walkdir = "2"
+
+v11y-api = { path = "../api" }
+v11y-indexer = { path = "../indexer" }
+
+trustification-storage = { path = "../../storage" }
+
