@@ -223,7 +223,17 @@ pub struct IndexWriter {
 }
 
 impl IndexWriter {
-    pub fn add_document<INDEX: Index, F>(&mut self, index: &INDEX, data: &[u8], name: &str, id: F) -> Result<(), Error>
+    pub fn add_document<INDEX: Index>(&mut self, index: &INDEX, id: &str, data: &[u8]) -> Result<(), Error> {
+        self.add_document_with_id(index, data, id, |_| id.to_string())
+    }
+
+    pub fn add_document_with_id<INDEX: Index, F>(
+        &mut self,
+        index: &INDEX,
+        data: &[u8],
+        name: &str,
+        id: F,
+    ) -> Result<(), Error>
     where
         F: FnOnce(&INDEX::Document) -> String,
     {

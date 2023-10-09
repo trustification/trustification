@@ -4,6 +4,7 @@ use tracing::instrument;
 use trustification_api::search::SearchResult;
 use trustification_auth::client::TokenProvider;
 use url::Url;
+use v11y_client::search::SearchHit;
 use v11y_client::{V11yClient, Vulnerability};
 
 #[derive(Debug, thiserror::Error)]
@@ -33,9 +34,9 @@ impl V11yService {
     }
 
     #[instrument(skip(self), ret, err)]
-    pub async fn search(&self, query: QueryParams) -> Result<SearchResult<Vec<Vulnerability>>, Error> {
+    pub async fn search(&self, query: QueryParams) -> Result<SearchResult<Vec<SearchHit>>, Error> {
         self.client
-            .search(&query.q, query.offset, query.limit)
+            .search(&query.q, query.limit, query.offset)
             .await
             .map_err(Error::Any)
     }

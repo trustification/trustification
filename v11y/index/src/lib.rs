@@ -1,5 +1,6 @@
 use core::str::FromStr;
-use cve::{published, Cve, Published, Rejected};
+use cve::{common, published, Cve, Published, Rejected};
+use cvss::v3::Base;
 use sikula::{mir::Direction, prelude::*};
 use tantivy::{
     collector::TopDocs,
@@ -11,7 +12,7 @@ use tantivy::{
 use time::{format_description::well_known::Rfc3339, OffsetDateTime};
 use trustification_api::search::SearchOptions;
 use trustification_index::{
-    boost, create_boolean_query, create_date_query, create_string_query, field2str,
+    boost, create_boolean_query, create_date_query, create_string_query, field2float, field2str, field2strvec,
     metadata::doc2metadata,
     tantivy::{
         doc,
@@ -30,7 +31,15 @@ pub struct Index {
 
 struct Fields {
     indexed_timestamp: Field,
+
     id: Field,
+    state: Field,
+
+    title: Field,
+    description: Field,
+
+    cvss31_score: Field,
+    cvss30_score: Field,
 }
 
 impl Default for Index {
@@ -45,6 +54,13 @@ impl Index {
         let fields = Fields {
             indexed_timestamp: schema.add_date_field("indexed_timestamp", STORED),
             id: schema.add_text_field("id", STRING | FAST | STORED),
+            state: schema.add_text_field("state", STRING | FAST | STORED),
+
+            title: schema.add_text_field("title", TEXT | FAST | STORED),
+            description: schema.add_text_field("description", TEXT | FAST | STORED),
+
+            cvss31_score: schema.add_f64_field("cvss31_score", FAST | INDEXED | STORED),
+            cvss30_score: schema.add_f64_field("cvss30_score", FAST | INDEXED | STORED),
         };
         Self {
             schema: schema.build(),
@@ -52,12 +68,39 @@ impl Index {
         }
     }
 
+    fn index_common(&self, document: &mut Document, metadata: &common::Metadata, container: &common::CnaContainer) {
+        document.add_text(self.fields.id, &metadata.id);
+    }
+
     fn index_published_cve(&self, cve: &Published) -> Result<Document, SearchError> {
         log::debug!("Indexing published CVE document");
 
         let mut document = doc!();
 
-        document.add_text(self.fields.id, &cve.metadata.id);
+        document.add_text(self.fields.state, "published");
+        self.index_common(&mut document, &cve.metadata.common, &cve.containers.cna.common);
+
+        if let Some(title) = &cve.containers.cna.title {
+            document.add_text(self.fields.title, &title);
+        }
+
+        for desc in &cve.containers.cna.descriptions {
+            document.add_text(self.fields.description, &desc.value);
+        }
+
+        for metric in &cve.containers.cna.metrics {
+            if let Some(score) = metric.cvss_v3_1.as_ref().and_then(|v| v["vectorString"].as_str()) {
+                match Base::from_str(score) {
+                    Ok(score) => document.add_f64(self.fields.cvss31_score, score.score().value()),
+                    Err(err) => log::warn!("Failed to parse CVSS 3.1: {err}"),
+                }
+            } else if let Some(score) = metric.cvss_v3_0.as_ref().and_then(|v| v["vectorString"].as_str()) {
+                match Base::from_str(score) {
+                    Ok(score) => document.add_f64(self.fields.cvss30_score, score.score().value()),
+                    Err(err) => log::warn!("Failed to parse CVSS 3.0: {err}"),
+                }
+            }
+        }
 
         log::debug!("Indexed {:?}", document);
         Ok(document)
@@ -68,7 +111,8 @@ impl Index {
 
         let mut document = doc!();
 
-        document.add_text(self.fields.id, &cve.metadata.id);
+        document.add_text(self.fields.state, "rejected");
+        self.index_common(&mut document, &cve.metadata.common, &cve.containers.cna.common);
 
         log::debug!("Indexed {:?}", document);
         Ok(document)
@@ -82,6 +126,12 @@ impl Index {
                 Term::from_field_text(self.fields.id, value),
                 Default::default(),
             )),
+            Cves::Title(value) => create_string_query(self.fields.title, value),
+            Cves::Description(value) => create_string_query(self.fields.description, value),
+            Cves::Published => {
+                create_boolean_query(Occur::Should, Term::from_field_text(self.fields.state, "published"))
+            }
+            Cves::Rejected => create_boolean_query(Occur::Should, Term::from_field_text(self.fields.state, "rejected")),
         }
     }
 
@@ -201,9 +251,26 @@ impl trustification_index::Index for Index {
         options: &SearchOptions,
     ) -> Result<Self::MatchedDocument, SearchError> {
         let doc = searcher.doc(doc_address)?;
-        let id = field2str(&self.schema, &doc, self.fields.id)?;
 
-        let document = SearchDocument { id: id.to_string() };
+        let id = field2str(&self.schema, &doc, self.fields.id)?;
+        let title = doc.get_first(self.fields.title).and_then(|s| s.as_text());
+        let published = field2str(&self.schema, &doc, self.fields.state)? == "published";
+        let descriptions = field2strvec(&doc, self.fields.description)?
+            .iter()
+            .map(|s| s.to_string())
+            .collect();
+
+        let cvss31_score = doc.get_first(self.fields.cvss31_score).and_then(|s| s.as_f64());
+        let cvss30_score = doc.get_first(self.fields.cvss31_score).and_then(|s| s.as_f64());
+
+        let document = SearchDocument {
+            id: id.to_string(),
+            title: title.map(ToString::to_string),
+            descriptions,
+            published,
+            cvss31_score,
+            cvss30_score,
+        };
 
         let explanation: Option<serde_json::Value> = if options.explain {
             match query.query.explain(searcher, doc_address) {

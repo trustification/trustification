@@ -1,5 +1,5 @@
 use actix_web::{web, ResponseError};
-use derive_more::{Display, Error};
+use derive_more::{Display, Error, From};
 use std::sync::Arc;
 use trustification_auth::{
     authenticator::Authenticator,
@@ -49,15 +49,17 @@ pub fn config(
             .service(vulnerability::ingest_vulnerability)
             .service(vulnerability::get)
             //.service(vulnerability::get_by_alias),
-            .service(search::search),
+            .service(search::search_cve),
     )
     .service(swagger_ui_with_auth(ApiDoc::openapi(), swagger_ui_oidc));
 }
 
-#[derive(Debug, Display)]
+#[derive(Debug, Display, From)]
 pub enum Error {
     #[display(fmt = "Database error")]
     Db,
+    #[display(fmt = "index error: {}", "_0")]
+    Index(trustification_index::Error),
 }
 
 impl ResponseError for Error {}

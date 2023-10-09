@@ -158,6 +158,13 @@ To run the indexer processes, you can use cargo:
 ```shell
 RUST_LOG=info cargo run -p trust -- vexination indexer --devmode &
 RUST_LOG=info cargo run -p trust -- bombastic indexer --devmode &
+RUST_LOG=info cargo run -p trust -- v11y indexer --devmode &
+```
+
+## Ingesting CVEs
+
+```shell
+RUST_LOG=info cargo run -p trust -- v11y walker --devmode --source ../cvelistV5/
 ```
 
 ## Ingesting VEX

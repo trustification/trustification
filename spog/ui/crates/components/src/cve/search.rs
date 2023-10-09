@@ -6,7 +6,7 @@ use spog_ui_common::utils::pagination_to_offset;
 use spog_ui_utils::config::use_config;
 use std::rc::Rc;
 use trustification_api::search::SearchResult;
-use vexination_model::prelude::*;
+use v11y_model::search::{Cves, SearchDocument};
 use yew::prelude::*;
 use yew_more_hooks::prelude::*;
 
@@ -14,10 +14,10 @@ use yew_more_hooks::prelude::*;
 pub fn use_cve_search(
     search_params: UseStateHandle<SearchMode<DynamicSearchParameters>>,
     pagination: UsePagination,
-    callback: Callback<UseAsyncHandleDeps<SearchResult<Rc<Vec<v11y_model::Vulnerability>>>, String>>,
+    callback: Callback<UseAsyncHandleDeps<SearchResult<Rc<Vec<SearchDocument>>>, String>>,
 ) -> UseStandardSearch {
     let config = use_config();
-    use_generic_search::<Vulnerabilities, _, _, _, _>(
+    use_generic_search::<Cves, _, _, _, _>(
         search_params,
         pagination,
         callback,

@@ -2,30 +2,33 @@ mod search;
 
 pub use search::*;
 
+use crate::cvss::CvssScore;
 use crate::table_wrapper::TableWrapper;
 use patternfly_yew::prelude::*;
+use spog_ui_common::utils::cvss::Cvss;
 use spog_ui_navigation::AppRoute;
 use std::rc::Rc;
 use trustification_api::search::SearchResult;
+use v11y_model::search::SearchDocument;
 use yew::prelude::*;
 use yew_more_hooks::prelude::*;
 use yew_nested_router::components::Link;
 
 #[derive(PartialEq, Properties, Clone)]
 pub struct CveEntry {
-    vulnerability: v11y_model::Vulnerability,
+    cve: SearchDocument,
 }
 
 #[derive(PartialEq, Properties)]
 pub struct CveResultProperties {
-    pub state: UseAsyncState<SearchResult<Rc<Vec<v11y_model::Vulnerability>>>, String>,
+    pub state: UseAsyncState<SearchResult<Rc<Vec<SearchDocument>>>, String>,
     pub onsort: Callback<(String, bool)>,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq)]
 pub enum Column {
     Id,
-    Title,
+    Description,
     Severity,
 }
 
@@ -34,11 +37,25 @@ impl TableEntryRenderer<Column> for CveEntry {
         match context.column {
             Column::Id => html!(
                 <Link<AppRoute>
-                    target={AppRoute::Cve{id: self.vulnerability.id.clone()}}
-                >{ self.vulnerability.id.clone() }</Link<AppRoute>>
+                    target={AppRoute::Cve{id: self.cve.id.clone()}}
+                >{ self.cve.id.clone() }</Link<AppRoute>>
             ),
-            Column::Title => html!(&self.vulnerability.summary),
-            Column::Severity => html!(html!()),
+            Column::Description => html!( <>
+                if let Some(title) = &self.cve.title {
+                    { title }
+                } else {
+                    { for self.cve.descriptions.iter() }
+                }
+            </>),
+            Column::Severity => html!(
+                <>
+                    if let Some(score)= &self.cve.cvss31_score {
+                        <CvssScore cvss={Cvss{score: (*score) as _}} />
+                    } else if let Some(score) = &self.cve.cvss30_score {
+                        <CvssScore cvss={Cvss{score: (*score) as _}} />
+                    }
+                </>
+            ),
         }
         .into()
     }
@@ -62,7 +79,7 @@ pub fn cve_result(props: &CveResultProperties) -> Html {
                 .result
                 .iter()
                 .map(|vulnerability| CveEntry {
-                    vulnerability: vulnerability.clone(),
+                    cve: vulnerability.clone(),
                 })
                 .collect();
             Some(data)
@@ -90,7 +107,7 @@ pub fn cve_result(props: &CveResultProperties) -> Html {
             width: ColumnWidth::Percent(10)
         }),
         yew::props!(TableColumnProperties<Column> {
-            index: Column::Title,
+            index: Column::Description,
             label: "Description",
             width: ColumnWidth::Percent(50)
         }),

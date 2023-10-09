@@ -6,17 +6,32 @@ pub enum Cves<'a> {
     /// Search by CVE id
     #[search(default, sort)]
     Id(&'a str),
+
+    #[search(default)]
+    Title(Primary<'a>),
+
+    #[search(default)]
+    Description(Primary<'a>),
+
+    Published,
+    Rejected,
 }
 
 /// A document returned from the search index for every match.
-#[derive(serde::Deserialize, serde::Serialize, Debug, PartialEq, utoipa::ToSchema)]
+#[derive(Clone, serde::Deserialize, serde::Serialize, Debug, PartialEq, utoipa::ToSchema)]
 pub struct SearchDocument {
     /// CVE identifier
     pub id: String,
+    pub published: bool,
+    pub title: Option<String>,
+    pub descriptions: Vec<String>,
+
+    pub cvss31_score: Option<f64>,
+    pub cvss30_score: Option<f64>,
 }
 
 /// The hit describes the document, its score and optionally an explanation of why that score was given.
-#[derive(serde::Deserialize, serde::Serialize, Debug, PartialEq, utoipa::ToSchema)]
+#[derive(Clone, serde::Deserialize, serde::Serialize, Debug, PartialEq, utoipa::ToSchema)]
 pub struct SearchHit {
     /// The document that was matched.
     pub document: SearchDocument,
