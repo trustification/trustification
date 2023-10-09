@@ -7878,6 +7878,7 @@ dependencies = [
  "serde_json",
  "tokio",
  "v11y-api",
+ "v11y-indexer",
 ]
 
 [[package]]
@@ -7924,6 +7925,33 @@ dependencies = [
  "trustification-api",
  "trustification-auth",
  "v11y-model",
+]
+
+[[package]]
+name = "v11y-indexer"
+version = "0.1.0"
+dependencies = [
+ "actix-web",
+ "anyhow",
+ "chrono",
+ "clap",
+ "env_logger",
+ "futures",
+ "humantime",
+ "humantime-serde",
+ "log",
+ "prometheus",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "time",
+ "tokio",
+ "tracing",
+ "trustification-api",
+ "trustification-auth",
+ "trustification-infrastructure",
+ "v11y-model",
+ "walkdir",
 ]
 
 [[package]]

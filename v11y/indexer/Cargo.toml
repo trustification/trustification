@@ -1,0 +1,29 @@
+[package]
+name = "v11y-indexer"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+actix-web = "4"
+anyhow = "1"
+chrono = "0.4.26"
+clap = { version = "4", features = ["derive"] }
+futures = "0.3"
+humantime = "2"
+humantime-serde = "1.1.1"
+time = { version = "0.3", features = ["parsing", "formatting"] }
+log = "0.4"
+prometheus = "0.13.3"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0.68"
+sqlx = { version = "0.7.0", features = ["runtime-tokio", "sqlite", "chrono"] }
+tokio = { version = "1.0", features = ["full"] }
+tracing = "0.1"
+trustification-api = { path = "../../api" }
+trustification-auth = { path = "../../auth", features = ["actix", "swagger"] }
+trustification-infrastructure = { path = "../../infrastructure" }
+v11y-model = { path = "../model" }
+walkdir = "2"
+env_logger = "0.10"
