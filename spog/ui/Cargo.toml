@@ -63,6 +63,7 @@ spog-ui-backend = { path = "crates/backend" }
 spog-ui-components = { path = "crates/components" }
 spog-ui-common = { path = "crates/common" }
 spog-ui-utils = { path = "crates/utils" }
+spog-ui-donut = { path = "crates/donut" }
 
 [build-dependencies]
 trustification-version = { path = "../../version", features = ["build"] }
