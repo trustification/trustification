@@ -29,6 +29,7 @@ use tantivy::{
     directory::{MmapDirectory, INDEX_WRITER_LOCK},
     query::{AllQuery, BooleanQuery, BoostQuery, Occur, Query, RangeQuery, RegexQuery, TermQuery},
     schema::*,
+    tokenizer::TokenizerManager,
     DateTime, Directory, DocAddress, Index as SearchIndex, IndexSettings, Searcher,
 };
 use time::{OffsetDateTime, UtcOffset};
@@ -155,6 +156,9 @@ pub trait Index {
     type Document;
     type QueryContext: core::fmt::Debug;
 
+    fn tokenizers(&self) -> Result<TokenizerManager, Error> {
+        Ok(TokenizerManager::default())
+    }
     fn parse_doc(data: &[u8]) -> Result<Self::Document, Error>;
     fn settings(&self) -> IndexSettings;
     fn schema(&self) -> Schema;
@@ -288,12 +292,18 @@ struct IndexDirectory {
 
 impl IndexDirectory {
     /// Attempt to build a new index from the serialized zstd data
-    pub fn sync(&mut self, schema: Schema, settings: IndexSettings, data: &[u8]) -> Result<Option<SearchIndex>, Error> {
+    pub fn sync(
+        &mut self,
+        schema: Schema,
+        settings: IndexSettings,
+        tokenizers: TokenizerManager,
+        data: &[u8],
+    ) -> Result<Option<SearchIndex>, Error> {
         let digest = Sha256::digest(data).to_vec();
         if self.digest != digest {
             let next = self.state.next();
             let path = next.directory(&self.path);
-            let index = self.unpack(schema, settings, data, &path)?;
+            let index = self.unpack(schema, settings, tokenizers, data, &path)?;
             self.state = next;
             self.digest = digest;
             Ok(Some(index))
@@ -315,35 +325,55 @@ impl IndexDirectory {
         })
     }
 
-    pub fn reset(&mut self, settings: IndexSettings, schema: Schema) -> Result<SearchIndex, Error> {
+    pub fn reset(
+        &mut self,
+        settings: IndexSettings,
+        schema: Schema,
+        tokenizers: TokenizerManager,
+    ) -> Result<SearchIndex, Error> {
         let next = self.state.next();
         let path = next.directory(&self.path);
         if path.exists() {
             std::fs::remove_dir_all(&path).map_err(|e| Error::Open(e.to_string()))?;
         }
         std::fs::create_dir_all(&path).map_err(|e| Error::Open(e.to_string()))?;
-        let index = self.build_new(settings, schema, &path)?;
+        let index = self.build_new(settings, schema, tokenizers, &path)?;
         self.state = next;
         Ok(index)
     }
 
-    fn build_new(&self, settings: IndexSettings, schema: Schema, path: &Path) -> Result<SearchIndex, Error> {
+    fn build_new(
+        &self,
+        settings: IndexSettings,
+        schema: Schema,
+        tokenizers: TokenizerManager,
+        path: &Path,
+    ) -> Result<SearchIndex, Error> {
         std::fs::create_dir_all(path).map_err(|e| Error::Open(e.to_string()))?;
         let dir = MmapDirectory::open(path).map_err(|e| Error::Open(e.to_string()))?;
-        let builder = SearchIndex::builder().schema(schema).settings(settings);
+        let builder = SearchIndex::builder()
+            .schema(schema)
+            .settings(settings)
+            .tokenizers(tokenizers);
         let index = builder.open_or_create(dir).map_err(|e| Error::Open(e.to_string()))?;
         Ok(index)
     }
 
-    pub fn build(&self, settings: IndexSettings, schema: Schema) -> Result<SearchIndex, Error> {
+    pub fn build(
+        &self,
+        settings: IndexSettings,
+        schema: Schema,
+        tokenizers: TokenizerManager,
+    ) -> Result<SearchIndex, Error> {
         let path = self.state.directory(&self.path);
-        self.build_new(settings, schema, &path)
+        self.build_new(settings, schema, tokenizers, &path)
     }
 
     fn unpack(
         &mut self,
         schema: Schema,
         settings: IndexSettings,
+        tokenizers: TokenizerManager,
         data: &[u8],
         path: &Path,
     ) -> Result<SearchIndex, Error> {
@@ -358,7 +388,10 @@ impl IndexDirectory {
         log::trace!("Unpacked into {:?}", path);
 
         let dir = MmapDirectory::open(path).map_err(|e| Error::Open(e.to_string()))?;
-        let builder = SearchIndex::builder().schema(schema).settings(settings);
+        let builder = SearchIndex::builder()
+            .schema(schema)
+            .settings(settings)
+            .tokenizers(tokenizers);
         let inner = builder.open_or_create(dir).map_err(|e| Error::Open(e.to_string()))?;
         Ok(inner)
     }
@@ -401,7 +434,11 @@ impl<INDEX: Index> IndexStore<INDEX> {
     pub fn new_in_memory(index: INDEX) -> Result<Self, Error> {
         let schema = index.schema();
         let settings = index.settings();
-        let builder = SearchIndex::builder().schema(schema).settings(settings);
+        let tokenizers = index.tokenizers()?;
+        let builder = SearchIndex::builder()
+            .schema(schema)
+            .settings(settings)
+            .tokenizers(tokenizers);
         let inner = builder.create_in_ram()?;
         Ok(Self {
             inner: RwLock::new(inner),
@@ -428,9 +465,10 @@ impl<INDEX: Index> IndexStore<INDEX> {
 
                 let schema = index.schema();
                 let settings = index.settings();
+                let tokenizers = index.tokenizers()?;
 
                 let index_dir = IndexDirectory::new(&path)?;
-                let inner = index_dir.build(settings, schema)?;
+                let inner = index_dir.build(settings, schema, tokenizers)?;
                 Ok(Self {
                     inner: RwLock::new(inner),
                     index_writer_memory_bytes: config.index_writer_memory_bytes,
@@ -443,7 +481,11 @@ impl<INDEX: Index> IndexStore<INDEX> {
                 let bucket = storage.clone().try_into()?;
                 let schema = index.schema();
                 let settings = index.settings();
-                let builder = SearchIndex::builder().schema(schema).settings(settings);
+                let tokenizers = index.tokenizers()?;
+                let builder = SearchIndex::builder()
+                    .schema(schema)
+                    .settings(settings)
+                    .tokenizers(tokenizers);
                 let dir = S3Directory::new(bucket);
                 let inner = builder.open_or_create(dir)?;
                 Ok(Self {
@@ -472,7 +514,12 @@ impl<INDEX: Index> IndexStore<INDEX> {
         if let Some(index_dir) = &self.index_dir {
             let data = storage.get_index().await?;
             let mut index_dir = index_dir.write().unwrap();
-            match index_dir.sync(self.index.schema(), self.index.settings(), &data) {
+            match index_dir.sync(
+                self.index.schema(),
+                self.index.settings(),
+                self.index.tokenizers()?,
+                &data,
+            ) {
                 Ok(Some(index)) => {
                     *self.inner.write().unwrap() = index;
                     log::debug!("Index reloaded");
@@ -494,7 +541,7 @@ impl<INDEX: Index> IndexStore<INDEX> {
     pub fn reset(&mut self) -> Result<(), Error> {
         if let Some(index_dir) = &self.index_dir {
             let mut index_dir = index_dir.write().unwrap();
-            let index = index_dir.reset(self.index.settings(), self.index.schema())?;
+            let index = index_dir.reset(self.index.settings(), self.index.schema(), self.index.tokenizers()?)?;
             let mut inner = self.inner.write().unwrap();
             *inner = index;
         }
