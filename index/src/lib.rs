@@ -815,11 +815,14 @@ pub fn field2bool<'m>(schema: &'m Schema, doc: &'m Document, field: Field) -> Re
         .unwrap_or_else(|| Err(Error::FieldNotFound(schema.get_field_name(field).to_string())))
 }
 
+/// Get field as mandatory date
 pub fn field2date(schema: &Schema, doc: &Document, field: Field) -> Result<OffsetDateTime, Error> {
-    let value = doc.get_first(field).map(|s| s.as_date()).unwrap_or(None);
-    value
-        .map(|v| Ok(v.into_utc()))
-        .unwrap_or_else(|| Err(Error::FieldNotFound(schema.get_field_name(field).to_string())))
+    field2date_opt(doc, field).ok_or_else(|| Error::FieldNotFound(schema.get_field_name(field).to_string()))
+}
+
+/// Get field as optional date
+pub fn field2date_opt(doc: &Document, field: Field) -> Option<OffsetDateTime> {
+    doc.get_first(field).and_then(|s| s.as_date()).map(|d| d.into_utc())
 }
 
 pub fn field2float(schema: &Schema, doc: &Document, field: Field) -> Result<f64, Error> {

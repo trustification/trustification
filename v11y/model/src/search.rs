@@ -38,8 +38,12 @@ pub struct SearchDocument {
     pub title: Option<String>,
     pub descriptions: Vec<String>,
 
-    pub cvss31_score: Option<f64>,
-    pub cvss30_score: Option<f64>,
+    pub cvss3x_score: Option<f64>,
+
+    #[serde(with = "time::serde::rfc3339::option")]
+    pub date_published: Option<OffsetDateTime>,
+    #[serde(with = "time::serde::rfc3339::option")]
+    pub date_updated: Option<OffsetDateTime>,
 }
 
 /// The hit describes the document, its score and optionally an explanation of why that score was given.
