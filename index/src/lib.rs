@@ -1,5 +1,9 @@
 pub mod metadata;
+
 mod s3dir;
+mod sort;
+
+pub use sort::*;
 
 use prometheus::{
     histogram_opts, opts, register_histogram_with_registry, register_int_counter_with_registry,
@@ -14,9 +18,10 @@ use std::{
 };
 use trustification_api::search::SearchOptions;
 use trustification_storage::{Storage, StorageConfig};
-// Rexport to align versions
+// Re-export to align versions
 use log::{debug, warn};
 use sha2::{Digest, Sha256};
+use sikula::lir::PartialOrdered;
 use std::sync::RwLock;
 pub use tantivy;
 pub use tantivy::schema::Document;
@@ -654,28 +659,30 @@ pub fn term2query<'m, R: Search, F: Fn(&R::Parsed<'m>) -> Box<dyn Query>>(
 }
 
 /// Crate a date query based on an ordered value
-pub fn create_date_query(field: Field, field_str: &str, value: &Ordered<time::OffsetDateTime>) -> Box<dyn Query> {
+pub fn create_date_query(schema: &Schema, field: Field, value: &Ordered<time::OffsetDateTime>) -> Box<dyn Query> {
+    let field_name = schema.get_field_name(field).to_string();
+
     match value {
         Ordered::Less(e) => Box::new(RangeQuery::new_term_bounds(
-            field_str.to_string(),
+            field_name,
             Type::Date,
             &Bound::Unbounded,
             &Bound::Excluded(Term::from_field_date(field, DateTime::from_utc(*e))),
         )),
         Ordered::LessEqual(e) => Box::new(RangeQuery::new_term_bounds(
-            field_str.to_string(),
+            field_name,
             Type::Date,
             &Bound::Unbounded,
             &Bound::Included(Term::from_field_date(field, DateTime::from_utc(*e))),
         )),
         Ordered::Greater(e) => Box::new(RangeQuery::new_term_bounds(
-            field_str.to_string(),
+            field_name,
             Type::Date,
             &Bound::Excluded(Term::from_field_date(field, DateTime::from_utc(*e))),
             &Bound::Unbounded,
         )),
         Ordered::GreaterEqual(e) => Box::new(RangeQuery::new_term_bounds(
-            field_str.to_string(),
+            field_name,
             Type::Date,
             &Bound::Included(Term::from_field_date(field, DateTime::from_utc(*e))),
             &Bound::Unbounded,
@@ -689,22 +696,12 @@ pub fn create_date_query(field: Field, field_str: &str, value: &Ordered<time::Of
 
             let from = Bound::Included(Term::from_field_date(field, DateTime::from_utc(theday)));
             let to = Bound::Included(Term::from_field_date(field, DateTime::from_utc(theday_after)));
-            Box::new(RangeQuery::new_term_bounds(
-                field_str.to_string(),
-                Type::Date,
-                &from,
-                &to,
-            ))
+            Box::new(RangeQuery::new_term_bounds(field_name, Type::Date, &from, &to))
         }
         Ordered::Range(from, to) => {
             let from = bound_map(*from, |f| Term::from_field_date(field, DateTime::from_utc(f)));
             let to = bound_map(*to, |f| Term::from_field_date(field, DateTime::from_utc(f)));
-            Box::new(RangeQuery::new_term_bounds(
-                field_str.to_string(),
-                Type::Date,
-                &from,
-                &to,
-            ))
+            Box::new(RangeQuery::new_term_bounds(field_name, Type::Date, &from, &to))
         }
     }
 }
@@ -761,6 +758,41 @@ pub fn create_boolean_query(occur: Occur, term: Term) -> Box<dyn Query> {
     )]))
 }
 
+/// Create a float query
+///
+/// Multiple fields will be combined with "or".
+pub fn create_float_query<F>(schema: &Schema, fields: F, value: &PartialOrdered<f64>) -> Box<dyn Query>
+where
+    F: IntoIterator<Item = Field>,
+{
+    let mut fields = fields
+        .into_iter()
+        .map(|f| schema.get_field_name(f).to_string())
+        .collect::<Vec<_>>();
+
+    let query_field = |field, lower, upper| Box::new(RangeQuery::new_f64_bounds(field, lower, upper)) as Box<dyn Query>;
+
+    let query = move |lower, upper| {
+        if fields.len() == 1 {
+            query_field(fields.pop().unwrap(), lower, upper)
+        } else {
+            let mut query_terms = Vec::new();
+            for field in fields {
+                query_terms.push(query_field(field, lower, upper));
+            }
+            Box::new(BooleanQuery::union(query_terms))
+        }
+    };
+
+    match value {
+        PartialOrdered::Less(e) => query(Bound::Unbounded, Bound::Excluded(*e)),
+        PartialOrdered::LessEqual(e) => query(Bound::Unbounded, Bound::Included(*e)),
+        PartialOrdered::Greater(e) => query(Bound::Excluded(*e), Bound::Unbounded),
+        PartialOrdered::GreaterEqual(e) => query(Bound::Included(*e), Bound::Unbounded),
+        PartialOrdered::Range(from, to) => query(*from, *to),
+    }
+}
+
 pub fn field2strvec(doc: &Document, field: Field) -> Result<Vec<&str>, Error> {
     Ok(doc.get_all(field).map(|s| s.as_text().unwrap_or_default()).collect())
 }
@@ -771,6 +803,13 @@ pub fn field2f64vec(doc: &Document, field: Field) -> Result<Vec<f64>, Error> {
 
 pub fn field2str<'m>(schema: &'m Schema, doc: &'m Document, field: Field) -> Result<&'m str, Error> {
     let value = doc.get_first(field).map(|s| s.as_text()).unwrap_or(None);
+    value
+        .map(Ok)
+        .unwrap_or_else(|| Err(Error::FieldNotFound(schema.get_field_name(field).to_string())))
+}
+
+pub fn field2bool<'m>(schema: &'m Schema, doc: &'m Document, field: Field) -> Result<bool, Error> {
+    let value = doc.get_first(field).map(|s| s.as_bool()).unwrap_or(None);
     value
         .map(Ok)
         .unwrap_or_else(|| Err(Error::FieldNotFound(schema.get_field_name(field).to_string())))

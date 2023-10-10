@@ -1,9 +1,3 @@
-use std::{
-    collections::{hash_map::Entry, HashMap, HashSet},
-    ops::Bound,
-    time::Duration,
-};
-
 use csaf::{
     definitions::{NoteCategory, ProductIdT},
     product_tree::ProductTree,
@@ -11,7 +5,11 @@ use csaf::{
 };
 use log::{debug, warn};
 use serde_json::{Map, Value};
-use sikula::{mir::Direction, prelude::*};
+use sikula::prelude::*;
+use std::{
+    collections::{hash_map::Entry, HashMap, HashSet},
+    time::Duration,
+};
 use tantivy::{
     collector::TopDocs,
     query::{AllQuery, TermSetQuery},
@@ -21,10 +19,11 @@ use tantivy::{
 use time::OffsetDateTime;
 use trustification_api::search::SearchOptions;
 use trustification_index::{
-    boost, create_date_query, create_string_query, create_text_query, field2date, field2float, field2str, field2strvec,
+    boost, create_date_query, create_float_query, create_string_query, create_text_query, field2date, field2float,
+    field2str, field2strvec, sort_by,
     tantivy::{
         doc,
-        query::{BooleanQuery, Query, RangeQuery},
+        query::{BooleanQuery, Query},
         schema::{Field, Schema, Term, FAST, INDEXED, STORED, STRING, TEXT},
         DateTime,
     },
@@ -308,27 +307,10 @@ impl trustification_index::Index for Index {
 
         debug!("Query: {query:?}");
 
-        let mut sort_by = None;
-        if let Some(f) = query.sorting.first() {
-            match f.qualifier {
-                VulnerabilitiesSortable::Severity => match f.direction {
-                    Direction::Descending => {
-                        sort_by.replace((self.fields.advisory_severity_score, Order::Desc));
-                    }
-                    Direction::Ascending => {
-                        sort_by.replace((self.fields.advisory_severity_score, Order::Asc));
-                    }
-                },
-                VulnerabilitiesSortable::Release => match f.direction {
-                    Direction::Descending => {
-                        sort_by.replace((self.fields.advisory_current, Order::Desc));
-                    }
-                    Direction::Ascending => {
-                        sort_by.replace((self.fields.advisory_current, Order::Asc));
-                    }
-                },
-            }
-        }
+        let sort_by = query.sorting.first().map(|f| match f.qualifier {
+            VulnerabilitiesSortable::Severity => sort_by(f.direction, self.fields.advisory_severity_score),
+            VulnerabilitiesSortable::Release => sort_by(f.direction, self.fields.advisory_current),
+        });
 
         let query = if query.term.is_empty() {
             Box::new(AllQuery)
@@ -643,53 +625,13 @@ impl Index {
                 Term::from_field_text(self.fields.cve_severity, "low"),
                 Term::from_field_text(self.fields.advisory_severity, "Low"),
             ])),
-            Vulnerabilities::Cvss(ordered) => match ordered {
-                PartialOrdered::Less(e) => Box::new(RangeQuery::new_f64_bounds(
-                    self.schema.get_field_name(self.fields.cve_cvss).to_string(),
-                    Bound::Unbounded,
-                    Bound::Excluded(*e),
-                )),
-                PartialOrdered::LessEqual(e) => Box::new(RangeQuery::new_f64_bounds(
-                    self.schema.get_field_name(self.fields.cve_cvss).to_string(),
-                    Bound::Unbounded,
-                    Bound::Included(*e),
-                )),
-                PartialOrdered::Greater(e) => Box::new(RangeQuery::new_f64_bounds(
-                    self.schema.get_field_name(self.fields.cve_cvss).to_string(),
-                    Bound::Excluded(*e),
-                    Bound::Unbounded,
-                )),
-                PartialOrdered::GreaterEqual(e) => Box::new(RangeQuery::new_f64_bounds(
-                    self.schema.get_field_name(self.fields.cve_cvss).to_string(),
-                    Bound::Included(*e),
-                    Bound::Unbounded,
-                )),
-                PartialOrdered::Range(from, to) => Box::new(RangeQuery::new_f64_bounds(
-                    self.schema.get_field_name(self.fields.cve_cvss).to_string(),
-                    *from,
-                    *to,
-                )),
-            },
-            Vulnerabilities::Initial(ordered) => create_date_query(
-                self.fields.advisory_initial,
-                self.schema.get_field_name(self.fields.advisory_initial),
-                ordered,
-            ),
-            Vulnerabilities::Release(ordered) => create_date_query(
-                self.fields.advisory_current,
-                self.schema.get_field_name(self.fields.advisory_current),
-                ordered,
-            ),
-            Vulnerabilities::CveRelease(ordered) => create_date_query(
-                self.fields.cve_release,
-                self.schema.get_field_name(self.fields.cve_release),
-                ordered,
-            ),
-            Vulnerabilities::CveDiscovery(ordered) => create_date_query(
-                self.fields.cve_discovery,
-                self.schema.get_field_name(self.fields.cve_discovery),
-                ordered,
-            ),
+            Vulnerabilities::Cvss(ordered) => create_float_query(&self.schema, [self.fields.cve_cvss], ordered),
+            Vulnerabilities::Initial(ordered) => create_date_query(&self.schema, self.fields.advisory_initial, ordered),
+            Vulnerabilities::Release(ordered) => create_date_query(&self.schema, self.fields.advisory_current, ordered),
+            Vulnerabilities::CveRelease(ordered) => create_date_query(&self.schema, self.fields.cve_release, ordered),
+            Vulnerabilities::CveDiscovery(ordered) => {
+                create_date_query(&self.schema, self.fields.cve_discovery, ordered)
+            }
         }
     }
 }

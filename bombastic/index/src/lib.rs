@@ -336,11 +336,7 @@ impl Index {
             )])),
 
             Packages::Created(ordered) => boost(
-                create_date_query(
-                    self.fields.sbom_created,
-                    self.schema.get_field_name(self.fields.sbom_created),
-                    ordered,
-                ),
+                create_date_query(&self.schema, self.fields.sbom_created, ordered),
                 CREATED_WEIGHT,
             ),
 

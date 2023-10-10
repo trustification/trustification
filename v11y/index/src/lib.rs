@@ -1,19 +1,21 @@
 use core::str::FromStr;
-use cve::{common, published, Cve, Published, Rejected};
+use cve::{common, Cve, Published, Rejected, Timestamp};
 use cvss::v3::Base;
-use sikula::{mir::Direction, prelude::*};
+use sikula::prelude::*;
 use tantivy::{
     collector::TopDocs,
-    query::{AllQuery, BooleanQuery, TermQuery, TermSetQuery},
+    query::{AllQuery, TermQuery},
     schema::INDEXED,
     store::ZstdCompressor,
-    DocAddress, IndexSettings, Order, Searcher, SnippetGenerator,
+    DocAddress, IndexSettings, Order, Searcher,
 };
-use time::{format_description::well_known::Rfc3339, OffsetDateTime};
+use time::OffsetDateTime;
 use trustification_api::search::SearchOptions;
 use trustification_index::{
-    boost, create_boolean_query, create_date_query, create_string_query, field2float, field2str, field2strvec,
+    create_boolean_query, create_date_query, create_float_query, create_string_query, field2bool, field2str,
+    field2strvec,
     metadata::doc2metadata,
+    sort_by,
     tantivy::{
         doc,
         query::{Occur, Query},
@@ -33,7 +35,14 @@ struct Fields {
     indexed_timestamp: Field,
 
     id: Field,
-    state: Field,
+    published: Field,
+
+    date_reserved: Field,
+    date_published: Field,
+    date_updated: Field,
+    date_rejected: Field,
+
+    assigner_short_name: Field,
 
     title: Field,
     description: Field,
@@ -54,7 +63,13 @@ impl Index {
         let fields = Fields {
             indexed_timestamp: schema.add_date_field("indexed_timestamp", STORED),
             id: schema.add_text_field("id", STRING | FAST | STORED),
-            state: schema.add_text_field("state", STRING | FAST | STORED),
+            published: schema.add_bool_field("published", FAST | INDEXED | STORED),
+
+            assigner_short_name: schema.add_text_field("assigner_short_name", STRING | STORED),
+            date_reserved: schema.add_date_field("date_reserved", INDEXED),
+            date_published: schema.add_date_field("date_published", INDEXED | FAST | STORED),
+            date_updated: schema.add_date_field("date_updated", INDEXED | FAST | STORED),
+            date_rejected: schema.add_date_field("date_rejected", INDEXED | FAST | STORED),
 
             title: schema.add_text_field("title", TEXT | FAST | STORED),
             description: schema.add_text_field("description", TEXT | FAST | STORED),
@@ -68,8 +83,21 @@ impl Index {
         }
     }
 
-    fn index_common(&self, document: &mut Document, metadata: &common::Metadata, container: &common::CnaContainer) {
+    fn index_common(&self, document: &mut Document, metadata: &common::Metadata, _container: &common::CnaContainer) {
         document.add_text(self.fields.id, &metadata.id);
+
+        document.add_date(
+            self.fields.indexed_timestamp,
+            DateTime::from_utc(OffsetDateTime::now_utc()),
+        );
+
+        Self::add_timestamp(document, self.fields.date_reserved, metadata.date_reserved);
+        Self::add_timestamp(document, self.fields.date_published, metadata.date_published);
+        Self::add_timestamp(document, self.fields.date_updated, metadata.date_updated);
+
+        if let Some(short_name) = &metadata.assigner_short_name {
+            document.add_text(self.fields.assigner_short_name, short_name);
+        }
     }
 
     fn index_published_cve(&self, cve: &Published) -> Result<Document, SearchError> {
@@ -77,11 +105,11 @@ impl Index {
 
         let mut document = doc!();
 
-        document.add_text(self.fields.state, "published");
+        document.add_text(self.fields.published, true);
         self.index_common(&mut document, &cve.metadata.common, &cve.containers.cna.common);
 
         if let Some(title) = &cve.containers.cna.title {
-            document.add_text(self.fields.title, &title);
+            document.add_text(self.fields.title, title);
         }
 
         for desc in &cve.containers.cna.descriptions {
@@ -111,16 +139,16 @@ impl Index {
 
         let mut document = doc!();
 
-        document.add_text(self.fields.state, "rejected");
+        document.add_text(self.fields.published, false);
         self.index_common(&mut document, &cve.metadata.common, &cve.containers.cna.common);
+
+        Self::add_timestamp(&mut document, self.fields.date_rejected, cve.metadata.date_rejected);
 
         log::debug!("Indexed {:?}", document);
         Ok(document)
     }
 
     fn resource2query(&self, resource: &Cves) -> Box<dyn Query> {
-        const PACKAGE_WEIGHT: f32 = 1.5;
-        const CREATED_WEIGHT: f32 = 1.25;
         match resource {
             Cves::Id(value) => Box::new(TermQuery::new(
                 Term::from_field_text(self.fields.id, value),
@@ -128,16 +156,28 @@ impl Index {
             )),
             Cves::Title(value) => create_string_query(self.fields.title, value),
             Cves::Description(value) => create_string_query(self.fields.description, value),
-            Cves::Published => {
-                create_boolean_query(Occur::Should, Term::from_field_text(self.fields.state, "published"))
-            }
-            Cves::Rejected => create_boolean_query(Occur::Should, Term::from_field_text(self.fields.state, "rejected")),
+
+            Cves::Score(value) => create_float_query(
+                &self.schema,
+                [self.fields.cvss31_score, self.fields.cvss30_score],
+                value,
+            ),
+
+            Cves::DateReserved(value) => create_date_query(&self.schema, self.fields.date_reserved, value),
+            Cves::DatePublished(value) => create_date_query(&self.schema, self.fields.date_published, value),
+            Cves::DateUpdated(value) => create_date_query(&self.schema, self.fields.date_updated, value),
+            Cves::DateRejected(value) => create_date_query(&self.schema, self.fields.date_rejected, value),
+
+            Cves::Published => create_boolean_query(Occur::Should, Term::from_field_bool(self.fields.published, true)),
+            Cves::Rejected => create_boolean_query(Occur::Should, Term::from_field_bool(self.fields.published, false)),
         }
     }
 
-    fn create_string_query(&self, fields: &[Field], value: &Primary<'_>) -> Box<dyn Query> {
-        let queries: Vec<Box<dyn Query>> = fields.iter().map(|f| create_string_query(*f, value)).collect();
-        Box::new(BooleanQuery::union(queries))
+    fn add_timestamp(document: &mut Document, field: Field, timestamp: impl Into<Option<Timestamp>>) {
+        if let Some(timestamp) = timestamp.into() {
+            // by definition, timestamps without timezone are considered UTC
+            document.add_date(field, DateTime::from_utc(timestamp.assume_utc()))
+        }
     }
 }
 
@@ -187,19 +227,13 @@ impl trustification_index::Index for Index {
 
         log::debug!("Query: {:?}", query.term);
 
-        let mut sort_by = None;
-        if let Some(f) = query.sorting.first() {
-            match f.qualifier {
-                CvesSortable::Id => match f.direction {
-                    Direction::Descending => {
-                        sort_by.replace((self.fields.id, Order::Desc));
-                    }
-                    Direction::Ascending => {
-                        sort_by.replace((self.fields.id, Order::Asc));
-                    }
-                },
-            }
-        }
+        let sort_by = query.sorting.first().map(|f| match f.qualifier {
+            CvesSortable::Id => sort_by(f.direction, self.fields.id),
+            CvesSortable::Score => sort_by(f.direction, self.fields.cvss31_score),
+            CvesSortable::DatePublished => sort_by(f.direction, self.fields.date_published),
+            CvesSortable::DateUpdated => sort_by(f.direction, self.fields.date_updated),
+            CvesSortable::DateRejected => sort_by(f.direction, self.fields.date_rejected),
+        });
 
         let query = if query.term.is_empty() {
             Box::new(AllQuery)
@@ -254,7 +288,7 @@ impl trustification_index::Index for Index {
 
         let id = field2str(&self.schema, &doc, self.fields.id)?;
         let title = doc.get_first(self.fields.title).and_then(|s| s.as_text());
-        let published = field2str(&self.schema, &doc, self.fields.state)? == "published";
+        let published = field2bool(&self.schema, &doc, self.fields.published)?;
         let descriptions = field2strvec(&doc, self.fields.description)?
             .iter()
             .map(|s| s.to_string())
