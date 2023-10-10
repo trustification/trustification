@@ -148,10 +148,7 @@ impl Index {
 
     fn resource2query(&self, resource: &Cves) -> Box<dyn Query> {
         match resource {
-            Cves::Id(value) => Box::new(TermQuery::new(
-                Term::from_field_text(self.fields.id, value),
-                Default::default(),
-            )),
+            Cves::Id(value) => create_string_query(self.fields.id, value),
             Cves::Title(value) => create_string_query(self.fields.title, value),
             Cves::Description(value) => create_string_query(self.fields.description, value),
 
