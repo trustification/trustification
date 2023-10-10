@@ -1,5 +1,7 @@
 use url::Url;
 
+// *NOTE*: Whenever you make changes to this model, re-run `examples/generate_spog_schema.rs`.
+
 /// SPoG UI configuration
 #[derive(Clone, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
@@ -12,6 +14,8 @@ pub struct Configuration {
     pub bombastic: Bombastic,
     #[serde(default)]
     pub vexination: Vexination,
+    #[serde(default)]
+    pub cve: Cve,
     #[serde(default)]
     pub scanner: Scanner,
     #[serde(default)]
@@ -169,6 +173,14 @@ pub struct Bombastic {
 #[derive(Clone, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct Vexination {
+    #[serde(default)]
+    pub filters: Filters,
+}
+
+/// CVE specific configuration
+#[derive(Clone, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct Cve {
     #[serde(default)]
     pub filters: Filters,
 }

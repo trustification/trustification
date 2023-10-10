@@ -9,5 +9,7 @@
 pubring.kbx*
 trustdb.gpg
 
+# v11y local cache
 /osv/
 /snyk/
+/cve/
