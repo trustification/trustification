@@ -4,8 +4,11 @@ use cvss::v3::Base;
 use cvss::Severity;
 use sikula::prelude::*;
 use tantivy::{
-    collector::TopDocs, query::AllQuery, schema::INDEXED, store::ZstdCompressor, DocAddress, IndexSettings, Order,
-    Searcher,
+    collector::TopDocs,
+    query::{AllQuery, TermQuery},
+    schema::INDEXED,
+    store::ZstdCompressor,
+    DocAddress, IndexSettings, Order, Searcher,
 };
 use time::OffsetDateTime;
 use trustification_api::search::SearchOptions;
@@ -168,6 +171,10 @@ impl Index {
             Cves::Published => create_boolean_query(Occur::Should, Term::from_field_bool(self.fields.published, true)),
             Cves::Rejected => create_boolean_query(Occur::Should, Term::from_field_bool(self.fields.published, false)),
 
+            Cves::Severity(value) => Box::new(TermQuery::new(
+                Term::from_field_text(self.fields.severity, value),
+                Default::default(),
+            )),
             Cves::Low => create_boolean_query(
                 Occur::Should,
                 Term::from_field_text(self.fields.severity, Severity::Low.as_str()),
