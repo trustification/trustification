@@ -25,6 +25,11 @@ pub enum Cves<'a> {
     #[search(sort)]
     DateRejected(Ordered<OffsetDateTime>),
 
+    Low,
+    Medium,
+    High,
+    Critical,
+
     Published,
     Rejected,
 }
