@@ -2182,6 +2182,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "cve"
+version = "0.2.0"
+source = "git+https://github.com/ctron/cve?rev=77341768d893098f1f8b1397364fecfb16b4d776#77341768d893098f1f8b1397364fecfb16b4d776"
+dependencies = [
+ "serde",
+ "serde_json",
+ "time",
+ "url",
+ "uuid",
+]
+
+[[package]]
 name = "cvss"
 version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -7492,6 +7504,7 @@ version = "0.1.0"
 dependencies = [
  "reqwest",
  "serde",
+ "utoipa",
 ]
 
 [[package]]
@@ -7877,6 +7890,8 @@ dependencies = [
  "serde_json",
  "tokio",
  "v11y-api",
+ "v11y-indexer",
+ "v11y-walker",
 ]
 
 [[package]]
@@ -7901,10 +7916,15 @@ dependencies = [
  "sha1",
  "tempdir",
  "tokio",
+ "tracing",
+ "trustification-api",
  "trustification-auth",
+ "trustification-index",
  "trustification-infrastructure",
+ "trustification-storage",
  "utoipa",
  "utoipa-swagger-ui",
+ "v11y-index",
  "v11y-model",
 ]
 
@@ -7918,8 +7938,61 @@ dependencies = [
  "serde",
  "serde_json",
  "tokio",
+ "trustification-api",
  "trustification-auth",
  "v11y-model",
+]
+
+[[package]]
+name = "v11y-index"
+version = "0.1.0"
+dependencies = [
+ "cve",
+ "cvss",
+ "env_logger",
+ "log",
+ "serde",
+ "serde_json",
+ "sikula",
+ "tantivy",
+ "tar",
+ "time",
+ "tokio",
+ "trustification-api",
+ "trustification-index",
+ "v11y-model",
+ "zstd",
+]
+
+[[package]]
+name = "v11y-indexer"
+version = "0.1.0"
+dependencies = [
+ "actix-web",
+ "anyhow",
+ "chrono",
+ "clap",
+ "cve",
+ "env_logger",
+ "futures",
+ "humantime",
+ "humantime-serde",
+ "log",
+ "prometheus",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "time",
+ "tokio",
+ "tracing",
+ "trustification-event-bus",
+ "trustification-index",
+ "trustification-indexer",
+ "trustification-infrastructure",
+ "trustification-storage",
+ "v11y-index",
+ "v11y-model",
+ "walkdir",
 ]
 
 [[package]]
@@ -7931,7 +8004,27 @@ dependencies = [
  "log",
  "serde",
  "serde_json",
+ "sikula",
+ "time",
  "utoipa",
+]
+
+[[package]]
+name = "v11y-walker"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "env_logger",
+ "log",
+ "prometheus",
+ "serde",
+ "serde_json",
+ "tokio",
+ "trustification-storage",
+ "v11y-api",
+ "v11y-indexer",
+ "walkdir",
 ]
 
 [[package]]

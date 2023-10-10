@@ -1,5 +1,5 @@
 use patternfly_yew::prelude::*;
-use spog_model::search::SearchResult;
+use trustification_api::search::SearchResult;
 use yew::prelude::*;
 use yew_more_hooks::prelude::UseAsyncState;
 

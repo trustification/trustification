@@ -297,6 +297,130 @@ vexination:
               - id: "any"
                 label: "Any time"
 
+cve:
+  filters:
+    categories:
+
+      - label: State
+        options:
+          - type: select
+            default: published
+            group: state
+            options:
+              - id: any
+                label: Any
+                terms: [ ]
+              - id: published
+                label: Published
+                terms:
+                  - "is:published"
+              - id: rejected
+                label: Rejected
+                terms:
+                  - "is:rejected"
+
+      - label: CVSS
+        options:
+          - type: check
+            id: low
+            label: |
+              <span class="tc-c-severity">
+                  <span class="tc-c-severity__icon"> <span class="tc-m-severity-low"> <i class="fa fa-shield-halved"></i> </span></span>
+                  <span class="tc-c-severity__text"> Low </span>
+              </span>
+            terms:
+              - "severity:low"
+
+          - type: check
+            id: moderate
+            label: |
+              <span class="tc-c-severity">
+                  <span class="tc-c-severity__icon"> <span class="tc-m-severity-moderate"> <i class="fa fa-shield-halved"></i> </span></span>
+                  <span class="tc-c-severity__text"> Medium </span>
+              </span>
+            terms:
+              - "severity:medium"
+
+          - type: check
+            id: important
+            label: |
+              <span class="tc-c-severity">
+                  <span class="tc-c-severity__icon"> <span class="tc-m-severity-important"> <i class="fa fa-shield-halved"></i> </span></span>
+                  <span class="tc-c-severity__text"> High </span>
+              </span>
+            terms:
+              - "severity:high"
+
+          - type: check
+            id: critical
+            label: |
+              <span class="tc-c-severity">
+                  <span class="tc-c-severity__icon"> <span class="tc-m-severity-critical"> <i class="fa fa-shield-halved"></i> </span></span>
+                  <span class="tc-c-severity__text"> Critical </span>
+              </span>
+            terms:
+              - "severity:critical"
+
+      - label: Published
+        options:
+          - type: select
+            group: date-published
+            default: any
+            options:
+              - id: last-week
+                label: Last 7 days
+                script: |
+                  const end = new Date();
+                  const start = new Date(end.getTime() - (7 * 24 * 60 * 60 * 1000));
+                  [
+                    "datePublished:" +
+                    start.toLocaleString("default", { year: "numeric" }) + "-" +
+                    start.toLocaleString("default", { month: "2-digit" }) + "-" +
+                    start.toLocaleString("default", { day: "2-digit" }) + ".." +
+                    end.toLocaleString("default", { year: "numeric" }) + "-" +
+                    end.toLocaleString("default", { month: "2-digit" }) + "-" +
+                    end.toLocaleString("default", { day: "2-digit" })
+                  ];
+              - id: last-month
+                label: Last 30 days
+                script: |
+                  const end = new Date();
+                  const start = new Date(end.getTime() - (30 * 24 * 60 * 60 * 1000));
+                  [
+                    "datePublished:" +
+                    start.toLocaleString("default", { year: "numeric" }) + "-" +
+                    start.toLocaleString("default", { month: "2-digit" }) + "-" +
+                    start.toLocaleString("default", { day: "2-digit" }) + ".." +
+                    end.toLocaleString("default", { year: "numeric" }) + "-" +
+                    end.toLocaleString("default", { month: "2-digit" }) + "-" +
+                    end.toLocaleString("default", { day: "2-digit" })
+                  ];
+              - id: this-year
+                label: This year
+                script: |
+                  const date = new Date();
+                  const start = new Date(date.getFullYear(), 0, 1);
+                  const end = new Date(date.getFullYear()+1, 0, 1);
+                  [
+                    "datePublished:" +
+                    start.toLocaleString("default", { year: "numeric" }) + "-" +
+                    start.toLocaleString("default", { month: "2-digit" }) + "-" +
+                    start.toLocaleString("default", { day: "2-digit" }) + ".." +
+                    end.toLocaleString("default", { year: "numeric" }) + "-" +
+                    end.toLocaleString("default", { month: "2-digit" }) + "-" +
+                    end.toLocaleString("default", { day: "2-digit" })
+                  ];
+              - id: "2022"
+                label: "2022"
+                terms:
+                  - 'datePublished:2022-01-01..2023-01-01'
+              - id: "2021"
+                label: "2021"
+                terms:
+                  - 'datePublished:2021-01-01..2022-01-01'
+              - id: "any"
+                label: "Any time"
+
 scanner:
   documentationUrl: https://www.trustification.io/blog/
 

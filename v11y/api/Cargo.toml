@@ -8,8 +8,12 @@ edition = "2021"
 [dependencies]
 actix-web = "4"
 v11y-model = { path = "../model" }
+v11y-index = { path = "../index" }
+trustification-api = { path = "../../api" }
 trustification-auth = { path = "../../auth", features = ["actix", "swagger"] }
 trustification-infrastructure = { path = "../../infrastructure" }
+trustification-index = { path = "../../index" }
+trustification-storage = { path = "../../storage" }
 clap = { version = "4", features = ["derive"] }
 anyhow = "1"
 derive_more = "0.99"
@@ -27,6 +31,7 @@ humantime-serde = "1.1.1"
 prometheus = "0.13.3"
 actix-web-httpauth = "0.8.0"
 sha1 = "0.10.5"
+tracing = "0.1"
 
 [dev-dependencies]
 env_logger = "0.10"

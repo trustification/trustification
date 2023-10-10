@@ -2747,6 +2747,7 @@ dependencies = [
  "trustification-version",
  "url",
  "urlencoding",
+ "v11y-model",
  "vexination-model",
  "wasm-bindgen",
  "wasm-bindgen-futures",
@@ -2847,6 +2848,7 @@ dependencies = [
  "trustification-common",
  "url",
  "urlencoding",
+ "v11y-model",
  "vexination-model",
  "wasm-bindgen",
  "wasm-bindgen-futures",
@@ -3183,6 +3185,7 @@ version = "0.1.0"
 dependencies = [
  "reqwest",
  "serde",
+ "utoipa",
 ]
 
 [[package]]
@@ -3324,6 +3327,8 @@ dependencies = [
  "log",
  "serde",
  "serde_json",
+ "sikula",
+ "time",
  "utoipa",
 ]
 

@@ -55,8 +55,8 @@ async fn issue_tc_587(context: &mut SpogUiContext) {
         .has_text("Failed to parse SBOM as CycloneDX 1.3: Unsupported CycloneDX version: 1.4")
         .await
         .unwrap();
-    assert_eq!(btn_scan.first().await.unwrap().is_clickable().await.unwrap(), false);
-    assert_eq!(btn_clear.first().await.unwrap().is_clickable().await.unwrap(), true);
+    assert!(!btn_scan.first().await.unwrap().is_clickable().await.unwrap());
+    assert!(btn_clear.first().await.unwrap().is_clickable().await.unwrap());
 
     // now clear it again
 
@@ -76,8 +76,8 @@ async fn issue_tc_587(context: &mut SpogUiContext) {
         .has_text("Requires an SBOM")
         .await
         .unwrap();
-    assert_eq!(btn_scan.first().await.unwrap().is_clickable().await.unwrap(), false);
-    assert_eq!(btn_clear.first().await.unwrap().is_clickable().await.unwrap(), false);
+    assert!(!btn_scan.first().await.unwrap().is_clickable().await.unwrap());
+    assert!(!btn_clear.first().await.unwrap().is_clickable().await.unwrap());
 
     // load it again
 
@@ -95,6 +95,6 @@ async fn issue_tc_587(context: &mut SpogUiContext) {
         .has_text("Failed to parse SBOM as CycloneDX 1.3: Unsupported CycloneDX version: 1.4")
         .await
         .unwrap();
-    assert_eq!(btn_scan.first().await.unwrap().is_clickable().await.unwrap(), false);
-    assert_eq!(btn_clear.first().await.unwrap().is_clickable().await.unwrap(), true);
+    assert!(!btn_scan.first().await.unwrap().is_clickable().await.unwrap());
+    assert!(btn_clear.first().await.unwrap().is_clickable().await.unwrap());
 }
