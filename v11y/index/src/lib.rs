@@ -1,6 +1,7 @@
 use core::str::FromStr;
 use cve::{common, Cve, Published, Rejected, Timestamp};
 use cvss::v3::Base;
+use cvss::Severity;
 use sikula::prelude::*;
 use tantivy::{
     collector::TopDocs, query::AllQuery, schema::INDEXED, store::ZstdCompressor, DocAddress, IndexSettings, Order,
@@ -45,6 +46,7 @@ struct Fields {
     description: Field,
 
     cvss3x_score: Field,
+    severity: Field,
 }
 
 impl Default for Index {
@@ -71,6 +73,7 @@ impl Index {
             description: schema.add_text_field("description", TEXT | FAST | STORED),
 
             cvss3x_score: schema.add_f64_field("cvss3x_score", FAST | INDEXED | STORED),
+            severity: schema.add_text_field("severity", STRING | FAST),
         };
         Self {
             schema: schema.build(),
@@ -100,7 +103,7 @@ impl Index {
 
         let mut document = doc!();
 
-        document.add_text(self.fields.published, true);
+        document.add_bool(self.fields.published, true);
         self.index_common(&mut document, &cve.metadata.common, &cve.containers.cna.common);
 
         if let Some(title) = &cve.containers.cna.title {
@@ -114,12 +117,18 @@ impl Index {
         for metric in &cve.containers.cna.metrics {
             if let Some(score) = metric.cvss_v3_1.as_ref().and_then(|v| v["vectorString"].as_str()) {
                 match Base::from_str(score) {
-                    Ok(score) => document.add_f64(self.fields.cvss3x_score, score.score().value()),
+                    Ok(score) => {
+                        document.add_f64(self.fields.cvss3x_score, score.score().value());
+                        document.add_text(self.fields.severity, score.severity().to_string());
+                    }
                     Err(err) => log::warn!("Failed to parse CVSS 3.1: {err}"),
                 }
             } else if let Some(score) = metric.cvss_v3_0.as_ref().and_then(|v| v["vectorString"].as_str()) {
                 match Base::from_str(score) {
-                    Ok(score) => document.add_f64(self.fields.cvss3x_score, score.score().value()),
+                    Ok(score) => {
+                        document.add_f64(self.fields.cvss3x_score, score.score().value());
+                        document.add_text(self.fields.severity, score.severity().to_string());
+                    }
                     Err(err) => log::warn!("Failed to parse CVSS 3.0: {err}"),
                 }
             }
@@ -134,7 +143,7 @@ impl Index {
 
         let mut document = doc!();
 
-        document.add_text(self.fields.published, false);
+        document.add_bool(self.fields.published, false);
         self.index_common(&mut document, &cve.metadata.common, &cve.containers.cna.common);
 
         Self::add_timestamp(&mut document, self.fields.date_rejected, cve.metadata.date_rejected);
@@ -158,6 +167,23 @@ impl Index {
 
             Cves::Published => create_boolean_query(Occur::Should, Term::from_field_bool(self.fields.published, true)),
             Cves::Rejected => create_boolean_query(Occur::Should, Term::from_field_bool(self.fields.published, false)),
+
+            Cves::Low => create_boolean_query(
+                Occur::Should,
+                Term::from_field_text(self.fields.severity, Severity::Low.as_str()),
+            ),
+            Cves::Medium => create_boolean_query(
+                Occur::Should,
+                Term::from_field_text(self.fields.severity, Severity::Medium.as_str()),
+            ),
+            Cves::High => create_boolean_query(
+                Occur::Should,
+                Term::from_field_text(self.fields.severity, Severity::High.as_str()),
+            ),
+            Cves::Critical => create_boolean_query(
+                Occur::Should,
+                Term::from_field_text(self.fields.severity, Severity::Critical.as_str()),
+            ),
         }
     }
 
