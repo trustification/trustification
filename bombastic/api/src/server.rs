@@ -279,8 +279,8 @@ async fn publish_sbom(
     let enc = verify_encoding(req.headers().get(CONTENT_ENCODING))?;
     let id = &params.id;
     let mut payload = payload.map_err(|e| match e {
-        PayloadError::Io(e) => e,
-        _ => io::Error::new(io::ErrorKind::Other, e),
+        PayloadError::Io(e) => StorageError::Io(e),
+        _ => StorageError::Io(io::Error::new(io::ErrorKind::Other, e)),
     });
     let size = state
         .storage
