@@ -49,9 +49,7 @@ impl TableEntryRenderer<Column> for CveEntry {
             </>),
             Column::Severity => html!(
                 <>
-                    if let Some(score)= &self.cve.cvss31_score {
-                        <CvssScore cvss={Cvss{score: (*score) as _}} />
-                    } else if let Some(score) = &self.cve.cvss30_score {
+                    if let Some(score)= &self.cve.cvss3x_score {
                         <CvssScore cvss={Cvss{score: (*score) as _}} />
                     }
                 </>

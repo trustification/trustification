@@ -8,3 +8,5 @@
 # from the bom import
 pubring.kbx*
 trustdb.gpg
+
+/osv/

@@ -12,8 +12,8 @@ use tantivy::{
 use time::OffsetDateTime;
 use trustification_api::search::SearchOptions;
 use trustification_index::{
-    create_boolean_query, create_date_query, create_float_query, create_string_query, field2bool, field2str,
-    field2strvec,
+    create_boolean_query, create_date_query, create_float_query, create_string_query, field2bool, field2date_opt,
+    field2str, field2strvec,
     metadata::doc2metadata,
     sort_by,
     tantivy::{
@@ -47,8 +47,7 @@ struct Fields {
     title: Field,
     description: Field,
 
-    cvss31_score: Field,
-    cvss30_score: Field,
+    cvss3x_score: Field,
 }
 
 impl Default for Index {
@@ -74,8 +73,7 @@ impl Index {
             title: schema.add_text_field("title", TEXT | FAST | STORED),
             description: schema.add_text_field("description", TEXT | FAST | STORED),
 
-            cvss31_score: schema.add_f64_field("cvss31_score", FAST | INDEXED | STORED),
-            cvss30_score: schema.add_f64_field("cvss30_score", FAST | INDEXED | STORED),
+            cvss3x_score: schema.add_f64_field("cvss3x_score", FAST | INDEXED | STORED),
         };
         Self {
             schema: schema.build(),
@@ -119,12 +117,12 @@ impl Index {
         for metric in &cve.containers.cna.metrics {
             if let Some(score) = metric.cvss_v3_1.as_ref().and_then(|v| v["vectorString"].as_str()) {
                 match Base::from_str(score) {
-                    Ok(score) => document.add_f64(self.fields.cvss31_score, score.score().value()),
+                    Ok(score) => document.add_f64(self.fields.cvss3x_score, score.score().value()),
                     Err(err) => log::warn!("Failed to parse CVSS 3.1: {err}"),
                 }
             } else if let Some(score) = metric.cvss_v3_0.as_ref().and_then(|v| v["vectorString"].as_str()) {
                 match Base::from_str(score) {
-                    Ok(score) => document.add_f64(self.fields.cvss30_score, score.score().value()),
+                    Ok(score) => document.add_f64(self.fields.cvss3x_score, score.score().value()),
                     Err(err) => log::warn!("Failed to parse CVSS 3.0: {err}"),
                 }
             }
@@ -157,11 +155,7 @@ impl Index {
             Cves::Title(value) => create_string_query(self.fields.title, value),
             Cves::Description(value) => create_string_query(self.fields.description, value),
 
-            Cves::Score(value) => create_float_query(
-                &self.schema,
-                [self.fields.cvss31_score, self.fields.cvss30_score],
-                value,
-            ),
+            Cves::Score(value) => create_float_query(&self.schema, [self.fields.cvss3x_score], value),
 
             Cves::DateReserved(value) => create_date_query(&self.schema, self.fields.date_reserved, value),
             Cves::DatePublished(value) => create_date_query(&self.schema, self.fields.date_published, value),
@@ -229,7 +223,7 @@ impl trustification_index::Index for Index {
 
         let sort_by = query.sorting.first().map(|f| match f.qualifier {
             CvesSortable::Id => sort_by(f.direction, self.fields.id),
-            CvesSortable::Score => sort_by(f.direction, self.fields.cvss31_score),
+            CvesSortable::Score => sort_by(f.direction, self.fields.cvss3x_score),
             CvesSortable::DatePublished => sort_by(f.direction, self.fields.date_published),
             CvesSortable::DateUpdated => sort_by(f.direction, self.fields.date_updated),
             CvesSortable::DateRejected => sort_by(f.direction, self.fields.date_rejected),
@@ -260,7 +254,7 @@ impl trustification_index::Index for Index {
                 &(
                     TopDocs::with_limit(limit)
                         .and_offset(offset)
-                        .order_by_fast_field::<tantivy::DateTime>(order_by, order.clone()),
+                        .order_by_fast_field::<DateTime>(order_by, order.clone()),
                     tantivy::collector::Count,
                 ),
             )?;
@@ -294,16 +288,20 @@ impl trustification_index::Index for Index {
             .map(|s| s.to_string())
             .collect();
 
-        let cvss31_score = doc.get_first(self.fields.cvss31_score).and_then(|s| s.as_f64());
-        let cvss30_score = doc.get_first(self.fields.cvss31_score).and_then(|s| s.as_f64());
+        let cvss3x_score = doc.get_first(self.fields.cvss3x_score).and_then(|s| s.as_f64());
+
+        let date_published = field2date_opt(&doc, self.fields.date_published);
+        let date_updated = field2date_opt(&doc, self.fields.date_updated);
 
         let document = SearchDocument {
             id: id.to_string(),
             title: title.map(ToString::to_string),
             descriptions,
             published,
-            cvss31_score,
-            cvss30_score,
+            cvss3x_score,
+
+            date_published,
+            date_updated,
         };
 
         let explanation: Option<serde_json::Value> = if options.explain {

@@ -167,6 +167,9 @@ RUST_LOG=info cargo run -p trust -- v11y indexer --devmode &
 RUST_LOG=info cargo run -p trust -- v11y walker --devmode --source ../cvelistV5/
 ```
 
+> [!NOTE]
+> For this to work, you need to clone the repository: <https://github.com/CVEProject/cvelistV5> 
+
 ## Ingesting VEX
 
 **NOTE:** If authentication is enabled, which is the default, you will need to provide an access token. See [above](#single-sign-on).
