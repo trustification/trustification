@@ -1,19 +1,17 @@
 use async_compression::tokio::bufread::{BzDecoder, ZstdDecoder, ZstdEncoder};
-use bytes::{Buf, Bytes};
+use bytes::Bytes;
 use futures::{stream::BoxStream, Stream, StreamExt, TryStreamExt};
 use tokio::io::AsyncRead;
 use tokio_util::io::{ReaderStream, StreamReader};
 
 use crate::Error;
 
-type ObjectStream = BoxStream<'static, Result<Bytes, Error>>;
+pub type ObjectStream = BoxStream<'static, Result<Bytes, Error>>;
 
-pub fn encode<'a, S, B, E>(encoding: Option<&'a str>, data: &'a mut S) -> Result<Box<dyn AsyncRead + Unpin + 'a>, Error>
-where
-    S: Stream<Item = Result<B, E>> + Unpin,
-    B: Buf + 'a,
-    E: Into<std::io::Error>,
-{
+pub fn encode<'a>(
+    encoding: Option<&str>,
+    data: impl Stream<Item = Result<Bytes, Error>> + Unpin + 'a,
+) -> Result<Box<dyn AsyncRead + Unpin + 'a>, Error> {
     match encoding {
         None => Ok(Box::new(ZstdEncoder::new(StreamReader::new(data)))),
         Some(s) => match s {
@@ -31,7 +29,7 @@ pub fn decode(encoding: Option<String>, stream: ObjectStream) -> Result<ObjectSt
             "bzip2" => Ok(bzip(stream)),
             _ => Err(Error::Encoding(s)),
         },
-        None => Err(Error::Encoding("none".to_string())),
+        None => Ok(stream),
     }
 }
 
