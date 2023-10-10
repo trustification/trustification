@@ -89,6 +89,17 @@ fn authenticated_page(props: &ChildrenProperties) -> Html {
 
     let callback_github = use_open("https://github.com/trustification/trustification", "_blank");
 
+    let url_str;
+    match &config.global.expanded_page_url{
+        Some(url) => {
+            url_str = url.as_str();
+        }
+        None =>{
+            url_str = "";
+        }
+    };
+    let callback_expanded_page = use_open(url_str, "_blank");
+
     let backdrop = use_backdrop();
 
     let callback_about = use_callback((), move |_, ()| {
@@ -129,6 +140,9 @@ fn authenticated_page(props: &ChildrenProperties) -> Html {
                                 </MenuLink>
                             ))
                         }
+                        <MenuAction onclick={callback_expanded_page}>
+                            { "Open a support case" }
+                        </MenuAction>
                         <MenuAction onclick={callback_about}>
                             { "About" }
                         </MenuAction>
