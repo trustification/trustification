@@ -51,6 +51,11 @@ jobs:
         run: |
           docker-compose ${files} up -d
 
+      - name: Print storage use
+        run: |
+          du -sh *
+          du -sh $HOME/*
+
       - name: Test
         run: |
           RUST_LOG=tantivy=off,info cargo xtask test --ui --webdriver none
