@@ -10,3 +10,4 @@ pubring.kbx*
 trustdb.gpg
 
 /osv/
+/snyk/
