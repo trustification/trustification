@@ -3,11 +3,8 @@ use cve::{common, Cve, Published, Rejected, Timestamp};
 use cvss::v3::Base;
 use sikula::prelude::*;
 use tantivy::{
-    collector::TopDocs,
-    query::{AllQuery, TermQuery},
-    schema::INDEXED,
-    store::ZstdCompressor,
-    DocAddress, IndexSettings, Order, Searcher,
+    collector::TopDocs, query::AllQuery, schema::INDEXED, store::ZstdCompressor, DocAddress, IndexSettings, Order,
+    Searcher,
 };
 use time::OffsetDateTime;
 use trustification_api::search::SearchOptions;
