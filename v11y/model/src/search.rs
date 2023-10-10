@@ -1,5 +1,6 @@
 use serde_json::Value;
 use sikula::prelude::*;
+use time::OffsetDateTime;
 
 #[derive(Clone, Debug, PartialEq, Search)]
 pub enum Cves<'a> {
@@ -12,6 +13,17 @@ pub enum Cves<'a> {
 
     #[search(default)]
     Description(Primary<'a>),
+
+    #[search(sort)]
+    Score(PartialOrdered<f64>),
+
+    DateReserved(Ordered<OffsetDateTime>),
+    #[search(sort)]
+    DatePublished(Ordered<OffsetDateTime>),
+    #[search(sort)]
+    DateUpdated(Ordered<OffsetDateTime>),
+    #[search(sort)]
+    DateRejected(Ordered<OffsetDateTime>),
 
     Published,
     Rejected,
