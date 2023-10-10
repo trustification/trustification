@@ -25,6 +25,7 @@ pub enum Cves<'a> {
     #[search(sort)]
     DateRejected(Ordered<OffsetDateTime>),
 
+    Severity(&'a str),
     Low,
     Medium,
     High,
