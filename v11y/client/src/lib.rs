@@ -1,5 +1,7 @@
 use reqwest::Url;
+use trustification_api::search::SearchResult;
 use trustification_auth::client::{TokenInjector, TokenProvider};
+use v11y_model::search::SearchHit;
 
 pub use v11y_model::*;
 
@@ -81,6 +83,26 @@ impl V11yClient {
         Ok(self
             .client
             .get(self.v11y_url.get_vulnerability_by_alias_url(alias))
+            .inject_token(self.provider.as_ref())
+            .await?
+            .send()
+            .await?
+            .error_for_status()?
+            .json()
+            .await?)
+    }
+
+    pub async fn search(
+        &self,
+        q: &str,
+        limit: usize,
+        offset: usize,
+    ) -> Result<SearchResult<Vec<SearchHit>>, anyhow::Error> {
+        Ok(self
+            .client
+            .get(self.v11y_url.vulnerability_url())
+            .query(&[("q", q)])
+            .query(&[("limit", limit), ("offset", offset)])
             .inject_token(self.provider.as_ref())
             .await?
             .send()

@@ -158,7 +158,17 @@ To run the indexer processes, you can use cargo:
 ```shell
 RUST_LOG=info cargo run -p trust -- vexination indexer --devmode &
 RUST_LOG=info cargo run -p trust -- bombastic indexer --devmode &
+RUST_LOG=info cargo run -p trust -- v11y indexer --devmode &
 ```
+
+## Ingesting CVEs
+
+```shell
+RUST_LOG=info cargo run -p trust -- v11y walker --devmode --source ../cvelistV5/
+```
+
+> [!NOTE]
+> For this to work, you need to clone the repository: <https://github.com/CVEProject/cvelistV5> 
 
 ## Ingesting VEX
 

@@ -36,7 +36,10 @@ members = [
     "v11y/api",
     "v11y/client",
     "v11y/model",
+    "v11y/index",
+    "v11y/indexer",
     "v11y/v11y",
+    "v11y/walker",
     "integration-tests",
     "trust",
     "exporter",
@@ -84,7 +87,10 @@ default-members = [
     "v11y/api",
     "v11y/client",
     "v11y/model",
+    "v11y/index",
+    "v11y/indexer",
     "v11y/v11y",
+    "v11y/walker",
     "trust",
     "exporter",
     "event-bus",
@@ -112,3 +118,4 @@ csaf = { git = "https://github.com/voteblake/csaf-rs", rev = "76cb9ede10adb1fbb4
 cyclonedx-bom = { git = "https://github.com/trustification/cyclonedx-rust-cargo", branch = "trustification" }
 #spdx-rs = { git = "https://github.com/trustification/spdx-rs", rev = "c65be086e898dae88609f07bbc5a224ba4e0838d" } # FIXME: awaiting doubleopen-project/spdx-rs#/27
 
+cve = { git = "https://github.com/ctron/cve", rev = "77341768d893098f1f8b1397364fecfb16b4d776" } # FIXME: awaiting release

@@ -1,16 +1,17 @@
 //! Unified search
 
 use patternfly_yew::prelude::*;
-use spog_model::prelude::*;
 use spog_ui_common::utils::count::count_tab_title;
 use spog_ui_components::{
     advisory::{use_advisory_search, AdvisoryResult, AdvisorySearchControls},
     common::Visible,
+    cve::{use_cve_search, CveResult, CveSearchControls},
     hooks::UseStandardSearch,
     sbom::{use_sbom_search, SbomResult, SbomSearchControls},
     search::{DynamicSearchParameters, SearchMode},
 };
 use std::ops::Deref;
+use trustification_api::search::SearchResult;
 use yew::prelude::*;
 use yew_more_hooks::prelude::*;
 
@@ -20,6 +21,7 @@ pub enum TabIndex {
     Advisories,
     Sboms,
     SbomsByPackage,
+    Cves,
 }
 
 #[derive(PartialEq, Properties)]
@@ -35,6 +37,7 @@ pub struct PageState {
     pub advisory: TabState,
     pub sbom: TabState,
     pub sbom_by_dependency: TabState,
+    pub cve: TabState,
 }
 
 #[derive(Clone, Debug, Default, PartialEq, serde::Deserialize, serde::Serialize)]
@@ -107,6 +110,15 @@ pub fn search(props: &SearchProperties) -> Html {
         },
     );
 
+    // CVE search
+
+    let cve = use_unified_search(
+        &page_state,
+        |page_state| page_state.cve.search_params.clone(),
+        |page_state| page_state.cve.pagination,
+        use_cve_search,
+    );
+
     // update search terms
 
     {
@@ -116,11 +128,13 @@ pub fn search(props: &SearchProperties) -> Html {
                 advisory.search_params.clone(),
                 sbom.search_params.clone(),
                 sbom_by_dependency.search_params.clone(),
+                cve.search_params.clone(),
             ),
-            |(search_terms, advisory, sbom, sbom_by_dependency)| {
+            |(search_terms, advisory, sbom, sbom_by_dependency, cve)| {
                 advisory.set(advisory.set_simple_terms(search_terms.clone()));
                 sbom.set(sbom.set_simple_terms(search_terms.clone()));
                 sbom_by_dependency.set(sbom_by_dependency.set_simple_terms(search_terms.clone()));
+                cve.set(cve.set_simple_terms(search_terms.clone()));
             },
         );
     }
@@ -143,6 +157,10 @@ pub fn search(props: &SearchProperties) -> Html {
             sbom_by_dependency: TabState {
                 pagination: **sbom_by_dependency.pagination,
                 search_params: (*sbom_by_dependency.search_params).clone(),
+            },
+            cve: TabState {
+                pagination: **cve.pagination,
+                search_params: (*cve.search_params).clone(),
             },
         },
     );
@@ -199,6 +217,9 @@ pub fn search(props: &SearchProperties) -> Html {
                             <Visible visible={*tab == TabIndex::SbomsByPackage}>
                                 <SbomSearchControls search_params={sbom_by_dependency.search_params.clone()} />
                             </Visible>
+                            <Visible visible={*tab == TabIndex::Cves}>
+                                <CveSearchControls search_params={cve.search_params.clone()} />
+                            </Visible>
                         </div>
                     </GridItem>
 
@@ -212,6 +233,7 @@ pub fn search(props: &SearchProperties) -> Html {
                             <Tab<TabIndex> index={TabIndex::Advisories} title={count_tab_title("Advisories", &*advisory.state)} />
                             <Tab<TabIndex> index={TabIndex::Sboms} title={count_tab_title("SBOMs", &*sbom.state)} />
                             <Tab<TabIndex> index={TabIndex::SbomsByPackage} title={count_tab_title("SBOMs (by dependency)", &*sbom_by_dependency.state)} />
+                            <Tab<TabIndex> index={TabIndex::Cves} title={count_tab_title("CVEs", &*cve.state)} />
                         </Tabs<TabIndex>>
 
                         <div class="pf-v5-u-background-color-100">
@@ -228,6 +250,11 @@ pub fn search(props: &SearchProperties) -> Html {
                             if *tab == TabIndex::SbomsByPackage {
                                 <PaginationWrapped pagination={sbom_by_dependency.pagination} total={*sbom_by_dependency.total}>
                                     <SbomResult state={(*sbom_by_dependency.state).clone()} onsort={&sbom_by_dependency.onsort} />
+                                </PaginationWrapped>
+                            }
+                            if *tab == TabIndex::Cves {
+                                <PaginationWrapped pagination={cve.pagination} total={*cve.total}>
+                                    <CveResult state={(*cve.state).clone()} onsort={&cve.onsort} />
                                 </PaginationWrapped>
                             }
                         </div>

@@ -26,6 +26,7 @@ use spog_ui_navigation::{AppRoute, View};
 use std::borrow::Cow;
 use std::collections::HashSet;
 use std::rc::Rc;
+use trustification_api::search::SearchResult;
 use url::Url;
 use yew::prelude::*;
 use yew_more_hooks::prelude::UseAsyncState;
