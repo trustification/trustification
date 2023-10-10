@@ -5,7 +5,7 @@ use spog_ui_common::utils::count::count_tab_title;
 use spog_ui_components::{
     advisory::{use_advisory_search, AdvisoryResult, AdvisorySearchControls},
     common::Visible,
-    cve::{use_cve_search, CveResult},
+    cve::{use_cve_search, CveResult, CveSearchControls},
     hooks::UseStandardSearch,
     sbom::{use_sbom_search, SbomResult, SbomSearchControls},
     search::{DynamicSearchParameters, SearchMode},
@@ -216,6 +216,9 @@ pub fn search(props: &SearchProperties) -> Html {
                             </Visible>
                             <Visible visible={*tab == TabIndex::SbomsByPackage}>
                                 <SbomSearchControls search_params={sbom_by_dependency.search_params.clone()} />
+                            </Visible>
+                            <Visible visible={*tab == TabIndex::Cves}>
+                                <CveSearchControls search_params={cve.search_params.clone()} />
                             </Visible>
                         </div>
                     </GridItem>

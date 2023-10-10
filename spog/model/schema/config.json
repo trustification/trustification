@@ -22,6 +22,16 @@
         }
       ]
     },
+    "cve": {
+      "default": {
+        "filters": {}
+      },
+      "allOf": [
+        {
+          "$ref": "#/definitions/Cve"
+        }
+      ]
+    },
     "features": {
       "default": {
         "dedicatedSearch": true,
@@ -123,6 +133,20 @@
           "type": [
             "string",
             "null"
+          ]
+        }
+      }
+    },
+    "Cve": {
+      "description": "CVE specific configuration",
+      "type": "object",
+      "properties": {
+        "filters": {
+          "default": {},
+          "allOf": [
+            {
+              "$ref": "#/definitions/Filters"
+            }
           ]
         }
       }
