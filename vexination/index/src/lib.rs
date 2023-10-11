@@ -15,10 +15,7 @@ use tantivy::{
     query::{AllQuery, TermSetQuery},
     schema::{IndexRecordOption, TextFieldIndexing},
     store::ZstdCompressor,
-    tokenizer::{
-        Language, LowerCaser, NgramTokenizer, RemoveLongFilter, SimpleTokenizer, Stemmer, TextAnalyzer, Tokenizer,
-        TokenizerManager,
-    },
+    tokenizer::{Language, LowerCaser, NgramTokenizer, RemoveLongFilter, Stemmer, TextAnalyzer, TokenizerManager},
     DocAddress, DocId, IndexSettings, Order, Score, Searcher, SegmentReader, SnippetGenerator,
 };
 use time::OffsetDateTime;
