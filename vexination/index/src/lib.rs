@@ -15,7 +15,10 @@ use tantivy::{
     query::{AllQuery, TermSetQuery},
     schema::{IndexRecordOption, TextFieldIndexing},
     store::ZstdCompressor,
-    tokenizer::{NgramTokenizer, TokenizerManager},
+    tokenizer::{
+        Language, LowerCaser, NgramTokenizer, RemoveLongFilter, SimpleTokenizer, Stemmer, TextAnalyzer, Tokenizer,
+        TokenizerManager,
+    },
     DocAddress, DocId, IndexSettings, Order, Score, Searcher, SegmentReader, SnippetGenerator,
 };
 use time::OffsetDateTime;
@@ -86,7 +89,15 @@ impl trustification_index::Index for Index {
 
     fn tokenizers(&self) -> Result<TokenizerManager, SearchError> {
         let manager = TokenizerManager::default();
-        manager.register("ngram", NgramTokenizer::prefix_only(2, 64)?);
+        let ngram = NgramTokenizer::all_ngrams(3, 40)?;
+        manager.register(
+            "ngram",
+            TextAnalyzer::builder(ngram)
+                .filter(RemoveLongFilter::limit(40))
+                .filter(LowerCaser)
+                .filter(Stemmer::new(Language::English))
+                .build(),
+        );
         Ok(manager)
     }
 
@@ -1018,6 +1029,20 @@ mod tests {
             assert_eq!(result.0[2].document.advisory_id, "RHSA-2023:1441");
             assert_eq!(result.0[3].document.advisory_id, "RHSA-2021:3029");
             assert!(result.0[0].document.advisory_date > result.0[1].document.advisory_date);
+        });
+    }
+
+    #[tokio::test]
+    async fn test_ngrams() {
+        assert_search(|index| {
+            let result = search(&index, "title:openssl");
+            assert_eq!(result.0.len(), 2);
+
+            let result = search(&index, "title:open");
+            assert_eq!(result.0.len(), 2);
+
+            let result = search(&index, "title:ssl");
+            assert_eq!(result.0.len(), 2);
         });
     }
 
