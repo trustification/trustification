@@ -12,9 +12,7 @@ pub enum AppRoute {
     Search {
         terms: String,
     },
-    Cve {
-        id: String,
-    },
+    Cve(View),
     Package {
         id: String,
     },

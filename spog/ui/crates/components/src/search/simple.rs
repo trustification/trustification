@@ -141,7 +141,7 @@ pub enum SearchModeAction {
     SetSimpleTerms(Vec<String>),
     ApplyDefault(SearchDefaults),
     Clear,
-    MakeComplex(String),
+    SetComplex(String),
     SetSimpleSort((String, bool)),
     SetSimple(DynamicSearchParameters),
 }
@@ -167,7 +167,7 @@ impl Reducible for SearchMode<DynamicSearchParameters> {
                 SearchMode::Simple(_) => Rc::new(SearchMode::Simple(DynamicSearchParameters::default())),
                 SearchMode::Complex(_) => Rc::new(SearchMode::Complex(String::new())),
             },
-            Self::Action::MakeComplex(terms) => Rc::new(SearchMode::Complex(terms)),
+            Self::Action::SetComplex(terms) => Rc::new(SearchMode::Complex(terms)),
             Self::Action::SetSimple(t) => Rc::new(SearchMode::Simple(t)),
             Self::Action::SetSimpleSort(sort_by) => match &*self {
                 Self::Complex(_) => self,

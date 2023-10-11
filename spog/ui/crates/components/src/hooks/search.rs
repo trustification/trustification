@@ -68,12 +68,12 @@ where
         |state, (text, context, search_params)| match state {
             false => {
                 let q = (*search_params).as_str(context).to_string();
-                search_params.dispatch(SearchModeAction::MakeComplex(q.clone()));
+                search_params.dispatch(SearchModeAction::SetComplex(q.clone()));
                 text.set(q);
             }
             true => {
                 // TODO: this will reset the query, which we should confirm first
-                search_params.dispatch(SearchModeAction::Clear);
+                search_params.dispatch(SearchModeAction::SetSimple(Default::default()));
                 text.set(String::new());
             }
         },
