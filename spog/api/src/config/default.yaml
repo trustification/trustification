@@ -5,7 +5,7 @@ $schema: "../../../model/schema/config.json"
 global:
   documentationUrl: https://github.com/trustification/trustification
   supportUrl: https://github.com/trustification/trustification/issues
-  expandedPageUrl: https://github.com/trustification/trustification/issues
+  supportCaseUrl: https://github.com/trustification/trustification/issues
 
 bombastic:
 

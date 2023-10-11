@@ -80,7 +80,7 @@ pub struct Global {
     pub support_url: Option<Url>,
 
     #[serde(default)]
-    pub expanded_page_url: Option<Url>,
+    pub support_case_url: Option<Url>,
 
     #[serde(default)]
     pub brand_image_src: Option<String>,
