@@ -93,7 +93,7 @@ fn authenticated_page(props: &ChildrenProperties) -> Html {
     let open_support_case_page = use_callback(
         |_, support_case_url| {
             if let Some(support_case_url) = support_case_url {
-            let _ = gloo_utils::window().open_with_url_and_target(support_case_url.as_str(), "_blank");
+                let _ = gloo_utils::window().open_with_url_and_target(support_case_url.as_str(), "_blank");
             }
         },
         support_case_url.clone(),
@@ -140,7 +140,7 @@ fn authenticated_page(props: &ChildrenProperties) -> Html {
                             ))
                         }
                         {
-                            for config.global.support_case_url.clone().as_ref().map(|_url| html_nested!(
+                            for config.global.support_case_url.as_ref().map(|_url| html_nested!(
                                 <MenuAction onclick={open_support_case_page} >
                                     {"Open a support case"}
                                 </MenuAction>
