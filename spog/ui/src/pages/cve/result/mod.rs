@@ -2,14 +2,17 @@ mod advisories;
 mod products;
 
 use advisories::RelatedAdvisories;
+use cve::published::Metric;
 use patternfly_yew::prelude::*;
 use products::RelatedProducts;
 use spog_ui_backend::{use_backend, CveService, SearchParameters, VexService};
+use spog_ui_components::cvss::Cvss3Label;
 use spog_ui_components::markdown::Markdown;
 use spog_ui_components::{async_state_renderer::async_content, time::Date};
 use std::rc::Rc;
+use std::str::FromStr;
 use yew::prelude::*;
-use yew_more_hooks::hooks::use_async_with_cloned_deps;
+use yew_more_hooks::{hooks::use_async_with_cloned_deps, prelude::UseAsyncState};
 use yew_oauth2::hook::use_latest_access_token;
 
 #[derive(PartialEq, Properties)]
@@ -77,7 +80,15 @@ pub fn result_view(props: &ResultViewProperties) -> Html {
         <>
             <PageSection sticky={vec![PageSectionSticky::Top]} variant={PageSectionVariant::Light} >
                 <Content>
-                    <Title>{props.id.clone()}</Title>
+                    <Title>
+                        {props.id.clone()}
+                        if let UseAsyncState::Ready(Ok(details)) = &*details {{
+                            match &**details {
+                                cve::Cve::Published(published) => cvss3(&published.containers.cna.metrics),
+                                cve::Cve::Rejected(_rejected) => html!(<Label label="Rejected" color={Color::Grey} />),
+                            }
+                        }}
+                    </Title>
                 </Content>
                 { async_content(&*details, |details| html!(<CveDetailsView details={details.clone()} />)) }
             </PageSection>
@@ -96,6 +107,21 @@ pub fn result_view(props: &ResultViewProperties) -> Html {
     )
 }
 
+fn cvss3(metrics: &[Metric]) -> Html {
+    for m in metrics {
+        if let Some(cvss) = m
+            .cvss_v3_1
+            .as_ref()
+            .or(m.cvss_v3_0.as_ref())
+            .and_then(|cvss| cvss["vectorString"].as_str())
+            .and_then(|cvss| cvss::v3::Base::from_str(cvss).ok())
+        {
+            return html!(<Cvss3Label {cvss}/>);
+        }
+    }
+    html!()
+}
+
 #[derive(PartialEq, Properties)]
 pub struct CveDetailsViewProperties {
     pub details: Rc<cve::Cve>,
@@ -112,7 +138,11 @@ pub fn cve_details(props: &CveDetailsViewProperties) -> Html {
                     }
                     <DescriptionGroup term="Descriptions">
                         { for details.containers.cna.descriptions.iter().map(|desc|{
-                            html!(<Markdown content={Rc::new(desc.value.clone())} />)
+                            html!(
+                                <div lang={desc.language.clone()}>
+                                    <Markdown content={Rc::new(desc.value.clone())} />
+                                </div>
+                            )
                         })}
                     </DescriptionGroup>
                     if let Some(timestamp) = details.metadata.date_published {
