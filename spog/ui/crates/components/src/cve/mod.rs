@@ -1,6 +1,8 @@
 mod search;
 
 pub use search::*;
+use spog_ui_common::utils::time::date;
+use spog_ui_common::utils::OrNone;
 
 use crate::cvss::CvssScore;
 use crate::table_wrapper::TableWrapper;
@@ -30,6 +32,7 @@ pub enum Column {
     Id,
     Description,
     Severity,
+    DatePublished,
 }
 
 impl TableEntryRenderer<Column> for CveEntry {
@@ -54,6 +57,7 @@ impl TableEntryRenderer<Column> for CveEntry {
                     }
                 </>
             ),
+            Column::DatePublished => html!({ OrNone(self.cve.date_published).map(date) }),
         }
         .into()
     }
@@ -113,6 +117,14 @@ pub fn cve_result(props: &CveResultProperties) -> Html {
             index: Column::Severity,
             label: "CVSS",
             width: ColumnWidth::Percent(10),
+            text_modifier: Some(TextModifier::Wrap),
+            sortby: *sortby,
+            onsort: onsort.clone()
+        }),
+        yew::props!(TableColumnProperties<Column> {
+            index: Column::DatePublished,
+            label: "Date published",
+            width: ColumnWidth::Percent(20),
             text_modifier: Some(TextModifier::Wrap),
             sortby: *sortby,
             onsort: onsort.clone()
