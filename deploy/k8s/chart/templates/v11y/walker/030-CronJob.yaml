@@ -33,13 +33,13 @@ spec:
                   name: cvelist
               command: ["/bin/sh"]
               args:
-                - "-c"
+                - "-ec"
                 - |
                   if test -d cvelistV5; then
-                    git clone https://github.com/CVEProject/cvelistV5
-                  else
                     cd cvelistV5
                     git pull
+                  else
+                    git clone https://github.com/CVEProject/cvelistV5
                   fi
 
           containers:
