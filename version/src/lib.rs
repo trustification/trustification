@@ -4,7 +4,7 @@
 //!
 //! During build time it is necessary to have at least the following build script:
 //!
-//! ```rust
+//! ```ignore
 //! use std::error::Error;
 //!
 //! fn main() -> Result<(), Box<dyn Error>> {
