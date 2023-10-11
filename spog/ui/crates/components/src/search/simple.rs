@@ -140,6 +140,7 @@ pub enum SearchModeAction {
     SetTerms(String),
     SetSimpleTerms(Vec<String>),
     ApplyDefault(SearchDefaults),
+    /// Clear the search, keeping the same search mode
     Clear,
     SetComplex(String),
     SetSimpleSort((String, bool)),
