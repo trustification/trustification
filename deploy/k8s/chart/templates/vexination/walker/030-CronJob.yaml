@@ -28,7 +28,7 @@ spec:
                 - "vexination"
                 - "walker"
                 - "--sink"
-                - "https://vex.{{ .Values.domain }}"
+                - "https://vex.{{ .Values.domain }}/api/v1/vex"
                 - "--source"
                 - "{{ .Values.vexination.walker.source }}"
                 - "-3"
