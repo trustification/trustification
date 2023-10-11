@@ -3,7 +3,7 @@ mod result;
 use patternfly_yew::prelude::*;
 use result::ResultView;
 use spog_ui_components::common::PageHeading;
-use spog_ui_navigation::AppRoute;
+use spog_ui_navigation::{AppRoute, View};
 use yew::prelude::*;
 use yew_nested_router::prelude::*;
 
@@ -29,7 +29,7 @@ fn search_view() -> Html {
 
     let submit_cb = use_callback(text.clone(), move |(), text| {
         if let Some(router) = &router {
-            router.push(AppRoute::Cve { id: (**text).clone() });
+            router.push(AppRoute::Cve(View::Content { id: (**text).clone() }));
         }
     });
     let onclick = (*use_memo(submit_cb.clone(), |cb| cb.reform(|_: MouseEvent| ()))).clone();

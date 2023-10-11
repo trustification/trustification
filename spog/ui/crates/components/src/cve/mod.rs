@@ -1,14 +1,12 @@
 mod search;
 
 pub use search::*;
-use spog_ui_common::utils::time::date;
-use spog_ui_common::utils::OrNone;
 
 use crate::cvss::CvssScore;
 use crate::table_wrapper::TableWrapper;
 use patternfly_yew::prelude::*;
-use spog_ui_common::utils::cvss::Cvss;
-use spog_ui_navigation::AppRoute;
+use spog_ui_common::{utils::cvss::Cvss, utils::time::date, utils::OrNone};
+use spog_ui_navigation::{AppRoute, View};
 use std::rc::Rc;
 use trustification_api::search::SearchResult;
 use v11y_model::search::SearchDocument;
@@ -40,7 +38,7 @@ impl TableEntryRenderer<Column> for CveEntry {
         match context.column {
             Column::Id => html!(
                 <Link<AppRoute>
-                    target={AppRoute::Cve{id: self.cve.id.clone()}}
+                    target={AppRoute::Cve(View::Content{id: self.cve.id.clone()})}
                 >{ self.cve.id.clone() }</Link<AppRoute>>
             ),
             Column::Description => html!( <>
