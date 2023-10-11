@@ -22,12 +22,12 @@ pub fn encode<'a>(
 }
 
 // Returns an unencoded JSON stream
-pub fn decode(encoding: Option<String>, stream: ObjectStream) -> Result<ObjectStream, Error> {
+pub fn decode(encoding: Option<&str>, stream: ObjectStream) -> Result<ObjectStream, Error> {
     match encoding {
-        Some(s) => match s.as_str() {
+        Some(s) => match s {
             "zstd" => Ok(zstd(stream)),
             "bzip2" => Ok(bzip(stream)),
-            _ => Err(Error::Encoding(s)),
+            _ => Err(Error::Encoding(s.to_string())),
         },
         None => Ok(stream),
     }

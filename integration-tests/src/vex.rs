@@ -3,6 +3,7 @@ use crate::{config::Config, runner::Runner};
 use async_trait::async_trait;
 use test_context::AsyncTestContext;
 use trustification_indexer::ReindexMode;
+use trustification_storage::validator::Validator;
 
 #[async_trait]
 impl AsyncTestContext for VexinationContext {
@@ -158,6 +159,7 @@ fn vexination_indexer() -> vexination_indexer::Run {
             endpoint: Some(STORAGE_ENDPOINT.into()),
             access_key: Some("admin".into()),
             secret_key: Some("password".into()),
+            validator: Validator::None,
         },
         infra: InfrastructureConfig {
             infrastructure_enabled: false,
@@ -194,6 +196,7 @@ fn vexination_api() -> vexination_api::Run {
             endpoint: Some(STORAGE_ENDPOINT.into()),
             access_key: Some("admin".into()),
             secret_key: Some("password".into()),
+            validator: Validator::VEX,
         },
         infra: InfrastructureConfig {
             infrastructure_enabled: false,

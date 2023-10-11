@@ -3,6 +3,7 @@ use crate::{config::Config, runner::Runner};
 use async_trait::async_trait;
 use reqwest::Url;
 use test_context::AsyncTestContext;
+use trustification_storage::validator::Validator;
 
 #[async_trait]
 impl AsyncTestContext for BombasticContext {
@@ -181,6 +182,7 @@ fn bombastic_indexer() -> bombastic_indexer::Run {
             endpoint: Some(STORAGE_ENDPOINT.into()),
             access_key: Some("admin".into()),
             secret_key: Some("password".into()),
+            validator: Validator::None,
         },
         bus: EventBusConfig {
             event_bus: EventBusType::Kafka,
@@ -215,6 +217,7 @@ fn bombastic_api() -> bombastic_api::Run {
             endpoint: Some(STORAGE_ENDPOINT.into()),
             access_key: Some("admin".into()),
             secret_key: Some("password".into()),
+            validator: Validator::SBOM,
         },
         infra: InfrastructureConfig {
             infrastructure_enabled: false,
