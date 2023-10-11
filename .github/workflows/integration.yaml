@@ -72,7 +72,8 @@ jobs:
 
       - name: Test
         run: |
-          RUST_LOG=tantivy=off,info cargo xtask test --ui --webdriver none --nocapture
+          #RUST_LOG=tantivy=off,info cargo xtask test --ui --webdriver none --nocapture
+          RUST_LOG=tantivy=off,info cargo xtask test --nocapture
           docker-compose ${files} ps
 
       - name: Print logs
