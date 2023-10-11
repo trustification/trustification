@@ -2,6 +2,7 @@ use patternfly_yew::prelude::*;
 use spog_ui_common::utils::cvss::{Cvss, Severity};
 use std::collections::{BTreeMap, HashMap};
 use std::str::FromStr;
+use yew::html::IntoPropValue;
 use yew::prelude::*;
 
 #[derive(Clone, Debug, PartialEq, Properties)]
@@ -9,6 +10,7 @@ pub struct CvssScoreProperties {
     pub cvss: Cvss,
 }
 
+/// A component showing the CVSS score using a progress component
 #[function_component(CvssScore)]
 pub fn cvss_information(props: &CvssScoreProperties) -> Html {
     // let label = format!("{}", props.cvss.score);
@@ -72,6 +74,25 @@ pub fn cvss3(props: &Cvss3Properties) -> Html {
     html!(
         <CvssScore cvss={&props.cvss} />
     )
+}
+
+#[function_component(Cvss3Label)]
+pub fn cvss3_label(props: &Cvss3Properties) -> Html {
+    let cvss: Cvss = (&props.cvss).into_prop_value();
+
+    let severity = cvss.to_severity();
+
+    let color = match severity {
+        Severity::None => Color::Blue,
+        Severity::Low => Color::Gold,
+        Severity::Medium => Color::Orange,
+        Severity::High => Color::Red,
+        Severity::Critical => Color::Purple,
+    };
+
+    let label = format!("{:.1} {}", cvss.score, severity.as_str());
+
+    html!(<Label {color} {label} />)
 }
 
 #[derive(PartialEq, Properties)]
