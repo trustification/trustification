@@ -23,7 +23,7 @@ spec:
           volumes:
             - name: cvelist
               persistentVolumeClaim:
-                claimName: cvelist
+                claimName: v11y-cvelist
 
           initContainers:
             - name: git-fetch
