@@ -1,4 +1,5 @@
 mod stream;
+pub mod validator;
 
 use std::borrow::Cow;
 
@@ -14,10 +15,12 @@ use prometheus::{
 use s3::{creds::error::CredentialsError, error::S3Error, Bucket};
 pub use s3::{creds::Credentials, Region};
 use serde::Deserialize;
+use validator::Validator;
 
 pub struct Storage {
     bucket: Bucket,
     metrics: Metrics,
+    validator: Validator,
 }
 
 #[derive(Clone)]
@@ -130,6 +133,10 @@ pub struct StorageConfig {
     /// Secret key for using storage
     #[arg(env = "STORAGE_SECRET_KEY", long = "storage-secret-key")]
     pub secret_key: Option<String>,
+
+    /// Validation choice
+    #[arg(env = "VALIDATOR", long = "validator")]
+    pub validator: Validator,
 }
 
 impl TryInto<Bucket> for StorageConfig {
@@ -202,6 +209,8 @@ pub enum Error {
     Io(std::io::Error),
     #[error("invalid storage key {0}")]
     InvalidKey(String),
+    #[error("invalid storage content")]
+    InvalidContent,
     #[error("unexpected encoding {0}")]
     Encoding(String),
     #[error("Prometheus error {0}")]
@@ -270,10 +279,12 @@ pub struct Head {
 
 impl Storage {
     pub fn new(config: StorageConfig, registry: &Registry) -> Result<Self, Error> {
+        let validator = config.validator.clone();
         let bucket = config.try_into()?;
         Ok(Self {
             bucket,
             metrics: Metrics::register(registry)?,
+            validator,
         })
     }
 
@@ -311,6 +322,7 @@ impl Storage {
         let bucket = self.bucket.with_extra_headers(headers);
 
         pin_mut!(data);
+        let data = self.validator.validate(encoding, data).await?;
         let mut rdr = stream::encode(encoding, data)?;
         let path = format!("{}{}", DATA_PATH, key);
 
@@ -452,7 +464,7 @@ impl Storage {
         let res = {
             let (head, _status) = self.bucket.head_object(path.path.clone()).await?;
             let stream = self.get_encoded_stream(path.clone()).await?;
-            stream::decode(head.content_encoding, stream.boxed())
+            stream::decode(head.content_encoding.as_deref(), stream.boxed())
         };
         if res.is_err() {
             self.metrics.gets_failed_total.inc();
