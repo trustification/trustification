@@ -89,16 +89,15 @@ fn authenticated_page(props: &ChildrenProperties) -> Html {
 
     let callback_github = use_open("https://github.com/trustification/trustification", "_blank");
 
-    let url_str;
-    match &config.global.expanded_page_url{
-        Some(url) => {
-            url_str = url.as_str();
-        }
-        None =>{
-            url_str = "";
-        }
-    };
-    let callback_expanded_page = use_open(url_str, "_blank");
+    let support_case_url = &config.global.support_case_url.as_ref().map(|url| url.to_string());
+    let open_support_case_page = use_callback(
+        |_, support_case_url| {
+            if let Some(support_case_url) = support_case_url {
+            let _ = gloo_utils::window().open_with_url_and_target(support_case_url.as_str(), "_blank");
+            }
+        },
+        support_case_url.clone(),
+    );
 
     let backdrop = use_backdrop();
 
@@ -140,9 +139,13 @@ fn authenticated_page(props: &ChildrenProperties) -> Html {
                                 </MenuLink>
                             ))
                         }
-                        <MenuAction onclick={callback_expanded_page}>
-                            { "Open a support case" }
-                        </MenuAction>
+                        {
+                            for config.global.support_case_url.clone().as_ref().map(|_url| html_nested!(
+                                <MenuAction onclick={open_support_case_page} >
+                                    {"Open a support case"}
+                                </MenuAction>
+                            ))
+                        }
                         <MenuAction onclick={callback_about}>
                             { "About" }
                         </MenuAction>
