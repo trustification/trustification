@@ -14,7 +14,7 @@ use yew_more_hooks::prelude::*;
 
 #[derive(PartialEq, Properties)]
 pub struct CveSearchControlsProperties {
-    pub search_params: UseStateHandle<SearchMode<DynamicSearchParameters>>,
+    pub search_params: UseReducerHandle<SearchMode<DynamicSearchParameters>>,
 }
 
 #[function_component(CveSearchControls)]
@@ -24,20 +24,20 @@ pub fn cve_search_controls(props: &CveSearchControlsProperties) -> Html {
 
     let search_config = {
         use_memo((), move |()| {
-            let search = convert_search(&filters);
-            search.apply_defaults(&props.search_params);
+            let (search, defaults) = convert_search(&filters);
+            props.search_params.dispatch(SearchModeAction::ApplyDefault(defaults));
             search
         })
     };
 
     html!(
-        <SimpleSearch<DynamicSearchParameters> search={search_config} search_params={props.search_params.clone()} />
+        <SimpleSearch search={search_config} search_params={props.search_params.clone()} />
     )
 }
 
 #[hook]
 pub fn use_cve_search(
-    search_params: UseStateHandle<SearchMode<DynamicSearchParameters>>,
+    search_params: UseReducerHandle<SearchMode<DynamicSearchParameters>>,
     pagination: UsePagination,
     callback: Callback<UseAsyncHandleDeps<SearchResult<Rc<Vec<SearchDocument>>>, String>>,
 ) -> UseStandardSearch {

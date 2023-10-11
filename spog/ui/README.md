@@ -66,4 +66,3 @@ trunk-ng serve
 ```
 
 Navigate to: http://localhost:6030
-

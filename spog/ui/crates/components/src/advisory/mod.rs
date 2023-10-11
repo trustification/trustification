@@ -480,7 +480,7 @@ mod test {
 
     #[test]
     fn test_quarkus_product_id_1() {
-        let csaf: Csaf = serde_json::from_slice(include_bytes!("../../../test-data/quarkus1.json")).unwrap();
+        let csaf: Csaf = serde_json::from_slice(include_bytes!("../../../../test-data/quarkus1.json")).unwrap();
 
         let vul1 = &csaf.vulnerabilities.as_ref().unwrap()[0];
         let fixed1 = vul1.product_status.as_ref().unwrap().fixed.as_ref().unwrap();

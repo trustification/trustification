@@ -16,7 +16,7 @@ use yew_more_hooks::prelude::*;
 
 #[derive(PartialEq, Properties)]
 pub struct AdvisorySearchControlsProperties {
-    pub search_params: UseStateHandle<SearchMode<DynamicSearchParameters>>,
+    pub search_params: UseReducerHandle<SearchMode<DynamicSearchParameters>>,
 }
 
 #[function_component(AdvisorySearchControls)]
@@ -26,20 +26,20 @@ pub fn advisory_search_controls(props: &AdvisorySearchControlsProperties) -> Htm
 
     let search_config = {
         use_memo((), move |()| {
-            let search = convert_search(&filters);
-            search.apply_defaults(&props.search_params);
+            let (search, defaults) = convert_search(&filters);
+            props.search_params.dispatch(SearchModeAction::ApplyDefault(defaults));
             search
         })
     };
 
     html!(
-        <SimpleSearch<DynamicSearchParameters> search={search_config} search_params={props.search_params.clone()} />
+        <SimpleSearch search={search_config} search_params={props.search_params.clone()} />
     )
 }
 
 #[hook]
 pub fn use_advisory_search(
-    search_params: UseStateHandle<SearchMode<DynamicSearchParameters>>,
+    search_params: UseReducerHandle<SearchMode<DynamicSearchParameters>>,
     pagination: UsePagination,
     callback: Callback<UseAsyncHandleDeps<SearchResult<Rc<Vec<AdvisorySummary>>>, String>>,
 ) -> UseStandardSearch {
@@ -91,7 +91,7 @@ pub fn advisory_search(props: &AdvisorySearchProperties) -> Html {
         ..Default::default()
     });
 
-    let search_params = use_state_eq::<SearchMode<DynamicSearchParameters>, _>(|| page_state.search_params.clone());
+    let search_params = use_reducer_eq(|| page_state.search_params.clone());
     let total = use_state_eq(|| None);
     let pagination = use_pagination(*total, || page_state.pagination);
     let state = use_state_eq(UseAsyncState::default);
@@ -107,11 +107,7 @@ pub fn advisory_search(props: &AdvisorySearchProperties) -> Html {
 
     let onsort = {
         use_callback(search_params.clone(), move |sort_by: (String, bool), search_params| {
-            if let SearchMode::Simple(simple) = &**search_params {
-                let mut simple = simple.clone();
-                simple.set_sort_by(sort_by);
-                search_params.set(SearchMode::Simple(simple));
-            };
+            search_params.dispatch(SearchModeAction::SetSimpleSort(sort_by));
         })
     };
 
@@ -154,7 +150,7 @@ pub fn advisory_search(props: &AdvisorySearchProperties) -> Html {
                 </GridItem>
 
                 <GridItem cols={[2]}>
-                    <AdvisorySearchControls search_params={search.search_params}/>
+                    <AdvisorySearchControls search_params={search.search_params} />
                 </GridItem>
 
                 <GridItem cols={[10]}>

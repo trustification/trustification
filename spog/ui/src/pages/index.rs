@@ -52,9 +52,10 @@ pub fn index() -> Html {
                                             <FlexItem>
                                                 <TextInputGroup style="--pf-v5-c-text-input-group__text-input--MinWidth: 64ch;">
                                                     <TextInputGroupMain
+                                                        id="search_terms"
                                                         icon={Icon::Search}
                                                         value={(*text).clone()}
-                                                        placeholder="Search for an SBOM or advisory"
+                                                        placeholder="Search for an SBOM, advisory, or CVE"
                                                         {onchange}
                                                         autofocus=true
                                                     />
@@ -63,6 +64,7 @@ pub fn index() -> Html {
 
                                             <FlexItem>
                                                 <Button
+                                                    id="search"
                                                     variant={ButtonVariant::Primary}
                                                     label="Search"
                                                     {onclick}

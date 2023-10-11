@@ -1,5 +1,6 @@
 use crate::search::{
-    DefaultEntry, Search, SearchCategory, SearchOption, SearchOptionCheck, SearchOptionSelect, SearchOptionSelectItem,
+    DefaultEntry, Search, SearchCategory, SearchDefaults, SearchOption, SearchOptionCheck, SearchOptionSelect,
+    SearchOptionSelectItem,
 };
 use gloo_utils::format::JsValueSerdeExt;
 use spog_model::prelude::*;
@@ -11,20 +12,25 @@ use yew::prelude::*;
 #[derive(Clone, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct DynamicSearchParameters {
     pub terms: Vec<String>,
-    pub state: HashMap<(Rc<String>, Rc<String>), Rc<String>>,
-    pub sort: Option<(String, bool)>, // Column name and whether or not is ASC
+    pub state: HashMap<String, Rc<String>>,
+    /// Column name and whether or not it's sorted ascending
+    pub sort: Option<(String, bool)>,
 }
 
 impl DynamicSearchParameters {
+    fn id(cat: Rc<String>, id: Rc<String>) -> String {
+        format!("{cat}/{id}")
+    }
+
     pub fn get(&self, cat: Rc<String>, id: Rc<String>) -> Option<Rc<String>> {
-        self.state.get(&(cat, id)).cloned()
+        self.state.get(&Self::id(cat, id)).cloned()
     }
 
     pub fn set(&mut self, cat: Rc<String>, id: Rc<String>, value: Option<Rc<String>>) {
         if let Some(value) = value {
-            self.state.insert((cat, id), value);
+            self.state.insert(Self::id(cat, id), value);
         } else {
-            self.state.remove(&(cat, id));
+            self.state.remove(&Self::id(cat, id));
         }
     }
 
@@ -34,12 +40,20 @@ impl DynamicSearchParameters {
 }
 
 impl SimpleProperties for DynamicSearchParameters {
+    type Defaults = SearchDefaults;
+
     fn terms(&self) -> &[String] {
         &self.terms
     }
 
     fn terms_mut(&mut self) -> &mut Vec<String> {
         &mut self.terms
+    }
+
+    fn apply_defaults(&mut self, defaults: Self::Defaults) {
+        for DefaultEntry { category, id, value } in defaults.0 {
+            self.set(category, id, Some(value));
+        }
     }
 }
 
@@ -108,7 +122,7 @@ impl ToFilterExpression for DynamicSearchParameters {
     }
 }
 
-pub fn convert_search(filters: &Filters) -> Search<DynamicSearchParameters> {
+pub fn convert_search(filters: &Filters) -> (Search, SearchDefaults) {
     let mut defaults = vec![];
 
     let categories = filters
@@ -124,14 +138,10 @@ pub fn convert_search(filters: &Filters) -> Search<DynamicSearchParameters> {
         })
         .collect();
 
-    Search { categories, defaults }
+    (Search { categories }, SearchDefaults(defaults))
 }
 
-fn convert_option(
-    cat_id: &str,
-    opt: &FilterOption,
-    defaults: &mut Vec<DefaultEntry>,
-) -> SearchOption<DynamicSearchParameters> {
+fn convert_option(cat_id: &str, opt: &FilterOption, defaults: &mut Vec<DefaultEntry>) -> SearchOption {
     let cat_id = Rc::new(cat_id.to_string());
 
     match opt {
@@ -139,7 +149,7 @@ fn convert_option(
         FilterOption::Check(opt) => {
             let label = format!("<div>{}</div>", opt.label);
             let id = Rc::new(opt.id.clone());
-            SearchOption::Check(SearchOptionCheck::<DynamicSearchParameters> {
+            SearchOption::Check(SearchOptionCheck {
                 label: Html::from_html_unchecked(AttrValue::from(label.clone())).into(),
                 getter: {
                     let cat_id = cat_id.clone();
@@ -164,7 +174,7 @@ fn convert_option(
                 });
             }
 
-            SearchOption::Select(SearchOptionSelect::<DynamicSearchParameters> {
+            SearchOption::Select(SearchOptionSelect {
                 options: select
                     .options
                     .iter()
@@ -196,5 +206,24 @@ fn convert_option(
                     .collect(),
             })
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_serialize() {
+        let mut v = DynamicSearchParameters::default();
+        v.set(
+            Rc::new("cat".to_string()),
+            Rc::new("id".to_string()),
+            Some(Rc::new("value".to_string())),
+        );
+        v.set_sort_by(("field".into(), true));
+
+        // must serialize to JSON
+        serde_json::to_string(&v).unwrap();
     }
 }

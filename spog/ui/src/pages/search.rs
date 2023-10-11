@@ -8,7 +8,7 @@ use spog_ui_components::{
     cve::{use_cve_search, CveResult, CveSearchControls},
     hooks::UseStandardSearch,
     sbom::{use_sbom_search, SbomResult, SbomSearchControls},
-    search::{DynamicSearchParameters, SearchMode},
+    search::{DynamicSearchParameters, SearchMode, SearchModeAction},
 };
 use std::ops::Deref;
 use trustification_api::search::SearchResult;
@@ -121,23 +121,21 @@ pub fn search(props: &SearchProperties) -> Html {
 
     // update search terms
 
-    {
-        use_effect_with(
-            (
-                (*search_terms).clone(),
-                advisory.search_params.clone(),
-                sbom.search_params.clone(),
-                sbom_by_dependency.search_params.clone(),
-                cve.search_params.clone(),
-            ),
-            |(search_terms, advisory, sbom, sbom_by_dependency, cve)| {
-                advisory.set(advisory.set_simple_terms(search_terms.clone()));
-                sbom.set(sbom.set_simple_terms(search_terms.clone()));
-                sbom_by_dependency.set(sbom_by_dependency.set_simple_terms(search_terms.clone()));
-                cve.set(cve.set_simple_terms(search_terms.clone()));
-            },
-        );
-    }
+    use_effect_with(
+        (
+            (*search_terms).clone(),
+            advisory.search_params.clone(),
+            sbom.search_params.clone(),
+            sbom_by_dependency.search_params.clone(),
+            cve.search_params.clone(),
+        ),
+        |(search_terms, advisory, sbom, sbom_by_dependency, cve)| {
+            advisory.dispatch(SearchModeAction::SetSimpleTerms(search_terms.clone()));
+            sbom.dispatch(SearchModeAction::SetSimpleTerms(search_terms.clone()));
+            sbom_by_dependency.dispatch(SearchModeAction::SetSimpleTerms(search_terms.clone()));
+            cve.dispatch(SearchModeAction::SetSimpleTerms(search_terms.clone()));
+        },
+    );
 
     // update page state
 
@@ -184,6 +182,7 @@ pub fn search(props: &SearchProperties) -> Html {
                                 <InputGroupItem>
                                     <TextInputGroup style="--pf-v5-c-text-input-group__text-input--MinWidth: 64ch;">
                                         <TextInputGroupMain
+                                            id="search_terms"
                                             icon={Icon::Search}
                                             value={(*text).clone()}
                                             {onchange}
@@ -192,6 +191,7 @@ pub fn search(props: &SearchProperties) -> Html {
                                 </InputGroupItem>
                                 <InputGroupItem>
                                     <Button
+                                        id="search"
                                         variant={ButtonVariant::Control}
                                         icon={Icon::ArrowRight}
                                         {onclick}
@@ -296,13 +296,13 @@ where
     IS: FnOnce(&PageState) -> SearchMode<DynamicSearchParameters>,
     IP: FnOnce(&PageState) -> PaginationControl,
     FH: FnOnce(
-        UseStateHandle<SearchMode<DynamicSearchParameters>>,
+        UseReducerHandle<SearchMode<DynamicSearchParameters>>,
         UsePagination,
         Callback<UseAsyncHandleDeps<SearchResult<R>, String>>,
     ) -> H,
     H: Hook<Output = UseStandardSearch>,
 {
-    let search_params = use_state_eq::<SearchMode<DynamicSearchParameters>, _>(|| init_search(page_state));
+    let search_params = use_reducer_eq::<SearchMode<DynamicSearchParameters>, _>(|| init_search(page_state));
     let state = use_state_eq(UseAsyncState::default);
     let callback = use_callback(
         state.clone(),
@@ -315,15 +315,9 @@ where
     let pagination = use_pagination(*total, || init_pagination(page_state));
     let search = use_hook(search_params.clone(), pagination.clone(), callback);
 
-    let onsort = {
-        use_callback(search_params.clone(), move |sort_by: (String, bool), search_params| {
-            if let SearchMode::Simple(simple) = &**search_params {
-                let mut simple = simple.clone();
-                simple.set_sort_by(sort_by);
-                search_params.set(SearchMode::Simple(simple));
-            };
-        })
-    };
+    let onsort = use_callback(search_params.clone(), move |sort_by: (String, bool), search_params| {
+        search_params.dispatch(SearchModeAction::SetSimpleSort(sort_by));
+    });
 
     UseUnifiedSearch {
         pagination,
