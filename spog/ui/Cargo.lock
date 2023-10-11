@@ -3686,6 +3686,8 @@ dependencies = [
 [[package]]
 name = "yew-more-hooks"
 version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e9e29ef071d90bb12bd74f1ee50b6bb76a663d3c9bc4a7b1498431d810f13152"
 dependencies = [
  "gloo-utils 0.2.0",
  "log",
