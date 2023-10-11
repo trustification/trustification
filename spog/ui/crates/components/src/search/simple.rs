@@ -7,6 +7,20 @@ use yew::html::{ChildrenRenderer, IntoPropValue};
 use yew::prelude::*;
 use yew::virtual_dom::VNode;
 
+#[derive(Clone)]
+pub struct SearchDefaults(pub Vec<DefaultEntry>);
+
+impl SearchDefaults {
+    pub fn apply_defaults<T>(self, state: &mut SearchMode<T>)
+    where
+        T: ToFilterExpression + SimpleProperties<Defaults = SearchDefaults> + Default + Clone,
+    {
+        if let SearchMode::Simple(state) = state {
+            state.apply_defaults(self);
+        }
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct DefaultEntry {
     pub category: Rc<String>,
@@ -15,43 +29,20 @@ pub struct DefaultEntry {
 }
 
 #[derive(Clone)]
-pub struct Search<T> {
-    pub categories: Vec<SearchCategory<T>>,
-    pub defaults: Vec<DefaultEntry>,
+pub struct Search {
+    pub categories: Vec<SearchCategory>,
 }
 
-impl<T> Search<T> {
+impl Search {
     pub fn category_labels(&self) -> impl Iterator<Item = &str> {
         self.categories.iter().map(|cat| cat.title.as_str())
     }
 }
 
-impl<T> Search<T> {
-    /// Apply the current set of defaults to a search state
-    ///
-    /// NOTE: We might consider pulling out a trait for handling any `T`. Right now, we don't need it.
-    pub fn apply_defaults(&self, handle: &UseStateHandle<SearchMode<DynamicSearchParameters>>) {
-        if self.defaults.is_empty() {
-            // early return
-            return;
-        }
-
-        let mut state = (**handle).clone();
-
-        if let SearchMode::Simple(state) = &mut state {
-            for DefaultEntry { category, id, value } in self.defaults.clone() {
-                state.set(category, id, Some(value));
-            }
-        }
-
-        handle.set(state);
-    }
-}
-
 #[derive(Clone)]
-pub struct SearchCategory<T> {
+pub struct SearchCategory {
     pub title: String,
-    pub options: Vec<SearchOption<T>>,
+    pub options: Vec<SearchOption>,
 }
 
 #[derive(Clone)]
@@ -91,38 +82,38 @@ pub type SearchOptionGetter<T> = Rc<dyn Fn(&T) -> bool>;
 pub type SearchOptionSetter<T> = Rc<dyn Fn(&mut T, bool)>;
 
 #[derive(Clone)]
-pub enum SearchOption<T> {
-    Check(SearchOptionCheck<T>),
-    Select(SearchOptionSelect<T>),
+pub enum SearchOption {
+    Check(SearchOptionCheck),
+    Select(SearchOptionSelect),
     Divider,
 }
 
 #[derive(Clone)]
-pub struct SearchOptionCheck<T> {
+pub struct SearchOptionCheck {
     pub label: LabelProvider,
-    pub getter: SearchOptionGetter<T>,
-    pub setter: SearchOptionSetter<T>,
+    pub getter: SearchOptionGetter<DynamicSearchParameters>,
+    pub setter: SearchOptionSetter<DynamicSearchParameters>,
 }
 
 #[derive(Clone)]
-pub struct SearchOptionSelectItem<T> {
+pub struct SearchOptionSelectItem {
     pub label: LabelProvider,
-    pub getter: SearchOptionGetter<T>,
-    pub setter: SearchOptionSetter<T>,
+    pub getter: SearchOptionGetter<DynamicSearchParameters>,
+    pub setter: SearchOptionSetter<DynamicSearchParameters>,
 }
 
 #[derive(Clone)]
-pub struct SearchOptionSelect<T> {
-    pub options: Vec<SearchOptionSelectItem<T>>,
+pub struct SearchOptionSelect {
+    pub options: Vec<SearchOptionSelectItem>,
 }
 
-impl<T> SearchOption<T> {
+impl SearchOption {
     #[allow(unused)]
     pub fn new_check<L, G, S>(label: L, getter: G, setter: S) -> Self
     where
         L: Into<LabelProvider>,
-        G: Fn(&T) -> bool + 'static,
-        S: Fn(&mut T, bool) + 'static,
+        G: Fn(&DynamicSearchParameters) -> bool + 'static,
+        S: Fn(&mut DynamicSearchParameters, bool) + 'static,
     {
         Self::Check(SearchOptionCheck {
             label: label.into(),
@@ -132,18 +123,70 @@ impl<T> SearchOption<T> {
     }
 }
 
-fn search_set<T, F>(search: UseStateHandle<SearchMode<T>>, f: F) -> Callback<bool>
+fn search_set<F>(search: UseReducerHandle<SearchMode<DynamicSearchParameters>>, f: F) -> Callback<bool>
 where
-    T: Clone + 'static,
-    F: Fn(&mut T, bool) + 'static,
+    F: Fn(&mut DynamicSearchParameters, bool) + 'static,
 {
     Callback::from(move |state| {
         if let SearchMode::Simple(simple) = &*search {
             let mut simple = simple.clone();
             f(&mut simple, state);
-            search.set(SearchMode::Simple(simple));
+            search.dispatch(SearchModeAction::SetSimple(simple));
         }
     })
+}
+
+pub enum SearchModeAction {
+    SetTerms(String),
+    SetSimpleTerms(Vec<String>),
+    ApplyDefault(SearchDefaults),
+    Clear,
+    MakeComplex(String),
+    SetSimpleSort((String, bool)),
+    SetSimple(DynamicSearchParameters),
+}
+
+impl Reducible for SearchMode<DynamicSearchParameters> {
+    type Action = SearchModeAction;
+
+    fn reduce(self: Rc<Self>, action: Self::Action) -> Rc<Self> {
+        match action {
+            Self::Action::SetTerms(terms) => match (*self).clone() {
+                SearchMode::Complex(_) => Rc::new(SearchMode::Complex(terms)),
+                SearchMode::Simple(mut s) => {
+                    *s.terms_mut() = terms.split(' ').map(|s| s.to_string()).collect();
+                    Rc::new(SearchMode::Simple(s))
+                }
+            },
+            Self::Action::ApplyDefault(defaults) => {
+                let mut new = (*self).clone();
+                defaults.apply_defaults(&mut new);
+                Rc::new(new)
+            }
+            Self::Action::Clear => match *self {
+                SearchMode::Simple(_) => Rc::new(SearchMode::Simple(DynamicSearchParameters::default())),
+                SearchMode::Complex(_) => Rc::new(SearchMode::Complex(String::new())),
+            },
+            Self::Action::MakeComplex(terms) => Rc::new(SearchMode::Complex(terms)),
+            Self::Action::SetSimple(t) => Rc::new(SearchMode::Simple(t)),
+            Self::Action::SetSimpleSort(sort_by) => match &*self {
+                Self::Complex(_) => self,
+                Self::Simple(s) => {
+                    let mut s = (*s).clone();
+                    s.set_sort_by(sort_by);
+                    Rc::new(Self::Simple(s))
+                }
+            },
+            Self::Action::SetSimpleTerms(terms) => match &*self {
+                Self::Complex(_) => self,
+                Self::Simple(s) => {
+                    let mut s = (*s).clone();
+                    (*s.terms_mut()) = terms;
+                    Rc::new(Self::Simple(s))
+                }
+            },
+        }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
@@ -201,28 +244,19 @@ where
 }
 
 #[derive(Properties)]
-pub struct SimpleSearchProperties<T>
-where
-    T: PartialEq + Clone + ToFilterExpression + 'static,
-{
-    pub search: Rc<Search<T>>,
-    pub search_params: UseStateHandle<SearchMode<T>>,
+pub struct SimpleSearchProperties {
+    pub search: Rc<Search>,
+    pub search_params: UseReducerHandle<SearchMode<DynamicSearchParameters>>,
 }
 
-impl<T> PartialEq for SimpleSearchProperties<T>
-where
-    T: PartialEq + Clone + ToFilterExpression + 'static,
-{
+impl PartialEq for SimpleSearchProperties {
     fn eq(&self, other: &Self) -> bool {
         Rc::ptr_eq(&self.search, &other.search) && self.search_params.eq(&other.search_params)
     }
 }
 
 #[function_component(SimpleSearch)]
-pub fn simple_search<T>(props: &SimpleSearchProperties<T>) -> Html
-where
-    T: Default + PartialEq + Clone + ToFilterExpression + SimpleProperties + 'static,
-{
+pub fn simple_search(props: &SimpleSearchProperties) -> Html {
     let filter_expansion = {
         let search = props.search.clone();
         use_state(|| {
@@ -259,7 +293,7 @@ where
 
     let onclear = use_callback(props.search_params.clone(), |_, search_params| {
         if let SearchMode::Simple(_) = &**search_params {
-            search_params.set(SearchMode::Simple(T::default()));
+            search_params.dispatch(SearchModeAction::Clear);
         }
     });
     let canclear = props.search_params.is_simple();
@@ -285,10 +319,7 @@ where
     )
 }
 
-fn render_opt<T>(props: &SimpleSearchProperties<T>, opt: &SearchOption<T>) -> Html
-where
-    T: Default + PartialEq + Clone + ToFilterExpression + SimpleProperties + 'static,
-{
+fn render_opt(props: &SimpleSearchProperties, opt: &SearchOption) -> Html {
     match opt {
         SearchOption::Divider => {
             html!(<ListDivider/>)

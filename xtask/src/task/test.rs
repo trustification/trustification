@@ -39,6 +39,14 @@ pub struct Test {
     /// Tests to run
     #[arg()]
     tests: Vec<String>,
+
+    /// Skip build
+    #[arg(long, default_value_t = false)]
+    skip_build: bool,
+
+    /// Enable `--nocapture`
+    #[arg(long, default_value_t = false)]
+    nocapture: bool,
 }
 
 impl Test {
@@ -59,7 +67,7 @@ impl Test {
             true => {
                 features.extend(["--features", "ui"]);
 
-                {
+                if !self.skip_build {
                     let _dir = sh.push_dir("spog/ui");
                     cmd!(sh, "npm ci").run()?;
                     cmd!(sh, "trunk-ng build ").run()?;
@@ -97,11 +105,15 @@ impl Test {
             .flat_map(|test| vec!["--test", test])
             .collect::<Vec<_>>();
 
+        let mut opts = vec![];
+        if self.nocapture {
+            opts.push("--nocapture");
+        }
+
         let cmd = cmd!(
             sh,
-            "cargo test -p integration-tests {features...} -- --nocapture {threads...} {test...} {tests...}"
-        )
-        .env("RUST_LOG", "tantivy=off,info");
+            "cargo test -p integration-tests {features...} -- {opts...} {threads...} {test...} {tests...}"
+        );
 
         cmd.run()?;
 

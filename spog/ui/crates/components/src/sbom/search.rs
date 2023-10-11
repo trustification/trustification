@@ -16,7 +16,7 @@ use yew_more_hooks::prelude::*;
 
 #[derive(PartialEq, Properties)]
 pub struct SbomSearchControlsProperties {
-    pub search_params: UseStateHandle<SearchMode<DynamicSearchParameters>>,
+    pub search_params: UseReducerHandle<SearchMode<DynamicSearchParameters>>,
 }
 
 #[function_component(SbomSearchControls)]
@@ -24,19 +24,19 @@ pub fn sbom_search_controls(props: &SbomSearchControlsProperties) -> Html {
     let config = use_config();
     let filters = use_memo((), |()| config.bombastic.filters.clone());
     let search_config = use_memo((), |()| {
-        let search = convert_search(&filters);
-        search.apply_defaults(&props.search_params);
+        let (search, defaults) = convert_search(&filters);
+        props.search_params.dispatch(SearchModeAction::ApplyDefault(defaults));
         search
     });
 
     html!(
-        <SimpleSearch<DynamicSearchParameters> search={search_config} search_params={props.search_params.clone()} />
+        <SimpleSearch search={search_config} search_params={props.search_params.clone()} />
     )
 }
 
 #[hook]
 pub fn use_sbom_search<S>(
-    search_params: UseStateHandle<SearchMode<DynamicSearchParameters>>,
+    search_params: UseReducerHandle<SearchMode<DynamicSearchParameters>>,
     pagination: UsePagination,
     callback: Callback<UseAsyncHandleDeps<SearchResult<Rc<Vec<PackageSummary>>>, String>>,
     f: S,
@@ -93,7 +93,9 @@ pub fn sbom_search(props: &SbomSearchProperties) -> Html {
         ..Default::default()
     });
 
-    let search_params = use_state_eq::<SearchMode<DynamicSearchParameters>, _>(|| page_state.search_params.clone());
+    log::info!("Initi state: {:?}", *page_state);
+
+    let search_params = use_reducer_eq::<SearchMode<DynamicSearchParameters>, _>(|| page_state.search_params.clone());
     let total = use_state_eq(|| None);
     let pagination = use_pagination(*total, || page_state.pagination);
     let state = use_state_eq(UseAsyncState::default);
@@ -111,11 +113,7 @@ pub fn sbom_search(props: &SbomSearchProperties) -> Html {
 
     let onsort = {
         use_callback(search_params.clone(), move |sort_by: (String, bool), search_params| {
-            if let SearchMode::Simple(simple) = &**search_params {
-                let mut simple = simple.clone();
-                simple.set_sort_by(sort_by);
-                search_params.set(SearchMode::Simple(simple));
-            };
+            search_params.dispatch(SearchModeAction::SetSimpleSort(sort_by));
         })
     };
 
