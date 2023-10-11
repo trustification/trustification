@@ -1,4 +1,4 @@
-use reqwest::Url;
+use reqwest::{Response, Url};
 use trustification_api::search::SearchResult;
 use trustification_auth::client::{TokenInjector, TokenProvider};
 use v11y_model::search::SearchHit;
@@ -16,6 +16,10 @@ impl V11yUrl {
 
     pub fn vulnerability_url(&self) -> Url {
         self.base_url.join("/api/v1/vulnerability").unwrap()
+    }
+
+    pub fn get_cve_url(&self, id: impl AsRef<str>) -> Url {
+        self.base_url.join("/api/v1/cve/").unwrap().join(id.as_ref()).unwrap()
     }
 
     pub fn get_vulnerability_url(&self, id: impl AsRef<str>) -> Url {
@@ -64,6 +68,16 @@ impl V11yClient {
             .send()
             .await
             .map(|_| ())?)
+    }
+
+    pub async fn get_cve(&self, id: &str) -> Result<Response, anyhow::Error> {
+        Ok(self
+            .client
+            .get(self.v11y_url.get_cve_url(id))
+            .inject_token(self.provider.as_ref())
+            .await?
+            .send()
+            .await?)
     }
 
     pub async fn get_vulnerability(&self, id: &str) -> Result<Vec<Vulnerability>, anyhow::Error> {

@@ -462,6 +462,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "cve"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "884ee0d6331d2cc6fc3c33108904b426235996790a765c1bfa47ae3584ba8f17"
+dependencies = [
+ "serde",
+ "serde_json",
+ "time",
+ "url",
+ "uuid",
+]
+
+[[package]]
 name = "cvss"
 version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2657,6 +2670,7 @@ dependencies = [
  "browser-panic-hook",
  "chrono",
  "csaf",
+ "cve",
  "cvss",
  "cyclonedx-bom",
  "gloo-events 0.2.0",
@@ -2716,6 +2730,7 @@ dependencies = [
  "bombastic-model",
  "chrono",
  "csaf",
+ "cve",
  "cyclonedx-bom",
  "gloo-events 0.2.0",
  "gloo-net 0.4.0",
@@ -3326,6 +3341,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "79daa5ed5740825c40b389c5e50312b9c86df53fccd33f281df655642b43869d"
 dependencies = [
  "getrandom",
+ "serde",
  "wasm-bindgen",
 ]
 

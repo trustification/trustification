@@ -1,25 +1,19 @@
 use patternfly_yew::prelude::*;
-use std::collections::BTreeMap;
 use std::rc::Rc;
 use yew::prelude::*;
 
 #[derive(PartialEq, Properties)]
 pub struct RelatedProductsProperties {
-    pub products: Rc<BTreeMap<String, Vec<String>>>,
+    pub products: Rc<Vec<String>>,
 }
 
 #[function_component(RelatedProducts)]
 pub fn related_products(props: &RelatedProductsProperties) -> Html {
     html!(
         <Content>
-        { for props.products.iter().map(|(state, products)| {
-            html!(<>
-                <Title level={Level::H3}>{ state.clone() }</Title>
-                <List>
-                    { for products.iter().map(Html::from) }
-                </List>
-            </>)
-        })}
+            <List>
+                { for props.products.iter().map(Html::from) }
+            </List>
         </Content>
     )
 }

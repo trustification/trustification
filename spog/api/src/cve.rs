@@ -5,7 +5,7 @@ use crate::service::collectorist::CollectoristService;
 use crate::service::v11y::V11yService;
 use actix_web::{
     web::{self, ServiceConfig},
-    HttpResponse,
+    HttpResponse, HttpResponseBuilder,
 };
 use actix_web_httpauth::extractors::bearer::BearerAuth;
 use bytes::BytesMut;
@@ -26,7 +26,7 @@ pub(crate) fn configure(auth: Option<Arc<Authenticator>>) -> impl FnOnce(&mut Se
             web::scope("/api/v1/cve")
                 .wrap(new_auth!(auth))
                 .service(web::resource("").to(cve_search))
-                .service(web::resource("/{id}").to(cve_details)),
+                .service(web::resource("/{id}").to(cve_get)),
         );
     }
 }
@@ -38,6 +38,15 @@ async fn cve_search(
     Ok(HttpResponse::Ok().json(v11y.search(params).await.map_err(Error::V11y)?))
 }
 
+async fn cve_get(id: web::Path<String>, v11y: web::Data<V11yService>) -> actix_web::Result<HttpResponse> {
+    let id = id.into_inner();
+
+    let response = v11y.fetch(&id).await?;
+
+    Ok(HttpResponseBuilder::new(response.status()).streaming(response.bytes_stream()))
+}
+
+#[allow(unused)]
 async fn cve_details(
     app_state: web::Data<AppState>,
     guac: web::Data<GuacService>,
