@@ -135,6 +135,14 @@ v11y:
         memory: "2Gi"
       limits:
         memory: "2Gi"
+  walker:
+    enable: true
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "2Gi"
+      limits:
+        memory: "2Gi"
 exhort:
   enabled: true
   api:
