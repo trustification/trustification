@@ -14,10 +14,10 @@ mod sbom_search;
 mod scanner;
 mod search;
 
+pub use self::cve::*;
 pub use advisory::*;
 pub use advisory_search::*;
 pub use chicken::*;
-pub use cve::*;
 pub use cve_search::*;
 pub use index::*;
 pub use not_found::*;

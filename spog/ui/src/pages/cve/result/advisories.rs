@@ -1,5 +1,5 @@
 use patternfly_yew::prelude::*;
-use spog_model::prelude::AdvisoryOverview;
+use spog_model::prelude::{AdvisoryOverview, AdvisorySummary};
 use spog_ui_navigation::{AppRoute, View};
 use std::rc::Rc;
 use yew::prelude::*;
@@ -7,7 +7,7 @@ use yew_nested_router::components::Link;
 
 #[derive(PartialEq, Properties)]
 pub struct RelatedAdvisoriesProperties {
-    pub advisories: Rc<Vec<AdvisoryOverview>>,
+    pub advisories: Rc<Vec<AdvisorySummary>>,
 }
 
 #[derive(Copy, Clone, Eq, PartialEq)]
@@ -36,6 +36,22 @@ impl TableEntryRenderer<Column> for AdvisoryOverview {
 pub fn related_advisories(props: &RelatedAdvisoriesProperties) -> Html {
     let (entries, _) = use_table_data(MemoizedTableModel::new(props.advisories.clone()));
 
+    impl TableEntryRenderer<Column> for AdvisorySummary {
+        fn render_cell(&self, context: CellContext<'_, Column>) -> Cell {
+            match context.column {
+                Column::Id => {
+                    html! (
+                        <Link<AppRoute> target={AppRoute::Advisory(View::Content {id: self.id.clone()})} >
+                            { self.id.clone() }
+                        </Link<AppRoute>>
+                    )
+                }
+                Column::Title => html!(self.title.clone()),
+            }
+            .into()
+        }
+    }
+
     let header = html_nested!(
         <TableHeader<Column>>
             <TableColumn<Column> index={Column::Id} label="ID" />
@@ -44,7 +60,7 @@ pub fn related_advisories(props: &RelatedAdvisoriesProperties) -> Html {
     );
 
     html!(
-        <Table<Column, UseTableData<Column, MemoizedTableModel<AdvisoryOverview>>>
+        <Table<Column, UseTableData<Column, MemoizedTableModel<AdvisorySummary>>>
             {header}
             {entries}
             mode={TableMode::Compact}

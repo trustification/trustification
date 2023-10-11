@@ -47,7 +47,7 @@ pub fn config(
         web::scope("/api/v1")
             .wrap(new_auth!(auth))
             .service(vulnerability::ingest_vulnerability)
-            .service(vulnerability::get)
+            .service(vulnerability::get_cve)
             //.service(vulnerability::get_by_alias),
             .service(search::search_cve),
     )

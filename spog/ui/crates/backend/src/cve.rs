@@ -1,5 +1,4 @@
 use crate::{ApplyAccessToken, Backend, Endpoint, SearchParameters};
-use spog_model::prelude::*;
 use spog_ui_common::error::*;
 use std::rc::Rc;
 use trustification_api::search::SearchResult;
@@ -22,7 +21,7 @@ impl CveService {
         }
     }
 
-    pub async fn get(&self, id: impl AsRef<str>) -> Result<CveDetails, ApiError> {
+    pub async fn get(&self, id: impl AsRef<str>) -> Result<cve::Cve, ApiError> {
         let url = self.backend.join(
             Endpoint::Api,
             &format!("/api/v1/cve/{id}", id = urlencoding::encode(id.as_ref())),

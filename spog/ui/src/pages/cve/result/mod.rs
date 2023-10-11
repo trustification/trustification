@@ -4,17 +4,16 @@ mod products;
 use advisories::RelatedAdvisories;
 use patternfly_yew::prelude::*;
 use products::RelatedProducts;
-use spog_model::prelude::CveDetails;
-use spog_ui_backend::{use_backend, CveService};
-use spog_ui_components::{async_state_renderer::async_content, common::PageHeading, time::Date};
+use spog_ui_backend::{use_backend, CveService, SearchParameters, VexService};
+use spog_ui_components::{async_state_renderer::async_content, time::Date};
 use std::rc::Rc;
-use v11y_model::ScoreType;
 use yew::prelude::*;
 use yew_more_hooks::hooks::use_async_with_cloned_deps;
 use yew_oauth2::hook::use_latest_access_token;
 
 #[derive(PartialEq, Properties)]
 pub struct ResultViewProperties {
+    /// the CVE id
     pub id: String,
 }
 
@@ -23,92 +22,106 @@ pub fn result_view(props: &ResultViewProperties) -> Html {
     let backend = use_backend();
     let access_token = use_latest_access_token();
 
-    let state = use_async_with_cloned_deps(
-        move |id| async move {
-            let service = CveService::new(backend.clone(), access_token.clone());
-            service.get(&id).await.map(Rc::new).map_err(|err| err.to_string())
-        },
-        props.id.clone(),
-    );
+    let details = {
+        let backend = backend.clone();
+        let access_token = access_token.clone();
+        use_async_with_cloned_deps(
+            move |id| async move {
+                let service = CveService::new(backend.clone(), access_token.clone());
+                service.get(&id).await.map(Rc::new).map_err(|err| err.to_string())
+            },
+            props.id.clone(),
+        )
+    };
+
+    let products = {
+        let _backend = backend.clone();
+        let _access_token = access_token.clone();
+        use_async_with_cloned_deps(
+            move |_id| async move { Ok::<_, String>(Rc::new(vec!["Product A".to_string(), "Product B".to_string()])) },
+            props.id.clone(),
+        )
+    };
+
+    let advisories = {
+        let backend = backend.clone();
+        let access_token = access_token.clone();
+        use_async_with_cloned_deps(
+            |id| async move {
+                let service = VexService::new(backend.clone(), access_token.clone());
+                service
+                    .search_advisories(&format!(r#"cve:{id}"#), &SearchParameters::default())
+                    .await
+                    .map(|r| {
+                        let mut related = r.result;
+                        related.sort_unstable_by(|a, b| a.id.cmp(&b.id));
+                        Rc::new(related)
+                    })
+                    .map_err(|err| err.to_string())
+            },
+            props.id.clone(),
+        )
+    };
+
+    #[derive(Copy, Clone, PartialEq, Eq)]
+    enum TabIndex {
+        Products,
+        Advisories,
+    }
+
+    let tab = use_state_eq(|| TabIndex::Products);
+    let onselect = use_callback(tab.clone(), |index, selected| selected.set(index));
 
     html!(
         <>
-            <PageHeading>{props.id.clone()}</PageHeading>
+            <PageSection sticky={vec![PageSectionSticky::Top]} variant={PageSectionVariant::Light} >
+                <Content>
+                    <Title>{props.id.clone()}</Title>
+                </Content>
+                { async_content(&*details, |details| html!(<CveDetailsView details={details.clone()} />)) }
+            </PageSection>
+
             <PageSection>
-            {
-                async_content(&*state, |state| html!(<ResultContent details={state.clone()} />))
-            }
+                <Tabs<TabIndex> r#box=true selected={*tab} {onselect}>
+                    <Tab<TabIndex> index={TabIndex::Products} title="Related Products">
+                        { async_content(&*products, |products| html!(<RelatedProducts {products} />)) }
+                    </Tab<TabIndex>>
+                    <Tab<TabIndex> index={TabIndex::Advisories} title="Related Advisories">
+                        { async_content(&*advisories, |advisories| html!(<RelatedAdvisories {advisories} />)) }
+                    </Tab<TabIndex>>
+                </Tabs<TabIndex>>
             </PageSection>
         </>
     )
 }
 
 #[derive(PartialEq, Properties)]
-pub struct ResultContentProperties {
-    details: Rc<CveDetails>,
-}
-
-#[function_component(ResultContent)]
-fn result_content(props: &ResultContentProperties) -> Html {
-    let advisories = use_memo(props.details.clone(), |details| details.advisories.clone());
-    let products = use_memo(props.details.clone(), |details| details.products.clone());
-
-    html!(
-        <Grid gutter=true>
-            <GridItem cols={[12]}>
-                <CveDetailsView details={props.details.clone()} />
-            </GridItem>
-            <GridItem cols={[6]}>
-                <Card title={html!(<Title>{"Related products"}</Title>)}>
-                    <CardBody>
-                        <RelatedProducts {products} />
-                    </CardBody>
-                </Card>
-            </GridItem>
-            <GridItem cols={[6]}>
-                <Card title={html!(<Title>{"Related advisories"}</Title>)}>
-                    <CardBody>
-                        <RelatedAdvisories {advisories} />
-                    </CardBody>
-                </Card>
-            </GridItem>
-        </Grid>
-    )
-}
-
-#[derive(PartialEq, Properties)]
 pub struct CveDetailsViewProperties {
-    pub details: Rc<CveDetails>,
+    pub details: Rc<cve::Cve>,
 }
 
 #[function_component(CveDetailsView)]
 pub fn cve_details(props: &CveDetailsViewProperties) -> Html {
-    props
-        .details
-        .details
-        .iter()
-        .map(|details| {
+    match &*props.details {
+        cve::Cve::Published(details) => {
             html!(
-                <Card title={html!(<Title>{ details.origin.clone() }</Title>)}>
-                    <CardBody>
-                        <DescriptionList>
-                            if !details.summary.is_empty() {
-                                <DescriptionGroup term="Summary">{ details.summary.clone() }</DescriptionGroup>
-                            }
-                            if !details.details.is_empty() {
-                                <DescriptionGroup term="Details">{ details.details.clone() }</DescriptionGroup>
-                            }
-                            <DescriptionGroup term="Published"><Date timestamp={details.published} /></DescriptionGroup>
-                            if let Some(withdrawn) = details.withdrawn {
-                                <DescriptionGroup term="Published"><Date timestamp={withdrawn} /></DescriptionGroup>
-                            }
-                            if let Some(cvss3) = details.severities.iter().find(|score| score.r#type == ScoreType::Cvss3) {
-                                <DescriptionGroup term="Score">{ cvss3.score }</DescriptionGroup>
-                            }
-                        </DescriptionList>
-                    </CardBody>
-                </Card>
+                <DescriptionList>
+                    if let Some(title) = &details.containers.cna.title {
+                        <DescriptionGroup term="Title">{ title.clone() }</DescriptionGroup>
+                    }
+                    <DescriptionGroup term="Descriptions">
+                        { for details.containers.cna.descriptions.iter().map(|desc|{
+                            html!({ desc.value.clone() })
+                        })}
+                    </DescriptionGroup>
+                    if let Some(timestamp) = details.metadata.date_published {
+                        <DescriptionGroup term="Published"><Date timestamp={timestamp.assume_utc()} /></DescriptionGroup>
+                    }
+                </DescriptionList>
             )
-        })
-        .collect()
+        }
+        cve::Cve::Rejected(details) => {
+            html!()
+        }
+    }
 }
