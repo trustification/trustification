@@ -7680,6 +7680,7 @@ dependencies = [
  "anyhow",
  "async-compression",
  "async-stream",
+ "bombastic-model",
  "bytes",
  "clap",
  "futures",

@@ -321,8 +321,7 @@ impl Storage {
         );
         let bucket = self.bucket.with_extra_headers(headers);
 
-        pin_mut!(data);
-        let data = self.validator.validate(encoding, data).await?;
+        let data = self.validator.validate(encoding, Box::pin(data)).await?;
         let mut rdr = stream::encode(encoding, data)?;
         let path = format!("{}{}", DATA_PATH, key);
 
@@ -339,8 +338,8 @@ impl Storage {
     }
 
     pub async fn put_json_slice<'a>(&self, key: &'a str, json: &'a [u8]) -> Result<usize, Error> {
-        let mut stream = once(ok::<_, Error>(Bytes::copy_from_slice(json)));
-        self.put_stream(key, "application/json", None, &mut stream).await
+        let stream = once(ok::<_, Error>(Bytes::copy_from_slice(json)));
+        self.put_stream(key, "application/json", None, stream).await
     }
 
     pub async fn get_head(&self, path: S3Path) -> Result<Head, Error> {
@@ -464,7 +463,7 @@ impl Storage {
         let res = {
             let (head, _status) = self.bucket.head_object(path.path.clone()).await?;
             let stream = self.get_encoded_stream(path.clone()).await?;
-            stream::decode(head.content_encoding.as_deref(), stream.boxed())
+            stream::decode(head.content_encoding.as_deref(), Box::pin(stream))
         };
         if res.is_err() {
             self.metrics.gets_failed_total.inc();

@@ -1,6 +1,8 @@
+use super::stream::ObjectStream;
 use crate::Error;
+use bombastic_model::prelude::SBOM as SBOMValidator;
 use bytes::Bytes;
-use futures::Stream;
+use futures::{future::ok, pin_mut, stream::once, StreamExt};
 use std::str::FromStr;
 
 #[derive(Clone, Debug, Default)]
@@ -27,16 +29,27 @@ impl FromStr for Validator {
 }
 
 impl Validator {
-    pub async fn validate(
+    pub async fn validate<'a>(
         &self,
         _encoding: Option<&str>,
-        data: impl Stream<Item = Result<Bytes, Error>> + Unpin,
-    ) -> Result<impl Stream<Item = Result<Bytes, Error>> + Unpin, Error> {
+        data: ObjectStream<'a>,
+    ) -> Result<ObjectStream<'a>, Error> {
         use Validator::*;
         match self {
             None => Ok(data),
-            SBOM => Ok(data), // TODO
-            VEX => Ok(data),  // TODO
+            SBOM => {
+                let mut bytes = vec![];
+                pin_mut!(data);
+                while let Some(chunk) = data.next().await {
+                    bytes.extend_from_slice(&chunk?)
+                }
+                let _ = SBOMValidator::parse(&bytes).map_err(|e| {
+                    log::error!("Invalid SBOM: {e}");
+                    Error::InvalidContent
+                })?;
+                Ok(Box::pin(once(ok(Bytes::copy_from_slice(&bytes)))))
+            }
+            VEX => Ok(data), // TODO
             Seedwing(_url) => todo!(),
         }
     }
