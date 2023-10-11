@@ -1,12 +1,12 @@
 use async_compression::tokio::bufread::{BzDecoder, ZstdDecoder, ZstdEncoder};
 use bytes::Bytes;
-use futures::{stream::BoxStream, Stream, StreamExt, TryStreamExt};
+use futures::{stream::LocalBoxStream, Stream, StreamExt, TryStreamExt};
 use tokio::io::AsyncRead;
 use tokio_util::io::{ReaderStream, StreamReader};
 
 use crate::Error;
 
-pub type ObjectStream = BoxStream<'static, Result<Bytes, Error>>;
+pub type ObjectStream<'a> = LocalBoxStream<'a, Result<Bytes, Error>>;
 
 pub fn encode<'a>(
     encoding: Option<&str>,
@@ -22,7 +22,7 @@ pub fn encode<'a>(
 }
 
 // Returns an unencoded JSON stream
-pub fn decode(encoding: Option<&str>, stream: ObjectStream) -> Result<ObjectStream, Error> {
+pub fn decode<'a>(encoding: Option<&str>, stream: ObjectStream<'a>) -> Result<ObjectStream<'a>, Error> {
     match encoding {
         Some(s) => match s {
             "zstd" => Ok(zstd(stream)),
@@ -36,11 +36,11 @@ pub fn decode(encoding: Option<&str>, stream: ObjectStream) -> Result<ObjectStre
 fn zstd(s: ObjectStream) -> ObjectStream {
     ReaderStream::new(ZstdDecoder::new(StreamReader::new(s)))
         .map_err(Error::Io)
-        .boxed()
+        .boxed_local()
 }
 
 fn bzip(s: ObjectStream) -> ObjectStream {
     ReaderStream::new(BzDecoder::new(StreamReader::new(s)))
         .map_err(Error::Io)
-        .boxed()
+        .boxed_local()
 }
