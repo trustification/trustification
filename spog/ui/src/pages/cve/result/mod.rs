@@ -5,6 +5,7 @@ use advisories::RelatedAdvisories;
 use patternfly_yew::prelude::*;
 use products::RelatedProducts;
 use spog_ui_backend::{use_backend, CveService, SearchParameters, VexService};
+use spog_ui_components::markdown::Markdown;
 use spog_ui_components::{async_state_renderer::async_content, time::Date};
 use std::rc::Rc;
 use yew::prelude::*;
@@ -111,7 +112,7 @@ pub fn cve_details(props: &CveDetailsViewProperties) -> Html {
                     }
                     <DescriptionGroup term="Descriptions">
                         { for details.containers.cna.descriptions.iter().map(|desc|{
-                            html!({ desc.value.clone() })
+                            html!(<Markdown content={Rc::new(desc.value.clone())} />)
                         })}
                     </DescriptionGroup>
                     if let Some(timestamp) = details.metadata.date_published {
