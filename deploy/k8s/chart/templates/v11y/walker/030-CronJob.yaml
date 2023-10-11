@@ -49,11 +49,12 @@ spec:
               volumeMounts:
                 - mountPath: /mnt
                   name: cvelist
-              command: ["/usr/bin/bash"]
+              command: ["/trust"]
               args:
-                - "-c"
-                - |
-                  exec trust v11y walker --source /mnt/cvelistV5
+                - "v11y"
+                - "walker"
+                - "--source"
+                - "/mnt/cvelistV5"
               env:
                 - name: RUST_LOG
                   value: {{ default "info" .Values.v11y.walker.logLevel }}
