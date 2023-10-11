@@ -35,7 +35,7 @@ spec:
               args:
                 - "-c"
                 - |
-                  if -d cvelistV5; then
+                  if test -d cvelistV5; then
                     git clone https://github.com/CVEProject/cvelistV5
                   else
                     cd cvelistV5
