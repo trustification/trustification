@@ -83,18 +83,4 @@ spec:
                   name: infra
               resources:
                 {{- toYaml .Values.v11y.walker.resources | nindent 16 }}
-              livenessProbe:
-                httpGet:
-                  path: /health/live
-                  port: 9010
-                initialDelaySeconds: 2
-              readinessProbe:
-                httpGet:
-                  path: /health/ready
-                  port: 9010
-                initialDelaySeconds: 2
-              startupProbe:
-                httpGet:
-                  path: /health/startup
-                  port: 9010
 {{ end }}
