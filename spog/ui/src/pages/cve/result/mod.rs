@@ -124,6 +124,19 @@ pub fn result_view(props: &ResultViewProperties) -> Html {
     )
 }
 
+// Result content
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum TabIndex {
+    RelatedProducts,
+    RelatedAdvisories,
+}
+
+#[derive(PartialEq, Properties)]
+pub struct ResultContentProperties {
+    details: Rc<CveDetails>,
+}
+
 fn cve_title(cve: &cve::Cve) -> Html {
     if let cve::Cve::Published(details) = cve {
         html!(<p>{ details.containers.cna.title.clone() }</p>)
