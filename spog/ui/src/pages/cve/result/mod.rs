@@ -5,6 +5,7 @@ use advisories::RelatedAdvisories;
 use cve::published::Metric;
 use patternfly_yew::prelude::*;
 use products::RelatedProducts;
+use spog_model::prelude::CveDetails;
 use spog_ui_backend::{use_backend, CveService, SearchParameters, VexService};
 use spog_ui_components::cvss::Cvss3Label;
 use spog_ui_components::markdown::Markdown;
@@ -40,10 +41,17 @@ pub fn result_view(props: &ResultViewProperties) -> Html {
     };
 
     let products = {
-        let _backend = backend.clone();
-        let _access_token = access_token.clone();
+        let backend = backend.clone();
+        let access_token = access_token.clone();
         use_async_with_cloned_deps(
-            move |_id| async move { Ok::<_, String>(Rc::new(vec!["Product A".to_string(), "Product B".to_string()])) },
+            move |id| async move {
+                let service = CveService::new(backend.clone(), access_token.clone());
+                service
+                    .get_related_products(&id)
+                    .await
+                    .map(Rc::new)
+                    .map_err(|err| err.to_string())
+            },
             props.id.clone(),
         )
     };
@@ -113,7 +121,7 @@ pub fn result_view(props: &ResultViewProperties) -> Html {
             <PageSection>
                 <Tabs<TabIndex> r#box=true selected={page_state.tab} {onselect}>
                     <Tab<TabIndex> index={TabIndex::Products} title="Related Products">
-                        { async_content(&*products, |products| html!(<RelatedProducts {products} />)) }
+                        { async_content(&*products, |products| html!(<RelatedProducts cve_details={products} />)) }
                     </Tab<TabIndex>>
                     <Tab<TabIndex> index={TabIndex::Advisories} title="Related Advisories">
                         { async_content(&*advisories, |advisories| html!(<RelatedAdvisories {advisories} />)) }
@@ -122,6 +130,13 @@ pub fn result_view(props: &ResultViewProperties) -> Html {
             </PageSection>
         </>
     )
+}
+
+// Result content
+
+#[derive(PartialEq, Properties)]
+pub struct ResultContentProperties {
+    details: Rc<CveDetails>,
 }
 
 fn cve_title(cve: &cve::Cve) -> Html {
