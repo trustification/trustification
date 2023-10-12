@@ -49,7 +49,20 @@ impl Run {
             if let Some(key) = name.strip_suffix(".json") {
                 log::info!("Processing: {key}");
                 let data = tokio::fs::read(entry.path()).await?;
-                storage.put_json_slice(key, &data).await?;
+
+                const MAX_RETRIES: usize = 10;
+                for retry in 0..MAX_RETRIES {
+                    match storage.put_json_slice(key, &data).await {
+                        Ok(_) => break,
+                        Err(e) => {
+                            log::warn!("Failed to store {} (attempt {}/{}): {:?}", key, retry, MAX_RETRIES, e);
+                            tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
+                            if retry == MAX_RETRIES - 1 {
+                                return Err(e)?;
+                            }
+                        }
+                    }
+                }
             }
         }
 
