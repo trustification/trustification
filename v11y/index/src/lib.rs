@@ -209,7 +209,7 @@ pub struct CveQuery {
 }
 
 impl trustification_index::Index for Index {
-    type MatchedDocument = SearchHit;
+    type MatchedDocument = SearchHit<SearchDocument>;
     type Document = Cve;
     type QueryContext = CveQuery;
 

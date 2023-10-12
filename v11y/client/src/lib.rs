@@ -1,7 +1,7 @@
 use reqwest::{Response, Url};
 use trustification_api::search::SearchResult;
 use trustification_auth::client::{TokenInjector, TokenProvider};
-use v11y_model::search::SearchHit;
+use v11y_model::search::{SearchDocument, SearchHit};
 
 pub use v11y_model::*;
 
@@ -115,7 +115,7 @@ impl V11yClient {
         q: &str,
         limit: usize,
         offset: usize,
-    ) -> Result<SearchResult<Vec<SearchHit>>, anyhow::Error> {
+    ) -> Result<SearchResult<Vec<SearchHit<SearchDocument>>>, anyhow::Error> {
         Ok(self
             .client
             .get(self.v11y_url.search_url())
