@@ -138,7 +138,7 @@ pub fn cve_result(props: &CveResultProperties) -> Html {
         >
             <Table<Column, UseTableData<Column, MemoizedTableModel<CveEntry>>>
                 {entries}
-                mode={TableMode::Expandable}
+                mode={TableMode::Default}
                 {onexpand}
             />
         </TableWrapper<Column, UseTableData<Column, MemoizedTableModel<CveEntry>>>>
