@@ -51,6 +51,10 @@ parameters:
   required: true
 - name: VEXINATION_INDEXER_RESOURCES
   required: true
+- name: V11Y_INDEXER_RESOURCES
+  required: true
+- name: V11Y_WALKER_RESOURCES
+  required: true
 - name: SPOG_API_RESOURCES
   required: true
 - name: SPOG_UI_RESOURCES
@@ -60,6 +64,18 @@ parameters:
 - name: OIDC_PROVIDER_CLIENT_SECRET_KEY
   required: true
 - name: V11Y_API_RESOURCES
+  required: true
+- name: V11Y_STORAGE_BUCKET
+  required: true
+- name: V11Y_AWS_SECRET_NAME
+  required: true
+- name: V11Y_INDEXER_STORED_TOPIC
+  required: true
+- name: V11Y_INDEXER_INDEXED_TOPIC
+  required: true
+- name: V11Y_INDEXER_FAILED_TOPIC
+  required: true
+- name: V11Y_INDEXER_GUAC_TOPIC
   required: true
 - name: COLLECTORIST_RESOURCES
   required: true
