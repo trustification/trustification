@@ -90,7 +90,7 @@ pub fn result_view(props: &ResultViewProperties) -> Html {
                         }}
                     </Title>
                     if let UseAsyncState::Ready(Ok(details)) = &*details {
-                        { cve_title(&details) }
+                        { cve_title(details) }
                     }
                 </Content>
 
