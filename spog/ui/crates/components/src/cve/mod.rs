@@ -5,23 +5,23 @@ pub use search::*;
 use crate::cvss::CvssScore;
 use crate::table_wrapper::TableWrapper;
 use patternfly_yew::prelude::*;
+use spog_model::cve::CveSearchDocument;
 use spog_ui_common::{utils::cvss::Cvss, utils::time::date, utils::OrNone};
 use spog_ui_navigation::{AppRoute, View};
 use std::rc::Rc;
 use trustification_api::search::SearchResult;
-use v11y_model::search::SearchDocument;
 use yew::prelude::*;
 use yew_more_hooks::prelude::*;
 use yew_nested_router::components::Link;
 
 #[derive(PartialEq, Properties, Clone)]
 pub struct CveEntry {
-    cve: SearchDocument,
+    cve: CveSearchDocument,
 }
 
 #[derive(PartialEq, Properties)]
 pub struct CveResultProperties {
-    pub state: UseAsyncState<SearchResult<Rc<Vec<SearchDocument>>>, String>,
+    pub state: UseAsyncState<SearchResult<Rc<Vec<CveSearchDocument>>>, String>,
     pub onsort: Callback<(String, bool)>,
 }
 
@@ -31,6 +31,7 @@ pub enum Column {
     Description,
     Severity,
     DatePublished,
+    Related,
 }
 
 impl TableEntryRenderer<Column> for CveEntry {
@@ -56,6 +57,9 @@ impl TableEntryRenderer<Column> for CveEntry {
                 </>
             ),
             Column::DatePublished => html!({ OrNone(self.cve.date_published).map(date) }),
+            Column::Related => {
+                html!({ self.cve.related_advisories })
+            }
         }
         .into()
     }
@@ -132,6 +136,11 @@ pub fn cve_result(props: &CveResultProperties) -> Html {
             text_modifier: Some(TextModifier::Wrap),
             sortby: *sortby,
             onsort: onsort.clone()
+        }),
+        yew::props!(TableColumnProperties<Column> {
+             index: Column::Related,
+             label: "Relations",
+             width: ColumnWidth::Percent(10),
         }),
     ];
 

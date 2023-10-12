@@ -4,12 +4,13 @@ use crate::{
     search::*,
 };
 use patternfly_yew::prelude::*;
+use spog_model::cve::CveSearchDocument;
 use spog_ui_backend::CveService;
 use spog_ui_common::utils::pagination_to_offset;
 use spog_ui_utils::config::use_config;
 use std::rc::Rc;
 use trustification_api::search::SearchResult;
-use v11y_model::search::{Cves, SearchDocument};
+use v11y_model::search::Cves;
 use yew::prelude::*;
 use yew_more_hooks::prelude::*;
 
@@ -40,7 +41,7 @@ pub fn cve_search_controls(props: &CveSearchControlsProperties) -> Html {
 pub fn use_cve_search(
     search_params: UseReducerHandle<SearchMode<DynamicSearchParameters>>,
     pagination: UsePagination,
-    callback: Callback<UseAsyncHandleDeps<SearchResult<Rc<Vec<SearchDocument>>>, String>>,
+    callback: Callback<UseAsyncHandleDeps<SearchResult<Rc<Vec<CveSearchDocument>>>, String>>,
 ) -> UseStandardSearch {
     let config = use_config();
     use_generic_search::<Cves, _, _, _, _>(

@@ -1,4 +1,6 @@
 use std::collections::BTreeMap;
+use std::ops::Deref;
+use v11y_model::search::SearchDocument;
 
 #[derive(Clone, Debug, PartialEq, serde::Deserialize, serde::Serialize)]
 pub struct CveDetails {
@@ -38,4 +40,22 @@ pub struct PackageRelatedToProductCve {
 pub struct AdvisoryOverview {
     pub id: String,
     pub title: String,
+}
+
+#[derive(Clone, serde::Deserialize, serde::Serialize, Debug, PartialEq, utoipa::ToSchema)]
+pub struct CveSearchDocument {
+    pub document: SearchDocument,
+
+    #[serde(default)]
+    pub related_advisories: usize,
+    #[serde(default)]
+    pub related_products: usize,
+}
+
+impl Deref for CveSearchDocument {
+    type Target = SearchDocument;
+
+    fn deref(&self) -> &Self::Target {
+        &self.document
+    }
 }

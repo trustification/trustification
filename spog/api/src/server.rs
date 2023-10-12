@@ -68,7 +68,13 @@ impl Server {
     }
 
     pub async fn run(self, context: MainContext<()>, listener: Option<TcpListener>) -> anyhow::Result<()> {
-        let state = web::Data::new(configure(&self.run)?);
+        let provider = self.run.oidc.into_provider_or_devmode(self.run.devmode).await?;
+        let state = web::Data::new(AppState {
+            client: self.run.client.build_client()?,
+            bombastic: self.run.bombastic_url.clone(),
+            vexination: self.run.vexination_url.clone(),
+            provider: provider.clone(),
+        });
 
         let config_configurator = config::configurator(self.run.config).await?;
 
@@ -84,8 +90,6 @@ impl Server {
         if authenticator.is_none() {
             log::warn!("Authentication is disabled");
         }
-
-        let provider = self.run.oidc.into_provider_or_devmode(self.run.devmode).await?;
 
         let crda = self.run.crda_url.map(CrdaClient::new).map(web::Data::new);
         let crda_payload_limit = self.run.crda_payload_limit;
@@ -241,6 +245,7 @@ impl actix_web::error::ResponseError for Error {
 
 pub struct AppState {
     client: reqwest::Client,
+    pub provider: Arc<dyn TokenProvider>,
     pub bombastic: reqwest::Url,
     pub vexination: reqwest::Url,
 }
@@ -355,12 +360,4 @@ impl AppState {
             }
         }
     }
-}
-
-pub(crate) fn configure(run: &Run) -> anyhow::Result<AppState> {
-    Ok(AppState {
-        client: run.client.build_client()?,
-        bombastic: run.bombastic_url.clone(),
-        vexination: run.vexination_url.clone(),
-    })
 }

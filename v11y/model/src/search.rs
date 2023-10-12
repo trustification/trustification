@@ -1,5 +1,6 @@
 use serde_json::Value;
 use sikula::prelude::*;
+use std::fmt::Debug;
 use time::OffsetDateTime;
 
 #[derive(Clone, Debug, PartialEq, Search)]
@@ -54,9 +55,9 @@ pub struct SearchDocument {
 
 /// The hit describes the document, its score and optionally an explanation of why that score was given.
 #[derive(Clone, serde::Deserialize, serde::Serialize, Debug, PartialEq, utoipa::ToSchema)]
-pub struct SearchHit {
+pub struct SearchHit<T> {
     /// The document that was matched.
-    pub document: SearchDocument,
+    pub document: T,
     /// Score as evaluated by the search engine.
     pub score: f32,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -67,11 +68,22 @@ pub struct SearchHit {
     pub metadata: Option<Value>,
 }
 
-/// The payload returned describing how many results matched and the matching documents (within offset and limit requested).
-#[derive(serde::Deserialize, serde::Serialize, Debug, PartialEq, utoipa::ToSchema)]
-pub struct SearchResult {
-    /// Total number of matching documents
-    pub total: usize,
-    /// Documents matched up to max requested
-    pub result: Vec<SearchHit>,
+impl<T> SearchHit<T> {
+    pub fn map<U, F>(self, f: F) -> SearchHit<U>
+    where
+        F: FnOnce(T) -> U,
+    {
+        let Self {
+            document,
+            score,
+            explanation,
+            metadata,
+        } = self;
+        SearchHit {
+            document: f(document),
+            score,
+            explanation,
+            metadata,
+        }
+    }
 }
