@@ -22,6 +22,7 @@ mod vulnerability;
     paths(
         crate::server::vulnerability::ingest_vulnerability,
         crate::server::vulnerability::get,
+        crate::server::search::search_cve,
         //crate::server::vulnerability::get_by_alias,
     ),
     components(

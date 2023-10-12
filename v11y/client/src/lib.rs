@@ -18,8 +18,8 @@ impl V11yUrl {
         self.base_url.join("/api/v1/vulnerability").unwrap()
     }
 
-    pub fn get_cve_url(&self, id: impl AsRef<str>) -> Url {
-        self.base_url.join("/api/v1/cve/").unwrap().join(id.as_ref()).unwrap()
+    pub fn search_url(&self) -> Url {
+        self.base_url.join("/api/v1/search").unwrap()
     }
 
     pub fn get_vulnerability_url(&self, id: impl AsRef<str>) -> Url {
