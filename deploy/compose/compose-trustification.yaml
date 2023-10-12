@@ -108,6 +108,7 @@ services:
       HTTP_SERVER_BIND_ADDR: "::"
 
   spog-ui:
+    command: /nginx.sh
     image: $TRUST_UI_IMAGE:${TRUST_VERSION:?TRUST_VERSION is required}
     environment:
       - API_URL=http://localhost:$SPOG_API_PORT
