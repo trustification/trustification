@@ -20,7 +20,7 @@ use spog_ui_common::{
     components::SafeHtml,
     utils::{time::chrono_date, OrNone},
 };
-use spog_ui_navigation::AppRoute;
+use spog_ui_navigation::{AppRoute, View};
 
 use yew::prelude::*;
 use yew_more_hooks::hooks::use_async_with_cloned_deps;
@@ -113,7 +113,7 @@ impl TableEntryRenderer<Column> for VulnerabilityWrapper {
             Column::Cve => match &self.cve {
                 Some(cve) => html!(
                     <Link<AppRoute>
-                        target={AppRoute::Cve{id: cve.clone()}}
+                        target={AppRoute::Cve(View::Content { id: cve.clone() })}
                     >
                         {cve.clone()}
                     </Link<AppRoute>>

@@ -24,7 +24,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 8,
+  "id": 21,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -88,7 +88,7 @@
       },
       "gridPos": {
         "h": 7,
-        "w": 12,
+        "w": 24,
         "x": 0,
         "y": 0
       },
@@ -114,12 +114,48 @@
           "editorMode": "code",
           "expr": "histogram_quantile(0.99, sum by(le) (rate(spog_api_http_requests_duration_seconds_bucket{namespace=\"$namespace\"}[10m])))",
           "interval": "",
-          "legendFormat": "$namespace",
+          "legendFormat": "spog",
           "range": true,
           "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.99, sum by(le) (rate(bombastic_api_http_requests_duration_seconds_bucket{namespace=\"$namespace\"}[10m])))",
+          "hide": false,
+          "legendFormat": "bombastic",
+          "range": true,
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.99, sum by(le) (rate(vexination_api_http_requests_duration_seconds_bucket{namespace=\"$namespace\"}[10m])))",
+          "hide": false,
+          "legendFormat": "vexination",
+          "range": true,
+          "refId": "C"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.99, sum by(le) (rate(v11y_api_http_requests_duration_seconds_bucket{namespace=\"$namespace\"}[10m])))",
+          "hide": false,
+          "legendFormat": "v11y",
+          "range": true,
+          "refId": "D"
         }
       ],
-      "title": "SPOG API request latency p99 (seconds)",
+      "title": "API request latency p99 (seconds)",
       "type": "timeseries"
     },
     {
@@ -179,10 +215,10 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 7,
-        "w": 12,
-        "x": 12,
-        "y": 0
+        "h": 6,
+        "w": 24,
+        "x": 0,
+        "y": 7
       },
       "id": 8,
       "options": {
@@ -206,181 +242,10 @@
           "editorMode": "code",
           "expr": "sum(rate(spog_api_http_requests_total{namespace = \"$namespace\"}[10m]))",
           "interval": "",
-          "legendFormat": "$namespace",
+          "legendFormat": "spog",
           "range": true,
           "refId": "A"
-        }
-      ],
-      "title": "SPOG API request throughput (requests/sec)",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${datasource}"
-      },
-      "description": "",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          }
         },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 7,
-        "w": 12,
-        "x": 0,
-        "y": 7
-      },
-      "id": 11,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${datasource}"
-          },
-          "editorMode": "code",
-          "expr": "histogram_quantile(0.99, sum by(le) (rate(bombastic_api_http_requests_duration_seconds_bucket{namespace=\"$namespace\"}[10m])))",
-          "interval": "",
-          "legendFormat": "$namespace",
-          "range": true,
-          "refId": "A"
-        }
-      ],
-      "title": "Bombastic API request latency p99 (seconds)",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${datasource}"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 7,
-        "w": 12,
-        "x": 12,
-        "y": 7
-      },
-      "id": 4,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        }
-      },
-      "targets": [
         {
           "datasource": {
             "type": "prometheus",
@@ -388,198 +253,40 @@
           },
           "editorMode": "code",
           "expr": "sum(rate(bombastic_api_http_requests_total{namespace = \"$namespace\"}[10m]))",
+          "hide": false,
           "interval": "",
-          "legendFormat": "$namespace",
+          "legendFormat": "bombastic",
           "range": true,
-          "refId": "A"
-        }
-      ],
-      "title": "Bombastic API request throughput (requests/sec)",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${datasource}"
-      },
-      "description": "",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          }
+          "refId": "B"
         },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 7,
-        "w": 12,
-        "x": 0,
-        "y": 14
-      },
-      "id": 12,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        }
-      },
-      "targets": [
         {
           "datasource": {
             "type": "prometheus",
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.99, sum by(le) (rate(vexination_api_http_requests_duration_seconds_bucket{namespace=\"$namespace\"}[10m])))",
+          "expr": "sum(rate(vexination_api_http_requests_total{namespace = \"$namespace\"}[10m]))",
+          "hide": false,
           "interval": "",
-          "legendFormat": "$namespace",
+          "legendFormat": "vexination",
           "range": true,
-          "refId": "A"
-        }
-      ],
-      "title": "Vexination API request latency p99 (seconds)",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${datasource}"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "lineInterpolation": "linear",
-            "lineStyle": {
-              "fill": "solid"
-            },
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          }
+          "refId": "C"
         },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 7,
-        "w": 12,
-        "x": 12,
-        "y": 14
-      },
-      "id": 5,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        }
-      },
-      "targets": [
         {
           "datasource": {
-            "type": "prometheus"
+            "type": "prometheus",
+            "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum(rate(vexination_api_http_requests_total{namespace = \"$namespace\"}[10m]))",
+          "expr": "sum(rate(v11y_api_http_requests_total{namespace = \"$namespace\"}[10m]))",
+          "hide": false,
           "interval": "",
-          "legendFormat": "$namespace",
+          "legendFormat": "v11y",
           "range": true,
-          "refId": "A"
+          "refId": "D"
         }
       ],
-      "title": "Vexination API request throughput (requests/sec)",
+      "title": "API request throughput (requests/sec)",
       "type": "timeseries"
     },
     {
@@ -642,9 +349,9 @@
       },
       "gridPos": {
         "h": 7,
-        "w": 12,
-        "x": 12,
-        "y": 21
+        "w": 24,
+        "x": 0,
+        "y": 13
       },
       "id": 7,
       "options": {
@@ -667,91 +374,23 @@
           "editorMode": "code",
           "expr": "sum(rate(index_indexed_total{namespace = \"$namespace\", pod=~\"bombastic-indexer.*\"}[10m]))",
           "hide": false,
-          "legendFormat": "$namespace",
+          "interval": "",
+          "legendFormat": "bombastic",
           "range": true,
           "refId": "A"
-        }
-      ],
-      "title": " Bombastic Indexing Throughput (documents/sec)",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${datasource}"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          }
         },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 7,
-        "w": 12,
-        "x": 12,
-        "y": 28
-      },
-      "id": 6,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
+        {
+          "datasource": {
+            "type": "prometheus"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate(index_indexed_total{namespace = \"$namespace\", pod=~\"v11y-indexer.*\"}[10m]))",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "v11y",
+          "range": true,
+          "refId": "B"
         },
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        }
-      },
-      "targets": [
         {
           "datasource": {
             "type": "prometheus"
@@ -760,12 +399,12 @@
           "expr": "sum(rate(index_indexed_total{namespace = \"$namespace\", pod=~\"vexination-indexer.*\"}[10m]))",
           "hide": false,
           "interval": "",
-          "legendFormat": "$namespace",
+          "legendFormat": "vexination",
           "range": true,
-          "refId": "A"
+          "refId": "C"
         }
       ],
-      "title": "Vexination Indexing Throughput (document/sec)",
+      "title": "Indexing Throughput (documents/sec)",
       "type": "timeseries"
     }
   ],
@@ -793,7 +432,7 @@
       },
       {
         "current": {
-          "selected": true,
+          "selected": false,
           "text": "trustification-staging",
           "value": "trustification-staging"
         },
@@ -827,7 +466,7 @@
   "timepicker": {},
   "timezone": "",
   "title": "Trustification Performance",
-  "uid": "WiqVYwiIz",
-  "version": 3,
+  "uid": "_fTIIfGSz",
+  "version": 2,
   "weekStart": ""
 }

@@ -45,8 +45,6 @@ jobs:
             containerfile: trust/Containerfile
           - name: trust-ui
             containerfile: spog/ui/Containerfile
-          - name: trust-docs
-            containerfile: docs/Containerfile
           - name: trust-tests
             containerfile: integration-tests/Containerfile
 

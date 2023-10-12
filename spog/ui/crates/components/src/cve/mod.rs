@@ -5,8 +5,8 @@ pub use search::*;
 use crate::cvss::CvssScore;
 use crate::table_wrapper::TableWrapper;
 use patternfly_yew::prelude::*;
-use spog_ui_common::utils::cvss::Cvss;
-use spog_ui_navigation::AppRoute;
+use spog_ui_common::{utils::cvss::Cvss, utils::time::date, utils::OrNone};
+use spog_ui_navigation::{AppRoute, View};
 use std::rc::Rc;
 use trustification_api::search::SearchResult;
 use v11y_model::search::SearchDocument;
@@ -30,6 +30,7 @@ pub enum Column {
     Id,
     Description,
     Severity,
+    DatePublished,
 }
 
 impl TableEntryRenderer<Column> for CveEntry {
@@ -37,7 +38,7 @@ impl TableEntryRenderer<Column> for CveEntry {
         match context.column {
             Column::Id => html!(
                 <Link<AppRoute>
-                    target={AppRoute::Cve{id: self.cve.id.clone()}}
+                    target={AppRoute::Cve(View::Content{id: self.cve.id.clone()})}
                 >{ self.cve.id.clone() }</Link<AppRoute>>
             ),
             Column::Description => html!( <>
@@ -54,6 +55,7 @@ impl TableEntryRenderer<Column> for CveEntry {
                     }
                 </>
             ),
+            Column::DatePublished => html!({ OrNone(self.cve.date_published).map(date) }),
         }
         .into()
     }
@@ -117,6 +119,14 @@ pub fn cve_result(props: &CveResultProperties) -> Html {
             sortby: *sortby,
             onsort: onsort.clone()
         }),
+        yew::props!(TableColumnProperties<Column> {
+            index: Column::DatePublished,
+            label: "Date published",
+            width: ColumnWidth::Percent(20),
+            text_modifier: Some(TextModifier::Wrap),
+            sortby: *sortby,
+            onsort: onsort.clone()
+        }),
     ];
 
     html!(
@@ -128,7 +138,7 @@ pub fn cve_result(props: &CveResultProperties) -> Html {
         >
             <Table<Column, UseTableData<Column, MemoizedTableModel<CveEntry>>>
                 {entries}
-                mode={TableMode::Expandable}
+                mode={TableMode::Default}
                 {onexpand}
             />
         </TableWrapper<Column, UseTableData<Column, MemoizedTableModel<CveEntry>>>>

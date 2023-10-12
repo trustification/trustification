@@ -8,14 +8,6 @@ on:
         required: true
         type: string
 
-  workflow_dispatch:
-    inputs:
-      releaseTag:
-        description: The release tag
-        required: true
-        type: string
-        default: latest
-
 env:
   RELEASE_TAG: ${{ inputs.releaseTag }}
 

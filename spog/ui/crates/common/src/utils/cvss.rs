@@ -1,6 +1,5 @@
-use std::str::FromStr;
-
 use spog_model::vuln::Cvss3;
+use std::str::FromStr;
 use yew::{html::IntoPropValue, prelude::*};
 
 #[derive(Clone, Debug, PartialEq)]
@@ -29,6 +28,18 @@ impl FromStr for Severity {
             "critical" => Self::Critical,
             _ => return Err(()),
         })
+    }
+}
+
+impl Severity {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::None => "none",
+            Self::Low => "low",
+            Self::Medium => "medium",
+            Self::High => "high",
+            Self::Critical => "critical",
+        }
     }
 }
 

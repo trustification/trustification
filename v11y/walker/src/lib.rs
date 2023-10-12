@@ -26,6 +26,8 @@ impl Run {
 
         let walker = WalkDir::new(&self.source).follow_links(true).contents_first(true);
 
+        let mut files = vec![];
+
         for entry in walker {
             let entry = entry?;
 
@@ -47,11 +49,34 @@ impl Run {
             }
 
             if let Some(key) = name.strip_suffix(".json") {
-                log::info!("Processing: {key}");
-                let data = tokio::fs::read(entry.path()).await?;
-                storage.put_json_slice(key, &data).await?;
+                files.push((key.to_string(), entry.path().to_path_buf()));
             }
         }
+
+        files.sort_unstable();
+
+        log::info!("Processing {} files", files.len());
+
+        for (key, path) in files.iter().rev() {
+            log::info!("Processing: {key}");
+            let data = tokio::fs::read(path).await?;
+
+            const MAX_RETRIES: usize = 10;
+            for retry in 0..MAX_RETRIES {
+                match storage.put_json_slice(key, &data).await {
+                    Ok(_) => break,
+                    Err(e) => {
+                        log::warn!("Failed to store {} (attempt {}/{}): {:?}", key, retry, MAX_RETRIES, e);
+                        tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
+                        if retry == MAX_RETRIES - 1 {
+                            return Err(e)?;
+                        }
+                    }
+                }
+            }
+        }
+
+        log::info!("Processed {} files", files.len());
 
         Ok(ExitCode::SUCCESS)
     }

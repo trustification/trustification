@@ -22,6 +22,7 @@ mod vulnerability;
     paths(
         crate::server::vulnerability::ingest_vulnerability,
         crate::server::vulnerability::get,
+        crate::server::search::search_cve,
         //crate::server::vulnerability::get_by_alias,
     ),
     components(
@@ -47,7 +48,7 @@ pub fn config(
         web::scope("/api/v1")
             .wrap(new_auth!(auth))
             .service(vulnerability::ingest_vulnerability)
-            .service(vulnerability::get)
+            .service(vulnerability::get_cve)
             //.service(vulnerability::get_by_alias),
             .service(search::search_cve),
     )

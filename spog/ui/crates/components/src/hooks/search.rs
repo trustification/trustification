@@ -1,4 +1,4 @@
-use crate::search::{DynamicSearchParameters, SearchMode};
+use crate::search::{DynamicSearchParameters, SearchMode, SearchModeAction};
 use patternfly_yew::prelude::*;
 use spog_model::config::Filters;
 use spog_ui_backend::{use_backend, Backend};
@@ -11,7 +11,7 @@ use yew_oauth2::prelude::{use_latest_access_token, LatestAccessToken};
 
 #[derive(Clone)]
 pub struct UseStandardSearch {
-    pub search_params: UseStateHandle<SearchMode<DynamicSearchParameters>>,
+    pub search_params: UseReducerHandle<SearchMode<DynamicSearchParameters>>,
     pub filter_input_state: Rc<InputState>,
     pub onclear: Callback<()>,
     pub onset: Callback<()>,
@@ -21,7 +21,7 @@ pub struct UseStandardSearch {
 
 #[hook]
 pub fn use_standard_search<S>(
-    search_params: UseStateHandle<SearchMode<DynamicSearchParameters>>,
+    search_params: UseReducerHandle<SearchMode<DynamicSearchParameters>>,
     context: Rc<Filters>,
 ) -> UseStandardSearch
 where
@@ -53,36 +53,27 @@ where
         text.set(String::new());
         // trigger empty search
         match **search_params {
-            SearchMode::Complex(_) => search_params.set(SearchMode::Complex(String::new())),
-            SearchMode::Simple(_) => search_params.set(SearchMode::Simple(Default::default())),
+            SearchMode::Complex(_) => search_params.dispatch(SearchModeAction::Clear),
+            SearchMode::Simple(_) => search_params.dispatch(SearchModeAction::Clear),
         }
     });
 
     // apply text field to search
-    let onset = use_callback(
-        (text.clone(), search_params.clone()),
-        |(), (text, search_params)| match (**search_params).clone() {
-            SearchMode::Complex(_) => {
-                search_params.set(SearchMode::Complex((**text).clone()));
-            }
-            SearchMode::Simple(mut s) => {
-                *s.terms_mut() = text.split(' ').map(|s| s.to_string()).collect();
-                search_params.set(SearchMode::Simple(s));
-            }
-        },
-    );
+    let onset = use_callback((text.clone(), search_params.clone()), |(), (text, search_params)| {
+        search_params.dispatch(SearchModeAction::SetTerms((**text).clone()))
+    });
 
     let ontogglesimple = use_callback(
         (text.clone(), context.clone(), search_params.clone()),
         |state, (text, context, search_params)| match state {
             false => {
                 let q = (*search_params).as_str(context).to_string();
-                search_params.set(SearchMode::Complex(q.clone()));
+                search_params.dispatch(SearchModeAction::SetComplex(q.clone()));
                 text.set(q);
             }
             true => {
                 // TODO: this will reset the query, which we should confirm first
-                search_params.set(SearchMode::default());
+                search_params.dispatch(SearchModeAction::SetSimple(Default::default()));
                 text.set(String::new());
             }
         },
@@ -109,7 +100,7 @@ pub struct SearchOperationContext {
 
 #[hook]
 pub fn use_generic_search<S, R, F, Fut, IF>(
-    search_params: UseStateHandle<SearchMode<DynamicSearchParameters>>,
+    search_params: UseReducerHandle<SearchMode<DynamicSearchParameters>>,
     pagination: UsePagination,
     callback: Callback<UseAsyncHandleDeps<R, String>>,
     init_filter: IF,

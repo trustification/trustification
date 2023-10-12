@@ -23,8 +23,11 @@ pub trait ToFilterExpression {
 }
 
 pub trait SimpleProperties {
+    type Defaults;
+
     fn terms(&self) -> &[String];
     fn terms_mut(&mut self) -> &mut Vec<String>;
+    fn apply_defaults(&mut self, defaults: Self::Defaults);
 }
 
 /// ensure that all terms are either plain or wrapped in quotes.

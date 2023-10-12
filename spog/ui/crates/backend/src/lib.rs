@@ -15,10 +15,10 @@ mod search;
 mod version;
 mod vuln;
 
+pub use self::cve::*;
 pub use access_token::*;
 pub use analyze::*;
 pub use config::*;
-pub use cve::*;
 pub use hooks::*;
 pub use pkg::*;
 pub use sbom::*;
