@@ -9,21 +9,6 @@ use actix_web::{
 pub struct Endpoints {
     pub vexination: String,
     pub bombastic: String,
-    #[serde(default, skip_serializing_if = "Oidc::is_empty")]
-    pub oidc: Oidc,
-}
-
-#[derive(Clone, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
-#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
-pub struct Oidc {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub issuer: Option<String>,
-}
-
-impl Oidc {
-    pub fn is_empty(&self) -> bool {
-        self.issuer.is_none()
-    }
 }
 
 pub fn configurator(endpoints: Endpoints) -> impl FnOnce(&mut ServiceConfig) {

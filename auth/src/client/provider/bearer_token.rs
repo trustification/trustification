@@ -1,7 +1,6 @@
 use super::{super::error::Error, Credentials, TokenProvider};
 use async_trait::async_trait;
 use std::fmt::{Debug, Formatter};
-use url::Url;
 
 /// A token provider, using an existing bearer token.
 ///
@@ -21,9 +20,5 @@ impl Debug for BearerTokenProvider {
 impl TokenProvider for BearerTokenProvider {
     async fn provide_access_token(&self) -> Result<Option<Credentials>, Error> {
         Ok(Some(Credentials::Bearer(self.token.clone())))
-    }
-
-    fn issuer(&self) -> Option<Url> {
-        None
     }
 }

@@ -29,7 +29,6 @@ async fn spog_version(context: &mut SpogContext) {
 async fn spog_endpoints(context: &mut SpogContext) {
     let vexination_url = String::from(context.vexination.url.as_str());
     let bombastic_url = String::from(context.bombastic.url.as_str());
-    let issuer_url = String::from(context.provider.provider_user.issuer().unwrap().as_str());
 
     let response = reqwest::Client::new()
         .get(context.urlify("/.well-known/trustification/endpoints"))
@@ -43,7 +42,6 @@ async fn spog_endpoints(context: &mut SpogContext) {
     let endpoints: Value = response.json().await.unwrap();
     assert_eq!(endpoints["vexination"], vexination_url);
     assert_eq!(endpoints["bombastic"], bombastic_url);
-    assert_eq!(endpoints["oidc"]["issuer"], issuer_url);
 }
 
 /// SPoG is the entrypoint for the frontend. It exposes a search API, but forwards requests
