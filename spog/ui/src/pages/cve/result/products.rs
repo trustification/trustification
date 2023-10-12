@@ -1,5 +1,5 @@
 use patternfly_yew::prelude::*;
-use spog_model::prelude::{PackageRelatedToProductCve, ProductCveStatus, ProductRelatedToCve};
+use spog_model::prelude::{CveDetails, PackageRelatedToProductCve, ProductCveStatus, ProductRelatedToCve};
 use std::collections::BTreeMap;
 use std::rc::Rc;
 use yew::prelude::*;
@@ -83,12 +83,13 @@ impl TableEntryRenderer<Column> for TableData {
 
 #[derive(PartialEq, Properties)]
 pub struct RelatedProductsProperties {
-    pub products: Rc<BTreeMap<ProductCveStatus, Vec<ProductRelatedToCve>>>,
+    pub cve_details: Rc<CveDetails>,
+    // pub products: Rc<BTreeMap<ProductCveStatus, Vec<ProductRelatedToCve>>>,
 }
 
 #[function_component(RelatedProducts)]
 pub fn related_products(props: &RelatedProductsProperties) -> Html {
-    let table_data = use_memo(props.products.clone(), |map| {
+    let table_data = use_memo(props.cve_details.products.clone(), |map| {
         map.iter()
             .flat_map(|(map_key, map_value)| {
                 map_value
@@ -120,13 +121,15 @@ pub fn related_products(props: &RelatedProductsProperties) -> Html {
     let pagination = use_pagination(Some(total), || PaginationControl { page: 1, per_page: 10 });
 
     html!(
-        <PaginationWrapped pagination={pagination} total={10}>
-            <Table<Column, UseTableData<Column, MemoizedTableModel<TableData>>>
-                {header}
-                {entries}
-                // mode={TableMode::Expandable}
-                {onexpand}
-            />
-        </PaginationWrapped>
+        <div class="pf-v5-u-background-color-100">
+            <PaginationWrapped pagination={pagination} total={10}>
+                <Table<Column, UseTableData<Column, MemoizedTableModel<TableData>>>
+                    {header}
+                    {entries}
+                    // mode={TableMode::Expandable}
+                    {onexpand}
+                />
+            </PaginationWrapped>
+        </div>
     )
 }

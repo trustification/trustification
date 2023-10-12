@@ -28,7 +28,8 @@ pub(crate) fn configure(auth: Option<Arc<Authenticator>>) -> impl FnOnce(&mut Se
             web::scope("/api/v1/cve")
                 .wrap(new_auth!(auth))
                 .service(web::resource("").to(cve_search))
-                .service(web::resource("/{id}").to(cve_get)),
+                .service(web::resource("/{id}").to(cve_get))
+                .service(web::resource("/{id}/related-products").to(cve_details_mock)),
         );
     }
 }
