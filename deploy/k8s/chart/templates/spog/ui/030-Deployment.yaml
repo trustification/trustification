@@ -32,6 +32,7 @@ spec:
         - image: {{ .Values.uiImage }}:{{ .Values.release }}
           imagePullPolicy: {{ .Values.imagePullPolicy }}
           name: service
+          command: ["/nginx.sh"]
           env:
             - name: API_URL
               value: https://api.{{ .Values.domain }}
