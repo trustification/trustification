@@ -94,6 +94,13 @@ impl Server {
         let crda = self.run.crda_url.map(CrdaClient::new).map(web::Data::new);
         let crda_payload_limit = self.run.crda_payload_limit;
 
+        let end_points = endpoints::Endpoints {
+            vexination: String::from(self.run.vexination_url.as_str()),
+            bombastic: String::from(self.run.bombastic_url.as_str()),
+            collectorist: String::from(self.run.collectorist_url.as_str()),
+            v11y: String::from(self.run.v11y_url.as_str()),
+        };
+
         let guac = web::Data::new(GuacService::new(self.run.guac_url));
 
         let v11y = web::Data::new(V11yService::new(
@@ -122,10 +129,7 @@ impl Server {
                     .app_data(collectorist.clone())
                     .configure(index::configure())
                     .configure(version::configurator(version!()))
-                    .configure(endpoints::configurator(endpoints::Endpoints {
-                        vexination: String::from(self.run.vexination_url.as_str()),
-                        bombastic: String::from(self.run.bombastic_url.as_str()),
-                    }))
+                    .configure(endpoints::configurator(end_points.clone()))
                     .configure(sbom::configure(authenticator.clone()))
                     .configure(advisory::configure(authenticator.clone()))
                     .configure(crate::guac::configure(authenticator.clone()))
