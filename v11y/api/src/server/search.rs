@@ -65,7 +65,6 @@ impl From<&SearchParams> for SearchOptions {
 #[utoipa::path(
     get,
     tag = "cve",
-    path = "/api/v1/vulnerability/search",
     responses(
         (status = 200, description = "Search completed"),
         (status = BAD_REQUEST, description = "Bad query"),
@@ -75,7 +74,7 @@ impl From<&SearchParams> for SearchOptions {
         ("q" = String, Query, description = "Search query"),
     )
 )]
-#[get("/vulnerability/search")]
+#[get("/search")]
 async fn search_cve(
     state: web::Data<AppState>,
     params: web::Query<SearchParams>,
