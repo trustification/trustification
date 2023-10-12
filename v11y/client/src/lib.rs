@@ -114,7 +114,7 @@ impl V11yClient {
     ) -> Result<SearchResult<Vec<SearchHit>>, anyhow::Error> {
         Ok(self
             .client
-            .get(self.v11y_url.vulnerability_url())
+            .get(self.v11y_url.search_url())
             .query(&[("q", q)])
             .query(&[("limit", limit), ("offset", offset)])
             .inject_token(self.provider.as_ref())
