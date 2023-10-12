@@ -1,6 +1,5 @@
 use patternfly_yew::prelude::*;
-use spog_model::prelude::{CveDetails, PackageRelatedToProductCve, ProductCveStatus, ProductRelatedToCve};
-use std::collections::BTreeMap;
+use spog_model::prelude::{CveDetails, PackageRelatedToProductCve, ProductCveStatus};
 use std::rc::Rc;
 use yew::prelude::*;
 
