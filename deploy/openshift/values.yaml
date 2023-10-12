@@ -45,10 +45,24 @@ bombastic:
     resources: ${{BOMBASTIC_API_RESOURCES}}
     logLevel: ${LOG_LEVEL}
 v11y:
-  enabled: true
+  enabled: false
+  bucket: ${V11Y_STORAGE_BUCKET}
+  credentials: ${V11Y_AWS_SECRET_NAME}
+  indexMode: file
   api:
     resources: ${{V11Y_API_RESOURCES}}
     logLevel: ${LOG_LEVEL}
+  indexer:
+    reindex: false
+    topics:
+      stored: ${V11Y_INDEXER_STORED_TOPIC}
+      indexed: ${V11Y_INDEXER_INDEXED_TOPIC}
+      failed: ${V11Y_INDEXER_FAILED_TOPIC}
+    resources: ${{V11Y_INDEXER_RESOURCES}}
+    logLevel: ${LOG_LEVEL}
+  walker:
+    enable: false
+    resources: ${{V11Y_WALKER_RESOURCES}}
 collectorist:
   enabled: true
   api:
