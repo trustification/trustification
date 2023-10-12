@@ -92,9 +92,15 @@ pub fn cve_result(props: &CveResultProperties) -> Html {
         (sortby.clone(), props.onsort.clone()),
         |val: TableHeaderSortBy<Column>, (sortby, onsort)| {
             sortby.set(Some(val));
-            if val.index == Column::Severity {
-                onsort.emit(("severity".to_string(), val.asc));
-            };
+            match &val.index {
+                Column::Severity => {
+                    onsort.emit(("score".to_string(), val.asc));
+                }
+                Column::DatePublished => {
+                    onsort.emit(("datePublished".to_string(), val.asc));
+                }
+                _ => {}
+            }
         },
     );
 
