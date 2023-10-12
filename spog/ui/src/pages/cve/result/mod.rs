@@ -134,12 +134,6 @@ pub fn result_view(props: &ResultViewProperties) -> Html {
 
 // Result content
 
-#[derive(Clone, Copy, PartialEq, Eq)]
-enum TabIndex {
-    RelatedProducts,
-    RelatedAdvisories,
-}
-
 #[derive(PartialEq, Properties)]
 pub struct ResultContentProperties {
     details: Rc<CveDetails>,
