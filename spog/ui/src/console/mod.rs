@@ -90,14 +90,11 @@ fn authenticated_page(props: &ChildrenProperties) -> Html {
     let callback_github = use_open("https://github.com/trustification/trustification", "_blank");
 
     let support_case_url = &config.global.support_case_url.as_ref().map(|url| url.to_string());
-    let open_support_case_page = use_callback(
-        |_, support_case_url| {
-            if let Some(support_case_url) = support_case_url {
-                let _ = gloo_utils::window().open_with_url_and_target(support_case_url.as_str(), "_blank");
-            }
-        },
-        support_case_url.clone(),
-    );
+    let open_support_case_page = use_callback(support_case_url.clone(), |_, support_case_url| {
+        if let Some(support_case_url) = support_case_url {
+            let _ = gloo_utils::window().open_with_url_and_target(support_case_url.as_str(), "_blank");
+        }
+    });
 
     let backdrop = use_backdrop();
 
