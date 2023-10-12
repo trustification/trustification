@@ -14,6 +14,7 @@ actix-web-httpauth = "0.8"
 actix-web-extras = "0.1"
 actix-ws = "*"
 anyhow = "1"
+async-trait = "0.1.73"
 derive_more = "0.99"
 bytes = "1"
 chrono = "0.4.23"
@@ -47,6 +48,8 @@ zstd = "0.12"
 spog-model = { path = "../model" }
 vexination-model = { path = "../../vexination/model" }
 bombastic-model = { path = "../../bombastic/model" }
+
+exhort-model = { path = "../../exhort/model" }
 
 trustification-analytics = { path = "../../analytics" }
 trustification-api = { path = "../../api" }

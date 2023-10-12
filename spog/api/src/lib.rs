@@ -18,6 +18,7 @@ mod analyze;
 mod config;
 mod cve;
 mod endpoints;
+mod error;
 mod guac;
 mod index;
 mod sbom;
@@ -47,6 +48,9 @@ pub struct Run {
 
     #[arg(long = "vexination-url", env, default_value_t = endpoint::Vexination::url())]
     pub vexination_url: Url,
+
+    #[arg(long = "exhort-url", env, default_value_t = endpoint::Exhort::url())]
+    pub exhort_url: Url,
 
     #[arg(long = "crda-url", env)]
     pub crda_url: Option<Url>,
