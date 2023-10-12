@@ -51,12 +51,12 @@ async fn cve_get(id: web::Path<String>, v11y: web::Data<V11yService>) -> actix_w
 
 // TODO remove this method using real data
 async fn cve_details_mock(
-    app_state: web::Data<AppState>,
-    guac: web::Data<GuacService>,
+    _app_state: web::Data<AppState>,
+    _guac: web::Data<GuacService>,
     id: web::Path<String>,
-    access_token: BearerAuth,
-    collectorist: web::Data<CollectoristService>,
-    v11y: web::Data<V11yService>,
+    _access_token: BearerAuth,
+    _collectorist: web::Data<CollectoristService>,
+    _v11y: web::Data<V11yService>,
 ) -> actix_web::Result<HttpResponse> {
     let mut products = BTreeMap::<ProductCveStatus, Vec<ProductRelatedToCve>>::new();
     products.insert(
