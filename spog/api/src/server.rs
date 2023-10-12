@@ -5,8 +5,7 @@ use std::{net::TcpListener, sync::Arc};
 use crate::{
     advisory,
     analyze::{self, CrdaClient},
-    config, cve,
-    endpoints::{self, Oidc},
+    config, cve, endpoints,
     guac::service::GuacService,
     index, sbom,
     service::{collectorist, collectorist::CollectoristService, v11y, v11y::V11yService},
@@ -126,9 +125,6 @@ impl Server {
                     .configure(endpoints::configurator(endpoints::Endpoints {
                         vexination: String::from(self.run.vexination_url.as_str()),
                         bombastic: String::from(self.run.bombastic_url.as_str()),
-                        oidc: Oidc {
-                            issuer: provider.issuer().map(|url| String::from(url.as_str())),
-                        },
                     }))
                     .configure(sbom::configure(authenticator.clone()))
                     .configure(advisory::configure(authenticator.clone()))

@@ -10,7 +10,6 @@ use base64::{prelude::BASE64_STANDARD, write::EncoderStringWriter};
 use std::fmt::Debug;
 use std::io::Write;
 use std::sync::Arc;
-use url::Url;
 
 #[derive(Clone, Debug)]
 pub enum Credentials {
@@ -39,7 +38,6 @@ impl Credentials {
 #[async_trait]
 pub trait TokenProvider: Send + Sync {
     async fn provide_access_token(&self) -> Result<Option<Credentials>, Error>;
-    fn issuer(&self) -> Option<Url>;
 }
 
 #[async_trait]
@@ -49,10 +47,6 @@ where
 {
     async fn provide_access_token(&self) -> Result<Option<Credentials>, Error> {
         self.as_ref().provide_access_token().await
-    }
-
-    fn issuer(&self) -> Option<Url> {
-        self.as_ref().issuer()
     }
 }
 
@@ -64,20 +58,12 @@ where
     async fn provide_access_token(&self) -> Result<Option<Credentials>, Error> {
         self.as_ref().provide_access_token().await
     }
-
-    fn issuer(&self) -> Option<Url> {
-        self.as_ref().issuer()
-    }
 }
 
 #[async_trait]
 impl TokenProvider for Arc<dyn TokenProvider> {
     async fn provide_access_token(&self) -> Result<Option<Credentials>, Error> {
         self.as_ref().provide_access_token().await
-    }
-
-    fn issuer(&self) -> Option<Url> {
-        self.as_ref().issuer()
     }
 }
 
@@ -90,20 +76,12 @@ impl TokenProvider for NoTokenProvider {
     async fn provide_access_token(&self) -> Result<Option<Credentials>, Error> {
         Ok(None)
     }
-
-    fn issuer(&self) -> Option<Url> {
-        None
-    }
 }
 
 #[async_trait]
 impl TokenProvider for () {
     async fn provide_access_token(&self) -> Result<Option<Credentials>, Error> {
         Ok(None)
-    }
-
-    fn issuer(&self) -> Option<Url> {
-        None
     }
 }
 
@@ -118,23 +96,12 @@ where
             Some(provider) => provider.provide_access_token().await,
         }
     }
-
-    fn issuer(&self) -> Option<Url> {
-        match self {
-            None => None,
-            Some(provider) => provider.issuer(),
-        }
-    }
 }
 
 #[async_trait]
 impl TokenProvider for String {
     async fn provide_access_token(&self) -> Result<Option<Credentials>, Error> {
         Ok(Some(Credentials::Bearer(self.clone())))
-    }
-
-    fn issuer(&self) -> Option<Url> {
-        None
     }
 }
 
@@ -143,9 +110,5 @@ impl TokenProvider for String {
 impl TokenProvider for actix_web_httpauth::extractors::bearer::BearerAuth {
     async fn provide_access_token(&self) -> Result<Option<Credentials>, Error> {
         Ok(Some(Credentials::Bearer(self.token().to_string())))
-    }
-
-    fn issuer(&self) -> Option<Url> {
-        None
     }
 }

@@ -231,8 +231,4 @@ impl TokenProvider for OpenIdTokenProvider {
             .await
             .map(|token| Some(Credentials::Bearer(token.access_token)))?)
     }
-
-    fn issuer(&self) -> Option<Url> {
-        Some(self.client.config().issuer.clone())
-    }
 }
