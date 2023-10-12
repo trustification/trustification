@@ -2636,6 +2636,7 @@ dependencies = [
  "collectorist-client",
  "derive_more",
  "env_logger",
+ "exhort-model",
  "futures",
  "guac",
  "log",
@@ -2650,6 +2651,21 @@ dependencies = [
  "utoipa",
  "utoipa-swagger-ui",
  "v11y-client",
+]
+
+[[package]]
+name = "exhort-model"
+version = "0.1.0"
+dependencies = [
+ "log",
+ "packageurl",
+ "serde",
+ "serde_json",
+ "trustification-auth",
+ "trustification-common",
+ "trustification-infrastructure",
+ "utoipa",
+ "v11y-model",
 ]
 
 [[package]]
@@ -6256,6 +6272,7 @@ dependencies = [
  "actix-web-httpauth",
  "actix-ws",
  "anyhow",
+ "async-trait",
  "bombastic-model",
  "bytes",
  "chrono",
@@ -6264,6 +6281,7 @@ dependencies = [
  "csaf",
  "derive_more",
  "env_logger",
+ "exhort-model",
  "futures",
  "guac",
  "http",

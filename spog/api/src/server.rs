@@ -2,16 +2,19 @@ use std::future::Future;
 use std::pin::Pin;
 use std::{net::TcpListener, sync::Arc};
 
+use crate::error::Error;
 use crate::{
     advisory,
     analyze::{self, CrdaClient},
     config, cve, endpoints,
     guac::service::GuacService,
     index, sbom,
-    service::{collectorist, collectorist::CollectoristService, v11y, v11y::V11yService},
+    service::{collectorist::CollectoristService, v11y, v11y::V11yService},
     Run,
 };
-use actix_web::{http::header::ContentType, web, HttpResponse};
+use actix_web::web;
+use async_trait::async_trait;
+use exhort_model::AnalyzeRequest;
 use futures::future::select_all;
 use http::StatusCode;
 use spog_model::search;
@@ -20,10 +23,9 @@ use trustification_api::{search::SearchOptions, Apply};
 use trustification_auth::{
     authenticator::Authenticator,
     authorizer::Authorizer,
-    client::{Error as AuthClientError, TokenInjector, TokenProvider},
+    client::{TokenInjector, TokenProvider},
     swagger_ui::SwaggerUiOidc,
 };
-use trustification_common::error::ErrorInformation;
 use trustification_infrastructure::{app::http::HttpServerBuilder, MainContext};
 use trustification_version::version;
 use utoipa::OpenApi;
@@ -73,6 +75,7 @@ impl Server {
             client: self.run.client.build_client()?,
             bombastic: self.run.bombastic_url.clone(),
             vexination: self.run.vexination_url.clone(),
+            exhort: self.run.exhort_url.clone(),
             provider: provider.clone(),
         });
 
@@ -176,86 +179,12 @@ impl Server {
     }
 }
 
-#[derive(Debug, thiserror::Error)]
-pub enum Error {
-    #[error("response error: {0} / {1}")]
-    Response(StatusCode, String),
-    #[error("request error: {0}")]
-    Request(#[from] reqwest::Error),
-    #[error("url parse error: {0}")]
-    UrlParse(#[from] url::ParseError),
-    #[error("authentication error: {0}")]
-    AuthClient(#[from] AuthClientError),
-    #[error("guac error: {0}")]
-    Guac(#[from] crate::guac::service::Error),
-    #[error("serialization error: {0}")]
-    Serde(#[from] serde_json::error::Error),
-    #[error("collectorist error: {0}")]
-    Collectorist(#[from] collectorist::Error),
-    #[error("v11y error: {0}")]
-    V11y(#[from] v11y::Error),
-}
-
-impl actix_web::error::ResponseError for Error {
-    fn error_response(&self) -> HttpResponse {
-        let mut res = HttpResponse::build(self.status_code());
-        res.insert_header(ContentType::json());
-        match self {
-            Self::Response(status, error) => res.json(ErrorInformation {
-                error: format!("{}", status),
-                message: "Error response from backend service".to_string(),
-                details: error.to_string(),
-            }),
-            Self::Request(error) => res.json(ErrorInformation {
-                error: format!("{}", self.status_code()),
-                message: "Error creating request to backend service".to_string(),
-                details: error.to_string(),
-            }),
-            Self::UrlParse(error) => res.json(ErrorInformation {
-                error: format!("{}", self.status_code()),
-                message: "Error constructing url to backend service".to_string(),
-                details: error.to_string(),
-            }),
-            Self::AuthClient(error) => res.json(ErrorInformation {
-                error: format!("{}", self.status_code()),
-                message: "Error creating authentication client".to_string(),
-                details: error.to_string(),
-            }),
-            Self::Serde(error) => res.json(ErrorInformation {
-                error: "Serialization".to_string(),
-                message: "Serialization error".to_string(),
-                details: error.to_string(),
-            }),
-            Self::Guac(error) => res.json(ErrorInformation {
-                error: "Guac".to_string(),
-                message: "Error contacting GUAC".to_string(),
-                details: error.to_string(),
-            }),
-            Self::Collectorist(error) => res.json(ErrorInformation {
-                error: "collectorist".to_string(),
-                message: "Error contacting collectorist".to_string(),
-                details: error.to_string(),
-            }),
-            Self::V11y(error) => res.json(ErrorInformation {
-                error: "v11y".to_string(),
-                message: "Error contacting v11y".to_string(),
-                details: error.to_string(),
-            }),
-        }
-    }
-    fn status_code(&self) -> StatusCode {
-        match self {
-            Self::Response(status, _) => *status,
-            _ => StatusCode::INTERNAL_SERVER_ERROR,
-        }
-    }
-}
-
 pub struct AppState {
     client: reqwest::Client,
     pub provider: Arc<dyn TokenProvider>,
     pub bombastic: reqwest::Url,
     pub vexination: reqwest::Url,
+    pub exhort: reqwest::Url,
 }
 
 impl AppState {
@@ -272,16 +201,11 @@ impl AppState {
             .inject_token(provider)
             .await?
             .send()
+            .await?
+            .or_status_error()
             .await?;
-        if response.status() == StatusCode::OK {
-            Ok(response.bytes_stream())
-        } else {
-            let status = response.status();
-            match response.text().await {
-                Ok(body) => Err(Error::Response(status, body)),
-                Err(e) => Err(Error::Request(e)),
-            }
-        }
+
+        Ok(response.bytes_stream())
     }
 
     pub async fn search_sbom(
@@ -302,16 +226,11 @@ impl AppState {
             .inject_token(provider)
             .await?
             .send()
+            .await?
+            .or_status_error()
             .await?;
-        if response.status() == StatusCode::OK {
-            Ok(response.json::<bombastic_model::prelude::SearchResult>().await?)
-        } else {
-            let status = response.status();
-            match response.text().await {
-                Ok(body) => Err(Error::Response(status, body)),
-                Err(e) => Err(Error::Request(e)),
-            }
-        }
+
+        Ok(response.json::<bombastic_model::prelude::SearchResult>().await?)
     }
 
     pub async fn get_vex(
@@ -327,16 +246,11 @@ impl AppState {
             .inject_token(provider)
             .await?
             .send()
+            .await?
+            .or_status_error()
             .await?;
-        if response.status() == StatusCode::OK {
-            Ok(response.bytes_stream())
-        } else {
-            let status = response.status();
-            match response.text().await {
-                Ok(body) => Err(Error::Response(status, body)),
-                Err(e) => Err(Error::Request(e)),
-            }
-        }
+
+        Ok(response.bytes_stream())
     }
 
     pub async fn search_vex(
@@ -357,12 +271,47 @@ impl AppState {
             .inject_token(provider)
             .await?
             .send()
+            .await?
+            .or_status_error()
             .await?;
-        if response.status() == StatusCode::OK {
-            Ok(response.json::<vexination_model::prelude::SearchResult>().await?)
+
+        Ok(response.json::<vexination_model::prelude::SearchResult>().await?)
+    }
+
+    pub async fn analyze_sbom(
+        &self,
+        purls: Vec<String>,
+        provider: &dyn TokenProvider,
+    ) -> Result<exhort_model::AnalyzeResponse, Error> {
+        let url = self.exhort.join("/api/v1/analyze")?;
+        let response = self
+            .client
+            .post(url)
+            .inject_token(provider)
+            .await?
+            .json(&AnalyzeRequest { purls })
+            .send()
+            .await?
+            .or_status_error()
+            .await?;
+
+        Ok(response.json::<exhort_model::AnalyzeResponse>().await?)
+    }
+}
+
+#[async_trait]
+pub trait ResponseError: Sized {
+    async fn or_status_error(self) -> Result<Self, Error>;
+}
+
+#[async_trait]
+impl ResponseError for reqwest::Response {
+    async fn or_status_error(self) -> Result<Self, Error> {
+        if self.status() == StatusCode::OK {
+            Ok(self)
         } else {
-            let status = response.status();
-            match response.text().await {
+            let status = self.status();
+            match self.text().await {
                 Ok(body) => Err(Error::Response(status, body)),
                 Err(e) => Err(Error::Request(e)),
             }
