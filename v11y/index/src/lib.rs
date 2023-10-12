@@ -3,12 +3,13 @@ use cve::{common, Cve, Published, Rejected, Timestamp};
 use cvss::v3::Base;
 use cvss::Severity;
 use sikula::prelude::*;
+use std::time::Duration;
 use tantivy::{
     collector::TopDocs,
     query::{AllQuery, TermQuery},
     schema::INDEXED,
     store::ZstdCompressor,
-    DocAddress, IndexSettings, Order, Searcher,
+    DocAddress, DocId, IndexSettings, Order, Searcher,
 };
 use time::OffsetDateTime;
 use trustification_api::search::SearchOptions;
@@ -21,7 +22,7 @@ use trustification_index::{
         doc,
         query::{Occur, Query},
         schema::{Field, Schema, Term, FAST, STORED, STRING, TEXT},
-        DateTime,
+        DateTime, Score, SegmentReader,
     },
     term2query, Document, Error as SearchError,
 };
@@ -290,9 +291,53 @@ impl trustification_index::Index for Index {
             }
             Ok((hits, result.1))
         } else {
+            let severity_field = self.schema.get_field_name(self.fields.cvss3x_score).to_string();
+            let date_field = self.schema.get_field_name(self.fields.date_updated).to_string();
+            let now = tantivy::DateTime::from_utc(OffsetDateTime::now_utc());
             Ok(searcher.search(
                 &query.query,
-                &(TopDocs::with_limit(limit).and_offset(offset), tantivy::collector::Count),
+                &(
+                    TopDocs::with_limit(limit)
+                        .and_offset(offset)
+                        .tweak_score(move |segment_reader: &SegmentReader| {
+                            let severity_reader = segment_reader.fast_fields().f64(&severity_field);
+
+                            let date_reader = segment_reader.fast_fields().date(&date_field);
+
+                            move |doc: DocId, original_score: Score| {
+                                let severity_reader = severity_reader.clone();
+                                let date_reader = date_reader.clone();
+                                let mut tweaked = original_score;
+                                if let Ok(Some(score)) = severity_reader.map(|s| s.first(doc)) {
+                                    log::trace!("CVSS score impact {} -> {}", tweaked, (score as f32) * tweaked);
+                                    tweaked *= score as f32;
+
+                                    // Now look at the date, normalize score between 0 and 1 (baseline 1970)
+                                    if let Ok(Some(date)) = date_reader.map(|s| s.first(doc)) {
+                                        if date < now {
+                                            let mut normalized = 2.0
+                                                * (date.into_timestamp_secs() as f64
+                                                    / now.into_timestamp_secs() as f64);
+                                            // If it's the past month, boost it more.
+                                            if (now.into_utc() - date.into_utc()) < Duration::from_secs(30 * 24 * 3600)
+                                            {
+                                                normalized *= 4.0;
+                                            }
+                                            log::trace!(
+                                                "DATE score impact {} -> {}",
+                                                tweaked,
+                                                tweaked * (normalized as f32)
+                                            );
+                                            tweaked *= normalized as f32;
+                                        }
+                                    }
+                                }
+                                log::trace!("Tweaking from {} to {}", original_score, tweaked);
+                                tweaked
+                            }
+                        }),
+                    tantivy::collector::Count,
+                ),
             )?)
         }
     }

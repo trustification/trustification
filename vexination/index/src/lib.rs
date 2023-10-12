@@ -367,7 +367,7 @@ impl trustification_index::Index for Index {
                 .schema
                 .get_field_name(self.fields.advisory_severity_score)
                 .to_string();
-            let advisory_current_field = self.schema.get_field_name(self.fields.advisory_current).to_string();
+            let date_field = self.schema.get_field_name(self.fields.advisory_current).to_string();
             let now = tantivy::DateTime::from_utc(OffsetDateTime::now_utc());
             Ok(searcher.search(
                 &query.query,
@@ -377,7 +377,7 @@ impl trustification_index::Index for Index {
                         .tweak_score(move |segment_reader: &SegmentReader| {
                             let severity_reader = segment_reader.fast_fields().f64(&severity_field);
 
-                            let date_reader = segment_reader.fast_fields().date(&advisory_current_field);
+                            let date_reader = segment_reader.fast_fields().date(&date_field);
 
                             move |doc: DocId, original_score: Score| {
                                 let severity_reader = severity_reader.clone();
