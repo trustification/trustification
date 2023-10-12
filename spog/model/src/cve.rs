@@ -34,7 +34,6 @@ pub struct PackageRelatedToProductCve {
     pub r#type: String,
 }
 
-
 #[derive(Clone, Debug, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
 pub struct AdvisoryOverview {
     pub id: String,
