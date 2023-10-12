@@ -394,7 +394,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "1.0 - (sum(rate(v11y_api_http_requests_duration_seconds_bucket{exported_endpoint=~\"/api/v1/.*/search\", namespace = \"$namespace\", status !~ \"5..\", le=\"1\"}[10m])) by (namespace) / sum(rate(v11y_api_http_requests_duration_seconds_count{exported_endpoint=~\"/api/v1/.*/search\", namespace = \"$namespace\", status !~ \"5..\"}[10m])) by (namespace))",
+          "expr": "1.0 - (sum(rate(v11y_api_http_requests_duration_seconds_bucket{exported_endpoint=~\"/api/v1/search\", namespace = \"$namespace\", status !~ \"5..\", le=\"1\"}[10m])) by (namespace) / sum(rate(v11y_api_http_requests_duration_seconds_count{exported_endpoint=~\"/api/v1/search\", namespace = \"$namespace\", status !~ \"5..\"}[10m])) by (namespace))",
           "hide": false,
           "legendFormat": "v11y",
           "range": true,
