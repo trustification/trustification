@@ -18,19 +18,19 @@ bombastic:
             label: UBI 7
             id: ubi7
             terms:
-              - '"pkg:oci/redhat/ubi7"'
+              - '"pkg:oci/ubi7"'
 
           - type: check
             label: UBI 8
             id: ubi8
             terms:
-              - '"pkg:oci/redhat/ubi8"'
+              - '"pkg:oci/ubi8"'
 
           - type: check
             label: UBI 9
             id: ubi9
             terms:
-              - '"pkg:oci/redhat/ubi9"'
+              - '"pkg:oci/ubi9"'
 
           - type: divider
 
