@@ -59,10 +59,10 @@ pub fn related_advisories(props: &RelatedAdvisoriesProperties) -> Html {
                 <PanelMain>
                     <Bullseye>
                         <EmptyState
-                            title="No results"
+                            title="No related advisories"
                             icon={Icon::Search}
                         >
-                            { "Try a different search expression." }
+                            { "No related advisories have been found." }
                         </EmptyState>
                     </Bullseye>
                 </PanelMain>
