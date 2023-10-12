@@ -9,6 +9,8 @@ use actix_web::{
 pub struct Endpoints {
     pub vexination: String,
     pub bombastic: String,
+    pub collectorist: String,
+    pub v11y: String,
 }
 
 pub fn configurator(endpoints: Endpoints) -> impl FnOnce(&mut ServiceConfig) {
