@@ -150,9 +150,9 @@ v11y:
     resources:
       requests:
         cpu: "100m"
-        memory: "2Gi"
+        memory: "256Gi"
       limits:
-        memory: "2Gi"
+        memory: "512Gi"
 exhort:
   enabled: true
   api:
