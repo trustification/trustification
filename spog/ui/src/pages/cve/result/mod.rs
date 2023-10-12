@@ -12,6 +12,7 @@ use spog_ui_components::{async_state_renderer::async_content, time::Date};
 use std::rc::Rc;
 use std::str::FromStr;
 use yew::prelude::*;
+use yew_more_hooks::hooks::use_page_state;
 use yew_more_hooks::{hooks::use_async_with_cloned_deps, prelude::UseAsyncState};
 use yew_oauth2::hook::use_latest_access_token;
 
@@ -67,14 +68,24 @@ pub fn result_view(props: &ResultViewProperties) -> Html {
         )
     };
 
-    #[derive(Copy, Clone, PartialEq, Eq)]
+    #[derive(Copy, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
     enum TabIndex {
         Products,
         Advisories,
     }
 
-    let tab = use_state_eq(|| TabIndex::Products);
-    let onselect = use_callback(tab.clone(), |index, selected| selected.set(index));
+    #[derive(Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+    struct PageState {
+        tab: TabIndex,
+    }
+
+    let page_state = use_page_state(|| PageState {
+        tab: TabIndex::Products,
+    });
+
+    let onselect = use_callback(page_state.clone(), |index, state| {
+        state.modify(|state| state.tab = index);
+    });
 
     html!(
         <>
@@ -100,7 +111,7 @@ pub fn result_view(props: &ResultViewProperties) -> Html {
             </PageSection>
 
             <PageSection>
-                <Tabs<TabIndex> r#box=true selected={*tab} {onselect}>
+                <Tabs<TabIndex> r#box=true selected={page_state.tab} {onselect}>
                     <Tab<TabIndex> index={TabIndex::Products} title="Related Products">
                         { async_content(&*products, |products| html!(<RelatedProducts {products} />)) }
                     </Tab<TabIndex>>
