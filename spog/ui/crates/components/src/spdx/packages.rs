@@ -168,7 +168,7 @@ pub fn spdx_packages(props: &SpdxPackagesProperties) -> Html {
                             <GridItem cols={[4]}>
                                 <Card plain=true title={html!(<Title>{"Qualifiers"}</Title>)}>
                                     <CardBody>
-                                        <DescriptionList mode={DescriptionListMode::Horizontal}>
+                                        <DescriptionList mode={[DescriptionListMode::Horizontal]}>
                                         { for qualifiers.iter().map(|(k,v)| {
                                             html!(<>
                                                 <DescriptionGroup term={k.clone()}>

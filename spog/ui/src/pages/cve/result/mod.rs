@@ -81,7 +81,7 @@ pub fn result_view(props: &ResultViewProperties) -> Html {
             <PageSection sticky={vec![PageSectionSticky::Top]} variant={PageSectionVariant::Light} >
                 <Content>
                     <Title>
-                        {props.id.clone()}
+                        {props.id.clone()} { " "}
                         if let UseAsyncState::Ready(Ok(details)) = &*details {{
                             match &**details {
                                 cve::Cve::Published(published) => cvss3(&published.containers.cna.metrics),
@@ -89,7 +89,13 @@ pub fn result_view(props: &ResultViewProperties) -> Html {
                             }
                         }}
                     </Title>
+                    if let UseAsyncState::Ready(Ok(details)) = &*details {
+                        { cve_title(&details) }
+                    }
                 </Content>
+
+                <div class="pf-v5-u-my-md"></div>
+
                 { async_content(&*details, |details| html!(<CveDetailsView details={details.clone()} />)) }
             </PageSection>
 
@@ -105,6 +111,14 @@ pub fn result_view(props: &ResultViewProperties) -> Html {
             </PageSection>
         </>
     )
+}
+
+fn cve_title(cve: &cve::Cve) -> Html {
+    if let cve::Cve::Published(details) = cve {
+        html!(<p>{ details.containers.cna.title.clone() }</p>)
+    } else {
+        html!()
+    }
 }
 
 fn cvss3(metrics: &[Metric]) -> Html {
@@ -129,30 +143,71 @@ pub struct CveDetailsViewProperties {
 
 #[function_component(CveDetailsView)]
 pub fn cve_details(props: &CveDetailsViewProperties) -> Html {
-    match &*props.details {
-        cve::Cve::Published(details) => {
-            html!(
-                <DescriptionList>
-                    if let Some(title) = &details.containers.cna.title {
-                        <DescriptionGroup term="Title">{ title.clone() }</DescriptionGroup>
-                    }
-                    <DescriptionGroup term="Descriptions">
-                        { for details.containers.cna.descriptions.iter().map(|desc|{
-                            html!(
-                                <div lang={desc.language.clone()}>
-                                    <Markdown content={Rc::new(desc.value.clone())} />
-                                </div>
-                            )
-                        })}
-                    </DescriptionGroup>
-                    if let Some(timestamp) = details.metadata.date_published {
-                        <DescriptionGroup term="Published"><Date timestamp={timestamp.assume_utc()} /></DescriptionGroup>
-                    }
-                </DescriptionList>
-            )
-        }
-        cve::Cve::Rejected(details) => {
-            html!()
-        }
-    }
+    html!(
+        <Grid gutter=true> {
+
+            match &*props.details {
+                cve::Cve::Published(details) => {
+                    html!(
+                        <>
+                            <GridItem cols={[6.lg(), 8.md(), 12.all()]}>
+                                <Content>
+                                    { for details.containers.cna.descriptions.iter().map(|desc|{
+                                        html!(
+                                            <div lang={desc.language.clone()}>
+                                                <Markdown content={Rc::new(desc.value.clone())} />
+                                            </div>
+                                        )
+                                    })}
+                                </Content>
+                            </GridItem>
+
+                            <GridItem cols={[12]}>
+                                <DescriptionList auto_fit=true>
+                                    if let Some(timestamp) = details.metadata.date_published {
+                                        <DescriptionGroup term="Published date"><Date timestamp={timestamp.assume_utc()} /></DescriptionGroup>
+                                    }
+                                    if let Some(timestamp) = details.metadata.date_updated {
+                                        <DescriptionGroup term="Last modified"><Date timestamp={timestamp.assume_utc()} /></DescriptionGroup>
+                                    }
+                                </DescriptionList>
+                            </GridItem>
+                        </>
+                    )
+                }
+                cve::Cve::Rejected(details) => {
+                    html!(
+                        <>
+                            <GridItem cols={[6.lg(), 8.md(), 12.all()]}>
+                                <Content>
+                                    { for details.containers.cna.rejected_reasons.iter().map(|desc|{
+                                        html!(
+                                            <div lang={desc.language.clone()}>
+                                                <Markdown content={Rc::new(desc.value.clone())} />
+                                            </div>
+                                        )
+                                    })}
+                                </Content>
+                            </GridItem>
+
+                            <GridItem cols={[12]}>
+                                <DescriptionList auto_fit=true>
+                                    if let Some(timestamp) = details.metadata.date_published {
+                                        <DescriptionGroup term="Published date"><Date timestamp={timestamp.assume_utc()} /></DescriptionGroup>
+                                    }
+                                    if let Some(timestamp) = details.metadata.date_updated {
+                                        <DescriptionGroup term="Last modified"><Date timestamp={timestamp.assume_utc()} /></DescriptionGroup>
+                                    }
+                                    if let Some(timestamp) = details.metadata.date_rejected {
+                                        <DescriptionGroup term="Rejection date"><Date timestamp={timestamp.assume_utc()} /></DescriptionGroup>
+                                    }
+                                </DescriptionList>
+                            </GridItem>
+                        </>
+                    )
+                }
+            }
+
+        } </Grid>
+    )
 }
