@@ -58,7 +58,8 @@ data:
         "profile",
         "roles",
         "web-origins",
-        "create:document"
+        "create:document",
+        "read:document"
       ],
       "optionalClientScopes": [
         "address",
