@@ -11,16 +11,18 @@ use actix_web_httpauth::extractors::bearer::BearerAuth;
 use bytes::BytesMut;
 use csaf::definitions::ProductIdT;
 use csaf::Csaf;
-use futures::TryStreamExt;
+use futures::{stream, TryStreamExt};
 use spog_model::csaf::{find_product_relations, trace_product};
 use spog_model::cve::{
-    AdvisoryOverview, CveDetails, PackageRelatedToProductCve, ProductCveStatus, ProductRelatedToCve,
+    AdvisoryOverview, CveDetails, CveSearchDocument, PackageRelatedToProductCve, ProductCveStatus, ProductRelatedToCve,
 };
 use std::collections::{BTreeMap, BTreeSet, HashSet};
 use std::sync::Arc;
+use trustification_api::search::SearchResult;
 use trustification_auth::authenticator::Authenticator;
 use trustification_auth::client::{BearerTokenProvider, TokenProvider};
 use trustification_infrastructure::new_auth;
+use v11y_client::search::{SearchDocument, SearchHit};
 
 pub(crate) fn configure(auth: Option<Arc<Authenticator>>) -> impl FnOnce(&mut ServiceConfig) {
     |config: &mut ServiceConfig| {
@@ -37,8 +39,42 @@ pub(crate) fn configure(auth: Option<Arc<Authenticator>>) -> impl FnOnce(&mut Se
 async fn cve_search(
     web::Query(params): web::Query<search::QueryParams>,
     v11y: web::Data<V11yService>,
+    state: web::Data<AppState>,
 ) -> actix_web::Result<HttpResponse> {
-    Ok(HttpResponse::Ok().json(v11y.search(params).await.map_err(Error::V11y)?))
+    let SearchResult { result, total } = v11y.search(params).await.map_err(Error::V11y)?;
+
+    // enrich the results with counts of relations
+    let result: Vec<_> = stream::iter(result.into_iter().map(Ok::<_, Error>))
+        .and_then(move |hit: SearchHit<SearchDocument>| {
+            let state = state.clone();
+            async move {
+                let related_advisories = count_related_advisories(&state, &hit.document.id).await?;
+                let related_products = count_related_products(&hit.document.id).await?;
+                Ok(hit.map(|document| CveSearchDocument {
+                    document,
+                    related_advisories,
+                    related_products,
+                }))
+            }
+        })
+        .try_collect()
+        .await?;
+
+    Ok(HttpResponse::Ok().json(SearchResult { total, result }))
+}
+
+/// return the number of related advisories for a CVE
+async fn count_related_advisories(state: &AppState, cve: &str) -> Result<usize, Error> {
+    let result = state
+        .search_vex(&format!(r#"cve:"{}""#, cve), 0, 1, Default::default(), &*state.provider)
+        .await?;
+    Ok(result.total)
+}
+
+/// return the number of related products for a CVE
+async fn count_related_products(_cve: &str) -> Result<usize, Error> {
+    // FIXME: implemented by guac
+    Ok(0)
 }
 
 async fn cve_get(id: web::Path<String>, v11y: web::Data<V11yService>) -> actix_web::Result<HttpResponse> {
