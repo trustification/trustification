@@ -1,5 +1,7 @@
-use super::stream::ObjectStream;
-use crate::Error;
+use crate::{
+    stream::{decode, encode, ObjectStream},
+    Error,
+};
 use bombastic_model::prelude::SBOM as SBOMValidator;
 use bytes::Bytes;
 use futures::{future::ok, pin_mut, stream::once, StreamExt};
@@ -31,26 +33,47 @@ impl FromStr for Validator {
 impl Validator {
     pub async fn validate<'a>(
         &self,
-        _encoding: Option<&str>,
+        encoding: Option<&str>,
         data: ObjectStream<'a>,
     ) -> Result<ObjectStream<'a>, Error> {
         use Validator::*;
         match self {
             None => Ok(data),
             SBOM => {
-                let mut bytes = vec![];
-                pin_mut!(data);
-                while let Some(chunk) = data.next().await {
-                    bytes.extend_from_slice(&chunk?)
-                }
-                let _ = SBOMValidator::parse(&bytes).map_err(|e| {
-                    log::error!("Invalid SBOM: {e}");
-                    Error::InvalidContent
-                })?;
-                Ok(Box::pin(once(ok(Bytes::copy_from_slice(&bytes)))))
+                check(encoding, data, |bytes| {
+                    SBOMValidator::parse(bytes).map_err(|e| {
+                        log::error!("Invalid SBOM: {e}");
+                        Error::InvalidContent
+                    })
+                })
+                .await
             }
-            VEX => Ok(data), // TODO
+            VEX => {
+                check(encoding, data, |bytes| {
+                    serde_json::from_slice::<csaf::Csaf>(bytes).map_err(|e| {
+                        log::error!("Invalid VEX: {e}");
+                        Error::InvalidContent
+                    })
+                })
+                .await
+            }
             Seedwing(_url) => todo!(),
         }
     }
+}
+
+async fn check<'a, T, F: Fn(&[u8]) -> Result<T, Error>>(
+    encoding: Option<&str>,
+    data: ObjectStream<'a>,
+    parse: F,
+) -> Result<ObjectStream<'a>, Error> {
+    let data = decode(encoding, data)?;
+    let mut bytes = vec![];
+    pin_mut!(data);
+    while let Some(chunk) = data.next().await {
+        bytes.extend_from_slice(&chunk?)
+    }
+    parse(&bytes)?;
+    let s = once(ok(Bytes::copy_from_slice(&bytes)));
+    Ok(Box::pin(encode(encoding, Box::pin(s))?))
 }

@@ -322,7 +322,7 @@ impl Storage {
         let bucket = self.bucket.with_extra_headers(headers);
 
         let data = self.validator.validate(encoding, Box::pin(data)).await?;
-        let mut rdr = stream::encode(encoding, data)?;
+        let mut rdr = stream::stream_reader(encoding, data)?;
         let path = format!("{}{}", DATA_PATH, key);
 
         let len = bucket
