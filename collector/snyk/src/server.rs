@@ -19,6 +19,7 @@ use trustification_infrastructure::{new_auth, MainContext};
 use v11y_client::Vulnerability;
 
 use crate::client::SnykClient;
+use crate::rewrite::rewrite;
 use crate::AppState;
 
 #[derive(OpenApi)]
@@ -45,6 +46,9 @@ pub enum Error {
 
     #[display(fmt = "Internal error")]
     Internal,
+
+    #[display(fmt = "pURL error")]
+    Purl,
 }
 
 impl ResponseError for Error {}
@@ -94,7 +98,11 @@ pub async fn collect_packages(
     for purl in &request.purls {
         let mut vulns: Vec<v11y_client::Vulnerability> = Vec::new();
 
-        for issue in client.issues(purl).await.map_err(|_| Error::Snyk)? {
+        for issue in client
+            .issues(&rewrite(purl).map_err(|_e| Error::Purl)?)
+            .await
+            .map_err(|_| Error::Snyk)?
+        {
             let issue_vulns: Vec<Vulnerability> = issue.into();
             vulns.extend_from_slice(&issue_vulns)
         }
