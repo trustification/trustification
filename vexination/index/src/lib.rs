@@ -13,7 +13,9 @@ use std::{
 use tantivy::{
     collector::TopDocs,
     query::{AllQuery, TermSetQuery},
+    schema::{IndexRecordOption, TextFieldIndexing},
     store::ZstdCompressor,
+    tokenizer::{Language, LowerCaser, NgramTokenizer, RemoveLongFilter, Stemmer, TextAnalyzer, TokenizerManager},
     DocAddress, DocId, IndexSettings, Order, Score, Searcher, SegmentReader, SnippetGenerator,
 };
 use time::OffsetDateTime;
@@ -81,6 +83,20 @@ impl trustification_index::Index for Index {
     type MatchedDocument = SearchHit;
     type Document = Csaf;
     type QueryContext = VexQuery;
+
+    fn tokenizers(&self) -> Result<TokenizerManager, SearchError> {
+        let manager = TokenizerManager::default();
+        let ngram = NgramTokenizer::all_ngrams(3, 16)?;
+        manager.register(
+            "ngram",
+            TextAnalyzer::builder(ngram)
+                .filter(RemoveLongFilter::limit(40))
+                .filter(LowerCaser)
+                .filter(Stemmer::new(Language::English))
+                .build(),
+        );
+        Ok(manager)
+    }
 
     fn settings(&self) -> IndexSettings {
         IndexSettings {
@@ -497,11 +513,20 @@ impl Index {
     pub fn new() -> Self {
         let mut schema = Schema::builder();
         let indexed_timestamp = schema.add_date_field("indexed_timestamp", STORED);
+        let text_options = TextFieldIndexing::default()
+            .set_tokenizer("ngram")
+            .set_index_option(IndexRecordOption::WithFreqsAndPositions);
 
         let advisory_id = schema.add_text_field("advisory_id", STRING | FAST | STORED);
         let advisory_status = schema.add_text_field("advisory_status", STRING);
-        let advisory_title = schema.add_text_field("advisory_title", TEXT | STORED);
-        let advisory_description = schema.add_text_field("advisory_description", TEXT | STORED);
+        let advisory_title = schema.add_text_field(
+            "advisory_title",
+            (TEXT | STORED).set_indexing_options(text_options.clone()),
+        );
+        let advisory_description = schema.add_text_field(
+            "advisory_description",
+            (TEXT | STORED).set_indexing_options(text_options.clone()),
+        );
         let advisory_revision = schema.add_text_field("advisory_revision", STRING | STORED);
         let advisory_severity = schema.add_text_field("advisory_severity", STRING | STORED);
         let advisory_initial = schema.add_date_field("advisory_initial_date", INDEXED);
@@ -509,8 +534,9 @@ impl Index {
         let advisory_severity_score = schema.add_f64_field("advisory_severity_score", FAST);
 
         let cve_id = schema.add_text_field("cve_id", STRING | FAST | STORED);
-        let cve_title = schema.add_text_field("cve_title", TEXT | STORED);
-        let cve_description = schema.add_text_field("cve_description", TEXT | STORED);
+        let cve_title = schema.add_text_field("cve_title", (TEXT | STORED).set_indexing_options(text_options.clone()));
+        let cve_description =
+            schema.add_text_field("cve_description", (TEXT | STORED).set_indexing_options(text_options));
         let cve_discovery = schema.add_date_field("cve_discovery_date", INDEXED);
         let cve_release = schema.add_date_field("cve_release_date", INDEXED | STORED);
         let cve_severity = schema.add_text_field("cve_severity", STRING | FAST);
@@ -1000,6 +1026,20 @@ mod tests {
             assert_eq!(result.0[2].document.advisory_id, "RHSA-2023:1441");
             assert_eq!(result.0[3].document.advisory_id, "RHSA-2021:3029");
             assert!(result.0[0].document.advisory_date > result.0[1].document.advisory_date);
+        });
+    }
+
+    #[tokio::test]
+    async fn test_ngrams() {
+        assert_search(|index| {
+            let result = search(&index, "title:openssl");
+            assert_eq!(result.0.len(), 2);
+
+            let result = search(&index, "title:open");
+            assert_eq!(result.0.len(), 2);
+
+            let result = search(&index, "title:ssl");
+            assert_eq!(result.0.len(), 2);
         });
     }
 
