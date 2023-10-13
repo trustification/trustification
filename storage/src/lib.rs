@@ -271,6 +271,7 @@ const DATA_PATH: &str = "/data/";
 const INDEX_PATH: &str = "/index";
 const VERSION_HEADER: &str = "x-amz-meta-version";
 const VERSION: u32 = 1;
+const DEFAULT_ENCODING: &str = "zstd";
 
 pub struct Head {
     pub status: StatusCode,
@@ -317,12 +318,12 @@ impl Storage {
         headers.insert(VERSION_HEADER, VERSION.into());
         headers.insert(
             CONTENT_ENCODING,
-            HeaderValue::from_str(encoding.unwrap_or("zstd")).unwrap(),
+            HeaderValue::from_str(encoding.unwrap_or(DEFAULT_ENCODING)).unwrap(),
         );
         let bucket = self.bucket.with_extra_headers(headers);
 
         let data = self.validator.validate(encoding, Box::pin(data)).await?;
-        let mut rdr = stream::stream_reader(encoding, data)?;
+        let mut rdr = stream::encoded_reader(DEFAULT_ENCODING, encoding, data)?;
         let path = format!("{}{}", DATA_PATH, key);
 
         let len = bucket
