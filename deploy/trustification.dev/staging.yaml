@@ -1,6 +1,6 @@
 release: ec0dcf9d08c78caaaf789054937d426924a73079
 trustImage: ghcr.io/trustification/trust
-uiImage: ghcr.io/trustification/trust-ui
+uiImage: ghcr.io/trustification/trust
 docsImage: ghcr.io/trustification/trust-docs
 testsImage: ghcr.io/trustification/trust-tests
 guacImage: ghcr.io/trustification/guac:v0.2.5-s3fix

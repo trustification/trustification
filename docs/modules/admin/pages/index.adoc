@@ -21,7 +21,7 @@ Running Trustification on bare-metal servers requires you to compile the `trust`
 
 === Container image
 
-Trustification services are available in two container images, `ghcr.io/trustification/trust`, and `ghcr.io/trustification/trust-ui`.
+Trustification services are available in a image, `ghcr.io/trustification/trust`.
 
 === Kubernetes
 
