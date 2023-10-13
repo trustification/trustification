@@ -18,7 +18,7 @@ config:
   authentication: trustification.dev/config/staging/auth.yaml
   collectorist: trustification.dev/config/staging/collectorist.yaml
 spog:
-  crdaUrl: http://alpha-exhort.apps.sssc-cl01.appeng.rhecoeng.com/
+  crdaUrl: https://rhda.rhcloud.com/
   branding: false
   ui:
     segmentWriteKey:

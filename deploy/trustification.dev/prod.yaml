@@ -17,7 +17,7 @@ config:
   name: trustification-config
   authentication: trustification.dev/config/prod/auth.yaml
 spog:
-  crdaUrl: http://alpha-exhort.apps.sssc-cl01.appeng.rhecoeng.com/
+  crdaUrl: https://rhda.rhcloud.com/
   branding: false
   ui:
     resources:
