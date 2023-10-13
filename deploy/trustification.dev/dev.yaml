@@ -1,6 +1,6 @@
 release: 0.1.0-nightly.d12c5d72
 trustImage: ghcr.io/trustification/trust
-uiImage: ghcr.io/trustification/trust-ui
+uiImage: ghcr.io/trustification/trust
 docsImage: ghcr.io/trustification/trust-docs
 testsImage: ghcr.io/trustification/trust-tests
 domain: dev.trustification.dev
