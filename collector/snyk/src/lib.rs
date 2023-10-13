@@ -28,6 +28,8 @@ use crate::client::schema::{Issue, IssueAttributes, Reference, Severity};
 mod client;
 mod server;
 
+mod rewrite;
+
 #[derive(clap::Args, Debug)]
 #[command(about = "Run the api server", args_conflicts_with_subcommands = true)]
 pub struct Run {
