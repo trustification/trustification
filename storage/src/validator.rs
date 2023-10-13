@@ -77,3 +77,79 @@ async fn check<'a, T, F: Fn(&[u8]) -> Result<T, Error>>(
     let s = once(ok(Bytes::copy_from_slice(&bytes)));
     Ok(Box::pin(encode(encoding, Box::pin(s))?))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    async fn read(data: ObjectStream<'_>) -> Vec<u8> {
+        let mut bytes = vec![];
+        pin_mut!(data);
+        while let Some(chunk) = data.next().await {
+            bytes.extend_from_slice(&chunk.unwrap())
+        }
+        bytes
+    }
+
+    async fn test(v: Validator, enc: Option<&str>, expected: &[u8]) -> Result<Vec<u8>, Error> {
+        let src = once(ok(Bytes::copy_from_slice(expected)));
+        let sink = v.validate(enc, Box::pin(src)).await?;
+        Ok(read(Box::pin(sink)).await)
+    }
+
+    #[tokio::test]
+    async fn none() -> Result<(), Error> {
+        let expected = include_bytes!("../../bombastic/testdata/ubi8-invalid.json");
+        let result = test(Validator::None, None, expected).await?;
+        Ok(assert_eq!(expected[..], result[..]))
+    }
+
+    #[tokio::test]
+    async fn sbom_json_valid() -> Result<(), Error> {
+        let expected = include_bytes!("../../bombastic/testdata/ubi8-valid.json");
+        let result = test(Validator::SBOM, None, expected).await?;
+        Ok(assert_eq!(expected[..], result[..]))
+    }
+
+    #[tokio::test]
+    async fn sbom_json_invalid() {
+        let expected = include_bytes!("../../bombastic/testdata/ubi8-invalid.json");
+        assert!(test(Validator::SBOM, None, expected).await.is_err())
+    }
+
+    #[tokio::test]
+    async fn sbom_bzip2_valid() -> Result<(), Error> {
+        let expected = include_bytes!("../../bombastic/testdata/ubi8-valid.json.bz2");
+        let result = test(Validator::SBOM, Some("bzip2"), expected).await?;
+        // This exact file was obtained from a Red Hat internal
+        // repo. I think it's safe to ignore the 4-byte bz2 header, as
+        // it's the block-size (4th byte) that's different: 6 vs 9. I
+        // think we can chalk that up to different bzip2 encoders.
+        Ok(assert_eq!(expected[4..], result[4..]))
+    }
+
+    #[tokio::test]
+    async fn sbom_bzip2_invalid() {
+        let expected = include_bytes!("../../bombastic/testdata/ubi8-invalid.json.bz2");
+        assert!(test(Validator::SBOM, Some("bzip2"), expected).await.is_err())
+    }
+
+    #[tokio::test]
+    async fn sbom_bzip2_invalid_license() {
+        let expected = include_bytes!("../../bombastic/testdata/3amp-2.json.bz2");
+        assert!(test(Validator::SBOM, Some("bzip2"), expected).await.is_err())
+    }
+
+    #[tokio::test]
+    async fn sbom_zstd_valid() -> Result<(), Error> {
+        let expected = include_bytes!("../../bombastic/testdata/ubi8-valid.json.zst");
+        let result = test(Validator::SBOM, Some("zstd"), expected).await?;
+        Ok(assert_eq!(expected[..], result[..]))
+    }
+
+    #[tokio::test]
+    async fn sbom_zstd_invalid() {
+        let expected = include_bytes!("../../bombastic/testdata/ubi8-invalid.json.zst");
+        assert!(test(Validator::SBOM, Some("zstd"), expected).await.is_err())
+    }
+}
