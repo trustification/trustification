@@ -1,4 +1,4 @@
-release: 0.1.0-nightly.c8f3dbc0
+release: 2fc2e51c0b520e8c55625899621c314d2d75e472
 trustImage: ghcr.io/trustification/trust
 uiImage: ghcr.io/trustification/trust
 docsImage: ghcr.io/trustification/trust-docs
@@ -16,10 +16,16 @@ config:
   enable: true
   name: trustification-config
   authentication: trustification.dev/config/prod/auth.yaml
+  collectorist: trustification.dev/config/prod/collectorist.yaml
 spog:
   crdaUrl: http://alpha-exhort.apps.sssc-cl01.appeng.rhecoeng.com/
   branding: false
   ui:
+    segmentWriteKey:
+      valueFrom:
+        secretKeyRef:
+          name: segment-write-keys
+          key: spogUi
     resources:
       requests:
         cpu: "100m"
@@ -27,6 +33,11 @@ spog:
       limits:
         memory: "64Mi"
   api:
+    segmentWriteKey:
+      valueFrom:
+        secretKeyRef:
+          name: segment-write-keys
+          key: spogApi
     resources:
       requests:
         cpu: "100m"
@@ -38,7 +49,8 @@ bombastic:
   credentials: bombastic-credentials-secret
   indexMode: file
   collector:
-    queue: sbom-guac-prod
+    enabled: true
+    queue: sbom-indexed-prod
   indexer:
     topics:
       stored: sbom-stored-prod
@@ -72,8 +84,6 @@ vexination:
   bucket: vexination-prod
   credentials: vexination-credentials-secret
   indexMode: file
-  exporter:
-    topic: vex-guac-prod
   indexer:
     topics:
       stored: vex-stored-prod
@@ -147,6 +157,41 @@ exhort:
   enabled: true
   api:
     resources:
+keycloakRealm:
+  redirectUris:
+    - http://localhost:*
+    - https://trustification.dev
+    - https://trustification.dev/*
+    - https://sbom.trustification.dev
+    - https://sbom.trustification.dev/*
+    - https://vex.trustification.dev
+    - https://vex.trustification.dev/*
+oidcClients:
+  frontend:
+    issuerUrl: https://sso.trustification.dev/realms/chicken
+    clientId:
+      value: frontend
+  walker:
+    issuerUrl: https://sso.trustification.dev/realms/chicken
+    clientSecret:
+      valueFrom:
+        secretKeyRef:
+          name: oidc-client-walker
+          key: client-secret
+  testingManager:
+    issuerUrl: https://sso.trustification.dev/realms/chicken
+    clientSecret:
+      valueFrom:
+        secretKeyRef:
+          name: oidc-client-testing-manager
+          key: client-secret
+  testingUser:
+    issuerUrl: https://sso.trustification.dev/realms/chicken
+    clientSecret:
+      valueFrom:
+        secretKeyRef:
+          name: oidc-client-testing-user
+          key: client-secret
 guac:
   enabled: true
   graphql:
@@ -185,38 +230,4 @@ keycloak:
         enabled: false
     auth:
       existingSecret: sso-postgres
-keycloakRealm:
-  redirectUris:
-    - http://localhost:*
-    - https://trustification.dev
-    - https://trustification.dev/*
-    - https://sbom.trustification.dev
-    - https://sbom.trustification.dev/*
-    - https://vex.trustification.dev
-    - https://vex.trustification.dev/*
-oidcClients:
-  frontend:
-    issuerUrl: https://sso.trustification.dev/realms/chicken
-    clientId:
-      value: frontend
-  walker:
-    issuerUrl: https://sso.trustification.dev/realms/chicken
-    clientSecret:
-      valueFrom:
-        secretKeyRef:
-          name: oidc-client-walker
-          key: client-secret
-  testingManager:
-    issuerUrl: https://sso.trustification.dev/realms/chicken
-    clientSecret:
-      valueFrom:
-        secretKeyRef:
-          name: oidc-client-testing-manager
-          key: client-secret
-  testingUser:
-    issuerUrl: https://sso.trustification.dev/realms/chicken
-    clientSecret:
-      valueFrom:
-        secretKeyRef:
-          name: oidc-client-testing-user
-          key: client-secret
+
