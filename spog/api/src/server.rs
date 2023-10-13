@@ -278,6 +278,7 @@ impl AppState {
         Ok(response.json::<vexination_model::prelude::SearchResult>().await?)
     }
 
+    #[allow(unused)]
     pub async fn analyze_sbom(
         &self,
         purls: Vec<String>,

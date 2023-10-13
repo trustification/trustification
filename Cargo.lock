@@ -6276,6 +6276,7 @@ dependencies = [
  "clap",
  "collectorist-client",
  "csaf",
+ "cve",
  "cvss",
  "derive_more",
  "env_logger",
