@@ -23,6 +23,27 @@ async fn spog_version(context: &mut SpogContext) {
     assert_eq!(version["name"], "spog-api");
 }
 
+#[test_context(SpogContext)]
+#[tokio::test]
+#[ntest::timeout(30_000)]
+async fn spog_endpoints(context: &mut SpogContext) {
+    let vexination_url = String::from(context.vexination.url.as_str());
+    let bombastic_url = String::from(context.bombastic.url.as_str());
+
+    let response = reqwest::Client::new()
+        .get(context.urlify("/.well-known/trustification/endpoints"))
+        .inject_token(&context.provider.provider_user)
+        .await
+        .unwrap()
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    let endpoints: Value = response.json().await.unwrap();
+    assert_eq!(endpoints["vexination"], vexination_url);
+    assert_eq!(endpoints["bombastic"], bombastic_url);
+}
+
 /// SPoG is the entrypoint for the frontend. It exposes a search API, but forwards requests
 /// to bombastic of vexination. This requires forwarding the token too. This test is here to
 /// test this.

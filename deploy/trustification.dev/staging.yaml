@@ -3,7 +3,7 @@ trustImage: ghcr.io/trustification/trust
 uiImage: ghcr.io/trustification/trust
 docsImage: ghcr.io/trustification/trust-docs
 testsImage: ghcr.io/trustification/trust-tests
-guacImage: ghcr.io/trustification/guac:v0.2.5-s3fix
+guacImage: ghcr.io/trustification/guac:v0.2.6-s3fix
 domain: staging.trustification.dev
 replicas: 1
 imagePullPolicy: IfNotPresent
@@ -18,7 +18,7 @@ config:
   authentication: trustification.dev/config/staging/auth.yaml
   collectorist: trustification.dev/config/staging/collectorist.yaml
 spog:
-  crdaUrl: http://alpha-exhort.apps.sssc-cl01.appeng.rhecoeng.com/
+  crdaUrl: https://rhda.rhcloud.com/
   branding: false
   ui:
     segmentWriteKey:
