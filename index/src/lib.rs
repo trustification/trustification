@@ -1071,7 +1071,7 @@ mod tests {
         let mut good = IndexDirectory::new(&dir.join("good")).unwrap();
         let mut bad = IndexDirectory::new(&dir.join("bad")).unwrap();
 
-        let store = good.build(Default::default(), old_schema).unwrap();
+        let store = good.build(Default::default(), old_schema, Default::default()).unwrap();
 
         let mut w = store.writer(10_000_000).unwrap();
         w.add_document(doc!(old_id => "foo")).unwrap();
@@ -1079,12 +1079,13 @@ mod tests {
         w.wait_merging_threads().unwrap();
 
         let snapshot = good.pack().unwrap();
-        let store = bad.build(Default::default(), new_schema).unwrap();
+        let store = bad.build(Default::default(), new_schema, Default::default()).unwrap();
         let schema = store.schema();
         let settings = store.settings();
+        let tokenizers = store.tokenizers();
 
         assert_eq!(bad.state, IndexState::A);
-        let result = bad.sync(schema, settings.clone(), &snapshot);
+        let result = bad.sync(schema, settings.clone(), tokenizers.clone(), &snapshot);
         assert!(result.is_err());
         assert_eq!(bad.state, IndexState::A);
     }
@@ -1102,9 +1103,12 @@ mod tests {
 
         let mut good = IndexDirectory::new(&dir.join("good")).unwrap();
 
-        let store = good.build(Default::default(), schema).unwrap();
+        let store = good
+            .build(Default::default(), schema, TokenizerManager::default())
+            .unwrap();
         let schema = store.schema();
         let settings = store.settings();
+        let tokenizers = store.tokenizers();
 
         let mut w = store.writer(10_000_000).unwrap();
         w.add_document(doc!(id => "foo")).unwrap();
@@ -1113,7 +1117,7 @@ mod tests {
         assert_eq!(store.reader().unwrap().searcher().num_docs(), 1);
 
         assert_eq!(good.state, IndexState::A);
-        let clean = good.reset(settings.clone(), schema).unwrap();
+        let clean = good.reset(settings.clone(), schema, tokenizers.clone()).unwrap();
         assert_eq!(good.state, IndexState::B);
         assert_eq!(store.reader().unwrap().searcher().num_docs(), 1);
         assert_eq!(clean.reader().unwrap().searcher().num_docs(), 0);
