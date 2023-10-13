@@ -77,6 +77,7 @@ impl<'a, INDEX: Index> Indexer<'a, INDEX> {
         let mut writer = Some(block_in_place(|| self.index.writer())?);
         let consumer = self.bus.subscribe("indexer", &[self.stored_topic]).await?;
         let mut processed_events = Vec::new();
+        let mut indexed_events = Vec::new();
         let mut events = 0;
 
         *self.status.lock().await = IndexerStatus::Running;
@@ -127,6 +128,7 @@ impl<'a, INDEX: Index> Indexer<'a, INDEX> {
                         if let Some(payload) = event.payload() {
                             if let Ok(data) = self.storage.decode_event(payload) {
                                 log::debug!("Received {} records", data.records.len());
+                                let mut indexed = 0;
                                 for data in data.records {
                                     if self.storage.is_index(data.key()) {
                                         log::trace!("It's an index event, ignoring");
@@ -139,6 +141,7 @@ impl<'a, INDEX: Index> Indexer<'a, INDEX> {
                                                             log::warn!("(Ignored) Internal error when indexing {}: {:?}", res.key, e);
                                                         }
                                                         events += 1;
+                                                        indexed += 1;
                                                     }
                                                     Err(e) => {
                                                         log::warn!("Error retrieving document event data, ignoring (error: {:?})", e);
@@ -153,6 +156,11 @@ impl<'a, INDEX: Index> Indexer<'a, INDEX> {
                                             }
                                             _ => log::debug!("Non (PUT | DELETE)  event ({:?}), skipping", data),
                                         }
+                                    }
+                                }
+                                if indexed > 0 {
+                                    if let Some(payload) = event.payload() {
+                                        indexed_events.push(payload.to_vec());
                                     }
                                 }
                             } else {
@@ -187,13 +195,13 @@ impl<'a, INDEX: Index> Indexer<'a, INDEX> {
                                     log::warn!("Error committing event: {:?}", e)
                                 }
                             }
+                            processed_events.clear();
                             events = 0;
 
-                            for event in processed_events.drain(..) {
-                                if let Some(payload) = event.payload() {
-                                    if let Err(e) = self.bus.send(self.indexed_topic, payload).await {
-                                        log::warn!("(Ignored) Error sending event to indexed topic {}: {:?}", self.indexed_topic, e);
-                                    }
+                            for payload in indexed_events.drain(..) {
+                                // Filter events not related to documents
+                                if let Err(e) = self.bus.send(self.indexed_topic, &payload).await {
+                                    log::warn!("(Ignored) Error sending event to indexed topic {}: {:?}", self.indexed_topic, e);
                                 }
                             }
 
