@@ -1,8 +1,8 @@
+use super::pkg::PackageRef;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use time::OffsetDateTime;
 use utoipa::ToSchema;
-
-use super::pkg::PackageRef;
 
 #[derive(Clone, Debug, PartialEq, Eq, ToSchema, Serialize, Deserialize)]
 #[schema(example = json!(Vulnerability {
@@ -36,10 +36,36 @@ pub struct Vulnerability {
 
 #[derive(Clone, Debug, PartialEq, Eq, ToSchema, Serialize, Deserialize)]
 #[schema(example = json!(Cvss3{
-score: "7.3".to_string(),
-status: "verified".to_string()
+    score: "7.3".to_string(),
+    status: "verified".to_string()
 }))]
 pub struct Cvss3 {
     pub score: String,
     pub status: String,
+}
+
+#[derive(Clone, Debug, PartialEq, ToSchema, Serialize, Deserialize)]
+pub struct SbomReport {
+    /// The SBOM name
+    pub name: String,
+    /// The SBOM version
+    pub version: Option<String>,
+    /// The time the document was created
+    pub created: Option<OffsetDateTime>,
+
+    /// Vulnerabilities summary
+    pub summary: Vec<(Option<cvss::Severity>, usize)>,
+    /// Vulnerabilities list
+    pub details: Vec<SbomReportVulnerability>,
+}
+
+#[derive(Clone, Debug, PartialEq, ToSchema, Serialize, Deserialize)]
+pub struct SbomReportVulnerability {
+    pub id: String,
+    pub description: String,
+    pub score: Option<f32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub published: Option<OffsetDateTime>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub updated: Option<OffsetDateTime>,
 }

@@ -1,6 +1,7 @@
+use crate::error::Error;
 use crate::guac::service::GuacService;
 use crate::search;
-use crate::server::{AppState, Error};
+use crate::server::AppState;
 use crate::service::collectorist::CollectoristService;
 use crate::service::v11y::V11yService;
 use actix_web::{

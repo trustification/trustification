@@ -11,6 +11,7 @@ analytics-next = "0.1.0"
 anyhow = "1"
 async-trait = "0.1"
 browser-panic-hook = "0.2.0"
+convert_case = "0.6.0"
 chrono = { version = "0.4", default-features = false, features = ["wasmbind"] }
 csaf = { version = "0.5.0", default-features = false }
 cve = "0.2"
@@ -50,14 +51,14 @@ yew-more-hooks = "0.3.1"
 yew-nested-router = "0.4.0"
 yew-oauth2 = { version = "0.7.0", features = ["router", "openid"] }
 
-spog-model = { path = "../model" }
-v11y-model = { path = "../../v11y/model" }
-
 bombastic-model = { path = "../../bombastic/model" }
-vexination-model = { path = "../../vexination/model" }
+exhort-model = { path = "../../exhort/model" }
+spog-model = { path = "../model" }
 trustification-api = { path = "../../api" }
 trustification-common = { path = "../../common", default-features = false }
 trustification-version = { path = "../../version" }
+v11y-model = { path = "../../v11y/model" }
+vexination-model = { path = "../../vexination/model" }
 
 spog-ui-navigation = { path = "crates/navigation" }
 spog-ui-backend = { path = "crates/backend" }

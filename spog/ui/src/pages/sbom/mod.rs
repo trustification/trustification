@@ -1,3 +1,5 @@
+//! The SBOM details page
+
 use crate::model;
 use patternfly_yew::prelude::*;
 use spog_ui_backend::use_backend;

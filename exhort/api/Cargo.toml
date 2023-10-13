@@ -12,6 +12,7 @@ guac = { workspace = true }
 ### this seems completely wrong, but Cargo seems to also require way too many ../ for this
 ### wtf am I doing wrong?
 collectorist-client = { path = " ../../../../collectorist/client" }
+exhort-model = { path = "../model" }
 v11y-client = { path = "../../v11y/client"}
 trustification-common = { path = "../../common"}
 trustification-infrastructure = { path = "../../infrastructure" }

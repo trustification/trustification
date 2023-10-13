@@ -1,23 +1,19 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 use std::str::FromStr;
 use std::sync::Arc;
 
 use actix_web::{post, web, HttpResponse, Responder, ResponseError};
 use derive_more::{Display, Error, From};
+use exhort_model::*;
 use guac::client::intrinsic::certify_vuln::CertifyVulnSpec;
 use packageurl::PackageUrl;
-use serde::{Deserialize, Serialize};
 use trustification_auth::authenticator::Authenticator;
 use trustification_auth::authorizer::Authorizer;
 use trustification_auth::swagger_ui::{swagger_ui_with_auth, SwaggerUiOidc};
 use trustification_infrastructure::app::http::{HttpServerBuilder, HttpServerConfig};
 use trustification_infrastructure::endpoint::Exhort;
 use trustification_infrastructure::MainContext;
-use utoipa::openapi::schema::AdditionalProperties;
-use utoipa::openapi::{ArrayBuilder, Object, ObjectBuilder, RefOr, SchemaType};
-use utoipa::{OpenApi, ToSchema};
-//use trustification_infrastructure::new_auth;
-use v11y_client::Vulnerability;
+use utoipa::OpenApi;
 
 use crate::AppState;
 
@@ -149,64 +145,4 @@ async fn analyze(state: web::Data<AppState>, request: web::Json<AnalyzeRequest>)
         }
     }
     Ok(HttpResponse::Ok().json(response))
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
-pub struct AnalyzeRequest {
-    pub purls: Vec<String>,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
-pub struct AnalyzeResponse {
-    #[schema(schema_with = response_affected)]
-    pub affected: HashMap<String, Vec<String>>,
-    //#[schema(additional_properties, value_type = Vulnerability)]
-    pub vulnerabilities: Vec<Vulnerability>,
-}
-
-fn response_affected() -> Object {
-    ObjectBuilder::new()
-        .schema_type(SchemaType::Object)
-        .additional_properties(Some(AdditionalProperties::RefOr(RefOr::T(
-            ArrayBuilder::new()
-                .items(
-                    ObjectBuilder::new()
-                        .schema_type(SchemaType::String)
-                        .description(Some("vulnerability ID"))
-                        .build(),
-                )
-                .build()
-                .into(),
-        ))))
-        .build()
-}
-
-impl AnalyzeResponse {
-    pub fn new() -> Self {
-        Self {
-            affected: Default::default(),
-            vulnerabilities: Default::default(),
-        }
-    }
-
-    pub fn add_package_vulnerability(&mut self, purl: &str, vuln_id: &str) {
-        if !self.affected.contains_key(purl) {
-            self.affected.insert(purl.to_string(), Vec::new());
-        }
-
-        if let Some(inner) = self.affected.get_mut(purl) {
-            inner.push(vuln_id.to_string());
-        }
-    }
-
-    pub fn add_vulnerability(&mut self, vuln: &Vulnerability) {
-        self.vulnerabilities.push(vuln.clone());
-        //if !self.vulnerabilities.contains_key(&vuln.id) {
-        //self.vulnerabilities.insert(vuln.id.clone(), Vec::new());
-        //}
-
-        //if let Some(inner) = self.vulnerabilities.get_mut(&vuln.id) {
-        //inner.push(vuln.clone())
-        //}
-    }
 }
