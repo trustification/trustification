@@ -135,7 +135,7 @@ pub struct StorageConfig {
     pub secret_key: Option<String>,
 
     /// Validation choice
-    #[arg(env = "VALIDATOR", long = "validator")]
+    #[arg(env = "VALIDATOR", long = "validator", default_value = "none")]
     pub validator: Validator,
 }
 
