@@ -20,7 +20,7 @@
     "web-vitals": "^2.1.0"
   },
   "scripts": {
-    "copy:js:main": "cp build/static/js/main.js ../crates/donut/js/main.js",
+    "copy:js:main": "cp build/static/js/main.js ../js/main.js",
     "start": "craco start",
     "build": "craco build && npm run copy:js:main",
     "copy": "craco build",
