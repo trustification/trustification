@@ -10,7 +10,4 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0.68"
 utoipa = "3"
 
-trustification-common = { path = "../../common" }
-trustification-infrastructure = { path = "../../infrastructure" }
-trustification-auth = { path = "../../auth" }
 v11y-model = { path = "../../v11y/model" }

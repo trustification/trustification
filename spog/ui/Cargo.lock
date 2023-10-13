@@ -702,6 +702,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "exhort-model"
+version = "0.1.0"
+dependencies = [
+ "log",
+ "packageurl",
+ "serde",
+ "serde_json",
+ "utoipa",
+ "v11y-model",
+]
+
+[[package]]
 name = "fastrand"
 version = "2.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2648,6 +2660,8 @@ version = "0.1.0"
 dependencies = [
  "chrono",
  "csaf",
+ "cvss",
+ "exhort-model",
  "schemars",
  "serde",
  "serde_json",
@@ -2669,10 +2683,12 @@ dependencies = [
  "bombastic-model",
  "browser-panic-hook",
  "chrono",
+ "convert_case",
  "csaf",
  "cve",
  "cvss",
  "cyclonedx-bom",
+ "exhort-model",
  "gloo-events 0.2.0",
  "gloo-net 0.4.0",
  "gloo-storage 0.3.0",
@@ -2732,6 +2748,7 @@ dependencies = [
  "csaf",
  "cve",
  "cyclonedx-bom",
+ "exhort-model",
  "gloo-events 0.2.0",
  "gloo-net 0.4.0",
  "gloo-storage 0.3.0",

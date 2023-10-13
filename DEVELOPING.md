@@ -143,6 +143,7 @@ RUST_LOG=info cargo run -p trust -- vexination api --devmode &
 RUST_LOG=info cargo run -p trust -- bombastic api --devmode &
 RUST_LOG=info cargo run -p trust -- spog api --devmode &
 RUST_LOG=info cargo run -p trust -- v11y api --devmode &
+RUST_LOG=info cargo run -p trust -- exhort api --devmode &
 RUST_LOG=info cargo run -p trust -- collectorist api --devmode &
 RUST_LOG=info cargo run -p trust -- collector osv --devmode &
 RUST_LOG=info cargo run -p trust -- collector nvd --devmode &

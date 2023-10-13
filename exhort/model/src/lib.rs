@@ -28,7 +28,7 @@ fn response_affected() -> Object {
         .build()
 }
 
-#[derive(Serialize, Deserialize, Debug, Default, Clone, ToSchema)]
+#[derive(PartialEq, Serialize, Deserialize, Debug, Default, Clone, ToSchema)]
 pub struct AnalyzeResponse {
     #[schema(schema_with = response_affected)]
     pub affected: HashMap<String, Vec<String>>,

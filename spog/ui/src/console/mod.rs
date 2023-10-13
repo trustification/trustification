@@ -217,6 +217,7 @@ fn render(route: AppRoute, config: &spog_model::config::Configuration) -> Html {
             html!(<pages::Sbom {query} />)
         }
         AppRoute::Sbom(View::Content { id }) if config.features.dedicated_search => html!(<pages::SBOM {id} />),
+        AppRoute::SbomReport { id } => html!(<pages::SbomReport {id} />),
         AppRoute::Advisory(View::Search { query }) if config.features.dedicated_search => {
             html!(<pages::Advisory {query} />)
         }
