@@ -119,7 +119,7 @@ async fn process_get_vulnerabilities(
     };*/
 
     let details = iter(analyze)
-        .map(|(id, packages)| async move {
+        .map(|(id, _packages)| async move {
             // FIXME: need to provide packages to entry
             let cve: cve::Cve = match v11y.fetch(&id).await?.or_status_error_opt().await? {
                 Some(cve) => cve.json().await?,
@@ -249,7 +249,7 @@ fn find_main(spdx: &SPDX) -> Vec<&PackageInformation> {
 
 /// Extract all purls which are referenced by "document describes"
 #[allow(unused)]
-fn map_purls<'a>(pi: &'a PackageInformation) -> impl IntoIterator<Item = String> + 'a {
+fn map_purls(pi: &PackageInformation) -> impl IntoIterator<Item = String> + '_ {
     pi.external_reference.iter().filter_map(|er| {
         if er.reference_type == "purl" {
             Some(er.reference_locator.clone())
@@ -297,7 +297,6 @@ async fn analyze(guac: &GuacService, sbom: &SPDX) -> Result<(BTreeMap<String, BT
 mod test {
     use super::*;
     use exhort_model::AnalyzeResponse;
-    use std::collections::HashMap;
 
     fn test_data() -> AnalyzeResponse {
         AnalyzeResponse {
@@ -311,10 +310,7 @@ mod test {
                 mock_vuln("CVE-0000-0007", "Alles kaputt", Some(10.0)),
                 mock_vuln("CVE-0000-0008", "Unsure", None),
             ],
-            affected: {
-                let map = HashMap::new();
-                map
-            },
+            affected: Default::default(),
         }
     }
 
@@ -324,13 +320,5 @@ mod test {
         let result: AnalyzeResponse = serde_json::from_value(serde_json::to_value(&analyze).unwrap()).unwrap();
 
         assert_eq!(result.vulnerabilities.len(), analyze.vulnerabilities.len());
-    }
-
-    #[test]
-    fn summarize() {
-        let analyze = test_data();
-        // let sum = summarize_vulns(&analyze);
-
-        // assert_eq!(sum.len(), 6);
     }
 }
