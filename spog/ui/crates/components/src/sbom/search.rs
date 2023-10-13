@@ -93,8 +93,6 @@ pub fn sbom_search(props: &SbomSearchProperties) -> Html {
         ..Default::default()
     });
 
-    log::info!("Initi state: {:?}", *page_state);
-
     let search_params = use_reducer_eq::<SearchMode<DynamicSearchParameters>, _>(|| page_state.search_params.clone());
     let total = use_state_eq(|| None);
     let pagination = use_pagination(*total, || page_state.pagination);

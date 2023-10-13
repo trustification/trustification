@@ -12,11 +12,13 @@ pub struct CollectorsConfig {
 
 impl CollectorsConfig {
     pub fn devmode() -> Self {
+        const DEFAULT_BASE: &str = "/api/v1/";
+
         let mut collectors = HashMap::new();
         collectors.insert(
             "osv".into(),
             CollectorConfig {
-                url: endpoint::CollectorOsv::url(),
+                url: endpoint::CollectorOsv::url().join(DEFAULT_BASE).unwrap(),
                 interests: vec![Interest::Package, Interest::Vulnerability],
                 cadence: default_cadence(),
             },
@@ -24,7 +26,7 @@ impl CollectorsConfig {
         collectors.insert(
             "snyk".into(),
             CollectorConfig {
-                url: endpoint::CollectorSnyk::url(),
+                url: endpoint::CollectorSnyk::url().join(DEFAULT_BASE).unwrap(),
                 interests: vec![Interest::Package],
                 cadence: default_cadence(),
             },
@@ -32,7 +34,7 @@ impl CollectorsConfig {
         collectors.insert(
             "nvd".into(),
             CollectorConfig {
-                url: endpoint::CollectorNvd::url(),
+                url: endpoint::CollectorNvd::url().join(DEFAULT_BASE).unwrap(),
                 interests: vec![Interest::Vulnerability],
                 cadence: default_cadence(),
             },

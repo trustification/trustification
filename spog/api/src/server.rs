@@ -9,7 +9,7 @@ use crate::{
     config, cve, endpoints,
     guac::service::GuacService,
     index, sbom,
-    service::{collectorist::CollectoristService, v11y, v11y::V11yService},
+    service::{collectorist::CollectoristService, v11y::V11yService},
     Run,
 };
 use actix_web::web;
@@ -282,7 +282,7 @@ impl AppState {
         &self,
         purls: Vec<String>,
         provider: &dyn TokenProvider,
-    ) -> Result<exhort_model::AnalyzeResponse, Error> {
+    ) -> Result<Option<exhort_model::AnalyzeResponse>, Error> {
         let url = self.exhort.join("/api/v1/analyze")?;
         let response = self
             .client
@@ -295,13 +295,15 @@ impl AppState {
             .or_status_error()
             .await?;
 
-        Ok(response.json::<exhort_model::AnalyzeResponse>().await?)
+        Ok(Some(response.json::<exhort_model::AnalyzeResponse>().await?))
     }
 }
 
 #[async_trait]
 pub trait ResponseError: Sized {
     async fn or_status_error(self) -> Result<Self, Error>;
+
+    async fn or_status_error_opt(self) -> Result<Option<Self>, Error>;
 }
 
 #[async_trait]
@@ -314,6 +316,20 @@ impl ResponseError for reqwest::Response {
             match self.text().await {
                 Ok(body) => Err(Error::Response(status, body)),
                 Err(e) => Err(Error::Request(e)),
+            }
+        }
+    }
+
+    async fn or_status_error_opt(self) -> Result<Option<Self>, Error> {
+        match self.status() {
+            StatusCode::OK => Ok(Some(self)),
+            StatusCode::NOT_FOUND => Ok(None),
+            _ => {
+                let status = self.status();
+                match self.text().await {
+                    Ok(body) => Err(Error::Response(status, body)),
+                    Err(e) => Err(Error::Request(e)),
+                }
             }
         }
     }

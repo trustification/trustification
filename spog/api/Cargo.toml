@@ -20,6 +20,7 @@ bytes = "1"
 chrono = "0.4.23"
 clap = { version = "4.0.29", features = ["derive"] }
 csaf = "0.5"
+cvss = "2"
 env_logger = "0.10"
 futures = "0.3"
 guac = { workspace = true }
@@ -35,6 +36,7 @@ serde = { version = "1.0.152" }
 serde_json = "1.0.89"
 serde_yaml = "0.9"
 snyk = { git = "https://github.com/dejanb/snyk-rs.git", branch = "main" }
+spdx-rs = "0.5.5"
 thiserror = "1"
 tracing = "0.1"
 tokio = { version = "*", features = ["rt", "fs", "macros", "rt-multi-thread"] }

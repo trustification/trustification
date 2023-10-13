@@ -33,6 +33,7 @@ yew-more-hooks = "0.3.0"
 yew-oauth2 = { version = "0.7.0", features = ["router", "openid"] }
 
 bombastic-model = { path = "../../../../bombastic/model" }
+exhort-model = { path = "../../../../exhort/model" }
 spog-model = { path = "../../../model" }
 spog-ui-common = { path = "../common" }
 trustification-api = { path = "../../../../api" }

@@ -11,28 +11,49 @@ extern "C" {
 
 }
 
-pub fn create_donut(node: &NodeRef, options: &Value) {
+pub fn create_donut(node: &NodeRef, options: &JsValue) {
     if let Some(node) = node.get() {
-        if let Ok(options) = JsValue::from_serde(options) {
-            create(&node, &options);
-        }
+        create(&node, options);
     }
 }
 
 #[derive(PartialEq, Properties)]
 pub struct DonutProperties {
     pub options: Value,
+
+    #[prop_or_default]
+    pub labels: Option<Callback<Value, String>>,
+
+    #[prop_or_default]
+    pub style: Option<AttrValue>,
 }
 
 #[function_component(Donut)]
 pub fn donut(props: &DonutProperties) -> Html {
     let node = use_node_ref();
 
-    use_effect_with((node.clone(), props.options.clone()), |(node, options)| {
-        create_donut(node, options);
+    let labels = use_memo(props.labels.clone(), |labels| {
+        labels.clone().map(|labels| {
+            Closure::<dyn Fn(JsValue) -> String>::new(move |value: JsValue| {
+                if let Ok(value) = value.into_serde::<Value>() {
+                    labels.emit(value)
+                } else {
+                    "".to_string()
+                }
+            })
+        })
     });
 
-    html!(<div ref={node}></div>)
+    use_effect_with((node.clone(), props.options.clone()), move |(node, options)| {
+        if let Ok(options) = JsValue::from_serde(options) {
+            if let Some(labels) = labels.as_ref() {
+                let _ = js_sys::Reflect::set(&options, &JsValue::from_str("labels"), labels.as_ref());
+            }
+            create_donut(node, &options);
+        }
+    });
+
+    html!(<div style={props.style.clone()} ref={node}></div>)
 }
 
 #[cfg(test)]
