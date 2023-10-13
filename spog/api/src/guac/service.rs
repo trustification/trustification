@@ -1,6 +1,7 @@
 use std::str::FromStr;
 
 use actix_web::{http::header::ContentType, HttpResponse};
+use guac::client::intrinsic::certify_vuln::{CertifyVuln, CertifyVulnSpec};
 use guac::client::intrinsic::vulnerability::{Vulnerability, VulnerabilitySpec};
 use guac::client::{Error as GuacError, GuacClient};
 use http::StatusCode;
@@ -11,7 +12,7 @@ use trustification_common::error::ErrorInformation;
 
 #[derive(Clone)]
 pub struct GuacService {
-    client: GuacClient,
+    pub client: GuacClient,
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -114,6 +115,17 @@ impl GuacService {
                 no_vuln: None,
                 vulnerability_id: Some(id),
                 r#type: None,
+            })
+            .await?)
+    }
+
+    pub async fn certify_vuln(&self, purl: PackageUrl<'_>) -> Result<Vec<CertifyVuln>, Error> {
+        Ok(self
+            .client
+            .intrinsic()
+            .certify_vuln(&CertifyVulnSpec {
+                package: Some(purl.into()),
+                ..Default::default()
             })
             .await?)
     }

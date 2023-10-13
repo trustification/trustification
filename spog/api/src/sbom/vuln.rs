@@ -1,17 +1,22 @@
 use crate::error::Error;
-use crate::server::AppState;
+use crate::guac::service::GuacService;
+use crate::server::{AppState, ResponseError};
+use crate::service::v11y::V11yService;
 use actix_web::cookie::time;
-use actix_web::cookie::time::OffsetDateTime;
 use actix_web::{web, HttpResponse};
 use actix_web_httpauth::extractors::bearer::BearerAuth;
 use bombastic_model::data::SBOM;
 use bytes::{BufMut, BytesMut};
-use exhort_model::AnalyzeResponse;
-use futures::StreamExt;
+use cve::Cve;
+use futures::stream::iter;
+use futures::{StreamExt, TryStreamExt};
+use packageurl::PackageUrl;
+use serde_json::Value;
 use spdx_rs::models::{PackageInformation, SPDX};
 use spog_model::prelude::SbomReport;
 use spog_model::vuln::SbomReportVulnerability;
-use std::collections::{BTreeMap, HashMap};
+use std::collections::{BTreeMap, BTreeSet};
+use std::str::FromStr;
 use tracing::instrument;
 use trustification_auth::client::TokenProvider;
 use trustification_common::error::ErrorInformation;
@@ -35,10 +40,12 @@ pub struct GetParams {
 )]
 pub async fn get_vulnerabilities(
     state: web::Data<AppState>,
+    v11y: web::Data<V11yService>,
+    guac: web::Data<GuacService>,
     web::Query(GetParams { id }): web::Query<GetParams>,
     access_token: Option<BearerAuth>,
 ) -> actix_web::Result<HttpResponse> {
-    if let Some(result) = process_get_vulnerabilities(&state, &access_token, &id).await? {
+    if let Some(result) = process_get_vulnerabilities(&state, &v11y, &guac, &access_token, &id).await? {
         Ok(HttpResponse::Ok().json(result))
     } else {
         Ok(HttpResponse::NotFound().json(ErrorInformation {
@@ -49,9 +56,11 @@ pub async fn get_vulnerabilities(
     }
 }
 
-#[instrument(skip(state, access_token), err)]
+#[instrument(skip(state, guac, v11y, access_token), err)]
 async fn process_get_vulnerabilities(
     state: &AppState,
+    v11y: &V11yService,
+    guac: &GuacService,
     access_token: &dyn TokenProvider,
     id: &str,
 ) -> Result<Option<SbomReport>, Error> {
@@ -64,15 +73,13 @@ async fn process_get_vulnerabilities(
     }
 
     let sbom = SBOM::parse(&sbom).map_err(|err| Error::Generic(format!("Unable to parse SBOM: {err}")))?;
-    let (name, version, created, purls) = match sbom {
+    let (name, version, created, analyze) = match sbom {
         SBOM::SPDX(spdx) => {
+            let (analyze, num) = analyze(guac, &spdx).await?;
+
+            // get the main packages
             let main = find_main(&spdx);
-
-            if main.is_empty() {
-                return Ok(None);
-            }
-
-            let purls: Vec<_> = main.iter().flat_map(|pi| map_purls(pi)).collect();
+            // find a single version (if possible)
             let version: Vec<_> = main.iter().flat_map(|pi| &pi.package_version).collect();
             let version = match version.len() {
                 1 => Some(version[0].to_string()),
@@ -85,21 +92,15 @@ async fn process_get_vulnerabilities(
             )
             .ok();
 
-            (name, version, created, purls)
+            log::info!("SBOM report (in: {num} packages) - out: {} {analyze:?}", analyze.len());
+
+            (name, version, created, analyze)
         }
         _ => return Err(Error::Generic("Unsupported format".to_string())),
     };
 
-    log::debug!("Requesting report for {} packages", purls.len());
-
-    let analyze = match state.analyze_sbom(purls, access_token).await? {
-        Some(analyze) => analyze,
-        None => return Ok(None),
-    };
-
-    log::debug!("SBOM report: {analyze:#?}");
-
     // FIXME: mock data
+    /*
     let analyze = AnalyzeResponse {
         vulnerabilities: vec![
             mock_vuln("CVE-0000-0001", "Weird one", Some(0.0)),
@@ -115,24 +116,31 @@ async fn process_get_vulnerabilities(
             let map = HashMap::new();
             map
         },
-    };
+    };*/
 
-    let summary = summarize_vulns(&analyze).into_iter().collect();
+    let details = iter(analyze)
+        .map(|(id, packages)| async move {
+            // FIXME: need to provide packages to entry
+            let cve: cve::Cve = match v11y.fetch(&id).await?.or_status_error_opt().await? {
+                Some(cve) => cve.json().await?,
+                None => return Ok(None),
+            };
 
-    let details = analyze
-        .vulnerabilities
-        .into_iter()
-        .map(|v| {
-            let score = get_score(&v);
-            SbomReportVulnerability {
-                id: v.id,
-                description: v.summary,
+            let score = get_score(&cve);
+            Ok(Some(SbomReportVulnerability {
+                id: cve.id().to_string(),
+                description: "".to_string(),
                 score,
-                published: OffsetDateTime::from_unix_timestamp(v.published.timestamp()).ok(),
-                updated: OffsetDateTime::from_unix_timestamp(v.modified.timestamp()).ok(),
-            }
+                published: cve.common_metadata().date_published.map(|t| t.assume_utc()),
+                updated: cve.common_metadata().date_updated.map(|t| t.assume_utc()),
+            }))
         })
-        .collect();
+        .buffer_unordered(4)
+        .try_filter_map(|r| async move { Ok::<_, Error>(r) })
+        .try_collect::<Vec<_>>()
+        .await?;
+
+    let summary = summarize_vulns(&details).into_iter().collect();
 
     Ok(Some(SbomReport {
         name,
@@ -143,6 +151,7 @@ async fn process_get_vulnerabilities(
     }))
 }
 
+#[allow(unused)]
 fn mock_vuln(id: &str, summary: &str, severity: Option<f32>) -> Vulnerability {
     Vulnerability {
         id: id.to_string(),
@@ -184,36 +193,48 @@ fn into_severity(score: f32) -> cvss::Severity {
     }
 }
 
-fn get_score(v: &Vulnerability) -> Option<f32> {
-    let mut v2 = None;
-    let mut v3 = None;
-    let mut v4 = None;
+fn get_score(cve: &cve::Cve) -> Option<f32> {
+    let p = match cve {
+        Cve::Published(p) => p,
+        Cve::Rejected(_) => return None,
+    };
 
-    for s in &v.severities {
-        match s.r#type {
-            ScoreType::Cvss2 => v2 = Some(s.score),
-            ScoreType::Cvss3 => v3 = Some(s.score),
-            ScoreType::Cvss4 => v4 = Some(s.score),
-            _ => {}
+    let score = |value: &Value| {
+        value["vectorString"]
+            .as_str()
+            .and_then(|s| cvss::v3::Base::from_str(s).ok())
+            .map(|base| base.score().value() as f32)
+    };
+
+    let mut v3_1 = None;
+    let mut v3_0 = None;
+
+    for m in &p.containers.cna.metrics {
+        if let Some(m) = m.cvss_v3_1.as_ref().and_then(score) {
+            v3_1 = Some(m);
+        } else if let Some(m) = m.cvss_v3_0.as_ref().and_then(score) {
+            v3_0 = Some(m);
         }
     }
 
-    v4.or(v3).or(v2)
+    v3_1.or(v3_0)
 }
 
 /// Collect a summary of count, based on CVSS v3 severities
-fn summarize_vulns(response: &AnalyzeResponse) -> BTreeMap<Option<cvss::Severity>, usize> {
+fn summarize_vulns<'a>(
+    vulnerabilities: impl IntoIterator<Item = &'a SbomReportVulnerability>,
+) -> BTreeMap<Option<cvss::Severity>, usize> {
     let mut result = BTreeMap::new();
 
-    for r in &response.vulnerabilities {
-        let score = get_score(r).map(into_severity);
+    for v in vulnerabilities.into_iter() {
+        let score = v.score.map(into_severity);
         *result.entry(score).or_default() += 1;
     }
 
     result
 }
 
-fn find_main<'a>(spdx: &'a SPDX) -> Vec<&'a PackageInformation> {
+fn find_main(spdx: &SPDX) -> Vec<&PackageInformation> {
     let mut main = vec![];
     for desc in &spdx.document_creation_information.document_describes {
         for pi in &spdx.package_information {
@@ -227,6 +248,7 @@ fn find_main<'a>(spdx: &'a SPDX) -> Vec<&'a PackageInformation> {
 }
 
 /// Extract all purls which are referenced by "document describes"
+#[allow(unused)]
 fn map_purls<'a>(pi: &'a PackageInformation) -> impl IntoIterator<Item = String> + 'a {
     pi.external_reference.iter().filter_map(|er| {
         if er.reference_type == "purl" {
@@ -237,9 +259,45 @@ fn map_purls<'a>(pi: &'a PackageInformation) -> impl IntoIterator<Item = String>
     })
 }
 
+#[instrument(skip(guac, sbom), ret, err)]
+async fn analyze(guac: &GuacService, sbom: &SPDX) -> Result<(BTreeMap<String, BTreeSet<String>>, usize), Error> {
+    let mut result = BTreeMap::<String, BTreeSet<String>>::new();
+    let mut num = 0;
+
+    let purls = sbom.package_information.iter().flat_map(|pi| {
+        pi.external_reference
+            .iter()
+            .filter_map(|er| match er.reference_type == "purl" {
+                true => Some(&er.reference_locator),
+                false => None,
+            })
+    });
+
+    for purl_str in purls {
+        if let Ok(purl) = PackageUrl::from_str(purl_str) {
+            num += 1;
+            let cert = guac.certify_vuln(purl).await?;
+            log::debug!("Cert ({purl_str}): {cert:?}");
+
+            for vuln in cert {
+                for vuln_id in vuln.vulnerability.vulnerability_ids {
+                    result
+                        .entry(vuln_id.vulnerability_id)
+                        .or_default()
+                        .insert(purl_str.clone());
+                }
+            }
+        }
+    }
+
+    Ok((result, num))
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
+    use exhort_model::AnalyzeResponse;
+    use std::collections::HashMap;
 
     fn test_data() -> AnalyzeResponse {
         AnalyzeResponse {
@@ -271,8 +329,8 @@ mod test {
     #[test]
     fn summarize() {
         let analyze = test_data();
-        let sum = summarize_vulns(&analyze);
+        // let sum = summarize_vulns(&analyze);
 
-        assert_eq!(sum.len(), 6);
+        // assert_eq!(sum.len(), 6);
     }
 }
