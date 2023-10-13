@@ -1,6 +1,7 @@
 use crate::error::Error;
 use crate::server::AppState;
 use actix_web::cookie::time;
+use actix_web::cookie::time::OffsetDateTime;
 use actix_web::{web, HttpResponse};
 use actix_web_httpauth::extractors::bearer::BearerAuth;
 use bombastic_model::data::SBOM;
@@ -9,6 +10,7 @@ use exhort_model::AnalyzeResponse;
 use futures::StreamExt;
 use spdx_rs::models::{PackageInformation, SPDX};
 use spog_model::prelude::SbomReport;
+use spog_model::vuln::SbomReportVulnerability;
 use std::collections::{BTreeMap, HashMap};
 use tracing::instrument;
 use trustification_auth::client::TokenProvider;
@@ -117,11 +119,27 @@ async fn process_get_vulnerabilities(
 
     let summary = summarize_vulns(&analyze).into_iter().collect();
 
+    let details = analyze
+        .vulnerabilities
+        .into_iter()
+        .map(|v| {
+            let score = get_score(&v);
+            SbomReportVulnerability {
+                id: v.id,
+                description: v.summary,
+                score,
+                published: OffsetDateTime::from_unix_timestamp(v.published.timestamp()).ok(),
+                updated: OffsetDateTime::from_unix_timestamp(v.modified.timestamp()).ok(),
+            }
+        })
+        .collect();
+
     Ok(Some(SbomReport {
         name,
         version,
         created,
         summary,
+        details,
     }))
 }
 
@@ -166,24 +184,29 @@ fn into_severity(score: f32) -> cvss::Severity {
     }
 }
 
+fn get_score(v: &Vulnerability) -> Option<f32> {
+    let mut v2 = None;
+    let mut v3 = None;
+    let mut v4 = None;
+
+    for s in &v.severities {
+        match s.r#type {
+            ScoreType::Cvss2 => v2 = Some(s.score),
+            ScoreType::Cvss3 => v3 = Some(s.score),
+            ScoreType::Cvss4 => v4 = Some(s.score),
+            _ => {}
+        }
+    }
+
+    v4.or(v3).or(v2)
+}
+
 /// Collect a summary of count, based on CVSS v3 severities
 fn summarize_vulns(response: &AnalyzeResponse) -> BTreeMap<Option<cvss::Severity>, usize> {
     let mut result = BTreeMap::new();
 
     for r in &response.vulnerabilities {
-        let mut v2 = None;
-        let mut v3 = None;
-        let mut v4 = None;
-        for s in &r.severities {
-            match s.r#type {
-                ScoreType::Cvss2 => v2 = Some(s.score),
-                ScoreType::Cvss3 => v3 = Some(s.score),
-                ScoreType::Cvss4 => v4 = Some(s.score),
-                _ => {}
-            }
-        }
-
-        let score = v4.or(v3).or(v2).map(into_severity);
+        let score = get_score(r).map(into_severity);
         *result.entry(score).or_default() += 1;
     }
 

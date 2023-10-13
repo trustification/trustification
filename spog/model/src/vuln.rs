@@ -55,4 +55,17 @@ pub struct SbomReport {
 
     /// Vulnerabilities summary
     pub summary: Vec<(Option<cvss::Severity>, usize)>,
+    /// Vulnerabilities list
+    pub details: Vec<SbomReportVulnerability>,
+}
+
+#[derive(Clone, Debug, PartialEq, ToSchema, Serialize, Deserialize)]
+pub struct SbomReportVulnerability {
+    pub id: String,
+    pub description: String,
+    pub score: Option<f32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub published: Option<OffsetDateTime>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub updated: Option<OffsetDateTime>,
 }

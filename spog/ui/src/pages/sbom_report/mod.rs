@@ -1,6 +1,9 @@
 //! The SBOM report page
 
+mod details;
+
 use convert_case::{Case, Casing};
+use details::Details;
 use patternfly_yew::prelude::*;
 use serde_json::{json, Value};
 use spog_ui_backend::use_backend;
@@ -88,7 +91,9 @@ pub fn sbom(props: &SbomReportProperties) -> Html {
                         </DescriptionList>
                         <Donut {options} {labels} style="width: 350px;" />
                     </PageSection>
-                    <Details sbom={data.clone()}/>
+                    <PageSection>
+                        <Details sbom={data.clone()}/>
+                    </PageSection>
                 </>
             )
         }
@@ -158,48 +163,4 @@ fn donut_options(data: &spog_model::vuln::SbomReport) -> Value {
         "title": format!("{total}"),
         "width": 350,
     })
-}
-
-#[derive(Clone, PartialEq, Properties)]
-struct DetailsProps {
-    sbom: Rc<spog_model::prelude::SbomReport>,
-}
-
-#[function_component(Details)]
-fn details(props: &DetailsProps) -> Html {
-    #[derive(Clone, PartialEq)]
-    struct Entry {}
-
-    #[derive(Clone, Copy, PartialEq, Eq)]
-    enum Column {
-        Id,
-        Description,
-        Cvss,
-        Published,
-        Updated,
-    }
-
-    impl TableEntryRenderer<Column> for Entry {
-        fn render_cell(&self, context: CellContext<'_, Column>) -> Cell {
-            match context.column {
-                Column::Id => html!(),
-                Column::Description => html!(),
-                Column::Cvss => html!(),
-                Column::Published => html!(),
-                Column::Updated => html!(),
-            }
-            .into()
-        }
-    }
-
-    let entries = use_memo(props.sbom.clone(), |sbom| Vec::<Entry>::new());
-
-    let (entries, _onexpand) = use_table_data(MemoizedTableModel::new(entries));
-
-    html!(
-        <Table<Column, UseTableData<Column, MemoizedTableModel<Entry>>>
-            {entries}
-            mode={TableMode::Default}
-        />
-    )
 }
