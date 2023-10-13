@@ -7,6 +7,12 @@ pub struct Cvss {
     pub score: f32,
 }
 
+impl IntoPropValue<Cvss> for f32 {
+    fn into_prop_value(self) -> Cvss {
+        Cvss { score: self }
+    }
+}
+
 #[derive(Copy, Clone, PartialEq, Eq, Ord, PartialOrd, Hash)]
 pub enum Severity {
     None,
