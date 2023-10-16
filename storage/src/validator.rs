@@ -152,4 +152,17 @@ mod tests {
         let expected = include_bytes!("../../bombastic/testdata/ubi8-invalid.json.zst");
         assert!(test(Validator::SBOM, Some("zstd"), expected).await.is_err())
     }
+
+    #[tokio::test]
+    async fn vex_json_valid() -> Result<(), Error> {
+        let expected = include_bytes!("../../vexination/testdata/rhsa-2023_1441.json");
+        let result = test(Validator::VEX, None, expected).await?;
+        Ok(assert_eq!(expected[..], result[..]))
+    }
+
+    #[tokio::test]
+    async fn vex_json_invalid() {
+        let expected = include_bytes!("../../vexination/testdata/rhsa-2023_1441.json");
+        assert!(test(Validator::VEX, None, &expected[10..]).await.is_err())
+    }
 }
