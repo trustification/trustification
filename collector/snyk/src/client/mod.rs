@@ -5,17 +5,27 @@ use crate::client::schema::{Issue, Response};
 
 pub mod schema;
 
-#[derive(Debug, derive_more::Display, Serialize, Deserialize)]
+#[derive(Debug, thiserror::Error)]
 pub enum Error {
-    #[display(fmt = "HTTP error")]
-    Http,
-    #[display(fmt = "Serialization error")]
-    Serialization,
-    #[display(fmt = "Snyk error")]
+    #[error("HTTP error: {0}")]
+    Http(reqwest::Error),
+    #[error("Serialization error: {0}")]
+    Serialization(serde_json::Error),
+    #[error("Snyk error: {0:?}")]
     Snyk(Vec<schema::Error>),
 }
 
-impl std::error::Error for Error {}
+impl From<reqwest::Error> for Error {
+    fn from(inner: reqwest::Error) -> Self {
+        Self::Http(inner)
+    }
+}
+
+impl From<serde_json::Error> for Error {
+    fn from(inner: serde_json::Error) -> Self {
+        Self::Serialization(inner)
+    }
+}
 
 struct SnykUrl(&'static str);
 
@@ -106,11 +116,9 @@ impl SnykClient {
             .header("Content-Type", "application/vnd.api+json")
             .query(&[("version", "2023-08-31~beta")])
             .send()
-            .await
-            .map_err(|_| Error::Http)?
+            .await?
             .json()
-            .await
-            .map_err(|_| Error::Serialization)?;
+            .await?;
 
         if let Some(issues) = result.data {
             Ok(issues)
