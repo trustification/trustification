@@ -18,7 +18,7 @@ config:
   authentication: trustification.dev/config/prod/auth.yaml
 spog:
   crdaUrl: https://rhda.rhcloud.com/
-  branding: false
+  branding: true
   ui:
     resources:
       requests:
