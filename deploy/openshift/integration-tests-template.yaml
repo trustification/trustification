@@ -6,7 +6,7 @@ objects:
 - apiVersion: batch/v1
   kind: Job
   metadata:
-    name: integration-tests-${IMAGE_TAG}
+    name: integration-tests-${IMAGE_TAG}-${JOBID}
   spec:
     template:
       spec:
@@ -42,6 +42,9 @@ parameters:
   required: true
 - name: IMAGE_TAG
   required: true
+- name: JOBID
+  generate: expression
+  from: "[0-9a-z]{7}"
 - name: DOMAIN
   required: true
 - name: ISSUER_URL
