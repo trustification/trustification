@@ -1,4 +1,5 @@
 #!/usr/bin/env sh
+set -e
 TESTDIR=${1:-/tests}
 TESTS=$(ls $TESTDIR)
 
