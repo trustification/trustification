@@ -45,7 +45,7 @@ bombastic:
     resources: ${{BOMBASTIC_API_RESOURCES}}
     logLevel: ${LOG_LEVEL}
 v11y:
-  enabled: false
+  enabled: true
   bucket: ${V11Y_STORAGE_BUCKET}
   credentials: ${V11Y_AWS_SECRET_NAME}
   indexMode: file
