@@ -62,7 +62,7 @@ impl TableEntryRenderer<Column> for TableData {
                     &self.sbom_id
                 }
             }),
-            Column::Version => html!(<>{"v1.1"}</>),
+            Column::Version => html!(<></>),
             Column::Status => html!(
                 <>
                     <Label label={self.status.label().to_string()} color={self.status.color()}/>
@@ -73,8 +73,8 @@ impl TableEntryRenderer<Column> for TableData {
                     {&self.packages.len()}
                 </>
             ),
-            Column::Supplier => html!(<>{"Red Hat"}</>),
-            Column::ReleasedOn => html!(<>{"2021"}</>),
+            Column::Supplier => html!(<></>),
+            Column::ReleasedOn => html!(<></>),
         }
         .into()
     }
