@@ -61,7 +61,7 @@ v11y:
     resources: ${{V11Y_INDEXER_RESOURCES}}
     logLevel: ${LOG_LEVEL}
   walker:
-    enable: false
+    enable: true
     resources: ${{V11Y_WALKER_RESOURCES}}
 collectorist:
   enabled: true
