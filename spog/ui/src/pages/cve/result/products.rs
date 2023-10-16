@@ -119,7 +119,7 @@ pub fn related_products(props: &RelatedProductsProperties) -> Html {
 
     let header = html_nested! {
         <TableHeader<Column>>
-            <TableColumn<Column> label="Name" index={Column::Name} expandable=true />
+            <TableColumn<Column> label="Name" index={Column::Name} />
             <TableColumn<Column> label="Version" index={Column::Version} />
             <TableColumn<Column> label="Status" index={Column::Status} />
             <TableColumn<Column> label="Dependencies" index={Column::Dependencies} expandable=true />
