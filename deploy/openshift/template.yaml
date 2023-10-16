@@ -1290,9 +1290,9 @@ objects:
                 - -p
                 - '8080'
                 - --bombastic-url
-                - https://bombastic-api.$(NAMESPACE).svc
+                - https://sbom.${DOMAIN}
                 - --vexination-url
-                - https://vexination-api.$(NAMESPACE).svc
+                - https://vex.${DOMAIN}
                 - --collectorist-url
                 - https://collectorist-api.$(NAMESPACE).svc
                 - --v11y-url
