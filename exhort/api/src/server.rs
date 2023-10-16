@@ -3,17 +3,17 @@ use std::str::FromStr;
 use std::sync::Arc;
 
 use actix_web::{post, web, HttpResponse, Responder, ResponseError};
-use derive_more::{Display, Error, From};
-use exhort_model::*;
 use guac::client::intrinsic::certify_vuln::CertifyVulnSpec;
 use packageurl::PackageUrl;
+use utoipa::OpenApi;
+
+use exhort_model::*;
 use trustification_auth::authenticator::Authenticator;
 use trustification_auth::authorizer::Authorizer;
 use trustification_auth::swagger_ui::{swagger_ui_with_auth, SwaggerUiOidc};
 use trustification_infrastructure::app::http::{HttpServerBuilder, HttpServerConfig};
 use trustification_infrastructure::endpoint::Exhort;
 use trustification_infrastructure::MainContext;
-use utoipa::OpenApi;
 
 use crate::AppState;
 
@@ -41,7 +41,6 @@ use crate::AppState;
             v11y_client::Version,
         )
     )
-
 )]
 pub struct ApiDoc;
 
@@ -82,14 +81,29 @@ pub fn config(
     .service(swagger_ui_with_auth(ApiDoc::openapi(), swagger_ui_oidc));
 }
 
-#[derive(Debug, Display, Error, From)]
+#[derive(Debug, thiserror::Error)]
 enum Error {
-    Collectorist,
-    Guac,
-    V11y,
+    #[error("http error: {0}")]
+    Http(reqwest::Error),
+    #[error("collectorist error: {errors:?}")]
+    Collectorist { errors: Vec<String> },
 }
 
 impl ResponseError for Error {}
+
+impl From<reqwest::Error> for Error {
+    fn from(inner: reqwest::Error) -> Self {
+        Self::Http(inner)
+    }
+}
+
+impl From<collectorist_client::Error> for Error {
+    fn from(inner: collectorist_client::Error) -> Self {
+        Self::Collectorist {
+            errors: vec![inner.to_string()],
+        }
+    }
+}
 
 #[utoipa::path(
     post,
@@ -100,22 +114,24 @@ impl ResponseError for Error {}
 )]
 #[post("analyze")]
 async fn analyze(state: web::Data<AppState>, request: web::Json<AnalyzeRequest>) -> actix_web::Result<impl Responder> {
-    state
+    // If the collectorist client provides a hard error, go ahead and return it
+    let collectorist_response = state
         .collectorist_client
         .collect_packages(request.purls.clone())
         .await
-        .map_err(|e| {
-            log::error!("collectorist error {}", e);
-            Error::Collectorist
-        })?;
+        .map_err(|e| Error::from(e))?;
 
     let mut response = AnalyzeResponse::new();
+
+    // Else... collect any soft-errors, and continue doing out best.
+    response.errors = collectorist_response.errors.clone();
 
     let mut vuln_ids = HashSet::new();
 
     for purl_str in &request.purls {
+        // As GUAC about each purl in the original request.
         if let Ok(purl) = PackageUrl::from_str(purl_str) {
-            for vuln in state
+            match state
                 .guac_client
                 .intrinsic()
                 .certify_vuln(&CertifyVulnSpec {
@@ -123,25 +139,37 @@ async fn analyze(state: web::Data<AppState>, request: web::Json<AnalyzeRequest>)
                     ..Default::default()
                 })
                 .await
-                .map_err(|e| {
-                    log::error!("GUAC error {}", e);
-                    Error::Guac
-                })?
             {
-                for vuln_id in vuln.vulnerability.vulnerability_ids {
-                    response.add_package_vulnerability(purl_str, &vuln_id.vulnerability_id);
-                    vuln_ids.insert(vuln_id.vulnerability_id);
+                Ok(vulns) => {
+                    // Add mappings from purl->vuln for all discovered
+                    for vuln in vulns {
+                        for vuln_id in vuln.vulnerability.vulnerability_ids {
+                            response.add_package_vulnerability(purl_str, &vuln_id.vulnerability_id);
+                            vuln_ids.insert(vuln_id.vulnerability_id);
+                        }
+                    }
+                }
+                Err(err) => {
+                    // if a soft error has occurred, record it and keep trucking.
+                    log::error!("guac error {}", err);
+                    response.errors.push(err.to_string());
                 }
             }
         }
     }
 
+    // For every vulnerability that appears within any of the purl->vuln
+    // mappings, go collect the vulnerability details from v11y, doing
+    // our best effort and not allowing soft errors to fail the process.
     for vuln_id in vuln_ids {
-        for vuln in state.v11y_client.get_vulnerability(&vuln_id).await.map_err(|e| {
-            log::error!("v11y error {}", e);
-            Error::V11y
-        })? {
-            response.add_vulnerability(&vuln);
+        match state.v11y_client.get_vulnerability(&vuln_id).await {
+            Ok(vulnerabilities) => {
+                response.vulnerabilities.extend(vulnerabilities.iter().cloned());
+            }
+            Err(err) => {
+                log::error!("v11y error {}", err);
+                response.errors.push(err.to_string())
+            }
         }
     }
     Ok(HttpResponse::Ok().json(response))

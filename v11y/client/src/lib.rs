@@ -43,6 +43,26 @@ impl V11yUrl {
     }
 }
 
+#[derive(Debug, thiserror::Error)]
+pub enum Error {
+    #[error("http error: {0}")]
+    Http(reqwest::Error),
+    #[error("auth error: {0}")]
+    Auth(trustification_auth::client::Error),
+}
+
+impl From<reqwest::Error> for Error {
+    fn from(inner: reqwest::Error) -> Self {
+        Self::Http(inner)
+    }
+}
+
+impl From<trustification_auth::client::Error> for Error {
+    fn from(inner: trustification_auth::client::Error) -> Self {
+        Self::Auth(inner)
+    }
+}
+
 #[allow(unused)]
 pub struct V11yClient {
     client: reqwest::Client,
@@ -84,7 +104,7 @@ impl V11yClient {
             .await?)
     }
 
-    pub async fn get_vulnerability(&self, id: &str) -> Result<Vec<Vulnerability>, anyhow::Error> {
+    pub async fn get_vulnerability(&self, id: &str) -> Result<Vec<Vulnerability>, Error> {
         Ok(self
             .client
             .get(self.v11y_url.get_vulnerability_url(id))

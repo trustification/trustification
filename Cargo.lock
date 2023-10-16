@@ -1760,6 +1760,7 @@ dependencies = [
  "trustification-auth",
  "trustification-common",
  "trustification-infrastructure",
+ "url",
  "utoipa",
  "utoipa-swagger-ui",
  "v11y-client",
@@ -1848,6 +1849,7 @@ name = "collectorist-client"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "derive_more",
  "humantime",
  "humantime-serde",
  "log",
@@ -2645,6 +2647,7 @@ dependencies = [
  "reqwest",
  "serde",
  "serde_json",
+ "thiserror",
  "tonic-build",
  "trustification-auth",
  "trustification-common",
@@ -7962,6 +7965,7 @@ dependencies = [
  "reqwest",
  "serde",
  "serde_json",
+ "thiserror",
  "tokio",
  "trustification-api",
  "trustification-auth",
