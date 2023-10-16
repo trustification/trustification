@@ -20,6 +20,7 @@ spog:
   crdaUrl: https://rhda.rhcloud.com/
   branding: true
   ui:
+    customize: false
     resources:
       requests:
         cpu: "100m"

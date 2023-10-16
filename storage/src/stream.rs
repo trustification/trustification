@@ -1,48 +1,50 @@
-use async_compression::tokio::bufread::{BzDecoder, ZstdDecoder, ZstdEncoder};
-use bytes::{Buf, Bytes};
-use futures::{stream::BoxStream, Stream, StreamExt, TryStreamExt};
+use async_compression::tokio::bufread::{BzDecoder, BzEncoder, ZstdDecoder, ZstdEncoder};
+use bytes::Bytes;
+use futures::{stream::LocalBoxStream, Stream, StreamExt, TryStreamExt};
 use tokio::io::AsyncRead;
 use tokio_util::io::{ReaderStream, StreamReader};
 
 use crate::Error;
 
-type ObjectStream = BoxStream<'static, Result<Bytes, Error>>;
+pub type ObjectStream<'a> = LocalBoxStream<'a, Result<Bytes, Error>>;
 
-pub fn encode<'a, S, B, E>(encoding: Option<&'a str>, data: &'a mut S) -> Result<Box<dyn AsyncRead + Unpin + 'a>, Error>
-where
-    S: Stream<Item = Result<B, E>> + Unpin,
-    B: Buf + 'a,
-    E: Into<std::io::Error>,
-{
-    match encoding {
-        None => Ok(Box::new(ZstdEncoder::new(StreamReader::new(data)))),
+pub fn encoded_reader<'a>(
+    default: &str,
+    encoding: Option<&str>,
+    data: impl Stream<Item = Result<Bytes, Error>> + Unpin + 'a,
+) -> Result<Box<dyn AsyncRead + Unpin + 'a>, Error> {
+    Ok(match encoding {
+        None => encode(Some(default), Box::pin(data)),
         Some(s) => match s {
-            "zstd" | "bzip2" => Ok(Box::new(StreamReader::new(data))),
+            "zstd" | "bzip2" => encode(None, Box::pin(data)),
             e => Err(Error::Encoding(e.to_string())),
         },
     }
+    .map(|s| Box::new(StreamReader::new(s)))?)
 }
 
-// Returns an unencoded JSON stream
-pub fn decode(encoding: Option<String>, stream: ObjectStream) -> Result<ObjectStream, Error> {
+pub fn decode<'a>(encoding: Option<&str>, stream: ObjectStream<'a>) -> Result<ObjectStream<'a>, Error> {
     match encoding {
-        Some(s) => match s.as_str() {
-            "zstd" => Ok(zstd(stream)),
-            "bzip2" => Ok(bzip(stream)),
-            _ => Err(Error::Encoding(s)),
+        Some(s) => match s {
+            "zstd" => Ok(boxed(ZstdDecoder::new(StreamReader::new(stream)))),
+            "bzip2" => Ok(boxed(BzDecoder::new(StreamReader::new(stream)))),
+            _ => Err(Error::Encoding(s.to_string())),
         },
-        None => Err(Error::Encoding("none".to_string())),
+        None => Ok(stream),
     }
 }
 
-fn zstd(s: ObjectStream) -> ObjectStream {
-    ReaderStream::new(ZstdDecoder::new(StreamReader::new(s)))
-        .map_err(Error::Io)
-        .boxed()
+pub fn encode<'a>(encoding: Option<&str>, stream: ObjectStream<'a>) -> Result<ObjectStream<'a>, Error> {
+    match encoding {
+        Some(s) => match s {
+            "zstd" => Ok(boxed(ZstdEncoder::new(StreamReader::new(stream)))),
+            "bzip2" => Ok(boxed(BzEncoder::new(StreamReader::new(stream)))),
+            _ => Err(Error::Encoding(s.to_string())),
+        },
+        None => Ok(stream),
+    }
 }
 
-fn bzip(s: ObjectStream) -> ObjectStream {
-    ReaderStream::new(BzDecoder::new(StreamReader::new(s)))
-        .map_err(Error::Io)
-        .boxed()
+fn boxed<'a, T: AsyncRead + 'a>(t: T) -> ObjectStream<'a> {
+    ReaderStream::new(t).map_err(Error::Io).boxed_local()
 }

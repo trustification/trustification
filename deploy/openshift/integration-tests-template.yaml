@@ -6,7 +6,7 @@ objects:
 - apiVersion: batch/v1
   kind: Job
   metadata:
-    name: integration-tests-${IMAGE_TAG}-${JOBID}
+    name: it-${IMAGE_TAG}-${JOBID}
   spec:
     template:
       spec:

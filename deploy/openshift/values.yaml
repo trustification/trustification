@@ -14,9 +14,10 @@ enableMonitoring: false
 config:
   name: ${CONFIG_NAME}
 spog:
-  branding: true
+  branding: false
   crdaUrl: ${CRDA_URL}
   ui:
+    customize: true
     resources: ${{SPOG_UI_RESOURCES}}
   api:
     resources: ${{SPOG_API_RESOURCES}}

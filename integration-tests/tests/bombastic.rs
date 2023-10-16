@@ -1,4 +1,4 @@
-use integration_tests::{get_response, id, wait_for_event, wait_for_search_result, BombasticContext, Urlifier};
+use integration_tests::{get_response, id, wait_for_search_result, BombasticContext, Urlifier};
 use reqwest::StatusCode;
 use serde_json::{json, Value};
 use test_context::test_context;
@@ -274,6 +274,47 @@ async fn sbom_invalid_type(context: &mut BombasticContext) {
 #[test_context(BombasticContext)]
 #[tokio::test]
 #[ntest::timeout(60_000)]
+async fn valid_bzip2_encoded(context: &mut BombasticContext) {
+    let sbom = include_bytes!("../../bombastic/testdata/ubi8-valid.json.bz2");
+    let id = "valid_bzip2_encoded";
+    let response = reqwest::Client::new()
+        .post(context.urlify(format!("/api/v1/sbom?id={id}")))
+        .body(sbom.as_slice())
+        .header("Content-Type", "application/json")
+        .header("Content-Encoding", "bzip2")
+        .inject_token(&context.provider.provider_manager)
+        .await
+        .unwrap()
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::CREATED);
+    context.delete_sbom(id).await
+}
+
+#[test_context(BombasticContext)]
+#[tokio::test]
+#[ntest::timeout(60_000)]
+async fn invalid_bzip2_encoded(context: &mut BombasticContext) {
+    let sbom = include_bytes!("../../bombastic/testdata/3amp-2.json.bz2");
+    let id = "invalid_bzip2_encoded";
+    let response = reqwest::Client::new()
+        .post(context.urlify(format!("/api/v1/sbom?id={id}")))
+        .body(sbom.as_slice())
+        .header("Content-Type", "application/json")
+        .header("Content-Encoding", "bzip2")
+        .inject_token(&context.provider.provider_manager)
+        .await
+        .unwrap()
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+}
+
+#[test_context(BombasticContext)]
+#[tokio::test]
+#[ntest::timeout(60_000)]
 async fn sbom_invalid_encoding(context: &mut BombasticContext) {
     let response = reqwest::Client::new()
         .post(context.urlify("/api/v1/sbom?id=foo"))
@@ -336,7 +377,6 @@ async fn upload_sbom_existing_with_change(context: &mut BombasticContext) {
 }
 
 #[cfg(feature = "admin")]
-#[ignore = "until API can support failures so that event bus is not needed to check"]
 #[test_context(BombasticContext)]
 #[tokio::test]
 #[ntest::timeout(60_000)]
@@ -345,24 +385,19 @@ async fn sbom_upload_empty_json(context: &mut BombasticContext) {
     let id = "test-empty-json-upload";
     let client = reqwest::Client::new();
     let url = context.urlify(format!("/api/v1/sbom?id={id}"));
-    wait_for_event(&context.events, "sbom-failed", id, async {
-        let response = client
-            .post(url)
-            .json(&input)
-            .inject_token(&context.provider.provider_manager)
-            .await
-            .unwrap()
-            .send()
-            .await
-            .unwrap();
-        assert_eq!(response.status(), StatusCode::CREATED);
-    })
-    .await;
-    context.delete_sbom(id).await;
+    let response = client
+        .post(url)
+        .json(&input)
+        .inject_token(&context.provider.provider_manager)
+        .await
+        .unwrap()
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::BAD_REQUEST);
 }
 
 #[cfg(feature = "admin")]
-#[ignore = "until API can support failures so that event bus is not needed to check"]
 #[test_context(BombasticContext)]
 #[tokio::test]
 #[ntest::timeout(60_000)]
