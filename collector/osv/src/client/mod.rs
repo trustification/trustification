@@ -18,11 +18,11 @@ impl OsvUrl {
     }
 
     pub fn querybatch(&self) -> Result<Url, url::ParseError> {
-        Ok(Url::parse(&format!("{}/querybatch", self.0))?)
+        Url::parse(&format!("{}/querybatch", self.0))
     }
 
-    pub fn vuln(&self, vuln_id: &str) -> anyhow::Result<Url> {
-        Ok(Url::parse(&format!("{}/vulns/{}", self.0, vuln_id))?)
+    pub fn vuln(&self, vuln_id: &str) -> Result<Url, url::ParseError> {
+        Url::parse(&format!("{}/vulns/{}", self.0, vuln_id))
     }
 }
 
