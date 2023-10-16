@@ -19,7 +19,7 @@ config:
   collectorist: trustification.dev/config/staging/collectorist.yaml
 spog:
   crdaUrl: https://rhda.rhcloud.com/
-  branding: false
+  branding: true
   ui:
     segmentWriteKey:
       valueFrom:
