@@ -21,6 +21,7 @@ spog:
   crdaUrl: https://rhda.rhcloud.com/
   branding: true
   ui:
+    customize: false
     segmentWriteKey:
       valueFrom:
         secretKeyRef:

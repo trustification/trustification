@@ -1,3 +1,4 @@
+{{ if .Values.spog.branding }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -10,3 +11,4 @@ binaryData:
   {{- range $path, $content := .Files.Glob "files/common/**" }}
   {{ base $path }}: {{ $content | toJson }}
   {{- end }}
+{{ end }}

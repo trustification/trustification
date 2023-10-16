@@ -59,7 +59,7 @@ spec:
               value: "true"
             - name: INFRASTRUCTURE_BIND
               value: "[::]:9010"
-{{- if .Values.spog.branding }}
+{{- if .Values.spog.ui.customize }}
             - name: SPOG_UI_CONFIG
               value: /etc/config/spog-ui.yaml
 {{- end }}
