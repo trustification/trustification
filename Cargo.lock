@@ -1782,6 +1782,7 @@ dependencies = [
  "libtest-with",
  "log",
  "packageurl",
+ "regex",
  "reqwest",
  "serde",
  "serde_json",

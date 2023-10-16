@@ -62,6 +62,20 @@ objects:
       resources:
         requests:
           storage: 1Gi
+  - kind: PersistentVolumeClaim
+    apiVersion: v1
+    metadata:
+      name: v11y-storage
+      labels:
+        app.kubernetes.io/name: v11y-api
+        app.kubernetes.io/component: api
+        app.kubernetes.io/part-of: trustification
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 1Gi
   - apiVersion: v1
     kind: Service
     metadata:
@@ -286,6 +300,27 @@ objects:
       selector:
         app.kubernetes.io/name: spog-ui
         app.kubernetes.io/component: ui
+        app.kubernetes.io/part-of: trustification
+      type: ClusterIP
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      labels:
+        app.kubernetes.io/name: v11y-api
+        app.kubernetes.io/component: api
+        app.kubernetes.io/part-of: trustification
+      annotations:
+        service.beta.openshift.io/serving-cert-secret-name: v11y-api-tls
+      name: v11y-api
+    spec:
+      ports:
+        - name: endpoint
+          port: 443
+          protocol: TCP
+          targetPort: 8080
+      selector:
+        app.kubernetes.io/name: v11y-api
+        app.kubernetes.io/component: api
         app.kubernetes.io/part-of: trustification
       type: ClusterIP
   - apiVersion: v1
@@ -1401,6 +1436,218 @@ objects:
                   path: /
                   port: 8080
                 initialDelaySeconds: 2
+  - apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: v11y-api
+      labels:
+        app.kubernetes.io/name: v11y-api
+        app.kubernetes.io/component: api
+        app.kubernetes.io/part-of: trustification
+      annotations:
+        service.beta.openshift.io/serving-cert-secret-name: v11y-api-tls
+    spec:
+      replicas: 1
+      strategy:
+        type: Recreate
+      selector:
+        matchLabels:
+          app.kubernetes.io/name: v11y-api
+          app.kubernetes.io/component: api
+          app.kubernetes.io/part-of: trustification
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: v11y-api
+            app.kubernetes.io/component: api
+            app.kubernetes.io/part-of: trustification
+            metrics: 'true'
+          annotations:
+            config/checksum: 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
+        spec:
+          volumes:
+            - name: data
+              persistentVolumeClaim:
+                claimName: v11y-storage
+            - name: config
+              configMap:
+                name: ${CONFIG_NAME}
+            - name: tls
+              secret:
+                secretName: v11y-api-tls
+          containers:
+            - image: ${BACKEND_IMAGE}:${IMAGE_TAG}
+              imagePullPolicy: Always
+              name: service
+              command:
+                - /trust
+              args:
+                - v11y
+                - api
+                - -p
+                - '8080'
+                - --auth-disabled
+                - --storage-base
+                - /data
+              env:
+                - name: RUST_LOG
+                  value: ${LOG_LEVEL}
+                - name: STORAGE_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${V11Y_AWS_SECRET_NAME}
+                      key: aws_access_key_id
+                - name: STORAGE_SECRET_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${V11Y_AWS_SECRET_NAME}
+                      key: aws_secret_access_key
+                - name: STORAGE_REGION
+                  value: ${AWS_REGION}
+                - name: STORAGE_BUCKET
+                  value: ${V11Y_STORAGE_BUCKET}
+                - name: HTTP_SERVER_BIND_ADDR
+                  value: '::'
+                - name: HTTP_SERVER_TLS_ENABLED
+                  value: 'true'
+                - name: HTTP_SERVER_TLS_KEY_FILE
+                  value: /etc/tls/tls.key
+                - name: HTTP_SERVER_TLS_CERTIFICATE_FILE
+                  value: /etc/tls/tls.crt
+                - name: INFRASTRUCTURE_ENABLED
+                  value: 'true'
+                - name: INFRASTRUCTURE_BIND
+                  value: '[::]:9010'
+              volumeMounts:
+                - name: data
+                  mountPath: /data
+                - mountPath: /etc/config
+                  name: config
+                - mountPath: /etc/tls
+                  name: tls
+              ports:
+                - containerPort: 8080
+                  protocol: TCP
+                - containerPort: 9010
+                  protocol: TCP
+                  name: infra
+              resources: ${{V11Y_API_RESOURCES}}
+              livenessProbe:
+                httpGet:
+                  path: /health/live
+                  port: 9010
+                initialDelaySeconds: 2
+              readinessProbe:
+                httpGet:
+                  path: /health/ready
+                  port: 9010
+                initialDelaySeconds: 2
+              startupProbe:
+                httpGet:
+                  path: /health/startup
+                  port: 9010
+  - apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: v11y-indexer
+      labels:
+        app.kubernetes.io/name: v11y-indexer
+        app.kubernetes.io/component: indexer
+        app.kubernetes.io/part-of: trustification
+    spec:
+      replicas: 1
+      selector:
+        matchLabels:
+          app.kubernetes.io/name: v11y-indexer
+          app.kubernetes.io/component: indexer
+          app.kubernetes.io/part-of: trustification
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: v11y-indexer
+            app.kubernetes.io/component: indexer
+            app.kubernetes.io/part-of: trustification
+            metrics: 'true'
+        spec:
+          volumes:
+            - name: data
+              emptyDir: {}
+          containers:
+            - image: ${BACKEND_IMAGE}:${IMAGE_TAG}
+              imagePullPolicy: Always
+              name: service
+              command:
+                - /trust
+              args:
+                - v11y
+                - indexer
+                - --event-bus
+                - sqs
+                - --stored-topic
+                - ${V11Y_INDEXER_STORED_TOPIC}
+                - --indexed-topic
+                - ${V11Y_INDEXER_INDEXED_TOPIC}
+                - --failed-topic
+                - ${V11Y_INDEXER_FAILED_TOPIC}
+                - --index-mode
+                - file
+                - --index-dir
+                - /data/index
+              env:
+                - name: RUST_LOG
+                  value: ${LOG_LEVEL}
+                - name: STORAGE_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${V11Y_AWS_SECRET_NAME}
+                      key: aws_access_key_id
+                - name: STORAGE_SECRET_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${V11Y_AWS_SECRET_NAME}
+                      key: aws_secret_access_key
+                - name: STORAGE_REGION
+                  value: ${AWS_REGION}
+                - name: STORAGE_BUCKET
+                  value: ${V11Y_STORAGE_BUCKET}
+                - name: SQS_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${V11Y_AWS_SECRET_NAME}
+                      key: aws_access_key_id
+                - name: SQS_SECRET_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${V11Y_AWS_SECRET_NAME}
+                      key: aws_secret_access_key
+                - name: SQS_REGION
+                  value: ${AWS_REGION}
+                - name: INFRASTRUCTURE_ENABLED
+                  value: 'true'
+                - name: INFRASTRUCTURE_BIND
+                  value: '[::]:9010'
+              volumeMounts:
+                - name: data
+                  mountPath: /data
+              ports:
+                - containerPort: 9010
+                  protocol: TCP
+                  name: infra
+              resources: ${{V11Y_INDEXER_RESOURCES}}
+              livenessProbe:
+                httpGet:
+                  path: /health/live
+                  port: 9010
+                initialDelaySeconds: 2
+              readinessProbe:
+                httpGet:
+                  path: /health/ready
+                  port: 9010
+                initialDelaySeconds: 2
+              startupProbe:
+                httpGet:
+                  path: /health/startup
+                  port: 9010
   - apiVersion: apps/v1
     kind: Deployment
     metadata:
