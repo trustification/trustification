@@ -11,6 +11,7 @@ log = "0.4"
 reqwest = "0.11.18"
 anyhow = "1"
 v11y-model = { path = "../model" }
+thiserror = "1.0.44"
 
 trustification-api = { path = "../../api" }
 trustification-auth = { path = "../../auth" }

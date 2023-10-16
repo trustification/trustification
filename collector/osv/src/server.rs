@@ -27,9 +27,6 @@ use crate::{
 
 #[derive(Debug, Display)]
 pub enum Error {
-    #[display(fmt = "GUAC error")]
-    Guac,
-
     #[display(fmt = "OSV error")]
     Osv,
 
@@ -104,35 +101,53 @@ pub async fn collect_packages(
     request: web::Json<CollectPackagesRequest>,
     state: web::Data<AppState>,
 ) -> actix_web::Result<impl Responder, Error> {
-    log::info!("-- collect packages");
-
+    // OSV allows batch-style querying, convert our collector API into an OSV query.
     let request: QueryBatchRequest = (&*request).into();
-    //log::debug!("osv request: {}", serde_json::to_string_pretty(&request).unwrap());
+
+    // If we experience an error communicating with OSV, we *do* want to exit
+    // early, as any subsequent processes will indeed fail or otherwise be useless.
     let response = state.osv.query_batch(request).await.map_err(|_| Error::Osv)?;
 
+    // we want to make as much progress as possible, so we do not
+    // return early using `?` as we want to collect as much as possible
+    // while also collecting all relevant errors along the way.
+    let mut collected_guac_errors = Vec::new();
+
     for entry in &response.results {
-        log::info!("-- entry");
         if let Some(vulns) = &entry.vulns {
             if let Package::Purl { purl } = &entry.package {
-                state
+                // First, ensure that each purl that came back as part of the OSV
+                // response is ingested, which ensures it is known by GUAC and can
+                // subsequently be referenced by other verbs.
+                if let Err(err) = state
                     .guac_client
                     .intrinsic()
                     .ingest_package(&PackageUrl::from_str(purl).map_err(|_| Error::Internal)?.into())
                     .await
-                    .map_err(|_| Error::Guac)?;
+                {
+                    log::warn!("guac error {}", err);
+                    collected_guac_errors.push(err);
+                }
+
                 for vuln in vulns {
-                    log::info!("ingest vulnerability {} on purl {}", vuln.id, purl);
-                    state
+                    // Next, for each vulnerability mentioned by OSV, ensure the vulnerability
+                    // is known to GUAC so that further verbs can be applied to them.
+                    if let Err(err) = state
                         .guac_client
                         .intrinsic()
-                        //.ingest_vulnerability("osv", &vuln.id)
                         .ingest_vulnerability(&VulnerabilityInputSpec {
                             r#type: "osv".to_string(),
                             vulnerability_id: vuln.id.clone(),
                         })
                         .await
-                        .map_err(|_| Error::Guac)?;
-                    state
+                    {
+                        log::warn!("guac error {}", err);
+                        collected_guac_errors.push(err);
+                    }
+
+                    // Finally, we ensure that GUAC understands the link between the package
+                    // and the vulnerabilities related to that package.
+                    if let Err(err) = state
                         .guac_client
                         .intrinsic()
                         .ingest_certify_vuln(
@@ -152,13 +167,20 @@ pub async fn collect_packages(
                             },
                         )
                         .await
-                        .map_err(|_| Error::Guac)?;
+                    {
+                        log::warn!("guac error {}", err);
+                        collected_guac_errors.push(err);
+                    }
                 }
             }
         }
     }
-    let gathered = CollectPackagesResponse::from(response);
-    log::debug!("osv response: {}", serde_json::to_string_pretty(&gathered).unwrap());
+    let mut gathered = CollectPackagesResponse::from(response);
+
+    gathered
+        .errors
+        .extend(collected_guac_errors.iter().map(|err| err.to_string()));
+
     Ok(HttpResponse::Ok().json(gathered))
 }
 
@@ -167,7 +189,7 @@ pub async fn collect_packages(
     tag = "collector-osv",
     path = "/api/v1/vulnerabilities",
     responses(
-        (status = 200, description = "Requested pURLs gathered"),
+        (status = 200, description = "Requested vulnerabilities have been gathered"),
     ),
 )]
 #[post("vulnerabilities")]
@@ -177,28 +199,43 @@ pub async fn collect_vulnerabilities(
 ) -> actix_web::Result<impl Responder> {
     let mut vulnerability_ids = Vec::default();
 
+    // We are presented with a set of vulnerability IDs, and
+    // desire to collect as much as possible. Therefore we gather
+    // any errors as they occur, and keep on processing.
+    let mut collected_osv_errors = Vec::new();
+    let mut collected_v11y_errors = Vec::new();
+
     for vuln_id in &request.vulnerability_ids {
         match state.osv.vulns(vuln_id).await {
             Ok(Some(osv_vuln)) => {
+                // We note that OSV did indeed find a record for the specified
+                // vulnerability ID.
                 vulnerability_ids.push(osv_vuln.id.clone());
+
                 let v11y_vuln = v11y_client::Vulnerability::from(osv_vuln);
-                log::debug!("{:?}", v11y_vuln);
                 if let Err(err) = state.v11y_client.ingest_vulnerability(&v11y_vuln).await {
-                    log::warn!("Failed to store in v11y: {err}");
+                    log::warn!("v11y error: {err}");
+                    collected_v11y_errors.push(err);
                 }
             }
             Ok(None) => {
-                // not found
+                // not found, do not add it to the response.
             }
             Err(err) => {
-                log::warn!("Failed to query OSV: {err}");
+                log::warn!("OSV error: {err}");
+                collected_osv_errors.push(err);
             }
         }
     }
 
-    let gathered = CollectVulnerabilitiesResponse { vulnerability_ids };
-
-    log::info!("Gathered information: {gathered:?}");
+    let gathered = CollectVulnerabilitiesResponse {
+        vulnerability_ids,
+        errors: collected_osv_errors
+            .iter()
+            .map(|err| err.to_string())
+            .chain(collected_v11y_errors.iter().map(|err| err.to_string()))
+            .collect(),
+    };
 
     Ok(HttpResponse::Ok().json(gathered))
 }

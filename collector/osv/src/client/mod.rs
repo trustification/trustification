@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use reqwest::{StatusCode, Url};
 use serde::{Deserialize, Serialize};
+use url::ParseError;
 
 use collector_client::CollectPackagesResponse;
 
@@ -16,7 +17,7 @@ impl OsvUrl {
         Self(base)
     }
 
-    pub fn querybatch(&self) -> anyhow::Result<Url> {
+    pub fn querybatch(&self) -> Result<Url, url::ParseError> {
         Ok(Url::parse(&format!("{}/querybatch", self.0))?)
     }
 
@@ -63,6 +64,23 @@ pub struct CollatedBatchVulnerabilities {
     pub vulns: Option<Vec<BatchVulnerability>>,
 }
 
+pub enum Error {
+    Url(url::ParseError),
+    Http(reqwest::Error),
+}
+
+impl From<reqwest::Error> for Error {
+    fn from(inner: reqwest::Error) -> Self {
+        Self::Http(inner)
+    }
+}
+
+impl From<url::ParseError> for Error {
+    fn from(inner: ParseError) -> Self {
+        Self::Url(inner)
+    }
+}
+
 #[allow(unused)]
 impl OsvClient {
     pub fn new() -> Self {
@@ -71,7 +89,7 @@ impl OsvClient {
         }
     }
 
-    pub async fn query_batch(&self, request: QueryBatchRequest) -> Result<CollatedQueryBatchResponse, anyhow::Error> {
+    pub async fn query_batch(&self, request: QueryBatchRequest) -> Result<CollatedQueryBatchResponse, Error> {
         let response: QueryBatchResponse = self
             .client
             .post(OSV_URL.querybatch()?)
@@ -119,7 +137,10 @@ impl From<CollatedQueryBatchResponse> for CollectPackagesResponse {
                 _ => None,
             })
             .collect();
-        Self { purls }
+        Self {
+            purls,
+            errors: Vec::new(),
+        }
     }
 }
 

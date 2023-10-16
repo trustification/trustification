@@ -34,6 +34,7 @@ pub struct AnalyzeResponse {
     pub affected: HashMap<String, Vec<String>>,
     //#[schema(additional_properties, value_type = Vulnerability)]
     pub vulnerabilities: Vec<Vulnerability>,
+    pub errors: Vec<String>,
 }
 
 impl AnalyzeResponse {

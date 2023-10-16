@@ -311,6 +311,7 @@ mod test {
                 mock_vuln("CVE-0000-0008", "Unsure", None),
             ],
             affected: Default::default(),
+            errors: Default::default(),
         }
     }
 
