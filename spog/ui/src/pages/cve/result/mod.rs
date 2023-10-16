@@ -1,4 +1,5 @@
 mod advisories;
+mod packages;
 mod products;
 
 use advisories::RelatedAdvisories;
@@ -97,7 +98,7 @@ pub fn result_view(props: &ResultViewProperties) -> Html {
 
     html!(
         <>
-            <PageSection sticky={vec![PageSectionSticky::Top]} variant={PageSectionVariant::Light} >
+            <PageSection variant={PageSectionVariant::Light} >
                 <Content>
                     <Title>
                         {props.id.clone()} { " "}

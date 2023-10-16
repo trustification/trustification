@@ -3,7 +3,7 @@ use spog_model::prelude::{CveDetails, PackageRelatedToProductCve, ProductCveStat
 use std::rc::Rc;
 use yew::prelude::*;
 
-use crate::pages::search::PaginationWrapped;
+use crate::pages::{cve::result::packages::PackagesTable, search::PaginationWrapped};
 
 struct TableData {
     sbom_id: String,
@@ -62,7 +62,7 @@ impl TableEntryRenderer<Column> for TableData {
                     &self.sbom_id
                 }
             }),
-            Column::Version => html!(<></>),
+            Column::Version => html!(<>{"v1.1"}</>),
             Column::Status => html!(
                 <>
                     <Label label={self.status.label().to_string()} color={self.status.color()}/>
@@ -73,10 +73,21 @@ impl TableEntryRenderer<Column> for TableData {
                     {&self.packages.len()}
                 </>
             ),
-            Column::Supplier => html!(<></>),
-            Column::ReleasedOn => html!(<></>),
+            Column::Supplier => html!(<>{"Red Hat"}</>),
+            Column::ReleasedOn => html!(<>{"2021"}</>),
         }
         .into()
+    }
+
+    fn render_column_details(&self, #[allow(unused)] column: &Column) -> Vec<Span> {
+        vec![Span::max(match column {
+            Column::Name => html!({ "Name" }),
+            Column::Version => html!({ "Version" }),
+            Column::Status => html!({ "Status" }),
+            Column::Dependencies => html!(<PackagesTable packages={self.packages.clone()} />),
+            Column::Supplier => html!({ "Supplier" }),
+            Column::ReleasedOn => html!({ "ReleasedOn" }),
+        })]
     }
 }
 
@@ -108,10 +119,10 @@ pub fn related_products(props: &RelatedProductsProperties) -> Html {
 
     let header = html_nested! {
         <TableHeader<Column>>
-            <TableColumn<Column> label="Name" index={Column::Name} />
+            <TableColumn<Column> label="Name" index={Column::Name} expandable=true />
             <TableColumn<Column> label="Version" index={Column::Version} />
             <TableColumn<Column> label="Status" index={Column::Status} />
-            <TableColumn<Column> label="Dependencies" index={Column::Dependencies} />
+            <TableColumn<Column> label="Dependencies" index={Column::Dependencies} expandable=true />
             <TableColumn<Column> label="Supplier" index={Column::Supplier} />
             <TableColumn<Column> label="Released on" index={Column::ReleasedOn} />
         </TableHeader<Column>>
@@ -123,9 +134,9 @@ pub fn related_products(props: &RelatedProductsProperties) -> Html {
         <div class="pf-v5-u-background-color-100">
             <PaginationWrapped pagination={pagination} total={10}>
                 <Table<Column, UseTableData<Column, MemoizedTableModel<TableData>>>
+                    mode={TableMode::Expandable}
                     {header}
                     {entries}
-                    // mode={TableMode::Expandable}
                     {onexpand}
                 />
             </PaginationWrapped>
