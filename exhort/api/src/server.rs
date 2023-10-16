@@ -119,7 +119,7 @@ async fn analyze(state: web::Data<AppState>, request: web::Json<AnalyzeRequest>)
         .collectorist_client
         .collect_packages(request.purls.clone())
         .await
-        .map_err(|e| Error::from(e))?;
+        .map_err(Error::from)?;
 
     let mut response = AnalyzeResponse::new();
 
