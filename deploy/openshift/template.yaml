@@ -504,8 +504,6 @@ objects:
                 - file
                 - --index-dir
                 - /data/index
-                - --reindex
-                - always
               env:
                 - name: RUST_LOG
                   value: ${LOG_LEVEL}
@@ -1808,8 +1806,6 @@ objects:
                 - file
                 - --index-dir
                 - /data/index
-                - --reindex
-                - always
               env:
                 - name: RUST_LOG
                   value: ${LOG_LEVEL}
@@ -1865,6 +1861,79 @@ objects:
                 httpGet:
                   path: /health/startup
                   port: 9010
+  - apiVersion: batch/v1
+    kind: CronJob
+    metadata:
+      name: bombastic-walker
+      labels:
+        app.kubernetes.io/name: bombastic-walker
+        app.kubernetes.io/component: walker
+        app.kubernetes.io/part-of: trustification
+    spec:
+      schedule: 0 1 * * *
+      jobTemplate:
+        spec:
+          template:
+            metadata:
+              labels:
+                app.kubernetes.io/name: bombastic-walker
+                app.kubernetes.io/component: walker
+                app.kubernetes.io/part-of: trustification
+            spec:
+              restartPolicy: OnFailure
+              containers:
+                - image: ${BACKEND_IMAGE}:${IMAGE_TAG}
+                  imagePullPolicy: Always
+                  name: walker
+                  command:
+                    - /trust
+                  args:
+                    - bombastic
+                    - walker
+                    - --sink
+                    - https://sbom.${DOMAIN}
+                    - --source
+                    - https://access.redhat.com/security/data/sbom/beta/
+                    - '-3'
+                    - --signing-key
+                    - https://access.redhat.com/security/data/97f5eac4.txt#77E79ABE93673533ED09EBE2DCE3823597F5EAC4
+                    - --fix-licenses
+                    - 'true'
+                  env:
+                    - name: RUST_LOG
+                      value: ${LOG_LEVEL}
+                    - name: INFRASTRUCTURE_ENABLED
+                      value: 'true'
+                    - name: INFRASTRUCTURE_BIND
+                      value: '[::]:9010'
+                    - name: OIDC_PROVIDER_CLIENT_ID
+                      value: trusted-content-api
+                    - name: OIDC_PROVIDER_CLIENT_SECRET
+                      valueFrom:
+                        secretKeyRef:
+                          key: ${OIDC_PROVIDER_CLIENT_SECRET_KEY}
+                          name: ${OIDC_PROVIDER_CLIENT_SECRET_NAME}
+                    - name: OIDC_PROVIDER_ISSUER_URL
+                      value: ${ISSUER_URL}
+                  ports:
+                    - containerPort: 9010
+                      protocol: TCP
+                      name: infra
+                  resources: ${{BOMBASTIC_WALKER_RESOURCES}}
+                  livenessProbe:
+                    httpGet:
+                      path: /health/live
+                      port: 9010
+                    initialDelaySeconds: 2
+                  readinessProbe:
+                    httpGet:
+                      path: /health/ready
+                      port: 9010
+                    initialDelaySeconds: 2
+                  startupProbe:
+                    httpGet:
+                      path: /health/startup
+                      port: 9010
   - apiVersion: batch/v1
     kind: CronJob
     metadata:
