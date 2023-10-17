@@ -104,7 +104,7 @@ vexination:
   credentials: ${VEXINATION_AWS_SECRET_NAME}
   indexMode: file
   walker:
-    enabled: true
+    enable: true
     source: https://www.redhat.com/.well-known/csaf/provider-metadata.json
     ignore: https://access.redhat.com/security/data/csaf/v2/advisories/
     logLevel: ${LOG_LEVEL}
