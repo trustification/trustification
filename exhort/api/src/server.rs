@@ -168,8 +168,7 @@ async fn analyze(state: web::Data<AppState>, request: web::Json<AnalyzeRequest>)
         match state.v11y_client.get_cve(&vuln_id).await {
             Ok(vulnerabilities) => {
                 if vulnerabilities.status() == 200 {
-                    let cve: Result<Box<RawValue>, _> = vulnerabilities.json().await;
-                    match cve {
+                    match vulnerabilities.json::<Box<RawValue>>().await {
                         Ok(cve) => {
                             //response.vulnerabilities.extend(vulns.iter().cloned() );
                             response.vulnerabilities.push(cve);
