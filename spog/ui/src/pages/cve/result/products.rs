@@ -130,16 +130,32 @@ pub fn related_products(props: &RelatedProductsProperties) -> Html {
 
     let pagination = use_pagination(Some(total), || PaginationControl { page: 1, per_page: 10 });
 
-    html!(
-        <div class="pf-v5-u-background-color-100">
-            <PaginationWrapped pagination={pagination} total={10}>
-                <Table<Column, UseTableData<Column, MemoizedTableModel<TableData>>>
-                    mode={TableMode::Expandable}
-                    {header}
-                    {entries}
-                    {onexpand}
-                />
-            </PaginationWrapped>
-        </div>
-    )
+    match props.cve_details.products.is_empty() {
+        true => html!(
+            <Panel>
+                <PanelMain>
+                    <Bullseye>
+                        <EmptyState
+                            title="No related products"
+                            icon={Icon::Search}
+                        >
+                            { "No related products have been found." }
+                        </EmptyState>
+                    </Bullseye>
+                </PanelMain>
+            </Panel>
+        ),
+        false => html!(
+            <div class="pf-v5-u-background-color-100">
+                <PaginationWrapped pagination={pagination} total={10}>
+                    <Table<Column, UseTableData<Column, MemoizedTableModel<TableData>>>
+                        mode={TableMode::Expandable}
+                        {header}
+                        {entries}
+                        {onexpand}
+                    />
+                </PaginationWrapped>
+            </div>
+        ),
+    }
 }

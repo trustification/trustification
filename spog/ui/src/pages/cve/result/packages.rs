@@ -1,10 +1,7 @@
 use patternfly_yew::prelude::*;
-use spog_model::prelude::{CveDetails, PackageRelatedToProductCve, ProductCveStatus};
+use spog_model::prelude::PackageRelatedToProductCve;
 use std::rc::Rc;
 use yew::prelude::*;
-
-use crate::pages::search::PaginationWrapped;
-
 #[derive(Copy, Clone, PartialEq, Eq)]
 pub enum Column {
     Name,
