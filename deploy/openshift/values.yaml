@@ -73,6 +73,7 @@ v11y:
     logLevel: ${LOG_LEVEL}
   walker:
     enable: true
+    schedule: "0 * * * *"
     resources: ${{V11Y_WALKER_RESOURCES}}
 collectorist:
   enabled: true
