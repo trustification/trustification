@@ -214,9 +214,9 @@ pub async fn collect_packages(
         purls: gathered_purls,
         errors: collected_snyk_errors
             .iter()
-            .map(|err| err.to_string())
-            .chain(collected_guac_errors.iter().map(|err| err.to_string()))
-            .chain(collected_v11y_errors.iter().map(|err| err.to_string()))
+            .chain(collected_guac_errors.iter())
+            .chain(collected_v11y_errors.iter())
+            .cloned()
             .collect(),
     };
 
