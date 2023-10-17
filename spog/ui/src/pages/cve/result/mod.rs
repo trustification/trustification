@@ -29,7 +29,7 @@ pub fn result_view(props: &ResultViewProperties) -> Html {
     let backend = use_backend();
     let access_token = use_latest_access_token();
 
-    let details = {
+    let cve_details = {
         let backend = backend.clone();
         let access_token = access_token.clone();
         use_async_with_cloned_deps(
@@ -41,7 +41,7 @@ pub fn result_view(props: &ResultViewProperties) -> Html {
         )
     };
 
-    let products = {
+    let related_products = {
         let backend = backend.clone();
         let access_token = access_token.clone();
         use_async_with_cloned_deps(
@@ -57,7 +57,7 @@ pub fn result_view(props: &ResultViewProperties) -> Html {
         )
     };
 
-    let advisories = {
+    let related_advisories = {
         let backend = backend.clone();
         let access_token = access_token.clone();
         use_async_with_cloned_deps(
@@ -102,30 +102,30 @@ pub fn result_view(props: &ResultViewProperties) -> Html {
                 <Content>
                     <Title>
                         {props.id.clone()} { " "}
-                        if let UseAsyncState::Ready(Ok(details)) = &*details {{
+                        if let UseAsyncState::Ready(Ok(details)) = &*cve_details {{
                             match &**details {
                                 cve::Cve::Published(published) => cvss3(&published.containers.cna.metrics),
                                 cve::Cve::Rejected(_rejected) => html!(<Label label="Rejected" color={Color::Grey} />),
                             }
                         }}
                     </Title>
-                    if let UseAsyncState::Ready(Ok(details)) = &*details {
+                    if let UseAsyncState::Ready(Ok(details)) = &*cve_details {
                         { cve_title(details) }
                     }
                 </Content>
 
                 <div class="pf-v5-u-my-md"></div>
 
-                { async_content(&*details, |details| html!(<CveDetailsView details={details.clone()} />)) }
+                { async_content(&*cve_details, |details| html!(<CveDetailsView details={details.clone()} />)) }
             </PageSection>
 
             <PageSection>
                 <Tabs<TabIndex> r#box=true selected={page_state.tab} {onselect}>
                     <Tab<TabIndex> index={TabIndex::Products} title="Related Products">
-                        { async_content(&*products, |products| html!(<RelatedProducts cve_details={products} />)) }
+                        { async_content(&*related_products, |products| html!(<RelatedProducts cve_details={products} />)) }
                     </Tab<TabIndex>>
                     <Tab<TabIndex> index={TabIndex::Advisories} title="Related Advisories">
-                        { async_content(&*advisories, |advisories| html!(<RelatedAdvisories {advisories} />)) }
+                        { async_content(&*related_advisories, |advisories| html!(<RelatedAdvisories {advisories} />)) }
                     </Tab<TabIndex>>
                 </Tabs<TabIndex>>
             </PageSection>
