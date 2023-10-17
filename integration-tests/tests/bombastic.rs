@@ -274,6 +274,7 @@ async fn sbom_invalid_type(context: &mut BombasticContext) {
 #[test_context(BombasticContext)]
 #[tokio::test]
 #[ntest::timeout(60_000)]
+#[ignore = "Test does not work on AWS, issue #691"]
 async fn valid_bzip2_encoded(context: &mut BombasticContext) {
     let sbom = include_bytes!("../../bombastic/testdata/ubi8-valid.json.bz2");
     let id = "valid_bzip2_encoded";
