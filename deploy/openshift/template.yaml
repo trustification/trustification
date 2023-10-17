@@ -2054,7 +2054,7 @@ objects:
         app.kubernetes.io/component: walker
         app.kubernetes.io/part-of: trustification
     spec:
-      schedule: 0 1 * * *
+      schedule: 0 * * * *
       concurrencyPolicy: Forbid
       jobTemplate:
         spec:
