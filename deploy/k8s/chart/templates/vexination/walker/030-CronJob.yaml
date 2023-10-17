@@ -31,6 +31,8 @@ spec:
                 - "https://vex.{{ .Values.domain }}/api/v1/vex"
                 - "--source"
                 - "{{ .Values.vexination.walker.source }}"
+                - "--ignore-distributions"
+                - "{{ .Values.vexination.walker.ignore }}"
                 - "-3"
               env:
                 - name: RUST_LOG

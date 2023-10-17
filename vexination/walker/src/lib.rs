@@ -28,6 +28,10 @@ pub struct Run {
     #[arg(short = 'S', long)]
     pub(crate) sink: Url,
 
+    /// Distributions to ignore
+    #[arg(long, default_value = "Vec::new()")]
+    ignore_distributions: Vec<Url>,
+
     /// OpenPGP policy date.
     #[arg(long)]
     policy_date: Option<humantime::Timestamp>,
@@ -75,7 +79,15 @@ impl Run {
 
                     let options = ValidationOptions { validation_date };
 
-                    server::run(self.workers, self.source, self.sink, provider, options).await
+                    server::run(
+                        self.workers,
+                        self.source,
+                        self.sink,
+                        provider,
+                        options,
+                        self.ignore_distributions,
+                    )
+                    .await
                 },
             )
             .await?;

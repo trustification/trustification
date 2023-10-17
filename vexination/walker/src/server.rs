@@ -24,6 +24,7 @@ pub async fn run(
     sink: url::Url,
     provider: Arc<dyn TokenProvider>,
     options: ValidationOptions,
+    ignore_distributions: Vec<url::Url>,
 ) -> Result<(), anyhow::Error> {
     let fetcher = Fetcher::new(Default::default()).await?;
     let client = Arc::new(reqwest::Client::new());
@@ -85,6 +86,9 @@ pub async fn run(
     if let Ok(path) = source.to_file_path() {
         let source = FileSource::new(path, None)?;
         Walker::new(source.clone())
+            .with_distribution_filter(Box::new(move |distribution| {
+                !ignore_distributions.contains(&distribution.directory_url)
+            }))
             .walk(RetrievingVisitor::new(source.clone(), validation))
             .await?;
     } else {
@@ -95,6 +99,9 @@ pub async fn run(
             options: Default::default(),
         };
         Walker::new(source.clone())
+            .with_distribution_filter(Box::new(move |distribution| {
+                !ignore_distributions.contains(&distribution.directory_url)
+            }))
             .walk_parallel(workers, RetrievingVisitor::new(source.clone(), validation))
             .await?;
     }
