@@ -27,7 +27,7 @@ spec:
 
           initContainers:
             - name: git-fetch
-              image: "docker.io/alpine/git:2.40.1"
+              image: "quay.io/trustification/git:2.40.1"
               volumeMounts:
                 - mountPath: /git
                   name: cvelist
