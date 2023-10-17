@@ -8049,6 +8049,7 @@ dependencies = [
  "serde",
  "serde_json",
  "tokio",
+ "trustification-infrastructure",
  "trustification-storage",
  "v11y-api",
  "v11y-indexer",
