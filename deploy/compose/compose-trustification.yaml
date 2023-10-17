@@ -56,7 +56,7 @@ services:
           sleep 5
         done
         echo keycloak is up
-        /trust bombastic api --devmode
+        /trust bombastic api --devmode --validator sbom
     entrypoint: /usr/bin/bash
     restart: on-failure
     healthcheck:
