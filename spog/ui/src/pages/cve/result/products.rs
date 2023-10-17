@@ -1,7 +1,9 @@
 use patternfly_yew::prelude::*;
 use spog_model::prelude::{CveDetails, PackageRelatedToProductCve, ProductCveStatus};
+use spog_ui_navigation::{AppRoute, View};
 use std::rc::Rc;
 use yew::prelude::*;
+use yew_nested_router::components::Link;
 
 use crate::pages::{cve::result::packages::PackagesTable, search::PaginationWrapped};
 
@@ -57,11 +59,13 @@ pub enum Column {
 impl TableEntryRenderer<Column> for TableData {
     fn render_cell(&self, context: CellContext<'_, Column>) -> Cell {
         match context.column {
-            Column::Name => html!({
-                {
-                    &self.sbom_id
-                }
-            }),
+            Column::Name => html!(
+                <Link<AppRoute>
+                    target={AppRoute::Sbom(View::Content{id: self.sbom_id.clone()})}
+                >
+                    { self.sbom_id.clone() }
+                </Link<AppRoute>>
+            ),
             Column::Version => html!(<></>),
             Column::Status => html!(
                 <>
