@@ -106,6 +106,7 @@ vexination:
   walker:
     enable: true
     source: https://www.redhat.com/.well-known/csaf/provider-metadata.json
+    ignore: https://access.redhat.com/security/data/csaf/v2/advisories/
     resources:
       requests:
         cpu: "100m"

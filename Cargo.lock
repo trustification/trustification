@@ -1969,9 +1969,8 @@ checksum = "e496a50fda8aacccc86d7529e2c1e0892dbd0f898a6b5645b5561b89c3210efa"
 
 [[package]]
 name = "cpe"
-version = "0.1.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b4637f8a437a9f69a092a038302c31ce4db082b1cff8c8a524aaa9f607143094"
+version = "0.1.3"
+source = "git+https://github.com/trustification/cpe-rs?rev=dc2c5661d436410cc9562596ab16a2e771261eb2#dc2c5661d436410cc9562596ab16a2e771261eb2"
 dependencies = [
  "derive_builder",
  "language-tags",
@@ -2123,9 +2122,9 @@ dependencies = [
 
 [[package]]
 name = "csaf-walker"
-version = "0.5.2"
+version = "0.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cf8f501aceb6b5604b3e6cebae9aad4a1efbb3475deb789d1fe0c19551a1d46a"
+checksum = "9327701f3bea0557af6b434ff9293b46d7791df9bbfc5933e6cbee61fe696a39"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -5634,9 +5633,9 @@ dependencies = [
 
 [[package]]
 name = "sbom-walker"
-version = "0.5.1"
+version = "0.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5ca71dcd7a02b3bba924ccc63c33a3b761a684b2d9bc61d25dd30f40f9bc9354"
+checksum = "0dd08fd5c28db4592972466f84e9c33cda079d16b9ff260380e233dd113e1163"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -8293,9 +8292,9 @@ dependencies = [
 
 [[package]]
 name = "walker-common"
-version = "0.5.1"
+version = "0.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4cc20ff92c946cb96d7dbca5a0486165401387a004f43b083d60b36697add32e"
+checksum = "cb942baf1d34977b720de0ba28353326e641b0b401ca4e0d27d1e557448780ed"
 dependencies = [
  "anyhow",
  "async-trait",
