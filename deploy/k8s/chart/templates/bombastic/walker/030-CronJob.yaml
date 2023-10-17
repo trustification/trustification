@@ -9,6 +9,7 @@ metadata:
     app.kubernetes.io/part-of: trustification
 spec:
   schedule: "0 1 * * *"
+  concurrencyPolicy: Forbid
   jobTemplate:
     spec:
       template:
