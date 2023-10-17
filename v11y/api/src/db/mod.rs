@@ -67,7 +67,7 @@ impl Db {
     }
 
     async fn ensure_hash_directory(&self, base: &Path, id: &str) -> Result<PathBuf, DbError> {
-        let hash_dir = base.join(Self::hash_prefix_of(&id.to_lowercase()));
+        let hash_dir = base.join(Self::hash_prefix_of(id));
 
         if !hash_dir.exists() {
             create_dir_all(&hash_dir).await?;
@@ -101,7 +101,7 @@ impl Db {
 
     fn hash_prefix_of(id: &str) -> String {
         let mut hasher = Sha1::default();
-        hasher.update(id.to_lowercase());
+        hasher.update(id);
         let output = hasher.finalize_fixed();
         format!("{:x}{:x}{:x}{:x}", output[0], output[1], output[2], output[3])
     }
@@ -110,7 +110,7 @@ impl Db {
         let dir = self.ensure_origin_directory(&vuln.origin).await?;
         let hash_dir = self.ensure_hash_directory(&dir, &vuln.id).await?;
 
-        let vuln_file = hash_dir.join(format!("{}.json", vuln.id.to_lowercase()));
+        let vuln_file = hash_dir.join(format!("{}.json", vuln.id));
 
         // todo: write to a tempfile and then rename it.
         let file = File::create(vuln_file)?;
@@ -122,7 +122,7 @@ impl Db {
         let mut vulnerabilities = Vec::new();
 
         for dir in self.get_hash_directories(id, origin) {
-            let file = dir.join(format!("{}.json", id.to_lowercase()));
+            let file = dir.join(format!("{}.json", id));
             if file.exists() {
                 if let Ok(reader) = File::open(file.clone()) {
                     let result = serde_json::from_reader(reader);
