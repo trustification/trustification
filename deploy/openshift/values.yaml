@@ -19,9 +19,19 @@ spog:
   ui:
     customize: true
     resources: ${{SPOG_UI_RESOURCES}}
+    segmentWriteKey:
+      valueFrom:
+        secretKeyRef:
+          name: ${SEGMENT_SECRET_NAME}
+          key: ${SEGMENT_SECRET_API_KEY}
   api:
     resources: ${{SPOG_API_RESOURCES}}
     logLevel: ${LOG_LEVEL}
+    segmentWriteKey:
+      valueFrom:
+        secretKeyRef:
+          name: ${SEGMENT_SECRET_NAME}
+          key: ${SEGMENT_SECRET_UI_KEY}
 bombastic:
   bucket: ${BOMBASTIC_STORAGE_BUCKET}
   credentials: ${BOMBASTIC_AWS_SECRET_NAME}
