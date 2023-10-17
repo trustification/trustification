@@ -97,3 +97,9 @@ parameters:
 - name: CRDA_URL
   required: false
   value: https://rhda.rhcloud.com/
+- name: SEGMENT_SECRET_NAME
+  value: segment-write-keys
+- name: SEGMENT_SECRET_API_KEY
+  value: spogApi
+- name: SEGMENT_SECRET_UI_KEY
+  value: spogUi
