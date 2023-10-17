@@ -26,7 +26,7 @@ impl Run {
     pub async fn run(self) -> anyhow::Result<ExitCode> {
         Infrastructure::from(self.infra)
             .run(
-                "vexination-walker",
+                "v11y-walker",
                 |_context| async { Ok(()) },
                 |_context| async move {
                     let storage = Storage::new(self.storage.process("v11y", self.devmode), &Registry::new())?;
