@@ -40,6 +40,8 @@ spec:
             - "api"
             - "-p"
             - "8080"
+            - "--validator"
+            = "sbom"
             - "--index-mode"
             - "{{ .Values.bombastic.indexMode }}"
             - "--auth-configuration"
