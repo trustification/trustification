@@ -108,10 +108,12 @@ pub async fn collect_packages(
         // the rewrite might fail for one purl, so we check.
         match purl {
             Ok(purl) => {
+                log::info!("check {purl}");
                 let snyk_response = snyk.issues(&purl).await;
 
                 match snyk_response {
                     Ok(issues) => {
+                        log::info!("issues {}", issues.len());
                         // Snyk replied with at least a moderately okay response, proceed.
                         if let Ok(purl) = PackageUrl::from_str(original_purl) {
                             if !issues.is_empty() {

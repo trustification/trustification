@@ -5,6 +5,7 @@ use std::sync::Arc;
 use actix_web::{post, web, HttpResponse, Responder, ResponseError};
 use guac::client::intrinsic::certify_vuln::CertifyVulnSpec;
 use packageurl::PackageUrl;
+use serde_json::value::RawValue;
 use utoipa::OpenApi;
 
 use exhort_model::*;
@@ -129,7 +130,7 @@ async fn analyze(state: web::Data<AppState>, request: web::Json<AnalyzeRequest>)
     let mut vuln_ids = HashSet::new();
 
     for purl_str in &request.purls {
-        // As GUAC about each purl in the original request.
+        // Ask GUAC about each purl in the original request.
         if let Ok(purl) = PackageUrl::from_str(purl_str) {
             match state
                 .guac_client
@@ -144,8 +145,10 @@ async fn analyze(state: web::Data<AppState>, request: web::Json<AnalyzeRequest>)
                     // Add mappings from purl->vuln for all discovered
                     for vuln in vulns {
                         for vuln_id in vuln.vulnerability.vulnerability_ids {
-                            response.add_package_vulnerability(purl_str, &vuln_id.vulnerability_id);
-                            vuln_ids.insert(vuln_id.vulnerability_id);
+                            if vuln_id.vulnerability_id.starts_with("cve") {
+                                response.add_package_vulnerability(purl_str, &vuln_id.vulnerability_id);
+                                vuln_ids.insert(vuln_id.vulnerability_id);
+                            }
                         }
                     }
                 }
@@ -162,9 +165,25 @@ async fn analyze(state: web::Data<AppState>, request: web::Json<AnalyzeRequest>)
     // mappings, go collect the vulnerability details from v11y, doing
     // our best effort and not allowing soft errors to fail the process.
     for vuln_id in vuln_ids {
-        match state.v11y_client.get_vulnerability(&vuln_id).await {
+        match state.v11y_client.get_cve(&vuln_id).await {
             Ok(vulnerabilities) => {
-                response.vulnerabilities.extend(vulnerabilities.iter().cloned());
+                if vulnerabilities.status() == 200 {
+                    match vulnerabilities.json::<Box<RawValue>>().await {
+                        Ok(cve) => {
+                            //response.vulnerabilities.extend(vulns.iter().cloned() );
+                            response.vulnerabilities.push(cve);
+                        }
+                        Err(err) => {
+                            log::error!("v11y cve error {} {}", err, vuln_id);
+                            response.errors.push(err.to_string());
+                        }
+                    }
+                } else {
+                    log::error!("v11y can't find {}", vuln_id);
+                    response
+                        .errors
+                        .push(format!("v11y error: unable to locate {}", vuln_id));
+                }
             }
             Err(err) => {
                 log::error!("v11y error {}", err);

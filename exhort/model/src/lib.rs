@@ -1,10 +1,11 @@
 use serde::{Deserialize, Serialize};
+use serde_json::value::RawValue;
 use std::collections::HashMap;
 use utoipa::{
     openapi::{schema::AdditionalProperties, *},
     ToSchema,
 };
-use v11y_model::Vulnerability;
+//use v11y_model::Vulnerability;
 
 #[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
 pub struct AnalyzeRequest {
@@ -28,12 +29,12 @@ fn response_affected() -> Object {
         .build()
 }
 
-#[derive(PartialEq, Serialize, Deserialize, Debug, Default, Clone, ToSchema)]
+#[derive(Serialize, Deserialize, Debug, Default, Clone, ToSchema)]
 pub struct AnalyzeResponse {
     #[schema(schema_with = response_affected)]
     pub affected: HashMap<String, Vec<String>>,
     //#[schema(additional_properties, value_type = Vulnerability)]
-    pub vulnerabilities: Vec<Vulnerability>,
+    pub vulnerabilities: Vec<Box<RawValue>>,
     pub errors: Vec<String>,
 }
 
@@ -52,7 +53,7 @@ impl AnalyzeResponse {
         }
     }
 
-    pub fn add_vulnerability(&mut self, vuln: &Vulnerability) {
+    /*pub fn add_vulnerability(&mut self, vuln: &Vulnerability) {
         self.vulnerabilities.push(vuln.clone());
         //if !self.vulnerabilities.contains_key(&vuln.id) {
         //self.vulnerabilities.insert(vuln.id.clone(), Vec::new());
@@ -62,4 +63,6 @@ impl AnalyzeResponse {
         //inner.push(vuln.clone())
         //}
     }
+
+     */
 }
