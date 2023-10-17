@@ -1,16 +1,16 @@
+use std::collections::HashMap;
 use std::net::{IpAddr, SocketAddr, TcpListener};
 use std::str::FromStr;
 use std::sync::Arc;
 
 use actix_web::{post, web, HttpResponse, Responder, ResponseError};
-use derive_more::Display;
 use guac::client::intrinsic::certify_vuln::ScanMetadataInput;
 use guac::client::intrinsic::vulnerability::VulnerabilityInputSpec;
 use packageurl::PackageUrl;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
-use collector_client::CollectPackagesRequest;
+use collector_client::{CollectPackagesRequest, CollectPackagesResponse};
 use trustification_auth::authenticator::Authenticator;
 use trustification_auth::authorizer::Authorizer;
 use trustification_infrastructure::app::http::{HttpServerBuilder, HttpServerConfig};
@@ -36,22 +36,19 @@ use crate::AppState;
 )]
 pub struct ApiDoc;
 
-#[derive(Debug, Display)]
+#[derive(Debug, thiserror::Error)]
 pub enum Error {
-    #[display(fmt = "GUAC error")]
-    Guac,
-
-    #[display(fmt = "Snyk error")]
-    Snyk,
-
-    #[display(fmt = "Internal error")]
-    Internal,
-
-    #[display(fmt = "pURL error")]
-    Purl,
+    #[error("snyk error {0}")]
+    Snyk(crate::client::Error),
 }
 
 impl ResponseError for Error {}
+
+impl From<crate::client::Error> for Error {
+    fn from(inner: crate::client::Error) -> Self {
+        Self::Snyk(inner)
+    }
+}
 
 pub async fn run(
     context: MainContext<()>,
@@ -93,65 +90,135 @@ pub async fn collect_packages(
     request: web::Json<CollectPackagesRequest>,
     state: web::Data<AppState>,
 ) -> actix_web::Result<impl Responder, Error> {
-    let client = SnykClient::new(&state.snyk_org_id, &state.snyk_token);
+    let snyk = SnykClient::new(&state.snyk_org_id, &state.snyk_token);
 
-    for purl in &request.purls {
-        let mut vulns: Vec<v11y_client::Vulnerability> = Vec::new();
+    // we collect soft errors and proceed as much as possible.
+    let mut collected_snyk_errors = Vec::new();
+    let mut collected_guac_errors = Vec::new();
+    let mut collected_v11y_errors = Vec::new();
 
-        for issue in client
-            .issues(&rewrite(purl).map_err(|_e| Error::Purl)?)
-            .await
-            .map_err(|_| Error::Snyk)?
-        {
-            let issue_vulns: Vec<Vulnerability> = issue.into();
-            vulns.extend_from_slice(&issue_vulns)
-        }
+    let mut vulns: Vec<v11y_client::Vulnerability> = Vec::new();
 
-        if !vulns.is_empty() {
-            state
-                .guac_client
-                .intrinsic()
-                .ingest_package(&PackageUrl::from_str(purl).map_err(|_| Error::Internal)?.into())
-                .await
-                .map_err(|_| Error::Guac)?;
+    let mut gathered_purls = HashMap::new();
 
-            for vuln in &vulns {
-                state
-                    .guac_client
-                    .intrinsic()
-                    .ingest_vulnerability(&VulnerabilityInputSpec {
-                        r#type: "snyk".to_string(),
-                        vulnerability_id: vuln.id.clone(),
-                    })
-                    .await
-                    .map_err(|_| Error::Guac)?;
+    for original_purl in &request.purls {
+        // rewrite the purl for Snyk, due to `redhat` vs `rhel` and `?distro` qualifier.
+        let purl = rewrite(original_purl);
 
-                state
-                    .guac_client
-                    .intrinsic()
-                    .ingest_certify_vuln(
-                        &PackageUrl::from_str(purl).map_err(|_| Error::Internal)?.into(),
-                        &VulnerabilityInputSpec {
-                            r#type: "snyk".to_string(),
-                            vulnerability_id: vuln.id.clone(),
-                        },
-                        &ScanMetadataInput {
-                            db_uri: "https://api.snyk.io/".to_string(),
-                            db_version: "1.0".to_string(),
-                            scanner_uri: "https://trustification.io/".to_string(),
-                            scanner_version: "1.0".to_string(),
-                            time_scanned: Default::default(),
-                            origin: "snyk".to_string(),
-                            collector: "snyk".to_string(),
-                        },
-                    )
-                    .await
-                    .map_err(|_| Error::Guac)?;
+        // the rewrite might fail for one purl, so we check.
+        match purl {
+            Ok(purl) => {
+                let snyk_response = snyk.issues(&purl).await;
 
-                state.v11y_client.ingest_vulnerability(vuln).await.ok();
+                match snyk_response {
+                    Ok(issues) => {
+                        // Snyk replied with at least a moderately okay response, proceed.
+                        if let Ok(purl) = PackageUrl::from_str(original_purl) {
+                            if !issues.is_empty() {
+                                // Since at least one issue was discovered, we need to
+                                // ensure that GUAC knows about the package so we can
+                                // link it to these issues later. Additionally, we add
+                                // it to the response set for the collectorist to continue
+                                // tracking as it sees fit.
+
+                                if let Err(err) = state.guac_client.intrinsic().ingest_package(&purl.into()).await {
+                                    collected_guac_errors.push(err.to_string());
+                                }
+                            }
+
+                            for issue in &issues {
+                                // A single Synk issue may represent multiple problems
+                                // and we dig in because the problem `id` is the ID we want
+                                // to track within GUAC.
+                                //
+                                // Add each of the problem IDs into GUAC so we can subsequently
+                                // wire them up to the previous packages we ingested.
+
+                                let mut ids = Vec::new();
+
+                                for problem in &issue.attributes.problems {
+                                    ids.push(problem.id.clone());
+                                    if let Err(err) = state
+                                        .guac_client
+                                        .intrinsic()
+                                        .ingest_vulnerability(&VulnerabilityInputSpec {
+                                            r#type: "snyk".to_string(),
+                                            vulnerability_id: problem.id.clone(),
+                                        })
+                                        .await
+                                    {
+                                        collected_guac_errors.push(err.to_string());
+                                    }
+
+                                    if let Ok(purl) = PackageUrl::from_str(original_purl) {
+                                        // Ingest the relationship between each problem ID
+                                        // and the purl it's associated with.
+                                        if let Err(err) = state
+                                            .guac_client
+                                            .intrinsic()
+                                            .ingest_certify_vuln(
+                                                &purl.into(),
+                                                &VulnerabilityInputSpec {
+                                                    r#type: "snyk".to_string(),
+                                                    vulnerability_id: problem.id.clone(),
+                                                },
+                                                &ScanMetadataInput {
+                                                    db_uri: "https://api.snyk.io/".to_string(),
+                                                    db_version: "1.0".to_string(),
+                                                    scanner_uri: "https://trustification.io/".to_string(),
+                                                    scanner_version: "1.0".to_string(),
+                                                    time_scanned: Default::default(),
+                                                    origin: "snyk".to_string(),
+                                                    collector: "snyk".to_string(),
+                                                },
+                                            )
+                                            .await
+                                        {
+                                            collected_guac_errors.push(err.to_string());
+                                        }
+                                    } else {
+                                        collected_snyk_errors.push(format!("purl error: {}", original_purl));
+                                    }
+                                }
+
+                                gathered_purls.insert(original_purl.clone(), ids);
+
+                                // finally, expand the Snyk issue into one-or-more v11y Vulnerabilities
+                                // which will be ingested in bulk after all of the GUAC machinations.
+                                let issue_vulns: Vec<Vulnerability> = issue.clone().into();
+                                vulns.extend_from_slice(&issue_vulns)
+                            }
+                        } else {
+                            collected_snyk_errors.push(format!("purl error: {}", purl));
+                        }
+                    }
+                    Err(err) => collected_snyk_errors.push(err.to_string()),
+                }
+            }
+            Err(_) => {
+                collected_snyk_errors.push(format!("unable to rewrite {original_purl}"));
             }
         }
     }
 
-    Ok(HttpResponse::Ok().finish())
+    // now stuff all the expanded issue->vulns into v11y proper.
+    if !vulns.is_empty() {
+        for vuln in &vulns {
+            if let Err(err) = state.v11y_client.ingest_vulnerability(vuln).await {
+                collected_v11y_errors.push(err.to_string())
+            }
+        }
+    }
+
+    let gathered = CollectPackagesResponse {
+        purls: gathered_purls,
+        errors: collected_snyk_errors
+            .iter()
+            .chain(collected_guac_errors.iter())
+            .chain(collected_v11y_errors.iter())
+            .cloned()
+            .collect(),
+    };
+
+    Ok(HttpResponse::Ok().json(gathered))
 }
