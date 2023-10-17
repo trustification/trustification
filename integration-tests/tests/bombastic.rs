@@ -212,16 +212,19 @@ async fn bombastic_reindexing(context: &mut BombasticContext) {
     context.upload_sbom(&key, &input).await;
 
     wait_for_search_result(context, &[("q", &encode(&key)), ("metadata", "true")], |response| {
-        assert!(response["total"].as_u64().unwrap() >= 1);
-        let format = &time::format_description::well_known::Rfc3339;
-        let ts = OffsetDateTime::parse(
-            response["result"][0]["$metadata"]["indexed_timestamp"]["values"][0]
-                .as_str()
-                .unwrap(),
-            format,
-        )
-        .unwrap();
-        ts > now
+        if response["total"].as_u64().unwrap() >= 1 {
+            let format = &time::format_description::well_known::Rfc3339;
+            let ts = OffsetDateTime::parse(
+                response["result"][0]["$metadata"]["indexed_timestamp"]["values"][0]
+                    .as_str()
+                    .unwrap(),
+                format,
+            )
+            .unwrap();
+            ts > now
+        } else {
+            false
+        }
     })
     .await;
 }
