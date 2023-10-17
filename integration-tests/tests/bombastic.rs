@@ -153,15 +153,11 @@ async fn bombastic_search(context: &mut BombasticContext) {
     input["packages"][617]["versionInfo"] = json!(key);
     context.upload_sbom(&key, &input).await;
 
-    wait_for_search_result(context, &[("q", &encode(&key))], |response| {
-        if response["total"].as_u64().unwrap() >= 1 {
-            assert_eq!(response["result"][0]["document"]["name"], json!("ubi9-container"));
-            true
-        } else {
-            false
-        }
+    let response = wait_for_search_result(context, &[("q", &encode(&key))], |response| {
+        response["total"].as_u64().unwrap() > 0
     })
     .await;
+    assert_eq!(response["result"][0]["document"]["name"], json!("ubi9-container"));
 }
 
 #[test_context(BombasticContext)]
@@ -196,15 +192,11 @@ async fn bombastic_reindexing(context: &mut BombasticContext) {
     input["packages"][617]["versionInfo"] = json!(key);
     context.upload_sbom(&key, &input).await;
 
-    wait_for_search_result(context, &[("q", &encode(&key))], |response| {
-        if response["total"].as_u64().unwrap() >= 1 {
-            assert_eq!(response["result"][0]["document"]["name"], json!("ubi9-container"));
-            true
-        } else {
-            false
-        }
+    let response = wait_for_search_result(context, &[("q", &encode(&key))], |response| {
+        response["total"].as_u64().unwrap() > 0
     })
     .await;
+    assert_eq!(response["result"][0]["document"]["name"], json!("ubi9-container"));
 
     let now = OffsetDateTime::now_utc();
 
@@ -212,7 +204,7 @@ async fn bombastic_reindexing(context: &mut BombasticContext) {
     context.upload_sbom(&key, &input).await;
 
     wait_for_search_result(context, &[("q", &encode(&key)), ("metadata", "true")], |response| {
-        if response["total"].as_u64().unwrap() >= 1 {
+        response["total"].as_u64().filter(|&t| t > 0).is_some_and(|_| {
             let format = &time::format_description::well_known::Rfc3339;
             let ts = OffsetDateTime::parse(
                 response["result"][0]["$metadata"]["indexed_timestamp"]["values"][0]
@@ -222,9 +214,7 @@ async fn bombastic_reindexing(context: &mut BombasticContext) {
             )
             .unwrap();
             ts > now
-        } else {
-            false
-        }
+        })
     })
     .await;
 }
@@ -238,15 +228,11 @@ async fn bombastic_deletion(context: &mut BombasticContext) {
     input["packages"][617]["versionInfo"] = json!(key);
     context.upload_sbom(&key, &input).await;
 
-    wait_for_search_result(context, &[("q", &encode(&key))], |response| {
-        if response["total"].as_u64().unwrap() >= 1 {
-            assert_eq!(response["result"][0]["document"]["name"], json!("ubi9-container"));
-            true
-        } else {
-            false
-        }
+    let response = wait_for_search_result(context, &[("q", &encode(&key))], |response| {
+        response["total"].as_u64().unwrap() > 0
     })
     .await;
+    assert_eq!(response["result"][0]["document"]["name"], json!("ubi9-container"));
 
     context.delete_sbom(&key).await;
 

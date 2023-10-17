@@ -137,11 +137,11 @@ impl BombasticContext {
     }
 }
 
-pub async fn wait_for_search_result<F: Fn(serde_json::Value) -> bool>(
+pub async fn wait_for_search_result<F: Fn(&serde_json::Value) -> bool>(
     context: &mut BombasticContext,
     flags: &[(&str, &str)],
     check: F,
-) {
+) -> serde_json::Value {
     loop {
         let url = context.urlify("/api/v1/sbom/search");
         let response = reqwest::Client::new()
@@ -155,8 +155,8 @@ pub async fn wait_for_search_result<F: Fn(serde_json::Value) -> bool>(
             .unwrap();
         assert_eq!(response.status(), StatusCode::OK);
         let payload: Value = response.json().await.unwrap();
-        if check(payload) {
-            break;
+        if check(&payload) {
+            return payload;
         }
         tokio::time::sleep(Duration::from_secs(1)).await;
     }
