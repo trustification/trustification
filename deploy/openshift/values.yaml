@@ -73,6 +73,7 @@ v11y:
     logLevel: ${LOG_LEVEL}
   walker:
     enable: true
+    schedule: "0 * * * *"
     resources: ${{V11Y_WALKER_RESOURCES}}
 collectorist:
   enabled: true
@@ -104,7 +105,8 @@ vexination:
   credentials: ${VEXINATION_AWS_SECRET_NAME}
   indexMode: file
   walker:
-    enabled: true
+    enable: true
+    schedule: "0 * * * *"
     source: https://www.redhat.com/.well-known/csaf/provider-metadata.json
     ignore: https://access.redhat.com/security/data/csaf/v2/advisories/
     logLevel: ${LOG_LEVEL}

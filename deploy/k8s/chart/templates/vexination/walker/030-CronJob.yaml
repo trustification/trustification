@@ -8,7 +8,7 @@ metadata:
     app.kubernetes.io/component: walker
     app.kubernetes.io/part-of: trustification
 spec:
-  schedule: "0 1 * * *"
+  schedule: {{ .Values.vexination.walker.schedule | default "0 1 * * *" }}
   concurrencyPolicy: Forbid
   jobTemplate:
     spec:

@@ -1954,7 +1954,7 @@ objects:
         app.kubernetes.io/component: walker
         app.kubernetes.io/part-of: trustification
     spec:
-      schedule: 0 1 * * *
+      schedule: 0 * * * *
       concurrencyPolicy: Forbid
       jobTemplate:
         spec:
@@ -2031,6 +2031,74 @@ objects:
                       protocol: TCP
                       name: infra
                   resources: ${{V11Y_WALKER_RESOURCES}}
+                  livenessProbe:
+                    httpGet:
+                      path: /health/live
+                      port: 9010
+                    initialDelaySeconds: 2
+                  readinessProbe:
+                    httpGet:
+                      path: /health/ready
+                      port: 9010
+                    initialDelaySeconds: 2
+                  startupProbe:
+                    httpGet:
+                      path: /health/startup
+                      port: 9010
+  - apiVersion: batch/v1
+    kind: CronJob
+    metadata:
+      name: vexination-walker
+      labels:
+        app.kubernetes.io/name: vexination-walker
+        app.kubernetes.io/component: walker
+        app.kubernetes.io/part-of: trustification
+    spec:
+      schedule: 0 * * * *
+      concurrencyPolicy: Forbid
+      jobTemplate:
+        spec:
+          template:
+            metadata:
+              labels:
+                app.kubernetes.io/name: vexination-walker
+                app.kubernetes.io/component: walker
+                app.kubernetes.io/part-of: trustification
+            spec:
+              restartPolicy: Never
+              containers:
+                - image: ${BACKEND_IMAGE}:${IMAGE_TAG}
+                  imagePullPolicy: Always
+                  name: walker
+                  command:
+                    - /trust
+                  args:
+                    - vexination
+                    - walker
+                    - --sink
+                    - https://vex.${DOMAIN}/api/v1/vex
+                    - --source
+                    - https://www.redhat.com/.well-known/csaf/provider-metadata.json
+                    - --ignore-distributions
+                    - https://access.redhat.com/security/data/csaf/v2/advisories/
+                    - '-3'
+                  env:
+                    - name: RUST_LOG
+                      value: ${LOG_LEVEL}
+                    - name: INFRASTRUCTURE_ENABLED
+                      value: 'true'
+                    - name: INFRASTRUCTURE_BIND
+                      value: '[::]:9010'
+                    - name: OIDC_PROVIDER_CLIENT_ID
+                      value: trusted-content-api
+                    - name: OIDC_PROVIDER_CLIENT_SECRET
+                      valueFrom:
+                        secretKeyRef:
+                          key: ${OIDC_PROVIDER_CLIENT_SECRET_KEY}
+                          name: ${OIDC_PROVIDER_CLIENT_SECRET_NAME}
+                    - name: OIDC_PROVIDER_ISSUER_URL
+                      value: ${ISSUER_URL}
+                  resources: null
                   livenessProbe:
                     httpGet:
                       path: /health/live
