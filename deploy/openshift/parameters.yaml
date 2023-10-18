@@ -91,6 +91,12 @@ parameters:
   required: true
 - name: K8S_NAMESPACE
   required: true
+- name: VEXINATION_WALKER_SCHEDULE
+  value: "1 0 * * *"
+- name: BOMBASTIC_WALKER_SCHEDULE
+  value: "1 0 * * *"
+- name: V11Y_WALKER_SCHEDULE
+  value: "1 0 * * *"
 - name: LOG_LEVEL
   required: false
   value: "info"

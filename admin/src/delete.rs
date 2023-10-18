@@ -85,10 +85,10 @@ impl BombasticDelete {
             {
                 r if r.status() == StatusCode::OK => {
                     let response = r.json::<bombastic_model::prelude::SearchResult>().await?;
-                    if response.total == 0 {
+                    if response.result.is_empty() {
                         break;
                     }
-                    log::info!("[Offset {}]: Got {} documents", offset, response.total);
+                    log::info!("[Offset {}]: Got {} documents", offset, response.result.len());
                     for result in response.result.iter() {
                         if let Some(matches) = &matches {
                             if matches.is_match(&result.document.id) {
@@ -99,11 +99,11 @@ impl BombasticDelete {
                         }
                     }
 
-                    if response.total < LIMIT {
+                    if response.result.len() < LIMIT {
                         break;
                     }
 
-                    offset += response.total;
+                    offset += response.result.len();
                 }
                 r => {
                     log::warn!("Failed to list documents: {}", r.status());
@@ -200,12 +200,13 @@ impl VexinationDelete {
             {
                 r if r.status() == StatusCode::OK => {
                     let response = r.json::<vexination_model::prelude::SearchResult>().await?;
-                    if response.total == 0 {
+                    if response.result.is_empty() {
                         break;
                     }
-                    log::info!("[Offset {}]: Got {} documents", offset, response.total);
+                    log::info!("[Offset {}]: Got {} documents", offset, response.result.len());
                     for result in response.result.iter() {
                         if let Some(matches) = &matches {
+                            log::info!("CHecking if {} matches {}", matches, result.document.advisory_id);
                             if matches.is_match(&result.document.advisory_id) {
                                 self.delete(client, provider, &result.document.advisory_id).await?;
                             }
@@ -214,11 +215,11 @@ impl VexinationDelete {
                         }
                     }
 
-                    if response.total < LIMIT {
+                    if response.result.len() < LIMIT {
                         break;
                     }
 
-                    offset += response.total;
+                    offset += response.result.len();
                 }
                 r => {
                     log::warn!("Failed to list documents: {}", r.status());

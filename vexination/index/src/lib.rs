@@ -86,7 +86,7 @@ impl trustification_index::Index for Index {
 
     fn tokenizers(&self) -> Result<TokenizerManager, SearchError> {
         let manager = TokenizerManager::default();
-        let ngram = NgramTokenizer::all_ngrams(3, 16)?;
+        let ngram = NgramTokenizer::all_ngrams(3, 8)?;
         manager.register(
             "ngram",
             TextAnalyzer::builder(ngram)
