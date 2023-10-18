@@ -85,7 +85,7 @@ impl BombasticDelete {
             {
                 r if r.status() == StatusCode::OK => {
                     let response = r.json::<bombastic_model::prelude::SearchResult>().await?;
-                    if response.result.len() == 0 {
+                    if response.result.is_empty() {
                         break;
                     }
                     log::info!("[Offset {}]: Got {} documents", offset, response.result.len());
@@ -200,7 +200,7 @@ impl VexinationDelete {
             {
                 r if r.status() == StatusCode::OK => {
                     let response = r.json::<vexination_model::prelude::SearchResult>().await?;
-                    if response.result.len() == 0 {
+                    if response.result.is_empty() {
                         break;
                     }
                     log::info!("[Offset {}]: Got {} documents", offset, response.result.len());
