@@ -3109,7 +3109,7 @@ dependencies = [
 [[package]]
 name = "guac"
 version = "0.1.0"
-source = "git+https://github.com/trustification/guac-rs.git?rev=a5fad28fe4d59de7165b33d89f6d58aa7b553f05#a5fad28fe4d59de7165b33d89f6d58aa7b553f05"
+source = "git+https://github.com/trustification/guac-rs.git?branch=spog-api#0b356903f98db4f33573f71ef601f2977b260ddc"
 dependencies = [
  "anyhow",
  "async-nats",
