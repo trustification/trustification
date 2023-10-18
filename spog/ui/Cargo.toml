@@ -92,7 +92,7 @@ members = [
 #yew-nested-router = { git = "https://github.com/ctron/yew-nested-router", rev = "9689db446dee7030325884df768d0c2e84f353d6" }
 #yew-more-hooks = { git = "https://github.com/ctron/yew-more-hooks", rev = "fc0af774aa925edcd5a544e562619ecb539942f8" }
 #yew-more-hooks = { path = "../../../yew-more-hooks" }
-patternfly-yew = { git = "https://github.com/ctron/patternfly-yew", rev = "fc1b552e61c4253a5a797b9e0a153c7b988dfead" } # FIXME: awaiting release
+patternfly-yew = { git = "https://github.com/ctron/patternfly-yew", rev = "e1a0e93712c80b4efde50602b74ec9193e276b46" } # FIXME: awaiting release
 #patternfly-yew = { path = "../../../patternfly-yew" }
 
 #analytics-next = { git = "https://github.com/ctron/analytics-next-rs", rev = "9c95122f4e6dc308c90b945bd0f1925faf7cb828" } # FIXME: awaiting release
