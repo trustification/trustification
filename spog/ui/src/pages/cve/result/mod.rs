@@ -197,8 +197,7 @@ pub fn cve_details(props: &CveDetailsViewProperties) -> Html {
                                     {
                                         if !*show_more && details.containers.cna.descriptions.iter()
                                             .map(|e| e.value.len())
-                                            .fold(0, |prev, current| prev + current)
-                                            > CVE_DESCRIPTION_MAX_LENGH
+                                            .sum::<usize>() > CVE_DESCRIPTION_MAX_LENGH
                                         {
                                             html!(
                                                 <>
@@ -244,8 +243,7 @@ pub fn cve_details(props: &CveDetailsViewProperties) -> Html {
                                     {
                                         if !*show_more && details.containers.cna.rejected_reasons.iter()
                                             .map(|e| e.value.len())
-                                            .fold(0, |prev, current| prev + current)
-                                            > CVE_DESCRIPTION_MAX_LENGH
+                                            .sum::<usize>() > CVE_DESCRIPTION_MAX_LENGH
                                         {
                                             html!(
                                                 <>
