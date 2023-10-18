@@ -130,6 +130,7 @@ async fn spog_crda_integration(context: &mut SpogContext) {
 
 /// SPoG API might enrich results from package search with related vulnerabilities. This test checks that this
 /// is working as expected for the test data.
+#[ignore = "Unstable test, issue #696"]
 #[test_context(SpogContext)]
 #[tokio::test]
 #[ntest::timeout(120_000)]
