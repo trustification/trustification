@@ -139,12 +139,13 @@ impl trustification_index::Index for Index {
         }
 
         if let Some(severity) = &csaf.document.aggregate_severity {
-            document.add_text(self.fields.advisory_severity, &severity.text);
-            let score = match severity.text.as_ref() {
-                "Critical" => 1.0,
-                "Important" => 0.75,
-                "Moderate" => 0.5,
-                "Low" => 0.25,
+            let severity = severity.text.to_lowercase();
+            document.add_text(self.fields.advisory_severity, &severity);
+            let score = match severity.as_ref() {
+                "critical" => 1.0,
+                "important" => 0.75,
+                "moderate" => 0.5,
+                "low" => 0.25,
                 _ => 0.25,
             };
             document.add_f64(self.fields.advisory_severity_score, score);
@@ -626,7 +627,7 @@ impl Index {
 
             Vulnerabilities::Severity(value) => Box::new(TermSetQuery::new(vec![Term::from_field_text(
                 self.fields.advisory_severity,
-                value,
+                &value.to_ascii_lowercase(),
             )])),
 
             Vulnerabilities::Status(value) => Box::new(TermSetQuery::new(vec![Term::from_field_text(
@@ -637,19 +638,19 @@ impl Index {
             Vulnerabilities::Final => create_string_query(self.fields.advisory_status, &Primary::Equal("final")),
             Vulnerabilities::Critical => Box::new(TermSetQuery::new(vec![
                 Term::from_field_text(self.fields.cve_severity, "critical"),
-                Term::from_field_text(self.fields.advisory_severity, "Critical"),
+                Term::from_field_text(self.fields.advisory_severity, "critical"),
             ])),
             Vulnerabilities::High => Box::new(TermSetQuery::new(vec![
                 Term::from_field_text(self.fields.cve_severity, "high"),
-                Term::from_field_text(self.fields.advisory_severity, "Important"),
+                Term::from_field_text(self.fields.advisory_severity, "important"),
             ])),
             Vulnerabilities::Medium => Box::new(TermSetQuery::new(vec![
                 Term::from_field_text(self.fields.cve_severity, "medium"),
-                Term::from_field_text(self.fields.advisory_severity, "Moderate"),
+                Term::from_field_text(self.fields.advisory_severity, "moderate"),
             ])),
             Vulnerabilities::Low => Box::new(TermSetQuery::new(vec![
                 Term::from_field_text(self.fields.cve_severity, "low"),
-                Term::from_field_text(self.fields.advisory_severity, "Low"),
+                Term::from_field_text(self.fields.advisory_severity, "low"),
             ])),
             Vulnerabilities::Cvss(ordered) => create_float_query(&self.schema, [self.fields.cve_cvss], ordered),
             Vulnerabilities::Initial(ordered) => create_date_query(&self.schema, self.fields.advisory_initial, ordered),
