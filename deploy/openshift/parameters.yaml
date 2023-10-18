@@ -97,6 +97,18 @@ parameters:
   value: "1 0 * * *"
 - name: V11Y_WALKER_SCHEDULE
   value: "1 0 * * *"
+- name: V11Y_API_INDEX_SYNC_INTERVAL
+  value: "1800s"
+- name: V11Y_INDEXER_INDEX_SYNC_INTERVAL
+  value: "1800s"
+- name: BOMBASTIC_API_INDEX_SYNC_INTERVAL
+  value: "1800s"
+- name: BOMBASTIC_INDEXER_INDEX_SYNC_INTERVAL
+  value: "1800s"
+- name: VEXINATION_API_INDEX_SYNC_INTERVAL
+  value: "1800s"
+- name: VEXINATION_INDEXER_INDEX_SYNC_INTERVAL
+  value: "1800s"
 - name: LOG_LEVEL
   required: false
   value: "info"

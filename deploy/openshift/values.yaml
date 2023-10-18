@@ -40,6 +40,7 @@ bombastic:
     queue: ${BOMBASTIC_INDEXER_GUAC_TOPIC}
   indexer:
     reindex: false
+    index_sync_interval: ${BOMBASTIC_INDEXER_INDEX_SYNC_INTERVAL}
     topics:
       stored: ${BOMBASTIC_INDEXER_STORED_TOPIC}
       indexed: ${BOMBASTIC_INDEXER_INDEXED_TOPIC}
@@ -54,6 +55,7 @@ bombastic:
     resources: ${{BOMBASTIC_WALKER_RESOURCES}}
     logLevel: ${LOG_LEVEL}
   api:
+    index_sync_interval: ${BOMBASTIC_API_INDEX_SYNC_INTERVAL}
     resources: ${{BOMBASTIC_API_RESOURCES}}
     logLevel: ${LOG_LEVEL}
 v11y:
@@ -62,10 +64,12 @@ v11y:
   credentials: ${V11Y_AWS_SECRET_NAME}
   indexMode: file
   api:
+    index_sync_interval: ${V11Y_API_INDEX_SYNC_INTERVAL}
     resources: ${{V11Y_API_RESOURCES}}
     logLevel: ${LOG_LEVEL}
   indexer:
     reindex: false
+    index_sync_interval: ${V11Y_INDEXER_INDEX_SYNC_INTERVAL}
     topics:
       stored: ${V11Y_INDEXER_STORED_TOPIC}
       indexed: ${V11Y_INDEXER_INDEXED_TOPIC}
@@ -113,6 +117,7 @@ vexination:
     logLevel: ${LOG_LEVEL}
   indexer:
     reindex: false
+    index_sync_interval: ${VEXINATION_INDEXER_INDEX_SYNC_INTERVAL}
     topics:
       stored: ${VEXINATION_INDEXER_STORED_TOPIC}
       indexed: ${VEXINATION_INDEXER_INDEXED_TOPIC}
@@ -120,6 +125,7 @@ vexination:
     resources: ${{VEXINATION_INDEXER_RESOURCES}}
     logLevel: ${LOG_LEVEL}
   api:
+    index_sync_interval: ${VEXINATION_API_INDEX_SYNC_INTERVAL}
     resources: ${{VEXINATION_API_RESOURCES}}
     logLevel: ${LOG_LEVEL}
 keycloak:
