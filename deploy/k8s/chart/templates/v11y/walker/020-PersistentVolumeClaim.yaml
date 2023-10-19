@@ -1,4 +1,4 @@
-{{ if and .Values.v11y.walker.enable .Values.v11y.walker.enable }}
+{{ if and .Values.v11y.walker.enabled .Values.v11y.walker.enabled }}
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:

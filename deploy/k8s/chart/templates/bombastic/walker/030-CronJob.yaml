@@ -1,4 +1,4 @@
-{{ if .Values.bombastic.walker.enable }}
+{{ if .Values.bombastic.walker.enabled }}
 apiVersion: batch/v1
 kind: CronJob
 metadata:
@@ -9,6 +9,7 @@ metadata:
     app.kubernetes.io/part-of: trustification
 spec:
   schedule: {{ .Values.bombastic.walker.schedule | default "0 1 * * *" }}
+  suspend: {{ .Values.bombastic.walker.suspend | default false }}
   concurrencyPolicy: Forbid
   jobTemplate:
     spec:

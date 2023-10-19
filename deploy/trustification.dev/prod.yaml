@@ -13,7 +13,7 @@ createRoutes: true
 enableMonitoring: true
 enableDocs: true
 config:
-  enable: true
+  enabled: true
   name: trustification-config
   authentication: trustification.dev/config/prod/auth.yaml
 spog:
@@ -52,7 +52,7 @@ bombastic:
       limits:
         memory: "2Gi"
   walker:
-    enable: true
+    enabled: true
     interval: "1d"
     source: "https://access.redhat.com/security/data/sbom/beta/"
     signingKey: "https://access.redhat.com/security/data/97f5eac4.txt#77E79ABE93673533ED09EBE2DCE3823597F5EAC4"
@@ -94,7 +94,7 @@ vexination:
       limits:
         memory: "1Gi"
   walker:
-    enable: true
+    enabled: true
     source: https://www.redhat.com/.well-known/csaf/provider-metadata.json
     ignore: https://access.redhat.com/security/data/csaf/v2/advisories/
     resources:
@@ -138,7 +138,7 @@ v11y:
       limits:
         memory: "2Gi"
   walker:
-    enable: true
+    enabled: true
     resources:
       requests:
         cpu: "100m"
