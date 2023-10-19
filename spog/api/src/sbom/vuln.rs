@@ -99,25 +99,6 @@ async fn process_get_vulnerabilities(
         _ => return Err(Error::Generic("Unsupported format".to_string())),
     };
 
-    // FIXME: mock data
-    /*
-    let analyze = AnalyzeResponse {
-        vulnerabilities: vec![
-            mock_vuln("CVE-0000-0001", "Weird one", Some(0.0)),
-            mock_vuln("CVE-0000-0002", "Passt schon", Some(0.1)),
-            mock_vuln("CVE-0000-0003", "Foo bar", Some(7.5)),
-            mock_vuln("CVE-0000-0004", "Bar baz", Some(3.5)),
-            mock_vuln("CVE-0000-0005", "Baz foo", Some(4.5)),
-            mock_vuln("CVE-0000-0006", "Boom!", Some(9.5)),
-            mock_vuln("CVE-0000-0007", "Alles kaputt", Some(10.0)),
-            mock_vuln("CVE-0000-0008", "Unsure", None),
-        ],
-        affected: {
-            let map = HashMap::new();
-            map
-        },
-    };*/
-
     let details = iter(analyze)
         .map(|(id, _packages)| async move {
             // FIXME: need to provide packages to entry
@@ -149,34 +130,6 @@ async fn process_get_vulnerabilities(
         summary,
         details,
     }))
-}
-
-#[allow(unused)]
-fn mock_vuln(id: &str, summary: &str, severity: Option<f32>) -> Vulnerability {
-    Vulnerability {
-        id: id.to_string(),
-        summary: summary.to_string(),
-        details: "".to_string(),
-        origin: "mock".to_string(),
-
-        published: chrono::Utc::now(),
-        modified: chrono::Utc::now(),
-
-        aliases: vec![],
-        related: vec![],
-        references: vec![],
-        affected: vec![],
-        withdrawn: None,
-        severities: severity
-            .into_iter()
-            .map(|score| Severity {
-                score,
-                r#type: ScoreType::Cvss3,
-                source: "mock".to_string(),
-                additional: None,
-            })
-            .collect(),
-    }
 }
 
 fn into_severity(score: f32) -> cvss::Severity {
@@ -326,38 +279,4 @@ async fn analyze(guac: &GuacService, sbom: &SPDX) -> Result<(BTreeMap<String, BT
     }
 
     Ok((result, num))
-}
-
-#[cfg(test)]
-mod test {
-    //use super::*;
-    //use exhort_model::AnalyzeResponse;
-
-    /*
-    fn test_data() -> AnalyzeResponse {
-        AnalyzeResponse {
-            vulnerabilities: vec![
-                mock_vuln("CVE-0000-0001", "Weird one", Some(0.0)),
-                mock_vuln("CVE-0000-0002", "Passt schon", Some(0.1)),
-                mock_vuln("CVE-0000-0003", "Foo bar", Some(7.5)),
-                mock_vuln("CVE-0000-0004", "Bar baz", Some(3.5)),
-                mock_vuln("CVE-0000-0005", "Baz foo", Some(4.5)),
-                mock_vuln("CVE-0000-0006", "Boom!", Some(9.5)),
-                mock_vuln("CVE-0000-0007", "Alles kaputt", Some(10.0)),
-                mock_vuln("CVE-0000-0008", "Unsure", None),
-            ],
-            affected: Default::default(),
-            errors: Default::default(),
-        }
-    }
-
-    #[test]
-    fn serialize_summary() {
-        let analyze = test_data();
-        let result: AnalyzeResponse = serde_json::from_value(serde_json::to_value(&analyze).unwrap()).unwrap();
-
-        assert_eq!(result.vulnerabilities.len(), analyze.vulnerabilities.len());
-    }
-
-     */
 }
