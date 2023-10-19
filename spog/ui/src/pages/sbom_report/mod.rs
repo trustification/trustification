@@ -60,7 +60,7 @@ pub fn sbom(props: &SbomReportProperties) -> Html {
     match &*info {
         UseAsyncState::Pending | UseAsyncState::Processing => html!(
             <>
-                <PageHeading>{ props.id.clone() }</PageHeading>
+                // <PageHeading>{ props.id.clone() }</PageHeading>
                 <PageSection fill={PageSectionFill::Fill}><Spinner/></PageSection>
             </>
         ),
