@@ -48,7 +48,7 @@ spec:
             - {{ . | quote }}
 {{- end }}
             - "--guac"
-            - "http://guac-graphql.$(NAMESPACE).svc/query"
+            - "http://guac-graphql.$(NAMESPACE).svc:8080/query"
             - "--auth-configuration"
             - "/etc/config/auth.yaml"
           env:
