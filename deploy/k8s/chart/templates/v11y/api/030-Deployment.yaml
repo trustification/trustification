@@ -71,6 +71,8 @@ spec:
               value: "true"
             - name: INFRASTRUCTURE_BIND
               value: "[::]:9010"
+            - name: ENABLE_TRACING
+              value: {{ default "false" .Values.v11y.api.tracing }}
           volumeMounts:
             - name: data
               mountPath: /data
