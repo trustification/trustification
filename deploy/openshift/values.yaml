@@ -37,6 +37,7 @@ bombastic:
   credentials: ${BOMBASTIC_AWS_SECRET_NAME}
   indexMode: file
   collector:
+    enabled: false
     queue: ${BOMBASTIC_INDEXER_GUAC_TOPIC}
   indexer:
     reindex: false
@@ -48,7 +49,8 @@ bombastic:
     resources: ${{BOMBASTIC_INDEXER_RESOURCES}}
     logLevel: ${LOG_LEVEL}
   walker:
-    enable: true
+    enabled: true
+    suspend: ${{BOMBASTIC_WALKER_SUSPEND}}
     schedule: ${BOMBASTIC_WALKER_SCHEDULE}
     source: "https://access.redhat.com/security/data/sbom/beta/"
     signingKey: "https://access.redhat.com/security/data/97f5eac4.txt#77E79ABE93673533ED09EBE2DCE3823597F5EAC4"
@@ -77,7 +79,8 @@ v11y:
     resources: ${{V11Y_INDEXER_RESOURCES}}
     logLevel: ${LOG_LEVEL}
   walker:
-    enable: true
+    enabled: true
+    suspend: ${{V11Y_WALKER_SUSPEND}}
     schedule: ${V11Y_WALKER_SCHEDULE}
     resources: ${{V11Y_WALKER_RESOURCES}}
 collectorist:
@@ -110,7 +113,8 @@ vexination:
   credentials: ${VEXINATION_AWS_SECRET_NAME}
   indexMode: file
   walker:
-    enable: true
+    enabled: true
+    suspend: ${{VEXINATION_WALKER_SUSPEND}}
     schedule: ${VEXINATION_WALKER_SCHEDULE}
     source: https://www.redhat.com/.well-known/csaf/provider-metadata.json
     ignore: https://access.redhat.com/security/data/csaf/v2/advisories/

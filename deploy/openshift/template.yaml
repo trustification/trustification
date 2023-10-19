@@ -1893,6 +1893,7 @@ objects:
         app.kubernetes.io/part-of: trustification
     spec:
       schedule: ${BOMBASTIC_WALKER_SCHEDULE}
+      suspend: ${{BOMBASTIC_WALKER_SUSPEND}}
       concurrencyPolicy: Forbid
       jobTemplate:
         spec:
@@ -1967,6 +1968,7 @@ objects:
         app.kubernetes.io/part-of: trustification
     spec:
       schedule: ${V11Y_WALKER_SCHEDULE}
+      suspend: ${{V11Y_WALKER_SUSPEND}}
       concurrencyPolicy: Forbid
       jobTemplate:
         spec:
@@ -2067,6 +2069,7 @@ objects:
         app.kubernetes.io/part-of: trustification
     spec:
       schedule: ${VEXINATION_WALKER_SCHEDULE}
+      suspend: ${{VEXINATION_WALKER_SUSPEND}}
       concurrencyPolicy: Forbid
       jobTemplate:
         spec:
@@ -2242,6 +2245,12 @@ parameters:
 - name: CRDA_URL
   required: false
   value: https://rhda.rhcloud.com/
+- name: BOMBASTIC_WALKER_SUSPEND
+  value: false
+- name: V11Y_WALKER_SUSPEND
+  value: false
+- name: VEXINATION_WALKER_SUSPEND
+  value: false
 - name: SEGMENT_SECRET_NAME
   value: segment-write-keys
 - name: SEGMENT_SECRET_API_KEY

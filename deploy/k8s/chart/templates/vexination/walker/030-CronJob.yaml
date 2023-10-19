@@ -1,4 +1,4 @@
-{{ if .Values.vexination.walker.enable }}
+{{ if .Values.vexination.walker.enabled }}
 apiVersion: batch/v1
 kind: CronJob
 metadata:
@@ -9,6 +9,7 @@ metadata:
     app.kubernetes.io/part-of: trustification
 spec:
   schedule: {{ .Values.vexination.walker.schedule | default "0 1 * * *" }}
+  suspend: {{ .Values.vexination.walker.suspend | default false }}
   concurrencyPolicy: Forbid
   jobTemplate:
     spec:

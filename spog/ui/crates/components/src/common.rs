@@ -56,7 +56,7 @@ pub struct CardWrapperProperties {
 pub fn card_wrapper(props: &CardWrapperProperties) -> Html {
     let title = html!(<Title>{ props.title.clone() }</Title>);
     html!(
-        <Card plain={props.plain} {title}>
+        <Card plain={props.plain} {title} full_height=true>
             <CardBody>
                 { for props.children.iter() }
             </CardBody>
