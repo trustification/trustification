@@ -52,7 +52,7 @@ impl Tracker {
                         interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
                         loop {
                             interval.tick().await;
-                            log::info!("Flushing analytics batcher");
+                            log::debug!("Flushing analytics batcher");
                             if let Some(segment) = &tracker.segment {
                                 segment.flush().await;
                             }
