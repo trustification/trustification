@@ -32,6 +32,16 @@ impl From<packageurl::Error> for Error {
 }
 
 impl actix_web::error::ResponseError for Error {
+    fn status_code(&self) -> StatusCode {
+        match self {
+            Self::Guac(error) => match error {
+                GuacError::Purl(_) => StatusCode::BAD_REQUEST,
+                _ => StatusCode::INTERNAL_SERVER_ERROR,
+            },
+            Error::PurlFormat(_) => StatusCode::BAD_REQUEST,
+        }
+    }
+
     fn error_response(&self) -> HttpResponse {
         let mut res = HttpResponse::build(self.status_code());
         res.insert_header(ContentType::json());
@@ -46,16 +56,6 @@ impl actix_web::error::ResponseError for Error {
                 message: "Purl parsing error".to_string(),
                 details: err.to_string(),
             }),
-        }
-    }
-
-    fn status_code(&self) -> StatusCode {
-        match self {
-            Self::Guac(error) => match error {
-                GuacError::Purl(_) => StatusCode::BAD_REQUEST,
-                _ => StatusCode::INTERNAL_SERVER_ERROR,
-            },
-            Error::PurlFormat(_) => StatusCode::BAD_REQUEST,
         }
     }
 }
