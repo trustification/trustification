@@ -23,7 +23,7 @@ pub fn spdx_creator(bom: &SPDX) -> Html {
     let title = html!(<Title>{"Creation"}</Title>);
 
     html!(
-        <Card {title}>
+        <Card {title} full_height=true>
             <CardBody>
                 <DescriptionList>
                     <DescriptionGroup term="Created">{ bom.document_creation_information.creation_info.created.to_string() }</DescriptionGroup>
@@ -63,7 +63,7 @@ pub fn spdx_meta(bom: &SPDX) -> Html {
     let title = html!(<Title>{"Metadata"}</Title>);
 
     html!(
-        <Card {title}>
+        <Card {title} full_height=true>
             <CardBody>
                 <DescriptionList>
                     <DescriptionGroup term="Name">{ bom.document_creation_information.document_name.clone() }</DescriptionGroup>
@@ -119,7 +119,7 @@ pub fn spdx_main(bom: &SPDX) -> Html {
             };
 
             html!(
-                <Card {title}>
+                <Card {title} full_height=true>
                     {
                         for content.into_iter()
                             .map(|content|html_nested!(<CardBody>{content}</CardBody>))
@@ -133,7 +133,7 @@ pub fn spdx_main(bom: &SPDX) -> Html {
 pub fn spdx_stats(size: usize, bom: &SPDX) -> Html {
     let title = html!(<Title>{"Statistics"}</Title>);
     html!(
-        <Card {title}>
+        <Card {title} full_height=true>
             <CardBody>
                 <DescriptionList>
                     <DescriptionGroup term="Size">{ format_size(size, BINARY) }</DescriptionGroup>

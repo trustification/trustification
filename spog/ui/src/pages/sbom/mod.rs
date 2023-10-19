@@ -100,12 +100,20 @@ fn details(props: &DetailsProps) -> Html {
                     </PageSection>
 
                     <PageSection hidden={*tab != TabIndex::Info} fill={PageSectionFill::Fill}>
-                        <Grid gutter=true>
-                            <GridItem cols={[4]}>{spdx_meta(bom)}</GridItem>
-                            <GridItem cols={[2]}>{spdx_creator(bom)}</GridItem>
-                            <GridItem cols={[2]}>{spdx_stats(source.as_bytes().len(), bom)}</GridItem>
-                            <GridItem cols={[4]}>{spdx_main(bom)}</GridItem>
-                        </Grid>
+                        <Stack gutter=true>
+                            <StackItem>
+                                <Grid gutter=true>
+                                    <GridItem cols={[6]}>{spdx_meta(bom)}</GridItem>
+                                    <GridItem cols={[3]}>{spdx_creator(bom)}</GridItem>
+                                    <GridItem cols={[3]}>{spdx_stats(source.as_bytes().len(), bom)}</GridItem>
+                                </Grid>
+                            </StackItem>
+                            <StackItem>
+                                <Grid gutter=true>
+                                    <GridItem cols={[12]}>{spdx_main(bom)}</GridItem>
+                                </Grid>
+                            </StackItem>
+                        </Stack>
                     </PageSection>
 
                     <PageSection hidden={*tab != TabIndex::Packages} fill={PageSectionFill::Fill}>
