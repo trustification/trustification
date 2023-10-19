@@ -429,6 +429,8 @@ objects:
                   value: 'true'
                 - name: INFRASTRUCTURE_BIND
                   value: '[::]:9010'
+                - name: ENABLE_TRACING
+                  value: 'false'
                 - name: INDEX_SYNC_INTERVAL
                   value: ${BOMBASTIC_API_INDEX_SYNC_INTERVAL}
                 - name: SWAGGER_UI_OIDC_ISSUER_URL
@@ -1306,8 +1308,12 @@ objects:
                 - https://collectorist-api.$(NAMESPACE).svc
                 - --v11y-url
                 - https://v11y-api.$(NAMESPACE).svc
+                - --exhort-url
+                - https://exhort-api.$(NAMESPACE).svc
                 - --crda-url
                 - ${CRDA_URL}
+                - --guac
+                - http://guac-graphql.$(NAMESPACE).svc:8080/query
                 - --auth-configuration
                 - /etc/config/auth.yaml
               env:
@@ -1329,6 +1335,8 @@ objects:
                   value: 'true'
                 - name: INFRASTRUCTURE_BIND
                   value: '[::]:9010'
+                - name: ENABLE_TRACING
+                  value: 'false'
                 - name: SPOG_UI_CONFIG
                   value: /etc/config/spog-ui.yaml
                 - name: OIDC_PROVIDER_CLIENT_ID
@@ -1537,6 +1545,8 @@ objects:
                   value: 'true'
                 - name: INFRASTRUCTURE_BIND
                   value: '[::]:9010'
+                - name: ENABLE_TRACING
+                  value: 'false'
               volumeMounts:
                 - name: data
                   mountPath: /data
@@ -1747,6 +1757,8 @@ objects:
                   value: 'true'
                 - name: INFRASTRUCTURE_BIND
                   value: '[::]:9010'
+                - name: ENABLE_TRACING
+                  value: 'false'
                 - name: INDEX_SYNC_INTERVAL
                   value: ${VEXINATION_API_INDEX_SYNC_INTERVAL}
                 - name: SWAGGER_UI_OIDC_ISSUER_URL

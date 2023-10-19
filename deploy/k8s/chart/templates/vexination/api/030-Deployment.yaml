@@ -67,7 +67,7 @@ spec:
             - name: INFRASTRUCTURE_BIND
               value: "[::]:9010"
             - name: ENABLE_TRACING
-              value: {{ default "false" .Values.vexination.api.tracing }}
+              value: "{{ .Values.vexination.api.tracing }}"
             - name: INDEX_SYNC_INTERVAL
               value: {{ .Values.vexination.api.index_sync_interval | default "1800s" }}
             - name: SWAGGER_UI_OIDC_ISSUER_URL

@@ -1,4 +1,4 @@
-release: d88da957fccfe542c5a293cb624cd6dedd79d6d0
+release: 330617d122a767b68a69921c97c9c63e2136f56b
 trustImage: ghcr.io/trustification/trust
 uiImage: ghcr.io/trustification/trust
 docsImage: ghcr.io/trustification/trust-docs
@@ -34,7 +34,7 @@ spog:
       limits:
         memory: "64Mi"
   api:
-    tracing: "true"
+    tracing: true
     segmentWriteKey:
       valueFrom:
         secretKeyRef:
@@ -76,7 +76,7 @@ bombastic:
       limits:
         memory: "2Gi"
   api:
-    tracing: "true"
+    tracing: true
     resources:
       requests:
         cpu: "100m"
@@ -99,7 +99,7 @@ vexination:
       limits:
         memory: "2Gi"
   api:
-    tracing: "true"
+    tracing: true
     resources:
       requests:
         cpu: "100m"
