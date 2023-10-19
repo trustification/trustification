@@ -193,6 +193,10 @@ fn into_severity(score: f32) -> cvss::Severity {
     }
 }
 
+/// get the description
+fn get_description() {}
+
+/// get the CVSS score as a plain number
 fn get_score(cve: &cve::Cve) -> Option<f32> {
     let p = match cve {
         Cve::Published(p) => p,
@@ -208,16 +212,19 @@ fn get_score(cve: &cve::Cve) -> Option<f32> {
 
     let mut v3_1 = None;
     let mut v3_0 = None;
+    let mut v2_0 = None;
 
     for m in &p.containers.cna.metrics {
         if let Some(m) = m.cvss_v3_1.as_ref().and_then(score) {
             v3_1 = Some(m);
         } else if let Some(m) = m.cvss_v3_0.as_ref().and_then(score) {
             v3_0 = Some(m);
+        } else if let Some(m) = m.cvss_v2_0.as_ref().and_then(score) {
+            v2_0 = Some(m);
         }
     }
 
-    v3_1.or(v3_0)
+    v3_1.or(v3_0).or(v2_0)
 }
 
 /// Collect a summary of count, based on CVSS v3 severities
