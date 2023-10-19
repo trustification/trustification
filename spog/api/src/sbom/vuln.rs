@@ -129,7 +129,7 @@ async fn process_get_vulnerabilities(
             let score = get_score(&cve);
             Ok(Some(SbomReportVulnerability {
                 id: cve.id().to_string(),
-                description: "".to_string(),
+                description: get_description(&cve),
                 score,
                 published: cve.common_metadata().date_published.map(|t| t.assume_utc()),
                 updated: cve.common_metadata().date_updated.map(|t| t.assume_utc()),
@@ -194,7 +194,33 @@ fn into_severity(score: f32) -> cvss::Severity {
 }
 
 /// get the description
-fn get_description() {}
+///
+/// We scan for the first description matching "en" or an empty string, as "en" is default.
+///
+// FIXME: We should consider other langauges as well, like a language priorities list.
+fn get_description(cve: &Cve) -> Option<String> {
+    let desc = match cve {
+        Cve::Published(cve) => {
+            if let Some(title) = cve.containers.cna.title.clone() {
+                return Some(title);
+            }
+
+            &cve.containers.cna.descriptions
+        }
+        Cve::Rejected(cve) => &cve.containers.cna.rejected_reasons,
+    };
+
+    desc.iter()
+        .filter_map(|d| {
+            let lang = &d.language;
+            if lang.is_empty() || lang.starts_with("en") {
+                Some(d.value.clone())
+            } else {
+                None
+            }
+        })
+        .next()
+}
 
 /// get the CVSS score as a plain number
 fn get_score(cve: &cve::Cve) -> Option<f32> {
@@ -223,6 +249,8 @@ fn get_score(cve: &cve::Cve) -> Option<f32> {
             v2_0 = Some(m);
         }
     }
+
+    // FIXME: we need to provide some indication what score version this was
 
     v3_1.or(v3_0).or(v2_0)
 }
