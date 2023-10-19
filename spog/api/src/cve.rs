@@ -32,7 +32,7 @@ pub(crate) fn configure(auth: Option<Arc<Authenticator>>) -> impl FnOnce(&mut Se
                 .wrap(new_auth!(auth))
                 .service(web::resource("").to(cve_search))
                 .service(web::resource("/{id}").to(cve_get))
-                .service(web::resource("/{id}/related-products").to(cve_details_mock)),
+                .service(web::resource("/{id}/related-products").to(cve_related_product)),
         );
     }
 }
@@ -86,6 +86,21 @@ async fn cve_get(id: web::Path<String>, v11y: web::Data<V11yService>) -> actix_w
     Ok(HttpResponseBuilder::new(response.status()).streaming(response.bytes_stream()))
 }
 
+
+async fn cve_related_product(
+    _app_state: web::Data<AppState>,
+    guac: web::Data<GuacService>,
+    id: web::Path<String>,
+    _access_token: BearerAuth,
+    _collectorist: web::Data<CollectoristService>,
+    _v11y: web::Data<V11yService>,
+) -> actix_web::Result<HttpResponse> {
+    let id = id.into_inner();
+
+    let result = guac.product_by_cve(id).await?;
+
+    Ok(HttpResponse::Ok().json(result))
+}
 // TODO remove this method using real data
 async fn cve_details_mock(
     _app_state: web::Data<AppState>,
