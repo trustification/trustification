@@ -84,15 +84,21 @@ pub fn sbom(props: &SbomReportProperties) -> Html {
                         <StackItem>
                             <Card>
                                 <CardBody>
-                                    <DescriptionList auto_fit=true>
-                                        if let Some(version) = data.version.clone() {
-                                            <DescriptionGroup term="Version">{ version }</DescriptionGroup>
-                                        }
-                                        if let Some(timestamp) = data.created {
-                                            <DescriptionGroup term="Creation date"><Date {timestamp} /></DescriptionGroup>
-                                        }
-                                    </DescriptionList>
-                                    <Donut {options} {labels} style="width: 350px;" />
+                                    <Split gutter=true>
+                                        <SplitItem fill=true>
+                                            <Donut {options} {labels} style="width: 350px;" />
+                                        </SplitItem>
+                                        <SplitItem>
+                                            <DescriptionList auto_fit=true>
+                                                if let Some(version) = data.version.clone() {
+                                                    <DescriptionGroup term="Version">{ version }</DescriptionGroup>
+                                                }
+                                                if let Some(timestamp) = data.created {
+                                                    <DescriptionGroup term="Creation date"><Date {timestamp} /></DescriptionGroup>
+                                                }
+                                            </DescriptionList>
+                                        </SplitItem>
+                                    </Split>
                                 </CardBody>
                             </Card>
                         </StackItem>

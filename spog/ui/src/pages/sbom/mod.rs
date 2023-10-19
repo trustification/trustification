@@ -38,19 +38,19 @@ pub fn sbom(props: &SBOMProperties) -> Html {
 
     let (heading, content) = match &*info {
         UseAsyncState::Pending | UseAsyncState::Processing => (
-            html!(<PageHeading subtitle="SBOM detail information">{ props.id.clone() }</PageHeading>),
+            html!(<PageHeading>{ props.id.clone() }</PageHeading>),
             html!(<PageSection fill={PageSectionFill::Fill}><Spinner/></PageSection>),
         ),
         UseAsyncState::Ready(Ok(None)) => (
-            html!(<PageHeading sticky=false subtitle="SBOM detail information">{ props.id.clone() } {" "} </PageHeading>),
+            html!(<PageHeading sticky=false>{ props.id.clone() } {" "} </PageHeading>),
             html!(<NotFound/>),
         ),
         UseAsyncState::Ready(Ok(Some(data))) => (
-            html!(<PageHeading sticky=false subtitle="SBOM detail information">{ props.id.clone() } {" "} <Label label={data.type_name()} color={Color::Blue} /> </PageHeading>),
+            html!(<PageHeading sticky=false>{ props.id.clone() } {" "} <Label label={data.type_name()} color={Color::Blue} /> </PageHeading>),
             html!(<Details id={props.id.clone()} sbom={data.clone()}/> ),
         ),
         UseAsyncState::Ready(Err(err)) => (
-            html!(<PageHeading subtitle="SBOM detail information">{ props.id.clone() }</PageHeading>),
+            html!(<PageHeading>{ props.id.clone() }</PageHeading>),
             html!(<PageSection fill={PageSectionFill::Fill}><Error err={err.to_string()} /></PageSection>),
         ),
     };
@@ -138,7 +138,7 @@ fn details(props: &DetailsProps) -> Html {
                     </PageSection>
 
                     <PageSection hidden={*tab != TabIndex::Overview} fill={PageSectionFill::Fill}>
-                        {"hello"}
+                        <SbomReport id={props.id.clone()} />
                     </PageSection>
 
                     <PageSection hidden={*tab != TabIndex::Info} fill={PageSectionFill::Fill}>
@@ -165,7 +165,7 @@ fn details(props: &DetailsProps) -> Html {
                     </PageSection>
 
                     <PageSection hidden={*tab != TabIndex::Overview} fill={PageSectionFill::Fill}>
-                        {"hello"}
+                        <SbomReport id={props.id.clone()} />
                     </PageSection>
 
                     <PageSection hidden={*tab != TabIndex::Info} fill={PageSectionFill::Fill}>
