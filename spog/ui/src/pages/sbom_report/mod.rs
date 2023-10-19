@@ -60,7 +60,7 @@ pub fn sbom(props: &SbomReportProperties) -> Html {
     match &*info {
         UseAsyncState::Pending | UseAsyncState::Processing => html!(
             <>
-                <PageHeading>{ props.id.clone() }</PageHeading>
+                // <PageHeading>{ props.id.clone() }</PageHeading>
                 <PageSection fill={PageSectionFill::Fill}><Spinner/></PageSection>
             </>
         ),
@@ -75,25 +75,31 @@ pub fn sbom(props: &SbomReportProperties) -> Html {
 
             html!(
                 <>
-                    <PageSection variant={PageSectionVariant::Light} r#type={PageSectionType::Breadcrumbs}>
-                        <Content>
-                            <Title>{ data.name.clone() }</Title>
-                        </Content>
-                    </PageSection>
-                    <PageSection variant={PageSectionVariant::Light} shadow={PageSectionShadow::Bottom}>
-                        <DescriptionList auto_fit=true>
-                            if let Some(version) = data.version.clone() {
-                                <DescriptionGroup term="Version">{ version }</DescriptionGroup>
-                            }
-                            if let Some(timestamp) = data.created {
-                                <DescriptionGroup term="Creation date"><Date {timestamp} /></DescriptionGroup>
-                            }
-                        </DescriptionList>
-                        <Donut {options} {labels} style="width: 350px;" />
-                    </PageSection>
-                    <PageSection>
-                        <Details sbom={data.clone()}/>
-                    </PageSection>
+                    // <PageSection variant={PageSectionVariant::Light} r#type={PageSectionType::Breadcrumbs}>
+                    //     <Content>
+                    //         <Title>{ data.name.clone() }</Title>
+                    //     </Content>
+                    // </PageSection>
+                    <Stack gutter=true>
+                        <StackItem>
+                            <Card>
+                                <CardBody>
+                                    <DescriptionList auto_fit=true>
+                                        if let Some(version) = data.version.clone() {
+                                            <DescriptionGroup term="Version">{ version }</DescriptionGroup>
+                                        }
+                                        if let Some(timestamp) = data.created {
+                                            <DescriptionGroup term="Creation date"><Date {timestamp} /></DescriptionGroup>
+                                        }
+                                    </DescriptionList>
+                                    <Donut {options} {labels} style="width: 350px;" />
+                                </CardBody>
+                            </Card>
+                        </StackItem>
+                        <StackItem>
+                            <Details sbom={data.clone()}/>
+                        </StackItem>
+                    </Stack>
                 </>
             )
         }
