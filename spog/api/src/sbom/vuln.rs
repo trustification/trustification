@@ -20,7 +20,6 @@ use std::str::FromStr;
 use tracing::instrument;
 use trustification_auth::client::TokenProvider;
 use trustification_common::error::ErrorInformation;
-use v11y_client::{ScoreType, Severity, Vulnerability};
 
 #[derive(Debug, serde::Deserialize)]
 pub struct GetParams {
@@ -247,7 +246,7 @@ fn map_purls(pi: &PackageInformation) -> impl IntoIterator<Item = String> + '_ {
     })
 }
 
-#[instrument(skip(guac, sbom), ret, err)]
+#[instrument(skip(guac, sbom), err)]
 async fn analyze(guac: &GuacService, sbom: &SPDX) -> Result<(BTreeMap<String, BTreeSet<String>>, usize), Error> {
     let mut result = BTreeMap::<String, BTreeSet<String>>::new();
     let mut num = 0;
@@ -277,6 +276,8 @@ async fn analyze(guac: &GuacService, sbom: &SPDX) -> Result<(BTreeMap<String, BT
             }
         }
     }
+
+    log::debug!("Processed {num} packages");
 
     Ok((result, num))
 }
