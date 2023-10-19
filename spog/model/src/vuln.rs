@@ -62,7 +62,9 @@ pub struct SbomReport {
 #[derive(Clone, Debug, PartialEq, ToSchema, Serialize, Deserialize)]
 pub struct SbomReportVulnerability {
     pub id: String,
-    pub description: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub score: Option<f32>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub published: Option<OffsetDateTime>,
