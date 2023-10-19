@@ -111,7 +111,7 @@ fn details(props: &DetailsProps) -> Html {
                             <StackItem>
                                 <Grid gutter=true>
                                     <GridItem cols={[12]}>{spdx_main(bom)}</GridItem>
-                                </Grid>                                
+                                </Grid>
                             </StackItem>
                         </Stack>
                     </PageSection>
