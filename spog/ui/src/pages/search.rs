@@ -17,10 +17,10 @@ use yew_more_hooks::prelude::*;
 
 #[derive(Copy, Clone, Debug, Default, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 pub enum TabIndex {
-    #[default]
     Advisories,
     Sboms,
     SbomsByPackage,
+    #[default]
     Cves,
 }
 
@@ -230,10 +230,10 @@ pub fn search(props: &SearchProperties) -> Html {
                             selected={*tab} {onselect}
                             r#box=true
                         >
-                            <Tab<TabIndex> index={TabIndex::Advisories} title={count_tab_title("Advisories", &*advisory.state)} />
-                            <Tab<TabIndex> index={TabIndex::Sboms} title={count_tab_title("SBOMs", &*sbom.state)} />
-                            <Tab<TabIndex> index={TabIndex::SbomsByPackage} title={count_tab_title("SBOMs (by dependency)", &*sbom_by_dependency.state)} />
                             <Tab<TabIndex> index={TabIndex::Cves} title={count_tab_title("CVEs", &*cve.state)} />
+                            <Tab<TabIndex> index={TabIndex::Sboms} title={count_tab_title("Products and containers", &*sbom.state)} />
+                            <Tab<TabIndex> index={TabIndex::Advisories} title={count_tab_title("Advisories", &*advisory.state)} />
+                            // <Tab<TabIndex> index={TabIndex::SbomsByPackage} title={count_tab_title("SBOMs (by dependency)", &*sbom_by_dependency.state)} />
                         </Tabs<TabIndex>>
 
                         <div class="pf-v5-u-background-color-100">
