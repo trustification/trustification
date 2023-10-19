@@ -14,6 +14,8 @@ use yew::prelude::*;
 use yew_more_hooks::prelude::*;
 use yew_oauth2::prelude::*;
 
+use crate::pages::sbom_report::SbomReport;
+
 #[derive(Clone, Debug, PartialEq, Properties)]
 pub struct SBOMProperties {
     pub id: String,
@@ -45,7 +47,7 @@ pub fn sbom(props: &SBOMProperties) -> Html {
         ),
         UseAsyncState::Ready(Ok(Some(data))) => (
             html!(<PageHeading sticky=false subtitle="SBOM detail information">{ props.id.clone() } {" "} <Label label={data.type_name()} color={Color::Blue} /> </PageHeading>),
-            html!(<Details sbom={data.clone()}/> ),
+            html!(<Details id={props.id.clone()} sbom={data.clone()}/> ),
         ),
         UseAsyncState::Ready(Err(err)) => (
             html!(<PageHeading subtitle="SBOM detail information">{ props.id.clone() }</PageHeading>),
@@ -63,6 +65,7 @@ pub fn sbom(props: &SBOMProperties) -> Html {
 
 #[derive(Clone, PartialEq, Properties)]
 struct DetailsProps {
+    id: String,
     sbom: Rc<model::SBOM>,
 }
 
@@ -71,6 +74,7 @@ fn details(props: &DetailsProps) -> Html {
     #[derive(Copy, Clone, Eq, PartialEq)]
     enum TabIndex {
         Overview,
+        Info,
         Packages,
         Source,
     }
@@ -85,12 +89,17 @@ fn details(props: &DetailsProps) -> Html {
                     <PageSection r#type={PageSectionType::Tabs} variant={PageSectionVariant::Light} sticky={[PageSectionSticky::Top]}>
                         <Tabs<TabIndex> inset={TabInset::Page} detached=true selected={*tab} {onselect}>
                             <Tab<TabIndex> index={TabIndex::Overview} title="Overview" />
+                            <Tab<TabIndex> index={TabIndex::Info} title="Info" />
                             <Tab<TabIndex> index={TabIndex::Packages} title="Packages" />
                             <Tab<TabIndex> index={TabIndex::Source} title="Source" />
                         </Tabs<TabIndex>>
                     </PageSection>
 
                     <PageSection hidden={*tab != TabIndex::Overview} fill={PageSectionFill::Fill}>
+                        <SbomReport id={props.id.clone()} />
+                    </PageSection>
+
+                    <PageSection hidden={*tab != TabIndex::Info} fill={PageSectionFill::Fill}>
                         <Grid gutter=true>
                             <GridItem cols={[4]}>{spdx_meta(bom)}</GridItem>
                             <GridItem cols={[2]}>{spdx_creator(bom)}</GridItem>
@@ -115,11 +124,16 @@ fn details(props: &DetailsProps) -> Html {
                     <PageSection r#type={PageSectionType::Tabs} variant={PageSectionVariant::Light} sticky={[PageSectionSticky::Top]}>
                         <Tabs<TabIndex> inset={TabInset::Page} detached=true selected={*tab} {onselect}>
                             <Tab<TabIndex> index={TabIndex::Overview} title="Overview" />
+                            <Tab<TabIndex> index={TabIndex::Info} title="Info" />
                             <Tab<TabIndex> index={TabIndex::Source} title="Source" />
                         </Tabs<TabIndex>>
                     </PageSection>
 
                     <PageSection hidden={*tab != TabIndex::Overview} fill={PageSectionFill::Fill}>
+                        {"hello"}
+                    </PageSection>
+
+                    <PageSection hidden={*tab != TabIndex::Info} fill={PageSectionFill::Fill}>
                         <Grid gutter=true>
                             <GridItem cols={[2]}><Technical size={source.as_bytes().len()}/></GridItem>
                         </Grid>
@@ -137,11 +151,16 @@ fn details(props: &DetailsProps) -> Html {
                     <PageSection r#type={PageSectionType::Tabs} variant={PageSectionVariant::Light} sticky={[PageSectionSticky::Top]}>
                         <Tabs<TabIndex> inset={TabInset::Page} detached=true selected={*tab} {onselect}>
                             <Tab<TabIndex> index={TabIndex::Overview} title="Overview" />
+                            <Tab<TabIndex> index={TabIndex::Info} title="Info" />
                             <Tab<TabIndex> index={TabIndex::Source} title="Source" />
                         </Tabs<TabIndex>>
                     </PageSection>
 
                     <PageSection hidden={*tab != TabIndex::Overview} fill={PageSectionFill::Fill}>
+                        {"hello"}
+                    </PageSection>
+
+                    <PageSection hidden={*tab != TabIndex::Info} fill={PageSectionFill::Fill}>
                         <Grid gutter=true>
                             <GridItem cols={[2]}><Technical size={source.as_bytes().len()}/></GridItem>
                         </Grid>
