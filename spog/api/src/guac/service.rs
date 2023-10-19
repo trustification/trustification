@@ -6,6 +6,7 @@ use guac::client::intrinsic::vulnerability::{Vulnerability, VulnerabilitySpec};
 use guac::client::{Error as GuacError, GuacClient};
 use http::StatusCode;
 use packageurl::PackageUrl;
+use tracing::instrument;
 
 use spog_model::prelude::{PackageDependencies, PackageDependents, PackageRefList};
 use trustification_common::error::ErrorInformation;
@@ -119,6 +120,7 @@ impl GuacService {
             .await?)
     }
 
+    #[instrument(skip(self), err)]
     pub async fn certify_vuln(&self, purl: PackageUrl<'_>) -> Result<Vec<CertifyVuln>, Error> {
         Ok(self
             .client
