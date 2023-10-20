@@ -37,7 +37,7 @@ bombastic:
   credentials: ${BOMBASTIC_AWS_SECRET_NAME}
   indexMode: file
   collector:
-    enabled: false
+    enabled: true
     queue: ${BOMBASTIC_INDEXER_GUAC_TOPIC}
   indexer:
     reindex: false
@@ -112,6 +112,9 @@ vexination:
   bucket: ${VEXINATION_STORAGE_BUCKET}
   credentials: ${VEXINATION_AWS_SECRET_NAME}
   indexMode: file
+  collector:
+    enabled: true
+    queue: ${VEXINATION_INDEXER_GUAC_TOPIC}
   walker:
     enabled: true
     suspend: ${{VEXINATION_WALKER_SUSPEND}}
