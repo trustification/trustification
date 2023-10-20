@@ -57,3 +57,11 @@ services:
       AWS_ACCESS_KEY_ID: admin
       AWS_SECRET_ACCESS_KEY: password
       AWS_REGION: eu-west-1
+
+  vex-collector:
+    image: $GUAC_IMAGE
+    command: "/opt/guac/guacone collect s3 --poll --s3-mp kafka --s3-url http://minio:9000 --s3-bucket vexination --s3-queues vex-indexed --s3-mp-endpoint kafka:9094 --gql-addr http://guac-graphql:$GUAC_API_PORT/query --csub-addr guac-collectsub:$GUAC_CSUB_PORT"
+    environment:
+      AWS_ACCESS_KEY_ID: admin
+      AWS_SECRET_ACCESS_KEY: password
+      AWS_REGION: eu-west-1
