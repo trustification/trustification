@@ -2,6 +2,7 @@ use crate::error::Error;
 use crate::guac::service::GuacService;
 use crate::server::{AppState, ResponseError};
 use crate::service::v11y::V11yService;
+use crate::utils::spdx::find_purls;
 use actix_web::cookie::time;
 use actix_web::{web, HttpResponse};
 use actix_web_httpauth::extractors::bearer::BearerAuth;
@@ -10,12 +11,14 @@ use bytes::{BufMut, BytesMut};
 use cve::Cve;
 use futures::stream::iter;
 use futures::{StreamExt, TryStreamExt};
+use names::Generator;
 use packageurl::PackageUrl;
+use rand::Rng;
 use serde_json::Value;
 use spdx_rs::models::{PackageInformation, SPDX};
 use spog_model::prelude::SbomReport;
 use spog_model::vuln::SbomReportVulnerability;
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::{BTreeMap, BTreeSet, HashSet};
 use std::str::FromStr;
 use tracing::instrument;
 use trustification_auth::client::TokenProvider;
@@ -72,12 +75,13 @@ async fn process_get_vulnerabilities(
     }
 
     let sbom = SBOM::parse(&sbom).map_err(|err| Error::Generic(format!("Unable to parse SBOM: {err}")))?;
-    let (name, version, created, analyze) = match sbom {
+    let (name, version, created, analyze, backtraces) = match sbom {
         SBOM::SPDX(spdx) => {
-            let (analyze, num) = analyze(guac, &spdx).await?;
-
             // get the main packages
             let main = find_main(&spdx);
+
+            let (analyze, backtraces, num) = analyze_spdx(guac, &spdx).await?;
+
             // find a single version (if possible)
             let version: Vec<_> = main.iter().flat_map(|pi| &pi.package_version).collect();
             let version = match version.len() {
@@ -93,7 +97,7 @@ async fn process_get_vulnerabilities(
 
             log::info!("SBOM report (in: {num} packages) - out: {} {analyze:?}", analyze.len());
 
-            (name, version, created, analyze)
+            (name, version, created, analyze, backtraces)
         }
         _ => return Err(Error::Generic("Unsupported format".to_string())),
     };
@@ -129,6 +133,7 @@ async fn process_get_vulnerabilities(
         created,
         summary,
         details,
+        backtraces,
     }))
 }
 
@@ -222,6 +227,7 @@ fn summarize_vulns<'a>(
     result
 }
 
+/// Extract all purls which are referenced by "document describes"
 fn find_main(spdx: &SPDX) -> Vec<&PackageInformation> {
     let mut main = vec![];
     for desc in &spdx.document_creation_information.document_describes {
@@ -235,7 +241,7 @@ fn find_main(spdx: &SPDX) -> Vec<&PackageInformation> {
     main
 }
 
-/// Extract all purls which are referenced by "document describes"
+/// map package information to it's purls
 #[allow(unused)]
 fn map_purls(pi: &PackageInformation) -> impl IntoIterator<Item = String> + '_ {
     pi.external_reference.iter().filter_map(|er| {
@@ -247,38 +253,97 @@ fn map_purls(pi: &PackageInformation) -> impl IntoIterator<Item = String> + '_ {
     })
 }
 
+/// Analyze by purls
+///
+/// result(Ok):
+///   map(CVE to array(PURL))
+///   map(purl to parents(chain of purls))
+///   total number of packages found
 #[instrument(skip(guac, sbom), err)]
-async fn analyze(guac: &GuacService, sbom: &SPDX) -> Result<(BTreeMap<String, BTreeSet<String>>, usize), Error> {
+async fn analyze_spdx(
+    guac: &GuacService,
+    sbom: &SPDX,
+) -> Result<
+    (
+        // CVE to PURLs
+        BTreeMap<String, BTreeSet<String>>,
+        // PURL to backtrace
+        BTreeMap<String, BTreeSet<Vec<String>>>,
+        // number of processed purls
+        usize,
+    ),
+    Error,
+> {
     let mut result = BTreeMap::<String, BTreeSet<String>>::new();
     let mut num = 0;
 
-    let purls = sbom.package_information.iter().flat_map(|pi| {
-        pi.external_reference
-            .iter()
-            .filter_map(|er| match er.reference_type == "purl" {
-                true => Some(&er.reference_locator),
-                false => None,
-            })
-    });
+    let purls = find_purls(&sbom).collect::<BTreeMap<_, _>>();
 
-    for purl_str in purls {
+    let mut processed = HashSet::new();
+    let mut backtraces = BTreeMap::new();
+
+    for (purl_str, _) in &purls {
+        if !processed.insert(purl_str) {
+            // we already processed it
+            continue;
+        }
+
         if let Ok(purl) = PackageUrl::from_str(purl_str) {
             num += 1;
-            let cert = guac.certify_vuln(purl).await?;
+            let cert = guac.certify_vuln(purl.clone()).await?;
             log::debug!("Cert ({purl_str}): {cert:?}");
 
+            let mut need_traces = false;
             for vuln in cert {
                 for vuln_id in vuln.vulnerability.vulnerability_ids {
+                    need_traces = true;
                     result
                         .entry(vuln_id.vulnerability_id)
                         .or_default()
-                        .insert(purl_str.clone());
+                        .insert(purl_str.to_string());
                 }
+            }
+
+            if need_traces {
+                backtraces.insert(
+                    purl_str.to_string(),
+                    backtrace(guac, &purl).await?.collect::<BTreeSet<_>>(),
+                );
             }
         }
     }
 
+    // done
+
     log::debug!("Processed {num} packages");
 
-    Ok((result, num))
+    Ok((result, backtraces, num))
+}
+
+/// take a PURL, a retrieve all paths towards the main entry point of its SBOM
+// FIXME: This needs to be implemented
+async fn backtrace<'a>(
+    _guac: &GuacService,
+    _purl: &'a PackageUrl<'a>,
+) -> Result<impl Iterator<Item = Vec<String>> + 'a, Error> {
+    let mut rng = rand::thread_rng();
+    let mut names = Generator::default();
+
+    // create some mock data
+    let mut result = vec![];
+
+    for _ in 0..rng.gen_range(0..5) {
+        let mut trace = vec![];
+        for _ in 0..rng.gen_range(1..5) {
+            trace.push(
+                PackageUrl::new("mock", names.next().unwrap_or_else(|| "mock".to_string()))
+                    .map(|purl| purl.to_string())
+                    .unwrap_or_else(|_| "pkg://mock/failed".to_string())
+                    .to_string(),
+            );
+        }
+        result.push(trace);
+    }
+
+    Ok(result.into_iter())
 }

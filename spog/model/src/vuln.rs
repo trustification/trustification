@@ -1,7 +1,7 @@
 use super::pkg::PackageRef;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 use time::OffsetDateTime;
 use utoipa::ToSchema;
 
@@ -58,6 +58,8 @@ pub struct SbomReport {
     pub summary: Vec<(Option<cvss::Severity>, usize)>,
     /// Vulnerabilities list
     pub details: Vec<SbomReportVulnerability>,
+    /// Traces from the vulnerable PURL back to the SBOM root
+    pub backtraces: BTreeMap<String, BTreeSet<Vec<String>>>,
 }
 
 #[derive(Clone, Debug, PartialEq, ToSchema, Serialize, Deserialize)]
