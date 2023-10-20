@@ -28,7 +28,7 @@ use trustification_index::{
         schema::{Field, Schema, Term, FAST, STORED, STRING, TEXT},
         DateTime,
     },
-    term2query, Document, Error as SearchError,
+    term2query, Document, Error as SearchError, SearchQuery,
 };
 
 pub struct Index {
@@ -411,16 +411,9 @@ impl Index {
     }
 }
 
-#[derive(Debug)]
-pub struct SbomQuery {
-    query: Box<dyn Query>,
-    sort_by: Option<(Field, Order)>,
-}
-
 impl trustification_index::Index for Index {
     type MatchedDocument = SearchHit;
     type Document = SBOM;
-    type QueryContext = SbomQuery;
 
     fn index_doc(&self, id: &str, doc: &SBOM) -> Result<Document, SearchError> {
         match doc {
@@ -451,7 +444,7 @@ impl trustification_index::Index for Index {
             .unwrap()
     }
 
-    fn prepare_query(&self, q: &str) -> Result<SbomQuery, SearchError> {
+    fn prepare_query(&self, q: &str) -> Result<SearchQuery, SearchError> {
         let mut query = Packages::parse(q).map_err(|err| SearchError::QueryParser(err.to_string()))?;
         query.term = query.term.compact();
 
@@ -478,38 +471,20 @@ impl trustification_index::Index for Index {
         };
 
         debug!("Processed query: {:?}", query);
-        Ok(SbomQuery { query, sort_by })
+        Ok(SearchQuery { query, sort_by })
     }
 
     fn search(
         &self,
         searcher: &Searcher,
-        query: &SbomQuery,
+        query: &dyn Query,
         offset: usize,
         limit: usize,
     ) -> Result<(Vec<(f32, DocAddress)>, usize), SearchError> {
-        if let Some((field, order)) = &query.sort_by {
-            let order_by = self.schema.get_field_name(*field);
-            let mut hits = Vec::new();
-            let result = searcher.search(
-                &query.query,
-                &(
-                    TopDocs::with_limit(limit)
-                        .and_offset(offset)
-                        .order_by_fast_field::<tantivy::DateTime>(order_by, order.clone()),
-                    tantivy::collector::Count,
-                ),
-            )?;
-            for r in result.0 {
-                hits.push((1.0, r.1));
-            }
-            Ok((hits, result.1))
-        } else {
-            Ok(searcher.search(
-                &query.query,
-                &(TopDocs::with_limit(limit).and_offset(offset), tantivy::collector::Count),
-            )?)
-        }
+        Ok(searcher.search(
+            query,
+            &(TopDocs::with_limit(limit).and_offset(offset), tantivy::collector::Count),
+        )?)
     }
 
     fn process_hit(
@@ -517,14 +492,14 @@ impl trustification_index::Index for Index {
         doc_address: DocAddress,
         score: f32,
         searcher: &Searcher,
-        query: &SbomQuery,
+        query: &dyn Query,
         options: &SearchOptions,
     ) -> Result<Self::MatchedDocument, SearchError> {
         let doc = searcher.doc(doc_address)?;
         let id = field2str(&self.schema, &doc, self.fields.sbom_id)?;
         let name = field2str(&self.schema, &doc, self.fields.sbom_name)?;
 
-        let snippet_generator = SnippetGenerator::create(searcher, &query.query, self.fields.sbom.desc)?;
+        let snippet_generator = SnippetGenerator::create(searcher, query, self.fields.sbom.desc)?;
         let snippet = snippet_generator.snippet_from_doc(&doc).to_html();
 
         let purl = doc
@@ -594,7 +569,7 @@ impl trustification_index::Index for Index {
         };
 
         let explanation: Option<serde_json::Value> = if options.explain {
-            match query.query.explain(searcher, doc_address) {
+            match query.explain(searcher, doc_address) {
                 Ok(explanation) => Some(serde_json::to_value(explanation).ok()).unwrap_or(None),
                 Err(e) => {
                     warn!("Error producing explanation for document {:?}: {:?}", doc_address, e);

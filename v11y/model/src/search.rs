@@ -6,7 +6,7 @@ use time::OffsetDateTime;
 #[derive(Clone, Debug, PartialEq, Search)]
 pub enum Cves<'a> {
     /// Search by CVE id
-    #[search(default, sort)]
+    #[search(default)]
     Id(Primary<'a>),
 
     #[search(default)]

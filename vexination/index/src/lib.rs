@@ -16,7 +16,7 @@ use tantivy::{
     schema::{IndexRecordOption, TextFieldIndexing},
     store::ZstdCompressor,
     tokenizer::{Language, LowerCaser, NgramTokenizer, RemoveLongFilter, Stemmer, TextAnalyzer, TokenizerManager},
-    DocAddress, DocId, IndexSettings, Order, Score, Searcher, SegmentReader, SnippetGenerator,
+    DocAddress, DocId, IndexSettings, Score, Searcher, SegmentReader, SnippetGenerator,
 };
 use time::OffsetDateTime;
 use trustification_api::search::SearchOptions;
@@ -29,7 +29,7 @@ use trustification_index::{
         schema::{Field, Schema, Term, FAST, INDEXED, STORED, STRING, TEXT},
         DateTime,
     },
-    term2query, Document, Error as SearchError,
+    term2query, Document, Error as SearchError, SearchQuery,
 };
 use vexination_model::prelude::*;
 
@@ -73,16 +73,9 @@ struct ProductPackage {
     purl: Option<String>,
 }
 
-#[derive(Debug)]
-pub struct VexQuery {
-    query: Box<dyn Query>,
-    sort_by: Option<(Field, Order)>,
-}
-
 impl trustification_index::Index for Index {
     type MatchedDocument = SearchHit;
     type Document = Csaf;
-    type QueryContext = VexQuery;
 
     fn tokenizers(&self) -> Result<TokenizerManager, SearchError> {
         let manager = TokenizerManager::default();
@@ -317,7 +310,7 @@ impl trustification_index::Index for Index {
         self.schema.clone()
     }
 
-    fn prepare_query(&self, q: &str) -> Result<VexQuery, SearchError> {
+    fn prepare_query(&self, q: &str) -> Result<SearchQuery, SearchError> {
         let mut query = Vulnerabilities::parse(q).map_err(|err| SearchError::QueryParser(err.to_string()))?;
 
         query.term = query.term.compact();
@@ -336,102 +329,65 @@ impl trustification_index::Index for Index {
         };
 
         debug!("Processed query: {:?}", query);
-        Ok(VexQuery { query, sort_by })
+        Ok(SearchQuery { query, sort_by })
     }
 
     fn search(
         &self,
         searcher: &Searcher,
-        query: &VexQuery,
+        query: &dyn Query,
         offset: usize,
         limit: usize,
     ) -> Result<(Vec<(f32, DocAddress)>, usize), SearchError> {
-        if let Some((field, order)) = query.sort_by.as_ref() {
-            let order_by_str = self.schema.get_field_name(*field);
-            let mut hits = Vec::new();
-            let total = if *field == self.fields.advisory_severity_score {
-                let result = searcher.search(
-                    &query.query,
-                    &(
-                        TopDocs::with_limit(limit)
-                            .and_offset(offset)
-                            .order_by_fast_field::<f64>(order_by_str, order.clone()),
-                        tantivy::collector::Count,
-                    ),
-                )?;
-                for r in result.0 {
-                    hits.push((r.0 as f32, r.1));
-                }
-                result.1
-            } else {
-                let result = searcher.search(
-                    &query.query,
-                    &(
-                        TopDocs::with_limit(limit)
-                            .and_offset(offset)
-                            .order_by_fast_field::<tantivy::DateTime>(order_by_str, order.clone()),
-                        tantivy::collector::Count,
-                    ),
-                )?;
-                for r in result.0 {
-                    hits.push((1.0, r.1));
-                }
-                result.1
-            };
-            Ok((hits, total))
-        } else {
-            let severity_field = self
-                .schema
-                .get_field_name(self.fields.advisory_severity_score)
-                .to_string();
-            let date_field = self.schema.get_field_name(self.fields.advisory_current).to_string();
-            let now = tantivy::DateTime::from_utc(OffsetDateTime::now_utc());
-            Ok(searcher.search(
-                &query.query,
-                &(
-                    TopDocs::with_limit(limit)
-                        .and_offset(offset)
-                        .tweak_score(move |segment_reader: &SegmentReader| {
-                            let severity_reader = segment_reader.fast_fields().f64(&severity_field);
+        let severity_field = self
+            .schema
+            .get_field_name(self.fields.advisory_severity_score)
+            .to_string();
+        let date_field = self.schema.get_field_name(self.fields.advisory_current).to_string();
+        let now = tantivy::DateTime::from_utc(OffsetDateTime::now_utc());
+        Ok(searcher.search(
+            query,
+            &(
+                TopDocs::with_limit(limit)
+                    .and_offset(offset)
+                    .tweak_score(move |segment_reader: &SegmentReader| {
+                        let severity_reader = segment_reader.fast_fields().f64(&severity_field);
 
-                            let date_reader = segment_reader.fast_fields().date(&date_field);
+                        let date_reader = segment_reader.fast_fields().date(&date_field);
 
-                            move |doc: DocId, original_score: Score| {
-                                let severity_reader = severity_reader.clone();
-                                let date_reader = date_reader.clone();
-                                let mut tweaked = original_score;
-                                if let Ok(Some(score)) = severity_reader.map(|s| s.first(doc)) {
-                                    log::trace!("CVSS score impact {} -> {}", tweaked, (score as f32) * tweaked);
-                                    tweaked *= score as f32;
+                        move |doc: DocId, original_score: Score| {
+                            let severity_reader = severity_reader.clone();
+                            let date_reader = date_reader.clone();
+                            let mut tweaked = original_score;
+                            if let Ok(Some(score)) = severity_reader.map(|s| s.first(doc)) {
+                                log::trace!("CVSS score impact {} -> {}", tweaked, (score as f32) * tweaked);
+                                tweaked *= score as f32;
 
-                                    // Now look at the date, normalize score between 0 and 1 (baseline 1970)
-                                    if let Ok(Some(date)) = date_reader.map(|s| s.first(doc)) {
-                                        if date < now {
-                                            let mut normalized = 2.0
-                                                * (date.into_timestamp_secs() as f64
-                                                    / now.into_timestamp_secs() as f64);
-                                            // If it's the past month, boost it more.
-                                            if (now.into_utc() - date.into_utc()) < Duration::from_secs(30 * 24 * 3600)
-                                            {
-                                                normalized *= 4.0;
-                                            }
-                                            log::trace!(
-                                                "DATE score impact {} -> {}",
-                                                tweaked,
-                                                tweaked * (normalized as f32)
-                                            );
-                                            tweaked *= normalized as f32;
+                                // Now look at the date, normalize score between 0 and 1 (baseline 1970)
+                                if let Ok(Some(date)) = date_reader.map(|s| s.first(doc)) {
+                                    if date < now {
+                                        let mut normalized = 2.0
+                                            * (date.into_timestamp_secs() as f64 / now.into_timestamp_secs() as f64);
+                                        // If it's the past month, boost it more.
+                                        if (now.into_utc() - date.into_utc()) < Duration::from_secs(30 * 24 * 3600) {
+                                            normalized *= 4.0;
                                         }
+                                        log::trace!(
+                                            "DATE score impact {} -> {}",
+                                            tweaked,
+                                            tweaked * (normalized as f32)
+                                        );
+                                        tweaked *= normalized as f32;
                                     }
                                 }
-                                log::trace!("Tweaking from {} to {}", original_score, tweaked);
-                                tweaked
                             }
-                        }),
-                    tantivy::collector::Count,
-                ),
-            )?)
-        }
+                            log::trace!("Tweaking from {} to {}", original_score, tweaked);
+                            tweaked
+                        }
+                    }),
+                tantivy::collector::Count,
+            ),
+        )?)
     }
 
     fn process_hit(
@@ -439,11 +395,11 @@ impl trustification_index::Index for Index {
         doc_address: DocAddress,
         score: f32,
         searcher: &Searcher,
-        query: &VexQuery,
+        query: &dyn Query,
         options: &SearchOptions,
     ) -> Result<Self::MatchedDocument, SearchError> {
         let doc = searcher.doc(doc_address)?;
-        let snippet_generator = SnippetGenerator::create(searcher, &query.query, self.fields.advisory_description)?;
+        let snippet_generator = SnippetGenerator::create(searcher, query, self.fields.advisory_description)?;
         let advisory_snippet = snippet_generator.snippet_from_doc(&doc).to_html();
 
         let advisory_id = field2str(&self.schema, &doc, self.fields.advisory_id)?;
@@ -481,7 +437,7 @@ impl trustification_index::Index for Index {
         };
 
         let explanation: Option<serde_json::Value> = if options.explain {
-            match query.query.explain(searcher, doc_address) {
+            match query.explain(searcher, doc_address) {
                 Ok(explanation) => Some(serde_json::to_value(explanation).ok()).unwrap_or(None),
                 Err(e) => {
                     warn!("Error producing explanation for document {:?}: {:?}", doc_address, e);
