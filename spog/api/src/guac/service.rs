@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 use std::str::FromStr;
 
 use actix_web::{http::header::ContentType, HttpResponse};
-use guac::client::intrinsic::certify_vex::VexStatus;
+use guac::client::intrinsic::certify_vex_statement::VexStatus;
 use guac::client::intrinsic::certify_vuln::{CertifyVuln, CertifyVulnSpec};
 use guac::client::intrinsic::vulnerability::{Vulnerability, VulnerabilitySpec};
 use guac::client::{Error as GuacError, GuacClient};
@@ -10,7 +10,10 @@ use http::StatusCode;
 use packageurl::PackageUrl;
 use tracing::instrument;
 
-use spog_model::prelude::{PackageDependencies, PackageDependents, PackageRefList, ProductCveStatus, ProductRelatedToCve, PackageRelatedToProductCve, CveDetails};
+use spog_model::prelude::{
+    CveDetails, PackageDependencies, PackageDependents, PackageRefList, PackageRelatedToProductCve, ProductCveStatus,
+    ProductRelatedToCve,
+};
 use trustification_common::error::ErrorInformation;
 
 #[derive(Clone)]
@@ -137,9 +140,7 @@ impl GuacService {
     pub async fn product_by_cve(&self, id: String) -> Result<CveDetails, Error> {
         let result = self.client.intrinsic().product_by_cve(&id).await;
         let data = match result {
-            Ok(res) => {
-                res
-            },
+            Ok(res) => res,
             Err(_err) => {
                 // TODO filter error
                 Vec::new()
@@ -154,27 +155,20 @@ impl GuacService {
 
             for package in product.path {
                 let p = package.try_as_purls()?[0].to_string();
-                packages.push(PackageRelatedToProductCve { purl: p, r#type: "Direct".to_string() })
+                packages.push(PackageRelatedToProductCve {
+                    purl: p,
+                    r#type: "Direct".to_string(),
+                })
             }
 
-            let pr = ProductRelatedToCve {
-                sbom_id: id,
-                packages,
-            };
+            let pr = ProductRelatedToCve { sbom_id: id, packages };
 
             let status = match product.vex.status {
-                VexStatus::Affected => {
-                    ProductCveStatus::KnownAffected
-                },
-                VexStatus::Fixed => {
-                    ProductCveStatus::Fixed
-                },
-                VexStatus::UnderInvestigation => {
-                    ProductCveStatus::UnderInvestigation
-                },
-                VexStatus::NotAffected => {
-                    ProductCveStatus::KnownNotAffected
-                }
+                VexStatus::Affected => ProductCveStatus::KnownAffected,
+                VexStatus::Fixed => ProductCveStatus::Fixed,
+                VexStatus::UnderInvestigation => ProductCveStatus::UnderInvestigation,
+                VexStatus::NotAffected => ProductCveStatus::KnownNotAffected,
+                VexStatus::Other(_) => todo!(),
             };
 
             products.entry(status).or_insert(vec![]).push(pr);
@@ -187,7 +181,6 @@ impl GuacService {
             advisories: vec![],
         })
     }
-
 }
 
 #[cfg(test)]
@@ -204,5 +197,4 @@ mod test {
         let res = guac.product_by_cve("cve-2022-2284".to_string()).await.unwrap();
         println!("{}", serde_json::to_string_pretty(&res).unwrap());
     }
-
 }
