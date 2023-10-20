@@ -431,6 +431,12 @@ objects:
                   value: '[::]:9010'
                 - name: TRACING
                   value: disabled
+                - name: OTEL_BSP_MAX_EXPORT_BATCH_SIZE
+                  value: '32'
+                - name: OTEL_TRACES_SAMPLER
+                  value: parentbased_traceidratio
+                - name: OTEL_TRACES_SAMPLER_ARG
+                  value: '0.1'
                 - name: INDEX_SYNC_INTERVAL
                   value: ${BOMBASTIC_API_INDEX_SYNC_INTERVAL}
                 - name: SWAGGER_UI_OIDC_ISSUER_URL
@@ -1335,8 +1341,14 @@ objects:
                   value: 'true'
                 - name: INFRASTRUCTURE_BIND
                   value: '[::]:9010'
-                - name: ENABLE_TRACING
-                  value: ''
+                - name: TRACING
+                  value: disabled
+                - name: OTEL_BSP_MAX_EXPORT_BATCH_SIZE
+                  value: '32'
+                - name: OTEL_TRACES_SAMPLER
+                  value: parentbased_traceidratio
+                - name: OTEL_TRACES_SAMPLER_ARG
+                  value: '0.1'
                 - name: SPOG_UI_CONFIG
                   value: /etc/config/spog-ui.yaml
                 - name: OIDC_PROVIDER_CLIENT_ID
@@ -1547,6 +1559,12 @@ objects:
                   value: '[::]:9010'
                 - name: TRACING
                   value: disabled
+                - name: OTEL_BSP_MAX_EXPORT_BATCH_SIZE
+                  value: '32'
+                - name: OTEL_TRACES_SAMPLER
+                  value: parentbased_traceidratio
+                - name: OTEL_TRACES_SAMPLER_ARG
+                  value: '0.1'
               volumeMounts:
                 - name: data
                   mountPath: /data
@@ -1759,6 +1777,12 @@ objects:
                   value: '[::]:9010'
                 - name: TRACING
                   value: disabled
+                - name: OTEL_BSP_MAX_EXPORT_BATCH_SIZE
+                  value: '32'
+                - name: OTEL_TRACES_SAMPLER
+                  value: parentbased_traceidratio
+                - name: OTEL_TRACES_SAMPLER_ARG
+                  value: '0.1'
                 - name: INDEX_SYNC_INTERVAL
                   value: ${VEXINATION_API_INDEX_SYNC_INTERVAL}
                 - name: SWAGGER_UI_OIDC_ISSUER_URL
