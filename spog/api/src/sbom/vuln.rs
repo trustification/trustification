@@ -20,7 +20,6 @@ use std::str::FromStr;
 use tracing::instrument;
 use trustification_auth::client::TokenProvider;
 use trustification_common::error::ErrorInformation;
-use v11y_client::{ScoreType, Severity, Vulnerability};
 
 #[derive(Debug, serde::Deserialize)]
 pub struct GetParams {
@@ -99,25 +98,6 @@ async fn process_get_vulnerabilities(
         _ => return Err(Error::Generic("Unsupported format".to_string())),
     };
 
-    // FIXME: mock data
-    /*
-    let analyze = AnalyzeResponse {
-        vulnerabilities: vec![
-            mock_vuln("CVE-0000-0001", "Weird one", Some(0.0)),
-            mock_vuln("CVE-0000-0002", "Passt schon", Some(0.1)),
-            mock_vuln("CVE-0000-0003", "Foo bar", Some(7.5)),
-            mock_vuln("CVE-0000-0004", "Bar baz", Some(3.5)),
-            mock_vuln("CVE-0000-0005", "Baz foo", Some(4.5)),
-            mock_vuln("CVE-0000-0006", "Boom!", Some(9.5)),
-            mock_vuln("CVE-0000-0007", "Alles kaputt", Some(10.0)),
-            mock_vuln("CVE-0000-0008", "Unsure", None),
-        ],
-        affected: {
-            let map = HashMap::new();
-            map
-        },
-    };*/
-
     let details = iter(analyze)
         .map(|(id, _packages)| async move {
             // FIXME: need to provide packages to entry
@@ -129,7 +109,7 @@ async fn process_get_vulnerabilities(
             let score = get_score(&cve);
             Ok(Some(SbomReportVulnerability {
                 id: cve.id().to_string(),
-                description: "".to_string(),
+                description: get_description(&cve),
                 score,
                 published: cve.common_metadata().date_published.map(|t| t.assume_utc()),
                 updated: cve.common_metadata().date_updated.map(|t| t.assume_utc()),
@@ -151,34 +131,6 @@ async fn process_get_vulnerabilities(
     }))
 }
 
-#[allow(unused)]
-fn mock_vuln(id: &str, summary: &str, severity: Option<f32>) -> Vulnerability {
-    Vulnerability {
-        id: id.to_string(),
-        summary: summary.to_string(),
-        details: "".to_string(),
-        origin: "mock".to_string(),
-
-        published: chrono::Utc::now(),
-        modified: chrono::Utc::now(),
-
-        aliases: vec![],
-        related: vec![],
-        references: vec![],
-        affected: vec![],
-        withdrawn: None,
-        severities: severity
-            .into_iter()
-            .map(|score| Severity {
-                score,
-                r#type: ScoreType::Cvss3,
-                source: "mock".to_string(),
-                additional: None,
-            })
-            .collect(),
-    }
-}
-
 fn into_severity(score: f32) -> cvss::Severity {
     if score >= 9.0 {
         cvss::Severity::Critical
@@ -193,6 +145,36 @@ fn into_severity(score: f32) -> cvss::Severity {
     }
 }
 
+/// get the description
+///
+/// We scan for the first description matching "en" or an empty string, as "en" is default.
+///
+// FIXME: We should consider other langauges as well, like a language priorities list.
+fn get_description(cve: &Cve) -> Option<String> {
+    let desc = match cve {
+        Cve::Published(cve) => {
+            if let Some(title) = cve.containers.cna.title.clone() {
+                return Some(title);
+            }
+
+            &cve.containers.cna.descriptions
+        }
+        Cve::Rejected(cve) => &cve.containers.cna.rejected_reasons,
+    };
+
+    desc.iter()
+        .filter_map(|d| {
+            let lang = &d.language;
+            if lang.is_empty() || lang.starts_with("en") {
+                Some(d.value.clone())
+            } else {
+                None
+            }
+        })
+        .next()
+}
+
+/// get the CVSS score as a plain number
 fn get_score(cve: &cve::Cve) -> Option<f32> {
     let p = match cve {
         Cve::Published(p) => p,
@@ -208,16 +190,21 @@ fn get_score(cve: &cve::Cve) -> Option<f32> {
 
     let mut v3_1 = None;
     let mut v3_0 = None;
+    let mut v2_0 = None;
 
     for m in &p.containers.cna.metrics {
         if let Some(m) = m.cvss_v3_1.as_ref().and_then(score) {
             v3_1 = Some(m);
         } else if let Some(m) = m.cvss_v3_0.as_ref().and_then(score) {
             v3_0 = Some(m);
+        } else if let Some(m) = m.cvss_v2_0.as_ref().and_then(score) {
+            v2_0 = Some(m);
         }
     }
 
-    v3_1.or(v3_0)
+    // FIXME: we need to provide some indication what score version this was
+
+    v3_1.or(v3_0).or(v2_0)
 }
 
 /// Collect a summary of count, based on CVSS v3 severities
@@ -259,7 +246,7 @@ fn map_purls(pi: &PackageInformation) -> impl IntoIterator<Item = String> + '_ {
     })
 }
 
-#[instrument(skip(guac, sbom), ret, err)]
+#[instrument(skip(guac, sbom), err)]
 async fn analyze(guac: &GuacService, sbom: &SPDX) -> Result<(BTreeMap<String, BTreeSet<String>>, usize), Error> {
     let mut result = BTreeMap::<String, BTreeSet<String>>::new();
     let mut num = 0;
@@ -290,39 +277,7 @@ async fn analyze(guac: &GuacService, sbom: &SPDX) -> Result<(BTreeMap<String, BT
         }
     }
 
+    log::debug!("Processed {num} packages");
+
     Ok((result, num))
-}
-
-#[cfg(test)]
-mod test {
-    //use super::*;
-    //use exhort_model::AnalyzeResponse;
-
-    /*
-    fn test_data() -> AnalyzeResponse {
-        AnalyzeResponse {
-            vulnerabilities: vec![
-                mock_vuln("CVE-0000-0001", "Weird one", Some(0.0)),
-                mock_vuln("CVE-0000-0002", "Passt schon", Some(0.1)),
-                mock_vuln("CVE-0000-0003", "Foo bar", Some(7.5)),
-                mock_vuln("CVE-0000-0004", "Bar baz", Some(3.5)),
-                mock_vuln("CVE-0000-0005", "Baz foo", Some(4.5)),
-                mock_vuln("CVE-0000-0006", "Boom!", Some(9.5)),
-                mock_vuln("CVE-0000-0007", "Alles kaputt", Some(10.0)),
-                mock_vuln("CVE-0000-0008", "Unsure", None),
-            ],
-            affected: Default::default(),
-            errors: Default::default(),
-        }
-    }
-
-    #[test]
-    fn serialize_summary() {
-        let analyze = test_data();
-        let result: AnalyzeResponse = serde_json::from_value(serde_json::to_value(&analyze).unwrap()).unwrap();
-
-        assert_eq!(result.vulnerabilities.len(), analyze.vulnerabilities.len());
-    }
-
-     */
 }
