@@ -1,25 +1,27 @@
+use core::fmt;
+
 use tracing_bunyan_formatter::BunyanFormattingLayer;
 
-#[derive(Clone, Debug, serde::Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[derive(clap::ValueEnum, Clone, Copy, Debug, PartialEq)]
 pub enum Tracing {
+    #[clap(name = "disabled")]
     Disabled,
-    Jaeger,
-}
-
-impl From<bool> for Tracing {
-    fn from(enable: bool) -> Self {
-        if enable {
-            Tracing::Jaeger
-        } else {
-            Tracing::Disabled
-        }
-    }
+    #[clap(name = "enabled")]
+    Enabled,
 }
 
 impl Default for Tracing {
     fn default() -> Self {
         Self::Disabled
+    }
+}
+
+impl fmt::Display for Tracing {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Tracing::Disabled => write!(f, "disabled"),
+            Tracing::Enabled => write!(f, "enabled"),
+        }
     }
 }
 
@@ -41,7 +43,7 @@ pub fn init_tracing(name: &str, tracing: Tracing) {
         Tracing::Disabled => {
             init_no_tracing();
         }
-        Tracing::Jaeger => {
+        Tracing::Enabled => {
             init_jaeger(name);
         }
     }

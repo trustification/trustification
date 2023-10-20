@@ -62,6 +62,8 @@ impl Run {
             log::warn!("Authentication is disabled");
         }
 
+        let tracing = self.infra.tracing;
+
         Infrastructure::from(self.infra)
             .run(
                 "vexination-api",
@@ -71,6 +73,7 @@ impl Run {
                     context.health.readiness.register("available.index", check).await;
                     let state = Self::configure(index, storage, probe, context.metrics.registry(), self.devmode)?;
                     let mut http = HttpServerBuilder::try_from(self.http)?
+                        .tracing(tracing)
                         .metrics(context.metrics.registry().clone(), "vexination_api")
                         .authorizer(authorizer.clone())
                         .configure(move |svc| {

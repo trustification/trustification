@@ -7373,6 +7373,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "tracing-actix-web"
+version = "0.7.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a512ec11fae6c666707625e84f83e5d58f941e9ab15723289c0d380edfe48f09"
+dependencies = [
+ "actix-web",
+ "pin-project",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
 name = "tracing-attributes"
 version = "0.1.26"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -7669,6 +7681,7 @@ dependencies = [
  "serde_json",
  "thiserror",
  "tokio",
+ "tracing-actix-web",
  "tracing-bunyan-formatter",
  "tracing-opentelemetry",
  "tracing-subscriber",

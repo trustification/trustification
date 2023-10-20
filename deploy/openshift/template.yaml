@@ -429,8 +429,8 @@ objects:
                   value: 'true'
                 - name: INFRASTRUCTURE_BIND
                   value: '[::]:9010'
-                - name: ENABLE_TRACING
-                  value: 'false'
+                - name: TRACING
+                  value: disabled
                 - name: INDEX_SYNC_INTERVAL
                   value: ${BOMBASTIC_API_INDEX_SYNC_INTERVAL}
                 - name: SWAGGER_UI_OIDC_ISSUER_URL
@@ -1336,7 +1336,7 @@ objects:
                 - name: INFRASTRUCTURE_BIND
                   value: '[::]:9010'
                 - name: ENABLE_TRACING
-                  value: 'false'
+                  value: ''
                 - name: SPOG_UI_CONFIG
                   value: /etc/config/spog-ui.yaml
                 - name: OIDC_PROVIDER_CLIENT_ID
@@ -1545,8 +1545,8 @@ objects:
                   value: 'true'
                 - name: INFRASTRUCTURE_BIND
                   value: '[::]:9010'
-                - name: ENABLE_TRACING
-                  value: 'false'
+                - name: TRACING
+                  value: disabled
               volumeMounts:
                 - name: data
                   mountPath: /data
@@ -1757,8 +1757,8 @@ objects:
                   value: 'true'
                 - name: INFRASTRUCTURE_BIND
                   value: '[::]:9010'
-                - name: ENABLE_TRACING
-                  value: 'false'
+                - name: TRACING
+                  value: disabled
                 - name: INDEX_SYNC_INTERVAL
                   value: ${VEXINATION_API_INDEX_SYNC_INTERVAL}
                 - name: SWAGGER_UI_OIDC_ISSUER_URL

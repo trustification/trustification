@@ -121,6 +121,7 @@ impl Server {
         let tracker = web::Data::from(tracker);
 
         let mut http = HttpServerBuilder::try_from(self.run.http)?
+            .tracing(self.run.infra.tracing)
             .metrics(context.metrics.registry().clone(), "spog_api")
             .authorizer(authorizer.clone())
             .configure(move |svc| {

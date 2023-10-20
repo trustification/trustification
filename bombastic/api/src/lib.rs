@@ -62,6 +62,8 @@ impl Run {
             log::warn!("Authentication is disabled");
         }
 
+        let tracing = self.infra.tracing;
+
         Infrastructure::from(self.infra)
             .run(
                 "bombastic-api",
@@ -72,6 +74,7 @@ impl Run {
                     let state = Self::configure(index, storage, probe, context.metrics.registry(), self.devmode)?;
 
                     let mut http = HttpServerBuilder::try_from(self.http)?
+                        .tracing(tracing)
                         .metrics(context.metrics.registry().clone(), "bombastic_api")
                         .authorizer(authorizer.clone())
                         .configure(move |svc| {

@@ -34,7 +34,7 @@ spog:
       limits:
         memory: "64Mi"
   api:
-    tracing: true
+    tracing: "enabled"
     segmentWriteKey:
       valueFrom:
         secretKeyRef:
@@ -76,7 +76,7 @@ bombastic:
       limits:
         memory: "2Gi"
   api:
-    tracing: true
+    tracing: "enabled"
     resources:
       requests:
         cpu: "100m"
@@ -99,7 +99,7 @@ vexination:
       limits:
         memory: "2Gi"
   api:
-    tracing: true
+    tracing: "enabled"
     resources:
       requests:
         cpu: "100m"
@@ -138,7 +138,7 @@ v11y:
   credentials: v11y-credentials-secret
   indexMode: file
   api:
-    tracing: "true"
+    tracing: "enabled"
     resources:
   indexer:
     topics:
