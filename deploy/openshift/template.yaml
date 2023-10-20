@@ -472,6 +472,79 @@ objects:
   - apiVersion: apps/v1
     kind: Deployment
     metadata:
+      name: bombastic-collector
+      labels:
+        app.kubernetes.io/name: bombastic-collector
+        app.kubernetes.io/component: collector
+        app.kubernetes.io/part-of: trustification
+    spec:
+      replicas: 1
+      selector:
+        matchLabels:
+          app.kubernetes.io/name: bombastic-collector
+          app.kubernetes.io/component: collector
+          app.kubernetes.io/part-of: trustification
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: bombastic-collector
+            app.kubernetes.io/component: collector
+            app.kubernetes.io/part-of: trustification
+            metrics: 'true'
+        spec:
+          volumes:
+            - name: config
+              configMap:
+                name: ${CONFIG_NAME}
+            - name: guac-config
+              configMap:
+                name: guac-cm
+          containers:
+            - image: ${GUAC_IMAGE}
+              imagePullPolicy: Always
+              name: service
+              command:
+                - /opt/guac/guacone
+              args:
+                - collect
+                - s3
+                - --poll
+                - --s3-bucket
+                - ${BOMBASTIC_STORAGE_BUCKET}
+                - --s3-mp
+                - sqs
+                - --s3-queues
+                - ${BOMBASTIC_INDEXER_GUAC_TOPIC}
+              workingDir: /guac
+              env:
+                - name: NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.namespace
+                - name: AWS_ACCESS_KEY_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${BOMBASTIC_AWS_SECRET_NAME}
+                      key: aws_access_key_id
+                - name: AWS_SECRET_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${BOMBASTIC_AWS_SECRET_NAME}
+                      key: aws_secret_access_key
+                - name: AWS_REGION
+                  value: ${AWS_REGION}
+              ports:
+                - containerPort: 2782
+                  protocol: TCP
+              volumeMounts:
+                - name: guac-config
+                  mountPath: /guac
+                  readOnly: true
+                - mountPath: /etc/config
+                  name: config
+  - apiVersion: apps/v1
+    kind: Deployment
+    metadata:
       name: bombastic-indexer
       labels:
         app.kubernetes.io/name: bombastic-indexer
@@ -1815,6 +1888,79 @@ objects:
                 httpGet:
                   path: /health/startup
                   port: 9010
+  - apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: vexination-collector
+      labels:
+        app.kubernetes.io/name: vexination-collector
+        app.kubernetes.io/component: collector
+        app.kubernetes.io/part-of: trustification
+    spec:
+      replicas: 1
+      selector:
+        matchLabels:
+          app.kubernetes.io/name: vexination-collector
+          app.kubernetes.io/component: collector
+          app.kubernetes.io/part-of: trustification
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: vexination-collector
+            app.kubernetes.io/component: collector
+            app.kubernetes.io/part-of: trustification
+            metrics: 'true'
+        spec:
+          volumes:
+            - name: config
+              configMap:
+                name: ${CONFIG_NAME}
+            - name: guac-config
+              configMap:
+                name: guac-cm
+          containers:
+            - image: ${GUAC_IMAGE}
+              imagePullPolicy: Always
+              name: service
+              command:
+                - /opt/guac/guacone
+              args:
+                - collect
+                - s3
+                - --poll
+                - --s3-bucket
+                - ${VEXINATION_STORAGE_BUCKET}
+                - --s3-mp
+                - sqs
+                - --s3-queues
+                - ${VEXINATION_INDEXER_GUAC_TOPIC}
+              workingDir: /guac
+              env:
+                - name: NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.namespace
+                - name: AWS_ACCESS_KEY_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${VEXINATION_AWS_SECRET_NAME}
+                      key: aws_access_key_id
+                - name: AWS_SECRET_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${VEXINATION_AWS_SECRET_NAME}
+                      key: aws_secret_access_key
+                - name: AWS_REGION
+                  value: ${AWS_REGION}
+              ports:
+                - containerPort: 2782
+                  protocol: TCP
+              volumeMounts:
+                - name: guac-config
+                  mountPath: /guac
+                  readOnly: true
+                - mountPath: /etc/config
+                  name: config
   - apiVersion: apps/v1
     kind: Deployment
     metadata:
