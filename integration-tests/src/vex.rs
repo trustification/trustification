@@ -165,7 +165,7 @@ fn vexination_indexer() -> vexination_indexer::Run {
             infrastructure_enabled: false,
             infrastructure_bind: "127.0.0.1".into(),
             infrastructure_workers: 1,
-            enable_tracing: false,
+            tracing: Default::default(),
         },
         index: IndexConfig {
             index_dir: None,
@@ -202,7 +202,7 @@ fn vexination_api() -> vexination_api::Run {
             infrastructure_enabled: false,
             infrastructure_bind: "127.0.0.1".into(),
             infrastructure_workers: 1,
-            enable_tracing: false,
+            tracing: Default::default(),
         },
         auth: testing_auth(),
         swagger_ui_oidc: testing_swagger_ui_oidc(),

@@ -139,7 +139,7 @@ fn spog_api(
             infrastructure_enabled: false,
             infrastructure_bind: "127.0.0.1".into(),
             infrastructure_workers: 1,
-            enable_tracing: false,
+            tracing: Default::default(),
         },
         auth: testing_auth(),
         swagger_ui_oidc: testing_swagger_ui_oidc(),

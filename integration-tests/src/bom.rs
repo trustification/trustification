@@ -193,7 +193,7 @@ fn bombastic_indexer() -> bombastic_indexer::Run {
             infrastructure_enabled: false,
             infrastructure_bind: "127.0.0.1".into(),
             infrastructure_workers: 1,
-            enable_tracing: false,
+            tracing: Default::default(),
         },
     }
 }
@@ -223,7 +223,7 @@ fn bombastic_api() -> bombastic_api::Run {
             infrastructure_enabled: false,
             infrastructure_bind: "127.0.0.1".into(),
             infrastructure_workers: 1,
-            enable_tracing: false,
+            tracing: Default::default(),
         },
         auth: testing_auth(),
         swagger_ui_oidc: testing_swagger_ui_oidc(),

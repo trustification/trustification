@@ -25,7 +25,6 @@ spog:
           name: ${SEGMENT_SECRET_NAME}
           key: ${SEGMENT_SECRET_API_KEY}
   api:
-    tracing: false
     resources: ${{SPOG_API_RESOURCES}}
     logLevel: ${LOG_LEVEL}
     segmentWriteKey:
@@ -58,7 +57,6 @@ bombastic:
     resources: ${{BOMBASTIC_WALKER_RESOURCES}}
     logLevel: ${LOG_LEVEL}
   api:
-    tracing: false
     index_sync_interval: ${BOMBASTIC_API_INDEX_SYNC_INTERVAL}
     resources: ${{BOMBASTIC_API_RESOURCES}}
     logLevel: ${LOG_LEVEL}
@@ -68,7 +66,6 @@ v11y:
   credentials: ${V11Y_AWS_SECRET_NAME}
   indexMode: file
   api:
-    tracing: false
     index_sync_interval: ${V11Y_API_INDEX_SYNC_INTERVAL}
     resources: ${{V11Y_API_RESOURCES}}
     logLevel: ${LOG_LEVEL}
@@ -132,7 +129,6 @@ vexination:
     resources: ${{VEXINATION_INDEXER_RESOURCES}}
     logLevel: ${LOG_LEVEL}
   api:
-    tracing: false
     index_sync_interval: ${VEXINATION_API_INDEX_SYNC_INTERVAL}
     resources: ${{VEXINATION_API_RESOURCES}}
     logLevel: ${LOG_LEVEL}
