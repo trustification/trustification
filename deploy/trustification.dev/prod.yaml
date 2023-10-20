@@ -73,8 +73,9 @@ vexination:
   bucket: vexination-prod
   credentials: vexination-credentials-secret
   indexMode: file
-  exporter:
-    topic: vex-guac-prod
+  collector:
+    enabled: true
+    queue: vex-indexed-prod
   indexer:
     topics:
       stored: vex-stored-prod

@@ -6,6 +6,10 @@ metadata:
     app.kubernetes.io/name: vexination-api
     app.kubernetes.io/component: api
     app.kubernetes.io/part-of: trustification
+{{ if eq "enabled" .Values.vexination.api.tracing }}
+  annotations:
+    sidecar.jaegertracing.io/inject: "true"
+{{ end }}
 spec:
   replicas: {{ .Values.replicas }}
   selector:
@@ -68,6 +72,12 @@ spec:
               value: "[::]:9010"
             - name: TRACING
               value: {{ default "disabled" .Values.vexination.api.tracing }}
+            - name: OTEL_BSP_MAX_EXPORT_BATCH_SIZE
+              value: "32"
+            - name: OTEL_TRACES_SAMPLER
+              value: parentbased_traceidratio
+            - name: OTEL_TRACES_SAMPLER_ARG
+              value: "0.1"
             - name: INDEX_SYNC_INTERVAL
               value: {{ .Values.vexination.api.index_sync_interval | default "1800s" }}
             - name: SWAGGER_UI_OIDC_ISSUER_URL
