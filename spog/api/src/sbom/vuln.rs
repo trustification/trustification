@@ -99,9 +99,9 @@ async fn process_get_vulnerabilities(
     };
 
     let details = iter(analyze)
-        .map(|(id, _packages)| async move {
+        .map(|(id, affected_packages)| async move {
             // FIXME: need to provide packages to entry
-            let cve: cve::Cve = match v11y.fetch(&id).await?.or_status_error_opt().await? {
+            let cve: Cve = match v11y.fetch(&id).await?.or_status_error_opt().await? {
                 Some(cve) => cve.json().await?,
                 None => return Ok(None),
             };
@@ -113,6 +113,7 @@ async fn process_get_vulnerabilities(
                 score,
                 published: cve.common_metadata().date_published.map(|t| t.assume_utc()),
                 updated: cve.common_metadata().date_updated.map(|t| t.assume_utc()),
+                affected_packages,
             }))
         })
         .buffer_unordered(4)
@@ -175,7 +176,7 @@ fn get_description(cve: &Cve) -> Option<String> {
 }
 
 /// get the CVSS score as a plain number
-fn get_score(cve: &cve::Cve) -> Option<f32> {
+fn get_score(cve: &Cve) -> Option<f32> {
     let p = match cve {
         Cve::Published(p) => p,
         Cve::Rejected(_) => return None,
