@@ -26,11 +26,12 @@ use std::sync::RwLock;
 pub use tantivy;
 pub use tantivy::schema::Document;
 use tantivy::{
+    collector::TopDocs,
     directory::{MmapDirectory, INDEX_WRITER_LOCK},
     query::{AllQuery, BooleanQuery, BoostQuery, Occur, Query, RangeQuery, RegexQuery, TermQuery},
     schema::*,
     tokenizer::TokenizerManager,
-    DateTime, Directory, DocAddress, Index as SearchIndex, IndexSettings, Searcher,
+    DateTime, Directory, DocAddress, Index as SearchIndex, IndexSettings, Order, Searcher,
 };
 use time::{OffsetDateTime, UtcOffset};
 
@@ -154,7 +155,6 @@ pub struct IndexStore<INDEX: Index> {
 pub trait Index {
     type MatchedDocument: core::fmt::Debug;
     type Document;
-    type QueryContext: core::fmt::Debug;
 
     fn tokenizers(&self) -> Result<TokenizerManager, Error> {
         Ok(TokenizerManager::default())
@@ -162,11 +162,11 @@ pub trait Index {
     fn parse_doc(data: &[u8]) -> Result<Self::Document, Error>;
     fn settings(&self) -> IndexSettings;
     fn schema(&self) -> Schema;
-    fn prepare_query(&self, q: &str) -> Result<Self::QueryContext, Error>;
+    fn prepare_query(&self, q: &str) -> Result<SearchQuery, Error>;
     fn search(
         &self,
         searcher: &Searcher,
-        query: &Self::QueryContext,
+        query: &dyn Query,
         offset: usize,
         limit: usize,
     ) -> Result<(Vec<(f32, DocAddress)>, usize), Error>;
@@ -175,7 +175,7 @@ pub trait Index {
         doc: DocAddress,
         score: f32,
         searcher: &Searcher,
-        query: &Self::QueryContext,
+        query: &dyn Query,
         options: &SearchOptions,
     ) -> Result<Self::MatchedDocument, Error>;
     fn index_doc(&self, id: &str, document: &Self::Document) -> Result<Document, Error>;
@@ -190,6 +190,8 @@ pub enum Error {
     Snapshot,
     #[error("value for field {0} not found")]
     FieldNotFound(String),
+    #[error("field {0} cannot be sorted")]
+    NotSortable(String),
     #[error("operation cannot be done because index is not persisted")]
     NotPersisted,
     #[error("error parsing document {0}")]
@@ -229,6 +231,12 @@ impl From<trustification_storage::Error> for Error {
 pub struct IndexWriter {
     writer: tantivy::IndexWriter,
     metrics: Metrics,
+}
+
+#[derive(Debug)]
+pub struct SearchQuery {
+    pub query: Box<dyn Query>,
+    pub sort_by: Option<(Field, Order)>,
 }
 
 impl IndexWriter {
@@ -644,7 +652,94 @@ impl<INDEX: Index> IndexStore<INDEX> {
 
         debug!("Processed query: {:?}", query);
 
-        let (top_docs, count) = self.index.search(&searcher, &query, offset, limit)?;
+        let (top_docs, count) = if let Some(sort_by) = query.sort_by {
+            let field = sort_by.0;
+            let order = sort_by.1;
+            let order_by_str = self.index.schema().get_field_name(field).to_string();
+            let vtype = self.index.schema().get_field_entry(field).field_type().value_type();
+            let mut hits = Vec::new();
+            let total = match vtype {
+                Type::U64 => {
+                    let result = searcher.search(
+                        &query.query,
+                        &(
+                            TopDocs::with_limit(limit)
+                                .and_offset(offset)
+                                .order_by_fast_field::<u64>(&order_by_str, order.clone()),
+                            tantivy::collector::Count,
+                        ),
+                    )?;
+                    for r in result.0 {
+                        hits.push((1.0, r.1));
+                    }
+                    result.1
+                }
+                Type::I64 => {
+                    let result = searcher.search(
+                        &query.query,
+                        &(
+                            TopDocs::with_limit(limit)
+                                .and_offset(offset)
+                                .order_by_fast_field::<i64>(&order_by_str, order.clone()),
+                            tantivy::collector::Count,
+                        ),
+                    )?;
+                    for r in result.0 {
+                        hits.push((1.0, r.1));
+                    }
+                    result.1
+                }
+                Type::F64 => {
+                    let result = searcher.search(
+                        &query.query,
+                        &(
+                            TopDocs::with_limit(limit)
+                                .and_offset(offset)
+                                .order_by_fast_field::<f64>(&order_by_str, order.clone()),
+                            tantivy::collector::Count,
+                        ),
+                    )?;
+                    for r in result.0 {
+                        hits.push((1.0, r.1));
+                    }
+                    result.1
+                }
+                Type::Bool => {
+                    let result = searcher.search(
+                        &query.query,
+                        &(
+                            TopDocs::with_limit(limit)
+                                .and_offset(offset)
+                                .order_by_fast_field::<bool>(&order_by_str, order.clone()),
+                            tantivy::collector::Count,
+                        ),
+                    )?;
+                    for r in result.0 {
+                        hits.push((1.0, r.1));
+                    }
+                    result.1
+                }
+                Type::Date => {
+                    let result = searcher.search(
+                        &query.query,
+                        &(
+                            TopDocs::with_limit(limit)
+                                .and_offset(offset)
+                                .order_by_fast_field::<DateTime>(&order_by_str, order.clone()),
+                            tantivy::collector::Count,
+                        ),
+                    )?;
+                    for r in result.0 {
+                        hits.push((1.0, r.1));
+                    }
+                    result.1
+                }
+                _ => return Err(Error::NotSortable(order_by_str)),
+            };
+            (hits, total)
+        } else {
+            self.index.search(&searcher, &query.query, offset, limit)?
+        };
 
         self.metrics.queries_total.inc();
 
@@ -653,7 +748,7 @@ impl<INDEX: Index> IndexStore<INDEX> {
         if options.summaries {
             let mut hits = Vec::new();
             for hit in top_docs {
-                match self.index.process_hit(hit.1, hit.0, &searcher, &query, &options) {
+                match self.index.process_hit(hit.1, hit.0, &searcher, &query.query, &options) {
                     Ok(value) => {
                         debug!("HIT: {:?}", value);
                         hits.push(value);
@@ -906,7 +1001,6 @@ mod tests {
     impl Index for TestIndex {
         type MatchedDocument = String;
         type Document = String;
-        type QueryContext = Box<dyn Query>;
 
         fn settings(&self) -> IndexSettings {
             IndexSettings::default()
@@ -922,7 +1016,7 @@ mod tests {
                 .map(|s| s.to_string())
         }
 
-        fn prepare_query(&self, q: &str) -> Result<Box<dyn Query>, Error> {
+        fn prepare_query(&self, q: &str) -> Result<SearchQuery, Error> {
             let queries: Vec<Box<dyn Query>> = vec![
                 Box::new(TermQuery::new(
                     Term::from_field_text(self.id, q),
@@ -933,7 +1027,10 @@ mod tests {
                     IndexRecordOption::Basic,
                 )),
             ];
-            Ok(Box::new(BooleanQuery::union(queries)))
+            Ok(SearchQuery {
+                query: Box::new(BooleanQuery::union(queries)),
+                sort_by: None,
+            })
         }
 
         fn process_hit(
@@ -941,7 +1038,7 @@ mod tests {
             doc: DocAddress,
             _score: f32,
             searcher: &Searcher,
-            _query: &Box<dyn Query>,
+            _query: &dyn Query,
             _options: &SearchOptions,
         ) -> Result<Self::MatchedDocument, Error> {
             let d = searcher.doc(doc)?;
@@ -955,7 +1052,7 @@ mod tests {
         fn search(
             &self,
             searcher: &Searcher,
-            query: &Box<dyn Query>,
+            query: &dyn Query,
             offset: usize,
             limit: usize,
         ) -> Result<(Vec<(f32, DocAddress)>, usize), Error> {
