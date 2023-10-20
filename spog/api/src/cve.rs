@@ -86,7 +86,6 @@ async fn cve_get(id: web::Path<String>, v11y: web::Data<V11yService>) -> actix_w
     Ok(HttpResponseBuilder::new(response.status()).streaming(response.bytes_stream()))
 }
 
-
 async fn cve_related_product(
     _app_state: web::Data<AppState>,
     guac: web::Data<GuacService>,
