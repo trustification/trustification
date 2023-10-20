@@ -87,6 +87,9 @@ vexination:
   bucket: vexination-staging
   credentials: vexination-credentials-secret
   indexMode: file
+  collector:
+    enabled: true
+    queue: vex-indexed-staging
   indexer:
     topics:
       stored: vex-stored-staging
