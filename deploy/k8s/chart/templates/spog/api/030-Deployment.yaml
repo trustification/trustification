@@ -6,6 +6,10 @@ metadata:
     app.kubernetes.io/name: spog-api
     app.kubernetes.io/component: api
     app.kubernetes.io/part-of: trustification
+{{ if eq "enabled" .Values.spog.api.tracing }}
+  annotations:
+    sidecar.jaegertracing.io/inject: "true"
+{{ end }}
 spec:
   replicas: {{ .Values.replicas }}
   selector:
@@ -63,8 +67,14 @@ spec:
               value: "true"
             - name: INFRASTRUCTURE_BIND
               value: "[::]:9010"
-            - name: ENABLE_TRACING
-              value: "{{ .Values.spog.api.tracing }}"
+            - name: TRACING
+              value: {{ default "disabled" .Values.spog.api.tracing }}
+            - name: OTEL_BSP_MAX_EXPORT_BATCH_SIZE
+              value: "32"
+            - name: OTEL_TRACES_SAMPLER
+              value: parentbased_traceidratio
+            - name: OTEL_TRACES_SAMPLER_ARG
+              value: "0.1"
 {{- if .Values.spog.ui.customize }}
             - name: SPOG_UI_CONFIG
               value: /etc/config/spog-ui.yaml
