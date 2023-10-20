@@ -101,6 +101,7 @@ async fn cve_related_product(
     Ok(HttpResponse::Ok().json(result))
 }
 // TODO remove this method using real data
+#[allow(dead_code)]
 async fn cve_details_mock(
     _app_state: web::Data<AppState>,
     _guac: web::Data<GuacService>,
