@@ -7,7 +7,7 @@ use cyclonedx_bom::models::{
     license::{LicenseChoice, LicenseIdentifier},
 };
 use log::{debug, info, warn};
-use sikula::{mir::Direction, prelude::*};
+use sikula::prelude::*;
 use spdx_rs::models::Algorithm;
 use tantivy::query::{TermQuery, TermSetQuery};
 use tantivy::{collector::TopDocs, Order};
@@ -22,6 +22,7 @@ use trustification_api::search::SearchOptions;
 use trustification_index::{
     boost, create_boolean_query, create_date_query, create_string_query, field2str,
     metadata::doc2metadata,
+    sort_by,
     tantivy::{
         doc,
         query::{Occur, Query},
@@ -311,6 +312,7 @@ impl Index {
                 Term::from_field_text(self.fields.sbom_id, value),
                 Default::default(),
             )),
+            Packages::Name(value) => self.create_string_query(&[self.fields.sbom_name], value),
             Packages::Package(primary) => boost(
                 self.create_string_query(
                     &[
@@ -457,19 +459,11 @@ impl trustification_index::Index for Index {
 
         debug!("Query: {:?}", query.term);
 
-        let mut sort_by = None;
-        if let Some(f) = query.sorting.first() {
-            match f.qualifier {
-                PackagesSortable::Created => match f.direction {
-                    Direction::Descending => {
-                        sort_by.replace((self.fields.sbom_created, Order::Desc));
-                    }
-                    Direction::Ascending => {
-                        sort_by.replace((self.fields.sbom_created, Order::Asc));
-                    }
-                },
-            }
-        }
+        let sort_by = query.sorting.first().map(|f| match f.qualifier {
+            PackagesSortable::Created => sort_by(f.direction, self.fields.sbom_created),
+            PackagesSortable::Name => sort_by(f.direction, self.fields.sbom_name),
+            PackagesSortable::Version => sort_by(f.direction, self.fields.sbom.version),
+        });
 
         let query = if query.term.is_empty() {
             Box::new(AllQuery)
@@ -496,7 +490,7 @@ impl trustification_index::Index for Index {
                 &(
                     TopDocs::with_limit(limit)
                         .and_offset(offset)
-                        .order_by_fast_field::<tantivy::DateTime>(order_by, order.clone()),
+                        .order_by_fast_field::<DateTime>(order_by, order.clone()),
                     tantivy::collector::Count,
                 ),
             )?;

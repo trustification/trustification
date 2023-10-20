@@ -6,6 +6,9 @@ pub enum Packages<'a> {
     /// Search by SBOM id
     #[search(default)]
     Id(&'a str),
+    /// Search by SBOM name
+    #[search(sort)]
+    Name(Primary<'a>),
     /// Search package name and package reference.
     ///
     /// Example queries:
@@ -26,7 +29,7 @@ pub enum Packages<'a> {
     Type(&'a str),
     #[search]
     Namespace(&'a str),
-    #[search(default)]
+    #[search(default, sort)]
     Version(Primary<'a>),
     #[search(default)]
     Description(&'a str),

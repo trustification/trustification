@@ -117,9 +117,18 @@ pub fn sbom_result(props: &SbomResultProperties) -> Html {
         (sortby.clone(), props.onsort.clone()),
         |val: TableHeaderSortBy<Column>, (sortby, onsort)| {
             sortby.set(Some(val));
-            if val.index == Column::Created {
-                onsort.emit(("created".to_string(), val.asc));
-            };
+            match val.index {
+                Column::Created => {
+                    onsort.emit(("created".to_string(), val.asc));
+                }
+                Column::Version => {
+                    onsort.emit(("version".to_string(), val.asc));
+                }
+                Column::Name => {
+                    onsort.emit(("name".to_string(), val.asc));
+                }
+                _ => {}
+            }
         },
     );
 
@@ -129,39 +138,43 @@ pub fn sbom_result(props: &SbomResultProperties) -> Html {
         yew::props!(TableColumnProperties<Column> {
             index: Column::Name,
             label: "Name",
-            width: ColumnWidth::Percent(15)
+            width: ColumnWidth::Percent(15),
+            sortby: *sortby,
+            onsort: onsort.clone(),
         }),
         yew::props!(TableColumnProperties<Column> {
             index: Column::Version,
             label: "Version",
-            width: ColumnWidth::Percent(20)
+            width: ColumnWidth::Percent(20),
+            sortby: *sortby,
+            onsort: onsort.clone(),
         }),
         yew::props!(TableColumnProperties<Column> {
             index: Column::Supplier,
             label: "Supplier",
-            width: ColumnWidth::Percent(20)
+            width: ColumnWidth::Percent(20),
         }),
         yew::props!(TableColumnProperties<Column> {
             index: Column::Created,
             label: "Created on",
             width: ColumnWidth::Percent(10),
             sortby: *sortby,
-            onsort: onsort.clone()
+            onsort: onsort.clone(),
         }),
         yew::props!(TableColumnProperties<Column> {
             index: Column::Dependencies,
             label: "Dependencies",
-            width: ColumnWidth::Percent(10)
+            width: ColumnWidth::Percent(10),
         }),
         yew::props!(TableColumnProperties<Column> {
             index: Column::Advisories,
             label: "Advisories",
-            width: ColumnWidth::Percent(10)
+            width: ColumnWidth::Percent(10),
         }),
         yew::props!(TableColumnProperties<Column> {
             index: Column::Download,
             label: "Download",
-            width: ColumnWidth::FitContent
+            width: ColumnWidth::FitContent,
         }),
     ];
 
