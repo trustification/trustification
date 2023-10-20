@@ -1,6 +1,7 @@
 use super::pkg::PackageRef;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeSet;
 use time::OffsetDateTime;
 use utoipa::ToSchema;
 
@@ -70,4 +71,6 @@ pub struct SbomReportVulnerability {
     pub published: Option<OffsetDateTime>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub updated: Option<OffsetDateTime>,
+    #[serde(default)]
+    pub affected_packages: BTreeSet<String>,
 }
