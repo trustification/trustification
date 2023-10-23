@@ -106,7 +106,7 @@ pub fn cve_search(props: &CveSearchProperties) -> Html {
     total.set(state.data().and_then(|d| d.total));
 
     let onsort = {
-        use_callback(search_params.clone(), move |sort_by: (String, bool), search_params| {
+        use_callback(search_params.clone(), move |sort_by: (String, Order), search_params| {
             search_params.dispatch(SearchModeAction::SetSimpleSort(sort_by));
         })
     };

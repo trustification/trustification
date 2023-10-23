@@ -3,6 +3,7 @@ use crate::search::{
     SearchOptionSelectItem,
 };
 use gloo_utils::format::JsValueSerdeExt;
+use patternfly_yew::core::Order;
 use spog_model::prelude::*;
 use spog_ui_common::utils::search::{escape_terms, or_group, SimpleProperties, ToFilterExpression};
 use std::collections::HashMap;
@@ -34,8 +35,14 @@ impl DynamicSearchParameters {
         }
     }
 
-    pub fn set_sort_by(&mut self, sort: (String, bool)) {
-        self.sort = Some(sort);
+    pub fn set_sort_by(&mut self, (index, order): (String, Order)) {
+        self.sort = Some((
+            index,
+            match order {
+                Order::Ascending => true,
+                Order::Descending => false,
+            },
+        ));
     }
 }
 

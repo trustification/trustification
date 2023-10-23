@@ -41,7 +41,7 @@ pub struct AdvisoryEntry {
 #[derive(PartialEq, Properties)]
 pub struct AdvisoryResultProperties {
     pub state: UseAsyncState<SearchResult<Rc<Vec<AdvisorySummary>>>, String>,
-    pub onsort: Callback<(String, bool)>,
+    pub onsort: Callback<(String, Order)>,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq)]
@@ -120,7 +120,7 @@ pub fn advisory_result(props: &AdvisoryResultProperties) -> Html {
         |val: TableHeaderSortBy<Column>, (sortby, onsort)| {
             sortby.set(Some(val));
             if val.index == Column::Severity {
-                onsort.emit(("severity".to_string(), val.asc));
+                onsort.emit(("severity".to_string(), val.order));
             };
         },
     );
