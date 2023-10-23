@@ -66,7 +66,9 @@ pub fn details(props: &DetailsProps) -> Html {
                     )
                 }
                 Column::AffectedPackages => {
-                    html!(<AffectedPackages packages={self.packages.clone()} />)
+                    html!(<AffectedPackages
+                            packages={self.packages.clone()}
+                        />)
                 }
                 _ => html!(),
             };
@@ -86,10 +88,11 @@ pub fn details(props: &DetailsProps) -> Html {
     );
 
     let entries = use_memo(props.sbom.clone(), |sbom| {
+        let backtraces = Rc::new(sbom.backtraces.clone());
         sbom.details
             .iter()
             .map(|vuln| {
-                let packages = Rc::new(build_packages(&vuln.affected_packages));
+                let packages = Rc::new(build_packages(&vuln.affected_packages, backtraces.clone()));
                 Entry {
                     vuln: vuln.clone(),
                     packages,
@@ -110,12 +113,18 @@ pub fn details(props: &DetailsProps) -> Html {
     )
 }
 
-fn build_packages(packages: &BTreeSet<String>) -> Vec<(PackageKey, PackageValue)> {
+fn build_packages(
+    packages: &BTreeSet<String>,
+    backtraces: Rc<BTreeMap<String, BTreeSet<Vec<String>>>>,
+) -> Vec<AffectedPackage> {
     let mut result = BTreeMap::<PackageKey, PackageValue>::new();
 
     for purl in packages.iter().filter_map(|p| PackageUrl::from_str(p).ok()) {
         let key = PackageKey::new(&purl);
-        let value = result.entry(key).or_default();
+        let value = result.entry(key).or_insert_with(|| PackageValue {
+            backtraces: backtraces.clone(),
+            qualifiers: Default::default(),
+        });
         for (k, v) in purl.qualifiers() {
             let qe = value.qualifiers.entry(k.to_string()).or_default();
             qe.insert(v.to_string());
@@ -132,6 +141,7 @@ struct PackageKey {
     namespace: Option<String>,
     name: String,
     version: Option<String>,
+    purl: String,
 }
 
 impl PackageKey {
@@ -140,13 +150,15 @@ impl PackageKey {
             namespace: purl.namespace().map(ToString::to_string),
             name: purl.name().to_string(),
             version: purl.version().map(ToString::to_string),
+            purl: purl.to_string(),
         }
     }
 }
 
-#[derive(Default, PartialEq)]
+#[derive(PartialEq)]
 struct PackageValue {
     qualifiers: BTreeMap<String, BTreeSet<String>>,
+    backtraces: Rc<BTreeMap<String, BTreeSet<Vec<String>>>>,
 }
 
 #[derive(PartialEq, Properties)]
@@ -182,6 +194,32 @@ fn affected_packages(props: &AffectedPackagesProperties) -> Html {
             }
             .into()
         }
+
+        fn render_details(&self) -> Vec<Span> {
+            let purls = self
+                .1
+                .backtraces
+                .get(&self.0.purl)
+                .iter()
+                .flat_map(|p| *p)
+                .map(|trace| trace.join(" » "))
+                .collect::<Vec<_>>();
+
+            let content = match purls.is_empty() {
+                true => html!({ "Only direct dependencies" }),
+                false => html!(
+                    <List r#type={ListType::Basic}>
+                        {
+                            for self.1.backtraces.get(&self.0.purl).iter().flat_map(|p| *p).map(|trace| {
+                                trace.join(" » ")
+                            })
+                        }
+                    </List>
+                ),
+            };
+
+            vec![Span::max(content)]
+        }
     }
 
     let header = html_nested!(
@@ -193,13 +231,14 @@ fn affected_packages(props: &AffectedPackagesProperties) -> Html {
         </TableHeader<Column>>
     );
 
-    let (entries, _onexpand) = use_table_data(MemoizedTableModel::new(props.packages.clone()));
+    let (entries, onexpand) = use_table_data(MemoizedTableModel::new(props.packages.clone()));
 
     html!(
         <Table<Column, UseTableData<Column, MemoizedTableModel<AffectedPackage>>>
             {header}
             {entries}
-            mode={TableMode::Compact}
+            {onexpand}
+            mode={TableMode::CompactExpandable}
         />
     )
 }
