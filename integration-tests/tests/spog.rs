@@ -130,20 +130,23 @@ async fn spog_crda_integration(context: &mut SpogContext) {
 
 /// SPoG API might enrich results from package search with related vulnerabilities. This test checks that this
 /// is working as expected for the test data.
-#[ignore = "Unstable test, issue #696"]
 #[test_context(SpogContext)]
 #[tokio::test]
 #[ntest::timeout(120_000)]
 async fn spog_search_correlation(context: &mut SpogContext) {
-    let input = serde_json::from_str(include_str!("testdata/correlation/stf-1.5.json")).unwrap();
+    let mut sbom: serde_json::Value = serde_json::from_str(include_str!("testdata/correlation/stf-1.5.json")).unwrap();
+    let cpe_id = id("cpe:/a:redhat:service_telemetry_framework:1.5::el8");
+    sbom["packages"][883]["externalRefs"][0]["referenceLocator"] = json!(cpe_id);
     let sbom_id = id("test-search-correlation");
-    context.bombastic.upload_sbom(&sbom_id, &input).await;
+    context.bombastic.upload_sbom(&sbom_id, &sbom).await;
 
-    let mut input: serde_json::Value =
+    let mut vex: serde_json::Value =
         serde_json::from_str(include_str!("testdata/correlation/rhsa-2023_1529.json")).unwrap();
     let vex_id = id("test-search-correlation");
-    input["document"]["tracking"]["id"] = json!(vex_id);
-    context.vexination.upload_vex(&input).await;
+    vex["document"]["tracking"]["id"] = json!(vex_id);
+    vex["product_tree"]["branches"][0]["branches"][0]["branches"][0]["product"]["product_identification_helper"]
+        ["cpe"] = json!(cpe_id);
+    context.vexination.upload_vex(&vex).await;
 
     let client = reqwest::Client::new();
     // Ensure we can search for the data. We want to allow the
@@ -160,7 +163,7 @@ async fn spog_search_correlation(context: &mut SpogContext) {
         assert_eq!(response.status(), StatusCode::OK, "unexpected status from search");
         let payload: Value = response.json().await.unwrap();
         if payload["total"].as_u64().unwrap() >= 1 {
-            assert_eq!(payload["result"][0]["name"], json!("stf-1.5"), "unexpected name");
+            assert_eq!(payload["result"][0]["name"], json!("stf-1.5"), "unexpected sbom name");
 
             let data: spog_model::search::PackageSummary =
                 serde_json::from_value(payload["result"][0].clone()).unwrap();
