@@ -18,7 +18,7 @@ use yew_nested_router::components::Link;
 #[derive(PartialEq, Properties)]
 pub struct SbomResultProperties {
     pub state: UseAsyncState<SearchResult<Rc<Vec<PackageSummary>>>, String>,
-    pub onsort: Callback<(String, bool)>,
+    pub onsort: Callback<(String, Order)>,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq)]
@@ -118,7 +118,7 @@ pub fn sbom_result(props: &SbomResultProperties) -> Html {
         |val: TableHeaderSortBy<Column>, (sortby, onsort)| {
             sortby.set(Some(val));
             if val.index == Column::Created {
-                onsort.emit(("created".to_string(), val.asc));
+                onsort.emit(("created".to_string(), val.order));
             };
         },
     );

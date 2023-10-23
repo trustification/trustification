@@ -22,7 +22,7 @@ pub struct CveEntry {
 #[derive(PartialEq, Properties)]
 pub struct CveResultProperties {
     pub state: UseAsyncState<SearchResult<Rc<Vec<CveSearchDocument>>>, String>,
-    pub onsort: Callback<(String, bool)>,
+    pub onsort: Callback<(String, Order)>,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq)]
@@ -98,10 +98,10 @@ pub fn cve_result(props: &CveResultProperties) -> Html {
             sortby.set(Some(val));
             match &val.index {
                 Column::Severity => {
-                    onsort.emit(("score".to_string(), val.asc));
+                    onsort.emit(("score".to_string(), val.order));
                 }
                 Column::DatePublished => {
-                    onsort.emit(("datePublished".to_string(), val.asc));
+                    onsort.emit(("datePublished".to_string(), val.order));
                 }
                 _ => {}
             }

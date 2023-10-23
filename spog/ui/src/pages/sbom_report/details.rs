@@ -3,6 +3,7 @@ use patternfly_yew::prelude::*;
 use spog_model::prelude::SbomReportVulnerability;
 use spog_ui_components::{cvss::CvssScore, time::Date};
 use spog_ui_navigation::{AppRoute, View};
+use std::cmp::Ordering;
 use std::collections::{BTreeMap, BTreeSet};
 use std::rc::Rc;
 use std::str::FromStr;
@@ -26,6 +27,7 @@ pub fn details(props: &DetailsProps) -> Html {
         Updated,
     }
 
+    #[derive(Clone, PartialEq)]
     struct Entry {
         vuln: SbomReportVulnerability,
         packages: Rc<Vec<AffectedPackage>>,
@@ -76,20 +78,24 @@ pub fn details(props: &DetailsProps) -> Html {
         }
     }
 
+    let sort_by = use_state_eq(|| TableHeaderSortBy::ascending(Column::Id));
+    let onsort = use_callback(sort_by.clone(), |value, sort_by| sort_by.set(value));
+
     let header = html_nested!(
         <TableHeader<Column>>
-            <TableColumn<Column> index={Column::Id} label="Id" width={ColumnWidth::FitContent} expandable=true />
+            <TableColumn<Column> index={Column::Id} label="Id" width={ColumnWidth::FitContent} expandable=true sortby={*sort_by} onsort={onsort.clone()} />
             <TableColumn<Column> index={Column::Description} label="Description" width={ColumnWidth::WidthMax} />
-            <TableColumn<Column> index={Column::Cvss} label="CVSS" width={ColumnWidth::Percent(15)} />
-            <TableColumn<Column> index={Column::AffectedPackages} label="Affected dependencies" width={ColumnWidth::FitContent} expandable=true />
-            <TableColumn<Column> index={Column::Published} label="Published" width={ColumnWidth::FitContent} />
-            <TableColumn<Column> index={Column::Updated} label="Updated" width={ColumnWidth::FitContent} />
+            <TableColumn<Column> index={Column::Cvss} label="CVSS" width={ColumnWidth::Percent(15)} sortby={*sort_by} onsort={onsort.clone()} />
+            <TableColumn<Column> index={Column::AffectedPackages} label="Affected dependencies" width={ColumnWidth::FitContent} expandable=true sortby={*sort_by} onsort={onsort.clone()} />
+            <TableColumn<Column> index={Column::Published} label="Published" width={ColumnWidth::FitContent} sortby={*sort_by} onsort={onsort.clone()} />
+            <TableColumn<Column> index={Column::Updated} label="Updated" width={ColumnWidth::FitContent} sortby={*sort_by} onsort={onsort.clone()} />
         </TableHeader<Column>>
     );
 
-    let entries = use_memo(props.sbom.clone(), |sbom| {
+    let entries = use_memo((props.sbom.clone(), *sort_by), |(sbom, sort_by)| {
         let backtraces = Rc::new(sbom.backtraces.clone());
-        sbom.details
+        let mut result = sbom
+            .details
             .iter()
             .map(|vuln| {
                 let packages = Rc::new(build_packages(&vuln.affected_packages, backtraces.clone()));
@@ -98,19 +104,66 @@ pub fn details(props: &DetailsProps) -> Html {
                     packages,
                 }
             })
+            .collect::<Vec<_>>();
+
+        result.sort_by(|a, b| {
+            let result = match sort_by.index {
+                Column::Cvss => a.vuln.score.partial_cmp(&b.vuln.score).unwrap_or(Ordering::Equal),
+                Column::AffectedPackages => a.vuln.affected_packages.len().cmp(&b.vuln.affected_packages.len()),
+                Column::Published => a.vuln.published.cmp(&b.vuln.published),
+                Column::Updated => a.vuln.updated.cmp(&b.vuln.updated),
+                _ => a.vuln.id.cmp(&b.vuln.id),
+            };
+
+            match sort_by.order {
+                Order::Ascending => result,
+                Order::Descending => result.reverse(),
+            }
+        });
+
+        result
+    });
+
+    let total = entries.len();
+    let pagination = use_pagination(Some(total), Default::default);
+
+    // page from the filtered entries
+    let entries = use_memo((entries, pagination.control), |(entries, control)| {
+        let offset = control.per_page * control.page;
+        let limit = control.per_page;
+        entries
+            .iter()
+            // apply pagination window
+            .skip(offset)
+            .take(limit)
+            .cloned()
             .collect::<Vec<_>>()
     });
 
     let (entries, onexpand) = use_table_data(MemoizedTableModel::new(entries));
 
-    html!(
-        <Table<Column, UseTableData<Column, MemoizedTableModel<Entry>>>
-            {header}
-            {entries}
-            {onexpand}
-            mode={TableMode::Expandable}
-        />
-    )
+    match total {
+        0 => html!(),
+        _ => html!(
+            <div class="pf-v5-u-background-color-100 pf-v5-u-py-md">
+                <SimplePagination
+                    pagination={pagination.clone()}
+                    {total}
+                />
+                <Table<Column, UseTableData<Column, MemoizedTableModel<Entry>>>
+                    {header}
+                    {entries}
+                    {onexpand}
+                    mode={TableMode::Expandable}
+                />
+                <SimplePagination
+                    pagination={pagination}
+                    {total}
+                    position={PaginationPosition::Bottom}
+                />
+            </div>
+        ),
+    }
 }
 
 fn build_packages(
@@ -244,11 +297,14 @@ fn affected_packages(props: &AffectedPackagesProperties) -> Html {
     let (entries, onexpand) = use_table_data(MemoizedTableModel::new(props.packages.clone()));
 
     html!(
-        <Table<Column, UseTableData<Column, MemoizedTableModel<AffectedPackage>>>
-            {header}
-            {entries}
-            {onexpand}
-            mode={TableMode::CompactExpandable}
-        />
+        <>
+
+            <Table<Column, UseTableData<Column, MemoizedTableModel<AffectedPackage>>>
+                {header}
+                {entries}
+                {onexpand}
+                mode={TableMode::CompactExpandable}
+            />
+        </>
     )
 }
