@@ -24,6 +24,10 @@ pub struct Test {
     #[arg(long, env)]
     ui: bool,
 
+    /// Enable guac tests
+    #[arg(long, env)]
+    guac: bool,
+
     /// Port of the (chrome/gecko)driver
     #[arg(long, env, default_value_t = 4444)]
     webdriver_port: u16,
@@ -61,6 +65,10 @@ impl Test {
 
         let port = self.webdriver_port;
         let mut features = vec![];
+
+        if self.guac {
+            features.extend(["--features", "guac"]);
+        }
 
         // don't drop this until we're done with it
         let _webdriver = Shutdown(match self.ui {
