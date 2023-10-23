@@ -3,6 +3,7 @@ use actix_web::{
     web::{self, ServiceConfig},
     HttpResponse,
 };
+use tracing::instrument;
 
 #[derive(Clone, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
@@ -27,6 +28,7 @@ pub fn configure(endpoints: Endpoints, config: &mut ServiceConfig) {
     ),
 )]
 #[get("/.well-known/trustification/endpoints")]
+#[instrument(skip_all)]
 pub async fn endpoints_fn(endpoints: web::Data<Endpoints>) -> HttpResponse {
     HttpResponse::Ok().json(endpoints)
 }

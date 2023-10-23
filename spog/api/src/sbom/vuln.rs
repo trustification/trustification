@@ -40,6 +40,7 @@ pub struct GetParams {
         ("id" = String, Path, description = "Id of package to fetch"),
     )
 )]
+#[instrument(skip(state, v11y, guac, access_token), err)]
 pub async fn get_vulnerabilities(
     state: web::Data<AppState>,
     v11y: web::Data<V11yService>,
@@ -268,12 +269,17 @@ pub type AnalyzeOutcome = (
 ///   map(CVE to array(PURL))
 ///   map(purl to parents(chain of purls))
 ///   total number of packages found
-#[instrument(skip(guac, sbom), err)]
+#[instrument(
+    skip(guac, sbom),
+    fields(sbom_name=sbom.document_creation_information.document_name),
+    err
+)]
 async fn analyze_spdx(guac: &GuacService, sbom: &SPDX) -> Result<AnalyzeOutcome, Error> {
     let mut result = BTreeMap::<String, BTreeSet<String>>::new();
     let mut num = 0;
 
     let purls = find_purls(sbom).collect::<BTreeMap<_, _>>();
+    log::debug!("Extracted {} PURLs", purls.len());
 
     let mut processed = HashSet::new();
     let mut backtraces = BTreeMap::new();
@@ -284,27 +290,32 @@ async fn analyze_spdx(guac: &GuacService, sbom: &SPDX) -> Result<AnalyzeOutcome,
             continue;
         }
 
-        if let Ok(purl) = PackageUrl::from_str(purl_str) {
-            num += 1;
-            let cert = guac.certify_vuln(purl.clone()).await?;
-            log::debug!("Cert ({purl_str}): {cert:?}");
+        match PackageUrl::from_str(purl_str) {
+            Ok(purl) => {
+                num += 1;
+                let cert = guac.certify_vuln(purl.clone()).await?;
+                log::debug!("Cert ({purl_str}): {cert:?}");
 
-            let mut need_traces = false;
-            for vuln in cert {
-                for vuln_id in vuln.vulnerability.vulnerability_ids {
-                    need_traces = true;
-                    result
-                        .entry(vuln_id.vulnerability_id)
-                        .or_default()
-                        .insert(purl_str.to_string());
+                let mut need_traces = false;
+                for vuln in cert {
+                    for vuln_id in vuln.vulnerability.vulnerability_ids {
+                        need_traces = true;
+                        result
+                            .entry(vuln_id.vulnerability_id)
+                            .or_default()
+                            .insert(purl_str.to_string());
+                    }
+                }
+
+                if need_traces {
+                    backtraces.insert(
+                        purl_str.to_string(),
+                        backtrace(guac, &purl).await?.collect::<BTreeSet<_>>(),
+                    );
                 }
             }
-
-            if need_traces {
-                backtraces.insert(
-                    purl_str.to_string(),
-                    backtrace(guac, &purl).await?.collect::<BTreeSet<_>>(),
-                );
+            Err(err) => {
+                log::info!("Failed to parse PURL: {err}");
             }
         }
     }
@@ -318,6 +329,7 @@ async fn analyze_spdx(guac: &GuacService, sbom: &SPDX) -> Result<AnalyzeOutcome,
 
 /// take a PURL, a retrieve all paths towards the main entry point of its SBOM
 // FIXME: This needs to be implemented
+#[instrument(skip(_guac), err)]
 async fn backtrace<'a>(
     _guac: &GuacService,
     _purl: &'a PackageUrl<'a>,

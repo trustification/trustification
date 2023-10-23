@@ -107,6 +107,7 @@ async fn report(
     Ok(run_report(data, &crda, &tracker).await?)
 }
 
+#[instrument(skip_all, fields(data_len=data.len()), err)]
 async fn run_report(data: Bytes, crda: &CrdaClient, tracker: &Tracker) -> Result<HttpResponse, Error> {
     let sbom = SBOM::parse(&data)?;
 

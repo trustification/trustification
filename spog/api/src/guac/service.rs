@@ -73,6 +73,7 @@ impl GuacService {
     }
 
     /// Lookup related packages for a provided Package URL
+    #[instrument(skip(self), err)]
     pub async fn get_packages(&self, purl: &str) -> Result<PackageRefList, Error> {
         let purl = PackageUrl::from_str(purl)?;
         let packages = self.client.intrinsic().packages(&purl.into()).await?;
@@ -90,6 +91,7 @@ impl GuacService {
     }
 
     /// Lookup dependencies for a provided Package URL
+    #[instrument(skip(self), err)]
     pub async fn get_dependencies(&self, purl: &str) -> Result<PackageDependencies, Error> {
         let purl = PackageUrl::from_str(purl)?;
 
@@ -101,6 +103,7 @@ impl GuacService {
     }
 
     /// Lookup dependents for a provided Package URL
+    #[instrument(skip(self), err)]
     pub async fn get_dependents(&self, purl: &str) -> Result<PackageDependents, Error> {
         let purl = PackageUrl::from_str(purl)?;
 
@@ -125,7 +128,7 @@ impl GuacService {
             .await?)
     }
 
-    #[instrument(skip(self), err)]
+    #[instrument(skip(self, purl), fields(purl = %purl), err)]
     pub async fn certify_vuln(&self, purl: PackageUrl<'_>) -> Result<Vec<CertifyVuln>, Error> {
         Ok(self
             .client
@@ -137,6 +140,7 @@ impl GuacService {
             .await?)
     }
 
+    #[instrument(skip(self), err)]
     pub async fn product_by_cve(&self, id: String) -> Result<CveDetails, Error> {
         let result = self.client.intrinsic().product_by_cve(&id).await;
         let data = match result {
