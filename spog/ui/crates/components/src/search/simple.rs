@@ -143,7 +143,7 @@ pub enum SearchModeAction {
     /// Clear the search, keeping the same search mode
     Clear,
     SetComplex(String),
-    SetSimpleSort((String, bool)),
+    SetSimpleSort((String, Order)),
     SetSimple(DynamicSearchParameters),
 }
 

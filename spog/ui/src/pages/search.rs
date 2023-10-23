@@ -273,7 +273,7 @@ pub struct UseUnifiedSearch<R> {
     pub search: UseStandardSearch,
     pub total: UseStateHandle<Option<usize>>,
     pub state: UseStateHandle<UseAsyncState<SearchResult<R>, String>>,
-    pub onsort: Callback<(String, bool)>,
+    pub onsort: Callback<(String, Order)>,
 }
 
 impl<R> Deref for UseUnifiedSearch<R> {
@@ -315,7 +315,7 @@ where
     let pagination = use_pagination(*total, || init_pagination(page_state));
     let search = use_hook(search_params.clone(), pagination.clone(), callback);
 
-    let onsort = use_callback(search_params.clone(), move |sort_by: (String, bool), search_params| {
+    let onsort = use_callback(search_params.clone(), move |sort_by: (String, Order), search_params| {
         search_params.dispatch(SearchModeAction::SetSimpleSort(sort_by));
     });
 
