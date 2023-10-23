@@ -4,6 +4,7 @@ use http::header;
 use log::trace;
 use spog_model::search::AdvisorySummary;
 use std::sync::Arc;
+use tracing::instrument;
 use trustification_api::search::{SearchOptions, SearchResult};
 use trustification_auth::authenticator::Authenticator;
 use trustification_infrastructure::new_auth;
@@ -41,6 +42,7 @@ pub struct GetParams {
         ("id" = String, Path, description = "Id of advisory to fetch"),
     )
 )]
+#[instrument(skip(state, access_token), err)]
 pub async fn get(
     state: web::Data<AppState>,
     web::Query(GetParams { token, id }): web::Query<GetParams>,
@@ -67,6 +69,7 @@ pub async fn get(
         ("limit" = u64, Path, description = "Max entries returned in the search results"),
     )
 )]
+#[instrument(skip(state, access_token), err)]
 pub async fn search(
     state: web::Data<AppState>,
     params: web::Query<QueryParams>,
