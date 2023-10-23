@@ -26,6 +26,7 @@ pub fn details(props: &DetailsProps) -> Html {
         Updated,
     }
 
+    #[derive(Clone, PartialEq)]
     struct Entry {
         vuln: SbomReportVulnerability,
         packages: Rc<Vec<AffectedPackage>>,
@@ -101,16 +102,46 @@ pub fn details(props: &DetailsProps) -> Html {
             .collect::<Vec<_>>()
     });
 
+    let total = entries.len();
+    let pagination = use_pagination(Some(total), Default::default);
+
+    // page from the filtered entries
+    let entries = use_memo((entries, pagination.control), |(entries, control)| {
+        let offset = control.per_page * control.page;
+        let limit = control.per_page;
+        entries
+            .iter()
+            // apply pagination window
+            .skip(offset)
+            .take(limit)
+            .cloned()
+            .collect::<Vec<_>>()
+    });
+
     let (entries, onexpand) = use_table_data(MemoizedTableModel::new(entries));
 
-    html!(
-        <Table<Column, UseTableData<Column, MemoizedTableModel<Entry>>>
-            {header}
-            {entries}
-            {onexpand}
-            mode={TableMode::Expandable}
-        />
-    )
+    match total {
+        0 => html!(),
+        _ => html!(
+            <div class="pf-v5-u-background-color-100 pf-v5-u-py-md">
+                <SimplePagination
+                    pagination={pagination.clone()}
+                    {total}
+                />
+                <Table<Column, UseTableData<Column, MemoizedTableModel<Entry>>>
+                    {header}
+                    {entries}
+                    {onexpand}
+                    mode={TableMode::Expandable}
+                />
+                <SimplePagination
+                    pagination={pagination}
+                    {total}
+                    position={PaginationPosition::Bottom}
+                />
+            </div>
+        ),
+    }
 }
 
 fn build_packages(
@@ -244,11 +275,14 @@ fn affected_packages(props: &AffectedPackagesProperties) -> Html {
     let (entries, onexpand) = use_table_data(MemoizedTableModel::new(props.packages.clone()));
 
     html!(
-        <Table<Column, UseTableData<Column, MemoizedTableModel<AffectedPackage>>>
-            {header}
-            {entries}
-            {onexpand}
-            mode={TableMode::CompactExpandable}
-        />
+        <>
+
+            <Table<Column, UseTableData<Column, MemoizedTableModel<AffectedPackage>>>
+                {header}
+                {entries}
+                {onexpand}
+                mode={TableMode::CompactExpandable}
+            />
+        </>
     )
 }
