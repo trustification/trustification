@@ -19,6 +19,7 @@ use spog_model::cve::{
 };
 use std::collections::{BTreeMap, BTreeSet, HashSet};
 use std::sync::Arc;
+use tracing::instrument;
 use trustification_api::search::SearchResult;
 use trustification_auth::authenticator::Authenticator;
 use trustification_auth::client::{BearerTokenProvider, TokenProvider};
@@ -37,6 +38,7 @@ pub(crate) fn configure(auth: Option<Arc<Authenticator>>) -> impl FnOnce(&mut Se
     }
 }
 
+#[instrument(skip(v11y, state), err)]
 async fn cve_search(
     web::Query(params): web::Query<search::QueryParams>,
     v11y: web::Data<V11yService>,
@@ -65,6 +67,7 @@ async fn cve_search(
 }
 
 /// return the number of related advisories for a CVE
+#[instrument(skip(state), err, ret)]
 async fn count_related_advisories(state: &AppState, cve: &str) -> Result<usize, Error> {
     let result = state
         .search_vex(&format!(r#"cve:"{}""#, cve), 0, 1, Default::default(), &*state.provider)
@@ -78,6 +81,7 @@ async fn count_related_products(_cve: &str) -> Result<usize, Error> {
     Ok(0)
 }
 
+#[instrument(skip(v11y), err)]
 async fn cve_get(id: web::Path<String>, v11y: web::Data<V11yService>) -> actix_web::Result<HttpResponse> {
     let id = id.into_inner();
 
@@ -100,6 +104,7 @@ async fn cve_related_product(
 
     Ok(HttpResponse::Ok().json(result))
 }
+
 // TODO remove this method using real data
 #[allow(dead_code)]
 async fn cve_details_mock(
