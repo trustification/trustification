@@ -253,6 +253,15 @@ fn map_purls(pi: &PackageInformation) -> impl IntoIterator<Item = String> + '_ {
     })
 }
 
+pub type AnalyzeOutcome = (
+    // CVE to PURLs
+    BTreeMap<String, BTreeSet<String>>,
+    // PURL to backtrace
+    BTreeMap<String, BTreeSet<Vec<String>>>,
+    // number of processed purls
+    usize,
+);
+
 /// Analyze by purls
 ///
 /// result(Ok):
@@ -260,29 +269,16 @@ fn map_purls(pi: &PackageInformation) -> impl IntoIterator<Item = String> + '_ {
 ///   map(purl to parents(chain of purls))
 ///   total number of packages found
 #[instrument(skip(guac, sbom), err)]
-async fn analyze_spdx(
-    guac: &GuacService,
-    sbom: &SPDX,
-) -> Result<
-    (
-        // CVE to PURLs
-        BTreeMap<String, BTreeSet<String>>,
-        // PURL to backtrace
-        BTreeMap<String, BTreeSet<Vec<String>>>,
-        // number of processed purls
-        usize,
-    ),
-    Error,
-> {
+async fn analyze_spdx(guac: &GuacService, sbom: &SPDX) -> Result<AnalyzeOutcome, Error> {
     let mut result = BTreeMap::<String, BTreeSet<String>>::new();
     let mut num = 0;
 
-    let purls = find_purls(&sbom).collect::<BTreeMap<_, _>>();
+    let purls = find_purls(sbom).collect::<BTreeMap<_, _>>();
 
     let mut processed = HashSet::new();
     let mut backtraces = BTreeMap::new();
 
-    for (purl_str, _) in &purls {
+    for purl_str in purls.keys() {
         if !processed.insert(purl_str) {
             // we already processed it
             continue;
