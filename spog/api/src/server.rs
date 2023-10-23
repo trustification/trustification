@@ -18,6 +18,7 @@ use exhort_model::AnalyzeRequest;
 use futures::future::select_all;
 use http::StatusCode;
 use spog_model::search;
+use tracing::instrument;
 use trustification_analytics::Tracker;
 use trustification_api::{search::SearchOptions, Apply};
 use trustification_auth::{
@@ -189,6 +190,7 @@ pub struct AppState {
 }
 
 impl AppState {
+    #[instrument(skip(self, provider), err)]
     pub async fn get_sbom(
         &self,
         id: &str,
@@ -209,6 +211,7 @@ impl AppState {
         Ok(response.bytes_stream())
     }
 
+    #[instrument(skip(self, provider), err)]
     pub async fn search_sbom(
         &self,
         q: &str,
@@ -234,6 +237,7 @@ impl AppState {
         Ok(response.json::<bombastic_model::prelude::SearchResult>().await?)
     }
 
+    #[instrument(skip(self, provider), err)]
     pub async fn get_vex(
         &self,
         id: &str,
@@ -254,6 +258,7 @@ impl AppState {
         Ok(response.bytes_stream())
     }
 
+    #[instrument(skip(self, provider), err)]
     pub async fn search_vex(
         &self,
         q: &str,
@@ -280,6 +285,7 @@ impl AppState {
     }
 
     #[allow(unused)]
+    #[instrument(skip(self, provider), err)]
     pub async fn analyze_sbom(
         &self,
         purls: Vec<String>,

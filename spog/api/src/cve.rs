@@ -253,6 +253,7 @@ async fn cve_details(
     Ok(HttpResponse::Ok().json(build_cve_details(&app_state, &guac, provider, id, &collectorist, &v11y).await?))
 }
 
+#[instrument(skip_all, fields(cve_id = %cve_id), err)]
 async fn build_cve_details<P>(
     app: &AppState,
     _guac: &GuacService,
@@ -267,7 +268,7 @@ where
     collectorist.trigger_vulnerability(&cve_id).await?;
     let details = v11y.fetch_by_alias(&cve_id).await?;
 
-    log::info!("Details: {details:#?}");
+    log::debug!("Details: {details:#?}");
 
     // fetch from index
 
