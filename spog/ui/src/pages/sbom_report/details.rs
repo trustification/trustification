@@ -138,18 +138,22 @@ type AffectedPackage = (PackageKey, PackageValue);
 
 #[derive(PartialEq, Eq, Ord, PartialOrd)]
 struct PackageKey {
+    r#type: String,
     namespace: Option<String>,
     name: String,
     version: Option<String>,
+    subpath: Option<String>,
     purl: String,
 }
 
 impl PackageKey {
     pub fn new(purl: &PackageUrl<'static>) -> Self {
         Self {
+            r#type: purl.ty().to_string(),
             namespace: purl.namespace().map(ToString::to_string),
             name: purl.name().to_string(),
             version: purl.version().map(ToString::to_string),
+            subpath: purl.subpath().map(ToString::to_string),
             purl: purl.to_string(),
         }
     }
@@ -170,18 +174,22 @@ struct AffectedPackagesProperties {
 fn affected_packages(props: &AffectedPackagesProperties) -> Html {
     #[derive(Clone, Copy, PartialEq, Eq)]
     enum Column {
+        Type,
         Namespace,
         Name,
         Version,
+        Path,
         Qualifiers,
     }
 
     impl TableEntryRenderer<Column> for (PackageKey, PackageValue) {
         fn render_cell(&self, context: CellContext<'_, Column>) -> Cell {
             match context.column {
+                Column::Type => html!({ self.0.r#type.clone() }),
                 Column::Namespace => html!({ for self.0.namespace.clone() }),
                 Column::Name => html!({ self.0.name.clone() }),
                 Column::Version => html!({ for self.0.version.clone() }),
+                Column::Path => html!({ for self.0.subpath.clone() }),
                 Column::Qualifiers => html!({ for self.1.qualifiers.iter().map(|(k,v)| html!(
                     { for v.iter().map(|v| {
                         html!(
@@ -224,9 +232,11 @@ fn affected_packages(props: &AffectedPackagesProperties) -> Html {
 
     let header = html_nested!(
         <TableHeader<Column>>
+            <TableColumn<Column> index={Column::Type} label="Type" />
             <TableColumn<Column> index={Column::Namespace} label="Namespace" />
             <TableColumn<Column> index={Column::Name} label="Name" />
             <TableColumn<Column> index={Column::Version} label="Version" />
+            <TableColumn<Column> index={Column::Path} label="Path" />
             <TableColumn<Column> index={Column::Qualifiers} label="Qualifiers" />
         </TableHeader<Column>>
     );
