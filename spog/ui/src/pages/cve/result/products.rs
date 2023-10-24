@@ -223,7 +223,6 @@ pub fn related_products(props: &RelatedProductsProperties) -> Html {
 #[derive(PartialEq, Properties)]
 pub struct RelatedProductsTableProperties {
     pub table_data: Rc<Vec<TableData>>,
-    // pub sboms: Rc<Vec<SearchResult<Vec<PackageSummary>>>>,
     pub sboms: Rc<Vec<Option<PackageSummary>>>,
 }
 
@@ -237,12 +236,6 @@ pub fn related_products_table(props: &RelatedProductsTableProperties) -> Html {
                 .enumerate()
                 .map(|(index, item)| {
                     let sbom_by_index = &sboms[index];
-                    // let sbom = if sbom_by_index.result.len() == 1 {
-                    //     let i = &sbom_by_index.result[0];
-                    //     Some(i.clone())
-                    // } else {
-                    //     None
-                    // };
 
                     TableData {
                         status: item.status.clone(),
