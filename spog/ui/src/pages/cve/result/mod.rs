@@ -8,9 +8,10 @@ use patternfly_yew::prelude::*;
 use products::RelatedProducts;
 use spog_model::prelude::CveDetails;
 use spog_ui_backend::{use_backend, CveService, SearchParameters, VexService};
-use spog_ui_components::cvss::Cvss3Label;
-use spog_ui_components::markdown::Markdown;
-use spog_ui_components::{async_state_renderer::async_content, time::Date};
+use spog_ui_components::{
+    async_state_renderer::async_content, common::Visible, cvss::Cvss3Label, editor::ReadonlyEditor, markdown::Markdown,
+    time::Date,
+};
 use std::rc::Rc;
 use std::str::FromStr;
 use yew::prelude::*;
@@ -18,7 +19,7 @@ use yew_more_hooks::hooks::use_page_state;
 use yew_more_hooks::{hooks::use_async_with_cloned_deps, prelude::UseAsyncState};
 use yew_oauth2::hook::use_latest_access_token;
 
-const CVE_DESCRIPTION_MAX_LENGH: usize = 180;
+const CVE_DESCRIPTION_MAX_LENGTH: usize = 180;
 
 fn truncate(s: &str, max_chars: usize) -> &str {
     match s.char_indices().nth(max_chars) {
@@ -44,7 +45,17 @@ pub fn result_view(props: &ResultViewProperties) -> Html {
         use_async_with_cloned_deps(
             move |id| async move {
                 let service = CveService::new(backend.clone(), access_token.clone());
-                service.get(&id).await.map(Rc::new).map_err(|err| err.to_string())
+                service
+                    .get(&id)
+                    .await
+                    .map_err(|err| err.to_string())?
+                    .map(|source| {
+                        Ok::<_, String>((
+                            Rc::new(serde_json::from_str::<cve::Cve>(&source).map_err(|err| err.to_string())?),
+                            Rc::new(source),
+                        ))
+                    })
+                    .transpose()
             },
             props.id.clone(),
         )
@@ -90,6 +101,7 @@ pub fn result_view(props: &ResultViewProperties) -> Html {
     enum TabIndex {
         Products,
         Advisories,
+        Source,
     }
 
     #[derive(Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
@@ -112,31 +124,49 @@ pub fn result_view(props: &ResultViewProperties) -> Html {
                     <Title>
                         {props.id.clone()} { " "}
                         if let UseAsyncState::Ready(Ok(details)) = &*cve_details {{
-                            match &**details {
-                                cve::Cve::Published(published) => cvss3(&published.containers.cna.metrics),
-                                cve::Cve::Rejected(_rejected) => html!(<Label label="Rejected" color={Color::Grey} />),
+                             match details.as_ref().map(|details| details.0.as_ref()) {
+                                Some(cve::Cve::Published(published)) => cvss3(&published.containers.cna.metrics),
+                                Some(cve::Cve::Rejected(_rejected)) => html!(<Label label="Rejected" color={Color::Grey} />),
+                                None => html!(),
                             }
                         }}
                     </Title>
-                    if let UseAsyncState::Ready(Ok(details)) = &*cve_details {
+                    if let UseAsyncState::Ready(Ok(Some((details, _)))) = &*cve_details {
                         { cve_title(details) }
                     }
                 </Content>
 
                 <div class="pf-v5-u-my-md"></div>
 
-                { async_content(&*cve_details, |details| html!(<CveDetailsView details={details.clone()} />)) }
+                { async_content(&*cve_details, |details| html!(
+                    if let Some((details, _)) = details.clone() {
+                        <CveDetailsView {details} />
+                    }
+                )) }
             </PageSection>
 
-            <PageSection>
-                <Tabs<TabIndex> r#box=true selected={page_state.tab} {onselect}>
-                    <Tab<TabIndex> index={TabIndex::Products} title="Related Products">
-                        { async_content(&*related_products, |products| html!(<RelatedProducts cve_details={products} />)) }
-                    </Tab<TabIndex>>
-                    <Tab<TabIndex> index={TabIndex::Advisories} title="Related Advisories">
-                        { async_content(&*related_advisories, |advisories| html!(<RelatedAdvisories {advisories} />)) }
-                    </Tab<TabIndex>>
+            <PageSection class="pf-v5-u-pb-0">
+                <Tabs<TabIndex> r#box=true selected={page_state.tab} {onselect} detached=true>
+                    <Tab<TabIndex> index={TabIndex::Products} title="Related Products" />
+                    <Tab<TabIndex> index={TabIndex::Advisories} title="Related Advisories" />
+                    <Tab<TabIndex> index={TabIndex::Source} title="Source" />
                 </Tabs<TabIndex>>
+            </PageSection>
+
+            <PageSection class="pf-v5-u-pt-0">
+                <Visible visible={matches!(page_state.tab, TabIndex::Products)} >
+                    { async_content(&*related_products, |products| html!(<RelatedProducts cve_details={products} />)) }
+                </Visible>
+                <Visible visible={matches!(page_state.tab, TabIndex::Advisories)} >
+                    { async_content(&*related_advisories, |advisories| html!(<RelatedAdvisories {advisories} />)) }
+                </Visible>
+                <Visible visible={matches!(page_state.tab, TabIndex::Source)} style="height: 100%;">
+                    { async_content(&*cve_details, |details| html!(
+                        if let Some((_, content)) = details {
+                            <ReadonlyEditor {content} />
+                        }
+                    )) }
+                </Visible>
             </PageSection>
         </>
     )
@@ -197,11 +227,11 @@ pub fn cve_details(props: &CveDetailsViewProperties) -> Html {
                                     {
                                         if !*show_more && details.containers.cna.descriptions.iter()
                                             .map(|e| e.value.len())
-                                            .sum::<usize>() > CVE_DESCRIPTION_MAX_LENGH
+                                            .sum::<usize>() > CVE_DESCRIPTION_MAX_LENGTH
                                         {
                                             html!(
                                                 <>
-                                                    {truncate(&details.containers.cna.descriptions[0].value, CVE_DESCRIPTION_MAX_LENGH)}{"..."}
+                                                    {truncate(&details.containers.cna.descriptions[0].value, CVE_DESCRIPTION_MAX_LENGTH)}{"..."}
                                                     <Button variant={ButtonVariant::Link} onclick={show_more_toggle}>{ "More" }</Button>
                                                 </>
                                             )
@@ -243,11 +273,11 @@ pub fn cve_details(props: &CveDetailsViewProperties) -> Html {
                                     {
                                         if !*show_more && details.containers.cna.rejected_reasons.iter()
                                             .map(|e| e.value.len())
-                                            .sum::<usize>() > CVE_DESCRIPTION_MAX_LENGH
+                                            .sum::<usize>() > CVE_DESCRIPTION_MAX_LENGTH
                                         {
                                             html!(
                                                 <>
-                                                    {truncate(&details.containers.cna.rejected_reasons[0].value, CVE_DESCRIPTION_MAX_LENGH)}{"..."}
+                                                    {truncate(&details.containers.cna.rejected_reasons[0].value, CVE_DESCRIPTION_MAX_LENGTH)}{"..."}
                                                     <Button variant={ButtonVariant::Link} onclick={show_more_toggle}>{ "More" }</Button>
                                                 </>
                                             )
