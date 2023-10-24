@@ -179,6 +179,7 @@ impl GuacService {
         })
     }
 
+    #[allow(dead_code)]
     pub async fn find_vulnerability(&self, purl: String) -> Result<HashMap<String, BTreeSet<String>>, Error> {
         let result = self.client.semantic().find_vulnerability(&purl).await?;
         Ok(result)
