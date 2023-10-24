@@ -228,6 +228,9 @@ impl Index {
         let mut document = doc!();
 
         document.add_text(self.fields.sbom_id, id);
+        if let Some(serial) = &bom.serial_number {
+            document.add_text(self.fields.sbom_uid, serial.to_string());
+        }
         document.add_date(
             self.fields.indexed_timestamp,
             DateTime::from_utc(OffsetDateTime::now_utc()),
@@ -518,7 +521,10 @@ impl trustification_index::Index for Index {
     ) -> Result<Self::MatchedDocument, SearchError> {
         let doc = searcher.doc(doc_address)?;
         let id = field2str(&self.schema, &doc, self.fields.sbom_id)?;
-        let uid = field2str(&self.schema, &doc, self.fields.sbom_uid)?;
+        let uid = doc
+            .get_first(self.fields.sbom_uid)
+            .and_then(|s| s.as_text())
+            .map(ToString::to_string);
         let name = field2str(&self.schema, &doc, self.fields.sbom_name)?;
 
         let snippet_generator = SnippetGenerator::create(searcher, query, self.fields.sbom.desc)?;
@@ -581,7 +587,7 @@ impl trustification_index::Index for Index {
         let dependencies: u64 = doc.get_all(self.fields.dep.purl).count() as u64;
         let document = SearchDocument {
             id: id.to_string(),
-            uid: uid.to_string(),
+            uid,
             version: version.to_string(),
             file_sha256: file_sha256.to_string(),
             purl,

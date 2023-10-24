@@ -58,7 +58,7 @@ pub struct SearchDocument {
     /// SBOM (storage) identifier
     pub id: String,
     /// SBOM unique identifier
-    pub uid: String,
+    pub uid: Option<String>,
     /// SBOM package name
     pub name: String,
     /// SBOM package version
