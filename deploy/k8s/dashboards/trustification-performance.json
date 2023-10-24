@@ -426,7 +426,7 @@
         "options": [],
         "query": "prometheus",
         "refresh": 1,
-        "regex": "app-sre-stage-01-prometheus|app-sre-prod-01-prometheus|prometheus",
+        "regex": "^app-sre-stage-01-prometheus|^app-sre-prod-01-prometheus|^prometheus",
         "skipUrlSync": false,
         "type": "datasource"
       },
