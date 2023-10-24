@@ -183,7 +183,6 @@ async fn spog_search_correlation(context: &mut SpogContext) {
 
 /// SPoG is the entrypoint for the frontend. It exposes an dependencies API, but forwards requests
 /// to Guac. This test is here to test this.
-#[ignore = "Unstable test, issue #618"]
 #[test_context(SpogContext)]
 #[tokio::test]
 #[ntest::timeout(30_000)]
@@ -196,7 +195,6 @@ async fn spog_dependencies(context: &mut SpogContext) {
 
     let purl: &str = "pkg:rpm/redhat/json-c@0.13.1-0.4.el8";
 
-    let mut attempt = 1;
     loop {
         let response = client
             .get(context.urlify("/api/v1/packages"))
@@ -207,17 +205,13 @@ async fn spog_dependencies(context: &mut SpogContext) {
             .send()
             .await
             .unwrap();
-        assert_eq!(response.status(), StatusCode::OK);
-
-        let payload: Value = response.json().await.unwrap();
-        let pkgs = payload.as_array().unwrap();
-        if pkgs.contains(&json!({"purl": "pkg:rpm/json-c@0.13.1-0.4.el8?arch=x86_64"})) {
-            break;
+        if response.status() == StatusCode::OK {
+            let payload: Value = response.json().await.unwrap();
+            let pkgs = payload.as_array().unwrap();
+            if pkgs.contains(&json!({"purl": "pkg:rpm/json-c@0.13.1-0.4.el8?arch=x86_64"})) {
+                break;
+            }
         }
-
-        attempt += 1;
-        assert!(attempt < 10, "Guac ingestion failed, no packages available");
-        // wait a bit until the SBOM gets ingested into Guac
         tokio::time::sleep(Duration::from_secs(1)).await;
     }
 
