@@ -8,6 +8,7 @@ use actix_web::{web, HttpResponse};
 use actix_web_httpauth::extractors::bearer::BearerAuth;
 use bombastic_model::data::SBOM;
 use bytes::{BufMut, BytesMut};
+use csaf::document::Category;
 use csaf::Csaf;
 use cve::Cve;
 use futures::stream::iter;
@@ -17,6 +18,7 @@ use packageurl::PackageUrl;
 use rand::Rng;
 use serde_json::Value;
 use spdx_rs::models::{PackageInformation, SPDX};
+use spog_model::csaf::{has_purl, trace_product};
 use spog_model::prelude::SbomReport;
 use spog_model::vuln::SbomReportVulnerability;
 use std::collections::{BTreeMap, BTreeSet, HashMap};
@@ -393,6 +395,10 @@ fn scrape_remediations(id: &str, purl: &str, vex: &HashMap<&str, Vec<Rc<Csaf>>>)
 
     // iterate over all documents
     for vex in vex.get(id).iter().flat_map(|v| *v) {
+        if vex.document.category != Category::Vex {
+            continue;
+        }
+
         // iterate over all vulnerabilities of the document
         for v in vex
             .vulnerabilities
@@ -402,6 +408,11 @@ fn scrape_remediations(id: &str, purl: &str, vex: &HashMap<&str, Vec<Rc<Csaf>>>)
         {
             // now convert all the remediations
             for r in v.remediations.iter().flatten() {
+                // only add remediations matching the purl
+                if !has_purl(&vex, &r.product_ids, purl) {
+                    continue;
+                }
+
                 result.push(Remediation {
                     details: r.details.clone(),
                 })
@@ -410,4 +421,28 @@ fn scrape_remediations(id: &str, purl: &str, vex: &HashMap<&str, Vec<Rc<Csaf>>>)
     }
 
     result
+}
+
+#[cfg(test)]
+mod test {
+
+    use super::*;
+
+    #[test]
+    fn has_url() {
+        let csaf = include_bytes!("../../../example-data/cve-2023-22998.json");
+        let csaf: Csaf = serde_json::from_slice(csaf).unwrap();
+
+        let mut vex = HashMap::new();
+        vex.insert("CVE-2023-22998", vec![Rc::new(csaf)]);
+        let rem = scrape_remediations(
+            "CVE-2023-22998",
+            "pkg:rpm/redhat/kernel-rt-modules-extra@5.14.0-284.11.1.rt14.296.el9_2?arch=x86_64",
+            &vex,
+        );
+
+        assert_eq!(rem, vec![Remediation{
+            details: "Before applying this update, make sure all previously released errata\nrelevant to your system have been applied.\n\nFor details on how to apply this update, refer to:\n\nhttps://access.redhat.com/articles/11258".to_string()
+        }]);
+    }
 }
