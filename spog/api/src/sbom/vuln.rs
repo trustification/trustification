@@ -8,6 +8,7 @@ use actix_web::{web, HttpResponse};
 use actix_web_httpauth::extractors::bearer::BearerAuth;
 use bombastic_model::data::SBOM;
 use bytes::{BufMut, BytesMut};
+use csaf::Csaf;
 use cve::Cve;
 use futures::stream::iter;
 use futures::{stream, StreamExt, TryStreamExt};
@@ -18,9 +19,11 @@ use serde_json::Value;
 use spdx_rs::models::{PackageInformation, SPDX};
 use spog_model::prelude::SbomReport;
 use spog_model::vuln::SbomReportVulnerability;
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::{BTreeMap, BTreeSet, HashMap};
+use std::rc::Rc;
 use std::str::FromStr;
 use tracing::instrument;
+use trustification_api::search::SearchOptions;
 use trustification_auth::client::TokenProvider;
 use trustification_common::error::ErrorInformation;
 
@@ -362,4 +365,49 @@ async fn backtrace<'a>(
     }
 
     Ok(result.into_iter())
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub struct Remediation {
+    pub details: String,
+}
+
+/// take a set of CVE is and fetch their related CSAF documents
+async fn collect_vex<'a>(
+    state: &AppState,
+    token: &dyn TokenProvider,
+    ids: &[&'a str],
+) -> Result<HashMap<&'a str, Vec<Rc<Csaf>>>, Error> {
+    for ids in ids.chunks(10) {
+        let q = "";
+
+        let vex = state.search_vex(q, 0, 1000, SearchOptions::default(), token).await?;
+    }
+
+    todo!()
+}
+
+/// from a set of relevant VEXes, fetch the matching remediations for this PURL
+fn scrape_remediations(id: &str, purl: &str, vex: &HashMap<&str, Vec<Rc<Csaf>>>) -> Vec<Remediation> {
+    let mut result = vec![];
+
+    // iterate over all documents
+    for vex in vex.get(id).iter().flat_map(|v| *v) {
+        // iterate over all vulnerabilities of the document
+        for v in vex
+            .vulnerabilities
+            .iter()
+            .flatten()
+            .filter(|v| v.cve.as_deref() == Some(id))
+        {
+            // now convert all the remediations
+            for r in v.remediations.iter().flatten() {
+                result.push(Remediation {
+                    details: r.details.clone(),
+                })
+            }
+        }
+    }
+
+    result
 }
