@@ -2,6 +2,7 @@ use crate::server::AppState;
 use actix_web::{web, HttpResponse};
 use actix_web_httpauth::extractors::bearer::BearerAuth;
 use http::header;
+use tracing::instrument;
 
 #[derive(Debug, serde::Deserialize)]
 pub struct GetParams {
@@ -20,6 +21,7 @@ pub struct GetParams {
         ("id" = String, Path, description = "Id of package to fetch"),
     )
 )]
+#[instrument(skip(state, access_token))]
 pub async fn get(
     state: web::Data<AppState>,
     web::Query(GetParams { id, token }): web::Query<GetParams>,
