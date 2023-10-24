@@ -27,6 +27,7 @@ use trustification_auth::{
     client::{TokenInjector, TokenProvider},
     swagger_ui::SwaggerUiOidc,
 };
+use trustification_infrastructure::tracing::PropagateCurrentContext;
 use trustification_infrastructure::{app::http::HttpServerBuilder, MainContext};
 use trustification_version::version;
 use utoipa::OpenApi;
@@ -201,6 +202,7 @@ impl AppState {
             .client
             .get(url)
             .query(&[("id", id)])
+            .propagate_current_context()
             .inject_token(provider)
             .await?
             .send()
@@ -227,6 +229,7 @@ impl AppState {
             .query(&[("q", q)])
             .query(&[("offset", offset), ("limit", limit)])
             .apply(&options)
+            .propagate_current_context()
             .inject_token(provider)
             .await?
             .send()
@@ -248,6 +251,7 @@ impl AppState {
             .client
             .get(url)
             .query(&[("advisory", id)])
+            .propagate_current_context()
             .inject_token(provider)
             .await?
             .send()
@@ -274,6 +278,7 @@ impl AppState {
             .query(&[("q", q)])
             .query(&[("offset", offset), ("limit", limit)])
             .apply(&options)
+            .propagate_current_context()
             .inject_token(provider)
             .await?
             .send()
@@ -295,6 +300,7 @@ impl AppState {
         let response = self
             .client
             .post(url)
+            .propagate_current_context()
             .inject_token(provider)
             .await?
             .json(&AnalyzeRequest { purls })

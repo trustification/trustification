@@ -1,9 +1,9 @@
 mod infra;
-mod tracing;
 
 pub mod app;
 pub mod endpoint;
 pub mod health;
+pub mod tracing;
 
 pub use infra::*;
 
