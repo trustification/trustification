@@ -174,7 +174,8 @@ pub struct Range {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Affected {
     /// The package that is affected by the vulnerability
-    pub package: Package,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub package: Option<Package>,
 
     /// This `severity` field applies to a specific package, in cases where affected
     /// packages have differing severities for the same vulnerability. If any package
