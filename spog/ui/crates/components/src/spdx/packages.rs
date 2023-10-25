@@ -1,4 +1,5 @@
 use super::{get_purl, spdx_external_references, spdx_package_list_entry};
+use itertools::Itertools;
 use packageurl::PackageUrl;
 use patternfly_yew::prelude::*;
 use spdx_rs::models::{PackageInformation, Relationship, SPDX};
@@ -129,8 +130,9 @@ pub fn spdx_packages(props: &SpdxPackagesProperties) -> Html {
                         <Label compact=true label={base.ty().to_string()} color={Color::Blue} />
                     </>)
                     .into(),
-                    Column::Versions => Cell::from(versions.iter().map(Html::from).collect::<Html>())
-                        .text_modifier(TextModifier::Truncate),
+                    Column::Versions => {
+                        Cell::from(html!(versions.iter().join(", "))).text_modifier(TextModifier::Truncate)
+                    }
                     Column::Qualifiers => html!(
                         { for qualifiers.iter().flat_map(|(k,v)| {
                             let k = k.clone();
