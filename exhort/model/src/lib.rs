@@ -126,7 +126,7 @@ impl AnalyzeResponse {
         }
 
         if let Some(vendor_analyses) = self.analysis.get_mut(&purl) {
-            if ! vendor_analyses.iter().any(|each| each.vendor == vendor) {
+            if !vendor_analyses.iter().any(|each| each.vendor == vendor) {
                 let analysis = VendorAnalysis {
                     vendor: vendor.clone(),
                     vulnerable: vec![],
@@ -154,7 +154,7 @@ impl AnalyzeResponse {
         }
 
         if let Some(vendor_analyses) = self.analysis.get_mut(&purl) {
-            if ! vendor_analyses.iter().any(|each| each.vendor == vendor) {
+            if !vendor_analyses.iter().any(|each| each.vendor == vendor) {
                 let analysis = VendorAnalysis {
                     vendor: vendor.clone(),
                     vulnerable: vec![],
@@ -174,7 +174,7 @@ impl AnalyzeResponse {
         }
 
         if let Some(vendor_analyses) = self.analysis.get_mut(&purl) {
-            if ! vendor_analyses.iter().any(|each| each.vendor == vendor) {
+            if !vendor_analyses.iter().any(|each| each.vendor == vendor) {
                 let analysis = VendorAnalysis {
                     vendor: vendor.clone(),
                     vulnerable: vec![],
