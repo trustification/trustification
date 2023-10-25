@@ -1,10 +1,12 @@
+use std::collections::HashMap;
+
 use serde::{Deserialize, Serialize};
 use serde_json::value::RawValue;
-use std::collections::HashMap;
 use utoipa::{
-    openapi::{schema::AdditionalProperties, *},
+    openapi::{*, schema::AdditionalProperties},
     ToSchema,
 };
+
 //use v11y_model::Vulnerability;
 
 #[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
@@ -32,10 +34,71 @@ fn response_affected() -> Object {
 #[derive(Serialize, Deserialize, Debug, Default, Clone, ToSchema)]
 pub struct AnalyzeResponse {
     #[schema(schema_with = response_affected)]
-    pub affected: HashMap<String, Vec<String>>,
+    pub analysis: HashMap<String, Vec<VendorAnalysis>>,
     //#[schema(additional_properties, value_type = Vulnerability)]
-    pub vulnerabilities: Vec<Box<RawValue>>,
+    pub cves: Vec<Box<RawValue>>,
     pub errors: Vec<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Default, Clone, ToSchema)]
+pub struct VendorAnalysis {
+    pub vendor: String,
+    pub vulnerable: Vec<VulnerabilityAnalysis>,
+}
+
+impl VendorAnalysis {
+    pub fn add_package_vulnerabilities(&mut self, vuln_ids: Vec<String>) {
+        for vuln_id in vuln_ids {
+            self.vulnerable.push(VulnerabilityAnalysis {
+                id: vuln_id,
+                severity: vec![],
+                aliases: vec![],
+            });
+        }
+    }
+
+    pub fn add_vulnerability_severity(&mut self, vuln_id: String, source: String, score_type: String, score_value: f64) {
+        if let Some(vuln_analysis) = self.vulnerable.iter_mut().find(|e| e.id == vuln_id ) {
+            vuln_analysis.add_severity(
+                source,
+                score_type,
+                score_value
+            )
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Default, Clone, ToSchema)]
+pub struct VulnerabilityAnalysis {
+    pub id: String,
+    pub severity: Vec<SeverityAnalysis>,
+    pub aliases: Vec<String>,
+}
+
+impl VulnerabilityAnalysis {
+    pub fn add_severity(&mut self, source: String, score_type: String, score_value: f64) {
+        self.severity.push( SeverityAnalysis {
+            source,
+            r#type: score_type,
+            score: score_value,
+        });
+
+    }
+
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
+pub struct SeverityAnalysis {
+    pub source: String,
+    pub r#type: String,
+    pub score: f64,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
+pub enum SeverityType {
+    CVSSv3,
+    CVSSv31,
+    CVSSv4,
 }
 
 impl AnalyzeResponse {
@@ -43,15 +106,62 @@ impl AnalyzeResponse {
         Self::default()
     }
 
-    pub fn add_package_vulnerability(&mut self, purl: &str, vuln_id: &str) {
-        if !self.affected.contains_key(purl) {
-            self.affected.insert(purl.to_string(), Vec::new());
+    pub fn add_package_vulnerabilities(&mut self, purl: String, vendor: String, vuln_ids: Vec<String>) {
+        if !self.analysis.contains_key(&purl) {
+            self.analysis.insert(purl.clone(), vec![]);
         }
 
-        if let Some(inner) = self.affected.get_mut(purl) {
-            inner.push(vuln_id.to_string());
+        if let Some(vendor_analyses) = self.analysis.get_mut(&purl) {
+            if vendor_analyses.iter().find(|each| each.vendor == vendor).is_none() {
+                let tmp = VendorAnalysis::default();
+                vendor_analyses.push(tmp);
+            }
+
+            if let Some(vendor_analysis) = vendor_analyses.iter_mut().find(|each| each.vendor == vendor) {
+                vendor_analysis.add_package_vulnerabilities(vuln_ids);
+            }
         }
     }
+
+    pub fn add_vulnerability_severity(&mut self,
+        purl:String,
+        vendor: String,
+        vuln_id: String,
+        source: String,
+        score_type: String,
+        score_value: f64
+    ) {
+        if !self.analysis.contains_key(&purl) {
+            self.analysis.insert(purl.clone(), vec![]);
+        }
+
+        if let Some(vendor_analyses) = self.analysis.get_mut(&purl) {
+            if vendor_analyses.iter().find(|each| each.vendor == vendor).is_none() {
+                let tmp = VendorAnalysis::default();
+                vendor_analyses.push(tmp);
+            }
+
+            if let Some(vendor_analysis) = vendor_analyses.iter_mut().find(|each| each.vendor == vendor) {
+                vendor_analysis.add_vulnerability_severity(
+                    vuln_id,
+                    source,
+                    score_type,
+                    score_value,
+                )
+            }
+        }
+        todo!()
+    }
+
+    //pub fn add_package_vulnerability(&mut self, purl: &str, vuln_id: &str) {
+    //if !self.analysis.contains_key(purl) {
+    //self.analysis.insert(purl.to_string(), Vec::new());
+    //}
+    //
+    //if let Some(inner) = self.analysis.get_mut(purl) {
+    //inner.push(vuln_id.to_string());
+    //}
+    //}
 
     /*pub fn add_vulnerability(&mut self, vuln: &Vulnerability) {
         self.vulnerabilities.push(vuln.clone());

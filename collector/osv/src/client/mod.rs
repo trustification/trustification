@@ -204,6 +204,8 @@ mod tests {
     #[tokio::test]
     async fn query_vuln() -> Result<(), anyhow::Error> {
         let vuln = OsvClient::new().vulns("GHSA-7rjr-3q55-vv33").await?.unwrap();
+
+        //println!("#{:#?}", vuln);
         let _vuln: v11y_client::Vulnerability = vuln.into();
 
         Ok(())
