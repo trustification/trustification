@@ -7,7 +7,7 @@ license = "Apache-2.0"
 description = "The data model of the API"
 
 [dependencies]
-utoipa = { version = "3" }
+utoipa = { version = "4" }
 serde = { version = "1", features = ["derive"] }
 time = { version = "0.3", features = ["serde"] }
 sikula = { version = "0.4.0", default-features = false, features = ["time"] }

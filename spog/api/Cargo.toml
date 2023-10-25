@@ -44,8 +44,8 @@ tokio = { version = "*", features = ["rt", "fs", "macros", "rt-multi-thread"] }
 tracing = "0.1"
 url = "2"
 urlencoding = "2.1.2"
-utoipa = { version = "3", features = ["actix_extras"] }
-utoipa-swagger-ui = { version = "3", features = ["actix-web"] }
+utoipa = { version = "4", features = ["actix_extras"] }
+utoipa-swagger-ui = { version = "4", features = ["actix-web"] }
 uuid = { version = "1", features = ["v4"] }
 zstd = "0.12"
 

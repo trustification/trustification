@@ -98,7 +98,7 @@ pub fn details(props: &DetailsProps) -> Html {
             .details
             .iter()
             .map(|vuln| {
-                let packages = Rc::new(build_packages(&vuln.affected_packages, backtraces.clone()));
+                let packages = Rc::new(build_packages(vuln.affected_packages.keys(), backtraces.clone()));
                 Entry {
                     vuln: vuln.clone(),
                     packages,
@@ -166,13 +166,13 @@ pub fn details(props: &DetailsProps) -> Html {
     }
 }
 
-fn build_packages(
-    packages: &BTreeSet<String>,
+fn build_packages<'a>(
+    packages: impl Iterator<Item = &'a String>,
     backtraces: Rc<BTreeMap<String, BTreeSet<Vec<String>>>>,
 ) -> Vec<AffectedPackage> {
     let mut result = BTreeMap::<PackageKey, PackageValue>::new();
 
-    for purl in packages.iter().filter_map(|p| PackageUrl::from_str(p).ok()) {
+    for purl in packages.filter_map(|p| PackageUrl::from_str(p).ok()) {
         let key = PackageKey::new(&purl);
         let value = result.entry(key).or_insert_with(|| PackageValue {
             backtraces: backtraces.clone(),
