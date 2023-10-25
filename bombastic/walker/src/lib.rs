@@ -1,6 +1,7 @@
 use crate::scanner::{Options, Scanner};
 use anyhow::anyhow;
 use clap::{arg, command, ArgAction, Args};
+use std::path::PathBuf;
 use std::process::ExitCode;
 use std::sync::Arc;
 use std::time::SystemTime;
@@ -65,6 +66,10 @@ pub struct Run {
 
     #[command(flatten)]
     pub infra: InfrastructureConfig,
+
+    /// A file to read/store the last sync timestamp to at the end of a successful run.
+    #[arg(long = "since-file")]
+    pub since_file: Option<PathBuf>,
 }
 
 impl Run {
@@ -126,6 +131,7 @@ impl Run {
                         provider,
                         validation_date,
                         fix_licenses: self.fix_licenses,
+                        since_file: self.since_file,
                     });
 
                     if let Some(interval) = self.scan_interval {

@@ -5,11 +5,13 @@ use sbom_walker::source::{DispatchSource, FileSource, HttpOptions, HttpSource};
 use sbom_walker::validation::ValidationVisitor;
 use sbom_walker::visitors::send::SendVisitor;
 use sbom_walker::walker::Walker;
+use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
 use tokio::time::MissedTickBehavior;
 use tracing::{instrument, log};
 use url::Url;
+use walker_common::since::Since;
 use walker_common::{
     fetcher::{Fetcher, FetcherOptions},
     sender::{self, provider::TokenProvider},
@@ -23,6 +25,7 @@ pub struct Options {
     pub provider: Arc<dyn TokenProvider>,
     pub validation_date: Option<SystemTime>,
     pub fix_licenses: bool,
+    pub since_file: Option<PathBuf>,
 }
 
 pub struct Scanner {
@@ -48,6 +51,7 @@ impl Scanner {
 
     #[instrument(skip(self))]
     pub async fn run_once(&self) -> anyhow::Result<()> {
+        let since = Since::new(None::<SystemTime>, self.options.since_file.clone(), Default::default())?;
         let source: DispatchSource = match self.options.source.to_file_path() {
             Ok(path) => FileSource::new(path, None)?.into(),
             Err(_) => HttpSource {
@@ -55,7 +59,7 @@ impl Scanner {
                 fetcher: Fetcher::new(FetcherOptions::default()).await?,
                 options: HttpOptions {
                     keys: self.options.keys.clone(),
-                    ..Default::default()
+                    since: *since,
                 },
             }
             .into(),
@@ -79,6 +83,8 @@ impl Scanner {
 
         let walker = Walker::new(source.clone());
         walker.walk(RetrievingVisitor::new(source.clone(), validation)).await?;
+
+        since.store()?;
 
         Ok(())
     }
