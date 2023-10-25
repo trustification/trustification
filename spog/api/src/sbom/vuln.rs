@@ -24,10 +24,15 @@ use spog_model::vuln::SbomReportVulnerability;
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::rc::Rc;
 use std::str::FromStr;
-use tracing::instrument;
+use tracing::{info_span, instrument};
 use trustification_api::search::SearchOptions;
 use trustification_auth::client::TokenProvider;
 use trustification_common::error::ErrorInformation;
+
+/// chunk size for finding VEX by CVE IDs
+const SEARCH_CHUNK_SIZE: usize = 10;
+/// number of parallel fetches for VEX documents
+const PARALLEL_FETCH_VEX: usize = 4;
 
 #[derive(Debug, serde::Deserialize)]
 pub struct GetParams {
@@ -355,11 +360,20 @@ async fn analyze_spdx(
 
     // fill in the remediations
 
-    for (cve, map) in &mut outcome.cve_to_purl {
-        for (purl, rem) in map {
-            rem.extend(scrape_remediations(cve, purl, &vex));
+    info_span!("scrape_remediations").in_scope(|| {
+        let mut count = 0;
+        for (cve, map) in &mut outcome.cve_to_purl {
+            for (purl, rem) in map {
+                let rems = scrape_remediations(cve, purl, &vex);
+                if !rems.is_empty() {
+                    log::debug!("Remediations for {cve} / {purl}: {rems:?}");
+                }
+                count += rems.len();
+                rem.extend(rems);
+            }
         }
-    }
+        log::debug!("Found {count} remediations");
+    });
 
     // done
 
@@ -408,15 +422,17 @@ async fn collect_vex<'a>(
     let (_, num_ids) = ids.size_hint();
     tracing::Span::current().record("num_ids", num_ids);
 
+    let ids = ids.filter(|id| !id.as_ref().is_empty());
+
     // a stream of chunked queries
     let cves = stream::iter(ids)
         // request in chunks of 10
-        .ready_chunks(10)
+        .ready_chunks(SEARCH_CHUNK_SIZE)
         .map(Ok)
         .and_then(|ids| async move {
             let q = ids
                 .iter()
-                .map(|id| format!(r#""{}""#, id.as_ref()))
+                .map(|id| format!(r#"cve:"{}""#, id.as_ref()))
                 .collect::<Vec<_>>()
                 .join(" OR ");
 
@@ -449,8 +465,8 @@ async fn collect_vex<'a>(
 
             Ok::<_, Error>(result)
         })
-        // fetch 4 in parallel
-        .buffer_unordered(4)
+        // fetch parallel
+        .buffer_unordered(PARALLEL_FETCH_VEX)
         // fold them into a single result
         .try_fold(HashMap::<String, Vec<Rc<Csaf>>>::new(), |mut acc, x| async move {
             for (id, docs) in x {
@@ -464,7 +480,6 @@ async fn collect_vex<'a>(
 }
 
 /// from a set of relevant VEXes, fetch the matching remediations for this PURL
-#[instrument(skip(vex), fields(vex=vex.len()))]
 fn scrape_remediations(id: &str, purl: &str, vex: &HashMap<String, Vec<Rc<Csaf>>>) -> Vec<Remediation> {
     let mut result = vec![];
 
