@@ -2,8 +2,10 @@ use std::collections::HashSet;
 use std::str::FromStr;
 use std::sync::Arc;
 
-use actix_web::{post, web, HttpResponse, Responder, ResponseError};
+use actix_web::{HttpResponse, post, Responder, ResponseError, web};
 use guac::client::intrinsic::certify_vuln::CertifyVulnSpec;
+use guac::client::intrinsic::vuln_metadata::{VulnerabilityMetadataSpec, VulnerabilityScoreType};
+use guac::client::intrinsic::vulnerability::VulnerabilitySpec;
 use packageurl::PackageUrl;
 use serde_json::value::RawValue;
 use utoipa::OpenApi;
@@ -142,12 +144,43 @@ async fn analyze(state: web::Data<AppState>, request: web::Json<AnalyzeRequest>)
                 .await
             {
                 Ok(vulns) => {
-                    // Add mappings from purl->vuln for all discovered
-                    for vuln in vulns {
-                        for vuln_id in vuln.vulnerability.vulnerability_ids {
-                            if vuln_id.vulnerability_id.starts_with("cve") {
-                                response.add_package_vulnerability(purl_str, &vuln_id.vulnerability_id);
-                                vuln_ids.insert(vuln_id.vulnerability_id);
+                    // Add mappings from purl->vuln by vendor for all discovered
+                    for certify_vuln in vulns {
+
+                        response.add_package_vulnerabilities(
+                            purl_str.clone(),
+                            certify_vuln.metadata.collector,
+                            certify_vuln.vulnerability.vulnerability_ids.iter().map(|e|e.vulnerability_id.clone()).collect(),
+                        );
+                        for vuln_id in certify_vuln.vulnerability.vulnerability_ids {
+                            vuln_ids.insert(
+                                vuln_id.vulnerability_id
+                            );
+                        }
+
+                        if let Ok(meta) = state
+                            .guac_client
+                            .intrinsic()
+                            .vuln_metadata(
+                                &VulnerabilityMetadataSpec {
+                                    vulnerability: Some( VulnerabilitySpec {
+                                        id: Some(certify_vuln.vulnerability.id.clone()),
+                                        ..Default::default()
+                                    } ),
+                                    ..Default::default()
+                                }
+
+                            ).await {
+                            for vuln_meta in meta {
+                                // add severities into the response if possible.
+                                response.add_vulnerability_severity(
+                                    purl_str.clone(),
+                                    vuln_meta.collector,
+                                    vuln_meta.origin,
+                                    certify_vuln.vulnerability.id.clone(),
+                                    score_type_to_string( vuln_meta.score_type),
+                                    vuln_meta.score_value,
+                                )
                             }
                         }
                     }
@@ -165,13 +198,14 @@ async fn analyze(state: web::Data<AppState>, request: web::Json<AnalyzeRequest>)
     // mappings, go collect the vulnerability details from v11y, doing
     // our best effort and not allowing soft errors to fail the process.
     for vuln_id in vuln_ids {
+        if vuln_id.to_lowercase().starts_with("CVE") {
+
         match state.v11y_client.get_cve(&vuln_id).await {
             Ok(vulnerabilities) => {
                 if vulnerabilities.status() == 200 {
                     match vulnerabilities.json::<Box<RawValue>>().await {
                         Ok(cve) => {
-                            //response.vulnerabilities.extend(vulns.iter().cloned() );
-                            response.vulnerabilities.push(cve);
+                            response.cves.push(cve);
                         }
                         Err(err) => {
                             log::error!("v11y cve error {} {}", err, vuln_id);
@@ -190,6 +224,39 @@ async fn analyze(state: web::Data<AppState>, request: web::Json<AnalyzeRequest>)
                 response.errors.push(err.to_string())
             }
         }
+        }
     }
     Ok(HttpResponse::Ok().json(response))
+}
+
+fn score_type_to_string(ty: VulnerabilityScoreType) -> String {
+    match ty {
+        VulnerabilityScoreType::CVSSv2 => {
+            "CVSSv2".to_string()
+        }
+        VulnerabilityScoreType::CVSSv3 => {
+            "CVSSv3".to_string()
+        }
+        VulnerabilityScoreType::CVSSv31 => {
+            "CVSSv31".to_string()
+        }
+        VulnerabilityScoreType::CVSSv4 => {
+            "CVSSv4".to_string()
+        }
+        VulnerabilityScoreType::EPSSv1 => {
+            "EPSSv1".to_string()
+        }
+        VulnerabilityScoreType::EPSSv2 => {
+            "EPSSv2".to_string()
+        }
+        VulnerabilityScoreType::OWASP => {
+            "OWASP".to_string()
+        }
+        VulnerabilityScoreType::SSVC => {
+            "SSVC".to_string()
+        }
+        VulnerabilityScoreType::Other(other) => {
+            other
+        }
+    }
 }
