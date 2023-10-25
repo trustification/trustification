@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+use std::time::SystemTime;
 use std::{net::SocketAddr, sync::Arc, time::Duration};
 
 use csaf_walker::discover::DiscoveredAdvisory;
@@ -13,6 +15,7 @@ use serde::Deserialize;
 use tokio::sync::{Mutex, RwLock};
 use trustification_auth::client::TokenInjector;
 use trustification_auth::client::TokenProvider;
+use walker_common::since::Since;
 use walker_common::{
     fetcher::{Fetcher, FetcherOptions},
     validate::ValidationOptions,
@@ -25,6 +28,7 @@ pub async fn run(
     provider: Arc<dyn TokenProvider>,
     options: ValidationOptions,
     ignore_distributions: Vec<url::Url>,
+    since_file: Option<PathBuf>,
 ) -> Result<(), anyhow::Error> {
     let fetcher = Fetcher::new(Default::default()).await?;
     let client = Arc::new(reqwest::Client::new());
@@ -92,11 +96,12 @@ pub async fn run(
             .walk(RetrievingVisitor::new(source.clone(), validation))
             .await?;
     } else {
+        let since = Since::new(None::<SystemTime>, since_file, Default::default())?;
         log::info!("Walking VEX docs: source='{source}' workers={workers}");
         let source = HttpSource {
             url: source,
             fetcher,
-            options: Default::default(),
+            options: csaf_walker::source::HttpOptions { since: *since },
         };
         Walker::new(source.clone())
             .with_distribution_filter(Box::new(move |distribution| {
@@ -104,6 +109,8 @@ pub async fn run(
             }))
             .walk_parallel(workers, RetrievingVisitor::new(source.clone(), validation))
             .await?;
+
+        since.store()?;
     }
 
     Ok(())

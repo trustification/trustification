@@ -1,0 +1,16 @@
+{{ if and .Values.vexination.walker.enabled .Values.vexination.walker.enabled }}
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: vexination-walker-state
+  labels:
+    app.kubernetes.io/name: vexination-walker-state
+    app.kubernetes.io/component: walker
+    app.kubernetes.io/part-of: trustification
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Mi
+{{ end }}

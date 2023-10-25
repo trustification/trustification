@@ -21,6 +21,10 @@ spec:
             app.kubernetes.io/part-of: trustification
         spec:
           restartPolicy: OnFailure
+          volumes:
+            - name: walker-state
+              persistentVolumeClaim:
+                claimName: bombastic-walker-state
           containers:
             - image: {{ .Values.trustImage }}:{{ .Values.release }}
               imagePullPolicy: {{ .Values.imagePullPolicy }}
@@ -38,6 +42,8 @@ spec:
                 - "{{ .Values.bombastic.walker.signingKey }}"
                 - "--fix-licenses"
                 - "true"
+                - "--since-file"
+                - "/walker-state/since"
               env:
                 - name: RUST_LOG
                   value: {{ default "info" .Values.bombastic.walker.logLevel }}
@@ -50,6 +56,9 @@ spec:
                 - containerPort: 9010
                   protocol: TCP
                   name: infra
+              volumeMounts:
+                - mountPath: /walker-state
+                  name: walker-state
               resources:
                 {{- toYaml .Values.bombastic.walker.resources | nindent 16 }}
               livenessProbe:
