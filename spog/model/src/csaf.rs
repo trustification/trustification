@@ -43,14 +43,13 @@ pub fn has_purl(csaf: &Csaf, ids: &Option<Vec<ProductIdT>>, purl: &str) -> bool 
     // find the branch of the PURL
     walk_product_tree_branches(&csaf.product_tree, |parents, branch| {
         if branch_has_purl(branch, purl) {
-            println!("{purl} -> {:?}", product_id(branch));
             // this branch has the purl, check if it's product is contained in the id set
             if contains_product(rel, &ids, branch) {
                 has = true;
             }
             // or if any of its parents is
             for parent in parents {
-                if contains_product(rel, &ids, &parent) {
+                if contains_product(rel, &ids, parent) {
                     has = true;
                 }
             }
