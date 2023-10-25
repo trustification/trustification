@@ -1,14 +1,14 @@
+mod cve;
+
 use packageurl::PackageUrl;
 use patternfly_yew::prelude::*;
 use spog_model::prelude::{Remediation, SbomReportVulnerability};
 use spog_ui_components::{cvss::CvssScore, time::Date};
-use spog_ui_navigation::{AppRoute, View};
 use std::cmp::Ordering;
 use std::collections::{BTreeMap, BTreeSet};
 use std::rc::Rc;
 use std::str::FromStr;
 use yew::prelude::*;
-use yew_nested_router::components::Link;
 
 #[derive(Clone, PartialEq, Properties)]
 pub struct DetailsProps {
@@ -74,9 +74,7 @@ pub fn details(props: &DetailsProps) -> Html {
             let content = match column {
                 Column::Id => {
                     html!(
-                        <Link<AppRoute> target={AppRoute::Cve(View::Content {id: self.vuln.id.clone()})}>
-                            {"All CVE details "} { Icon::ArrowRight }
-                        </Link<AppRoute>>
+                        <cve::Details id={self.vuln.id.clone()} />
                     )
                 }
                 Column::AffectedPackages => {
@@ -290,9 +288,11 @@ fn affected_packages(props: &AffectedPackagesProperties) -> Html {
                 false => html!(
                     <List r#type={ListType::Basic}>
                         {
-                            for self.1.backtraces.get(&self.0.purl).iter().flat_map(|p| *p).map(|trace| {
-                                trace.join(" » ")
-                            })
+                            for self.1.backtraces.get(&self.0.purl).iter().flat_map(|p| *p).map(|trace| html_nested!(
+                                <ListItem>
+                                    { trace.join(" » ") }
+                                </ListItem>
+                            ))
                         }
                     </List>
                 ),
@@ -303,8 +303,8 @@ fn affected_packages(props: &AffectedPackagesProperties) -> Html {
                     <Title level={Level::H4}>{"Remediation"}</Title>
                     <List r#type={ListType::Basic}>
                         { for self.1.remediations.iter().map(|rem| {
-                            html!(
-                                { rem.details.clone() }
+                            html_nested! (
+                                <ListItem> { rem.details.clone() } </ListItem>
                             )
                         })}
                     </List>
