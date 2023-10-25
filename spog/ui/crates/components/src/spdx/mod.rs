@@ -44,7 +44,8 @@ pub fn spdx_creator(bom: &SPDX) -> Html {
                             _ => html! (
                                 <DescriptionGroup term="Creators">
                                     <List>
-                                        { for bom.document_creation_information.creation_info.creators.iter().map(Html::from) }
+                                        { for bom.document_creation_information.creation_info.creators.iter()
+                                            .map(|i| html_nested!(<ListItem> {i} </ListItem>)) }
                                     </List>
                                 </DescriptionGroup>
                             )
@@ -152,11 +153,11 @@ pub fn spdx_external_references(package: &PackageInformation) -> Html {
                 .external_reference
                 .iter()
                 .map(|e| {
-                    html!( <>
+                    html_nested!( <ListItem>
                         {&e.reference_locator} { " " }
                         <Label label={format!("{:?}", e.reference_category)} color={Color::Blue} /> { " " }
                         <Label label={format!("{}", e.reference_type)} color={Color::Grey} />
-                    </> )
+                    </ListItem> )
                 })
             }
         </List>

@@ -213,7 +213,7 @@ pub fn csaf_references(props: &CsafReferencesProperties) -> Html {
             if let Some(references) = &props.references {
                 <List>
                     { for references.iter().map(|reference| {
-                        html! ( <>
+                        html_nested! ( <ListItem>
                             <a class="pf-v5-c-button pf-m-link" href={reference.url.to_string()} target="_blank">
                                 { &reference.summary }
                                 <span class="pf-v5-c-button__icon pf-m-end">
@@ -223,7 +223,7 @@ pub fn csaf_references(props: &CsafReferencesProperties) -> Html {
                             if let Some(category) = &reference.category {
                                 <Label compact=true label={ref_cat_str(category)} color={Color::Blue} />
                             }
-                        </>)
+                        </ListItem>)
                     }) }
                 </List>
             }
@@ -327,10 +327,12 @@ fn csaf_product_status(props: &CsafProductStatusSectionProperties) -> Html {
                 <List>
                     {
                         match props.overview {
-                            false => entries.iter().map(|entry| {
-                                    csaf_product_status_entry_details(&props.csaf, entry)
-                                }).collect::<Vec<_>>(),
-                            true => csaf_product_status_entry_overview(&props.csaf, entries),
+                            false => entries.iter().map(|entry| html_nested! (
+                                <ListItem> {csaf_product_status_entry_details(&props.csaf, entry)} </ListItem>
+                            )).collect::<Vec<_>>(),
+                            true => csaf_product_status_entry_overview(&props.csaf, entries).into_iter()
+                                .map(|i| html_nested!(<ListItem> {i} </ListItem>))
+                                .collect::<Vec<_>>(),
                         }
                     }
                 </List>

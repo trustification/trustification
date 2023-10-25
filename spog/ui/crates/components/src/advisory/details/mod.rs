@@ -170,8 +170,8 @@ impl TableEntryRenderer<Column> for VulnerabilityWrapper {
                     <CardWrapper plain=true title="IDs">
                         if let Some(ids) = &self.ids {
                             <List>
-                                { for ids.iter().map(|id|{
-                                    html!(<>{&id.text}  {" ("} { &id.system_name } {")"}</>)
+                                { for ids.iter().map(|id| {
+                                    html_nested!(<ListItem>{&id.text}  {" ("} { &id.system_name } {")"}</ListItem>)
                                 })}
                             </List>
                         }
