@@ -125,3 +125,5 @@ cyclonedx-bom = { git = "https://github.com/trustification/cyclonedx-rust-cargo"
 #spdx-rs = { git = "https://github.com/trustification/spdx-rs", rev = "c65be086e898dae88609f07bbc5a224ba4e0838d" } # FIXME: awaiting doubleopen-project/spdx-rs#/27
 
 cve = { git = "https://github.com/ctron/cve", rev = "77341768d893098f1f8b1397364fecfb16b4d776" } # FIXME: awaiting release
+
+
