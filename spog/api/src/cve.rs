@@ -20,7 +20,7 @@ use spog_model::cve::{
 use std::collections::{BTreeMap, BTreeSet, HashSet};
 use std::sync::Arc;
 use tracing::instrument;
-use trustification_api::search::SearchResult;
+use trustification_api::search::{SearchOptions, SearchResult};
 use trustification_auth::authenticator::Authenticator;
 use trustification_auth::client::{BearerTokenProvider, TokenProvider};
 use trustification_infrastructure::new_auth;
@@ -69,8 +69,12 @@ async fn cve_search(
 /// return the number of related advisories for a CVE
 #[instrument(skip(state), err, ret)]
 async fn count_related_advisories(state: &AppState, cve: &str) -> Result<usize, Error> {
+    let options = SearchOptions {
+        summaries: false,
+        ..Default::default()
+    };
     let result = state
-        .search_vex(&format!(r#"cve:"{}""#, cve), 0, 1, Default::default(), &*state.provider)
+        .search_vex(&format!(r#"cve:"{}""#, cve), 0, 1000, options, &*state.provider)
         .await?;
     Ok(result.total)
 }
