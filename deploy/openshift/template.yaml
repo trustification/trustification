@@ -42,6 +42,20 @@ objects:
   - kind: PersistentVolumeClaim
     apiVersion: v1
     metadata:
+      name: bombastic-walker-state
+      labels:
+        app.kubernetes.io/name: bombastic-walker-state
+        app.kubernetes.io/component: walker
+        app.kubernetes.io/part-of: trustification
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 1Mi
+  - kind: PersistentVolumeClaim
+    apiVersion: v1
+    metadata:
       name: collectorist-storage
       labels:
         app.kubernetes.io/name: collectorist-api
@@ -81,6 +95,20 @@ objects:
       resources:
         requests:
           storage: 10Gi
+  - kind: PersistentVolumeClaim
+    apiVersion: v1
+    metadata:
+      name: vexination-walker-state
+      labels:
+        app.kubernetes.io/name: vexination-walker-state
+        app.kubernetes.io/component: walker
+        app.kubernetes.io/part-of: trustification
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 1Mi
   - apiVersion: v1
     kind: Service
     metadata:
@@ -2087,6 +2115,10 @@ objects:
                 app.kubernetes.io/part-of: trustification
             spec:
               restartPolicy: OnFailure
+              volumes:
+                - name: walker-state
+                  persistentVolumeClaim:
+                    claimName: bombastic-walker-state
               containers:
                 - image: ${BACKEND_IMAGE}:${IMAGE_TAG}
                   imagePullPolicy: Always
@@ -2105,6 +2137,8 @@ objects:
                     - https://access.redhat.com/security/data/97f5eac4.txt#77E79ABE93673533ED09EBE2DCE3823597F5EAC4
                     - --fix-licenses
                     - 'true'
+                    - --since-file
+                    - /walker-state/since
                   env:
                     - name: RUST_LOG
                       value: ${LOG_LEVEL}
@@ -2125,6 +2159,9 @@ objects:
                     - containerPort: 9010
                       protocol: TCP
                       name: infra
+                  volumeMounts:
+                    - mountPath: /walker-state
+                      name: walker-state
                   resources: ${{BOMBASTIC_WALKER_RESOURCES}}
                   livenessProbe:
                     httpGet:
@@ -2263,6 +2300,10 @@ objects:
                 app.kubernetes.io/part-of: trustification
             spec:
               restartPolicy: Never
+              volumes:
+                - name: walker-state
+                  persistentVolumeClaim:
+                    claimName: vexination-walker-state
               containers:
                 - image: ${BACKEND_IMAGE}:${IMAGE_TAG}
                   imagePullPolicy: Always
@@ -2279,6 +2320,8 @@ objects:
                     - --ignore-distributions
                     - https://access.redhat.com/security/data/csaf/v2/advisories/
                     - '-3'
+                    - --since-file
+                    - /walker-state/since
                   env:
                     - name: RUST_LOG
                       value: ${LOG_LEVEL}
@@ -2295,6 +2338,9 @@ objects:
                           name: ${OIDC_PROVIDER_CLIENT_SECRET_NAME}
                     - name: OIDC_PROVIDER_ISSUER_URL
                       value: ${ISSUER_URL}
+                  volumeMounts:
+                    - mountPath: /walker-state
+                      name: walker-state
                   resources: null
                   livenessProbe:
                     httpGet:
