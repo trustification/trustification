@@ -94,10 +94,8 @@ impl VulnerabilityAnalysis {
 
     pub fn add_aliases(&mut self, aliases: Vec<String>) {
         for alias in aliases {
-            if self.id != alias {
-                if !self.aliases.contains(&alias) {
-                    self.aliases.push(alias);
-                }
+            if self.id != alias && !self.aliases.contains(&alias) {
+                self.aliases.push(alias);
             }
         }
     }
@@ -128,7 +126,7 @@ impl AnalyzeResponse {
         }
 
         if let Some(vendor_analyses) = self.analysis.get_mut(&purl) {
-            if vendor_analyses.iter().find(|each| each.vendor == vendor).is_none() {
+            if ! vendor_analyses.iter().any(|each| each.vendor == vendor) {
                 let analysis = VendorAnalysis {
                     vendor: vendor.clone(),
                     vulnerable: vec![],
@@ -156,7 +154,7 @@ impl AnalyzeResponse {
         }
 
         if let Some(vendor_analyses) = self.analysis.get_mut(&purl) {
-            if vendor_analyses.iter().find(|each| each.vendor == vendor).is_none() {
+            if ! vendor_analyses.iter().any(|each| each.vendor == vendor) {
                 let analysis = VendorAnalysis {
                     vendor: vendor.clone(),
                     vulnerable: vec![],
@@ -176,7 +174,7 @@ impl AnalyzeResponse {
         }
 
         if let Some(vendor_analyses) = self.analysis.get_mut(&purl) {
-            if vendor_analyses.iter().find(|each| each.vendor == vendor).is_none() {
+            if ! vendor_analyses.iter().any(|each| each.vendor == vendor) {
                 let analysis = VendorAnalysis {
                     vendor: vendor.clone(),
                     vulnerable: vec![],
