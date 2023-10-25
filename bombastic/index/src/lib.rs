@@ -25,7 +25,7 @@ use trustification_index::{
         doc,
         query::{Occur, Query},
         schema::{Field, Schema, Term, FAST, STORED, STRING, TEXT},
-        DateTime,
+        DateTime, DocId, Score, SegmentReader,
     },
     term2query, Document, Error as SearchError, SearchQuery,
 };
@@ -505,9 +505,34 @@ impl trustification_index::Index for Index {
         offset: usize,
         limit: usize,
     ) -> Result<(Vec<(f32, DocAddress)>, usize), SearchError> {
+        let date_field = self.schema.get_field_name(self.fields.sbom_created).to_string();
+        let now = tantivy::DateTime::from_utc(OffsetDateTime::now_utc());
         Ok(searcher.search(
             query,
-            &(TopDocs::with_limit(limit).and_offset(offset), tantivy::collector::Count),
+            &(
+                TopDocs::with_limit(limit)
+                    .and_offset(offset)
+                    .tweak_score(move |segment_reader: &SegmentReader| {
+                        let date_reader = segment_reader.fast_fields().date(&date_field);
+
+                        move |doc: DocId, original_score: Score| {
+                            let date_reader = date_reader.clone();
+                            let mut tweaked = original_score;
+                            // Now look at the date, normalize score between 0 and 1 (baseline 1970)
+                            if let Ok(Some(date)) = date_reader.map(|s| s.first(doc)) {
+                                if date < now {
+                                    let normalized =
+                                        1.0 + (date.into_timestamp_secs() as f64 / now.into_timestamp_secs() as f64);
+                                    log::trace!("DATE score impact {} -> {}", tweaked, tweaked * (normalized as f32));
+                                    tweaked *= normalized as f32;
+                                }
+                            }
+                            log::trace!("Tweaking from {} to {}", original_score, tweaked);
+                            tweaked
+                        }
+                    }),
+                tantivy::collector::Count,
+            ),
         )?)
     }
 
