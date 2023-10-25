@@ -10,24 +10,22 @@ use std::{
     collections::{hash_map::Entry, HashMap, HashSet},
     time::Duration,
 };
-use tantivy::{
-    collector::TopDocs,
-    query::{AllQuery, TermSetQuery},
-    schema::{IndexRecordOption, TextFieldIndexing},
-    store::ZstdCompressor,
-    tokenizer::{Language, LowerCaser, NgramTokenizer, RemoveLongFilter, Stemmer, TextAnalyzer, TokenizerManager},
-    DocAddress, DocId, IndexSettings, Score, Searcher, SegmentReader, SnippetGenerator,
-};
 use time::OffsetDateTime;
 use trustification_api::search::SearchOptions;
 use trustification_index::{
     boost, create_date_query, create_float_query, create_string_query, create_text_query, field2date, field2float,
     field2str, field2strvec, sort_by,
     tantivy::{
+        self,
+        collector::TopDocs,
         doc,
+        query::{AllQuery, TermSetQuery},
         query::{BooleanQuery, Query},
         schema::{Field, Schema, Term, FAST, INDEXED, STORED, STRING, TEXT},
-        DateTime,
+        schema::{IndexRecordOption, TextFieldIndexing},
+        store::ZstdCompressor,
+        tokenizer::{Language, LowerCaser, NgramTokenizer, RemoveLongFilter, Stemmer, TextAnalyzer, TokenizerManager},
+        DateTime, DocAddress, DocId, IndexSettings, Score, Searcher, SegmentReader, SnippetGenerator,
     },
     term2query, Document, Error as SearchError, SearchQuery,
 };
