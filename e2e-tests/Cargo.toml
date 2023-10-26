@@ -8,8 +8,5 @@ edition = "2021"
 thirtyfour = "0.31.0"
 tokio = "1.33.0"
 clap = { version = "4", features = ["derive", "env"] }
-xshell = "0.2"
-test-context = "0.1"
-async-trait = "0.1.74"
 cucumber = { version = "0.20", features = ["output-junit","output-json","libtest"] }
 futures = "0.3.1"
