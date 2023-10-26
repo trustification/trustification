@@ -1,4 +1,5 @@
 use super::{get_purl, spdx_external_references, spdx_package_list_entry};
+use itertools::Itertools;
 use packageurl::PackageUrl;
 use patternfly_yew::prelude::*;
 use spdx_rs::models::{PackageInformation, Relationship, SPDX};
@@ -129,8 +130,9 @@ pub fn spdx_packages(props: &SpdxPackagesProperties) -> Html {
                         <Label compact=true label={base.ty().to_string()} color={Color::Blue} />
                     </>)
                     .into(),
-                    Column::Versions => Cell::from(versions.iter().map(Html::from).collect::<Html>())
-                        .text_modifier(TextModifier::Truncate),
+                    Column::Versions => {
+                        Cell::from(html!(versions.iter().join(", "))).text_modifier(TextModifier::Truncate)
+                    }
                     Column::Qualifiers => html!(
                         { for qualifiers.iter().flat_map(|(k,v)| {
                             let k = k.clone();
@@ -187,7 +189,7 @@ pub fn spdx_packages(props: &SpdxPackagesProperties) -> Html {
                                 <Card plain=true title={html!(<Title>{"Versions"}</Title>)}>
                                     <CardBody>
                                         <List r#type={ListType::Basic}>
-                                            { for versions.iter().map(Html::from) }
+                                            { for versions.iter().map(|i| html_nested!(<ListItem> {i} </ListItem>)) }
                                         </List>
                                     </CardBody>
                                 </Card>
@@ -197,7 +199,7 @@ pub fn spdx_packages(props: &SpdxPackagesProperties) -> Html {
                                 <Card plain=true title={html!(<Title>{"Packages"}</Title>)}>
                                     <CardBody>
                                         <List r#type={ListType::Basic}>
-                                            { for packages.iter().map(spdx_package_list_entry)}
+                                            { for packages.iter().map(|i| html_nested!(<ListItem> { spdx_package_list_entry(i) } </ListItem>))}
                                         </List>
                                     </CardBody>
                                 </Card>
@@ -509,7 +511,11 @@ pub fn render_single_details(
                         Some(html_nested!(<CardBody>
                             <Title level={Level::H3}>{"Outgoing"}</Title>
                             <List r#type={ListType::Basic}>
-                                { for outgoing.into_iter().map(|rel|spdx_relationship_entry(packages, rel, &rel.spdx_element_id))}
+                                { for outgoing.into_iter().map(|rel| html_nested!(
+                                    <ListItem>
+                                        {spdx_relationship_entry(packages, rel, &rel.spdx_element_id)}
+                                    </ListItem>
+                                ))}
                             </List>
                         </CardBody>))
                     } else { None } }
@@ -517,7 +523,11 @@ pub fn render_single_details(
                         Some(html_nested!(<CardBody>
                             <Title level={Level::H3}>{"Incoming"}</Title>
                             <List r#type={ListType::Basic}>
-                                { for incoming.into_iter().map(|rel|spdx_relationship_entry(packages, rel, &rel.related_spdx_element))}
+                                { for incoming.into_iter().map(|rel| html_nested!(
+                                    <ListItem>
+                                        { spdx_relationship_entry(packages, rel, &rel.related_spdx_element) }
+                                    </ListItem>
+                                )) }
                             </List>
                         </CardBody>))
                     } else { None } }

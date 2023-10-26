@@ -2,12 +2,13 @@ mod advisories;
 mod packages;
 mod products;
 
+use crate::hooks::use_related_advisories;
 use advisories::RelatedAdvisories;
 use cve::published::Metric;
 use patternfly_yew::prelude::*;
 use products::RelatedProducts;
 use spog_model::prelude::CveDetails;
-use spog_ui_backend::{use_backend, CveService, SearchParameters, VexService};
+use spog_ui_backend::{use_backend, CveService};
 use spog_ui_components::{
     async_state_renderer::async_content, common::Visible, cvss::Cvss3Label, editor::ReadonlyEditor, markdown::Markdown,
     time::Date,
@@ -77,25 +78,7 @@ pub fn result_view(props: &ResultViewProperties) -> Html {
         )
     };
 
-    let related_advisories = {
-        let backend = backend.clone();
-        let access_token = access_token.clone();
-        use_async_with_cloned_deps(
-            |id| async move {
-                let service = VexService::new(backend.clone(), access_token.clone());
-                service
-                    .search_advisories(&format!(r#"cve:{id}"#), &SearchParameters::default())
-                    .await
-                    .map(|r| {
-                        let mut related = r.result;
-                        related.sort_unstable_by(|a, b| a.id.cmp(&b.id));
-                        Rc::new(related)
-                    })
-                    .map_err(|err| err.to_string())
-            },
-            props.id.clone(),
-        )
-    };
+    let related_advisories = use_related_advisories(props.id.clone());
 
     #[derive(Copy, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
     enum TabIndex {

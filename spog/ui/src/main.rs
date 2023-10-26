@@ -3,6 +3,7 @@
 mod about;
 mod app;
 mod console;
+mod hooks;
 mod model;
 mod pages;
 

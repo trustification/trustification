@@ -8,6 +8,8 @@ use actix_web::{web, HttpResponse};
 use actix_web_httpauth::extractors::bearer::BearerAuth;
 use bombastic_model::data::SBOM;
 use bytes::{BufMut, BytesMut};
+use csaf::document::Category;
+use csaf::Csaf;
 use cve::Cve;
 use futures::stream::iter;
 use futures::{stream, StreamExt, TryStreamExt};
@@ -16,13 +18,21 @@ use packageurl::PackageUrl;
 use rand::Rng;
 use serde_json::Value;
 use spdx_rs::models::{PackageInformation, SPDX};
-use spog_model::prelude::SbomReport;
+use spog_model::csaf::has_purl;
+use spog_model::prelude::{Remediation, SbomReport};
 use spog_model::vuln::SbomReportVulnerability;
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
+use std::rc::Rc;
 use std::str::FromStr;
-use tracing::instrument;
+use tracing::{info_span, instrument};
+use trustification_api::search::SearchOptions;
 use trustification_auth::client::TokenProvider;
 use trustification_common::error::ErrorInformation;
+
+/// chunk size for finding VEX by CVE IDs
+const SEARCH_CHUNK_SIZE: usize = 10;
+/// number of parallel fetches for VEX documents
+const PARALLEL_FETCH_VEX: usize = 4;
 
 #[derive(Debug, serde::Deserialize)]
 pub struct GetParams {
@@ -81,7 +91,11 @@ async fn process_get_vulnerabilities(
             // get the main packages
             let main = find_main(&spdx);
 
-            let (analyze, backtraces, num) = analyze_spdx(guac, &spdx).await?;
+            let AnalyzeOutcome {
+                cve_to_purl,
+                purl_to_backtrace,
+                total,
+            } = analyze_spdx(state, guac, access_token, &spdx).await?;
 
             // find a single version (if possible)
             let version: Vec<_> = main.iter().flat_map(|pi| &pi.package_version).collect();
@@ -96,9 +110,12 @@ async fn process_get_vulnerabilities(
             )
             .ok();
 
-            log::info!("SBOM report (in: {num} packages) - out: {} {analyze:?}", analyze.len());
+            log::info!(
+                "SBOM report (in: {total} packages) - out: {} {cve_to_purl:?}",
+                cve_to_purl.len()
+            );
 
-            (name, version, created, analyze, backtraces)
+            (name, version, created, cve_to_purl, purl_to_backtrace)
         }
         _ => return Err(Error::Generic("Unsupported format".to_string())),
     };
@@ -254,14 +271,15 @@ fn map_purls(pi: &PackageInformation) -> impl IntoIterator<Item = String> + '_ {
     })
 }
 
-pub type AnalyzeOutcome = (
-    // CVE to PURLs
-    BTreeMap<String, BTreeSet<String>>,
+#[derive(Default)]
+pub struct AnalyzeOutcome {
+    // CVE to PURLs to remediations
+    cve_to_purl: BTreeMap<String, BTreeMap<String, Vec<Remediation>>>,
     // PURL to backtrace
-    BTreeMap<String, BTreeSet<Vec<String>>>,
-    // number of processed purls
-    usize,
-);
+    purl_to_backtrace: BTreeMap<String, BTreeSet<Vec<String>>>,
+    // total number of PURLs
+    total: usize,
+}
 
 /// Analyze by purls
 ///
@@ -270,11 +288,16 @@ pub type AnalyzeOutcome = (
 ///   map(purl to parents(chain of purls))
 ///   total number of packages found
 #[instrument(
-    skip(guac, sbom),
+    skip_all,
     fields(sbom_name=sbom.document_creation_information.document_name),
     err
 )]
-async fn analyze_spdx(guac: &GuacService, sbom: &SPDX) -> Result<AnalyzeOutcome, Error> {
+async fn analyze_spdx(
+    state: &AppState,
+    guac: &GuacService,
+    token: &dyn TokenProvider,
+    sbom: &SPDX,
+) -> Result<AnalyzeOutcome, Error> {
     let purls = find_purls(sbom).collect::<BTreeMap<_, _>>();
     log::debug!("Extracted {} PURLs", purls.len());
 
@@ -288,7 +311,7 @@ async fn analyze_spdx(guac: &GuacService, sbom: &SPDX) -> Result<AnalyzeOutcome,
         }
     });
 
-    let outcome = stream::iter(purls)
+    let mut outcome = stream::iter(purls)
         .map(|purl| async move {
             let cert = guac.certify_vuln(purl.clone()).await?;
             log::debug!("Cert ({purl}): {cert:?}");
@@ -314,23 +337,47 @@ async fn analyze_spdx(guac: &GuacService, sbom: &SPDX) -> Result<AnalyzeOutcome,
             AnalyzeOutcome::default(),
             |mut acc, (purl, ids, backtrace)| async move {
                 for id in ids {
-                    acc.0.entry(id).or_default().insert(purl.to_string());
+                    acc.cve_to_purl
+                        .entry(id)
+                        .or_default()
+                        .insert(purl.to_string(), Default::default());
                 }
 
                 if let Some(backtrace) = backtrace {
-                    acc.1.insert(purl.to_string(), backtrace);
+                    acc.purl_to_backtrace.insert(purl.to_string(), backtrace);
                 }
 
-                acc.2 += 1;
+                acc.total += 1;
 
                 Ok(acc)
             },
         )
         .await?;
 
+    // get all relevant VEX documents
+
+    let vex = collect_vex(state, token, outcome.cve_to_purl.keys()).await?;
+
+    // fill in the remediations
+
+    info_span!("scrape_remediations").in_scope(|| {
+        let mut count = 0;
+        for (cve, map) in &mut outcome.cve_to_purl {
+            for (purl, rem) in map {
+                let rems = scrape_remediations(cve, purl, &vex);
+                if !rems.is_empty() {
+                    log::debug!("Remediations for {cve} / {purl}: {rems:?}");
+                }
+                count += rems.len();
+                rem.extend(rems);
+            }
+        }
+        log::debug!("Found {count} remediations");
+    });
+
     // done
 
-    log::debug!("Processed {} packages", outcome.2);
+    log::debug!("Processed {} packages", outcome.total);
 
     Ok(outcome)
 }
@@ -362,4 +409,130 @@ async fn backtrace<'a>(
     }
 
     Ok(result.into_iter())
+}
+
+/// take a set of CVE id and fetch their related CSAF documents
+#[instrument(skip_all, fields(num_ids), err)]
+async fn collect_vex<'a>(
+    state: &AppState,
+    token: &dyn TokenProvider,
+    ids: impl IntoIterator<Item = impl AsRef<str>>,
+) -> Result<HashMap<String, Vec<Rc<Csaf>>>, Error> {
+    let ids = ids.into_iter();
+    let (_, num_ids) = ids.size_hint();
+    tracing::Span::current().record("num_ids", num_ids);
+
+    let ids = ids.filter(|id| !id.as_ref().is_empty());
+
+    // a stream of chunked queries
+    let cves = stream::iter(ids)
+        // request in chunks of 10
+        .ready_chunks(SEARCH_CHUNK_SIZE)
+        .map(Ok)
+        .and_then(|ids| async move {
+            let q = ids
+                .iter()
+                .map(|id| format!(r#"cve:"{}""#, id.as_ref()))
+                .collect::<Vec<_>>()
+                .join(" OR ");
+
+            // lookup documents (limit to 1.000, which should be reasonable)
+            let result = state.search_vex(&q, 0, 1000, SearchOptions::default(), token).await?;
+
+            Ok::<HashSet<_>, Error>(result.result.into_iter().map(|hit| hit.document.advisory_id).collect())
+        });
+
+    // flatten the result stream
+    let cves: HashSet<String> = cves.try_collect::<Vec<_>>().await?.into_iter().flatten().collect();
+
+    // now fetch the documents and sort them in the result map
+    let result: HashMap<String, Vec<_>> = stream::iter(cves)
+        .map(|id| async move {
+            let doc: BytesMut = state.get_vex(&id, token).await?.try_collect().await?;
+
+            let mut result = Vec::new();
+
+            if let Ok(doc) = serde_json::from_slice::<Csaf>(&doc) {
+                let doc = Rc::new(doc);
+                if let Some(v) = &doc.vulnerabilities {
+                    for v in v {
+                        if let Some(cve) = v.cve.clone() {
+                            result.push((cve, doc.clone()))
+                        }
+                    }
+                }
+            }
+
+            Ok::<_, Error>(result)
+        })
+        // fetch parallel
+        .buffer_unordered(PARALLEL_FETCH_VEX)
+        // fold them into a single result
+        .try_fold(HashMap::<String, Vec<Rc<Csaf>>>::new(), |mut acc, x| async move {
+            for (id, docs) in x {
+                acc.entry(id).or_default().push(docs);
+            }
+            Ok(acc)
+        })
+        .await?;
+
+    Ok(result)
+}
+
+/// from a set of relevant VEXes, fetch the matching remediations for this PURL
+fn scrape_remediations(id: &str, purl: &str, vex: &HashMap<String, Vec<Rc<Csaf>>>) -> Vec<Remediation> {
+    let mut result = vec![];
+
+    // iterate over all documents
+    for vex in vex.get(id).iter().flat_map(|v| *v) {
+        if vex.document.category != Category::Vex {
+            continue;
+        }
+
+        // iterate over all vulnerabilities of the document
+        for v in vex
+            .vulnerabilities
+            .iter()
+            .flatten()
+            .filter(|v| v.cve.as_deref() == Some(id))
+        {
+            // now convert all the remediations
+            for r in v.remediations.iter().flatten() {
+                // only add remediations matching the purl
+                if !has_purl(vex, &r.product_ids, purl) {
+                    continue;
+                }
+
+                result.push(Remediation {
+                    details: r.details.clone(),
+                })
+            }
+        }
+    }
+
+    result
+}
+
+#[cfg(test)]
+mod test {
+
+    use super::*;
+
+    #[test]
+    fn test_scrape_remediations() {
+        let csaf = include_bytes!("../../../example-data/cve-2023-22998.json");
+        let csaf: Csaf = serde_json::from_slice(csaf).unwrap();
+
+        let mut vex = HashMap::new();
+        vex.insert("CVE-2023-22998".to_string(), vec![Rc::new(csaf)]);
+        let rem = scrape_remediations(
+            "CVE-2023-22998",
+            "pkg:rpm/redhat/kernel-rt-modules-extra@5.14.0-284.11.1.rt14.296.el9_2?arch=x86_64",
+            &vex,
+        );
+
+        assert_eq!(rem, vec![Remediation{
+            details: "Before applying this update, make sure all previously released errata\nrelevant to your system have been applied.\n\nFor details on how to apply this update, refer to:\n\nhttps://access.redhat.com/articles/11258".to_string()
+        }]);
+    }
 }

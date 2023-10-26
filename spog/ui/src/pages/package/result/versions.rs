@@ -50,8 +50,8 @@ fn result_content(props: &ResultContentProperties) -> Html {
             <List>
                 {
                     for props.related_packages.iter().map(|item| {
-                        html!(
-                            <>{&item.purl}</>
+                        html_nested! (
+                            <ListItem>{&item.purl}</ListItem>
                         )
                     })
                 }

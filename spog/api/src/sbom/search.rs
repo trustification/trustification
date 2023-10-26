@@ -2,7 +2,6 @@ use crate::search;
 use crate::server::AppState;
 use actix_web::{web, HttpResponse};
 use actix_web_httpauth::extractors::bearer::BearerAuth;
-use log::{debug, trace};
 use spog_model::search::PackageSummary;
 use tracing::instrument;
 use trustification_api::search::{SearchOptions, SearchResult};
@@ -28,7 +27,7 @@ pub async fn search(
     access_token: Option<BearerAuth>,
 ) -> actix_web::Result<HttpResponse> {
     let params = params.into_inner();
-    trace!("Querying SBOM using {}", params.q);
+    log::trace!("Querying SBOM using {}", params.q);
     let data = state
         .search_sbom(
             &params.q,
@@ -69,7 +68,6 @@ pub async fn search(
 
     // TODO: Use guac to lookup advisories for each package!
     search_advisories(state, &mut result.result, &access_token).await;
-    debug!("Search result: {:?}", result);
     Ok(HttpResponse::Ok().json(result))
 }
 

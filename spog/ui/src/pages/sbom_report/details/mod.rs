@@ -1,14 +1,14 @@
+mod cve;
+
 use packageurl::PackageUrl;
 use patternfly_yew::prelude::*;
-use spog_model::prelude::SbomReportVulnerability;
+use spog_model::prelude::{Remediation, SbomReportVulnerability};
 use spog_ui_components::{cvss::CvssScore, time::Date};
-use spog_ui_navigation::{AppRoute, View};
 use std::cmp::Ordering;
 use std::collections::{BTreeMap, BTreeSet};
 use std::rc::Rc;
 use std::str::FromStr;
 use yew::prelude::*;
-use yew_nested_router::components::Link;
 
 #[derive(Clone, PartialEq, Properties)]
 pub struct DetailsProps {
@@ -46,7 +46,19 @@ pub fn details(props: &DetailsProps) -> Html {
                     </>
                 )
                 .into(),
-                Column::AffectedPackages => html!({ self.packages.len() }).into(),
+                Column::AffectedPackages => {
+                    let rems: usize = self.packages.iter().map(|p| p.1.remediations.len()).sum();
+                    html!(
+                        <>
+                            { self.packages.len() }
+                            if rems > 0 {
+                                {" / "}
+                                { rems }
+                            }
+                        </>
+                    )
+                    .into()
+                }
                 Column::Published => Cell::from(html!(if let Some(timestamp) = self.vuln.published {
                     <Date {timestamp} />
                 }))
@@ -62,9 +74,7 @@ pub fn details(props: &DetailsProps) -> Html {
             let content = match column {
                 Column::Id => {
                     html!(
-                        <Link<AppRoute> target={AppRoute::Cve(View::Content {id: self.vuln.id.clone()})}>
-                            {"All CVE details "} { Icon::ArrowRight }
-                        </Link<AppRoute>>
+                        <cve::Details id={self.vuln.id.clone()} />
                     )
                 }
                 Column::AffectedPackages => {
@@ -166,22 +176,28 @@ pub fn details(props: &DetailsProps) -> Html {
     }
 }
 
-fn build_packages(
-    packages: &BTreeSet<String>,
+fn build_packages<'a>(
+    packages: impl IntoIterator<Item = (&'a String, &'a Vec<Remediation>)>,
     backtraces: Rc<BTreeMap<String, BTreeSet<Vec<String>>>>,
 ) -> Vec<AffectedPackage> {
     let mut result = BTreeMap::<PackageKey, PackageValue>::new();
 
-    for purl in packages.iter().filter_map(|p| PackageUrl::from_str(p).ok()) {
+    for (purl, rems) in packages
+        .into_iter()
+        .filter_map(|(purl, rem)| Some((PackageUrl::from_str(purl).ok()?, rem)))
+    {
         let key = PackageKey::new(&purl);
         let value = result.entry(key).or_insert_with(|| PackageValue {
             backtraces: backtraces.clone(),
             qualifiers: Default::default(),
+            remediations: Default::default(),
         });
         for (k, v) in purl.qualifiers() {
             let qe = value.qualifiers.entry(k.to_string()).or_default();
             qe.insert(v.to_string());
         }
+        // FIXME: need to reduce
+        value.remediations.extend(rems.clone());
     }
 
     result.into_iter().collect()
@@ -216,6 +232,7 @@ impl PackageKey {
 struct PackageValue {
     qualifiers: BTreeMap<String, BTreeSet<String>>,
     backtraces: Rc<BTreeMap<String, BTreeSet<Vec<String>>>>,
+    remediations: Vec<Remediation>,
 }
 
 #[derive(PartialEq, Properties)]
@@ -271,13 +288,35 @@ fn affected_packages(props: &AffectedPackagesProperties) -> Html {
                 false => html!(
                     <List r#type={ListType::Basic}>
                         {
-                            for self.1.backtraces.get(&self.0.purl).iter().flat_map(|p| *p).map(|trace| {
-                                trace.join(" » ")
-                            })
+                            for self.1.backtraces.get(&self.0.purl).iter().flat_map(|p| *p).map(|trace| html_nested!(
+                                <ListItem>
+                                    { trace.join(" » ") }
+                                </ListItem>
+                            ))
                         }
                     </List>
                 ),
             };
+
+            let rems = html!(<>
+                if !self.1.remediations.is_empty() {
+                    <Title level={Level::H4}>{"Remediation"}</Title>
+                    <List r#type={ListType::Basic}>
+                        { for self.1.remediations.iter().map(|rem| {
+                            html_nested! (
+                                <ListItem> { rem.details.clone() } </ListItem>
+                            )
+                        })}
+                    </List>
+                }
+            </>);
+
+            let content = html!(
+                <Grid>
+                    <GridItem cols={[6]}>{content}</GridItem>
+                    <GridItem cols={[6]}>{rems}</GridItem>
+                </Grid>
+            );
 
             vec![Span::max(content)]
         }
