@@ -11,6 +11,7 @@ pub mod download;
 pub mod editor;
 pub mod hooks;
 pub mod markdown;
+pub mod pagination;
 pub mod sbom;
 pub mod search;
 pub mod severity;
