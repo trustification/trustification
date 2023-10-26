@@ -7,6 +7,6 @@
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^6.3.0",
-    "@patternfly/patternfly": "^5.0.2"
+    "@patternfly/patternfly": "^5.1.0"
   }
 }
