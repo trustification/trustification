@@ -9,23 +9,21 @@ use cyclonedx_bom::models::{
 use log::{debug, info, warn};
 use sikula::{mir::Direction, prelude::*};
 use spdx_rs::models::Algorithm;
-use tantivy::{
-    collector::TopDocs,
-    query::{AllQuery, BooleanQuery, TermQuery, TermSetQuery},
-    schema::INDEXED,
-    store::ZstdCompressor,
-    DocAddress, IndexSettings, Order, Searcher, SnippetGenerator,
-};
 use time::{format_description::well_known::Rfc3339, OffsetDateTime};
 use trustification_api::search::SearchOptions;
 use trustification_index::{
     boost, create_boolean_query, create_date_query, create_string_query, field2str,
     metadata::doc2metadata,
     tantivy::{
+        self,
+        collector::TopDocs,
         doc,
+        query::{AllQuery, BooleanQuery, TermQuery, TermSetQuery},
         query::{Occur, Query},
+        schema::INDEXED,
         schema::{Field, Schema, Term, FAST, STORED, STRING, TEXT},
-        DateTime, DocId, Score, SegmentReader,
+        store::ZstdCompressor,
+        DateTime, DocAddress, DocId, IndexSettings, Order, Score, Searcher, SegmentReader, SnippetGenerator,
     },
     term2query, Document, Error as SearchError, SearchQuery,
 };

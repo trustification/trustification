@@ -4,13 +4,6 @@ use cvss::v3::Base;
 use cvss::Severity;
 use sikula::prelude::*;
 use std::time::Duration;
-use tantivy::{
-    collector::TopDocs,
-    query::{AllQuery, TermQuery},
-    schema::INDEXED,
-    store::ZstdCompressor,
-    DocAddress, DocId, IndexSettings, Searcher,
-};
 use time::OffsetDateTime;
 use trustification_api::search::SearchOptions;
 use trustification_index::{
@@ -19,10 +12,15 @@ use trustification_index::{
     metadata::doc2metadata,
     sort_by,
     tantivy::{
+        self,
+        collector::TopDocs,
         doc,
+        query::{AllQuery, TermQuery},
         query::{Occur, Query},
+        schema::INDEXED,
         schema::{Field, Schema, Term, FAST, STORED, STRING, TEXT},
-        DateTime, Score, SegmentReader,
+        store::ZstdCompressor,
+        DateTime, DocAddress, DocId, IndexSettings, Score, Searcher, SegmentReader,
     },
     term2query, Document, Error as SearchError, SearchQuery,
 };
