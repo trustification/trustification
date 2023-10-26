@@ -7,6 +7,7 @@ use spog_ui_components::{
     common::Visible,
     cve::{use_cve_search, CveResult, CveSearchControls},
     hooks::UseStandardSearch,
+    pagination::PaginationWrapped,
     sbom::{use_sbom_search, SbomResult, SbomSearchControls},
     search::{DynamicSearchParameters, SearchMode, SearchModeAction},
 };
@@ -330,33 +331,4 @@ where
 
 fn split_terms(terms: &str) -> Vec<String> {
     terms.split(' ').map(ToString::to_string).collect()
-}
-
-#[derive(PartialEq, Properties)]
-pub struct PaginationWrappedProperties {
-    pub children: Children,
-    pub pagination: UsePagination,
-    pub total: Option<usize>,
-}
-
-#[function_component(PaginationWrapped)]
-pub fn pagination_wrapped(props: &PaginationWrappedProperties) -> Html {
-    html!(
-        <>
-            <div class="pf-v5-u-p-sm">
-                <SimplePagination
-                    pagination={props.pagination.clone()}
-                    total={props.total}
-                />
-            </div>
-            { for props.children.iter() }
-            <div class="pf-v5-u-p-sm">
-                <SimplePagination
-                    pagination={props.pagination.clone()}
-                    total={props.total}
-                    position={PaginationPosition::Bottom}
-                />
-            </div>
-        </>
-    )
 }

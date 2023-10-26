@@ -3,7 +3,7 @@ mod cve;
 use packageurl::PackageUrl;
 use patternfly_yew::prelude::*;
 use spog_model::prelude::{Remediation, SbomReportVulnerability};
-use spog_ui_components::{cvss::CvssScore, time::Date};
+use spog_ui_components::{cvss::CvssScore, pagination::PaginationWrapped, time::Date};
 use std::cmp::Ordering;
 use std::collections::{BTreeMap, BTreeSet};
 use std::rc::Rc;
@@ -155,22 +155,15 @@ pub fn details(props: &DetailsProps) -> Html {
     match total {
         0 => html!(),
         _ => html!(
-            <div class="pf-v5-u-background-color-100 pf-v5-u-py-md">
-                <SimplePagination
-                    pagination={pagination.clone()}
-                    {total}
-                />
-                <Table<Column, UseTableData<Column, MemoizedTableModel<Entry>>>
-                    {header}
-                    {entries}
-                    {onexpand}
-                    mode={TableMode::Expandable}
-                />
-                <SimplePagination
-                    pagination={pagination}
-                    {total}
-                    position={PaginationPosition::Bottom}
-                />
+            <div class="pf-v5-u-background-color-100">
+                <PaginationWrapped {pagination} {total}>
+                    <Table<Column, UseTableData<Column, MemoizedTableModel<Entry>>>
+                        {header}
+                        {entries}
+                        {onexpand}
+                        mode={TableMode::Expandable}
+                    />
+                </PaginationWrapped>
             </div>
         ),
     }

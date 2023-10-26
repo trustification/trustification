@@ -1,3 +1,4 @@
+use crate::pages::cve::result::packages::PackagesTable;
 use futures::future::try_join_all;
 use patternfly_yew::prelude::*;
 use spog_model::{
@@ -6,15 +7,13 @@ use spog_model::{
 };
 use spog_ui_backend::{use_backend, PackageService};
 use spog_ui_common::utils::time::date;
-use spog_ui_components::async_state_renderer::async_content;
+use spog_ui_components::{async_state_renderer::async_content, pagination::PaginationWrapped};
 use spog_ui_navigation::{AppRoute, View};
 use std::rc::Rc;
 use yew::prelude::*;
 use yew_more_hooks::prelude::use_async_with_cloned_deps;
 use yew_nested_router::components::Link;
 use yew_oauth2::prelude::use_latest_access_token;
-
-use crate::pages::{cve::result::packages::PackagesTable, search::PaginationWrapped};
 
 #[derive(PartialEq)]
 pub struct TableData {
