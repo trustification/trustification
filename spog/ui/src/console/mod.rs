@@ -216,19 +216,19 @@ fn render(route: AppRoute, config: &spog_model::config::Configuration) -> Html {
         AppRoute::Sbom(View::Search { query }) if config.features.dedicated_search => {
             html!(<pages::Sbom {query} />)
         }
-        AppRoute::Sbom(View::Content { id }) if config.features.dedicated_search => html!(<pages::SBOM {id} />),
+        AppRoute::Sbom(View::Content { id }) => html!(<pages::SBOM {id} />),
         AppRoute::SbomReport { id } => html!(<pages::SbomReport {id} />),
         AppRoute::Advisory(View::Search { query }) if config.features.dedicated_search => {
             html!(<pages::Advisory {query} />)
         }
-        AppRoute::Advisory(View::Content { id }) if config.features.dedicated_search => html!(<pages::VEX {id} />),
+        AppRoute::Advisory(View::Content { id }) => html!(<pages::VEX {id} />),
         AppRoute::Cve(View::Search { query }) if config.features.dedicated_search => {
             html!(<pages::CveSearchPage {query} />)
         }
-        AppRoute::Cve(View::Content { id }) if config.features.dedicated_search => {
+        AppRoute::Cve(View::Content { id }) => {
             html!(<pages::Cve {id} />)
         }
-        AppRoute::Package { id } if config.features.dedicated_search => {
+        AppRoute::Package { id } => {
             let id = match id.is_empty() {
                 true => None,
                 false => Some(id),
