@@ -21,6 +21,7 @@ mod endpoints;
 mod error;
 mod guac;
 mod index;
+mod package;
 mod sbom;
 mod search;
 mod server;

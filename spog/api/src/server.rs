@@ -8,7 +8,7 @@ use crate::{
     analyze::{self, CrdaClient},
     config, cve, endpoints,
     guac::service::GuacService,
-    index, sbom,
+    index, package, sbom,
     service::{collectorist::CollectoristService, v11y::V11yService},
     Run,
 };
@@ -138,6 +138,7 @@ impl Server {
                     .configure(advisory::configure(authenticator.clone()))
                     .configure(crate::guac::configure(authenticator.clone()))
                     .configure(cve::configure(authenticator.clone()))
+                    .configure(package::configure(authenticator.clone()))
                     .configure(config_configurator.clone())
                     .service({
                         let mut openapi = ApiDoc::openapi();
