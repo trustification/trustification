@@ -179,11 +179,33 @@ impl GuacService {
         })
     }
 
-    #[allow(dead_code)]
-    pub async fn find_vulnerability(&self, purl: String) -> Result<HashMap<String, BTreeSet<String>>, Error> {
-        let result = self.client.semantic().find_vulnerability(&purl).await?;
-        Ok(result)
+    /// Find vulnerabilities for an SBOM
+    ///
+    /// The `sbom_id` is an identifier for an SBOM. Currently, this is a special PURL format of
+    /// `pkg:/guac/pkg/<name>@<version>`, where `<name>` and `<version>` are coming from the single
+    /// (expected) "document describes" component.
+    ///
+    /// Later on, this will be replaced with the SPDX namespace, or the CycloneDX serial.
+    ///
+    /// The result is `map<cve, set<purls>>`.
+    #[instrument(skip(self), err)]
+    pub async fn find_vulnerability(
+        &self,
+        id: GuacSbomIdentifier<'_>,
+    ) -> Result<HashMap<String, BTreeSet<String>>, Error> {
+        let purl = PackageUrl::new("guac", id.name)?
+            .with_namespace("pkg")
+            .with_version(id.version)
+            .to_string();
+
+        Ok(self.client.semantic().find_vulnerability(&purl).await?)
     }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct GuacSbomIdentifier<'a> {
+    pub name: &'a str,
+    pub version: &'a str,
 }
 
 #[cfg(test)]
@@ -209,7 +231,10 @@ mod test {
     async fn test_find_vulnerability() {
         let guac = GuacService::new("http://localhost:8085/query");
         let res = guac
-            .find_vulnerability("pkg:guac/pkg/rhel-7.9.z@7.9.z".to_string())
+            .find_vulnerability(GuacSbomIdentifier {
+                name: "rhel-7.9.z",
+                version: "7.9.z",
+            })
             .await
             .unwrap();
         println!("{}", serde_json::to_string_pretty(&res).unwrap());
