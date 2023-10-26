@@ -32,14 +32,12 @@ fn brand() -> Html {
     html! (
         <MastheadBrand>
             <patternfly_yew::prelude::Brand
-                src={src.clone()}
+                {src}
                 alt="Logo"
                 style={r#"
                     --pf-v5-c-brand--Height: var(--pf-v5-c-page__header-brand-link--c-brand--MaxHeight);
                 "#}
-            >
-                <BrandSource srcset={src} />
-            </patternfly_yew::prelude::Brand>
+            />
         </MastheadBrand>
     )
 }
