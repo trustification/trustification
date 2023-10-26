@@ -8,18 +8,16 @@ use cucumber::World;
 use tokio::io;
 
 #[derive(Debug, Default)]
-pub struct E2EContext{
+pub struct E2EContext {
     data: HashMap<TypeId, Box<dyn Any>>,
 }
 
-impl E2EContext{
-    pub fn new() -> Self{
+impl E2EContext {
+    pub fn new() -> Self {
         Default::default()
     }
     pub fn get_driver<T: Any>(&self) -> Option<&T> {
-        self.data
-            .get(&TypeId::of::<T>())
-            .and_then(|x| x.downcast_ref::<T>())
+        self.data.get(&TypeId::of::<T>()).and_then(|x| x.downcast_ref::<T>())
     }
 
     pub fn insert<T: Any>(&mut self, value: T) {
@@ -28,7 +26,7 @@ impl E2EContext{
 }
 
 #[derive(Debug, World, Default)]
-pub struct E2EWorld{
+pub struct E2EWorld {
     pub context: Arc<E2EContext>,
     pub browser: Option<String>,
     pub application: Option<String>,
