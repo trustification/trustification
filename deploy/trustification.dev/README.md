@@ -67,6 +67,18 @@ Resource not found for url: http://trustification-staging-keycloak.trustificatio
 
 [The issue](https://github.com/keycloak/keycloak/issues/12484) relates to creating Keycloak identity providers from the command line. The workaround is to create the initial GitHub Identity Provider in the Keycloak admin UI. You can find the credentials for Keycloak stored in a Kubernetes secret. Then, go to "Identity Providers" and create it.
 
+
+### Inspecting Guac via GraphQL
+
+If you wish to inspect Guac data using GraphQL, the easiest way is to expose it locally using `port-forward`, like
+
+```bash
+oc port-forward service/guac-graphql 8080
+```
+
+After that you will be able to access it at: `http://localhost:8080` (UI) and `http://localhost:8080/query` (API)
+
+
 ## License
 
 Apache License, Version 2.0 ([LICENSE](LICENSE))
