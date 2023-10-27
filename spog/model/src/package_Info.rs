@@ -38,6 +38,15 @@ pub struct PackageInfo {
     pub vulnerabilities: Vec<V11yRef>,
 }
 
+impl PackageInfo {
+    pub fn get_v11y_severity_count(&self, level: String) -> usize {
+        self.vulnerabilities
+            .iter()
+            .filter(|v11y_model| v11y_model.severity == level)
+            .count()
+    }
+}
+
 #[derive(Clone, Default, Debug, PartialEq, Eq, ToSchema, Serialize, Deserialize)]
 #[schema(example = json!(V11yRef {
     cve: "cve-2023-0286".into(),
