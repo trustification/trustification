@@ -139,7 +139,7 @@ pub fn cve_result(props: &CveResultProperties) -> Html {
         }),
         yew::props!(TableColumnProperties<Column> {
              index: Column::Related,
-             label: "Related products",
+             label: "Related documents",
              width: ColumnWidth::Percent(10),
         }),
     ];
