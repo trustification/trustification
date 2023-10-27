@@ -2,9 +2,9 @@ mod pages;
 mod world;
 use cucumber::{cli, writer, World, WriterExt};
 use futures::FutureExt;
-use std::fs::File;
 use std::process::Command;
 use std::sync::Arc;
+use std::{fs::File, time::Duration};
 use thirtyfour::{DesiredCapabilities, WebDriver};
 use world::{E2EContext, E2EWorld};
 
@@ -46,13 +46,15 @@ async fn main() {
                     let serverurl = "http://localhost:9515";
                     caps.add_chrome_arg("--window-size=1920,1080")
                         .expect("Window size error");
-                    Command::new("chromedriver")
-                        .args(["--port=9515"])
-                        .spawn()
-                        .expect("Failed to execute process");
+                    //Command::new("chromedriver")
+                    //    .args(["--port=9515"])
+                    //    .spawn()
+                    //    .expect("Failed to invoke chromedriver! Make sure chromedriver is installed and env path is configured");
                     let driver = WebDriver::new(serverurl, caps)
                         .await
                         .expect("Error while creating Webdriver");
+                    let delay = Duration::new(10, 0);
+                    driver.set_implicit_wait_timeout(delay).await.expect("Error on wait");
                     context.insert(driver);
                     world.context = Arc::new(context);
                     world.application = Some(opts_custom.application.clone());
