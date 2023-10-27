@@ -423,6 +423,48 @@ cve:
               - id: "any"
                 label: "Any time"
 
+packages:
+
+  filters:
+    categories:
+
+      - label: Type
+        options:
+
+          - type: check
+            label: maven
+            id: maven
+            terms:
+              - '"pkg:maven"'
+
+          - type: check
+            label: RPM
+            id: RPM
+            terms:
+              - '"pkg:rpm"'
+
+          - type: check
+            label: NPM
+            id: NPM
+            terms:
+              - '"pkg:npm"'
+
+      - label: Supplier
+        options:
+
+          - type: check
+            label: Redhat
+            id: Redhat
+            terms:
+              - 'supplier:"Organization: Red Hat"'
+
+          - type: check
+            label: Redhat
+            id: Redhat
+            terms:
+              - 'supplier:"Organization: Red Hat"'
+
+
 scanner:
   documentationUrl: https://www.trustification.io/blog/
 

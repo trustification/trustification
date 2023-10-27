@@ -1,14 +1,11 @@
 use crate::search;
-// use crate::server::AppState;
-// use crate::service::v11y::V11yService;
 use actix_web::{
     web::{self, ServiceConfig},
     HttpResponse,
 };
-use spog_model::package_Info::{PackageInfo, V11yRef};
-use spog_model::search::PackageInfoSummary;
+use spog_model::package_info::{PackageInfo, V11yRef};
 use std::sync::Arc;
-use trustification_api::search::{SearchOptions, SearchResult};
+use trustification_api::search::SearchResult;
 use trustification_auth::authenticator::Authenticator;
 use trustification_infrastructure::new_auth;
 
@@ -19,7 +16,7 @@ pub(crate) fn configure(auth: Option<Arc<Authenticator>>) -> impl FnOnce(&mut Se
                 .wrap(new_auth!(auth))
                 .service(web::resource("/search").to(packages_search_mock))
                 .service(web::resource("/{id}").to(package_get_mock)),
-                                                                             // .service(web::resource("/{id}/related-products").to(cve_related_product)),
+            // .service(web::resource("/{id}/related-products").to(cve_related_product)),
         );
     }
 }
@@ -40,16 +37,14 @@ pub async fn packages_search_mock(
     web::Query(params): web::Query<search::QueryParams>,
 ) -> actix_web::Result<HttpResponse> {
     let pkgs = make_mock_data();
-    let mut result = SearchResult::<Vec<PackageInfo>> {
+    let result = SearchResult::<Vec<PackageInfo>> {
         total: Some(pkgs.len()),
         result: pkgs,
     };
     Ok(HttpResponse::Ok().json(result))
 }
 
-pub async fn package_get_mock(
-    web::Query(params): web::Query<search::QueryParams>,
-) -> actix_web::Result<HttpResponse> {
+pub async fn package_get_mock(web::Query(params): web::Query<search::QueryParams>) -> actix_web::Result<HttpResponse> {
     let pkgs = make_mock_data();
     Ok(HttpResponse::Ok().json(&pkgs[0]))
 }

@@ -9,7 +9,7 @@ pub struct PackageProperties {
 }
 
 #[function_component(PackageSearchPage)]
-pub fn cve_search_page(props: &PackageProperties) -> Html {
+pub fn package_search_page(props: &PackageProperties) -> Html {
     let query = props.query.clone().filter(|s| !s.is_empty());
 
     html!(

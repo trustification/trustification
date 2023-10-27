@@ -20,9 +20,9 @@ pub struct PackageSearchControlsProperties {
 }
 
 #[function_component(PackageSearchControls)]
-pub fn cve_search_controls(props: &PackageSearchControlsProperties) -> Html {
+pub fn packages_search_controls(props: &PackageSearchControlsProperties) -> Html {
     let config = use_config();
-    let filters = use_memo((), |()| config.cve.filters.clone());
+    let filters = use_memo((), |()| config.packages.filters.clone());
 
     let search_config = {
         use_memo((), move |()| {
@@ -48,7 +48,7 @@ pub fn use_package_search(
         search_params,
         pagination,
         callback,
-        || config.cve.filters.clone(),
+        || config.packages.filters.clone(),
         |context| async move {
             let service = PackageInfoService::new(context.backend.clone(), context.access_token);
             service
