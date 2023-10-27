@@ -3,7 +3,7 @@ trustImage: ghcr.io/trustification/trust
 uiImage: ghcr.io/trustification/trust
 docsImage: ghcr.io/trustification/trust-docs
 testsImage: ghcr.io/trustification/trust-tests
-guacImage: ghcr.io/trustification/guac:v0.3.8-s3fix
+guacImage: ghcr.io/trustification/guac:v0.3.9-s3fix
 domain: staging.trustification.dev
 replicas: 1
 imagePullPolicy: IfNotPresent
@@ -53,6 +53,7 @@ bombastic:
   collector:
     enabled: true
     queue: sbom-indexed-staging
+    schedule: "0 * * * *"
   indexer:
     topics:
       stored: sbom-stored-staging
@@ -90,6 +91,7 @@ vexination:
   collector:
     enabled: true
     queue: vex-indexed-staging
+    schedule: "30 * * * *"
   indexer:
     topics:
       stored: vex-stored-staging
