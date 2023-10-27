@@ -39,7 +39,7 @@ impl TableEntryRenderer<Column> for PackagesEntry {
         match context.column {
             Column::Name => html!(
                 <Link<AppRoute>
-                    target={AppRoute::Packages(View::Content{id: self.package.href.clone().unwrap_or_default()})}
+                    target={AppRoute::Package{id: self.package.purl.clone().unwrap_or_default()}}
                 >{ self.package.name.clone().unwrap_or_default() }</Link<AppRoute>>
             ),
             Column::Version => html!( <>
