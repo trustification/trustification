@@ -7,6 +7,7 @@ use actix_web::{
     web::{self, JsonConfig, ServiceConfig},
     HttpServer,
 };
+use actix_web_opentelemetry::RequestTracing;
 use actix_web_prom::{PrometheusMetrics, PrometheusMetricsBuilder};
 use anyhow::{anyhow, Context};
 use bytesize::ByteSize;
@@ -425,7 +426,7 @@ impl HttpServerBuilder {
 
             let (logger, tracing_logger) = match self.tracing {
                 Tracing::Disabled => (Some(actix_web::middleware::Logger::default()), None),
-                Tracing::Enabled => (None, Some(tracing_actix_web::TracingLogger::default())),
+                Tracing::Enabled => (None, Some(RequestTracing::default())),
             };
 
             log::debug!(
