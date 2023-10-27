@@ -1,9 +1,9 @@
-release: 2fc2e51c0b520e8c55625899621c314d2d75e472
+release: c1dd7d38b5b672ef5f4b342b31b783b159178cb0
 trustImage: ghcr.io/trustification/trust
 uiImage: ghcr.io/trustification/trust
 docsImage: ghcr.io/trustification/trust-docs
 testsImage: ghcr.io/trustification/trust-tests
-guacImage: ghcr.io/trustification/guac:v0.2.5-s3fix
+guacImage: ghcr.io/trustification/guac:v0.3.5-s3fix
 domain: staging.trustification.dev
 replicas: 1
 imagePullPolicy: IfNotPresent
@@ -13,14 +13,15 @@ createRoutes: true
 enableMonitoring: true
 enableDocs: true
 config:
-  enable: true
+  enabled: true
   name: trustification-config
   authentication: trustification.dev/config/staging/auth.yaml
   collectorist: trustification.dev/config/staging/collectorist.yaml
 spog:
-  crdaUrl: http://alpha-exhort.apps.sssc-cl01.appeng.rhecoeng.com/
-  branding: false
+  crdaUrl: https://rhda.rhcloud.com/
+  branding: true
   ui:
+    customize: false
     segmentWriteKey:
       valueFrom:
         secretKeyRef:
@@ -33,6 +34,7 @@ spog:
       limits:
         memory: "64Mi"
   api:
+    tracing: "enabled"
     segmentWriteKey:
       valueFrom:
         secretKeyRef:
@@ -63,8 +65,8 @@ bombastic:
       limits:
         memory: "2Gi"
   walker:
-    enable: true
-    interval: "1d"
+    enabled: true
+    schedule: "0 * * * *"
     source: "https://access.redhat.com/security/data/sbom/beta/"
     signingKey: "https://access.redhat.com/security/data/97f5eac4.txt#77E79ABE93673533ED09EBE2DCE3823597F5EAC4"
     resources:
@@ -74,6 +76,7 @@ bombastic:
       limits:
         memory: "2Gi"
   api:
+    tracing: "enabled"
     resources:
       requests:
         cpu: "100m"
@@ -84,6 +87,9 @@ vexination:
   bucket: vexination-staging
   credentials: vexination-credentials-secret
   indexMode: file
+  collector:
+    enabled: true
+    queue: vex-indexed-staging
   indexer:
     topics:
       stored: vex-stored-staging
@@ -96,6 +102,7 @@ vexination:
       limits:
         memory: "2Gi"
   api:
+    tracing: "enabled"
     resources:
       requests:
         cpu: "100m"
@@ -103,8 +110,10 @@ vexination:
       limits:
         memory: "1Gi"
   walker:
-    enable: true
+    enabled: true
+    schedule: "0 * * * *"
     source: https://www.redhat.com/.well-known/csaf/provider-metadata.json
+    ignore: https://access.redhat.com/security/data/csaf/v2/advisories/
     resources:
       requests:
         cpu: "100m"
@@ -133,6 +142,7 @@ v11y:
   credentials: v11y-credentials-secret
   indexMode: file
   api:
+    tracing: "enabled"
     resources:
   indexer:
     topics:
@@ -146,7 +156,7 @@ v11y:
       limits:
         memory: "2Gi"
   walker:
-    enable: true
+    enabled: true
     resources:
       requests:
         cpu: "100m"

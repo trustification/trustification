@@ -10,24 +10,24 @@ use std::{
     collections::{hash_map::Entry, HashMap, HashSet},
     time::Duration,
 };
-use tantivy::{
-    collector::TopDocs,
-    query::{AllQuery, TermSetQuery},
-    store::ZstdCompressor,
-    DocAddress, DocId, IndexSettings, Order, Score, Searcher, SegmentReader, SnippetGenerator,
-};
 use time::OffsetDateTime;
 use trustification_api::search::SearchOptions;
 use trustification_index::{
     boost, create_date_query, create_float_query, create_string_query, create_text_query, field2date, field2float,
     field2str, field2strvec, sort_by,
     tantivy::{
+        self,
+        collector::TopDocs,
         doc,
+        query::{AllQuery, TermSetQuery},
         query::{BooleanQuery, Query},
         schema::{Field, Schema, Term, FAST, INDEXED, STORED, STRING, TEXT},
-        DateTime,
+        schema::{IndexRecordOption, TextFieldIndexing},
+        store::ZstdCompressor,
+        tokenizer::{Language, LowerCaser, NgramTokenizer, RemoveLongFilter, Stemmer, TextAnalyzer, TokenizerManager},
+        DateTime, DocAddress, DocId, IndexSettings, Score, Searcher, SegmentReader, SnippetGenerator,
     },
-    term2query, Document, Error as SearchError,
+    term2query, Document, Error as SearchError, SearchQuery,
 };
 use vexination_model::prelude::*;
 
@@ -71,16 +71,23 @@ struct ProductPackage {
     purl: Option<String>,
 }
 
-#[derive(Debug)]
-pub struct VexQuery {
-    query: Box<dyn Query>,
-    sort_by: Option<(Field, Order)>,
-}
-
 impl trustification_index::Index for Index {
     type MatchedDocument = SearchHit;
     type Document = Csaf;
-    type QueryContext = VexQuery;
+
+    fn tokenizers(&self) -> Result<TokenizerManager, SearchError> {
+        let manager = TokenizerManager::default();
+        let ngram = NgramTokenizer::all_ngrams(3, 8)?;
+        manager.register(
+            "ngram",
+            TextAnalyzer::builder(ngram)
+                .filter(RemoveLongFilter::limit(40))
+                .filter(LowerCaser)
+                .filter(Stemmer::new(Language::English))
+                .build(),
+        );
+        Ok(manager)
+    }
 
     fn settings(&self) -> IndexSettings {
         IndexSettings {
@@ -123,12 +130,13 @@ impl trustification_index::Index for Index {
         }
 
         if let Some(severity) = &csaf.document.aggregate_severity {
-            document.add_text(self.fields.advisory_severity, &severity.text);
-            let score = match severity.text.as_ref() {
-                "Critical" => 1.0,
-                "Important" => 0.75,
-                "Moderate" => 0.5,
-                "Low" => 0.25,
+            let severity = severity.text.to_lowercase();
+            document.add_text(self.fields.advisory_severity, &severity);
+            let score = match severity.as_ref() {
+                "critical" => 1.0,
+                "important" => 0.75,
+                "moderate" => 0.5,
+                "low" => 0.25,
                 _ => 0.25,
             };
             document.add_f64(self.fields.advisory_severity_score, score);
@@ -300,7 +308,7 @@ impl trustification_index::Index for Index {
         self.schema.clone()
     }
 
-    fn prepare_query(&self, q: &str) -> Result<VexQuery, SearchError> {
+    fn prepare_query(&self, q: &str) -> Result<SearchQuery, SearchError> {
         let mut query = Vulnerabilities::parse(q).map_err(|err| SearchError::QueryParser(err.to_string()))?;
 
         query.term = query.term.compact();
@@ -319,102 +327,65 @@ impl trustification_index::Index for Index {
         };
 
         debug!("Processed query: {:?}", query);
-        Ok(VexQuery { query, sort_by })
+        Ok(SearchQuery { query, sort_by })
     }
 
     fn search(
         &self,
         searcher: &Searcher,
-        query: &VexQuery,
+        query: &dyn Query,
         offset: usize,
         limit: usize,
     ) -> Result<(Vec<(f32, DocAddress)>, usize), SearchError> {
-        if let Some((field, order)) = query.sort_by.as_ref() {
-            let order_by_str = self.schema.get_field_name(*field);
-            let mut hits = Vec::new();
-            let total = if *field == self.fields.advisory_severity_score {
-                let result = searcher.search(
-                    &query.query,
-                    &(
-                        TopDocs::with_limit(limit)
-                            .and_offset(offset)
-                            .order_by_fast_field::<f64>(order_by_str, order.clone()),
-                        tantivy::collector::Count,
-                    ),
-                )?;
-                for r in result.0 {
-                    hits.push((r.0 as f32, r.1));
-                }
-                result.1
-            } else {
-                let result = searcher.search(
-                    &query.query,
-                    &(
-                        TopDocs::with_limit(limit)
-                            .and_offset(offset)
-                            .order_by_fast_field::<tantivy::DateTime>(order_by_str, order.clone()),
-                        tantivy::collector::Count,
-                    ),
-                )?;
-                for r in result.0 {
-                    hits.push((1.0, r.1));
-                }
-                result.1
-            };
-            Ok((hits, total))
-        } else {
-            let severity_field = self
-                .schema
-                .get_field_name(self.fields.advisory_severity_score)
-                .to_string();
-            let date_field = self.schema.get_field_name(self.fields.advisory_current).to_string();
-            let now = tantivy::DateTime::from_utc(OffsetDateTime::now_utc());
-            Ok(searcher.search(
-                &query.query,
-                &(
-                    TopDocs::with_limit(limit)
-                        .and_offset(offset)
-                        .tweak_score(move |segment_reader: &SegmentReader| {
-                            let severity_reader = segment_reader.fast_fields().f64(&severity_field);
+        let severity_field = self
+            .schema
+            .get_field_name(self.fields.advisory_severity_score)
+            .to_string();
+        let date_field = self.schema.get_field_name(self.fields.advisory_current).to_string();
+        let now = tantivy::DateTime::from_utc(OffsetDateTime::now_utc());
+        Ok(searcher.search(
+            query,
+            &(
+                TopDocs::with_limit(limit)
+                    .and_offset(offset)
+                    .tweak_score(move |segment_reader: &SegmentReader| {
+                        let severity_reader = segment_reader.fast_fields().f64(&severity_field);
 
-                            let date_reader = segment_reader.fast_fields().date(&date_field);
+                        let date_reader = segment_reader.fast_fields().date(&date_field);
 
-                            move |doc: DocId, original_score: Score| {
-                                let severity_reader = severity_reader.clone();
-                                let date_reader = date_reader.clone();
-                                let mut tweaked = original_score;
-                                if let Ok(Some(score)) = severity_reader.map(|s| s.first(doc)) {
-                                    log::trace!("CVSS score impact {} -> {}", tweaked, (score as f32) * tweaked);
-                                    tweaked *= score as f32;
+                        move |doc: DocId, original_score: Score| {
+                            let severity_reader = severity_reader.clone();
+                            let date_reader = date_reader.clone();
+                            let mut tweaked = original_score;
+                            if let Ok(Some(score)) = severity_reader.map(|s| s.first(doc)) {
+                                log::trace!("CVSS score impact {} -> {}", tweaked, (score as f32) * tweaked);
+                                tweaked *= score as f32;
 
-                                    // Now look at the date, normalize score between 0 and 1 (baseline 1970)
-                                    if let Ok(Some(date)) = date_reader.map(|s| s.first(doc)) {
-                                        if date < now {
-                                            let mut normalized = 2.0
-                                                * (date.into_timestamp_secs() as f64
-                                                    / now.into_timestamp_secs() as f64);
-                                            // If it's the past month, boost it more.
-                                            if (now.into_utc() - date.into_utc()) < Duration::from_secs(30 * 24 * 3600)
-                                            {
-                                                normalized *= 4.0;
-                                            }
-                                            log::trace!(
-                                                "DATE score impact {} -> {}",
-                                                tweaked,
-                                                tweaked * (normalized as f32)
-                                            );
-                                            tweaked *= normalized as f32;
+                                // Now look at the date, normalize score between 0 and 1 (baseline 1970)
+                                if let Ok(Some(date)) = date_reader.map(|s| s.first(doc)) {
+                                    if date < now {
+                                        let mut normalized = 2.0
+                                            * (date.into_timestamp_secs() as f64 / now.into_timestamp_secs() as f64);
+                                        // If it's the past month, boost it more.
+                                        if (now.into_utc() - date.into_utc()) < Duration::from_secs(30 * 24 * 3600) {
+                                            normalized *= 4.0;
                                         }
+                                        log::trace!(
+                                            "DATE score impact {} -> {}",
+                                            tweaked,
+                                            tweaked * (normalized as f32)
+                                        );
+                                        tweaked *= normalized as f32;
                                     }
                                 }
-                                log::trace!("Tweaking from {} to {}", original_score, tweaked);
-                                tweaked
                             }
-                        }),
-                    tantivy::collector::Count,
-                ),
-            )?)
-        }
+                            log::trace!("Tweaking from {} to {}", original_score, tweaked);
+                            tweaked
+                        }
+                    }),
+                tantivy::collector::Count,
+            ),
+        )?)
     }
 
     fn process_hit(
@@ -422,11 +393,11 @@ impl trustification_index::Index for Index {
         doc_address: DocAddress,
         score: f32,
         searcher: &Searcher,
-        query: &VexQuery,
+        query: &dyn Query,
         options: &SearchOptions,
     ) -> Result<Self::MatchedDocument, SearchError> {
         let doc = searcher.doc(doc_address)?;
-        let snippet_generator = SnippetGenerator::create(searcher, &query.query, self.fields.advisory_description)?;
+        let snippet_generator = SnippetGenerator::create(searcher, query, self.fields.advisory_description)?;
         let advisory_snippet = snippet_generator.snippet_from_doc(&doc).to_html();
 
         let advisory_id = field2str(&self.schema, &doc, self.fields.advisory_id)?;
@@ -464,7 +435,7 @@ impl trustification_index::Index for Index {
         };
 
         let explanation: Option<serde_json::Value> = if options.explain {
-            match query.query.explain(searcher, doc_address) {
+            match query.explain(searcher, doc_address) {
                 Ok(explanation) => Some(serde_json::to_value(explanation).ok()).unwrap_or(None),
                 Err(e) => {
                     warn!("Error producing explanation for document {:?}: {:?}", doc_address, e);
@@ -497,11 +468,20 @@ impl Index {
     pub fn new() -> Self {
         let mut schema = Schema::builder();
         let indexed_timestamp = schema.add_date_field("indexed_timestamp", STORED);
+        let text_options = TextFieldIndexing::default()
+            .set_tokenizer("ngram")
+            .set_index_option(IndexRecordOption::WithFreqsAndPositions);
 
         let advisory_id = schema.add_text_field("advisory_id", STRING | FAST | STORED);
         let advisory_status = schema.add_text_field("advisory_status", STRING);
-        let advisory_title = schema.add_text_field("advisory_title", TEXT | STORED);
-        let advisory_description = schema.add_text_field("advisory_description", TEXT | STORED);
+        let advisory_title = schema.add_text_field(
+            "advisory_title",
+            (TEXT | STORED).set_indexing_options(text_options.clone()),
+        );
+        let advisory_description = schema.add_text_field(
+            "advisory_description",
+            (TEXT | STORED).set_indexing_options(text_options.clone()),
+        );
         let advisory_revision = schema.add_text_field("advisory_revision", STRING | STORED);
         let advisory_severity = schema.add_text_field("advisory_severity", STRING | STORED);
         let advisory_initial = schema.add_date_field("advisory_initial_date", INDEXED);
@@ -509,8 +489,9 @@ impl Index {
         let advisory_severity_score = schema.add_f64_field("advisory_severity_score", FAST);
 
         let cve_id = schema.add_text_field("cve_id", STRING | FAST | STORED);
-        let cve_title = schema.add_text_field("cve_title", TEXT | STORED);
-        let cve_description = schema.add_text_field("cve_description", TEXT | STORED);
+        let cve_title = schema.add_text_field("cve_title", (TEXT | STORED).set_indexing_options(text_options.clone()));
+        let cve_description =
+            schema.add_text_field("cve_description", (TEXT | STORED).set_indexing_options(text_options));
         let cve_discovery = schema.add_date_field("cve_discovery_date", INDEXED);
         let cve_release = schema.add_date_field("cve_release_date", INDEXED | STORED);
         let cve_severity = schema.add_text_field("cve_severity", STRING | FAST);
@@ -600,7 +581,7 @@ impl Index {
 
             Vulnerabilities::Severity(value) => Box::new(TermSetQuery::new(vec![Term::from_field_text(
                 self.fields.advisory_severity,
-                value,
+                &value.to_ascii_lowercase(),
             )])),
 
             Vulnerabilities::Status(value) => Box::new(TermSetQuery::new(vec![Term::from_field_text(
@@ -611,19 +592,19 @@ impl Index {
             Vulnerabilities::Final => create_string_query(self.fields.advisory_status, &Primary::Equal("final")),
             Vulnerabilities::Critical => Box::new(TermSetQuery::new(vec![
                 Term::from_field_text(self.fields.cve_severity, "critical"),
-                Term::from_field_text(self.fields.advisory_severity, "Critical"),
+                Term::from_field_text(self.fields.advisory_severity, "critical"),
             ])),
             Vulnerabilities::High => Box::new(TermSetQuery::new(vec![
                 Term::from_field_text(self.fields.cve_severity, "high"),
-                Term::from_field_text(self.fields.advisory_severity, "Important"),
+                Term::from_field_text(self.fields.advisory_severity, "important"),
             ])),
             Vulnerabilities::Medium => Box::new(TermSetQuery::new(vec![
                 Term::from_field_text(self.fields.cve_severity, "medium"),
-                Term::from_field_text(self.fields.advisory_severity, "Moderate"),
+                Term::from_field_text(self.fields.advisory_severity, "moderate"),
             ])),
             Vulnerabilities::Low => Box::new(TermSetQuery::new(vec![
                 Term::from_field_text(self.fields.cve_severity, "low"),
-                Term::from_field_text(self.fields.advisory_severity, "Low"),
+                Term::from_field_text(self.fields.advisory_severity, "low"),
             ])),
             Vulnerabilities::Cvss(ordered) => create_float_query(&self.schema, [self.fields.cve_cvss], ordered),
             Vulnerabilities::Initial(ordered) => create_date_query(&self.schema, self.fields.advisory_initial, ordered),
@@ -1000,6 +981,20 @@ mod tests {
             assert_eq!(result.0[2].document.advisory_id, "RHSA-2023:1441");
             assert_eq!(result.0[3].document.advisory_id, "RHSA-2021:3029");
             assert!(result.0[0].document.advisory_date > result.0[1].document.advisory_date);
+        });
+    }
+
+    #[tokio::test]
+    async fn test_ngrams() {
+        assert_search(|index| {
+            let result = search(&index, "title:openssl");
+            assert_eq!(result.0.len(), 2);
+
+            let result = search(&index, "title:open");
+            assert_eq!(result.0.len(), 2);
+
+            let result = search(&index, "title:ssl");
+            assert_eq!(result.0.len(), 2);
         });
     }
 

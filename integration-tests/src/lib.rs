@@ -29,30 +29,6 @@ use {
 const STORAGE_ENDPOINT: &str = "http://localhost:9000";
 const KAFKA_BOOTSTRAP_SERVERS: &str = "localhost:9092";
 
-pub async fn wait_for_event<F: Future>(events: &EventBusConfig, bus_name: &str, id: &str, f: F) {
-    let bus = events.create(&prometheus::Registry::new()).await.unwrap();
-    let consumer = bus.subscribe("test-client", &[bus_name]).await.unwrap();
-    f.await;
-    loop {
-        if let Ok(Some(event)) = consumer.next().await {
-            let payload = event.payload().unwrap();
-            if let Ok(v) = serde_json::from_slice::<Value>(payload) {
-                let key = v["key"].as_str().unwrap();
-                if key.ends_with(id) {
-                    break;
-                }
-            } else {
-                let key = std::str::from_utf8(payload).unwrap();
-                if key.ends_with(id) {
-                    break;
-                }
-            }
-        } else {
-            tokio::time::sleep(Duration::from_secs(1)).await;
-        }
-    }
-}
-
 pub async fn get_response(url: &Url, exp_status: StatusCode, context: &ProviderContext) -> Option<Value> {
     let response = reqwest::Client::new()
         .get(url.to_owned())

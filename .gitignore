@@ -3,6 +3,7 @@
 *.sqlite
 .vscode/
 *.db
+*.db-journal
 .DS_Store
 
 # from the bom import

@@ -3,6 +3,7 @@ use crate::{config::Config, runner::Runner};
 use async_trait::async_trait;
 use reqwest::Url;
 use test_context::AsyncTestContext;
+use trustification_storage::validator::Validator;
 
 #[async_trait]
 impl AsyncTestContext for BombasticContext {
@@ -136,11 +137,11 @@ impl BombasticContext {
     }
 }
 
-pub async fn wait_for_search_result<F: Fn(serde_json::Value) -> bool>(
+pub async fn wait_for_search_result<F: Fn(&serde_json::Value) -> bool>(
     context: &mut BombasticContext,
     flags: &[(&str, &str)],
     check: F,
-) {
+) -> serde_json::Value {
     loop {
         let url = context.urlify("/api/v1/sbom/search");
         let response = reqwest::Client::new()
@@ -154,8 +155,8 @@ pub async fn wait_for_search_result<F: Fn(serde_json::Value) -> bool>(
             .unwrap();
         assert_eq!(response.status(), StatusCode::OK);
         let payload: Value = response.json().await.unwrap();
-        if check(payload) {
-            break;
+        if check(&payload) {
+            return payload;
         }
         tokio::time::sleep(Duration::from_secs(1)).await;
     }
@@ -181,6 +182,7 @@ fn bombastic_indexer() -> bombastic_indexer::Run {
             endpoint: Some(STORAGE_ENDPOINT.into()),
             access_key: Some("admin".into()),
             secret_key: Some("password".into()),
+            validator: Validator::None,
         },
         bus: EventBusConfig {
             event_bus: EventBusType::Kafka,
@@ -191,7 +193,7 @@ fn bombastic_indexer() -> bombastic_indexer::Run {
             infrastructure_enabled: false,
             infrastructure_bind: "127.0.0.1".into(),
             infrastructure_workers: 1,
-            enable_tracing: false,
+            tracing: Default::default(),
         },
     }
 }
@@ -215,12 +217,13 @@ fn bombastic_api() -> bombastic_api::Run {
             endpoint: Some(STORAGE_ENDPOINT.into()),
             access_key: Some("admin".into()),
             secret_key: Some("password".into()),
+            validator: Validator::SBOM,
         },
         infra: InfrastructureConfig {
             infrastructure_enabled: false,
             infrastructure_bind: "127.0.0.1".into(),
             infrastructure_workers: 1,
-            enable_tracing: false,
+            tracing: Default::default(),
         },
         auth: testing_auth(),
         swagger_ui_oidc: testing_swagger_ui_oidc(),

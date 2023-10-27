@@ -26,10 +26,12 @@ use std::sync::RwLock;
 pub use tantivy;
 pub use tantivy::schema::Document;
 use tantivy::{
+    collector::TopDocs,
     directory::{MmapDirectory, INDEX_WRITER_LOCK},
     query::{AllQuery, BooleanQuery, BoostQuery, Occur, Query, RangeQuery, RegexQuery, TermQuery},
     schema::*,
-    DateTime, Directory, DocAddress, Index as SearchIndex, IndexSettings, Searcher,
+    tokenizer::TokenizerManager,
+    DateTime, Directory, DocAddress, Index as SearchIndex, IndexSettings, Order, Searcher,
 };
 use time::{OffsetDateTime, UtcOffset};
 
@@ -153,16 +155,18 @@ pub struct IndexStore<INDEX: Index> {
 pub trait Index {
     type MatchedDocument: core::fmt::Debug;
     type Document;
-    type QueryContext: core::fmt::Debug;
 
+    fn tokenizers(&self) -> Result<TokenizerManager, Error> {
+        Ok(TokenizerManager::default())
+    }
     fn parse_doc(data: &[u8]) -> Result<Self::Document, Error>;
     fn settings(&self) -> IndexSettings;
     fn schema(&self) -> Schema;
-    fn prepare_query(&self, q: &str) -> Result<Self::QueryContext, Error>;
+    fn prepare_query(&self, q: &str) -> Result<SearchQuery, Error>;
     fn search(
         &self,
         searcher: &Searcher,
-        query: &Self::QueryContext,
+        query: &dyn Query,
         offset: usize,
         limit: usize,
     ) -> Result<(Vec<(f32, DocAddress)>, usize), Error>;
@@ -171,7 +175,7 @@ pub trait Index {
         doc: DocAddress,
         score: f32,
         searcher: &Searcher,
-        query: &Self::QueryContext,
+        query: &dyn Query,
         options: &SearchOptions,
     ) -> Result<Self::MatchedDocument, Error>;
     fn index_doc(&self, id: &str, document: &Self::Document) -> Result<Document, Error>;
@@ -186,6 +190,8 @@ pub enum Error {
     Snapshot,
     #[error("value for field {0} not found")]
     FieldNotFound(String),
+    #[error("field {0} cannot be sorted")]
+    NotSortable(String),
     #[error("operation cannot be done because index is not persisted")]
     NotPersisted,
     #[error("error parsing document {0}")]
@@ -225,6 +231,12 @@ impl From<trustification_storage::Error> for Error {
 pub struct IndexWriter {
     writer: tantivy::IndexWriter,
     metrics: Metrics,
+}
+
+#[derive(Debug)]
+pub struct SearchQuery {
+    pub query: Box<dyn Query>,
+    pub sort_by: Option<(Field, Order)>,
 }
 
 impl IndexWriter {
@@ -288,12 +300,18 @@ struct IndexDirectory {
 
 impl IndexDirectory {
     /// Attempt to build a new index from the serialized zstd data
-    pub fn sync(&mut self, schema: Schema, settings: IndexSettings, data: &[u8]) -> Result<Option<SearchIndex>, Error> {
+    pub fn sync(
+        &mut self,
+        schema: Schema,
+        settings: IndexSettings,
+        tokenizers: TokenizerManager,
+        data: &[u8],
+    ) -> Result<Option<SearchIndex>, Error> {
         let digest = Sha256::digest(data).to_vec();
         if self.digest != digest {
             let next = self.state.next();
             let path = next.directory(&self.path);
-            let index = self.unpack(schema, settings, data, &path)?;
+            let index = self.unpack(schema, settings, tokenizers, data, &path)?;
             self.state = next;
             self.digest = digest;
             Ok(Some(index))
@@ -315,35 +333,55 @@ impl IndexDirectory {
         })
     }
 
-    pub fn reset(&mut self, settings: IndexSettings, schema: Schema) -> Result<SearchIndex, Error> {
+    pub fn reset(
+        &mut self,
+        settings: IndexSettings,
+        schema: Schema,
+        tokenizers: TokenizerManager,
+    ) -> Result<SearchIndex, Error> {
         let next = self.state.next();
         let path = next.directory(&self.path);
         if path.exists() {
             std::fs::remove_dir_all(&path).map_err(|e| Error::Open(e.to_string()))?;
         }
         std::fs::create_dir_all(&path).map_err(|e| Error::Open(e.to_string()))?;
-        let index = self.build_new(settings, schema, &path)?;
+        let index = self.build_new(settings, schema, tokenizers, &path)?;
         self.state = next;
         Ok(index)
     }
 
-    fn build_new(&self, settings: IndexSettings, schema: Schema, path: &Path) -> Result<SearchIndex, Error> {
+    fn build_new(
+        &self,
+        settings: IndexSettings,
+        schema: Schema,
+        tokenizers: TokenizerManager,
+        path: &Path,
+    ) -> Result<SearchIndex, Error> {
         std::fs::create_dir_all(path).map_err(|e| Error::Open(e.to_string()))?;
         let dir = MmapDirectory::open(path).map_err(|e| Error::Open(e.to_string()))?;
-        let builder = SearchIndex::builder().schema(schema).settings(settings);
+        let builder = SearchIndex::builder()
+            .schema(schema)
+            .settings(settings)
+            .tokenizers(tokenizers);
         let index = builder.open_or_create(dir).map_err(|e| Error::Open(e.to_string()))?;
         Ok(index)
     }
 
-    pub fn build(&self, settings: IndexSettings, schema: Schema) -> Result<SearchIndex, Error> {
+    pub fn build(
+        &self,
+        settings: IndexSettings,
+        schema: Schema,
+        tokenizers: TokenizerManager,
+    ) -> Result<SearchIndex, Error> {
         let path = self.state.directory(&self.path);
-        self.build_new(settings, schema, &path)
+        self.build_new(settings, schema, tokenizers, &path)
     }
 
     fn unpack(
         &mut self,
         schema: Schema,
         settings: IndexSettings,
+        tokenizers: TokenizerManager,
         data: &[u8],
         path: &Path,
     ) -> Result<SearchIndex, Error> {
@@ -358,7 +396,10 @@ impl IndexDirectory {
         log::trace!("Unpacked into {:?}", path);
 
         let dir = MmapDirectory::open(path).map_err(|e| Error::Open(e.to_string()))?;
-        let builder = SearchIndex::builder().schema(schema).settings(settings);
+        let builder = SearchIndex::builder()
+            .schema(schema)
+            .settings(settings)
+            .tokenizers(tokenizers);
         let inner = builder.open_or_create(dir).map_err(|e| Error::Open(e.to_string()))?;
         Ok(inner)
     }
@@ -401,7 +442,11 @@ impl<INDEX: Index> IndexStore<INDEX> {
     pub fn new_in_memory(index: INDEX) -> Result<Self, Error> {
         let schema = index.schema();
         let settings = index.settings();
-        let builder = SearchIndex::builder().schema(schema).settings(settings);
+        let tokenizers = index.tokenizers()?;
+        let builder = SearchIndex::builder()
+            .schema(schema)
+            .settings(settings)
+            .tokenizers(tokenizers);
         let inner = builder.create_in_ram()?;
         Ok(Self {
             inner: RwLock::new(inner),
@@ -428,9 +473,10 @@ impl<INDEX: Index> IndexStore<INDEX> {
 
                 let schema = index.schema();
                 let settings = index.settings();
+                let tokenizers = index.tokenizers()?;
 
                 let index_dir = IndexDirectory::new(&path)?;
-                let inner = index_dir.build(settings, schema)?;
+                let inner = index_dir.build(settings, schema, tokenizers)?;
                 Ok(Self {
                     inner: RwLock::new(inner),
                     index_writer_memory_bytes: config.index_writer_memory_bytes,
@@ -443,7 +489,11 @@ impl<INDEX: Index> IndexStore<INDEX> {
                 let bucket = storage.clone().try_into()?;
                 let schema = index.schema();
                 let settings = index.settings();
-                let builder = SearchIndex::builder().schema(schema).settings(settings);
+                let tokenizers = index.tokenizers()?;
+                let builder = SearchIndex::builder()
+                    .schema(schema)
+                    .settings(settings)
+                    .tokenizers(tokenizers);
                 let dir = S3Directory::new(bucket);
                 let inner = builder.open_or_create(dir)?;
                 Ok(Self {
@@ -472,7 +522,12 @@ impl<INDEX: Index> IndexStore<INDEX> {
         if let Some(index_dir) = &self.index_dir {
             let data = storage.get_index().await?;
             let mut index_dir = index_dir.write().unwrap();
-            match index_dir.sync(self.index.schema(), self.index.settings(), &data) {
+            match index_dir.sync(
+                self.index.schema(),
+                self.index.settings(),
+                self.index.tokenizers()?,
+                &data,
+            ) {
                 Ok(Some(index)) => {
                     *self.inner.write().unwrap() = index;
                     log::debug!("Index reloaded");
@@ -494,7 +549,7 @@ impl<INDEX: Index> IndexStore<INDEX> {
     pub fn reset(&mut self) -> Result<(), Error> {
         if let Some(index_dir) = &self.index_dir {
             let mut index_dir = index_dir.write().unwrap();
-            let index = index_dir.reset(self.index.settings(), self.index.schema())?;
+            let index = index_dir.reset(self.index.settings(), self.index.schema(), self.index.tokenizers()?)?;
             let mut inner = self.inner.write().unwrap();
             *inner = index;
         }
@@ -597,7 +652,94 @@ impl<INDEX: Index> IndexStore<INDEX> {
 
         debug!("Processed query: {:?}", query);
 
-        let (top_docs, count) = self.index.search(&searcher, &query, offset, limit)?;
+        let (top_docs, count) = if let Some(sort_by) = query.sort_by {
+            let field = sort_by.0;
+            let order = sort_by.1;
+            let order_by_str = self.index.schema().get_field_name(field).to_string();
+            let vtype = self.index.schema().get_field_entry(field).field_type().value_type();
+            let mut hits = Vec::new();
+            let total = match vtype {
+                Type::U64 => {
+                    let result = searcher.search(
+                        &query.query,
+                        &(
+                            TopDocs::with_limit(limit)
+                                .and_offset(offset)
+                                .order_by_fast_field::<u64>(&order_by_str, order.clone()),
+                            tantivy::collector::Count,
+                        ),
+                    )?;
+                    for r in result.0 {
+                        hits.push((1.0, r.1));
+                    }
+                    result.1
+                }
+                Type::I64 => {
+                    let result = searcher.search(
+                        &query.query,
+                        &(
+                            TopDocs::with_limit(limit)
+                                .and_offset(offset)
+                                .order_by_fast_field::<i64>(&order_by_str, order.clone()),
+                            tantivy::collector::Count,
+                        ),
+                    )?;
+                    for r in result.0 {
+                        hits.push((1.0, r.1));
+                    }
+                    result.1
+                }
+                Type::F64 => {
+                    let result = searcher.search(
+                        &query.query,
+                        &(
+                            TopDocs::with_limit(limit)
+                                .and_offset(offset)
+                                .order_by_fast_field::<f64>(&order_by_str, order.clone()),
+                            tantivy::collector::Count,
+                        ),
+                    )?;
+                    for r in result.0 {
+                        hits.push((1.0, r.1));
+                    }
+                    result.1
+                }
+                Type::Bool => {
+                    let result = searcher.search(
+                        &query.query,
+                        &(
+                            TopDocs::with_limit(limit)
+                                .and_offset(offset)
+                                .order_by_fast_field::<bool>(&order_by_str, order.clone()),
+                            tantivy::collector::Count,
+                        ),
+                    )?;
+                    for r in result.0 {
+                        hits.push((1.0, r.1));
+                    }
+                    result.1
+                }
+                Type::Date => {
+                    let result = searcher.search(
+                        &query.query,
+                        &(
+                            TopDocs::with_limit(limit)
+                                .and_offset(offset)
+                                .order_by_fast_field::<DateTime>(&order_by_str, order.clone()),
+                            tantivy::collector::Count,
+                        ),
+                    )?;
+                    for r in result.0 {
+                        hits.push((1.0, r.1));
+                    }
+                    result.1
+                }
+                _ => return Err(Error::NotSortable(order_by_str)),
+            };
+            (hits, total)
+        } else {
+            self.index.search(&searcher, &query.query, offset, limit)?
+        };
 
         self.metrics.queries_total.inc();
 
@@ -606,7 +748,7 @@ impl<INDEX: Index> IndexStore<INDEX> {
         if options.summaries {
             let mut hits = Vec::new();
             for hit in top_docs {
-                match self.index.process_hit(hit.1, hit.0, &searcher, &query, &options) {
+                match self.index.process_hit(hit.1, hit.0, &searcher, &query.query, &options) {
                     Ok(value) => {
                         debug!("HIT: {:?}", value);
                         hits.push(value);
@@ -859,7 +1001,6 @@ mod tests {
     impl Index for TestIndex {
         type MatchedDocument = String;
         type Document = String;
-        type QueryContext = Box<dyn Query>;
 
         fn settings(&self) -> IndexSettings {
             IndexSettings::default()
@@ -875,7 +1016,7 @@ mod tests {
                 .map(|s| s.to_string())
         }
 
-        fn prepare_query(&self, q: &str) -> Result<Box<dyn Query>, Error> {
+        fn prepare_query(&self, q: &str) -> Result<SearchQuery, Error> {
             let queries: Vec<Box<dyn Query>> = vec![
                 Box::new(TermQuery::new(
                     Term::from_field_text(self.id, q),
@@ -886,7 +1027,10 @@ mod tests {
                     IndexRecordOption::Basic,
                 )),
             ];
-            Ok(Box::new(BooleanQuery::union(queries)))
+            Ok(SearchQuery {
+                query: Box::new(BooleanQuery::union(queries)),
+                sort_by: None,
+            })
         }
 
         fn process_hit(
@@ -894,7 +1038,7 @@ mod tests {
             doc: DocAddress,
             _score: f32,
             searcher: &Searcher,
-            _query: &Box<dyn Query>,
+            _query: &dyn Query,
             _options: &SearchOptions,
         ) -> Result<Self::MatchedDocument, Error> {
             let d = searcher.doc(doc)?;
@@ -908,7 +1052,7 @@ mod tests {
         fn search(
             &self,
             searcher: &Searcher,
-            query: &Box<dyn Query>,
+            query: &dyn Query,
             offset: usize,
             limit: usize,
         ) -> Result<(Vec<(f32, DocAddress)>, usize), Error> {
@@ -1024,7 +1168,7 @@ mod tests {
         let mut good = IndexDirectory::new(&dir.join("good")).unwrap();
         let mut bad = IndexDirectory::new(&dir.join("bad")).unwrap();
 
-        let store = good.build(Default::default(), old_schema).unwrap();
+        let store = good.build(Default::default(), old_schema, Default::default()).unwrap();
 
         let mut w = store.writer(10_000_000).unwrap();
         w.add_document(doc!(old_id => "foo")).unwrap();
@@ -1032,12 +1176,13 @@ mod tests {
         w.wait_merging_threads().unwrap();
 
         let snapshot = good.pack().unwrap();
-        let store = bad.build(Default::default(), new_schema).unwrap();
+        let store = bad.build(Default::default(), new_schema, Default::default()).unwrap();
         let schema = store.schema();
         let settings = store.settings();
+        let tokenizers = store.tokenizers();
 
         assert_eq!(bad.state, IndexState::A);
-        let result = bad.sync(schema, settings.clone(), &snapshot);
+        let result = bad.sync(schema, settings.clone(), tokenizers.clone(), &snapshot);
         assert!(result.is_err());
         assert_eq!(bad.state, IndexState::A);
     }
@@ -1055,9 +1200,12 @@ mod tests {
 
         let mut good = IndexDirectory::new(&dir.join("good")).unwrap();
 
-        let store = good.build(Default::default(), schema).unwrap();
+        let store = good
+            .build(Default::default(), schema, TokenizerManager::default())
+            .unwrap();
         let schema = store.schema();
         let settings = store.settings();
+        let tokenizers = store.tokenizers();
 
         let mut w = store.writer(10_000_000).unwrap();
         w.add_document(doc!(id => "foo")).unwrap();
@@ -1066,7 +1214,7 @@ mod tests {
         assert_eq!(store.reader().unwrap().searcher().num_docs(), 1);
 
         assert_eq!(good.state, IndexState::A);
-        let clean = good.reset(settings.clone(), schema).unwrap();
+        let clean = good.reset(settings.clone(), schema, tokenizers.clone()).unwrap();
         assert_eq!(good.state, IndexState::B);
         assert_eq!(store.reader().unwrap().searcher().num_docs(), 1);
         assert_eq!(clean.reader().unwrap().searcher().num_docs(), 0);

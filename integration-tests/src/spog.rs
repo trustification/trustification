@@ -61,12 +61,13 @@ pub async fn start_spog(config: &Config) -> SpogContext {
         // FIXME: use from start_* once we have it
         let curl = endpoint::Collectorist::url();
         let wurl = endpoint::V11y::url();
+        let eurl = endpoint::Exhort::url();
 
         let runner = Runner::spawn(move || async move {
             select! {
                 biased;
 
-                spog = spog_api(burl, vurl, curl, wurl).run(Some(listener)) => match spog {
+                spog = spog_api(burl, vurl, curl, wurl, eurl).run(Some(listener)) => match spog {
                     Err(e) => {
                         panic!("Error running spog API: {e:?}");
                     }
@@ -111,7 +112,13 @@ pub async fn start_spog(config: &Config) -> SpogContext {
     }
 }
 
-fn spog_api(bombastic_url: Url, vexination_url: Url, collectorist_url: Url, v11y_url: Url) -> spog_api::Run {
+fn spog_api(
+    bombastic_url: Url,
+    vexination_url: Url,
+    collectorist_url: Url,
+    v11y_url: Url,
+    exhort_url: Url,
+) -> spog_api::Run {
     use trustification_infrastructure::endpoint;
     use trustification_infrastructure::endpoint::Endpoint;
 
@@ -121,6 +128,7 @@ fn spog_api(bombastic_url: Url, vexination_url: Url, collectorist_url: Url, v11y
         guac_url: endpoint::GuacGraphQl::url(),
         bombastic_url,
         vexination_url,
+        exhort_url,
         crda_url: option_env!("CRDA_URL").map(|url| url.parse().unwrap()),
         crda_payload_limit: DEFAULT_CRDA_PAYLOAD_LIMIT,
         collectorist_url,
@@ -131,7 +139,7 @@ fn spog_api(bombastic_url: Url, vexination_url: Url, collectorist_url: Url, v11y
             infrastructure_enabled: false,
             infrastructure_bind: "127.0.0.1".into(),
             infrastructure_workers: 1,
-            enable_tracing: false,
+            tracing: Default::default(),
         },
         auth: testing_auth(),
         swagger_ui_oidc: testing_swagger_ui_oidc(),

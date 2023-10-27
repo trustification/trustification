@@ -17,12 +17,15 @@ mod analytics;
 mod analyze;
 mod config;
 mod cve;
+mod endpoints;
+mod error;
 mod guac;
 mod index;
 mod sbom;
 mod search;
 mod server;
 mod service;
+mod utils;
 
 pub const DEFAULT_CRDA_PAYLOAD_LIMIT: usize = 10 * 1024 * 1024;
 
@@ -46,6 +49,9 @@ pub struct Run {
 
     #[arg(long = "vexination-url", env, default_value_t = endpoint::Vexination::url())]
     pub vexination_url: Url,
+
+    #[arg(long = "exhort-url", env, default_value_t = endpoint::Exhort::url())]
+    pub exhort_url: Url,
 
     #[arg(long = "crda-url", env)]
     pub crda_url: Option<Url>,

@@ -86,6 +86,7 @@ impl error::ResponseError for Error {
     fn status_code(&self) -> StatusCode {
         match self {
             Self::Storage(StorageError::NotFound) => StatusCode::NOT_FOUND,
+            Self::Storage(StorageError::InvalidContent) => StatusCode::BAD_REQUEST,
             Self::InvalidContentType | Self::InvalidContentEncoding => StatusCode::BAD_REQUEST,
             Self::Index(IndexError::QueryParser(_)) => StatusCode::BAD_REQUEST,
             e => {
@@ -257,7 +258,7 @@ async fn search_sbom(
         (status = 200, description = "SBOM uploaded successfully"),
         (status = 401, description = "User is not authenticated"),
         (status = 403, description = "User is not allowed to perform operation"),
-        (status = BAD_REQUEST, description = "Missing valid id"),
+        (status = BAD_REQUEST, description = "Missing valid id or invalid content"),
     ),
     params(
         ("id" = String, Query, description = "Identifier assigned to the SBOM"),
@@ -278,13 +279,13 @@ async fn publish_sbom(
     let typ = verify_type(content_type)?;
     let enc = verify_encoding(req.headers().get(CONTENT_ENCODING))?;
     let id = &params.id;
-    let mut payload = payload.map_err(|e| match e {
-        PayloadError::Io(e) => e,
-        _ => io::Error::new(io::ErrorKind::Other, e),
+    let payload = payload.map_err(|e| match e {
+        PayloadError::Io(e) => StorageError::Io(e),
+        _ => StorageError::Io(io::Error::new(io::ErrorKind::Other, e)),
     });
     let size = state
         .storage
-        .put_stream(id, typ.as_ref(), enc, &mut payload)
+        .put_stream(id, typ.as_ref(), enc, payload)
         .await
         .map_err(Error::Storage)?;
     let msg = format!("Successfully uploaded SBOM: id={id}, size={size}");

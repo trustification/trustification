@@ -23,6 +23,27 @@ async fn spog_version(context: &mut SpogContext) {
     assert_eq!(version["name"], "spog-api");
 }
 
+#[test_context(SpogContext)]
+#[tokio::test]
+#[ntest::timeout(30_000)]
+async fn spog_endpoints(context: &mut SpogContext) {
+    let vexination_url = String::from(context.vexination.url.as_str());
+    let bombastic_url = String::from(context.bombastic.url.as_str());
+
+    let response = reqwest::Client::new()
+        .get(context.urlify("/.well-known/trustification/endpoints"))
+        .inject_token(&context.provider.provider_user)
+        .await
+        .unwrap()
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    let endpoints: Value = response.json().await.unwrap();
+    assert_eq!(endpoints["vexination"], vexination_url);
+    assert_eq!(endpoints["bombastic"], bombastic_url);
+}
+
 /// SPoG is the entrypoint for the frontend. It exposes a search API, but forwards requests
 /// to bombastic of vexination. This requires forwarding the token too. This test is here to
 /// test this.
@@ -113,15 +134,19 @@ async fn spog_crda_integration(context: &mut SpogContext) {
 #[tokio::test]
 #[ntest::timeout(120_000)]
 async fn spog_search_correlation(context: &mut SpogContext) {
-    let input = serde_json::from_str(include_str!("testdata/correlation/stf-1.5.json")).unwrap();
+    let mut sbom: serde_json::Value = serde_json::from_str(include_str!("testdata/correlation/stf-1.5.json")).unwrap();
+    let cpe_id = id("cpe:/a:redhat:service_telemetry_framework:1.5::el8");
+    sbom["packages"][883]["externalRefs"][0]["referenceLocator"] = json!(cpe_id);
     let sbom_id = id("test-search-correlation");
-    context.bombastic.upload_sbom(&sbom_id, &input).await;
+    context.bombastic.upload_sbom(&sbom_id, &sbom).await;
 
-    let mut input: serde_json::Value =
+    let mut vex: serde_json::Value =
         serde_json::from_str(include_str!("testdata/correlation/rhsa-2023_1529.json")).unwrap();
     let vex_id = id("test-search-correlation");
-    input["document"]["tracking"]["id"] = json!(vex_id);
-    context.vexination.upload_vex(&input).await;
+    vex["document"]["tracking"]["id"] = json!(vex_id);
+    vex["product_tree"]["branches"][0]["branches"][0]["branches"][0]["product"]["product_identification_helper"]
+        ["cpe"] = json!(cpe_id);
+    context.vexination.upload_vex(&vex).await;
 
     let client = reqwest::Client::new();
     // Ensure we can search for the data. We want to allow the
@@ -138,7 +163,7 @@ async fn spog_search_correlation(context: &mut SpogContext) {
         assert_eq!(response.status(), StatusCode::OK, "unexpected status from search");
         let payload: Value = response.json().await.unwrap();
         if payload["total"].as_u64().unwrap() >= 1 {
-            assert_eq!(payload["result"][0]["name"], json!("stf-1.5"), "unexpected name");
+            assert_eq!(payload["result"][0]["name"], json!("stf-1.5"), "unexpected sbom name");
 
             let data: spog_model::search::PackageSummary =
                 serde_json::from_value(payload["result"][0].clone()).unwrap();
@@ -158,7 +183,6 @@ async fn spog_search_correlation(context: &mut SpogContext) {
 
 /// SPoG is the entrypoint for the frontend. It exposes an dependencies API, but forwards requests
 /// to Guac. This test is here to test this.
-#[ignore = "Unstable test, issue #618"]
 #[test_context(SpogContext)]
 #[tokio::test]
 #[ntest::timeout(30_000)]
@@ -171,7 +195,6 @@ async fn spog_dependencies(context: &mut SpogContext) {
 
     let purl: &str = "pkg:rpm/redhat/json-c@0.13.1-0.4.el8";
 
-    let mut attempt = 1;
     loop {
         let response = client
             .get(context.urlify("/api/v1/packages"))
@@ -182,17 +205,13 @@ async fn spog_dependencies(context: &mut SpogContext) {
             .send()
             .await
             .unwrap();
-        assert_eq!(response.status(), StatusCode::OK);
-
-        let payload: Value = response.json().await.unwrap();
-        let pkgs = payload.as_array().unwrap();
-        if pkgs.contains(&json!({"purl": "pkg:rpm/json-c@0.13.1-0.4.el8?arch=x86_64"})) {
-            break;
+        if response.status() == StatusCode::OK {
+            let payload: Value = response.json().await.unwrap();
+            let pkgs = payload.as_array().unwrap();
+            if pkgs.contains(&json!({"purl": "pkg:rpm/json-c@0.13.1-0.4.el8?arch=x86_64"})) {
+                break;
+            }
         }
-
-        attempt += 1;
-        assert!(attempt < 10, "Guac ingestion failed, no packages available");
-        // wait a bit until the SBOM gets ingested into Guac
         tokio::time::sleep(Duration::from_secs(1)).await;
     }
 

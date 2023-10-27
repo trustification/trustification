@@ -20,11 +20,13 @@ pub type VulnerabilityIds = Vec<String>;
 pub struct CollectPackagesResponse {
     #[serde(flatten)]
     pub purls: HashMap<String, VulnerabilityIds>,
+    pub errors: Vec<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct CollectVulnerabilitiesResponse {
     pub vulnerability_ids: VulnerabilityIds,
+    pub errors: Vec<String>,
 }
 
 pub struct CollectorUrl {

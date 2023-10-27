@@ -93,8 +93,6 @@ pub fn sbom_search(props: &SbomSearchProperties) -> Html {
         ..Default::default()
     });
 
-    log::info!("Initi state: {:?}", *page_state);
-
     let search_params = use_reducer_eq::<SearchMode<DynamicSearchParameters>, _>(|| page_state.search_params.clone());
     let total = use_state_eq(|| None);
     let pagination = use_pagination(*total, || page_state.pagination);
@@ -112,7 +110,7 @@ pub fn sbom_search(props: &SbomSearchProperties) -> Html {
     total.set(state.data().and_then(|d| d.total));
 
     let onsort = {
-        use_callback(search_params.clone(), move |sort_by: (String, bool), search_params| {
+        use_callback(search_params.clone(), move |sort_by: (String, Order), search_params| {
             search_params.dispatch(SearchModeAction::SetSimpleSort(sort_by));
         })
     };

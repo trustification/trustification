@@ -1,4 +1,4 @@
-{{ if .Values.bombastic.walker.enable }}
+{{ if .Values.bombastic.walker.enabled }}
 apiVersion: batch/v1
 kind: CronJob
 metadata:
@@ -8,7 +8,9 @@ metadata:
     app.kubernetes.io/component: walker
     app.kubernetes.io/part-of: trustification
 spec:
-  schedule: "0 1 * * *"
+  schedule: {{ .Values.bombastic.walker.schedule | default "0 1 * * *" }}
+  suspend: {{ .Values.bombastic.walker.suspend | default false }}
+  concurrencyPolicy: Forbid
   jobTemplate:
     spec:
       template:
@@ -19,6 +21,10 @@ spec:
             app.kubernetes.io/part-of: trustification
         spec:
           restartPolicy: OnFailure
+          volumes:
+            - name: walker-state
+              persistentVolumeClaim:
+                claimName: bombastic-walker-state
           containers:
             - image: {{ .Values.trustImage }}:{{ .Values.release }}
               imagePullPolicy: {{ .Values.imagePullPolicy }}
@@ -36,6 +42,8 @@ spec:
                 - "{{ .Values.bombastic.walker.signingKey }}"
                 - "--fix-licenses"
                 - "true"
+                - "--since-file"
+                - "/walker-state/since"
               env:
                 - name: RUST_LOG
                   value: {{ default "info" .Values.bombastic.walker.logLevel }}
@@ -48,6 +56,9 @@ spec:
                 - containerPort: 9010
                   protocol: TCP
                   name: infra
+              volumeMounts:
+                - mountPath: /walker-state
+                  name: walker-state
               resources:
                 {{- toYaml .Values.bombastic.walker.resources | nindent 16 }}
               livenessProbe:

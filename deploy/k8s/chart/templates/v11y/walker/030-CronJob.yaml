@@ -1,4 +1,4 @@
-{{ if and .Values.v11y.walker.enable .Values.v11y.walker.enable }}
+{{ if and .Values.v11y.walker.enabled .Values.v11y.walker.enabled }}
 apiVersion: batch/v1
 kind: CronJob
 metadata:
@@ -9,6 +9,7 @@ metadata:
     app.kubernetes.io/part-of: trustification
 spec:
   schedule: {{ .Values.v11y.walker.schedule | default "0 1 * * *" }}
+  suspend: {{ .Values.v11y.walker.suspend | default false }}
   concurrencyPolicy: Forbid
   jobTemplate:
     spec:
@@ -27,7 +28,7 @@ spec:
 
           initContainers:
             - name: git-fetch
-              image: "docker.io/alpine/git:2.40.1"
+              image: "quay.io/trustification/git:2.40.1"
               volumeMounts:
                 - mountPath: /git
                   name: cvelist

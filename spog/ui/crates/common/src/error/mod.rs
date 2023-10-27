@@ -80,6 +80,8 @@ pub enum ApiError {
     Url(#[from] ParseError),
     #[error("Failed to request: {0}")]
     Request(#[from] reqwest::Error),
+    #[error("JSON error: {0}")]
+    Json(#[from] serde_json::Error),
     #[error("API error: {details} ({status})")]
     Api {
         status: StatusCode,

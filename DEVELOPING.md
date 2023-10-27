@@ -143,6 +143,7 @@ RUST_LOG=info cargo run -p trust -- vexination api --devmode &
 RUST_LOG=info cargo run -p trust -- bombastic api --devmode &
 RUST_LOG=info cargo run -p trust -- spog api --devmode &
 RUST_LOG=info cargo run -p trust -- v11y api --devmode &
+RUST_LOG=info cargo run -p trust -- exhort api --devmode &
 RUST_LOG=info cargo run -p trust -- collectorist api --devmode &
 RUST_LOG=info cargo run -p trust -- collector osv --devmode &
 RUST_LOG=info cargo run -p trust -- collector nvd --devmode &
@@ -195,7 +196,13 @@ RUST_LOG=info cargo run -p trust -- vexination walker --devmode --sink http://lo
 If you have a local copy of the data, you can also run:
 
 ```shell
-RUST_LOG=info cargo run -p trust -- vexination walker --devmode -3 --sink http://localhost:8081/api/v1/vex --source file:///path/to/copy
+RUST_LOG=info cargo run -p trust -- vexination walker --devmode -3 --sink http://localhost:8081/api/v1/vex --source file:///path/to/data
+```
+
+You can create/sync a local copy of the data using [csaf-walker](https://github.com/ctron/csaf-walker#installation):
+
+```shell
+csaf sync -3 https://redhat.com/ -d /path/to/data
 ```
 
 ## Ingesting SBOMs

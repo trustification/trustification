@@ -1,5 +1,6 @@
 use crate::app::{new_app, AppOptions};
 use crate::endpoint::Endpoint;
+use crate::tracing::Tracing;
 use actix_cors::Cors;
 use actix_tls::{accept::openssl::reexports::SslAcceptor, connect::openssl::reexports::SslMethod};
 use actix_web::{
@@ -280,6 +281,7 @@ pub struct HttpServerBuilder {
     workers: usize,
     json_limit: Option<usize>,
     request_limit: Option<usize>,
+    tracing: Tracing,
 }
 
 pub struct TlsConfiguration {
@@ -313,6 +315,7 @@ impl HttpServerBuilder {
             workers: 0,
             json_limit: None,
             request_limit: None,
+            tracing: Tracing::default(),
         }
     }
 
@@ -339,6 +342,11 @@ impl HttpServerBuilder {
 
     pub fn authorizer(mut self, authorizer: Authorizer) -> Self {
         self.authorizer = Some(authorizer);
+        self
+    }
+
+    pub fn tracing(mut self, tracing: Tracing) -> Self {
+        self.tracing = tracing;
         self
     }
 
@@ -415,11 +423,25 @@ impl HttpServerBuilder {
                 json = json.limit(limit);
             }
 
+            let (logger, tracing_logger) = match self.tracing {
+                Tracing::Disabled => (Some(actix_web::middleware::Logger::default()), None),
+                Tracing::Enabled => (None, Some(tracing_actix_web::TracingLogger::default())),
+            };
+
+            log::debug!(
+                "Loggers ({}) - logger: {}, tracing: {}",
+                self.tracing,
+                logger.is_some(),
+                tracing_logger.is_some()
+            );
+
             let mut app = new_app(AppOptions {
                 cors,
                 metrics: metrics.clone(),
                 authenticator: self.authenticator.clone(),
                 authorizer: self.authorizer.clone().unwrap_or_else(|| Authorizer::new(None)),
+                logger,
+                tracing_logger,
             });
 
             // configure payload limit

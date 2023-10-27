@@ -6,6 +6,7 @@ use anyhow::bail;
 use spog_model::config::Configuration;
 use std::borrow::Cow;
 use std::path::PathBuf;
+use tracing::instrument;
 
 pub struct Config {
     content: Configuration,
@@ -13,6 +14,7 @@ pub struct Config {
 }
 
 impl Config {
+    #[instrument(skip(self), err)]
     async fn retrieve(&self) -> anyhow::Result<Cow<'_, Configuration>> {
         Ok(match &self.source {
             Some(config) => {

@@ -1,17 +1,24 @@
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::str::FromStr;
 
 use actix_web::{http::header::ContentType, HttpResponse};
+use guac::client::intrinsic::certify_vex_statement::VexStatus;
+use guac::client::intrinsic::certify_vuln::{CertifyVuln, CertifyVulnSpec};
 use guac::client::intrinsic::vulnerability::{Vulnerability, VulnerabilitySpec};
 use guac::client::{Error as GuacError, GuacClient};
 use http::StatusCode;
 use packageurl::PackageUrl;
+use tracing::instrument;
 
-use spog_model::prelude::{PackageDependencies, PackageDependents, PackageRefList};
+use spog_model::prelude::{
+    CveDetails, PackageDependencies, PackageDependents, PackageRefList, PackageRelatedToProductCve, ProductCveStatus,
+    ProductRelatedToCve,
+};
 use trustification_common::error::ErrorInformation;
 
 #[derive(Clone)]
 pub struct GuacService {
-    client: GuacClient,
+    pub client: GuacClient,
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -30,6 +37,16 @@ impl From<packageurl::Error> for Error {
 }
 
 impl actix_web::error::ResponseError for Error {
+    fn status_code(&self) -> StatusCode {
+        match self {
+            Self::Guac(error) => match error {
+                GuacError::Purl(_) => StatusCode::BAD_REQUEST,
+                _ => StatusCode::INTERNAL_SERVER_ERROR,
+            },
+            Error::PurlFormat(_) => StatusCode::BAD_REQUEST,
+        }
+    }
+
     fn error_response(&self) -> HttpResponse {
         let mut res = HttpResponse::build(self.status_code());
         res.insert_header(ContentType::json());
@@ -46,16 +63,6 @@ impl actix_web::error::ResponseError for Error {
             }),
         }
     }
-
-    fn status_code(&self) -> StatusCode {
-        match self {
-            Self::Guac(error) => match error {
-                GuacError::Purl(_) => StatusCode::BAD_REQUEST,
-                _ => StatusCode::INTERNAL_SERVER_ERROR,
-            },
-            Error::PurlFormat(_) => StatusCode::BAD_REQUEST,
-        }
-    }
 }
 
 impl GuacService {
@@ -66,6 +73,7 @@ impl GuacService {
     }
 
     /// Lookup related packages for a provided Package URL
+    #[instrument(skip(self), err)]
     pub async fn get_packages(&self, purl: &str) -> Result<PackageRefList, Error> {
         let purl = PackageUrl::from_str(purl)?;
         let packages = self.client.intrinsic().packages(&purl.into()).await?;
@@ -83,6 +91,7 @@ impl GuacService {
     }
 
     /// Lookup dependencies for a provided Package URL
+    #[instrument(skip(self), err)]
     pub async fn get_dependencies(&self, purl: &str) -> Result<PackageDependencies, Error> {
         let purl = PackageUrl::from_str(purl)?;
 
@@ -94,6 +103,7 @@ impl GuacService {
     }
 
     /// Lookup dependents for a provided Package URL
+    #[instrument(skip(self), err)]
     pub async fn get_dependents(&self, purl: &str) -> Result<PackageDependents, Error> {
         let purl = PackageUrl::from_str(purl)?;
 
@@ -116,5 +126,92 @@ impl GuacService {
                 r#type: None,
             })
             .await?)
+    }
+
+    #[instrument(skip(self, purl), fields(purl = %purl), err)]
+    pub async fn certify_vuln(&self, purl: PackageUrl<'_>) -> Result<Vec<CertifyVuln>, Error> {
+        Ok(self
+            .client
+            .intrinsic()
+            .certify_vuln(&CertifyVulnSpec {
+                package: Some(purl.into()),
+                ..Default::default()
+            })
+            .await?)
+    }
+
+    #[instrument(skip(self), err)]
+    pub async fn product_by_cve(&self, id: String) -> Result<CveDetails, Error> {
+        let result = self.client.semantic().product_by_cve(&id).await?;
+        let mut products = BTreeMap::<ProductCveStatus, Vec<ProductRelatedToCve>>::new();
+
+        for product in result {
+            let id = product.root.try_as_purls()?[0].name().to_string();
+
+            let mut packages: Vec<PackageRelatedToProductCve> = Vec::new();
+
+            for package in product.path {
+                let p = package.try_as_purls()?[0].to_string();
+                packages.push(PackageRelatedToProductCve {
+                    purl: p,
+                    r#type: "Direct".to_string(),
+                })
+            }
+
+            let pr = ProductRelatedToCve { sbom_id: id, packages };
+
+            let status = match product.vex.status {
+                VexStatus::Affected => ProductCveStatus::KnownAffected,
+                VexStatus::Fixed => ProductCveStatus::Fixed,
+                VexStatus::UnderInvestigation => ProductCveStatus::UnderInvestigation,
+                VexStatus::NotAffected => ProductCveStatus::KnownNotAffected,
+                VexStatus::Other(_) => todo!(),
+            };
+
+            products.entry(status).or_insert(vec![]).push(pr);
+        }
+
+        Ok(CveDetails {
+            id,
+            products,
+            details: vec![],
+            advisories: vec![],
+        })
+    }
+
+    #[allow(dead_code)]
+    pub async fn find_vulnerability(&self, purl: String) -> Result<HashMap<String, BTreeSet<String>>, Error> {
+        let result = self.client.semantic().find_vulnerability(&purl).await?;
+        Ok(result)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    // TODO do proper testing
+    // ./bin/guacone collect files --gql-addr http://localhost:8085/query ./rhel-7.9.z.json
+    // ./bin/guacone collect files --gql-addr http://localhost:8085/query ./cve-2022-2284.json
+    #[tokio::test]
+    #[ignore]
+    async fn test_product_by_cve() {
+        let guac = GuacService::new("http://localhost:8085/query");
+        let res = guac.product_by_cve("cve-2022-2284".to_string()).await.unwrap();
+        println!("{}", serde_json::to_string_pretty(&res).unwrap());
+    }
+
+    // TODO do proper testing
+    // ./bin/guacone collect files --gql-addr http://localhost:8085/query ./rhel-7.9.z.json
+    // ./bin/guacone collect files --gql-addr http://localhost:8085/query ./cve-2022-2284.json
+    #[tokio::test]
+    #[ignore]
+    async fn test_find_vulnerability() {
+        let guac = GuacService::new("http://localhost:8085/query");
+        let res = guac
+            .find_vulnerability("pkg:guac/pkg/rhel-7.9.z@7.9.z".to_string())
+            .await
+            .unwrap();
+        println!("{}", serde_json::to_string_pretty(&res).unwrap());
     }
 }

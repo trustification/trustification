@@ -6,6 +6,10 @@ metadata:
     app.kubernetes.io/name: spog-api
     app.kubernetes.io/component: api
     app.kubernetes.io/part-of: trustification
+{{ if eq "enabled" .Values.spog.api.tracing }}
+  annotations:
+    sidecar.jaegertracing.io/inject: "true"
+{{ end }}
 spec:
   replicas: {{ .Values.replicas }}
   selector:
@@ -34,17 +38,21 @@ spec:
             - "-p"
             - "8080"
             - "--bombastic-url"
-            - "https://bombastic-api.$(NAMESPACE).svc"
+            - "https://sbom.{{ .Values.domain }}"
             - "--vexination-url"
-            - "https://vexination-api.$(NAMESPACE).svc"
+            - "https://vex.{{ .Values.domain  }}"
             - "--collectorist-url"
             - "https://collectorist-api.$(NAMESPACE).svc"
             - "--v11y-url"
             - "https://v11y-api.$(NAMESPACE).svc"
+            - "--exhort-url"
+            - "https://exhort-api.$(NAMESPACE).svc"
 {{- with .Values.spog.crdaUrl }}
             - "--crda-url"
             - {{ . | quote }}
 {{- end }}
+            - "--guac"
+            - "http://guac-graphql.$(NAMESPACE).svc:8080/query"
             - "--auth-configuration"
             - "/etc/config/auth.yaml"
           env:
@@ -59,7 +67,15 @@ spec:
               value: "true"
             - name: INFRASTRUCTURE_BIND
               value: "[::]:9010"
-{{- if .Values.spog.branding }}
+            - name: TRACING
+              value: {{ default "disabled" .Values.spog.api.tracing }}
+            - name: OTEL_BSP_MAX_EXPORT_BATCH_SIZE
+              value: "32"
+            - name: OTEL_TRACES_SAMPLER
+              value: parentbased_traceidratio
+            - name: OTEL_TRACES_SAMPLER_ARG
+              value: "0.1"
+{{- if .Values.spog.ui.customize }}
             - name: SPOG_UI_CONFIG
               value: /etc/config/spog-ui.yaml
 {{- end }}

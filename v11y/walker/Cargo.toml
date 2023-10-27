@@ -18,4 +18,4 @@ v11y-api = { path = "../api" }
 v11y-indexer = { path = "../indexer" }
 
 trustification-storage = { path = "../../storage" }
-
+trustification-infrastructure = { path = "../../infrastructure" }

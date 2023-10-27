@@ -72,6 +72,8 @@ impl Run {
             log::warn!("Authentication is disabled");
         }
 
+        let tracing = self.infra.tracing;
+
         Infrastructure::from(self.infra)
             .run(
                 "v11y",
@@ -91,6 +93,7 @@ impl Run {
                     .await?;
 
                     let http = HttpServerBuilder::try_from(self.http)?
+                        .tracing(tracing)
                         .metrics(context.metrics.registry().clone(), "v11y_api")
                         .authorizer(authorizer.clone())
                         .configure(move |svc| {

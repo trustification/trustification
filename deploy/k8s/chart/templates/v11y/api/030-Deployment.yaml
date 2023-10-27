@@ -9,6 +9,9 @@ metadata:
     app.kubernetes.io/part-of: trustification
   annotations:
     service.beta.openshift.io/serving-cert-secret-name: v11y-api-tls
+{{ if eq "enabled" .Values.v11y.api.tracing }}
+    sidecar.jaegertracing.io/inject: "true"
+{{ end }}
 spec:
   replicas: 1
   strategy:
@@ -71,6 +74,14 @@ spec:
               value: "true"
             - name: INFRASTRUCTURE_BIND
               value: "[::]:9010"
+            - name: TRACING
+              value: {{ default "disabled" .Values.v11y.api.tracing }}
+            - name: OTEL_BSP_MAX_EXPORT_BATCH_SIZE
+              value: "32"
+            - name: OTEL_TRACES_SAMPLER
+              value: parentbased_traceidratio
+            - name: OTEL_TRACES_SAMPLER_ARG
+              value: "0.1"
           volumeMounts:
             - name: data
               mountPath: /data

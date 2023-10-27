@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use reqwest::{StatusCode, Url};
 use serde::{Deserialize, Serialize};
+use url::ParseError;
 
 use collector_client::CollectPackagesResponse;
 
@@ -16,12 +17,12 @@ impl OsvUrl {
         Self(base)
     }
 
-    pub fn querybatch(&self) -> anyhow::Result<Url> {
-        Ok(Url::parse(&format!("{}/querybatch", self.0))?)
+    pub fn querybatch(&self) -> Result<Url, url::ParseError> {
+        Url::parse(&format!("{}/querybatch", self.0))
     }
 
-    pub fn vuln(&self, vuln_id: &str) -> anyhow::Result<Url> {
-        Ok(Url::parse(&format!("{}/vulns/{}", self.0, vuln_id))?)
+    pub fn vuln(&self, vuln_id: &str) -> Result<Url, url::ParseError> {
+        Url::parse(&format!("{}/vulns/{}", self.0, vuln_id))
     }
 }
 
@@ -63,6 +64,23 @@ pub struct CollatedBatchVulnerabilities {
     pub vulns: Option<Vec<BatchVulnerability>>,
 }
 
+pub enum Error {
+    Url(url::ParseError),
+    Http(reqwest::Error),
+}
+
+impl From<reqwest::Error> for Error {
+    fn from(inner: reqwest::Error) -> Self {
+        Self::Http(inner)
+    }
+}
+
+impl From<url::ParseError> for Error {
+    fn from(inner: ParseError) -> Self {
+        Self::Url(inner)
+    }
+}
+
 #[allow(unused)]
 impl OsvClient {
     pub fn new() -> Self {
@@ -71,7 +89,7 @@ impl OsvClient {
         }
     }
 
-    pub async fn query_batch(&self, request: QueryBatchRequest) -> Result<CollatedQueryBatchResponse, anyhow::Error> {
+    pub async fn query_batch(&self, request: QueryBatchRequest) -> Result<CollatedQueryBatchResponse, Error> {
         let response: QueryBatchResponse = self
             .client
             .post(OSV_URL.querybatch()?)
@@ -119,7 +137,10 @@ impl From<CollatedQueryBatchResponse> for CollectPackagesResponse {
                 _ => None,
             })
             .collect();
-        Self { purls }
+        Self {
+            purls,
+            errors: Vec::new(),
+        }
     }
 }
 
@@ -183,6 +204,8 @@ mod tests {
     #[tokio::test]
     async fn query_vuln() -> Result<(), anyhow::Error> {
         let vuln = OsvClient::new().vulns("GHSA-7rjr-3q55-vv33").await?.unwrap();
+
+        //println!("#{:#?}", vuln);
         let _vuln: v11y_client::Vulnerability = vuln.into();
 
         Ok(())

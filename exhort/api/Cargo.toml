@@ -12,6 +12,7 @@ guac = { workspace = true }
 ### this seems completely wrong, but Cargo seems to also require way too many ../ for this
 ### wtf am I doing wrong?
 collectorist-client = { path = " ../../../../collectorist/client" }
+exhort-model = { path = "../model" }
 v11y-client = { path = "../../v11y/client"}
 trustification-common = { path = "../../common"}
 trustification-infrastructure = { path = "../../infrastructure" }
@@ -22,10 +23,11 @@ anyhow = "1"
 derive_more = "0.99"
 futures = "0.3"
 log = "0.4"
-utoipa = { version = "3", features = ["actix_extras"] }
-utoipa-swagger-ui = { version = "3", features = ["actix-web"] }
+thiserror = "1.0.44"
+utoipa = { version = "4", features = ["actix_extras"] }
+utoipa-swagger-ui = { version = "4", features = ["actix-web"] }
 serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0.68"
+serde_json = { version = "1.0.68", features = [ "raw_value" ] }
 packageurl = "0.3"
 
 [dev-dependencies]

@@ -1,54 +1,11 @@
-use actix_web::{web, web::ServiceConfig, HttpResponse};
+use crate::search;
+use crate::server::AppState;
+use actix_web::{web, HttpResponse};
 use actix_web_httpauth::extractors::bearer::BearerAuth;
-use http::header;
-use log::{debug, trace};
 use spog_model::search::PackageSummary;
-use std::sync::Arc;
+use tracing::instrument;
 use trustification_api::search::{SearchOptions, SearchResult};
-use trustification_auth::authenticator::Authenticator;
 use trustification_auth::client::TokenProvider;
-use trustification_infrastructure::new_auth;
-
-use crate::{search, server::AppState};
-
-pub(crate) fn configure(auth: Option<Arc<Authenticator>>) -> impl FnOnce(&mut ServiceConfig) {
-    |config: &mut ServiceConfig| {
-        config.service(web::resource("/api/v1/package/search").wrap(new_auth!(auth)).to(search));
-        // the get operation doesn't get the authenticator added, as we check this using the access_token query parameter
-        config.service(web::resource("/api/v1/package").to(get));
-    }
-}
-
-#[derive(Debug, serde::Deserialize)]
-pub struct GetParams {
-    pub id: String,
-    pub token: Option<String>,
-}
-
-#[utoipa::path(
-    get,
-    path = "/api/v1/package",
-    responses(
-        (status = 200, description = "Package was found"),
-        (status = NOT_FOUND, description = "Package was not found")
-    ),
-    params(
-        ("id" = String, Path, description = "Id of package to fetch"),
-    )
-)]
-pub async fn get(
-    state: web::Data<AppState>,
-    web::Query(GetParams { id, token }): web::Query<GetParams>,
-    access_token: Option<BearerAuth>,
-) -> actix_web::Result<HttpResponse> {
-    let token = token.or_else(|| access_token.map(|s| s.token().to_string()));
-    let response = state.get_sbom(&id, &token).await?;
-    // TODO: should check the content type, but assume JSON for now
-    let value = format!(r#"attachment; filename="{}.json""#, id);
-    Ok(HttpResponse::Ok()
-        .append_header((header::CONTENT_DISPOSITION, value))
-        .streaming(response))
-}
 
 #[utoipa::path(
     get,
@@ -62,6 +19,7 @@ pub async fn get(
         ("limit" = u64, Path, description = "Max entries returned in the search results"),
     )
 )]
+#[instrument(skip(state, access_token), err)]
 pub async fn search(
     state: web::Data<AppState>,
     params: web::Query<search::QueryParams>,
@@ -69,7 +27,7 @@ pub async fn search(
     access_token: Option<BearerAuth>,
 ) -> actix_web::Result<HttpResponse> {
     let params = params.into_inner();
-    trace!("Querying SBOM using {}", params.q);
+    log::trace!("Querying SBOM using {}", params.q);
     let data = state
         .search_sbom(
             &params.q,
@@ -110,10 +68,10 @@ pub async fn search(
 
     // TODO: Use guac to lookup advisories for each package!
     search_advisories(state, &mut result.result, &access_token).await;
-    debug!("Search result: {:?}", result);
     Ok(HttpResponse::Ok().json(result))
 }
 
+#[instrument(skip_all)]
 async fn search_advisories(
     state: web::Data<AppState>,
     packages: &mut Vec<PackageSummary>,

@@ -13,7 +13,10 @@ schemars = { version = "0.8", features = ["url"] }
 serde = { version = "1", features = ["derive"] }
 time = { version = "0.3" }
 url = { version = "2", features = ["serde"] }
-utoipa = { version = "3" }
+utoipa = { version = "4" }
+cvss = "2"
+
+exhort-model = { path = "../../exhort/model" }
 vexination-model = { path = "../../vexination/model" }
 v11y-model = { path = "../../v11y/model" }
 

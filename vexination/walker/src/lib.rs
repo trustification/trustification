@@ -28,6 +28,10 @@ pub struct Run {
     #[arg(short = 'S', long)]
     pub(crate) sink: Url,
 
+    /// Distributions to ignore
+    #[arg(long, default_value = "Vec::new()")]
+    ignore_distributions: Vec<Url>,
+
     /// OpenPGP policy date.
     #[arg(long)]
     policy_date: Option<humantime::Timestamp>,
@@ -49,6 +53,10 @@ pub struct Run {
     /// OIDC client
     #[command(flatten)]
     pub(crate) oidc: OpenIdTokenProviderConfigArguments,
+
+    /// A file to read/store the last sync timestamp to at the end of a successful run.
+    #[arg(long = "since-file")]
+    pub since_file: Option<PathBuf>,
 }
 
 impl Run {
@@ -75,7 +83,16 @@ impl Run {
 
                     let options = ValidationOptions { validation_date };
 
-                    server::run(self.workers, self.source, self.sink, provider, options).await
+                    server::run(
+                        self.workers,
+                        self.source,
+                        self.sink,
+                        provider,
+                        options,
+                        self.ignore_distributions,
+                        self.since_file,
+                    )
+                    .await
                 },
             )
             .await?;

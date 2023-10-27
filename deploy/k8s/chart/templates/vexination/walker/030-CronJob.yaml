@@ -1,4 +1,4 @@
-{{ if .Values.vexination.walker.enable }}
+{{ if .Values.vexination.walker.enabled }}
 apiVersion: batch/v1
 kind: CronJob
 metadata:
@@ -8,7 +8,9 @@ metadata:
     app.kubernetes.io/component: walker
     app.kubernetes.io/part-of: trustification
 spec:
-  schedule: "0 1 * * *"
+  schedule: {{ .Values.vexination.walker.schedule | default "0 1 * * *" }}
+  suspend: {{ .Values.vexination.walker.suspend | default false }}
+  concurrencyPolicy: Forbid
   jobTemplate:
     spec:
       template:
@@ -19,6 +21,10 @@ spec:
             app.kubernetes.io/part-of: trustification
         spec:
           restartPolicy: Never
+          volumes:
+            - name: walker-state
+              persistentVolumeClaim:
+                claimName: vexination-walker-state
           containers:
             - image: {{ .Values.trustImage }}:{{ .Values.release }}
               imagePullPolicy: {{ .Values.imagePullPolicy }}
@@ -31,7 +37,11 @@ spec:
                 - "https://vex.{{ .Values.domain }}/api/v1/vex"
                 - "--source"
                 - "{{ .Values.vexination.walker.source }}"
+                - "--ignore-distributions"
+                - "{{ .Values.vexination.walker.ignore }}"
                 - "-3"
+                - "--since-file"
+                - "/walker-state/since"
               env:
                 - name: RUST_LOG
                   value: {{ default "info" .Values.vexination.walker.logLevel }}
@@ -40,6 +50,9 @@ spec:
                 - name: INFRASTRUCTURE_BIND
                   value: "[::]:9010"
                 {{ include "trustification.authentication-client" ( dict "root" . "clientId" "walker" ) | nindent 16 }}
+              volumeMounts:
+                - mountPath: /walker-state
+                  name: walker-state
               resources:
                 {{- toYaml .Values.vexination.walker.resources | nindent 16 }}
               livenessProbe:

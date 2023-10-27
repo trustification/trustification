@@ -1,4 +1,4 @@
-use integration_tests::{get_response, id, wait_for_event, wait_for_search_result, BombasticContext, Urlifier};
+use integration_tests::{get_response, id, wait_for_search_result, BombasticContext, Urlifier};
 use reqwest::StatusCode;
 use serde_json::{json, Value};
 use test_context::test_context;
@@ -153,15 +153,11 @@ async fn bombastic_search(context: &mut BombasticContext) {
     input["packages"][617]["versionInfo"] = json!(key);
     context.upload_sbom(&key, &input).await;
 
-    wait_for_search_result(context, &[("q", &encode(&key))], |response| {
-        if response["total"].as_u64().unwrap() >= 1 {
-            assert_eq!(response["result"][0]["document"]["name"], json!("ubi9-container"));
-            true
-        } else {
-            false
-        }
+    let response = wait_for_search_result(context, &[("q", &encode(&key))], |response| {
+        response["total"].as_u64().unwrap() > 0
     })
     .await;
+    assert_eq!(response["result"][0]["document"]["name"], json!("ubi9-container"));
 }
 
 #[test_context(BombasticContext)]
@@ -196,15 +192,11 @@ async fn bombastic_reindexing(context: &mut BombasticContext) {
     input["packages"][617]["versionInfo"] = json!(key);
     context.upload_sbom(&key, &input).await;
 
-    wait_for_search_result(context, &[("q", &encode(&key))], |response| {
-        if response["total"].as_u64().unwrap() >= 1 {
-            assert_eq!(response["result"][0]["document"]["name"], json!("ubi9-container"));
-            true
-        } else {
-            false
-        }
+    let response = wait_for_search_result(context, &[("q", &encode(&key))], |response| {
+        response["total"].as_u64().unwrap() > 0
     })
     .await;
+    assert_eq!(response["result"][0]["document"]["name"], json!("ubi9-container"));
 
     let now = OffsetDateTime::now_utc();
 
@@ -212,16 +204,17 @@ async fn bombastic_reindexing(context: &mut BombasticContext) {
     context.upload_sbom(&key, &input).await;
 
     wait_for_search_result(context, &[("q", &encode(&key)), ("metadata", "true")], |response| {
-        assert!(response["total"].as_u64().unwrap() >= 1);
-        let format = &time::format_description::well_known::Rfc3339;
-        let ts = OffsetDateTime::parse(
-            response["result"][0]["$metadata"]["indexed_timestamp"]["values"][0]
-                .as_str()
-                .unwrap(),
-            format,
-        )
-        .unwrap();
-        ts > now
+        response["total"].as_u64().filter(|&t| t > 0).is_some_and(|_| {
+            let format = &time::format_description::well_known::Rfc3339;
+            let ts = OffsetDateTime::parse(
+                response["result"][0]["$metadata"]["indexed_timestamp"]["values"][0]
+                    .as_str()
+                    .unwrap(),
+                format,
+            )
+            .unwrap();
+            ts > now
+        })
     })
     .await;
 }
@@ -235,15 +228,11 @@ async fn bombastic_deletion(context: &mut BombasticContext) {
     input["packages"][617]["versionInfo"] = json!(key);
     context.upload_sbom(&key, &input).await;
 
-    wait_for_search_result(context, &[("q", &encode(&key))], |response| {
-        if response["total"].as_u64().unwrap() >= 1 {
-            assert_eq!(response["result"][0]["document"]["name"], json!("ubi9-container"));
-            true
-        } else {
-            false
-        }
+    let response = wait_for_search_result(context, &[("q", &encode(&key))], |response| {
+        response["total"].as_u64().unwrap() > 0
     })
     .await;
+    assert_eq!(response["result"][0]["document"]["name"], json!("ubi9-container"));
 
     context.delete_sbom(&key).await;
 
@@ -269,6 +258,47 @@ async fn sbom_invalid_type(context: &mut BombasticContext) {
         .unwrap();
     assert_eq!(response.status(), StatusCode::BAD_REQUEST);
     assert_eq!(response.headers().get("accept").unwrap(), &"application/json");
+}
+
+#[test_context(BombasticContext)]
+#[tokio::test]
+#[ntest::timeout(60_000)]
+async fn valid_bzip2_encoded(context: &mut BombasticContext) {
+    let sbom = include_bytes!("../../bombastic/testdata/ubi8-valid.json.bz2");
+    let id = "valid_bzip2_encoded";
+    let response = reqwest::Client::new()
+        .post(context.urlify(format!("/api/v1/sbom?id={id}")))
+        .body(sbom.as_slice())
+        .header("Content-Type", "application/json")
+        .header("Content-Encoding", "bzip2")
+        .inject_token(&context.provider.provider_manager)
+        .await
+        .unwrap()
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::CREATED);
+    context.delete_sbom(id).await
+}
+
+#[test_context(BombasticContext)]
+#[tokio::test]
+#[ntest::timeout(60_000)]
+async fn invalid_bzip2_encoded(context: &mut BombasticContext) {
+    let sbom = include_bytes!("../../bombastic/testdata/3amp-2.json.bz2");
+    let id = "invalid_bzip2_encoded";
+    let response = reqwest::Client::new()
+        .post(context.urlify(format!("/api/v1/sbom?id={id}")))
+        .body(sbom.as_slice())
+        .header("Content-Type", "application/json")
+        .header("Content-Encoding", "bzip2")
+        .inject_token(&context.provider.provider_manager)
+        .await
+        .unwrap()
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::BAD_REQUEST);
 }
 
 #[test_context(BombasticContext)]
@@ -336,7 +366,6 @@ async fn upload_sbom_existing_with_change(context: &mut BombasticContext) {
 }
 
 #[cfg(feature = "admin")]
-#[ignore = "until API can support failures so that event bus is not needed to check"]
 #[test_context(BombasticContext)]
 #[tokio::test]
 #[ntest::timeout(60_000)]
@@ -345,24 +374,19 @@ async fn sbom_upload_empty_json(context: &mut BombasticContext) {
     let id = "test-empty-json-upload";
     let client = reqwest::Client::new();
     let url = context.urlify(format!("/api/v1/sbom?id={id}"));
-    wait_for_event(&context.events, "sbom-failed", id, async {
-        let response = client
-            .post(url)
-            .json(&input)
-            .inject_token(&context.provider.provider_manager)
-            .await
-            .unwrap()
-            .send()
-            .await
-            .unwrap();
-        assert_eq!(response.status(), StatusCode::CREATED);
-    })
-    .await;
-    context.delete_sbom(id).await;
+    let response = client
+        .post(url)
+        .json(&input)
+        .inject_token(&context.provider.provider_manager)
+        .await
+        .unwrap()
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::BAD_REQUEST);
 }
 
 #[cfg(feature = "admin")]
-#[ignore = "until API can support failures so that event bus is not needed to check"]
 #[test_context(BombasticContext)]
 #[tokio::test]
 #[ntest::timeout(60_000)]

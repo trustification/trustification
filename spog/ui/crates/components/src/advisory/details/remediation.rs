@@ -50,7 +50,7 @@ impl TableEntryRenderer<Column> for RemediationWrapper {
                 <List> {
                     for self.rem.product_ids.iter()
                         .flatten()
-                        .map(|prod| csaf_product_status_entry_details(&self.csaf, prod))
+                        .map(|prod| html_nested!(<ListItem> { csaf_product_status_entry_details(&self.csaf, prod) } </ListItem>))
                 } </List>
             </Content>
         );

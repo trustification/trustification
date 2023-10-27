@@ -7,6 +7,9 @@ pub enum AppRoute {
     NotLoggedIn,
     Chicken,
     Sbom(View),
+    SbomReport {
+        id: String,
+    },
     Advisory(View),
     Scanner,
     Search {

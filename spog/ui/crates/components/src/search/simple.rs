@@ -143,7 +143,7 @@ pub enum SearchModeAction {
     /// Clear the search, keeping the same search mode
     Clear,
     SetComplex(String),
-    SetSimpleSort((String, bool)),
+    SetSimpleSort((String, Order)),
     SetSimple(DynamicSearchParameters),
 }
 
@@ -309,7 +309,9 @@ pub fn simple_search(props: &SimpleSearchProperties) -> Html {
                             Rc::new(cat.title.clone()),
                             html!(
                                 <List r#type={ListType::Plain}>
-                                    { for cat.options.iter().map(|opt|render_opt(props, opt))}
+                                    { for cat.options.iter().map(|opt| html_nested!(
+                                        <ListItem>{render_opt(props, opt)}</ListItem>
+                                    ))}
                                 </List>
                             ),
                         )

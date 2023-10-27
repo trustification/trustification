@@ -7,6 +7,7 @@ use spog_ui_components::{
     common::Visible,
     cve::{use_cve_search, CveResult, CveSearchControls},
     hooks::UseStandardSearch,
+    pagination::PaginationWrapped,
     sbom::{use_sbom_search, SbomResult, SbomSearchControls},
     search::{DynamicSearchParameters, SearchMode, SearchModeAction},
 };
@@ -17,10 +18,10 @@ use yew_more_hooks::prelude::*;
 
 #[derive(Copy, Clone, Debug, Default, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 pub enum TabIndex {
-    #[default]
     Advisories,
     Sboms,
     SbomsByPackage,
+    #[default]
     Cves,
 }
 
@@ -230,10 +231,10 @@ pub fn search(props: &SearchProperties) -> Html {
                             selected={*tab} {onselect}
                             r#box=true
                         >
-                            <Tab<TabIndex> index={TabIndex::Advisories} title={count_tab_title("Advisories", &*advisory.state)} />
-                            <Tab<TabIndex> index={TabIndex::Sboms} title={count_tab_title("SBOMs", &*sbom.state)} />
-                            <Tab<TabIndex> index={TabIndex::SbomsByPackage} title={count_tab_title("SBOMs (by dependency)", &*sbom_by_dependency.state)} />
                             <Tab<TabIndex> index={TabIndex::Cves} title={count_tab_title("CVEs", &*cve.state)} />
+                            <Tab<TabIndex> index={TabIndex::Sboms} title={count_tab_title("Products and containers", &*sbom.state)} />
+                            <Tab<TabIndex> index={TabIndex::Advisories} title={count_tab_title("Advisories", &*advisory.state)} />
+                            // <Tab<TabIndex> index={TabIndex::SbomsByPackage} title={count_tab_title("SBOMs (by dependency)", &*sbom_by_dependency.state)} />
                         </Tabs<TabIndex>>
 
                         <div class="pf-v5-u-background-color-100">
@@ -273,7 +274,7 @@ pub struct UseUnifiedSearch<R> {
     pub search: UseStandardSearch,
     pub total: UseStateHandle<Option<usize>>,
     pub state: UseStateHandle<UseAsyncState<SearchResult<R>, String>>,
-    pub onsort: Callback<(String, bool)>,
+    pub onsort: Callback<(String, Order)>,
 }
 
 impl<R> Deref for UseUnifiedSearch<R> {
@@ -315,7 +316,7 @@ where
     let pagination = use_pagination(*total, || init_pagination(page_state));
     let search = use_hook(search_params.clone(), pagination.clone(), callback);
 
-    let onsort = use_callback(search_params.clone(), move |sort_by: (String, bool), search_params| {
+    let onsort = use_callback(search_params.clone(), move |sort_by: (String, Order), search_params| {
         search_params.dispatch(SearchModeAction::SetSimpleSort(sort_by));
     });
 
@@ -330,33 +331,4 @@ where
 
 fn split_terms(terms: &str) -> Vec<String> {
     terms.split(' ').map(ToString::to_string).collect()
-}
-
-#[derive(PartialEq, Properties)]
-pub struct PaginationWrappedProperties {
-    pub children: Children,
-    pub pagination: UsePagination,
-    pub total: Option<usize>,
-}
-
-#[function_component(PaginationWrapped)]
-pub fn pagination_wrapped(props: &PaginationWrappedProperties) -> Html {
-    html!(
-        <>
-            <div class="pf-v5-u-p-sm">
-                <SimplePagination
-                    pagination={props.pagination.clone()}
-                    total={props.total}
-                />
-            </div>
-            { for props.children.iter() }
-            <div class="pf-v5-u-p-sm">
-                <SimplePagination
-                    pagination={props.pagination.clone()}
-                    total={props.total}
-                    position={PaginationPosition::Bottom}
-                />
-            </div>
-        </>
-    )
 }

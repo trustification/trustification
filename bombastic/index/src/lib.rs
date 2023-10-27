@@ -9,26 +9,23 @@ use cyclonedx_bom::models::{
 use log::{debug, info, warn};
 use sikula::{mir::Direction, prelude::*};
 use spdx_rs::models::Algorithm;
-use tantivy::query::{TermQuery, TermSetQuery};
-use tantivy::{collector::TopDocs, Order};
-use tantivy::{
-    query::{AllQuery, BooleanQuery},
-    schema::INDEXED,
-    store::ZstdCompressor,
-    DocAddress, IndexSettings, Searcher, SnippetGenerator,
-};
 use time::{format_description::well_known::Rfc3339, OffsetDateTime};
 use trustification_api::search::SearchOptions;
 use trustification_index::{
     boost, create_boolean_query, create_date_query, create_string_query, field2str,
     metadata::doc2metadata,
     tantivy::{
+        self,
+        collector::TopDocs,
         doc,
+        query::{AllQuery, BooleanQuery, TermQuery, TermSetQuery},
         query::{Occur, Query},
+        schema::INDEXED,
         schema::{Field, Schema, Term, FAST, STORED, STRING, TEXT},
-        DateTime,
+        store::ZstdCompressor,
+        DateTime, DocAddress, DocId, IndexSettings, Order, Score, Searcher, SegmentReader, SnippetGenerator,
     },
-    term2query, Document, Error as SearchError,
+    term2query, Document, Error as SearchError, SearchQuery,
 };
 
 pub struct Index {
@@ -56,7 +53,12 @@ pub struct PackageFields {
 
 struct Fields {
     indexed_timestamp: Field,
+    /// the "storage id"
     sbom_id: Field,
+    /// the unique ID of the SBOM
+    sbom_uid: Field,
+    /// the SHA256 sum of its content
+    sbom_sha256: Field,
     sbom_created: Field,
     sbom_creators: Field,
     sbom_name: Field,
@@ -76,6 +78,8 @@ impl Index {
         let fields = Fields {
             indexed_timestamp: schema.add_date_field("indexed_timestamp", STORED),
             sbom_id: schema.add_text_field("sbom_id", STRING | FAST | STORED),
+            sbom_uid: schema.add_text_field("sbom_uid", STRING | FAST | STORED),
+            sbom_sha256: schema.add_text_field("sbom_sha256", STRING | STORED),
             sbom_created: schema.add_date_field("sbom_created", INDEXED | FAST | STORED),
             sbom_creators: schema.add_text_field("sbom_creators", STRING | STORED),
             sbom_name: schema.add_text_field("sbom_name", STRING | FAST | STORED),
@@ -126,6 +130,10 @@ impl Index {
         let mut document = doc!();
 
         document.add_text(self.fields.sbom_id, id);
+        document.add_text(
+            self.fields.sbom_uid,
+            &bom.document_creation_information.spdx_document_namespace,
+        );
         document.add_text(self.fields.sbom_name, &bom.document_creation_information.document_name);
         document.add_date(
             self.fields.indexed_timestamp,
@@ -218,6 +226,9 @@ impl Index {
         let mut document = doc!();
 
         document.add_text(self.fields.sbom_id, id);
+        if let Some(serial) = &bom.serial_number {
+            document.add_text(self.fields.sbom_uid, serial.to_string());
+        }
         document.add_date(
             self.fields.indexed_timestamp,
             DateTime::from_utc(OffsetDateTime::now_utc()),
@@ -309,6 +320,10 @@ impl Index {
         match resource {
             Packages::Id(value) => Box::new(TermQuery::new(
                 Term::from_field_text(self.fields.sbom_id, value),
+                Default::default(),
+            )),
+            Packages::Uid(value) => Box::new(TermQuery::new(
+                Term::from_field_text(self.fields.sbom_uid, value),
                 Default::default(),
             )),
             Packages::Package(primary) => boost(
@@ -411,26 +426,26 @@ impl Index {
     }
 }
 
-#[derive(Debug)]
-pub struct SbomQuery {
-    query: Box<dyn Query>,
-    sort_by: Option<(Field, Order)>,
-}
-
 impl trustification_index::Index for Index {
     type MatchedDocument = SearchHit;
-    type Document = SBOM;
-    type QueryContext = SbomQuery;
+    type Document = (SBOM, String);
 
-    fn index_doc(&self, id: &str, doc: &SBOM) -> Result<Document, SearchError> {
-        match doc {
-            SBOM::CycloneDX(bom) => self.index_cyclonedx(id, bom),
-            SBOM::SPDX(bom) => self.index_spdx(id, bom),
-        }
+    fn index_doc(&self, id: &str, (doc, sha256): &Self::Document) -> Result<Document, SearchError> {
+        let mut doc = match doc {
+            SBOM::CycloneDX(bom) => self.index_cyclonedx(id, bom)?,
+            SBOM::SPDX(bom) => self.index_spdx(id, bom)?,
+        };
+
+        doc.add_text(self.fields.sbom_sha256, sha256);
+
+        Ok(doc)
     }
 
-    fn parse_doc(data: &[u8]) -> Result<SBOM, SearchError> {
-        SBOM::parse(data).map_err(|e| SearchError::DocParser(e.to_string()))
+    fn parse_doc(data: &[u8]) -> Result<Self::Document, SearchError> {
+        let sha256 = sha256::digest(data);
+        SBOM::parse(data)
+            .map_err(|e| SearchError::DocParser(e.to_string()))
+            .map(|doc| (doc, sha256))
     }
 
     fn schema(&self) -> Schema {
@@ -451,7 +466,7 @@ impl trustification_index::Index for Index {
             .unwrap()
     }
 
-    fn prepare_query(&self, q: &str) -> Result<SbomQuery, SearchError> {
+    fn prepare_query(&self, q: &str) -> Result<SearchQuery, SearchError> {
         let mut query = Packages::parse(q).map_err(|err| SearchError::QueryParser(err.to_string()))?;
         query.term = query.term.compact();
 
@@ -478,38 +493,45 @@ impl trustification_index::Index for Index {
         };
 
         debug!("Processed query: {:?}", query);
-        Ok(SbomQuery { query, sort_by })
+        Ok(SearchQuery { query, sort_by })
     }
 
     fn search(
         &self,
         searcher: &Searcher,
-        query: &SbomQuery,
+        query: &dyn Query,
         offset: usize,
         limit: usize,
     ) -> Result<(Vec<(f32, DocAddress)>, usize), SearchError> {
-        if let Some((field, order)) = &query.sort_by {
-            let order_by = self.schema.get_field_name(*field);
-            let mut hits = Vec::new();
-            let result = searcher.search(
-                &query.query,
-                &(
-                    TopDocs::with_limit(limit)
-                        .and_offset(offset)
-                        .order_by_fast_field::<tantivy::DateTime>(order_by, order.clone()),
-                    tantivy::collector::Count,
-                ),
-            )?;
-            for r in result.0 {
-                hits.push((1.0, r.1));
-            }
-            Ok((hits, result.1))
-        } else {
-            Ok(searcher.search(
-                &query.query,
-                &(TopDocs::with_limit(limit).and_offset(offset), tantivy::collector::Count),
-            )?)
-        }
+        let date_field = self.schema.get_field_name(self.fields.sbom_created).to_string();
+        let now = tantivy::DateTime::from_utc(OffsetDateTime::now_utc());
+        Ok(searcher.search(
+            query,
+            &(
+                TopDocs::with_limit(limit)
+                    .and_offset(offset)
+                    .tweak_score(move |segment_reader: &SegmentReader| {
+                        let date_reader = segment_reader.fast_fields().date(&date_field);
+
+                        move |doc: DocId, original_score: Score| {
+                            let date_reader = date_reader.clone();
+                            let mut tweaked = original_score;
+                            // Now look at the date, normalize score between 0 and 1 (baseline 1970)
+                            if let Ok(Some(date)) = date_reader.map(|s| s.first(doc)) {
+                                if date < now {
+                                    let normalized =
+                                        1.0 + (date.into_timestamp_secs() as f64 / now.into_timestamp_secs() as f64);
+                                    log::trace!("DATE score impact {} -> {}", tweaked, tweaked * (normalized as f32));
+                                    tweaked *= normalized as f32;
+                                }
+                            }
+                            log::trace!("Tweaking from {} to {}", original_score, tweaked);
+                            tweaked
+                        }
+                    }),
+                tantivy::collector::Count,
+            ),
+        )?)
     }
 
     fn process_hit(
@@ -517,15 +539,24 @@ impl trustification_index::Index for Index {
         doc_address: DocAddress,
         score: f32,
         searcher: &Searcher,
-        query: &SbomQuery,
+        query: &dyn Query,
         options: &SearchOptions,
     ) -> Result<Self::MatchedDocument, SearchError> {
         let doc = searcher.doc(doc_address)?;
         let id = field2str(&self.schema, &doc, self.fields.sbom_id)?;
+        let uid = doc
+            .get_first(self.fields.sbom_uid)
+            .and_then(|s| s.as_text())
+            .map(ToString::to_string);
         let name = field2str(&self.schema, &doc, self.fields.sbom_name)?;
 
-        let snippet_generator = SnippetGenerator::create(searcher, &query.query, self.fields.sbom.desc)?;
+        let snippet_generator = SnippetGenerator::create(searcher, query, self.fields.sbom.desc)?;
         let snippet = snippet_generator.snippet_from_doc(&doc).to_html();
+
+        let file_sha256 = doc
+            .get_first(self.fields.sbom_sha256)
+            .map(|s| s.as_text().unwrap_or(""))
+            .unwrap_or("");
 
         let purl = doc
             .get_first(self.fields.sbom.purl)
@@ -579,7 +610,9 @@ impl trustification_index::Index for Index {
         let dependencies: u64 = doc.get_all(self.fields.dep.purl).count() as u64;
         let document = SearchDocument {
             id: id.to_string(),
+            uid,
             version: version.to_string(),
+            file_sha256: file_sha256.to_string(),
             purl,
             cpe,
             name: name.to_string(),
@@ -594,7 +627,7 @@ impl trustification_index::Index for Index {
         };
 
         let explanation: Option<serde_json::Value> = if options.explain {
-            match query.query.explain(searcher, doc_address) {
+            match query.explain(searcher, doc_address) {
                 Ok(explanation) => Some(serde_json::to_value(explanation).ok()).unwrap_or(None),
                 Err(e) => {
                     warn!("Error producing explanation for document {:?}: {:?}", doc_address, e);

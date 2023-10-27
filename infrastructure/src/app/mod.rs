@@ -11,6 +11,7 @@ use actix_web::{
 use actix_web_extras::middleware::Condition;
 use actix_web_prom::PrometheusMetrics;
 use std::sync::Arc;
+use tracing_actix_web::{DefaultRootSpanBuilder, TracingLogger};
 use trustification_auth::authenticator::Authenticator;
 use trustification_auth::authorizer::Authorizer;
 
@@ -20,6 +21,8 @@ pub struct AppOptions {
     pub metrics: Option<PrometheusMetrics>,
     pub authenticator: Option<Arc<Authenticator>>,
     pub authorizer: Authorizer,
+    pub logger: Option<Logger>,
+    pub tracing_logger: Option<TracingLogger<DefaultRootSpanBuilder>>,
 }
 
 #[macro_export]
@@ -64,5 +67,7 @@ pub fn new_app(
         // Compress everything
         .wrap(Compress::default())
         // First log the request, so that we know what happens (can't fail)
-        .wrap(Logger::default())
+        .wrap(Condition::from_option(options.logger))
+        // Enable tracing logger if configured
+        .wrap(Condition::from_option(options.tracing_logger))
 }
