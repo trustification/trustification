@@ -1,5 +1,5 @@
 use actix_web::{post, web, HttpResponse, Responder, ResponseError};
-use collector_client::CollectVulnerabilitiesRequest;
+use collector_client::{CollectVulnerabilitiesRequest, CollectVulnerabilitiesResponse};
 use guac::client::intrinsic::vulnerability::VulnerabilityInputSpec;
 use std::net::{IpAddr, SocketAddr, TcpListener};
 use std::str::FromStr;
@@ -36,6 +36,7 @@ pub enum Error {
     GuacError(#[from] guac::client::Error),
 
     #[error("NVD error: {0}")]
+    #[allow(unused)]
     NvdError(#[source] reqwest::Error),
 }
 
@@ -77,22 +78,37 @@ pub async fn collect_vulnerabilities(
     request: web::Json<CollectVulnerabilitiesRequest>,
     state: web::Data<AppState>,
 ) -> Result<impl Responder, Error> {
-    for id in &request.vulnerability_ids {
-        if let Some(vuln) = state.nvd.get_cve(id).await.map_err(Error::NvdError)? {
-            state
-                .guac_client
-                .intrinsic()
-                .ingest_vulnerability(&VulnerabilityInputSpec {
-                    r#type: "cve".to_string(),
-                    vulnerability_id: vuln.cve.id.clone(),
-                })
-                .await?;
+    let mut vulnerability_ids = Vec::with_capacity(request.vulnerability_ids.len());
+    let mut errors = vec![];
 
-            state.v11y_client.ingest_vulnerability(&(vuln.into())).await.ok();
+    for id in request.into_inner().vulnerability_ids {
+        match state.nvd.get_cve(&id).await {
+            Ok(Some(vuln)) => {
+                vulnerability_ids.push(id);
+                state
+                    .guac_client
+                    .intrinsic()
+                    .ingest_vulnerability(&VulnerabilityInputSpec {
+                        r#type: "cve".to_string(),
+                        vulnerability_id: vuln.cve.id.clone(),
+                    })
+                    .await?;
+
+                state.v11y_client.ingest_vulnerability(&(vuln.into())).await.ok();
+            }
+            Ok(None) => {}
+            Err(err) => {
+                errors.push(err.to_string());
+            }
         }
     }
 
-    Ok(HttpResponse::Ok().finish())
+    let gathered = CollectVulnerabilitiesResponse {
+        vulnerability_ids,
+        errors,
+    };
+
+    Ok(HttpResponse::Ok().json(gathered))
 }
 
 pub fn config(cfg: &mut web::ServiceConfig, auth: Option<Arc<Authenticator>>) {

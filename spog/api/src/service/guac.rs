@@ -4,6 +4,7 @@ use std::str::FromStr;
 use actix_web::{http::header::ContentType, HttpResponse};
 use guac::client::intrinsic::certify_vex_statement::VexStatus;
 use guac::client::intrinsic::certify_vuln::{CertifyVuln, CertifyVulnSpec};
+use guac::client::intrinsic::vuln_metadata::{VulnerabilityMetadata, VulnerabilityMetadataSpec};
 use guac::client::intrinsic::vulnerability::{Vulnerability, VulnerabilitySpec};
 use guac::client::{Error as GuacError, GuacClient};
 use http::StatusCode;
@@ -128,13 +129,26 @@ impl GuacService {
             .await?)
     }
 
-    #[instrument(skip(self, purl), fields(purl = %purl), err)]
+    #[instrument(skip(self, purl), fields(purl = %purl), ret, err)]
     pub async fn certify_vuln(&self, purl: PackageUrl<'_>) -> Result<Vec<CertifyVuln>, Error> {
         Ok(self
             .client
             .intrinsic()
             .certify_vuln(&CertifyVulnSpec {
                 package: Some(purl.into()),
+                ..Default::default()
+            })
+            .await?)
+    }
+
+    /// Get metadata for a vulnerability by its ID.
+    #[instrument(skip(self))]
+    pub async fn vuln_meta(&self, id: String) -> Result<Vec<VulnerabilityMetadata>, Error> {
+        Ok(self
+            .client
+            .intrinsic()
+            .vuln_metadata(&VulnerabilityMetadataSpec {
+                id: Some(id),
                 ..Default::default()
             })
             .await?)
