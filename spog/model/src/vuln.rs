@@ -1,7 +1,7 @@
 use super::pkg::PackageRef;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::ops::{Deref, DerefMut};
 use time::OffsetDateTime;
 use utoipa::openapi::{KnownFormat, ObjectBuilder, RefOr, Schema, SchemaFormat, SchemaType};
@@ -150,12 +150,7 @@ pub struct SbomReportVulnerability {
     /// A plain text description
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
-    /// The severity score
-    ///
-    /// TODO: Right now this expected to be a CVSS v3 score. This needs to change into an
-    /// enum which carries the score type information as well.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub score: Option<f32>,
+
     /// Timestamp the vulnerability was initially published
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub published: Option<OffsetDateTime>,
@@ -165,10 +160,24 @@ pub struct SbomReportVulnerability {
     /// A map listing the packages affected by this vulnerability, and the available remediations.
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub affected_packages: BTreeMap<String, Vec<Remediation>>,
+
+    #[serde(default, skip_serializing_if = "HashMap::is_empty")]
+    pub sources: HashMap<Source, SourceDetails>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, ToSchema, serde::Serialize, serde::Deserialize)]
 pub struct Remediation {
     /// Detail information on the remediation.
     pub details: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, ToSchema, serde::Serialize, serde::Deserialize, Hash)]
+pub enum Source {
+    Mitre,
+}
+
+#[derive(Clone, Debug, PartialEq, ToSchema, Serialize, Deserialize)]
+pub struct SourceDetails {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub score: Option<f32>,
 }
