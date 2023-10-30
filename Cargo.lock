@@ -1782,6 +1782,7 @@ dependencies = [
  "test-with",
  "thiserror",
  "tokio",
+ "tracing",
  "trustification-auth",
  "trustification-common",
  "trustification-infrastructure",
