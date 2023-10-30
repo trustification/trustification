@@ -4,6 +4,7 @@ mod vex;
 
 use crate::error::Error;
 use crate::guac::service::GuacService;
+use crate::sbom::vuln::analyze::{AnalyzeOutcome, Score, VulnerabilityDetails};
 use crate::server::{AppState, ResponseError};
 use crate::service::v11y::V11yService;
 use actix_web::cookie::time;
@@ -15,11 +16,12 @@ use bytes::{BufMut, BytesMut};
 use cve::Cve;
 use futures::stream::iter;
 use futures::{StreamExt, TryStreamExt};
+use guac::client::intrinsic::vuln_metadata::VulnerabilityScoreType;
 use serde_json::Value;
 use spdx_rs::models::{PackageInformation, SPDX};
-use spog_model::prelude::{SbomReport, Source};
+use spog_model::prelude::SbomReport;
 use spog_model::vuln::{SbomReportVulnerability, SourceDetails};
-use std::collections::{BTreeMap, HashMap, HashSet};
+use std::collections::BTreeMap;
 use std::str::FromStr;
 use tracing::instrument;
 use trustification_auth::client::TokenProvider;
@@ -116,7 +118,7 @@ async fn process_get_vulnerabilities(
     // fetch CVE details
 
     let details = iter(cve_to_purl)
-        .map(|(id, affected_packages)| async move {
+        .map(|(id, details)| async move {
             let cve: Cve = match v11y.fetch_cve(&id).await?.or_status_error_opt().await? {
                 Some(cve) => cve.json().await?,
                 None => {
@@ -127,10 +129,35 @@ async fn process_get_vulnerabilities(
                 }
             };
 
-            let score = get_score(&cve);
+            let VulnerabilityDetails {
+                mut scores,
+                purls: affected_packages,
+            } = details;
 
-            let mut sources = HashMap::new();
-            sources.insert(Source::Mitre, SourceDetails { score });
+            if let Some(value) = get_score(&cve) {
+                scores.push(Score {
+                    // FIXME: use the actual score
+                    r#type: VulnerabilityScoreType::CVSSv3,
+                    source: "mitre".to_string(),
+                    value,
+                })
+            }
+
+            let sources = scores
+                .into_iter()
+                .map(|score| {
+                    // FIXME: use the provided score type
+                    (
+                        score.source,
+                        SourceDetails {
+                            score: Some(score.value),
+                        },
+                    )
+                })
+                .collect();
+
+            // let mut sources = HashMap::new();
+            // sources.insert(Source::Mitre, SourceDetails { score });
 
             Ok(SbomReportVulnerability {
                 id: cve.id().to_string(),
@@ -243,12 +270,12 @@ fn get_score(cve: &Cve) -> Option<f32> {
 /// Collect a summary of count, based on CVSS v3 severities
 fn summarize_vulns<'a>(
     vulnerabilities: impl IntoIterator<Item = &'a SbomReportVulnerability>,
-) -> BTreeMap<Source, BTreeMap<Option<cvss::Severity>, usize>> {
-    let mut result = BTreeMap::<Source, BTreeMap<_, _>>::new();
+) -> BTreeMap<String, BTreeMap<Option<cvss::Severity>, usize>> {
+    let mut result = BTreeMap::<String, BTreeMap<_, _>>::new();
 
     for v in vulnerabilities.into_iter() {
         for (source, details) in &v.sources {
-            let result = result.entry(*source).or_default();
+            let result = result.entry(source.clone()).or_default();
             let score = details.score.map(into_severity);
             *result.entry(score).or_default() += 1;
         }

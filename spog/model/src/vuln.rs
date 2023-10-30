@@ -58,7 +58,7 @@ pub struct SbomReport {
     pub created: Option<OffsetDateTime>,
 
     /// Vulnerabilities summary
-    pub summary: Vec<(Source, Vec<SummaryEntry>)>,
+    pub summary: Vec<(String, Vec<SummaryEntry>)>,
     /// Vulnerabilities list
     pub details: Vec<SbomReportVulnerability>,
     /// Traces from the vulnerable PURL back to the SBOM root
@@ -162,12 +162,12 @@ pub struct SbomReportVulnerability {
     pub affected_packages: BTreeMap<String, Vec<Remediation>>,
 
     #[serde(default, skip_serializing_if = "HashMap::is_empty")]
-    pub sources: HashMap<Source, SourceDetails>,
+    pub sources: HashMap<String, SourceDetails>,
 }
 
 impl SbomReportVulnerability {
     /// Get the score of a specific source
-    pub fn score(&self, source: &Source) -> Option<f32> {
+    pub fn score(&self, source: &str) -> Option<f32> {
         self.sources.get(source).and_then(|details| details.score)
     }
 }
@@ -176,11 +176,6 @@ impl SbomReportVulnerability {
 pub struct Remediation {
     /// Detail information on the remediation.
     pub details: String,
-}
-
-#[derive(Copy, Clone, Debug, PartialEq, Eq, ToSchema, serde::Serialize, serde::Deserialize, Hash, Ord, PartialOrd)]
-pub enum Source {
-    Mitre,
 }
 
 #[derive(Clone, Debug, PartialEq, ToSchema, Serialize, Deserialize)]

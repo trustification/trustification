@@ -4,6 +4,7 @@ use std::str::FromStr;
 use actix_web::{http::header::ContentType, HttpResponse};
 use guac::client::intrinsic::certify_vex_statement::VexStatus;
 use guac::client::intrinsic::certify_vuln::{CertifyVuln, CertifyVulnSpec};
+use guac::client::intrinsic::vuln_equal::{VulnEqual, VulnEqualSpec};
 use guac::client::intrinsic::vuln_metadata::{VulnerabilityMetadata, VulnerabilityMetadataSpec};
 use guac::client::intrinsic::vulnerability::{Vulnerability, VulnerabilitySpec};
 use guac::client::{Error as GuacError, GuacClient};
@@ -142,12 +143,25 @@ impl GuacService {
     }
 
     /// Get metadata for a vulnerability by its ID.
-    #[instrument(skip(self))]
+    #[instrument(skip(self), ret, err)]
     pub async fn vuln_meta(&self, id: String) -> Result<Vec<VulnerabilityMetadata>, Error> {
         Ok(self
             .client
             .intrinsic()
             .vuln_metadata(&VulnerabilityMetadataSpec {
+                id: Some(id),
+                ..Default::default()
+            })
+            .await?)
+    }
+
+    /// Get aliases of a vulnerability
+    #[instrument(skip(self), ret, err)]
+    pub async fn vuln_aliases(&self, id: String) -> Result<Vec<VulnEqual>, Error> {
+        Ok(self
+            .client
+            .intrinsic()
+            .vuln_equal(&VulnEqualSpec {
                 id: Some(id),
                 ..Default::default()
             })
