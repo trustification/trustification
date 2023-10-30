@@ -107,7 +107,7 @@ async fn count_related_products(_cve: &str) -> Result<usize, Error> {
 async fn cve_get(id: web::Path<String>, v11y: web::Data<V11yService>) -> actix_web::Result<HttpResponse> {
     let id = id.into_inner();
 
-    let response = v11y.fetch(&id).await?;
+    let response = v11y.fetch_cve(&id).await?;
 
     Ok(HttpResponseBuilder::new(response.status()).streaming(response.bytes_stream()))
 }

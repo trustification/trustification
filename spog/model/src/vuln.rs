@@ -143,7 +143,7 @@ impl DerefMut for Backtrace {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, ToSchema, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, PartialEq, ToSchema, Serialize, Deserialize)]
 pub struct SbomReportVulnerability {
     /// The ID of the vulnerability
     pub id: String,

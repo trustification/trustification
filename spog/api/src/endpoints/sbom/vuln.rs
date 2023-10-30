@@ -123,7 +123,7 @@ async fn process_get_vulnerabilities(
     let details = iter(analyze)
         .map(|(id, affected_packages)| async move {
             // FIXME: need to provide packages to entry
-            let cve: Cve = match v11y.fetch(&id).await?.or_status_error_opt().await? {
+            let cve: Cve = match v11y.fetch_cve(&id).await?.or_status_error_opt().await? {
                 Some(cve) => cve.json().await?,
                 None => return Ok(None),
             };

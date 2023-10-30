@@ -41,7 +41,7 @@ impl V11yService {
     }
 
     #[instrument(skip(self), err)]
-    pub async fn fetch(&self, id: &str) -> Result<Response, Error> {
+    pub async fn fetch_cve(&self, id: &str) -> Result<Response, Error> {
         self.client.get_cve(id).await.map_err(Error::Any)
     }
 
