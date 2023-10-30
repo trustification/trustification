@@ -1,4 +1,3 @@
-use crate::pages::search::PaginationWrapped;
 use futures::future::try_join_all;
 use patternfly_yew::prelude::*;
 use spog_model::{
@@ -7,7 +6,7 @@ use spog_model::{
 };
 use spog_ui_backend::{use_backend, CveService};
 use spog_ui_common::{utils::cvss::Cvss, utils::time::date, utils::OrNone};
-use spog_ui_components::{async_state_renderer::async_content, cvss::CvssScore};
+use spog_ui_components::{async_state_renderer::async_content, cvss::CvssScore, pagination::PaginationWrapped};
 use spog_ui_navigation::{AppRoute, View};
 use std::rc::Rc;
 use yew::prelude::*;
@@ -79,9 +78,7 @@ pub fn vulnerabilities(props: &VulnerabilitiesProperties) -> Html {
         use_async_with_cloned_deps(
             move |vulnerabilities| async move {
                 let service = CveService::new(backend.clone(), access_token.clone());
-                let futures = vulnerabilities
-                    .iter()
-                    .map(|vuln| service.get_from_index(&vuln.cve));
+                let futures = vulnerabilities.iter().map(|vuln| service.get_from_index(&vuln.cve));
                 try_join_all(futures)
                     .await
                     .map(|vec| {
