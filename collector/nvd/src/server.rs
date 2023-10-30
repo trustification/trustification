@@ -1,20 +1,18 @@
+use actix_web::{post, web, HttpResponse, Responder, ResponseError};
+use collector_client::CollectVulnerabilitiesRequest;
+use guac::client::intrinsic::vulnerability::VulnerabilityInputSpec;
 use std::net::{IpAddr, SocketAddr, TcpListener};
 use std::str::FromStr;
 use std::sync::Arc;
-
-use actix_web::middleware::{Compress, Logger};
-use actix_web::{post, web, HttpResponse, Responder, ResponseError};
-use guac::client::intrinsic::vulnerability::VulnerabilityInputSpec;
-use utoipa::OpenApi;
-use utoipa_swagger_ui::SwaggerUi;
-
-use collector_client::CollectVulnerabilitiesRequest;
+use tracing::instrument;
 use trustification_auth::{authenticator::Authenticator, authorizer::Authorizer};
 use trustification_infrastructure::{
     app::http::{HttpServerBuilder, HttpServerConfig},
     endpoint::CollectorNvd,
     new_auth, MainContext,
 };
+use utoipa::OpenApi;
+use utoipa_swagger_ui::SwaggerUi;
 
 use crate::AppState;
 
@@ -74,6 +72,7 @@ pub async fn run(
     ),
 )]
 #[post("vulnerabilities")]
+#[instrument(skip(state), err)]
 pub async fn collect_vulnerabilities(
     request: web::Json<CollectVulnerabilitiesRequest>,
     state: web::Data<AppState>,
