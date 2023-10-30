@@ -41,6 +41,13 @@ bombastic:
   collector:
     enabled: true
     schedule: "0 * * * *"
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "4Gi"
+      limits:
+        cpu: "1"
+        memory: "4Gi"
   indexer:
     topics:
       stored: sbom-stored-prod
@@ -77,6 +84,13 @@ vexination:
   collector:
     enabled: true
     schedule: "30 * * * *"
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "4Gi"
+      limits:
+        cpu: "1"
+        memory: "4Gi"
   indexer:
     topics:
       stored: vex-stored-prod
@@ -155,6 +169,13 @@ guac:
   enabled: true
   graphql:
     debug: true
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "8Gi"
+      limits:
+        cpu: "1"
+        memory: "8Gi"
 keycloak:
   enabled: true
   production: true

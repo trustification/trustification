@@ -62,6 +62,8 @@ spec:
               ports:
                 - containerPort: 2782
                   protocol: TCP
+              resources:
+                {{- toYaml .Values.bombastic.collector.resources | nindent 16 }}
               volumeMounts:
                 - name: guac-config
                   mountPath: /guac

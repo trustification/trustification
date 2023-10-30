@@ -39,6 +39,7 @@ bombastic:
   collector:
     enabled: true
     schedule: ${BOMBASTIC_COLLECTOR_SCHEDULE}
+    resources: ${{BOMBASTIC_COLLECTOR_RESOURCES}}
   indexer:
     reindex: false
     index_sync_interval: ${BOMBASTIC_INDEXER_INDEX_SYNC_INTERVAL}
@@ -115,6 +116,7 @@ vexination:
   collector:
     enabled: true
     schedule: ${VEXINATION_COLLECTOR_SCHEDULE}
+    resources: ${{VEXINATION_COLLECTOR_RESOURCES}}
   walker:
     enabled: true
     suspend: ${{VEXINATION_WALKER_SUSPEND}}
@@ -141,6 +143,7 @@ guac:
   enabled: true
   graphql:
     debug: false
+    resources: ${{GUAC_GQL_RESOURCES}}
 oidcClients:
   frontend:
     issuerUrl: ${ISSUER_URL}

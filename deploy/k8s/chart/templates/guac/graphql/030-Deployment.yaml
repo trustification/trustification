@@ -52,6 +52,8 @@ spec:
             - mountPath: /etc/config
               name: config
             {{ include "trustification.http-server-volume-mounts" . | nindent 12 }}
+          resources:
+            {{- toYaml .Values.guac.graphql.resources | nindent 12 }}
           ports:
             - containerPort: 8080
               protocol: TCP

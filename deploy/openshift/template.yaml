@@ -1295,6 +1295,7 @@ objects:
                   name: config
                 - mountPath: /etc/tls
                   name: tls
+              resources: ${{GUAC_GQL_RESOURCES}}
               ports:
                 - containerPort: 8080
                   protocol: TCP
@@ -2011,6 +2012,7 @@ objects:
                   ports:
                     - containerPort: 2782
                       protocol: TCP
+                  resources: ${{BOMBASTIC_COLLECTOR_RESOURCES}}
                   volumeMounts:
                     - name: guac-config
                       mountPath: /guac
@@ -2266,6 +2268,7 @@ objects:
                   ports:
                     - containerPort: 2782
                       protocol: TCP
+                  resources: ${{VEXINATION_COLLECTOR_RESOURCES}}
                   volumeMounts:
                     - name: guac-config
                       mountPath: /guac
@@ -2440,6 +2443,12 @@ parameters:
 - name: EXHORT_API_RESOURCES
   required: true
 - name: GUAC_IMAGE
+  required: true
+- name: GUAC_GQL_RESOURCES
+  required: true
+- name: BOMBASTIC_COLLECTOR_RESOURCES
+  required: true
+- name: VEXINATION_COLLECTOR_RESOURCES
   required: true
 - name: K8S_NAMESPACE
   required: true
