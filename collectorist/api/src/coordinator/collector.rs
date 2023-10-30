@@ -81,7 +81,7 @@ impl Collector {
                 Ok(response)
             }
             Err(e) => {
-                log::warn!("{}", e);
+                log::warn!("collector response: {}", e);
                 Err(e)
             }
         }
