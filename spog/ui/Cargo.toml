@@ -66,6 +66,7 @@ spog-ui-components = { path = "crates/components" }
 spog-ui-common = { path = "crates/common" }
 spog-ui-utils = { path = "crates/utils" }
 spog-ui-donut = { path = "crates/donut" }
+futures = "0.3.29"
 
 [build-dependencies]
 trustification-version = { path = "../../version", features = ["build"] }
