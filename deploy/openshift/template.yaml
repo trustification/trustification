@@ -1986,9 +1986,10 @@ objects:
                   args:
                     - collect
                     - s3
-                    - --poll
                     - --s3-bucket
                     - ${BOMBASTIC_STORAGE_BUCKET}
+                    - --s3-region
+                    - ${AWS_REGION}
                   workingDir: /guac
                   env:
                     - name: NAMESPACE
@@ -2210,7 +2211,7 @@ objects:
         app.kubernetes.io/component: collector
         app.kubernetes.io/part-of: trustification
     spec:
-      schedule: 1 * * * *
+      schedule: 0 * * * *
       suspend: false
       concurrencyPolicy: Forbid
       jobTemplate:
@@ -2223,6 +2224,7 @@ objects:
                 app.kubernetes.io/part-of: trustification
                 metrics: 'true'
             spec:
+              restartPolicy: OnFailure
               volumes:
                 - name: config
                   configMap:
@@ -2239,9 +2241,10 @@ objects:
                   args:
                     - collect
                     - s3
-                    - --poll
                     - --s3-bucket
                     - ${VEXINATION_STORAGE_BUCKET}
+                    - --s3-region
+                    - ${AWS_REGION}
                   workingDir: /guac
                   env:
                     - name: NAMESPACE
