@@ -59,21 +59,6 @@ impl CveService {
         Ok(result.map(|result| result.into_iter().map(|result| result.document).collect()))
     }
 
-    pub async fn get_from_index(&self, id: &str) -> Result<SearchResult<Vec<CveSearchDocument>>, Error> {
-        let q = format!("id:{id}");
-        let response = self
-            .client
-            .get(self.backend.join(Endpoint::Api, "/api/v1/cve")?)
-            .query(&[("q", q)])
-            .latest_access_token(&self.access_token)
-            .send()
-            .await?;
-
-        let result: SearchResult<Vec<SearchHit<CveSearchDocument>>> = response.error_for_status()?.json().await?;
-
-        Ok(result.map(|result| result.into_iter().map(|result| result.document).collect()))
-    }
-
     pub async fn get_related_products(&self, id: impl AsRef<str>) -> Result<CveDetails, ApiError> {
         let url = self.backend.join(
             Endpoint::Api,
