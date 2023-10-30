@@ -85,9 +85,7 @@ fn related_versions_result_content(props: &RelatedVersionsResultContentPropertie
             <List>
                 {
                     for props.related_packages.iter().map(|item| {
-                        html!(
-                            <>{&item.purl}</>
-                        )
+                        html_nested!(<ListItem>{&item.purl}</ListItem>)
                     })
                 }
             </List>

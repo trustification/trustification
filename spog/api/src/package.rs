@@ -88,22 +88,22 @@ fn make_mock_data() -> Vec<PackageInfo> {
             supplier: "Organization: Red Hat".to_string().into(),
             vulnerabilities: vec![
                 V11yRef {
-                    cve: "cve-2023-0286".to_string().into(),
+                    cve: "CVE-2023-5511".to_string().into(),
                     href: "https://access.redhat.com/security/cve/cve-2023-0286".into(),
                     severity: "low".to_string(),
                 },
                 V11yRef {
-                    cve: "cve-2023-0286".to_string().into(),
+                    cve: "CVE-2023-5511".to_string().into(),
                     href: "https://access.redhat.com/security/cve/cve-2023-0286".into(),
                     severity: "medium".to_string(),
                 },
                 V11yRef {
-                    cve: "cve-2023-0286".to_string().into(),
+                    cve: "CVE-2023-5511".to_string().into(),
                     href: "https://access.redhat.com/security/cve/cve-2023-0286".into(),
                     severity: "high".to_string(),
                 },
                 V11yRef {
-                    cve: "cve-2023-0286".to_string().into(),
+                    cve: "CVE-2023-5511".to_string().into(),
                     href: "https://access.redhat.com/security/cve/cve-2023-0286".into(),
                     severity: "critical".to_string(),
                 },

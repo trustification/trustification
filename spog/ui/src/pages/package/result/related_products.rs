@@ -1,4 +1,3 @@
-use crate::pages::search::PaginationWrapped;
 use futures::future::try_join_all;
 use patternfly_yew::prelude::*;
 use spog_model::{
@@ -6,7 +5,7 @@ use spog_model::{
     search::PackageSummary,
 };
 use spog_ui_backend::{use_backend, PackageService};
-use spog_ui_components::async_state_renderer::async_content;
+use spog_ui_components::{async_state_renderer::async_content, pagination::PaginationWrapped};
 use spog_ui_navigation::{AppRoute, View};
 use std::rc::Rc;
 use yew::prelude::*;
