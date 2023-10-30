@@ -41,7 +41,10 @@ impl PackageInfoService {
     pub async fn get_related_products(&self, id: impl AsRef<str>) -> Result<PackageProductDetails, ApiError> {
         let url = self.backend.join(
             Endpoint::Api,
-            &format!("/api/v1/package_info/{id}/related-products", id = urlencoding::encode(id.as_ref())),
+            &format!(
+                "/api/v1/package_info/{id}/related-products",
+                id = urlencoding::encode(id.as_ref())
+            ),
         )?;
 
         let response = self

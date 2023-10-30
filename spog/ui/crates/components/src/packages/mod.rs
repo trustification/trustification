@@ -102,7 +102,7 @@ fn get_package_definitions(pkg: &PackageInfoSummary) -> PackagesEntry {
         href: pkg.href.clone().into(),
         sbom: pkg.sbom.clone().into(),
         supplier: pkg.supplier.clone().into(),
-        vulnerabilities: pkg.vulnerabilities.clone().into(),
+        vulnerabilities: pkg.vulnerabilities.clone(),
         description: pkg.description.clone().into(),
     };
     PackagesEntry { package: pkg }
@@ -112,7 +112,7 @@ fn get_package_definitions(pkg: &PackageInfoSummary) -> PackagesEntry {
 pub fn package_result(props: &PackagesResultProperties) -> Html {
     let data = match &props.state {
         UseAsyncState::Ready(Ok(val)) => {
-            let data: Vec<_> = val.result.iter().map(|pkg| get_package_definitions(pkg)).collect();
+            let data: Vec<_> = val.result.iter().map(get_package_definitions).collect();
             Some(data)
         }
         _ => None,
