@@ -18,8 +18,8 @@ use rand::Rng;
 use serde_json::Value;
 use spdx_rs::models::{PackageInformation, SPDX};
 use spog_model::csaf::has_purl;
-use spog_model::prelude::{Remediation, SbomReport, SummaryEntry};
-use spog_model::vuln::{Backtrace, SbomReportVulnerability};
+use spog_model::prelude::{Remediation, SbomReport, Source, SummaryEntry};
+use spog_model::vuln::{Backtrace, SbomReportVulnerability, SourceDetails};
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::rc::Rc;
 use std::str::FromStr;
@@ -118,6 +118,8 @@ async fn process_get_vulnerabilities(
         _ => return Err(Error::Generic("Unsupported format".to_string())),
     };
 
+    // fetch CVE details
+
     let details = iter(analyze)
         .map(|(id, affected_packages)| async move {
             // FIXME: need to provide packages to entry
@@ -125,26 +127,34 @@ async fn process_get_vulnerabilities(
                 Some(cve) => cve.json().await?,
                 None => return Ok(None),
             };
-
             let score = get_score(&cve);
+
+            let mut sources = HashMap::new();
+            sources.insert(Source::Mitre, SourceDetails { score });
+
             Ok(Some(SbomReportVulnerability {
                 id: cve.id().to_string(),
                 description: get_description(&cve),
-                score,
+                sources,
                 published: cve.common_metadata().date_published.map(|t| t.assume_utc()),
                 updated: cve.common_metadata().date_updated.map(|t| t.assume_utc()),
                 affected_packages,
             }))
         })
         .buffer_unordered(4)
+        // filter out missing ones
         .try_filter_map(|r| async move { Ok::<_, Error>(r) })
         .try_collect::<Vec<_>>()
         .await?;
+
+    // summarize scores
 
     let summary = summarize_vulns(&details)
         .into_iter()
         .map(|(severity, count)| SummaryEntry { severity, count })
         .collect();
+
+    // done
 
     Ok(Some(SbomReport {
         name,
