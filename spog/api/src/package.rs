@@ -17,7 +17,8 @@ pub(crate) fn configure(auth: Option<Arc<Authenticator>>) -> impl FnOnce(&mut Se
         config.service(
             web::scope("/api/v1/package_info")
                 .wrap(new_auth!(auth))
-                .service(web::resource("/search").to(packages_search_mock)), // .service(web::resource("/{id}").to(cve_get))
+                .service(web::resource("/search").to(packages_search_mock))
+                .service(web::resource("/{id}").to(package_get_mock)),
                                                                              // .service(web::resource("/{id}/related-products").to(cve_related_product)),
         );
     }
@@ -44,6 +45,13 @@ pub async fn packages_search_mock(
         result: pkgs,
     };
     Ok(HttpResponse::Ok().json(result))
+}
+
+pub async fn package_get_mock(
+    web::Query(params): web::Query<search::QueryParams>,
+) -> actix_web::Result<HttpResponse> {
+    let pkgs = make_mock_data();
+    Ok(HttpResponse::Ok().json(&pkgs[0]))
 }
 
 fn make_mock_data() -> Vec<PackageInfo> {
