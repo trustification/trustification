@@ -225,10 +225,10 @@ guac:
     resources:
       requests:
         cpu: "100m"
-        memory: "8Gi"
+        memory: "10Gi"
       limits:
-        cpu: "1"
-        memory: "8Gi"
+        cpu: "2"
+        memory: "10Gi"
 keycloak:
   enabled: true
   production: true
