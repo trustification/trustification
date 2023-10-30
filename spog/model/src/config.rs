@@ -22,6 +22,8 @@ pub struct Configuration {
     pub features: Features,
     #[serde(default)]
     pub consent: Consent,
+    #[serde(default)]
+    pub packages: Packages,
 }
 
 /// Configuration for the consent dialog
@@ -164,6 +166,12 @@ pub struct Hint {
     pub body: String,
 }
 
+#[derive(Clone, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct Packages {
+    #[serde(default)]
+    pub filters: Filters,
+}
 /// Bombastic specific configuration
 #[derive(Clone, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]

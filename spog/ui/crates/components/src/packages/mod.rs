@@ -3,10 +3,9 @@ mod search;
 use crate::table_wrapper::TableWrapper;
 use patternfly_yew::prelude::*;
 pub use search::*;
-use serde_json::from_str;
-use spog_model::package_Info::{PackageInfo, V11yRef};
+use spog_model::package_info::PackageInfo;
 use spog_model::search::PackageInfoSummary;
-use spog_ui_navigation::{AppRoute, View};
+use spog_ui_navigation::AppRoute;
 use std::rc::Rc;
 use trustification_api::search::SearchResult;
 use yew::prelude::*;
@@ -62,11 +61,7 @@ impl TableEntryRenderer<Column> for PackagesEntry {
                     self.package.supplier.clone().unwrap_or_default()
                 }
                 </>),
-            Column::Vulnerabilities => html!( <>
-                {
-                    self.package.package_type.clone().unwrap_or_default()
-                }
-                </>),
+            Column::Vulnerabilities => v11y_component_renderer(self.clone().package),
         }
         .into()
     }
@@ -79,6 +74,23 @@ impl TableEntryRenderer<Column> for PackagesEntry {
         let html = html!();
         vec![Span::max(html)]
     }
+}
+
+fn v11y_component_renderer(packageinfo: PackageInfo) -> Html {
+    html!(
+        <tr>
+        <td>{packageinfo.vulnerabilities.len()}</td>
+        <td>
+        <Button icon={Icon::Security} class="v11y-severity-critical">{packageinfo.get_v11y_severity_count("critical".to_string())}</Button>
+        </td>
+        <td><Button icon={Icon::Security} class="v11y-severity-high">{packageinfo.get_v11y_severity_count("high".to_string())}</Button>
+        </td>
+        <td><Button icon={Icon::Security} class="v11y-severity-medium">{packageinfo.get_v11y_severity_count("medium".to_string())}</Button>
+        </td>
+        <td><Button icon={Icon::Security} class="v11y-severity-low">{packageinfo.get_v11y_severity_count("low".to_string())}</Button>
+        </td>
+        </tr>
+    )
 }
 
 fn get_package_definitions(pkg: &PackageInfoSummary) -> PackagesEntry {

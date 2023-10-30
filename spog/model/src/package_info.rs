@@ -1,5 +1,3 @@
-use std::ops::Deref;
-
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use utoipa::ToSchema;
@@ -36,6 +34,15 @@ pub struct PackageInfo {
     pub supplier: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub vulnerabilities: Vec<V11yRef>,
+}
+
+impl PackageInfo {
+    pub fn get_v11y_severity_count(&self, level: String) -> usize {
+        self.vulnerabilities
+            .iter()
+            .filter(|v11y_model| v11y_model.severity == level)
+            .count()
+    }
 }
 
 #[derive(Clone, Default, Debug, PartialEq, Eq, ToSchema, Serialize, Deserialize)]

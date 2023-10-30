@@ -1,4 +1,4 @@
-use crate::package_Info::V11yRef;
+use crate::package_info::V11yRef;
 use serde_json::Value;
 use std::collections::HashMap;
 use time::OffsetDateTime;
@@ -89,14 +89,4 @@ impl PackageInfoSummary {
     pub fn get_count_v11y(&self) -> usize {
         self.vulnerabilities.len()
     }
-    // pub fn to_v11y(&self) -> Vec<V11yRef> {
-    //     self.vulnerabilities
-    //         .iter()
-    //         .map(|v11y_model| V11yRef::from_string(v11y_model))
-    //         .collect()
-    // }
-    // pub fn get_level_severity_count(&self, severity: String) -> usize {
-    //     let vs: Vec<V11yRef> = self.to_v11y();
-    //     vs.iter().filter(|v11y_model| v11y_model.severity == severity).count()
-    // }
 }
