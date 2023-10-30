@@ -137,7 +137,7 @@ fn authenticated_page(props: &ChildrenProperties) -> Html {
                         {
                             for config.global.support_case_url.as_ref().map(|_url| html_nested!(
                                 <MenuAction onclick={open_support_case_page} >
-                                    {"Open a support case"}
+                                    { config.global.support_case_label.clone()  }
                                 </MenuAction>
                             ))
                         }
