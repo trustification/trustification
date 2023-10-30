@@ -20,14 +20,19 @@ pub struct Vulnerability {
 #[serde(rename_all = "camelCase")]
 pub struct Cve {
     pub id: String,
+    #[serde(default)]
     pub source_identifier: Option<String>,
     pub published: NaiveDateTime,
     pub last_modified: NaiveDateTime,
+    #[serde(default)]
     pub evaluator_comment: Option<String>,
+    #[serde(default)]
     pub evaluator_solution: Option<String>,
+    #[serde(default)]
     pub evaluator_impact: Option<String>,
     pub descriptions: Vec<LangString>,
     pub references: Vec<Reference>,
+    #[serde(default)]
     pub metrics: Option<Metrics>,
 }
 
@@ -42,18 +47,20 @@ pub struct LangString {
 #[serde(rename_all = "camelCase")]
 pub struct Reference {
     pub url: String,
+    #[serde(default)]
     pub source: Option<String>,
+    #[serde(default)]
     pub tags: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Metrics {
-    #[serde(default = "Vec::default")]
+    #[serde(default)]
     pub cvss_metric_v31: Vec<CvssV31>,
-    #[serde(default = "Vec::default")]
+    #[serde(default)]
     pub cvss_metric_v30: Vec<CvssV30>,
-    #[serde(default = "Vec::default")]
+    #[serde(default)]
     pub cvss_metric_v2: Vec<CvssV2>,
 }
 
