@@ -58,7 +58,7 @@ pub struct SbomReport {
     pub created: Option<OffsetDateTime>,
 
     /// Vulnerabilities summary
-    pub summary: Vec<SummaryEntry>,
+    pub summary: Vec<(Source, Vec<SummaryEntry>)>,
     /// Vulnerabilities list
     pub details: Vec<SbomReportVulnerability>,
     /// Traces from the vulnerable PURL back to the SBOM root
@@ -165,13 +165,20 @@ pub struct SbomReportVulnerability {
     pub sources: HashMap<Source, SourceDetails>,
 }
 
+impl SbomReportVulnerability {
+    /// Get the score of a specific source
+    pub fn score(&self, source: &Source) -> Option<f32> {
+        self.sources.get(source).and_then(|details| details.score)
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Eq, ToSchema, serde::Serialize, serde::Deserialize)]
 pub struct Remediation {
     /// Detail information on the remediation.
     pub details: String,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, ToSchema, serde::Serialize, serde::Deserialize, Hash)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, ToSchema, serde::Serialize, serde::Deserialize, Hash, Ord, PartialOrd)]
 pub enum Source {
     Mitre,
 }
