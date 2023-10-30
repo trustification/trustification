@@ -26,6 +26,7 @@ mod sbom;
 mod search;
 mod server;
 mod service;
+mod utils;
 
 pub const DEFAULT_CRDA_PAYLOAD_LIMIT: usize = 10 * 1024 * 1024;
 

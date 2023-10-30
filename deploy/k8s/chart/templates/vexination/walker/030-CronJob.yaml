@@ -21,6 +21,10 @@ spec:
             app.kubernetes.io/part-of: trustification
         spec:
           restartPolicy: Never
+          volumes:
+            - name: walker-state
+              persistentVolumeClaim:
+                claimName: vexination-walker-state
           containers:
             - image: {{ .Values.trustImage }}:{{ .Values.release }}
               imagePullPolicy: {{ .Values.imagePullPolicy }}
@@ -36,6 +40,8 @@ spec:
                 - "--ignore-distributions"
                 - "{{ .Values.vexination.walker.ignore }}"
                 - "-3"
+                - "--since-file"
+                - "/walker-state/since"
               env:
                 - name: RUST_LOG
                   value: {{ default "info" .Values.vexination.walker.logLevel }}
@@ -44,6 +50,9 @@ spec:
                 - name: INFRASTRUCTURE_BIND
                   value: "[::]:9010"
                 {{ include "trustification.authentication-client" ( dict "root" . "clientId" "walker" ) | nindent 16 }}
+              volumeMounts:
+                - mountPath: /walker-state
+                  name: walker-state
               resources:
                 {{- toYaml .Values.vexination.walker.resources | nindent 16 }}
               livenessProbe:

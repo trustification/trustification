@@ -1,4 +1,5 @@
 use crate::{ApplyAccessToken, Backend, Endpoint, SearchParameters};
+use reqwest::StatusCode;
 use spog_model::cve::CveSearchDocument;
 use spog_model::prelude::CveDetails;
 use spog_ui_common::error::*;
@@ -23,7 +24,7 @@ impl CveService {
         }
     }
 
-    pub async fn get(&self, id: impl AsRef<str>) -> Result<cve::Cve, ApiError> {
+    pub async fn get(&self, id: impl AsRef<str>) -> Result<Option<String>, ApiError> {
         let url = self.backend.join(
             Endpoint::Api,
             &format!("/api/v1/cve/{id}", id = urlencoding::encode(id.as_ref())),
@@ -36,7 +37,26 @@ impl CveService {
             .send()
             .await?;
 
-        Ok(response.api_error_for_status().await?.json().await?)
+        if response.status() == StatusCode::NOT_FOUND {
+            return Ok(None);
+        }
+
+        Ok(Some(response.api_error_for_status().await?.text().await?))
+    }
+
+    pub async fn get_from_index(&self, id: &str) -> Result<SearchResult<Vec<CveSearchDocument>>, Error> {
+        let q = format!("id:{id}");
+        let response = self
+            .client
+            .get(self.backend.join(Endpoint::Api, "/api/v1/cve")?)
+            .query(&[("q", q)])
+            .latest_access_token(&self.access_token)
+            .send()
+            .await?;
+
+        let result: SearchResult<Vec<SearchHit<CveSearchDocument>>> = response.error_for_status()?.json().await?;
+
+        Ok(result.map(|result| result.into_iter().map(|result| result.document).collect()))
     }
 
     pub async fn get_from_index(&self, id: &str) -> Result<SearchResult<Vec<CveSearchDocument>>, Error> {

@@ -114,7 +114,7 @@ impl PackageService {
 
         Ok(response.error_for_status()?.json().await?)
     }
-    
+
     /// common call of getting some refs for a batch of purls
     async fn batch_to_refs<'a, I, R>(&self, path: &str, purls: I) -> Result<R, Error>
     where

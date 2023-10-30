@@ -134,6 +134,25 @@ export SNYK_ORG_ID=<the-matching-org-id>
 
 You can request one [here](https://docs.snyk.io/enterprise-setup/snyk-broker/snyk-broker-code-agent/setting-up-the-code-agent-broker-client-deployment/step-1-obtaining-the-required-tokens-for-the-setup-procedure/obtaining-your-snyk-api-token).
 
+## Tracing
+
+If you started the `compose-jaeger.yaml` services alongside the others, you can locally enable tracing.
+
+In order to activate tracing locally, set the following two environment variables before starting any of the following
+processes:
+
+```shell
+export TRACING=enabled
+export OTEL_TRACES_SAMPLER_ARG=1
+```
+
+Or when using `fish`:
+
+```shell
+set -gx TRACING enabled
+set -gx OTEL_TRACES_SAMPLER_ARG 1
+```
+
 ## APIs
 
 To run the API processes, you can use cargo:

@@ -6,6 +6,7 @@ global:
   documentationUrl: https://github.com/trustification/trustification
   supportUrl: https://github.com/trustification/trustification/issues
   supportCaseUrl: https://github.com/trustification/trustification/issues
+  supportCaseLabel: "Open a support case"
 
 bombastic:
 

@@ -1,7 +1,7 @@
 use super::pkg::PackageRef;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 use time::OffsetDateTime;
 use utoipa::ToSchema;
 
@@ -58,6 +58,8 @@ pub struct SbomReport {
     pub summary: Vec<(Option<cvss::Severity>, usize)>,
     /// Vulnerabilities list
     pub details: Vec<SbomReportVulnerability>,
+    /// Traces from the vulnerable PURL back to the SBOM root
+    pub backtraces: BTreeMap<String, BTreeSet<Vec<String>>>,
 }
 
 #[derive(Clone, Debug, PartialEq, ToSchema, Serialize, Deserialize)]
@@ -71,6 +73,11 @@ pub struct SbomReportVulnerability {
     pub published: Option<OffsetDateTime>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub updated: Option<OffsetDateTime>,
-    #[serde(default)]
-    pub affected_packages: BTreeSet<String>,
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub affected_packages: BTreeMap<String, Vec<Remediation>>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, ToSchema, serde::Serialize, serde::Deserialize)]
+pub struct Remediation {
+    pub details: String,
 }

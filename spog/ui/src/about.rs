@@ -36,7 +36,7 @@ pub fn about() -> Html {
                 brand_image_alt="Brand Logo"
                 {background_image_src}
                 {product_name}
-                trademark="Copyright © 2020, 2023 by the Chickens"
+                trademark="Copyright © 2020, 2023 Red Hat, Inc"
             >
                 <Content>
                     <p>{ &version.description }</p>

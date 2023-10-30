@@ -6,5 +6,5 @@ TESTS=$(ls $TESTDIR)
 for t in $TESTS
 do
     echo "Running ${t}"
-    ${TESTDIR}/${t}
+    ${TESTDIR}/${t} -- --nocapture
 done

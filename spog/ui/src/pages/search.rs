@@ -8,6 +8,7 @@ use spog_ui_components::{
     cve::{use_cve_search, CveResult, CveSearchControls},
     hooks::UseStandardSearch,
     packages::{use_package_search, PackagesResult},
+    pagination::PaginationWrapped,
     sbom::{use_sbom_search, SbomResult, SbomSearchControls},
     search::{DynamicSearchParameters, SearchMode, SearchModeAction},
 };
@@ -232,6 +233,9 @@ pub fn search(props: &SearchProperties) -> Html {
                             <Visible visible={*tab == TabIndex::Packages}>
                                 <SbomSearchControls search_params={package.search_params.clone()} />
                             </Visible>
+                            <Visible visible={*tab == TabIndex::Packages}>
+                                <SbomSearchControls search_params={package.search_params.clone()} />
+                            </Visible>
                             <Visible visible={*tab == TabIndex::Sboms}>
                                 <SbomSearchControls search_params={sbom.search_params.clone()} />
                             </Visible>
@@ -300,7 +304,7 @@ pub struct UseUnifiedSearch<R> {
     pub search: UseStandardSearch,
     pub total: UseStateHandle<Option<usize>>,
     pub state: UseStateHandle<UseAsyncState<SearchResult<R>, String>>,
-    pub onsort: Callback<(String, bool)>,
+    pub onsort: Callback<(String, Order)>,
 }
 
 impl<R> Deref for UseUnifiedSearch<R> {
@@ -342,7 +346,7 @@ where
     let pagination = use_pagination(*total, || init_pagination(page_state));
     let search = use_hook(search_params.clone(), pagination.clone(), callback);
 
-    let onsort = use_callback(search_params.clone(), move |sort_by: (String, bool), search_params| {
+    let onsort = use_callback(search_params.clone(), move |sort_by: (String, Order), search_params| {
         search_params.dispatch(SearchModeAction::SetSimpleSort(sort_by));
     });
 
@@ -357,33 +361,4 @@ where
 
 fn split_terms(terms: &str) -> Vec<String> {
     terms.split(' ').map(ToString::to_string).collect()
-}
-
-#[derive(PartialEq, Properties)]
-pub struct PaginationWrappedProperties {
-    pub children: Children,
-    pub pagination: UsePagination,
-    pub total: Option<usize>,
-}
-
-#[function_component(PaginationWrapped)]
-pub fn pagination_wrapped(props: &PaginationWrappedProperties) -> Html {
-    html!(
-        <>
-            <div class="pf-v5-u-p-sm">
-                <SimplePagination
-                    pagination={props.pagination.clone()}
-                    total={props.total}
-                />
-            </div>
-            { for props.children.iter() }
-            <div class="pf-v5-u-p-sm">
-                <SimplePagination
-                    pagination={props.pagination.clone()}
-                    total={props.total}
-                    position={PaginationPosition::Bottom}
-                />
-            </div>
-        </>
-    )
 }

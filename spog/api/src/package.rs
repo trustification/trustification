@@ -33,6 +33,7 @@ params(
 ("id" = String, Path, description = "Id of advisory to fetch"),
 )
 )]
+
 pub async fn packages_search_mock(
     web::Query(params): web::Query<search::QueryParams>,
 ) -> actix_web::Result<HttpResponse> {
@@ -44,9 +45,7 @@ pub async fn packages_search_mock(
     Ok(HttpResponse::Ok().json(result))
 }
 
-pub async fn package_get_mock(
-    web::Query(params): web::Query<search::QueryParams>,
-) -> actix_web::Result<HttpResponse> {
+pub async fn package_get_mock(web::Query(params): web::Query<search::QueryParams>) -> actix_web::Result<HttpResponse> {
     let pkgs = make_mock_data();
     Ok(HttpResponse::Ok().json(&pkgs[0]))
 }

@@ -19,7 +19,8 @@ use spog_model::cve::{
 };
 use std::collections::{BTreeMap, BTreeSet, HashSet};
 use std::sync::Arc;
-use trustification_api::search::SearchResult;
+use tracing::instrument;
+use trustification_api::search::{SearchOptions, SearchResult};
 use trustification_auth::authenticator::Authenticator;
 use trustification_auth::client::{BearerTokenProvider, TokenProvider};
 use trustification_infrastructure::new_auth;
@@ -37,6 +38,7 @@ pub(crate) fn configure(auth: Option<Arc<Authenticator>>) -> impl FnOnce(&mut Se
     }
 }
 
+#[instrument(skip(v11y, state), err)]
 async fn cve_search(
     web::Query(params): web::Query<search::QueryParams>,
     v11y: web::Data<V11yService>,
@@ -65,9 +67,14 @@ async fn cve_search(
 }
 
 /// return the number of related advisories for a CVE
+#[instrument(skip(state), err, ret)]
 async fn count_related_advisories(state: &AppState, cve: &str) -> Result<usize, Error> {
+    let options = SearchOptions {
+        summaries: false,
+        ..Default::default()
+    };
     let result = state
-        .search_vex(&format!(r#"cve:"{}""#, cve), 0, 1, Default::default(), &*state.provider)
+        .search_vex(&format!(r#"cve:"{}""#, cve), 0, 1000, options, &*state.provider)
         .await?;
     Ok(result.total)
 }
@@ -78,6 +85,7 @@ async fn count_related_products(_cve: &str) -> Result<usize, Error> {
     Ok(0)
 }
 
+#[instrument(skip(v11y), err)]
 async fn cve_get(id: web::Path<String>, v11y: web::Data<V11yService>) -> actix_web::Result<HttpResponse> {
     let id = id.into_inner();
 
@@ -100,6 +108,7 @@ async fn cve_related_product(
 
     Ok(HttpResponse::Ok().json(result))
 }
+
 // TODO remove this method using real data
 #[allow(dead_code)]
 async fn cve_details_mock(
@@ -248,6 +257,7 @@ async fn cve_details(
     Ok(HttpResponse::Ok().json(build_cve_details(&app_state, &guac, provider, id, &collectorist, &v11y).await?))
 }
 
+#[instrument(skip_all, fields(cve_id = %cve_id), err)]
 async fn build_cve_details<P>(
     app: &AppState,
     _guac: &GuacService,
@@ -262,7 +272,7 @@ where
     collectorist.trigger_vulnerability(&cve_id).await?;
     let details = v11y.fetch_by_alias(&cve_id).await?;
 
-    log::info!("Details: {details:#?}");
+    log::debug!("Details: {details:#?}");
 
     // fetch from index
 

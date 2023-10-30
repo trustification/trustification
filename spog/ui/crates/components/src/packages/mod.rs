@@ -20,7 +20,7 @@ pub struct PackagesEntry {
 #[derive(PartialEq, Properties)]
 pub struct PackagesResultProperties {
     pub state: UseAsyncState<SearchResult<Rc<Vec<PackageInfoSummary>>>, String>,
-    pub onsort: Callback<(String, bool)>,
+    pub onsort: Callback<(String, Order)>,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq)]
@@ -124,13 +124,13 @@ pub fn package_result(props: &PackagesResultProperties) -> Html {
             sortby.set(Some(val));
             match &val.index {
                 Column::Name => {
-                    onsort.emit(("name".to_string(), val.asc));
+                    onsort.emit(("name".to_string(), val.order));
                 }
                 Column::Version => {
-                    onsort.emit(("version".to_string(), val.asc));
+                    onsort.emit(("version".to_string(), val.order));
                 }
                 Column::PackageType => {
-                    onsort.emit(("package_type".to_string(), val.asc));
+                    onsort.emit(("package_type".to_string(), val.order));
                 }
                 _ => {}
             }

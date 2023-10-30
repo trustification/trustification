@@ -6,6 +6,8 @@ use std::sync::Arc;
 use actix_web::{post, web, HttpResponse, Responder, ResponseError};
 use derive_more::Display;
 use guac::client::intrinsic::certify_vuln::ScanMetadataInput;
+use guac::client::intrinsic::vuln_equal::VulnEqualInputSpec;
+use guac::client::intrinsic::vuln_metadata::{VulnerabilityMetadataInputSpec, VulnerabilityScoreType};
 use guac::client::intrinsic::vulnerability::VulnerabilityInputSpec;
 use packageurl::PackageUrl;
 use utoipa::OpenApi;
@@ -20,6 +22,7 @@ use trustification_infrastructure::app::http::{HttpServerBuilder, HttpServerConf
 use trustification_infrastructure::endpoint::CollectorOsv;
 use trustification_infrastructure::{new_auth, MainContext};
 
+use crate::client::schema::SeverityType;
 use crate::{
     client::{schema::Package, QueryBatchRequest, QueryPackageRequest},
     AppState,
@@ -204,6 +207,7 @@ pub async fn collect_vulnerabilities(
     // any errors as they occur, and keep on processing.
     let mut collected_osv_errors = Vec::new();
     let mut collected_v11y_errors = Vec::new();
+    let mut collected_guac_errors = Vec::new();
 
     for vuln_id in &request.vulnerability_ids {
         match state.osv.vulns(vuln_id).await {
@@ -211,6 +215,119 @@ pub async fn collect_vulnerabilities(
                 // We note that OSV did indeed find a record for the specified
                 // vulnerability ID.
                 vulnerability_ids.push(osv_vuln.id.clone());
+
+                let osv_vuln_input_spec = VulnerabilityInputSpec {
+                    r#type: "osv".to_string(),
+                    vulnerability_id: osv_vuln.id.clone(),
+                };
+
+                if let Err(err) = state
+                    .guac_client
+                    .intrinsic()
+                    .ingest_vulnerability(&osv_vuln_input_spec)
+                    .await
+                {
+                    collected_guac_errors.push(err);
+                } else {
+                    if let Some(severities) = &osv_vuln.severity {
+                        for severity in severities {
+                            if matches!(severity.severity_type, SeverityType::CVSSv3) {
+                                if let Ok(cvss) = cvss::v3::Base::from_str(&severity.score) {
+                                    if let Err(err) = state
+                                        .guac_client
+                                        .intrinsic()
+                                        .ingest_vuln_metadata(
+                                            &osv_vuln_input_spec,
+                                            &VulnerabilityMetadataInputSpec {
+                                                score_type: if cvss.minor_version == 0 {
+                                                    VulnerabilityScoreType::CVSSv3
+                                                } else {
+                                                    VulnerabilityScoreType::CVSSv31
+                                                },
+                                                score_value: cvss.score().value(),
+                                                timestamp: Default::default(),
+                                                origin: "osv".to_string(),
+                                                collector: "osv".to_string(),
+                                            },
+                                        )
+                                        .await
+                                    {
+                                        collected_guac_errors.push(err)
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    if let Some(aliases) = &osv_vuln.aliases {
+                        for alias in aliases {
+                            let alias_vuln_input_spec = VulnerabilityInputSpec {
+                                r#type: "osv".to_string(),
+                                vulnerability_id: alias.clone(),
+                            };
+
+                            if let Err(err) = state
+                                .guac_client
+                                .intrinsic()
+                                .ingest_vulnerability(&alias_vuln_input_spec)
+                                .await
+                            {
+                                collected_guac_errors.push(err);
+                            }
+
+                            if let Err(err) = state
+                                .guac_client
+                                .intrinsic()
+                                .ingest_vuln_equal(
+                                    &osv_vuln_input_spec,
+                                    &alias_vuln_input_spec,
+                                    &VulnEqualInputSpec {
+                                        collector: "osv".to_string(),
+                                        origin: "osv".to_string(),
+                                        justification: "osv".to_string(),
+                                    },
+                                )
+                                .await
+                            {
+                                collected_guac_errors.push(err);
+                            }
+
+                            // special-case for CVEs
+                            if alias.to_lowercase().starts_with("cve") {
+                                let alias_vuln_input_spec = VulnerabilityInputSpec {
+                                    r#type: "cve".to_string(),
+                                    vulnerability_id: alias.clone(),
+                                };
+
+                                if let Err(err) = state
+                                    .guac_client
+                                    .intrinsic()
+                                    .ingest_vulnerability(&alias_vuln_input_spec)
+                                    .await
+                                {
+                                    collected_guac_errors.push(err);
+                                }
+
+                                if let Err(err) = state
+                                    .guac_client
+                                    .intrinsic()
+                                    .ingest_vuln_equal(
+                                        &osv_vuln_input_spec,
+                                        &alias_vuln_input_spec,
+                                        &VulnEqualInputSpec {
+                                            collector: "osv".to_string(),
+                                            origin: "osv".to_string(),
+                                            justification: "osv".to_string(),
+                                        },
+                                    )
+                                    .await
+                                {
+                                    collected_guac_errors.push(err);
+                                }
+                            }
+                        }
+                    }
+                }
 
                 let v11y_vuln = v11y_client::Vulnerability::from(osv_vuln);
                 if let Err(err) = state.v11y_client.ingest_vulnerability(&v11y_vuln).await {
@@ -234,6 +351,7 @@ pub async fn collect_vulnerabilities(
             .iter()
             .map(|err| err.to_string())
             .chain(collected_v11y_errors.iter().map(|err| err.to_string()))
+            .chain(collected_guac_errors.iter().map(|err| err.to_string()))
             .collect(),
     };
 

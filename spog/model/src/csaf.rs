@@ -1,6 +1,7 @@
-use csaf::definitions::{Branch, BranchesT};
-use csaf::product_tree::Relationship;
+use csaf::definitions::{Branch, BranchesT, ProductIdT};
+use csaf::product_tree::{ProductTree, Relationship};
 use csaf::Csaf;
+use std::collections::HashSet;
 
 /// build the chain form a product ID up to the parent
 pub fn trace_product<'a>(csaf: &'a Csaf, product_id: &str) -> Vec<&'a Branch> {
@@ -21,6 +22,103 @@ pub fn trace_product<'a>(csaf: &'a Csaf, product_id: &str) -> Vec<&'a Branch> {
     result
 }
 
+/// check if a list of IDs has the purl as the final branch element
+pub fn has_purl(csaf: &Csaf, ids: &Option<Vec<ProductIdT>>, purl: &str) -> bool {
+    let ids = match ids {
+        Some(ids) => ids,
+        None => return false,
+    };
+
+    static EMPTY: Vec<Relationship> = vec![];
+
+    let rel = csaf
+        .product_tree
+        .as_ref()
+        .and_then(|pt| pt.relationships.as_ref())
+        .unwrap_or(&EMPTY);
+
+    let mut has = false;
+    let ids = HashSet::from_iter(ids.iter().map(|p| p.0.as_str()));
+
+    // find the branch of the PURL
+    walk_product_tree_branches(&csaf.product_tree, |parents, branch| {
+        if branch_has_purl(branch, purl) {
+            // this branch has the purl, check if it's product is contained in the id set
+            if contains_product(rel, &ids, branch) {
+                has = true;
+            }
+            // or if any of its parents is
+            for parent in parents {
+                if contains_product(rel, &ids, parent) {
+                    has = true;
+                }
+            }
+        }
+    });
+
+    has
+}
+
+/// find all product IDs related to this one
+pub fn related_product_ids<'a>(rel: &'a [Relationship], id: &'a str) -> impl Iterator<Item = &'a str> + 'a {
+    rel.iter()
+        .filter(move |rel| rel.product_reference.0 == id)
+        .map(|rel| rel.full_product_name.product_id.0.as_str())
+}
+
+pub fn product_id(branch: &Branch) -> Option<&str> {
+    branch.product.as_ref().map(|p| p.product_id.0.as_str())
+}
+
+/// check if the product ID of branch is contained in the set
+pub fn contains_product(rel: &[Relationship], ids: &HashSet<&str>, branch: &Branch) -> bool {
+    let id = product_id(branch);
+    match id {
+        Some(id) => {
+            // directly in the set
+            if ids.contains(id) {
+                return true;
+            }
+
+            // or any of its related
+            let related = related_product_ids(rel, id).collect::<Vec<_>>();
+            for related in related {
+                if ids.contains(related) {
+                    return true;
+                }
+            }
+
+            false
+        }
+        None => false,
+    }
+}
+
+/// check if the branch is identified using the provided purl
+pub fn branch_has_purl(branch: &Branch, purl: &str) -> bool {
+    if let Some(x) = branch
+        .product
+        .as_ref()
+        .and_then(|p| p.product_identification_helper.as_ref())
+        .and_then(|pih| pih.purl.as_ref())
+    {
+        x.to_string() == purl
+    } else {
+        false
+    }
+}
+
+#[allow(clippy::needless_lifetimes)]
+pub fn walk_product_tree_branches<'a, F>(product_tree: &'a Option<ProductTree>, f: F)
+where
+    F: FnMut(&[&'a Branch], &'a Branch),
+{
+    if let Some(product_tree) = &product_tree {
+        walk_product_branches(&product_tree.branches, f);
+    }
+}
+
+#[allow(clippy::needless_lifetimes)]
 pub fn walk_product_branches<'a, F>(branches: &'a Option<BranchesT>, mut f: F)
 where
     F: FnMut(&[&'a Branch], &'a Branch),

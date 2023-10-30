@@ -9,9 +9,9 @@ use actix_web::{
     App, Error,
 };
 use actix_web_extras::middleware::Condition;
+use actix_web_opentelemetry::RequestTracing;
 use actix_web_prom::PrometheusMetrics;
 use std::sync::Arc;
-use tracing_actix_web::{DefaultRootSpanBuilder, TracingLogger};
 use trustification_auth::authenticator::Authenticator;
 use trustification_auth::authorizer::Authorizer;
 
@@ -22,7 +22,7 @@ pub struct AppOptions {
     pub authenticator: Option<Arc<Authenticator>>,
     pub authorizer: Authorizer,
     pub logger: Option<Logger>,
-    pub tracing_logger: Option<TracingLogger<DefaultRootSpanBuilder>>,
+    pub tracing_logger: Option<RequestTracing>,
 }
 
 #[macro_export]

@@ -18,6 +18,7 @@ use exhort_model::AnalyzeRequest;
 use futures::future::select_all;
 use http::StatusCode;
 use spog_model::search;
+use tracing::instrument;
 use trustification_analytics::Tracker;
 use trustification_api::{search::SearchOptions, Apply};
 use trustification_auth::{
@@ -26,6 +27,7 @@ use trustification_auth::{
     client::{TokenInjector, TokenProvider},
     swagger_ui::SwaggerUiOidc,
 };
+use trustification_infrastructure::tracing::PropagateCurrentContext;
 use trustification_infrastructure::{app::http::HttpServerBuilder, MainContext};
 use trustification_version::version;
 use utoipa::OpenApi;
@@ -190,6 +192,7 @@ pub struct AppState {
 }
 
 impl AppState {
+    #[instrument(skip(self, provider), err)]
     pub async fn get_sbom(
         &self,
         id: &str,
@@ -200,6 +203,7 @@ impl AppState {
             .client
             .get(url)
             .query(&[("id", id)])
+            .propagate_current_context()
             .inject_token(provider)
             .await?
             .send()
@@ -210,6 +214,7 @@ impl AppState {
         Ok(response.bytes_stream())
     }
 
+    #[instrument(skip(self, provider), err)]
     pub async fn search_sbom(
         &self,
         q: &str,
@@ -225,6 +230,7 @@ impl AppState {
             .query(&[("q", q)])
             .query(&[("offset", offset), ("limit", limit)])
             .apply(&options)
+            .propagate_current_context()
             .inject_token(provider)
             .await?
             .send()
@@ -235,6 +241,7 @@ impl AppState {
         Ok(response.json::<bombastic_model::prelude::SearchResult>().await?)
     }
 
+    #[instrument(skip(self, provider), err)]
     pub async fn get_vex(
         &self,
         id: &str,
@@ -245,6 +252,7 @@ impl AppState {
             .client
             .get(url)
             .query(&[("advisory", id)])
+            .propagate_current_context()
             .inject_token(provider)
             .await?
             .send()
@@ -255,6 +263,7 @@ impl AppState {
         Ok(response.bytes_stream())
     }
 
+    #[instrument(skip(self, provider), err)]
     pub async fn search_vex(
         &self,
         q: &str,
@@ -270,6 +279,7 @@ impl AppState {
             .query(&[("q", q)])
             .query(&[("offset", offset), ("limit", limit)])
             .apply(&options)
+            .propagate_current_context()
             .inject_token(provider)
             .await?
             .send()
@@ -281,6 +291,7 @@ impl AppState {
     }
 
     #[allow(unused)]
+    #[instrument(skip(self, provider), err)]
     pub async fn analyze_sbom(
         &self,
         purls: Vec<String>,
@@ -290,6 +301,7 @@ impl AppState {
         let response = self
             .client
             .post(url)
+            .propagate_current_context()
             .inject_token(provider)
             .await?
             .json(&AnalyzeRequest { purls })
