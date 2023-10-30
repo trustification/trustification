@@ -2,7 +2,7 @@ mod cve;
 
 use packageurl::PackageUrl;
 use patternfly_yew::prelude::*;
-use spog_model::prelude::{Backtrace, Remediation, SbomReportVulnerability};
+use spog_model::prelude::*;
 use spog_ui_components::{cvss::CvssScore, pagination::PaginationWrapped, time::Date};
 use std::cmp::Ordering;
 use std::collections::{BTreeMap, BTreeSet};
@@ -40,7 +40,7 @@ pub fn details(props: &DetailsProps) -> Html {
                 Column::Description => html!({ for self.vuln.description.clone() }).into(),
                 Column::Cvss => html!(
                     <>
-                        if let Some(score) = self.vuln.score {
+                        if let Some(score) = self.vuln.score(&Source::Mitre) {
                             <CvssScore cvss={score} />
                         }
                     </>
@@ -118,7 +118,11 @@ pub fn details(props: &DetailsProps) -> Html {
 
         result.sort_by(|a, b| {
             let result = match sort_by.index {
-                Column::Cvss => a.vuln.score.partial_cmp(&b.vuln.score).unwrap_or(Ordering::Equal),
+                Column::Cvss => a
+                    .vuln
+                    .score(&Source::Mitre)
+                    .partial_cmp(&b.vuln.score(&Source::Mitre))
+                    .unwrap_or(Ordering::Equal),
                 Column::AffectedPackages => a.vuln.affected_packages.len().cmp(&b.vuln.affected_packages.len()),
                 Column::Published => a.vuln.published.cmp(&b.vuln.published),
                 Column::Updated => a.vuln.updated.cmp(&b.vuln.updated),

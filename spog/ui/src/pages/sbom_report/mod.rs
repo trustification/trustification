@@ -6,7 +6,7 @@ use convert_case::{Case, Casing};
 use details::Details;
 use patternfly_yew::prelude::*;
 use serde_json::{json, Value};
-use spog_model::prelude::SummaryEntry;
+use spog_model::prelude::*;
 use spog_ui_backend::use_backend;
 use spog_ui_common::error::components::Error;
 use spog_ui_components::{
@@ -122,7 +122,13 @@ pub fn sbom(props: &SbomReportProperties) -> Html {
 
 /// build the options for the donut chart
 fn donut_options(data: &spog_model::vuln::SbomReport) -> Value {
-    let mut summary = data.summary.clone();
+    let mut summary = data
+        .summary
+        .iter()
+        .find(|(k, _)| *k == Source::Mitre)
+        .map(|(_, v)| v)
+        .cloned()
+        .unwrap_or_else(Vec::new);
 
     // reverse sort
     summary.sort_unstable_by(|a, b| b.severity.cmp(&a.severity));

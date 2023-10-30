@@ -151,7 +151,15 @@ async fn process_get_vulnerabilities(
 
     let summary = summarize_vulns(&details)
         .into_iter()
-        .map(|(severity, count)| SummaryEntry { severity, count })
+        .map(|(source, counts)| {
+            (
+                source,
+                counts
+                    .into_iter()
+                    .map(|(severity, count)| SummaryEntry { severity, count })
+                    .collect::<Vec<_>>(),
+            )
+        })
         .collect();
 
     // done
@@ -245,12 +253,15 @@ fn get_score(cve: &Cve) -> Option<f32> {
 /// Collect a summary of count, based on CVSS v3 severities
 fn summarize_vulns<'a>(
     vulnerabilities: impl IntoIterator<Item = &'a SbomReportVulnerability>,
-) -> BTreeMap<Option<cvss::Severity>, usize> {
-    let mut result = BTreeMap::new();
+) -> BTreeMap<Source, BTreeMap<Option<cvss::Severity>, usize>> {
+    let mut result = BTreeMap::<Source, BTreeMap<_, _>>::new();
 
     for v in vulnerabilities.into_iter() {
-        let score = v.score.map(into_severity);
-        *result.entry(score).or_default() += 1;
+        for (source, details) in &v.sources {
+            let result = result.entry(*source).or_default();
+            let score = details.score.map(into_severity);
+            *result.entry(score).or_default() += 1;
+        }
     }
 
     result
