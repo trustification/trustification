@@ -22,6 +22,22 @@ impl PackageInfoService {
         }
     }
 
+    pub async fn get(&self, id: impl AsRef<str>) -> Result<PackageInfoSummary, ApiError> {
+        let url = self.backend.join(
+            Endpoint::Api,
+            &format!("/api/v1/package_info/{id}", id = urlencoding::encode(id.as_ref())),
+        )?;
+
+        let response = self
+            .client
+            .get(url)
+            .latest_access_token(&self.access_token)
+            .send()
+            .await?;
+
+        Ok(response.api_error_for_status().await?.json().await?)
+    }
+
     pub async fn search_packages(
         &self,
         q: &str,
