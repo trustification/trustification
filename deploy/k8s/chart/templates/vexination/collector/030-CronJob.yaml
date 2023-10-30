@@ -37,9 +37,10 @@ spec:
               args:
                 - "collect"
                 - "s3"
-                - "--poll"
                 - "--s3-bucket"
                 - "{{ .Values.vexination.bucket }}"
+                - "--s3-region"
+                - "{{ .Values.region }}"
               workingDir: "/guac"
               env:
                 - name: NAMESPACE
