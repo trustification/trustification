@@ -99,8 +99,6 @@ pub fn config(cfg: &mut web::ServiceConfig, auth: Option<Arc<Authenticator>>) {
     cfg.service(
         web::scope("/api/v1")
             .wrap(new_auth!(auth))
-            .wrap(Logger::default())
-            .wrap(Compress::default())
             .service(collect_vulnerabilities),
     )
     .service(SwaggerUi::new("/swagger-ui/{_:.*}").url("/openapi.json", ApiDoc::openapi()));
