@@ -1970,7 +1970,7 @@ objects:
                 app.kubernetes.io/part-of: trustification
                 metrics: 'true'
             spec:
-              restartPolicy: OnFailure
+              restartPolicy: Never
               volumes:
                 - name: config
                   configMap:
@@ -2226,7 +2226,7 @@ objects:
                 app.kubernetes.io/part-of: trustification
                 metrics: 'true'
             spec:
-              restartPolicy: OnFailure
+              restartPolicy: Never
               volumes:
                 - name: config
                   configMap:
