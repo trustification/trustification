@@ -233,6 +233,9 @@ pub fn search(props: &SearchProperties) -> Html {
                             <Visible visible={*tab == TabIndex::Packages}>
                                 <SbomSearchControls search_params={package.search_params.clone()} />
                             </Visible>
+                            <Visible visible={*tab == TabIndex::Packages}>
+                                <SbomSearchControls search_params={package.search_params.clone()} />
+                            </Visible>
                             <Visible visible={*tab == TabIndex::Sboms}>
                                 <SbomSearchControls search_params={sbom.search_params.clone()} />
                             </Visible>

@@ -5,6 +5,7 @@ use actix_web::{
 };
 use spog_model::package_info::{PackageInfo, V11yRef};
 use std::sync::Arc;
+use spog_model::prelude::{PackageProductDetails, ProductRelatedToPackage};
 use trustification_api::search::SearchResult;
 use trustification_auth::authenticator::Authenticator;
 use trustification_infrastructure::new_auth;
@@ -15,8 +16,8 @@ pub(crate) fn configure(auth: Option<Arc<Authenticator>>) -> impl FnOnce(&mut Se
             web::scope("/api/v1/package_info")
                 .wrap(new_auth!(auth))
                 .service(web::resource("/search").to(packages_search_mock))
-                .service(web::resource("/{id}").to(package_get_mock)),
-            // .service(web::resource("/{id}/related-products").to(cve_related_product)),
+                .service(web::resource("/{id}").to(package_get_mock))
+                .service(web::resource("/{id}/related-products").to(package_related_products)),
         );
     }
 }
@@ -49,6 +50,25 @@ pub async fn package_get_mock(web::Query(params): web::Query<search::QueryParams
     Ok(HttpResponse::Ok().json(&pkgs[0]))
 }
 
+// TODO Replace mock data
+pub async fn package_related_products(
+    web::Query(params): web::Query<search::QueryParams>,
+) -> actix_web::Result<HttpResponse> {
+    let related_products = vec![
+        ProductRelatedToPackage {
+            sbom_id: "3amp-2.json.bz2".to_string(),
+            dependency_type: "Direct".to_string(),
+        },
+        ProductRelatedToPackage {
+            sbom_id: "3amp-2.json.bz2".to_string(),
+            dependency_type: "Transitive".to_string(),
+        }];
+    let result = PackageProductDetails {
+        related_products
+    };
+    Ok(HttpResponse::Ok().json(&result))
+}
+
 fn make_mock_data() -> Vec<PackageInfo> {
     let mut packages = vec![
         PackageInfo {
@@ -68,22 +88,22 @@ fn make_mock_data() -> Vec<PackageInfo> {
             supplier: "Organization: Red Hat".to_string().into(),
             vulnerabilities: vec![
                 V11yRef {
-                    cve: "cve-2023-0286".to_string().into(),
+                    cve: "CVE-2023-5511".to_string().into(),
                     href: "https://access.redhat.com/security/cve/cve-2023-0286".into(),
                     severity: "low".to_string(),
                 },
                 V11yRef {
-                    cve: "cve-2023-0286".to_string().into(),
+                    cve: "CVE-2023-5511".to_string().into(),
                     href: "https://access.redhat.com/security/cve/cve-2023-0286".into(),
                     severity: "medium".to_string(),
                 },
                 V11yRef {
-                    cve: "cve-2023-0286".to_string().into(),
+                    cve: "CVE-2023-5511".to_string().into(),
                     href: "https://access.redhat.com/security/cve/cve-2023-0286".into(),
                     severity: "high".to_string(),
                 },
                 V11yRef {
-                    cve: "cve-2023-0286".to_string().into(),
+                    cve: "CVE-2023-5511".to_string().into(),
                     href: "https://access.redhat.com/security/cve/cve-2023-0286".into(),
                     severity: "critical".to_string(),
                 },
