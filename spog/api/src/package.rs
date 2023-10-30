@@ -5,6 +5,7 @@ use actix_web::{
 };
 use spog_model::package_info::{PackageInfo, V11yRef};
 use std::sync::Arc;
+use spog_model::prelude::{PackageProductDetails, ProductRelatedToPackage};
 use trustification_api::search::SearchResult;
 use trustification_auth::authenticator::Authenticator;
 use trustification_infrastructure::new_auth;
@@ -15,8 +16,8 @@ pub(crate) fn configure(auth: Option<Arc<Authenticator>>) -> impl FnOnce(&mut Se
             web::scope("/api/v1/package_info")
                 .wrap(new_auth!(auth))
                 .service(web::resource("/search").to(packages_search_mock))
-                .service(web::resource("/{id}").to(package_get_mock)),
-            // .service(web::resource("/{id}/related-products").to(cve_related_product)),
+                .service(web::resource("/{id}").to(package_get_mock))
+                .service(web::resource("/{id}/related-products").to(package_related_products)),
         );
     }
 }
@@ -32,7 +33,6 @@ params(
 ("id" = String, Path, description = "Id of advisory to fetch"),
 )
 )]
-
 pub async fn packages_search_mock(
     web::Query(params): web::Query<search::QueryParams>,
 ) -> actix_web::Result<HttpResponse> {
@@ -49,6 +49,25 @@ pub async fn package_get_mock(
 ) -> actix_web::Result<HttpResponse> {
     let pkgs = make_mock_data();
     Ok(HttpResponse::Ok().json(&pkgs[0]))
+}
+
+// TODO Replace mock data
+pub async fn package_related_products(
+    web::Query(params): web::Query<search::QueryParams>,
+) -> actix_web::Result<HttpResponse> {
+    let related_products = vec![
+        ProductRelatedToPackage {
+            sbom_id: "3amp-2.json.bz2".to_string(),
+            dependency_type: "Direct".to_string(),
+        },
+        ProductRelatedToPackage {
+            sbom_id: "3amp-2.json.bz2".to_string(),
+            dependency_type: "Transitive".to_string(),
+        }];
+    let result = PackageProductDetails {
+        related_products
+    };
+    Ok(HttpResponse::Ok().json(&result))
 }
 
 fn make_mock_data() -> Vec<PackageInfo> {

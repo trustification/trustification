@@ -2,12 +2,11 @@ use crate::pages::search::PaginationWrapped;
 use futures::future::try_join_all;
 use patternfly_yew::prelude::*;
 use spog_model::{
-    prelude::{CveSearchDocument, V11yRef},
-    search::PackageInfoSummary,
+    prelude::{PackageProductDetails, ProductRelatedToPackage},
+    search::PackageSummary,
 };
-use spog_ui_backend::{use_backend, CveService};
-use spog_ui_common::{utils::cvss::Cvss, utils::time::date, utils::OrNone};
-use spog_ui_components::{async_state_renderer::async_content, cvss::CvssScore};
+use spog_ui_backend::{use_backend, PackageService};
+use spog_ui_components::async_state_renderer::async_content;
 use spog_ui_navigation::{AppRoute, View};
 use std::rc::Rc;
 use yew::prelude::*;
@@ -17,16 +16,17 @@ use yew_oauth2::prelude::use_latest_access_token;
 
 #[derive(PartialEq)]
 pub struct TableData {
-    id: String,
-    cve: Option<CveSearchDocument>,
+    sbom_id: String,
+    dependency_type: String,
+    sbom: Option<PackageSummary>,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq)]
 pub enum Column {
     Id,
-    Description,
-    Severity,
-    DatePublished,
+    Version,
+    Supplier,
+    Dependency,
 }
 
 impl TableEntryRenderer<Column> for TableData {
@@ -34,29 +34,21 @@ impl TableEntryRenderer<Column> for TableData {
         match context.column {
             Column::Id => html!(
                 <Link<AppRoute>
-                    target={AppRoute::Cve(View::Content{id: self.id.clone()})}
-                >{ self.id.clone() }</Link<AppRoute>>
+                    target={AppRoute::Sbom(View::Content{id: self.sbom_id.to_string()})}
+                >{ self.sbom_id.clone() }</Link<AppRoute>>
             ),
-            Column::Description => html!( <>
-                if let Some(cve) = &self.cve {
-                    if let Some(title) = &cve.title {
-                        { title }
-                    } else {
-                        { for cve.descriptions.iter() }
-                    }
+            Column::Version => html!(<>
+                if let Some(sbom) = &self.sbom {
+                    {&sbom.version}
                 }
             </>),
-            Column::Severity => html!( <>
-                if let Some(cve) = &self.cve {
-                    if let Some(score)= &cve.cvss3x_score {
-                        <CvssScore cvss={Cvss{score: (*score) as _}} />
-                    }
+            Column::Supplier => html!(<>
+                if let Some(sbom) = &self.sbom {
+                    {&sbom.supplier}
                 }
             </>),
-            Column::DatePublished => html!( <>
-                if let Some(cve) = &self.cve {
-                    {OrNone(cve.date_published).map(date)}
-                }
+            Column::Dependency => html!(<>
+                {&self.dependency_type}
             </>),
         }
         .into()
@@ -64,22 +56,24 @@ impl TableEntryRenderer<Column> for TableData {
 }
 
 #[derive(PartialEq, Properties)]
-pub struct VulnerabilitiesProperties {
-    pub package: Rc<PackageInfoSummary>,
+pub struct RelatedProductsProperties {
+    pub related_products_details: Rc<PackageProductDetails>,
 }
 
-#[function_component(Vulnerabilities)]
-pub fn vulnerabilities(props: &VulnerabilitiesProperties) -> Html {
+#[function_component(RelatedProducts)]
+pub fn related_products(props: &RelatedProductsProperties) -> Html {
     let backend = use_backend();
     let access_token = use_latest_access_token();
 
-    let cves_detail = {
+    let sboms = {
         let backend = backend.clone();
         let access_token = access_token.clone();
         use_async_with_cloned_deps(
-            move |vulnerabilities| async move {
-                let service = CveService::new(backend.clone(), access_token.clone());
-                let futures = vulnerabilities.iter().map(|vuln| service.get_from_index(&vuln.cve));
+            move |related_products| async move {
+                let service = PackageService::new(backend.clone(), access_token.clone());
+                let futures = related_products
+                    .iter()
+                    .map(|related_product| service.get_package(&related_product.sbom_id));
                 try_join_all(futures)
                     .await
                     .map(|vec| {
@@ -97,20 +91,20 @@ pub fn vulnerabilities(props: &VulnerabilitiesProperties) -> Html {
                     .map(Rc::new)
                     .map_err(|err| err.to_string())
             },
-            props.package.vulnerabilities.clone(),
+            props.related_products_details.related_products.clone(),
         )
     };
 
-    match props.package.vulnerabilities.is_empty() {
+    match props.related_products_details.related_products.is_empty() {
         true => html!(
             <Panel>
                 <PanelMain>
                     <Bullseye>
                         <EmptyState
-                            title="No related vulnerabilities"
+                            title="No related products"
                             icon={Icon::Search}
                         >
-                            { "No related vulnerabilities have been found." }
+                            { "No related products have been found." }
                         </EmptyState>
                     </Bullseye>
                 </PanelMain>
@@ -118,7 +112,7 @@ pub fn vulnerabilities(props: &VulnerabilitiesProperties) -> Html {
         ),
         false => html!(
             <>
-                { async_content(&*cves_detail, |cves_detail| html!(<VulnerabilitiesTable vulnerabilities={props.package.vulnerabilities.clone()}  details={cves_detail} />)) }
+                { async_content(&*sboms, |sboms| html!(<RelatedProductsTable {sboms} related_products={props.related_products_details.related_products.clone()} />)) }
             </>
         ),
     }
@@ -127,25 +121,26 @@ pub fn vulnerabilities(props: &VulnerabilitiesProperties) -> Html {
 // Table
 
 #[derive(PartialEq, Properties)]
-pub struct VulnerabilitiesTableProperties {
-    pub vulnerabilities: Vec<V11yRef>,
-    pub details: Rc<Vec<Option<CveSearchDocument>>>,
+pub struct RelatedProductsTableProperties {
+    pub related_products: Vec<ProductRelatedToPackage>,
+    pub sboms: Rc<Vec<Option<PackageSummary>>>,
 }
 
-#[function_component(VulnerabilitiesTable)]
-pub fn vulnerabilities_table(props: &VulnerabilitiesTableProperties) -> Html {
+#[function_component(RelatedProductsTable)]
+pub fn related_products_table(props: &RelatedProductsTableProperties) -> Html {
     let table_data = use_memo(
-        (props.vulnerabilities.clone(), props.details.clone()),
-        |(vulnerabilities, details)| {
-            vulnerabilities
+        (props.related_products.clone(), props.sboms.clone()),
+        |(related_products, sboms)| {
+            related_products
                 .iter()
                 .enumerate()
                 .map(|(index, item)| {
-                    let detail_by_index = &details[index];
+                    let sbom_by_index = &sboms[index];
 
                     TableData {
-                        id: item.cve.clone(),
-                        cve: detail_by_index.clone(),
+                        sbom_id: item.sbom_id.clone(),
+                        dependency_type: item.dependency_type.clone(),
+                        sbom: sbom_by_index.clone(),
                     }
                 })
                 .collect::<Vec<_>>()
@@ -157,10 +152,10 @@ pub fn vulnerabilities_table(props: &VulnerabilitiesTableProperties) -> Html {
 
     let header = html_nested! {
         <TableHeader<Column>>
-            <TableColumn<Column> label="ID" index={Column::Id} />
-            <TableColumn<Column> label="Description" index={Column::Description} />
-            <TableColumn<Column> label="Severity" index={Column::Severity} />
-            <TableColumn<Column> label="Date published" index={Column::DatePublished} />
+            <TableColumn<Column> label="Name" index={Column::Id} />
+            <TableColumn<Column> label="Version" index={Column::Version} />
+            <TableColumn<Column> label="Supplier" index={Column::Supplier} />
+            <TableColumn<Column> label="Dependency" index={Column::Dependency} />
         </TableHeader<Column>>
     };
 

@@ -57,6 +57,17 @@ pub struct V11yRef {
     pub severity: String,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
+pub struct PackageProductDetails {
+    pub related_products: Vec<ProductRelatedToPackage>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
+pub struct ProductRelatedToPackage {
+    pub sbom_id: String,
+    pub dependency_type: String,
+}
+
 impl V11yRef {
     pub fn from_string(s: &str) -> V11yRef {
         let json: Value = serde_json::from_str(s).unwrap_or_default();

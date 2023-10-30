@@ -102,6 +102,19 @@ impl PackageService {
         Ok(response.error_for_status()?.json().await?)
     }
 
+    pub async fn get_package(&self, id: &str) -> Result<SearchResult<Vec<PackageSummary>>, Error> {
+        let q = format!("id:{id}");
+        let response = self
+            .client
+            .get(self.backend.join(Endpoint::Api, "/api/v1/package/search")?)
+            .query(&[("q", q)])
+            .latest_access_token(&self.access_token)
+            .send()
+            .await?;
+
+        Ok(response.error_for_status()?.json().await?)
+    }
+    
     /// common call of getting some refs for a batch of purls
     async fn batch_to_refs<'a, I, R>(&self, path: &str, purls: I) -> Result<R, Error>
     where
