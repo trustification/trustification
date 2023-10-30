@@ -38,7 +38,7 @@ bombastic:
   indexMode: file
   collector:
     enabled: true
-    queue: ${BOMBASTIC_INDEXER_GUAC_TOPIC}
+    schedule: ${BOMBASTIC_COLLECTOR_SCHEDULE}
   indexer:
     reindex: false
     index_sync_interval: ${BOMBASTIC_INDEXER_INDEX_SYNC_INTERVAL}
@@ -114,7 +114,7 @@ vexination:
   indexMode: file
   collector:
     enabled: true
-    queue: ${VEXINATION_INDEXER_GUAC_TOPIC}
+    schedule: ${VEXINATION_COLLECTOR_SCHEDULE}
   walker:
     enabled: true
     suspend: ${{VEXINATION_WALKER_SUSPEND}}

@@ -92,11 +92,15 @@ parameters:
 - name: K8S_NAMESPACE
   required: true
 - name: VEXINATION_WALKER_SCHEDULE
-  value: "1 0 * * *"
+  value: "10 * * * *"
 - name: BOMBASTIC_WALKER_SCHEDULE
-  value: "1 0 * * *"
+  value: "10 * * * *"
 - name: V11Y_WALKER_SCHEDULE
   value: "1 0 * * *"
+- name: VEXINATION_COLLECTOR_SCHEDULE
+  value: "30 * * * *"
+- name: BOMBASTIC_COLLECTOR_SCHEDULE
+  value: "0 * * * *"
 - name: V11Y_API_INDEX_SYNC_INTERVAL
   value: "1800s"
 - name: V11Y_INDEXER_INDEX_SYNC_INTERVAL

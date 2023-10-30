@@ -52,7 +52,6 @@ bombastic:
   indexMode: file
   collector:
     enabled: true
-    queue: sbom-indexed-staging
     schedule: "0 * * * *"
   indexer:
     topics:
@@ -90,7 +89,6 @@ vexination:
   indexMode: file
   collector:
     enabled: true
-    queue: vex-indexed-staging
     schedule: "30 * * * *"
   indexer:
     topics:
