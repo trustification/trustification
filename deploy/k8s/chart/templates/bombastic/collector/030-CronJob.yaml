@@ -21,7 +21,7 @@ spec:
             app.kubernetes.io/part-of: trustification
             metrics: "true"
         spec:
-          restartPolicy: OnFailure
+          restartPolicy: Never
           volumes:
             - name: config
               configMap:
@@ -62,6 +62,8 @@ spec:
               ports:
                 - containerPort: 2782
                   protocol: TCP
+              resources:
+                {{- toYaml .Values.bombastic.collector.resources | nindent 16 }}
               volumeMounts:
                 - name: guac-config
                   mountPath: /guac
