@@ -105,7 +105,7 @@ default-members = [
 ]
 
 [workspace.dependencies]
-guac = { git = "https://github.com/trustification/guac-rs.git", rev="76053d07948cf557b9d978ef39d574ed1562cf70" }
+guac = { git = "https://github.com/trustification/guac-rs.git", rev="6f94746714eb6146c4571d4d0b8f8a117da0f56c" }
 #guac = { path = "../guac-rs/lib" }
 
 [patch.crates-io]
