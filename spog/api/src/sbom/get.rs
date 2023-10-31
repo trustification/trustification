@@ -12,13 +12,13 @@ pub struct GetParams {
 
 #[utoipa::path(
     get,
-    path = "/api/v1/package",
+    path = "/api/v1/sbom",
     responses(
-        (status = 200, description = "Package was found"),
-        (status = NOT_FOUND, description = "Package was not found")
+        (status = 200, description = "SBOM was found"),
+        (status = NOT_FOUND, description = "SBOM was not found")
     ),
     params(
-        ("id" = String, Path, description = "Id of package to fetch"),
+        ("id" = String, Path, description = "Id of SBOM to fetch"),
     )
 )]
 #[instrument(skip(state, access_token))]

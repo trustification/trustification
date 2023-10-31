@@ -2,14 +2,14 @@ use crate::app_state::AppState;
 use crate::search;
 use actix_web::{web, HttpResponse};
 use actix_web_httpauth::extractors::bearer::BearerAuth;
-use spog_model::search::PackageSummary;
+use spog_model::search::SbomSummary;
 use tracing::instrument;
 use trustification_api::search::{SearchOptions, SearchResult};
 use trustification_auth::client::TokenProvider;
 
 #[utoipa::path(
     get,
-    path = "/api/v1/package/search",
+    path = "/api/v1/sbom/search",
     responses(
         (status = 200, description = "Search was performed successfully"),
     ),
@@ -37,11 +37,11 @@ pub async fn search(
             &access_token,
         )
         .await?;
-    let mut m: Vec<PackageSummary> = Vec::with_capacity(data.result.len());
+    let mut m: Vec<SbomSummary> = Vec::with_capacity(data.result.len());
     for item in data.result {
         let metadata = item.metadata.unwrap_or_default();
         let item = item.document;
-        m.push(PackageSummary {
+        m.push(SbomSummary {
             id: item.id.clone(),
             purl: item.purl,
             name: item.name,
@@ -52,7 +52,7 @@ pub async fn search(
             snippet: item.snippet,
             classifier: item.classifier,
             supplier: item.supplier.trim_start_matches("Organization: ").to_string(),
-            href: format!("/api/v1/package?id={}", item.id),
+            href: format!("/api/v1/sbom?id={}", item.id),
             description: item.description,
             dependencies: item.dependencies,
             vulnerabilities: vec![],
@@ -62,12 +62,12 @@ pub async fn search(
         });
     }
 
-    let mut result = SearchResult::<Vec<PackageSummary>> {
+    let mut result = SearchResult::<Vec<SbomSummary>> {
         total: Some(data.total),
         result: m,
     };
 
-    // TODO: Use guac to lookup advisories for each package!
+    // TODO: Use guac to lookup advisories for each sbom!
     search_advisories(state, &mut result.result, &access_token).await;
     Ok(HttpResponse::Ok().json(result))
 }
@@ -75,11 +75,11 @@ pub async fn search(
 #[instrument(skip_all)]
 async fn search_advisories(
     state: web::Data<AppState>,
-    packages: &mut Vec<PackageSummary>,
+    sboms: &mut Vec<SbomSummary>,
     provider: &dyn TokenProvider,
 ) {
-    for package in packages {
-        if let Some(q) = package.advisories_query() {
+    for sbom in sboms {
+        if let Some(q) = sbom.advisories_query() {
             if let Ok(result) = state
                 .search_vex(
                     &q,
@@ -94,7 +94,7 @@ async fn search_advisories(
                 )
                 .await
             {
-                package.advisories = Some(result.total as u64);
+                sbom.advisories = Some(result.total as u64);
             }
         }
     }

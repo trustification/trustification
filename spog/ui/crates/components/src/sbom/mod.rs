@@ -18,7 +18,7 @@ use yew_nested_router::components::Link;
 
 #[derive(PartialEq, Properties)]
 pub struct SbomResultProperties {
-    pub state: UseAsyncState<SearchResult<Rc<Vec<PackageSummary>>>, String>,
+    pub state: UseAsyncState<SearchResult<Rc<Vec<SbomSummary>>>, String>,
     pub onsort: Callback<(String, Order)>,
 }
 
@@ -36,7 +36,7 @@ pub enum Column {
 #[derive(Clone)]
 pub struct PackageEntry {
     url: Option<Url>,
-    package: PackageSummary,
+    package: SbomSummary,
     link_advisories: bool,
 }
 

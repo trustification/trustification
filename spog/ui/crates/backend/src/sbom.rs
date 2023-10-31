@@ -24,7 +24,7 @@ impl SBOMService {
     }
 
     pub fn download_href(&self, pkg: impl AsRef<str>) -> Result<Url, Error> {
-        let mut url = self.backend.join(Endpoint::Api, "/api/package/sbom")?;
+        let mut url = self.backend.join(Endpoint::Api, "/api/sbom/sbom")?;
 
         url.query_pairs_mut().append_pair("purl", pkg.as_ref()).finish();
 
@@ -32,7 +32,7 @@ impl SBOMService {
     }
 
     pub async fn get(&self, id: impl AsRef<str>) -> Result<Option<String>, Error> {
-        let mut url = self.backend.join(Endpoint::Api, "/api/v1/package")?;
+        let mut url = self.backend.join(Endpoint::Api, "/api/v1/sbom")?;
         url.query_pairs_mut().append_pair("id", id.as_ref()).finish();
 
         let response = self
