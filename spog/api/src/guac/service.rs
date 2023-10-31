@@ -188,7 +188,7 @@ impl GuacService {
     /// Later on, this will be replaced with the SPDX namespace, or the CycloneDX serial.
     ///
     /// The result is `map<cve, set<purls>>`.
-    #[instrument(skip(self), err)]
+    #[instrument(skip(self), ret, err)]
     pub async fn find_vulnerability(
         &self,
         id: GuacSbomIdentifier<'_>,
