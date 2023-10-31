@@ -7,7 +7,6 @@ use actix_web::{
 use spog_model::package_info::{PackageInfo, V11yRef};
 use spog_model::prelude::{PackageProductDetails, ProductRelatedToPackage};
 use std::sync::Arc;
-use tracing::instrument;
 use trustification_api::search::SearchResult;
 use trustification_auth::authenticator::Authenticator;
 use trustification_infrastructure::new_auth;
@@ -22,6 +21,7 @@ pub(crate) fn configure(auth: Option<Arc<Authenticator>>) -> impl FnOnce(&mut Se
                 .service(web::resource("/related").to(get_related))
                 .service(web::resource("/dependencies").to(get_dependencies))
                 .service(web::resource("/dependents").to(get_dependents))
+                // these must come last, otherwise the path parameter will eat the rest
                 .service(web::resource("/{id}").to(package_get_mock))
                 .service(web::resource("/{id}/related-products").to(package_related_products)),
         );
@@ -197,7 +197,7 @@ pub async fn get_related(
     get,
     path = "/api/v1/package/dependencies",
     responses(
-        (status = OK, description = "Package was found", body = PackageDependencies),
+        (status = OK, description = "Package was found", body = inline(spog_model::pkg::PackageDependencies)),
         (status = NOT_FOUND, description = "Package was not found")
     ),
     params(GetPackage)
@@ -215,7 +215,7 @@ pub async fn get_dependencies(
     get,
     path = "/api/v1/package/dependents",
     responses(
-        (status = OK, description = "Package was found", body = PackageDependents),
+        (status = OK, description = "Package was found", body = inline(spog_model::pkg::PackageDependents)),
         (status = NOT_FOUND, description = "Package was not found")
     ),
     params(GetPackage)

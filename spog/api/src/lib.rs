@@ -24,7 +24,7 @@ use trustification_infrastructure::{
 use url::Url;
 
 // export the API documentation
-pub use server::ApiDoc;
+pub use endpoints::ApiDoc;
 
 pub const DEFAULT_CRDA_PAYLOAD_LIMIT: usize = 10 * 1024 * 1024;
 

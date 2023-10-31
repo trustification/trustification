@@ -1,17 +1,16 @@
-use crate::endpoints::analyze;
-use crate::endpoints::analyze::CrdaClient;
 use crate::{
     app_state::AppState,
-    config, endpoints,
-    endpoints::well_known::endpoints::Endpoints,
-    openapi,
-    service::guac::GuacService,
-    service::{collectorist::CollectoristService, v11y::V11yService},
+    config,
+    endpoints::{
+        self,
+        analyze::{self, CrdaClient},
+        wellknown::endpoints::Endpoints,
+    },
+    service::{collectorist::CollectoristService, guac::GuacService, v11y::V11yService},
     Run,
 };
 use actix_web::web;
 use futures::future::select_all;
-use spog_model::search;
 use std::future::Future;
 use std::pin::Pin;
 use std::{net::TcpListener, sync::Arc};
@@ -25,74 +24,6 @@ use utoipa_swagger_ui::SwaggerUi;
 pub struct Server {
     run: Run,
 }
-
-#[derive(OpenApi)]
-#[openapi(
-    paths(
-        endpoints::index::index,
-        endpoints::well_known::endpoints::endpoints,
-        trustification_version::version::version,
-
-        endpoints::sbom::get,
-        endpoints::sbom::search,
-        endpoints::sbom::get_vulnerabilities,
-        endpoints::advisory::get,
-        endpoints::advisory::search,
-
-        endpoints::analyze::report,
-
-        endpoints::package::package_search_mock,
-        endpoints::package::package_get_mock,
-        endpoints::package::package_related_products,
-        endpoints::package::get_related,
-        endpoints::package::get_dependencies,
-        endpoints::package::get_dependents,
-
-        endpoints::cve::cve_get,
-        endpoints::cve::cve_search,
-    ),
-    components(
-        schemas(
-            search::AdvisorySummary,
-            search::SbomSummary,
-
-            spog_model::package_info::PackageInfo,
-            spog_model::package_info::PackageProductDetails,
-            spog_model::package_info::ProductRelatedToPackage,
-            spog_model::package_info::V11yRef,
-
-            openapi::SearchResultSbom,
-            openapi::SearchResultVex,
-            openapi::SearchResultCve,
-
-            spog_model::pkg::PackageDependents,
-            spog_model::pkg::PackageDependencies,
-            spog_model::pkg::PackageRefList,
-            spog_model::pkg::PackageRef,
-
-            spog_model::vuln::Remediation,
-            spog_model::vuln::SbomReport,
-            spog_model::vuln::SbomReportVulnerability,
-            spog_model::vuln::SummaryEntry,
-
-            trustification_version::VersionInformation,
-            trustification_version::Version,
-            trustification_version::Git,
-            trustification_version::Build,
-
-            v11y_model::search::SearchHitWithDocument,
-            v11y_model::search::SearchDocument,
-        )
-    ),
-    tags(
-        (name = "package", description = "Package endpoints"),
-        (name = "advisory", description = "Advisory endpoints"),
-        (name = "sbom", description = "SBOM endpoints"),
-        (name = "vulnerability", description = "Vulnerability endpoints"),
-        (name = "well-known", description = ".well-known endpoints"),
-    ),
-)]
-pub struct ApiDoc;
 
 impl Server {
     pub fn new(run: Run) -> Self {
@@ -163,14 +94,14 @@ impl Server {
                     .app_data(collectorist.clone())
                     .configure(endpoints::index::configure())
                     .configure(version::configurator(version!()))
-                    .configure(endpoints::well_known::endpoints::configurator(endpoints.clone()))
+                    .configure(endpoints::wellknown::endpoints::configurator(endpoints.clone()))
                     .configure(endpoints::sbom::configure(authenticator.clone()))
                     .configure(endpoints::advisory::configure(authenticator.clone()))
                     .configure(endpoints::cve::configure(authenticator.clone()))
                     .configure(endpoints::package::configure(authenticator.clone()))
                     .configure(config_configurator.clone())
                     .service({
-                        let mut openapi = ApiDoc::openapi();
+                        let mut openapi = endpoints::ApiDoc::openapi();
                         let mut swagger = SwaggerUi::new("/swagger-ui/{_:.*}");
 
                         if let Some(swagger_ui_oidc) = &swagger_oidc {
