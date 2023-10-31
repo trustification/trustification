@@ -7,6 +7,7 @@ use actix_web::{
 use spog_model::package_info::{PackageInfo, V11yRef};
 use spog_model::prelude::{PackageProductDetails, ProductRelatedToPackage};
 use std::sync::Arc;
+use tracing::instrument;
 use trustification_api::search::SearchResult;
 use trustification_auth::authenticator::Authenticator;
 use trustification_infrastructure::new_auth;
@@ -18,9 +19,11 @@ pub(crate) fn configure(auth: Option<Arc<Authenticator>>) -> impl FnOnce(&mut Se
             web::scope("/api/v1/package")
                 .wrap(new_auth!(auth))
                 .service(web::resource("/search").to(package_search_mock))
+                .service(web::resource("/related").to(get_related))
+                .service(web::resource("/dependencies").to(get_dependencies))
+                .service(web::resource("/dependents").to(get_dependents))
                 .service(web::resource("/{id}").to(package_get_mock))
-                .service(web::resource("/{id}/related-products").to(package_related_products))
-                .service(web::resource("/related").to(package_related)),
+                .service(web::resource("/{id}/related-products").to(package_related_products)),
         );
     }
 }
@@ -174,17 +177,54 @@ pub struct GetPackage {
 
 #[utoipa::path(
     get,
-    path = "/api/v1/packages",
+    path = "/api/v1/packages/related",
     responses(
-        (status = OK, description = "Package was found"),
+        (status = OK, description = "Package was found", body = PackageRefList),
         (status = NOT_FOUND, description = "Package was not found")
     ),
     params(GetPackage)
 )]
-pub async fn package_related(
+pub async fn get_related(
     guac: web::Data<GuacService>,
     web::Query(GetPackage { purl }): web::Query<GetPackage>,
 ) -> actix_web::Result<HttpResponse> {
     let pkgs = guac.get_packages(&purl).await?;
+
     Ok(HttpResponse::Ok().json(pkgs))
+}
+
+#[utoipa::path(
+    get,
+    path = "/api/v1/package/dependencies",
+    responses(
+        (status = OK, description = "Package was found", body = PackageDependencies),
+        (status = NOT_FOUND, description = "Package was not found")
+    ),
+    params(GetPackage)
+)]
+pub async fn get_dependencies(
+    guac: web::Data<GuacService>,
+    web::Query(GetPackage { purl }): web::Query<GetPackage>,
+) -> actix_web::Result<HttpResponse> {
+    let deps = guac.get_dependencies(&purl).await?;
+
+    Ok(HttpResponse::Ok().json(deps))
+}
+
+#[utoipa::path(
+    get,
+    path = "/api/v1/package/dependents",
+    responses(
+        (status = OK, description = "Package was found", body = PackageDependents),
+        (status = NOT_FOUND, description = "Package was not found")
+    ),
+    params(GetPackage)
+)]
+pub async fn get_dependents(
+    guac: web::Data<GuacService>,
+    web::Query(GetPackage { purl }): web::Query<GetPackage>,
+) -> actix_web::Result<HttpResponse> {
+    let deps = guac.get_dependents(&purl).await?;
+
+    Ok(HttpResponse::Ok().json(deps))
 }

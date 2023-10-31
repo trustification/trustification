@@ -44,6 +44,9 @@ pub struct Server {
         endpoints::package::package_search_mock,
         endpoints::package::package_get_mock,
         endpoints::package::package_related_products,
+        endpoints::package::get_related,
+        endpoints::package::get_dependencies,
+        endpoints::package::get_dependents,
 
         endpoints::cve::cve_get,
         endpoints::cve::cve_search,
@@ -61,6 +64,11 @@ pub struct Server {
             openapi::SearchResultSbom,
             openapi::SearchResultVex,
             openapi::SearchResultCve,
+
+            spog_model::pkg::PackageDependents,
+            spog_model::pkg::PackageDependencies,
+            spog_model::pkg::PackageRefList,
+            spog_model::pkg::PackageRef,
 
             spog_model::vuln::Remediation,
             spog_model::vuln::SbomReport,
