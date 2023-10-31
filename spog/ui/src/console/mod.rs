@@ -59,7 +59,7 @@ fn authenticated_page(props: &ChildrenProperties) -> Html {
                             <NavRouterItem<AppRoute> to={AppRoute::Advisory(Default::default())} predicate={AppRoute::is_advisory}>{ "Advisories" }</NavRouterItem<AppRoute>>
                             <NavRouterItem<AppRoute> to={AppRoute::Sbom(Default::default())} predicate={AppRoute::is_sbom}>{ "SBOMs" }</NavRouterItem<AppRoute>>
                             <NavRouterItem<AppRoute> to={AppRoute::Cve(Default::default())} predicate={AppRoute::is_cve}>{ "CVEs" }</NavRouterItem<AppRoute>>
-                            <NavRouterItem<AppRoute> to={AppRoute::Package{id: Default::default()}} predicate={AppRoute::is_package}>{ "Packages" }</NavRouterItem<AppRoute>>
+                            <NavRouterItem<AppRoute> to={AppRoute::Packages(Default::default())} predicate={AppRoute::is_package}>{ "Packages" }</NavRouterItem<AppRoute>>
                         </NavExpandable>
                     } else {
                         <NavRouterItem<AppRoute> to={AppRoute::Search{terms: String::new()}}>{ "Search" }</NavRouterItem<AppRoute>>
@@ -226,12 +226,21 @@ fn render(route: AppRoute, config: &spog_model::config::Configuration) -> Html {
         AppRoute::Cve(View::Content { id }) => {
             html!(<pages::Cve {id} />)
         }
-        AppRoute::Package { id } => {
+
+        AppRoute::Packages(View::Search { query }) if config.features.dedicated_search => {
+            html!(<pages::PackageSearchPage {query} />)
+        }
+
+        AppRoute::Packages(View::Content { id }) if config.features.dedicated_search => {
+            html!(<pages::Packages {id} />)
+        }
+
+        AppRoute::Package { id } if config.features.dedicated_search => {
             let id = match id.is_empty() {
                 true => None,
                 false => Some(id),
             };
-            html!(<pages::Package {id} />)
+            html!(<pages::Packages {id} />)
         }
 
         _ => html!(<pages::NotFound />),

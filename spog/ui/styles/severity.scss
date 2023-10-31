@@ -1,5 +1,19 @@
 
+  .v11y-severity-high {
+    color: var(--pf-v5-global--danger-color--100);
+  }
 
+  .v11y-severity-critical {
+    color: var(--pf-v5-global--danger-color--200);
+  }
+
+  .v11y-severity-medium {
+    color: var(--pf-v5-global--warning-color--100);
+  }
+
+  .v11y-severity-low {
+    color: var(--pf-v5-global--success-color--100);
+  }
 
 .tc-c-severity {
 

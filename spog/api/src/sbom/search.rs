@@ -55,6 +55,7 @@ pub async fn search(
             href: format!("/api/v1/package?id={}", item.id),
             description: item.description,
             dependencies: item.dependencies,
+            vulnerabilities: vec![],
             advisories: None,
             created: item.created,
             metadata,
