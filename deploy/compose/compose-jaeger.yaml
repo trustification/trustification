@@ -3,10 +3,12 @@ services:
   jaeger:
     image: $JAEGER_IMAGE
     ports:
+      - "5775:5775/udp"
       - "6831:6831/udp"
       - "6832:6832/udp"
       - "5778:5778/tcp" # configs
       - "16686:16686/tcp" # server frontend
       - "14268:14268/tcp"
+      - "9411:9411/tcp" # zipkin
     environment:
       - LOG_LEVEL=debug
