@@ -15,6 +15,7 @@ thiserror = "1.0.44"
 
 trustification-api = { path = "../../api" }
 trustification-auth = { path = "../../auth" }
+trustification-infrastructure = { path = "../../infrastructure" }
 
 [dev-dependencies]
 tokio = "*"

@@ -1,4 +1,4 @@
-use crate::server::AppState;
+use crate::app_state::AppState;
 use actix_web::{web, HttpResponse};
 use actix_web_httpauth::extractors::bearer::BearerAuth;
 use http::header;

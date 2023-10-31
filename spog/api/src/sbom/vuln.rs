@@ -1,13 +1,13 @@
+use crate::app_state::{AppState, ResponseError};
 use crate::error::Error;
 use crate::guac::service::GuacService;
-use crate::server::{AppState, ResponseError};
 use crate::service::v11y::V11yService;
 use crate::utils::spdx::find_purls;
 use actix_web::cookie::time;
 use actix_web::{web, HttpResponse};
 use actix_web_httpauth::extractors::bearer::BearerAuth;
 use bombastic_model::data::SBOM;
-use bytes::{BufMut, BytesMut};
+use bytes::BytesMut;
 use csaf::document::Category;
 use csaf::Csaf;
 use cve::Cve;
@@ -77,13 +77,8 @@ async fn process_get_vulnerabilities(
     access_token: &dyn TokenProvider,
     id: &str,
 ) -> Result<Option<SbomReport>, Error> {
-    // avoid getting the full SBOM, but the query fields only
-    let mut stream = state.get_sbom(id, access_token).await?;
-    let mut sbom = BytesMut::new();
-
-    while let Some(data) = stream.next().await {
-        sbom.put(data?);
-    }
+    // FIXME: avoid getting the full SBOM, but the search document fields only
+    let sbom: BytesMut = state.get_sbom(id, access_token).await?.try_collect().await?;
 
     let sbom = SBOM::parse(&sbom).map_err(|err| Error::Generic(format!("Unable to parse SBOM: {err}")))?;
     let (name, version, created, analyze, backtraces) = match sbom {

@@ -15,6 +15,7 @@ use url::Url;
 mod advisory;
 mod analytics;
 mod analyze;
+mod app_state;
 mod config;
 mod cve;
 mod endpoints;

@@ -40,16 +40,17 @@ impl V11yService {
         }
     }
 
-    #[allow(unused)]
+    #[instrument(skip(self), err)]
     pub async fn fetch(&self, id: &str) -> Result<Response, Error> {
         self.client.get_cve(id).await.map_err(Error::Any)
     }
 
+    #[instrument(skip(self), err)]
     pub async fn fetch_by_alias(&self, alias: &str) -> Result<Vec<Vulnerability>, Error> {
         self.client.get_vulnerability_by_alias(alias).await.map_err(Error::Any)
     }
 
-    #[instrument(skip(self), ret, err)]
+    #[instrument(skip(self), err)]
     pub async fn search(&self, query: QueryParams) -> Result<SearchResult<Vec<SearchHit<SearchDocument>>>, Error> {
         self.client
             .search(&query.q, query.limit, query.offset)

@@ -1,6 +1,7 @@
 use reqwest::{Response, Url};
 use trustification_api::search::SearchResult;
 use trustification_auth::client::{TokenInjector, TokenProvider};
+use trustification_infrastructure::tracing::PropagateCurrentContext;
 use v11y_model::search::{SearchDocument, SearchHit};
 
 pub use v11y_model::*;
@@ -19,7 +20,9 @@ impl V11yUrl {
     }
 
     pub fn get_cve_url(&self, id: impl AsRef<str>) -> Url {
-        self.base_url.join("/api/v1/cve/").unwrap().join(id.as_ref()).unwrap()
+        let mut url = self.base_url.join("/api/v1/cve").unwrap();
+        url.path_segments_mut().unwrap().push(id.as_ref());
+        url
     }
 
     pub fn search_url(&self) -> Url {
@@ -86,6 +89,7 @@ impl V11yClient {
         Ok(self
             .client
             .post(self.v11y_url.vulnerability_url())
+            .propagate_current_context()
             .inject_token(self.provider.as_ref())
             .await?
             .json(&vuln)
@@ -98,6 +102,7 @@ impl V11yClient {
         Ok(self
             .client
             .get(self.v11y_url.get_cve_url(id))
+            .propagate_current_context()
             .inject_token(self.provider.as_ref())
             .await?
             .send()
@@ -108,6 +113,7 @@ impl V11yClient {
         Ok(self
             .client
             .get(self.v11y_url.get_vulnerability_url(id))
+            .propagate_current_context()
             .inject_token(self.provider.as_ref())
             .await?
             .send()
@@ -121,6 +127,7 @@ impl V11yClient {
         Ok(self
             .client
             .get(self.v11y_url.get_vulnerability_by_alias_url(alias))
+            .propagate_current_context()
             .inject_token(self.provider.as_ref())
             .await?
             .send()
@@ -141,6 +148,7 @@ impl V11yClient {
             .get(self.v11y_url.search_url())
             .query(&[("q", q)])
             .query(&[("limit", limit), ("offset", offset)])
+            .propagate_current_context()
             .inject_token(self.provider.as_ref())
             .await?
             .send()
