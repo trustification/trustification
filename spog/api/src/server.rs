@@ -38,6 +38,11 @@ pub struct Server {
         trustification_version::version::version_fn,
         crate::guac::get,
         analyze::report,
+
+        package::package_search_mock,
+        package::package_get_mock,
+        package::package_related_products,
+
         cve::cve_get,
         cve::cve_search,
     ),
@@ -45,13 +50,21 @@ pub struct Server {
         schemas(
             search::AdvisorySummary,
             search::SbomSummary,
+
+            spog_model::package_info::PackageInfo,
+            spog_model::package_info::PackageProductDetails,
+            spog_model::package_info::ProductRelatedToPackage,
+            spog_model::package_info::V11yRef,
+
             openapi::SearchResultSbom,
             openapi::SearchResultVex,
             openapi::SearchResultCve,
+
             spog_model::vuln::Remediation,
             spog_model::vuln::SbomReport,
             spog_model::vuln::SbomReportVulnerability,
             spog_model::vuln::SummaryEntry,
+
             trustification_version::VersionInformation,
             trustification_version::Version,
             trustification_version::Git,

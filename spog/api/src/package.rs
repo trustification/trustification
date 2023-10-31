@@ -15,7 +15,7 @@ pub(crate) fn configure(auth: Option<Arc<Authenticator>>) -> impl FnOnce(&mut Se
         config.service(
             web::scope("/api/v1/package")
                 .wrap(new_auth!(auth))
-                .service(web::resource("/search").to(packages_search_mock))
+                .service(web::resource("/search").to(package_search_mock))
                 .service(web::resource("/{id}").to(package_get_mock))
                 .service(web::resource("/{id}/related-products").to(package_related_products)),
         );
@@ -26,14 +26,13 @@ pub(crate) fn configure(auth: Option<Arc<Authenticator>>) -> impl FnOnce(&mut Se
     get,
     path = "/api/v1/package/search",
     responses(
-        (status = 200, description = "packages was found"),
-        (status = NOT_FOUND, description = "packages was not found")
+        (status = 200, description = "packages search was successful", body = SearchResultPackage),
     ),
-    params(
-        ("id" = String, Path, description = "Id of advisory to fetch"),
-    )
+    params()
 )]
-pub async fn packages_search_mock() -> actix_web::Result<HttpResponse> {
+pub async fn package_search_mock(query: web::Query<search::QueryParams>) -> actix_web::Result<HttpResponse> {
+    let web::Query(_) = query;
+
     let pkgs = make_mock_data();
     let result = SearchResult {
         total: Some(pkgs.len()),
@@ -42,15 +41,37 @@ pub async fn packages_search_mock() -> actix_web::Result<HttpResponse> {
     Ok(HttpResponse::Ok().json(result))
 }
 
-pub async fn package_get_mock(web::Query(_): web::Query<search::QueryParams>) -> actix_web::Result<HttpResponse> {
+#[utoipa::path(
+    get,
+    path = "/api/v1/package/{id}",
+    responses(
+        (status = OK, description = "packages was found", body = Vec<PackageInfo>),
+        (status = NOT_FOUND, description = "packages was not found"),
+    ),
+    params(
+        ("id" = Url, Path, description = "The ID of the package to retrieve")
+    )
+)]
+pub async fn package_get_mock(path: web::Path<String>) -> actix_web::Result<HttpResponse> {
+    let _id = path.into_inner();
     let pkgs = make_mock_data();
     Ok(HttpResponse::Ok().json(&pkgs[0]))
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/v1/package/{id}/related-products",
+    responses(
+        (status = 200, description = "related products search was successful", body = PackageProductDetails),
+    ),
+    params(
+        ("id" = Url, Path, description = "The ID of the package to get related products for")
+    )
+)]
 // TODO Replace mock data
-pub async fn package_related_products(
-    web::Query(_): web::Query<search::QueryParams>,
-) -> actix_web::Result<HttpResponse> {
+pub async fn package_related_products(query: web::Query<search::QueryParams>) -> actix_web::Result<HttpResponse> {
+    let web::Query(_) = query;
+
     let related_products = vec![
         ProductRelatedToPackage {
             sbom_id: "3amp-2.json.bz2".to_string(),

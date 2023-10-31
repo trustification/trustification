@@ -7,6 +7,7 @@ use v11y_model::search::SearchHitWithDocument;
     SearchResultSbom = LocalSearchResult<Vec<SbomSummary>>,
     SearchResultVex = LocalSearchResult<Vec<AdvisorySummary>>,
     SearchResultCve = LocalSearchResult<Vec<SearchHitWithDocument>>,
+    SearchResultPackage = LocalSearchResult<Vec<PackageInfo>>,
 )]
 pub struct LocalSearchResult<T> {
     pub result: T,
