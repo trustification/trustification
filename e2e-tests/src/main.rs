@@ -2,9 +2,11 @@ mod pages;
 mod world;
 use cucumber::{cli, writer, World, WriterExt};
 use futures::FutureExt;
-use std::process::Command;
+use std::process::{Command, Stdio};
 use std::sync::Arc;
+use std::{env, result::Result};
 use std::{fs::File, time::Duration};
+use thirtyfour::prelude::*;
 use thirtyfour::{DesiredCapabilities, WebDriver};
 use world::{E2EContext, E2EWorld};
 
@@ -27,8 +29,47 @@ pub struct E2Ecliparser {
     //pub browsercap: String,
 }
 
+pub fn fetch_driver() {
+    if let Result::Err(_) = std::env::var("driver_path") {
+        println!("Configuring Webdriver, It may take sometime. Please wait...");
+        let cargo_path = env::var("CARGO").expect("Cargo installation not available");
+        let output = Command::new("sh")
+            .args(["./src/scripts/env.sh", "-s", cargo_path.as_str()])
+            .stdout(Stdio::piped())
+            .output()
+            .expect("Failed to run the shell script");
+        if output.status.success() {
+            let mut driver_path = String::from_utf8_lossy(&output.stdout).to_string();
+            driver_path = driver_path.trim().to_string();
+            println!("Driver Path from script {}", &driver_path);
+            env::set_var("driver_path", &driver_path);
+            println!("driver path {}", &driver_path);
+            Command::new(driver_path)
+                .spawn()
+                .expect("Failed to run the shell script");
+        } else {
+            eprintln!("Command failed with an error code: {:?}", output.status);
+            std::process::exit(1);
+        }
+    }
+}
+
+pub fn driver_teardown() {
+    if let Result::Ok(_) = std::env::var("driver_path") {
+        println!("Removing Chromedriver...");
+        Command::new("sh")
+            .args(["./src/scripts/env.sh", "-t"])
+            .stdout(Stdio::piped())
+            .output()
+            .expect("Failed to run the shell script");
+    }
+}
+
 #[tokio::main]
 async fn main() {
+    if let Result::Err(_) = env::var("driver_path") {
+        fetch_driver();
+    }
     let junit_output_file =
         File::create(format!("{}/junit.xml", env!("CARGO_MANIFEST_DIR"))).expect("Error file creation");
     let json_output_file =
@@ -41,25 +82,27 @@ async fn main() {
             {
                 let opts_custom = Arc::clone(&opts_custom);
                 let mut context = E2EContext::new();
+                let serverurl = "http://localhost:9515";
                 Box::pin(async move {
-                    let mut caps = DesiredCapabilities::chrome();
-                    let serverurl = "http://localhost:9515";
-                    caps.add_chrome_arg("--window-size=1920,1080")
-                        .expect("Window size error");
-                    //Command::new("chromedriver")
-                    //    .args(["--port=9515"])
-                    //    .spawn()
-                    //    .expect("Failed to invoke chromedriver! Make sure chromedriver is installed and env path is configured");
-                    let driver = WebDriver::new(serverurl, caps)
-                        .await
-                        .expect("Error while creating Webdriver");
-                    let delay = Duration::new(10, 0);
-                    driver.set_implicit_wait_timeout(delay).await.expect("Error on wait");
-                    context.insert(driver);
-                    world.context = Arc::new(context);
-                    world.application = Some(opts_custom.application.clone());
-                    world.user_name = Some(opts_custom.user_name.clone());
-                    world.password = Some(opts_custom.password.clone());
+                    if let Result::Ok(_) = env::var("driver_path") {
+                        let mut caps = DesiredCapabilities::chrome();
+                        let _ = caps.set_no_sandbox();
+                        let _ = caps.set_disable_dev_shm_usage();
+                        let _ = caps.add_arg("start-maximized");
+                        let driver = WebDriver::new(serverurl, caps)
+                            .await
+                            .expect("Error while creating Webdriver");
+                        let delay = Duration::new(10, 0);
+                        driver.set_implicit_wait_timeout(delay).await.expect("Error on wait");
+                        context.insert(driver);
+                        world.context = Arc::new(context);
+                        world.application = Some(opts_custom.application.clone());
+                        world.user_name = Some(opts_custom.user_name.clone());
+                        world.password = Some(opts_custom.password.clone());
+                    } else {
+                        println!("Make sure the driver is configured!!!");
+                        std::process::exit(1);
+                    }
                 })
             }
             .boxed_local()
@@ -83,4 +126,5 @@ async fn main() {
         )
         .run("tests/features/")
         .await;
+    driver_teardown();
 }

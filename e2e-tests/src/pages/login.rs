@@ -1,6 +1,5 @@
 use crate::world::E2EWorld;
 use cucumber::given;
-use std::thread::sleep;
 use std::time::Duration;
 use thirtyfour::{
     common::command::By,
