@@ -1,16 +1,9 @@
-mod advisory;
 mod analytics;
-mod analyze;
 mod app_state;
 mod config;
-mod cve;
 mod endpoints;
 mod error;
-mod guac;
-mod index;
 mod openapi;
-mod package;
-mod sbom;
 mod search;
 mod server;
 mod service;

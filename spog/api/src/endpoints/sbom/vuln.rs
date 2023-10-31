@@ -1,7 +1,6 @@
 use crate::app_state::{AppState, ResponseError};
 use crate::error::Error;
-use crate::guac::service::{GuacSbomIdentifier, GuacService};
-use crate::service::v11y::V11yService;
+use crate::service::{guac::GuacService, v11y::V11yService};
 use actix_web::cookie::time;
 use actix_web::{web, HttpResponse};
 use actix_web_httpauth::extractors::bearer::BearerAuth;
@@ -510,7 +509,7 @@ mod test {
 
     #[test]
     fn test_scrape_remediations() {
-        let csaf = include_bytes!("../../../example-data/cve-2023-22998.json");
+        let csaf = include_bytes!("../../../../example-data/cve-2023-22998.json");
         let csaf: Csaf = serde_json::from_slice(csaf).unwrap();
 
         let mut vex = HashMap::new();

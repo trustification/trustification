@@ -51,7 +51,7 @@ impl PackageService {
         let url = self.backend.join(
             Endpoint::Api,
             &format!(
-                "/api/v1/packages?purl={purl}",
+                "/api/v1/package/related?purl={purl}",
                 purl = urlencoding::encode(purl.as_ref())
             ),
         )?;

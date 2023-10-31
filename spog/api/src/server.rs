@@ -1,10 +1,11 @@
+use crate::endpoints::analyze;
+use crate::endpoints::analyze::CrdaClient;
 use crate::{
-    advisory,
-    analyze::{self, CrdaClient},
     app_state::AppState,
-    config, cve, endpoints,
-    guac::service::GuacService,
-    index, openapi, package, sbom,
+    config, endpoints,
+    endpoints::well_known::endpoints::Endpoints,
+    openapi,
+    service::guac::GuacService,
     service::{collectorist::CollectoristService, v11y::V11yService},
     Run,
 };
@@ -28,23 +29,24 @@ pub struct Server {
 #[derive(OpenApi)]
 #[openapi(
     paths(
-        index::index,
-        endpoints::endpoints_fn,
-        sbom::get,
-        sbom::search,
-        sbom::get_vulnerabilities,
-        advisory::get,
-        advisory::search,
-        trustification_version::version::version_fn,
-        crate::guac::get,
-        analyze::report,
+        endpoints::index::index,
+        endpoints::well_known::endpoints::endpoints,
+        trustification_version::version::version,
 
-        package::package_search_mock,
-        package::package_get_mock,
-        package::package_related_products,
+        endpoints::sbom::get,
+        endpoints::sbom::search,
+        endpoints::sbom::get_vulnerabilities,
+        endpoints::advisory::get,
+        endpoints::advisory::search,
 
-        cve::cve_get,
-        cve::cve_search,
+        endpoints::analyze::report,
+
+        endpoints::package::package_search_mock,
+        endpoints::package::package_get_mock,
+        endpoints::package::package_related_products,
+
+        endpoints::cve::cve_get,
+        endpoints::cve::cve_search,
     ),
     components(
         schemas(
@@ -117,7 +119,7 @@ impl Server {
         let crda = self.run.crda_url.map(CrdaClient::new).map(web::Data::new);
         let crda_payload_limit = self.run.crda_payload_limit;
 
-        let end_points = endpoints::Endpoints {
+        let endpoints = Endpoints {
             vexination: String::from(self.run.vexination_url.as_str()),
             bombastic: String::from(self.run.bombastic_url.as_str()),
             collectorist: String::from(self.run.collectorist_url.as_str()),
@@ -151,14 +153,13 @@ impl Server {
                     .app_data(tracker.clone())
                     .app_data(v11y.clone())
                     .app_data(collectorist.clone())
-                    .configure(index::configure())
+                    .configure(endpoints::index::configure())
                     .configure(version::configurator(version!()))
-                    .configure(endpoints::configurator(end_points.clone()))
-                    .configure(sbom::configure(authenticator.clone()))
-                    .configure(advisory::configure(authenticator.clone()))
-                    .configure(crate::guac::configure(authenticator.clone()))
-                    .configure(cve::configure(authenticator.clone()))
-                    .configure(package::configure(authenticator.clone()))
+                    .configure(endpoints::well_known::endpoints::configurator(endpoints.clone()))
+                    .configure(endpoints::sbom::configure(authenticator.clone()))
+                    .configure(endpoints::advisory::configure(authenticator.clone()))
+                    .configure(endpoints::cve::configure(authenticator.clone()))
+                    .configure(endpoints::package::configure(authenticator.clone()))
                     .configure(config_configurator.clone())
                     .service({
                         let mut openapi = ApiDoc::openapi();

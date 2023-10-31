@@ -13,22 +13,23 @@ pub struct Endpoints {
     pub v11y: String,
 }
 
-pub fn configurator(endpoints: Endpoints) -> impl FnOnce(&mut ServiceConfig) {
-    move |service| configure(endpoints, service)
+pub fn configurator(endpoints_information: Endpoints) -> impl FnOnce(&mut ServiceConfig) {
+    move |service| configure(endpoints_information, service)
 }
 
-pub fn configure(endpoints: Endpoints, config: &mut ServiceConfig) {
-    config.app_data(web::Data::new(endpoints)).service(endpoints_fn);
+fn configure(endpoints_information: Endpoints, config: &mut ServiceConfig) {
+    config
+        .app_data(web::Data::new(endpoints_information))
+        .service(endpoints);
 }
 
 #[utoipa::path(
-    tag = "well-known",
     responses(
         (status = 200, description = "Get endpoints", body = inline(Endpoints)),
     ),
 )]
 #[get("/.well-known/trustification/endpoints")]
 #[instrument(skip_all)]
-pub async fn endpoints_fn(endpoints: web::Data<Endpoints>) -> HttpResponse {
-    HttpResponse::Ok().json(endpoints)
+pub async fn endpoints(endpoints_information: web::Data<Endpoints>) -> HttpResponse {
+    HttpResponse::Ok().json(endpoints_information)
 }

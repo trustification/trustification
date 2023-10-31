@@ -1,4 +1,5 @@
 use crate::search;
+use crate::service::guac::GuacService;
 use actix_web::{
     web::{self, ServiceConfig},
     HttpResponse,
@@ -9,6 +10,7 @@ use std::sync::Arc;
 use trustification_api::search::SearchResult;
 use trustification_auth::authenticator::Authenticator;
 use trustification_infrastructure::new_auth;
+use utoipa::IntoParams;
 
 pub(crate) fn configure(auth: Option<Arc<Authenticator>>) -> impl FnOnce(&mut ServiceConfig) {
     |config: &mut ServiceConfig| {
@@ -17,7 +19,8 @@ pub(crate) fn configure(auth: Option<Arc<Authenticator>>) -> impl FnOnce(&mut Se
                 .wrap(new_auth!(auth))
                 .service(web::resource("/search").to(package_search_mock))
                 .service(web::resource("/{id}").to(package_get_mock))
-                .service(web::resource("/{id}/related-products").to(package_related_products)),
+                .service(web::resource("/{id}/related-products").to(package_related_products))
+                .service(web::resource("/related").to(package_related)),
         );
     }
 }
@@ -54,6 +57,7 @@ pub async fn package_search_mock(query: web::Query<search::QueryParams>) -> acti
 )]
 pub async fn package_get_mock(path: web::Path<String>) -> actix_web::Result<HttpResponse> {
     let _id = path.into_inner();
+
     let pkgs = make_mock_data();
     Ok(HttpResponse::Ok().json(&pkgs[0]))
 }
@@ -69,8 +73,8 @@ pub async fn package_get_mock(path: web::Path<String>) -> actix_web::Result<Http
     )
 )]
 // TODO Replace mock data
-pub async fn package_related_products(query: web::Query<search::QueryParams>) -> actix_web::Result<HttpResponse> {
-    let web::Query(_) = query;
+pub async fn package_related_products(path: web::Path<String>) -> actix_web::Result<HttpResponse> {
+    let _id = path.into_inner();
 
     let related_products = vec![
         ProductRelatedToPackage {
@@ -161,4 +165,26 @@ fn make_mock_data() -> Vec<PackageInfo> {
         },
     ];
     packages
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, serde::Deserialize, IntoParams)]
+pub struct GetPackage {
+    pub purl: String,
+}
+
+#[utoipa::path(
+    get,
+    path = "/api/v1/packages",
+    responses(
+        (status = OK, description = "Package was found"),
+        (status = NOT_FOUND, description = "Package was not found")
+    ),
+    params(GetPackage)
+)]
+pub async fn package_related(
+    guac: web::Data<GuacService>,
+    web::Query(GetPackage { purl }): web::Query<GetPackage>,
+) -> actix_web::Result<HttpResponse> {
+    let pkgs = guac.get_packages(&purl).await?;
+    Ok(HttpResponse::Ok().json(pkgs))
 }

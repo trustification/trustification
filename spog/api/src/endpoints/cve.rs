@@ -1,5 +1,5 @@
 use crate::{
-    app_state::AppState, error::Error, guac::service::GuacService, search, service::collectorist::CollectoristService,
+    app_state::AppState, error::Error, search, service::collectorist::CollectoristService, service::guac::GuacService,
     service::v11y::V11yService,
 };
 use actix_web::{
