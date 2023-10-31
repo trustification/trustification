@@ -2,7 +2,7 @@ use futures::future::try_join_all;
 use patternfly_yew::prelude::*;
 use spog_model::{
     prelude::{PackageProductDetails, ProductRelatedToPackage},
-    search::PackageSummary,
+    search::SbomSummary,
 };
 use spog_ui_backend::{use_backend, PackageService};
 use spog_ui_components::{async_state_renderer::async_content, pagination::PaginationWrapped};
@@ -17,7 +17,7 @@ use yew_oauth2::prelude::use_latest_access_token;
 pub struct TableData {
     sbom_id: String,
     dependency_type: String,
-    sbom: Option<PackageSummary>,
+    sbom: Option<SbomSummary>,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq)]
@@ -122,7 +122,7 @@ pub fn related_products(props: &RelatedProductsProperties) -> Html {
 #[derive(PartialEq, Properties)]
 pub struct RelatedProductsTableProperties {
     pub related_products: Vec<ProductRelatedToPackage>,
-    pub sboms: Rc<Vec<Option<PackageSummary>>>,
+    pub sboms: Rc<Vec<Option<SbomSummary>>>,
 }
 
 #[function_component(RelatedProductsTable)]

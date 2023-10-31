@@ -13,9 +13,9 @@ use trustification_infrastructure::new_auth;
 
 pub(crate) fn configure(auth: Option<Arc<Authenticator>>) -> impl FnOnce(&mut ServiceConfig) {
     |config: &mut ServiceConfig| {
-        config.service(web::resource("/api/v1/package/search").wrap(new_auth!(auth)).to(search));
+        config.service(web::resource("/api/v1/sbom/search").wrap(new_auth!(auth)).to(search));
         // the get operation doesn't get the authenticator added, as we check this using the access_token query parameter
-        config.service(web::resource("/api/v1/package").to(get));
+        config.service(web::resource("/api/v1/sbom").to(get));
         config.service(web::resource("/api/v1/sbom/vulnerabilities").to(get_vulnerabilities));
     }
 }

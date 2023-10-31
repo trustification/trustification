@@ -38,7 +38,7 @@ pub fn sbom_search_controls(props: &SbomSearchControlsProperties) -> Html {
 pub fn use_sbom_search<S>(
     search_params: UseReducerHandle<SearchMode<DynamicSearchParameters>>,
     pagination: UsePagination,
-    callback: Callback<UseAsyncHandleDeps<SearchResult<Rc<Vec<PackageSummary>>>, String>>,
+    callback: Callback<UseAsyncHandleDeps<SearchResult<Rc<Vec<SbomSummary>>>, String>>,
     f: S,
 ) -> UseStandardSearch
 where

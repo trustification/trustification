@@ -30,7 +30,7 @@ impl PackageService {
     pub async fn lookup(&self, purl: PackageUrl<'_>) -> Result<Package, Error> {
         Ok(self
             .client
-            .get(self.backend.join(Endpoint::Api, "/api/package")?)
+            .get(self.backend.join(Endpoint::Api, "/api/sbom")?)
             .query(&[("purl", purl.to_string())])
             .latest_access_token(&self.access_token)
             .send()
@@ -44,7 +44,7 @@ impl PackageService {
     where
         I: IntoIterator<Item = PackageUrl<'a>>,
     {
-        self.batch_to_refs("/api/package", purls).await
+        self.batch_to_refs("/api/sbom", purls).await
     }
 
     pub async fn related_packages(&self, purl: impl AsRef<str>) -> Result<PackageDependencies, ApiError> {
@@ -70,7 +70,7 @@ impl PackageService {
         let url = self.backend.join(
             Endpoint::Api,
             &format!(
-                "/api/v1/packages/dependents?purl={purl}",
+                "/api/v1/sbom/dependents?purl={purl}",
                 purl = urlencoding::encode(purl.as_ref())
             ),
         )?;
@@ -89,10 +89,10 @@ impl PackageService {
         &self,
         q: &str,
         options: &SearchParameters,
-    ) -> Result<SearchResult<Vec<PackageSummary>>, Error> {
+    ) -> Result<SearchResult<Vec<SbomSummary>>, Error> {
         let response = self
             .client
-            .get(self.backend.join(Endpoint::Api, "/api/v1/package/search")?)
+            .get(self.backend.join(Endpoint::Api, "/api/v1/sbom/search")?)
             .query(&[("q", q)])
             .apply(options)
             .latest_access_token(&self.access_token)
@@ -102,11 +102,11 @@ impl PackageService {
         Ok(response.error_for_status()?.json().await?)
     }
 
-    pub async fn get_package(&self, id: &str) -> Result<SearchResult<Vec<PackageSummary>>, Error> {
+    pub async fn get_package(&self, id: &str) -> Result<SearchResult<Vec<SbomSummary>>, Error> {
         let q = format!("id:{id}");
         let response = self
             .client
-            .get(self.backend.join(Endpoint::Api, "/api/v1/package/search")?)
+            .get(self.backend.join(Endpoint::Api, "/api/v1/sbom/search")?)
             .query(&[("q", q)])
             .latest_access_token(&self.access_token)
             .send()

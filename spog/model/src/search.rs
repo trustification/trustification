@@ -32,7 +32,7 @@ pub struct CveSummary {
 }
 
 #[derive(utoipa::ToSchema, serde::Deserialize, serde::Serialize, Debug, PartialEq, Clone)]
-pub struct PackageSummary {
+pub struct SbomSummary {
     pub id: String,
     pub name: String,
     pub version: String,
@@ -53,7 +53,7 @@ pub struct PackageSummary {
     pub metadata: Value,
 }
 
-impl PackageSummary {
+impl SbomSummary {
     pub fn advisories_query(&self) -> Option<String> {
         let mut terms = Vec::new();
         if let Some(cpe) = &self.cpe {
