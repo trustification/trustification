@@ -76,7 +76,7 @@ impl PackageSummary {
 pub struct PackageInfoSummary {
     pub name: String,
     pub version: String,
-    pub packageType: String,
+    pub package_type: String,
     pub purl: Option<String>,
     pub description: String,
     pub supplier: String,

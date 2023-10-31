@@ -32,7 +32,7 @@ pub struct Package {
     pub vulnerabilities: Vec<VulnerabilityRef>,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, ToSchema, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, ToSchema, Serialize, Deserialize, Default)]
 #[schema(example = json!(VulnerabilityRef {
     cve: "cve-2023-0286".into(),
     href: "https://access.redhat.com/security/cve/cve-2023-0286".into(),
@@ -44,15 +44,6 @@ pub struct VulnerabilityRef {
     pub severity: String,
 }
 
-impl VulnerabilityRef {
-    pub fn new() -> Self {
-        Self {
-            cve: String::new(),
-            href: String::new(),
-            severity: String::new(),
-        }
-    }
-}
 #[derive(Clone, Debug, PartialEq, Eq, ToSchema, Serialize, Deserialize)]
 #[schema(example = json!(PackageRef {
     purl: "pkg:rpm/redhat/openssl@1.1.1k-7.el8_6".to_string(),

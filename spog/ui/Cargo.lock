@@ -2886,7 +2886,6 @@ dependencies = [
  "openidconnect",
  "packageurl",
  "patternfly-yew",
- "regex",
  "reqwest",
  "roxmltree",
  "serde",

@@ -23,36 +23,33 @@ pub(crate) fn configure(auth: Option<Arc<Authenticator>>) -> impl FnOnce(&mut Se
 }
 
 #[utoipa::path(
-get,
-path = "/api/v1/package_info/search",
-responses(
-(status = 200, description = "packages was found"),
-(status = NOT_FOUND, description = "packages was not found")
-),
-params(
-("id" = String, Path, description = "Id of advisory to fetch"),
-)
+    get,
+    path = "/api/v1/package_info/search",
+    responses(
+        (status = 200, description = "packages was found"),
+        (status = NOT_FOUND, description = "packages was not found")
+    ),
+    params(
+        ("id" = String, Path, description = "Id of advisory to fetch"),
+    )
 )]
-
-pub async fn packages_search_mock(
-    web::Query(params): web::Query<search::QueryParams>,
-) -> actix_web::Result<HttpResponse> {
+pub async fn packages_search_mock() -> actix_web::Result<HttpResponse> {
     let pkgs = make_mock_data();
-    let result = SearchResult::<Vec<PackageInfo>> {
+    let result = SearchResult {
         total: Some(pkgs.len()),
         result: pkgs,
     };
     Ok(HttpResponse::Ok().json(result))
 }
 
-pub async fn package_get_mock(web::Query(params): web::Query<search::QueryParams>) -> actix_web::Result<HttpResponse> {
+pub async fn package_get_mock(web::Query(_): web::Query<search::QueryParams>) -> actix_web::Result<HttpResponse> {
     let pkgs = make_mock_data();
     Ok(HttpResponse::Ok().json(&pkgs[0]))
 }
 
 // TODO Replace mock data
 pub async fn package_related_products(
-    web::Query(params): web::Query<search::QueryParams>,
+    web::Query(_): web::Query<search::QueryParams>,
 ) -> actix_web::Result<HttpResponse> {
     let related_products = vec![
         ProductRelatedToPackage {
@@ -69,7 +66,7 @@ pub async fn package_related_products(
 }
 
 fn make_mock_data() -> Vec<PackageInfo> {
-    let mut packages = vec![
+    let packages = vec![
         PackageInfo {
             name: "io.quarkus.arc:arc".to_string().into(),
             version: "2.16.2.Final".to_string().into(),
@@ -87,22 +84,22 @@ fn make_mock_data() -> Vec<PackageInfo> {
             supplier: "Organization: Red Hat".to_string().into(),
             vulnerabilities: vec![
                 V11yRef {
-                    cve: "CVE-2023-5511".to_string().into(),
+                    cve: "CVE-2023-5511".to_string(),
                     href: "https://access.redhat.com/security/cve/cve-2023-0286".into(),
                     severity: "low".to_string(),
                 },
                 V11yRef {
-                    cve: "CVE-2023-5511".to_string().into(),
+                    cve: "CVE-2023-5511".to_string(),
                     href: "https://access.redhat.com/security/cve/cve-2023-0286".into(),
                     severity: "medium".to_string(),
                 },
                 V11yRef {
-                    cve: "CVE-2023-5511".to_string().into(),
+                    cve: "CVE-2023-5511".to_string(),
                     href: "https://access.redhat.com/security/cve/cve-2023-0286".into(),
                     severity: "high".to_string(),
                 },
                 V11yRef {
-                    cve: "CVE-2023-5511".to_string().into(),
+                    cve: "CVE-2023-5511".to_string(),
                     href: "https://access.redhat.com/security/cve/cve-2023-0286".into(),
                     severity: "critical".to_string(),
                 },

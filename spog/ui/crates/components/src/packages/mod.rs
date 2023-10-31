@@ -77,26 +77,62 @@ impl TableEntryRenderer<Column> for PackagesEntry {
 }
 
 fn v11y_component_renderer(packageinfo: PackageInfo) -> Html {
+    let icon = |class: Classes| html!(<i class={classes!(class, "fa", "fa-shield-halved")}></i>);
     html!(
-        <tr>
-        <td>{packageinfo.vulnerabilities.len()}</td>
-        <td>
-        <Button icon={Icon::Security} class="v11y-severity-critical">{packageinfo.get_v11y_severity_count("critical".to_string())}</Button>
-        </td>
-        <td><Button icon={Icon::Security} class="v11y-severity-high">{packageinfo.get_v11y_severity_count("high".to_string())}</Button>
-        </td>
-        <td><Button icon={Icon::Security} class="v11y-severity-medium">{packageinfo.get_v11y_severity_count("medium".to_string())}</Button>
-        </td>
-        <td><Button icon={Icon::Security} class="v11y-severity-low">{packageinfo.get_v11y_severity_count("low".to_string())}</Button>
-        </td>
-        </tr>
+        <Split gutter=true>
+            <SplitItem>{packageinfo.vulnerabilities.len()}</SplitItem>
+            <SplitItem>
+                <Grid gutter=true>
+                    <GridItem cols={[3]}>
+                        <Split>
+                            <SplitItem>
+                                {icon(classes!("v11y-severity-critical"))}
+                            </SplitItem>
+                            <SplitItem>
+                                {packageinfo.get_v11y_severity_count("critical".to_string())}
+                            </SplitItem>
+                        </Split>
+                    </GridItem>
+                    <GridItem cols={[3]}>
+                        <Split>
+                            <SplitItem>
+                                {icon(classes!("v11y-severity-high"))}
+                            </SplitItem>
+                            <SplitItem>
+                                {packageinfo.get_v11y_severity_count("high".to_string())}
+                            </SplitItem>
+                        </Split>
+                    </GridItem>
+                    <GridItem cols={[3]}>
+                        <Split>
+                            <SplitItem>
+                                {icon(classes!("v11y-severity-medium"))}
+                            </SplitItem>
+                            <SplitItem>
+                                {packageinfo.get_v11y_severity_count("medium".to_string())}
+                            </SplitItem>
+                        </Split>
+                    </GridItem>
+                    <GridItem cols={[3]}>
+                        <Split>
+                            <SplitItem>
+                                {icon(classes!("v11y-severity-low"))}
+                            </SplitItem>
+                            <SplitItem>
+                                {packageinfo.get_v11y_severity_count("low".to_string())}
+                            </SplitItem>
+                        </Split>
+                    </GridItem>
+                </Grid>
+            </SplitItem>
+        </Split>
     )
 }
 
 fn get_package_definitions(pkg: &PackageInfoSummary) -> PackagesEntry {
     let pkg = PackageInfo {
         name: pkg.name.clone().into(),
-        package_type: pkg.packageType.clone().into(),
+        package_type: pkg.package_type.clone().into(),
         version: pkg.version.clone().into(),
         purl: pkg.purl.clone(),
         href: pkg.href.clone().into(),
