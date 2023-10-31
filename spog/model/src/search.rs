@@ -1,3 +1,4 @@
+use crate::package_info::V11yRef;
 use serde_json::Value;
 use std::collections::HashMap;
 use time::OffsetDateTime;
@@ -47,7 +48,7 @@ pub struct PackageSummary {
     pub href: String,
     pub advisories: Option<u64>,
     pub created: OffsetDateTime,
-
+    pub vulnerabilities: Vec<String>,
     #[serde(default, skip_serializing_if = "Value::is_null", rename = "$metadata")]
     pub metadata: Value,
 }
@@ -67,5 +68,25 @@ impl PackageSummary {
             true => None,
             false => Some(terms.join(" OR ")),
         }
+    }
+}
+
+#[derive(utoipa::ToSchema, serde::Deserialize, serde::Serialize, Debug, PartialEq, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct PackageInfoSummary {
+    pub name: String,
+    pub version: String,
+    pub package_type: String,
+    pub purl: Option<String>,
+    pub description: String,
+    pub supplier: String,
+    pub href: String,
+    pub sbom: String,
+    pub vulnerabilities: Vec<V11yRef>,
+}
+
+impl PackageInfoSummary {
+    pub fn get_count_v11y(&self) -> usize {
+        self.vulnerabilities.len()
     }
 }
