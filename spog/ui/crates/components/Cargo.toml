@@ -45,7 +45,6 @@ yew-hooks = "0.3"
 yew-more-hooks = "0.3.0"
 yew-nested-router = "0.4.0"
 yew-oauth2 = { version = "0.7.0", features = ["router", "openid"] }
-regex = "1.10.2"
 
 spog-model = { path = "../../../model" }
 v11y-model = { path = "../../../../v11y/model" }

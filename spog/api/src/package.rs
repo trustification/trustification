@@ -4,8 +4,8 @@ use actix_web::{
     HttpResponse,
 };
 use spog_model::package_info::{PackageInfo, V11yRef};
-use std::sync::Arc;
 use spog_model::prelude::{PackageProductDetails, ProductRelatedToPackage};
+use std::sync::Arc;
 use trustification_api::search::SearchResult;
 use trustification_auth::authenticator::Authenticator;
 use trustification_infrastructure::new_auth;
@@ -62,10 +62,9 @@ pub async fn package_related_products(
         ProductRelatedToPackage {
             sbom_id: "3amp-2.json.bz2".to_string(),
             dependency_type: "Transitive".to_string(),
-        }];
-    let result = PackageProductDetails {
-        related_products
-    };
+        },
+    ];
+    let result = PackageProductDetails { related_products };
     Ok(HttpResponse::Ok().json(&result))
 }
 
