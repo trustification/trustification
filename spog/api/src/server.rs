@@ -15,6 +15,7 @@ use std::future::Future;
 use std::pin::Pin;
 use std::{net::TcpListener, sync::Arc};
 use trustification_analytics::Tracker;
+use trustification_api::Apply;
 use trustification_auth::{authenticator::Authenticator, authorizer::Authorizer, swagger_ui::SwaggerUiOidc};
 use trustification_infrastructure::{app::http::HttpServerBuilder, MainContext};
 use trustification_version::version;
