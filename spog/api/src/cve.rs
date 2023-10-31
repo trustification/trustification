@@ -1,9 +1,7 @@
-use crate::error::Error;
-use crate::guac::service::GuacService;
-use crate::search;
-use crate::server::AppState;
-use crate::service::collectorist::CollectoristService;
-use crate::service::v11y::V11yService;
+use crate::{
+    app_state::AppState, error::Error, guac::service::GuacService, search, service::collectorist::CollectoristService,
+    service::v11y::V11yService,
+};
 use actix_web::{
     web::{self, ServiceConfig},
     HttpResponse, HttpResponseBuilder,
@@ -13,16 +11,21 @@ use bytes::BytesMut;
 use csaf::definitions::ProductIdT;
 use csaf::Csaf;
 use futures::{stream, TryStreamExt};
-use spog_model::csaf::{find_product_relations, trace_product};
-use spog_model::cve::{
-    AdvisoryOverview, CveDetails, CveSearchDocument, PackageRelatedToProductCve, ProductCveStatus, ProductRelatedToCve,
+use spog_model::{
+    csaf::{find_product_relations, trace_product},
+    cve::{
+        AdvisoryOverview, CveDetails, CveSearchDocument, PackageRelatedToProductCve, ProductCveStatus,
+        ProductRelatedToCve,
+    },
 };
 use std::collections::{BTreeMap, BTreeSet, HashSet};
 use std::sync::Arc;
 use tracing::instrument;
 use trustification_api::search::{SearchOptions, SearchResult};
-use trustification_auth::authenticator::Authenticator;
-use trustification_auth::client::{BearerTokenProvider, TokenProvider};
+use trustification_auth::{
+    authenticator::Authenticator,
+    client::{BearerTokenProvider, TokenProvider},
+};
 use trustification_infrastructure::new_auth;
 use v11y_client::search::{SearchDocument, SearchHit};
 
