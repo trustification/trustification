@@ -2,11 +2,11 @@ use std::future::Future;
 use std::pin::Pin;
 use std::{net::TcpListener, sync::Arc};
 
-use crate::error::Error;
 use crate::{
     advisory,
     analyze::{self, CrdaClient},
     config, cve, endpoints,
+    error::Error,
     guac::service::GuacService,
     index, package, sbom,
     service::{collectorist::CollectoristService, v11y::V11yService},
@@ -27,8 +27,7 @@ use trustification_auth::{
     client::{TokenInjector, TokenProvider},
     swagger_ui::SwaggerUiOidc,
 };
-use trustification_infrastructure::tracing::PropagateCurrentContext;
-use trustification_infrastructure::{app::http::HttpServerBuilder, MainContext};
+use trustification_infrastructure::{app::http::HttpServerBuilder, tracing::PropagateCurrentContext, MainContext};
 use trustification_version::version;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
