@@ -41,7 +41,8 @@ spec:
                 - "{{ .Values.bombastic.bucket }}"
                 - "--s3-region"
                 - "{{ .Values.region }}"
-                - "--limit 100"
+                - "--limit"
+                - "100"
               workingDir: "/guac"
               env:
                 - name: NAMESPACE
