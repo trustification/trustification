@@ -73,11 +73,7 @@ pub async fn search(
 }
 
 #[instrument(skip_all)]
-async fn search_advisories(
-    state: web::Data<AppState>,
-    sboms: &mut Vec<SbomSummary>,
-    provider: &dyn TokenProvider,
-) {
+async fn search_advisories(state: web::Data<AppState>, sboms: &mut Vec<SbomSummary>, provider: &dyn TokenProvider) {
     for sbom in sboms {
         if let Some(q) = sbom.advisories_query() {
             if let Ok(result) = state

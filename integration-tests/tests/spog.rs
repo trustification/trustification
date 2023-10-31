@@ -165,8 +165,7 @@ async fn spog_search_correlation(context: &mut SpogContext) {
         if payload["total"].as_u64().unwrap() >= 1 {
             assert_eq!(payload["result"][0]["name"], json!("stf-1.5"), "unexpected sbom name");
 
-            let data: spog_model::search::SbomSummary =
-                serde_json::from_value(payload["result"][0].clone()).unwrap();
+            let data: spog_model::search::SbomSummary = serde_json::from_value(payload["result"][0].clone()).unwrap();
             // println!("Data: {:?}", data);
             // we need to have some information
             assert!(data.advisories.is_some(), "missing advisories");
