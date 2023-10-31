@@ -1,5 +1,6 @@
 use crate::app_state::{AppState, ResponseError};
 use crate::error::Error;
+use crate::service::guac::GuacSbomIdentifier;
 use crate::service::{guac::GuacService, v11y::V11yService};
 use actix_web::cookie::time;
 use actix_web::{web, HttpResponse};
@@ -277,8 +278,6 @@ pub struct AnalyzeOutcome {
     cve_to_purl: BTreeMap<String, BTreeMap<String, Vec<Remediation>>>,
     // PURL to backtrace
     purl_to_backtrace: BTreeMap<String, BTreeSet<Backtrace>>,
-    // total number of PURLs
-    total: usize,
 }
 
 /// Analyze by purls
