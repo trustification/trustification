@@ -44,7 +44,7 @@ pub struct Server {
     components(
         schemas(
             search::AdvisorySummary,
-            search::SBomSummary,
+            search::SbomSummary,
             openapi::SearchResultSbom,
             openapi::SearchResultVex,
             openapi::SearchResultCve,
