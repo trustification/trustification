@@ -1,8 +1,7 @@
 use crate::app_state::{AppState, ResponseError};
 use crate::error::Error;
-use crate::guac::service::GuacService;
+use crate::guac::service::{GuacSbomIdentifier, GuacService};
 use crate::service::v11y::V11yService;
-use crate::utils::spdx::find_purls;
 use actix_web::cookie::time;
 use actix_web::{web, HttpResponse};
 use actix_web_httpauth::extractors::bearer::BearerAuth;
@@ -24,7 +23,7 @@ use spog_model::vuln::SbomReportVulnerability;
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::rc::Rc;
 use std::str::FromStr;
-use tracing::{info_span, instrument};
+use tracing::{info_span, instrument, Instrument};
 use trustification_api::search::SearchOptions;
 use trustification_auth::client::TokenProvider;
 use trustification_common::error::ErrorInformation;
@@ -86,29 +85,33 @@ async fn process_get_vulnerabilities(
             // get the main packages
             let main = find_main(&spdx);
 
+            let main = match main.as_slice() {
+                [main] => main,
+                [] => {
+                    return Err(Error::Generic(
+                        r#"SBOM has no "document describes" entries. Unable to analyze."#.to_string(),
+                    ))
+                }
+                _ => {
+                    return Err(Error::Generic(format!(
+                        r#"SBOM has more than one "document describes" entry (number of entries: {})."#,
+                        main.len()
+                    )))
+                }
+            };
+
             let AnalyzeOutcome {
                 cve_to_purl,
                 purl_to_backtrace,
-                total,
-            } = analyze_spdx(state, guac, access_token, &spdx).await?;
+            } = analyze_spdx(state, guac, access_token, main).await?;
 
             // find a single version (if possible)
-            let version: Vec<_> = main.iter().flat_map(|pi| &pi.package_version).collect();
-            let version = match version.len() {
-                1 => Some(version[0].to_string()),
-                _ => None,
-            };
-
+            let version = main.package_version.clone();
             let name = spdx.document_creation_information.document_name;
             let created = time::OffsetDateTime::from_unix_timestamp(
                 spdx.document_creation_information.creation_info.created.timestamp(),
             )
             .ok();
-
-            log::info!(
-                "SBOM report (in: {total} packages) - out: {} {cve_to_purl:?}",
-                cve_to_purl.len()
-            );
 
             (name, version, created, cve_to_purl, purl_to_backtrace)
         }
@@ -272,8 +275,6 @@ pub struct AnalyzeOutcome {
     cve_to_purl: BTreeMap<String, BTreeMap<String, Vec<Remediation>>>,
     // PURL to backtrace
     purl_to_backtrace: BTreeMap<String, BTreeSet<Vec<String>>>,
-    // total number of PURLs
-    total: usize,
 }
 
 /// Analyze by purls
@@ -282,99 +283,88 @@ pub struct AnalyzeOutcome {
 ///   map(CVE to array(PURL))
 ///   map(purl to parents(chain of purls))
 ///   total number of packages found
-#[instrument(
-    skip_all,
-    fields(sbom_name=sbom.document_creation_information.document_name),
-    err
-)]
+#[instrument(skip(state, guac, token), err)]
 async fn analyze_spdx(
     state: &AppState,
     guac: &GuacService,
     token: &dyn TokenProvider,
-    sbom: &SPDX,
+    main: &PackageInformation,
 ) -> Result<AnalyzeOutcome, Error> {
-    let purls = find_purls(sbom).collect::<BTreeMap<_, _>>();
-    log::debug!("Extracted {} PURLs", purls.len());
-
-    // let mut backtraces = BTreeMap::new();
-
-    let purls = purls.keys().flat_map(|purl| match PackageUrl::from_str(purl) {
-        Ok(purl) => Some(purl),
-        Err(err) => {
-            log::debug!("Failed to parse purl ({purl}): {err}");
-            None
+    let version = match &main.package_version {
+        Some(version) => version,
+        None => {
+            return Err(Error::Generic(
+                "SBOM's main component is missing the version".to_string(),
+            ))
         }
-    });
+    };
 
-    let mut outcome = stream::iter(purls)
+    // find vulnerabilities
+
+    let cve_to_purl = guac
+        .find_vulnerability(GuacSbomIdentifier {
+            name: &main.package_name,
+            version,
+        })
+        .await?;
+
+    // collect the backtraces
+
+    let purl_to_backtrace = async {
+        stream::iter(
+            cve_to_purl
+                .values()
+                .flatten()
+                .filter_map(|purl| PackageUrl::from_str(purl).ok()),
+        )
         .map(|purl| async move {
-            let cert = guac.certify_vuln(purl.clone()).await?;
-            log::debug!("Cert ({purl}): {cert:?}");
-            Ok::<_, Error>((purl, cert))
+            let backtraces = backtrace(guac, &purl).await?.collect::<BTreeSet<_>>();
+            Ok::<_, Error>((purl.to_string(), backtraces))
         })
         .buffer_unordered(4)
-        .and_then(|(purl, cert)| async move {
-            let ids = cert
-                .into_iter()
-                .flat_map(|vuln| vuln.vulnerability.vulnerability_ids)
-                .map(|id| id.vulnerability_id)
-                .collect::<Vec<_>>();
-
-            let backtrace = if !ids.is_empty() {
-                Some(backtrace(guac, &purl).await?.collect::<BTreeSet<_>>())
-            } else {
-                None
-            };
-
-            Ok::<_, Error>((purl, ids, backtrace))
-        })
-        .try_fold(
-            AnalyzeOutcome::default(),
-            |mut acc, (purl, ids, backtrace)| async move {
-                for id in ids {
-                    acc.cve_to_purl
-                        .entry(id)
-                        .or_default()
-                        .insert(purl.to_string(), Default::default());
-                }
-
-                if let Some(backtrace) = backtrace {
-                    acc.purl_to_backtrace.insert(purl.to_string(), backtrace);
-                }
-
-                acc.total += 1;
-
-                Ok(acc)
-            },
-        )
-        .await?;
+        .try_collect()
+        .await
+    }
+    .instrument(info_span!("collect backtraces"))
+    .await?;
 
     // get all relevant VEX documents
 
-    let vex = collect_vex(state, token, outcome.cve_to_purl.keys()).await?;
+    let vex = collect_vex(state, token, cve_to_purl.keys()).await?;
 
     // fill in the remediations
 
-    info_span!("scrape_remediations").in_scope(|| {
+    let cve_to_purl = info_span!("scrape_remediations").in_scope(|| {
         let mut count = 0;
-        for (cve, map) in &mut outcome.cve_to_purl {
-            for (purl, rem) in map {
-                let rems = scrape_remediations(cve, purl, &vex);
-                if !rems.is_empty() {
-                    log::debug!("Remediations for {cve} / {purl}: {rems:?}");
-                }
-                count += rems.len();
-                rem.extend(rems);
-            }
-        }
+
+        let result = cve_to_purl
+            .into_iter()
+            .map(|(cve, purls)| {
+                let purls = purls
+                    .into_iter()
+                    .map(|purl| {
+                        let rem = scrape_remediations(&cve, &purl, &vex);
+                        count += rem.len();
+
+                        (purl, rem)
+                    })
+                    .collect::<BTreeMap<String, Vec<Remediation>>>();
+
+                (cve, purls)
+            })
+            .collect();
+
         log::debug!("Found {count} remediations");
+
+        result
     });
 
     // done
 
-    log::debug!("Processed {} packages", outcome.total);
-
-    Ok(outcome)
+    Ok(AnalyzeOutcome {
+        cve_to_purl,
+        purl_to_backtrace,
+    })
 }
 
 /// take a PURL, a retrieve all paths towards the main entry point of its SBOM

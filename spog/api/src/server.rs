@@ -1,7 +1,7 @@
-use crate::app_state::AppState;
 use crate::{
     advisory,
     analyze::{self, CrdaClient},
+    app_state::AppState,
     config, cve, endpoints,
     guac::service::GuacService,
     index, package, sbom,
