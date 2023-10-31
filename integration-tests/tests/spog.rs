@@ -54,7 +54,7 @@ async fn spog_search_forward_bombastic(context: &mut SpogContext) {
     let client = reqwest::Client::new();
 
     let response = client
-        .get(context.urlify("/api/v1/package/search"))
+        .get(context.urlify("/api/v1/sbom/search"))
         .inject_token(&context.provider.provider_user)
         .await
         .unwrap()
@@ -68,7 +68,7 @@ async fn spog_search_forward_bombastic(context: &mut SpogContext) {
     let client = reqwest::Client::new();
 
     let response = client
-        .get(context.urlify("/api/v1/package/search"))
+        .get(context.urlify("/api/v1/sbom/search"))
         .query(&[("q", urlencoding::encode("unknown:field"))])
         .inject_token(&context.provider.provider_user)
         .await
@@ -153,7 +153,7 @@ async fn spog_search_correlation(context: &mut SpogContext) {
     // indexer time to do its thing, so might need to retry
     loop {
         let response = client
-            .get(context.urlify(format!("/api/v1/package/search?q=id%3A{sbom_id}")))
+            .get(context.urlify(format!("/api/v1/sbom/search?q=id%3A{sbom_id}")))
             .inject_token(&context.provider.provider_user)
             .await
             .unwrap()
@@ -165,8 +165,7 @@ async fn spog_search_correlation(context: &mut SpogContext) {
         if payload["total"].as_u64().unwrap() >= 1 {
             assert_eq!(payload["result"][0]["name"], json!("stf-1.5"), "unexpected sbom name");
 
-            let data: spog_model::search::PackageSummary =
-                serde_json::from_value(payload["result"][0].clone()).unwrap();
+            let data: spog_model::search::SbomSummary = serde_json::from_value(payload["result"][0].clone()).unwrap();
             // println!("Data: {:?}", data);
             // we need to have some information
             assert!(data.advisories.is_some(), "missing advisories");

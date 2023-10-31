@@ -36,10 +36,10 @@ pub struct Server {
             crate::guac::get,
         ),
         components(
-            //schemas(search::PackageSummary, search::VulnSummary, search::SearchResult<Vec<search::PackageSummary>>)
+            //schemas(search::SbomSummary, search::VulnSummary, search::SearchResult<Vec<search::SbomSummary>>)
             schemas(
-                search::PackageSummary,
-                trustification_api::search::SearchResult<Vec<search::PackageSummary>>,
+                search::SbomSummary,
+                trustification_api::search::SearchResult<Vec<search::SbomSummary>>,
                 trustification_version::VersionInformation,
                 trustification_version::Version,
                 trustification_version::Git,

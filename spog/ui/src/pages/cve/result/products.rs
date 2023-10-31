@@ -3,7 +3,7 @@ use futures::future::try_join_all;
 use patternfly_yew::prelude::*;
 use spog_model::{
     prelude::{CveDetails, PackageRelatedToProductCve, ProductCveStatus},
-    search::PackageSummary,
+    search::SbomSummary,
 };
 use spog_ui_backend::{use_backend, PackageService};
 use spog_ui_common::utils::time::date;
@@ -20,7 +20,7 @@ pub struct TableData {
     sbom_id: String,
     status: ProductCveStatus,
     packages: Vec<PackageRelatedToProductCve>,
-    sbom: Option<PackageSummary>,
+    sbom: Option<SbomSummary>,
 }
 
 trait StatusLabel {
@@ -222,7 +222,7 @@ pub fn related_products(props: &RelatedProductsProperties) -> Html {
 #[derive(PartialEq, Properties)]
 pub struct RelatedProductsTableProperties {
     pub table_data: Rc<Vec<TableData>>,
-    pub sboms: Rc<Vec<Option<PackageSummary>>>,
+    pub sboms: Rc<Vec<Option<SbomSummary>>>,
 }
 
 #[function_component(RelatedProductsTable)]
