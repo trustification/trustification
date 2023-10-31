@@ -4,7 +4,7 @@ use crate::{
     app_state::AppState,
     config, cve, endpoints,
     guac::service::GuacService,
-    index, package, sbom,
+    index, openapi, package, sbom,
     service::{collectorist::CollectoristService, v11y::V11yService},
     Run,
 };
@@ -28,6 +28,8 @@ pub struct Server {
 #[derive(OpenApi)]
 #[openapi(
     paths(
+        index::index,
+        endpoints::endpoints_fn,
         sbom::get,
         sbom::search,
         sbom::get_vulnerabilities,
@@ -36,18 +38,27 @@ pub struct Server {
         trustification_version::version::version_fn,
         crate::guac::get,
         analyze::report,
+        cve::cve_get,
+        cve::cve_search,
     ),
     components(
         schemas(
-            search::SbomSummary,
-            sbom::SearchResultSbom,
+            search::AdvisorySummary,
+            search::SBomSummary,
+            openapi::SearchResultSbom,
+            openapi::SearchResultVex,
+            openapi::SearchResultCve,
             spog_model::vuln::Remediation,
             spog_model::vuln::SbomReport,
             spog_model::vuln::SbomReportVulnerability,
+            spog_model::vuln::SummaryEntry,
             trustification_version::VersionInformation,
             trustification_version::Version,
             trustification_version::Git,
             trustification_version::Build,
+
+            v11y_model::search::SearchHitWithDocument,
+            v11y_model::search::SearchDocument,
         )
     ),
     tags(
@@ -55,6 +66,7 @@ pub struct Server {
         (name = "advisory", description = "Advisory endpoints"),
         (name = "sbom", description = "SBOM endpoints"),
         (name = "vulnerability", description = "Vulnerability endpoints"),
+        (name = "well-known", description = ".well-known endpoints"),
     ),
 )]
 pub struct ApiDoc;

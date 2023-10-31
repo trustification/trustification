@@ -8,6 +8,7 @@ mod endpoints;
 mod error;
 mod guac;
 mod index;
+mod openapi;
 mod package;
 mod sbom;
 mod search;

@@ -5,8 +5,7 @@ use actix_web::{
 };
 use tracing::instrument;
 
-#[derive(Clone, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
-#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
+#[derive(Clone, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize, utoipa::ToSchema)]
 pub struct Endpoints {
     pub vexination: String,
     pub bombastic: String,
@@ -23,8 +22,9 @@ pub fn configure(endpoints: Endpoints, config: &mut ServiceConfig) {
 }
 
 #[utoipa::path(
+    tag = "well-known",
     responses(
-        (status = 200, description = "Get endpoints", body = Endpoints),
+        (status = 200, description = "Get endpoints", body = inline(Endpoints)),
     ),
 )]
 #[get("/.well-known/trustification/endpoints")]

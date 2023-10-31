@@ -38,6 +38,14 @@ pub(crate) fn configure(auth: Option<Arc<Authenticator>>) -> impl FnOnce(&mut Se
     }
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/v1/cve",
+    responses(
+        (status = OK, description = "Search was performed successfully", body = SearchResultCve),
+    ),
+    params(search::QueryParams)
+)]
 #[instrument(skip(v11y, state), err)]
 async fn cve_search(
     web::Query(params): web::Query<search::QueryParams>,
@@ -85,6 +93,16 @@ async fn count_related_products(_cve: &str) -> Result<usize, Error> {
     Ok(0)
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/v1/cve/{id}",
+    responses(
+        (status = OK, description = "Search was performed successfully", body = SearchResultCve),
+    ),
+    params(
+        ("id" = String, Path, description = "The CVE to retrieve"),
+    )
+)]
 #[instrument(skip(v11y), err)]
 async fn cve_get(id: web::Path<String>, v11y: web::Data<V11yService>) -> actix_web::Result<HttpResponse> {
     let id = id.into_inner();

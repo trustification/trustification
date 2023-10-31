@@ -6,6 +6,7 @@ use actix_web::{
 };
 
 #[utoipa::path(
+    tag = "well-known",
     responses(
         (status = 200, description = "Get version information", body = VersionInformation),
     ),

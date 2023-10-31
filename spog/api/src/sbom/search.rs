@@ -7,15 +7,11 @@ use tracing::instrument;
 use trustification_api::search::{SearchOptions, SearchResult};
 use trustification_auth::client::TokenProvider;
 
-// FIXME: should give us proper OpenAPI types, but doesn't.
-// See: https://github.com/juhaku/utoipa/issues/790
-pub type SearchResultSbom = SearchResult<Vec<SbomSummary>>;
-
 #[utoipa::path(
     get,
     path = "/api/v1/sbom/search",
     responses(
-        (status = 200, description = "Search was performed successfully", body = SearchResultSbom),
+        (status = OK, description = "Search was performed successfully", body = SearchResultSbom),
     ),
     params(
         search::QueryParams,

@@ -58,7 +58,7 @@ pub struct SbomReport {
     pub created: Option<OffsetDateTime>,
 
     /// Vulnerabilities summary
-    pub summary: Vec<(Option<cvss::Severity>, usize)>,
+    pub summary: Vec<SummaryEntry>,
     /// Vulnerabilities list
     pub details: Vec<SbomReportVulnerability>,
     /// Traces from the vulnerable PURL back to the SBOM root
@@ -66,9 +66,18 @@ pub struct SbomReport {
     pub backtraces: BTreeMap<String, BTreeSet<Backtrace>>,
 }
 
-mod schema {
+/// Entry in the [`SbomReport`] summary.
+#[derive(Clone, Debug, PartialEq, ToSchema, Serialize, Deserialize)]
+pub struct SummaryEntry {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[schema(inline, schema_with=schema::severity)]
+    pub severity: Option<cvss::Severity>,
+    pub count: usize,
+}
 
+mod schema {
     use crate::vuln::Backtrace;
+    use cvss::Severity;
     use utoipa::openapi::schema::AdditionalProperties;
     use utoipa::openapi::*;
     use utoipa::ToSchema;
@@ -81,6 +90,23 @@ mod schema {
             .schema_type(SchemaType::Object)
             .description(Some("Traces from the vulnerable PURL back to the SBOM root"))
             .additional_properties(Some(AdditionalProperties::RefOr(backtraces.into())))
+            .build()
+    }
+
+    pub fn severity() -> Object {
+        ObjectBuilder::new()
+            .schema_type(SchemaType::String)
+            .enum_values(Some(
+                [
+                    Severity::None,
+                    Severity::Low,
+                    Severity::Medium,
+                    Severity::High,
+                    Severity::Critical,
+                ]
+                .into_iter()
+                .map(|s| s.as_str()),
+            ))
             .build()
     }
 }

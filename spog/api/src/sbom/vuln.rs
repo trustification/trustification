@@ -18,7 +18,7 @@ use rand::Rng;
 use serde_json::Value;
 use spdx_rs::models::{PackageInformation, SPDX};
 use spog_model::csaf::has_purl;
-use spog_model::prelude::{Remediation, SbomReport};
+use spog_model::prelude::{Remediation, SbomReport, SummaryEntry};
 use spog_model::vuln::{Backtrace, SbomReportVulnerability};
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::rc::Rc;
@@ -141,7 +141,10 @@ async fn process_get_vulnerabilities(
         .try_collect::<Vec<_>>()
         .await?;
 
-    let summary = summarize_vulns(&details).into_iter().collect();
+    let summary = summarize_vulns(&details)
+        .into_iter()
+        .map(|(severity, count)| SummaryEntry { severity, count })
+        .collect();
 
     Ok(Some(SbomReport {
         name,
