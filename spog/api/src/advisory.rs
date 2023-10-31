@@ -9,7 +9,7 @@ use trustification_api::search::{SearchOptions, SearchResult};
 use trustification_auth::authenticator::Authenticator;
 use trustification_infrastructure::new_auth;
 
-use crate::{search::QueryParams, server::AppState};
+use crate::{app_state::AppState, search::QueryParams};
 
 const MAX_LIMIT: usize = 1_000;
 
