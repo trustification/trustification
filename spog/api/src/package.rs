@@ -13,7 +13,7 @@ use trustification_infrastructure::new_auth;
 pub(crate) fn configure(auth: Option<Arc<Authenticator>>) -> impl FnOnce(&mut ServiceConfig) {
     |config: &mut ServiceConfig| {
         config.service(
-            web::scope("/api/v1/package_info")
+            web::scope("/api/v1/package")
                 .wrap(new_auth!(auth))
                 .service(web::resource("/search").to(packages_search_mock))
                 .service(web::resource("/{id}").to(package_get_mock))
@@ -24,7 +24,7 @@ pub(crate) fn configure(auth: Option<Arc<Authenticator>>) -> impl FnOnce(&mut Se
 
 #[utoipa::path(
     get,
-    path = "/api/v1/package_info/search",
+    path = "/api/v1/package/search",
     responses(
         (status = 200, description = "packages was found"),
         (status = NOT_FOUND, description = "packages was not found")

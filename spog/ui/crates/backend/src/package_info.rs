@@ -25,7 +25,7 @@ impl PackageInfoService {
     pub async fn get(&self, id: impl AsRef<str>) -> Result<PackageInfoSummary, ApiError> {
         let url = self.backend.join(
             Endpoint::Api,
-            &format!("/api/v1/package_info/{id}", id = urlencoding::encode(id.as_ref())),
+            &format!("/api/v1/package/{id}", id = urlencoding::encode(id.as_ref())),
         )?;
 
         let response = self
@@ -42,7 +42,7 @@ impl PackageInfoService {
         let url = self.backend.join(
             Endpoint::Api,
             &format!(
-                "/api/v1/package_info/{id}/related-products",
+                "/api/v1/package/{id}/related-products",
                 id = urlencoding::encode(id.as_ref())
             ),
         )?;
@@ -64,7 +64,7 @@ impl PackageInfoService {
     ) -> Result<SearchResult<Vec<PackageInfoSummary>>, Error> {
         let response = self
             .client
-            .get(self.backend.join(Endpoint::Api, "/api/v1/package_info/search")?)
+            .get(self.backend.join(Endpoint::Api, "/api/v1/package/search")?)
             .query(&[("q", q)])
             .apply(options)
             .latest_access_token(&self.access_token)
