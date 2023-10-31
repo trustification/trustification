@@ -1,17 +1,3 @@
-use std::process::ExitCode;
-use std::{net::TcpListener, path::PathBuf};
-use trustification_analytics::AnalyticsConfig;
-use trustification_auth::{
-    auth::AuthConfigArguments, client::OpenIdTokenProviderConfigArguments, swagger_ui::SwaggerUiOidcConfig,
-};
-use trustification_common::tls::ClientConfig;
-use trustification_infrastructure::{
-    app::http::HttpServerConfig,
-    endpoint::{self, Endpoint, SpogApi},
-    Infrastructure, InfrastructureConfig,
-};
-use url::Url;
-
 mod advisory;
 mod analytics;
 mod analyze;
@@ -28,6 +14,23 @@ mod search;
 mod server;
 mod service;
 mod utils;
+
+use std::process::ExitCode;
+use std::{net::TcpListener, path::PathBuf};
+use trustification_analytics::AnalyticsConfig;
+use trustification_auth::{
+    auth::AuthConfigArguments, client::OpenIdTokenProviderConfigArguments, swagger_ui::SwaggerUiOidcConfig,
+};
+use trustification_common::tls::ClientConfig;
+use trustification_infrastructure::{
+    app::http::HttpServerConfig,
+    endpoint::{self, Endpoint, SpogApi},
+    Infrastructure, InfrastructureConfig,
+};
+use url::Url;
+
+// export the API documentation
+pub use server::ApiDoc;
 
 pub const DEFAULT_CRDA_PAYLOAD_LIMIT: usize = 10 * 1024 * 1024;
 

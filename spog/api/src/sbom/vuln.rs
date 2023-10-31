@@ -19,7 +19,7 @@ use serde_json::Value;
 use spdx_rs::models::{PackageInformation, SPDX};
 use spog_model::csaf::has_purl;
 use spog_model::prelude::{Remediation, SbomReport};
-use spog_model::vuln::SbomReportVulnerability;
+use spog_model::vuln::{Backtrace, SbomReportVulnerability};
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::rc::Rc;
 use std::str::FromStr;
@@ -27,14 +27,16 @@ use tracing::{info_span, instrument, Instrument};
 use trustification_api::search::SearchOptions;
 use trustification_auth::client::TokenProvider;
 use trustification_common::error::ErrorInformation;
+use utoipa::IntoParams;
 
 /// chunk size for finding VEX by CVE IDs
 const SEARCH_CHUNK_SIZE: usize = 10;
 /// number of parallel fetches for VEX documents
 const PARALLEL_FETCH_VEX: usize = 4;
 
-#[derive(Debug, serde::Deserialize)]
+#[derive(Debug, serde::Deserialize, IntoParams)]
 pub struct GetParams {
+    /// ID of the SBOM to get vulnerabilities for
     pub id: String,
 }
 
@@ -42,12 +44,10 @@ pub struct GetParams {
     get,
     path = "/api/v1/sbom/vulnerabilities",
     responses(
-        (status = 200, description = "SBOM was found"),
+        (status = OK, description = "Processing succeeded", body = SbomReport),
         (status = NOT_FOUND, description = "SBOM was not found")
     ),
-    params(
-        ("id" = String, Path, description = "Id of SBOM to fetch"),
-    )
+    params(GetParams)
 )]
 #[instrument(skip(state, v11y, guac, access_token), err)]
 pub async fn get_vulnerabilities(
@@ -274,7 +274,9 @@ pub struct AnalyzeOutcome {
     // CVE to PURLs to remediations
     cve_to_purl: BTreeMap<String, BTreeMap<String, Vec<Remediation>>>,
     // PURL to backtrace
-    purl_to_backtrace: BTreeMap<String, BTreeSet<Vec<String>>>,
+    purl_to_backtrace: BTreeMap<String, BTreeSet<Backtrace>>,
+    // total number of PURLs
+    total: usize,
 }
 
 /// Analyze by purls
@@ -373,7 +375,7 @@ async fn analyze_spdx(
 async fn backtrace<'a>(
     _guac: &GuacService,
     _purl: &'a PackageUrl<'a>,
-) -> Result<impl Iterator<Item = Vec<String>> + 'a, Error> {
+) -> Result<impl Iterator<Item = Backtrace> + 'a, Error> {
     let mut rng = rand::thread_rng();
     let mut names = Generator::default();
 
@@ -390,7 +392,7 @@ async fn backtrace<'a>(
                     .to_string(),
             );
         }
-        result.push(trace);
+        result.push(Backtrace(trace));
     }
 
     Ok(result.into_iter())

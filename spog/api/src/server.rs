@@ -15,7 +15,6 @@ use std::future::Future;
 use std::pin::Pin;
 use std::{net::TcpListener, sync::Arc};
 use trustification_analytics::Tracker;
-use trustification_api::Apply;
 use trustification_auth::{authenticator::Authenticator, authorizer::Authorizer, swagger_ui::SwaggerUiOidc};
 use trustification_infrastructure::{app::http::HttpServerBuilder, MainContext};
 use trustification_version::version;
@@ -28,31 +27,36 @@ pub struct Server {
 
 #[derive(OpenApi)]
 #[openapi(
-        paths(
-            sbom::get,
-            sbom::search,
-            advisory::get,
-            advisory::search,
-            trustification_version::version::version_fn,
-            crate::guac::get,
-        ),
-        components(
-            //schemas(search::SbomSummary, search::VulnSummary, search::SearchResult<Vec<search::SbomSummary>>)
-            schemas(
-                search::SbomSummary,
-                trustification_api::search::SearchResult<Vec<search::SbomSummary>>,
-                trustification_version::VersionInformation,
-                trustification_version::Version,
-                trustification_version::Git,
-                trustification_version::Build,
-            )
-        ),
-        tags(
-            (name = "package", description = "Package endpoints"),
-            (name = "advisory", description = "Advisory endpoints"),
-          //  (name = "vulnerability", description = "Vulnerability endpoints"),
-        ),
-    )]
+    paths(
+        sbom::get,
+        sbom::search,
+        sbom::get_vulnerabilities,
+        advisory::get,
+        advisory::search,
+        trustification_version::version::version_fn,
+        crate::guac::get,
+        analyze::report,
+    ),
+    components(
+        schemas(
+            search::SbomSummary,
+            sbom::SearchResultSbom,
+            spog_model::vuln::Remediation,
+            spog_model::vuln::SbomReport,
+            spog_model::vuln::SbomReportVulnerability,
+            trustification_version::VersionInformation,
+            trustification_version::Version,
+            trustification_version::Git,
+            trustification_version::Build,
+        )
+    ),
+    tags(
+        (name = "package", description = "Package endpoints"),
+        (name = "advisory", description = "Advisory endpoints"),
+        (name = "sbom", description = "SBOM endpoints"),
+        (name = "vulnerability", description = "Vulnerability endpoints"),
+    ),
+)]
 pub struct ApiDoc;
 
 impl Server {

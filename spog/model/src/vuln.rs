@@ -2,7 +2,9 @@ use super::pkg::PackageRef;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
+use std::ops::{Deref, DerefMut};
 use time::OffsetDateTime;
+use utoipa::openapi::{KnownFormat, ObjectBuilder, RefOr, Schema, SchemaFormat, SchemaType};
 use utoipa::ToSchema;
 
 #[derive(Clone, Debug, PartialEq, Eq, ToSchema, Serialize, Deserialize)]
@@ -45,6 +47,7 @@ pub struct Cvss3 {
     pub status: String,
 }
 
+/// Report of vulnerabilities of an SBOM.
 #[derive(Clone, Debug, PartialEq, ToSchema, Serialize, Deserialize)]
 pub struct SbomReport {
     /// The SBOM name
@@ -59,25 +62,87 @@ pub struct SbomReport {
     /// Vulnerabilities list
     pub details: Vec<SbomReportVulnerability>,
     /// Traces from the vulnerable PURL back to the SBOM root
-    pub backtraces: BTreeMap<String, BTreeSet<Vec<String>>>,
+    #[schema(schema_with=schema::backtraces)]
+    pub backtraces: BTreeMap<String, BTreeSet<Backtrace>>,
+}
+
+mod schema {
+
+    use crate::vuln::Backtrace;
+    use utoipa::openapi::schema::AdditionalProperties;
+    use utoipa::openapi::*;
+    use utoipa::ToSchema;
+
+    pub fn backtraces() -> Object {
+        let backtrace = Backtrace::schema().1;
+        let backtraces = ArrayBuilder::new().unique_items(true).items(backtrace).build();
+
+        ObjectBuilder::new()
+            .schema_type(SchemaType::Object)
+            .description(Some("Traces from the vulnerable PURL back to the SBOM root"))
+            .additional_properties(Some(AdditionalProperties::RefOr(backtraces.into())))
+            .build()
+    }
+}
+
+/// A trace from a vulnerability back to its top-most component.
+#[derive(Clone, Debug, PartialEq, Eq, Ord, PartialOrd, Serialize, Deserialize)]
+pub struct Backtrace(pub Vec<String>);
+
+impl<'__s> ToSchema<'__s> for Backtrace {
+    fn schema() -> (&'__s str, RefOr<Schema>) {
+        let schema = ObjectBuilder::new()
+            .schema_type(SchemaType::String)
+            .format(Some(SchemaFormat::KnownFormat(KnownFormat::Uri)))
+            .description(Some("A Package URL"))
+            .to_array_builder()
+            .unique_items(true)
+            .build();
+
+        ("Backtrace", schema.into())
+    }
+}
+
+impl Deref for Backtrace {
+    type Target = Vec<String>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for Backtrace {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, ToSchema, Serialize, Deserialize)]
 pub struct SbomReportVulnerability {
+    /// The ID of the vulnerability
     pub id: String,
+    /// A plain text description
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    /// The severity score
+    ///
+    /// TODO: Right now this expected to be a CVSS v3 score. This needs to change into an
+    /// enum which carries the score type information as well.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub score: Option<f32>,
+    /// Timestamp the vulnerability was initially published
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub published: Option<OffsetDateTime>,
+    /// Timestamp the vulnerability was last updated
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub updated: Option<OffsetDateTime>,
+    /// A map listing the packages affected by this vulnerability, and the available remediations.
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub affected_packages: BTreeMap<String, Vec<Remediation>>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, ToSchema, serde::Serialize, serde::Deserialize)]
 pub struct Remediation {
+    /// Detail information on the remediation.
     pub details: String,
 }

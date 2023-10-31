@@ -1,13 +1,16 @@
 mod result;
 
 pub use result::*;
+use utoipa::IntoParams;
 
 use crate::Apply;
 
-#[derive(Clone, Debug, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
+#[derive(Clone, Debug, PartialEq, Eq, serde::Deserialize, serde::Serialize, IntoParams)]
 pub struct SearchOptions {
+    /// Return index "explain" output
     #[serde(default)]
     pub explain: bool,
+    /// Return additional search metadata
     #[serde(default)]
     pub metadata: bool,
     #[serde(default = "default_summaries")]
