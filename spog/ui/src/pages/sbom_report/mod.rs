@@ -6,6 +6,7 @@ use convert_case::{Case, Casing};
 use details::Details;
 use patternfly_yew::prelude::*;
 use serde_json::{json, Value};
+use spog_model::prelude::SummaryEntry;
 use spog_ui_backend::use_backend;
 use spog_ui_common::error::components::Error;
 use spog_ui_components::{
@@ -123,34 +124,34 @@ fn donut_options(data: &spog_model::vuln::SbomReport) -> Value {
     let mut summary = data.summary.clone();
 
     // reverse sort
-    summary.sort_unstable_by(|(a, _), (b, _)| b.cmp(a));
+    summary.sort_unstable_by(|a, b| b.severity.cmp(&a.severity));
 
-    let total: usize = summary.iter().map(|(_, v)| v).sum();
+    let total: usize = summary.iter().map(|SummaryEntry { count, .. }| *count).sum();
     let donut_data = summary
         .iter()
-        .map(|(k, v)| {
+        .map(|SummaryEntry { severity, count }| {
             json!({
-                "x": k.map(|k| k.as_str().to_case(Case::Title)).unwrap_or_else(|| "Unknown".to_string()),
-                "y": v,
+                "x": severity.map(|k| k.as_str().to_case(Case::Title)).unwrap_or_else(|| "Unknown".to_string()),
+                "y": count,
             })
         })
         .collect::<Vec<_>>();
 
     let legend_data = summary
         .iter()
-        .map(|(k, v)| {
-            let k = k
+        .map(|SummaryEntry { severity, count }| {
+            let k = severity
                 .map(|k| k.as_str().to_case(Case::Title))
                 .unwrap_or_else(|| "Unknown".to_string());
             json!({
-                "name": format!("{v} {k}"),
+                "name": format!("{count} {k}"),
             })
         })
         .collect::<Vec<_>>();
 
     let color_scale = summary
         .iter()
-        .map(|(k, _)| match k {
+        .map(|SummaryEntry { severity, .. }| match severity {
             None => "var(--pf-v5-global--Color--light-200)",
             Some(cvss::Severity::None) => "var(--pf-v5-global--Color--light-300)",
             Some(cvss::Severity::Low) => "var(--pf-v5-global--info-color--100)",

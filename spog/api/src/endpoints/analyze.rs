@@ -94,7 +94,7 @@ pub(crate) fn configure(payload_limit: usize) -> impl FnOnce(&mut ServiceConfig)
     post,
     path = "/api/v1/analyze/report",
     responses(
-        (status = 200, description = "Generated CRDA report", body = String),
+        (status = OK, description = "Generated CRDA report", body = String),
         (status = 400, description = "Invalid SBOM format", body = String),
         (status = 502, description = "Failed to communicate with CRDA backend", body = String),
     )

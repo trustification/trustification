@@ -57,12 +57,12 @@ pub struct V11yRef {
     pub severity: String,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
+#[derive(Clone, Debug, PartialEq, Eq, serde::Deserialize, serde::Serialize, ToSchema)]
 pub struct PackageProductDetails {
     pub related_products: Vec<ProductRelatedToPackage>,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
+#[derive(Clone, Debug, PartialEq, Eq, serde::Deserialize, serde::Serialize, ToSchema)]
 pub struct ProductRelatedToPackage {
     pub sbom_id: String,
     pub dependency_type: String,

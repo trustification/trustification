@@ -2,7 +2,7 @@ mod cve;
 
 use packageurl::PackageUrl;
 use patternfly_yew::prelude::*;
-use spog_model::prelude::{Remediation, SbomReportVulnerability};
+use spog_model::prelude::{Backtrace, Remediation, SbomReportVulnerability};
 use spog_ui_components::{cvss::CvssScore, pagination::PaginationWrapped, time::Date};
 use std::cmp::Ordering;
 use std::collections::{BTreeMap, BTreeSet};
@@ -171,7 +171,7 @@ pub fn details(props: &DetailsProps) -> Html {
 
 fn build_packages<'a>(
     packages: impl IntoIterator<Item = (&'a String, &'a Vec<Remediation>)>,
-    backtraces: Rc<BTreeMap<String, BTreeSet<Vec<String>>>>,
+    backtraces: Rc<BTreeMap<String, BTreeSet<Backtrace>>>,
 ) -> Vec<AffectedPackage> {
     let mut result = BTreeMap::<PackageKey, PackageValue>::new();
 
@@ -224,7 +224,7 @@ impl PackageKey {
 #[derive(PartialEq)]
 struct PackageValue {
     qualifiers: BTreeMap<String, BTreeSet<String>>,
-    backtraces: Rc<BTreeMap<String, BTreeSet<Vec<String>>>>,
+    backtraces: Rc<BTreeMap<String, BTreeSet<Backtrace>>>,
     remediations: Vec<Remediation>,
 }
 

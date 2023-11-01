@@ -6348,6 +6348,7 @@ dependencies = [
  "utoipa-swagger-ui",
  "uuid",
  "v11y-client",
+ "v11y-model",
  "vexination-model",
  "zstd",
 ]
@@ -7904,6 +7905,7 @@ dependencies = [
  "indexmap 2.0.2",
  "serde",
  "serde_json",
+ "serde_yaml",
  "utoipa-gen",
 ]
 
@@ -7918,6 +7920,7 @@ dependencies = [
  "quote",
  "regex",
  "syn 2.0.38",
+ "url",
 ]
 
 [[package]]

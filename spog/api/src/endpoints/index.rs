@@ -16,7 +16,7 @@ const ENDPOINTS: &[&str] = &[
 
 #[utoipa::path(
     responses(
-        (status = 200, description = "API", body = Vec<String>),
+        (status = 200, description = "API", body = Vec<Url>),
     )
 )]
 #[get("/")]

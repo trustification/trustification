@@ -11,12 +11,11 @@ use trustification_auth::client::TokenProvider;
     get,
     path = "/api/v1/sbom/search",
     responses(
-        (status = 200, description = "Search was performed successfully"),
+        (status = OK, description = "Search was performed successfully", body = SearchResultSbom),
     ),
     params(
-        ("q" = String, Path, description = "Search query"),
-        ("offset" = u64, Path, description = "Offset in the search results to return"),
-        ("limit" = u64, Path, description = "Max entries returned in the search results"),
+        search::QueryParams,
+        SearchOptions,
     )
 )]
 #[instrument(skip(state, access_token), err)]
@@ -62,7 +61,7 @@ pub async fn search(
         });
     }
 
-    let mut result = SearchResult::<Vec<SbomSummary>> {
+    let mut result = SearchResult {
         total: Some(data.total),
         result: m,
     };

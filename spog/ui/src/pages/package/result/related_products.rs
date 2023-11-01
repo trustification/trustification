@@ -4,7 +4,7 @@ use spog_model::{
     prelude::{PackageProductDetails, ProductRelatedToPackage},
     search::SbomSummary,
 };
-use spog_ui_backend::{use_backend, PackageService};
+use spog_ui_backend::{use_backend, SBOMService};
 use spog_ui_components::{async_state_renderer::async_content, pagination::PaginationWrapped};
 use spog_ui_navigation::{AppRoute, View};
 use std::rc::Rc;
@@ -69,7 +69,7 @@ pub fn related_products(props: &RelatedProductsProperties) -> Html {
         let access_token = access_token.clone();
         use_async_with_cloned_deps(
             move |related_products| async move {
-                let service = PackageService::new(backend.clone(), access_token.clone());
+                let service = SBOMService::new(backend.clone(), access_token.clone());
                 let futures = related_products
                     .iter()
                     .map(|related_product| service.get_package(&related_product.sbom_id));

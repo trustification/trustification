@@ -1,16 +1,16 @@
 use crate::{
-    advisory,
-    analyze::{self, CrdaClient},
     app_state::AppState,
-    config, cve, endpoints,
-    guac::service::GuacService,
-    index, package, sbom,
-    service::{collectorist::CollectoristService, v11y::V11yService},
+    config,
+    endpoints::{
+        self,
+        analyze::{self, CrdaClient},
+        wellknown::endpoints::Endpoints,
+    },
+    service::{collectorist::CollectoristService, guac::GuacService, v11y::V11yService},
     Run,
 };
 use actix_web::web;
 use futures::future::select_all;
-use spog_model::search;
 use std::future::Future;
 use std::pin::Pin;
 use std::{net::TcpListener, sync::Arc};
@@ -24,35 +24,6 @@ use utoipa_swagger_ui::SwaggerUi;
 pub struct Server {
     run: Run,
 }
-
-#[derive(OpenApi)]
-#[openapi(
-        paths(
-            sbom::get,
-            sbom::search,
-            advisory::get,
-            advisory::search,
-            trustification_version::version::version_fn,
-            crate::guac::get,
-        ),
-        components(
-            //schemas(search::SbomSummary, search::VulnSummary, search::SearchResult<Vec<search::SbomSummary>>)
-            schemas(
-                search::SbomSummary,
-                trustification_api::search::SearchResult<Vec<search::SbomSummary>>,
-                trustification_version::VersionInformation,
-                trustification_version::Version,
-                trustification_version::Git,
-                trustification_version::Build,
-            )
-        ),
-        tags(
-            (name = "package", description = "Package endpoints"),
-            (name = "advisory", description = "Advisory endpoints"),
-          //  (name = "vulnerability", description = "Vulnerability endpoints"),
-        ),
-    )]
-pub struct ApiDoc;
 
 impl Server {
     pub fn new(run: Run) -> Self {
@@ -87,7 +58,7 @@ impl Server {
         let crda = self.run.crda_url.map(CrdaClient::new).map(web::Data::new);
         let crda_payload_limit = self.run.crda_payload_limit;
 
-        let end_points = endpoints::Endpoints {
+        let endpoints = Endpoints {
             vexination: String::from(self.run.vexination_url.as_str()),
             bombastic: String::from(self.run.bombastic_url.as_str()),
             collectorist: String::from(self.run.collectorist_url.as_str()),
@@ -121,17 +92,16 @@ impl Server {
                     .app_data(tracker.clone())
                     .app_data(v11y.clone())
                     .app_data(collectorist.clone())
-                    .configure(index::configure())
+                    .configure(endpoints::index::configure())
                     .configure(version::configurator(version!()))
-                    .configure(endpoints::configurator(end_points.clone()))
-                    .configure(sbom::configure(authenticator.clone()))
-                    .configure(advisory::configure(authenticator.clone()))
-                    .configure(crate::guac::configure(authenticator.clone()))
-                    .configure(cve::configure(authenticator.clone()))
-                    .configure(package::configure(authenticator.clone()))
+                    .configure(endpoints::wellknown::endpoints::configurator(endpoints.clone()))
+                    .configure(endpoints::sbom::configure(authenticator.clone()))
+                    .configure(endpoints::advisory::configure(authenticator.clone()))
+                    .configure(endpoints::cve::configure(authenticator.clone()))
+                    .configure(endpoints::package::configure(authenticator.clone()))
                     .configure(config_configurator.clone())
                     .service({
-                        let mut openapi = ApiDoc::openapi();
+                        let mut openapi = endpoints::ApiDoc::openapi();
                         let mut swagger = SwaggerUi::new("/swagger-ui/{_:.*}");
 
                         if let Some(swagger_ui_oidc) = &swagger_oidc {
