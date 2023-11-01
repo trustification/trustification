@@ -1,10 +1,9 @@
-// pub mod data;
-
 pub mod data {
     pub use spog_model::prelude::*;
 }
 
 mod access_token;
+mod advisory;
 mod analyze;
 mod config;
 mod cve;
@@ -14,10 +13,10 @@ mod pkg;
 mod sbom;
 mod search;
 mod version;
-mod vuln;
 
 pub use self::cve::*;
 pub use access_token::*;
+pub use advisory::*;
 pub use analyze::*;
 pub use config::*;
 pub use hooks::*;
@@ -26,7 +25,6 @@ pub use pkg::*;
 pub use sbom::*;
 pub use search::*;
 pub use version::*;
-pub use vuln::*;
 
 use url::Url;
 

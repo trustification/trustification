@@ -13,7 +13,7 @@ schemars = { version = "0.8", features = ["url"] }
 serde = { version = "1", features = ["derive"] }
 time = { version = "0.3" }
 url = { version = "2", features = ["serde"] }
-utoipa = { version = "4" }
+utoipa = { version = "4", features = ["url"] }
 cvss = "2"
 
 exhort-model = { path = "../../exhort/model" }

@@ -1,7 +1,7 @@
 use crate::app_state::{AppState, ResponseError};
 use crate::error::Error;
-use crate::guac::service::{GuacSbomIdentifier, GuacService};
-use crate::service::v11y::V11yService;
+use crate::service::guac::GuacSbomIdentifier;
+use crate::service::{guac::GuacService, v11y::V11yService};
 use actix_web::cookie::time;
 use actix_web::{web, HttpResponse};
 use actix_web_httpauth::extractors::bearer::BearerAuth;
@@ -18,8 +18,8 @@ use rand::Rng;
 use serde_json::Value;
 use spdx_rs::models::{PackageInformation, SPDX};
 use spog_model::csaf::has_purl;
-use spog_model::prelude::{Remediation, SbomReport};
-use spog_model::vuln::SbomReportVulnerability;
+use spog_model::prelude::{Remediation, SbomReport, SummaryEntry};
+use spog_model::vuln::{Backtrace, SbomReportVulnerability};
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::rc::Rc;
 use std::str::FromStr;
@@ -27,14 +27,16 @@ use tracing::{info_span, instrument, Instrument};
 use trustification_api::search::SearchOptions;
 use trustification_auth::client::TokenProvider;
 use trustification_common::error::ErrorInformation;
+use utoipa::IntoParams;
 
 /// chunk size for finding VEX by CVE IDs
 const SEARCH_CHUNK_SIZE: usize = 10;
 /// number of parallel fetches for VEX documents
 const PARALLEL_FETCH_VEX: usize = 4;
 
-#[derive(Debug, serde::Deserialize)]
+#[derive(Debug, serde::Deserialize, IntoParams)]
 pub struct GetParams {
+    /// ID of the SBOM to get vulnerabilities for
     pub id: String,
 }
 
@@ -42,12 +44,10 @@ pub struct GetParams {
     get,
     path = "/api/v1/sbom/vulnerabilities",
     responses(
-        (status = 200, description = "SBOM was found"),
+        (status = OK, description = "Processing succeeded", body = SbomReport),
         (status = NOT_FOUND, description = "SBOM was not found")
     ),
-    params(
-        ("id" = String, Path, description = "Id of SBOM to fetch"),
-    )
+    params(GetParams)
 )]
 #[instrument(skip(state, v11y, guac, access_token), err)]
 pub async fn get_vulnerabilities(
@@ -141,7 +141,10 @@ async fn process_get_vulnerabilities(
         .try_collect::<Vec<_>>()
         .await?;
 
-    let summary = summarize_vulns(&details).into_iter().collect();
+    let summary = summarize_vulns(&details)
+        .into_iter()
+        .map(|(severity, count)| SummaryEntry { severity, count })
+        .collect();
 
     Ok(Some(SbomReport {
         name,
@@ -274,7 +277,7 @@ pub struct AnalyzeOutcome {
     // CVE to PURLs to remediations
     cve_to_purl: BTreeMap<String, BTreeMap<String, Vec<Remediation>>>,
     // PURL to backtrace
-    purl_to_backtrace: BTreeMap<String, BTreeSet<Vec<String>>>,
+    purl_to_backtrace: BTreeMap<String, BTreeSet<Backtrace>>,
 }
 
 /// Analyze by purls
@@ -373,7 +376,7 @@ async fn analyze_spdx(
 async fn backtrace<'a>(
     _guac: &GuacService,
     _purl: &'a PackageUrl<'a>,
-) -> Result<impl Iterator<Item = Vec<String>> + 'a, Error> {
+) -> Result<impl Iterator<Item = Backtrace> + 'a, Error> {
     let mut rng = rand::thread_rng();
     let mut names = Generator::default();
 
@@ -390,7 +393,7 @@ async fn backtrace<'a>(
                     .to_string(),
             );
         }
-        result.push(trace);
+        result.push(Backtrace(trace));
     }
 
     Ok(result.into_iter())
@@ -505,7 +508,7 @@ mod test {
 
     #[test]
     fn test_scrape_remediations() {
-        let csaf = include_bytes!("../../../example-data/cve-2023-22998.json");
+        let csaf = include_bytes!("../../../../example-data/cve-2023-22998.json");
         let csaf: Csaf = serde_json::from_slice(csaf).unwrap();
 
         let mut vex = HashMap::new();

@@ -8,6 +8,7 @@ use tracing::instrument;
 use trustification_api::search::{SearchOptions, SearchResult};
 use trustification_auth::authenticator::Authenticator;
 use trustification_infrastructure::new_auth;
+use utoipa::IntoParams;
 
 use crate::{app_state::AppState, search::QueryParams};
 
@@ -25,9 +26,11 @@ pub(crate) fn configure(auth: Option<Arc<Authenticator>>) -> impl FnOnce(&mut Se
     }
 }
 
-#[derive(Debug, serde::Deserialize)]
+#[derive(Debug, serde::Deserialize, IntoParams)]
 pub struct GetParams {
+    /// ID of the advisory/VEX to retrieve
     pub id: String,
+    /// The bearer token
     pub token: Option<String>,
 }
 
@@ -35,12 +38,10 @@ pub struct GetParams {
     get,
     path = "/api/v1/advisory",
     responses(
-        (status = 200, description = "Advisory was found"),
+        (status = OK, description = "Advisory was found"),
         (status = NOT_FOUND, description = "Advisory was not found")
     ),
-    params(
-        ("id" = String, Path, description = "Id of advisory to fetch"),
-    )
+    params(GetParams)
 )]
 #[instrument(skip(state, access_token), err)]
 pub async fn get(
@@ -61,13 +62,9 @@ pub async fn get(
     get,
     path = "/api/v1/advisory/search",
     responses(
-        (status = 200, description = "Search was performed successfully"),
+        (status = OK, description = "Search was performed successfully", body = SearchResultVex),
     ),
-    params(
-        ("q" = String, Path, description = "Search query"),
-        ("offset" = u64, Path, description = "Offset in the search results to return"),
-        ("limit" = u64, Path, description = "Max entries returned in the search results"),
-    )
+    params(QueryParams, SearchOptions)
 )]
 #[instrument(skip(state, access_token), err)]
 pub async fn search(

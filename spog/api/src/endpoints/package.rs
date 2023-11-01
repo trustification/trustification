@@ -1,4 +1,5 @@
 use crate::search;
+use crate::service::guac::GuacService;
 use actix_web::{
     web::{self, ServiceConfig},
     HttpResponse,
@@ -9,13 +10,18 @@ use std::sync::Arc;
 use trustification_api::search::SearchResult;
 use trustification_auth::authenticator::Authenticator;
 use trustification_infrastructure::new_auth;
+use utoipa::IntoParams;
 
 pub(crate) fn configure(auth: Option<Arc<Authenticator>>) -> impl FnOnce(&mut ServiceConfig) {
     |config: &mut ServiceConfig| {
         config.service(
             web::scope("/api/v1/package")
                 .wrap(new_auth!(auth))
-                .service(web::resource("/search").to(packages_search_mock))
+                .service(web::resource("/search").to(package_search_mock))
+                .service(web::resource("/related").to(get_related))
+                .service(web::resource("/dependencies").to(get_dependencies))
+                .service(web::resource("/dependents").to(get_dependents))
+                // these must come last, otherwise the path parameter will eat the rest
                 .service(web::resource("/{id}").to(package_get_mock))
                 .service(web::resource("/{id}/related-products").to(package_related_products)),
         );
@@ -26,14 +32,13 @@ pub(crate) fn configure(auth: Option<Arc<Authenticator>>) -> impl FnOnce(&mut Se
     get,
     path = "/api/v1/package/search",
     responses(
-        (status = 200, description = "packages was found"),
-        (status = NOT_FOUND, description = "packages was not found")
+        (status = 200, description = "packages search was successful", body = SearchResultPackage),
     ),
-    params(
-        ("id" = String, Path, description = "Id of advisory to fetch"),
-    )
+    params()
 )]
-pub async fn packages_search_mock() -> actix_web::Result<HttpResponse> {
+pub async fn package_search_mock(query: web::Query<search::QueryParams>) -> actix_web::Result<HttpResponse> {
+    let web::Query(_) = query;
+
     let pkgs = make_mock_data();
     let result = SearchResult {
         total: Some(pkgs.len()),
@@ -42,15 +47,38 @@ pub async fn packages_search_mock() -> actix_web::Result<HttpResponse> {
     Ok(HttpResponse::Ok().json(result))
 }
 
-pub async fn package_get_mock(web::Query(_): web::Query<search::QueryParams>) -> actix_web::Result<HttpResponse> {
+#[utoipa::path(
+    get,
+    path = "/api/v1/package/{id}",
+    responses(
+        (status = OK, description = "packages was found", body = Vec<PackageInfo>),
+        (status = NOT_FOUND, description = "packages was not found"),
+    ),
+    params(
+        ("id" = Url, Path, description = "The ID of the package to retrieve")
+    )
+)]
+pub async fn package_get_mock(path: web::Path<String>) -> actix_web::Result<HttpResponse> {
+    let _id = path.into_inner();
+
     let pkgs = make_mock_data();
     Ok(HttpResponse::Ok().json(&pkgs[0]))
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/v1/package/{id}/related-products",
+    responses(
+        (status = 200, description = "related products search was successful", body = PackageProductDetails),
+    ),
+    params(
+        ("id" = Url, Path, description = "The ID of the package to get related products for")
+    )
+)]
 // TODO Replace mock data
-pub async fn package_related_products(
-    web::Query(_): web::Query<search::QueryParams>,
-) -> actix_web::Result<HttpResponse> {
+pub async fn package_related_products(path: web::Path<String>) -> actix_web::Result<HttpResponse> {
+    let _id = path.into_inner();
+
     let related_products = vec![
         ProductRelatedToPackage {
             sbom_id: "3amp-2.json.bz2".to_string(),
@@ -140,4 +168,63 @@ fn make_mock_data() -> Vec<PackageInfo> {
         },
     ];
     packages
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, serde::Deserialize, IntoParams)]
+pub struct GetPackage {
+    pub purl: String,
+}
+
+#[utoipa::path(
+    get,
+    path = "/api/v1/packages/related",
+    responses(
+        (status = OK, description = "Package was found", body = PackageRefList),
+        (status = NOT_FOUND, description = "Package was not found")
+    ),
+    params(GetPackage)
+)]
+pub async fn get_related(
+    guac: web::Data<GuacService>,
+    web::Query(GetPackage { purl }): web::Query<GetPackage>,
+) -> actix_web::Result<HttpResponse> {
+    let pkgs = guac.get_packages(&purl).await?;
+
+    Ok(HttpResponse::Ok().json(pkgs))
+}
+
+#[utoipa::path(
+    get,
+    path = "/api/v1/package/dependencies",
+    responses(
+        (status = OK, description = "Package was found", body = inline(spog_model::pkg::PackageDependencies)),
+        (status = NOT_FOUND, description = "Package was not found")
+    ),
+    params(GetPackage)
+)]
+pub async fn get_dependencies(
+    guac: web::Data<GuacService>,
+    web::Query(GetPackage { purl }): web::Query<GetPackage>,
+) -> actix_web::Result<HttpResponse> {
+    let deps = guac.get_dependencies(&purl).await?;
+
+    Ok(HttpResponse::Ok().json(deps))
+}
+
+#[utoipa::path(
+    get,
+    path = "/api/v1/package/dependents",
+    responses(
+        (status = OK, description = "Package was found", body = inline(spog_model::pkg::PackageDependents)),
+        (status = NOT_FOUND, description = "Package was not found")
+    ),
+    params(GetPackage)
+)]
+pub async fn get_dependents(
+    guac: web::Data<GuacService>,
+    web::Query(GetPackage { purl }): web::Query<GetPackage>,
+) -> actix_web::Result<HttpResponse> {
+    let deps = guac.get_dependents(&purl).await?;
+
+    Ok(HttpResponse::Ok().json(deps))
 }

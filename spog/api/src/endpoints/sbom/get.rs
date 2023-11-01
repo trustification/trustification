@@ -4,22 +4,23 @@ use actix_web_httpauth::extractors::bearer::BearerAuth;
 use http::header;
 use tracing::instrument;
 
-#[derive(Debug, serde::Deserialize)]
+#[derive(Debug, serde::Deserialize, utoipa::IntoParams)]
 pub struct GetParams {
+    /// ID of package to fetch
     pub id: String,
+    /// Access token to use for authentication
     pub token: Option<String>,
 }
 
+/// Get (aka download) an SBOM.
 #[utoipa::path(
     get,
     path = "/api/v1/sbom",
     responses(
-        (status = 200, description = "SBOM was found"),
+        (status = OK, description = "SBOM was found"),
         (status = NOT_FOUND, description = "SBOM was not found")
     ),
-    params(
-        ("id" = String, Path, description = "Id of SBOM to fetch"),
-    )
+    params(GetParams)
 )]
 #[instrument(skip(state, access_token))]
 pub async fn get(
