@@ -343,6 +343,10 @@ impl trustification_index::Index for Index {
 impl trustification_index::WriteIndex for Index {
     type Document = Cve;
 
+    fn name(&self) -> &str {
+        "cve"
+    }
+
     fn index_doc(&self, _id: &str, doc: &Cve) -> Result<Document, SearchError> {
         match doc {
             Cve::Published(cve) => self.index_published_cve(cve),
