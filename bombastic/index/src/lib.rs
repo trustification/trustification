@@ -428,43 +428,6 @@ impl Index {
 
 impl trustification_index::Index for Index {
     type MatchedDocument = SearchHit;
-    type Document = (SBOM, String);
-
-    fn index_doc(&self, id: &str, (doc, sha256): &Self::Document) -> Result<Document, SearchError> {
-        let mut doc = match doc {
-            SBOM::CycloneDX(bom) => self.index_cyclonedx(id, bom)?,
-            SBOM::SPDX(bom) => self.index_spdx(id, bom)?,
-        };
-
-        doc.add_text(self.fields.sbom_sha256, sha256);
-
-        Ok(doc)
-    }
-
-    fn parse_doc(data: &[u8]) -> Result<Self::Document, SearchError> {
-        let sha256 = sha256::digest(data);
-        SBOM::parse(data)
-            .map_err(|e| SearchError::DocParser(e.to_string()))
-            .map(|doc| (doc, sha256))
-    }
-
-    fn schema(&self) -> Schema {
-        self.schema.clone()
-    }
-
-    fn settings(&self) -> IndexSettings {
-        IndexSettings {
-            docstore_compression: tantivy::store::Compressor::Zstd(ZstdCompressor::default()),
-            ..Default::default()
-        }
-    }
-
-    fn doc_id_to_term(&self, id: &str) -> Term {
-        self.schema
-            .get_field("sbom_id")
-            .map(|f| Term::from_field_text(f, id))
-            .unwrap()
-    }
 
     fn prepare_query(&self, q: &str) -> Result<SearchQuery, SearchError> {
         let mut query = Packages::parse(q).map_err(|err| SearchError::QueryParser(err.to_string()))?;
@@ -646,6 +609,46 @@ impl trustification_index::Index for Index {
             explanation,
             metadata,
         })
+    }
+}
+
+impl trustification_index::WriteIndex for Index {
+    type Document = (SBOM, String);
+
+    fn index_doc(&self, id: &str, (doc, sha256): &Self::Document) -> Result<Document, SearchError> {
+        let mut doc = match doc {
+            SBOM::CycloneDX(bom) => self.index_cyclonedx(id, bom)?,
+            SBOM::SPDX(bom) => self.index_spdx(id, bom)?,
+        };
+
+        doc.add_text(self.fields.sbom_sha256, sha256);
+
+        Ok(doc)
+    }
+
+    fn parse_doc(&self, data: &[u8]) -> Result<Self::Document, SearchError> {
+        let sha256 = sha256::digest(data);
+        SBOM::parse(data)
+            .map_err(|e| SearchError::DocParser(e.to_string()))
+            .map(|doc| (doc, sha256))
+    }
+
+    fn schema(&self) -> Schema {
+        self.schema.clone()
+    }
+
+    fn settings(&self) -> IndexSettings {
+        IndexSettings {
+            docstore_compression: tantivy::store::Compressor::Zstd(ZstdCompressor::default()),
+            ..Default::default()
+        }
+    }
+
+    fn doc_id_to_term(&self, id: &str) -> Term {
+        self.schema
+            .get_field("sbom_id")
+            .map(|f| Term::from_field_text(f, id))
+            .unwrap()
     }
 }
 
