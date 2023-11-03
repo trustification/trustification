@@ -144,7 +144,7 @@ impl Metrics {
     }
 }
 
-pub struct IndexStore<INDEX: Index> {
+pub struct IndexStore<INDEX> {
     inner: RwLock<SearchIndex>,
     index_dir: Option<RwLock<IndexDirectory>>,
     index: INDEX,
@@ -152,16 +152,44 @@ pub struct IndexStore<INDEX: Index> {
     metrics: Metrics,
 }
 
-pub trait Index {
-    type MatchedDocument: core::fmt::Debug;
-    type Document;
+impl<DOC> WriteIndex for Box<dyn WriteIndex<Document = DOC>> {
+    type Document = DOC;
+    fn parse_doc(&self, data: &[u8]) -> Result<Self::Document, Error> {
+        self.as_ref().parse_doc(data)
+    }
+    fn settings(&self) -> IndexSettings {
+        self.as_ref().settings()
+    }
+    fn schema(&self) -> Schema {
+        self.as_ref().schema()
+    }
+    fn index_doc(&self, id: &str, document: &Self::Document) -> Result<Document, Error> {
+        self.as_ref().index_doc(id, document)
+    }
 
+    fn doc_id_to_term(&self, id: &str) -> Term {
+        self.as_ref().doc_id_to_term(id)
+    }
+    fn tokenizers(&self) -> Result<TokenizerManager, Error> {
+        self.as_ref().tokenizers()
+    }
+}
+
+pub trait WriteIndex {
+    type Document;
     fn tokenizers(&self) -> Result<TokenizerManager, Error> {
         Ok(TokenizerManager::default())
     }
-    fn parse_doc(data: &[u8]) -> Result<Self::Document, Error>;
+    fn parse_doc(&self, data: &[u8]) -> Result<Self::Document, Error>;
     fn settings(&self) -> IndexSettings;
     fn schema(&self) -> Schema;
+    fn index_doc(&self, id: &str, document: &Self::Document) -> Result<Document, Error>;
+    fn doc_id_to_term(&self, id: &str) -> Term;
+}
+
+pub trait Index: WriteIndex {
+    type MatchedDocument: core::fmt::Debug;
+
     fn prepare_query(&self, q: &str) -> Result<SearchQuery, Error>;
     fn search(
         &self,
@@ -178,8 +206,6 @@ pub trait Index {
         query: &dyn Query,
         options: &SearchOptions,
     ) -> Result<Self::MatchedDocument, Error>;
-    fn index_doc(&self, id: &str, document: &Self::Document) -> Result<Document, Error>;
-    fn doc_id_to_term(&self, id: &str) -> Term;
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -240,22 +266,27 @@ pub struct SearchQuery {
 }
 
 impl IndexWriter {
-    pub fn add_document<INDEX: Index>(&mut self, index: &INDEX, id: &str, data: &[u8]) -> Result<(), Error> {
+    pub fn add_document<DOC>(
+        &mut self,
+        index: &dyn WriteIndex<Document = DOC>,
+        id: &str,
+        data: &[u8],
+    ) -> Result<(), Error> {
         self.add_document_with_id(index, data, id, |_| id.to_string())
     }
 
-    pub fn add_document_with_id<INDEX: Index, F>(
+    pub fn add_document_with_id<DOC, F>(
         &mut self,
-        index: &INDEX,
+        index: &dyn WriteIndex<Document = DOC>,
         data: &[u8],
         name: &str,
         id: F,
     ) -> Result<(), Error>
     where
-        F: FnOnce(&INDEX::Document) -> String,
+        F: FnOnce(&DOC) -> String,
     {
         let indexing_latency = self.metrics.indexing_latency_seconds.start_timer();
-        match INDEX::parse_doc(data) {
+        match index.parse_doc(data) {
             Ok(doc) => {
                 let id = &id(&doc);
                 let doc = index.index_doc(id, &doc).map_err(|e| {
@@ -285,7 +316,7 @@ impl IndexWriter {
         Ok(())
     }
 
-    pub fn delete_document<INDEX: Index>(&self, index: &INDEX, key: &str) {
+    pub fn delete_document<DOC>(&self, index: &dyn WriteIndex<Document = DOC>, key: &str) {
         let term = index.doc_id_to_term(key);
         self.writer.delete_term(term);
     }
@@ -438,7 +469,7 @@ impl IndexState {
     }
 }
 
-impl<INDEX: Index> IndexStore<INDEX> {
+impl<INDEX: WriteIndex> IndexStore<INDEX> {
     pub fn new_in_memory(index: INDEX) -> Result<Self, Error> {
         let schema = index.schema();
         let settings = index.settings();
@@ -630,7 +661,9 @@ impl<INDEX: Index> IndexStore<INDEX> {
             metrics: self.metrics.clone(),
         })
     }
+}
 
+impl<INDEX: Index> IndexStore<INDEX> {
     pub fn search(
         &self,
         q: &str,
@@ -1000,21 +1033,6 @@ mod tests {
 
     impl Index for TestIndex {
         type MatchedDocument = String;
-        type Document = String;
-
-        fn settings(&self) -> IndexSettings {
-            IndexSettings::default()
-        }
-
-        fn schema(&self) -> Schema {
-            self.schema.clone()
-        }
-
-        fn parse_doc(data: &[u8]) -> Result<Self::Document, Error> {
-            core::str::from_utf8(data)
-                .map_err(|e| Error::DocParser(e.to_string()))
-                .map(|s| s.to_string())
-        }
 
         fn prepare_query(&self, q: &str) -> Result<SearchQuery, Error> {
             let queries: Vec<Box<dyn Query>> = vec![
@@ -1060,6 +1078,24 @@ mod tests {
                 query,
                 &(TopDocs::with_limit(limit).and_offset(offset), tantivy::collector::Count),
             )?)
+        }
+    }
+
+    impl WriteIndex for TestIndex {
+        type Document = String;
+
+        fn settings(&self) -> IndexSettings {
+            IndexSettings::default()
+        }
+
+        fn schema(&self) -> Schema {
+            self.schema.clone()
+        }
+
+        fn parse_doc(&self, data: &[u8]) -> Result<Self::Document, Error> {
+            core::str::from_utf8(data)
+                .map_err(|e| Error::DocParser(e.to_string()))
+                .map(|s| s.to_string())
         }
 
         fn index_doc(&self, id: &str, document: &Self::Document) -> Result<Document, Error> {

@@ -4,7 +4,7 @@ use std::sync::Arc;
 use tokio::sync::{mpsc, Mutex};
 use tokio::task::block_in_place;
 use trustification_event_bus::EventBusConfig;
-use trustification_index::{IndexConfig, IndexStore};
+use trustification_index::{IndexConfig, IndexStore, WriteIndex};
 use trustification_indexer::{actix::configure, Indexer, IndexerStatus, ReindexMode};
 use trustification_infrastructure::{Infrastructure, InfrastructureConfig};
 use trustification_storage::{Storage, StorageConfig};
@@ -52,13 +52,9 @@ impl Run {
                 "v11y-indexer",
                 |_context| async { Ok(()) },
                 |context| async move {
+                    let index: Box<dyn WriteIndex<Document = v11y_index::Cve>> = Box::new(v11y_index::Index::new());
                     let index = block_in_place(|| {
-                        IndexStore::new(
-                            &self.storage,
-                            &self.index,
-                            v11y_index::Index::new(),
-                            context.metrics.registry(),
-                        )
+                        IndexStore::new(&self.storage, &self.index, index, context.metrics.registry())
                     })?;
                     let storage = Storage::new(storage.process("v11y", self.devmode), context.metrics.registry())?;
 
@@ -68,7 +64,7 @@ impl Run {
                     }
 
                     let mut indexer = Indexer {
-                        index,
+                        indexes: vec![index],
                         storage,
                         bus,
                         stored_topic: self.stored_topic.as_str(),

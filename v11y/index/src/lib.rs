@@ -1,5 +1,6 @@
 use core::str::FromStr;
-use cve::{common, Cve, Published, Rejected, Timestamp};
+pub use cve::Cve;
+use cve::{common, Published, Rejected, Timestamp};
 use cvss::v3::Base;
 use cvss::Severity;
 use sikula::prelude::*;
@@ -203,36 +204,6 @@ impl Index {
 
 impl trustification_index::Index for Index {
     type MatchedDocument = SearchHit<SearchDocument>;
-    type Document = Cve;
-
-    fn index_doc(&self, _id: &str, doc: &Cve) -> Result<Document, SearchError> {
-        match doc {
-            Cve::Published(cve) => self.index_published_cve(cve),
-            Cve::Rejected(cve) => self.index_rejected_cve(cve),
-        }
-    }
-
-    fn parse_doc(data: &[u8]) -> Result<Cve, SearchError> {
-        serde_json::from_slice(data).map_err(|err| SearchError::DocParser(err.to_string()))
-    }
-
-    fn schema(&self) -> Schema {
-        self.schema.clone()
-    }
-
-    fn settings(&self) -> IndexSettings {
-        IndexSettings {
-            docstore_compression: tantivy::store::Compressor::Zstd(ZstdCompressor::default()),
-            ..Default::default()
-        }
-    }
-
-    fn doc_id_to_term(&self, id: &str) -> Term {
-        self.schema
-            .get_field("id")
-            .map(|f| Term::from_field_text(f, id))
-            .unwrap()
-    }
 
     fn prepare_query(&self, q: &str) -> Result<SearchQuery, SearchError> {
         let mut query = Cves::parse(q).map_err(|err| SearchError::QueryParser(err.to_string()))?;
@@ -366,5 +337,38 @@ impl trustification_index::Index for Index {
             explanation,
             metadata,
         })
+    }
+}
+
+impl trustification_index::WriteIndex for Index {
+    type Document = Cve;
+
+    fn index_doc(&self, _id: &str, doc: &Cve) -> Result<Document, SearchError> {
+        match doc {
+            Cve::Published(cve) => self.index_published_cve(cve),
+            Cve::Rejected(cve) => self.index_rejected_cve(cve),
+        }
+    }
+
+    fn parse_doc(&self, data: &[u8]) -> Result<Cve, SearchError> {
+        serde_json::from_slice(data).map_err(|err| SearchError::DocParser(err.to_string()))
+    }
+
+    fn schema(&self) -> Schema {
+        self.schema.clone()
+    }
+
+    fn settings(&self) -> IndexSettings {
+        IndexSettings {
+            docstore_compression: tantivy::store::Compressor::Zstd(ZstdCompressor::default()),
+            ..Default::default()
+        }
+    }
+
+    fn doc_id_to_term(&self, id: &str) -> Term {
+        self.schema
+            .get_field("id")
+            .map(|f| Term::from_field_text(f, id))
+            .unwrap()
     }
 }
