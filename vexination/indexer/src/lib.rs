@@ -4,7 +4,7 @@ use std::sync::Arc;
 use tokio::sync::{mpsc, Mutex};
 use tokio::task::block_in_place;
 use trustification_event_bus::EventBusConfig;
-use trustification_index::{IndexConfig, IndexStore};
+use trustification_index::{IndexConfig, IndexStore, WriteIndex};
 use trustification_indexer::{actix::configure, Indexer, IndexerStatus, ReindexMode};
 use trustification_infrastructure::{Infrastructure, InfrastructureConfig};
 use trustification_storage::{Storage, StorageConfig};
@@ -53,8 +53,9 @@ impl Run {
                 "vexination-indexer",
                 |_context| async { Ok(()) },
                 |context| async move {
+                    let index: Box<dyn WriteIndex<Document = csaf::Csaf>> = Box::new(Index::new());
                     let index = block_in_place(|| {
-                        IndexStore::new(&self.storage, &self.index, Index::new(), context.metrics.registry())
+                        IndexStore::new(&self.storage, &self.index, index, context.metrics.registry())
                     })?;
                     let storage =
                         Storage::new(storage.process("vexination", self.devmode), context.metrics.registry())?;
@@ -64,7 +65,7 @@ impl Run {
                     }
 
                     let mut indexer = Indexer {
-                        index,
+                        indexes: vec![index],
                         storage,
                         bus,
                         stored_topic: self.stored_topic.as_str(),
