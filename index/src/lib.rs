@@ -154,15 +154,22 @@ pub struct IndexStore<INDEX> {
 
 impl<DOC> WriteIndex for Box<dyn WriteIndex<Document = DOC>> {
     type Document = DOC;
+    fn name(&self) -> &str {
+        self.as_ref().name()
+    }
+
     fn parse_doc(&self, data: &[u8]) -> Result<Self::Document, Error> {
         self.as_ref().parse_doc(data)
     }
+
     fn settings(&self) -> IndexSettings {
         self.as_ref().settings()
     }
+
     fn schema(&self) -> Schema {
         self.as_ref().schema()
     }
+
     fn index_doc(&self, id: &str, document: &Self::Document) -> Result<Document, Error> {
         self.as_ref().index_doc(id, document)
     }
@@ -170,6 +177,7 @@ impl<DOC> WriteIndex for Box<dyn WriteIndex<Document = DOC>> {
     fn doc_id_to_term(&self, id: &str) -> Term {
         self.as_ref().doc_id_to_term(id)
     }
+
     fn tokenizers(&self) -> Result<TokenizerManager, Error> {
         self.as_ref().tokenizers()
     }
@@ -177,6 +185,7 @@ impl<DOC> WriteIndex for Box<dyn WriteIndex<Document = DOC>> {
 
 pub trait WriteIndex {
     type Document;
+    fn name(&self) -> &str;
     fn tokenizers(&self) -> Result<TokenizerManager, Error> {
         Ok(TokenizerManager::default())
     }
@@ -551,7 +560,7 @@ impl<INDEX: WriteIndex> IndexStore<INDEX> {
     /// NOTE: Only applicable for file indices.
     pub async fn sync(&self, storage: &Storage) -> Result<(), Error> {
         if let Some(index_dir) = &self.index_dir {
-            let data = storage.get_index().await?;
+            let data = storage.get_index(self.index.name()).await?;
             let mut index_dir = index_dir.write().unwrap();
             match index_dir.sync(
                 self.index.schema(),
@@ -633,7 +642,7 @@ impl<INDEX: WriteIndex> IndexStore<INDEX> {
                 drop(lock);
                 drop(inner);
                 drop(dir);
-                match storage.put_index(&out).await {
+                match storage.put_index(self.index.name(), &out).await {
                     Ok(_) => {
                         log::trace!("Snapshot published successfully");
                         Ok(())
@@ -1083,6 +1092,10 @@ mod tests {
 
     impl WriteIndex for TestIndex {
         type Document = String;
+
+        fn name(&self) -> &str {
+            "test"
+        }
 
         fn settings(&self) -> IndexSettings {
             IndexSettings::default()
