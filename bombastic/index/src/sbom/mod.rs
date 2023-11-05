@@ -1,6 +1,3 @@
-pub mod packages;
-pub mod sbom;
-
 use core::str::FromStr;
 
 use bombastic_model::prelude::*;
@@ -670,8 +667,8 @@ mod tests {
 
     const TESTDATA: &[&str] = &[
         "../testdata/ubi9-sbom.json",
-        // "../testdata/kmm-1.json",
-        // "../testdata/my-sbom.json",
+        "../testdata/kmm-1.json",
+        "../testdata/my-sbom.json",
     ];
 
     fn load_valid_file(store: &mut IndexStore<Index>, writer: &mut IndexWriter, path: impl AsRef<Path>) {
@@ -731,7 +728,7 @@ mod tests {
         assert_search(|index| {
             let result =
                 search(&index,
-"\"pkg:oci/ubi9@sha256:cb303404e576ff5528d4f08b12ad85fab8f61fa9e5dba67b37b119db24865df3?repository_url=registry.redhat.io/ubi9&tag=9.1.0-1782\" in:package"
+                       "\"pkg:oci/ubi9@sha256:cb303404e576ff5528d4f08b12ad85fab8f61fa9e5dba67b37b119db24865df3?repository_url=registry.redhat.io/ubi9&tag=9.1.0-1782\" in:package"
                 );
             assert_eq!(result.0.len(), 1);
 
