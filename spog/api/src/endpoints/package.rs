@@ -177,7 +177,7 @@ pub struct GetPackage {
 
 #[utoipa::path(
     get,
-    path = "/api/v1/packages/related",
+    path = "/api/v1/package/related",
     responses(
         (status = OK, description = "Package was found", body = PackageRefList),
         (status = NOT_FOUND, description = "Package was not found")

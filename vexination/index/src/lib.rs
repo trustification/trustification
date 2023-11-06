@@ -226,6 +226,10 @@ impl trustification_index::Index for Index {
 impl trustification_index::WriteIndex for Index {
     type Document = Csaf;
 
+    fn name(&self) -> &str {
+        "vex"
+    }
+
     fn tokenizers(&self) -> Result<TokenizerManager, SearchError> {
         let manager = TokenizerManager::default();
         let ngram = NgramTokenizer::all_ngrams(3, 8)?;

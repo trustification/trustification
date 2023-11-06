@@ -615,6 +615,10 @@ impl trustification_index::Index for Index {
 impl trustification_index::WriteIndex for Index {
     type Document = (SBOM, String);
 
+    fn name(&self) -> &str {
+        "sbom"
+    }
+
     fn index_doc(&self, id: &str, (doc, sha256): &Self::Document) -> Result<Document, SearchError> {
         let mut doc = match doc {
             SBOM::CycloneDX(bom) => self.index_cyclonedx(id, bom)?,
