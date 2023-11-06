@@ -45,7 +45,7 @@ pub struct VendorAnalysis {
     pub vendor: String,
     pub vulnerable: Vec<VulnerabilityAnalysis>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub certified: Option<PackageCertification>
+    pub certified: Option<PackageCertification>,
 }
 
 impl VendorAnalysis {
