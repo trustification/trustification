@@ -215,6 +215,12 @@ async fn analyze(state: web::Data<AppState>, request: web::Json<AnalyzeRequest>)
                             .await
                         {
                             for equal in equals {
+                                let aliases: Vec<_> = equal
+                                    .vulnerabilities
+                                    .iter()
+                                    .flat_map(|e| e.vulnerability_ids.iter().map(|id| id.vulnerability_id.clone()))
+                                    .collect();
+
                                 response.add_vulnerability_aliases(
                                     purl_str.clone(),
                                     equal.collector,
@@ -224,12 +230,10 @@ async fn analyze(state: web::Data<AppState>, request: web::Json<AnalyzeRequest>)
                                         .first()
                                         .map(|id| id.vulnerability_id.clone())
                                         .unwrap_or_default(),
-                                    equal
-                                        .vulnerabilities
-                                        .iter()
-                                        .flat_map(|e| e.vulnerability_ids.iter().map(|id| id.vulnerability_id.clone()))
-                                        .collect(),
-                                )
+                                    aliases.clone(),
+                                );
+
+                                vuln_ids.extend(aliases.iter().cloned());
                             }
                         }
                     }
