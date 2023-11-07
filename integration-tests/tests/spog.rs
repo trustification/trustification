@@ -185,6 +185,7 @@ async fn spog_search_correlation(context: &mut SpogContext) {
 #[test_context(SpogContext)]
 #[tokio::test]
 #[ntest::timeout(30_000)]
+#[ignore = "Unstable test, issue #618"]
 async fn spog_dependencies(context: &mut SpogContext) {
     let input = serde_json::from_str(include_str!("testdata/correlation/stf-1.5.json")).unwrap();
     let sbom_id = "test-stf-1.5-guac";
