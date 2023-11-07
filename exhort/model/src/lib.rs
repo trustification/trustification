@@ -46,6 +46,7 @@ pub struct VendorAnalysis {
     pub vulnerable: Vec<VulnerabilityAnalysis>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub certified: Option<PackageCertification>,
+    pub recommendations: Vec<String>,
 }
 
 impl VendorAnalysis {
@@ -133,6 +134,7 @@ impl AnalyzeResponse {
                     vendor: vendor.clone(),
                     vulnerable: vec![],
                     certified: None,
+                    recommendations: vec![],
                 };
                 vendor_analyses.push(analysis);
             }
@@ -162,6 +164,7 @@ impl AnalyzeResponse {
                     vendor: vendor.clone(),
                     vulnerable: vec![],
                     certified: None,
+                    recommendations: vec![]
                 };
                 vendor_analyses.push(analysis);
             }
@@ -183,6 +186,7 @@ impl AnalyzeResponse {
                     vendor: vendor.clone(),
                     vulnerable: vec![],
                     certified: None,
+                    recommendations: vec![]
                 };
                 vendor_analyses.push(analysis);
             }
