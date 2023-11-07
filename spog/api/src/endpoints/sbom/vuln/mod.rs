@@ -2,38 +2,38 @@ mod analyze;
 mod backtrace;
 mod vex;
 
+use crate::app_state::{AppState, ResponseError};
+use crate::endpoints::sbom::vuln::analyze::AnalyzeOutcome;
 use crate::error::Error;
-use crate::guac::service::GuacService;
-use crate::sbom::vuln::analyze::{AnalyzeOutcome, Score, VulnerabilityDetails};
-use crate::server::{AppState, ResponseError};
-use crate::service::v11y::V11yService;
+use crate::service::{guac::GuacService, v11y::V11yService};
 use actix_web::cookie::time;
 use actix_web::{web, HttpResponse};
 use actix_web_httpauth::extractors::bearer::BearerAuth;
 use analyze::analyze_spdx;
 use bombastic_model::data::SBOM;
-use bytes::{BufMut, BytesMut};
+use bytes::BytesMut;
 use cve::Cve;
 use futures::stream::iter;
 use futures::{StreamExt, TryStreamExt};
-use guac::client::intrinsic::vuln_metadata::VulnerabilityScoreType;
 use serde_json::Value;
 use spdx_rs::models::{PackageInformation, SPDX};
-use spog_model::prelude::SbomReport;
+use spog_model::prelude::{SbomReport, SummaryEntry};
 use spog_model::vuln::{SbomReportVulnerability, SourceDetails};
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashMap};
 use std::str::FromStr;
 use tracing::instrument;
 use trustification_auth::client::TokenProvider;
 use trustification_common::error::ErrorInformation;
+use utoipa::IntoParams;
 
 /// chunk size for finding VEX by CVE IDs
 const SEARCH_CHUNK_SIZE: usize = 10;
 /// number of parallel fetches for VEX documents
 const PARALLEL_FETCH_VEX: usize = 4;
 
-#[derive(Debug, serde::Deserialize)]
+#[derive(Debug, serde::Deserialize, IntoParams)]
 pub struct GetParams {
+    /// ID of the SBOM to get vulnerabilities for
     pub id: String,
 }
 
@@ -41,12 +41,10 @@ pub struct GetParams {
     get,
     path = "/api/v1/sbom/vulnerabilities",
     responses(
-        (status = 200, description = "Package was found"),
-        (status = NOT_FOUND, description = "Package was not found")
+        (status = OK, description = "Processing succeeded", body = SbomReport),
+        (status = NOT_FOUND, description = "SBOM was not found")
     ),
-    params(
-        ("id" = String, Path, description = "Id of package to fetch"),
-    )
+    params(GetParams)
 )]
 #[instrument(skip(state, v11y, guac, access_token), err)]
 pub async fn get_vulnerabilities(
@@ -75,40 +73,42 @@ async fn process_get_vulnerabilities(
     access_token: &dyn TokenProvider,
     id: &str,
 ) -> Result<Option<SbomReport>, Error> {
-    // avoid getting the full SBOM, but the query fields only
-    let mut stream = state.get_sbom(id, access_token).await?;
-    let mut sbom = BytesMut::new();
-
-    while let Some(data) = stream.next().await {
-        sbom.put(data?);
-    }
+    // FIXME: avoid getting the full SBOM, but the search document fields only
+    let sbom: BytesMut = state.get_sbom(id, access_token).await?.try_collect().await?;
 
     let sbom = SBOM::parse(&sbom).map_err(|err| Error::Generic(format!("Unable to parse SBOM: {err}")))?;
-    let (name, version, created, cve_to_purl, backtraces) = match sbom {
+    let (name, version, created, analyze, backtraces) = match sbom {
         SBOM::SPDX(spdx) => {
             // get the main packages
             let main = find_main(&spdx);
 
+            let main = match main.as_slice() {
+                [main] => main,
+                [] => {
+                    return Err(Error::Generic(
+                        r#"SBOM has no "document describes" entries. Unable to analyze."#.to_string(),
+                    ))
+                }
+                _ => {
+                    return Err(Error::Generic(format!(
+                        r#"SBOM has more than one "document describes" entry (number of entries: {})."#,
+                        main.len()
+                    )))
+                }
+            };
+
             let AnalyzeOutcome {
                 cve_to_purl,
                 purl_to_backtrace,
-                total,
-            } = analyze_spdx(state, guac, access_token, &spdx).await?;
+            } = analyze_spdx(state, guac, access_token, main).await?;
 
             // find a single version (if possible)
-            let version: Vec<_> = main.iter().flat_map(|pi| &pi.package_version).collect();
-            let version = match version.len() {
-                1 => Some(version[0].to_string()),
-                _ => None,
-            };
-
+            let version = main.package_version.clone();
             let name = spdx.document_creation_information.document_name;
             let created = time::OffsetDateTime::from_unix_timestamp(
                 spdx.document_creation_information.creation_info.created.timestamp(),
             )
             .ok();
-
-            log::info!("SBOM report (in: {total} packages) - out: {}", cve_to_purl.len());
 
             (name, version, created, cve_to_purl, purl_to_backtrace)
         }
@@ -117,58 +117,30 @@ async fn process_get_vulnerabilities(
 
     // fetch CVE details
 
-    let details = iter(cve_to_purl)
-        .map(|(id, details)| async move {
+    let details = iter(analyze)
+        .map(|(id, affected_packages)| async move {
+            // FIXME: need to provide packages to entry
             let cve: Cve = match v11y.fetch_cve(&id).await?.or_status_error_opt().await? {
                 Some(cve) => cve.json().await?,
-                None => {
-                    return Ok::<_, Error>(SbomReportVulnerability {
-                        id,
-                        ..Default::default()
-                    })
-                }
+                None => return Ok(None),
             };
+            let score = get_score(&cve);
 
-            let VulnerabilityDetails {
-                mut scores,
-                purls: affected_packages,
-            } = details;
+            let mut sources = HashMap::new();
+            sources.insert("mitre".to_string(), SourceDetails { score });
 
-            if let Some(value) = get_score(&cve) {
-                scores.push(Score {
-                    // FIXME: use the actual score
-                    r#type: VulnerabilityScoreType::CVSSv3,
-                    source: "mitre".to_string(),
-                    value,
-                })
-            }
-
-            let sources = scores
-                .into_iter()
-                .map(|score| {
-                    // FIXME: use the provided score type
-                    (
-                        score.source,
-                        SourceDetails {
-                            score: Some(score.value),
-                        },
-                    )
-                })
-                .collect();
-
-            // let mut sources = HashMap::new();
-            // sources.insert(Source::Mitre, SourceDetails { score });
-
-            Ok(SbomReportVulnerability {
+            Ok(Some(SbomReportVulnerability {
                 id: cve.id().to_string(),
                 description: get_description(&cve),
                 sources,
                 published: cve.common_metadata().date_published.map(|t| t.assume_utc()),
                 updated: cve.common_metadata().date_updated.map(|t| t.assume_utc()),
                 affected_packages,
-            })
+            }))
         })
         .buffer_unordered(4)
+        // filter out missing ones
+        .try_filter_map(|r| async move { Ok::<_, Error>(r) })
         .try_collect::<Vec<_>>()
         .await?;
 
@@ -176,7 +148,15 @@ async fn process_get_vulnerabilities(
 
     let summary = summarize_vulns(&details)
         .into_iter()
-        .map(|(k, v)| (k, Vec::from_iter(v)))
+        .map(|(source, counts)| {
+            (
+                source,
+                counts
+                    .into_iter()
+                    .map(|(severity, count)| SummaryEntry { severity, count })
+                    .collect::<Vec<_>>(),
+            )
+        })
         .collect();
 
     // done

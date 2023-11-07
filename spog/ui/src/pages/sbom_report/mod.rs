@@ -125,10 +125,10 @@ fn donut_options(data: &spog_model::vuln::SbomReport) -> Value {
     let mut summary = data
         .summary
         .iter()
-        .find(|(k, _)| *k == Source::Mitre)
+        .find(|(k, _)| *k == "mitre")
         .map(|(_, v)| v)
         .cloned()
-        .unwrap_or_else(Vec::new);
+        .unwrap_or_default();
 
     // reverse sort
     summary.sort_unstable_by(|a, b| b.severity.cmp(&a.severity));

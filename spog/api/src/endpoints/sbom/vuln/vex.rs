@@ -1,7 +1,7 @@
+use super::AppState;
 use super::PARALLEL_FETCH_VEX;
 use super::SEARCH_CHUNK_SIZE;
 use crate::error::Error;
-use crate::server::AppState;
 use bytes::BytesMut;
 use csaf::Csaf;
 use futures::{stream, StreamExt, TryStreamExt};

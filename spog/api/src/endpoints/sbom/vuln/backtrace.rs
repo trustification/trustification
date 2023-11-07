@@ -1,8 +1,9 @@
 use super::Error;
-use crate::guac::service::GuacService;
+use crate::service::guac::GuacService;
 use names::Generator;
 use packageurl::PackageUrl;
 use rand::Rng;
+use spog_model::prelude::Backtrace;
 use tracing::instrument;
 
 /// take a PURL, a retrieve all paths towards the main entry point of its SBOM
@@ -11,7 +12,7 @@ use tracing::instrument;
 pub async fn backtrace<'a>(
     _guac: &GuacService,
     _purl: &'a PackageUrl<'a>,
-) -> Result<impl Iterator<Item = Vec<String>> + 'a, Error> {
+) -> Result<impl Iterator<Item = Backtrace> + 'a, Error> {
     let mut rng = rand::thread_rng();
     let mut names = Generator::default();
 
@@ -28,7 +29,7 @@ pub async fn backtrace<'a>(
                     .to_string(),
             );
         }
-        result.push(trace);
+        result.push(Backtrace(trace));
     }
 
     Ok(result.into_iter())
