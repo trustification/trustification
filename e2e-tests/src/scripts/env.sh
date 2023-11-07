@@ -61,7 +61,7 @@ setup_env(){
 
     INFO=$(selenium-manager --browser $BROWSER  --cache-path $DRIVER_PATH 2>&1)
     if [[ $INFO == *"Driver path"* ]]; then
-        DRIVER_PATH=$(echo "$INFO" | grep "Driver path" | cut -d ':' -f 2 | sed -e 's/^[ \t]*//' )
+        DRIVER_PATH=$(echo "$INFO" | grep "Driver path" | sed -e 's/^.* \(.*\)$/\1/')
     fi
     echo $DRIVER_PATH
 }
