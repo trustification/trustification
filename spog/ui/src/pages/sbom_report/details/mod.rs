@@ -40,7 +40,7 @@ pub fn details(props: &DetailsProps) -> Html {
                 Column::Description => html!({ for self.vuln.description.clone() }).into(),
                 Column::Cvss => html!(
                     <>
-                        if let Some(score) = self.vuln.score(&Source::Mitre) {
+                        if let Some(score) = self.vuln.score("mitre") {
                             <CvssScore cvss={score} />
                         }
                     </>
@@ -120,8 +120,8 @@ pub fn details(props: &DetailsProps) -> Html {
             let result = match sort_by.index {
                 Column::Cvss => a
                     .vuln
-                    .score(&Source::Mitre)
-                    .partial_cmp(&b.vuln.score(&Source::Mitre))
+                    .score("mitre")
+                    .partial_cmp(&b.vuln.score("mitre"))
                     .unwrap_or(Ordering::Equal),
                 Column::AffectedPackages => a.vuln.affected_packages.len().cmp(&b.vuln.affected_packages.len()),
                 Column::Published => a.vuln.published.cmp(&b.vuln.published),
