@@ -91,6 +91,7 @@ pub fn sbom(props: &SbomReportProperties) -> Html {
                                         </SplitItem>
                                         <SplitItem>
                                             <DescriptionList auto_fit=true>
+                                                <DescriptionGroup term="Name">{ data.name.clone() }</DescriptionGroup>
                                                 if let Some(version) = data.version.clone() {
                                                     <DescriptionGroup term="Version">{ version }</DescriptionGroup>
                                                 }
