@@ -1,3 +1,8 @@
+//! Trustification Index
+//!
+//! This crate provides a wrapper around the tantivy index for the trustification project.
+//!
+
 pub mod metadata;
 
 mod s3dir;
@@ -35,6 +40,7 @@ use tantivy::{
 };
 use time::{OffsetDateTime, UtcOffset};
 
+/// Configuration for the index.
 #[derive(Clone, Debug, clap::Parser)]
 #[command(rename_all_env = "SCREAMING_SNAKE_CASE")]
 pub struct IndexConfig {
@@ -144,6 +150,9 @@ impl Metrics {
     }
 }
 
+/// A search index. This is a wrapper around the tantivy index that handles loading and storing of the index to object storage (via the local filesystem).
+///
+/// The index can be live-loaded and stored to/from object storage while serving queries.
 pub struct IndexStore<INDEX> {
     inner: RwLock<SearchIndex>,
     index_dir: Option<RwLock<IndexDirectory>>,
@@ -183,23 +192,36 @@ impl<DOC> WriteIndex for Box<dyn WriteIndex<Document = DOC>> {
     }
 }
 
+/// Defines the interface for an index that can be written to.
 pub trait WriteIndex {
+    /// Input document type expected by the index.
     type Document;
+    /// Name of the index. Must be unique across trait implementations.
     fn name(&self) -> &str;
+    /// Tokenizers used by the index.
     fn tokenizers(&self) -> Result<TokenizerManager, Error> {
         Ok(TokenizerManager::default())
     }
+    /// Parse a document from a byte slice.
     fn parse_doc(&self, data: &[u8]) -> Result<Self::Document, Error>;
+    /// Index settings required for this index.
     fn settings(&self) -> IndexSettings;
+    /// Schema required for this index.
     fn schema(&self) -> Schema;
+    /// Process an input document and return a tantivy document to be added to the index.
     fn index_doc(&self, id: &str, document: &Self::Document) -> Result<Document, Error>;
+    /// Convert a document id to a term for referencing that document.
     fn doc_id_to_term(&self, id: &str) -> Term;
 }
 
+/// Defines the interface for an index that can be searched.
 pub trait Index: WriteIndex {
+    /// Type of the matched document returned from a search.
     type MatchedDocument: core::fmt::Debug;
 
+    /// Prepare a query for searching and return a query object.
     fn prepare_query(&self, q: &str) -> Result<SearchQuery, Error>;
+    /// Search the index for a query and return a list of matched documents.
     fn search(
         &self,
         searcher: &Searcher,
@@ -207,6 +229,7 @@ pub trait Index: WriteIndex {
         offset: usize,
         limit: usize,
     ) -> Result<(Vec<(f32, DocAddress)>, usize), Error>;
+    /// Invoked for every matched document to process the document and return a result.
     fn process_hit(
         &self,
         doc: DocAddress,
@@ -217,6 +240,7 @@ pub trait Index: WriteIndex {
     ) -> Result<Self::MatchedDocument, Error>;
 }
 
+/// Errors returned by the index.
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[error("error opening index {0}")]
@@ -263,18 +287,25 @@ impl From<trustification_storage::Error> for Error {
     }
 }
 
+/// A search query.
+#[derive(Debug)]
+pub struct SearchQuery {
+    /// The tantivy query to execute.
+    pub query: Box<dyn Query>,
+    /// A custom sort order to apply to the results.
+    pub sort_by: Option<(Field, Order)>,
+}
+
+/// A writer for an index that allows batching document writes before committing a batch.
+///
+/// Batching document writes can improve performance by reducing the number of commits to the index.
 pub struct IndexWriter {
     writer: tantivy::IndexWriter,
     metrics: Metrics,
 }
 
-#[derive(Debug)]
-pub struct SearchQuery {
-    pub query: Box<dyn Query>,
-    pub sort_by: Option<(Field, Order)>,
-}
-
 impl IndexWriter {
+    /// Add a document to the batch.
     pub fn add_document<DOC>(
         &mut self,
         index: &dyn WriteIndex<Document = DOC>,
@@ -284,6 +315,7 @@ impl IndexWriter {
         self.add_document_with_id(index, data, id, |_| id.to_string())
     }
 
+    /// Add a document with a given identifier to the batch.
     pub fn add_document_with_id<DOC, F>(
         &mut self,
         index: &dyn WriteIndex<Document = DOC>,
@@ -319,18 +351,21 @@ impl IndexWriter {
         Ok(())
     }
 
+    /// Commit the batch and consume the writer. May merge index segments.
     pub fn commit(mut self) -> Result<(), Error> {
         self.writer.commit()?;
         self.writer.wait_merging_threads()?;
         Ok(())
     }
 
+    /// Add a delete operation to the batch.
     pub fn delete_document<DOC>(&self, index: &dyn WriteIndex<Document = DOC>, key: &str) {
         let term = index.doc_id_to_term(key);
         self.writer.delete_term(term);
     }
 }
 
+/// Represents state of the index on disk and managing index swaps.
 #[derive(Debug)]
 struct IndexDirectory {
     path: PathBuf,
@@ -673,6 +708,7 @@ impl<INDEX: WriteIndex> IndexStore<INDEX> {
 }
 
 impl<INDEX: Index> IndexStore<INDEX> {
+    /// Search the index for a given query and return matching documents.
     pub fn search(
         &self,
         q: &str,
