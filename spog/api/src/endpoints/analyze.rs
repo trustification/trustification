@@ -51,6 +51,14 @@ pub struct CrdaClient {
     url: Url,
 }
 
+static RHDA_SOURCE_HEADER: header::HeaderName = header::HeaderName::from_static("rhda-source");
+const RHDA_SOURCE_VALUE: &str = "trustification";
+// TODO: when having consent, forward the user ID
+#[allow(unused)]
+static RHDA_TOKEN_HEADER: header::HeaderName = header::HeaderName::from_static("rhda-token");
+static RHDA_OPERATION_TYPE_HEADER: header::HeaderName = header::HeaderName::from_static("rhda-operation-type");
+const RHDA_OPERATION_TYPE_VALUE: &str = "stack-analysis";
+
 impl CrdaClient {
     pub fn new(url: Url) -> Self {
         let client = reqwest::Client::new();
@@ -68,6 +76,8 @@ impl CrdaClient {
             .post(self.url.join("api/v3/analysis")?)
             .header(header::CONTENT_TYPE, content_type)
             .header(header::ACCEPT, "text/html")
+            .header(&RHDA_SOURCE_HEADER, RHDA_SOURCE_VALUE)
+            .header(&RHDA_OPERATION_TYPE_HEADER, RHDA_OPERATION_TYPE_VALUE)
             .body(sbom)
             .send()
             .await?
