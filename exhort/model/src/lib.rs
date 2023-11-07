@@ -164,7 +164,7 @@ impl AnalyzeResponse {
                     vendor: vendor.clone(),
                     vulnerable: vec![],
                     certified: None,
-                    recommendations: vec![]
+                    recommendations: vec![],
                 };
                 vendor_analyses.push(analysis);
             }
@@ -186,7 +186,7 @@ impl AnalyzeResponse {
                     vendor: vendor.clone(),
                     vulnerable: vec![],
                     certified: None,
-                    recommendations: vec![]
+                    recommendations: vec![],
                 };
                 vendor_analyses.push(analysis);
             }
