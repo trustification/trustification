@@ -1,11 +1,13 @@
 mod search;
 
+use crate::cvss::CvssMap;
 use crate::table_wrapper::TableWrapper;
 use patternfly_yew::prelude::*;
 pub use search::*;
 use spog_model::package_info::PackageInfo;
 use spog_model::search::PackageInfoSummary;
 use spog_ui_navigation::AppRoute;
+use std::collections::HashMap;
 use std::rc::Rc;
 use trustification_api::search::SearchResult;
 use yew::prelude::*;
@@ -15,6 +17,7 @@ use yew_nested_router::components::Link;
 #[derive(PartialEq, Properties, Clone)]
 pub struct PackagesEntry {
     package: PackageInfo,
+    summary: HashMap<String, u64>,
 }
 
 #[derive(PartialEq, Properties)]
@@ -61,7 +64,14 @@ impl TableEntryRenderer<Column> for PackagesEntry {
                     self.package.supplier.clone().unwrap_or_default()
                 }
                 </>),
-            Column::Vulnerabilities => v11y_component_renderer(self.clone().package),
+            Column::Vulnerabilities => {
+                let l = self.summary.len();
+                if l == 0 {
+                    "N/A".to_string().into()
+                } else {
+                    html!(<CvssMap map={self.summary.clone()} />)
+                }
+            }
         }
         .into()
     }
@@ -76,61 +86,13 @@ impl TableEntryRenderer<Column> for PackagesEntry {
     }
 }
 
-fn v11y_component_renderer(packageinfo: PackageInfo) -> Html {
-    let icon = |class: Classes| html!(<i class={classes!(class, "fa", "fa-shield-halved")}></i>);
-    html!(
-        <Split gutter=true>
-            <SplitItem>{packageinfo.vulnerabilities.len()}</SplitItem>
-            <SplitItem>
-                <Grid gutter=true>
-                    <GridItem cols={[3]}>
-                        <Split>
-                            <SplitItem>
-                                {icon(classes!("v11y-severity-critical"))}
-                            </SplitItem>
-                            <SplitItem>
-                                {packageinfo.get_v11y_severity_count("critical".to_string())}
-                            </SplitItem>
-                        </Split>
-                    </GridItem>
-                    <GridItem cols={[3]}>
-                        <Split>
-                            <SplitItem>
-                                {icon(classes!("v11y-severity-high"))}
-                            </SplitItem>
-                            <SplitItem>
-                                {packageinfo.get_v11y_severity_count("high".to_string())}
-                            </SplitItem>
-                        </Split>
-                    </GridItem>
-                    <GridItem cols={[3]}>
-                        <Split>
-                            <SplitItem>
-                                {icon(classes!("v11y-severity-medium"))}
-                            </SplitItem>
-                            <SplitItem>
-                                {packageinfo.get_v11y_severity_count("medium".to_string())}
-                            </SplitItem>
-                        </Split>
-                    </GridItem>
-                    <GridItem cols={[3]}>
-                        <Split>
-                            <SplitItem>
-                                {icon(classes!("v11y-severity-low"))}
-                            </SplitItem>
-                            <SplitItem>
-                                {packageinfo.get_v11y_severity_count("low".to_string())}
-                            </SplitItem>
-                        </Split>
-                    </GridItem>
-                </Grid>
-            </SplitItem>
-        </Split>
-    )
-}
-
 fn get_package_definitions(pkg: &PackageInfoSummary) -> PackagesEntry {
-    let pkg = PackageInfo {
+    let mut summary = HashMap::new();
+    for vuln in &pkg.vulnerabilities {
+        *summary.entry(vuln.severity.clone()).or_default() += 1;
+    }
+
+    let package = PackageInfo {
         name: pkg.name.clone().into(),
         package_type: pkg.package_type.clone().into(),
         version: pkg.version.clone().into(),
@@ -141,7 +103,8 @@ fn get_package_definitions(pkg: &PackageInfoSummary) -> PackagesEntry {
         vulnerabilities: pkg.vulnerabilities.clone(),
         description: pkg.description.clone().into(),
     };
-    PackagesEntry { package: pkg }
+
+    PackagesEntry { package, summary }
 }
 
 #[function_component(PackagesResult)]
