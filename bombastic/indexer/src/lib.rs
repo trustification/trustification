@@ -62,7 +62,7 @@ impl Run {
 
                     let package_index: Box<dyn WriteIndex<Document = (SBOM, String)>> =
                         Box::new(packages::Index::new());
-                    let packages_index = block_in_place(|| {
+                    let packageinfo_index = block_in_place(|| {
                         IndexStore::new(&self.storage, &self.index, package_index, context.metrics.registry())
                     })?;
                     let storage = Storage::new(storage.process("bombastic", self.devmode), context.metrics.registry())?;
@@ -73,7 +73,7 @@ impl Run {
                     }
 
                     let mut indexer = Indexer {
-                        indexes: vec![index, package_index],
+                        indexes: vec![index, packageinfo_index],
                         storage,
                         bus,
                         stored_topic: self.stored_topic.as_str(),

@@ -104,21 +104,21 @@ impl Index {
                 purl_qualifiers_values: schema.add_text_field("sbom_pkg_purl_qualifiers_values", STRING),
             },
             dep: PackageFields {
-                name: schema.add_text_field("dep_name", FAST | STRING),
-                purl: schema.add_text_field("dep_purl", FAST | STRING | STORED),
-                version: schema.add_text_field("dep_version", STRING),
-                desc: schema.add_text_field("dep_desc", TEXT),
-                cpe: schema.add_text_field("dep_cpe", STRING | FAST | STORED),
-                license: schema.add_text_field("dep_license", TEXT | STORED),
-                supplier: schema.add_text_field("dep_supplier", STRING),
-                classifier: schema.add_text_field("dep_classifier", STRING),
-                sha256: schema.add_text_field("dep_sha256", STRING),
-                purl_type: schema.add_text_field("dep_purl_type", STRING),
-                purl_name: schema.add_text_field("dep_purl_name", FAST | STRING),
-                purl_namespace: schema.add_text_field("dep_purl_namespace", STRING),
-                purl_version: schema.add_text_field("dep_purl_version", STRING),
-                purl_qualifiers: schema.add_text_field("dep_purl_qualifiers", STRING),
-                purl_qualifiers_values: schema.add_text_field("dep_purl_qualifiers_values", STRING),
+                name: schema.add_text_field("package_name", FAST | STRING),
+                purl: schema.add_text_field("package_purl", FAST | STRING | STORED),
+                version: schema.add_text_field("package_version", STRING),
+                desc: schema.add_text_field("package_desc", TEXT),
+                cpe: schema.add_text_field("package_cpe", STRING | FAST | STORED),
+                license: schema.add_text_field("package_license", TEXT | STORED),
+                supplier: schema.add_text_field("package_supplier", STRING),
+                classifier: schema.add_text_field("package_classifier", STRING),
+                sha256: schema.add_text_field("package_sha256", STRING),
+                purl_type: schema.add_text_field("package_purl_type", STRING),
+                purl_name: schema.add_text_field("package_purl_name", FAST | STRING),
+                purl_namespace: schema.add_text_field("package_purl_namespace", STRING),
+                purl_version: schema.add_text_field("package_purl_version", STRING),
+                purl_qualifiers: schema.add_text_field("package_purl_qualifiers", STRING),
+                purl_qualifiers_values: schema.add_text_field("package_purl_qualifiers_values", STRING),
             },
         };
         Self {
@@ -127,11 +127,16 @@ impl Index {
         }
     }
 
-    fn index_spdx(&self, id: &str, bom: &spdx_rs::models::SPDX) -> Result<Document, SearchError> {
+    fn index_spdx(
+        &self,
+        id: &str,
+        bom: &spdx_rs::models::SPDX,
+        sha256: &str,
+    ) -> Result<Vec<(String, Document)>, SearchError> {
         debug!("Indexing SPDX document");
-
+        let mut documents: Vec<(String, Document)> = Vec::new();
         let mut document = doc!();
-
+        document.add_text(self.fields.sbom_sha256, sha256);
         document.add_text(self.fields.sbom_id, id);
         document.add_text(
             self.fields.sbom_uid,
@@ -166,7 +171,8 @@ impl Index {
             }
         }
         debug!("Indexed {:?}", document);
-        Ok(document)
+        documents.push((id.to_string(), document));
+        Ok(documents)
     }
 
     fn index_spdx_package(
@@ -225,9 +231,15 @@ impl Index {
         }
     }
 
-    fn index_cyclonedx(&self, id: &str, bom: &cyclonedx_bom::prelude::Bom) -> Result<Document, SearchError> {
+    fn index_cyclonedx(
+        &self,
+        id: &str,
+        bom: &cyclonedx_bom::prelude::Bom,
+        sha256: &str,
+    ) -> Result<Vec<(String, Document)>, SearchError> {
+        let mut documents: Vec<(String, Document)> = Vec::new();
         let mut document = doc!();
-
+        document.add_text(self.fields.sbom_sha256, sha256);
         document.add_text(self.fields.sbom_id, id);
         if let Some(serial) = &bom.serial_number {
             document.add_text(self.fields.sbom_uid, serial.to_string());
@@ -258,7 +270,8 @@ impl Index {
                 Self::index_cyclonedx_component(&mut document, component, &self.fields.dep);
             }
         }
-        Ok(document)
+        documents.push((id.to_string(), document));
+        Ok(documents)
     }
 
     fn index_cyclonedx_component(
@@ -622,13 +635,11 @@ impl trustification_index::WriteIndex for Index {
         "sbom"
     }
 
-    fn index_doc(&self, id: &str, (doc, sha256): &Self::Document) -> Result<Document, SearchError> {
-        let mut doc = match doc {
-            SBOM::CycloneDX(bom) => self.index_cyclonedx(id, bom)?,
-            SBOM::SPDX(bom) => self.index_spdx(id, bom)?,
+    fn index_doc(&self, id: &str, (doc, sha256): &Self::Document) -> Result<Vec<(String, Document)>, SearchError> {
+        let doc = match doc {
+            SBOM::CycloneDX(bom) => self.index_cyclonedx(id, bom, sha256)?,
+            SBOM::SPDX(bom) => self.index_spdx(id, bom, sha256)?,
         };
-
-        doc.add_text(self.fields.sbom_sha256, sha256);
 
         Ok(doc)
     }
@@ -670,8 +681,8 @@ mod tests {
 
     const TESTDATA: &[&str] = &[
         "../testdata/ubi9-sbom.json",
-        // "../testdata/kmm-1.json",
-        // "../testdata/my-sbom.json",
+        "../testdata/kmm-1.json",
+        "../testdata/my-sbom.json",
     ];
 
     fn load_valid_file(store: &mut IndexStore<Index>, writer: &mut IndexWriter, path: impl AsRef<Path>) {
