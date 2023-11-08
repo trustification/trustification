@@ -33,12 +33,10 @@ pub struct Index {
 
 pub struct Fields {
     indexed_timestamp: Field,
-    package_id: Field,
     name: Field,
     version: Field,
     desc: Field,
     purl: Field,
-    cpe: Field,
     package_created: Field,
     license: Field,
     supplier: Field,
@@ -63,23 +61,21 @@ impl Index {
         let mut schema = Schema::builder();
         let fields = Fields {
             indexed_timestamp: schema.add_date_field("indexed_timestamp", STORED),
-            package_id: schema.add_text_field("package_id", STRING | FAST | STORED),
-            name: schema.add_text_field("package_name", FAST | STRING),
-            purl: schema.add_text_field("package_purl", FAST | STRING | STORED),
+            purl: schema.add_text_field("package_url", FAST | STRING | STORED),
+            name: schema.add_text_field("package_name", FAST | STRING | STORED),
             package_created: schema.add_date_field("package_created", INDEXED | FAST | STORED),
             version: schema.add_text_field("package_version", STRING),
             desc: schema.add_text_field("package_desc", TEXT),
-            cpe: schema.add_text_field("package_cpe", STRING | FAST | STORED),
             license: schema.add_text_field("package_license", TEXT | STORED),
             supplier: schema.add_text_field("package_supplier", STRING),
             classifier: schema.add_text_field("package_classifier", STRING),
             sha256: schema.add_text_field("package_sha256", STRING),
-            purl_type: schema.add_text_field("package_purl_type", STRING),
-            purl_name: schema.add_text_field("package_purl_name", FAST | STRING),
-            purl_namespace: schema.add_text_field("package_purl_namespace", STRING),
-            purl_version: schema.add_text_field("package_purl_version", STRING),
-            purl_qualifiers: schema.add_text_field("package_purl_qualifiers", STRING),
-            purl_qualifiers_values: schema.add_text_field("package_purl_qualifiers_values", STRING),
+            purl_type: schema.add_text_field("package_url_type", STRING),
+            purl_name: schema.add_text_field("package_url_name", FAST | STRING),
+            purl_namespace: schema.add_text_field("package_url_namespace", STRING),
+            purl_version: schema.add_text_field("package_url_version", STRING),
+            purl_qualifiers: schema.add_text_field("package_url_qualifiers", STRING),
+            purl_qualifiers_values: schema.add_text_field("package_url_qualifiers_values", STRING),
         };
         Self {
             schema: schema.build(),
@@ -128,7 +124,6 @@ impl Index {
             if r.reference_type == "purl" {
                 let purl = r.reference_locator.clone();
                 package_id = purl.clone();
-                document.add_text(fields.purl, &purl);
 
                 if let Ok(package) = packageurl::PackageUrl::from_str(&purl) {
                     document.add_text(fields.purl_name, package.name());
@@ -151,6 +146,7 @@ impl Index {
             }
         }
 
+        document.add_text(fields.purl, &package_id);
         document.add_text(fields.name, &package.package_name);
         if let Some(version) = &package.package_version {
             document.add_text(fields.version, version);
@@ -259,10 +255,7 @@ impl Index {
         // const PACKAGE_WEIGHT: f32 = 1.5;
         const CREATED_WEIGHT: f32 = 1.25;
         match resource {
-            PackageInfo::Id(value) => Box::new(TermQuery::new(
-                Term::from_field_text(self.fields.package_id, value),
-                Default::default(),
-            )),
+            PackageInfo::Purl(value) => self.create_string_query(&[self.fields.purl], value),
 
             PackageInfo::Type(value) => Box::new(TermSetQuery::new(vec![Term::from_field_text(
                 self.fields.purl_type,
@@ -377,18 +370,8 @@ impl trustification_index::Index for Index {
         options: &SearchOptions,
     ) -> Result<Self::MatchedDocument, SearchError> {
         let doc = searcher.doc(doc_address)?;
-        let id = field2str(&self.schema, &doc, self.fields.package_id)?;
+        let purl = field2str(&self.schema, &doc, self.fields.purl)?;
         let name = field2str(&self.schema, &doc, self.fields.name)?;
-
-        let purl = doc
-            .get_first(self.fields.purl)
-            .map(|s| s.as_text().unwrap_or(""))
-            .map(|s| s.to_string());
-
-        let cpe = doc
-            .get_first(self.fields.cpe)
-            .map(|s| s.as_text().unwrap_or(""))
-            .map(|s| s.to_string());
 
         let version = doc
             .get_first(self.fields.version)
@@ -430,10 +413,8 @@ impl trustification_index::Index for Index {
             .unwrap_or(time::OffsetDateTime::UNIX_EPOCH);
 
         let document = SearchPackageDocument {
-            id: id.to_string(),
             version: version.to_string(),
-            purl,
-            cpe,
+            purl: purl.to_string(),
             name: name.to_string(),
             sha256: sha256.to_string(),
             license: license.to_string(),
@@ -508,7 +489,7 @@ impl trustification_index::WriteIndex for Index {
 
     fn doc_id_to_term(&self, id: &str) -> Term {
         self.schema
-            .get_field("package_id")
+            .get_field("package_url")
             .map(|f| Term::from_field_text(f, id))
             .unwrap()
     }
@@ -581,10 +562,10 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_search_by_supplier() {
+    async fn test_search_packages_by_supplier() {
         assert_search(|index| {
-            let result = search(&index, "supplier: \"Organization: Red Hat\"");
-            assert_eq!(result.0.len(), 1);
+            let result = search(&index, "supplier:\"Organization: Red Hat\"");
+            assert_eq!(result.0.len(), 617);
         });
     }
 }

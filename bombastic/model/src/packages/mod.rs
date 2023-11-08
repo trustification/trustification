@@ -3,9 +3,9 @@ use sikula::prelude::*;
 
 #[derive(Clone, Debug, PartialEq, Search)]
 pub enum PackageInfo<'a> {
-    /// Search by Package id
+    /// Search by Package URL
     #[search(default)]
-    Id(&'a str),
+    Purl(Primary<'a>),
     ///
     /// Example queries:
     ///
@@ -28,16 +28,12 @@ pub enum PackageInfo<'a> {
 /// A document returned from the search index for every match.
 #[derive(serde::Deserialize, serde::Serialize, Debug, PartialEq, utoipa::ToSchema)]
 pub struct SearchPackageDocument {
-    /// Package (storage) identifier
-    pub id: String,
     /// Package name
     pub name: String,
     /// Package version
     pub version: String,
-    /// package product identifier
-    pub cpe: Option<String>,
     /// package package URL
-    pub purl: Option<String>,
+    pub purl: String,
     /// package SHA256 digest
     pub sha256: String,
     /// package license
