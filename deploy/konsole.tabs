@@ -1,0 +1,21 @@
+# start with: konsole --tabs-from-file deploy/konsole.tabs --workdir ~/git/trustification
+# you can also use --hold to keep tabs with terminated processed open
+
+title: vexination api;; command: /usr/bin/env TRACING=enabled OTEL_TRACES_SAMPLER_ARG=1 RUST_LOG=info cargo run -p trust -- vexination api --devmode
+title: bombastic api;; command: /usr/bin/env TRACING=enabled OTEL_TRACES_SAMPLER_ARG=1 RUST_LOG=info cargo run -p trust -- bombastic api --devmode
+title: spog api;; command: /usr/bin/env TRACING=enabled OTEL_TRACES_SAMPLER_ARG=1 RUST_LOG=info cargo run -p trust -- spog api --devmode
+title: v11y api;; command: /usr/bin/env TRACING=enabled OTEL_TRACES_SAMPLER_ARG=1 RUST_LOG=info cargo run -p trust -- v11y api --devmode
+title: exhort api;; command: /usr/bin/env TRACING=enabled OTEL_TRACES_SAMPLER_ARG=1 RUST_LOG=info cargo run -p trust -- exhort api --devmode
+
+title: collectorist api;; command: /usr/bin/env TRACING=enabled OTEL_TRACES_SAMPLER_ARG=1 RUST_LOG=info cargo run -p trust -- collectorist api --devmode
+title: collector osv;; command: /usr/bin/env TRACING=enabled OTEL_TRACES_SAMPLER_ARG=1 RUST_LOG=info cargo run -p trust -- collector osv --devmode
+title: collector nvd;; command: /usr/bin/env TRACING=enabled OTEL_TRACES_SAMPLER_ARG=1 RUST_LOG=info cargo run -p trust -- collector nvd --devmode
+title: collector snyk;; command: /usr/bin/env TRACING=enabled OTEL_TRACES_SAMPLER_ARG=1 RUST_LOG=info cargo run -p trust -- collector snyk --devmode
+
+title: vexination indexer;; command: /usr/bin/env TRACING=enabled OTEL_TRACES_SAMPLER_ARG=1 RUST_LOG=info cargo run -p trust -- vexination indexer --devmode
+title: bombastic indexer;; command: /usr/bin/env TRACING=enabled OTEL_TRACES_SAMPLER_ARG=1 RUST_LOG=info cargo run -p trust -- bombastic indexer --devmode
+title: v11y indexer;; command: /usr/bin/env TRACING=enabled OTEL_TRACES_SAMPLER_ARG=1 RUST_LOG=info cargo run -p trust -- v11y indexer --devmode
+
+title: v11y walker;; command: /usr/bin/env TRACING=enabled OTEL_TRACES_SAMPLER_ARG=1 RUST_LOG=info cargo run -p trust -- v11y walker --devmode --source ../cvelistV5/
+title: vexination walker;; command: /usr/bin/env TRACING=enabled OTEL_TRACES_SAMPLER_ARG=1 RUST_LOG=info cargo run -p trust -- vexination walker --devmode -3 --sink http://localhost:8081/api/v1/vex --source ../csaf-walker/data/vex/
+title: bombastic walker;; command: /usr/bin/env TRACING=enabled OTEL_TRACES_SAMPLER_ARG=1 RUST_LOG=info cargo run -p trust bombastic walker --sink http://localhost:8082 --devmode -3
