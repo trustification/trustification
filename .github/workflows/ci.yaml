@@ -41,7 +41,14 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Check if templates have uncommitted changes
-        run: make -C deploy/openshift && git diff --quiet deploy/openshift || echo "::error Uncommitted changes to deploy/openshift"
+        run: |
+          pip3 install yq
+          make -C deploy/openshift
+          git diff --quiet deploy/openshift
+          if [ $? -gt 0 ]; then
+              echo "::error::Uncommitted changes to deploy/openshift (most likely template must be updated by running `make`)"
+              exit 1
+          fi
 
   ci-backend:
     runs-on: ubuntu-22.04
