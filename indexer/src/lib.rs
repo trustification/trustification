@@ -7,6 +7,7 @@ use std::sync::Arc;
 use tokio::sync::mpsc::Receiver;
 use tokio::sync::mpsc::Sender;
 use tokio::task::block_in_place;
+use tokio::time::Instant;
 use tokio::{select, sync::Mutex};
 use trustification_event_bus::{Error as BusError, EventBus};
 use trustification_index::{IndexStore, IndexWriter, WriteIndex};
@@ -258,7 +259,7 @@ impl<'a, DOC> Indexer<'a, DOC> {
         let objects = self.storage.list_objects_from(resume_token.clone());
         pin_mut!(objects);
 
-        let mut interval = tokio::time::interval(self.sync_interval);
+        let mut interval = tokio::time::interval_at(Instant::now() + self.sync_interval, self.sync_interval);
 
         loop {
             let tick = interval.tick();
@@ -289,16 +290,17 @@ impl<'a, DOC> Indexer<'a, DOC> {
                     }
                 }
                 _ = tick => {
-                    for (index, writer) in self.indexes.iter().zip(writers.drain(..)) {
-                        match index.commit(writer) {
+                    for (index, writer) in self.indexes.iter_mut().zip(writers.drain(..)) {
+                        match index.snapshot(writer, &self.storage, true).await {
                             Ok(_) => {
-                                log::trace!("Index committed");
+                                log::info!("Reindexed snapshot published");
                             }
                             Err(e) => {
-                                log::warn!("(Ignored) Error committing index: {:?}", e);
+                                log::warn!("(Ignored) Error publishing index: {:?}", e);
                             }
                         }
                     }
+
 
                     for index in self.indexes.iter_mut() {
                         writers.push(block_in_place(|| index.writer()).map_err(|e| (e.into(), resume_token.clone()))?);
