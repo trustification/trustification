@@ -179,7 +179,7 @@ impl<DOC> WriteIndex for Box<dyn WriteIndex<Document = DOC>> {
         self.as_ref().schema()
     }
 
-    fn index_doc(&self, id: &str, document: &Self::Document) -> Result<Document, Error> {
+    fn index_doc(&self, id: &str, document: &Self::Document) -> Result<Vec<(String, Document)>, Error> {
         self.as_ref().index_doc(id, document)
     }
 
@@ -209,7 +209,7 @@ pub trait WriteIndex {
     /// Schema required for this index.
     fn schema(&self) -> Schema;
     /// Process an input document and return a tantivy document to be added to the index.
-    fn index_doc(&self, id: &str, document: &Self::Document) -> Result<Document, Error>;
+    fn index_doc(&self, id: &str, document: &Self::Document) -> Result<Vec<(String, Document)>, Error>;
     /// Convert a document id to a term for referencing that document.
     fn doc_id_to_term(&self, id: &str) -> Term;
 }
@@ -330,15 +330,19 @@ impl IndexWriter {
         match index.parse_doc(data) {
             Ok(doc) => {
                 let id = &id(&doc);
-                let doc = index.index_doc(id, &doc).map_err(|e| {
+                let docs = index.index_doc(id, &doc).map_err(|e| {
                     self.metrics.failed_total.inc();
                     e
                 })?;
-                self.delete_document(index, id);
-                self.writer.add_document(doc).map_err(|e| {
-                    self.metrics.failed_total.inc();
-                    e
-                })?;
+                for (i, doc) in docs {
+                    self.delete_document(index, &i);
+                    self.writer.add_document(doc).map_err(|e| {
+                        let e = e.clone();
+                        self.metrics.failed_total.inc();
+                        e
+                    })?;
+                }
+
                 self.metrics.indexed_total.inc();
             }
             Err(e) => {
