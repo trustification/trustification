@@ -36,6 +36,11 @@ use crate::AppState;
         schemas(
             AnalyzeRequest,
             AnalyzeResponse,
+            VendorAnalysis,
+            VulnerabilityAnalysis,
+            SeverityAnalysis,
+            SeverityType,
+            PackageCertification,
             v11y_client::Vulnerability,
             v11y_client::Affected,
             v11y_client::Reference,
@@ -251,7 +256,7 @@ async fn analyze(state: web::Data<AppState>, request: web::Json<AnalyzeRequest>)
     // mappings, go collect the vulnerability details from v11y, doing
     // our best effort and not allowing soft errors to fail the process.
     for vuln_id in vuln_ids {
-        if vuln_id.to_lowercase().starts_with("CVE") {
+        if vuln_id.to_lowercase().starts_with("cve") {
             match state.v11y_client.get_cve(&vuln_id).await {
                 Ok(vulnerabilities) => {
                     if vulnerabilities.status() == 200 {
