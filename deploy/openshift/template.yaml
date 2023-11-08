@@ -1991,6 +1991,8 @@ objects:
                     - ${BOMBASTIC_STORAGE_BUCKET}
                     - --s3-region
                     - ${AWS_REGION}
+                    - --limit
+                    - '100'
                   workingDir: /guac
                   env:
                     - name: NAMESPACE
@@ -2249,6 +2251,8 @@ objects:
                     - ${VEXINATION_STORAGE_BUCKET}
                     - --s3-region
                     - ${AWS_REGION}
+                    - --limit
+                    - '100'
                   workingDir: /guac
                   env:
                     - name: NAMESPACE
