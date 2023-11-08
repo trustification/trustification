@@ -2155,6 +2155,8 @@ objects:
                     - walker
                     - --source
                     - /mnt/cvelistV5
+                    - --delta-file
+                    - /mnt/last-delta
                   env:
                     - name: RUST_LOG
                       value: info
