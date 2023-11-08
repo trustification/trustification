@@ -20,9 +20,9 @@ mod server;
 #[derive(clap::Args, Debug)]
 #[command(about = "Run the api server", args_conflicts_with_subcommands = true)]
 pub struct Run {
-    /// Source URL
+    /// Source URL or path
     #[arg(short, long)]
-    pub(crate) source: Url,
+    pub(crate) source: String,
 
     /// Vexination upload url
     #[arg(short = 'S', long)]

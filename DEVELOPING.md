@@ -153,6 +153,17 @@ set -gx TRACING enabled
 set -gx OTEL_TRACES_SAMPLER_ARG 1
 ```
 
+## All-in-one
+
+When using KDE's `konsole`, you can start all processes in multiple tabs using:
+
+```shell
+konsole --tabs-from-file deploy/konsole.tabs
+```
+
+> [!NOTE]
+> You still need to [start the dependencies first](#dependencies).
+
 ## APIs
 
 To run the API processes, you can use cargo:
@@ -188,7 +199,7 @@ RUST_LOG=info cargo run -p trust -- v11y walker --devmode --source ../cvelistV5/
 ```
 
 > [!NOTE]
-> For this to work, you need to clone the repository: <https://github.com/CVEProject/cvelistV5> 
+> For this to work, you need to clone the repository: <https://github.com/CVEProject/cvelistV5>
 
 ## Ingesting VEX
 
@@ -215,7 +226,7 @@ RUST_LOG=info cargo run -p trust -- vexination walker --devmode --sink http://lo
 If you have a local copy of the data, you can also run:
 
 ```shell
-RUST_LOG=info cargo run -p trust -- vexination walker --devmode -3 --sink http://localhost:8081/api/v1/vex --source file:///path/to/data
+RUST_LOG=info cargo run -p trust -- vexination walker --devmode -3 --sink http://localhost:8081/api/v1/vex --source /path/to/data
 ```
 
 You can create/sync a local copy of the data using [csaf-walker](https://github.com/ctron/csaf-walker#installation):
