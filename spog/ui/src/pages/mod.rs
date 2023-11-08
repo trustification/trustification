@@ -27,7 +27,7 @@ pub use not_logged_in::*;
 pub use package::*;
 pub use package_search::*;
 pub use sbom::*;
-pub use sbom_report::*;
+pub use sbom_report::SbomReport;
 pub use sbom_search::Sbom;
 pub use scanner::*;
 pub use search::Search;

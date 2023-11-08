@@ -67,7 +67,7 @@ impl Collector {
         match response {
             Ok(response) => {
                 for purl in response.purls.keys() {
-                    log::info!("[{}] scanned {} {:?}", id, purl, response.purls.values());
+                    log::info!("[{id}] scanned {} {:?}", purl, response.purls.values());
                     let _ = state.db.insert_purl(purl).await.ok();
                     let _ = state.db.update_purl_scan_time(&id, purl).await.ok();
                 }
@@ -81,7 +81,7 @@ impl Collector {
                 Ok(response)
             }
             Err(e) => {
-                log::warn!("collector response: {}", e);
+                log::warn!("[{id}] collector response: {}", e);
                 Err(e)
             }
         }
@@ -110,7 +110,7 @@ impl Collector {
         match response {
             Ok(response) => {
                 for vuln_id in &response.vulnerability_ids {
-                    log::debug!("[{}] scanned {}", id, vuln_id);
+                    log::debug!("[{id}] scanned {}", vuln_id);
                     let _ = state.db.insert_vulnerability(vuln_id).await;
                     let _ = state.db.update_vulnerability_scan_time(&id, vuln_id).await;
                 }
@@ -118,7 +118,7 @@ impl Collector {
             }
 
             Err(e) => {
-                log::warn!("{}", e);
+                log::warn!("[{id}] error parsing response: {}", e);
                 Err(e)
             }
         }

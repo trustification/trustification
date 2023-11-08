@@ -1,7 +1,7 @@
 use super::pkg::PackageRef;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::ops::{Deref, DerefMut};
 use time::OffsetDateTime;
 use utoipa::openapi::{KnownFormat, ObjectBuilder, RefOr, Schema, SchemaFormat, SchemaType};
@@ -58,7 +58,7 @@ pub struct SbomReport {
     pub created: Option<OffsetDateTime>,
 
     /// Vulnerabilities summary
-    pub summary: Vec<SummaryEntry>,
+    pub summary: Vec<(String, Vec<SummaryEntry>)>,
     /// Vulnerabilities list
     pub details: Vec<SbomReportVulnerability>,
     /// Traces from the vulnerable PURL back to the SBOM root
@@ -143,19 +143,14 @@ impl DerefMut for Backtrace {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, ToSchema, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, PartialEq, ToSchema, Serialize, Deserialize)]
 pub struct SbomReportVulnerability {
     /// The ID of the vulnerability
     pub id: String,
     /// A plain text description
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
-    /// The severity score
-    ///
-    /// TODO: Right now this expected to be a CVSS v3 score. This needs to change into an
-    /// enum which carries the score type information as well.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub score: Option<f32>,
+
     /// Timestamp the vulnerability was initially published
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub published: Option<OffsetDateTime>,
@@ -165,10 +160,26 @@ pub struct SbomReportVulnerability {
     /// A map listing the packages affected by this vulnerability, and the available remediations.
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub affected_packages: BTreeMap<String, Vec<Remediation>>,
+
+    #[serde(default, skip_serializing_if = "HashMap::is_empty")]
+    pub sources: HashMap<String, SourceDetails>,
+}
+
+impl SbomReportVulnerability {
+    /// Get the score of a specific source
+    pub fn score(&self, source: &str) -> Option<f32> {
+        self.sources.get(source).and_then(|details| details.score)
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, ToSchema, serde::Serialize, serde::Deserialize)]
 pub struct Remediation {
     /// Detail information on the remediation.
     pub details: String,
+}
+
+#[derive(Clone, Debug, PartialEq, ToSchema, Serialize, Deserialize)]
+pub struct SourceDetails {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub score: Option<f32>,
 }
