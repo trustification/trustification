@@ -458,12 +458,6 @@ packages:
             terms:
               - 'supplier:"Organization: Red Hat"'
 
-          - type: check
-            label: Redhat
-            id: Redhat
-            terms:
-              - 'supplier:"Organization: Red Hat"'
-
 
 scanner:
   documentationUrl: https://www.trustification.io/blog/
