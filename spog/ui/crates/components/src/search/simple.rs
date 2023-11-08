@@ -69,6 +69,16 @@ impl From<Html> for LabelProvider {
     }
 }
 
+impl IntoPropValue<OptionalHtml> for LabelProvider {
+    fn into_prop_value(self) -> OptionalHtml {
+        match self {
+            LabelProvider::Static(html) => html,
+            LabelProvider::Dynamic(f) => f(),
+        }
+        .into()
+    }
+}
+
 impl IntoPropValue<ChildrenRenderer<VNode>> for LabelProvider {
     fn into_prop_value(self) -> ChildrenRenderer<VNode> {
         ChildrenRenderer::new(vec![match self {
@@ -332,13 +342,12 @@ fn render_opt(props: &SimpleSearchProperties, opt: &SearchOption) -> Html {
 
             let opt = opt.clone();
             html!(
-                <Check
+                <Checkbox
                     checked={(*props.search_params).map_bool(|s|(opt.getter)(s))}
-                    onchange={search_set(props.search_params.clone(), move |s, state|(opt.setter)(s, state))}
+                    onchange={search_set(props.search_params.clone(), move |s, state|(opt.setter)(s, state)).reform(|state: CheckboxState| state.into())}
                     disabled={!active}
-                >
-                    { opt.label.clone() }
-                </Check>
+                    label={opt.label.clone()}
+                />
             )
         }
         SearchOption::Select(select) => {
