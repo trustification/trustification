@@ -17,11 +17,13 @@ use futures::stream::iter;
 use futures::{StreamExt, TryStreamExt};
 use serde_json::Value;
 use spdx_rs::models::{PackageInformation, SPDX};
-use spog_model::prelude::{SbomReport, SummaryEntry};
-use spog_model::vuln::{SbomReportVulnerability, SourceDetails};
+use spog_model::{
+    prelude::{SbomReport, SummaryEntry},
+    vuln::{SbomReportVulnerability, SourceDetails},
+};
 use std::collections::{BTreeMap, HashMap};
 use std::str::FromStr;
-use tracing::instrument;
+use tracing::{info_span, instrument, Instrument};
 use trustification_auth::client::TokenProvider;
 use trustification_common::error::ErrorInformation;
 use utoipa::IntoParams;
@@ -74,7 +76,12 @@ async fn process_get_vulnerabilities(
     id: &str,
 ) -> Result<Option<SbomReport>, Error> {
     // FIXME: avoid getting the full SBOM, but the search document fields only
-    let sbom: BytesMut = state.get_sbom(id, access_token).await?.try_collect().await?;
+    let sbom: BytesMut = state
+        .get_sbom(id, access_token)
+        .await?
+        .try_collect()
+        .instrument(info_span!("download SBOM data"))
+        .await?;
 
     let sbom = SBOM::parse(&sbom).map_err(|err| Error::Generic(format!("Unable to parse SBOM: {err}")))?;
     let (name, version, created, analyze, backtraces) = match sbom {
@@ -265,6 +272,7 @@ fn summarize_vulns<'a>(
 }
 
 /// Extract all purls which are referenced by "document describes"
+#[instrument(skip_all)]
 fn find_main(spdx: &SPDX) -> Vec<&PackageInformation> {
     let mut main = vec![];
     for desc in &spdx.document_creation_information.document_describes {
