@@ -8,6 +8,9 @@ replicas: 1
 imagePullPolicy: IfNotPresent
 region: eu-west-1
 enableWalkers: false
+default:
+  routeAnnotations:
+    "haproxy.router.openshift.io/hsts_header": "max-age=31536000;includeSubDomains;preload"
 spog:
   crdaUrl: http://alpha-exhort.apps.sssc-cl01.appeng.rhecoeng.com/
 bombastic:
