@@ -226,6 +226,8 @@ impl GuacService {
             .with_version(id.version)
             .to_string();
 
+        log::debug!("Using GUAC purl: {purl}");
+
         Ok(self.client.semantic().find_vulnerability(&purl).await?)
     }
 }
