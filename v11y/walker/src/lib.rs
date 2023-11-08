@@ -45,7 +45,7 @@ impl Run {
                     let delta_file = self.source.join("cves").join("delta.json");
                     if let Some(last_delta_file) = &self.delta_file {
                         if last_delta_file.exists() {
-                            let delta: delta::Delta = serde_json::from_reader(std::fs::File::open(&last_delta_file)?)?;
+                            let delta: delta::Delta = serde_json::from_reader(std::fs::File::open(last_delta_file)?)?;
                             last_delta.replace(delta);
                         }
                         let log_file = self.source.join("cves").join("deltaLog.json");
@@ -53,7 +53,7 @@ impl Run {
                             let delta_log: delta::DeltaLog = serde_json::from_reader(std::fs::File::open(&log_file)?)?;
                             let last_delta = last_delta
                                 .as_ref()
-                                .map(|d| d.fetch_time.clone())
+                                .map(|d| d.fetch_time)
                                 .unwrap_or(time::OffsetDateTime::UNIX_EPOCH);
                             log::info!("Last delta: {:?}", last_delta);
                             delta_log
