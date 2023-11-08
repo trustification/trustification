@@ -17,6 +17,9 @@ config:
   name: trustification-config
   authentication: trustification.dev/config/staging/auth.yaml
   collectorist: trustification.dev/config/staging/collectorist.yaml
+default:
+  routeAnnotations:
+    "haproxy.router.openshift.io/hsts_header": "max-age=31536000;includeSubDomains;preload"
 spog:
   crdaUrl: https://rhda.rhcloud.com/
   branding: true

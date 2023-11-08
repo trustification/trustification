@@ -2,6 +2,8 @@
 apiVersion: route.openshift.io/v1
 kind: Route
 metadata:
+  annotations:
+    {{- .Values.exhort.api.routeAnnotations | default .Values.default.routeAnnotations | toYaml | nindent 4 }}
   labels:
     app.kubernetes.io/name: exhort-api
     app.kubernetes.io/component: api

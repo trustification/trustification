@@ -16,6 +16,9 @@ config:
   enabled: true
   name: trustification-config
   authentication: trustification.dev/config/prod/auth.yaml
+default:
+  routeAnnotations:
+    "haproxy.router.openshift.io/hsts_header": "max-age=31536000;includeSubDomains;preload"
 spog:
   crdaUrl: https://rhda.rhcloud.com/
   branding: true
