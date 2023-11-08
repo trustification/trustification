@@ -1,4 +1,5 @@
 use std::fmt::Formatter;
+use tracing::{info_span, instrument};
 
 pub enum SBOM {
     #[cfg(feature = "cyclonedx-bom")]
@@ -43,28 +44,36 @@ impl std::fmt::Display for Error {
 impl std::error::Error for Error {}
 
 impl SBOM {
+    #[instrument(skip_all, fields(data_len={data.len()}), err)]
     pub fn parse(data: &[u8]) -> Result<Self, Error> {
         let mut err: Error = Default::default();
 
         #[cfg(feature = "spdx-rs")]
-        match serde_json::from_slice::<spdx_rs::models::SPDX>(data).map_err(|e| {
-            log::info!("Error parsing SPDX: {:?}", e);
-            e
-        }) {
-            Ok(spdx) => return Ok(SBOM::SPDX(spdx)),
-            Err(e) => {
-                err.spdx = Some(e);
+        {
+            let result = info_span!("parse spdx").in_scope(|| serde_json::from_slice::<spdx_rs::models::SPDX>(data));
+            match result.map_err(|e| {
+                log::info!("Error parsing SPDX: {:?}", e);
+                e
+            }) {
+                Ok(spdx) => return Ok(SBOM::SPDX(spdx)),
+                Err(e) => {
+                    err.spdx = Some(e);
+                }
             }
         }
 
         #[cfg(feature = "cyclonedx-bom")]
-        match cyclonedx_bom::prelude::Bom::parse_from_json_v1_3(data).map_err(|e| {
-            log::info!("Error parsing CycloneDX: {:?}", e);
-            e
-        }) {
-            Ok(bom) => return Ok(SBOM::CycloneDX(bom)),
-            Err(e) => {
-                err.cyclonedx = Some(e);
+        {
+            let result =
+                info_span!("parse cyclonedx").in_scope(|| cyclonedx_bom::prelude::Bom::parse_from_json_v1_3(data));
+            match result.map_err(|e| {
+                log::info!("Error parsing CycloneDX: {:?}", e);
+                e
+            }) {
+                Ok(bom) => return Ok(SBOM::CycloneDX(bom)),
+                Err(e) => {
+                    err.cyclonedx = Some(e);
+                }
             }
         }
 

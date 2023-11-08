@@ -1413,6 +1413,7 @@ dependencies = [
  "sikula",
  "spdx-rs",
  "time",
+ "tracing",
  "urlencoding",
  "utoipa",
 ]
