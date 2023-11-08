@@ -125,9 +125,6 @@ impl Index {
 
         let mut package_id = "".to_string();
         for r in package.external_reference.iter() {
-            if r.reference_type == "cpe22Type" {
-                document.add_text(fields.cpe, &r.reference_locator);
-            }
             if r.reference_type == "purl" {
                 let purl = r.reference_locator.clone();
                 package_id = purl.clone();
@@ -150,6 +147,7 @@ impl Index {
 
                     document.add_text(fields.purl_type, package.ty());
                 }
+                break;
             }
         }
 
@@ -172,7 +170,10 @@ impl Index {
             document.add_text(fields.supplier, supplier);
         }
 
-        documents.push((package_id, document));
+        // Only add packages with purls
+        if !package_id.is_empty() {
+            documents.push((package_id, document));
+        }
     }
 
     fn index_cyclonedx(
@@ -572,10 +573,10 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_search_form() {
+    async fn test_search_packages_empty_query() {
         assert_search(|index| {
             let result = search(&index, "");
-            assert_eq!(result.0.len(), 167);
+            assert_eq!(result.0.len(), 617);
         });
     }
 
