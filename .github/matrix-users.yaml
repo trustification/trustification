@@ -3,6 +3,7 @@ mapForChannel:
   dejanb: "@dejanb:matrix.org"
   danbev: "@danbev:matrix.org"
   jcrossley3: "@jcrossley3:matrix.org"
+  xiaofeng: "@xiabai:matrix.org"
 
 # in order for this to work, you will need to initiate a DM chat with the bot first
 mapForDirectMessage:
