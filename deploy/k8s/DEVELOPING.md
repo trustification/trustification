@@ -20,3 +20,15 @@ helm lint ./chart -f ./chart/trustification.dev/prod.yaml
 ```shell
 helm template --debug chart/ -f chart/staging.yaml # or prod.yaml
 ```
+
+## Update the OpenShift templates
+
+Helm charts are used to render the OpenShift templates in `../openshift`.
+
+You can update those using:
+
+```shell
+make -C ../openshift
+```
+
+Read more in [../openshift/DEVELOPING.md](../openshift/DEVE****LOPING.md).
