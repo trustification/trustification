@@ -44,10 +44,6 @@ pub struct SearchPackageDocument {
     pub classifier: String,
     /// package description
     pub description: String,
-    /// package creation time in RFC3339 format
-    #[schema(value_type = String)]
-    pub created: time::OffsetDateTime,
-
     pub purl_type: String,
     pub purl_name: String,
     pub purl_namespace: String,

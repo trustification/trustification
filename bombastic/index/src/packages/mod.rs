@@ -17,8 +17,7 @@ use trustification_index::{
         collector::TopDocs,
         doc,
         query::Query,
-        query::{AllQuery, BooleanQuery, TermQuery, TermSetQuery},
-        schema::INDEXED,
+        query::{AllQuery, BooleanQuery, TermSetQuery},
         schema::{Field, Schema, Term, FAST, STORED, STRING, TEXT},
         store::ZstdCompressor,
         DateTime, DocAddress, DocId, IndexSettings, Order, Score, Searcher, SegmentReader,
@@ -37,7 +36,7 @@ pub struct Fields {
     version: Field,
     desc: Field,
     purl: Field,
-    package_created: Field,
+    // package_created: Field,
     license: Field,
     supplier: Field,
     classifier: Field,
@@ -63,7 +62,7 @@ impl Index {
             indexed_timestamp: schema.add_date_field("indexed_timestamp", STORED),
             purl: schema.add_text_field("package_url", FAST | STRING | STORED),
             name: schema.add_text_field("package_name", FAST | STRING | STORED),
-            package_created: schema.add_date_field("package_created", INDEXED | FAST | STORED),
+            // package_created: schema.add_date_field("package_created", INDEXED | FAST | STORED),
             version: schema.add_text_field("package_version", STRING),
             desc: schema.add_text_field("package_desc", TEXT),
             license: schema.add_text_field("package_license", TEXT | STORED),
@@ -83,12 +82,7 @@ impl Index {
         }
     }
 
-    fn index_spdx(
-        &self,
-        id: &str,
-        bom: &spdx_rs::models::SPDX,
-        sha256: &str,
-    ) -> Result<Vec<(String, Document)>, SearchError> {
+    fn index_spdx(&self, bom: &spdx_rs::models::SPDX, sha256: &str) -> Result<Vec<(String, Document)>, SearchError> {
         debug!("Indexing Package from SPDX document");
         let mut documents: Vec<(String, Document)> = Vec::new();
 
@@ -142,7 +136,7 @@ impl Index {
 
                     document.add_text(fields.purl_type, package.ty());
                 }
-                break;
+                // break;
             }
         }
 
@@ -174,7 +168,6 @@ impl Index {
 
     fn index_cyclonedx(
         &self,
-        id: &str,
         bom: &cyclonedx_bom::prelude::Bom,
         sha256: &str,
     ) -> Result<Vec<(String, Document)>, SearchError> {
@@ -262,11 +255,6 @@ impl Index {
                 value,
             )])),
 
-            PackageInfo::Created(ordered) => boost(
-                create_date_query(&self.schema, self.fields.package_created, ordered),
-                CREATED_WEIGHT,
-            ),
-
             PackageInfo::Version(value) => {
                 self.create_string_query(&[self.fields.version, self.fields.purl_version], value)
             }
@@ -281,6 +269,11 @@ impl Index {
             )])),
 
             PackageInfo::Supplier(primary) => self.create_string_query(&[self.fields.supplier], primary),
+
+            PackageInfo::Created(ordered) => boost(
+                create_date_query(&self.schema, self.fields.indexed_timestamp, ordered),
+                CREATED_WEIGHT,
+            ),
         }
     }
 
@@ -304,10 +297,10 @@ impl trustification_index::Index for Index {
             match f.qualifier {
                 PackageInfoSortable::Created => match f.direction {
                     Direction::Descending => {
-                        sort_by.replace((self.fields.package_created, Order::Desc));
+                        sort_by.replace((self.fields.indexed_timestamp, Order::Desc));
                     }
                     Direction::Ascending => {
-                        sort_by.replace((self.fields.package_created, Order::Asc));
+                        sort_by.replace((self.fields.indexed_timestamp, Order::Asc));
                     }
                 },
             }
@@ -330,7 +323,7 @@ impl trustification_index::Index for Index {
         offset: usize,
         limit: usize,
     ) -> Result<(Vec<(f32, DocAddress)>, usize), SearchError> {
-        let date_field = self.schema.get_field_name(self.fields.package_created).to_string();
+        let date_field = self.schema.get_field_name(self.fields.indexed_timestamp).to_string();
         let now = tantivy::DateTime::from_utc(OffsetDateTime::now_utc());
         Ok(searcher.search(
             query,
@@ -403,15 +396,6 @@ impl trustification_index::Index for Index {
             .map(|s| s.as_text().unwrap_or(name))
             .unwrap_or(name);
 
-        let created: time::OffsetDateTime = doc
-            .get_first(self.fields.package_created)
-            .map(|s| {
-                s.as_date()
-                    .map(|d| d.into_utc())
-                    .unwrap_or(time::OffsetDateTime::UNIX_EPOCH)
-            })
-            .unwrap_or(time::OffsetDateTime::UNIX_EPOCH);
-
         let document = SearchPackageDocument {
             version: version.to_string(),
             purl: purl.to_string(),
@@ -420,7 +404,6 @@ impl trustification_index::Index for Index {
             license: license.to_string(),
             classifier: classifier.to_string(),
             supplier: supplier.to_string(),
-            created,
             purl_type: "".to_string(),
             purl_name: "".to_string(),
             purl_namespace: "".to_string(),
@@ -460,10 +443,11 @@ impl trustification_index::WriteIndex for Index {
         "package"
     }
 
+    #[allow(unused_variables)]
     fn index_doc(&self, id: &str, (doc, sha256): &Self::Document) -> Result<Vec<(String, Document)>, SearchError> {
         let doc = match doc {
-            SBOM::CycloneDX(bom) => self.index_cyclonedx(id, bom, sha256)?,
-            SBOM::SPDX(bom) => self.index_spdx(id, bom, sha256)?,
+            SBOM::CycloneDX(bom) => self.index_cyclonedx(bom, sha256)?,
+            SBOM::SPDX(bom) => self.index_spdx(bom, sha256)?,
         };
 
         Ok(doc)
@@ -503,11 +487,7 @@ mod tests {
 
     use super::*;
 
-    const TESTDATA: &[&str] = &[
-        "../testdata/ubi9-sbom.json",
-        // "../testdata/kmm-1.json",
-        // "../testdata/my-sbom.json",
-    ];
+    const TESTDATA: &[&str] = &["../testdata/ubi9-sbom.json", "../testdata/ubi9-sbom.json"];
 
     fn load_valid_file(store: &mut IndexStore<Index>, writer: &mut IndexWriter, path: impl AsRef<Path>) {
         let data = std::fs::read(&path).unwrap();
@@ -566,6 +546,22 @@ mod tests {
         assert_search(|index| {
             let result = search(&index, "supplier:\"Organization: Red Hat\"");
             assert_eq!(result.0.len(), 617);
+        });
+    }
+
+    #[tokio::test]
+    async fn test_search_packages_by_package_type() {
+        assert_search(|index| {
+            let result = search(&index, "type:rpm");
+            assert_eq!(result.0.len(), 613);
+        });
+    }
+
+    #[tokio::test]
+    async fn test_search_packages_by_name() {
+        assert_search(|index| {
+            let result = search(&index, "redhat.dbus");
+            assert_eq!(result.0.len(), 13);
         });
     }
 }
