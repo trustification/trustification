@@ -4,10 +4,7 @@ mod search;
 pub use details::*;
 pub use search::*;
 
-use crate::{
-    common::CardWrapper, cvss::CvssMap, download::Download, markdown::Markdown, severity::Severity,
-    table_wrapper::TableWrapper,
-};
+use crate::{common::CardWrapper, cvss::CvssMap, download::Download, severity::Severity, table_wrapper::TableWrapper};
 use csaf::{
     definitions::{Branch, Note, NoteCategory, ProductIdT, Reference, ReferenceCategory},
     document::{PublisherCategory, Status},
@@ -18,9 +15,12 @@ use csaf::{
 use patternfly_yew::prelude::*;
 use spog_model::prelude::*;
 use spog_ui_backend::{use_backend, Endpoint};
-use spog_ui_common::utils::{
-    csaf::{find_product_relations, has_product, trace_product},
-    time::date,
+use spog_ui_common::{
+    components::Markdown,
+    utils::{
+        csaf::{find_product_relations, has_product, trace_product},
+        time::date,
+    },
 };
 use spog_ui_navigation::{AppRoute, View};
 use std::borrow::Cow;
