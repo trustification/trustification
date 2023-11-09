@@ -36,7 +36,6 @@ pub struct Fields {
     version: Field,
     desc: Field,
     purl: Field,
-    // package_created: Field,
     license: Field,
     supplier: Field,
     classifier: Field,
@@ -62,7 +61,6 @@ impl Index {
             indexed_timestamp: schema.add_date_field("indexed_timestamp", STORED),
             purl: schema.add_text_field("package_url", FAST | STRING | STORED),
             name: schema.add_text_field("package_name", FAST | STRING | STORED),
-            // package_created: schema.add_date_field("package_created", INDEXED | FAST | STORED),
             version: schema.add_text_field("package_version", STRING),
             desc: schema.add_text_field("package_desc", TEXT),
             license: schema.add_text_field("package_license", TEXT | STORED),
@@ -136,7 +134,6 @@ impl Index {
 
                     document.add_text(fields.purl_type, package.ty());
                 }
-                // break;
             }
         }
 
