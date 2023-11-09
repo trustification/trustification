@@ -10,8 +10,7 @@ use products::RelatedProducts;
 use spog_model::prelude::CveDetails;
 use spog_ui_backend::{use_backend, CveService};
 use spog_ui_components::{
-    async_state_renderer::async_content, common::Visible, cvss::Cvss3Label, editor::ReadonlyEditor, markdown::Markdown,
-    time::Date,
+    async_state_renderer::async_content, cvss::Cvss3Label, editor::ReadonlyEditor, markdown::Markdown, time::Date,
 };
 use std::rc::Rc;
 use std::str::FromStr;
