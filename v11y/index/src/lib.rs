@@ -349,10 +349,10 @@ impl trustification_index::WriteIndex for Index {
         "cve"
     }
 
-    fn index_doc(&self, _id: &str, doc: &Cve) -> Result<Vec<(String, Document)>, SearchError> {
+    fn index_doc(&self, id: &str, doc: &Cve) -> Result<Vec<(String, Document)>, SearchError> {
         match doc {
-            Cve::Published(cve) => self.index_published_cve(cve, _id),
-            Cve::Rejected(cve) => self.index_rejected_cve(cve, _id),
+            Cve::Published(cve) => self.index_published_cve(cve, id),
+            Cve::Rejected(cve) => self.index_rejected_cve(cve, id),
         }
     }
 

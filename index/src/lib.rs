@@ -337,7 +337,6 @@ impl IndexWriter {
                 for (i, doc) in docs {
                     self.delete_document(index, &i);
                     self.writer.add_document(doc).map_err(|e| {
-                        let e = e.clone();
                         self.metrics.failed_total.inc();
                         e
                     })?;
@@ -1151,12 +1150,14 @@ mod tests {
                 .map(|s| s.to_string())
         }
 
-        fn index_doc(&self, id: &str, document: &Self::Document) -> Result<Document, Error> {
+        fn index_doc(&self, id: &str, document: &Self::Document) -> Result<Vec<(String, Document)>, Error> {
+            let mut documents: Vec<(String, Document)> = Vec::new();
             let doc = tantivy::doc!(
                 self.id => id.to_string(),
                 self.text => document.to_string()
             );
-            Ok(doc)
+            documents.push((id.to_string(), doc));
+            Ok(documents)
         }
 
         fn doc_id_to_term(&self, id: &str) -> Term {

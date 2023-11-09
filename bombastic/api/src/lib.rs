@@ -15,7 +15,6 @@ use trustification_infrastructure::{
     Infrastructure, InfrastructureConfig,
 };
 use trustification_storage::{Storage, StorageConfig};
-
 mod sbom;
 mod server;
 
@@ -105,7 +104,7 @@ impl Run {
         devmode: bool,
     ) -> anyhow::Result<Arc<AppState>> {
         let index =
-            block_in_place(|| IndexStore::new(&storage, &index_config, bombastic_index::Index::new(), registry))?;
+            block_in_place(|| IndexStore::new(&storage, &index_config, bombastic_index::sbom::Index::new(), registry))?;
         let storage = Storage::new(storage.process("bombastic", devmode), registry)?;
 
         let state = Arc::new(AppState { storage, index });
@@ -136,7 +135,7 @@ impl Run {
     }
 }
 
-pub(crate) type Index = IndexStore<bombastic_index::Index>;
+pub(crate) type Index = IndexStore<bombastic_index::sbom::Index>;
 pub struct AppState {
     storage: Storage,
     index: Index,
