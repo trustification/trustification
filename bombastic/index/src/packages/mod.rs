@@ -238,7 +238,11 @@ impl Index {
         }
 
         document.add_text(fields.classifier, component.component_type.to_string());
-        documents.push((package_id, document));
+
+        // Only add packages with purls
+        if !package_id.is_empty() {
+            documents.push((package_id, document));
+        }
     }
 
     fn resource2query(&self, resource: &PackageInfo) -> Box<dyn Query> {
@@ -441,7 +445,7 @@ impl trustification_index::WriteIndex for Index {
     }
 
     #[allow(unused_variables)]
-    fn index_doc(&self, id: &str, (doc, sha256): &Self::Document) -> Result<Vec<(String, Document)>, SearchError> {
+    fn index_doc(&self, _id: &str, (doc, sha256): &Self::Document) -> Result<Vec<(String, Document)>, SearchError> {
         let doc = match doc {
             SBOM::CycloneDX(bom) => self.index_cyclonedx(bom, sha256)?,
             SBOM::SPDX(bom) => self.index_spdx(bom, sha256)?,
