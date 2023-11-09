@@ -255,12 +255,14 @@ impl trustification_index::WriteIndex for Index {
         serde_json::from_slice::<csaf::Csaf>(data).map_err(|e| SearchError::DocParser(e.to_string()))
     }
 
-    fn index_doc(&self, id: &str, csaf: &Csaf) -> Result<Document, SearchError> {
+    fn index_doc(&self, id: &str, csaf: &Csaf) -> Result<Vec<(String, Document)>, SearchError> {
         let document_status = match &csaf.document.tracking.status {
             csaf::document::Status::Draft => "draft",
             csaf::document::Status::Interim => "interim",
             csaf::document::Status::Final => "final",
         };
+
+        let mut documents: Vec<(String, Document)> = Vec::new();
 
         let mut document = doc!(
             self.fields.advisory_id => id,
@@ -449,7 +451,8 @@ impl trustification_index::WriteIndex for Index {
             }
             debug!("Adding doc: {:?}", document);
         }
-        Ok(document)
+        documents.push((id.to_string(), document));
+        Ok(documents)
     }
 
     fn doc_id_to_term(&self, id: &str) -> Term {
