@@ -231,11 +231,11 @@ fn render(route: AppRoute, config: &spog_model::config::Configuration) -> Html {
             html!(<pages::PackageSearchPage {query} />)
         }
 
-        AppRoute::Packages(View::Content { id }) if config.features.dedicated_search => {
+        AppRoute::Packages(View::Content { id }) => {
             html!(<pages::Packages {id} />)
         }
 
-        AppRoute::Package { id } if config.features.dedicated_search => {
+        AppRoute::Package { id } => {
             let id = match id.is_empty() {
                 true => None,
                 false => Some(id),
