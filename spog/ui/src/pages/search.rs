@@ -4,7 +4,6 @@ use patternfly_yew::prelude::*;
 use spog_ui_common::utils::count::count_tab_title;
 use spog_ui_components::{
     advisory::{use_advisory_search, AdvisoryResult, AdvisorySearchControls},
-    common::Visible,
     cve::{use_cve_search, CveResult, CveSearchControls},
     hooks::UseStandardSearch,
     packages::{use_package_search, PackagesResult},
