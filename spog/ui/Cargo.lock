@@ -2882,7 +2882,6 @@ dependencies = [
  "itertools 0.11.0",
  "js-sys",
  "log",
- "markdown",
  "monaco",
  "openidconnect",
  "packageurl",

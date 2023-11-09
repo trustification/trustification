@@ -20,7 +20,6 @@ humansize = "2"
 itertools = "0.11"
 js-sys = "0.3"
 log = "0.4"
-markdown = "1.0.0-alpha.11"
 monaco = { version = "0.5", features = ["yew-components"] }
 openidconnect = "3"
 packageurl = "0.3"
