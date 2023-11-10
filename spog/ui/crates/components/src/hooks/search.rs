@@ -1,4 +1,4 @@
-use crate::search::{DynamicSearchParameters, SearchMode, SearchModeAction};
+use crate::search::{DynamicSearchParameters, SearchMode, SearchModeAction, SearchState};
 use patternfly_yew::prelude::*;
 use spog_model::config::Filters;
 use spog_ui_backend::{use_backend, Backend};
@@ -11,7 +11,7 @@ use yew_oauth2::prelude::{use_latest_access_token, LatestAccessToken};
 
 #[derive(Clone)]
 pub struct UseStandardSearch {
-    pub search_params: UseReducerHandle<SearchMode<DynamicSearchParameters>>,
+    pub search_params: UseReducerHandle<SearchState<DynamicSearchParameters>>,
     pub filter_input_state: Rc<InputState>,
     pub onclear: Callback<()>,
     pub onset: Callback<()>,
@@ -21,14 +21,14 @@ pub struct UseStandardSearch {
 
 #[hook]
 pub fn use_standard_search<S>(
-    search_params: UseReducerHandle<SearchMode<DynamicSearchParameters>>,
+    search_params: UseReducerHandle<SearchState<DynamicSearchParameters>>,
     context: Rc<Filters>,
 ) -> UseStandardSearch
 where
     S: sikula::prelude::Search,
 {
     // the current value in the text input field
-    let text = use_state_eq(|| match &*search_params {
+    let text = use_state_eq(|| match &**search_params {
         SearchMode::Complex(s) => s.clone(),
         SearchMode::Simple(s) => s.terms().join(" "),
     });
@@ -52,7 +52,7 @@ where
     let onclear = use_callback((text.clone(), search_params.clone()), |_, (text, search_params)| {
         text.set(String::new());
         // trigger empty search
-        match **search_params {
+        match ***search_params {
             SearchMode::Complex(_) => search_params.dispatch(SearchModeAction::Clear),
             SearchMode::Simple(_) => search_params.dispatch(SearchModeAction::Clear),
         }
@@ -94,13 +94,13 @@ pub struct SearchOperationContext {
     pub access_token: Option<LatestAccessToken>,
     pub page: usize,
     pub per_page: usize,
-    pub search_params: SearchMode<DynamicSearchParameters>,
+    pub search_params: SearchState<DynamicSearchParameters>,
     pub filters: Rc<Filters>,
 }
 
 #[hook]
 pub fn use_generic_search<S, R, F, Fut, IF>(
-    search_params: UseReducerHandle<SearchMode<DynamicSearchParameters>>,
+    search_params: UseReducerHandle<SearchState<DynamicSearchParameters>>,
     pagination: UsePagination,
     callback: Callback<UseAsyncHandleDeps<R, String>>,
     init_filter: IF,

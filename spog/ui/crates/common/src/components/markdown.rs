@@ -1,4 +1,4 @@
-use spog_ui_common::components::SafeHtml;
+use crate::components::SafeHtml;
 use std::rc::Rc;
 use yew::prelude::*;
 

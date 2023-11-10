@@ -1873,7 +1873,7 @@ checksum = "de3145af08024dea9fa9914f381a17b8fc6034dfb00f3a84013f7ff43f29ed4c"
 [[package]]
 name = "patternfly-yew"
 version = "0.5.0-rc.1"
-source = "git+https://github.com/ctron/patternfly-yew?rev=4b5025843efe1c9fce5c85168f5f5971005a0886#4b5025843efe1c9fce5c85168f5f5971005a0886"
+source = "git+https://github.com/ctron/patternfly-yew?rev=30b31e36120d3efc609f84e21a2baa208905a4e9#30b31e36120d3efc609f84e21a2baa208905a4e9"
 dependencies = [
  "chrono",
  "gloo-events 0.2.0",
@@ -2882,7 +2882,6 @@ dependencies = [
  "itertools 0.11.0",
  "js-sys",
  "log",
- "markdown",
  "monaco",
  "openidconnect",
  "packageurl",
