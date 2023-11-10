@@ -56,13 +56,23 @@ impl Run {
                 |context| async move {
                     let sbom_index: Box<dyn WriteIndex<Document = (SBOM, String)>> = Box::new(sbom::Index::new());
                     let index = block_in_place(|| {
-                        IndexStore::new(&self.storage, &self.index, sbom_index, context.metrics.registry())
+                        IndexStore::new(
+                            &self.storage,
+                            &self.index,
+                            sbom_index,
+                            &context.metrics.custom_registry("sbom_index".to_string()),
+                        )
                     })?;
 
                     let package_index: Box<dyn WriteIndex<Document = (SBOM, String)>> =
                         Box::new(packages::Index::new());
                     let package_store = block_in_place(|| {
-                        IndexStore::new(&self.storage, &self.index, package_index, context.metrics.registry())
+                        IndexStore::new(
+                            &self.storage,
+                            &self.index,
+                            package_index,
+                            &context.metrics.custom_registry("package_index".to_string()),
+                        )
                     })?;
                     let storage = Storage::new(storage.process("bombastic", self.devmode), context.metrics.registry())?;
 
