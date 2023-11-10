@@ -257,6 +257,10 @@ impl Metrics {
     pub fn registry(&self) -> &Registry {
         &self.registry
     }
+
+    pub fn custom_registry(&self, prefix: String) -> Registry {
+        Registry::new_custom(prefix.into(), Option::None).unwrap()
+    }
 }
 
 pub struct InfrastructureRunner {
