@@ -141,6 +141,8 @@ keycloak:
   enabled: false
 guac:
   enabled: true
+  database:
+    enabled: false
   graphql:
     debug: false
     resources: ${{GUAC_GQL_RESOURCES}}
