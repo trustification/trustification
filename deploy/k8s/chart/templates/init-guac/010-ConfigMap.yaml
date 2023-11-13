@@ -1,0 +1,19 @@
+{{-if (and .Values.guac.enabled .Values.guac.db.enabled ) }}
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: pre-install-guac-config
+  labels:
+    app.kubernetes.io/name: pre-install-guac-config
+    app.kubernetes.io/component: guac
+    app.kubernetes.io/part-of: guac
+data:
+  init.sql: |
+    SELECT 'CREATE DATABASE ' || :'db_name'
+    WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = :'db_name')\gexec
+    
+    CREATE ROLE :db_user WITH LOGIN;
+    ALTER USER :db_user WITH PASSWORD :'db_password';
+    
+    GRANT CONNECT ON DATABASE :db_name TO :db_user;
+{{ end }}
