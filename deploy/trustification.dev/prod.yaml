@@ -170,6 +170,8 @@ exhort:
     resources:
 guac:
   enabled: true
+  database:
+    enabled: false
   graphql:
     debug: true
     resources:
