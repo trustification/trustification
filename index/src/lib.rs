@@ -94,35 +94,51 @@ struct Metrics {
 }
 
 impl Metrics {
-    fn register(registry: &Registry) -> Result<Self, Error> {
+    fn register(registry: &Registry, prefix: &str) -> Result<Self, Error> {
+        let prefix = prefix.replace('-', "_");
         let indexed_total = register_int_counter_with_registry!(
-            opts!("index_indexed_total", "Total number of indexing operations"),
+            opts!(
+                format!("{}_index_indexed_total", prefix),
+                "Total number of indexing operations"
+            ),
             registry
         )?;
 
         let failed_total = register_int_counter_with_registry!(
-            opts!("index_failed_total", "Total number of indexing operations failed"),
+            opts!(
+                format!("{}_index_failed_total", prefix),
+                "Total number of indexing operations failed"
+            ),
             registry
         )?;
 
         let queries_total = register_int_counter_with_registry!(
-            opts!("index_queries_total", "Total number of search queries"),
+            opts!(
+                format!("{}_index_queries_total", prefix),
+                "Total number of search queries"
+            ),
             registry
         )?;
 
         let snapshots_total = register_int_counter_with_registry!(
-            opts!("index_snapshots_total", "Total number of snapshots taken"),
+            opts!(
+                format!("{}_index_snapshots_total", prefix),
+                "Total number of snapshots taken"
+            ),
             registry
         )?;
 
         let index_size_disk_bytes = register_int_gauge_with_registry!(
-            opts!("index_size_disk_bytes", "Amount of bytes consumed by index on disk"),
+            opts!(
+                format!("{}_index_size_disk_bytes", prefix),
+                "Amount of bytes consumed by index on disk"
+            ),
             registry
         )?;
 
         let indexing_latency_seconds = register_histogram_with_registry!(
             histogram_opts!(
-                "index_indexing_latency_seconds",
+                format!("{}_index_indexing_latency_seconds", prefix),
                 "Indexing latency",
                 vec![0.0001, 0.001, 0.01, 0.1, 1.0, 10.0]
             ),
@@ -131,7 +147,7 @@ impl Metrics {
 
         let query_latency_seconds = register_histogram_with_registry!(
             histogram_opts!(
-                "index_query_latency_seconds",
+                format!("{}_index_query_latency_seconds", prefix),
                 "Search query latency",
                 vec![0.0001, 0.001, 0.01, 0.1, 1.0, 10.0]
             ),
@@ -526,12 +542,13 @@ impl<INDEX: WriteIndex> IndexStore<INDEX> {
             .settings(settings)
             .tokenizers(tokenizers);
         let inner = builder.create_in_ram()?;
+        let name = index.name().to_string();
         Ok(Self {
             inner: RwLock::new(inner),
             index,
             index_writer_memory_bytes: 32 * 1024 * 1024,
             index_dir: None,
-            metrics: Metrics::register(&Default::default())?,
+            metrics: Metrics::register(&Default::default(), &name)?,
         })
     }
 
@@ -555,12 +572,13 @@ impl<INDEX: WriteIndex> IndexStore<INDEX> {
 
                 let index_dir = IndexDirectory::new(&path)?;
                 let inner = index_dir.build(settings, schema, tokenizers)?;
+                let name = index.name().to_string();
                 Ok(Self {
                     inner: RwLock::new(inner),
                     index_writer_memory_bytes: config.index_writer_memory_bytes,
                     index_dir: Some(RwLock::new(index_dir)),
                     index,
-                    metrics: Metrics::register(metrics_registry)?,
+                    metrics: Metrics::register(metrics_registry, &name)?,
                 })
             }
             IndexMode::S3 => {
@@ -574,12 +592,13 @@ impl<INDEX: WriteIndex> IndexStore<INDEX> {
                     .tokenizers(tokenizers);
                 let dir = S3Directory::new(bucket);
                 let inner = builder.open_or_create(dir)?;
+                let name = index.name().to_string();
                 Ok(Self {
                     inner: RwLock::new(inner),
                     index_writer_memory_bytes: config.index_writer_memory_bytes,
                     index_dir: None,
                     index,
-                    metrics: Metrics::register(metrics_registry)?,
+                    metrics: Metrics::register(metrics_registry, &name)?,
                 })
             }
         }
