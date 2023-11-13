@@ -1,4 +1,4 @@
-{{-if (and .Values.guac.enabled .Values.guac.db.enabled ) }}
+{{- if (and .Values.guac.enabled .Values.guac.database.enabled ) }}
 kind: Job
 apiVersion: batch/v1
 metadata:
@@ -95,4 +95,4 @@ spec:
             - -f
             - /etc/init-data/init.sql
 
-{{- endif }}
+{{ end }}

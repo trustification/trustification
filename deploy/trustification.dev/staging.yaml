@@ -223,6 +223,8 @@ oidcClients:
           key: client-secret
 guac:
   enabled: true
+  database:
+    enabled: true
   graphql:
     debug: true
     resources:

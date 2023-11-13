@@ -1,4 +1,4 @@
-{{-if (and .Values.guac.enabled .Values.guac.db.enabled ) }}
+{{- if (and .Values.guac.enabled .Values.guac.database.enabled ) }}
 kind: ConfigMap
 apiVersion: v1
 metadata:
