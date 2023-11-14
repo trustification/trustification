@@ -37,7 +37,17 @@ spec:
           imagePullPolicy: {{ .Values.imagePullPolicy }}
           name: service
           command: ["/opt/guac/guacgql"]
-          args: []
+          args:
+            - "--gql-backend"
+            - "ent"
+            - "--db-address"
+            - "postgres://$(PGUSER)@$(PGHOST):$(PGPORT)/$(DB_NAME)"
+            - "--db-driver"
+            - "postgres"
+            - "--db-debug"
+            - "true"
+            - "--gql-debug"
+            - "true"
           workingDir: "/guac"
           env:
             - name: NAMESPACE
@@ -45,6 +55,49 @@ spec:
                 fieldRef:
                   fieldPath: metadata.namespace
             {{ include "trustification.http-server" . | nindent 12 }}
+            - name: PGHOST
+              valueFrom:
+                secretKeyRef:
+                  name: guac-admin-db
+                  key: "db.host"
+            - name: PGPORT
+              valueFrom:
+                secretKeyRef:
+                  name: guac-admin-db
+                  key: "db.port"
+            - name: PGDATABASE
+              valueFrom:
+                secretKeyRef:
+                  name: guac-admin-db
+                  key: "db.name"
+            - name: PGUSER
+              valueFrom:
+                secretKeyRef:
+                  name: guac-admin-db
+                  key: "db.user"
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: guac-admin-db
+                  key: "db.password"
+
+            - name: DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: guac-user-db
+                  key: "db.name"
+
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: guac-user-db
+                  key: "db.user"
+
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: guac-user-db
+                  key: "db.password"     
           volumeMounts:
             - name: guac-config
               mountPath: /guac
