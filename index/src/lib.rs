@@ -560,11 +560,15 @@ impl<INDEX: WriteIndex> IndexStore<INDEX> {
     ) -> Result<Self, Error> {
         match config.mode {
             IndexMode::File => {
-                let path = config.index_dir.clone().unwrap_or_else(|| {
-                    use rand::RngCore;
-                    let r = rand::thread_rng().next_u32();
-                    std::env::temp_dir().join(format!("index.{}", r))
-                });
+                let path = config
+                    .index_dir
+                    .clone()
+                    .unwrap_or_else(|| {
+                        use rand::RngCore;
+                        let r = rand::thread_rng().next_u32();
+                        std::env::temp_dir().join(format!("index.{}", r))
+                    })
+                    .join(index.name());
 
                 let schema = index.schema();
                 let settings = index.settings();

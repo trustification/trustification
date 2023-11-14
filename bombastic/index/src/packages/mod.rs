@@ -4,7 +4,7 @@ use cyclonedx_bom::models::{
     hash::HashAlgorithm,
     license::{LicenseChoice, LicenseIdentifier},
 };
-use log::{debug, warn};
+use log::{debug, trace, warn};
 use sikula::{mir::Direction, prelude::*};
 use spdx_rs::models::Algorithm;
 use time::OffsetDateTime;
@@ -93,7 +93,7 @@ impl Index {
                 Self::index_spdx_package(&mut documents, package, &self.fields, sha256);
             }
         }
-        warn!("Indexed {:?}", documents);
+        trace!("Indexed {:?}", documents);
         Ok(documents)
     }
 

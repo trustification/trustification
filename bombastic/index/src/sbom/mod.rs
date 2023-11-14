@@ -6,7 +6,7 @@ use cyclonedx_bom::models::{
     hash::HashAlgorithm,
     license::{LicenseChoice, LicenseIdentifier},
 };
-use log::{debug, info, warn};
+use log::{debug, warn};
 use sikula::{mir::Direction, prelude::*};
 use spdx_rs::models::Algorithm;
 use time::{format_description::well_known::Rfc3339, OffsetDateTime};
@@ -161,7 +161,7 @@ impl Index {
                 .document_describes
                 .contains(&package.package_spdx_identifier)
             {
-                info!("Indexing SBOM {} with name {}", id, package.package_name);
+                debug!("Indexing SBOM {} with name {}", id, package.package_name);
                 Self::index_spdx_package(&mut document, package, &self.fields.sbom);
             } else {
                 Self::index_spdx_package(&mut document, package, &self.fields.dep);
