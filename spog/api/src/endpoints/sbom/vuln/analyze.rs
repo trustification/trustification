@@ -46,6 +46,8 @@ pub async fn analyze_spdx(
     guac: &GuacService,
     token: &dyn TokenProvider,
     main: &PackageInformation,
+    offset: Option<i64>,
+    limit: Option<i64>,
 ) -> Result<AnalyzeOutcome, Error> {
     let version = match &main.package_version {
         Some(version) => version,
@@ -62,7 +64,7 @@ pub async fn analyze_spdx(
         .find_vulnerability(GuacSbomIdentifier {
             name: &main.package_name,
             version,
-        })
+        }, offset, limit)
         .await?;
 
     // collect the backtraces
@@ -106,7 +108,6 @@ pub async fn analyze_spdx(
                         (purl, rem)
                     })
                     .collect::<BTreeMap<String, Vec<Remediation>>>();
-
                 (cve, purls)
             })
             .collect();

@@ -220,6 +220,8 @@ impl GuacService {
     pub async fn find_vulnerability(
         &self,
         id: GuacSbomIdentifier<'_>,
+        offset: Option<i64>,
+        limit: Option<i64>,
     ) -> Result<HashMap<String, BTreeSet<String>>, Error> {
         let purl = PackageUrl::new("guac", id.name)?
             .with_namespace("pkg")
@@ -228,7 +230,7 @@ impl GuacService {
 
         log::debug!("Using GUAC purl: {purl}");
 
-        Ok(self.client.semantic().find_vulnerability(&purl).await?)
+        Ok(self.client.semantic().find_vulnerability(&purl, offset, limit).await?)
     }
 }
 
@@ -264,7 +266,7 @@ mod test {
             .find_vulnerability(GuacSbomIdentifier {
                 name: "rhel-7.9.z",
                 version: "7.9.z",
-            })
+            }, Some(0), Some(20))
             .await
             .unwrap();
         println!("{}", serde_json::to_string_pretty(&res).unwrap());
