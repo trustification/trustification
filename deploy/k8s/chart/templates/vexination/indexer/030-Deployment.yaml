@@ -82,7 +82,7 @@ spec:
             - name: INFRASTRUCTURE_BIND
               value: "[::]:9010"
             - name: INDEX_WRITER_MEMORY_BYTES
-              value: {{ .Values.vexination.indexer.index_writer_memory_bytes | default "134217728" }}
+              value: {{ .Values.vexination.indexer.index_writer_memory_bytes | default "128 MIB" }}
             - name: INDEX_SYNC_INTERVAL
               value: {{ .Values.vexination.indexer.index_sync_interval | default "1800s" }}
           volumeMounts:

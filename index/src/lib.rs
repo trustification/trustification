@@ -24,6 +24,7 @@ use std::{
 use trustification_api::search::SearchOptions;
 use trustification_storage::{Storage, StorageConfig};
 // Re-export to align versions
+use bytesize::ByteSize;
 use log::{debug, warn};
 use sha2::{Digest, Sha256};
 use sikula::lir::PartialOrdered;
@@ -52,9 +53,9 @@ pub struct IndexConfig {
     #[arg(env = "INDEX_SYNC_INTERVAL", long = "index-sync-interval", default_value = "30s")]
     pub sync_interval: humantime::Duration,
 
-    /// Memory available to index writer
-    #[arg(env = "INDEX_WRITER_MEMORY_BYTES", long = "index-writer-memory-bytes", default_value_t = 32 * 1024 * 1024)]
-    pub index_writer_memory_bytes: usize,
+    /// Memory available to index writerl
+    #[arg(env = "INDEX_WRITER_MEMORY_BYTES", long = "index-writer-memory-bytes", default_value_t = ByteSize::mb(64))]
+    pub index_writer_memory_bytes: ByteSize,
 
     /// Synchronization interval for index persistence.
     #[arg(env = "INDEX_MODE", long = "index-mode", default_value_t = IndexMode::File)]
@@ -579,7 +580,7 @@ impl<INDEX: WriteIndex> IndexStore<INDEX> {
                 let name = index.name().to_string();
                 Ok(Self {
                     inner: RwLock::new(inner),
-                    index_writer_memory_bytes: config.index_writer_memory_bytes,
+                    index_writer_memory_bytes: config.index_writer_memory_bytes.as_u64() as usize,
                     index_dir: Some(RwLock::new(index_dir)),
                     index,
                     metrics: Metrics::register(metrics_registry, &name)?,
@@ -599,7 +600,7 @@ impl<INDEX: WriteIndex> IndexStore<INDEX> {
                 let name = index.name().to_string();
                 Ok(Self {
                     inner: RwLock::new(inner),
-                    index_writer_memory_bytes: config.index_writer_memory_bytes,
+                    index_writer_memory_bytes: config.index_writer_memory_bytes.as_u64() as usize,
                     index_dir: None,
                     index,
                     metrics: Metrics::register(metrics_registry, &name)?,
