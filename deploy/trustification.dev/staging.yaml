@@ -3,7 +3,7 @@ trustImage: ghcr.io/trustification/trust
 uiImage: ghcr.io/trustification/trust
 docsImage: ghcr.io/trustification/trust-docs
 testsImage: ghcr.io/trustification/trust-tests
-guacImage: ghcr.io/trustification/guac:v0.3.13-temp
+guacImage: ghcr.io/trustification/guac:v0.3.14
 domain: staging.trustification.dev
 replicas: 1
 imagePullPolicy: IfNotPresent
