@@ -133,46 +133,75 @@ pub async fn collect_packages(
                 }
 
                 for vuln in vulns {
-                    // Next, for each vulnerability mentioned by OSV, ensure the vulnerability
-                    // is known to GUAC so that further verbs can be applied to them.
-                    if let Err(err) = state
-                        .guac_client
-                        .intrinsic()
-                        .ingest_vulnerability(&VulnerabilityInputSpec {
+                    let mut vulnerability_input_specs = Vec::new();
+                    // If available ingest a vulnerability using its CVE-ID as the unique key
+                    // adopted everywhere in trustification.
+                    // To retrieve a vulnerability's CVE-ID, OSV must be called again
+                    // in order to retrieve vulnerability's aliases
+                    if !vuln.id.to_lowercase().starts_with("cve") {
+                        match state.osv.vulns(&vuln.id).await {
+                            Ok(Some(osv_vuln)) => {
+                                if let Some(aliases) = &osv_vuln.aliases {
+                                    for alias in aliases {
+                                        if alias.to_lowercase().starts_with("cve") {
+                                            vulnerability_input_specs.push(VulnerabilityInputSpec {
+                                                r#type: "cve".to_string(),
+                                                vulnerability_id: alias.clone(),
+                                            })
+                                        }
+                                    }
+                                }
+                            }
+                            Ok(None) => {
+                                // not found, do not add it to the response.
+                            }
+                            Err(err) => {
+                                log::warn!("OSV vuln retrival for {} failed with {}", vuln.id, err);
+                            }
+                        }
+                    }
+                    if vulnerability_input_specs.is_empty() {
+                        vulnerability_input_specs.push(VulnerabilityInputSpec {
                             r#type: "osv".to_string(),
                             vulnerability_id: vuln.id.clone(),
                         })
-                        .await
-                    {
-                        log::warn!("guac error {}", err);
-                        collected_guac_errors.push(err);
                     }
+                    // Next, for each vulnerability mentioned by OSV, ensure the vulnerability
+                    // is known to GUAC so that further verbs can be applied to them.
+                    for vulnerability_input_spec in vulnerability_input_specs {
+                        if let Err(err) = state
+                            .guac_client
+                            .intrinsic()
+                            .ingest_vulnerability(&vulnerability_input_spec)
+                            .await
+                        {
+                            log::warn!("guac error {}", err);
+                            collected_guac_errors.push(err);
+                        }
 
-                    // Finally, we ensure that GUAC understands the link between the package
-                    // and the vulnerabilities related to that package.
-                    if let Err(err) = state
-                        .guac_client
-                        .intrinsic()
-                        .ingest_certify_vuln(
-                            &PackageUrl::from_str(purl).map_err(|_| Error::Internal)?.into(),
-                            &VulnerabilityInputSpec {
-                                r#type: "osv".to_string(),
-                                vulnerability_id: vuln.id.clone(),
-                            },
-                            &ScanMetadataInput {
-                                db_uri: "https://osv.dev/".to_string(),
-                                db_version: "1.0".to_string(),
-                                scanner_uri: "https://trustification.io/".to_string(),
-                                scanner_version: "1.0".to_string(),
-                                time_scanned: Default::default(),
-                                origin: "osv".to_string(),
-                                collector: "osv".to_string(),
-                            },
-                        )
-                        .await
-                    {
-                        log::warn!("guac error {}", err);
-                        collected_guac_errors.push(err);
+                        // Finally, we ensure that GUAC understands the link between the package
+                        // and the vulnerabilities related to that package.
+                        if let Err(err) = state
+                            .guac_client
+                            .intrinsic()
+                            .ingest_certify_vuln(
+                                &PackageUrl::from_str(purl).map_err(|_| Error::Internal)?.into(),
+                                &vulnerability_input_spec,
+                                &ScanMetadataInput {
+                                    db_uri: "https://osv.dev/".to_string(),
+                                    db_version: "1.0".to_string(),
+                                    scanner_uri: "https://trustification.io/".to_string(),
+                                    scanner_version: "1.0".to_string(),
+                                    time_scanned: Default::default(),
+                                    origin: "osv".to_string(),
+                                    collector: "osv".to_string(),
+                                },
+                            )
+                            .await
+                        {
+                            log::warn!("guac error {}", err);
+                            collected_guac_errors.push(err);
+                        }
                     }
                 }
             }
