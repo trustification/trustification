@@ -577,6 +577,8 @@ objects:
                   value: 'true'
                 - name: INFRASTRUCTURE_BIND
                   value: '[::]:9010'
+                - name: INDEX_WRITER_MEMORY_BYTES
+                  value: ${BOMBASTIC_INDEXER_INDEX_WRITER_MEMORY_BYTES}
                 - name: INDEX_SYNC_INTERVAL
                   value: ${BOMBASTIC_INDEXER_INDEX_SYNC_INTERVAL}
               volumeMounts:
@@ -1924,6 +1926,8 @@ objects:
                   value: 'true'
                 - name: INFRASTRUCTURE_BIND
                   value: '[::]:9010'
+                - name: INDEX_WRITER_MEMORY_BYTES
+                  value: ${VEXINATION_INDEXER_INDEX_WRITER_MEMORY_BYTES}
                 - name: INDEX_SYNC_INTERVAL
                   value: ${VEXINATION_INDEXER_INDEX_SYNC_INTERVAL}
               volumeMounts:
@@ -2472,14 +2476,20 @@ parameters:
   value: "1800s"
 - name: V11Y_INDEXER_INDEX_SYNC_INTERVAL
   value: "1800s"
+- name: V11Y_INDEXER_INDEX_WRITER_MEMORY_BYTES
+  value: "134217728"
 - name: BOMBASTIC_API_INDEX_SYNC_INTERVAL
   value: "1800s"
 - name: BOMBASTIC_INDEXER_INDEX_SYNC_INTERVAL
   value: "1800s"
+- name: BOMBASTIC_INDEXER_INDEX_WRITER_MEMORY_BYTES
+  value: "134217728"
 - name: VEXINATION_API_INDEX_SYNC_INTERVAL
   value: "1800s"
 - name: VEXINATION_INDEXER_INDEX_SYNC_INTERVAL
   value: "1800s"
+- name: VEXINATION_INDEXER_INDEX_WRITER_MEMORY_BYTES
+  value: "134217728"
 - name: LOG_LEVEL
   required: false
   value: "info"

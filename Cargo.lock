@@ -3573,6 +3573,7 @@ dependencies = [
  "async-trait",
  "bombastic-api",
  "bombastic-indexer",
+ "bytesize",
  "chrono",
  "clap 4.4.6",
  "env_logger",
@@ -7639,6 +7640,7 @@ name = "trustification-index"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "bytesize",
  "clap 4.4.6",
  "crc32fast",
  "env_logger",

@@ -172,7 +172,7 @@ fn bombastic_indexer() -> bombastic_indexer::Run {
         reindex: Default::default(),
         index: IndexConfig {
             index_dir: None,
-            index_writer_memory_bytes: 32 * 1024 * 1024,
+            index_writer_memory_bytes: bytesize::ByteSize::mb(64),
             mode: Default::default(),
             sync_interval: Duration::from_secs(2).into(),
         },
@@ -204,7 +204,7 @@ fn bombastic_api() -> bombastic_api::Run {
         devmode: false,
         index: IndexConfig {
             index_dir: None,
-            index_writer_memory_bytes: 32 * 1024 * 1024,
+            index_writer_memory_bytes: bytesize::ByteSize::mb(64),
             mode: Default::default(),
             sync_interval: Duration::from_secs(2).into(),
         },
