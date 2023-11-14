@@ -263,10 +263,14 @@ mod test {
     async fn test_find_vulnerability() {
         let guac = GuacService::new("http://localhost:8085/query");
         let res = guac
-            .find_vulnerability(GuacSbomIdentifier {
-                name: "rhel-7.9.z",
-                version: "7.9.z",
-            }, Some(0), Some(20))
+            .find_vulnerability(
+                GuacSbomIdentifier {
+                    name: "rhel-7.9.z",
+                    version: "7.9.z",
+                },
+                Some(0),
+                Some(20),
+            )
             .await
             .unwrap();
         println!("{}", serde_json::to_string_pretty(&res).unwrap());

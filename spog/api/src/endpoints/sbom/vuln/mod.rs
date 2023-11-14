@@ -58,7 +58,17 @@ pub async fn get_vulnerabilities(
     params: web::Query<GetParams>,
     access_token: Option<BearerAuth>,
 ) -> actix_web::Result<HttpResponse> {
-    if let Some(result) = process_get_vulnerabilities(&state, &v11y, &guac, &access_token, &params.id, params.offset, params.limit).await? {
+    if let Some(result) = process_get_vulnerabilities(
+        &state,
+        &v11y,
+        &guac,
+        &access_token,
+        &params.id,
+        params.offset,
+        params.limit,
+    )
+    .await?
+    {
         Ok(HttpResponse::Ok().json(result))
     } else {
         Ok(HttpResponse::NotFound().json(ErrorInformation {

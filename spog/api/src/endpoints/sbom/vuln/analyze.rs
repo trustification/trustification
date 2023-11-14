@@ -61,10 +61,14 @@ pub async fn analyze_spdx(
     // find vulnerabilities
 
     let cve_to_purl = guac
-        .find_vulnerability(GuacSbomIdentifier {
-            name: &main.package_name,
-            version,
-        }, offset, limit)
+        .find_vulnerability(
+            GuacSbomIdentifier {
+                name: &main.package_name,
+                version,
+            },
+            offset,
+            limit,
+        )
         .await?;
 
     // collect the backtraces
