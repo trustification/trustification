@@ -83,8 +83,6 @@ parameters:
   required: true
 - name: COLLECTOR_SNYK_RESOURCES
   required: true
-- name: COLLECTOR_NVD_RESOURCES
-  required: true
 - name: EXHORT_API_RESOURCES
   required: true
 - name: GUAC_IMAGE

@@ -144,39 +144,3 @@ services:
       ISSUER_URL: http://keycloak:8080/realms/chicken
       INFRASTRUCTURE_ENABLED: "true"
       OPENID_CONFIGURATION: "http://keycloak:8080/realms/chicken/.well-known/openid-configuration"
-
-  collector-nvd:
-    image: $TRUST_IMAGE:${TRUST_VERSION:?TRUST_VERSION is required}
-    depends_on:
-      - init-keycloak
-      - collectorist-api
-      - v11y-api
-    expose:
-      - "$COLLECTOR_NVD_API_PORT"
-    ports:
-      - "$COLLECTOR_NVD_API_PORT:$COLLECTOR_NVD_API_PORT"
-    command:
-      - -c
-      - |
-        while [[ "$$(curl --connect-timeout 2 \
-                  -s -o /dev/null -w ''%{http_code}'' \
-                  $$OPENID_CONFIGURATION)" != "200" ]]; do
-          echo waiting for keycloak...
-          sleep 5
-        done
-        echo keycloak is up
-        /trust collector nvd \
-          -p $COLLECTOR_NVD_API_PORT \
-          --nvd-api-key $NVD_API_KEY \
-          --devmode
-    entrypoint: /usr/bin/bash
-    restart: on-failure
-    healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:9010" ]
-    environment:
-      HTTP_SERVER_BIND_ADDR: "::"
-      GUAC_URL: http://guac-graphql:$GUAC_API_PORT/query
-      V11Y_URL: http://v11y-api:$V11Y_API_PORT
-      ISSUER_URL: http://keycloak:8080/realms/chicken
-      INFRASTRUCTURE_ENABLED: "true"
-      OPENID_CONFIGURATION: "http://keycloak:8080/realms/chicken/.well-known/openid-configuration"

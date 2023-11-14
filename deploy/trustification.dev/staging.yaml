@@ -149,10 +149,6 @@ collector:
     enabled: true
     credentials: snyk-collector-secret
     resources:
-  nvd:
-    enabled: true
-    credentials: nvd-collector-secret
-    resources:
 v11y:
   enabled: true
   bucket: v11y-staging
