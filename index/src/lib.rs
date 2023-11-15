@@ -54,7 +54,7 @@ pub struct IndexConfig {
     pub sync_interval: humantime::Duration,
 
     /// Memory available to index writerl
-    #[arg(env = "INDEX_WRITER_MEMORY_BYTES", long = "index-writer-memory-bytes", default_value_t = ByteSize::mb(64))]
+    #[arg(env = "INDEX_WRITER_MEMORY_BYTES", long = "index-writer-memory-bytes", default_value_t = ByteSize::mb(256))]
     pub index_writer_memory_bytes: ByteSize,
 
     /// Synchronization interval for index persistence.

@@ -7543,6 +7543,7 @@ dependencies = [
  "tokio",
  "trustification-auth",
  "trustification-common",
+ "trustification-infrastructure",
  "url",
  "urlencoding",
  "vexination-model",
