@@ -214,7 +214,7 @@ mod default {
     }
 
     pub const fn json_limit() -> BinaryByteSize {
-        BinaryByteSize(ByteSize::kib(32))
+        BinaryByteSize(ByteSize::mib(2))
     }
 }
 
