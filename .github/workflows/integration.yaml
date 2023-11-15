@@ -69,6 +69,7 @@ jobs:
         run: |
           sudo du -sh *
           sudo du -sh $HOME/*
+          sudo rm -rf deploy/compose//container_files/pg
 
       - name: Test
         run: |
