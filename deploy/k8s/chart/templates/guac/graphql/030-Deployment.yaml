@@ -41,7 +41,7 @@ spec:
             - "--gql-backend"
             - "ent"
             - "--db-address"
-            - "postgres://$(PGUSER)@$(PGHOST):$(PGPORT)/$(DB_NAME)"
+            - "postgres://$(DB_USER):$(DB_PASSWORD)@$(PGHOST):$(PGPORT)/$(DB_NAME)"
             - "--db-driver"
             - "postgres"
             - "--db-debug"
@@ -58,35 +58,18 @@ spec:
             - name: PGHOST
               valueFrom:
                 secretKeyRef:
-                  name: guac-admin-db
+                  name: guac-user-db
                   key: "db.host"
             - name: PGPORT
               valueFrom:
                 secretKeyRef:
-                  name: guac-admin-db
+                  name: guac-user-db
                   key: "db.port"
-            - name: PGDATABASE
-              valueFrom:
-                secretKeyRef:
-                  name: guac-admin-db
-                  key: "db.name"
-            - name: PGUSER
-              valueFrom:
-                secretKeyRef:
-                  name: guac-admin-db
-                  key: "db.user"
-            - name: PGPASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: guac-admin-db
-                  key: "db.password"
-
             - name: DB_NAME
               valueFrom:
                 secretKeyRef:
                   name: guac-user-db
                   key: "db.name"
-
             - name: DB_USER
               valueFrom:
                 secretKeyRef:
