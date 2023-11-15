@@ -67,8 +67,8 @@ jobs:
 
       - name: Print storage use
         run: |
-          du -sh *
-          du -sh $HOME/*
+          sudo du -sh *
+          sudo du -sh $HOME/*
 
       - name: Test
         run: |
