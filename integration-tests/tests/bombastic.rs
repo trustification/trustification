@@ -1,4 +1,6 @@
-use integration_tests::{get_response, id, wait_for_search_result, BombasticContext, Urlifier};
+use integration_tests::{
+    get_response, id, wait_for_package_search_result, wait_for_sbom_search_result, BombasticContext, Urlifier,
+};
 use reqwest::StatusCode;
 use serde_json::{json, Value};
 use test_context::test_context;
@@ -146,18 +148,37 @@ async fn reject_non_manager_upload(context: &mut BombasticContext) {
 #[test_context(BombasticContext)]
 #[tokio::test]
 #[ntest::timeout(90_000)]
-async fn bombastic_search(context: &mut BombasticContext) {
+async fn bombastic_sbom_search(context: &mut BombasticContext) {
     let mut input: Value = serde_json::from_str(include_str!("../../bombastic/testdata/ubi9-sbom.json")).unwrap();
     // we generate a unique id and use it as the SBOM's version for searching
     let key = id("test-search");
     input["packages"][617]["versionInfo"] = json!(key);
     context.upload_sbom(&key, &input).await;
 
-    let response = wait_for_search_result(context, &[("q", &encode(&key))], |response| {
+    let response = wait_for_sbom_search_result(context, &[("q", &encode(&key))], |response| {
         response["total"].as_u64().unwrap() > 0
     })
     .await;
     assert_eq!(response["result"][0]["document"]["name"], json!("ubi9-container"));
+}
+
+#[test_context(BombasticContext)]
+#[tokio::test]
+#[ntest::timeout(90_000)]
+async fn bombastic_package_search(context: &mut BombasticContext) {
+    let mut input: Value = serde_json::from_str(include_str!("../../bombastic/testdata/ubi9-sbom.json")).unwrap();
+    // we generate a unique id and use it as the SBOM's version for searching
+    let key = id("test-package-search");
+    input["packages"][617]["versionInfo"] = json!(key);
+    context.upload_sbom(&key, &input).await;
+
+    let purl = "\"pkg:rpm/redhat/libdnf@0.67.0-3.el9?arch=aarch64\"";
+
+    let response = wait_for_package_search_result(context, &[("q", &purl)], |response| {
+        response["total"].as_u64().unwrap() > 0
+    })
+    .await;
+    assert_eq!(response["result"][0]["document"]["name"], json!("libdnf"));
 }
 
 #[test_context(BombasticContext)]
@@ -192,7 +213,7 @@ async fn bombastic_reindexing(context: &mut BombasticContext) {
     input["packages"][617]["versionInfo"] = json!(key);
     context.upload_sbom(&key, &input).await;
 
-    let response = wait_for_search_result(context, &[("q", &encode(&key))], |response| {
+    let response = wait_for_sbom_search_result(context, &[("q", &encode(&key))], |response| {
         response["total"].as_u64().unwrap() > 0
     })
     .await;
@@ -203,7 +224,7 @@ async fn bombastic_reindexing(context: &mut BombasticContext) {
     // Push update and check reindex
     context.upload_sbom(&key, &input).await;
 
-    wait_for_search_result(context, &[("q", &encode(&key)), ("metadata", "true")], |response| {
+    wait_for_sbom_search_result(context, &[("q", &encode(&key)), ("metadata", "true")], |response| {
         response["total"].as_u64().filter(|&t| t > 0).is_some_and(|_| {
             let format = &time::format_description::well_known::Rfc3339;
             let ts = OffsetDateTime::parse(
@@ -228,7 +249,7 @@ async fn bombastic_deletion(context: &mut BombasticContext) {
     input["packages"][617]["versionInfo"] = json!(key);
     context.upload_sbom(&key, &input).await;
 
-    let response = wait_for_search_result(context, &[("q", &encode(&key))], |response| {
+    let response = wait_for_sbom_search_result(context, &[("q", &encode(&key))], |response| {
         response["total"].as_u64().unwrap() > 0
     })
     .await;
@@ -236,7 +257,7 @@ async fn bombastic_deletion(context: &mut BombasticContext) {
 
     context.delete_sbom(&key).await;
 
-    wait_for_search_result(context, &[("q", &encode(&key))], |response| {
+    wait_for_sbom_search_result(context, &[("q", &encode(&key))], |response| {
         response["total"].as_u64().unwrap() == 1
     })
     .await;

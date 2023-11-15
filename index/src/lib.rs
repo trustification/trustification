@@ -24,6 +24,7 @@ use std::{
 use trustification_api::search::SearchOptions;
 use trustification_storage::{Storage, StorageConfig};
 // Re-export to align versions
+use bytesize::ByteSize;
 use log::{debug, warn};
 use sha2::{Digest, Sha256};
 use sikula::lir::PartialOrdered;
@@ -52,9 +53,9 @@ pub struct IndexConfig {
     #[arg(env = "INDEX_SYNC_INTERVAL", long = "index-sync-interval", default_value = "30s")]
     pub sync_interval: humantime::Duration,
 
-    /// Memory available to index writer
-    #[arg(env = "INDEX_WRITER_MEMORY_BYTES", long = "index-writer-memory-bytes", default_value_t = 32 * 1024 * 1024)]
-    pub index_writer_memory_bytes: usize,
+    /// Memory available to index writerl
+    #[arg(env = "INDEX_WRITER_MEMORY_BYTES", long = "index-writer-memory-bytes", default_value_t = ByteSize::mb(256))]
+    pub index_writer_memory_bytes: ByteSize,
 
     /// Synchronization interval for index persistence.
     #[arg(env = "INDEX_MODE", long = "index-mode", default_value_t = IndexMode::File)]
@@ -94,35 +95,51 @@ struct Metrics {
 }
 
 impl Metrics {
-    fn register(registry: &Registry) -> Result<Self, Error> {
+    fn register(registry: &Registry, prefix: &str) -> Result<Self, Error> {
+        let prefix = prefix.replace('-', "_");
         let indexed_total = register_int_counter_with_registry!(
-            opts!("index_indexed_total", "Total number of indexing operations"),
+            opts!(
+                format!("{}_index_indexed_total", prefix),
+                "Total number of indexing operations"
+            ),
             registry
         )?;
 
         let failed_total = register_int_counter_with_registry!(
-            opts!("index_failed_total", "Total number of indexing operations failed"),
+            opts!(
+                format!("{}_index_failed_total", prefix),
+                "Total number of indexing operations failed"
+            ),
             registry
         )?;
 
         let queries_total = register_int_counter_with_registry!(
-            opts!("index_queries_total", "Total number of search queries"),
+            opts!(
+                format!("{}_index_queries_total", prefix),
+                "Total number of search queries"
+            ),
             registry
         )?;
 
         let snapshots_total = register_int_counter_with_registry!(
-            opts!("index_snapshots_total", "Total number of snapshots taken"),
+            opts!(
+                format!("{}_index_snapshots_total", prefix),
+                "Total number of snapshots taken"
+            ),
             registry
         )?;
 
         let index_size_disk_bytes = register_int_gauge_with_registry!(
-            opts!("index_size_disk_bytes", "Amount of bytes consumed by index on disk"),
+            opts!(
+                format!("{}_index_size_disk_bytes", prefix),
+                "Amount of bytes consumed by index on disk"
+            ),
             registry
         )?;
 
         let indexing_latency_seconds = register_histogram_with_registry!(
             histogram_opts!(
-                "index_indexing_latency_seconds",
+                format!("{}_index_indexing_latency_seconds", prefix),
                 "Indexing latency",
                 vec![0.0001, 0.001, 0.01, 0.1, 1.0, 10.0]
             ),
@@ -131,7 +148,7 @@ impl Metrics {
 
         let query_latency_seconds = register_histogram_with_registry!(
             histogram_opts!(
-                "index_query_latency_seconds",
+                format!("{}_index_query_latency_seconds", prefix),
                 "Search query latency",
                 vec![0.0001, 0.001, 0.01, 0.1, 1.0, 10.0]
             ),
@@ -179,7 +196,7 @@ impl<DOC> WriteIndex for Box<dyn WriteIndex<Document = DOC>> {
         self.as_ref().schema()
     }
 
-    fn index_doc(&self, id: &str, document: &Self::Document) -> Result<Document, Error> {
+    fn index_doc(&self, id: &str, document: &Self::Document) -> Result<Vec<(String, Document)>, Error> {
         self.as_ref().index_doc(id, document)
     }
 
@@ -209,7 +226,7 @@ pub trait WriteIndex {
     /// Schema required for this index.
     fn schema(&self) -> Schema;
     /// Process an input document and return a tantivy document to be added to the index.
-    fn index_doc(&self, id: &str, document: &Self::Document) -> Result<Document, Error>;
+    fn index_doc(&self, id: &str, document: &Self::Document) -> Result<Vec<(String, Document)>, Error>;
     /// Convert a document id to a term for referencing that document.
     fn doc_id_to_term(&self, id: &str) -> Term;
 }
@@ -330,15 +347,18 @@ impl IndexWriter {
         match index.parse_doc(data) {
             Ok(doc) => {
                 let id = &id(&doc);
-                let doc = index.index_doc(id, &doc).map_err(|e| {
+                let docs = index.index_doc(id, &doc).map_err(|e| {
                     self.metrics.failed_total.inc();
                     e
                 })?;
-                self.delete_document(index, id);
-                self.writer.add_document(doc).map_err(|e| {
-                    self.metrics.failed_total.inc();
-                    e
-                })?;
+                for (i, doc) in docs {
+                    self.delete_document(index, &i);
+                    self.writer.add_document(doc).map_err(|e| {
+                        self.metrics.failed_total.inc();
+                        e
+                    })?;
+                }
+
                 self.metrics.indexed_total.inc();
             }
             Err(e) => {
@@ -523,12 +543,13 @@ impl<INDEX: WriteIndex> IndexStore<INDEX> {
             .settings(settings)
             .tokenizers(tokenizers);
         let inner = builder.create_in_ram()?;
+        let name = index.name().to_string();
         Ok(Self {
             inner: RwLock::new(inner),
             index,
             index_writer_memory_bytes: 32 * 1024 * 1024,
             index_dir: None,
-            metrics: Metrics::register(&Default::default())?,
+            metrics: Metrics::register(&Default::default(), &name)?,
         })
     }
 
@@ -540,11 +561,15 @@ impl<INDEX: WriteIndex> IndexStore<INDEX> {
     ) -> Result<Self, Error> {
         match config.mode {
             IndexMode::File => {
-                let path = config.index_dir.clone().unwrap_or_else(|| {
-                    use rand::RngCore;
-                    let r = rand::thread_rng().next_u32();
-                    std::env::temp_dir().join(format!("index.{}", r))
-                });
+                let path = config
+                    .index_dir
+                    .clone()
+                    .unwrap_or_else(|| {
+                        use rand::RngCore;
+                        let r = rand::thread_rng().next_u32();
+                        std::env::temp_dir().join(format!("index.{}", r))
+                    })
+                    .join(index.name());
 
                 let schema = index.schema();
                 let settings = index.settings();
@@ -552,12 +577,13 @@ impl<INDEX: WriteIndex> IndexStore<INDEX> {
 
                 let index_dir = IndexDirectory::new(&path)?;
                 let inner = index_dir.build(settings, schema, tokenizers)?;
+                let name = index.name().to_string();
                 Ok(Self {
                     inner: RwLock::new(inner),
-                    index_writer_memory_bytes: config.index_writer_memory_bytes,
+                    index_writer_memory_bytes: config.index_writer_memory_bytes.as_u64() as usize,
                     index_dir: Some(RwLock::new(index_dir)),
                     index,
-                    metrics: Metrics::register(metrics_registry)?,
+                    metrics: Metrics::register(metrics_registry, &name)?,
                 })
             }
             IndexMode::S3 => {
@@ -571,12 +597,13 @@ impl<INDEX: WriteIndex> IndexStore<INDEX> {
                     .tokenizers(tokenizers);
                 let dir = S3Directory::new(bucket);
                 let inner = builder.open_or_create(dir)?;
+                let name = index.name().to_string();
                 Ok(Self {
                     inner: RwLock::new(inner),
-                    index_writer_memory_bytes: config.index_writer_memory_bytes,
+                    index_writer_memory_bytes: config.index_writer_memory_bytes.as_u64() as usize,
                     index_dir: None,
                     index,
-                    metrics: Metrics::register(metrics_registry)?,
+                    metrics: Metrics::register(metrics_registry, &name)?,
                 })
             }
         }
@@ -1147,12 +1174,14 @@ mod tests {
                 .map(|s| s.to_string())
         }
 
-        fn index_doc(&self, id: &str, document: &Self::Document) -> Result<Document, Error> {
+        fn index_doc(&self, id: &str, document: &Self::Document) -> Result<Vec<(String, Document)>, Error> {
+            let mut documents: Vec<(String, Document)> = Vec::new();
             let doc = tantivy::doc!(
                 self.id => id.to_string(),
                 self.text => document.to_string()
             );
-            Ok(doc)
+            documents.push((id.to_string(), doc));
+            Ok(documents)
         }
 
         fn doc_id_to_term(&self, id: &str) -> Term {

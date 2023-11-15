@@ -101,9 +101,9 @@ impl Index {
         }
     }
 
-    fn index_published_cve(&self, cve: &Published) -> Result<Document, SearchError> {
+    fn index_published_cve(&self, cve: &Published, _id: &str) -> Result<Vec<(String, Document)>, SearchError> {
         log::debug!("Indexing published CVE document");
-
+        let mut documents: Vec<(String, Document)> = Vec::new();
         let mut document = doc!();
 
         document.add_bool(self.fields.published, true);
@@ -138,12 +138,13 @@ impl Index {
         }
 
         log::debug!("Indexed {:?}", document);
-        Ok(document)
+        documents.push((_id.to_string(), document));
+        Ok(documents)
     }
 
-    fn index_rejected_cve(&self, cve: &Rejected) -> Result<Document, SearchError> {
+    fn index_rejected_cve(&self, cve: &Rejected, _id: &str) -> Result<Vec<(String, Document)>, SearchError> {
         log::debug!("Indexing rejected CVE document");
-
+        let mut documents: Vec<(String, Document)> = Vec::new();
         let mut document = doc!();
 
         document.add_bool(self.fields.published, false);
@@ -152,7 +153,8 @@ impl Index {
         Self::add_timestamp(&mut document, self.fields.date_rejected, cve.metadata.date_rejected);
 
         log::debug!("Indexed {:?}", document);
-        Ok(document)
+        documents.push((_id.to_string(), document));
+        Ok(documents)
     }
 
     fn resource2query(&self, resource: &Cves) -> Box<dyn Query> {
@@ -347,10 +349,10 @@ impl trustification_index::WriteIndex for Index {
         "cve"
     }
 
-    fn index_doc(&self, _id: &str, doc: &Cve) -> Result<Document, SearchError> {
+    fn index_doc(&self, id: &str, doc: &Cve) -> Result<Vec<(String, Document)>, SearchError> {
         match doc {
-            Cve::Published(cve) => self.index_published_cve(cve),
-            Cve::Rejected(cve) => self.index_rejected_cve(cve),
+            Cve::Published(cve) => self.index_published_cve(cve, id),
+            Cve::Rejected(cve) => self.index_rejected_cve(cve, id),
         }
     }
 

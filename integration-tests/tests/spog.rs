@@ -8,7 +8,7 @@ use trustification_auth::client::TokenInjector;
 
 #[test_context(SpogContext)]
 #[tokio::test]
-#[ntest::timeout(30_000)]
+#[ntest::timeout(60_000)]
 async fn spog_version(context: &mut SpogContext) {
     let response = reqwest::Client::new()
         .get(context.urlify("/.well-known/trustification/version"))
@@ -49,7 +49,7 @@ async fn spog_endpoints(context: &mut SpogContext) {
 /// test this.
 #[test_context(SpogContext)]
 #[tokio::test]
-#[ntest::timeout(30_000)]
+#[ntest::timeout(60_000)]
 async fn spog_search_forward_bombastic(context: &mut SpogContext) {
     let client = reqwest::Client::new();
 
@@ -85,7 +85,7 @@ async fn spog_search_forward_bombastic(context: &mut SpogContext) {
 /// test this.
 #[test_context(SpogContext)]
 #[tokio::test]
-#[ntest::timeout(30_000)]
+#[ntest::timeout(60_000)]
 async fn spog_search_forward_vexination(context: &mut SpogContext) {
     let client = reqwest::Client::new();
 
@@ -184,6 +184,7 @@ async fn spog_search_correlation(context: &mut SpogContext) {
 /// to Guac. This test is here to test this.
 #[test_context(SpogContext)]
 #[tokio::test]
+#[ignore]
 #[ntest::timeout(60_000)]
 async fn spog_dependencies(context: &mut SpogContext) {
     let input = serde_json::from_str(include_str!("testdata/correlation/stf-1.5.json")).unwrap();

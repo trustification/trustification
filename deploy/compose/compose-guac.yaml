@@ -1,19 +1,26 @@
 version: "3"
 
 services:
-  # Neo4j is turned down for now since we are currently only using the in memory backend
-  # neo4j:
-  #   image: "neo4j:4.4.9-community"
-  #   environment:
-  #     NEO4J_AUTH: "neo4j/s3cr3t"
-  #     NEO4J_apoc_export_file_enabled: true
-  #     NEO4J_apoc_import_file_enabled: true
-  #     NEO4J_apoc_import_file_use__neo4j__config: true
-  #     NEO4JLABS_PLUGINS: '["apoc"]'
-  #   ports:
-  #     - "7474:7474"
-  #     - "7687:7687"
-  #   restart: on-failure
+  postgres:
+    image: docker.io/library/postgres:16
+    environment:
+      POSTGRES_USER: guac
+      POSTGRES_DB: guac
+      POSTGRES_HOST_AUTH_METHOD: trust
+    ports:
+      - "5432:5432"
+    expose:
+      - "5432"
+    volumes:
+      - ./container_files/pg:/var/lib/postgresql/data${SELINUX_VOLUME_OPTIONS}
+      # - ./container_files/guac/init.sql:/docker-entrypoint-initdb.d/init.sql${SELINUX_VOLUME_OPTIONS}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U guac -d guac"]
+      start_period: 10s
+      interval: 10s
+      timeout: 10s
+      retries: 5
+
   guac-collectsub:
     image: $GUAC_IMAGE
     command: "/opt/guac/guaccsub --csub-listen-port $GUAC_CSUB_PORT"
@@ -34,7 +41,10 @@ services:
 
   guac-graphql:
     image: $GUAC_IMAGE
-    command: "/opt/guac/guacgql --gql-listen-port $GUAC_API_PORT"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: "/opt/guac/guacgql --gql-listen-port $GUAC_API_PORT --gql-backend=ent --db-address=postgres://guac@postgres:5432/guac?sslmode=disable --db-driver=postgres --db-debug=true --gql-debug=true" #--db-migrate=false
     working_dir: /guac
     restart: on-failure
     expose:

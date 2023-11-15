@@ -30,8 +30,8 @@ use utoipa::OpenApi;
 
 #[derive(OpenApi)]
 #[openapi(
-    paths(query_sbom, publish_sbom, search_sbom, delete_sbom),
-    components(schemas(SearchDocument, SearchResult),)
+    paths(query_sbom, publish_sbom, search_sbom, delete_sbom, search_package),
+    components(schemas(SearchDocument, SearchResult, SearchPackageResult),)
 )]
 pub struct ApiDoc;
 
@@ -45,6 +45,7 @@ pub fn config(
             .wrap(new_auth!(auth))
             .service(query_sbom)
             .service(search_sbom)
+            .service(search_package)
             .service(publish_sbom)
             .service(delete_sbom),
     )
@@ -237,13 +238,54 @@ async fn search_sbom(
 
     let (result, total) = actix_web::web::block(move || {
         state
-            .index
+            .sbom_index
             .search(&params.q, params.offset, params.limit, (&params).into())
     })
     .await?
     .map_err(Error::Index)?;
 
     Ok(HttpResponse::Ok().json(SearchResult { total, result }))
+}
+
+/// Search for a package using a free form search query.
+///
+/// See the [documentation](https://docs.trustification.dev/trustification/user/retrieve.html) for a description of the query language.
+#[utoipa::path(
+    get,
+    tag = "bombastic",
+    path = "/api/v1/package/search",
+    responses(
+        (status = 200, description = "Search completed"),
+        (status = BAD_REQUEST, description = "Bad query"),
+        (status = 401, description = "Not authenticated"),
+    ),
+    params(
+        ("q" = String, Query, description = "Search query"),
+    )
+)]
+#[get("/package/search")]
+async fn search_package(
+    state: web::Data<SharedState>,
+    params: web::Query<SearchParams>,
+    authorizer: web::Data<Authorizer>,
+    user: UserInformation,
+) -> actix_web::Result<impl Responder> {
+    // TODO: Should this use a different permission?
+    authorizer.require(&user, Permission::ReadSbom)?;
+
+    let params = params.into_inner();
+
+    log::info!("Querying Package: '{}'", params.q);
+
+    let (result, total) = actix_web::web::block(move || {
+        state
+            .package_index
+            .search(&params.q, params.offset, params.limit, (&params).into())
+    })
+    .await?
+    .map_err(Error::Index)?;
+
+    Ok(HttpResponse::Ok().json(SearchPackageResult { total, result }))
 }
 
 /// Upload an SBOM with an identifier.

@@ -67,8 +67,9 @@ jobs:
 
       - name: Print storage use
         run: |
-          du -sh *
-          du -sh $HOME/*
+          sudo du -sh *
+          sudo du -sh $HOME/*
+          sudo rm -rf deploy/compose//container_files/pg
 
       - name: Test
         run: |

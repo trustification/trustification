@@ -37,6 +37,8 @@ const PARALLEL_FETCH_VEX: usize = 4;
 pub struct GetParams {
     /// ID of the SBOM to get vulnerabilities for
     pub id: String,
+    pub offset: Option<i64>,
+    pub limit: Option<i64>,
 }
 
 #[utoipa::path(
@@ -53,10 +55,20 @@ pub async fn get_vulnerabilities(
     state: web::Data<AppState>,
     v11y: web::Data<V11yService>,
     guac: web::Data<GuacService>,
-    web::Query(GetParams { id }): web::Query<GetParams>,
+    params: web::Query<GetParams>,
     access_token: Option<BearerAuth>,
 ) -> actix_web::Result<HttpResponse> {
-    if let Some(result) = process_get_vulnerabilities(&state, &v11y, &guac, &access_token, &id).await? {
+    if let Some(result) = process_get_vulnerabilities(
+        &state,
+        &v11y,
+        &guac,
+        &access_token,
+        &params.id,
+        params.offset,
+        params.limit,
+    )
+    .await?
+    {
         Ok(HttpResponse::Ok().json(result))
     } else {
         Ok(HttpResponse::NotFound().json(ErrorInformation {
@@ -74,6 +86,8 @@ async fn process_get_vulnerabilities(
     guac: &GuacService,
     access_token: &dyn TokenProvider,
     id: &str,
+    offset: Option<i64>,
+    limit: Option<i64>,
 ) -> Result<Option<SbomReport>, Error> {
     // FIXME: avoid getting the full SBOM, but the search document fields only
     let sbom: BytesMut = state
@@ -107,7 +121,7 @@ async fn process_get_vulnerabilities(
             let AnalyzeOutcome {
                 cve_to_purl,
                 purl_to_backtrace,
-            } = analyze_spdx(state, guac, access_token, main).await?;
+            } = analyze_spdx(state, guac, access_token, main, offset, limit).await?;
 
             // find a single version (if possible)
             let version = main.package_version.clone();

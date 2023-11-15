@@ -1,5 +1,6 @@
 use std::process::ExitCode;
 
+use bombastic_index::{packages, sbom};
 use bombastic_model::prelude::SBOM;
 use std::sync::Arc;
 use tokio::sync::{mpsc, Mutex};
@@ -53,10 +54,15 @@ impl Run {
                 "bombastic-indexer",
                 |_context| async { Ok(()) },
                 |context| async move {
-                    let sbom_index: Box<dyn WriteIndex<Document = (SBOM, String)>> =
-                        Box::new(bombastic_index::Index::new());
+                    let sbom_index: Box<dyn WriteIndex<Document = (SBOM, String)>> = Box::new(sbom::Index::new());
                     let index = block_in_place(|| {
                         IndexStore::new(&self.storage, &self.index, sbom_index, context.metrics.registry())
+                    })?;
+
+                    let package_index: Box<dyn WriteIndex<Document = (SBOM, String)>> =
+                        Box::new(packages::Index::new());
+                    let package_store = block_in_place(|| {
+                        IndexStore::new(&self.storage, &self.index, package_index, context.metrics.registry())
                     })?;
                     let storage = Storage::new(storage.process("bombastic", self.devmode), context.metrics.registry())?;
 
@@ -66,7 +72,7 @@ impl Run {
                     }
 
                     let mut indexer = Indexer {
-                        indexes: vec![index],
+                        indexes: vec![index, package_store],
                         storage,
                         bus,
                         stored_topic: self.stored_topic.as_str(),
