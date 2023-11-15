@@ -20,5 +20,6 @@ regex = "1.9.5"
 url = { version = "2.3.1", features = ["serde"] }
 trustification-auth = { path = "../auth" }
 trustification-common = { path = "../common" }
+trustification-infrastructure = { path = "../infrastructure" }
 bombastic-model = { path = "../bombastic/model" }
 vexination-model = { path = "../vexination/model" }

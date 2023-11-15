@@ -43,6 +43,7 @@ bombastic:
   indexer:
     reindex: false
     index_sync_interval: ${BOMBASTIC_INDEXER_INDEX_SYNC_INTERVAL}
+    index_writer_memory_bytes: ${BOMBASTIC_INDEXER_INDEX_WRITER_MEMORY_BYTES}
     topics:
       stored: ${BOMBASTIC_INDEXER_STORED_TOPIC}
       indexed: ${BOMBASTIC_INDEXER_INDEXED_TOPIC}
@@ -73,6 +74,7 @@ v11y:
   indexer:
     reindex: false
     index_sync_interval: ${V11Y_INDEXER_INDEX_SYNC_INTERVAL}
+    index_writer_memory_bytes: ${V11Y_INDEXER_INDEX_WRITER_MEMORY_BYTES}
     topics:
       stored: ${V11Y_INDEXER_STORED_TOPIC}
       indexed: ${V11Y_INDEXER_INDEXED_TOPIC}
@@ -122,6 +124,7 @@ vexination:
   indexer:
     reindex: false
     index_sync_interval: ${VEXINATION_INDEXER_INDEX_SYNC_INTERVAL}
+    index_writer_memory_bytes: ${VEXINATION_INDEXER_INDEX_WRITER_MEMORY_BYTES}
     topics:
       stored: ${VEXINATION_INDEXER_STORED_TOPIC}
       indexed: ${VEXINATION_INDEXER_INDEXED_TOPIC}

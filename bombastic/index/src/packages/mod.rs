@@ -543,6 +543,14 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_search_packages_by_purl() {
+        assert_search(|index| {
+            let result = search(&index, "purl:\"pkg:rpm/redhat/libdnf@0.67.0-3.el9?arch=aarch64\"");
+            assert_eq!(result.0.len(), 1);
+        });
+    }
+
+    #[tokio::test]
     async fn test_search_packages_by_supplier() {
         assert_search(|index| {
             let result = search(&index, "supplier:\"Organization: Red Hat\"");
