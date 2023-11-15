@@ -5,12 +5,12 @@ use crate::SharedState;
 use actix_web::{
     delete,
     error::{self, PayloadError},
-    get,
+    get, guard,
     http::{
         header::{self, Accept, AcceptEncoding, ContentType, HeaderValue, CONTENT_ENCODING},
-        StatusCode,
+        Method, StatusCode,
     },
-    route, web, HttpRequest, HttpResponse, Responder,
+    web, HttpRequest, HttpResponse, Responder,
 };
 use bombastic_model::prelude::*;
 use derive_more::{Display, Error, From};
@@ -48,9 +48,10 @@ pub fn config(
             .service(search_sbom)
             .service(search_package)
             .service(
-                web::scope("")
+                web::resource("/sbom")
                     .app_data(web::PayloadConfig::new(publish_limit))
-                    .service(publish_sbom),
+                    .guard(guard::Any(guard::Method(Method::PUT)).or(guard::Method(Method::POST)))
+                    .to(publish_sbom),
             )
             .service(delete_sbom),
     )
@@ -311,7 +312,6 @@ async fn search_package(
         ("id" = String, Query, description = "Identifier assigned to the SBOM"),
     )
 )]
-#[route("/sbom", method = "PUT", method = "POST")]
 async fn publish_sbom(
     req: HttpRequest,
     state: web::Data<SharedState>,
