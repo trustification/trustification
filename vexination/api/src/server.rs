@@ -35,13 +35,17 @@ pub fn config(
     cfg: &mut web::ServiceConfig,
     auth: Option<Arc<Authenticator>>,
     swagger_ui_oidc: Option<Arc<SwaggerUiOidc>>,
+    publish_limit: usize,
 ) {
     cfg.service(
         web::scope("/api/v1")
             .wrap(new_auth!(auth))
-            .app_data(web::PayloadConfig::new(10 * 1024 * 1024))
             .service(fetch_vex)
-            .service(publish_vex)
+            .service(
+                web::scope("")
+                    .app_data(web::PayloadConfig::new(publish_limit))
+                    .service(publish_vex),
+            )
             .service(search_vex)
             .service(delete_vex),
     )
