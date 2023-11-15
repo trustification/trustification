@@ -7,7 +7,10 @@ use chrono::Utc;
 use futures::StreamExt;
 use tokio::time::sleep;
 
-use collector_client::{CollectPackagesRequest, CollectPackagesResponse, CollectorClient};
+use collector_client::{
+    CollectPackagesRequest, CollectPackagesResponse, CollectVulnerabilitiesRequest, CollectVulnerabilitiesResponse,
+    CollectorClient,
+};
 
 use crate::config::{CollectorConfig, Interest};
 use crate::state::AppState;
@@ -84,6 +87,43 @@ impl Collector {
         }
     }
 
+    pub async fn collect_vulnerabilities(
+        &self,
+        state: &AppState,
+        vulnerability_ids: HashSet<String>,
+    ) -> Result<CollectVulnerabilitiesResponse, anyhow::Error> {
+        Self::collect_vulnerabilities_internal(&self.client, state, self.id.clone(), vulnerability_ids).await
+    }
+
+    async fn collect_vulnerabilities_internal(
+        client: &CollectorClient,
+        state: &AppState,
+        id: String,
+        vulnerability_ids: HashSet<String>,
+    ) -> Result<CollectVulnerabilitiesResponse, anyhow::Error> {
+        let response = client
+            .collect_vulnerabilities(CollectVulnerabilitiesRequest {
+                vulnerability_ids: Vec::from_iter(vulnerability_ids.iter().cloned()),
+            })
+            .await;
+
+        match response {
+            Ok(response) => {
+                for vuln_id in &response.vulnerability_ids {
+                    log::debug!("[{id}] scanned {}", vuln_id);
+                    let _ = state.db.insert_vulnerability(vuln_id).await;
+                    let _ = state.db.update_vulnerability_scan_time(&id, vuln_id).await;
+                }
+                Ok(response)
+            }
+
+            Err(e) => {
+                log::warn!("[{id}] error parsing response: {}", e);
+                Err(e)
+            }
+        }
+    }
+
     pub async fn update(client: Arc<CollectorClient>, state: Arc<AppState>, id: String) {
         loop {
             if let Some(config) = state.collectors.collector_config(id.clone()) {
@@ -115,6 +155,22 @@ impl Collector {
                                 state.db.insert_vulnerability(vuln_id).await.ok();
                             }
                         }
+                    }
+                }
+
+                if config.interests.contains(&Interest::Vulnerability) {
+                    let vuln_ids: HashSet<String> = state
+                        .db
+                        .get_vulnerabilities_to_scan(id.as_str(), Utc::now() - chrono::Duration::seconds(1200), 20)
+                        .await
+                        .collect()
+                        .await;
+
+                    if !vuln_ids.is_empty() {
+                        log::debug!("polling vulnerabilities for {} -> {}", id, collector_url);
+                        Self::collect_vulnerabilities_internal(&client, &state, id.clone(), vuln_ids)
+                            .await
+                            .ok();
                     }
                 }
             }

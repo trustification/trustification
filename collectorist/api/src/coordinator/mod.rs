@@ -1,5 +1,6 @@
 use collector_client::CollectPackagesResponse;
 use serde::{Deserialize, Serialize};
+use std::collections::HashSet;
 use std::sync::Arc;
 
 #[allow(clippy::module_inception)]
@@ -16,7 +17,7 @@ pub enum RateLimit {
 
 use std::time::SystemTime;
 
-use collectorist_client::CollectPackagesRequest;
+use collectorist_client::{CollectPackagesRequest, CollectVulnerabilitiesRequest};
 use guac::collectsub::{CollectSubClient, Entry, Filter};
 use log::{info, warn};
 use reqwest::Url;
@@ -85,7 +86,23 @@ impl Coordinator {
         state: &AppState,
         request: CollectPackagesRequest,
     ) -> Vec<CollectPackagesResponse> {
-        state.collectors.collect_packages(state.clone(), request).await
+        let result = state.collectors.collect_packages(state.clone(), request).await;
+
+        let vuln_ids: HashSet<_> = result
+            .iter()
+            .flat_map(|resp| resp.purls.values().flatten())
+            .cloned()
+            .collect();
+
+        state.collectors.collect_vulnerabilities(state.clone(), vuln_ids).await;
+        result
+    }
+
+    pub async fn collect_vulnerabilities(&self, state: &AppState, request: CollectVulnerabilitiesRequest) {
+        state
+            .collectors
+            .collect_vulnerabilities(state.clone(), request.vuln_ids.iter().cloned().collect::<HashSet<_>>())
+            .await;
     }
 
     pub async fn add_purl(&self, state: &AppState, purl: &str) -> Result<(), anyhow::Error> {

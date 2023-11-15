@@ -151,6 +151,10 @@ collector:
     enabled: false
     credentials: snyk-collector-secret
     resources:
+  nvd:
+    enabled: false
+    credentials: nvd-collector-secret
+    resources:
 v11y:
   enabled: true
   suspended: true

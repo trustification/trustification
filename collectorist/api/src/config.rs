@@ -31,6 +31,14 @@ impl CollectorsConfig {
                 cadence: default_cadence(),
             },
         );
+        collectors.insert(
+            "nvd".into(),
+            CollectorConfig {
+                url: endpoint::CollectorNvd::url().join(DEFAULT_BASE).unwrap(),
+                interests: vec![Interest::Vulnerability],
+                cadence: default_cadence(),
+            },
+        );
         Self { collectors }
     }
 }

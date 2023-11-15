@@ -134,3 +134,4 @@ endpoint!(Exhort, 8088);
 endpoint!(Collectorist, 8180);
 endpoint!(CollectorOsv, 8181);
 endpoint!(CollectorSnyk, 8182);
+endpoint!(CollectorNvd, 8183);

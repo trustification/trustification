@@ -113,6 +113,16 @@ environment variables and shouldn't change frequently, it is possible to set the
 > [!NOTE]
 > Be sure to set those API keys before starting the following services.
 
+### NVD
+
+For the `collector-nvd` service, you will need:
+
+```shell
+export NVD_API_KEY=<your-api-key>
+```
+
+You can request one [here](https://nvd.nist.gov/developers/request-an-api-key).
+
 ### Snyk
 
 For the `collector-snyk` service, you will need:
@@ -166,6 +176,7 @@ RUST_LOG=info cargo run -p trust -- v11y api --devmode &
 RUST_LOG=info cargo run -p trust -- exhort api --devmode &
 RUST_LOG=info cargo run -p trust -- collectorist api --devmode &
 RUST_LOG=info cargo run -p trust -- collector osv --devmode &
+RUST_LOG=info cargo run -p trust -- collector nvd --devmode &
 RUST_LOG=info cargo run -p trust -- collector snyk --devmode &
 ```
 

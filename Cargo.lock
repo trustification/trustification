@@ -1740,6 +1740,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "clap 4.4.6",
+ "collector-nvd",
  "collector-osv",
  "collector-snyk",
  "log",
@@ -1758,6 +1759,37 @@ dependencies = [
  "serde",
  "serde_json",
  "trustification-auth",
+]
+
+[[package]]
+name = "collector-nvd"
+version = "0.1.0"
+dependencies = [
+ "actix-web",
+ "anyhow",
+ "async-trait",
+ "chrono",
+ "clap 4.4.6",
+ "collector-client",
+ "env_logger",
+ "futures",
+ "guac",
+ "libtest-with",
+ "log",
+ "packageurl",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "test-with",
+ "thiserror",
+ "tokio",
+ "tracing",
+ "trustification-auth",
+ "trustification-common",
+ "trustification-infrastructure",
+ "utoipa",
+ "utoipa-swagger-ui",
+ "v11y-client",
 ]
 
 [[package]]

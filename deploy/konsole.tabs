@@ -9,6 +9,7 @@ title: exhort api;; command: /usr/bin/env TRACING=enabled OTEL_TRACES_SAMPLER_AR
 
 title: collectorist api;; command: /usr/bin/env TRACING=enabled OTEL_TRACES_SAMPLER_ARG=1 RUST_LOG=info cargo run -p trust -- collectorist api --devmode
 title: collector osv;; command: /usr/bin/env TRACING=enabled OTEL_TRACES_SAMPLER_ARG=1 RUST_LOG=info cargo run -p trust -- collector osv --devmode
+title: collector nvd;; command: /usr/bin/env TRACING=enabled OTEL_TRACES_SAMPLER_ARG=1 RUST_LOG=info cargo run -p trust -- collector nvd --devmode
 title: collector snyk;; command: /usr/bin/env TRACING=enabled OTEL_TRACES_SAMPLER_ARG=1 RUST_LOG=info cargo run -p trust -- collector snyk --devmode
 
 title: vexination indexer;; command: /usr/bin/env TRACING=enabled OTEL_TRACES_SAMPLER_ARG=1 RUST_LOG=info cargo run -p trust -- vexination indexer --devmode

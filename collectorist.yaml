@@ -8,3 +8,7 @@ collectors:
     url: http://localhost:8182/api/v1/
     interests:
     - package
+  nvd: 
+    url: http://localhost:8183/api/v1/
+    interests:
+    - vulnerability

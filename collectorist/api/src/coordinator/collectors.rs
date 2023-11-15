@@ -1,9 +1,9 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 
 use futures::future::join_all;
 
-use collector_client::{CollectPackagesResponse, CollectorClient};
+use collector_client::{CollectPackagesResponse, CollectVulnerabilitiesResponse, CollectorClient};
 use collectorist_client::CollectPackagesRequest;
 use trustification_auth::client::TokenProvider;
 
@@ -60,6 +60,24 @@ impl Collectors {
             if collector.config.interests.contains(&Interest::Package) {
                 log::info!("dispatch pkgs {}", collector.id);
                 futures.push(collector.collect_packages(state.clone(), request.purls.clone()));
+            }
+        }
+
+        join_all(futures).await.into_iter().flatten().collect()
+    }
+
+    pub async fn collect_vulnerabilities(
+        &self,
+        state: &AppState,
+        vuln_ids: HashSet<String>,
+    ) -> Vec<CollectVulnerabilitiesResponse> {
+        let mut futures = Vec::new();
+
+        for collector in self.collectors.values() {
+            log::info!("check vulns {}", collector.id);
+            if collector.config.interests.contains(&Interest::Vulnerability) {
+                log::info!("dispatch vulns {}", collector.id);
+                futures.push(collector.collect_vulnerabilities(state.clone(), vuln_ids.clone()));
             }
         }
 
