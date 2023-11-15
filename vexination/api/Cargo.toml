@@ -7,6 +7,7 @@ description = "Vexination REST API for fetching, publishing and searching VEX da
 
 [dependencies]
 actix-web = "4"
+bytesize = "1"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0.68"
 tokio = { version = "1.0", features = ["full"] }

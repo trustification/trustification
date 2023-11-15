@@ -1,6 +1,7 @@
 use super::*;
 use crate::{config::Config, runner::Runner};
 use async_trait::async_trait;
+use bytesize::ByteSize;
 use reqwest::Url;
 use test_context::AsyncTestContext;
 use trustification_storage::validator::Validator;
@@ -245,5 +246,6 @@ fn bombastic_api() -> bombastic_api::Run {
         auth: testing_auth(),
         swagger_ui_oidc: testing_swagger_ui_oidc(),
         http: Default::default(),
+        publish_limit: ByteSize::mib(64).into(),
     }
 }

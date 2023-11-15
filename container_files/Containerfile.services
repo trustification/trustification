@@ -123,4 +123,7 @@ EXPOSE 80
 COPY --from=backendbuilder /usr/src/project/target/release/trust /
 COPY ./collectorist.yaml /
 
+RUN mkdir /data
+COPY ./data/ds1 /data
+
 ENV RUST_LOG info

@@ -23,10 +23,28 @@ use std::str::FromStr;
 use std::sync::Arc;
 use trustification_auth::{authenticator::Authenticator, authorizer::Authorizer};
 
-const DEFAULT_ADDR: SocketAddr = SocketAddr::new(IpAddr::V6(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0x1)), 8080);
+const DEFAULT_ADDR: SocketAddr = SocketAddr::new(IpAddr::V6(Ipv6Addr::LOCALHOST), 8080);
 
 #[derive(Copy, Clone, Debug, PartialEq, PartialOrd, Eq, Ord, Hash, Default)]
 pub struct BinaryByteSize(pub ByteSize);
+
+impl From<ByteSize> for BinaryByteSize {
+    fn from(value: ByteSize) -> Self {
+        Self(value)
+    }
+}
+
+impl From<u64> for BinaryByteSize {
+    fn from(value: u64) -> Self {
+        Self(ByteSize(value))
+    }
+}
+
+impl From<usize> for BinaryByteSize {
+    fn from(value: usize) -> Self {
+        Self(ByteSize(value as u64))
+    }
+}
 
 impl Deref for BinaryByteSize {
     type Target = ByteSize;
@@ -196,7 +214,7 @@ mod default {
     }
 
     pub const fn json_limit() -> BinaryByteSize {
-        BinaryByteSize(ByteSize::mib(2))
+        BinaryByteSize(ByteSize::kib(32))
     }
 }
 
@@ -413,6 +431,13 @@ impl HttpServerBuilder {
 
     pub async fn run(self) -> anyhow::Result<()> {
         let metrics = self.metrics_factory.as_ref().map(|factory| (factory)()).transpose()?;
+
+        if let Some(limit) = self.request_limit {
+            log::info!("JSON limit: {}", BinaryByteSize::from(limit));
+        }
+        if let Some(limit) = self.json_limit {
+            log::info!("Payload limit: {}", BinaryByteSize::from(limit));
+        }
 
         let mut http = HttpServer::new(move || {
             let config = self.configurator.clone();

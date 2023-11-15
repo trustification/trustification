@@ -80,9 +80,8 @@ impl Run {
                 |_context| async { Ok(()) },
                 |_| async move {
                     let source = self
-                        .devmode
-                        .then(|| DEVMODE_SOURCE.to_string())
-                        .or(self.source)
+                        .source
+                        .or_else(|| self.devmode.then(|| DEVMODE_SOURCE.to_string()))
                         .ok_or_else(|| anyhow!("Missing source. Provider either --source <url> or --devmode"))?;
 
                     let keys = self
