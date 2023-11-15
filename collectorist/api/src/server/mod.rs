@@ -20,7 +20,6 @@ pub mod collector;
     ),
     paths(
         crate::server::collect::collect_packages,
-        crate::server::collect::collect_vulnerabilities,
     )
 )]
 pub struct ApiDoc;
@@ -36,8 +35,7 @@ pub fn config(
             .wrap(Compress::default())
             .wrap(new_auth!(auth))
             .service(collector_config)
-            .service(collect::collect_packages)
-            .service(collect::collect_vulnerabilities),
+            .service(collect::collect_packages),
     )
     .service(swagger_ui_with_auth(ApiDoc::openapi(), swagger_ui_oidc));
 }
