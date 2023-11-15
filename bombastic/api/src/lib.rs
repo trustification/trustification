@@ -103,11 +103,25 @@ impl Run {
         registry: &Registry,
         devmode: bool,
     ) -> anyhow::Result<Arc<AppState>> {
-        let index =
+        let sbom_index =
             block_in_place(|| IndexStore::new(&storage, &index_config, bombastic_index::sbom::Index::new(), registry))?;
+
+        let package_index = block_in_place(|| {
+            IndexStore::new(
+                &storage,
+                &index_config,
+                bombastic_index::packages::Index::new(),
+                registry,
+            )
+        })?;
+
         let storage = Storage::new(storage.process("bombastic", devmode), registry)?;
 
-        let state = Arc::new(AppState { storage, index });
+        let state = Arc::new(AppState {
+            storage,
+            sbom_index,
+            package_index,
+        });
 
         let sinker = state.clone();
         let sync_interval = index_config.sync_interval.into();
@@ -135,10 +149,12 @@ impl Run {
     }
 }
 
-pub(crate) type Index = IndexStore<bombastic_index::sbom::Index>;
+pub(crate) type SbomIndex = IndexStore<bombastic_index::sbom::Index>;
+pub(crate) type PackageIndex = IndexStore<bombastic_index::packages::Index>;
 pub struct AppState {
     storage: Storage,
-    index: Index,
+    sbom_index: SbomIndex,
+    package_index: PackageIndex,
 }
 
 pub(crate) type SharedState = Arc<AppState>;
@@ -146,8 +162,8 @@ pub(crate) type SharedState = Arc<AppState>;
 impl AppState {
     async fn sync_index(&self) -> Result<(), anyhow::Error> {
         let storage = &self.storage;
-        let index = &self.index;
-        index.sync(storage).await?;
+        self.sbom_index.sync(storage).await?;
+        self.package_index.sync(storage).await?;
         Ok(())
     }
 }
