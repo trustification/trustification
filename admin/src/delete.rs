@@ -4,6 +4,8 @@ use reqwest::StatusCode;
 use trustification_auth::client::OpenIdTokenProviderConfigArguments;
 use trustification_auth::client::TokenInjector;
 use trustification_auth::client::TokenProvider;
+use trustification_infrastructure::endpoint;
+use trustification_infrastructure::endpoint::Endpoint;
 use url::Url;
 
 /// Delete documents from trustification
@@ -26,7 +28,7 @@ impl Delete {
 #[command(about = "Delete documents from Bombastic", args_conflicts_with_subcommands = true)]
 pub struct BombasticDelete {
     /// URL of the Bombastic instance
-    #[arg(short = 'u', long = "url", default_value = "http://localhost:8080/api/v1/sbom")]
+    #[arg(short = 'u', long = "url", default_value_t = endpoint::Bombastic::url())]
     pub url: Url,
 
     /// ID of document to delete
@@ -44,12 +46,16 @@ pub struct BombasticDelete {
     /// OIDC parameters
     #[command(flatten)]
     pub oidc: OpenIdTokenProviderConfigArguments,
+
+    /// Development mode
+    #[arg(long = "devmode", default_value_t = false)]
+    pub devmode: bool,
 }
 
 impl BombasticDelete {
     pub async fn run(self) -> anyhow::Result<ExitCode> {
         let client = reqwest::Client::new();
-        let provider = self.oidc.clone().into_provider_or_devmode(false).await?;
+        let provider = self.oidc.clone().into_provider_or_devmode(self.devmode).await?;
         if let Some(id) = &self.id {
             self.delete(&client, &provider, id).await?;
         } else if let Some(matches) = &self.matches {
@@ -72,7 +78,7 @@ impl BombasticDelete {
         let mut offset = 0;
         loop {
             match client
-                .get(format!("{}/search", &self.url))
+                .get(format!("{}api/v1/sbom/search", &self.url))
                 .query(&[
                     ("q", "".to_string()),
                     ("offset", format!("{}", offset)),
@@ -116,7 +122,7 @@ impl BombasticDelete {
 
     async fn delete(&self, client: &reqwest::Client, provider: &impl TokenProvider, id: &str) -> anyhow::Result<()> {
         match client
-            .delete(self.url.clone())
+            .delete(format!("{}api/v1/sbom", &self.url))
             .query(&[("id", id)])
             .inject_token(provider)
             .await?
@@ -140,8 +146,8 @@ impl BombasticDelete {
 #[derive(clap::Args, Debug)]
 #[command(about = "Delete documents from Vexination", args_conflicts_with_subcommands = true)]
 pub struct VexinationDelete {
-    /// URL of the Bombastic instance
-    #[arg(short = 'u', long = "url", default_value = "http://localhost:8080/api/v1/vex")]
+    /// URL of the Vexination instance
+    #[arg(short = 'u', long = "url", default_value_t = endpoint::Vexination::url())]
     pub url: Url,
 
     /// ID of document to delete
@@ -159,12 +165,16 @@ pub struct VexinationDelete {
     /// OIDC parameters
     #[command(flatten)]
     pub oidc: OpenIdTokenProviderConfigArguments,
+
+    /// Development mode
+    #[arg(long = "devmode", default_value_t = false)]
+    pub devmode: bool,
 }
 
 impl VexinationDelete {
     pub async fn run(self) -> anyhow::Result<ExitCode> {
         let client = reqwest::Client::new();
-        let provider = self.oidc.clone().into_provider_or_devmode(false).await?;
+        let provider = self.oidc.clone().into_provider_or_devmode(self.devmode).await?;
         if let Some(id) = &self.id {
             self.delete(&client, &provider, id).await?;
         } else if let Some(matches) = &self.matches {
@@ -187,7 +197,7 @@ impl VexinationDelete {
         let mut offset = 0;
         loop {
             match client
-                .get(format!("{}/search", &self.url))
+                .get(format!("{}api/v1/vex/search", &self.url))
                 .query(&[
                     ("q", "".to_string()),
                     ("offset", format!("{}", offset)),
@@ -232,7 +242,7 @@ impl VexinationDelete {
 
     async fn delete(&self, client: &reqwest::Client, provider: &impl TokenProvider, id: &str) -> anyhow::Result<()> {
         match client
-            .delete(self.url.clone())
+            .delete(format!("{}api/v1/vex", &self.url))
             .query(&[("advisory", id)])
             .inject_token(provider)
             .await?
