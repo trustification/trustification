@@ -56,9 +56,9 @@ pub struct Run {
     #[arg(long = "sink", env, default_value_t = endpoint::Bombastic::url())]
     pub sink: Url,
 
-    /// SBOMs source URL
+    /// SBOMs source URL or path
     #[arg(long, env)]
-    pub source: Option<Url>,
+    pub source: Option<String>,
 
     /// OIDC client
     #[command(flatten)]
@@ -81,7 +81,7 @@ impl Run {
                 |_| async move {
                     let source = self
                         .devmode
-                        .then(|| Url::parse(DEVMODE_SOURCE).unwrap())
+                        .then(|| DEVMODE_SOURCE.to_string())
                         .or(self.source)
                         .ok_or_else(|| anyhow!("Missing source. Provider either --source <url> or --devmode"))?;
 
