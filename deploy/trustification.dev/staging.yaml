@@ -277,4 +277,4 @@ keycloak:
     auth:
       existingSecret: sso-postgres
 dataset:
-  enabled: false
+  enabled: true
