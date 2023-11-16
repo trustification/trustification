@@ -5,12 +5,12 @@ use crate::SharedState;
 use actix_web::{
     delete,
     error::{self, PayloadError},
-    get,
+    get, guard,
     http::{
         header::{self, Accept, AcceptEncoding, ContentType, HeaderValue, CONTENT_ENCODING},
-        StatusCode,
+        Method, StatusCode,
     },
-    route, web, HttpRequest, HttpResponse, Responder,
+    web, HttpRequest, HttpResponse, Responder,
 };
 use bombastic_model::prelude::*;
 use derive_more::{Display, Error, From};
@@ -39,6 +39,7 @@ pub fn config(
     cfg: &mut web::ServiceConfig,
     auth: Option<Arc<Authenticator>>,
     swagger_ui_oidc: Option<Arc<SwaggerUiOidc>>,
+    publish_limit: usize,
 ) {
     cfg.service(
         web::scope("/api/v1")
@@ -46,7 +47,12 @@ pub fn config(
             .service(query_sbom)
             .service(search_sbom)
             .service(search_package)
-            .service(publish_sbom)
+            .service(
+                web::resource("/sbom")
+                    .app_data(web::PayloadConfig::new(publish_limit))
+                    .guard(guard::Any(guard::Method(Method::PUT)).or(guard::Method(Method::POST)))
+                    .to(publish_sbom),
+            )
             .service(delete_sbom),
     )
     .service(swagger_ui_with_auth(ApiDoc::openapi(), swagger_ui_oidc));
@@ -306,7 +312,6 @@ async fn search_package(
         ("id" = String, Query, description = "Identifier assigned to the SBOM"),
     )
 )]
-#[route("/sbom", method = "PUT", method = "POST")]
 async fn publish_sbom(
     req: HttpRequest,
     state: web::Data<SharedState>,

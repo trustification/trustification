@@ -1,20 +1,25 @@
 use std::{net::TcpListener, process::ExitCode, sync::Arc, time::Duration};
 
 use actix_web::web;
+use bytesize::ByteSize;
 use prometheus::Registry;
 use tokio::task::block_in_place;
-use trustification_auth::auth::AuthConfigArguments;
-use trustification_auth::authenticator::Authenticator;
-use trustification_auth::authorizer::Authorizer;
-use trustification_auth::swagger_ui::{SwaggerUiOidc, SwaggerUiOidcConfig};
+use trustification_auth::{
+    auth::AuthConfigArguments,
+    authenticator::Authenticator,
+    authorizer::Authorizer,
+    swagger_ui::{SwaggerUiOidc, SwaggerUiOidcConfig},
+};
 use trustification_index::{IndexConfig, IndexStore};
 use trustification_infrastructure::{
+    app::http::BinaryByteSize,
     app::http::{HttpServerBuilder, HttpServerConfig},
     endpoint::Bombastic,
     health::checks::Probe,
     Infrastructure, InfrastructureConfig,
 };
 use trustification_storage::{Storage, StorageConfig};
+
 mod sbom;
 mod server;
 
@@ -41,6 +46,10 @@ pub struct Run {
 
     #[command(flatten)]
     pub http: HttpServerConfig<Bombastic>,
+
+    /// Request limit for publish requests
+    #[arg(long, default_value_t = ByteSize::mib(64).into())]
+    pub publish_limit: BinaryByteSize,
 }
 
 impl Run {
@@ -62,6 +71,7 @@ impl Run {
         }
 
         let tracing = self.infra.tracing;
+        let publish_limit = self.publish_limit.as_u64() as usize;
 
         Infrastructure::from(self.infra)
             .run(
@@ -80,8 +90,9 @@ impl Run {
                             let authenticator = authenticator.clone();
                             let swagger_oidc = swagger_oidc.clone();
 
-                            svc.app_data(web::Data::new(state.clone()))
-                                .configure(move |svc| server::config(svc, authenticator.clone(), swagger_oidc.clone()));
+                            svc.app_data(web::Data::new(state.clone())).configure(move |svc| {
+                                server::config(svc, authenticator.clone(), swagger_oidc.clone(), publish_limit)
+                            });
                         });
 
                     if let Some(v) = listener {

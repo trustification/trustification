@@ -106,11 +106,6 @@ collector:
     enabled: true
     resources: ${{COLLECTOR_OSV_RESOURCES}}
     logLevel: ${LOG_LEVEL}
-  nvd:
-    enabled: true
-    credentials: nvd-collector-secret
-    resources: ${{COLLECTOR_NVD_RESOURCES}}
-    logLevel: ${LOG_LEVEL}
 vexination:
   bucket: ${VEXINATION_STORAGE_BUCKET}
   credentials: ${VEXINATION_AWS_SECRET_NAME}

@@ -6,7 +6,6 @@ edition = "2021"
 [dependencies]
 collector-osv = { path = "../osv" }
 collector-snyk = { path = "../snyk" }
-collector-nvd = { path = "../nvd" }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0.68"
 tokio = { version = "1.0", features = ["full"] }

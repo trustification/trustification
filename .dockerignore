@@ -1,5 +1,9 @@
 .dockerignore
+container_files/Containerfile.*
 .idea/
+cve/
+osv/
+snyk/
 target/
 spog/ui/node_modules/
 *.db

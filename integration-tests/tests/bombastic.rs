@@ -174,7 +174,7 @@ async fn bombastic_package_search(context: &mut BombasticContext) {
 
     let purl = "\"pkg:rpm/redhat/libdnf@0.67.0-3.el9?arch=aarch64\"";
 
-    let response = wait_for_package_search_result(context, &[("q", &purl)], |response| {
+    let response = wait_for_package_search_result(context, &[("q", purl)], |response| {
         response["total"].as_u64().unwrap() > 0
     })
     .await;
