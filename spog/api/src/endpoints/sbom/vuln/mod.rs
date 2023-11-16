@@ -297,6 +297,13 @@ fn find_main(spdx: &SPDX) -> Vec<&PackageInformation> {
         }
     }
 
+    // FIXME: drop workaround, once the duplicate ID issue is fixed
+
+    main.sort_unstable_by_key(|pi| &pi.package_spdx_identifier);
+    main.dedup_by_key(|pi| &pi.package_spdx_identifier);
+
+    // return
+
     main
 }
 

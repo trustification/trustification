@@ -8,7 +8,7 @@ use patternfly_yew::prelude::*;
 use serde_json::{json, Value};
 use spog_model::prelude::*;
 use spog_ui_backend::use_backend;
-use spog_ui_common::error::components::Error;
+use spog_ui_common::error::components::ApiError;
 use spog_ui_components::{
     common::{NotFound, PageHeading},
     time::Date,
@@ -61,7 +61,6 @@ pub fn sbom(props: &SbomReportProperties) -> Html {
     match &*info {
         UseAsyncState::Pending | UseAsyncState::Processing => html!(
             <>
-                // <PageHeading>{ props.id.clone() }</PageHeading>
                 <PageSection fill={PageSectionFill::Fill}><Spinner/></PageSection>
             </>
         ),
@@ -76,11 +75,6 @@ pub fn sbom(props: &SbomReportProperties) -> Html {
 
             html!(
                 <>
-                    // <PageSection variant={PageSectionVariant::Light} r#type={PageSectionType::Breadcrumbs}>
-                    //     <Content>
-                    //         <Title>{ data.name.clone() }</Title>
-                    //     </Content>
-                    // </PageSection>
                     <Stack gutter=true>
                         <StackItem>
                             <Card>
@@ -113,8 +107,10 @@ pub fn sbom(props: &SbomReportProperties) -> Html {
         }
         UseAsyncState::Ready(Err(err)) => html!(
             <>
-                <PageHeading>{ props.id.clone() }</PageHeading>
-                <PageSection fill={PageSectionFill::Fill}><Error err={err.to_string()} /></PageSection>
+                <PageHeading sticky=false>{ props.id.clone() }</PageHeading>
+                <PageSection fill={PageSectionFill::Fill} variant={PageSectionVariant::Light}>
+                    <ApiError error={err.clone()} />
+                </PageSection>
             </>
         ),
     }

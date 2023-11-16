@@ -44,7 +44,7 @@ impl CveService {
         Ok(Some(response.api_error_for_status().await?.text().await?))
     }
 
-    pub async fn get_from_index(&self, id: &str) -> Result<SearchResult<Vec<CveSearchDocument>>, Error> {
+    pub async fn get_from_index(&self, id: &str) -> Result<SearchResult<Vec<CveSearchDocument>>, ApiError> {
         let q = format!("id:{id}");
         let response = self
             .client
@@ -54,7 +54,8 @@ impl CveService {
             .send()
             .await?;
 
-        let result: SearchResult<Vec<SearchHit<CveSearchDocument>>> = response.error_for_status()?.json().await?;
+        let result: SearchResult<Vec<SearchHit<CveSearchDocument>>> =
+            response.api_error_for_status().await?.json().await?;
 
         Ok(result.map(|result| result.into_iter().map(|result| result.document).collect()))
     }
@@ -82,7 +83,7 @@ impl CveService {
         &self,
         q: &str,
         options: &SearchParameters,
-    ) -> Result<SearchResult<Vec<CveSearchDocument>>, Error> {
+    ) -> Result<SearchResult<Vec<CveSearchDocument>>, ApiError> {
         let response = self
             .client
             .get(self.backend.join(Endpoint::Api, "/api/v1/cve")?)
@@ -92,7 +93,8 @@ impl CveService {
             .send()
             .await?;
 
-        let result: SearchResult<Vec<SearchHit<CveSearchDocument>>> = response.error_for_status()?.json().await?;
+        let result: SearchResult<Vec<SearchHit<CveSearchDocument>>> =
+            response.api_error_for_status().await?.json().await?;
 
         Ok(result.map(|result| result.into_iter().map(|result| result.document).collect()))
     }

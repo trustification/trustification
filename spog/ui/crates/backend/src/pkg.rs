@@ -38,7 +38,7 @@ impl PackageService {
             .send()
             .await?;
 
-        Ok(response.error_for_status()?.json().await?)
+        Ok(response.api_error_for_status().await?.json().await?)
     }
 
     pub async fn dependents(&self, purl: impl AsRef<str>) -> Result<PackageDependencies, ApiError> {
@@ -57,14 +57,14 @@ impl PackageService {
             .send()
             .await?;
 
-        Ok(response.error_for_status()?.json().await?)
+        Ok(response.api_error_for_status().await?.json().await?)
     }
 
     pub async fn search_packages(
         &self,
         q: &str,
         options: &SearchParameters,
-    ) -> Result<SearchResult<Vec<SbomSummary>>, Error> {
+    ) -> Result<SearchResult<Vec<SbomSummary>>, ApiError> {
         let response = self
             .client
             .get(self.backend.join(Endpoint::Api, "/api/v1/sbom/search")?)
@@ -74,6 +74,6 @@ impl PackageService {
             .send()
             .await?;
 
-        Ok(response.error_for_status()?.json().await?)
+        Ok(response.api_error_for_status().await?.json().await?)
     }
 }

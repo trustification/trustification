@@ -26,6 +26,12 @@ pub enum Error {
 }
 
 impl actix_web::error::ResponseError for Error {
+    fn status_code(&self) -> StatusCode {
+        match self {
+            Self::Response(status, _) => *status,
+            _ => StatusCode::INTERNAL_SERVER_ERROR,
+        }
+    }
     fn error_response(&self) -> HttpResponse {
         let mut res = HttpResponse::build(self.status_code());
         res.insert_header(ContentType::json());
@@ -75,12 +81,6 @@ impl actix_web::error::ResponseError for Error {
                 message: error.clone(),
                 details: error.to_string(),
             }),
-        }
-    }
-    fn status_code(&self) -> StatusCode {
-        match self {
-            Self::Response(status, _) => *status,
-            _ => StatusCode::INTERNAL_SERVER_ERROR,
         }
     }
 }
