@@ -38,6 +38,7 @@ spec:
           name: service
           command: ["/opt/guac/guacgql"]
           args:
+{{- if .Values.guac.database.enabled  }}
             - "--gql-backend"
             - "ent"
             - "--db-address"
@@ -48,6 +49,12 @@ spec:
             - "true"
             - "--gql-debug"
             - "true"
+{{- else }}
+            - "--gql-backend"
+            - "inmem"
+            - "--gql-debug"
+            - "true"
+{{- end }}
           workingDir: "/guac"
           env:
             - name: NAMESPACE
@@ -55,6 +62,7 @@ spec:
                 fieldRef:
                   fieldPath: metadata.namespace
             {{ include "trustification.http-server" . | nindent 12 }}
+{{- if .Values.guac.database.enabled  }}
             - name: PGHOST
               valueFrom:
                 secretKeyRef:
@@ -75,12 +83,12 @@ spec:
                 secretKeyRef:
                   name: guac-user-db
                   key: "db.user"
-
             - name: DB_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: guac-user-db
-                  key: "db.password"     
+                  key: "db.password"
+{{- end }}
           volumeMounts:
             - name: guac-config
               mountPath: /guac
