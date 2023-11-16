@@ -3,7 +3,6 @@ pub mod count;
 pub mod csaf;
 pub mod cvss;
 pub mod highlight;
-pub mod http;
 pub mod search;
 pub mod time;
 

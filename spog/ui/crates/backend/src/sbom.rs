@@ -23,7 +23,7 @@ impl SBOMService {
         }
     }
 
-    pub async fn get(&self, id: impl AsRef<str>) -> Result<Option<String>, Error> {
+    pub async fn get(&self, id: impl AsRef<str>) -> Result<Option<String>, ApiError> {
         let mut url = self.backend.join(Endpoint::Api, "/api/v1/sbom")?;
         url.query_pairs_mut().append_pair("id", id.as_ref()).finish();
 
@@ -38,10 +38,10 @@ impl SBOMService {
             return Ok(None);
         }
 
-        Ok(Some(response.error_for_status()?.text().await?))
+        Ok(Some(response.api_error_for_status().await?.text().await?))
     }
 
-    pub async fn get_sbom_vulns(&self, id: impl AsRef<str>) -> Result<Option<SbomReport>, Error> {
+    pub async fn get_sbom_vulns(&self, id: impl AsRef<str>) -> Result<Option<SbomReport>, ApiError> {
         let mut url = self.backend.join(Endpoint::Api, "/api/v1/sbom/vulnerabilities")?;
         url.query_pairs_mut().append_pair("id", id.as_ref()).finish();
 
@@ -56,10 +56,10 @@ impl SBOMService {
             return Ok(None);
         }
 
-        Ok(Some(response.error_for_status()?.json().await?))
+        Ok(Some(response.api_error_for_status().await?.json().await?))
     }
 
-    pub async fn get_package(&self, id: &str) -> Result<SearchResult<Vec<SbomSummary>>, Error> {
+    pub async fn get_package(&self, id: &str) -> Result<SearchResult<Vec<SbomSummary>>, ApiError> {
         let q = format!("id:{id}");
         let response = self
             .client
@@ -69,6 +69,6 @@ impl SBOMService {
             .send()
             .await?;
 
-        Ok(response.error_for_status()?.json().await?)
+        Ok(response.api_error_for_status().await?.json().await?)
     }
 }
