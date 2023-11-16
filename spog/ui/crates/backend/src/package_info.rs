@@ -61,7 +61,7 @@ impl PackageInfoService {
         &self,
         q: &str,
         options: &SearchParameters,
-    ) -> Result<SearchResult<Vec<PackageInfoSummary>>, Error> {
+    ) -> Result<SearchResult<Vec<PackageInfoSummary>>, ApiError> {
         let response = self
             .client
             .get(self.backend.join(Endpoint::Api, "/api/v1/package/search")?)
@@ -71,6 +71,6 @@ impl PackageInfoService {
             .send()
             .await?;
         log::warn!("pub async fn search_packages");
-        Ok(response.error_for_status()?.json().await?)
+        Ok(response.api_error_for_status().await?.json().await?)
     }
 }

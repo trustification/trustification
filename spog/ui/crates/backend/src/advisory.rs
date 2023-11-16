@@ -41,7 +41,7 @@ impl VexService {
         }
     }
 
-    pub async fn lookup(&self, advisory: &AdvisorySummary) -> Result<Option<csaf::Csaf>, Error> {
+    pub async fn lookup(&self, advisory: &AdvisorySummary) -> Result<Option<Csaf>, ApiError> {
         let response = self
             .client
             .get(self.backend.join(Endpoint::Api, &advisory.href)?)
@@ -53,10 +53,10 @@ impl VexService {
             return Ok(None);
         }
 
-        Ok(Some(response.error_for_status()?.json().await?))
+        Ok(Some(response.api_error_for_status().await?.json().await?))
     }
 
-    pub async fn get(&self, id: impl AsRef<str>) -> Result<Option<String>, Error> {
+    pub async fn get(&self, id: impl AsRef<str>) -> Result<Option<String>, ApiError> {
         let mut url = self.backend.join(Endpoint::Api, "/api/v1/advisory")?;
         url.query_pairs_mut().append_pair("id", id.as_ref()).finish();
 
@@ -71,14 +71,14 @@ impl VexService {
             return Ok(None);
         }
 
-        Ok(Some(response.error_for_status()?.text().await?))
+        Ok(Some(response.api_error_for_status().await?.text().await?))
     }
 
     pub async fn search_advisories(
         &self,
         q: &str,
         options: &SearchParameters,
-    ) -> Result<SearchResult<Vec<AdvisorySummary>>, Error> {
+    ) -> Result<SearchResult<Vec<AdvisorySummary>>, ApiError> {
         let response = self
             .client
             .get(self.backend.join(Endpoint::Api, "/api/v1/advisory/search")?)
@@ -88,6 +88,6 @@ impl VexService {
             .send()
             .await?;
 
-        Ok(response.error_for_status()?.json().await?)
+        Ok(response.api_error_for_status().await?.json().await?)
     }
 }
