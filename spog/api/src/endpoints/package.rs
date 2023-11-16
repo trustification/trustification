@@ -1,13 +1,16 @@
+use crate::app_state::AppState;
 use crate::search;
 use crate::service::guac::GuacService;
 use actix_web::{
     web::{self, ServiceConfig},
     HttpResponse,
 };
+use actix_web_httpauth::extractors::bearer::BearerAuth;
 use spog_model::package_info::{PackageInfo, V11yRef};
 use spog_model::prelude::{PackageProductDetails, ProductRelatedToPackage};
+use spog_model::search::PackageInfoSummary;
 use std::sync::Arc;
-use trustification_api::search::SearchResult;
+use trustification_api::search::{SearchOptions, SearchResult};
 use trustification_auth::authenticator::Authenticator;
 use trustification_infrastructure::new_auth;
 use utoipa::IntoParams;
@@ -17,7 +20,7 @@ pub(crate) fn configure(auth: Option<Arc<Authenticator>>) -> impl FnOnce(&mut Se
         config.service(
             web::scope("/api/v1/package")
                 .wrap(new_auth!(auth))
-                .service(web::resource("/search").to(package_search_mock))
+                .service(web::resource("/search").to(package_search))
                 .service(web::resource("/related").to(get_related))
                 .service(web::resource("/dependencies").to(get_dependencies))
                 .service(web::resource("/dependents").to(get_dependents))
@@ -36,6 +39,56 @@ pub(crate) fn configure(auth: Option<Arc<Authenticator>>) -> impl FnOnce(&mut Se
     ),
     params()
 )]
+pub async fn package_search(
+    state: web::Data<AppState>,
+    params: web::Query<search::QueryParams>,
+    options: web::Query<SearchOptions>,
+    access_token: Option<BearerAuth>,
+) -> actix_web::Result<HttpResponse> {
+    let params = params.into_inner();
+    log::trace!("Querying package using {}", params.q);
+    let data = state
+        .search_package(
+            &params.q,
+            params.offset,
+            params.limit,
+            options.into_inner(),
+            &access_token,
+        )
+        .await?;
+    let mut m: Vec<PackageInfoSummary> = Vec::with_capacity(data.result.len());
+    for item in data.result {
+        let item = item.document;
+        m.push(PackageInfoSummary {
+            purl: item.purl.into(),
+            name: item.name,
+            version: item.purl_version,
+            package_type: item.purl_type,
+            description: item.description,
+            supplier: item.supplier,
+            href: "".to_string(),
+            sbom: "".to_string(),
+            vulnerabilities: vec![],
+        });
+    }
+
+    let result = SearchResult {
+        total: Some(data.total),
+        result: m,
+    };
+
+    Ok(HttpResponse::Ok().json(result))
+}
+
+#[utoipa::path(
+    get,
+    path = "/api/v1/package/search",
+    responses(
+        (status = 200, description = "packages search was successful", body = SearchResultPackage),
+    ),
+    params()
+)]
+#[allow(dead_code)]
 pub async fn package_search_mock(query: web::Query<search::QueryParams>) -> actix_web::Result<HttpResponse> {
     let web::Query(_) = query;
 
@@ -93,6 +146,7 @@ pub async fn package_related_products(path: web::Path<String>) -> actix_web::Res
     Ok(HttpResponse::Ok().json(&result))
 }
 
+#[allow(dead_code)]
 fn make_mock_data() -> Vec<PackageInfo> {
     let packages = vec![
         PackageInfo {

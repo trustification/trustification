@@ -170,6 +170,16 @@ guac:
     enabled: false
   graphql:
     debug: true
+    affinity:
+      # tie to the zone of the RDS database
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: topology.kubernetes.io/zone
+                  operator: In
+                  values:
+                    - eu-west-1c
     resources:
       requests:
         cpu: "100m"

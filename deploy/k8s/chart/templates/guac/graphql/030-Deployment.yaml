@@ -24,6 +24,10 @@ spec:
       annotations:
         config/checksum: {{ include (print $.Template.BasePath "/config/020-ConfigMap.yaml") . | sha256sum }}
     spec:
+      {{- with .Values.guac.graphql.affinity }}
+      affinity:
+        {{- . | toYaml | nindent 8 }}
+      {{- end }}
       volumes:
         - name: config
           configMap:
