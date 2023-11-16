@@ -31,7 +31,7 @@ use utoipa::OpenApi;
 #[derive(OpenApi)]
 #[openapi(
     paths(query_sbom, publish_sbom, search_sbom, delete_sbom, search_package),
-    components(schemas(SearchDocument, SearchResult, SearchPackageResult),)
+    components(schemas(SearchDocument, SearchResult, SearchPackageDocument, SearchPackageResult),)
 )]
 pub struct ApiDoc;
 

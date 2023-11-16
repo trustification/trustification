@@ -61,18 +61,18 @@ impl Index {
             indexed_timestamp: schema.add_date_field("indexed_timestamp", STORED),
             purl: schema.add_text_field("package_url", FAST | STRING | STORED),
             name: schema.add_text_field("package_name", FAST | STRING | STORED),
-            version: schema.add_text_field("package_version", STRING),
-            desc: schema.add_text_field("package_desc", TEXT),
+            version: schema.add_text_field("package_version", STRING | STORED),
+            desc: schema.add_text_field("package_desc", TEXT | STORED),
             license: schema.add_text_field("package_license", TEXT | STORED),
-            supplier: schema.add_text_field("package_supplier", STRING),
-            classifier: schema.add_text_field("package_classifier", STRING),
-            sha256: schema.add_text_field("package_sha256", STRING),
-            purl_type: schema.add_text_field("package_url_type", STRING),
-            purl_name: schema.add_text_field("package_url_name", FAST | STRING),
-            purl_namespace: schema.add_text_field("package_url_namespace", STRING),
-            purl_version: schema.add_text_field("package_url_version", STRING),
-            purl_qualifiers: schema.add_text_field("package_url_qualifiers", STRING),
-            purl_qualifiers_values: schema.add_text_field("package_url_qualifiers_values", STRING),
+            supplier: schema.add_text_field("package_supplier", STRING | STORED),
+            classifier: schema.add_text_field("package_classifier", STRING | STORED),
+            sha256: schema.add_text_field("package_sha256", STRING | STORED),
+            purl_type: schema.add_text_field("package_url_type", STRING | STORED),
+            purl_name: schema.add_text_field("package_url_name", FAST | STRING | STORED),
+            purl_namespace: schema.add_text_field("package_url_namespace", STRING | STORED),
+            purl_version: schema.add_text_field("package_url_version", STRING | STORED),
+            purl_qualifiers: schema.add_text_field("package_url_qualifiers", STRING | STORED),
+            purl_qualifiers_values: schema.add_text_field("package_url_qualifiers_values", STRING | STORED),
         };
         Self {
             schema: schema.build(),
@@ -205,6 +205,7 @@ impl Index {
             document.add_text(fields.purl, &purl);
 
             if let Ok(package) = packageurl::PackageUrl::from_str(&purl) {
+                log::warn!("package is {}", package.clone());
                 document.add_text(fields.purl_name, package.name());
                 if let Some(namespace) = package.namespace() {
                     document.add_text(fields.purl_namespace, namespace);
@@ -397,6 +398,36 @@ impl trustification_index::Index for Index {
             .map(|s| s.as_text().unwrap_or(name))
             .unwrap_or(name);
 
+        let purl_type = doc
+            .get_first(self.fields.purl_type)
+            .map(|s| s.as_text().unwrap_or(""))
+            .unwrap_or("");
+
+        let purl_name = doc
+            .get_first(self.fields.purl_name)
+            .map(|s| s.as_text().unwrap_or(""))
+            .unwrap_or(name);
+
+        let purl_namespace = doc
+            .get_first(self.fields.purl_namespace)
+            .map(|s| s.as_text().unwrap_or(""))
+            .unwrap_or("");
+
+        let purl_version = doc
+            .get_first(self.fields.purl_version)
+            .map(|s| s.as_text().unwrap_or(""))
+            .unwrap_or("");
+
+        let purl_qualifiers = doc
+            .get_first(self.fields.purl_qualifiers)
+            .map(|s| s.as_text().unwrap_or(""))
+            .unwrap_or("");
+
+        let purl_qualifiers_values = doc
+            .get_first(self.fields.purl_qualifiers_values)
+            .map(|s| s.as_text().unwrap_or(""))
+            .unwrap_or("");
+
         let document = SearchPackageDocument {
             version: version.to_string(),
             purl: purl.to_string(),
@@ -405,13 +436,13 @@ impl trustification_index::Index for Index {
             license: license.to_string(),
             classifier: classifier.to_string(),
             supplier: supplier.to_string(),
-            purl_type: "".to_string(),
-            purl_name: "".to_string(),
-            purl_namespace: "".to_string(),
-            purl_version: "".to_string(),
-            purl_qualifiers: "".to_string(),
+            purl_type: purl_type.to_string(),
+            purl_name: purl_name.to_string(),
+            purl_namespace: purl_namespace.to_string(),
+            purl_version: purl_version.to_string(),
+            purl_qualifiers: purl_qualifiers.to_string(),
             description: description.to_string(),
-            purl_qualifiers_values: "".to_string(),
+            purl_qualifiers_values: purl_qualifiers_values.to_string(),
         };
 
         let explanation: Option<serde_json::Value> = if options.explain {

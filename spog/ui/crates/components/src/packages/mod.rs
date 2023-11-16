@@ -117,7 +117,7 @@ pub fn package_result(props: &PackagesResultProperties) -> Html {
         _ => None,
     };
     let sortby: UseStateHandle<Option<TableHeaderSortBy<Column>>> = use_state_eq(|| None);
-    let onsort = use_callback(
+    let _onsort = use_callback(
         (sortby.clone(), props.onsort.clone()),
         |val: TableHeaderSortBy<Column>, (sortby, onsort)| {
             sortby.set(Some(val));
@@ -143,31 +143,21 @@ pub fn package_result(props: &PackagesResultProperties) -> Html {
             index: Column::Name,
             label: "Name",
             width: ColumnWidth::Percent(10),
-            sortby: *sortby,
-            onsort: onsort.clone()
         }),
         yew::props!(TableColumnProperties<Column> {
             index: Column::Version,
             label: "Version",
             width: ColumnWidth::Percent(10),
-            sortby: *sortby,
-            onsort: onsort.clone()
         }),
         yew::props!(TableColumnProperties<Column> {
             index: Column::PackageType,
             label: "Type",
             width: ColumnWidth::Percent(10),
-            // text_modifier: Some(TextModifier::Wrap),
-            sortby: *sortby,
-            onsort: onsort.clone()
         }),
         yew::props!(TableColumnProperties<Column> {
             index: Column::Description,
             label: "Description",
             width: ColumnWidth::Percent(30),
-            // text_modifier: Some(TextModifier::Wrap),
-            sortby: *sortby,
-            onsort: onsort.clone()
         }),
         yew::props!(TableColumnProperties<Column> {
             index: Column::Vulnerabilities,

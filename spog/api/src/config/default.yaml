@@ -435,19 +435,19 @@ packages:
             label: maven
             id: maven
             terms:
-              - '"type:maven"'
+              - 'type:maven'
 
           - type: check
             label: RPM
             id: RPM
             terms:
-              - '"type:rpm"'
+              - 'type:rpm'
 
           - type: check
             label: NPM
             id: NPM
             terms:
-              - '"type:npm"'
+              - 'type:npm'
 
       - label: Supplier
         options:

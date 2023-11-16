@@ -67,6 +67,33 @@ impl AppState {
     }
 
     #[instrument(skip(self, provider), err)]
+    pub async fn search_package(
+        &self,
+        q: &str,
+        offset: usize,
+        limit: usize,
+        options: SearchOptions,
+        provider: &dyn TokenProvider,
+    ) -> Result<bombastic_model::packages::SearchPackageResult, Error> {
+        let url = self.bombastic.join("/api/v1/package/search")?;
+        let response = self
+            .client
+            .get(url)
+            .query(&[("q", q)])
+            .query(&[("offset", offset), ("limit", limit)])
+            .apply(&options)
+            .propagate_current_context()
+            .inject_token(provider)
+            .await?
+            .send()
+            .await?
+            .or_status_error()
+            .await?;
+
+        Ok(response.json::<bombastic_model::prelude::SearchPackageResult>().await?)
+    }
+
+    #[instrument(skip(self, provider), err)]
     pub async fn get_vex(
         &self,
         id: &str,
