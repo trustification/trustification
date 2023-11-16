@@ -143,6 +143,7 @@ guac:
     enabled: false
   graphql:
     debug: false
+    affinity: ${{GUAC_GQL_AFFINITY}}
     resources: ${{GUAC_GQL_RESOURCES}}
 oidcClients:
   frontend:

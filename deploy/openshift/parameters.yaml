@@ -89,6 +89,8 @@ parameters:
   required: true
 - name: GUAC_GQL_RESOURCES
   required: true
+- name: GUAC_GQL_AFFINITY
+  value: {}
 - name: BOMBASTIC_COLLECTOR_RESOURCES
   required: true
 - name: VEXINATION_COLLECTOR_RESOURCES
