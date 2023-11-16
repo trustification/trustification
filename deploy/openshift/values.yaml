@@ -170,3 +170,5 @@ oidcClients:
     scopes: "openid id.username"
     clientId:
       value: trusted-content-api
+dataset:
+  enabled: false

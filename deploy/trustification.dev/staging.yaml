@@ -153,7 +153,6 @@ collector:
     resources:
 v11y:
   enabled: true
-  suspended: true
   bucket: v11y-staging
   credentials: v11y-credentials-secret
   indexMode: file
@@ -267,3 +266,5 @@ keycloak:
         enabled: false
     auth:
       existingSecret: sso-postgres
+dataset:
+  enabled: false
