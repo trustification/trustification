@@ -3,7 +3,7 @@ use crate::{
     packages::PackagesResult,
     search::*,
 };
-use bombastic_model::search::Packages;
+use bombastic_model::packages::PackageInfo;
 use patternfly_yew::prelude::*;
 use spog_model::search::PackageInfoSummary;
 use spog_ui_backend::PackageInfoService;
@@ -44,7 +44,7 @@ pub fn use_package_search(
     callback: Callback<UseAsyncHandleDeps<SearchResult<Rc<Vec<PackageInfoSummary>>>, String>>,
 ) -> UseStandardSearch {
     let config = use_config();
-    use_generic_search::<Packages, _, _, _, _>(
+    use_generic_search::<PackageInfo, _, _, _, _>(
         search_params,
         pagination,
         callback,
