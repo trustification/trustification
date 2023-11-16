@@ -103,28 +103,26 @@ async fn process_get_vulnerabilities(
             // get the main packages
             let main = find_main(&spdx);
 
-            let main = match main.as_slice() {
-                [main] => main,
-                [] => {
-                    return Err(Error::Generic(
-                        r#"SBOM has no "document describes" entries. Unable to analyze."#.to_string(),
-                    ))
-                }
-                _ => {
-                    return Err(Error::Generic(format!(
-                        r#"SBOM has more than one "document describes" entry (number of entries: {})."#,
-                        main.len()
-                    )))
-                }
-            };
-
             let AnalyzeOutcome {
                 cve_to_purl,
                 purl_to_backtrace,
-            } = analyze_spdx(state, guac, access_token, main, offset, limit).await?;
+            } = analyze_spdx(
+                state,
+                guac,
+                access_token,
+                &spdx.document_creation_information.spdx_document_namespace,
+                offset,
+                limit,
+            )
+            .await?;
 
-            // find a single version (if possible)
-            let version = main.package_version.clone();
+            let version = Some(
+                main.iter()
+                    .flat_map(|pi| pi.package_version.as_deref())
+                    .collect::<Vec<_>>()
+                    .join(", "),
+            )
+            .filter(|s| !s.is_empty());
             let name = spdx.document_creation_information.document_name;
             let created = time::OffsetDateTime::from_unix_timestamp(
                 spdx.document_creation_information.creation_info.created.timestamp(),
