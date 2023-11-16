@@ -256,3 +256,5 @@ oidcClients:
         secretKeyRef:
           name: oidc-client-testing-user
           key: client-secret
+dataset:
+  enabled: false
