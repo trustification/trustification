@@ -45,31 +45,13 @@ pub async fn analyze_spdx(
     state: &AppState,
     guac: &GuacService,
     token: &dyn TokenProvider,
-    main: &PackageInformation,
+    sbom_id: &str,
     offset: Option<i64>,
     limit: Option<i64>,
 ) -> Result<AnalyzeOutcome, Error> {
-    let version = match &main.package_version {
-        Some(version) => version,
-        None => {
-            return Err(Error::Generic(
-                "SBOM's main component is missing the version".to_string(),
-            ))
-        }
-    };
-
     // find vulnerabilities
 
-    let cve_to_purl = guac
-        .find_vulnerability(
-            GuacSbomIdentifier {
-                name: &main.package_name,
-                version,
-            },
-            offset,
-            limit,
-        )
-        .await?;
+    let cve_to_purl = guac.find_vulnerability_by_id(sbom_id, offset, limit).await?;
 
     // collect the backtraces
 
