@@ -1,13 +1,12 @@
 use super::AppState;
 use super::{backtrace::backtrace, vex::collect_vex};
 use crate::error::Error;
-use crate::service::guac::{GuacSbomIdentifier, GuacService};
+use crate::service::guac::GuacService;
 use csaf::document::Category;
 use csaf::Csaf;
 use futures::{stream, StreamExt, TryStreamExt};
 use guac::client::intrinsic::vuln_metadata::VulnerabilityScoreType;
 use packageurl::PackageUrl;
-use spdx_rs::models::PackageInformation;
 use spog_model::csaf::has_purl;
 use spog_model::prelude::{Backtrace, Remediation};
 use std::collections::{BTreeMap, BTreeSet, HashMap};
@@ -51,7 +50,7 @@ pub async fn analyze_spdx(
 ) -> Result<AnalyzeOutcome, Error> {
     // find vulnerabilities
 
-    let cve_to_purl = guac.find_vulnerability_by_id(sbom_id, offset, limit).await?;
+    let cve_to_purl = guac.find_vulnerability_by_uid(sbom_id, offset, limit).await?;
 
     // collect the backtraces
 
