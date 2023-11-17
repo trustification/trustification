@@ -81,26 +81,6 @@ pub async fn package_search(
 
 #[utoipa::path(
     get,
-    path = "/api/v1/package/search",
-    responses(
-        (status = 200, description = "packages search was successful", body = SearchResultPackage),
-    ),
-    params()
-)]
-#[allow(dead_code)]
-pub async fn package_search_mock(query: web::Query<search::QueryParams>) -> actix_web::Result<HttpResponse> {
-    let web::Query(_) = query;
-
-    let pkgs = make_mock_data();
-    let result = SearchResult {
-        total: Some(pkgs.len()),
-        result: pkgs,
-    };
-    Ok(HttpResponse::Ok().json(result))
-}
-
-#[utoipa::path(
-    get,
     path = "/api/v1/package/{id}",
     responses(
         (status = OK, description = "packages was found", body = Vec<PackageInfo>),
@@ -145,11 +125,10 @@ pub async fn package_related_products(path: web::Path<String>) -> actix_web::Res
     Ok(HttpResponse::Ok().json(&result))
 }
 
-#[allow(dead_code)]
 fn make_mock_data() -> Vec<PackageInfo> {
     let packages = vec![
         PackageInfo {
-            name: ":arc".to_string().into(),
+            name: "arc".to_string().into(),
             namespace: "io.quarkus.arc".to_string().into(),
             version: "2.16.2.Final".to_string().into(),
             package_type: "maven".to_string().into(),
