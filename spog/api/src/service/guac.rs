@@ -216,7 +216,7 @@ impl GuacService {
     /// Later on, this will be replaced with the SPDX namespace, or the CycloneDX serial.
     ///
     /// The result is `map<cve, set<purls>>`.
-    #[instrument(skip(self), ret, err)]
+    #[instrument(skip(self), err)]
     pub async fn find_vulnerability(
         &self,
         id: GuacSbomIdentifier<'_>,
@@ -231,6 +231,23 @@ impl GuacService {
         log::debug!("Using GUAC purl: {purl}");
 
         Ok(self.client.semantic().find_vulnerability(&purl, offset, limit).await?)
+    }
+
+    /// Find vulnerabilities for an SBOM (by SBOM UID)
+    ///
+    /// The result is `map<cve, set<purls>>`.
+    #[instrument(skip(self), err)]
+    pub async fn find_vulnerability_by_uid(
+        &self,
+        id: &str,
+        offset: Option<i64>,
+        limit: Option<i64>,
+    ) -> Result<HashMap<String, BTreeSet<String>>, Error> {
+        Ok(self
+            .client
+            .semantic()
+            .find_vulnerability_by_sbom_uri(id, offset, limit)
+            .await?)
     }
 }
 
