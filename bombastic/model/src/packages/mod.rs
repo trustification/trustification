@@ -15,6 +15,10 @@ pub enum PackageInfo<'a> {
     Type(&'a str),
     #[search(default)]
     Version(Primary<'a>),
+    #[search(scope)]
+    Name(Primary<'a>),
+    #[search(scope)]
+    Namespace(Primary<'a>),
     #[search(sort)]
     Created(Ordered<time::OffsetDateTime>),
     #[search(scope)]

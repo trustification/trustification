@@ -276,6 +276,9 @@ impl Index {
                 create_date_query(&self.schema, self.fields.indexed_timestamp, ordered),
                 CREATED_WEIGHT,
             ),
+
+            PackageInfo::Name(value) => self.create_string_query(&[self.fields.purl_name], value),
+            PackageInfo::Namespace(value) => self.create_string_query(&[self.fields.purl_namespace], value),
         }
     }
 
