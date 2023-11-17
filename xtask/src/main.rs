@@ -1,6 +1,8 @@
 use clap::{Parser, Subcommand};
 
 mod common;
+mod config;
+mod errors;
 mod task;
 
 #[derive(Debug, Parser)]
