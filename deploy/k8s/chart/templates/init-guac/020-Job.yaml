@@ -32,9 +32,8 @@ spec:
 
       containers:
         - name: pre-install
-          image: docker.io/library/postgres:15
-          imagePullPolicy: IfNotPresent
-
+          image: {{ .Values.guac.database.image }}
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
           env:
             - name: PGHOST
               valueFrom:
