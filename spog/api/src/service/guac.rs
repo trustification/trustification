@@ -235,12 +235,6 @@ impl GuacService {
 
     /// Find vulnerabilities for an SBOM (by SBOM UID)
     ///
-    /// The `sbom_id` is an identifier for an SBOM. Currently, this is a special PURL format of
-    /// `pkg:/guac/pkg/<name>@<version>`, where `<name>` and `<version>` are coming from the single
-    /// (expected) "document describes" component.
-    ///
-    /// Later on, this will be replaced with the SPDX namespace, or the CycloneDX serial.
-    ///
     /// The result is `map<cve, set<purls>>`.
     #[instrument(skip(self), err)]
     pub async fn find_vulnerability_by_uid(
