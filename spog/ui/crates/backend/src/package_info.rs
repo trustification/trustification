@@ -22,7 +22,7 @@ impl PackageInfoService {
         }
     }
 
-    pub async fn get(&self, id: impl AsRef<str>) -> Result<PackageInfoSummary, ApiError> {
+    pub async fn get(&self, id: impl AsRef<str>) -> Result<PackageInfo, ApiError> {
         let url = self.backend.join(
             Endpoint::Api,
             &format!("/api/v1/package/{id}", id = urlencoding::encode(id.as_ref())),
@@ -61,7 +61,7 @@ impl PackageInfoService {
         &self,
         q: &str,
         options: &SearchParameters,
-    ) -> Result<SearchResult<Vec<PackageInfoSummary>>, ApiError> {
+    ) -> Result<SearchResult<Vec<PackageInfo>>, ApiError> {
         let response = self
             .client
             .get(self.backend.join(Endpoint::Api, "/api/v1/package/search")?)

@@ -1,9 +1,6 @@
 use futures::future::try_join_all;
 use patternfly_yew::prelude::*;
-use spog_model::{
-    prelude::{CveSearchDocument, V11yRef},
-    search::PackageInfoSummary,
-};
+use spog_model::prelude::{CveSearchDocument, PackageInfo, V11yRef};
 use spog_ui_backend::{use_backend, CveService};
 use spog_ui_common::{utils::cvss::Cvss, utils::time::date, utils::OrNone};
 use spog_ui_components::{async_state_renderer::async_content, cvss::CvssScore, pagination::PaginationWrapped};
@@ -64,7 +61,7 @@ impl TableEntryRenderer<Column> for TableData {
 
 #[derive(PartialEq, Properties)]
 pub struct VulnerabilitiesProperties {
-    pub package: Rc<PackageInfoSummary>,
+    pub package: Rc<PackageInfo>,
 }
 
 #[function_component(Vulnerabilities)]
