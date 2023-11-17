@@ -48,7 +48,17 @@ pub fn sbom(props: &SbomReportProperties) -> Html {
         (props.id.clone(), backend),
     );
 
-    let labels = use_callback((), |value: Value, ()| {
+    let empty = info
+        .data()
+        .and_then(|d| d.as_ref().map(|d| d.summary("mitre").map(|s| s.is_empty())))
+        .flatten()
+        .unwrap_or(true);
+
+    let labels = use_callback(empty, |value: Value, empty| {
+        if *empty {
+            return "None".to_string();
+        }
+
         let x = &value["datum"]["x"];
         let y = &value["datum"]["y"];
 
@@ -126,19 +136,10 @@ fn donut_options(data: &spog_model::vuln::SbomReport) -> Value {
         .cloned()
         .unwrap_or_default();
 
-    // reverse sort
-    summary.sort_unstable_by(|a, b| b.severity.cmp(&a.severity));
+    // reverse sort, by severity
+    summary.sort_unstable_by_key(|e| e.severity);
 
     let total: usize = summary.iter().map(|SummaryEntry { count, .. }| *count).sum();
-    let donut_data = summary
-        .iter()
-        .map(|SummaryEntry { severity, count }| {
-            json!({
-                "x": severity.map(|k| k.as_str().to_case(Case::Title)).unwrap_or_else(|| "Unknown".to_string()),
-                "y": count,
-            })
-        })
-        .collect::<Vec<_>>();
 
     let legend_data = summary
         .iter()
@@ -148,6 +149,26 @@ fn donut_options(data: &spog_model::vuln::SbomReport) -> Value {
                 .unwrap_or_else(|| "Unknown".to_string());
             json!({
                 "name": format!("{count} {k}"),
+            })
+        })
+        .collect::<Vec<_>>();
+
+    // now that we created the legend, we check if the summary is empty
+    if summary.is_empty() {
+        // if it is, we create a dummy entry, which will render as a grey circle. We can only
+        // do this after the legend was created.
+        summary = vec![SummaryEntry {
+            severity: None,
+            count: 1,
+        }];
+    }
+
+    let donut_data = summary
+        .iter()
+        .map(|SummaryEntry { severity, count }| {
+            json!({
+                "x": severity.map(|k| k.as_str().to_case(Case::Title)).unwrap_or_else(|| "Unknown".to_string()),
+                "y": count,
             })
         })
         .collect::<Vec<_>>();
