@@ -225,6 +225,7 @@ guac:
   enabled: true
   database:
     enabled: false
+    image: docker.io/library/postgres:15
   graphql:
     debug: true
     affinity:

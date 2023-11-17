@@ -2376,3 +2376,5 @@ parameters:
   value: spogApi
 - name: SEGMENT_SECRET_UI_KEY
   value: spogUi
+- name: POSTGRESQL_IMAGE
+  value: "docker.io/library/postgres:15"
