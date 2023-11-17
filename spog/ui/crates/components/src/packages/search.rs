@@ -5,7 +5,6 @@ use crate::{
 };
 use bombastic_model::packages::PackageInfo;
 use patternfly_yew::prelude::*;
-use spog_model::search::PackageInfoSummary;
 use spog_ui_backend::PackageInfoService;
 use spog_ui_common::utils::pagination_to_offset;
 use spog_ui_utils::config::use_config;
@@ -41,7 +40,7 @@ pub fn packages_search_controls(props: &PackageSearchControlsProperties) -> Html
 pub fn use_package_search(
     search_params: UseReducerHandle<SearchState<DynamicSearchParameters>>,
     pagination: UsePagination,
-    callback: Callback<UseAsyncHandleDeps<SearchResult<Rc<Vec<PackageInfoSummary>>>, String>>,
+    callback: Callback<UseAsyncHandleDeps<SearchResult<Rc<Vec<spog_model::prelude::PackageInfo>>>, String>>,
 ) -> UseStandardSearch {
     let config = use_config();
     use_generic_search::<PackageInfo, _, _, _, _>(

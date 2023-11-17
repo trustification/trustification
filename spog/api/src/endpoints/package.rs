@@ -8,7 +8,6 @@ use actix_web::{
 use actix_web_httpauth::extractors::bearer::BearerAuth;
 use spog_model::package_info::{PackageInfo, V11yRef};
 use spog_model::prelude::{PackageProductDetails, ProductRelatedToPackage};
-use spog_model::search::PackageInfoSummary;
 use std::sync::Arc;
 use trustification_api::search::{SearchOptions, SearchResult};
 use trustification_auth::authenticator::Authenticator;
@@ -56,18 +55,18 @@ pub async fn package_search(
             &access_token,
         )
         .await?;
-    let mut m: Vec<PackageInfoSummary> = Vec::with_capacity(data.result.len());
+    let mut m: Vec<PackageInfo> = Vec::with_capacity(data.result.len());
     for item in data.result {
         let item = item.document;
-        m.push(PackageInfoSummary {
+        m.push(PackageInfo {
             purl: item.purl.into(),
-            name: item.name,
-            version: item.purl_version,
-            package_type: item.purl_type,
-            description: item.description,
-            supplier: item.supplier,
-            href: "".to_string(),
-            sbom: "".to_string(),
+            name: item.purl_name.into(),
+            namespace: item.purl_namespace.into(),
+            version: item.purl_version.into(),
+            package_type: item.purl_type.into(),
+            supplier: item.supplier.into(),
+            href: None,
+            sbom: None,
             vulnerabilities: vec![],
         });
     }
@@ -150,10 +149,10 @@ pub async fn package_related_products(path: web::Path<String>) -> actix_web::Res
 fn make_mock_data() -> Vec<PackageInfo> {
     let packages = vec![
         PackageInfo {
-            name: "io.quarkus.arc:arc".to_string().into(),
+            name: ":arc".to_string().into(),
+            namespace: "io.quarkus.arc".to_string().into(),
             version: "2.16.2.Final".to_string().into(),
             package_type: "maven".to_string().into(),
-            description: "case one".to_string().into(),
             purl: "pkg:maven/io.quarkus.arc/arc@2.16.2.Final?type=jar".to_string().into(),
             href: Some(format!(
                 "/api/package?purl={}",
@@ -188,10 +187,10 @@ fn make_mock_data() -> Vec<PackageInfo> {
             ],
         },
         PackageInfo {
-            name: "redhat:openssl".to_string().into(),
+            name: "openssl".to_string().into(),
+            namespace: "redhat".to_string().into(),
             version: "1.1.1k-7.el8_6".to_string().into(),
             package_type: "rpm".to_string().into(),
-            description: "case two".to_string().into(),
             purl: Some("pkg:rpm/redhat/openssl@1.1.1k-7.el8_6".to_string()),
             href: Some(format!(
                 "/api/package?purl={}",

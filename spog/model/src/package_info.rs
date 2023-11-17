@@ -5,7 +5,10 @@ use utoipa::ToSchema;
 #[derive(Clone, Debug, PartialEq, Eq, ToSchema, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 #[schema(example = json!(PackageInfo {
-    name: Some("redhat:openssl".to_string()), version: Some("1.1.1k-7.el8_6".to_string()), description: Some("show case".to_string()),package_type: Some("rpm".to_string()),
+    name: Some("redhat:openssl".to_string()),
+    namespace: Some("redhat".to_string()),
+    version: Some("1.1.1k-7.el8_6".to_string()),
+    package_type: Some("rpm".to_string()),
     purl: Some("pkg:rpm/redhat/openssl@1.1.1k-7.el8_6".to_string()), href: Some(format!("/api/package?purl={}", &urlencoding::encode("pkg:rpm/redhat/openssl@1.1.1k-7.el8_6"))),
     sbom: Some(format!("/api/package/sbom?purl={}", &urlencoding::encode("pkg:rpm/redhat/openssl@1.1.1k-7.el8_6"))),
     supplier: "Organization: Red Hat".to_string().into(),
@@ -19,9 +22,9 @@ pub struct PackageInfo {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub version: Option<String>,
+    pub namespace: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
+    pub version: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub package_type: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
