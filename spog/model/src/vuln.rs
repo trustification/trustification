@@ -66,6 +66,17 @@ pub struct SbomReport {
     pub backtraces: BTreeMap<String, BTreeSet<Backtrace>>,
 }
 
+impl SbomReport {
+    pub fn summary(&self, source: &str) -> Option<&[SummaryEntry]> {
+        self.summary
+            .iter()
+            .find_map(|(actual, summary)| match actual == source {
+                true => Some(summary.as_slice()),
+                false => None,
+            })
+    }
+}
+
 /// Entry in the [`SbomReport`] summary.
 #[derive(Clone, Debug, PartialEq, ToSchema, Serialize, Deserialize)]
 pub struct SummaryEntry {
