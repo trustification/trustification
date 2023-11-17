@@ -141,6 +141,7 @@ guac:
   enabled: true
   database:
     enabled: false
+    image: ${POSTGRESQL_IMAGE}
   graphql:
     debug: false
     affinity: ${{GUAC_GQL_AFFINITY}}
