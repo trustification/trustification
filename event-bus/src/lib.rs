@@ -1,5 +1,6 @@
 //! Event bus used in Trustification.
 
+use hide::Hide;
 use prometheus::{opts, register_int_counter_vec_with_registry, IntCounterVec, Registry};
 
 mod kafka;
@@ -181,11 +182,11 @@ pub struct EventBusConfig {
 
     /// Access key if using SQS event bus
     #[arg(env = "SQS_ACCESS_KEY", long = "sqs-access-key")]
-    pub sqs_access_key: Option<String>,
+    pub sqs_access_key: Option<Hide<String>>,
 
     /// Secret key if using SQS event bus
     #[arg(env = "SQS_SECRET_KEY", long = "sqs-secret-key")]
-    pub sqs_secret_key: Option<String>,
+    pub sqs_secret_key: Option<Hide<String>>,
 
     /// Secret key if using SQS event bus
     #[arg(env = "SQS_REGION", long = "sqs-region")]
