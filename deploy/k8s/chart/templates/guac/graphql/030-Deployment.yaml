@@ -49,6 +49,8 @@ spec:
             - "postgres"
             - "--db-debug"
             - "true"
+            - "--db-migrate"
+            - "false"
           env:
             - name: PGHOST
               valueFrom:
