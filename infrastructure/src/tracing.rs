@@ -115,11 +115,10 @@ fn init_jaeger(name: &str) {
 
     println!("Using Jaeger tracing.");
     println!("{:#?}", pipeline);
-    println!("Tracing is enabled. This console will not show any logging information.");
 
     let tracer = pipeline.install_batch(opentelemetry::runtime::Tokio).unwrap();
 
-    let formatting_layer = BunyanFormattingLayer::new(name.to_string(), std::io::stdout);
+    let formatting_layer = tracing_subscriber::fmt::Layer::default();
 
     if let Err(e) = tracing_subscriber::Registry::default()
         .with(tracing_subscriber::EnvFilter::from_default_env())
