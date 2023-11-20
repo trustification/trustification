@@ -24,7 +24,7 @@ use utoipa::OpenApi;
 
         analyze::report,
 
-        package::package_search_mock,
+        package::package_search,
         package::package_get_mock,
         package::package_related_products,
         package::get_related,
