@@ -86,6 +86,8 @@ spec:
           command:
             - psql
             - -v
+            - ON_ERROR_STOP=1
+            - -v
             - db_name=$(DB_NAME)
             - -v
             - db_user=$(DB_USER)
