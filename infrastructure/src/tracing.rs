@@ -39,7 +39,7 @@ impl PropagateCurrentContext for reqwest::RequestBuilder {
     where
         Self: Sized,
     {
-        self.propagate_context(&opentelemetry::Context::current())
+        self.propagate_context(&Context::current())
     }
 }
 
