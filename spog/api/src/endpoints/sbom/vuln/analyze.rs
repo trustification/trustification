@@ -51,6 +51,7 @@ pub async fn analyze_spdx(
     // find vulnerabilities
 
     let cve_to_purl = guac.find_vulnerability_by_uid(sbom_id, offset, limit).await?;
+    log::info!("{} vulnerabilities found", cve_to_purl.len());
 
     // collect the backtraces
 

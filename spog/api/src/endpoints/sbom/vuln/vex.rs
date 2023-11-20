@@ -19,6 +19,7 @@ pub async fn collect_vex<'a>(
     ids: impl IntoIterator<Item = impl AsRef<str>>,
 ) -> Result<HashMap<String, Vec<Rc<Csaf>>>, Error> {
     let ids = ids.into_iter();
+
     let (_, num_ids) = ids.size_hint();
     tracing::Span::current().record("num_ids", num_ids);
 
@@ -32,18 +33,28 @@ pub async fn collect_vex<'a>(
         .and_then(|ids| async move {
             let q = ids
                 .iter()
-                .map(|id| format!(r#"cve:"{}""#, id.as_ref()))
+                .map(|id| {
+                    let id = id.as_ref();
+                    if id.starts_with("cve-") {
+                        format!(r#"cve:"{}""#, id.to_uppercase())
+                    } else {
+                        format!(r#"cve:"{id}""#)
+                    }
+                })
                 .collect::<Vec<_>>()
                 .join(" OR ");
 
             // lookup documents (limit to 1.000, which should be reasonable)
             let result = state.search_vex(&q, 0, 1000, SearchOptions::default(), token).await?;
 
+            log::info!("Found: {} (total: {})", result.result.len(), result.total);
+
             Ok::<HashSet<_>, Error>(result.result.into_iter().map(|hit| hit.document.advisory_id).collect())
         });
 
     // flatten the result stream
     let cves: HashSet<String> = cves.try_collect::<Vec<_>>().await?.into_iter().flatten().collect();
+    log::info!("Num CVEs: {}", cves.len());
 
     // now fetch the documents and sort them in the result map
     let result: HashMap<String, Vec<_>> = stream::iter(cves)
@@ -75,6 +86,8 @@ pub async fn collect_vex<'a>(
             Ok(acc)
         })
         .await?;
+
+    log::info!("Num result: {}", result.len());
 
     Ok(result)
 }
