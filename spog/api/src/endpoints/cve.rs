@@ -46,11 +46,12 @@ pub(crate) fn configure(auth: Option<Arc<Authenticator>>) -> impl FnOnce(&mut Se
     ),
     params(search::QueryParams)
 )]
-#[instrument(skip(v11y, state), err)]
+#[instrument(skip(v11y, state, guac), err)]
 async fn cve_search(
     web::Query(params): web::Query<search::QueryParams>,
     v11y: web::Data<V11yService>,
     state: web::Data<AppState>,
+    guac: web::Data<GuacService>,
 ) -> actix_web::Result<HttpResponse> {
     let SearchResult { result, total } = v11y.search(params).await.map_err(Error::V11y)?;
 
@@ -58,9 +59,10 @@ async fn cve_search(
     let result: Vec<_> = stream::iter(result.into_iter().map(Ok::<_, Error>))
         .and_then(move |hit: SearchHit<SearchDocument>| {
             let state = state.clone();
+            let guac = guac.clone();
             async move {
                 let related_advisories = count_related_advisories(&state, &hit.document.id).await?;
-                let related_products = count_related_products(&hit.document.id).await?;
+                let related_products = count_related_products(&guac, &hit.document.id).await?;
                 Ok(hit.map(|document| CveSearchDocument {
                     document,
                     related_advisories,
@@ -88,9 +90,10 @@ async fn count_related_advisories(state: &AppState, cve: &str) -> Result<usize, 
 }
 
 /// return the number of related products for a CVE
-async fn count_related_products(_cve: &str) -> Result<usize, Error> {
-    // FIXME: implemented by guac
-    Ok(0)
+async fn count_related_products(guac: &GuacService, cve: &str) -> Result<usize, Error> {
+    let details = guac.product_by_cve(cve.to_string()).await?;
+
+    Ok(details.products.len())
 }
 
 #[utoipa::path(
