@@ -1805,6 +1805,7 @@ dependencies = [
  "env_logger",
  "futures",
  "guac",
+ "hide",
  "libtest-with",
  "log",
  "packageurl",
@@ -3224,6 +3225,12 @@ checksum = "7f24254aa9a54b5c858eaee2f5bccdb46aaf0e486a595ed5fd8f86ba55232a70"
 dependencies = [
  "serde",
 ]
+
+[[package]]
+name = "hide"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "373243110fd07ae0b65bd0e2d908afeb9688c84e0b93f249cea8669cc890b365"
 
 [[package]]
 name = "hkdf"
@@ -7599,6 +7606,7 @@ dependencies = [
  "aws-sdk-sqs",
  "clap 4.4.6",
  "futures",
+ "hide",
  "log",
  "prometheus",
  "rdkafka",
@@ -7703,6 +7711,7 @@ dependencies = [
  "clap 4.4.6",
  "csaf",
  "futures",
+ "hide",
  "http",
  "log",
  "prometheus",
