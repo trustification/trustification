@@ -2,7 +2,6 @@ use core::fmt;
 use opentelemetry::propagation::Injector;
 use opentelemetry::Context;
 use reqwest::RequestBuilder;
-use tracing_bunyan_formatter::BunyanFormattingLayer;
 
 #[derive(clap::ValueEnum, Clone, Copy, Debug, PartialEq)]
 pub enum Tracing {
