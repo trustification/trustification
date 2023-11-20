@@ -290,7 +290,7 @@ impl Storage {
     }
 
     pub fn is_index(&self, key: &str) -> bool {
-        format!("/{}", key) == INDEX_PATH
+        format!("/{}", key).starts_with(INDEX_PATH)
     }
 
     pub fn key_from_event(record: &Record) -> Result<(Cow<str>, String), Error> {
@@ -422,14 +422,16 @@ impl Storage {
         }
     }
 
-    pub async fn put_index(&self, index: &[u8]) -> Result<(), Error> {
-        self.bucket.put_object(INDEX_PATH, index).await?;
+    pub async fn put_index(&self, name: &str, index: &[u8]) -> Result<(), Error> {
+        let index_path = format!("{}/{}", INDEX_PATH, name);
+        self.bucket.put_object(index_path, index).await?;
         self.metrics.index_puts_total.inc();
         Ok(())
     }
 
-    pub async fn get_index(&self) -> Result<Vec<u8>, Error> {
-        let data = self.bucket.get_object(INDEX_PATH).await?;
+    pub async fn get_index(&self, name: &str) -> Result<Vec<u8>, Error> {
+        let index_path = format!("{}/{}", INDEX_PATH, name);
+        let data = self.bucket.get_object(index_path).await?;
         Ok(data.to_vec())
     }
 

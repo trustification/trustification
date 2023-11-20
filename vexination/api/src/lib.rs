@@ -1,4 +1,5 @@
 use actix_web::web;
+use bytesize::ByteSize;
 use prometheus::Registry;
 use std::{net::TcpListener, process::ExitCode, sync::Arc, time::Duration};
 use tokio::task::block_in_place;
@@ -10,7 +11,7 @@ use trustification_auth::{
 };
 use trustification_index::{IndexConfig, IndexStore};
 use trustification_infrastructure::{
-    app::http::{HttpServerBuilder, HttpServerConfig},
+    app::http::{BinaryByteSize, HttpServerBuilder, HttpServerConfig},
     endpoint::Vexination,
     health::checks::Probe,
     Infrastructure, InfrastructureConfig,
@@ -42,6 +43,10 @@ pub struct Run {
 
     #[command(flatten)]
     pub http: HttpServerConfig<Vexination>,
+
+    /// Request limit for publish requests
+    #[arg(long, default_value_t = ByteSize::mib(64).into())]
+    pub publish_limit: BinaryByteSize,
 }
 
 impl Run {
@@ -62,6 +67,9 @@ impl Run {
             log::warn!("Authentication is disabled");
         }
 
+        let tracing = self.infra.tracing;
+        let publish_limit = self.publish_limit.as_u64() as usize;
+
         Infrastructure::from(self.infra)
             .run(
                 "vexination-api",
@@ -71,14 +79,16 @@ impl Run {
                     context.health.readiness.register("available.index", check).await;
                     let state = Self::configure(index, storage, probe, context.metrics.registry(), self.devmode)?;
                     let mut http = HttpServerBuilder::try_from(self.http)?
+                        .tracing(tracing)
                         .metrics(context.metrics.registry().clone(), "vexination_api")
                         .authorizer(authorizer.clone())
                         .configure(move |svc| {
                             let authenticator = authenticator.clone();
                             let swagger_oidc = swagger_oidc.clone();
 
-                            svc.app_data(web::Data::new(state.clone()))
-                                .configure(move |svc| server::config(svc, authenticator.clone(), swagger_oidc.clone()));
+                            svc.app_data(web::Data::new(state.clone())).configure(move |svc| {
+                                server::config(svc, authenticator.clone(), swagger_oidc.clone(), publish_limit)
+                            });
                         });
 
                     if let Some(v) = listener {

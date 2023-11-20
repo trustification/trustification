@@ -1,0 +1,16 @@
+{{ if and .Values.bombastic.walker.enabled .Values.bombastic.walker.enabled }}
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: bombastic-walker-state
+  labels:
+    app.kubernetes.io/name: bombastic-walker-state
+    app.kubernetes.io/component: walker
+    app.kubernetes.io/part-of: trustification
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Mi
+{{ end }}

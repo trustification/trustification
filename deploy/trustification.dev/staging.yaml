@@ -3,7 +3,7 @@ trustImage: ghcr.io/trustification/trust
 uiImage: ghcr.io/trustification/trust
 docsImage: ghcr.io/trustification/trust-docs
 testsImage: ghcr.io/trustification/trust-tests
-guacImage: ghcr.io/trustification/guac:v0.2.6-s3fix
+guacImage: ghcr.io/trustification/guac:v0.3.14
 domain: staging.trustification.dev
 replicas: 1
 imagePullPolicy: IfNotPresent
@@ -17,6 +17,9 @@ config:
   name: trustification-config
   authentication: trustification.dev/config/staging/auth.yaml
   collectorist: trustification.dev/config/staging/collectorist.yaml
+default:
+  routeAnnotations:
+    "haproxy.router.openshift.io/hsts_header": "max-age=31536000;includeSubDomains;preload"
 spog:
   crdaUrl: https://rhda.rhcloud.com/
   branding: true
@@ -34,7 +37,7 @@ spog:
       limits:
         memory: "64Mi"
   api:
-    tracing: true
+    tracing: "enabled"
     segmentWriteKey:
       valueFrom:
         secretKeyRef:
@@ -52,7 +55,14 @@ bombastic:
   indexMode: file
   collector:
     enabled: true
-    queue: sbom-indexed-staging
+    schedule: "0 * * * *"
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "4Gi"
+      limits:
+        cpu: "1"
+        memory: "4Gi"
   indexer:
     topics:
       stored: sbom-stored-staging
@@ -61,12 +71,13 @@ bombastic:
     resources:
       requests:
         cpu: "100m"
-        memory: "2Gi"
+        memory: "4Gi"
       limits:
-        memory: "2Gi"
+        memory: "4Gi"
   walker:
     enabled: true
-    interval: "1d"
+    suspended: true
+    schedule: "0 * * * *"
     source: "https://access.redhat.com/security/data/sbom/beta/"
     signingKey: "https://access.redhat.com/security/data/97f5eac4.txt#77E79ABE93673533ED09EBE2DCE3823597F5EAC4"
     resources:
@@ -76,7 +87,7 @@ bombastic:
       limits:
         memory: "2Gi"
   api:
-    tracing: true
+    tracing: "enabled"
     resources:
       requests:
         cpu: "100m"
@@ -87,6 +98,16 @@ vexination:
   bucket: vexination-staging
   credentials: vexination-credentials-secret
   indexMode: file
+  collector:
+    enabled: true
+    schedule: "30 * * * *"
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "4Gi"
+      limits:
+        cpu: "1"
+        memory: "4Gi"
   indexer:
     topics:
       stored: vex-stored-staging
@@ -99,7 +120,7 @@ vexination:
       limits:
         memory: "2Gi"
   api:
-    tracing: true
+    tracing: "enabled"
     resources:
       requests:
         cpu: "100m"
@@ -108,6 +129,8 @@ vexination:
         memory: "1Gi"
   walker:
     enabled: true
+    suspended: true
+    schedule: "0 * * * *"
     source: https://www.redhat.com/.well-known/csaf/provider-metadata.json
     ignore: https://access.redhat.com/security/data/csaf/v2/advisories/
     resources:
@@ -117,20 +140,16 @@ vexination:
       limits:
         memory: "2Gi"
 collectorist:
-  enabled: true
+  enabled: false
   api:
     resources:
 collector:
   osv:
-    enabled: true
+    enabled: false
     resources:
   snyk:
-    enabled: true
+    enabled: false
     credentials: snyk-collector-secret
-    resources:
-  nvd:
-    enabled: true
-    credentials: nvd-collector-secret
     resources:
 v11y:
   enabled: true
@@ -138,7 +157,7 @@ v11y:
   credentials: v11y-credentials-secret
   indexMode: file
   api:
-    tracing: "true"
+    tracing: "enabled"
     resources:
   indexer:
     topics:
@@ -202,8 +221,28 @@ oidcClients:
           key: client-secret
 guac:
   enabled: true
+  database:
+    enabled: true
+    image: docker.io/library/postgres:15
   graphql:
     debug: true
+    affinity:
+      # tie to the zone of the RDS database
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: topology.kubernetes.io/zone
+                  operator: In
+                  values:
+                    - eu-west-1c
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "2Gi"
+      limits:
+        cpu: "2"
+        memory: "2Gi"
 keycloak:
   enabled: true
   production: true
@@ -238,3 +277,5 @@ keycloak:
         enabled: false
     auth:
       existingSecret: sso-postgres
+dataset:
+  enabled: true

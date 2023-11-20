@@ -4,6 +4,9 @@ use std::sync::Arc;
 
 use actix_web::{post, web, HttpResponse, Responder, ResponseError};
 use guac::client::intrinsic::certify_vuln::CertifyVulnSpec;
+use guac::client::intrinsic::vuln_equal::VulnEqualSpec;
+use guac::client::intrinsic::vuln_metadata::{VulnerabilityMetadataSpec, VulnerabilityScoreType};
+use guac::client::intrinsic::vulnerability::VulnerabilitySpec;
 use packageurl::PackageUrl;
 use serde_json::value::RawValue;
 use utoipa::OpenApi;
@@ -33,6 +36,11 @@ use crate::AppState;
         schemas(
             AnalyzeRequest,
             AnalyzeResponse,
+            VendorAnalysis,
+            VulnerabilityAnalysis,
+            SeverityAnalysis,
+            SeverityType,
+            PackageCertification,
             v11y_client::Vulnerability,
             v11y_client::Affected,
             v11y_client::Reference,
@@ -142,12 +150,95 @@ async fn analyze(state: web::Data<AppState>, request: web::Json<AnalyzeRequest>)
                 .await
             {
                 Ok(vulns) => {
-                    // Add mappings from purl->vuln for all discovered
-                    for vuln in vulns {
-                        for vuln_id in vuln.vulnerability.vulnerability_ids {
-                            if vuln_id.vulnerability_id.starts_with("cve") {
-                                response.add_package_vulnerability(purl_str, &vuln_id.vulnerability_id);
-                                vuln_ids.insert(vuln_id.vulnerability_id);
+                    // Add mappings from purl->vuln by vendor for all discovered
+                    for certify_vuln in &vulns {
+                        response.add_package_vulnerabilities(
+                            purl_str.clone(),
+                            certify_vuln.metadata.collector.clone(),
+                            certify_vuln
+                                .vulnerability
+                                .vulnerability_ids
+                                .iter()
+                                .map(|e| e.vulnerability_id.clone())
+                                .collect(),
+                        );
+                        for vuln_id in &certify_vuln.vulnerability.vulnerability_ids {
+                            vuln_ids.insert(vuln_id.vulnerability_id.clone());
+                        }
+
+                        if let Ok(meta) = state
+                            .guac_client
+                            .intrinsic()
+                            .vuln_metadata(&VulnerabilityMetadataSpec {
+                                vulnerability: Some(VulnerabilitySpec {
+                                    vulnerability_id: Some(
+                                        certify_vuln
+                                            .vulnerability
+                                            .vulnerability_ids
+                                            .first()
+                                            .map(|id| id.vulnerability_id.clone())
+                                            .unwrap_or_default(),
+                                    ),
+                                    ..Default::default()
+                                }),
+                                ..Default::default()
+                            })
+                            .await
+                        {
+                            for vuln_meta in meta {
+                                // add severities into the response if possible.
+                                response.add_vulnerability_severity(
+                                    purl_str.clone(),
+                                    vuln_meta.collector,
+                                    certify_vuln
+                                        .vulnerability
+                                        .vulnerability_ids
+                                        .first()
+                                        .map(|id| id.vulnerability_id.clone())
+                                        .unwrap_or_default(),
+                                    vuln_meta.origin,
+                                    score_type_to_string(vuln_meta.score_type),
+                                    vuln_meta.score_value,
+                                )
+                            }
+                        }
+
+                        if let Ok(equals) = state
+                            .guac_client
+                            .intrinsic()
+                            .vuln_equal(&VulnEqualSpec {
+                                vulnerabilities: Some(vec![VulnerabilitySpec {
+                                    vulnerability_id: certify_vuln
+                                        .vulnerability
+                                        .vulnerability_ids
+                                        .first()
+                                        .map(|id| id.vulnerability_id.clone()),
+                                    ..Default::default()
+                                }]),
+                                ..Default::default()
+                            })
+                            .await
+                        {
+                            for equal in equals {
+                                let aliases: Vec<_> = equal
+                                    .vulnerabilities
+                                    .iter()
+                                    .flat_map(|e| e.vulnerability_ids.iter().map(|id| id.vulnerability_id.clone()))
+                                    .collect();
+
+                                response.add_vulnerability_aliases(
+                                    purl_str.clone(),
+                                    equal.collector,
+                                    certify_vuln
+                                        .vulnerability
+                                        .vulnerability_ids
+                                        .first()
+                                        .map(|id| id.vulnerability_id.clone())
+                                        .unwrap_or_default(),
+                                    aliases.clone(),
+                                );
+
+                                vuln_ids.extend(aliases.iter().cloned());
                             }
                         }
                     }
@@ -165,31 +256,46 @@ async fn analyze(state: web::Data<AppState>, request: web::Json<AnalyzeRequest>)
     // mappings, go collect the vulnerability details from v11y, doing
     // our best effort and not allowing soft errors to fail the process.
     for vuln_id in vuln_ids {
-        match state.v11y_client.get_cve(&vuln_id).await {
-            Ok(vulnerabilities) => {
-                if vulnerabilities.status() == 200 {
-                    match vulnerabilities.json::<Box<RawValue>>().await {
-                        Ok(cve) => {
-                            //response.vulnerabilities.extend(vulns.iter().cloned() );
-                            response.vulnerabilities.push(cve);
+        if vuln_id.to_lowercase().starts_with("cve") {
+            match state.v11y_client.get_cve(&vuln_id).await {
+                Ok(vulnerabilities) => {
+                    if vulnerabilities.status() == 200 {
+                        match vulnerabilities.json::<Box<RawValue>>().await {
+                            Ok(cve) => {
+                                response.cves.push(cve);
+                            }
+                            Err(err) => {
+                                log::error!("v11y cve error {} {}", err, vuln_id);
+                                response.errors.push(err.to_string());
+                            }
                         }
-                        Err(err) => {
-                            log::error!("v11y cve error {} {}", err, vuln_id);
-                            response.errors.push(err.to_string());
-                        }
+                    } else {
+                        log::error!("v11y can't find {}", vuln_id);
+                        response
+                            .errors
+                            .push(format!("v11y error: unable to locate {}", vuln_id));
                     }
-                } else {
-                    log::error!("v11y can't find {}", vuln_id);
-                    response
-                        .errors
-                        .push(format!("v11y error: unable to locate {}", vuln_id));
                 }
-            }
-            Err(err) => {
-                log::error!("v11y error {}", err);
-                response.errors.push(err.to_string())
+                Err(err) => {
+                    log::error!("v11y error {}", err);
+                    response.errors.push(err.to_string())
+                }
             }
         }
     }
     Ok(HttpResponse::Ok().json(response))
+}
+
+fn score_type_to_string(ty: VulnerabilityScoreType) -> String {
+    match ty {
+        VulnerabilityScoreType::CVSSv2 => "CVSSv2".to_string(),
+        VulnerabilityScoreType::CVSSv3 => "CVSSv3".to_string(),
+        VulnerabilityScoreType::CVSSv31 => "CVSSv31".to_string(),
+        VulnerabilityScoreType::CVSSv4 => "CVSSv4".to_string(),
+        VulnerabilityScoreType::EPSSv1 => "EPSSv1".to_string(),
+        VulnerabilityScoreType::EPSSv2 => "EPSSv2".to_string(),
+        VulnerabilityScoreType::OWASP => "OWASP".to_string(),
+        VulnerabilityScoreType::SSVC => "SSVC".to_string(),
+        VulnerabilityScoreType::Other(other) => other,
+    }
 }

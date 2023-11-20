@@ -155,9 +155,11 @@ mod test {
     #[test_with::env(SNYK_ORG_ID, SNYK_TOKEN)]
     #[tokio::test]
     async fn single() -> Result<(), anyhow::Error> {
-        client()?
+        let _result = client()?
             .issues("pkg:maven/org.apache.logging.log4j/log4j-core@2.13.3")
             .await?;
+
+        //println!("{:#?}", result);
         Ok(())
     }
 }

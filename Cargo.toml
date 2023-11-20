@@ -34,7 +34,6 @@ members = [
     "collector/client",
     "collector/osv",
     "collector/snyk",
-    "collector/nvd",
     "v11y/api",
     "v11y/client",
     "v11y/model",
@@ -87,7 +86,6 @@ default-members = [
     "collector/client",
     "collector/osv",
     "collector/snyk",
-    "collector/nvd",
     "v11y/api",
     "v11y/client",
     "v11y/model",
@@ -106,12 +104,12 @@ default-members = [
 ]
 
 [workspace.dependencies]
-guac = { git = "https://github.com/trustification/guac-rs.git", rev = "a5fad28fe4d59de7165b33d89f6d58aa7b553f05" }
+guac = { git = "https://github.com/trustification/guac-rs.git", rev="12972f840f8c895fcde23713df9d4d4ae12276c6" }
 #guac = { path = "../guac-rs/lib" }
 
 [patch.crates-io]
 #tantivy = { path = "../tantivy" }
-#sikula = { git = "https://github.com/ctron/sikula", rev = "cea7429f6b690adcdcd1ce2edb2b9e2277834e03" }
+#sikula = { git = "https://github.com/ctron/sikula", rev = "023c27232f016b80a34c8ed77b88d1c30dcae6e0" }
 #sikula = { path = "../sikula" }
 
 # csaf-walker = { path = "../csaf-walker/csaf" }
@@ -126,3 +124,5 @@ cyclonedx-bom = { git = "https://github.com/trustification/cyclonedx-rust-cargo"
 #spdx-rs = { git = "https://github.com/trustification/spdx-rs", rev = "c65be086e898dae88609f07bbc5a224ba4e0838d" } # FIXME: awaiting doubleopen-project/spdx-rs#/27
 
 cve = { git = "https://github.com/ctron/cve", rev = "77341768d893098f1f8b1397364fecfb16b4d776" } # FIXME: awaiting release
+
+

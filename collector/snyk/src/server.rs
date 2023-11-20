@@ -5,6 +5,8 @@ use std::sync::Arc;
 
 use actix_web::{post, web, HttpResponse, Responder, ResponseError};
 use guac::client::intrinsic::certify_vuln::ScanMetadataInput;
+use guac::client::intrinsic::vuln_equal::VulnEqualInputSpec;
+use guac::client::intrinsic::vuln_metadata::{VulnerabilityMetadataInputSpec, VulnerabilityScoreType};
 use guac::client::intrinsic::vulnerability::VulnerabilityInputSpec;
 use packageurl::PackageUrl;
 use utoipa::OpenApi;
@@ -138,48 +140,161 @@ pub async fn collect_packages(
 
                                 let mut ids = Vec::new();
 
-                                for problem in &issue.attributes.problems {
-                                    ids.push(problem.id.clone());
+                                let snyk_vuln_input_spec = VulnerabilityInputSpec {
+                                    r#type: "snyk".to_string(),
+                                    vulnerability_id: issue.attributes.key.clone(),
+                                };
+
+                                ids.push(issue.attributes.key.clone());
+                                // Ingest the root Snyk issue `key`
+                                // We will subsequently ingest some aliases around it.
+
+                                if let Err(err) = state
+                                    .guac_client
+                                    .intrinsic()
+                                    .ingest_vulnerability(&snyk_vuln_input_spec)
+                                    .await
+                                {
+                                    collected_guac_errors.push(err.to_string())
+                                }
+
+                                if let Ok(purl) = PackageUrl::from_str(original_purl) {
+                                    // Ingest the relationship between each the snyk issue ID
+                                    // and the purl it's associated with.
                                     if let Err(err) = state
                                         .guac_client
                                         .intrinsic()
-                                        .ingest_vulnerability(&VulnerabilityInputSpec {
-                                            r#type: "snyk".to_string(),
-                                            vulnerability_id: problem.id.clone(),
-                                        })
+                                        .ingest_certify_vuln(
+                                            &purl.into(),
+                                            &snyk_vuln_input_spec,
+                                            &ScanMetadataInput {
+                                                db_uri: "https://api.snyk.io/".to_string(),
+                                                db_version: "1.0".to_string(),
+                                                scanner_uri: "https://trustification.io/".to_string(),
+                                                scanner_version: "1.0".to_string(),
+                                                time_scanned: Default::default(),
+                                                origin: "snyk".to_string(),
+                                                collector: "snyk".to_string(),
+                                            },
+                                        )
+                                        .await
+                                    {
+                                        collected_guac_errors.push(err.to_string());
+                                    }
+                                } else {
+                                    collected_snyk_errors.push(format!("purl error: {}", original_purl));
+                                }
+
+                                for problem in &issue.attributes.problems {
+                                    let problem_vuln_input_spec = VulnerabilityInputSpec {
+                                        r#type: "snyk".to_string(),
+                                        vulnerability_id: problem.id.clone(),
+                                    };
+
+                                    ids.push(problem.id.clone());
+
+                                    if let Err(err) = state
+                                        .guac_client
+                                        .intrinsic()
+                                        .ingest_vulnerability(&problem_vuln_input_spec)
                                         .await
                                     {
                                         collected_guac_errors.push(err.to_string());
                                     }
 
-                                    if let Ok(purl) = PackageUrl::from_str(original_purl) {
-                                        // Ingest the relationship between each problem ID
-                                        // and the purl it's associated with.
+                                    // Create the alias linkage between the root Snyk vuln
+                                    // and the problems contained therein.
+                                    if let Err(err) = state
+                                        .guac_client
+                                        .intrinsic()
+                                        .ingest_vuln_equal(
+                                            &snyk_vuln_input_spec,
+                                            &problem_vuln_input_spec,
+                                            &VulnEqualInputSpec {
+                                                justification: "snyk".to_string(),
+                                                origin: "snyk".to_string(),
+                                                collector: "snyk".to_string(),
+                                            },
+                                        )
+                                        .await
+                                    {
+                                        collected_guac_errors.push(err.to_string())
+                                    }
+
+                                    // Special-case CVEs
+                                    if problem.id.to_lowercase().starts_with("cve") {
+                                        let cve_vuln_input_spec = VulnerabilityInputSpec {
+                                            r#type: "cve".to_string(),
+                                            vulnerability_id: problem.id.clone(),
+                                        };
+
                                         if let Err(err) = state
                                             .guac_client
                                             .intrinsic()
-                                            .ingest_certify_vuln(
-                                                &purl.into(),
-                                                &VulnerabilityInputSpec {
-                                                    r#type: "snyk".to_string(),
-                                                    vulnerability_id: problem.id.clone(),
-                                                },
-                                                &ScanMetadataInput {
-                                                    db_uri: "https://api.snyk.io/".to_string(),
-                                                    db_version: "1.0".to_string(),
-                                                    scanner_uri: "https://trustification.io/".to_string(),
-                                                    scanner_version: "1.0".to_string(),
-                                                    time_scanned: Default::default(),
+                                            .ingest_vulnerability(&cve_vuln_input_spec)
+                                            .await
+                                        {
+                                            collected_guac_errors.push(err.to_string());
+                                        }
+
+                                        if let Err(err) = state
+                                            .guac_client
+                                            .intrinsic()
+                                            .ingest_vuln_equal(
+                                                &snyk_vuln_input_spec,
+                                                &cve_vuln_input_spec,
+                                                &VulnEqualInputSpec {
+                                                    justification: "snyk".to_string(),
                                                     origin: "snyk".to_string(),
                                                     collector: "snyk".to_string(),
                                                 },
                                             )
                                             .await
                                         {
-                                            collected_guac_errors.push(err.to_string());
+                                            collected_guac_errors.push(err.to_string())
                                         }
-                                    } else {
-                                        collected_snyk_errors.push(format!("purl error: {}", original_purl));
+                                    }
+                                }
+
+                                for severity in &issue.attributes.severities {
+                                    if let (Some(score), Some(vector)) = (&severity.score, &severity.vector) {
+                                        if vector.starts_with("CVSS:3.1") {
+                                            if let Err(err) = state
+                                                .guac_client
+                                                .intrinsic()
+                                                .ingest_vuln_metadata(
+                                                    &snyk_vuln_input_spec,
+                                                    &VulnerabilityMetadataInputSpec {
+                                                        score_type: VulnerabilityScoreType::CVSSv31,
+                                                        score_value: *score as f64,
+                                                        timestamp: Default::default(),
+                                                        origin: severity.source.clone(),
+                                                        collector: "snyk".to_string(),
+                                                    },
+                                                )
+                                                .await
+                                            {
+                                                collected_guac_errors.push(err.to_string())
+                                            }
+                                        } else if vector.starts_with("CVSS:3.0") {
+                                            if let Err(err) = state
+                                                .guac_client
+                                                .intrinsic()
+                                                .ingest_vuln_metadata(
+                                                    &snyk_vuln_input_spec,
+                                                    &VulnerabilityMetadataInputSpec {
+                                                        score_type: VulnerabilityScoreType::CVSSv3,
+                                                        score_value: *score as f64,
+                                                        timestamp: Default::default(),
+                                                        origin: severity.source.clone(),
+                                                        collector: "snyk".to_string(),
+                                                    },
+                                                )
+                                                .await
+                                            {
+                                                collected_guac_errors.push(err.to_string())
+                                            }
+                                        }
                                     }
                                 }
 

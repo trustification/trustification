@@ -8,6 +8,7 @@ use spog_model::prelude::*;
 use spog_ui_backend::{use_backend, Endpoint};
 use spog_ui_common::{components::SafeHtml, utils::time::date};
 use spog_ui_navigation::{AppRoute, View};
+use spog_ui_utils::config::use_config;
 use std::rc::Rc;
 use trustification_api::search::SearchResult;
 use url::Url;
@@ -17,8 +18,8 @@ use yew_nested_router::components::Link;
 
 #[derive(PartialEq, Properties)]
 pub struct SbomResultProperties {
-    pub state: UseAsyncState<SearchResult<Rc<Vec<PackageSummary>>>, String>,
-    pub onsort: Callback<(String, bool)>,
+    pub state: UseAsyncState<SearchResult<Rc<Vec<SbomSummary>>>, String>,
+    pub onsort: Callback<(String, Order)>,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq)]
@@ -35,7 +36,8 @@ pub enum Column {
 #[derive(Clone)]
 pub struct PackageEntry {
     url: Option<Url>,
-    package: PackageSummary,
+    package: SbomSummary,
+    link_advisories: bool,
 }
 
 impl PackageEntry {
@@ -67,13 +69,14 @@ impl TableEntryRenderer<Column> for PackageEntry {
             .into(),
             Column::Dependencies => html!(&self.package.dependencies).into(),
             Column::Advisories => match self.package.advisories_query() {
-                Some(query) => html!(
+                Some(query) if self.link_advisories => html!(
                     <Link<AppRoute>
-                        target={AppRoute::Advisory(View::Search{query})}
+                        target={AppRoute::Advisory(View::Search { query })}
                     >
                         { for self.package.advisories }
                     </Link<AppRoute>>
                 ),
+                Some(_) => html!({ for self.package.advisories }),
                 None => html!(),
             }
             .into(),
@@ -94,6 +97,9 @@ impl TableEntryRenderer<Column> for PackageEntry {
 #[function_component(SbomResult)]
 pub fn sbom_result(props: &SbomResultProperties) -> Html {
     let backend = use_backend();
+    let config = use_config();
+    let link_advisories = config.features.dedicated_search;
+
     let data = match &props.state {
         UseAsyncState::Ready(Ok(val)) => {
             let data: Vec<PackageEntry> = val
@@ -104,6 +110,7 @@ pub fn sbom_result(props: &SbomResultProperties) -> Html {
                     PackageEntry {
                         package: pkg.clone(),
                         url,
+                        link_advisories,
                     }
                 })
                 .collect();
@@ -118,7 +125,7 @@ pub fn sbom_result(props: &SbomResultProperties) -> Html {
         |val: TableHeaderSortBy<Column>, (sortby, onsort)| {
             sortby.set(Some(val));
             if val.index == Column::Created {
-                onsort.emit(("created".to_string(), val.asc));
+                onsort.emit(("created".to_string(), val.order));
             };
         },
     );

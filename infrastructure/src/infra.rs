@@ -8,7 +8,7 @@ use futures::future::select_all;
 use prometheus::{Registry, TextEncoder};
 use tokio::signal;
 
-use crate::tracing::init_tracing;
+use crate::tracing::{init_tracing, Tracing};
 
 use crate::health::{Checks, HealthChecks};
 #[cfg(unix)]
@@ -30,8 +30,8 @@ pub struct InfrastructureConfig {
     #[arg(long, env, default_value = "1")]
     pub infrastructure_workers: usize,
     /// Enable tracing
-    #[arg(long, env)]
-    pub enable_tracing: bool,
+    #[arg(long, env, default_value_t = Tracing::Disabled)]
+    pub tracing: Tracing,
 }
 
 impl Default for InfrastructureConfig {
@@ -40,7 +40,7 @@ impl Default for InfrastructureConfig {
             infrastructure_enabled: false,
             infrastructure_bind: DEFAULT_BIND_ADDR.into(),
             infrastructure_workers: 1,
-            enable_tracing: false,
+            tracing: Tracing::Disabled,
         }
     }
 }
@@ -207,7 +207,7 @@ impl Infrastructure {
         })
         .await?;
 
-        init_tracing(id, self.config.enable_tracing.into());
+        init_tracing(id, self.config.tracing);
         let main = Box::pin(main(MainContext {
             init_data,
             metrics: self.metrics.clone(),

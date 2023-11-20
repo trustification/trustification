@@ -4,7 +4,6 @@ use actix_web::{post, web, HttpResponse, Responder};
 use collector_client::CollectPackagesResponse;
 
 use collectorist_client::CollectPackagesRequest;
-use collectorist_client::CollectVulnerabilitiesRequest;
 
 use crate::state::AppState;
 
@@ -50,23 +49,4 @@ pub(crate) async fn collect_packages(
 
     let result = CollectPackagesResponse { purls, errors };
     Ok(HttpResponse::Ok().json(&result))
-}
-
-#[utoipa::path(
-    post,
-    tag = "collectorist",
-    path = "/api/v1/vulnerabilities",
-    responses(
-        (status = 200, description = "Vulnerabilities gathered"),
-        (status = BAD_REQUEST, description = "Malformed input"),
-    ),
-)]
-#[post("/vulnerabilities")]
-pub(crate) async fn collect_vulnerabilities(
-    state: web::Data<AppState>,
-    input: web::Json<CollectVulnerabilitiesRequest>,
-) -> actix_web::Result<impl Responder> {
-    let request = input.into_inner();
-    state.coordinator.collect_vulnerabilities(&state, request).await;
-    Ok(HttpResponse::Ok().finish())
 }

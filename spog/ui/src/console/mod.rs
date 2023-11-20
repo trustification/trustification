@@ -32,14 +32,12 @@ fn brand() -> Html {
     html! (
         <MastheadBrand>
             <patternfly_yew::prelude::Brand
-                src={src.clone()}
+                {src}
                 alt="Logo"
                 style={r#"
                     --pf-v5-c-brand--Height: var(--pf-v5-c-page__header-brand-link--c-brand--MaxHeight);
                 "#}
-            >
-                <BrandSource srcset={src} />
-            </patternfly_yew::prelude::Brand>
+            />
         </MastheadBrand>
     )
 }
@@ -61,7 +59,7 @@ fn authenticated_page(props: &ChildrenProperties) -> Html {
                             <NavRouterItem<AppRoute> to={AppRoute::Advisory(Default::default())} predicate={AppRoute::is_advisory}>{ "Advisories" }</NavRouterItem<AppRoute>>
                             <NavRouterItem<AppRoute> to={AppRoute::Sbom(Default::default())} predicate={AppRoute::is_sbom}>{ "SBOMs" }</NavRouterItem<AppRoute>>
                             <NavRouterItem<AppRoute> to={AppRoute::Cve(Default::default())} predicate={AppRoute::is_cve}>{ "CVEs" }</NavRouterItem<AppRoute>>
-                            <NavRouterItem<AppRoute> to={AppRoute::Package{id: Default::default()}} predicate={AppRoute::is_package}>{ "Packages" }</NavRouterItem<AppRoute>>
+                            <NavRouterItem<AppRoute> to={AppRoute::Packages(Default::default())} predicate={AppRoute::is_package}>{ "Packages" }</NavRouterItem<AppRoute>>
                         </NavExpandable>
                     } else {
                         <NavRouterItem<AppRoute> to={AppRoute::Search{terms: String::new()}}>{ "Search" }</NavRouterItem<AppRoute>>
@@ -139,7 +137,7 @@ fn authenticated_page(props: &ChildrenProperties) -> Html {
                         {
                             for config.global.support_case_url.as_ref().map(|_url| html_nested!(
                                 <MenuAction onclick={open_support_case_page} >
-                                    {"Open a support case"}
+                                    { config.global.support_case_label.clone()  }
                                 </MenuAction>
                             ))
                         }
@@ -216,24 +214,33 @@ fn render(route: AppRoute, config: &spog_model::config::Configuration) -> Html {
         AppRoute::Sbom(View::Search { query }) if config.features.dedicated_search => {
             html!(<pages::Sbom {query} />)
         }
-        AppRoute::Sbom(View::Content { id }) if config.features.dedicated_search => html!(<pages::SBOM {id} />),
+        AppRoute::Sbom(View::Content { id }) => html!(<pages::SBOM {id} />),
         AppRoute::SbomReport { id } => html!(<pages::SbomReport {id} />),
         AppRoute::Advisory(View::Search { query }) if config.features.dedicated_search => {
             html!(<pages::Advisory {query} />)
         }
-        AppRoute::Advisory(View::Content { id }) if config.features.dedicated_search => html!(<pages::VEX {id} />),
+        AppRoute::Advisory(View::Content { id }) => html!(<pages::VEX {id} />),
         AppRoute::Cve(View::Search { query }) if config.features.dedicated_search => {
             html!(<pages::CveSearchPage {query} />)
         }
-        AppRoute::Cve(View::Content { id }) if config.features.dedicated_search => {
+        AppRoute::Cve(View::Content { id }) => {
             html!(<pages::Cve {id} />)
         }
-        AppRoute::Package { id } if config.features.dedicated_search => {
+
+        AppRoute::Packages(View::Search { query }) if config.features.dedicated_search => {
+            html!(<pages::PackageSearchPage {query} />)
+        }
+
+        AppRoute::Packages(View::Content { id }) => {
+            html!(<pages::Packages {id} />)
+        }
+
+        AppRoute::Package { id } => {
             let id = match id.is_empty() {
                 true => None,
                 false => Some(id),
             };
-            html!(<pages::Package {id} />)
+            html!(<pages::Packages {id} />)
         }
 
         _ => html!(<pages::NotFound />),

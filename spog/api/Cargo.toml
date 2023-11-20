@@ -10,24 +10,25 @@ description = "An API server for trusted content"
 actix = "*"
 actix-rt = "*"
 actix-web = "4"
-actix-web-httpauth = "0.8"
 actix-web-extras = "0.1"
+actix-web-httpauth = "0.8"
 actix-ws = "*"
 anyhow = "1"
 async-trait = "0.1.73"
-derive_more = "0.99"
 bytes = "1"
 chrono = "0.4.23"
 clap = { version = "4.0.29", features = ["derive"] }
 csaf = "0.5"
 cve = "0.2"
 cvss = "2"
+derive_more = "0.99"
 env_logger = "0.10"
 futures = "0.3"
 guac = { workspace = true }
 http = "*"
 log = "0.4"
 mime = "0.3.16"
+names = "0.14.0"
 okapi = "0.7.0-rc.1"
 packageurl = { version = "0.3", features = ["serde"] }
 prometheus = "0.13.3"
@@ -39,13 +40,14 @@ serde_yaml = "0.9"
 snyk = { git = "https://github.com/dejanb/snyk-rs.git", branch = "main" }
 spdx-rs = "0.5.5"
 thiserror = "1"
-tracing = "0.1"
 tokio = { version = "*", features = ["rt", "fs", "macros", "rt-multi-thread"] }
-uuid = { version = "1", features = ["v4"] }
+tracing = "0.1"
 url = "2"
 urlencoding = "2.1.2"
-utoipa = { version = "3", features = ["actix_extras"] }
-utoipa-swagger-ui = { version = "3", features = ["actix-web"] }
+utoipa = { version = "4", features = ["actix_extras", "yaml", "time"] }
+utoipa-swagger-ui = { version = "4", features = ["actix-web"] }
+uuid = { version = "1", features = ["v4"] }
+v11y-model = { path = "../../v11y/model" }
 zstd = "0.12"
 
 spog-model = { path = "../model" }

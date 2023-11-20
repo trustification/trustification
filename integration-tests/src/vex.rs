@@ -1,6 +1,7 @@
 use super::*;
 use crate::{config::Config, runner::Runner};
 use async_trait::async_trait;
+use bytesize::ByteSize;
 use test_context::AsyncTestContext;
 use trustification_indexer::ReindexMode;
 use trustification_storage::validator::Validator;
@@ -165,11 +166,11 @@ fn vexination_indexer() -> vexination_indexer::Run {
             infrastructure_enabled: false,
             infrastructure_bind: "127.0.0.1".into(),
             infrastructure_workers: 1,
-            enable_tracing: false,
+            tracing: Default::default(),
         },
         index: IndexConfig {
             index_dir: None,
-            index_writer_memory_bytes: 32 * 1024 * 1024,
+            index_writer_memory_bytes: bytesize::ByteSize::mb(64),
             mode: Default::default(),
             sync_interval: Duration::from_secs(2).into(),
         },
@@ -183,7 +184,7 @@ fn vexination_api() -> vexination_api::Run {
         devmode: false,
         index: IndexConfig {
             index_dir: None,
-            index_writer_memory_bytes: 32 * 1024 * 1024,
+            index_writer_memory_bytes: bytesize::ByteSize::mb(64),
             mode: Default::default(),
             sync_interval: Duration::from_secs(2).into(),
         },
@@ -202,10 +203,11 @@ fn vexination_api() -> vexination_api::Run {
             infrastructure_enabled: false,
             infrastructure_bind: "127.0.0.1".into(),
             infrastructure_workers: 1,
-            enable_tracing: false,
+            tracing: Default::default(),
         },
         auth: testing_auth(),
         swagger_ui_oidc: testing_swagger_ui_oidc(),
         http: Default::default(),
+        publish_limit: ByteSize::mib(64).into(),
     }
 }

@@ -4,10 +4,7 @@ mod search;
 pub use details::*;
 pub use search::*;
 
-use crate::{
-    common::CardWrapper, cvss::CvssMap, download::Download, markdown::Markdown, severity::Severity,
-    table_wrapper::TableWrapper,
-};
+use crate::{common::CardWrapper, cvss::CvssMap, download::Download, severity::Severity, table_wrapper::TableWrapper};
 use csaf::{
     definitions::{Branch, Note, NoteCategory, ProductIdT, Reference, ReferenceCategory},
     document::{PublisherCategory, Status},
@@ -18,9 +15,12 @@ use csaf::{
 use patternfly_yew::prelude::*;
 use spog_model::prelude::*;
 use spog_ui_backend::{use_backend, Endpoint};
-use spog_ui_common::utils::{
-    csaf::{find_product_relations, has_product, trace_product},
-    time::date,
+use spog_ui_common::{
+    components::Markdown,
+    utils::{
+        csaf::{find_product_relations, has_product, trace_product},
+        time::date,
+    },
 };
 use spog_ui_navigation::{AppRoute, View};
 use std::borrow::Cow;
@@ -41,7 +41,7 @@ pub struct AdvisoryEntry {
 #[derive(PartialEq, Properties)]
 pub struct AdvisoryResultProperties {
     pub state: UseAsyncState<SearchResult<Rc<Vec<AdvisorySummary>>>, String>,
-    pub onsort: Callback<(String, bool)>,
+    pub onsort: Callback<(String, Order)>,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq)]
@@ -120,7 +120,7 @@ pub fn advisory_result(props: &AdvisoryResultProperties) -> Html {
         |val: TableHeaderSortBy<Column>, (sortby, onsort)| {
             sortby.set(Some(val));
             if val.index == Column::Severity {
-                onsort.emit(("severity".to_string(), val.asc));
+                onsort.emit(("severity".to_string(), val.order));
             };
         },
     );
@@ -213,7 +213,7 @@ pub fn csaf_references(props: &CsafReferencesProperties) -> Html {
             if let Some(references) = &props.references {
                 <List>
                     { for references.iter().map(|reference| {
-                        html! ( <>
+                        html_nested! ( <ListItem>
                             <a class="pf-v5-c-button pf-m-link" href={reference.url.to_string()} target="_blank">
                                 { &reference.summary }
                                 <span class="pf-v5-c-button__icon pf-m-end">
@@ -223,7 +223,7 @@ pub fn csaf_references(props: &CsafReferencesProperties) -> Html {
                             if let Some(category) = &reference.category {
                                 <Label compact=true label={ref_cat_str(category)} color={Color::Blue} />
                             }
-                        </>)
+                        </ListItem>)
                     }) }
                 </List>
             }
@@ -321,25 +321,33 @@ pub struct CsafProductStatusSectionProperties {
 
 #[function_component(CsafProductStatusSection)]
 fn csaf_product_status(props: &CsafProductStatusSectionProperties) -> Html {
+    let entries = use_memo(props.entries.clone(), |entries| {
+        entries.as_ref().map(|entries| {
+            let entries = match props.overview {
+                false => entries
+                    .iter()
+                    .map(|entry| csaf_product_status_entry_details(&props.csaf, entry))
+                    .collect::<Vec<_>>(),
+                true => csaf_product_status_entry_overview(&props.csaf, entries),
+            };
+
+            entries
+                .into_iter()
+                .map(|i| html_nested!(<ListItem> {i} </ListItem>))
+                .collect::<Vec<_>>()
+        })
+    });
+
     html!(
-        if let Some(entries) = &props.entries {
+        if let Some(entries) = &*entries {
             <DescriptionGroup term={&props.title}>
-                <List>
-                    {
-                        match props.overview {
-                            false => entries.iter().map(|entry| {
-                                    csaf_product_status_entry_details(&props.csaf, entry)
-                                }).collect::<Vec<_>>(),
-                            true => csaf_product_status_entry_overview(&props.csaf, entries),
-                        }
-                    }
-                </List>
+                { entries }
             </DescriptionGroup>
         }
     )
 }
 
-#[derive(Debug, Eq, PartialEq, Hash)]
+#[derive(Debug, Eq, PartialEq, Hash, Ord, PartialOrd)]
 enum Product<'a> {
     Known(&'a str),
     Invalid(&'a str),
@@ -373,13 +381,23 @@ fn csaf_resolve_aggregated_products<'a>(csaf: &'a Csaf, entries: &'a [ProductIdT
 fn csaf_product_status_entry_overview(csaf: &Csaf, entries: &[ProductIdT]) -> Vec<Html> {
     let products = csaf_resolve_aggregated_products(csaf, entries);
 
+    let mut products = products
+        .into_iter()
+        .flat_map(|product| match product {
+            Product::Known(id) => trace_product(csaf, id).pop().map(|branch| Product::Known(&branch.name)),
+            Product::Invalid(id) => Some(Product::Invalid(id)),
+        })
+        .collect::<Vec<_>>();
+
+    products.sort_unstable();
+    products.dedup();
+
     // render out first segment of those products
     products
         .into_iter()
         .map(|product| match product {
             Product::Known(id) => {
-                let mut prod = trace_product(csaf, id);
-                html!({ for prod.pop().map(|branch| Html::from(&branch.name)) })
+                html!({ id })
             }
             Product::Invalid(id) => render_invalid_product(id),
         })

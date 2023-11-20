@@ -1,0 +1,42 @@
+{{- if (and .Values.guac.enabled .Values.guac.database.enabled ) }}
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: pre-install-guac-config
+  labels:
+    app.kubernetes.io/name: pre-install-guac-config
+    app.kubernetes.io/component: guac
+    app.kubernetes.io/part-of: guac
+data:
+  init.sql: |
+    -- ensure we have the database
+    SELECT 'CREATE DATABASE ' || :'db_name'
+    WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = :'db_name')\gexec
+    
+    -- create the user (if it exists)
+    DO
+    $do$
+    BEGIN
+      IF EXISTS (
+        SELECT FROM pg_catalog.pg_roles
+        WHERE rolname = :'db_user') THEN
+          RAISE NOTICE 'Role "' || :'db_user' || '" already exists. Skipping.';
+      ELSE
+        BEGIN   -- nested block
+          CREATE ROLE :db_user LOGIN;
+        EXCEPTION
+          WHEN duplicate_object THEN
+            RAISE NOTICE 'Role "' || :'db_user' || '" was just created by a concurrent transaction. Skipping.';
+        END;
+      END IF;
+    END
+    $do$;
+    
+    -- now set the password
+    ALTER USER :db_user WITH PASSWORD :'db_password';
+    
+    -- grant permissions
+    GRANT CONNECT ON DATABASE :db_name TO :db_user;
+    GRANT USAGE, CREATE ON SCHEMA public TO :db_user;
+    GRANT UPDATE, INSERT, SELECT, DELETE ON ALL TABLES IN SCHEMA public TO :db_user;
+{{ end }}

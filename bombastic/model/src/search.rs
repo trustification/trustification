@@ -3,9 +3,11 @@ use sikula::prelude::*;
 
 #[derive(Clone, Debug, PartialEq, Search)]
 pub enum Packages<'a> {
-    /// Search by SBOM id
+    /// Search by SBOM id (the storage ID)
     #[search(default)]
     Id(&'a str),
+    /// Search by SBOM uid (the actual ID)
+    Uid(&'a str),
     /// Search package name and package reference.
     ///
     /// Example queries:
@@ -53,8 +55,10 @@ pub enum Packages<'a> {
 /// A document returned from the search index for every match.
 #[derive(serde::Deserialize, serde::Serialize, Debug, PartialEq, utoipa::ToSchema)]
 pub struct SearchDocument {
-    /// SBOM identifier
+    /// SBOM (storage) identifier
     pub id: String,
+    /// SBOM unique identifier
+    pub uid: Option<String>,
     /// SBOM package name
     pub name: String,
     /// SBOM package version
@@ -63,6 +67,8 @@ pub struct SearchDocument {
     pub cpe: Option<String>,
     /// SBOM package URL
     pub purl: Option<String>,
+    /// SHA256 of the full file, as stored
+    pub file_sha256: String,
     /// SBOM SHA256 digest
     pub sha256: String,
     /// SBOM license

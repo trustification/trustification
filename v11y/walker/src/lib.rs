@@ -1,10 +1,13 @@
 use prometheus::Registry;
+use std::collections::HashSet;
 use std::ffi::OsStr;
 use std::path::PathBuf;
 use std::process::ExitCode;
 use trustification_infrastructure::{Infrastructure, InfrastructureConfig};
 use trustification_storage::{Storage, StorageConfig};
 use walkdir::WalkDir;
+
+mod delta;
 
 #[derive(clap::Args, Debug)]
 #[command(about = "Run the walker", args_conflicts_with_subcommands = true)]
@@ -20,6 +23,10 @@ pub struct Run {
 
     #[command(flatten)]
     pub infra: InfrastructureConfig,
+
+    /// A file to read/store the last delta.
+    #[arg(long = "delta-file")]
+    pub delta_file: Option<PathBuf>,
 }
 
 impl Run {
@@ -31,10 +38,42 @@ impl Run {
                 |_context| async move {
                     let storage = Storage::new(self.storage.process("v11y", self.devmode), &Registry::new())?;
 
-                    let walker = WalkDir::new(&self.source).follow_links(true).contents_first(true);
-
                     let mut files = vec![];
+                    let mut filter = HashSet::new();
 
+                    let mut last_delta = None;
+                    let delta_file = self.source.join("cves").join("delta.json");
+                    if let Some(last_delta_file) = &self.delta_file {
+                        if last_delta_file.exists() {
+                            let delta: delta::Delta = serde_json::from_reader(std::fs::File::open(last_delta_file)?)?;
+                            last_delta.replace(delta);
+                        }
+                        let log_file = self.source.join("cves").join("deltaLog.json");
+                        if log_file.exists() && delta_file.exists() {
+                            let delta_log: delta::DeltaLog = serde_json::from_reader(std::fs::File::open(&log_file)?)?;
+                            let last_delta = last_delta
+                                .as_ref()
+                                .map(|d| d.fetch_time)
+                                .unwrap_or(time::OffsetDateTime::UNIX_EPOCH);
+                            log::info!("Last delta: {:?}", last_delta);
+                            delta_log
+                                .iter()
+                                .filter(|delta| delta.number_of_changes > 0 && delta.fetch_time > last_delta)
+                                .for_each(|delta| {
+                                    log::trace!("Found newer delta: {:?}", delta);
+                                    for new in delta.new.iter() {
+                                        filter.insert(new.cve_id.clone());
+                                    }
+                                    for updated in delta.updated.iter() {
+                                        filter.insert(updated.cve_id.clone());
+                                    }
+                                });
+                        }
+                    }
+
+                    log::info!("Filters: {:?}", filter.len());
+
+                    let walker = WalkDir::new(&self.source).follow_links(true).contents_first(true);
                     for entry in walker {
                         let entry = entry?;
 
@@ -56,7 +95,9 @@ impl Run {
                         }
 
                         if let Some(key) = name.strip_suffix(".json") {
-                            files.push((key.to_string(), entry.path().to_path_buf()));
+                            if last_delta.is_none() || filter.contains(&key.to_string()) {
+                                files.push((key.to_string(), entry.path().to_path_buf()));
+                            }
                         }
                     }
 
@@ -84,6 +125,9 @@ impl Run {
                     }
 
                     log::info!("Processed {} files", files.len());
+                    if let Some(last_delta_file) = &self.delta_file {
+                        std::fs::copy(delta_file, last_delta_file)?;
+                    }
                     Ok(())
                 },
             )

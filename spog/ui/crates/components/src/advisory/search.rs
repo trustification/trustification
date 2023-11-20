@@ -16,7 +16,7 @@ use yew_more_hooks::prelude::*;
 
 #[derive(PartialEq, Properties)]
 pub struct AdvisorySearchControlsProperties {
-    pub search_params: UseReducerHandle<SearchMode<DynamicSearchParameters>>,
+    pub search_params: UseReducerHandle<SearchState<DynamicSearchParameters>>,
 }
 
 #[function_component(AdvisorySearchControls)]
@@ -39,7 +39,7 @@ pub fn advisory_search_controls(props: &AdvisorySearchControlsProperties) -> Htm
 
 #[hook]
 pub fn use_advisory_search(
-    search_params: UseReducerHandle<SearchMode<DynamicSearchParameters>>,
+    search_params: UseReducerHandle<SearchState<DynamicSearchParameters>>,
     pagination: UsePagination,
     callback: Callback<UseAsyncHandleDeps<SearchResult<Rc<Vec<AdvisorySummary>>>, String>>,
 ) -> UseStandardSearch {
@@ -78,7 +78,7 @@ pub struct AdvisorySearchProperties {
 #[derive(Clone, Debug, Default, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
 struct PageState {
     pagination: PaginationControl,
-    search_params: SearchMode<DynamicSearchParameters>,
+    search_params: HistorySearchState<DynamicSearchParameters>,
 }
 
 #[function_component(AdvisorySearch)]
@@ -87,11 +87,12 @@ pub fn advisory_search(props: &AdvisorySearchProperties) -> Html {
         search_params: match props.query.as_ref().filter(|s| !s.is_empty()) {
             Some(terms) => SearchMode::Complex(terms.clone()),
             None => Default::default(),
-        },
+        }
+        .into(),
         ..Default::default()
     });
 
-    let search_params = use_reducer_eq(|| page_state.search_params.clone());
+    let search_params = use_reducer_eq(|| SearchState::from(page_state.search_params.clone()));
     let total = use_state_eq(|| None);
     let pagination = use_pagination(*total, || page_state.pagination);
     let state = use_state_eq(UseAsyncState::default);
@@ -106,7 +107,7 @@ pub fn advisory_search(props: &AdvisorySearchProperties) -> Html {
     total.set(state.data().and_then(|d| d.total));
 
     let onsort = {
-        use_callback(search_params.clone(), move |sort_by: (String, bool), search_params| {
+        use_callback(search_params.clone(), move |sort_by: (String, Order), search_params| {
             search_params.dispatch(SearchModeAction::SetSimpleSort(sort_by));
         })
     };
@@ -117,7 +118,7 @@ pub fn advisory_search(props: &AdvisorySearchProperties) -> Html {
         page_state,
         PageState {
             pagination: **pagination,
-            search_params: (*search_params).clone(),
+            search_params: (*search_params).clone().into(),
         },
     );
 

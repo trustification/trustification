@@ -7,9 +7,10 @@ use std::sync::Arc;
 use tokio::sync::mpsc::Receiver;
 use tokio::sync::mpsc::Sender;
 use tokio::task::block_in_place;
+use tokio::time::Instant;
 use tokio::{select, sync::Mutex};
 use trustification_event_bus::{Error as BusError, EventBus};
-use trustification_index::{Index, IndexStore, IndexWriter};
+use trustification_index::{IndexStore, IndexWriter, WriteIndex};
 use trustification_storage::ContinuationToken;
 use trustification_storage::{EventType, Storage};
 
@@ -47,12 +48,12 @@ impl fmt::Display for ReindexMode {
     }
 }
 
-pub struct Indexer<'a, INDEX: Index> {
+pub struct Indexer<'a, DOC> {
     pub stored_topic: &'a str,
     pub indexed_topic: &'a str,
     pub failed_topic: &'a str,
     pub sync_interval: Duration,
-    pub index: IndexStore<INDEX>,
+    pub indexes: Vec<IndexStore<Box<dyn WriteIndex<Document = DOC>>>>,
     pub storage: Storage,
     pub bus: EventBus,
     pub status: Arc<Mutex<IndexerStatus>>,
@@ -61,20 +62,32 @@ pub struct Indexer<'a, INDEX: Index> {
     pub reindex: ReindexMode,
 }
 
-impl<'a, INDEX: Index> Indexer<'a, INDEX> {
+impl<'a, DOC> Indexer<'a, DOC> {
     pub async fn run(&mut self) -> Result<(), anyhow::Error> {
-        // Load initial index from storage.
-        if let Err(e) = self.index.sync(&self.storage).await {
-            log::info!("Error loading initial index: {:?}", e);
-            if self.reindex == ReindexMode::OnFailure || self.reindex == ReindexMode::Always {
+        // Load initial indexes from storage.
+        if self.reindex == ReindexMode::Always {
+            self.command_sender.send(IndexerCommand::Reindex).await?;
+        } else {
+            let mut failed = false;
+            for index in &self.indexes {
+                if let Err(e) = index.sync(&self.storage).await {
+                    log::info!("Error loading initial index: {:?}", e);
+                    if self.reindex == ReindexMode::OnFailure {
+                        failed = true;
+                    }
+                }
+            }
+
+            if (failed && self.reindex == ReindexMode::OnFailure) || self.reindex == ReindexMode::Always {
                 self.command_sender.send(IndexerCommand::Reindex).await?;
             }
-        } else if self.reindex == ReindexMode::Always {
-            self.command_sender.send(IndexerCommand::Reindex).await?;
         }
 
         let mut interval = tokio::time::interval(self.sync_interval);
-        let mut writer = Some(block_in_place(|| self.index.writer())?);
+        let mut writers = Vec::new();
+        for index in &mut self.indexes {
+            writers.push(block_in_place(|| index.writer())?);
+        }
         let consumer = self.bus.subscribe("indexer", &[self.stored_topic]).await?;
         let mut processed_events = Vec::new();
         let mut indexed_events = Vec::new();
@@ -87,25 +100,31 @@ impl<'a, INDEX: Index> Indexer<'a, INDEX> {
             select! {
                 command = self.commands.recv() => {
                     if let Some(IndexerCommand::Reindex) = command {
-                        self.index.reset()?;
+                        for index in &mut self.indexes {
+                            index.reset()?;
+                        }
                         log::info!("Reindexing all documents");
                         const MAX_RETRIES: usize = 3;
                         let mut retries = MAX_RETRIES;
                         let mut token = ContinuationToken::default();
                         loop {
                             retries -= 1;
-                            match self.reindex(&mut writer, token).await {
+                            match self.reindex(&mut writers, token).await {
                                 Ok(_) => {
                                     log::info!("Reindexing finished");
-                                    match self.index.snapshot(writer.take().unwrap(), &self.storage, true).await {
-                                        Ok(_) => {
-                                            log::info!("Reindexed index published");
-                                        }
-                                        Err(e) => {
-                                            log::warn!("(Ignored) Error publishing index: {:?}", e);
+                                    for (index, writer) in self.indexes.iter_mut().zip(writers.drain(..)) {
+                                        match index.snapshot(writer, &self.storage, true).await {
+                                            Ok(_) => {
+                                                log::info!("Reindexed index published");
+                                            }
+                                            Err(e) => {
+                                                log::warn!("(Ignored) Error publishing index: {:?}", e);
+                                            }
                                         }
                                     }
-                                    writer.replace(block_in_place(|| self.index.writer())?);
+                                    for index in self.indexes.iter_mut() {
+                                        writers.push(block_in_place(|| index.writer())?);
+                                    }
                                     *self.status.lock().await = IndexerStatus::Running;
                                     break;
                                 }
@@ -137,8 +156,10 @@ impl<'a, INDEX: Index> Indexer<'a, INDEX> {
                                             EventType::Put => {
                                                 match self.storage.get_for_event(&data, true).await {
                                                     Ok(res) => {
-                                                        if let Err(e) = self.index_doc(self.index.index(), writer.as_mut().unwrap(), &res.key, &res.data).await {
-                                                            log::warn!("(Ignored) Internal error when indexing {}: {:?}", res.key, e);
+                                                        for (index, writer) in self.indexes.iter().zip(writers.iter_mut()) {
+                                                            if let Err(e) = self.index_doc(index.index(), writer, &res.key, &res.data).await {
+                                                                log::warn!("(Ignored) Internal error when indexing {}: {:?}", res.key, e);
+                                                            }
                                                         }
                                                         events += 1;
                                                         indexed += 1;
@@ -150,7 +171,9 @@ impl<'a, INDEX: Index> Indexer<'a, INDEX> {
                                             },
                                             EventType::Delete => {
                                                 let (_, key) = Storage::key_from_event(&data)?;
-                                                block_in_place(|| writer.as_mut().unwrap().delete_document(self.index.index(), key.as_str()));
+                                                for (index, writer) in self.indexes.iter().zip(writers.iter_mut()) {
+                                                    block_in_place(|| writer.delete_document(index.index(), key.as_str()));
+                                                }
                                                 log::info!("Deleted entry '{key}' from index");
                                                 events += 1;
                                             }
@@ -184,7 +207,15 @@ impl<'a, INDEX: Index> Indexer<'a, INDEX> {
                 },
                 _ = tick => {
                     log::trace!("{} new events added, pushing new index to storage", events);
-                    match self.index.snapshot(writer.take().unwrap(), &self.storage, events > 0).await {
+                    let mut result = Ok(());
+                    for (index, writer) in self.indexes.iter_mut().zip(writers.drain(..)) {
+                        if let Err(e) = index.snapshot(writer, &self.storage, events > 0).await {
+                            result = Err(e);
+                            break;
+                        }
+                    }
+
+                    match result {
                         Ok(_) => {
                             log::trace!("Index updated successfully");
                             match consumer.commit(&processed_events[..]).await {
@@ -210,7 +241,9 @@ impl<'a, INDEX: Index> Indexer<'a, INDEX> {
                             log::warn!("Error taking index snapshot: {:?}", e);
                         }
                     }
-                    writer.replace(block_in_place(|| self.index.writer())?);
+                    for index in self.indexes.iter_mut() {
+                        writers.push(block_in_place(|| index.writer())?);
+                    }
                 }
             }
         }
@@ -218,7 +251,7 @@ impl<'a, INDEX: Index> Indexer<'a, INDEX> {
 
     async fn reindex(
         &mut self,
-        writer: &mut Option<IndexWriter>,
+        writers: &mut Vec<IndexWriter>,
         resume_token: ContinuationToken,
     ) -> Result<(), (IndexerError, ContinuationToken)> {
         let mut progress = 0;
@@ -226,7 +259,7 @@ impl<'a, INDEX: Index> Indexer<'a, INDEX> {
         let objects = self.storage.list_objects_from(resume_token.clone());
         pin_mut!(objects);
 
-        let mut interval = tokio::time::interval(self.sync_interval);
+        let mut interval = tokio::time::interval_at(Instant::now() + self.sync_interval, self.sync_interval);
 
         loop {
             let tick = interval.tick();
@@ -238,12 +271,13 @@ impl<'a, INDEX: Index> Indexer<'a, INDEX> {
                             let key = path.key();
                             log::info!("Reindexing {:?}", key);
                             // Not sending notifications for reindexing
-                            if let Err(e) = self.index_doc(self.index.index(), writer.as_mut().unwrap(), key, &obj).await {
-                                log::warn!("(Ignored) Internal error when indexing {}: {:?}", key, e);
-                            } else {
-                                progress += 1;
-                                *self.status.lock().await = IndexerStatus::Reindexing { progress };
+                            for (index, writer) in self.indexes.iter().zip(writers.iter_mut()) {
+                                if let Err(e) = self.index_doc(index.index(), writer, key, &obj).await {
+                                    log::warn!("(Ignored) Internal error when indexing {}: {:?}", key, e);
+                                }
                             }
+                            progress += 1;
+                            *self.status.lock().await = IndexerStatus::Reindexing { progress };
                         }
                         Some(Err((e, resume_token))) => {
                             log::warn!("Error reindexing: {:?}", e);
@@ -256,15 +290,21 @@ impl<'a, INDEX: Index> Indexer<'a, INDEX> {
                     }
                 }
                 _ = tick => {
-                    match self.index.commit(writer.take().unwrap()) {
-                        Ok(_) => {
-                            log::trace!("Index committed");
-                        }
-                        Err(e) => {
-                            log::warn!("(Ignored) Error committing index: {:?}", e);
+                    for (index, writer) in self.indexes.iter_mut().zip(writers.drain(..)) {
+                        match index.snapshot(writer, &self.storage, true).await {
+                            Ok(_) => {
+                                log::info!("Reindexed snapshot published");
+                            }
+                            Err(e) => {
+                                log::warn!("(Ignored) Error publishing index: {:?}", e);
+                            }
                         }
                     }
-                    writer.replace(block_in_place(|| self.index.writer()).map_err(|e| (e.into(), resume_token.clone()))?);
+
+
+                    for index in self.indexes.iter_mut() {
+                        writers.push(block_in_place(|| index.writer()).map_err(|e| (e.into(), resume_token.clone()))?);
+                    }
                 }
             }
         }
@@ -272,7 +312,7 @@ impl<'a, INDEX: Index> Indexer<'a, INDEX> {
 
     async fn index_doc(
         &self,
-        index: &INDEX,
+        index: &dyn WriteIndex<Document = DOC>,
         writer: &mut IndexWriter,
         key: &str,
         data: &[u8],

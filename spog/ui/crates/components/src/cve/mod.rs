@@ -22,7 +22,7 @@ pub struct CveEntry {
 #[derive(PartialEq, Properties)]
 pub struct CveResultProperties {
     pub state: UseAsyncState<SearchResult<Rc<Vec<CveSearchDocument>>>, String>,
-    pub onsort: Callback<(String, bool)>,
+    pub onsort: Callback<(String, Order)>,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq)]
@@ -43,6 +43,15 @@ impl TableEntryRenderer<Column> for CveEntry {
                 >{ self.cve.id.clone() }</Link<AppRoute>>
             ),
             Column::Description => html!( <>
+                if !self.cve.published {
+                    // means: rejected
+                    <i>
+                        { "Rejected" }
+                        if self.cve.title.is_some() {
+                            {": "}
+                        }
+                    </i>
+                }
                 if let Some(title) = &self.cve.title {
                     { title }
                 } else {
@@ -98,10 +107,10 @@ pub fn cve_result(props: &CveResultProperties) -> Html {
             sortby.set(Some(val));
             match &val.index {
                 Column::Severity => {
-                    onsort.emit(("score".to_string(), val.asc));
+                    onsort.emit(("score".to_string(), val.order));
                 }
                 Column::DatePublished => {
-                    onsort.emit(("datePublished".to_string(), val.asc));
+                    onsort.emit(("datePublished".to_string(), val.order));
                 }
                 _ => {}
             }
@@ -139,7 +148,7 @@ pub fn cve_result(props: &CveResultProperties) -> Html {
         }),
         yew::props!(TableColumnProperties<Column> {
              index: Column::Related,
-             label: "Related products",
+             label: "Related documents",
              width: ColumnWidth::Percent(10),
         }),
     ];

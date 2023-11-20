@@ -1,3 +1,14 @@
+mod analytics;
+mod app_state;
+mod config;
+mod endpoints;
+mod error;
+mod openapi;
+mod search;
+mod server;
+mod service;
+mod utils;
+
 use std::process::ExitCode;
 use std::{net::TcpListener, path::PathBuf};
 use trustification_analytics::AnalyticsConfig;
@@ -12,19 +23,8 @@ use trustification_infrastructure::{
 };
 use url::Url;
 
-mod advisory;
-mod analytics;
-mod analyze;
-mod config;
-mod cve;
-mod endpoints;
-mod error;
-mod guac;
-mod index;
-mod sbom;
-mod search;
-mod server;
-mod service;
+// export the API documentation
+pub use endpoints::ApiDoc;
 
 pub const DEFAULT_CRDA_PAYLOAD_LIMIT: usize = 10 * 1024 * 1024;
 

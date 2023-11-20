@@ -1,5 +1,6 @@
 use spog_ui_backend::Endpoints;
-use spog_ui_common::error::components::Error;
+use spog_ui_common::error::components::ApiError as ApiErrorComponent;
+use spog_ui_common::error::{ApiError, ApiErrorForStatus};
 use std::rc::Rc;
 use web_sys::RequestCache;
 use yew::prelude::*;
@@ -23,17 +24,15 @@ pub fn backend(props: &BackendProperties) -> Html {
             let response = gloo_net::http::Request::get("/endpoints/backend.json")
                 .cache(RequestCache::NoStore)
                 .send()
-                .await
-                .map_err(|err| format!("Failed to load backend information: {err}"))?;
+                .await?
+                .api_error_for_status()
+                .await?;
 
-            let endpoints: Endpoints = response
-                .json()
-                .await
-                .map_err(|err| format!("Failed to decode backend information: {err}"))?;
+            let endpoints: Endpoints = response.json().await?;
 
             log::info!("Found: {endpoints:?}");
 
-            Ok::<_, String>(spog_ui_backend::Backend { endpoints })
+            Ok::<_, ApiError>(spog_ui_backend::Backend { endpoints })
         },
         UseAsyncOptions::enable_auto(),
     );
@@ -41,7 +40,7 @@ pub fn backend(props: &BackendProperties) -> Html {
     match &*backend {
         UseAsyncState::Pending | UseAsyncState::Processing => html!(),
         UseAsyncState::Ready(Err(err)) => html!(
-            <Error err={err.clone()}/>
+            <ApiErrorComponent error={err.clone()}/>
         ),
         UseAsyncState::Ready(Ok(backend)) => html!(
             <ContextProvider<Rc<spog_ui_backend::Backend>> context={Rc::new(backend.clone())}>

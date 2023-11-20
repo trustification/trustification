@@ -1,11 +1,13 @@
 use crate::app::{new_app, AppOptions};
 use crate::endpoint::Endpoint;
+use crate::tracing::Tracing;
 use actix_cors::Cors;
 use actix_tls::{accept::openssl::reexports::SslAcceptor, connect::openssl::reexports::SslMethod};
 use actix_web::{
     web::{self, JsonConfig, ServiceConfig},
     HttpServer,
 };
+use actix_web_opentelemetry::RequestTracing;
 use actix_web_prom::{PrometheusMetrics, PrometheusMetricsBuilder};
 use anyhow::{anyhow, Context};
 use bytesize::ByteSize;
@@ -21,10 +23,28 @@ use std::str::FromStr;
 use std::sync::Arc;
 use trustification_auth::{authenticator::Authenticator, authorizer::Authorizer};
 
-const DEFAULT_ADDR: SocketAddr = SocketAddr::new(IpAddr::V6(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0x1)), 8080);
+const DEFAULT_ADDR: SocketAddr = SocketAddr::new(IpAddr::V6(Ipv6Addr::LOCALHOST), 8080);
 
 #[derive(Copy, Clone, Debug, PartialEq, PartialOrd, Eq, Ord, Hash, Default)]
 pub struct BinaryByteSize(pub ByteSize);
+
+impl From<ByteSize> for BinaryByteSize {
+    fn from(value: ByteSize) -> Self {
+        Self(value)
+    }
+}
+
+impl From<u64> for BinaryByteSize {
+    fn from(value: u64) -> Self {
+        Self(ByteSize(value))
+    }
+}
+
+impl From<usize> for BinaryByteSize {
+    fn from(value: usize) -> Self {
+        Self(ByteSize(value as u64))
+    }
+}
 
 impl Deref for BinaryByteSize {
     type Target = ByteSize;
@@ -280,6 +300,7 @@ pub struct HttpServerBuilder {
     workers: usize,
     json_limit: Option<usize>,
     request_limit: Option<usize>,
+    tracing: Tracing,
 }
 
 pub struct TlsConfiguration {
@@ -313,6 +334,7 @@ impl HttpServerBuilder {
             workers: 0,
             json_limit: None,
             request_limit: None,
+            tracing: Tracing::default(),
         }
     }
 
@@ -339,6 +361,11 @@ impl HttpServerBuilder {
 
     pub fn authorizer(mut self, authorizer: Authorizer) -> Self {
         self.authorizer = Some(authorizer);
+        self
+    }
+
+    pub fn tracing(mut self, tracing: Tracing) -> Self {
+        self.tracing = tracing;
         self
     }
 
@@ -405,6 +432,13 @@ impl HttpServerBuilder {
     pub async fn run(self) -> anyhow::Result<()> {
         let metrics = self.metrics_factory.as_ref().map(|factory| (factory)()).transpose()?;
 
+        if let Some(limit) = self.request_limit {
+            log::info!("JSON limit: {}", BinaryByteSize::from(limit));
+        }
+        if let Some(limit) = self.json_limit {
+            log::info!("Payload limit: {}", BinaryByteSize::from(limit));
+        }
+
         let mut http = HttpServer::new(move || {
             let config = self.configurator.clone();
 
@@ -415,11 +449,25 @@ impl HttpServerBuilder {
                 json = json.limit(limit);
             }
 
+            let (logger, tracing_logger) = match self.tracing {
+                Tracing::Disabled => (Some(actix_web::middleware::Logger::default()), None),
+                Tracing::Enabled => (None, Some(RequestTracing::default())),
+            };
+
+            log::debug!(
+                "Loggers ({}) - logger: {}, tracing: {}",
+                self.tracing,
+                logger.is_some(),
+                tracing_logger.is_some()
+            );
+
             let mut app = new_app(AppOptions {
                 cors,
                 metrics: metrics.clone(),
                 authenticator: self.authenticator.clone(),
                 authorizer: self.authorizer.clone().unwrap_or_else(|| Authorizer::new(None)),
+                logger,
+                tracing_logger,
             });
 
             // configure payload limit

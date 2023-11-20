@@ -4,7 +4,6 @@ use std::process::ExitCode;
 pub enum Command {
     Osv(collector_osv::Run),
     Snyk(collector_snyk::Run),
-    Nvd(collector_nvd::Run),
 }
 
 impl Command {
@@ -12,7 +11,6 @@ impl Command {
         match self {
             Self::Osv(run) => run.run().await,
             Self::Snyk(run) => run.run().await,
-            Self::Nvd(run) => run.run().await,
         }
     }
 }

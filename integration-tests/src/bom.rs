@@ -1,6 +1,7 @@
 use super::*;
 use crate::{config::Config, runner::Runner};
 use async_trait::async_trait;
+use bytesize::ByteSize;
 use reqwest::Url;
 use test_context::AsyncTestContext;
 use trustification_storage::validator::Validator;
@@ -137,13 +138,30 @@ impl BombasticContext {
     }
 }
 
-pub async fn wait_for_search_result<F: Fn(&serde_json::Value) -> bool>(
+pub async fn wait_for_package_search_result<F: Fn(&serde_json::Value) -> bool>(
     context: &mut BombasticContext,
     flags: &[(&str, &str)],
     check: F,
 ) -> serde_json::Value {
+    wait_for_search_result(context, flags, check, "/api/v1/package/search").await
+}
+
+pub async fn wait_for_sbom_search_result<F: Fn(&serde_json::Value) -> bool>(
+    context: &mut BombasticContext,
+    flags: &[(&str, &str)],
+    check: F,
+) -> serde_json::Value {
+    wait_for_search_result(context, flags, check, "/api/v1/sbom/search").await
+}
+
+async fn wait_for_search_result<F: Fn(&serde_json::Value) -> bool>(
+    context: &mut BombasticContext,
+    flags: &[(&str, &str)],
+    check: F,
+    path: &str,
+) -> serde_json::Value {
     loop {
-        let url = context.urlify("/api/v1/sbom/search");
+        let url = context.urlify(path);
         let response = reqwest::Client::new()
             .get(url)
             .query(flags)
@@ -172,7 +190,7 @@ fn bombastic_indexer() -> bombastic_indexer::Run {
         reindex: Default::default(),
         index: IndexConfig {
             index_dir: None,
-            index_writer_memory_bytes: 32 * 1024 * 1024,
+            index_writer_memory_bytes: bytesize::ByteSize::mb(64),
             mode: Default::default(),
             sync_interval: Duration::from_secs(2).into(),
         },
@@ -193,7 +211,7 @@ fn bombastic_indexer() -> bombastic_indexer::Run {
             infrastructure_enabled: false,
             infrastructure_bind: "127.0.0.1".into(),
             infrastructure_workers: 1,
-            enable_tracing: false,
+            tracing: Default::default(),
         },
     }
 }
@@ -204,7 +222,7 @@ fn bombastic_api() -> bombastic_api::Run {
         devmode: false,
         index: IndexConfig {
             index_dir: None,
-            index_writer_memory_bytes: 32 * 1024 * 1024,
+            index_writer_memory_bytes: bytesize::ByteSize::mb(64),
             mode: Default::default(),
             sync_interval: Duration::from_secs(2).into(),
         },
@@ -223,10 +241,11 @@ fn bombastic_api() -> bombastic_api::Run {
             infrastructure_enabled: false,
             infrastructure_bind: "127.0.0.1".into(),
             infrastructure_workers: 1,
-            enable_tracing: false,
+            tracing: Default::default(),
         },
         auth: testing_auth(),
         swagger_ui_oidc: testing_swagger_ui_oidc(),
         http: Default::default(),
+        publish_limit: ByteSize::mib(64).into(),
     }
 }

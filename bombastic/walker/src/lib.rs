@@ -1,6 +1,7 @@
 use crate::scanner::{Options, Scanner};
 use anyhow::anyhow;
 use clap::{arg, command, ArgAction, Args};
+use std::path::PathBuf;
 use std::process::ExitCode;
 use std::sync::Arc;
 use std::time::SystemTime;
@@ -55,9 +56,9 @@ pub struct Run {
     #[arg(long = "sink", env, default_value_t = endpoint::Bombastic::url())]
     pub sink: Url,
 
-    /// SBOMs source URL
+    /// SBOMs source URL or path
     #[arg(long, env)]
-    pub source: Option<Url>,
+    pub source: Option<String>,
 
     /// OIDC client
     #[command(flatten)]
@@ -65,6 +66,10 @@ pub struct Run {
 
     #[command(flatten)]
     pub infra: InfrastructureConfig,
+
+    /// A file to read/store the last sync timestamp to at the end of a successful run.
+    #[arg(long = "since-file")]
+    pub since_file: Option<PathBuf>,
 }
 
 impl Run {
@@ -75,9 +80,8 @@ impl Run {
                 |_context| async { Ok(()) },
                 |_| async move {
                     let source = self
-                        .devmode
-                        .then(|| Url::parse(DEVMODE_SOURCE).unwrap())
-                        .or(self.source)
+                        .source
+                        .or_else(|| self.devmode.then(|| DEVMODE_SOURCE.to_string()))
                         .ok_or_else(|| anyhow!("Missing source. Provider either --source <url> or --devmode"))?;
 
                     let keys = self
@@ -126,6 +130,7 @@ impl Run {
                         provider,
                         validation_date,
                         fix_licenses: self.fix_licenses,
+                        since_file: self.since_file,
                     });
 
                     if let Some(interval) = self.scan_interval {

@@ -1,3 +1,8 @@
+//! Trustification Index
+//!
+//! This crate provides a wrapper around the tantivy index for the trustification project.
+//!
+
 pub mod metadata;
 
 mod s3dir;
@@ -19,6 +24,7 @@ use std::{
 use trustification_api::search::SearchOptions;
 use trustification_storage::{Storage, StorageConfig};
 // Re-export to align versions
+use bytesize::ByteSize;
 use log::{debug, warn};
 use sha2::{Digest, Sha256};
 use sikula::lir::PartialOrdered;
@@ -26,14 +32,16 @@ use std::sync::RwLock;
 pub use tantivy;
 pub use tantivy::schema::Document;
 use tantivy::{
+    collector::TopDocs,
     directory::{MmapDirectory, INDEX_WRITER_LOCK},
     query::{AllQuery, BooleanQuery, BoostQuery, Occur, Query, RangeQuery, RegexQuery, TermQuery},
     schema::*,
     tokenizer::TokenizerManager,
-    DateTime, Directory, DocAddress, Index as SearchIndex, IndexSettings, Searcher,
+    DateTime, Directory, DocAddress, Index as SearchIndex, IndexSettings, Order, Searcher,
 };
 use time::{OffsetDateTime, UtcOffset};
 
+/// Configuration for the index.
 #[derive(Clone, Debug, clap::Parser)]
 #[command(rename_all_env = "SCREAMING_SNAKE_CASE")]
 pub struct IndexConfig {
@@ -45,9 +53,9 @@ pub struct IndexConfig {
     #[arg(env = "INDEX_SYNC_INTERVAL", long = "index-sync-interval", default_value = "30s")]
     pub sync_interval: humantime::Duration,
 
-    /// Memory available to index writer
-    #[arg(env = "INDEX_WRITER_MEMORY_BYTES", long = "index-writer-memory-bytes", default_value_t = 32 * 1024 * 1024)]
-    pub index_writer_memory_bytes: usize,
+    /// Memory available to index writerl
+    #[arg(env = "INDEX_WRITER_MEMORY_BYTES", long = "index-writer-memory-bytes", default_value_t = ByteSize::mb(256))]
+    pub index_writer_memory_bytes: ByteSize,
 
     /// Synchronization interval for index persistence.
     #[arg(env = "INDEX_MODE", long = "index-mode", default_value_t = IndexMode::File)]
@@ -87,35 +95,51 @@ struct Metrics {
 }
 
 impl Metrics {
-    fn register(registry: &Registry) -> Result<Self, Error> {
+    fn register(registry: &Registry, prefix: &str) -> Result<Self, Error> {
+        let prefix = prefix.replace('-', "_");
         let indexed_total = register_int_counter_with_registry!(
-            opts!("index_indexed_total", "Total number of indexing operations"),
+            opts!(
+                format!("{}_index_indexed_total", prefix),
+                "Total number of indexing operations"
+            ),
             registry
         )?;
 
         let failed_total = register_int_counter_with_registry!(
-            opts!("index_failed_total", "Total number of indexing operations failed"),
+            opts!(
+                format!("{}_index_failed_total", prefix),
+                "Total number of indexing operations failed"
+            ),
             registry
         )?;
 
         let queries_total = register_int_counter_with_registry!(
-            opts!("index_queries_total", "Total number of search queries"),
+            opts!(
+                format!("{}_index_queries_total", prefix),
+                "Total number of search queries"
+            ),
             registry
         )?;
 
         let snapshots_total = register_int_counter_with_registry!(
-            opts!("index_snapshots_total", "Total number of snapshots taken"),
+            opts!(
+                format!("{}_index_snapshots_total", prefix),
+                "Total number of snapshots taken"
+            ),
             registry
         )?;
 
         let index_size_disk_bytes = register_int_gauge_with_registry!(
-            opts!("index_size_disk_bytes", "Amount of bytes consumed by index on disk"),
+            opts!(
+                format!("{}_index_size_disk_bytes", prefix),
+                "Amount of bytes consumed by index on disk"
+            ),
             registry
         )?;
 
         let indexing_latency_seconds = register_histogram_with_registry!(
             histogram_opts!(
-                "index_indexing_latency_seconds",
+                format!("{}_index_indexing_latency_seconds", prefix),
                 "Indexing latency",
                 vec![0.0001, 0.001, 0.01, 0.1, 1.0, 10.0]
             ),
@@ -124,7 +148,7 @@ impl Metrics {
 
         let query_latency_seconds = register_histogram_with_registry!(
             histogram_opts!(
-                "index_query_latency_seconds",
+                format!("{}_index_query_latency_seconds", prefix),
                 "Search query latency",
                 vec![0.0001, 0.001, 0.01, 0.1, 1.0, 10.0]
             ),
@@ -143,7 +167,10 @@ impl Metrics {
     }
 }
 
-pub struct IndexStore<INDEX: Index> {
+/// A search index. This is a wrapper around the tantivy index that handles loading and storing of the index to object storage (via the local filesystem).
+///
+/// The index can be live-loaded and stored to/from object storage while serving queries.
+pub struct IndexStore<INDEX> {
     inner: RwLock<SearchIndex>,
     index_dir: Option<RwLock<IndexDirectory>>,
     index: INDEX,
@@ -151,37 +178,86 @@ pub struct IndexStore<INDEX: Index> {
     metrics: Metrics,
 }
 
-pub trait Index {
-    type MatchedDocument: core::fmt::Debug;
-    type Document;
-    type QueryContext: core::fmt::Debug;
+impl<DOC> WriteIndex for Box<dyn WriteIndex<Document = DOC>> {
+    type Document = DOC;
+    fn name(&self) -> &str {
+        self.as_ref().name()
+    }
 
+    fn parse_doc(&self, data: &[u8]) -> Result<Self::Document, Error> {
+        self.as_ref().parse_doc(data)
+    }
+
+    fn settings(&self) -> IndexSettings {
+        self.as_ref().settings()
+    }
+
+    fn schema(&self) -> Schema {
+        self.as_ref().schema()
+    }
+
+    fn index_doc(&self, id: &str, document: &Self::Document) -> Result<Vec<(String, Document)>, Error> {
+        self.as_ref().index_doc(id, document)
+    }
+
+    fn doc_id_to_term(&self, id: &str) -> Term {
+        self.as_ref().doc_id_to_term(id)
+    }
+
+    fn tokenizers(&self) -> Result<TokenizerManager, Error> {
+        self.as_ref().tokenizers()
+    }
+}
+
+/// Defines the interface for an index that can be written to.
+pub trait WriteIndex {
+    /// Input document type expected by the index.
+    type Document;
+    /// Name of the index. Must be unique across trait implementations.
+    fn name(&self) -> &str;
+    /// Tokenizers used by the index.
     fn tokenizers(&self) -> Result<TokenizerManager, Error> {
         Ok(TokenizerManager::default())
     }
-    fn parse_doc(data: &[u8]) -> Result<Self::Document, Error>;
+    /// Parse a document from a byte slice.
+    fn parse_doc(&self, data: &[u8]) -> Result<Self::Document, Error>;
+    /// Index settings required for this index.
     fn settings(&self) -> IndexSettings;
+    /// Schema required for this index.
     fn schema(&self) -> Schema;
-    fn prepare_query(&self, q: &str) -> Result<Self::QueryContext, Error>;
+    /// Process an input document and return a tantivy document to be added to the index.
+    fn index_doc(&self, id: &str, document: &Self::Document) -> Result<Vec<(String, Document)>, Error>;
+    /// Convert a document id to a term for referencing that document.
+    fn doc_id_to_term(&self, id: &str) -> Term;
+}
+
+/// Defines the interface for an index that can be searched.
+pub trait Index: WriteIndex {
+    /// Type of the matched document returned from a search.
+    type MatchedDocument: core::fmt::Debug;
+
+    /// Prepare a query for searching and return a query object.
+    fn prepare_query(&self, q: &str) -> Result<SearchQuery, Error>;
+    /// Search the index for a query and return a list of matched documents.
     fn search(
         &self,
         searcher: &Searcher,
-        query: &Self::QueryContext,
+        query: &dyn Query,
         offset: usize,
         limit: usize,
     ) -> Result<(Vec<(f32, DocAddress)>, usize), Error>;
+    /// Invoked for every matched document to process the document and return a result.
     fn process_hit(
         &self,
         doc: DocAddress,
         score: f32,
         searcher: &Searcher,
-        query: &Self::QueryContext,
+        query: &dyn Query,
         options: &SearchOptions,
     ) -> Result<Self::MatchedDocument, Error>;
-    fn index_doc(&self, id: &str, document: &Self::Document) -> Result<Document, Error>;
-    fn doc_id_to_term(&self, id: &str) -> Term;
 }
 
+/// Errors returned by the index.
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[error("error opening index {0}")]
@@ -190,6 +266,8 @@ pub enum Error {
     Snapshot,
     #[error("value for field {0} not found")]
     FieldNotFound(String),
+    #[error("field {0} cannot be sorted")]
+    NotSortable(String),
     #[error("operation cannot be done because index is not persisted")]
     NotPersisted,
     #[error("error parsing document {0}")]
@@ -226,39 +304,61 @@ impl From<trustification_storage::Error> for Error {
     }
 }
 
+/// A search query.
+#[derive(Debug)]
+pub struct SearchQuery {
+    /// The tantivy query to execute.
+    pub query: Box<dyn Query>,
+    /// A custom sort order to apply to the results.
+    pub sort_by: Option<(Field, Order)>,
+}
+
+/// A writer for an index that allows batching document writes before committing a batch.
+///
+/// Batching document writes can improve performance by reducing the number of commits to the index.
 pub struct IndexWriter {
     writer: tantivy::IndexWriter,
     metrics: Metrics,
 }
 
 impl IndexWriter {
-    pub fn add_document<INDEX: Index>(&mut self, index: &INDEX, id: &str, data: &[u8]) -> Result<(), Error> {
+    /// Add a document to the batch.
+    pub fn add_document<DOC>(
+        &mut self,
+        index: &dyn WriteIndex<Document = DOC>,
+        id: &str,
+        data: &[u8],
+    ) -> Result<(), Error> {
         self.add_document_with_id(index, data, id, |_| id.to_string())
     }
 
-    pub fn add_document_with_id<INDEX: Index, F>(
+    /// Add a document with a given identifier to the batch.
+    pub fn add_document_with_id<DOC, F>(
         &mut self,
-        index: &INDEX,
+        index: &dyn WriteIndex<Document = DOC>,
         data: &[u8],
         name: &str,
         id: F,
     ) -> Result<(), Error>
     where
-        F: FnOnce(&INDEX::Document) -> String,
+        F: FnOnce(&DOC) -> String,
     {
         let indexing_latency = self.metrics.indexing_latency_seconds.start_timer();
-        match INDEX::parse_doc(data) {
+        match index.parse_doc(data) {
             Ok(doc) => {
                 let id = &id(&doc);
-                let doc = index.index_doc(id, &doc).map_err(|e| {
+                let docs = index.index_doc(id, &doc).map_err(|e| {
                     self.metrics.failed_total.inc();
                     e
                 })?;
-                self.delete_document(index, id);
-                self.writer.add_document(doc).map_err(|e| {
-                    self.metrics.failed_total.inc();
-                    e
-                })?;
+                for (i, doc) in docs {
+                    self.delete_document(index, &i);
+                    self.writer.add_document(doc).map_err(|e| {
+                        self.metrics.failed_total.inc();
+                        e
+                    })?;
+                }
+
                 self.metrics.indexed_total.inc();
             }
             Err(e) => {
@@ -271,18 +371,21 @@ impl IndexWriter {
         Ok(())
     }
 
+    /// Commit the batch and consume the writer. May merge index segments.
     pub fn commit(mut self) -> Result<(), Error> {
         self.writer.commit()?;
         self.writer.wait_merging_threads()?;
         Ok(())
     }
 
-    pub fn delete_document<INDEX: Index>(&self, index: &INDEX, key: &str) {
+    /// Add a delete operation to the batch.
+    pub fn delete_document<DOC>(&self, index: &dyn WriteIndex<Document = DOC>, key: &str) {
         let term = index.doc_id_to_term(key);
         self.writer.delete_term(term);
     }
 }
 
+/// Represents state of the index on disk and managing index swaps.
 #[derive(Debug)]
 struct IndexDirectory {
     path: PathBuf,
@@ -430,7 +533,7 @@ impl IndexState {
     }
 }
 
-impl<INDEX: Index> IndexStore<INDEX> {
+impl<INDEX: WriteIndex> IndexStore<INDEX> {
     pub fn new_in_memory(index: INDEX) -> Result<Self, Error> {
         let schema = index.schema();
         let settings = index.settings();
@@ -440,12 +543,13 @@ impl<INDEX: Index> IndexStore<INDEX> {
             .settings(settings)
             .tokenizers(tokenizers);
         let inner = builder.create_in_ram()?;
+        let name = index.name().to_string();
         Ok(Self {
             inner: RwLock::new(inner),
             index,
             index_writer_memory_bytes: 32 * 1024 * 1024,
             index_dir: None,
-            metrics: Metrics::register(&Default::default())?,
+            metrics: Metrics::register(&Default::default(), &name)?,
         })
     }
 
@@ -457,11 +561,15 @@ impl<INDEX: Index> IndexStore<INDEX> {
     ) -> Result<Self, Error> {
         match config.mode {
             IndexMode::File => {
-                let path = config.index_dir.clone().unwrap_or_else(|| {
-                    use rand::RngCore;
-                    let r = rand::thread_rng().next_u32();
-                    std::env::temp_dir().join(format!("index.{}", r))
-                });
+                let path = config
+                    .index_dir
+                    .clone()
+                    .unwrap_or_else(|| {
+                        use rand::RngCore;
+                        let r = rand::thread_rng().next_u32();
+                        std::env::temp_dir().join(format!("index.{}", r))
+                    })
+                    .join(index.name());
 
                 let schema = index.schema();
                 let settings = index.settings();
@@ -469,12 +577,13 @@ impl<INDEX: Index> IndexStore<INDEX> {
 
                 let index_dir = IndexDirectory::new(&path)?;
                 let inner = index_dir.build(settings, schema, tokenizers)?;
+                let name = index.name().to_string();
                 Ok(Self {
                     inner: RwLock::new(inner),
-                    index_writer_memory_bytes: config.index_writer_memory_bytes,
+                    index_writer_memory_bytes: config.index_writer_memory_bytes.as_u64() as usize,
                     index_dir: Some(RwLock::new(index_dir)),
                     index,
-                    metrics: Metrics::register(metrics_registry)?,
+                    metrics: Metrics::register(metrics_registry, &name)?,
                 })
             }
             IndexMode::S3 => {
@@ -488,12 +597,13 @@ impl<INDEX: Index> IndexStore<INDEX> {
                     .tokenizers(tokenizers);
                 let dir = S3Directory::new(bucket);
                 let inner = builder.open_or_create(dir)?;
+                let name = index.name().to_string();
                 Ok(Self {
                     inner: RwLock::new(inner),
-                    index_writer_memory_bytes: config.index_writer_memory_bytes,
+                    index_writer_memory_bytes: config.index_writer_memory_bytes.as_u64() as usize,
                     index_dir: None,
                     index,
-                    metrics: Metrics::register(metrics_registry)?,
+                    metrics: Metrics::register(metrics_registry, &name)?,
                 })
             }
         }
@@ -512,7 +622,7 @@ impl<INDEX: Index> IndexStore<INDEX> {
     /// NOTE: Only applicable for file indices.
     pub async fn sync(&self, storage: &Storage) -> Result<(), Error> {
         if let Some(index_dir) = &self.index_dir {
-            let data = storage.get_index().await?;
+            let data = storage.get_index(self.index.name()).await?;
             let mut index_dir = index_dir.write().unwrap();
             match index_dir.sync(
                 self.index.schema(),
@@ -594,7 +704,7 @@ impl<INDEX: Index> IndexStore<INDEX> {
                 drop(lock);
                 drop(inner);
                 drop(dir);
-                match storage.put_index(&out).await {
+                match storage.put_index(self.index.name(), &out).await {
                     Ok(_) => {
                         log::trace!("Snapshot published successfully");
                         Ok(())
@@ -622,7 +732,10 @@ impl<INDEX: Index> IndexStore<INDEX> {
             metrics: self.metrics.clone(),
         })
     }
+}
 
+impl<INDEX: Index> IndexStore<INDEX> {
+    /// Search the index for a given query and return matching documents.
     pub fn search(
         &self,
         q: &str,
@@ -644,7 +757,94 @@ impl<INDEX: Index> IndexStore<INDEX> {
 
         debug!("Processed query: {:?}", query);
 
-        let (top_docs, count) = self.index.search(&searcher, &query, offset, limit)?;
+        let (top_docs, count) = if let Some(sort_by) = query.sort_by {
+            let field = sort_by.0;
+            let order = sort_by.1;
+            let order_by_str = self.index.schema().get_field_name(field).to_string();
+            let vtype = self.index.schema().get_field_entry(field).field_type().value_type();
+            let mut hits = Vec::new();
+            let total = match vtype {
+                Type::U64 => {
+                    let result = searcher.search(
+                        &query.query,
+                        &(
+                            TopDocs::with_limit(limit)
+                                .and_offset(offset)
+                                .order_by_fast_field::<u64>(&order_by_str, order.clone()),
+                            tantivy::collector::Count,
+                        ),
+                    )?;
+                    for r in result.0 {
+                        hits.push((1.0, r.1));
+                    }
+                    result.1
+                }
+                Type::I64 => {
+                    let result = searcher.search(
+                        &query.query,
+                        &(
+                            TopDocs::with_limit(limit)
+                                .and_offset(offset)
+                                .order_by_fast_field::<i64>(&order_by_str, order.clone()),
+                            tantivy::collector::Count,
+                        ),
+                    )?;
+                    for r in result.0 {
+                        hits.push((1.0, r.1));
+                    }
+                    result.1
+                }
+                Type::F64 => {
+                    let result = searcher.search(
+                        &query.query,
+                        &(
+                            TopDocs::with_limit(limit)
+                                .and_offset(offset)
+                                .order_by_fast_field::<f64>(&order_by_str, order.clone()),
+                            tantivy::collector::Count,
+                        ),
+                    )?;
+                    for r in result.0 {
+                        hits.push((1.0, r.1));
+                    }
+                    result.1
+                }
+                Type::Bool => {
+                    let result = searcher.search(
+                        &query.query,
+                        &(
+                            TopDocs::with_limit(limit)
+                                .and_offset(offset)
+                                .order_by_fast_field::<bool>(&order_by_str, order.clone()),
+                            tantivy::collector::Count,
+                        ),
+                    )?;
+                    for r in result.0 {
+                        hits.push((1.0, r.1));
+                    }
+                    result.1
+                }
+                Type::Date => {
+                    let result = searcher.search(
+                        &query.query,
+                        &(
+                            TopDocs::with_limit(limit)
+                                .and_offset(offset)
+                                .order_by_fast_field::<DateTime>(&order_by_str, order.clone()),
+                            tantivy::collector::Count,
+                        ),
+                    )?;
+                    for r in result.0 {
+                        hits.push((1.0, r.1));
+                    }
+                    result.1
+                }
+                _ => return Err(Error::NotSortable(order_by_str)),
+            };
+            (hits, total)
+        } else {
+            self.index.search(&searcher, &query.query, offset, limit)?
+        };
 
         self.metrics.queries_total.inc();
 
@@ -653,7 +853,7 @@ impl<INDEX: Index> IndexStore<INDEX> {
         if options.summaries {
             let mut hits = Vec::new();
             for hit in top_docs {
-                match self.index.process_hit(hit.1, hit.0, &searcher, &query, &options) {
+                match self.index.process_hit(hit.1, hit.0, &searcher, &query.query, &options) {
                     Ok(value) => {
                         debug!("HIT: {:?}", value);
                         hits.push(value);
@@ -905,24 +1105,8 @@ mod tests {
 
     impl Index for TestIndex {
         type MatchedDocument = String;
-        type Document = String;
-        type QueryContext = Box<dyn Query>;
 
-        fn settings(&self) -> IndexSettings {
-            IndexSettings::default()
-        }
-
-        fn schema(&self) -> Schema {
-            self.schema.clone()
-        }
-
-        fn parse_doc(data: &[u8]) -> Result<Self::Document, Error> {
-            core::str::from_utf8(data)
-                .map_err(|e| Error::DocParser(e.to_string()))
-                .map(|s| s.to_string())
-        }
-
-        fn prepare_query(&self, q: &str) -> Result<Box<dyn Query>, Error> {
+        fn prepare_query(&self, q: &str) -> Result<SearchQuery, Error> {
             let queries: Vec<Box<dyn Query>> = vec![
                 Box::new(TermQuery::new(
                     Term::from_field_text(self.id, q),
@@ -933,7 +1117,10 @@ mod tests {
                     IndexRecordOption::Basic,
                 )),
             ];
-            Ok(Box::new(BooleanQuery::union(queries)))
+            Ok(SearchQuery {
+                query: Box::new(BooleanQuery::union(queries)),
+                sort_by: None,
+            })
         }
 
         fn process_hit(
@@ -941,7 +1128,7 @@ mod tests {
             doc: DocAddress,
             _score: f32,
             searcher: &Searcher,
-            _query: &Box<dyn Query>,
+            _query: &dyn Query,
             _options: &SearchOptions,
         ) -> Result<Self::MatchedDocument, Error> {
             let d = searcher.doc(doc)?;
@@ -955,7 +1142,7 @@ mod tests {
         fn search(
             &self,
             searcher: &Searcher,
-            query: &Box<dyn Query>,
+            query: &dyn Query,
             offset: usize,
             limit: usize,
         ) -> Result<(Vec<(f32, DocAddress)>, usize), Error> {
@@ -964,13 +1151,37 @@ mod tests {
                 &(TopDocs::with_limit(limit).and_offset(offset), tantivy::collector::Count),
             )?)
         }
+    }
 
-        fn index_doc(&self, id: &str, document: &Self::Document) -> Result<Document, Error> {
+    impl WriteIndex for TestIndex {
+        type Document = String;
+
+        fn name(&self) -> &str {
+            "test"
+        }
+
+        fn settings(&self) -> IndexSettings {
+            IndexSettings::default()
+        }
+
+        fn schema(&self) -> Schema {
+            self.schema.clone()
+        }
+
+        fn parse_doc(&self, data: &[u8]) -> Result<Self::Document, Error> {
+            core::str::from_utf8(data)
+                .map_err(|e| Error::DocParser(e.to_string()))
+                .map(|s| s.to_string())
+        }
+
+        fn index_doc(&self, id: &str, document: &Self::Document) -> Result<Vec<(String, Document)>, Error> {
+            let mut documents: Vec<(String, Document)> = Vec::new();
             let doc = tantivy::doc!(
                 self.id => id.to_string(),
                 self.text => document.to_string()
             );
-            Ok(doc)
+            documents.push((id.to_string(), doc));
+            Ok(documents)
         }
 
         fn doc_id_to_term(&self, id: &str) -> Term {

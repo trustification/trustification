@@ -20,9 +20,9 @@ mod server;
 #[derive(clap::Args, Debug)]
 #[command(about = "Run the api server", args_conflicts_with_subcommands = true)]
 pub struct Run {
-    /// Source URL
+    /// Source URL or path
     #[arg(short, long)]
-    pub(crate) source: Url,
+    pub(crate) source: String,
 
     /// Vexination upload url
     #[arg(short = 'S', long)]
@@ -53,6 +53,10 @@ pub struct Run {
     /// OIDC client
     #[command(flatten)]
     pub(crate) oidc: OpenIdTokenProviderConfigArguments,
+
+    /// A file to read/store the last sync timestamp to at the end of a successful run.
+    #[arg(long = "since-file")]
+    pub since_file: Option<PathBuf>,
 }
 
 impl Run {
@@ -86,6 +90,7 @@ impl Run {
                         provider,
                         options,
                         self.ignore_distributions,
+                        self.since_file,
                     )
                     .await
                 },

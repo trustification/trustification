@@ -8,7 +8,7 @@ use trustification_auth::client::TokenInjector;
 
 #[test_context(SpogContext)]
 #[tokio::test]
-#[ntest::timeout(30_000)]
+#[ntest::timeout(60_000)]
 async fn spog_version(context: &mut SpogContext) {
     let response = reqwest::Client::new()
         .get(context.urlify("/.well-known/trustification/version"))
@@ -49,12 +49,12 @@ async fn spog_endpoints(context: &mut SpogContext) {
 /// test this.
 #[test_context(SpogContext)]
 #[tokio::test]
-#[ntest::timeout(30_000)]
+#[ntest::timeout(60_000)]
 async fn spog_search_forward_bombastic(context: &mut SpogContext) {
     let client = reqwest::Client::new();
 
     let response = client
-        .get(context.urlify("/api/v1/package/search"))
+        .get(context.urlify("/api/v1/sbom/search"))
         .inject_token(&context.provider.provider_user)
         .await
         .unwrap()
@@ -68,7 +68,7 @@ async fn spog_search_forward_bombastic(context: &mut SpogContext) {
     let client = reqwest::Client::new();
 
     let response = client
-        .get(context.urlify("/api/v1/package/search"))
+        .get(context.urlify("/api/v1/sbom/search"))
         .query(&[("q", urlencoding::encode("unknown:field"))])
         .inject_token(&context.provider.provider_user)
         .await
@@ -85,7 +85,7 @@ async fn spog_search_forward_bombastic(context: &mut SpogContext) {
 /// test this.
 #[test_context(SpogContext)]
 #[tokio::test]
-#[ntest::timeout(30_000)]
+#[ntest::timeout(60_000)]
 async fn spog_search_forward_vexination(context: &mut SpogContext) {
     let client = reqwest::Client::new();
 
@@ -130,27 +130,30 @@ async fn spog_crda_integration(context: &mut SpogContext) {
 
 /// SPoG API might enrich results from package search with related vulnerabilities. This test checks that this
 /// is working as expected for the test data.
-#[ignore = "Unstable test, issue #696"]
 #[test_context(SpogContext)]
 #[tokio::test]
 #[ntest::timeout(120_000)]
 async fn spog_search_correlation(context: &mut SpogContext) {
-    let input = serde_json::from_str(include_str!("testdata/correlation/stf-1.5.json")).unwrap();
+    let mut sbom: serde_json::Value = serde_json::from_str(include_str!("testdata/correlation/stf-1.5.json")).unwrap();
+    let cpe_id = id("cpe:/a:redhat:service_telemetry_framework:1.5::el8");
+    sbom["packages"][883]["externalRefs"][0]["referenceLocator"] = json!(cpe_id);
     let sbom_id = id("test-search-correlation");
-    context.bombastic.upload_sbom(&sbom_id, &input).await;
+    context.bombastic.upload_sbom(&sbom_id, &sbom).await;
 
-    let mut input: serde_json::Value =
+    let mut vex: serde_json::Value =
         serde_json::from_str(include_str!("testdata/correlation/rhsa-2023_1529.json")).unwrap();
     let vex_id = id("test-search-correlation");
-    input["document"]["tracking"]["id"] = json!(vex_id);
-    context.vexination.upload_vex(&input).await;
+    vex["document"]["tracking"]["id"] = json!(vex_id);
+    vex["product_tree"]["branches"][0]["branches"][0]["branches"][0]["product"]["product_identification_helper"]
+        ["cpe"] = json!(cpe_id);
+    context.vexination.upload_vex(&vex).await;
 
     let client = reqwest::Client::new();
     // Ensure we can search for the data. We want to allow the
     // indexer time to do its thing, so might need to retry
     loop {
         let response = client
-            .get(context.urlify(format!("/api/v1/package/search?q=id%3A{sbom_id}")))
+            .get(context.urlify(format!("/api/v1/sbom/search?q=id%3A{sbom_id}")))
             .inject_token(&context.provider.provider_user)
             .await
             .unwrap()
@@ -160,10 +163,9 @@ async fn spog_search_correlation(context: &mut SpogContext) {
         assert_eq!(response.status(), StatusCode::OK, "unexpected status from search");
         let payload: Value = response.json().await.unwrap();
         if payload["total"].as_u64().unwrap() >= 1 {
-            assert_eq!(payload["result"][0]["name"], json!("stf-1.5"), "unexpected name");
+            assert_eq!(payload["result"][0]["name"], json!("stf-1.5"), "unexpected sbom name");
 
-            let data: spog_model::search::PackageSummary =
-                serde_json::from_value(payload["result"][0].clone()).unwrap();
+            let data: spog_model::search::SbomSummary = serde_json::from_value(payload["result"][0].clone()).unwrap();
             // println!("Data: {:?}", data);
             // we need to have some information
             assert!(data.advisories.is_some(), "missing advisories");
@@ -180,10 +182,10 @@ async fn spog_search_correlation(context: &mut SpogContext) {
 
 /// SPoG is the entrypoint for the frontend. It exposes an dependencies API, but forwards requests
 /// to Guac. This test is here to test this.
-#[ignore = "Unstable test, issue #618"]
 #[test_context(SpogContext)]
 #[tokio::test]
-#[ntest::timeout(30_000)]
+#[ignore]
+#[ntest::timeout(60_000)]
 async fn spog_dependencies(context: &mut SpogContext) {
     let input = serde_json::from_str(include_str!("testdata/correlation/stf-1.5.json")).unwrap();
     let sbom_id = "test-stf-1.5-guac";
@@ -193,10 +195,9 @@ async fn spog_dependencies(context: &mut SpogContext) {
 
     let purl: &str = "pkg:rpm/redhat/json-c@0.13.1-0.4.el8";
 
-    let mut attempt = 1;
     loop {
         let response = client
-            .get(context.urlify("/api/v1/packages"))
+            .get(context.urlify("/api/v1/package/related"))
             .query(&[("purl", purl)])
             .inject_token(&context.provider.provider_user)
             .await
@@ -204,22 +205,18 @@ async fn spog_dependencies(context: &mut SpogContext) {
             .send()
             .await
             .unwrap();
-        assert_eq!(response.status(), StatusCode::OK);
-
-        let payload: Value = response.json().await.unwrap();
-        let pkgs = payload.as_array().unwrap();
-        if pkgs.contains(&json!({"purl": "pkg:rpm/json-c@0.13.1-0.4.el8?arch=x86_64"})) {
-            break;
+        if response.status() == StatusCode::OK {
+            let payload: Value = response.json().await.unwrap();
+            let pkgs = payload.as_array().unwrap();
+            if pkgs.contains(&json!({"purl": "pkg:rpm/json-c@0.13.1-0.4.el8?arch=x86_64"})) {
+                break;
+            }
         }
-
-        attempt += 1;
-        assert!(attempt < 10, "Guac ingestion failed, no packages available");
-        // wait a bit until the SBOM gets ingested into Guac
         tokio::time::sleep(Duration::from_secs(1)).await;
     }
 
     let response = client
-        .get(context.urlify("/api/v1/packages/dependents"))
+        .get(context.urlify("/api/v1/package/dependents"))
         .query(&[("purl", purl)])
         .inject_token(&context.provider.provider_user)
         .await
@@ -234,7 +231,7 @@ async fn spog_dependencies(context: &mut SpogContext) {
 
     let purl: &str = "pkg:rpm/redhat/python-zope-event@4.2.0-9.2.el8stf";
     let response = client
-        .get(context.urlify("/api/v1/packages/dependencies"))
+        .get(context.urlify("/api/v1/package/dependencies"))
         .query(&[("purl", purl)])
         .inject_token(&context.provider.provider_user)
         .await

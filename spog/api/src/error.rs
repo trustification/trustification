@@ -1,4 +1,4 @@
-use crate::service::{collectorist, v11y};
+use crate::service::{collectorist, guac, v11y};
 use actix_web::{http::header::ContentType, HttpResponse};
 use http::StatusCode;
 use trustification_common::error::ErrorInformation;
@@ -14,7 +14,7 @@ pub enum Error {
     #[error("authentication error: {0}")]
     AuthClient(#[from] trustification_auth::client::Error),
     #[error("guac error: {0}")]
-    Guac(#[from] crate::guac::service::Error),
+    Guac(#[from] guac::Error),
     #[error("serialization error: {0}")]
     Serde(#[from] serde_json::error::Error),
     #[error("collectorist error: {0}")]
@@ -26,6 +26,12 @@ pub enum Error {
 }
 
 impl actix_web::error::ResponseError for Error {
+    fn status_code(&self) -> StatusCode {
+        match self {
+            Self::Response(status, _) => *status,
+            _ => StatusCode::INTERNAL_SERVER_ERROR,
+        }
+    }
     fn error_response(&self) -> HttpResponse {
         let mut res = HttpResponse::build(self.status_code());
         res.insert_header(ContentType::json());
@@ -75,12 +81,6 @@ impl actix_web::error::ResponseError for Error {
                 message: error.clone(),
                 details: error.to_string(),
             }),
-        }
-    }
-    fn status_code(&self) -> StatusCode {
-        match self {
-            Self::Response(status, _) => *status,
-            _ => StatusCode::INTERNAL_SERVER_ERROR,
         }
     }
 }

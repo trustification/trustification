@@ -1,9 +1,10 @@
+use std::path::PathBuf;
+use std::time::SystemTime;
 use std::{net::SocketAddr, sync::Arc, time::Duration};
 
-use csaf_walker::discover::DiscoveredAdvisory;
-use csaf_walker::retrieve::RetrievedAdvisory;
 use csaf_walker::{
-    retrieve::RetrievingVisitor,
+    discover::DiscoveredAdvisory,
+    retrieve::{RetrievedAdvisory, RetrievingVisitor},
     source::{FileSource, HttpSource},
     validation::{ValidatedAdvisory, ValidationError, ValidationVisitor},
     walker::Walker,
@@ -11,20 +12,22 @@ use csaf_walker::{
 use reqwest::{header, StatusCode};
 use serde::Deserialize;
 use tokio::sync::{Mutex, RwLock};
-use trustification_auth::client::TokenInjector;
-use trustification_auth::client::TokenProvider;
+use trustification_auth::client::{TokenInjector, TokenProvider};
+use url::Url;
 use walker_common::{
     fetcher::{Fetcher, FetcherOptions},
+    since::Since,
     validate::ValidationOptions,
 };
 
 pub async fn run(
     workers: usize,
-    source: url::Url,
-    sink: url::Url,
+    source: String,
+    sink: Url,
     provider: Arc<dyn TokenProvider>,
     options: ValidationOptions,
-    ignore_distributions: Vec<url::Url>,
+    ignore_distributions: Vec<Url>,
+    since_file: Option<PathBuf>,
 ) -> Result<(), anyhow::Error> {
     let fetcher = Fetcher::new(Default::default()).await?;
     let client = Arc::new(reqwest::Client::new());
@@ -83,26 +86,30 @@ pub async fn run(
     })
     .with_options(options);
 
-    if let Ok(path) = source.to_file_path() {
-        let source = FileSource::new(path, None)?;
-        Walker::new(source.clone())
-            .with_distribution_filter(Box::new(move |distribution| {
-                !ignore_distributions.contains(&distribution.directory_url)
-            }))
-            .walk(RetrievingVisitor::new(source.clone(), validation))
-            .await?;
-    } else {
+    if let Ok(url) = Url::parse(&source) {
+        let since = Since::new(None::<SystemTime>, since_file, Default::default())?;
         log::info!("Walking VEX docs: source='{source}' workers={workers}");
         let source = HttpSource {
-            url: source,
+            url,
             fetcher,
-            options: Default::default(),
+            options: csaf_walker::source::HttpOptions { since: *since },
         };
         Walker::new(source.clone())
             .with_distribution_filter(Box::new(move |distribution| {
                 !ignore_distributions.contains(&distribution.directory_url)
             }))
             .walk_parallel(workers, RetrievingVisitor::new(source.clone(), validation))
+            .await?;
+
+        since.store()?;
+    } else {
+        log::info!("Walking VEX docs: path='{source}' workers={workers}");
+        let source = FileSource::new(source, None)?;
+        Walker::new(source.clone())
+            .with_distribution_filter(Box::new(move |distribution| {
+                !ignore_distributions.contains(&distribution.directory_url)
+            }))
+            .walk(RetrievingVisitor::new(source.clone(), validation))
             .await?;
     }
 
