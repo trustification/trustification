@@ -176,41 +176,6 @@ exhort:
   enabled: true
   api:
     resources:
-keycloakRealm:
-  redirectUris:
-    - http://localhost:*
-    - https://trustification.dev
-    - https://trustification.dev/*
-    - https://sbom.trustification.dev
-    - https://sbom.trustification.dev/*
-    - https://vex.trustification.dev
-    - https://vex.trustification.dev/*
-oidcClients:
-  frontend:
-    issuerUrl: https://sso.trustification.dev/realms/chicken
-    clientId:
-      value: frontend
-  walker:
-    issuerUrl: https://sso.trustification.dev/realms/chicken
-    clientSecret:
-      valueFrom:
-        secretKeyRef:
-          name: oidc-client-walker
-          key: client-secret
-  testingManager:
-    issuerUrl: https://sso.trustification.dev/realms/chicken
-    clientSecret:
-      valueFrom:
-        secretKeyRef:
-          name: oidc-client-testing-manager
-          key: client-secret
-  testingUser:
-    issuerUrl: https://sso.trustification.dev/realms/chicken
-    clientSecret:
-      valueFrom:
-        secretKeyRef:
-          name: oidc-client-testing-user
-          key: client-secret
 guac:
   enabled: true
   database:
@@ -269,5 +234,40 @@ keycloak:
         enabled: false
     auth:
       existingSecret: sso-postgres
+keycloakRealm:
+  redirectUris:
+    - http://localhost:*
+    - https://trustification.dev
+    - https://trustification.dev/*
+    - https://sbom.trustification.dev
+    - https://sbom.trustification.dev/*
+    - https://vex.trustification.dev
+    - https://vex.trustification.dev/*
+oidcClients:
+  frontend:
+    issuerUrl: https://sso.trustification.dev/realms/chicken
+    clientId:
+      value: frontend
+  walker:
+    issuerUrl: https://sso.trustification.dev/realms/chicken
+    clientSecret:
+      valueFrom:
+        secretKeyRef:
+          name: oidc-client-walker
+          key: client-secret
+  testingManager:
+    issuerUrl: https://sso.trustification.dev/realms/chicken
+    clientSecret:
+      valueFrom:
+        secretKeyRef:
+          name: oidc-client-testing-manager
+          key: client-secret
+  testingUser:
+    issuerUrl: https://sso.trustification.dev/realms/chicken
+    clientSecret:
+      valueFrom:
+        secretKeyRef:
+          name: oidc-client-testing-user
+          key: client-secret
 dataset:
   enabled: true
