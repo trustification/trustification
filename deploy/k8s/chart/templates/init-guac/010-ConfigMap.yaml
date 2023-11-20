@@ -14,24 +14,21 @@ data:
     WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = :'db_name')\gexec
     
     -- create the user (if it doesn't exist)
-    DO
-    $do$
+    CREATE OR REPLACE FUNCTION add_user_if_not_exists(username NAME) RETURNS integer
+        AS $$
     BEGIN
-      IF EXISTS (
-        SELECT FROM pg_catalog.pg_roles
-        WHERE rolname = :'db_user') THEN
-          RAISE NOTICE 'Role "' || :'db_user' || '" already exists. Skipping.';
-      ELSE
-        BEGIN   -- nested block
-          CREATE ROLE :db_user LOGIN;
-        EXCEPTION
-          WHEN duplicate_object THEN
-            RAISE NOTICE 'Role "' || :'db_user' || '" was just created by a concurrent transaction. Skipping.';
-        END;
-      END IF;
-    END
-    $do$;
-    
+        IF NOT EXISTS (SELECT FROM pg_roles
+            WHERE rolname = username) THEN
+
+            EXECUTE FORMAT('CREATE ROLE "%I" LOGIN', username);
+
+        END IF;
+        RETURN NULL;
+    END;
+    $$ language plpgsql;
+
+    SELECT add_user_if_not_exists(:'db_user');
+
     -- now set the password
     ALTER USER :db_user WITH PASSWORD :'db_password';
     
