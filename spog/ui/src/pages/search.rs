@@ -4,12 +4,12 @@ use patternfly_yew::prelude::*;
 use spog_ui_common::utils::count::count_tab_title;
 use spog_ui_components::{
     advisory::{use_advisory_search, AdvisoryResult, AdvisorySearchControls},
-    common::Visible,
     cve::{use_cve_search, CveResult, CveSearchControls},
     hooks::UseStandardSearch,
+    packages::{use_package_search, PackagesResult},
     pagination::PaginationWrapped,
     sbom::{use_sbom_search, SbomResult, SbomSearchControls},
-    search::{DynamicSearchParameters, SearchMode, SearchModeAction},
+    search::{DynamicSearchParameters, HistorySearchState, SearchModeAction, SearchState},
 };
 use std::ops::Deref;
 use trustification_api::search::SearchResult;
@@ -23,6 +23,7 @@ pub enum TabIndex {
     SbomsByPackage,
     #[default]
     Cves,
+    Packages,
 }
 
 #[derive(PartialEq, Properties)]
@@ -30,6 +31,7 @@ pub struct SearchProperties {
     pub terms: String,
 }
 
+/// The state of the page, stored in the history
 #[derive(Clone, Debug, Default, PartialEq, serde::Deserialize, serde::Serialize)]
 pub struct PageState {
     pub terms: Vec<String>,
@@ -39,12 +41,14 @@ pub struct PageState {
     pub sbom: TabState,
     pub sbom_by_dependency: TabState,
     pub cve: TabState,
+    pub package: TabState,
 }
 
+/// The state of a single tab, stored in the history
 #[derive(Clone, Debug, Default, PartialEq, serde::Deserialize, serde::Serialize)]
 pub struct TabState {
     pub pagination: PaginationControl,
-    pub search_params: SearchMode<DynamicSearchParameters>,
+    pub search_params: HistorySearchState<DynamicSearchParameters>,
 }
 
 #[function_component(Search)]
@@ -120,6 +124,15 @@ pub fn search(props: &SearchProperties) -> Html {
         use_cve_search,
     );
 
+    // Package search
+
+    let package = use_unified_search(
+        &page_state,
+        |page_state| page_state.package.search_params.clone(),
+        |page_state| page_state.package.pagination,
+        use_package_search,
+    );
+
     // update search terms
 
     use_effect_with(
@@ -129,12 +142,14 @@ pub fn search(props: &SearchProperties) -> Html {
             sbom.search_params.clone(),
             sbom_by_dependency.search_params.clone(),
             cve.search_params.clone(),
+            package.search_params.clone(),
         ),
-        |(search_terms, advisory, sbom, sbom_by_dependency, cve)| {
+        |(search_terms, advisory, sbom, sbom_by_dependency, cve, package)| {
             advisory.dispatch(SearchModeAction::SetSimpleTerms(search_terms.clone()));
             sbom.dispatch(SearchModeAction::SetSimpleTerms(search_terms.clone()));
             sbom_by_dependency.dispatch(SearchModeAction::SetSimpleTerms(search_terms.clone()));
             cve.dispatch(SearchModeAction::SetSimpleTerms(search_terms.clone()));
+            package.dispatch(SearchModeAction::SetSimpleTerms(search_terms.clone()));
         },
     );
 
@@ -147,19 +162,23 @@ pub fn search(props: &SearchProperties) -> Html {
             tab: *tab,
             advisory: TabState {
                 pagination: **advisory.pagination,
-                search_params: (*advisory.search_params).clone(),
+                search_params: (*advisory.search_params).clone().into(),
             },
             sbom: TabState {
                 pagination: **sbom.pagination,
-                search_params: (*sbom.search_params).clone(),
+                search_params: (*sbom.search_params).clone().into(),
             },
             sbom_by_dependency: TabState {
                 pagination: **sbom_by_dependency.pagination,
-                search_params: (*sbom_by_dependency.search_params).clone(),
+                search_params: (*sbom_by_dependency.search_params).clone().into(),
             },
             cve: TabState {
                 pagination: **cve.pagination,
-                search_params: (*cve.search_params).clone(),
+                search_params: (*cve.search_params).clone().into(),
+            },
+            package: TabState {
+                pagination: **package.pagination,
+                search_params: (*package.search_params).clone().into(),
             },
         },
     );
@@ -212,6 +231,12 @@ pub fn search(props: &SearchProperties) -> Html {
                             <Visible visible={*tab == TabIndex::Advisories}>
                                 <AdvisorySearchControls search_params={advisory.search_params.clone()} />
                             </Visible>
+                            <Visible visible={*tab == TabIndex::Packages}>
+                                <SbomSearchControls search_params={package.search_params.clone()} />
+                            </Visible>
+                            <Visible visible={*tab == TabIndex::Packages}>
+                                <SbomSearchControls search_params={package.search_params.clone()} />
+                            </Visible>
                             <Visible visible={*tab == TabIndex::Sboms}>
                                 <SbomSearchControls search_params={sbom.search_params.clone()} />
                             </Visible>
@@ -232,6 +257,7 @@ pub fn search(props: &SearchProperties) -> Html {
                             r#box=true
                         >
                             <Tab<TabIndex> index={TabIndex::Cves} title={count_tab_title("CVEs", &*cve.state)} />
+                            <Tab<TabIndex> index={TabIndex::Packages} title={count_tab_title("Packages", &*package.state)} />
                             <Tab<TabIndex> index={TabIndex::Sboms} title={count_tab_title("Products and containers", &*sbom.state)} />
                             <Tab<TabIndex> index={TabIndex::Advisories} title={count_tab_title("Advisories", &*advisory.state)} />
                             // <Tab<TabIndex> index={TabIndex::SbomsByPackage} title={count_tab_title("SBOMs (by dependency)", &*sbom_by_dependency.state)} />
@@ -241,6 +267,11 @@ pub fn search(props: &SearchProperties) -> Html {
                             if *tab == TabIndex::Advisories {
                                 <PaginationWrapped pagination={advisory.pagination} total={*advisory.total}>
                                     <AdvisoryResult state={(*advisory.state).clone()} onsort={&advisory.onsort} />
+                                </PaginationWrapped>
+                            }
+                            if *tab == TabIndex::Packages {
+                                <PaginationWrapped pagination={package.pagination} total={*package.total}>
+                                    <PackagesResult state={(*package.state).clone()} onsort={&package.onsort} />
                                 </PaginationWrapped>
                             }
                             if *tab == TabIndex::Sboms {
@@ -294,16 +325,16 @@ fn use_unified_search<R, IS, IP, FH, H>(
 ) -> UseUnifiedSearch<R>
 where
     R: Clone + PartialEq + 'static,
-    IS: FnOnce(&PageState) -> SearchMode<DynamicSearchParameters>,
+    IS: FnOnce(&PageState) -> HistorySearchState<DynamicSearchParameters>,
     IP: FnOnce(&PageState) -> PaginationControl,
     FH: FnOnce(
-        UseReducerHandle<SearchMode<DynamicSearchParameters>>,
+        UseReducerHandle<SearchState<DynamicSearchParameters>>,
         UsePagination,
         Callback<UseAsyncHandleDeps<SearchResult<R>, String>>,
     ) -> H,
     H: Hook<Output = UseStandardSearch>,
 {
-    let search_params = use_reducer_eq::<SearchMode<DynamicSearchParameters>, _>(|| init_search(page_state));
+    let search_params = use_reducer_eq::<SearchState<DynamicSearchParameters>, _>(|| init_search(page_state).into());
     let state = use_state_eq(UseAsyncState::default);
     let callback = use_callback(
         state.clone(),

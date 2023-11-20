@@ -36,6 +36,11 @@ use crate::AppState;
         schemas(
             AnalyzeRequest,
             AnalyzeResponse,
+            VendorAnalysis,
+            VulnerabilityAnalysis,
+            SeverityAnalysis,
+            SeverityType,
+            PackageCertification,
             v11y_client::Vulnerability,
             v11y_client::Affected,
             v11y_client::Reference,
@@ -215,6 +220,12 @@ async fn analyze(state: web::Data<AppState>, request: web::Json<AnalyzeRequest>)
                             .await
                         {
                             for equal in equals {
+                                let aliases: Vec<_> = equal
+                                    .vulnerabilities
+                                    .iter()
+                                    .flat_map(|e| e.vulnerability_ids.iter().map(|id| id.vulnerability_id.clone()))
+                                    .collect();
+
                                 response.add_vulnerability_aliases(
                                     purl_str.clone(),
                                     equal.collector,
@@ -224,12 +235,10 @@ async fn analyze(state: web::Data<AppState>, request: web::Json<AnalyzeRequest>)
                                         .first()
                                         .map(|id| id.vulnerability_id.clone())
                                         .unwrap_or_default(),
-                                    equal
-                                        .vulnerabilities
-                                        .iter()
-                                        .flat_map(|e| e.vulnerability_ids.iter().map(|id| id.vulnerability_id.clone()))
-                                        .collect(),
-                                )
+                                    aliases.clone(),
+                                );
+
+                                vuln_ids.extend(aliases.iter().cloned());
                             }
                         }
                     }
@@ -247,7 +256,7 @@ async fn analyze(state: web::Data<AppState>, request: web::Json<AnalyzeRequest>)
     // mappings, go collect the vulnerability details from v11y, doing
     // our best effort and not allowing soft errors to fail the process.
     for vuln_id in vuln_ids {
-        if vuln_id.to_lowercase().starts_with("CVE") {
+        if vuln_id.to_lowercase().starts_with("cve") {
             match state.v11y_client.get_cve(&vuln_id).await {
                 Ok(vulnerabilities) => {
                     if vulnerabilities.status() == 200 {

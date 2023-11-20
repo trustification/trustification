@@ -6,8 +6,9 @@ use convert_case::{Case, Casing};
 use details::Details;
 use patternfly_yew::prelude::*;
 use serde_json::{json, Value};
+use spog_model::prelude::*;
 use spog_ui_backend::use_backend;
-use spog_ui_common::error::components::Error;
+use spog_ui_common::error::components::ApiError;
 use spog_ui_components::{
     common::{NotFound, PageHeading},
     time::Date,
@@ -47,7 +48,17 @@ pub fn sbom(props: &SbomReportProperties) -> Html {
         (props.id.clone(), backend),
     );
 
-    let labels = use_callback((), |value: Value, ()| {
+    let empty = info
+        .data()
+        .and_then(|d| d.as_ref().map(|d| d.summary("mitre").map(|s| s.is_empty())))
+        .flatten()
+        .unwrap_or(true);
+
+    let labels = use_callback(empty, |value: Value, empty| {
+        if *empty {
+            return "None".to_string();
+        }
+
         let x = &value["datum"]["x"];
         let y = &value["datum"]["y"];
 
@@ -60,7 +71,6 @@ pub fn sbom(props: &SbomReportProperties) -> Html {
     match &*info {
         UseAsyncState::Pending | UseAsyncState::Processing => html!(
             <>
-                // <PageHeading>{ props.id.clone() }</PageHeading>
                 <PageSection fill={PageSectionFill::Fill}><Spinner/></PageSection>
             </>
         ),
@@ -75,11 +85,6 @@ pub fn sbom(props: &SbomReportProperties) -> Html {
 
             html!(
                 <>
-                    // <PageSection variant={PageSectionVariant::Light} r#type={PageSectionType::Breadcrumbs}>
-                    //     <Content>
-                    //         <Title>{ data.name.clone() }</Title>
-                    //     </Content>
-                    // </PageSection>
                     <Stack gutter=true>
                         <StackItem>
                             <Card>
@@ -90,6 +95,7 @@ pub fn sbom(props: &SbomReportProperties) -> Html {
                                         </SplitItem>
                                         <SplitItem>
                                             <DescriptionList auto_fit=true>
+                                                <DescriptionGroup term="Name">{ data.name.clone() }</DescriptionGroup>
                                                 if let Some(version) = data.version.clone() {
                                                     <DescriptionGroup term="Version">{ version }</DescriptionGroup>
                                                 }
@@ -111,8 +117,10 @@ pub fn sbom(props: &SbomReportProperties) -> Html {
         }
         UseAsyncState::Ready(Err(err)) => html!(
             <>
-                <PageHeading>{ props.id.clone() }</PageHeading>
-                <PageSection fill={PageSectionFill::Fill}><Error err={err.to_string()} /></PageSection>
+                <PageHeading sticky=false>{ props.id.clone() }</PageHeading>
+                <PageSection fill={PageSectionFill::Fill} variant={PageSectionVariant::Light}>
+                    <ApiError error={err.clone()} />
+                </PageSection>
             </>
         ),
     }
@@ -120,37 +128,54 @@ pub fn sbom(props: &SbomReportProperties) -> Html {
 
 /// build the options for the donut chart
 fn donut_options(data: &spog_model::vuln::SbomReport) -> Value {
-    let mut summary = data.summary.clone();
-
-    // reverse sort
-    summary.sort_unstable_by(|(a, _), (b, _)| b.cmp(a));
-
-    let total: usize = summary.iter().map(|(_, v)| v).sum();
-    let donut_data = summary
+    let mut summary = data
+        .summary
         .iter()
-        .map(|(k, v)| {
+        .find(|(k, _)| *k == "mitre")
+        .map(|(_, v)| v)
+        .cloned()
+        .unwrap_or_default();
+
+    // reverse sort, by severity
+    summary.sort_unstable_by_key(|e| e.severity);
+
+    let total: usize = summary.iter().map(|SummaryEntry { count, .. }| *count).sum();
+
+    let legend_data = summary
+        .iter()
+        .map(|SummaryEntry { severity, count }| {
+            let k = severity
+                .map(|k| k.as_str().to_case(Case::Title))
+                .unwrap_or_else(|| "Unknown".to_string());
             json!({
-                "x": k.map(|k| k.as_str().to_case(Case::Title)).unwrap_or_else(|| "Unknown".to_string()),
-                "y": v,
+                "name": format!("{count} {k}"),
             })
         })
         .collect::<Vec<_>>();
 
-    let legend_data = summary
+    // now that we created the legend, we check if the summary is empty
+    if summary.is_empty() {
+        // if it is, we create a dummy entry, which will render as a grey circle. We can only
+        // do this after the legend was created.
+        summary = vec![SummaryEntry {
+            severity: None,
+            count: 1,
+        }];
+    }
+
+    let donut_data = summary
         .iter()
-        .map(|(k, v)| {
-            let k = k
-                .map(|k| k.as_str().to_case(Case::Title))
-                .unwrap_or_else(|| "Unknown".to_string());
+        .map(|SummaryEntry { severity, count }| {
             json!({
-                "name": format!("{v} {k}"),
+                "x": severity.map(|k| k.as_str().to_case(Case::Title)).unwrap_or_else(|| "Unknown".to_string()),
+                "y": count,
             })
         })
         .collect::<Vec<_>>();
 
     let color_scale = summary
         .iter()
-        .map(|(k, _)| match k {
+        .map(|SummaryEntry { severity, .. }| match severity {
             None => "var(--pf-v5-global--Color--light-200)",
             Some(cvss::Severity::None) => "var(--pf-v5-global--Color--light-300)",
             Some(cvss::Severity::Low) => "var(--pf-v5-global--info-color--100)",

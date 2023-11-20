@@ -26,7 +26,7 @@ ARG RUST_VERSION="1.72.1"
 ARG SASS_VERSION="1.68.0"
 ARG WASM_PACK_VERSION="0.12.1"
 ARG WASM_BINDGEN_VERSION="0.2.87"
-ARG TRUNK_VERSION="0.17.9"
+ARG TRUNK_VERSION="0.17.12"
 
 RUN dnf -y install nodejs git gcc
 
@@ -107,7 +107,7 @@ FROM registry.access.redhat.com/ubi9/ubi-minimal:latest
 
 LABEL org.opencontainers.image.source="https://github.com/trustification/trustification"
 
-RUN microdnf install -y nginx jq
+RUN microdnf update -y && microdnf install -y nginx jq
 RUN true \
     && mkdir /public \
     && mkdir /endpoints
@@ -122,5 +122,8 @@ EXPOSE 80
 
 COPY --from=backendbuilder /usr/src/project/target/release/trust /
 COPY ./collectorist.yaml /
+
+RUN mkdir /data
+COPY ./data/ds1 /data
 
 ENV RUST_LOG info

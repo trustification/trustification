@@ -7,6 +7,7 @@ use actix_web::{
     web::{self, JsonConfig, ServiceConfig},
     HttpServer,
 };
+use actix_web_opentelemetry::RequestTracing;
 use actix_web_prom::{PrometheusMetrics, PrometheusMetricsBuilder};
 use anyhow::{anyhow, Context};
 use bytesize::ByteSize;
@@ -22,10 +23,28 @@ use std::str::FromStr;
 use std::sync::Arc;
 use trustification_auth::{authenticator::Authenticator, authorizer::Authorizer};
 
-const DEFAULT_ADDR: SocketAddr = SocketAddr::new(IpAddr::V6(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0x1)), 8080);
+const DEFAULT_ADDR: SocketAddr = SocketAddr::new(IpAddr::V6(Ipv6Addr::LOCALHOST), 8080);
 
 #[derive(Copy, Clone, Debug, PartialEq, PartialOrd, Eq, Ord, Hash, Default)]
 pub struct BinaryByteSize(pub ByteSize);
+
+impl From<ByteSize> for BinaryByteSize {
+    fn from(value: ByteSize) -> Self {
+        Self(value)
+    }
+}
+
+impl From<u64> for BinaryByteSize {
+    fn from(value: u64) -> Self {
+        Self(ByteSize(value))
+    }
+}
+
+impl From<usize> for BinaryByteSize {
+    fn from(value: usize) -> Self {
+        Self(ByteSize(value as u64))
+    }
+}
 
 impl Deref for BinaryByteSize {
     type Target = ByteSize;
@@ -413,6 +432,13 @@ impl HttpServerBuilder {
     pub async fn run(self) -> anyhow::Result<()> {
         let metrics = self.metrics_factory.as_ref().map(|factory| (factory)()).transpose()?;
 
+        if let Some(limit) = self.request_limit {
+            log::info!("JSON limit: {}", BinaryByteSize::from(limit));
+        }
+        if let Some(limit) = self.json_limit {
+            log::info!("Payload limit: {}", BinaryByteSize::from(limit));
+        }
+
         let mut http = HttpServer::new(move || {
             let config = self.configurator.clone();
 
@@ -425,7 +451,7 @@ impl HttpServerBuilder {
 
             let (logger, tracing_logger) = match self.tracing {
                 Tracing::Disabled => (Some(actix_web::middleware::Logger::default()), None),
-                Tracing::Enabled => (None, Some(tracing_actix_web::TracingLogger::default())),
+                Tracing::Enabled => (None, Some(RequestTracing::default())),
             };
 
             log::debug!(

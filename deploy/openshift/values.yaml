@@ -38,10 +38,12 @@ bombastic:
   indexMode: file
   collector:
     enabled: true
-    queue: ${BOMBASTIC_INDEXER_GUAC_TOPIC}
+    schedule: ${BOMBASTIC_COLLECTOR_SCHEDULE}
+    resources: ${{BOMBASTIC_COLLECTOR_RESOURCES}}
   indexer:
     reindex: false
     index_sync_interval: ${BOMBASTIC_INDEXER_INDEX_SYNC_INTERVAL}
+    index_writer_memory_bytes: ${BOMBASTIC_INDEXER_INDEX_WRITER_MEMORY_BYTES}
     topics:
       stored: ${BOMBASTIC_INDEXER_STORED_TOPIC}
       indexed: ${BOMBASTIC_INDEXER_INDEXED_TOPIC}
@@ -72,6 +74,7 @@ v11y:
   indexer:
     reindex: false
     index_sync_interval: ${V11Y_INDEXER_INDEX_SYNC_INTERVAL}
+    index_writer_memory_bytes: ${V11Y_INDEXER_INDEX_WRITER_MEMORY_BYTES}
     topics:
       stored: ${V11Y_INDEXER_STORED_TOPIC}
       indexed: ${V11Y_INDEXER_INDEXED_TOPIC}
@@ -103,18 +106,14 @@ collector:
     enabled: true
     resources: ${{COLLECTOR_OSV_RESOURCES}}
     logLevel: ${LOG_LEVEL}
-  nvd:
-    enabled: true
-    credentials: nvd-collector-secret
-    resources: ${{COLLECTOR_NVD_RESOURCES}}
-    logLevel: ${LOG_LEVEL}
 vexination:
   bucket: ${VEXINATION_STORAGE_BUCKET}
   credentials: ${VEXINATION_AWS_SECRET_NAME}
   indexMode: file
   collector:
     enabled: true
-    queue: ${VEXINATION_INDEXER_GUAC_TOPIC}
+    schedule: ${VEXINATION_COLLECTOR_SCHEDULE}
+    resources: ${{VEXINATION_COLLECTOR_RESOURCES}}
   walker:
     enabled: true
     suspend: ${{VEXINATION_WALKER_SUSPEND}}
@@ -125,6 +124,7 @@ vexination:
   indexer:
     reindex: false
     index_sync_interval: ${VEXINATION_INDEXER_INDEX_SYNC_INTERVAL}
+    index_writer_memory_bytes: ${VEXINATION_INDEXER_INDEX_WRITER_MEMORY_BYTES}
     topics:
       stored: ${VEXINATION_INDEXER_STORED_TOPIC}
       indexed: ${VEXINATION_INDEXER_INDEXED_TOPIC}
@@ -139,8 +139,13 @@ keycloak:
   enabled: false
 guac:
   enabled: true
+  database:
+    enabled: false
+    image: ${POSTGRESQL_IMAGE}
   graphql:
     debug: false
+    affinity: ${{GUAC_GQL_AFFINITY}}
+    resources: ${{GUAC_GQL_RESOURCES}}
 oidcClients:
   frontend:
     issuerUrl: ${ISSUER_URL}
@@ -167,3 +172,5 @@ oidcClients:
     scopes: "openid id.username"
     clientId:
       value: trusted-content-api
+dataset:
+  enabled: false

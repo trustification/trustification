@@ -19,7 +19,7 @@ use walker_common::{
 };
 
 pub struct Options {
-    pub source: Url,
+    pub source: String,
     pub target: Url,
     pub keys: Vec<Key>,
     pub provider: Arc<dyn TokenProvider>,
@@ -52,10 +52,9 @@ impl Scanner {
     #[instrument(skip(self))]
     pub async fn run_once(&self) -> anyhow::Result<()> {
         let since = Since::new(None::<SystemTime>, self.options.since_file.clone(), Default::default())?;
-        let source: DispatchSource = match self.options.source.to_file_path() {
-            Ok(path) => FileSource::new(path, None)?.into(),
-            Err(_) => HttpSource {
-                url: self.options.source.clone(),
+        let source: DispatchSource = match Url::parse(&self.options.source) {
+            Ok(url) => HttpSource {
+                url,
                 fetcher: Fetcher::new(FetcherOptions::default()).await?,
                 options: HttpOptions {
                     keys: self.options.keys.clone(),
@@ -63,6 +62,7 @@ impl Scanner {
                 },
             }
             .into(),
+            Err(_) => FileSource::new(&self.options.source, None)?.into(),
         };
 
         let sender = sender::HttpSender::new(self.options.provider.clone(), sender::Options::default()).await?;

@@ -4,15 +4,24 @@ use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
 #[derive(Clone, Debug, PartialEq, Eq, ToSchema, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 #[schema(example = json!(Package {
+    name: Some("redhat:openssl".to_string()), version: Some("1.1.1k-7.el8_6".to_string()), package_type: Some("rpm".to_string()),
     purl: Some("pkg:rpm/redhat/openssl@1.1.1k-7.el8_6".to_string()), href: Some(format!("/api/package?purl={}", &urlencoding::encode("pkg:rpm/redhat/openssl@1.1.1k-7.el8_6"))),
     sbom: Some(format!("/api/package/sbom?purl={}", &urlencoding::encode("pkg:rpm/redhat/openssl@1.1.1k-7.el8_6"))),
     vulnerabilities: vec![VulnerabilityRef {
         cve: "cve-2023-0286".into(),
-        href: "https://access.redhat.com/security/cve/cve-2023-0286".into()
+        href: "https://access.redhat.com/security/cve/cve-2023-0286".into(),
+        severity: "low".to_string()
     }],
 }))]
 pub struct Package {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub version: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub package_type: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub purl: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -23,14 +32,16 @@ pub struct Package {
     pub vulnerabilities: Vec<VulnerabilityRef>,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, ToSchema, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, ToSchema, Serialize, Deserialize, Default)]
 #[schema(example = json!(VulnerabilityRef {
     cve: "cve-2023-0286".into(),
-    href: "https://access.redhat.com/security/cve/cve-2023-0286".into()
+    href: "https://access.redhat.com/security/cve/cve-2023-0286".into(),
+    severity: "low".to_string()
 }))]
 pub struct VulnerabilityRef {
     pub cve: String,
     pub href: String,
+    pub severity: String,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, ToSchema, Serialize, Deserialize)]

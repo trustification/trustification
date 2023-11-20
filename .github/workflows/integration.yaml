@@ -67,13 +67,14 @@ jobs:
 
       - name: Print storage use
         run: |
-          du -sh *
-          du -sh $HOME/*
+          sudo du -sh *
+          sudo du -sh $HOME/*
+          sudo rm -rf deploy/compose//container_files/pg
 
       - name: Test
         run: |
           #RUST_LOG=tantivy=off,info cargo xtask test --ui --webdriver none --nocapture
-          RUST_LOG=tantivy=off,info cargo xtask test --nocapture
+          RUST_LOG=tantivy=off,info cargo xtask test --nocapture --concurrent=1
           docker-compose ${files} ps
 
       - name: Print logs

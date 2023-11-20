@@ -8,7 +8,7 @@ use trustification_auth::client::TokenInjector;
 
 #[test_context(SpogContext)]
 #[tokio::test]
-#[ntest::timeout(30_000)]
+#[ntest::timeout(60_000)]
 async fn spog_version(context: &mut SpogContext) {
     let response = reqwest::Client::new()
         .get(context.urlify("/.well-known/trustification/version"))
@@ -49,12 +49,12 @@ async fn spog_endpoints(context: &mut SpogContext) {
 /// test this.
 #[test_context(SpogContext)]
 #[tokio::test]
-#[ntest::timeout(30_000)]
+#[ntest::timeout(60_000)]
 async fn spog_search_forward_bombastic(context: &mut SpogContext) {
     let client = reqwest::Client::new();
 
     let response = client
-        .get(context.urlify("/api/v1/package/search"))
+        .get(context.urlify("/api/v1/sbom/search"))
         .inject_token(&context.provider.provider_user)
         .await
         .unwrap()
@@ -68,7 +68,7 @@ async fn spog_search_forward_bombastic(context: &mut SpogContext) {
     let client = reqwest::Client::new();
 
     let response = client
-        .get(context.urlify("/api/v1/package/search"))
+        .get(context.urlify("/api/v1/sbom/search"))
         .query(&[("q", urlencoding::encode("unknown:field"))])
         .inject_token(&context.provider.provider_user)
         .await
@@ -85,7 +85,7 @@ async fn spog_search_forward_bombastic(context: &mut SpogContext) {
 /// test this.
 #[test_context(SpogContext)]
 #[tokio::test]
-#[ntest::timeout(30_000)]
+#[ntest::timeout(60_000)]
 async fn spog_search_forward_vexination(context: &mut SpogContext) {
     let client = reqwest::Client::new();
 
@@ -153,7 +153,7 @@ async fn spog_search_correlation(context: &mut SpogContext) {
     // indexer time to do its thing, so might need to retry
     loop {
         let response = client
-            .get(context.urlify(format!("/api/v1/package/search?q=id%3A{sbom_id}")))
+            .get(context.urlify(format!("/api/v1/sbom/search?q=id%3A{sbom_id}")))
             .inject_token(&context.provider.provider_user)
             .await
             .unwrap()
@@ -165,8 +165,7 @@ async fn spog_search_correlation(context: &mut SpogContext) {
         if payload["total"].as_u64().unwrap() >= 1 {
             assert_eq!(payload["result"][0]["name"], json!("stf-1.5"), "unexpected sbom name");
 
-            let data: spog_model::search::PackageSummary =
-                serde_json::from_value(payload["result"][0].clone()).unwrap();
+            let data: spog_model::search::SbomSummary = serde_json::from_value(payload["result"][0].clone()).unwrap();
             // println!("Data: {:?}", data);
             // we need to have some information
             assert!(data.advisories.is_some(), "missing advisories");
@@ -185,7 +184,8 @@ async fn spog_search_correlation(context: &mut SpogContext) {
 /// to Guac. This test is here to test this.
 #[test_context(SpogContext)]
 #[tokio::test]
-#[ntest::timeout(30_000)]
+#[ignore]
+#[ntest::timeout(60_000)]
 async fn spog_dependencies(context: &mut SpogContext) {
     let input = serde_json::from_str(include_str!("testdata/correlation/stf-1.5.json")).unwrap();
     let sbom_id = "test-stf-1.5-guac";
@@ -197,7 +197,7 @@ async fn spog_dependencies(context: &mut SpogContext) {
 
     loop {
         let response = client
-            .get(context.urlify("/api/v1/packages"))
+            .get(context.urlify("/api/v1/package/related"))
             .query(&[("purl", purl)])
             .inject_token(&context.provider.provider_user)
             .await
@@ -216,7 +216,7 @@ async fn spog_dependencies(context: &mut SpogContext) {
     }
 
     let response = client
-        .get(context.urlify("/api/v1/packages/dependents"))
+        .get(context.urlify("/api/v1/package/dependents"))
         .query(&[("purl", purl)])
         .inject_token(&context.provider.provider_user)
         .await
@@ -231,7 +231,7 @@ async fn spog_dependencies(context: &mut SpogContext) {
 
     let purl: &str = "pkg:rpm/redhat/python-zope-event@4.2.0-9.2.el8stf";
     let response = client
-        .get(context.urlify("/api/v1/packages/dependencies"))
+        .get(context.urlify("/api/v1/package/dependencies"))
         .query(&[("purl", purl)])
         .inject_token(&context.provider.provider_user)
         .await

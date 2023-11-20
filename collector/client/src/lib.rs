@@ -16,14 +16,14 @@ pub struct CollectVulnerabilitiesRequest {
 
 pub type VulnerabilityIds = Vec<String>;
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Default)]
 pub struct CollectPackagesResponse {
     #[serde(flatten)]
     pub purls: HashMap<String, VulnerabilityIds>,
     pub errors: Vec<String>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Default)]
 pub struct CollectVulnerabilitiesResponse {
     pub vulnerability_ids: VulnerabilityIds,
     pub errors: Vec<String>,
@@ -78,22 +78,6 @@ impl CollectorClient {
             .send()
             .await?;
         let response: CollectPackagesResponse = response.json().await?;
-        Ok(response)
-    }
-
-    pub async fn collect_vulnerabilities(
-        &self,
-        request: CollectVulnerabilitiesRequest,
-    ) -> Result<CollectVulnerabilitiesResponse, anyhow::Error> {
-        let response = self
-            .client
-            .post(self.url.vulnerabilities_url())
-            .inject_token(self.provider.as_ref())
-            .await?
-            .json(&request)
-            .send()
-            .await?;
-        let response: CollectVulnerabilitiesResponse = response.json().await?;
         Ok(response)
     }
 }

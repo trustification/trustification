@@ -16,7 +16,7 @@ use yew_more_hooks::prelude::*;
 
 #[derive(PartialEq, Properties)]
 pub struct CveSearchControlsProperties {
-    pub search_params: UseReducerHandle<SearchMode<DynamicSearchParameters>>,
+    pub search_params: UseReducerHandle<SearchState<DynamicSearchParameters>>,
 }
 
 #[function_component(CveSearchControls)]
@@ -39,7 +39,7 @@ pub fn cve_search_controls(props: &CveSearchControlsProperties) -> Html {
 
 #[hook]
 pub fn use_cve_search(
-    search_params: UseReducerHandle<SearchMode<DynamicSearchParameters>>,
+    search_params: UseReducerHandle<SearchState<DynamicSearchParameters>>,
     pagination: UsePagination,
     callback: Callback<UseAsyncHandleDeps<SearchResult<Rc<Vec<CveSearchDocument>>>, String>>,
 ) -> UseStandardSearch {
@@ -78,7 +78,7 @@ pub struct CveSearchProperties {
 #[derive(Clone, Debug, Default, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
 struct PageState {
     pagination: PaginationControl,
-    search_params: SearchMode<DynamicSearchParameters>,
+    search_params: HistorySearchState<DynamicSearchParameters>,
 }
 
 #[function_component(CveSearch)]
@@ -87,11 +87,14 @@ pub fn cve_search(props: &CveSearchProperties) -> Html {
         search_params: match props.query.as_ref().filter(|s| !s.is_empty()) {
             Some(terms) => SearchMode::Complex(terms.clone()),
             None => Default::default(),
-        },
+        }
+        .into(),
         ..Default::default()
     });
 
-    let search_params = use_reducer_eq::<SearchMode<DynamicSearchParameters>, _>(|| page_state.search_params.clone());
+    let search_params = use_reducer_eq::<SearchState<DynamicSearchParameters>, _>(|| {
+        SearchState::from(page_state.search_params.clone())
+    });
     let total = use_state_eq(|| None);
     let pagination = use_pagination(*total, || page_state.pagination);
     let state = use_state_eq(UseAsyncState::default);
@@ -117,7 +120,7 @@ pub fn cve_search(props: &CveSearchProperties) -> Html {
         page_state,
         PageState {
             pagination: **pagination,
-            search_params: (*search_params).clone(),
+            search_params: (*search_params).clone().into(),
         },
     );
 

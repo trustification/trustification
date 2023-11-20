@@ -55,6 +55,7 @@ pub struct SearchDocument {
 
 /// The hit describes the document, its score and optionally an explanation of why that score was given.
 #[derive(Clone, serde::Deserialize, serde::Serialize, Debug, PartialEq, utoipa::ToSchema)]
+#[aliases(SearchHitWithDocument = SearchHit<SearchDocument>)]
 pub struct SearchHit<T> {
     /// The document that was matched.
     pub document: T,

@@ -11,6 +11,7 @@ log = "0.4"
 serde = { version = "1", features = ["derive"] }
 sikula = { version = "0.4.1", default-features = false, features = ["time"] }
 time = { version = "0.3", features = ["serde"] }
+tracing = "0.1"
 utoipa = { version = "4" }
 
 # required by ToSchema utopia

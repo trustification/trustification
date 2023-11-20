@@ -43,6 +43,15 @@ impl TableEntryRenderer<Column> for CveEntry {
                 >{ self.cve.id.clone() }</Link<AppRoute>>
             ),
             Column::Description => html!( <>
+                if !self.cve.published {
+                    // means: rejected
+                    <i>
+                        { "Rejected" }
+                        if self.cve.title.is_some() {
+                            {": "}
+                        }
+                    </i>
+                }
                 if let Some(title) = &self.cve.title {
                     { title }
                 } else {

@@ -5,12 +5,12 @@ use crate::SharedState;
 use actix_web::{
     delete,
     error::{self, PayloadError},
-    get,
+    get, guard,
     http::{
         header::{self, Accept, AcceptEncoding, ContentType, HeaderValue, CONTENT_ENCODING},
-        StatusCode,
+        Method, StatusCode,
     },
-    route, web, HttpRequest, HttpResponse, Responder,
+    web, HttpRequest, HttpResponse, Responder,
 };
 use bombastic_model::prelude::*;
 use derive_more::{Display, Error, From};
@@ -30,8 +30,8 @@ use utoipa::OpenApi;
 
 #[derive(OpenApi)]
 #[openapi(
-    paths(query_sbom, publish_sbom, search_sbom, delete_sbom),
-    components(schemas(SearchDocument, SearchResult),)
+    paths(query_sbom, publish_sbom, search_sbom, delete_sbom, search_package),
+    components(schemas(SearchDocument, SearchResult, SearchPackageDocument, SearchPackageResult),)
 )]
 pub struct ApiDoc;
 
@@ -39,13 +39,20 @@ pub fn config(
     cfg: &mut web::ServiceConfig,
     auth: Option<Arc<Authenticator>>,
     swagger_ui_oidc: Option<Arc<SwaggerUiOidc>>,
+    publish_limit: usize,
 ) {
     cfg.service(
         web::scope("/api/v1")
             .wrap(new_auth!(auth))
             .service(query_sbom)
             .service(search_sbom)
-            .service(publish_sbom)
+            .service(search_package)
+            .service(
+                web::resource("/sbom")
+                    .app_data(web::PayloadConfig::new(publish_limit))
+                    .guard(guard::Any(guard::Method(Method::PUT)).or(guard::Method(Method::POST)))
+                    .to(publish_sbom),
+            )
             .service(delete_sbom),
     )
     .service(swagger_ui_with_auth(ApiDoc::openapi(), swagger_ui_oidc));
@@ -237,13 +244,54 @@ async fn search_sbom(
 
     let (result, total) = actix_web::web::block(move || {
         state
-            .index
+            .sbom_index
             .search(&params.q, params.offset, params.limit, (&params).into())
     })
     .await?
     .map_err(Error::Index)?;
 
     Ok(HttpResponse::Ok().json(SearchResult { total, result }))
+}
+
+/// Search for a package using a free form search query.
+///
+/// See the [documentation](https://docs.trustification.dev/trustification/user/retrieve.html) for a description of the query language.
+#[utoipa::path(
+    get,
+    tag = "bombastic",
+    path = "/api/v1/package/search",
+    responses(
+        (status = 200, description = "Search completed"),
+        (status = BAD_REQUEST, description = "Bad query"),
+        (status = 401, description = "Not authenticated"),
+    ),
+    params(
+        ("q" = String, Query, description = "Search query"),
+    )
+)]
+#[get("/package/search")]
+async fn search_package(
+    state: web::Data<SharedState>,
+    params: web::Query<SearchParams>,
+    authorizer: web::Data<Authorizer>,
+    user: UserInformation,
+) -> actix_web::Result<impl Responder> {
+    // TODO: Should this use a different permission?
+    authorizer.require(&user, Permission::ReadSbom)?;
+
+    let params = params.into_inner();
+
+    log::info!("Querying Package: '{}'", params.q);
+
+    let (result, total) = actix_web::web::block(move || {
+        state
+            .package_index
+            .search(&params.q, params.offset, params.limit, (&params).into())
+    })
+    .await?
+    .map_err(Error::Index)?;
+
+    Ok(HttpResponse::Ok().json(SearchPackageResult { total, result }))
 }
 
 /// Upload an SBOM with an identifier.
@@ -264,7 +312,6 @@ async fn search_sbom(
         ("id" = String, Query, description = "Identifier assigned to the SBOM"),
     )
 )]
-#[route("/sbom", method = "PUT", method = "POST")]
 async fn publish_sbom(
     req: HttpRequest,
     state: web::Data<SharedState>,

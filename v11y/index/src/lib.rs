@@ -1,5 +1,6 @@
 use core::str::FromStr;
-use cve::{common, Cve, Published, Rejected, Timestamp};
+pub use cve::Cve;
+use cve::{common, Published, Rejected, Timestamp};
 use cvss::v3::Base;
 use cvss::Severity;
 use sikula::prelude::*;
@@ -100,9 +101,9 @@ impl Index {
         }
     }
 
-    fn index_published_cve(&self, cve: &Published) -> Result<Document, SearchError> {
+    fn index_published_cve(&self, cve: &Published, _id: &str) -> Result<Vec<(String, Document)>, SearchError> {
         log::debug!("Indexing published CVE document");
-
+        let mut documents: Vec<(String, Document)> = Vec::new();
         let mut document = doc!();
 
         document.add_bool(self.fields.published, true);
@@ -137,12 +138,13 @@ impl Index {
         }
 
         log::debug!("Indexed {:?}", document);
-        Ok(document)
+        documents.push((_id.to_string(), document));
+        Ok(documents)
     }
 
-    fn index_rejected_cve(&self, cve: &Rejected) -> Result<Document, SearchError> {
+    fn index_rejected_cve(&self, cve: &Rejected, _id: &str) -> Result<Vec<(String, Document)>, SearchError> {
         log::debug!("Indexing rejected CVE document");
-
+        let mut documents: Vec<(String, Document)> = Vec::new();
         let mut document = doc!();
 
         document.add_bool(self.fields.published, false);
@@ -151,7 +153,8 @@ impl Index {
         Self::add_timestamp(&mut document, self.fields.date_rejected, cve.metadata.date_rejected);
 
         log::debug!("Indexed {:?}", document);
-        Ok(document)
+        documents.push((_id.to_string(), document));
+        Ok(documents)
     }
 
     fn resource2query(&self, resource: &Cves) -> Box<dyn Query> {
@@ -203,36 +206,6 @@ impl Index {
 
 impl trustification_index::Index for Index {
     type MatchedDocument = SearchHit<SearchDocument>;
-    type Document = Cve;
-
-    fn index_doc(&self, _id: &str, doc: &Cve) -> Result<Document, SearchError> {
-        match doc {
-            Cve::Published(cve) => self.index_published_cve(cve),
-            Cve::Rejected(cve) => self.index_rejected_cve(cve),
-        }
-    }
-
-    fn parse_doc(data: &[u8]) -> Result<Cve, SearchError> {
-        serde_json::from_slice(data).map_err(|err| SearchError::DocParser(err.to_string()))
-    }
-
-    fn schema(&self) -> Schema {
-        self.schema.clone()
-    }
-
-    fn settings(&self) -> IndexSettings {
-        IndexSettings {
-            docstore_compression: tantivy::store::Compressor::Zstd(ZstdCompressor::default()),
-            ..Default::default()
-        }
-    }
-
-    fn doc_id_to_term(&self, id: &str) -> Term {
-        self.schema
-            .get_field("id")
-            .map(|f| Term::from_field_text(f, id))
-            .unwrap()
-    }
 
     fn prepare_query(&self, q: &str) -> Result<SearchQuery, SearchError> {
         let mut query = Cves::parse(q).map_err(|err| SearchError::QueryParser(err.to_string()))?;
@@ -366,5 +339,42 @@ impl trustification_index::Index for Index {
             explanation,
             metadata,
         })
+    }
+}
+
+impl trustification_index::WriteIndex for Index {
+    type Document = Cve;
+
+    fn name(&self) -> &str {
+        "cve"
+    }
+
+    fn index_doc(&self, id: &str, doc: &Cve) -> Result<Vec<(String, Document)>, SearchError> {
+        match doc {
+            Cve::Published(cve) => self.index_published_cve(cve, id),
+            Cve::Rejected(cve) => self.index_rejected_cve(cve, id),
+        }
+    }
+
+    fn parse_doc(&self, data: &[u8]) -> Result<Cve, SearchError> {
+        serde_json::from_slice(data).map_err(|err| SearchError::DocParser(err.to_string()))
+    }
+
+    fn schema(&self) -> Schema {
+        self.schema.clone()
+    }
+
+    fn settings(&self) -> IndexSettings {
+        IndexSettings {
+            docstore_compression: tantivy::store::Compressor::Zstd(ZstdCompressor::default()),
+            ..Default::default()
+        }
+    }
+
+    fn doc_id_to_term(&self, id: &str) -> Term {
+        self.schema
+            .get_field("id")
+            .map(|f| Term::from_field_text(f, id))
+            .unwrap()
     }
 }

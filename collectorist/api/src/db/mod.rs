@@ -86,19 +86,6 @@ impl Db {
         Ok(())
     }
 
-    pub async fn update_vulnerability_scan_time(&self, collector_id: &str, vuln_id: &str) -> Result<(), anyhow::Error> {
-        sqlx::query(
-            r#"replace into collector_vulnerabilities (collector, vulnerability_id, timestamp) VALUES ($1, $2, $3)"#,
-        )
-        .bind(collector_id.clone())
-        .bind(vuln_id)
-        .bind(Utc::now())
-        .execute(&self.pool)
-        .await?;
-
-        Ok(())
-    }
-
     #[allow(unused)]
     pub async fn get_purl_scan_time(
         &self,

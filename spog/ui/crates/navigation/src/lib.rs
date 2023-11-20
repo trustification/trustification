@@ -16,6 +16,7 @@ pub enum AppRoute {
         terms: String,
     },
     Cve(View),
+    Packages(View),
     Package {
         id: String,
     },

@@ -1,14 +1,18 @@
 use std::{net::TcpListener, process::ExitCode, sync::Arc, time::Duration};
 
 use actix_web::web;
+use bytesize::ByteSize;
 use prometheus::Registry;
 use tokio::task::block_in_place;
-use trustification_auth::auth::AuthConfigArguments;
-use trustification_auth::authenticator::Authenticator;
-use trustification_auth::authorizer::Authorizer;
-use trustification_auth::swagger_ui::{SwaggerUiOidc, SwaggerUiOidcConfig};
+use trustification_auth::{
+    auth::AuthConfigArguments,
+    authenticator::Authenticator,
+    authorizer::Authorizer,
+    swagger_ui::{SwaggerUiOidc, SwaggerUiOidcConfig},
+};
 use trustification_index::{IndexConfig, IndexStore};
 use trustification_infrastructure::{
+    app::http::BinaryByteSize,
     app::http::{HttpServerBuilder, HttpServerConfig},
     endpoint::Bombastic,
     health::checks::Probe,
@@ -42,6 +46,10 @@ pub struct Run {
 
     #[command(flatten)]
     pub http: HttpServerConfig<Bombastic>,
+
+    /// Request limit for publish requests
+    #[arg(long, default_value_t = ByteSize::mib(64).into())]
+    pub publish_limit: BinaryByteSize,
 }
 
 impl Run {
@@ -63,6 +71,7 @@ impl Run {
         }
 
         let tracing = self.infra.tracing;
+        let publish_limit = self.publish_limit.as_u64() as usize;
 
         Infrastructure::from(self.infra)
             .run(
@@ -81,8 +90,9 @@ impl Run {
                             let authenticator = authenticator.clone();
                             let swagger_oidc = swagger_oidc.clone();
 
-                            svc.app_data(web::Data::new(state.clone()))
-                                .configure(move |svc| server::config(svc, authenticator.clone(), swagger_oidc.clone()));
+                            svc.app_data(web::Data::new(state.clone())).configure(move |svc| {
+                                server::config(svc, authenticator.clone(), swagger_oidc.clone(), publish_limit)
+                            });
                         });
 
                     if let Some(v) = listener {
@@ -104,11 +114,25 @@ impl Run {
         registry: &Registry,
         devmode: bool,
     ) -> anyhow::Result<Arc<AppState>> {
-        let index =
-            block_in_place(|| IndexStore::new(&storage, &index_config, bombastic_index::Index::new(), registry))?;
+        let sbom_index =
+            block_in_place(|| IndexStore::new(&storage, &index_config, bombastic_index::sbom::Index::new(), registry))?;
+
+        let package_index = block_in_place(|| {
+            IndexStore::new(
+                &storage,
+                &index_config,
+                bombastic_index::packages::Index::new(),
+                registry,
+            )
+        })?;
+
         let storage = Storage::new(storage.process("bombastic", devmode), registry)?;
 
-        let state = Arc::new(AppState { storage, index });
+        let state = Arc::new(AppState {
+            storage,
+            sbom_index,
+            package_index,
+        });
 
         let sinker = state.clone();
         let sync_interval = index_config.sync_interval.into();
@@ -136,10 +160,12 @@ impl Run {
     }
 }
 
-pub(crate) type Index = IndexStore<bombastic_index::Index>;
+pub(crate) type SbomIndex = IndexStore<bombastic_index::sbom::Index>;
+pub(crate) type PackageIndex = IndexStore<bombastic_index::packages::Index>;
 pub struct AppState {
     storage: Storage,
-    index: Index,
+    sbom_index: SbomIndex,
+    package_index: PackageIndex,
 }
 
 pub(crate) type SharedState = Arc<AppState>;
@@ -147,8 +173,8 @@ pub(crate) type SharedState = Arc<AppState>;
 impl AppState {
     async fn sync_index(&self) -> Result<(), anyhow::Error> {
         let storage = &self.storage;
-        let index = &self.index;
-        index.sync(storage).await?;
+        self.sbom_index.sync(storage).await?;
+        self.package_index.sync(storage).await?;
         Ok(())
     }
 }

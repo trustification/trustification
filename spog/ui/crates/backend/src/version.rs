@@ -1,5 +1,5 @@
 use crate::{ApplyAccessToken, Backend, Endpoint};
-use spog_ui_common::utils::http::CheckStatus;
+use spog_ui_common::error::{ApiError, ApiErrorForStatus};
 use std::rc::Rc;
 use trustification_version::VersionInformation;
 use web_sys::RequestCache;
@@ -17,23 +17,17 @@ impl VersionService {
         Self { backend, access_token }
     }
 
-    pub async fn get_version(&self) -> Result<VersionInformation, String> {
+    pub async fn get_version(&self) -> Result<VersionInformation, ApiError> {
         let url = self
             .backend
-            .join(Endpoint::Api, "/.well-known/trustification/version")
-            .map_err(|err| format!("Unable to build URL: {err}"))?;
+            .join(Endpoint::Api, "/.well-known/trustification/version")?;
 
         let response = gloo_net::http::Request::get(url.as_str())
             .cache(RequestCache::NoStore)
             .latest_access_token(&self.access_token)
             .send()
-            .await
-            .map_err(|err| format!("Failed to load backend information: {err}"))?;
+            .await?;
 
-        response
-            .check_status()?
-            .json()
-            .await
-            .map_err(|err| format!("Failed to decode backend information: {err}"))
+        Ok(response.api_error_for_status().await?.json().await?)
     }
 }

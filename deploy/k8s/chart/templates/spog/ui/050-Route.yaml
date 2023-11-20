@@ -2,6 +2,8 @@
 apiVersion: route.openshift.io/v1
 kind: Route
 metadata:
+  annotations:
+    {{- .Values.spog.ui.routeAnnotations | default .Values.default.routeAnnotations | toYaml | nindent 4 }}
   labels:
     app.kubernetes.io/name: spog-ui
     app.kubernetes.io/component: ui

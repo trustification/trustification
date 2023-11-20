@@ -23,6 +23,7 @@ trustification-storage = { path = "../storage"}
 thiserror = "1"
 trustification-api = { path = "../api"}
 tokio = { version = "1", features = ["sync"] }
+bytesize = "1.3"
 
 [dev-dependencies]
 tokio = { version = "1", features = ["full"] }

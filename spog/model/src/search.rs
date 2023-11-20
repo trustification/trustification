@@ -31,7 +31,7 @@ pub struct CveSummary {
 }
 
 #[derive(utoipa::ToSchema, serde::Deserialize, serde::Serialize, Debug, PartialEq, Clone)]
-pub struct PackageSummary {
+pub struct SbomSummary {
     pub id: String,
     pub name: String,
     pub version: String,
@@ -47,12 +47,12 @@ pub struct PackageSummary {
     pub href: String,
     pub advisories: Option<u64>,
     pub created: OffsetDateTime,
-
+    pub vulnerabilities: Vec<String>,
     #[serde(default, skip_serializing_if = "Value::is_null", rename = "$metadata")]
     pub metadata: Value,
 }
 
-impl PackageSummary {
+impl SbomSummary {
     pub fn advisories_query(&self) -> Option<String> {
         let mut terms = Vec::new();
         if let Some(cpe) = &self.cpe {

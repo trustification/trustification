@@ -3,7 +3,7 @@ trustImage: ghcr.io/trustification/trust
 uiImage: ghcr.io/trustification/trust
 docsImage: ghcr.io/trustification/trust-docs
 testsImage: ghcr.io/trustification/trust-tests
-guacImage: ghcr.io/trustification/guac:v0.3.5-s3fix
+guacImage: ghcr.io/trustification/guac:v0.3.14
 domain: trustification.dev
 replicas: 2
 imagePullPolicy: IfNotPresent
@@ -17,6 +17,9 @@ config:
   name: trustification-config
   authentication: trustification.dev/config/prod/auth.yaml
   collectorist: trustification.dev/config/prod/collectorist.yaml
+default:
+  routeAnnotations:
+    "haproxy.router.openshift.io/hsts_header": "max-age=31536000;includeSubDomains;preload"
 spog:
   crdaUrl: https://rhda.rhcloud.com/
   branding: true
@@ -52,6 +55,14 @@ bombastic:
   collector:
     enabled: true
     queue: sbom-indexed-prod
+    schedule: "0 * * * *"
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "4Gi"
+      limits:
+        cpu: "1"
+        memory: "4Gi"
   indexer:
     topics:
       stored: sbom-stored-prod
@@ -60,9 +71,9 @@ bombastic:
     resources:
       requests:
         cpu: "100m"
-        memory: "2Gi"
+        memory: "4Gi"
       limits:
-        memory: "2Gi"
+        memory: "4Gi"
   walker:
     enabled: true
     interval: "1d"
@@ -87,7 +98,14 @@ vexination:
   indexMode: file
   collector:
     enabled: true
-    queue: vex-indexed-prod
+    schedule: "30 * * * *"
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "4Gi"
+      limits:
+        cpu: "1"
+        memory: "4Gi"
   indexer:
     topics:
       stored: vex-stored-prod
@@ -127,10 +145,6 @@ collector:
   snyk:
     enabled: true
     credentials: snyk-collector-secret
-    resources:
-  nvd:
-    enabled: true
-    credentials: nvd-collector-secret
     resources:
 v11y:
   enabled: true
@@ -199,8 +213,28 @@ oidcClients:
           key: client-secret
 guac:
   enabled: true
+  database:
+    enabled: false
+    image: docker.io/library/postgres:15
   graphql:
     debug: true
+    affinity:
+      # tie to the zone of the RDS database
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: topology.kubernetes.io/zone
+                  operator: In
+                  values:
+                    - eu-west-1c
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "2Gi"
+      limits:
+        cpu: "1"
+        memory: "2Gi"
 keycloak:
   enabled: true
   production: true
@@ -235,3 +269,5 @@ keycloak:
         enabled: false
     auth:
       existingSecret: sso-postgres
+dataset:
+  enabled: true

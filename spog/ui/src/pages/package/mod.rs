@@ -3,7 +3,7 @@ mod result;
 use patternfly_yew::prelude::*;
 use result::ResultView;
 use spog_ui_components::common::PageHeading;
-use spog_ui_navigation::AppRoute;
+use spog_ui_navigation::{AppRoute, View};
 use yew::prelude::*;
 use yew_nested_router::prelude::*;
 
@@ -12,7 +12,7 @@ pub struct PackageProperties {
     pub id: Option<String>,
 }
 
-#[function_component(Package)]
+#[function_component(Packages)]
 pub fn package(props: &PackageProperties) -> Html {
     match &props.id {
         Some(id) => html!(<ResultView id={id.clone()} />),
@@ -29,9 +29,9 @@ fn search_view() -> Html {
 
     let submit = use_callback(inputtext.clone(), move |(), inputtext| {
         if let Some(router) = &router {
-            router.push(AppRoute::Package {
+            router.push(AppRoute::Packages(View::Content {
                 id: (**inputtext).clone(),
-            });
+            }));
         }
     });
 

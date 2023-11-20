@@ -1,5 +1,5 @@
 use spog_ui_backend::{use_backend, ConfigService};
-use spog_ui_common::error::components::Error;
+use spog_ui_common::error::components::ApiError;
 use std::rc::Rc;
 use yew::prelude::*;
 use yew_more_hooks::hooks::r#async::*;
@@ -29,7 +29,7 @@ pub fn configuration(props: &ConfigurationProperties) -> Html {
     match &*config {
         UseAsyncState::Pending | UseAsyncState::Processing => html!(),
         UseAsyncState::Ready(Err(err)) => html!(
-            <Error err={err.clone()}/>
+            <ApiError error={err.clone()}/>
         ),
         UseAsyncState::Ready(Ok(config)) => html!(
             <ContextProvider<Rc<spog_model::config::Configuration>> context={config.clone()}>

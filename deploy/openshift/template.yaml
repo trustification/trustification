@@ -134,27 +134,6 @@ objects:
     kind: Service
     metadata:
       labels:
-        app.kubernetes.io/name: collector-nvd
-        app.kubernetes.io/component: collector
-        app.kubernetes.io/part-of: trustification
-      annotations:
-        service.beta.openshift.io/serving-cert-secret-name: collector-nvd-tls
-      name: collector-nvd
-    spec:
-      ports:
-        - name: endpoint
-          port: 443
-          protocol: TCP
-          targetPort: 8080
-      selector:
-        app.kubernetes.io/name: collector-nvd
-        app.kubernetes.io/component: collector
-        app.kubernetes.io/part-of: trustification
-      type: ClusterIP
-  - apiVersion: v1
-    kind: Service
-    metadata:
-      labels:
         app.kubernetes.io/name: collector-osv
         app.kubernetes.io/component: collector
         app.kubernetes.io/part-of: trustification
@@ -500,79 +479,6 @@ objects:
   - apiVersion: apps/v1
     kind: Deployment
     metadata:
-      name: bombastic-collector
-      labels:
-        app.kubernetes.io/name: bombastic-collector
-        app.kubernetes.io/component: collector
-        app.kubernetes.io/part-of: trustification
-    spec:
-      replicas: 1
-      selector:
-        matchLabels:
-          app.kubernetes.io/name: bombastic-collector
-          app.kubernetes.io/component: collector
-          app.kubernetes.io/part-of: trustification
-      template:
-        metadata:
-          labels:
-            app.kubernetes.io/name: bombastic-collector
-            app.kubernetes.io/component: collector
-            app.kubernetes.io/part-of: trustification
-            metrics: 'true'
-        spec:
-          volumes:
-            - name: config
-              configMap:
-                name: ${CONFIG_NAME}
-            - name: guac-config
-              configMap:
-                name: guac-cm
-          containers:
-            - image: ${GUAC_IMAGE}
-              imagePullPolicy: Always
-              name: service
-              command:
-                - /opt/guac/guacone
-              args:
-                - collect
-                - s3
-                - --poll
-                - --s3-bucket
-                - ${BOMBASTIC_STORAGE_BUCKET}
-                - --s3-mp
-                - sqs
-                - --s3-queues
-                - ${BOMBASTIC_INDEXER_GUAC_TOPIC}
-              workingDir: /guac
-              env:
-                - name: NAMESPACE
-                  valueFrom:
-                    fieldRef:
-                      fieldPath: metadata.namespace
-                - name: AWS_ACCESS_KEY_ID
-                  valueFrom:
-                    secretKeyRef:
-                      name: ${BOMBASTIC_AWS_SECRET_NAME}
-                      key: aws_access_key_id
-                - name: AWS_SECRET_ACCESS_KEY
-                  valueFrom:
-                    secretKeyRef:
-                      name: ${BOMBASTIC_AWS_SECRET_NAME}
-                      key: aws_secret_access_key
-                - name: AWS_REGION
-                  value: ${AWS_REGION}
-              ports:
-                - containerPort: 2782
-                  protocol: TCP
-              volumeMounts:
-                - name: guac-config
-                  mountPath: /guac
-                  readOnly: true
-                - mountPath: /etc/config
-                  name: config
-  - apiVersion: apps/v1
-    kind: Deployment
-    metadata:
       name: bombastic-indexer
       labels:
         app.kubernetes.io/name: bombastic-indexer
@@ -650,6 +556,8 @@ objects:
                   value: 'true'
                 - name: INFRASTRUCTURE_BIND
                   value: '[::]:9010'
+                - name: INDEX_WRITER_MEMORY_BYTES
+                  value: ${BOMBASTIC_INDEXER_INDEX_WRITER_MEMORY_BYTES}
                 - name: INDEX_SYNC_INTERVAL
                   value: ${BOMBASTIC_INDEXER_INDEX_SYNC_INTERVAL}
               volumeMounts:
@@ -660,122 +568,6 @@ objects:
                   protocol: TCP
                   name: infra
               resources: ${{BOMBASTIC_INDEXER_RESOURCES}}
-              livenessProbe:
-                httpGet:
-                  path: /health/live
-                  port: 9010
-                initialDelaySeconds: 2
-              readinessProbe:
-                httpGet:
-                  path: /health/ready
-                  port: 9010
-                initialDelaySeconds: 2
-              startupProbe:
-                httpGet:
-                  path: /health/startup
-                  port: 9010
-  - apiVersion: apps/v1
-    kind: Deployment
-    metadata:
-      name: collector-nvd
-      labels:
-        app.kubernetes.io/name: collector-nvd
-        app.kubernetes.io/component: collector
-        app.kubernetes.io/part-of: trustification
-    spec:
-      replicas: 1
-      strategy:
-        type: Recreate
-      selector:
-        matchLabels:
-          app.kubernetes.io/name: collector-nvd
-          app.kubernetes.io/component: collector
-          app.kubernetes.io/part-of: trustification
-      template:
-        metadata:
-          labels:
-            app.kubernetes.io/name: collector-nvd
-            app.kubernetes.io/component: collector
-            app.kubernetes.io/part-of: trustification
-            metrics: 'true'
-          annotations:
-            config/checksum: 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
-        spec:
-          volumes:
-            - name: data
-              emptyDir: {}
-            - name: config
-              configMap:
-                name: ${CONFIG_NAME}
-            - name: tls
-              secret:
-                secretName: collector-nvd-tls
-          containers:
-            - image: ${BACKEND_IMAGE}:${IMAGE_TAG}
-              imagePullPolicy: Always
-              name: service
-              command:
-                - /trust
-              args:
-                - collector
-                - nvd
-                - -p
-                - '8080'
-                - --auth-configuration
-                - /etc/config/auth.yaml
-                - --v11y-url
-                - https://v11y-api.$(NAMESPACE).svc
-                - --guac-url
-                - http://guac-graphql.$(NAMESPACE).svc:8080/query
-              env:
-                - name: RUST_LOG
-                  value: ${LOG_LEVEL}
-                - name: NAMESPACE
-                  valueFrom:
-                    fieldRef:
-                      fieldPath: metadata.namespace
-                - name: NVD_API_KEY
-                  valueFrom:
-                    secretKeyRef:
-                      name: nvd-collector-secret
-                      key: nvd_api_key
-                - name: HTTP_SERVER_BIND_ADDR
-                  value: '::'
-                - name: HTTP_SERVER_TLS_ENABLED
-                  value: 'true'
-                - name: HTTP_SERVER_TLS_KEY_FILE
-                  value: /etc/tls/tls.key
-                - name: HTTP_SERVER_TLS_CERTIFICATE_FILE
-                  value: /etc/tls/tls.crt
-                - name: INFRASTRUCTURE_ENABLED
-                  value: 'true'
-                - name: INFRASTRUCTURE_BIND
-                  value: '[::]:9010'
-                - name: SWAGGER_UI_OIDC_ISSUER_URL
-                  value: ${ISSUER_URL}
-                - name: OIDC_PROVIDER_CLIENT_ID
-                  value: trusted-content-api
-                - name: OIDC_PROVIDER_CLIENT_SECRET
-                  valueFrom:
-                    secretKeyRef:
-                      key: ${OIDC_PROVIDER_CLIENT_SECRET_KEY}
-                      name: ${OIDC_PROVIDER_CLIENT_SECRET_NAME}
-                - name: OIDC_PROVIDER_ISSUER_URL
-                  value: ${ISSUER_URL}
-              volumeMounts:
-                - name: data
-                  mountPath: /data
-                - mountPath: /etc/config
-                  name: config
-                - mountPath: /etc/tls
-                  name: tls
-              ports:
-                - containerPort: 8080
-                  protocol: TCP
-                - containerPort: 9010
-                  protocol: TCP
-                  name: infra
-              resources: ${{COLLECTOR_NVD_RESOURCES}}
               livenessProbe:
                 httpGet:
                   path: /health/live
@@ -1329,6 +1121,7 @@ objects:
           annotations:
             config/checksum: 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
         spec:
+          affinity: ${{GUAC_GQL_AFFINITY}}
           volumes:
             - name: config
               configMap:
@@ -1345,7 +1138,11 @@ objects:
               name: service
               command:
                 - /opt/guac/guacgql
-              args: []
+              args:
+                - --gql-backend
+                - inmem
+                - --gql-debug
+                - 'true'
               workingDir: /guac
               env:
                 - name: NAMESPACE
@@ -1368,6 +1165,7 @@ objects:
                   name: config
                 - mountPath: /etc/tls
                   name: tls
+              resources: ${{GUAC_GQL_RESOURCES}}
               ports:
                 - containerPort: 8080
                   protocol: TCP
@@ -1919,79 +1717,6 @@ objects:
   - apiVersion: apps/v1
     kind: Deployment
     metadata:
-      name: vexination-collector
-      labels:
-        app.kubernetes.io/name: vexination-collector
-        app.kubernetes.io/component: collector
-        app.kubernetes.io/part-of: trustification
-    spec:
-      replicas: 1
-      selector:
-        matchLabels:
-          app.kubernetes.io/name: vexination-collector
-          app.kubernetes.io/component: collector
-          app.kubernetes.io/part-of: trustification
-      template:
-        metadata:
-          labels:
-            app.kubernetes.io/name: vexination-collector
-            app.kubernetes.io/component: collector
-            app.kubernetes.io/part-of: trustification
-            metrics: 'true'
-        spec:
-          volumes:
-            - name: config
-              configMap:
-                name: ${CONFIG_NAME}
-            - name: guac-config
-              configMap:
-                name: guac-cm
-          containers:
-            - image: ${GUAC_IMAGE}
-              imagePullPolicy: Always
-              name: service
-              command:
-                - /opt/guac/guacone
-              args:
-                - collect
-                - s3
-                - --poll
-                - --s3-bucket
-                - ${VEXINATION_STORAGE_BUCKET}
-                - --s3-mp
-                - sqs
-                - --s3-queues
-                - ${VEXINATION_INDEXER_GUAC_TOPIC}
-              workingDir: /guac
-              env:
-                - name: NAMESPACE
-                  valueFrom:
-                    fieldRef:
-                      fieldPath: metadata.namespace
-                - name: AWS_ACCESS_KEY_ID
-                  valueFrom:
-                    secretKeyRef:
-                      name: ${VEXINATION_AWS_SECRET_NAME}
-                      key: aws_access_key_id
-                - name: AWS_SECRET_ACCESS_KEY
-                  valueFrom:
-                    secretKeyRef:
-                      name: ${VEXINATION_AWS_SECRET_NAME}
-                      key: aws_secret_access_key
-                - name: AWS_REGION
-                  value: ${AWS_REGION}
-              ports:
-                - containerPort: 2782
-                  protocol: TCP
-              volumeMounts:
-                - name: guac-config
-                  mountPath: /guac
-                  readOnly: true
-                - mountPath: /etc/config
-                  name: config
-  - apiVersion: apps/v1
-    kind: Deployment
-    metadata:
       name: vexination-indexer
       labels:
         app.kubernetes.io/name: vexination-indexer
@@ -2069,6 +1794,8 @@ objects:
                   value: 'true'
                 - name: INFRASTRUCTURE_BIND
                   value: '[::]:9010'
+                - name: INDEX_WRITER_MEMORY_BYTES
+                  value: ${VEXINATION_INDEXER_INDEX_WRITER_MEMORY_BYTES}
                 - name: INDEX_SYNC_INTERVAL
                   value: ${VEXINATION_INDEXER_INDEX_SYNC_INTERVAL}
               volumeMounts:
@@ -2093,6 +1820,79 @@ objects:
                 httpGet:
                   path: /health/startup
                   port: 9010
+  - apiVersion: batch/v1
+    kind: CronJob
+    metadata:
+      name: bombastic-collector
+      labels:
+        app.kubernetes.io/name: bombastic-collector
+        app.kubernetes.io/component: collector
+        app.kubernetes.io/part-of: trustification
+    spec:
+      schedule: ${BOMBASTIC_COLLECTOR_SCHEDULE}
+      suspend: false
+      concurrencyPolicy: Forbid
+      jobTemplate:
+        spec:
+          template:
+            metadata:
+              labels:
+                app.kubernetes.io/name: bombastic-collector
+                app.kubernetes.io/component: collector
+                app.kubernetes.io/part-of: trustification
+                metrics: 'true'
+            spec:
+              restartPolicy: Never
+              volumes:
+                - name: config
+                  configMap:
+                    name: ${CONFIG_NAME}
+                - name: guac-config
+                  configMap:
+                    name: guac-cm
+              containers:
+                - image: ${GUAC_IMAGE}
+                  imagePullPolicy: Always
+                  name: service
+                  command:
+                    - /opt/guac/guacone
+                  args:
+                    - collect
+                    - s3
+                    - --s3-bucket
+                    - ${BOMBASTIC_STORAGE_BUCKET}
+                    - --s3-region
+                    - ${AWS_REGION}
+                    - --limit
+                    - '100'
+                  workingDir: /guac
+                  env:
+                    - name: NAMESPACE
+                      valueFrom:
+                        fieldRef:
+                          fieldPath: metadata.namespace
+                    - name: AWS_ACCESS_KEY_ID
+                      valueFrom:
+                        secretKeyRef:
+                          name: ${BOMBASTIC_AWS_SECRET_NAME}
+                          key: aws_access_key_id
+                    - name: AWS_SECRET_ACCESS_KEY
+                      valueFrom:
+                        secretKeyRef:
+                          name: ${BOMBASTIC_AWS_SECRET_NAME}
+                          key: aws_secret_access_key
+                    - name: AWS_REGION
+                      value: ${AWS_REGION}
+                  ports:
+                    - containerPort: 2782
+                      protocol: TCP
+                  resources: ${{BOMBASTIC_COLLECTOR_RESOURCES}}
+                  volumeMounts:
+                    - name: guac-config
+                      mountPath: /guac
+                      readOnly: true
+                    - mountPath: /etc/config
+                      name: config
   - apiVersion: batch/v1
     kind: CronJob
     metadata:
@@ -2229,6 +2029,8 @@ objects:
                     - walker
                     - --source
                     - /mnt/cvelistV5
+                    - --delta-file
+                    - /mnt/last-delta
                   env:
                     - name: RUST_LOG
                       value: info
@@ -2278,6 +2080,79 @@ objects:
                     httpGet:
                       path: /health/startup
                       port: 9010
+  - apiVersion: batch/v1
+    kind: CronJob
+    metadata:
+      name: vexination-collector
+      labels:
+        app.kubernetes.io/name: vexination-collector
+        app.kubernetes.io/component: collector
+        app.kubernetes.io/part-of: trustification
+    spec:
+      schedule: ${VEXINATION_COLLECTOR_SCHEDULE}
+      suspend: false
+      concurrencyPolicy: Forbid
+      jobTemplate:
+        spec:
+          template:
+            metadata:
+              labels:
+                app.kubernetes.io/name: vexination-collector
+                app.kubernetes.io/component: collector
+                app.kubernetes.io/part-of: trustification
+                metrics: 'true'
+            spec:
+              restartPolicy: Never
+              volumes:
+                - name: config
+                  configMap:
+                    name: ${CONFIG_NAME}
+                - name: guac-config
+                  configMap:
+                    name: guac-cm
+              containers:
+                - image: ${GUAC_IMAGE}
+                  imagePullPolicy: Always
+                  name: service
+                  command:
+                    - /opt/guac/guacone
+                  args:
+                    - collect
+                    - s3
+                    - --s3-bucket
+                    - ${VEXINATION_STORAGE_BUCKET}
+                    - --s3-region
+                    - ${AWS_REGION}
+                    - --limit
+                    - '100'
+                  workingDir: /guac
+                  env:
+                    - name: NAMESPACE
+                      valueFrom:
+                        fieldRef:
+                          fieldPath: metadata.namespace
+                    - name: AWS_ACCESS_KEY_ID
+                      valueFrom:
+                        secretKeyRef:
+                          name: ${VEXINATION_AWS_SECRET_NAME}
+                          key: aws_access_key_id
+                    - name: AWS_SECRET_ACCESS_KEY
+                      valueFrom:
+                        secretKeyRef:
+                          name: ${VEXINATION_AWS_SECRET_NAME}
+                          key: aws_secret_access_key
+                    - name: AWS_REGION
+                      value: ${AWS_REGION}
+                  ports:
+                    - containerPort: 2782
+                      protocol: TCP
+                  resources: ${{VEXINATION_COLLECTOR_RESOURCES}}
+                  volumeMounts:
+                    - name: guac-config
+                      mountPath: /guac
+                      readOnly: true
+                    - mountPath: /etc/config
+                      name: config
   - apiVersion: batch/v1
     kind: CronJob
     metadata:
@@ -2441,32 +2316,48 @@ parameters:
   required: true
 - name: COLLECTOR_SNYK_RESOURCES
   required: true
-- name: COLLECTOR_NVD_RESOURCES
-  required: true
 - name: EXHORT_API_RESOURCES
   required: true
 - name: GUAC_IMAGE
   required: true
+- name: GUAC_GQL_RESOURCES
+  required: true
+- name: GUAC_GQL_AFFINITY
+  value: {}
+- name: BOMBASTIC_COLLECTOR_RESOURCES
+  required: true
+- name: VEXINATION_COLLECTOR_RESOURCES
+  required: true
 - name: K8S_NAMESPACE
   required: true
 - name: VEXINATION_WALKER_SCHEDULE
-  value: "1 0 * * *"
+  value: "10 * * * *"
 - name: BOMBASTIC_WALKER_SCHEDULE
-  value: "1 0 * * *"
+  value: "10 * * * *"
 - name: V11Y_WALKER_SCHEDULE
   value: "1 0 * * *"
+- name: VEXINATION_COLLECTOR_SCHEDULE
+  value: "30 * * * *"
+- name: BOMBASTIC_COLLECTOR_SCHEDULE
+  value: "0 * * * *"
 - name: V11Y_API_INDEX_SYNC_INTERVAL
   value: "1800s"
 - name: V11Y_INDEXER_INDEX_SYNC_INTERVAL
   value: "1800s"
+- name: V11Y_INDEXER_INDEX_WRITER_MEMORY_BYTES
+  value: "134217728"
 - name: BOMBASTIC_API_INDEX_SYNC_INTERVAL
   value: "1800s"
 - name: BOMBASTIC_INDEXER_INDEX_SYNC_INTERVAL
   value: "1800s"
+- name: BOMBASTIC_INDEXER_INDEX_WRITER_MEMORY_BYTES
+  value: "134217728"
 - name: VEXINATION_API_INDEX_SYNC_INTERVAL
   value: "1800s"
 - name: VEXINATION_INDEXER_INDEX_SYNC_INTERVAL
   value: "1800s"
+- name: VEXINATION_INDEXER_INDEX_WRITER_MEMORY_BYTES
+  value: "134217728"
 - name: LOG_LEVEL
   required: false
   value: "info"
@@ -2485,3 +2376,5 @@ parameters:
   value: spogApi
 - name: SEGMENT_SECRET_UI_KEY
   value: spogUi
+- name: POSTGRESQL_IMAGE
+  value: "docker.io/library/postgres:15"

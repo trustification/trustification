@@ -34,7 +34,6 @@ members = [
     "collector/client",
     "collector/osv",
     "collector/snyk",
-    "collector/nvd",
     "v11y/api",
     "v11y/client",
     "v11y/model",
@@ -86,7 +85,6 @@ default-members = [
     "collector/client",
     "collector/osv",
     "collector/snyk",
-    "collector/nvd",
     "v11y/api",
     "v11y/client",
     "v11y/model",
@@ -105,7 +103,7 @@ default-members = [
 ]
 
 [workspace.dependencies]
-guac = { git = "https://github.com/trustification/guac-rs.git", rev="76053d07948cf557b9d978ef39d574ed1562cf70" }
+guac = { git = "https://github.com/trustification/guac-rs.git", rev="12972f840f8c895fcde23713df9d4d4ae12276c6" }
 #guac = { path = "../guac-rs/lib" }
 
 [patch.crates-io]

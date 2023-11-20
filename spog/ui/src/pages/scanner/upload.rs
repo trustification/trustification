@@ -363,7 +363,9 @@ pub fn upload(props: &UploadProperties) -> Html {
                     </Card>
                 </StackItem>
                 <StackItem>
-                    {footer}
+                    if !*initial {
+                        {footer}
+                    }
                 </StackItem>
             </Stack>
 

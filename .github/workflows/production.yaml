@@ -39,7 +39,7 @@ jobs:
           git config --global user.email "ci@trustification.dev"
           git config --global user.name "Trustification CI"
           git checkout production
-          git merge v${{ inputs.releaseTag }} --no-edit -m "Updated production from main"
+          git merge ${{ inputs.releaseTag }} --no-edit -m "Updated production from main"
       - name: Update tags
         run: |
           ./yq e -i ".release= \"${{ inputs.releaseTag }}\"" deploy/trustification.dev/prod.yaml

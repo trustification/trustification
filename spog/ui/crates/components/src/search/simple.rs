@@ -2,21 +2,22 @@ use crate::search::DynamicSearchParameters;
 use patternfly_yew::prelude::*;
 use spog_ui_common::utils::search::*;
 use std::collections::HashSet;
+use std::ops::{Deref, DerefMut};
 use std::rc::Rc;
 use yew::html::{ChildrenRenderer, IntoPropValue};
 use yew::prelude::*;
 use yew::virtual_dom::VNode;
 
-#[derive(Clone)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SearchDefaults(pub Vec<DefaultEntry>);
 
 impl SearchDefaults {
-    pub fn apply_defaults<T>(self, state: &mut SearchMode<T>)
+    pub fn apply_defaults<T>(self, mode: &mut SearchMode<T>)
     where
         T: ToFilterExpression + SimpleProperties<Defaults = SearchDefaults> + Default + Clone,
     {
-        if let SearchMode::Simple(state) = state {
-            state.apply_defaults(self);
+        if let SearchMode::Simple(mode) = mode {
+            mode.apply_defaults(self);
         }
     }
 }
@@ -66,6 +67,16 @@ impl From<&str> for LabelProvider {
 impl From<Html> for LabelProvider {
     fn from(value: Html) -> Self {
         Self::Static(value)
+    }
+}
+
+impl IntoPropValue<OptionalHtml> for LabelProvider {
+    fn into_prop_value(self) -> OptionalHtml {
+        match self {
+            LabelProvider::Static(html) => html,
+            LabelProvider::Dynamic(f) => f(),
+        }
+        .into()
     }
 }
 
@@ -123,12 +134,12 @@ impl SearchOption {
     }
 }
 
-fn search_set<F>(search: UseReducerHandle<SearchMode<DynamicSearchParameters>>, f: F) -> Callback<bool>
+fn search_set<F>(search: UseReducerHandle<SearchState<DynamicSearchParameters>>, f: F) -> Callback<bool>
 where
     F: Fn(&mut DynamicSearchParameters, bool) + 'static,
 {
     Callback::from(move |state| {
-        if let SearchMode::Simple(simple) = &*search {
+        if let SearchMode::Simple(simple) = &**search {
             let mut simple = simple.clone();
             f(&mut simple, state);
             search.dispatch(SearchModeAction::SetSimple(simple));
@@ -137,59 +148,174 @@ where
 }
 
 pub enum SearchModeAction {
+    /// Set new search terms for either complex or simple mode
     SetTerms(String),
+    /// When in simple mode, set new search terms
     SetSimpleTerms(Vec<String>),
+    /// Apply the defaults, if no user interaction has taken place yet
     ApplyDefault(SearchDefaults),
     /// Clear the search, keeping the same search mode
     Clear,
+    /// Set complex mode, with provided query
     SetComplex(String),
-    SetSimpleSort((String, Order)),
+    /// Set simple mode, with provided state
     SetSimple(DynamicSearchParameters),
+    /// When in simple mode, set sort order
+    SetSimpleSort((String, Order)),
 }
 
-impl Reducible for SearchMode<DynamicSearchParameters> {
+impl Reducible for SearchState<DynamicSearchParameters> {
     type Action = SearchModeAction;
 
     fn reduce(self: Rc<Self>, action: Self::Action) -> Rc<Self> {
         match action {
-            Self::Action::SetTerms(terms) => match (*self).clone() {
-                SearchMode::Complex(_) => Rc::new(SearchMode::Complex(terms)),
-                SearchMode::Simple(mut s) => {
+            Self::Action::SetTerms(terms) => Rc::new(self.update(|mode| match mode {
+                SearchMode::Complex(_) => SearchMode::Complex(terms),
+                SearchMode::Simple(s) => {
+                    let mut s = s.clone();
                     *s.terms_mut() = terms.split(' ').map(|s| s.to_string()).collect();
-                    Rc::new(SearchMode::Simple(s))
+                    SearchMode::Simple(s)
                 }
-            },
+            })),
             Self::Action::ApplyDefault(defaults) => {
                 let mut new = (*self).clone();
-                defaults.apply_defaults(&mut new);
+                new.defaults = Some(defaults.clone());
+                if !new.modified {
+                    defaults.apply_defaults(&mut new);
+                }
                 Rc::new(new)
             }
-            Self::Action::Clear => match *self {
-                SearchMode::Simple(_) => Rc::new(SearchMode::Simple(DynamicSearchParameters::default())),
-                SearchMode::Complex(_) => Rc::new(SearchMode::Complex(String::new())),
-            },
-            Self::Action::SetComplex(terms) => Rc::new(SearchMode::Complex(terms)),
-            Self::Action::SetSimple(t) => Rc::new(SearchMode::Simple(t)),
-            Self::Action::SetSimpleSort(sort_by) => match &*self {
-                Self::Complex(_) => self,
-                Self::Simple(s) => {
+            Self::Action::Clear => {
+                let mut new = self.update(|mode| mode.reset()).unmodified();
+                if let Some(defaults) = self.defaults.clone() {
+                    defaults.apply_defaults(&mut new.mode);
+                }
+                Rc::new(new)
+            }
+            Self::Action::SetComplex(terms) => Rc::new(self.replace(SearchMode::Complex(terms))),
+            Self::Action::SetSimple(t) => Rc::new(self.replace(SearchMode::Simple(t))),
+            Self::Action::SetSimpleSort(sort_by) => Rc::new(self.update(|mode| match mode {
+                SearchMode::Complex(_) => mode.clone(),
+                SearchMode::Simple(s) => {
                     let mut s = (*s).clone();
                     s.set_sort_by(sort_by);
-                    Rc::new(Self::Simple(s))
+                    SearchMode::Simple(s)
                 }
-            },
-            Self::Action::SetSimpleTerms(terms) => match &*self {
-                Self::Complex(_) => self,
-                Self::Simple(s) => {
+            })),
+            Self::Action::SetSimpleTerms(terms) => Rc::new(self.update(|mode| match mode {
+                SearchMode::Complex(_) => mode.clone(),
+                SearchMode::Simple(s) => {
                     let mut s = (*s).clone();
                     (*s.terms_mut()) = terms;
-                    Rc::new(Self::Simple(s))
+                    SearchMode::Simple(s)
                 }
-            },
+            })),
         }
     }
 }
 
+/// The persisted search state
+#[derive(Clone, Debug, Default, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
+pub struct HistorySearchState<T> {
+    /// the current search mode and its options
+    pub mode: SearchMode<T>,
+    /// a flag indicating if the user modified the search options
+    pub modified: bool,
+}
+
+impl<T> From<HistorySearchState<T>> for SearchState<T> {
+    fn from(value: HistorySearchState<T>) -> Self {
+        Self {
+            mode: value.mode,
+            modified: value.modified,
+            defaults: None,
+        }
+    }
+}
+
+impl<T> From<SearchState<T>> for HistorySearchState<T> {
+    fn from(value: SearchState<T>) -> Self {
+        Self {
+            mode: value.mode,
+            modified: value.modified,
+        }
+    }
+}
+
+impl<T> From<SearchMode<T>> for HistorySearchState<T> {
+    fn from(mode: SearchMode<T>) -> Self {
+        Self { modified: false, mode }
+    }
+}
+
+/// Tracking the full search state
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct SearchState<T> {
+    /// the current search mode and its options
+    pub mode: SearchMode<T>,
+    /// the registered defaults
+    pub defaults: Option<SearchDefaults>,
+    /// a flag indicating if the user modified the search options
+    pub modified: bool,
+}
+
+impl<T> SearchState<T> {
+    /// Mutate the current search state and mark as modified
+    pub fn update<F>(&self, f: F) -> Self
+    where
+        F: FnOnce(&SearchMode<T>) -> SearchMode<T>,
+    {
+        Self {
+            mode: f(&self.mode),
+            defaults: self.defaults.clone(),
+            modified: true,
+        }
+    }
+
+    /// Replace the current search mode and mark as modified
+    pub fn replace(&self, mode: SearchMode<T>) -> Self {
+        Self {
+            mode,
+            defaults: self.defaults.clone(),
+            modified: true,
+        }
+    }
+
+    /// mark the state as "unmodifed"
+    pub fn unmodified(mut self) -> Self {
+        self.modified = false;
+        self
+    }
+}
+
+impl<T> Deref for SearchState<T> {
+    type Target = SearchMode<T>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.mode
+    }
+}
+
+impl<T> DerefMut for SearchState<T> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.mode
+    }
+}
+
+impl<T> From<SearchMode<T>> for SearchState<T> {
+    fn from(mode: SearchMode<T>) -> Self {
+        Self {
+            mode,
+            defaults: None,
+            modified: false,
+        }
+    }
+}
+
+/// The mode the search is in.
+///
+/// * Complex: the user specifies a full search string
+/// * Simple: the user may choose from some options, and enter some search terms
 #[derive(Clone, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum SearchMode<T> {
     Complex(String),
@@ -233,6 +359,14 @@ where
         *new.terms_mut() = new_terms;
         Self::Simple(new)
     }
+
+    /// Reset filters, but keep mode
+    pub fn reset(&self) -> Self {
+        match self {
+            Self::Complex(_) => Self::Complex(Default::default()),
+            Self::Simple(_) => Self::Simple(Default::default()),
+        }
+    }
 }
 
 impl<T> Default for SearchMode<T>
@@ -247,7 +381,7 @@ where
 #[derive(Properties)]
 pub struct SimpleSearchProperties {
     pub search: Rc<Search>,
-    pub search_params: UseReducerHandle<SearchMode<DynamicSearchParameters>>,
+    pub search_params: UseReducerHandle<SearchState<DynamicSearchParameters>>,
 }
 
 impl PartialEq for SimpleSearchProperties {
@@ -293,7 +427,7 @@ pub fn simple_search(props: &SimpleSearchProperties) -> Html {
     };
 
     let onclear = use_callback(props.search_params.clone(), |_, search_params| {
-        if let SearchMode::Simple(_) = &**search_params {
+        if let SearchMode::Simple(_) = &***search_params {
             search_params.dispatch(SearchModeAction::Clear);
         }
     });
@@ -332,13 +466,12 @@ fn render_opt(props: &SimpleSearchProperties, opt: &SearchOption) -> Html {
 
             let opt = opt.clone();
             html!(
-                <Check
+                <Checkbox
                     checked={(*props.search_params).map_bool(|s|(opt.getter)(s))}
-                    onchange={search_set(props.search_params.clone(), move |s, state|(opt.setter)(s, state))}
+                    onchange={search_set(props.search_params.clone(), move |s, state|(opt.setter)(s, state)).reform(|state: CheckboxState| state.into())}
                     disabled={!active}
-                >
-                    { opt.label.clone() }
-                </Check>
+                    label={opt.label.clone()}
+                />
             )
         }
         SearchOption::Select(select) => {

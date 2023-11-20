@@ -24,6 +24,10 @@ spec:
       annotations:
         config/checksum: {{ include (print $.Template.BasePath "/config/020-ConfigMap.yaml") . | sha256sum }}
     spec:
+      {{- with .Values.guac.graphql.affinity }}
+      affinity:
+        {{- . | toYaml | nindent 8 }}
+      {{- end }}
       volumes:
         - name: config
           configMap:
@@ -37,7 +41,24 @@ spec:
           imagePullPolicy: {{ .Values.imagePullPolicy }}
           name: service
           command: ["/opt/guac/guacgql"]
-          args: []
+          args:
+{{- if .Values.guac.database.enabled  }}
+            - "--gql-backend"
+            - "ent"
+            - "--db-address"
+            - "postgres://$(DB_USER):$(DB_PASSWORD)@$(PGHOST):$(PGPORT)/$(DB_NAME)"
+            - "--db-driver"
+            - "postgres"
+            - "--db-debug"
+            - "true"
+            - "--gql-debug"
+            - "true"
+{{- else }}
+            - "--gql-backend"
+            - "inmem"
+            - "--gql-debug"
+            - "true"
+{{- end }}
           workingDir: "/guac"
           env:
             - name: NAMESPACE
@@ -45,6 +66,33 @@ spec:
                 fieldRef:
                   fieldPath: metadata.namespace
             {{ include "trustification.http-server" . | nindent 12 }}
+{{- if .Values.guac.database.enabled  }}
+            - name: PGHOST
+              valueFrom:
+                secretKeyRef:
+                  name: guac-user-db
+                  key: "db.host"
+            - name: PGPORT
+              valueFrom:
+                secretKeyRef:
+                  name: guac-user-db
+                  key: "db.port"
+            - name: DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: guac-user-db
+                  key: "db.name"
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: guac-user-db
+                  key: "db.user"
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: guac-user-db
+                  key: "db.password"
+{{- end }}
           volumeMounts:
             - name: guac-config
               mountPath: /guac
@@ -52,6 +100,8 @@ spec:
             - mountPath: /etc/config
               name: config
             {{ include "trustification.http-server-volume-mounts" . | nindent 12 }}
+          resources:
+            {{- toYaml .Values.guac.graphql.resources | nindent 12 }}
           ports:
             - containerPort: 8080
               protocol: TCP

@@ -3,9 +3,9 @@ use futures::future::try_join_all;
 use patternfly_yew::prelude::*;
 use spog_model::{
     prelude::{CveDetails, PackageRelatedToProductCve, ProductCveStatus},
-    search::PackageSummary,
+    search::SbomSummary,
 };
-use spog_ui_backend::{use_backend, PackageService};
+use spog_ui_backend::{use_backend, SBOMService};
 use spog_ui_common::utils::time::date;
 use spog_ui_components::{async_state_renderer::async_content, pagination::PaginationWrapped};
 use spog_ui_navigation::{AppRoute, View};
@@ -20,7 +20,7 @@ pub struct TableData {
     sbom_id: String,
     status: ProductCveStatus,
     packages: Vec<PackageRelatedToProductCve>,
-    sbom: Option<PackageSummary>,
+    sbom: Option<SbomSummary>,
 }
 
 trait StatusLabel {
@@ -171,7 +171,7 @@ pub fn related_products(props: &RelatedProductsProperties) -> Html {
         let access_token = access_token.clone();
         use_async_with_cloned_deps(
             move |rows| async move {
-                let service = PackageService::new(backend.clone(), access_token.clone());
+                let service = SBOMService::new(backend.clone(), access_token.clone());
                 let futures = rows.iter().map(|row| service.get_package(&row.sbom_id));
                 try_join_all(futures)
                     .await
@@ -222,7 +222,7 @@ pub fn related_products(props: &RelatedProductsProperties) -> Html {
 #[derive(PartialEq, Properties)]
 pub struct RelatedProductsTableProperties {
     pub table_data: Rc<Vec<TableData>>,
-    pub sboms: Rc<Vec<Option<PackageSummary>>>,
+    pub sboms: Rc<Vec<Option<SbomSummary>>>,
 }
 
 #[function_component(RelatedProductsTable)]

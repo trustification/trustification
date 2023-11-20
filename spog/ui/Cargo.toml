@@ -66,7 +66,7 @@ spog-ui-components = { path = "crates/components" }
 spog-ui-common = { path = "crates/common" }
 spog-ui-utils = { path = "crates/utils" }
 spog-ui-donut = { path = "crates/donut" }
-futures = "0.3.28"
+futures = "0.3.29"
 
 [build-dependencies]
 trustification-version = { path = "../../version", features = ["build"] }
@@ -94,7 +94,7 @@ members = [
 #yew-more-hooks = { git = "https://github.com/ctron/yew-more-hooks", rev = "fc0af774aa925edcd5a544e562619ecb539942f8" }
 #yew-more-hooks = { path = "../../../yew-more-hooks" }
 
-patternfly-yew = { git = "https://github.com/ctron/patternfly-yew", rev = "8cee702715897f9d49607f637aa541b05fefa8e6" } # FIXME: awaiting release
+patternfly-yew = { git = "https://github.com/ctron/patternfly-yew", rev = "30b31e36120d3efc609f84e21a2baa208905a4e9" } # FIXME: awaiting release
 #patternfly-yew = { path = "../../../patternfly-yew" }
 
 #analytics-next = { git = "https://github.com/ctron/analytics-next-rs", rev = "9c95122f4e6dc308c90b945bd0f1925faf7cb828" } # FIXME: awaiting release

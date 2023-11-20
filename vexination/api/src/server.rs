@@ -1,8 +1,6 @@
 use actix_web::{
-    delete, get,
-    http::header::ContentType,
-    http::StatusCode,
-    route,
+    delete, get, guard,
+    http::{header::ContentType, Method, StatusCode},
     web::{self, Bytes},
     HttpResponse, Responder,
 };
@@ -35,13 +33,18 @@ pub fn config(
     cfg: &mut web::ServiceConfig,
     auth: Option<Arc<Authenticator>>,
     swagger_ui_oidc: Option<Arc<SwaggerUiOidc>>,
+    publish_limit: usize,
 ) {
     cfg.service(
         web::scope("/api/v1")
             .wrap(new_auth!(auth))
-            .app_data(web::PayloadConfig::new(10 * 1024 * 1024))
             .service(fetch_vex)
-            .service(publish_vex)
+            .service(
+                web::resource("/vex")
+                    .app_data(web::PayloadConfig::new(publish_limit))
+                    .guard(guard::Any(guard::Method(Method::PUT)).or(guard::Method(Method::POST)))
+                    .to(publish_vex),
+            )
             .service(search_vex)
             .service(delete_vex),
     )
@@ -144,7 +147,6 @@ struct PublishParams {
         ("advisory" = String, Query, description = "Identifier assigned to the VEX"),
     )
 )]
-#[route("/vex", method = "PUT", method = "POST")]
 async fn publish_vex(
     state: web::Data<SharedState>,
     params: web::Query<PublishParams>,

@@ -6,6 +6,7 @@ global:
   documentationUrl: https://github.com/trustification/trustification
   supportUrl: https://github.com/trustification/trustification/issues
   supportCaseUrl: https://github.com/trustification/trustification/issues
+  supportCaseLabel: "Open a support case"
 
 bombastic:
 
@@ -421,6 +422,42 @@ cve:
                   - 'datePublished:2021-01-01..2022-01-01'
               - id: "any"
                 label: "Any time"
+
+packages:
+
+  filters:
+    categories:
+
+      - label: Type
+        options:
+
+          - type: check
+            label: maven
+            id: maven
+            terms:
+              - 'type:maven'
+
+          - type: check
+            label: RPM
+            id: RPM
+            terms:
+              - 'type:rpm'
+
+          - type: check
+            label: NPM
+            id: NPM
+            terms:
+              - 'type:npm'
+
+      - label: Supplier
+        options:
+
+          - type: check
+            label: Redhat
+            id: Redhat
+            terms:
+              - 'supplier:"Organization: Red Hat"'
+
 
 scanner:
   documentationUrl: https://www.trustification.io/blog/
