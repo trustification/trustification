@@ -2,7 +2,6 @@ use core::fmt;
 use opentelemetry::propagation::Injector;
 use opentelemetry::Context;
 use reqwest::RequestBuilder;
-use tracing_bunyan_formatter::BunyanFormattingLayer;
 
 #[derive(clap::ValueEnum, Clone, Copy, Debug, PartialEq)]
 pub enum Tracing {
@@ -39,7 +38,7 @@ impl PropagateCurrentContext for reqwest::RequestBuilder {
     where
         Self: Sized,
     {
-        self.propagate_context(&opentelemetry::Context::current())
+        self.propagate_context(&Context::current())
     }
 }
 
@@ -115,11 +114,10 @@ fn init_jaeger(name: &str) {
 
     println!("Using Jaeger tracing.");
     println!("{:#?}", pipeline);
-    println!("Tracing is enabled. This console will not show any logging information.");
 
     let tracer = pipeline.install_batch(opentelemetry::runtime::Tokio).unwrap();
 
-    let formatting_layer = BunyanFormattingLayer::new(name.to_string(), std::io::stdout);
+    let formatting_layer = tracing_subscriber::fmt::Layer::default();
 
     if let Err(e) = tracing_subscriber::Registry::default()
         .with(tracing_subscriber::EnvFilter::from_default_env())
