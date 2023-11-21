@@ -35,5 +35,9 @@ data:
     -- grant permissions
     GRANT CONNECT ON DATABASE :db_name TO :db_user;
     GRANT USAGE, CREATE ON SCHEMA public TO :db_user;
-    GRANT UPDATE, INSERT, SELECT, DELETE ON ALL TABLES IN SCHEMA public TO :db_user;
+    
+    ALTER DEFAULT PRIVILEGES 
+        FOR ROLE :db_user
+        IN SCHEMA public
+        GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO :db_user;
 {{ end }}
