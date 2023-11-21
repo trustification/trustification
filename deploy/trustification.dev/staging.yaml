@@ -166,7 +166,7 @@ v11y:
       stored: v11y-stored-staging
       indexed: v11y-indexed-staging
       failed: v11y-failed-staging
-    indexSyncInterval: 5m
+    indexSyncInterval: 30m
     resources:
       requests:
         cpu: "100m"
