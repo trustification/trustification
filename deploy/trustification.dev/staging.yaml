@@ -68,6 +68,7 @@ bombastic:
       stored: sbom-stored-staging
       indexed: sbom-indexed-staging
       failed: sbom-failed-staging
+    indexSyncInterval: 1m
     resources:
       requests:
         cpu: "100m"
@@ -113,6 +114,7 @@ vexination:
       stored: vex-stored-staging
       indexed: vex-indexed-staging
       failed: vex-failed-staging
+    indexSyncInterval: 1m
     resources:
       requests:
         cpu: "100m"
@@ -164,6 +166,7 @@ v11y:
       stored: v11y-stored-staging
       indexed: v11y-indexed-staging
       failed: v11y-failed-staging
+    indexSyncInterval: 5m
     resources:
       requests:
         cpu: "100m"
