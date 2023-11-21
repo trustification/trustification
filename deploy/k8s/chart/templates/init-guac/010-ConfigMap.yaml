@@ -38,9 +38,11 @@ data:
     -- grant permissions on database
     \connect :db_name
     
-    GRANT USAGE, CREATE ON SCHEMA public TO :db_user;
+    GRANT USAGE ON SCHEMA public TO :db_user;
     
-    ALTER DEFAULT PRIVILEGES 
+    SET ROLE :db_user;
+    ALTER DEFAULT PRIVILEGES
         IN SCHEMA public
         GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO :db_user;
+    SET ROLE none;
 {{ end }}
