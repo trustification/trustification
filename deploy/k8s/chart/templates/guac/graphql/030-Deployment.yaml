@@ -49,8 +49,6 @@ spec:
             - "postgres"
             - "--db-debug"
             - "true"
-            - "--db-migrate"
-            - "false"
           env:
             - name: PGHOST
               valueFrom:
@@ -96,6 +94,8 @@ spec:
             - "true"
             - "--gql-debug"
             - "true"
+            - "--db-migrate"
+            - "false"
 {{- else }}
             - "--gql-backend"
             - "inmem"
