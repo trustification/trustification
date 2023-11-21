@@ -91,9 +91,9 @@ spec:
     rules:
     - alert: BombasticIndexerErrors
       expr: |
-        (sum(rate(index_failed_total{pod=~"bombastic-indexer.*"}[10m]))
+        (sum(rate(sbom_index_failed_total{pod=~"bombastic-indexer.*"}[10m]))
         /
-        sum(rate(index_indexed_total{pod=~"bombastic-indexer.*"}[10m]))) > 0.01
+        sum(rate(sbom_index_indexed_total{pod=~"bombastic-indexer.*"}[10m]))) > 0.01
       labels:
         service: trustification-bombastic-indexer
         severity: medium
@@ -101,9 +101,9 @@ spec:
         message: "{{ $labels.namespace }} indexer failure rate above 1%"
     - alert: VexinationIndexerErrors
       expr: |
-        (sum(rate(index_failed_total{pod=~"vexination-indexer.*"}[10m]))
+        (sum(rate(vex_index_failed_total{pod=~"vexination-indexer.*"}[10m]))
         /
-        sum(rate(index_indexed_total{pod=~"vexination-indexer.*"}[10m]))) > 0.01
+        sum(rate(vex_index_indexed_total{pod=~"vexination-indexer.*"}[10m]))) > 0.01
       labels:
         service: trustification-vexination-indexer
         severity: medium
