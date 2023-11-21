@@ -40,9 +40,11 @@ data:
     
     GRANT USAGE ON SCHEMA public TO :db_user;
     
-    SET ROLE :db_user;
+    -- grant on existing tables
+    GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO :db_user;
+    
+    -- grant on future tables
     ALTER DEFAULT PRIVILEGES
         IN SCHEMA public
         GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO :db_user;
-    SET ROLE none;
 {{ end }}
