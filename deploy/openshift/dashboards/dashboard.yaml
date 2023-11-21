@@ -34,7 +34,7 @@ data:
       "editable": true,
       "fiscalYearStartMonth": 0,
       "graphTooltip": 0,
-      "id": 21,
+      "id": 9,
       "links": [],
       "liveNow": false,
       "panels": [
@@ -382,10 +382,10 @@ data:
                 "type": "prometheus"
               },
               "editorMode": "code",
-              "expr": "sum(rate(index_indexed_total{namespace = \"$namespace\", pod=~\"bombastic-indexer.*\"}[10m]))",
+              "expr": "sum(rate(sbom_index_indexed_total{namespace = \"$namespace\", pod=~\"bombastic-indexer.*\"}[10m]))",
               "hide": false,
               "interval": "",
-              "legendFormat": "bombastic",
+              "legendFormat": "bombastic (sbom)",
               "range": true,
               "refId": "A"
             },
@@ -394,7 +394,7 @@ data:
                 "type": "prometheus"
               },
               "editorMode": "code",
-              "expr": "sum(rate(index_indexed_total{namespace = \"$namespace\", pod=~\"v11y-indexer.*\"}[10m]))",
+              "expr": "sum(rate(cve_index_indexed_total{namespace = \"$namespace\", pod=~\"v11y-indexer.*\"}[10m]))",
               "hide": false,
               "interval": "",
               "legendFormat": "v11y",
@@ -406,12 +406,24 @@ data:
                 "type": "prometheus"
               },
               "editorMode": "code",
-              "expr": "sum(rate(index_indexed_total{namespace = \"$namespace\", pod=~\"vexination-indexer.*\"}[10m]))",
+              "expr": "sum(rate(vex_index_indexed_total{namespace = \"$namespace\", pod=~\"vexination-indexer.*\"}[10m]))",
               "hide": false,
               "interval": "",
               "legendFormat": "vexination",
               "range": true,
               "refId": "C"
+            },
+            {
+              "datasource": {
+                "type": "prometheus"
+              },
+              "editorMode": "code",
+              "expr": "sum(rate(package_index_indexed_total{namespace = \"$namespace\", pod=~\"bombastic-indexer.*\"}[10m]))",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "bombastic (package)",
+              "range": true,
+              "refId": "D"
             }
           ],
           "title": "Indexing Throughput (documents/sec)",
@@ -476,7 +488,7 @@ data:
       "timepicker": {},
       "timezone": "",
       "title": "Trustification Performance",
-      "uid": "_fTIIfGSz",
+      "uid": "2n3ADXSIk",
       "version": 2,
       "weekStart": ""
     }
@@ -507,7 +519,7 @@ data:
       "editable": true,
       "fiscalYearStartMonth": 0,
       "graphTooltip": 0,
-      "id": 8,
+      "id": 10,
       "links": [],
       "liveNow": false,
       "panels": [
@@ -597,7 +609,7 @@ data:
                 "uid": "${datasource}"
               },
               "editorMode": "code",
-              "expr": "(sum by(namespace) (rate(index_failed_total{pod =~ \"vexination-indexer.*\", namespace = \"$namespace\"}[30m]))) / (sum by(namespace) (rate(index_indexed_total{pod =~ \"vexination-indexer.*\", namespace = \"$namespace\"}[30m])))\n",
+              "expr": "(sum by(namespace) (rate(vex_index_failed_total{pod =~ \"vexination-indexer.*\", namespace = \"$namespace\"}[30m]))) / (sum by(namespace) (rate(vex_index_indexed_total{pod =~ \"vexination-indexer.*\", namespace = \"$namespace\"}[30m])))\n",
               "interval": "",
               "legendFormat": "vexination",
               "range": true,
@@ -609,10 +621,10 @@ data:
                 "uid": "${datasource}"
               },
               "editorMode": "code",
-              "expr": "(sum by(namespace) (rate(index_failed_total{pod =~ \"bombastic-indexer.*\", namespace = \"$namespace\"}[30m]))) / (sum by(namespace) (rate(index_indexed_total{pod =~ \"bombastic-indexer.*\", namespace = \"$namespace\"}[30m])))",
+              "expr": "(sum by(namespace) (rate(sbom_index_failed_total{pod =~ \"bombastic-indexer.*\", namespace = \"$namespace\"}[30m]))) / (sum by(namespace) (rate(sbom_index_indexed_total{pod =~ \"bombastic-indexer.*\", namespace = \"$namespace\"}[30m])))",
               "hide": false,
               "interval": "",
-              "legendFormat": "bombastic",
+              "legendFormat": "bombastic (sbom)",
               "range": true,
               "refId": "B"
             },
@@ -622,12 +634,25 @@ data:
                 "uid": "${datasource}"
               },
               "editorMode": "code",
-              "expr": "(sum by(namespace) (rate(index_failed_total{pod =~ \"v11y-indexer.*\", namespace = \"$namespace\"}[30m]))) / (sum by(namespace) (rate(index_indexed_total{pod =~ \"v11y-indexer.*\", namespace = \"$namespace\"}[30m])))",
+              "expr": "(sum by(namespace) (rate(cve_index_failed_total{pod =~ \"v11y-indexer.*\", namespace = \"$namespace\"}[30m]))) / (sum by(namespace) (rate(cve_index_indexed_total{pod =~ \"v11y-indexer.*\", namespace = \"$namespace\"}[30m])))",
               "hide": false,
               "interval": "",
               "legendFormat": "v11y",
               "range": true,
               "refId": "C"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
+              "editorMode": "code",
+              "expr": "(sum by(namespace) (rate(package_index_failed_total{pod =~ \"bombastic-indexer.*\", namespace = \"$namespace\"}[30m]))) / (sum by(namespace) (rate(package_index_indexed_total{pod =~ \"bombastic-indexer.*\", namespace = \"$namespace\"}[30m])))",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "bombastic (package)",
+              "range": true,
+              "refId": "D"
             }
           ],
           "title": "Indexing failures",
@@ -853,7 +878,7 @@ data:
                 "uid": "${datasource}"
               },
               "editorMode": "code",
-              "expr": "1.0 - (sum(rate(bombastic_api_http_requests_duration_seconds_bucket{exported_endpoint=\"/api/v1/sbom/search\", namespace = \"$namespace\", status !~ \"5..\", le=\"1\"}[10m])) by (namespace) / sum(rate(bombastic_api_http_requests_duration_seconds_count{exported_endpoint=\"/api/v1/sbom/search\", namespace = \"$namespace\", status !~ \"5..\" }[10m])) by (namespace))",
+              "expr": "1.0 - (sum(rate(bombastic_api_http_requests_duration_seconds_bucket{exported_endpoint=~\"/api/v1/.*/search\", namespace = \"$namespace\", status !~ \"5..\", le=\"1\"}[10m])) by (namespace) / sum(rate(bombastic_api_http_requests_duration_seconds_count{exported_endpoint=~\"/api/v1/.*/search\", namespace = \"$namespace\", status !~ \"5..\" }[10m])) by (namespace))",
               "hide": false,
               "legendFormat": "bombastic",
               "range": true,
@@ -986,7 +1011,7 @@ data:
       },
       "timezone": "browser",
       "title": "Trustification SLO",
-      "uid": "jKQMtPiIk",
-      "version": 3,
+      "uid": "30wCDXIIz",
+      "version": 1,
       "weekStart": ""
     }
