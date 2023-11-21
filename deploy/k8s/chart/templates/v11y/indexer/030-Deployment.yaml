@@ -83,7 +83,7 @@ spec:
             - name: INFRASTRUCTURE_BIND
               value: "[::]:9010"
             - name: INDEX_SYNC_INTERVAL
-              value: {{ .Values.v11y.indexer.index_sync_interval | default "1800s" }}
+              value: {{ .Values.v11y.indexer.indexSyncInterval | default "1800s" }}
           volumeMounts:
             - name: data
               mountPath: /data
