@@ -31,9 +31,13 @@ data:
 
     -- now set the password
     ALTER USER :db_user WITH PASSWORD :'db_password';
-    
-    -- grant permissions
+
+    -- grant permission to connect
     GRANT CONNECT ON DATABASE :db_name TO :db_user;
+    
+    -- grant permissions on database
+    \connect :db_name
+    
     GRANT USAGE, CREATE ON SCHEMA public TO :db_user;
     
     ALTER DEFAULT PRIVILEGES 
