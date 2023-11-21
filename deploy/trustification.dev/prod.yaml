@@ -69,6 +69,7 @@ bombastic:
       stored: sbom-stored-prod
       indexed: sbom-indexed-prod
       failed: sbom-failed-prod
+    indexSyncInterval: 1m
     resources:
       requests:
         cpu: "100m"
@@ -114,6 +115,7 @@ vexination:
       stored: vex-stored-prod
       indexed: vex-indexed-prod
       failed: vex-failed-prod
+    indexSyncInterval: 1m
     resources:
       requests:
         cpu: "100m"
@@ -165,6 +167,7 @@ v11y:
       stored: v11y-stored-prod
       indexed: v11y-indexed-prod
       failed: v11y-failed-prod
+    indexSyncInterval: 30m
     resources:
       requests:
         cpu: "100m"

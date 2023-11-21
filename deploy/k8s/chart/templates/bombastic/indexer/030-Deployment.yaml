@@ -82,9 +82,9 @@ spec:
             - name: INFRASTRUCTURE_BIND
               value: "[::]:9010"
             - name: INDEX_WRITER_MEMORY_BYTES
-              value: {{ .Values.bombastic.indexer.index_writer_memory_bytes | default "128 MIB" }}
+              value: {{ .Values.bombastic.indexer.indexWriterMemoryBytes | default "128 MIB" }}
             - name: INDEX_SYNC_INTERVAL
-              value: {{ .Values.bombastic.indexer.index_sync_interval | default "1800s" }}
+              value: {{ .Values.bombastic.indexer.indexSyncInterval | default "1800s" }}
           volumeMounts:
             - name: data
               mountPath: /data
