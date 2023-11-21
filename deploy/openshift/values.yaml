@@ -41,7 +41,7 @@ bombastic:
     schedule: ${BOMBASTIC_COLLECTOR_SCHEDULE}
     resources: ${{BOMBASTIC_COLLECTOR_RESOURCES}}
   indexer:
-    reindex: false
+    reindex: true
     index_sync_interval: ${BOMBASTIC_INDEXER_INDEX_SYNC_INTERVAL}
     index_writer_memory_bytes: ${BOMBASTIC_INDEXER_INDEX_WRITER_MEMORY_BYTES}
     topics:
