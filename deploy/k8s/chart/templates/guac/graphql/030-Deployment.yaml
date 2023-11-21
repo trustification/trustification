@@ -94,8 +94,8 @@ spec:
             - "true"
             - "--gql-debug"
             - "true"
-            - "--db-migrate"
-            - "false"
+            # not sure why it has to be a single argument, but it won't work otherwise
+            - "--db-migrate=false"
 {{- else }}
             - "--gql-backend"
             - "inmem"
