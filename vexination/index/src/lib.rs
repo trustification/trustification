@@ -61,6 +61,7 @@ struct Fields {
     cve_cvss: Field,
     cve_fixed: Field,
     cve_affected: Field,
+    cve_not_affected: Field,
     cve_cwe: Field,
     cve_cvss_max: Field,
 }
@@ -317,6 +318,7 @@ impl trustification_index::WriteIndex for Index {
         let mut cvss_max: Option<f64> = None;
         let mut fixed: HashSet<String> = HashSet::new();
         let mut affected: HashSet<String> = HashSet::new();
+        let mut no_affected: HashSet<String> = HashSet::new();
 
         if let Some(vulns) = &csaf.vulnerabilities {
             for vuln in vulns {
@@ -415,6 +417,29 @@ impl trustification_index::WriteIndex for Index {
                             }
                         }
                     }
+
+                    if let Some(products) = &status.known_not_affected {
+                        for product in products {
+                            let (pp, related_pp) = find_product_package(csaf, product);
+                            if let Some(p) = pp {
+                                if let Some(cpe) = p.cpe {
+                                    no_affected.insert(cpe);
+                                }
+                                if let Some(purl) = p.purl {
+                                    no_affected.insert(purl);
+                                }
+                            }
+
+                            if let Some(p) = related_pp {
+                                if let Some(cpe) = p.cpe {
+                                    no_affected.insert(cpe);
+                                }
+                                if let Some(purl) = p.purl {
+                                    no_affected.insert(purl);
+                                }
+                            }
+                        }
+                    }
                 }
 
                 if let Some(discovery_date) = &vuln.discovery_date {
@@ -438,6 +463,10 @@ impl trustification_index::WriteIndex for Index {
 
             for fixed in fixed {
                 document.add_text(self.fields.cve_fixed, fixed);
+            }
+
+            for no_affected in no_affected {
+                document.add_text(self.fields.cve_not_affected, no_affected);
             }
 
             let mut json_severities: Map<String, Value> = Map::new();
@@ -506,6 +535,7 @@ impl Index {
         let cve_release = schema.add_date_field("cve_release_date", INDEXED | STORED);
         let cve_severity = schema.add_text_field("cve_severity", STRING | FAST);
         let cve_affected = schema.add_text_field("cve_affected", STORED | STRING);
+        let cve_not_affected = schema.add_text_field("cve_not_affected", STORED | STRING);
         let cve_fixed = schema.add_text_field("cve_fixed", STORED | STRING);
         let cve_cvss = schema.add_f64_field("cve_cvss", FAST | INDEXED | STORED);
         let cve_cvss_max = schema.add_f64_field("cve_cvss_max", FAST | STORED);
@@ -540,6 +570,7 @@ impl Index {
                 cve_cvss_max,
                 cve_cwe,
                 cve_severity_count,
+                cve_not_affected,
             },
         }
     }
@@ -581,13 +612,16 @@ impl Index {
             Vulnerabilities::Package(primary) => {
                 let q1 = create_rewrite_string_query(self.fields.cve_affected, primary);
                 let q2 = create_rewrite_string_query(self.fields.cve_fixed, primary);
+                let q3 = create_rewrite_string_query(self.fields.cve_not_affected, primary);
 
-                Box::new(BooleanQuery::union(vec![q1, q2]))
+                Box::new(BooleanQuery::union(vec![q1, q2, q3]))
             }
 
             Vulnerabilities::Fixed(primary) => create_rewrite_string_query(self.fields.cve_fixed, primary),
 
             Vulnerabilities::Affected(primary) => create_rewrite_string_query(self.fields.cve_affected, primary),
+
+            Vulnerabilities::NotAffected(primary) => create_rewrite_string_query(self.fields.cve_not_affected, primary),
 
             Vulnerabilities::Severity(value) => Box::new(TermSetQuery::new(vec![Term::from_field_text(
                 self.fields.advisory_severity,
@@ -916,6 +950,14 @@ mod tests {
         assert_search(|index| {
             let result = search(&index, "\"cpe:/o:redhat:rhel_eus\" in:fixed");
             assert_eq!(result.0.len(), 3);
+        });
+    }
+
+    #[tokio::test]
+    async fn test_products_by_not_affected() {
+        assert_search(|index| {
+            let result = search(&index, "notAffected:\"cpe:/o:redhat:rhel_eus:8.6:*:baseos:*\"");
+            assert_eq!(result.0.len(), 1);
         });
     }
 
