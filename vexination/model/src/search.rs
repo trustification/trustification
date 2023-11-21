@@ -24,6 +24,8 @@ pub enum Vulnerabilities<'a> {
     Fixed(Primary<'a>),
     #[search(scope)]
     Affected(Primary<'a>),
+    #[search(scope)]
+    NotAffected(Primary<'a>),
     #[search]
     Initial(Ordered<time::OffsetDateTime>),
     #[search(sort)]
