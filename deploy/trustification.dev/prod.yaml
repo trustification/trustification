@@ -167,7 +167,7 @@ v11y:
       stored: v11y-stored-prod
       indexed: v11y-indexed-prod
       failed: v11y-failed-prod
-    indexSyncInterval: 5m
+    indexSyncInterval: 30m
     resources:
       requests:
         cpu: "100m"
