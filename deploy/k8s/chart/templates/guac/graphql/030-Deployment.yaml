@@ -92,8 +92,6 @@ spec:
             - "postgres"
             - "--db-debug"
             - "true"
-            - "--gql-debug"
-            - "true"
             # not sure why it has to be a single argument, but it won't work otherwise
             - "--db-migrate=false"
 {{- else }}
