@@ -1,9 +1,9 @@
-release: 330617d122a767b68a69921c97c9c63e2136f56b
+release: b88ae9ebd967d7a44a91806d995315002bd7cb48
 trustImage: ghcr.io/trustification/trust
 uiImage: ghcr.io/trustification/trust
 docsImage: ghcr.io/trustification/trust-docs
 testsImage: ghcr.io/trustification/trust-tests
-guacImage: ghcr.io/trustification/guac:v0.3.16
+guacImage: ghcr.io/trustification/guac:v0.3.17
 domain: trustification.dev
 replicas: 2
 imagePullPolicy: IfNotPresent
@@ -25,6 +25,11 @@ spog:
   branding: true
   ui:
     customize: false
+    segmentWriteKey:
+      valueFrom:
+        secretKeyRef:
+          name: segment-write-keys
+          key: spogUi
     resources:
       requests:
         cpu: "100m"
@@ -50,6 +55,7 @@ bombastic:
   indexMode: file
   collector:
     enabled: true
+    queue: sbom-indexed-prod
     schedule: "0 * * * *"
     resources:
       requests:

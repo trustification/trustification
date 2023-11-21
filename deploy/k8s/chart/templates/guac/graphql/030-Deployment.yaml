@@ -36,6 +36,47 @@ spec:
           configMap:
             name: guac-cm
         {{ include "trustification.http-server-volumes" (dict "root" . "appName" "guac-graphql") | nindent 8 }}
+{{- if .Values.guac.database.enabled  }}
+      initContainers:
+        - image: {{ .Values.guacImage }}
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          name: migrate
+          command: ["/opt/guac/guacmigrate"]
+          args:
+            - "--db-address"
+            - "postgres://$(DB_USER):$(DB_PASSWORD)@$(PGHOST):$(PGPORT)/$(DB_NAME)"
+            - "--db-driver"
+            - "postgres"
+            - "--db-debug"
+            - "true"
+          env:
+            - name: PGHOST
+              valueFrom:
+                secretKeyRef:
+                  name: guac-admin-db
+                  key: "db.host"
+            - name: PGPORT
+              valueFrom:
+                secretKeyRef:
+                  name: guac-admin-db
+                  key: "db.port"
+            - name: DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  # we indeed require the user database, as we set up guac's schema
+                  name: guac-user-db
+                  key: "db.name"
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: guac-admin-db
+                  key: "db.user"
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: guac-admin-db
+                  key: "db.password"
+{{ end }}
       containers:
         - image: {{ .Values.guacImage }}
           imagePullPolicy: {{ .Values.imagePullPolicy }}
@@ -53,6 +94,8 @@ spec:
             - "true"
             - "--gql-debug"
             - "true"
+            # not sure why it has to be a single argument, but it won't work otherwise
+            - "--db-migrate=false"
 {{- else }}
             - "--gql-backend"
             - "inmem"
