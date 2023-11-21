@@ -24,7 +24,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 21,
+  "id": 9,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -372,10 +372,10 @@
             "type": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(rate(index_indexed_total{namespace = \"$namespace\", pod=~\"bombastic-indexer.*\"}[10m]))",
+          "expr": "sum(rate(sbom_index_indexed_total{namespace = \"$namespace\", pod=~\"bombastic-indexer.*\"}[10m]))",
           "hide": false,
           "interval": "",
-          "legendFormat": "bombastic",
+          "legendFormat": "bombastic (sbom)",
           "range": true,
           "refId": "A"
         },
@@ -384,7 +384,7 @@
             "type": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(rate(index_indexed_total{namespace = \"$namespace\", pod=~\"v11y-indexer.*\"}[10m]))",
+          "expr": "sum(rate(cve_index_indexed_total{namespace = \"$namespace\", pod=~\"v11y-indexer.*\"}[10m]))",
           "hide": false,
           "interval": "",
           "legendFormat": "v11y",
@@ -396,12 +396,24 @@
             "type": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(rate(index_indexed_total{namespace = \"$namespace\", pod=~\"vexination-indexer.*\"}[10m]))",
+          "expr": "sum(rate(vex_index_indexed_total{namespace = \"$namespace\", pod=~\"vexination-indexer.*\"}[10m]))",
           "hide": false,
           "interval": "",
           "legendFormat": "vexination",
           "range": true,
           "refId": "C"
+        },
+        {
+          "datasource": {
+            "type": "prometheus"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate(package_index_indexed_total{namespace = \"$namespace\", pod=~\"bombastic-indexer.*\"}[10m]))",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "bombastic (package)",
+          "range": true,
+          "refId": "D"
         }
       ],
       "title": "Indexing Throughput (documents/sec)",
@@ -466,7 +478,7 @@
   "timepicker": {},
   "timezone": "",
   "title": "Trustification Performance",
-  "uid": "_fTIIfGSz",
+  "uid": "2n3ADXSIk",
   "version": 2,
   "weekStart": ""
 }
