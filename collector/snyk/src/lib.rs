@@ -1,9 +1,9 @@
+use crate::client::schema::{Issue, IssueAttributes, Reference, Severity};
 use guac::client::GuacClient;
+use hide::Hide;
+use reqwest::Url;
 use std::process::ExitCode;
 use std::sync::Arc;
-
-use reqwest::Url;
-
 use trustification_auth::{
     auth::AuthConfigArguments,
     authenticator::Authenticator,
@@ -19,16 +19,9 @@ use trustification_infrastructure::{
 };
 use v11y_client::{ScoreType, Vulnerability};
 
-use crate::client::schema::{Issue, IssueAttributes, Reference, Severity};
-
-//use crate::client::schema::{Reference, Vulnerability};
-//use crate::server::{deregister_with_collectorist, register_with_collectorist};
-
-//mod client;
 mod client;
-mod server;
-
 mod rewrite;
+mod server;
 
 #[derive(clap::Args, Debug)]
 #[command(about = "Run the api server", args_conflicts_with_subcommands = true)]
@@ -57,7 +50,7 @@ pub struct Run {
     pub(crate) snyk_org_id: String,
 
     #[arg(env, long = "snyk-token")]
-    pub(crate) snyk_token: String,
+    pub(crate) snyk_token: Hide<String>,
 
     #[command(flatten)]
     pub auth: AuthConfigArguments,
@@ -91,7 +84,7 @@ impl Run {
                     let state = Self::configure(
                         self.client.build_client()?,
                         self.snyk_org_id,
-                        self.snyk_token,
+                        self.snyk_token.into(),
                         self.guac_url,
                         self.v11y_url,
                         provider.clone(),

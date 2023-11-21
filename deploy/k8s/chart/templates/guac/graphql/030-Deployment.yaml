@@ -113,12 +113,12 @@ spec:
             - name: PGHOST
               valueFrom:
                 secretKeyRef:
-                  name: guac-user-db
+                  name: guac-admin-db
                   key: "db.host"
             - name: PGPORT
               valueFrom:
                 secretKeyRef:
-                  name: guac-user-db
+                  name: guac-admin-db
                   key: "db.port"
             - name: DB_NAME
               valueFrom:

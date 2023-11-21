@@ -22,9 +22,13 @@ pub struct SqsEventBus {
 }
 
 impl SqsEventBus {
-    pub(crate) async fn new(access_key: String, secret_key: String, region: String) -> Result<Self, Error> {
+    pub(crate) async fn new(
+        access_key: impl Into<String>,
+        secret_key: impl Into<String>,
+        region: impl Into<String>,
+    ) -> Result<Self, Error> {
         let creds = Credentials::new(access_key, secret_key, None, None, "trustification");
-        let region = Region::new(region);
+        let region = Region::new(region.into());
         let config = SdkConfig::builder()
             .region(region)
             .credentials_provider(SharedCredentialsProvider::new(provide_credentials_fn(move || {

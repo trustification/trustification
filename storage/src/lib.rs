@@ -7,6 +7,7 @@ use async_stream::try_stream;
 use bytes::Bytes;
 use futures::pin_mut;
 use futures::{future::ok, stream::once, Stream, StreamExt};
+use hide::Hide;
 use http::{header::CONTENT_ENCODING, HeaderValue, StatusCode};
 use prometheus::{
     histogram_opts, opts, register_histogram_with_registry, register_int_counter_with_registry, Histogram, IntCounter,
@@ -128,11 +129,11 @@ pub struct StorageConfig {
 
     /// Access key for using storage
     #[arg(env = "STORAGE_ACCESS_KEY", long = "storage-access-key")]
-    pub access_key: Option<String>,
+    pub access_key: Option<Hide<String>>,
 
     /// Secret key for using storage
     #[arg(env = "STORAGE_SECRET_KEY", long = "storage-secret-key")]
-    pub secret_key: Option<String>,
+    pub secret_key: Option<Hide<String>>,
 
     /// Validation choice
     #[arg(env = "VALIDATOR", long = "validator", default_value = "none")]
@@ -145,8 +146,8 @@ impl TryInto<Bucket> for StorageConfig {
         let access_key = self.access_key.ok_or(Error::MissingParameter("access-key".into()))?;
         let secret_key = self.secret_key.ok_or(Error::MissingParameter("secret-key".into()))?;
         let credentials = Credentials {
-            access_key: Some(access_key),
-            secret_key: Some(secret_key),
+            access_key: Some(access_key.0),
+            secret_key: Some(secret_key.0),
             security_token: None,
             session_token: None,
             expiration: None,
@@ -162,11 +163,11 @@ impl StorageConfig {
     pub fn process(mut self, default_bucket: &str, devmode: bool) -> StorageConfig {
         if devmode {
             if self.access_key.is_none() {
-                self.access_key = Some("admin".to_string());
+                self.access_key = Some("admin".into());
             }
 
             if self.secret_key.is_none() {
-                self.secret_key = Some("password".to_string());
+                self.secret_key = Some("password".into());
             }
 
             if self.bucket.is_none() {

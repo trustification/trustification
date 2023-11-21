@@ -776,6 +776,9 @@
         "known_affected": [
           "BaseOS-8.6.0.Z.EUS:openssl-1:1.1.1k-7.el8_6.x86_64"
         ],
+        "known_not_affected": [
+          "BaseOS-8.6.0.Z.EUS:openssl-debuginfo-1:1.1.1k-8.el8_6.x86_64"
+        ],
         "fixed": [
           "BaseOS-8.6.0.Z.EUS:openssl-1:1.1.1k-8.el8_6.aarch64",
           "BaseOS-8.6.0.Z.EUS:openssl-1:1.1.1k-8.el8_6.ppc64le",
