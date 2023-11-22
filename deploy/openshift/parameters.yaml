@@ -144,4 +144,4 @@ parameters:
 - name: SEGMENT_SECRET_UI_KEY
   value: spogUi
 - name: POSTGRESQL_IMAGE
-  value: "docker.io/library/postgres:15"
+  value: "quay.io/app-sre/trusted-content-postgresql:15"
