@@ -43,6 +43,8 @@ spog:
         secretKeyRef:
           name: segment-write-keys
           key: spogApi
+    snyk:
+      credentials: snyk-collector-secret
     resources:
       requests:
         cpu: "100m"
