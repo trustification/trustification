@@ -34,6 +34,7 @@
     },
     "features": {
       "default": {
+        "additionalPackageInformation": true,
         "dedicatedSearch": true,
         "extendSection": true,
         "scanner": true
@@ -50,6 +51,8 @@
         "brandImageSrc": null,
         "documentationUrl": null,
         "productName": null,
+        "supportCaseLabel": null,
+        "supportCaseUrl": null,
         "supportUrl": null
       },
       "allOf": [
@@ -70,6 +73,16 @@
       "allOf": [
         {
           "$ref": "#/definitions/LandingPage"
+        }
+      ]
+    },
+    "packages": {
+      "default": {
+        "filters": {}
+      },
+      "allOf": [
+        {
+          "$ref": "#/definitions/Packages"
         }
       ]
     },
@@ -155,6 +168,11 @@
       "description": "Features for SPoG UI which can enabled/disabled.\n\nBy default, all features are enabled.",
       "type": "object",
       "properties": {
+        "additionalPackageInformation": {
+          "description": "Enable the \"additional infos\" tab on the package details page",
+          "default": true,
+          "type": "boolean"
+        },
         "dedicatedSearch": {
           "description": "Enable the dedicated search views (including the \"complex\" mode).",
           "default": true,
@@ -356,6 +374,21 @@
             "null"
           ]
         },
+        "supportCaseLabel": {
+          "default": null,
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "supportCaseUrl": {
+          "default": null,
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "uri"
+        },
         "supportUrl": {
           "default": null,
           "type": [
@@ -417,6 +450,19 @@
           "description": "Content above the search entry box section",
           "default": "",
           "type": "string"
+        }
+      }
+    },
+    "Packages": {
+      "type": "object",
+      "properties": {
+        "filters": {
+          "default": {},
+          "allOf": [
+            {
+              "$ref": "#/definitions/Filters"
+            }
+          ]
         }
       }
     },
