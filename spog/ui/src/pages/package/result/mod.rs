@@ -7,6 +7,7 @@ use patternfly_yew::prelude::*;
 use related_products::RelatedProducts;
 use spog_ui_backend::{use_backend, PackageInfoService};
 use spog_ui_components::{async_state_renderer::async_content, common::PageHeading};
+use spog_ui_utils::config::use_config;
 use std::rc::Rc;
 use vulnerabilities::Vulnerabilities;
 use yew::prelude::*;
@@ -22,6 +23,8 @@ pub struct ResultViewProperties {
 pub fn result_view(props: &ResultViewProperties) -> Html {
     let backend = use_backend();
     let access_token = use_latest_access_token();
+
+    let config = use_config();
 
     let package = {
         let backend = backend.clone();
@@ -82,9 +85,11 @@ pub fn result_view(props: &ResultViewProperties) -> Html {
                     <Tab<TabIndex> index={TabIndex::Products} title="Products using package">
                         { async_content(&*related_products_details, |related_products_details| html!(<RelatedProducts {related_products_details} />)) }
                     </Tab<TabIndex>>
-                    <Tab<TabIndex> index={TabIndex::PackageInfo} title="Package additional info">
-                        <PackageAdditionalInfo package_id={props.id.clone()} />
-                    </Tab<TabIndex>>
+                    { for config.features.additional_package_information.then(|| html_nested!(
+                        <Tab<TabIndex> index={TabIndex::PackageInfo} title="Package additional info">
+                            <PackageAdditionalInfo package_id={props.id.clone()} />
+                        </Tab<TabIndex>>
+                    )) }
                 </Tabs<TabIndex>>
             </PageSection>
         </>
