@@ -14,7 +14,7 @@ use tracing::instrument;
 
 use spog_model::prelude::{
     CveDetails, PackageDependencies, PackageDependents, PackageRefList, PackageRelatedToProductCve, ProductCveStatus,
-    ProductRelatedToCve,
+    ProductRelatedToCve, ProductRelatedToPackage,
 };
 use trustification_common::error::ErrorInformation;
 
@@ -249,6 +249,27 @@ impl GuacService {
             .find_vulnerability_by_sbom_uri(id, offset, limit)
             .await?)
     }
+
+    #[instrument(skip(self), err)]
+    pub async fn product_by_package(
+        &self,
+        purl: &str,
+        offset: Option<i64>,
+        limit: Option<i64>,
+    ) -> Result<Vec<ProductRelatedToPackage>, Error> {
+        let products = self
+            .client
+            .semantic()
+            .find_dependent_product(purl, offset, limit)
+            .await?;
+        Ok(products
+            .iter()
+            .map(|sbom_id| ProductRelatedToPackage {
+                sbom_uid: sbom_id.to_string(),
+                dependency_type: "Direct".to_string(),
+            })
+            .collect::<Vec<ProductRelatedToPackage>>())
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -290,6 +311,16 @@ mod test {
             )
             .await
             .unwrap();
+        println!("{}", serde_json::to_string_pretty(&res).unwrap());
+    }
+
+    // TODO do proper testing
+    // Use ds1 dataset
+    #[tokio::test]
+    #[ignore]
+    async fn test_product_by_package() {
+        let guac = GuacService::new("http://localhost:8085/query");
+        let res = guac.product_by_package("pkg:maven/org.xerial.snappy/snappy-java@1.1.8.4-redhat-00003?repository_url=https://maven.repository.redhat.com/ga/&type=jar", None, None).await.unwrap();
         println!("{}", serde_json::to_string_pretty(&res).unwrap());
     }
 }

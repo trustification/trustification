@@ -67,7 +67,7 @@ pub struct PackageProductDetails {
 
 #[derive(Clone, Debug, PartialEq, Eq, serde::Deserialize, serde::Serialize, ToSchema)]
 pub struct ProductRelatedToPackage {
-    pub sbom_id: String,
+    pub sbom_uid: String,
     pub dependency_type: String,
 }
 

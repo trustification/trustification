@@ -7,7 +7,7 @@ use actix_web::{
 };
 use actix_web_httpauth::extractors::bearer::BearerAuth;
 use spog_model::package_info::{PackageInfo, V11yRef};
-use spog_model::prelude::{PackageProductDetails, ProductRelatedToPackage};
+use spog_model::prelude::PackageProductDetails;
 use std::sync::Arc;
 use trustification_api::search::{SearchOptions, SearchResult};
 use trustification_auth::authenticator::Authenticator;
@@ -97,6 +97,13 @@ pub async fn package_get_mock(path: web::Path<String>) -> actix_web::Result<Http
     Ok(HttpResponse::Ok().json(&pkgs[0]))
 }
 
+#[derive(Debug, serde::Deserialize, IntoParams)]
+pub struct GetParams {
+    /// ID of the SBOM to get vulnerabilities for
+    pub offset: Option<i64>,
+    pub limit: Option<i64>,
+}
+
 #[utoipa::path(
     get,
     path = "/api/v1/package/{id}/related-products",
@@ -104,23 +111,17 @@ pub async fn package_get_mock(path: web::Path<String>) -> actix_web::Result<Http
         (status = 200, description = "related products search was successful", body = PackageProductDetails),
     ),
     params(
-        ("id" = Url, Path, description = "The ID of the package to get related products for")
+        ("id" = Url, Path, description = "The ID of the package to retrieve"),
+        GetParams
     )
 )]
-// TODO Replace mock data
-pub async fn package_related_products(path: web::Path<String>) -> actix_web::Result<HttpResponse> {
-    let _id = path.into_inner();
-
-    let related_products = vec![
-        ProductRelatedToPackage {
-            sbom_id: "3amp-2.json.bz2".to_string(),
-            dependency_type: "Direct".to_string(),
-        },
-        ProductRelatedToPackage {
-            sbom_id: "3amp-2.json.bz2".to_string(),
-            dependency_type: "Transitive".to_string(),
-        },
-    ];
+pub async fn package_related_products(
+    guac: web::Data<GuacService>,
+    path: web::Path<String>,
+    params: web::Query<GetParams>,
+) -> actix_web::Result<HttpResponse> {
+    let id = path.into_inner();
+    let related_products = guac.product_by_package(&id, params.offset, params.limit).await?;
     let result = PackageProductDetails { related_products };
     Ok(HttpResponse::Ok().json(&result))
 }

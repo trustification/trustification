@@ -72,7 +72,7 @@ pub fn related_products(props: &RelatedProductsProperties) -> Html {
                 let service = SBOMService::new(backend.clone(), access_token.clone());
                 let futures = related_products
                     .iter()
-                    .map(|related_product| service.get_package(&related_product.sbom_id));
+                    .map(|related_product| service.get_package(&related_product.sbom_uid));
                 try_join_all(futures)
                     .await
                     .map(|vec| {
@@ -137,7 +137,7 @@ pub fn related_products_table(props: &RelatedProductsTableProperties) -> Html {
                     let sbom_by_index = &sboms[index];
 
                     TableData {
-                        sbom_id: item.sbom_id.clone(),
+                        sbom_id: item.sbom_uid.clone(),
                         dependency_type: item.dependency_type.clone(),
                         sbom: sbom_by_index.clone(),
                     }
