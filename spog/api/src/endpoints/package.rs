@@ -7,7 +7,7 @@ use actix_web::{
 };
 use actix_web_httpauth::extractors::bearer::BearerAuth;
 use spog_model::package_info::{PackageInfo, V11yRef};
-use spog_model::prelude::{PackageProductDetails};
+use spog_model::prelude::PackageProductDetails;
 use std::sync::Arc;
 use trustification_api::search::{SearchOptions, SearchResult};
 use trustification_auth::authenticator::Authenticator;
@@ -121,7 +121,7 @@ pub async fn package_related_products(
     params: web::Query<GetParams>,
 ) -> actix_web::Result<HttpResponse> {
     let id = path.into_inner();
-    let related_products =  guac.product_by_package(&id, params.offset, params.limit).await?;
+    let related_products = guac.product_by_package(&id, params.offset, params.limit).await?;
     let result = PackageProductDetails { related_products };
     Ok(HttpResponse::Ok().json(&result))
 }

@@ -265,7 +265,7 @@ impl GuacService {
         Ok(products
             .iter()
             .map(|sbom_id| ProductRelatedToPackage {
-                sbom_id: sbom_id.to_string(),
+                sbom_uid: sbom_id.to_string(),
                 dependency_type: "Direct".to_string(),
             })
             .collect::<Vec<ProductRelatedToPackage>>())
