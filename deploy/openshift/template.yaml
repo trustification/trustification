@@ -1342,6 +1342,11 @@ objects:
                   value: parentbased_traceidratio
                 - name: OTEL_TRACES_SAMPLER_ARG
                   value: '0.1'
+                - name: SNYK_TOKEN
+                  valueFrom:
+                    secretKeyRef:
+                      name: snyk-collector-secret
+                      key: snyk_token
                 - name: SPOG_UI_CONFIG
                   value: /etc/config/spog-ui.yaml
                 - name: OIDC_PROVIDER_CLIENT_ID
