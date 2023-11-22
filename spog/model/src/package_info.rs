@@ -1,3 +1,4 @@
+use packageurl::PackageUrl;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use utoipa::ToSchema;
@@ -9,8 +10,7 @@ use utoipa::ToSchema;
     namespace: Some("redhat".to_string()),
     version: Some("1.1.1k-7.el8_6".to_string()),
     package_type: Some("rpm".to_string()),
-    purl: Some("pkg:rpm/redhat/openssl@1.1.1k-7.el8_6".to_string()), href: Some(format!("/api/package?purl={}", &urlencoding::encode("pkg:rpm/redhat/openssl@1.1.1k-7.el8_6"))),
-    sbom: Some(format!("/api/package/sbom?purl={}", &urlencoding::encode("pkg:rpm/redhat/openssl@1.1.1k-7.el8_6"))),
+    purl: Some("pkg:rpm/redhat/openssl@1.1.1k-7.el8_6".to_string()),
     supplier: "Organization: Red Hat".to_string().into(),
     vulnerabilities: vec![V11yRef {
         cve: "cve-2023-0286".into(),
@@ -29,10 +29,6 @@ pub struct PackageInfo {
     pub package_type: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub purl: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub href: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub sbom: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub supplier: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -60,15 +56,15 @@ pub struct V11yRef {
     pub severity: String,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, serde::Deserialize, serde::Serialize, ToSchema)]
+#[derive(Clone, Debug, PartialEq, serde::Deserialize, serde::Serialize, ToSchema)]
 pub struct PackageProductDetails {
     pub related_products: Vec<ProductRelatedToPackage>,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, serde::Deserialize, serde::Serialize, ToSchema)]
+#[derive(Clone, Debug, PartialEq, serde::Deserialize, serde::Serialize, ToSchema)]
 pub struct ProductRelatedToPackage {
     pub sbom_uid: String,
-    pub dependency_type: String,
+    pub backtraces: Vec<Vec<PackageUrl<'static>>>,
 }
 
 impl V11yRef {

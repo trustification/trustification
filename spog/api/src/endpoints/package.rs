@@ -65,8 +65,6 @@ pub async fn package_search(
             version: item.purl_version.into(),
             package_type: item.purl_type.into(),
             supplier: item.supplier.into(),
-            href: None,
-            sbom: None,
             vulnerabilities: vec![],
         });
     }
@@ -122,6 +120,7 @@ pub async fn package_related_products(
 ) -> actix_web::Result<HttpResponse> {
     let id = path.into_inner();
     let related_products = guac.product_by_package(&id, params.offset, params.limit).await?;
+
     let result = PackageProductDetails { related_products };
     Ok(HttpResponse::Ok().json(&result))
 }
@@ -134,14 +133,6 @@ fn make_mock_data() -> Vec<PackageInfo> {
             version: "2.16.2.Final".to_string().into(),
             package_type: "maven".to_string().into(),
             purl: "pkg:maven/io.quarkus.arc/arc@2.16.2.Final?type=jar".to_string().into(),
-            href: Some(format!(
-                "/api/package?purl={}",
-                &urlencoding::encode("pkg:maven/io.quarkus.arc/arc@2.16.2.Final?type=jar")
-            )),
-            sbom: Some(format!(
-                "/api/package/sbom?purl={}",
-                &urlencoding::encode("pkg:maven/io.quarkus.arc/arc@2.16.2.Final?type=jar")
-            )),
             supplier: "Organization: Red Hat".to_string().into(),
             vulnerabilities: vec![
                 V11yRef {
@@ -172,14 +163,6 @@ fn make_mock_data() -> Vec<PackageInfo> {
             version: "1.1.1k-7.el8_6".to_string().into(),
             package_type: "rpm".to_string().into(),
             purl: Some("pkg:rpm/redhat/openssl@1.1.1k-7.el8_6".to_string()),
-            href: Some(format!(
-                "/api/package?purl={}",
-                &urlencoding::encode("pkg:rpm/redhat/openssl@1.1.1k-7.el8_6")
-            )),
-            sbom: Some(format!(
-                "/api/package/sbom?purl={}",
-                &urlencoding::encode("pkg:rpm/redhat/openssl@1.1.1k-7.el8_6")
-            )),
             supplier: "Organization: Red Hat".to_string().into(),
             vulnerabilities: vec![
                 V11yRef {

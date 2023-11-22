@@ -60,7 +60,7 @@ impl SBOMService {
     }
 
     pub async fn get_package(&self, id: &str) -> Result<SearchResult<Vec<SbomSummary>>, ApiError> {
-        let q = format!("id:{id}");
+        let q = format!(r#"uid:"{id}""#);
         let response = self
             .client
             .get(self.backend.join(Endpoint::Api, "/api/v1/sbom/search")?)

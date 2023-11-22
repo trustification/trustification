@@ -9,12 +9,13 @@ description = "The data model of the API"
 [dependencies]
 chrono = { version = "0.4", default-features = false, features = ["serde"] }
 csaf = { version = "0.5.0", default-features = false }
+cvss = "2"
+packageurl = { version = "0.3", features = ["serde"] }
 schemars = { version = "0.8", features = ["url"] }
 serde = { version = "1", features = ["derive"] }
 time = { version = "0.3" }
 url = { version = "2", features = ["serde"] }
 utoipa = { version = "4", features = ["url"] }
-cvss = "2"
 
 exhort-model = { path = "../../exhort/model" }
 vexination-model = { path = "../../vexination/model" }
