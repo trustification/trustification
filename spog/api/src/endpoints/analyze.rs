@@ -45,12 +45,6 @@ impl ResponseError for Error {
     }
 }
 
-#[derive(Clone)]
-pub struct CrdaClient {
-    client: reqwest::Client,
-    url: Url,
-}
-
 static RHDA_SOURCE_HEADER: header::HeaderName = header::HeaderName::from_static("rhda-source");
 const RHDA_SOURCE_VALUE: &str = "trustification";
 // TODO: when having consent, forward the user ID
@@ -58,11 +52,23 @@ const RHDA_SOURCE_VALUE: &str = "trustification";
 static RHDA_TOKEN_HEADER: header::HeaderName = header::HeaderName::from_static("rhda-token");
 static RHDA_OPERATION_TYPE_HEADER: header::HeaderName = header::HeaderName::from_static("rhda-operation-type");
 const RHDA_OPERATION_TYPE_VALUE: &str = "stack-analysis";
+static EXHORT_SNYK_TOKEN: header::HeaderName = header::HeaderName::from_static("ex-snyk-token");
+
+#[derive(Clone)]
+pub struct CrdaClient {
+    client: reqwest::Client,
+    url: Url,
+    snyk_token: Option<String>,
+}
 
 impl CrdaClient {
-    pub fn new(url: Url) -> Self {
+    pub fn new(url: Url, snyk_token: Option<String>) -> Self {
         let client = reqwest::Client::new();
-        Self { client, url }
+        Self {
+            client,
+            url,
+            snyk_token,
+        }
     }
 
     #[instrument(skip(self, sbom), fields(sbom_size = sbom.as_bytes().map(|b|b.len())), err)]
@@ -71,13 +77,19 @@ impl CrdaClient {
         sbom: reqwest::Body,
         content_type: &str,
     ) -> Result<impl Stream<Item = reqwest::Result<Bytes>>, Error> {
-        Ok(self
+        let mut req = self
             .client
             .post(self.url.join("api/v3/analysis")?)
             .header(header::CONTENT_TYPE, content_type)
             .header(header::ACCEPT, "text/html")
             .header(&RHDA_SOURCE_HEADER, RHDA_SOURCE_VALUE)
-            .header(&RHDA_OPERATION_TYPE_HEADER, RHDA_OPERATION_TYPE_VALUE)
+            .header(&RHDA_OPERATION_TYPE_HEADER, RHDA_OPERATION_TYPE_VALUE);
+
+        if let Some(snyk_token) = &self.snyk_token {
+            req = req.header(&EXHORT_SNYK_TOKEN, snyk_token);
+        }
+
+        Ok(req
             .body(sbom)
             .send()
             .await?

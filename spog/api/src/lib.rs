@@ -9,6 +9,7 @@ mod server;
 mod service;
 mod utils;
 
+use hide::Hide;
 use std::process::ExitCode;
 use std::{net::TcpListener, path::PathBuf};
 use trustification_analytics::AnalyticsConfig;
@@ -63,6 +64,9 @@ pub struct Run {
 
     #[arg(long = "crda-payload-limit", env, default_value_t = DEFAULT_CRDA_PAYLOAD_LIMIT)]
     pub crda_payload_limit: usize,
+
+    #[arg(long = "snyk-token", env)]
+    pub snyk_token: Option<Hide<String>>,
 
     /// Path to the UI configuration file, overriding the default configuration file.
     #[arg(short, long = "config", env = "SPOG_UI_CONFIG")]
