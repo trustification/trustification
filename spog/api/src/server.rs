@@ -11,6 +11,7 @@ use crate::{
 };
 use actix_web::web;
 use futures::future::select_all;
+use hide::Hide;
 use std::future::Future;
 use std::pin::Pin;
 use std::{net::TcpListener, sync::Arc};
@@ -54,8 +55,15 @@ impl Server {
         if authenticator.is_none() {
             log::warn!("Authentication is disabled");
         }
+        if self.run.snyk_token.is_some() {
+            log::info!("Snyk token is present");
+        }
 
-        let crda = self.run.crda_url.map(CrdaClient::new).map(web::Data::new);
+        let crda = self
+            .run
+            .crda_url
+            .map(|url| CrdaClient::new(url, self.run.snyk_token.map(Hide::take)))
+            .map(web::Data::new);
         let crda_payload_limit = self.run.crda_payload_limit;
 
         let endpoints = Endpoints {
