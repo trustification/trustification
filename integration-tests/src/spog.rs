@@ -131,6 +131,7 @@ fn spog_api(
         exhort_url,
         crda_url: option_env!("CRDA_URL").map(|url| url.parse().unwrap()),
         crda_payload_limit: DEFAULT_CRDA_PAYLOAD_LIMIT,
+        snyk_token: None,
         collectorist_url,
         v11y_url,
         oidc: OpenIdTokenProviderConfigArguments::devmode(),

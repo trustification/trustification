@@ -39,6 +39,29 @@ objects:
         use-csub: true
 
         '
+  - kind: ConfigMap
+    apiVersion: v1
+    metadata:
+      name: pre-install-guac-config
+      labels:
+        app.kubernetes.io/name: pre-install-guac-config
+        app.kubernetes.io/component: guac
+        app.kubernetes.io/part-of: guac
+    data:
+      init.sql: "-- ensure we have the database\nSELECT 'CREATE DATABASE ' || :'db_name'\n\
+        WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = :'db_name')\\gexec\n\
+        \n-- create the user (if it doesn't exist)\nCREATE OR REPLACE FUNCTION add_user_if_not_exists(username\
+        \ NAME) RETURNS integer\n    AS $$\nBEGIN\n    IF NOT EXISTS (SELECT FROM\
+        \ pg_roles\n        WHERE rolname = username) THEN\n\n        EXECUTE FORMAT('CREATE\
+        \ ROLE \"%I\" LOGIN', username);\n\n    END IF;\n    RETURN NULL;\nEND;\n\
+        $$ language plpgsql;\n\nSELECT add_user_if_not_exists(:'db_user');\n\n-- now\
+        \ set the password\nALTER USER :db_user WITH PASSWORD :'db_password';\n\n\
+        -- grant permission to connect\nGRANT CONNECT ON DATABASE :db_name TO :db_user;\n\
+        \n-- grant permissions on database\n\\connect :db_name\n\nGRANT USAGE ON SCHEMA\
+        \ public TO :db_user;\n\n-- grant on existing tables\nGRANT SELECT, INSERT,\
+        \ UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO :db_user;\n\n-- grant on\
+        \ future tables\nALTER DEFAULT PRIVILEGES\n    IN SCHEMA public\n    GRANT\
+        \ SELECT, INSERT, UPDATE, DELETE ON TABLES TO :db_user;\n"
   - kind: PersistentVolumeClaim
     apiVersion: v1
     metadata:
@@ -1134,6 +1157,45 @@ objects:
             - name: tls
               secret:
                 secretName: guac-graphql-tls
+          initContainers:
+            - image: ${GUAC_IMAGE}
+              imagePullPolicy: Always
+              name: migrate
+              command:
+                - /opt/guac/guacmigrate
+              args:
+                - --db-address
+                - postgres://$(DB_USER):$(DB_PASSWORD)@$(PGHOST):$(PGPORT)/$(DB_NAME)
+                - --db-driver
+                - postgres
+                - --db-debug
+                - 'true'
+              env:
+                - name: PGHOST
+                  valueFrom:
+                    secretKeyRef:
+                      name: guac-admin-db
+                      key: db.host
+                - name: PGPORT
+                  valueFrom:
+                    secretKeyRef:
+                      name: guac-admin-db
+                      key: db.port
+                - name: DB_NAME
+                  valueFrom:
+                    secretKeyRef:
+                      name: guac-user-db
+                      key: db.name
+                - name: DB_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: guac-admin-db
+                      key: db.user
+                - name: DB_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: guac-admin-db
+                      key: db.password
           containers:
             - image: ${GUAC_IMAGE}
               imagePullPolicy: Always
@@ -1142,9 +1204,14 @@ objects:
                 - /opt/guac/guacgql
               args:
                 - --gql-backend
-                - inmem
-                - --gql-debug
+                - ent
+                - --db-address
+                - postgres://$(DB_USER):$(DB_PASSWORD)@$(PGHOST):$(PGPORT)/$(DB_NAME)
+                - --db-driver
+                - postgres
+                - --db-debug
                 - 'true'
+                - --db-migrate=false
               workingDir: /guac
               env:
                 - name: NAMESPACE
@@ -1159,6 +1226,31 @@ objects:
                   value: /etc/tls/tls.key
                 - name: HTTP_SERVER_TLS_CERTIFICATE_FILE
                   value: /etc/tls/tls.crt
+                - name: PGHOST
+                  valueFrom:
+                    secretKeyRef:
+                      name: guac-admin-db
+                      key: db.host
+                - name: PGPORT
+                  valueFrom:
+                    secretKeyRef:
+                      name: guac-admin-db
+                      key: db.port
+                - name: DB_NAME
+                  valueFrom:
+                    secretKeyRef:
+                      name: guac-user-db
+                      key: db.name
+                - name: DB_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: guac-user-db
+                      key: db.user
+                - name: DB_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: guac-user-db
+                      key: db.password
               volumeMounts:
                 - name: guac-config
                   mountPath: /guac
@@ -1250,6 +1342,11 @@ objects:
                   value: parentbased_traceidratio
                 - name: OTEL_TRACES_SAMPLER_ARG
                   value: '0.1'
+                - name: SNYK_TOKEN
+                  valueFrom:
+                    secretKeyRef:
+                      name: snyk-collector-secret
+                      key: snyk_token
                 - name: SPOG_UI_CONFIG
                   value: /etc/config/spog-ui.yaml
                 - name: OIDC_PROVIDER_CLIENT_ID
@@ -2233,6 +2330,142 @@ objects:
                     httpGet:
                       path: /health/startup
                       port: 9010
+  - kind: Job
+    apiVersion: batch/v1
+    metadata:
+      name: apply-dataset
+      annotations:
+        argocd.argoproj.io/hook: Sync
+        argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+        argocd.argoproj.io/sync-wave: '2'
+        helm.sh/hook-weight: '20'
+        helm.sh/hook: post-install,post-upgrade
+        helm.sh/hook-delete-policy: before-hook-creation
+      labels:
+        app.kubernetes.io/name: apply-dataset
+        app.kubernetes.io/component: init
+        app.kubernetes.io/part-of: trustification
+    spec:
+      backoffLimit: 1000
+      completions: 1
+      parallelism: 1
+      ttlSecondsAfterFinished: 600
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: run
+              image: ${BACKEND_IMAGE}:${IMAGE_TAG}
+              imagePullPolicy: Always
+              command:
+                - /usr/bin/bash
+              args:
+                - -ce
+                - 'set -e
+
+                  /trust bombastic walker --sink https://sbom.${DOMAIN} --source /data/sbom
+
+                  /trust vexination walker --sink https://vex.${DOMAIN}/api/v1/vex
+                  --source /data/csaf
+
+                  '
+              env:
+                - name: OIDC_PROVIDER_CLIENT_ID
+                  value: trusted-content-api
+                - name: OIDC_PROVIDER_CLIENT_SECRET
+                  valueFrom:
+                    secretKeyRef:
+                      key: ${OIDC_PROVIDER_CLIENT_SECRET_KEY}
+                      name: ${OIDC_PROVIDER_CLIENT_SECRET_NAME}
+                - name: OIDC_PROVIDER_ISSUER_URL
+                  value: ${ISSUER_URL}
+  - kind: Job
+    apiVersion: batch/v1
+    metadata:
+      name: pre-install-guac
+      annotations:
+        argocd.argoproj.io/hook: Sync
+        argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+        argocd.argoproj.io/sync-wave: '0'
+        helm.sh/hook-weight: '5'
+        helm.sh/hook: pre-install,pre-upgrade
+        helm.sh/hook-delete-policy: before-hook-creation
+      labels:
+        app.kubernetes.io/name: pre-install-guac
+        app.kubernetes.io/component: guac
+        app.kubernetes.io/part-of: guac
+    spec:
+      backoffLimit: 1000
+      completions: 1
+      parallelism: 1
+      ttlSecondsAfterFinished: 600
+      template:
+        spec:
+          restartPolicy: OnFailure
+          volumes:
+            - name: init-data
+              configMap:
+                name: pre-install-guac-config
+          containers:
+            - name: pre-install
+              image: ${POSTGRESQL_IMAGE}
+              imagePullPolicy: Always
+              env:
+                - name: PGHOST
+                  valueFrom:
+                    secretKeyRef:
+                      name: guac-admin-db
+                      key: db.host
+                - name: PGPORT
+                  valueFrom:
+                    secretKeyRef:
+                      name: guac-admin-db
+                      key: db.port
+                - name: PGDATABASE
+                  valueFrom:
+                    secretKeyRef:
+                      name: guac-admin-db
+                      key: db.name
+                - name: PGUSER
+                  valueFrom:
+                    secretKeyRef:
+                      name: guac-admin-db
+                      key: db.user
+                - name: PGPASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: guac-admin-db
+                      key: db.password
+                - name: DB_NAME
+                  valueFrom:
+                    secretKeyRef:
+                      name: guac-user-db
+                      key: db.name
+                - name: DB_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: guac-user-db
+                      key: db.user
+                - name: DB_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: guac-user-db
+                      key: db.password
+              volumeMounts:
+                - mountPath: /etc/init-data
+                  name: init-data
+              command:
+                - psql
+                - -v
+                - ON_ERROR_STOP=1
+                - -v
+                - db_name=$(DB_NAME)
+                - -v
+                - db_user=$(DB_USER)
+                - -v
+                - db_password=$(DB_PASSWORD)
+                - -f
+                - /etc/init-data/init.sql
 parameters:
 - name: BACKEND_IMAGE
   required: true

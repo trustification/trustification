@@ -55,6 +55,9 @@ pub struct Features {
     /// Enable the dedicated search views (including the "complex" mode).
     #[serde(default = "default_feature")]
     pub dedicated_search: bool,
+    /// Enable the "additional infos" tab on the package details page
+    #[serde(default = "default_feature")]
+    pub additional_package_information: bool,
 }
 
 impl Default for Features {
@@ -63,6 +66,7 @@ impl Default for Features {
             extend_section: default_feature(),
             scanner: default_feature(),
             dedicated_search: default_feature(),
+            additional_package_information: default_feature(),
         }
     }
 }

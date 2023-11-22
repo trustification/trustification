@@ -63,6 +63,7 @@ spec:
                 fieldRef:
                   fieldPath: metadata.namespace
             {{ include "trustification.http-server" . | nindent 12 }}
+
             - name: INFRASTRUCTURE_ENABLED
               value: "true"
             - name: INFRASTRUCTURE_BIND
@@ -75,6 +76,13 @@ spec:
               value: parentbased_traceidratio
             - name: OTEL_TRACES_SAMPLER_ARG
               value: "0.1"
+
+            - name: SNYK_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Values.spog.api.snyk.credentials }}"
+                  key: snyk_token
+
 {{- if .Values.spog.ui.customize }}
             - name: SPOG_UI_CONFIG
               value: /etc/config/spog-ui.yaml

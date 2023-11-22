@@ -27,6 +27,8 @@ spog:
   api:
     resources: ${{SPOG_API_RESOURCES}}
     logLevel: ${LOG_LEVEL}
+    snyk:
+      credentials: snyk-collector-secret
     segmentWriteKey:
       valueFrom:
         secretKeyRef:
@@ -140,7 +142,7 @@ keycloak:
 guac:
   enabled: true
   database:
-    enabled: false
+    enabled: true
     image: ${POSTGRESQL_IMAGE}
   graphql:
     debug: false
@@ -173,4 +175,4 @@ oidcClients:
     clientId:
       value: trusted-content-api
 dataset:
-  enabled: false
+  enabled: true
