@@ -1497,9 +1497,9 @@ dependencies = [
 
 [[package]]
 name = "itertools"
-version = "0.11.0"
+version = "0.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b1c173a5686ce8bfa551b3563d0c2170bf24ca44da99c7ca4bfdab5418c3fe57"
+checksum = "25db6b064527c5d482d0423354fcd07a89a2dfe07b67892e62411946db7f07b0"
 dependencies = [
  "either",
 ]
@@ -1873,13 +1873,14 @@ checksum = "de3145af08024dea9fa9914f381a17b8fc6034dfb00f3a84013f7ff43f29ed4c"
 
 [[package]]
 name = "patternfly-yew"
-version = "0.5.0-rc.1"
-source = "git+https://github.com/ctron/patternfly-yew?rev=30b31e36120d3efc609f84e21a2baa208905a4e9#30b31e36120d3efc609f84e21a2baa208905a4e9"
+version = "0.5.2"
+source = "git+https://github.com/ctron/patternfly-yew?rev=17abb02bbcd6dc698f39ea1b859d2f17fae32587#17abb02bbcd6dc698f39ea1b859d2f17fae32587"
 dependencies = [
  "chrono",
  "gloo-events 0.2.0",
  "gloo-timers 0.3.0",
  "gloo-utils 0.2.0",
+ "implicit-clone",
  "js-sys",
  "log",
  "num-traits",
@@ -2265,6 +2266,12 @@ checksum = "862340e351ce1b271a378ec53f304a5558f7db87f3769dc655a8f6ecbb68b302"
 dependencies = [
  "xmlparser",
 ]
+
+[[package]]
+name = "roxmltree"
+version = "0.19.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3cd14fd5e3b777a7422cca79358c57a8f6e3a703d9ac187448d0daf220c2407f"
 
 [[package]]
 name = "rsa"
@@ -2731,7 +2738,7 @@ dependencies = [
  "gloo-storage 0.3.0",
  "gloo-utils 0.2.0",
  "humansize",
- "itertools 0.11.0",
+ "itertools 0.12.0",
  "js-sys",
  "log",
  "markdown",
@@ -2740,7 +2747,7 @@ dependencies = [
  "packageurl",
  "patternfly-yew",
  "reqwest",
- "roxmltree",
+ "roxmltree 0.19.0",
  "serde",
  "serde_json",
  "sikula",
@@ -2831,7 +2838,7 @@ dependencies = [
  "gloo-storage 0.3.0",
  "gloo-utils 0.2.0",
  "humansize",
- "itertools 0.11.0",
+ "itertools 0.12.0",
  "js-sys",
  "log",
  "markdown",
@@ -2839,7 +2846,7 @@ dependencies = [
  "packageurl",
  "patternfly-yew",
  "reqwest",
- "roxmltree",
+ "roxmltree 0.18.1",
  "serde",
  "serde_json",
  "spdx-rs",
@@ -2881,7 +2888,7 @@ dependencies = [
  "gloo-storage 0.3.0",
  "gloo-utils 0.2.0",
  "humansize",
- "itertools 0.11.0",
+ "itertools 0.12.0",
  "js-sys",
  "log",
  "monaco",
@@ -2889,7 +2896,7 @@ dependencies = [
  "packageurl",
  "patternfly-yew",
  "reqwest",
- "roxmltree",
+ "roxmltree 0.19.0",
  "serde",
  "serde_json",
  "sikula",
@@ -3801,9 +3808,9 @@ dependencies = [
 
 [[package]]
 name = "yew-oauth2"
-version = "0.7.0"
+version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ddcc3c7f8f63c2dac170317d08d5481611ecd070c6a16b38c6b8a001babaee2e"
+checksum = "0a027a8eb1818da6962bdfcb110b25390c9cb0d5d8a0696b24fd89f54e43e533"
 dependencies = [
  "async-trait",
  "gloo-storage 0.3.0",
