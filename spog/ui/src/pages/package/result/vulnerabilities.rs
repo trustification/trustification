@@ -2,7 +2,7 @@ use futures::future::try_join_all;
 use patternfly_yew::prelude::*;
 use spog_model::prelude::{CveSearchDocument, PackageInfo, V11yRef};
 use spog_ui_backend::{use_backend, CveService};
-use spog_ui_common::{utils::cvss::Cvss, utils::time::date, utils::OrNone};
+use spog_ui_common::{use_apply_pagination, utils::cvss::Cvss, utils::time::date, utils::OrNone};
 use spog_ui_components::{async_state_renderer::async_content, cvss::CvssScore, pagination::PaginationWrapped};
 use spog_ui_navigation::{AppRoute, View};
 use std::rc::Rc;
@@ -11,7 +11,7 @@ use yew_more_hooks::prelude::use_async_with_cloned_deps;
 use yew_nested_router::components::Link;
 use yew_oauth2::prelude::use_latest_access_token;
 
-#[derive(PartialEq)]
+#[derive(Clone, PartialEq)]
 pub struct TableData {
     id: String,
     cve: Option<CveSearchDocument>,
@@ -130,7 +130,7 @@ pub struct VulnerabilitiesTableProperties {
 
 #[function_component(VulnerabilitiesTable)]
 pub fn vulnerabilities_table(props: &VulnerabilitiesTableProperties) -> Html {
-    let table_data = use_memo(
+    let entries = use_memo(
         (props.vulnerabilities.clone(), props.details.clone()),
         |(vulnerabilities, details)| {
             vulnerabilities
@@ -148,8 +148,10 @@ pub fn vulnerabilities_table(props: &VulnerabilitiesTableProperties) -> Html {
         },
     );
 
-    let total = table_data.len();
-    let (entries, onexpand) = use_table_data(MemoizedTableModel::new(table_data));
+    let total = entries.len();
+    let pagination = use_pagination(Some(total), Default::default);
+    let entries = use_apply_pagination(entries, pagination.control);
+    let (entries, onexpand) = use_table_data(MemoizedTableModel::new(entries));
 
     let header = html_nested! {
         <TableHeader<Column>>
@@ -160,11 +162,9 @@ pub fn vulnerabilities_table(props: &VulnerabilitiesTableProperties) -> Html {
         </TableHeader<Column>>
     };
 
-    let pagination = use_pagination(Some(total), || PaginationControl { page: 1, per_page: 10 });
-
     html!(
         <div class="pf-v5-u-background-color-100">
-            <PaginationWrapped pagination={pagination} total={10}>
+            <PaginationWrapped pagination={pagination} {total}>
                 <Table<Column, UseTableData<Column, MemoizedTableModel<TableData>>>
                     {header}
                     {entries}

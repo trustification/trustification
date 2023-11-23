@@ -4,6 +4,7 @@ mod packages;
 use packages::*;
 use patternfly_yew::prelude::*;
 use spog_model::prelude::*;
+use spog_ui_common::use_apply_pagination;
 use spog_ui_components::{cvss::CvssScore, pagination::PaginationWrapped, time::Date};
 use std::cmp::Ordering;
 use std::rc::Rc;
@@ -141,17 +142,7 @@ pub fn details(props: &DetailsProps) -> Html {
     let pagination = use_pagination(Some(total), Default::default);
 
     // page from the filtered entries
-    let entries = use_memo((entries, pagination.control), |(entries, control)| {
-        let offset = control.per_page * control.page;
-        let limit = control.per_page;
-        entries
-            .iter()
-            // apply pagination window
-            .skip(offset)
-            .take(limit)
-            .cloned()
-            .collect::<Vec<_>>()
-    });
+    let entries = use_apply_pagination(entries, pagination.control);
 
     let (entries, onexpand) = use_table_data(MemoizedTableModel::new(entries));
 
