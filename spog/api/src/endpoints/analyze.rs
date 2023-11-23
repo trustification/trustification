@@ -21,6 +21,8 @@ pub enum Error {
     Request(#[from] reqwest::Error),
     #[error(transparent)]
     Data(#[from] bombastic_model::data::Error),
+    #[error("backend error: {0}")]
+    Crda(String),
 }
 
 impl ResponseError for Error {
@@ -39,6 +41,11 @@ impl ResponseError for Error {
             Error::Data(err) => HttpResponse::BadRequest().json(ErrorInformation {
                 error: "InvalidSBOMFormat".into(),
                 message: "Unable to parse SBOM".into(),
+                details: err.to_string(),
+            }),
+            Error::Crda(err) => HttpResponse::BadRequest().json(ErrorInformation {
+                error: "InvalidSBOMContent".into(),
+                message: "Unable to process SBOM".into(),
                 details: err.to_string(),
             }),
         }
@@ -89,16 +96,17 @@ impl CrdaClient {
             req = req.header(&EXHORT_SNYK_TOKEN, snyk_token);
         }
 
-        Ok(req
-            .body(sbom)
-            .send()
-            .await?
-            .error_for_status()
-            .map(|r| {
-                log::debug!("CRDA response: {}", r.status());
-                r
-            })?
-            .bytes_stream())
+        let res = req.body(sbom).send().await?;
+
+        log::info!("CRDA status code: {}", res.status());
+
+        if res.status() == StatusCode::PRECONDITION_FAILED {
+            let message = res.text().await?;
+            log::info!("CRDA error: {message}");
+            Err(Error::Crda(message))
+        } else {
+            Ok(res.error_for_status()?.bytes_stream())
+        }
     }
 }
 
