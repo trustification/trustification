@@ -175,4 +175,4 @@ oidcClients:
     clientId:
       value: trusted-content-api
 dataset:
-  enabled: true
+  enabled: false
