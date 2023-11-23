@@ -22,7 +22,7 @@ gloo-net = "0.4.0"
 gloo-storage = "0.3.0"
 gloo-utils = { version = "0.2.0", features = ["serde"] }
 humansize = "2"
-itertools = "0.11"
+itertools = "0.12.0"
 js-sys = "0.3"
 log = "0.4"
 markdown = "1.0.0-alpha.11"
@@ -31,7 +31,7 @@ openidconnect = "3"
 packageurl = "0.3"
 patternfly-yew = { version = "0.5.0-alpha.3", features = ["icons-fab", "tree"] }
 reqwest = { version = "0.11", features = ["json"] }
-roxmltree = "0.18"
+roxmltree = "0.19"
 serde = { version = "1", features = ["derive", "rc"] }
 serde_json = "1"
 sikula = { version = "0.4.1", default-features = false, features = ["time"] }
@@ -49,7 +49,7 @@ yew-consent = "0.2"
 yew-hooks = "0.3"
 yew-more-hooks = "0.3.1"
 yew-nested-router = "0.4.0"
-yew-oauth2 = { version = "0.7.0", features = ["router", "openid"] }
+yew-oauth2 = { version = "0.8.0", features = ["router", "openid"] }
 
 bombastic-model = { path = "../../bombastic/model" }
 exhort-model = { path = "../../exhort/model" }
@@ -94,7 +94,7 @@ members = [
 #yew-more-hooks = { git = "https://github.com/ctron/yew-more-hooks", rev = "fc0af774aa925edcd5a544e562619ecb539942f8" }
 #yew-more-hooks = { path = "../../../yew-more-hooks" }
 
-patternfly-yew = { git = "https://github.com/ctron/patternfly-yew", rev = "30b31e36120d3efc609f84e21a2baa208905a4e9" } # FIXME: awaiting release
+patternfly-yew = { git = "https://github.com/ctron/patternfly-yew", rev = "17abb02bbcd6dc698f39ea1b859d2f17fae32587" } # FIXME: awaiting release
 #patternfly-yew = { path = "../../../patternfly-yew" }
 
 #analytics-next = { git = "https://github.com/ctron/analytics-next-rs", rev = "9c95122f4e6dc308c90b945bd0f1925faf7cb828" } # FIXME: awaiting release
