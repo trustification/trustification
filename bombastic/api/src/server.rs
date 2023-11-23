@@ -53,7 +53,8 @@ pub fn config(
                     .guard(guard::Any(guard::Method(Method::PUT)).or(guard::Method(Method::POST)))
                     .to(publish_sbom),
             )
-            .service(delete_sbom),
+            .service(delete_sbom)
+            .service(delete_sboms),
     )
     .service(swagger_ui_with_auth(ApiDoc::openapi(), swagger_ui_oidc));
 }
@@ -389,6 +390,20 @@ async fn delete_sbom(
     let id = &params.id;
     log::trace!("Deleting SBOM using id {}", id);
     state.storage.delete(id).await.map_err(Error::Storage)?;
+
+    Ok(HttpResponse::NoContent().finish())
+}
+
+/// Delete all SBOMs
+#[delete("/sbom/all")]
+async fn delete_sboms(
+    state: web::Data<SharedState>,
+    authorizer: web::Data<Authorizer>,
+    user: UserInformation,
+) -> actix_web::Result<impl Responder> {
+    authorizer.require(&user, Permission::DeleteSbom)?;
+
+    state.storage.delete_all().await.map_err(Error::Storage)?;
 
     Ok(HttpResponse::NoContent().finish())
 }

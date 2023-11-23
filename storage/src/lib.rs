@@ -495,6 +495,25 @@ impl Storage {
             })?;
         Ok(res)
     }
+
+    // Deletes all data in the bucket (except index)
+    pub async fn delete_all(&self) -> Result<(), Error> {
+        let results = self.bucket.list(DATA_PATH[1..].to_string(), None).await?;
+        for result in results {
+            for obj in result.contents {
+                self.metrics.deletes_total.inc();
+                self.bucket
+                    .delete_object(obj.key)
+                    .await
+                    .map(|r| r.status_code())
+                    .map_err(|e| {
+                        self.metrics.deletes_failed_total.inc();
+                        e
+                    })?;
+            }
+        }
+        Ok(())
+    }
 }
 
 #[derive(Clone, Default)]
