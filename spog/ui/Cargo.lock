@@ -1861,6 +1861,7 @@ version = "0.3.0"
 source = "git+https://github.com/ctron/packageurl.rs?rev=c9a0c192ff0cba5d75b8cbf8be0b1e4dc14320aa#c9a0c192ff0cba5d75b8cbf8be0b1e4dc14320aa"
 dependencies = [
  "percent-encoding",
+ "serde",
  "thiserror",
 ]
 
@@ -2696,6 +2697,7 @@ dependencies = [
  "csaf",
  "cvss",
  "exhort-model",
+ "packageurl",
  "schemars",
  "serde",
  "serde_json",
