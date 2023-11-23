@@ -4,6 +4,7 @@ mod products;
 
 use crate::hooks::use_related_advisories;
 use advisories::RelatedAdvisories;
+use cve::common::Description;
 use cve::published::Metric;
 use patternfly_yew::prelude::*;
 use products::RelatedProducts;
@@ -17,15 +18,6 @@ use yew::prelude::*;
 use yew_more_hooks::hooks::use_page_state;
 use yew_more_hooks::{hooks::use_async_with_cloned_deps, prelude::UseAsyncState};
 use yew_oauth2::hook::use_latest_access_token;
-
-const CVE_DESCRIPTION_MAX_LENGTH: usize = 180;
-
-fn truncate(s: &str, max_chars: usize) -> &str {
-    match s.char_indices().nth(max_chars) {
-        None => s,
-        Some((idx, _)) => &s[..idx],
-    }
-}
 
 #[derive(PartialEq, Properties)]
 pub struct ResultViewProperties {
@@ -184,19 +176,34 @@ fn cvss3(metrics: &[Metric]) -> Html {
 }
 
 #[derive(PartialEq, Properties)]
+struct DescriptionsProperties {
+    pub descriptions: Vec<Description>,
+}
+
+#[function_component(Descriptions)]
+fn descriptions(props: &DescriptionsProperties) -> Html {
+    html!(
+        <ExpandableSection variant={ExpandableSectionVariant::Truncate}>
+            <Content>
+                { for props.descriptions.iter().map(|desc| {
+                    html!(
+                        <div lang={desc.language.clone()}>
+                            <Markdown content={Rc::new(desc.value.clone())} />
+                        </div>
+                    )
+                })}
+            </Content>
+        </ExpandableSection>
+    )
+}
+
+#[derive(PartialEq, Properties)]
 pub struct CveDetailsViewProperties {
     pub details: Rc<cve::Cve>,
 }
 
 #[function_component(CveDetailsView)]
 pub fn cve_details(props: &CveDetailsViewProperties) -> Html {
-    let show_more = use_state_eq(|| false);
-
-    let show_more_toggle = use_callback(show_more.clone(), |_, show_more| {
-        let current = **show_more;
-        show_more.set(!current);
-    });
-
     html!(
         <Grid gutter=true> {
             match &*props.details {
@@ -204,33 +211,7 @@ pub fn cve_details(props: &CveDetailsViewProperties) -> Html {
                     html!(
                         <>
                             <GridItem cols={[6.lg(), 8.md(), 12.all()]}>
-                                <Content>
-                                    {
-                                        if !*show_more && details.containers.cna.descriptions.iter()
-                                            .map(|e| e.value.len())
-                                            .sum::<usize>() > CVE_DESCRIPTION_MAX_LENGTH
-                                        {
-                                            html!(
-                                                <>
-                                                    {truncate(&details.containers.cna.descriptions[0].value, CVE_DESCRIPTION_MAX_LENGTH)}{"..."}
-                                                    <Button variant={ButtonVariant::Link} onclick={show_more_toggle}>{ "More" }</Button>
-                                                </>
-                                            )
-                                        } else {
-                                            html!(
-                                                <>
-                                                    { for details.containers.cna.descriptions.iter().map(|desc|{
-                                                        html!(
-                                                            <div lang={desc.language.clone()}>
-                                                                <Markdown content={Rc::new(desc.value.clone())} />
-                                                            </div>
-                                                        )
-                                                    })}
-                                                </>
-                                            )
-                                        }
-                                    }
-                                </Content>
+                                <Descriptions descriptions={details.containers.cna.descriptions.clone()} />
                             </GridItem>
 
                             <GridItem cols={[12]}>
@@ -250,33 +231,7 @@ pub fn cve_details(props: &CveDetailsViewProperties) -> Html {
                     html!(
                         <>
                             <GridItem cols={[6.lg(), 8.md(), 12.all()]}>
-                                <Content>
-                                    {
-                                        if !*show_more && details.containers.cna.rejected_reasons.iter()
-                                            .map(|e| e.value.len())
-                                            .sum::<usize>() > CVE_DESCRIPTION_MAX_LENGTH
-                                        {
-                                            html!(
-                                                <>
-                                                    {truncate(&details.containers.cna.rejected_reasons[0].value, CVE_DESCRIPTION_MAX_LENGTH)}{"..."}
-                                                    <Button variant={ButtonVariant::Link} onclick={show_more_toggle}>{ "More" }</Button>
-                                                </>
-                                            )
-                                        } else {
-                                            html!(
-                                                <>
-                                                    { for details.containers.cna.rejected_reasons.iter().map(|desc|{
-                                                        html!(
-                                                            <div lang={desc.language.clone()}>
-                                                                <Markdown content={Rc::new(desc.value.clone())} />
-                                                            </div>
-                                                        )
-                                                    })}
-                                                </>
-                                            )
-                                        }
-                                    }
-                                </Content>
+                                <Descriptions descriptions={details.containers.cna.rejected_reasons.clone()} />
                             </GridItem>
 
                             <GridItem cols={[12]}>
