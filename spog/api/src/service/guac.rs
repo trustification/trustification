@@ -213,7 +213,7 @@ impl GuacService {
             }
 
             let pr = ProductRelatedToCve {
-                sbom_id: uid.to_string(),
+                sbom_uid: uid.to_string(),
                 packages,
             };
 
