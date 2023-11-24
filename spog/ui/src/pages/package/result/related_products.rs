@@ -33,17 +33,15 @@ pub enum Column {
 impl TableEntryRenderer<Column> for TableData {
     fn render_cell(&self, context: CellContext<'_, Column>) -> Cell {
         match context.column {
-            Column::Name => html!({
-                match &self.sbom {
-                    Some(sbom) => html!(
-                        <Link<AppRoute>
-                            target={AppRoute::Sbom(View::Content{id: sbom.id.clone()})}
-                        >{sbom.name.clone()}</Link<AppRoute>>
-                    ),
-                    // missing source
-                    None => html!({ self.sbom_uid.clone() }),
-                }
-            }),
+            Column::Name => match &self.sbom {
+                Some(sbom) => html!(
+                    <Link<AppRoute>
+                        target={AppRoute::Sbom(View::Content{id: sbom.id.clone()})}
+                    >{sbom.name.clone()}</Link<AppRoute>>
+                ),
+                // missing source
+                None => html!({ self.sbom_uid.clone() }),
+            },
             Column::Version => html!(<>
                 if let Some(sbom) = &self.sbom {
                     {&sbom.version}
@@ -208,7 +206,7 @@ pub fn related_products_table(props: &RelatedProductsTableProperties) -> Html {
 
     html!(
         <div class="pf-v5-u-background-color-100">
-            <PaginationWrapped pagination={pagination} {total}>
+            <PaginationWrapped {pagination} {total}>
                 <Table<Column, UseTableData<Column, MemoizedTableModel<TableData>>>
                     mode={TableMode::Expandable}
                     {header}
