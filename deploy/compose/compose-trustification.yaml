@@ -46,6 +46,7 @@ services:
       - "$BOMBASTIC_API_PORT"
     ports:
       - "$BOMBASTIC_API_PORT:$BOMBASTIC_API_PORT"
+      - "9010:9010"
     command:
       - -c
       - |
@@ -64,6 +65,7 @@ services:
     environment:
       ISSUER_URL: http://keycloak:8080/realms/chicken
       INFRASTRUCTURE_ENABLED: "true"
+      INFRASTRUCTURE_BIND: "[::]:9010"
       OPENID_CONFIGURATION: "http://keycloak:8080/realms/chicken/.well-known/openid-configuration"
       STORAGE_ENDPOINT: http://minio:9000
       HTTP_SERVER_BIND_ADDR: "::"
