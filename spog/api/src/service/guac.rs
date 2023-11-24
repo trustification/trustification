@@ -2,7 +2,7 @@ use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::str::FromStr;
 
 use actix_web::{http::header::ContentType, HttpResponse};
-use guac::client::intrinsic::certify_vex_statement::VexStatus;
+use guac::client::intrinsic::certify_vex_statement::{CertifyVexStatement, CertifyVexStatementSpec, VexStatus};
 use guac::client::intrinsic::certify_vuln::{CertifyVuln, CertifyVulnSpec};
 use guac::client::intrinsic::package::Package;
 use guac::client::intrinsic::vuln_equal::{VulnEqual, VulnEqualSpec};
@@ -147,6 +147,20 @@ impl GuacService {
             .intrinsic()
             .certify_vuln(&CertifyVulnSpec {
                 package: Some(purl.into()),
+                ..Default::default()
+            })
+            .await?)
+    }
+
+    #[instrument(skip(self, purl), fields(purl = %purl), ret, err)]
+    pub async fn certify_vex(&self, purl: &str) -> Result<Vec<CertifyVexStatement>, Error> {
+        let purl = PackageUrl::from_str(purl)?;
+        Ok(self
+            .client
+            .intrinsic()
+            .certify_vex_statement(&CertifyVexStatementSpec {
+                subject: Some(purl.clone().into()),
+                status: Some(VexStatus::Affected),
                 ..Default::default()
             })
             .await?)
