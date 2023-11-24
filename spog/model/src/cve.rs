@@ -26,7 +26,7 @@ pub enum ProductCveStatus {
 
 #[derive(Clone, Debug, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
 pub struct ProductRelatedToCve {
-    pub sbom_id: String,
+    pub sbom_uid: String,
     pub packages: Vec<PackageRelatedToProductCve>,
 }
 

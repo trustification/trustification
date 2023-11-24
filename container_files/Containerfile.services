@@ -102,6 +102,10 @@ RUN true \
     && rustup target add wasm32-unknown-unknown \
     && trunk build --release --dist /public
 
+# safeguard to ensure the project was built
+
+RUN test -f /public/*.wasm
+
 # Runtime
 FROM registry.access.redhat.com/ubi9/ubi-minimal:latest
 

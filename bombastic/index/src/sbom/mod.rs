@@ -51,6 +51,10 @@ pub struct PackageFields {
     purl_qualifiers_values: Field,
 }
 
+pub struct DepFields {
+    purl: Field,
+}
+
 struct Fields {
     indexed_timestamp: Field,
     /// the "storage id"
@@ -63,7 +67,7 @@ struct Fields {
     sbom_creators: Field,
     sbom_name: Field,
     sbom: PackageFields,
-    dep: PackageFields,
+    dep: DepFields,
 }
 
 impl Default for Index {
@@ -100,22 +104,8 @@ impl Index {
                 purl_qualifiers: schema.add_text_field("sbom_pkg_purl_qualifiers", STRING),
                 purl_qualifiers_values: schema.add_text_field("sbom_pkg_purl_qualifiers_values", STRING),
             },
-            dep: PackageFields {
-                name: schema.add_text_field("package_name", FAST | STRING),
+            dep: DepFields {
                 purl: schema.add_text_field("package_purl", FAST | STRING | STORED),
-                version: schema.add_text_field("package_version", STRING),
-                desc: schema.add_text_field("package_desc", TEXT),
-                cpe: schema.add_text_field("package_cpe", STRING | FAST | STORED),
-                license: schema.add_text_field("package_license", TEXT | STORED),
-                supplier: schema.add_text_field("package_supplier", STRING),
-                classifier: schema.add_text_field("package_classifier", STRING),
-                sha256: schema.add_text_field("package_sha256", STRING),
-                purl_type: schema.add_text_field("package_purl_type", STRING),
-                purl_name: schema.add_text_field("package_purl_name", FAST | STRING),
-                purl_namespace: schema.add_text_field("package_purl_namespace", STRING),
-                purl_version: schema.add_text_field("package_purl_version", STRING),
-                purl_qualifiers: schema.add_text_field("package_purl_qualifiers", STRING),
-                purl_qualifiers_values: schema.add_text_field("package_purl_qualifiers_values", STRING),
             },
         };
         Self {
@@ -164,12 +154,21 @@ impl Index {
                 debug!("Indexing SBOM {} with name {}", id, package.package_name);
                 Self::index_spdx_package(&mut document, package, &self.fields.sbom);
             } else {
-                Self::index_spdx_package(&mut document, package, &self.fields.dep);
+                Self::index_spdx_dep(&mut document, package, &self.fields.dep);
             }
         }
         debug!("Indexed {:?}", document);
         documents.push((id.to_string(), document));
         Ok(documents)
+    }
+
+    fn index_spdx_dep(document: &mut Document, package: &spdx_rs::models::PackageInformation, fields: &DepFields) {
+        for r in package.external_reference.iter() {
+            if r.reference_type == "purl" {
+                let purl = r.reference_locator.clone();
+                document.add_text(fields.purl, &purl);
+            }
+        }
     }
 
     fn index_spdx_package(
@@ -264,11 +263,18 @@ impl Index {
 
         if let Some(components) = &bom.components {
             for component in components.0.iter() {
-                Self::index_cyclonedx_component(&mut document, component, &self.fields.dep);
+                Self::index_cyclonedx_dep(&mut document, component, &self.fields.dep);
             }
         }
         documents.push((id.to_string(), document));
         Ok(documents)
+    }
+
+    fn index_cyclonedx_dep(document: &mut Document, component: &cyclonedx_bom::prelude::Component, fields: &DepFields) {
+        if let Some(purl) = &component.purl {
+            let purl = purl.to_string();
+            document.add_text(fields.purl, &purl);
+        }
     }
 
     fn index_cyclonedx_component(
@@ -399,15 +405,7 @@ impl Index {
                 Box::new(BooleanQuery::union(qs))
             }
 
-            Packages::Dependency(primary) => self.create_string_query(
-                &[
-                    self.fields.dep.name,
-                    self.fields.dep.purl_name,
-                    self.fields.dep.purl,
-                    self.fields.dep.cpe,
-                ],
-                primary,
-            ),
+            Packages::Dependency(primary) => self.create_string_query(&[self.fields.dep.purl], primary),
 
             Packages::Application => self.match_classifiers(Classification::Application),
             Packages::Library => self.match_classifiers(Classification::Library),
@@ -426,16 +424,10 @@ impl Index {
     }
 
     fn match_classifiers(&self, classification: Classification) -> Box<dyn Query> {
-        Box::new(BooleanQuery::union(vec![
-            create_boolean_query(
-                Occur::Should,
-                Term::from_field_text(self.fields.sbom.classifier, &classification.to_string()),
-            ),
-            create_boolean_query(
-                Occur::Should,
-                Term::from_field_text(self.fields.dep.classifier, &classification.to_string()),
-            ),
-        ]))
+        Box::new(BooleanQuery::union(vec![create_boolean_query(
+            Occur::Should,
+            Term::from_field_text(self.fields.sbom.classifier, &classification.to_string()),
+        )]))
     }
 }
 
@@ -787,14 +779,10 @@ mod tests {
         assert_search(|index| {
             let result = search(&index, "");
             assert_eq!(result.0.len(), 3);
-        });
-    }
-
-    #[tokio::test]
-    async fn test_dependency() {
-        assert_search(|index| {
-            let result = search(&index, "dependency:openssl");
-            assert_eq!(result.0.len(), 1);
+            if let Some(search_hit) = result.0.first() {
+                assert_eq!(search_hit.document.name, "kmm-1");
+                assert_eq!(search_hit.document.dependencies, 279);
+            }
         });
     }
 
@@ -813,14 +801,6 @@ mod tests {
             assert_eq!(result.0.len(), 0);
 
             let result = search(&index, "type:oci NOT ubi8");
-            assert_eq!(result.0.len(), 1);
-        });
-    }
-
-    #[tokio::test]
-    async fn test_quarkus() {
-        assert_search(|index| {
-            let result = search(&index, "dependency:quarkus-arc");
             assert_eq!(result.0.len(), 1);
         });
     }

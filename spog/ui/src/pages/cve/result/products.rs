@@ -6,6 +6,7 @@ use spog_model::{
     search::SbomSummary,
 };
 use spog_ui_backend::{use_backend, SBOMService};
+use spog_ui_common::use_apply_pagination;
 use spog_ui_common::utils::time::date;
 use spog_ui_components::{async_state_renderer::async_content, pagination::PaginationWrapped};
 use spog_ui_navigation::{AppRoute, View};
@@ -15,9 +16,9 @@ use yew_more_hooks::prelude::use_async_with_cloned_deps;
 use yew_nested_router::components::Link;
 use yew_oauth2::prelude::use_latest_access_token;
 
-#[derive(PartialEq)]
+#[derive(Clone, PartialEq)]
 pub struct TableData {
-    sbom_id: String,
+    sbom_uid: String,
     status: ProductCveStatus,
     packages: Vec<PackageRelatedToProductCve>,
     sbom: Option<SbomSummary>,
@@ -69,13 +70,15 @@ pub enum Column {
 impl TableEntryRenderer<Column> for TableData {
     fn render_cell(&self, context: CellContext<'_, Column>) -> Cell {
         match context.column {
-            Column::Name => html!(
-                <Link<AppRoute>
-                    target={AppRoute::Sbom(View::Content{id: self.sbom_id.clone()})}
-                >
-                    { self.sbom_id.clone() }
-                </Link<AppRoute>>
-            ),
+            Column::Name => match &self.sbom {
+                Some(sbom) => html!(
+                    <Link<AppRoute>
+                        target={AppRoute::Sbom(View::Content{id: sbom.id.clone()})}
+                    >{sbom.name.clone()}</Link<AppRoute>>
+                ),
+                // missing source
+                None => html!({ self.sbom_uid.clone() }),
+            },
             Column::Version => html!(
                 <>
                     {
@@ -100,30 +103,18 @@ impl TableEntryRenderer<Column> for TableData {
                     {&self.packages.len()}
                 </>
             ),
-            Column::Supplier => html!(
-                <>
-                    {
-                        match &self.sbom {
-                            Some(val) => html!(
-                                <>
-                                    {&val.supplier}
-                                </>
-                            ),
-                            None => html!(<></>),
-                        }
-                    }
-                </>
-            ),
-            Column::Created => html!(
-                <>
-                    {
-                        match &self.sbom {
-                            Some(val) => date(val.created).into(),
-                            None => html!(<></>),
-                        }
-                    }
-                </>
-            ),
+            Column::Supplier => match &self.sbom {
+                Some(val) => html!(
+                    <>
+                        {&val.supplier}
+                    </>
+                ),
+                None => html!(),
+            },
+            Column::Created => match &self.sbom {
+                Some(val) => date(val.created),
+                None => html!(),
+            },
         }
         .into()
     }
@@ -157,7 +148,7 @@ pub fn related_products(props: &RelatedProductsProperties) -> Html {
                     .iter()
                     .map(|item| TableData {
                         status: map_key.clone(),
-                        sbom_id: item.sbom_id.to_string(),
+                        sbom_uid: item.sbom_uid.to_string(),
                         packages: item.packages.clone(),
                         sbom: None,
                     })
@@ -172,7 +163,7 @@ pub fn related_products(props: &RelatedProductsProperties) -> Html {
         use_async_with_cloned_deps(
             move |rows| async move {
                 let service = SBOMService::new(backend.clone(), access_token.clone());
-                let futures = rows.iter().map(|row| service.get_package(&row.sbom_id));
+                let futures = rows.iter().map(|row| service.get_package(&row.sbom_uid));
                 try_join_all(futures)
                     .await
                     .map(|vec| {
@@ -227,7 +218,7 @@ pub struct RelatedProductsTableProperties {
 
 #[function_component(RelatedProductsTable)]
 pub fn related_products_table(props: &RelatedProductsTableProperties) -> Html {
-    let table_data = use_memo(
+    let entries = use_memo(
         (props.table_data.clone(), props.sboms.clone()),
         |(table_data, sboms)| {
             table_data
@@ -238,7 +229,7 @@ pub fn related_products_table(props: &RelatedProductsTableProperties) -> Html {
 
                     TableData {
                         status: item.status.clone(),
-                        sbom_id: item.sbom_id.clone(),
+                        sbom_uid: item.sbom_uid.clone(),
                         packages: item.packages.clone(),
                         sbom: sbom_by_index.clone(),
                     }
@@ -247,8 +238,10 @@ pub fn related_products_table(props: &RelatedProductsTableProperties) -> Html {
         },
     );
 
-    let total = table_data.len();
-    let (entries, onexpand) = use_table_data(MemoizedTableModel::new(table_data));
+    let total = entries.len();
+    let pagination = use_pagination(Some(total), Default::default);
+    let entries = use_apply_pagination(entries, pagination.control);
+    let (entries, onexpand) = use_table_data(MemoizedTableModel::new(entries));
 
     let header = html_nested! {
         <TableHeader<Column>>
@@ -261,11 +254,9 @@ pub fn related_products_table(props: &RelatedProductsTableProperties) -> Html {
         </TableHeader<Column>>
     };
 
-    let pagination = use_pagination(Some(total), || PaginationControl { page: 1, per_page: 10 });
-
     html!(
         <div class="pf-v5-u-background-color-100">
-            <PaginationWrapped pagination={pagination} total={10}>
+            <PaginationWrapped {pagination} {total}>
                 <Table<Column, UseTableData<Column, MemoizedTableModel<TableData>>>
                     mode={TableMode::Expandable}
                     {header}

@@ -7,7 +7,7 @@ use actix_web::{
 };
 use actix_web_httpauth::extractors::bearer::BearerAuth;
 use spog_model::package_info::{PackageInfo, V11yRef};
-use spog_model::prelude::{PackageProductDetails, ProductRelatedToPackage};
+use spog_model::prelude::PackageProductDetails;
 use std::sync::Arc;
 use trustification_api::search::{SearchOptions, SearchResult};
 use trustification_auth::authenticator::Authenticator;
@@ -65,8 +65,6 @@ pub async fn package_search(
             version: item.purl_version.into(),
             package_type: item.purl_type.into(),
             supplier: item.supplier.into(),
-            href: None,
-            sbom: None,
             vulnerabilities: vec![],
         });
     }
@@ -97,6 +95,13 @@ pub async fn package_get_mock(path: web::Path<String>) -> actix_web::Result<Http
     Ok(HttpResponse::Ok().json(&pkgs[0]))
 }
 
+#[derive(Debug, serde::Deserialize, IntoParams)]
+pub struct GetParams {
+    /// ID of the SBOM to get vulnerabilities for
+    pub offset: Option<i64>,
+    pub limit: Option<i64>,
+}
+
 #[utoipa::path(
     get,
     path = "/api/v1/package/{id}/related-products",
@@ -104,23 +109,18 @@ pub async fn package_get_mock(path: web::Path<String>) -> actix_web::Result<Http
         (status = 200, description = "related products search was successful", body = PackageProductDetails),
     ),
     params(
-        ("id" = Url, Path, description = "The ID of the package to get related products for")
+        ("id" = Url, Path, description = "The ID of the package to retrieve"),
+        GetParams
     )
 )]
-// TODO Replace mock data
-pub async fn package_related_products(path: web::Path<String>) -> actix_web::Result<HttpResponse> {
-    let _id = path.into_inner();
+pub async fn package_related_products(
+    guac: web::Data<GuacService>,
+    path: web::Path<String>,
+    params: web::Query<GetParams>,
+) -> actix_web::Result<HttpResponse> {
+    let id = path.into_inner();
+    let related_products = guac.product_by_package(&id, params.offset, params.limit).await?;
 
-    let related_products = vec![
-        ProductRelatedToPackage {
-            sbom_id: "3amp-2.json.bz2".to_string(),
-            dependency_type: "Direct".to_string(),
-        },
-        ProductRelatedToPackage {
-            sbom_id: "3amp-2.json.bz2".to_string(),
-            dependency_type: "Transitive".to_string(),
-        },
-    ];
     let result = PackageProductDetails { related_products };
     Ok(HttpResponse::Ok().json(&result))
 }
@@ -133,14 +133,6 @@ fn make_mock_data() -> Vec<PackageInfo> {
             version: "2.16.2.Final".to_string().into(),
             package_type: "maven".to_string().into(),
             purl: "pkg:maven/io.quarkus.arc/arc@2.16.2.Final?type=jar".to_string().into(),
-            href: Some(format!(
-                "/api/package?purl={}",
-                &urlencoding::encode("pkg:maven/io.quarkus.arc/arc@2.16.2.Final?type=jar")
-            )),
-            sbom: Some(format!(
-                "/api/package/sbom?purl={}",
-                &urlencoding::encode("pkg:maven/io.quarkus.arc/arc@2.16.2.Final?type=jar")
-            )),
             supplier: "Organization: Red Hat".to_string().into(),
             vulnerabilities: vec![
                 V11yRef {
@@ -171,14 +163,6 @@ fn make_mock_data() -> Vec<PackageInfo> {
             version: "1.1.1k-7.el8_6".to_string().into(),
             package_type: "rpm".to_string().into(),
             purl: Some("pkg:rpm/redhat/openssl@1.1.1k-7.el8_6".to_string()),
-            href: Some(format!(
-                "/api/package?purl={}",
-                &urlencoding::encode("pkg:rpm/redhat/openssl@1.1.1k-7.el8_6")
-            )),
-            sbom: Some(format!(
-                "/api/package/sbom?purl={}",
-                &urlencoding::encode("pkg:rpm/redhat/openssl@1.1.1k-7.el8_6")
-            )),
             supplier: "Organization: Red Hat".to_string().into(),
             vulnerabilities: vec![
                 V11yRef {

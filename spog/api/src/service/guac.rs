@@ -4,6 +4,7 @@ use std::str::FromStr;
 use actix_web::{http::header::ContentType, HttpResponse};
 use guac::client::intrinsic::certify_vex_statement::VexStatus;
 use guac::client::intrinsic::certify_vuln::{CertifyVuln, CertifyVulnSpec};
+use guac::client::intrinsic::package::Package;
 use guac::client::intrinsic::vuln_equal::{VulnEqual, VulnEqualSpec};
 use guac::client::intrinsic::vuln_metadata::{VulnerabilityMetadata, VulnerabilityMetadataSpec};
 use guac::client::intrinsic::vulnerability::{Vulnerability, VulnerabilitySpec};
@@ -14,7 +15,7 @@ use tracing::instrument;
 
 use spog_model::prelude::{
     CveDetails, PackageDependencies, PackageDependents, PackageRefList, PackageRelatedToProductCve, ProductCveStatus,
-    ProductRelatedToCve,
+    ProductRelatedToCve, ProductRelatedToPackage,
 };
 use trustification_common::error::ErrorInformation;
 
@@ -30,6 +31,9 @@ pub enum Error {
 
     #[error("Data format error: {0}")]
     PurlFormat(packageurl::Error),
+
+    #[error("Client error: {0}")]
+    Client(String),
 }
 
 impl From<packageurl::Error> for Error {
@@ -46,6 +50,7 @@ impl actix_web::error::ResponseError for Error {
                 _ => StatusCode::INTERNAL_SERVER_ERROR,
             },
             Error::PurlFormat(_) => StatusCode::BAD_REQUEST,
+            &Error::Client(_) => StatusCode::BAD_REQUEST,
         }
     }
 
@@ -58,10 +63,15 @@ impl actix_web::error::ResponseError for Error {
                 message: format!("{}", error),
                 details: error.to_string(),
             }),
-            Self::PurlFormat(err) => res.json(ErrorInformation {
+            Self::PurlFormat(error) => res.json(ErrorInformation {
                 error: format!("{}", self.status_code()),
                 message: "Purl parsing error".to_string(),
-                details: err.to_string(),
+                details: error.to_string(),
+            }),
+            Self::Client(error) => res.json(ErrorInformation {
+                error: format!("{}", self.status_code()),
+                message: "Guac client error".to_string(),
+                details: error.to_string(),
             }),
         }
     }
@@ -169,34 +179,55 @@ impl GuacService {
     }
 
     #[instrument(skip(self), err)]
+    fn get_purl(&self, package: Package) -> Result<PackageUrl<'_>, Error> {
+        let purls = package.try_as_purls()?;
+        if purls.is_empty() {
+            Err(Error::Client(format!("Cannot parse package {:?}", package).to_string()))
+        } else {
+            Ok(purls[0].clone())
+        }
+    }
+
+    #[instrument(skip(self), err)]
     pub async fn product_by_cve(&self, id: String) -> Result<CveDetails, Error> {
         let result = self.client.semantic().product_by_cve(&id).await?;
         let mut products = BTreeMap::<ProductCveStatus, Vec<ProductRelatedToCve>>::new();
 
         for product in result {
-            let id = product.root.try_as_purls()?[0].name().to_string();
+            let root = self.get_purl(product.root)?.clone();
+
+            let sbom = self.client.intrinsic().has_sbom(&root.clone().into()).await?;
+            if sbom.is_empty() {
+                return Err(Error::Client(format!("Cannot find an SBOM for {:?}", root).to_string()));
+            }
+            let uid = &sbom[0].uri;
 
             let mut packages: Vec<PackageRelatedToProductCve> = Vec::new();
 
             for package in product.path {
-                let p = package.try_as_purls()?[0].to_string();
+                let p = self.get_purl(package)?.to_string();
                 packages.push(PackageRelatedToProductCve {
                     purl: p,
                     r#type: "Direct".to_string(),
                 })
             }
 
-            let pr = ProductRelatedToCve { sbom_id: id, packages };
-
-            let status = match product.vex.status {
-                VexStatus::Affected => ProductCveStatus::KnownAffected,
-                VexStatus::Fixed => ProductCveStatus::Fixed,
-                VexStatus::UnderInvestigation => ProductCveStatus::UnderInvestigation,
-                VexStatus::NotAffected => ProductCveStatus::KnownNotAffected,
-                VexStatus::Other(_) => todo!(),
+            let pr = ProductRelatedToCve {
+                sbom_uid: uid.to_string(),
+                packages,
             };
 
-            products.entry(status).or_insert(vec![]).push(pr);
+            let status = match product.vex.status {
+                VexStatus::Affected => Ok(ProductCveStatus::KnownAffected),
+                VexStatus::Fixed => Ok(ProductCveStatus::Fixed),
+                VexStatus::UnderInvestigation => Ok(ProductCveStatus::UnderInvestigation),
+                VexStatus::NotAffected => Ok(ProductCveStatus::KnownNotAffected),
+                VexStatus::Other(_) => Err(Error::Client(
+                    format!("Cannot process CVE {}, unknown status {:?}", uid, product.vex.status).to_string(),
+                )),
+            };
+
+            products.entry(status?).or_insert(vec![]).push(pr);
         }
 
         Ok(CveDetails {
@@ -249,6 +280,27 @@ impl GuacService {
             .find_vulnerability_by_sbom_uri(id, offset, limit)
             .await?)
     }
+
+    #[instrument(skip(self), err)]
+    pub async fn product_by_package(
+        &self,
+        purl: &str,
+        offset: Option<i64>,
+        limit: Option<i64>,
+    ) -> Result<Vec<ProductRelatedToPackage>, Error> {
+        let products = self
+            .client
+            .semantic()
+            .find_dependent_product(purl, offset, limit)
+            .await?;
+        Ok(products
+            .iter()
+            .map(|sbom_id| ProductRelatedToPackage {
+                sbom_uid: sbom_id.to_string(),
+                backtraces: vec![],
+            })
+            .collect::<Vec<ProductRelatedToPackage>>())
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -268,7 +320,7 @@ mod test {
     #[ignore]
     async fn test_product_by_cve() {
         let guac = GuacService::new("http://localhost:8085/query");
-        let res = guac.product_by_cve("cve-2022-2284".to_string()).await.unwrap();
+        let res = guac.product_by_cve("cve-2023-2976".to_string()).await.unwrap();
         println!("{}", serde_json::to_string_pretty(&res).unwrap());
     }
 
@@ -290,6 +342,16 @@ mod test {
             )
             .await
             .unwrap();
+        println!("{}", serde_json::to_string_pretty(&res).unwrap());
+    }
+
+    // TODO do proper testing
+    // Use ds1 dataset
+    #[tokio::test]
+    #[ignore]
+    async fn test_product_by_package() {
+        let guac = GuacService::new("http://localhost:8085/query");
+        let res = guac.product_by_package("pkg:maven/org.xerial.snappy/snappy-java@1.1.8.4-redhat-00003?repository_url=https://maven.repository.redhat.com/ga/&type=jar", None, None).await.unwrap();
         println!("{}", serde_json::to_string_pretty(&res).unwrap());
     }
 }

@@ -46,7 +46,8 @@ pub fn config(
                     .to(publish_vex),
             )
             .service(search_vex)
-            .service(delete_vex),
+            .service(delete_vex)
+            .service(delete_vexes),
     )
     .service(swagger_ui_with_auth(ApiDoc::openapi(), swagger_ui_oidc));
 }
@@ -300,6 +301,20 @@ async fn delete_vex(
     log::trace!("Deleting VEX using id {}", id);
 
     state.storage.delete(id).await.map_err(Error::Storage)?;
+
+    Ok(HttpResponse::NoContent().finish())
+}
+
+/// Delete all VEX documents
+#[delete("/vex/all")]
+async fn delete_vexes(
+    state: web::Data<SharedState>,
+    authorizer: web::Data<Authorizer>,
+    user: UserInformation,
+) -> actix_web::Result<impl Responder> {
+    authorizer.require(&user, Permission::DeleteVex)?;
+
+    state.storage.delete_all().await.map_err(Error::Storage)?;
 
     Ok(HttpResponse::NoContent().finish())
 }

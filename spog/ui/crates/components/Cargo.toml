@@ -17,15 +17,15 @@ gloo-net = "0.4.0"
 gloo-storage = "0.3.0"
 gloo-utils = { version = "0.2.0", features = ["serde"] }
 humansize = "2"
-itertools = "0.11"
+itertools = "0.12"
 js-sys = "0.3"
 log = "0.4"
 monaco = { version = "0.5", features = ["yew-components"] }
 openidconnect = "3"
 packageurl = "0.3"
-patternfly-yew = { version = "0.5.0-alpha.3", features = ["icons-fab", "tree"] }
+patternfly-yew = { version = "0.5.0", features = ["icons-fab", "tree"] }
 reqwest = { version = "0.11", features = ["json"] }
-roxmltree = "0.18"
+roxmltree = "0.19"
 serde = { version = "1", features = ["derive", "rc"] }
 serde_json = "1"
 sikula = { version = "0.4.1", default-features = false, features = ["time"] }
@@ -43,7 +43,7 @@ yew-consent = "0.2"
 yew-hooks = "0.3"
 yew-more-hooks = "0.3.0"
 yew-nested-router = "0.4.0"
-yew-oauth2 = { version = "0.7.0", features = ["router", "openid"] }
+yew-oauth2 = { version = "0.8.0", features = ["router", "openid"] }
 
 spog-model = { path = "../../../model" }
 v11y-model = { path = "../../../../v11y/model" }
