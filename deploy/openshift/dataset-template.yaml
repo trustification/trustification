@@ -12,9 +12,9 @@ objects:
     completions: 1
     parallelism: 1
     ttlSecondsAfterFinished: 600
-    restartPolicy: Never
     template:
       spec:
+        restartPolicy: OnFailure
         containers:
           - image: ${IMAGE}:${IMAGE_TAG}
             imagePullPolicy: Always
