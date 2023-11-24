@@ -196,7 +196,10 @@ impl GuacService {
         for product in result {
             let root = self.get_purl(product.root)?.clone();
 
-            let sbom = self.client.intrinsic().has_sbom(&root.into()).await?;
+            let sbom = self.client.intrinsic().has_sbom(&root.clone().into()).await?;
+            if sbom.is_empty() {
+                return Err(Error::Client(format!("Cannot find an SBOM for {:?}", root).to_string()));
+            }
             let uid = &sbom[0].uri;
 
             let mut packages: Vec<PackageRelatedToProductCve> = Vec::new();
