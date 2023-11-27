@@ -29,7 +29,7 @@ pub struct E2Ecliparser {
     //pub browsercap: String,
 }
 
-pub fn fetch_driver() {
+pub async fn fetch_driver() {
     if let Result::Err(_) = std::env::var("driver_path") {
         println!("Configuring Webdriver, It may take sometime. Please wait...");
         let cargo_path = env::var("CARGO").expect("Cargo installation not available");
@@ -65,10 +65,26 @@ pub fn driver_teardown() {
     }
 }
 
+pub async fn load_data(){
+    println!("Loading Test data for localhost, it might take sometime...");
+    let cargo_path = env::var("CARGO").expect("Cargo installation not available");
+    let output = Command::new("sh")
+        .args(["./src/scripts/env.sh", "-d", cargo_path.as_str()])
+        .output()
+        .expect("Failed to run the shell script");
+    if output.status.success() {
+        println!("Data loaded successfully!");
+    } else {
+        eprintln!("Command failed with an error code: {:?}", output.status);
+        std::process::exit(1);
+    }
+}
+
+
 #[tokio::main]
 async fn main() {
     if let Result::Err(_) = env::var("driver_path") {
-        fetch_driver();
+        fetch_driver().await;
     }
     let junit_output_file =
         File::create(format!("{}/junit.xml", env!("CARGO_MANIFEST_DIR"))).expect("Error file creation");
@@ -76,6 +92,10 @@ async fn main() {
         File::create(format!("{}/cucumber.json", env!("CARGO_MANIFEST_DIR"))).expect("Error file creation");
     let opts = cli::Opts::<_, _, _, E2Ecliparser>::parsed();
     let _option = opts.custom.clone();
+    let application = _option.application.to_owned();
+    if application.contains("localhost"){
+        load_data().await;
+    }
     let opts_custom = Arc::new(_option);
     E2EWorld::cucumber()
         .before(move |_, _, _, world| {

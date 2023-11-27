@@ -14,7 +14,7 @@ fi
 
 argument_parser() {
     ARGS=$@
-    OPTSTR="s:thb:"
+    OPTSTR="s:thb:d:"
     while getopts $OPTSTR flag; do
         case "$flag" in
             s) # Setup browser driver
@@ -32,6 +32,10 @@ argument_parser() {
                 help_context $OPTSTR
                 exit 1
             ;;
+            d) # Set test data
+                CARGO_PATH=$OPTARG
+                setup_data
+            ;;
             *)
                 echo "Invalid Input"
                 help_context $OPTSTR
@@ -42,12 +46,13 @@ argument_parser() {
 }
 
 help_context(){
-    echo "Possible inputs: -s -t -h"
+    echo "Possible inputs: -s -t -h -d"
     echo "Explanation of inputs "
     echo "      -s: Setup webdriver"
     echo "      -t: Teardown webdriver"
     echo "      -b: Browser [default to chrome]"
     echo "      -h: Help menu"
+    echo "      -d: Load test data to localhost"
 }
 
 setup_env(){
@@ -61,7 +66,7 @@ setup_env(){
 
     INFO=$(selenium-manager --browser $BROWSER  --cache-path $DRIVER_PATH 2>&1)
     if [[ $INFO == *"Driver path"* ]]; then
-        DRIVER_PATH=$(echo "$INFO" | grep "Driver path" | cut -d ':' -f 2 | sed -e 's/^[ \t]*//' )
+        DRIVER_PATH=$(echo "$INFO" | grep "Driver path" | sed -e 's/^.* \(.*\)$/\1/')
     fi
     echo $DRIVER_PATH
 }
@@ -72,6 +77,11 @@ teardown_env(){
     rm -rf ./driver
 }
 
+setup_data(){
+    $CARGO_PATH run -p trust -- vexination walker --devmode -3 --sink http://localhost:8081/api/v1/vex --source ../data/ds1/csaf
+    $CARGO_PATH run -p trust bombastic walker --sink http://localhost:8082 --devmode --source ../data/ds1/sbom
+    sleep 10s
+}
 
 argument_parser "$@"
 

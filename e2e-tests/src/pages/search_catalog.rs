@@ -15,7 +15,7 @@ async fn assert_cve_search_result(world: &mut E2EWorld, sbom: String) {
         .displayed()
         .await
         .expect("Header is not displayed");
-    let btn_sbom: By = By::XPath("//button/span[contains(.,'SBOMs') and not (contains(.,'dependency'))]");
+    let btn_sbom: By = By::XPath("//button/span[contains(.,'Products and containers') and not (contains(.,'dependency'))]");
     driver.find(btn_sbom).await.unwrap().click().await.unwrap();
     let lnk_sbom: By = By::XPath(&"//a[contains(.,'<value>')]".replace("<value>", &sbom));
     assert!(driver.find(lnk_sbom).await.unwrap().is_displayed().await.unwrap());
