@@ -228,7 +228,7 @@ mod test {
             Rc::new("id".to_string()),
             Some(Rc::new("value".to_string())),
         );
-        v.set_sort_by(("field".into(), true));
+        v.set_sort_by(("field".into(), Order::Ascending));
 
         // must serialize to JSON
         serde_json::to_string(&v).unwrap();
