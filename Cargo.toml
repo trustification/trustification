@@ -52,6 +52,7 @@ members = [
     "admin",
     "indexer",
     "xtask",
+    "e2e-tests",
 ]
 default-members = [
     "analytics",

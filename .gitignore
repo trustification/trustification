@@ -5,6 +5,9 @@
 *.db
 *.db-journal
 .DS_Store
+cucumber.json
+junit.xml
+/driver
 
 # from the bom import
 pubring.kbx*
