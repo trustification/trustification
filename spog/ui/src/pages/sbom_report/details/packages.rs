@@ -1,10 +1,12 @@
 use packageurl::PackageUrl;
 use patternfly_yew::prelude::*;
 use spog_model::prelude::*;
+use spog_ui_navigation::AppRoute;
 use std::collections::{BTreeMap, BTreeSet};
 use std::rc::Rc;
 use std::str::FromStr;
 use yew::prelude::*;
+use yew_nested_router::components::Link;
 
 #[derive(PartialEq, Properties)]
 pub struct AffectedPackagesProperties {
@@ -28,7 +30,11 @@ pub fn affected_packages(props: &AffectedPackagesProperties) -> Html {
             match context.column {
                 Column::Type => html!({ self.0.r#type.clone() }),
                 Column::Namespace => html!({ for self.0.namespace.clone() }),
-                Column::Name => html!({ self.0.name.clone() }),
+                Column::Name => html!(
+                    <Link<AppRoute> target={AppRoute::Package {id: self.0.purl.clone()}}>
+                        { self.0.name.clone() }
+                    </Link<AppRoute>>
+                ),
                 Column::Version => html!({ for self.0.version.clone() }),
                 Column::Path => html!({ for self.0.subpath.clone() }),
                 Column::Qualifiers => html!({ for self.1.qualifiers.iter().map(|(k,v)| html!(

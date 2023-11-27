@@ -1,7 +1,10 @@
 use patternfly_yew::prelude::*;
 use spog_model::prelude::PackageRelatedToProductCve;
+use spog_ui_navigation::AppRoute;
 use std::rc::Rc;
 use yew::prelude::*;
+use yew_nested_router::components::Link;
+
 #[derive(Copy, Clone, PartialEq, Eq)]
 pub enum Column {
     Name,
@@ -11,7 +14,11 @@ pub enum Column {
 impl TableEntryRenderer<Column> for PackageRelatedToProductCve {
     fn render_cell(&self, context: CellContext<'_, Column>) -> Cell {
         match context.column {
-            Column::Name => html!({ &self.purl }),
+            Column::Name => html!(
+                <Link<AppRoute> target={AppRoute::Package {id: self.purl.clone()}}>
+                    { self.purl.clone() }
+                </Link<AppRoute>>
+            ),
             Column::Type => html!({ &self.r#type }),
         }
         .into()

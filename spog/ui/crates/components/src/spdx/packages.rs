@@ -3,13 +3,12 @@ use itertools::Itertools;
 use packageurl::PackageUrl;
 use patternfly_yew::prelude::*;
 use spdx_rs::models::{PackageInformation, Relationship, SPDX};
+use spog_ui_common::use_apply_pagination;
 use spog_ui_common::utils::{highlight::highlight, OrNone};
-use spog_ui_navigation::AppRoute;
 use std::cell::RefCell;
 use std::collections::{hash_map, BTreeMap, BTreeSet, HashMap, HashSet};
 use std::rc::Rc;
 use yew::prelude::*;
-use yew_nested_router::components::Link;
 
 #[derive(PartialEq, Properties)]
 pub struct SpdxPackagesProperties {
@@ -118,14 +117,10 @@ pub fn spdx_packages(props: &SpdxPackagesProperties) -> Html {
                     ..
                 } => match context.column {
                     Column::Name => html!(<>
-                        <Link<AppRoute>
-                            target={AppRoute::Package{id: base.to_string()}}
-                        >
-                            { highlight(base.name(), &self.filter.borrow()) }
-                            if let Some(namespace) = base.namespace() {
-                                { " / " } { highlight(namespace, &self.filter.borrow()) }
-                            }
-                        </Link<AppRoute>>
+                        { highlight(base.name(), &self.filter.borrow()) }
+                        if let Some(namespace) = base.namespace() {
+                            { " / " } { highlight(namespace, &self.filter.borrow()) }
+                        }
                         {" "}
                         <Label compact=true label={base.ty().to_string()} color={Color::Blue} />
                     </>)
@@ -157,7 +152,22 @@ pub fn spdx_packages(props: &SpdxPackagesProperties) -> Html {
                 } => {
                     let content = html!(<>
                         <Grid gutter=true>
-                            <GridItem cols={[4]}>
+
+                            <GridItem cols={[4.all(), 5.lg()]}>
+                                <Card plain=true title={html!(<Title>{"Packages"}</Title>)}>
+                                    <CardBody>
+                                        <List r#type={ListType::Basic}>
+                                            { for packages.iter().map(|i| html_nested!(
+                                                <ListItem>
+                                                    { spdx_package_list_entry(i) }
+                                                </ListItem>
+                                            ))}
+                                        </List>
+                                    </CardBody>
+                                </Card>
+                            </GridItem>
+
+                            <GridItem cols={[4.all(), 3.lg()]}>
                                 <Card plain=true title={html!(<Title>{"Details"}</Title>)}>
                                     <CardBody>
                                         <DescriptionList>
@@ -167,7 +177,7 @@ pub fn spdx_packages(props: &SpdxPackagesProperties) -> Html {
                                 </Card>
                             </GridItem>
 
-                            <GridItem cols={[4]}>
+                            <GridItem cols={[4.all(), 2.lg()]}>
                                 <Card plain=true title={html!(<Title>{"Qualifiers"}</Title>)}>
                                     <CardBody>
                                         <DescriptionList mode={[DescriptionListMode::Horizontal]}>
@@ -185,7 +195,7 @@ pub fn spdx_packages(props: &SpdxPackagesProperties) -> Html {
                                 </Card>
                             </GridItem>
 
-                            <GridItem cols={[4]}>
+                            <GridItem cols={[4.all(), 2.lg()]}>
                                 <Card plain=true title={html!(<Title>{"Versions"}</Title>)}>
                                     <CardBody>
                                         <List r#type={ListType::Basic}>
@@ -195,15 +205,6 @@ pub fn spdx_packages(props: &SpdxPackagesProperties) -> Html {
                                 </Card>
                             </GridItem>
 
-                            <GridItem cols={[4]}>
-                                <Card plain=true title={html!(<Title>{"Packages"}</Title>)}>
-                                    <CardBody>
-                                        <List r#type={ListType::Basic}>
-                                            { for packages.iter().map(|i| html_nested!(<ListItem> { spdx_package_list_entry(i) } </ListItem>))}
-                                        </List>
-                                    </CardBody>
-                                </Card>
-                            </GridItem>
                         </Grid>
                     </>);
                     vec![Span::max(content)]
@@ -315,14 +316,9 @@ pub fn spdx_packages(props: &SpdxPackagesProperties) -> Html {
         })
     };
 
-    let offset = use_state_eq(|| 0);
-    let limit = use_state_eq(|| 10);
-
     let filter = use_state_eq(String::new);
 
     let filtered_packages = {
-        let offset = offset.clone();
-        let limit = limit.clone();
         use_memo((packages, (*filter).clone()), move |(packages, filter)| {
             let packages = packages
                 .iter()
@@ -343,15 +339,6 @@ pub fn spdx_packages(props: &SpdxPackagesProperties) -> Html {
                 .cloned()
                 .collect::<Vec<_>>();
 
-            // try to cap last page, only apply once
-            if *offset > packages.len() {
-                if *limit > packages.len() {
-                    offset.set(0);
-                } else {
-                    offset.set(packages.len() - *limit);
-                }
-            }
-
             // also update the filter value
             *package_filter_string.borrow_mut() = filter.clone();
 
@@ -361,53 +348,16 @@ pub fn spdx_packages(props: &SpdxPackagesProperties) -> Html {
     };
 
     // total entries must be based on the filtered list
-    let total_entries = filtered_packages.len();
+    let total = filtered_packages.len();
 
-    // page from the filtered entries
-    let entries = use_memo(
-        (filtered_packages, *offset, *limit),
-        |(filtered_packages, offset, limit)| {
-            filtered_packages
-                .iter()
-                // apply pagination window
-                .skip(*offset)
-                .take(*limit)
-                .cloned()
-                .collect::<Vec<_>>()
-        },
-    );
-
+    let pagination = use_pagination(Some(total), Default::default);
+    let entries = use_apply_pagination(filtered_packages, pagination.control);
     let (entries, onexpand) = use_table_data(MemoizedTableModel::new(entries));
 
-    let limit_callback = {
-        let limit = limit.clone();
-        Callback::from(move |number| limit.set(number))
-    };
-
-    let nav_callback = {
-        let offset = offset.clone();
-        let limit = *limit;
-        Callback::from(move |page: Navigation| {
-            let o = match page {
-                Navigation::First => 0,
-                Navigation::Last => ((total_entries - 1) / limit) * limit,
-                Navigation::Previous => *offset - limit,
-                Navigation::Next => *offset + limit,
-                Navigation::Page(n) => (n - 1) * limit,
-            };
-            offset.set(o);
-        })
-    };
-
-    let onclearfilter = {
-        let filter = filter.clone();
-        Callback::from(move |_| filter.set(String::new()))
-    };
-
-    let onsetfilter = {
-        let filter = filter.clone();
-        Callback::from(move |value: String| filter.set(value.trim().to_string()))
-    };
+    let onclearfilter = use_callback(filter.clone(), |_, filter| filter.set(String::new()));
+    let onsetfilter = use_callback(filter.clone(), |value: String, filter| {
+        filter.set(value.trim().to_string())
+    });
 
     html!(
         <>
@@ -430,14 +380,7 @@ pub fn spdx_packages(props: &SpdxPackagesProperties) -> Html {
                     </ToolbarItem>
 
                     <ToolbarItem r#type={ToolbarItemType::Pagination}>
-                        <Pagination
-                            {total_entries}
-                            offset={*offset}
-                            entries_per_page_choices={vec![5, 10, 25, 50]}
-                            selected_choice={*limit}
-                            onlimit={&limit_callback}
-                            onnavigation={&nav_callback}
-                        />
+                        <SimplePagination pagination={pagination.clone()} {total} />
                     </ToolbarItem>
                 </ToolbarContent>
             </Toolbar>
@@ -449,13 +392,9 @@ pub fn spdx_packages(props: &SpdxPackagesProperties) -> Html {
                 {onexpand}
             />
 
-            <Pagination
-                {total_entries}
-                offset={*offset}
-                entries_per_page_choices={vec![5, 10, 25, 50]}
-                selected_choice={*limit}
-                onlimit={&limit_callback}
-                onnavigation={&nav_callback}
+            <SimplePagination
+                {pagination}
+                {total}
                 position={PaginationPosition::Bottom}
             />
         </>
