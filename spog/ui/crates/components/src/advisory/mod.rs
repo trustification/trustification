@@ -13,14 +13,12 @@ use csaf::{
     Csaf,
 };
 use patternfly_yew::prelude::*;
+use spog_model::csaf::{ProductsCache, RelationshipsCache};
 use spog_model::prelude::*;
 use spog_ui_backend::{use_backend, Endpoint};
 use spog_ui_common::{
     components::Markdown,
-    utils::{
-        csaf::{find_product_relations, has_product, trace_product},
-        time::date,
-    },
+    utils::{csaf::trace_product, time::date},
 };
 use spog_ui_navigation::{AppRoute, View};
 use std::borrow::Cow;
@@ -59,7 +57,7 @@ impl TableEntryRenderer<Column> for AdvisoryEntry {
         match context.column {
             Column::Id => html!(
                 <Link<AppRoute>
-                    target={AppRoute::Advisory(View::Content{id: self.summary.id.clone()})}
+                    target={AppRoute::Advisory(View::Content {id: self.summary.id.clone()})}
                 >{ self.summary.id.clone() }</Link<AppRoute>>
             ),
             Column::Title => html!(&self.summary.title),
@@ -324,10 +322,15 @@ fn csaf_product_status(props: &CsafProductStatusSectionProperties) -> Html {
     let entries = use_memo(props.entries.clone(), |entries| {
         entries.as_ref().map(|entries| {
             let entries = match props.overview {
-                false => entries
-                    .iter()
-                    .map(|entry| csaf_product_status_entry_details(&props.csaf, entry))
-                    .collect::<Vec<_>>(),
+                false => {
+                    let products = ProductsCache::new(&props.csaf);
+                    let relationships = RelationshipsCache::new(&props.csaf);
+
+                    entries
+                        .iter()
+                        .map(|entry| csaf_product_status_entry_details(&props.csaf, &products, &relationships, entry))
+                        .collect::<Vec<_>>()
+                }
                 true => csaf_product_status_entry_overview(&props.csaf, entries),
             };
 
@@ -353,19 +356,26 @@ enum Product<'a> {
     Invalid(&'a str),
 }
 
-fn csaf_resolve_aggregated_products<'a>(csaf: &'a Csaf, entries: &'a [ProductIdT]) -> HashSet<Product<'a>> {
+fn csaf_resolve_aggregated_products<'a>(
+    csaf: &'a Csaf,
+    products_cache: &ProductsCache,
+    entries: &'a [ProductIdT],
+) -> HashSet<Product<'a>> {
     // gather unique set of products
     let products = entries.iter().map(|id| id.0.as_str()).collect::<HashSet<_>>();
+
+    let cache = RelationshipsCache::new(csaf);
 
     // gather unique set of products they relate to
     products
         .into_iter()
         .flat_map(|id| {
-            let mut products = find_product_relations(csaf, id)
+            let mut products = cache
+                .relations(id)
                 .map(|rel| rel.relates_to_product_reference.0.as_str())
                 .collect::<Vec<_>>();
 
-            if has_product(csaf, id) {
+            if products_cache.has_product(id) {
                 products.push(id.clone());
             }
 
@@ -379,12 +389,15 @@ fn csaf_resolve_aggregated_products<'a>(csaf: &'a Csaf, entries: &'a [ProductIdT
 }
 
 fn csaf_product_status_entry_overview(csaf: &Csaf, entries: &[ProductIdT]) -> Vec<Html> {
-    let products = csaf_resolve_aggregated_products(csaf, entries);
+    let products_cache = ProductsCache::new(csaf);
 
+    let products = csaf_resolve_aggregated_products(csaf, &products_cache, entries);
+
+    // aggregate by name
     let mut products = products
         .into_iter()
         .flat_map(|product| match product {
-            Product::Known(id) => trace_product(csaf, id).pop().map(|branch| Product::Known(&branch.name)),
+            Product::Known(id) => products_cache.get(id).map(Product::Known),
             Product::Invalid(id) => Some(Product::Invalid(id)),
         })
         .collect::<Vec<_>>();
@@ -396,18 +409,25 @@ fn csaf_product_status_entry_overview(csaf: &Csaf, entries: &[ProductIdT]) -> Ve
     products
         .into_iter()
         .map(|product| match product {
-            Product::Known(id) => {
-                html!({ id })
+            // we resolved the id into a name
+            Product::Known(name) => {
+                html!({ name })
             }
             Product::Invalid(id) => render_invalid_product(id),
         })
         .collect()
 }
 
-fn csaf_product_status_entry_details(csaf: &Csaf, id: &ProductIdT) -> Html {
+fn csaf_product_status_entry_details(
+    csaf: &Csaf,
+    products: &ProductsCache,
+    relationships: &RelationshipsCache,
+    id: &ProductIdT,
+) -> Html {
     // for details, we show the actual component plus where it comes from
-    let actual = has_product(csaf, &id.0).then_some(id.0.as_str());
-    let content = find_product_relations(csaf, &id.0)
+    let actual = products.has_product(&id.0).then_some(id.0.as_str());
+    let content = relationships
+        .relations(&id.0)
         .map(|r| {
             // add product references
             let product = product_html(trace_product(csaf, &r.relates_to_product_reference.0));
@@ -507,7 +527,8 @@ mod test {
 
         assert!(has_product(&csaf, &prod1.0));
 
-        let resolved = csaf_resolve_aggregated_products(&csaf, fixed1);
+        let product_ids = gather_products(&csaf);
+        let resolved = csaf_resolve_aggregated_products(&csaf, &product_ids, fixed1);
         assert_eq!(
             Vec::from_iter(resolved),
             vec![Product::Known("Red Hat build of Quarkus")]
