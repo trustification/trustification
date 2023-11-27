@@ -21,6 +21,8 @@ pub enum Error {
     Collectorist(#[from] collectorist::Error),
     #[error("v11y error: {0}")]
     V11y(#[from] v11y::Error),
+    #[error(transparent)]
+    PackageUrl(#[from] packageurl::Error),
     #[error("{0}")]
     Generic(String),
 }
@@ -29,6 +31,7 @@ impl actix_web::error::ResponseError for Error {
     fn status_code(&self) -> StatusCode {
         match self {
             Self::Response(status, _) => *status,
+            Self::PackageUrl(_) => StatusCode::BAD_REQUEST,
             _ => StatusCode::INTERNAL_SERVER_ERROR,
         }
     }
@@ -74,6 +77,11 @@ impl actix_web::error::ResponseError for Error {
             Self::V11y(error) => res.json(ErrorInformation {
                 error: "v11y".to_string(),
                 message: "Error contacting v11y".to_string(),
+                details: error.to_string(),
+            }),
+            Self::PackageUrl(error) => res.json(ErrorInformation {
+                error: "PackageUrl".to_string(),
+                message: "Invalid package URL syntax".to_string(),
                 details: error.to_string(),
             }),
             Self::Generic(error) => res.json(ErrorInformation {
