@@ -2,12 +2,14 @@ mod search;
 
 use crate::cvss::CvssMap;
 use crate::table_wrapper::TableWrapper;
+use packageurl::PackageUrl;
 use patternfly_yew::prelude::*;
 pub use search::*;
 use spog_model::package_info::PackageInfo;
 use spog_ui_navigation::AppRoute;
 use std::collections::HashMap;
 use std::rc::Rc;
+use std::str::FromStr;
 use trustification_api::search::SearchResult;
 use yew::prelude::*;
 use yew_more_hooks::prelude::*;
@@ -16,6 +18,7 @@ use yew_nested_router::components::Link;
 #[derive(PartialEq, Properties, Clone)]
 pub struct PackagesEntry {
     package: PackageInfo,
+    purl: PackageUrl<'static>,
     summary: HashMap<String, u64>,
 }
 
@@ -31,7 +34,8 @@ pub enum Column {
     Namespace,
     Version,
     PackageType,
-    Supplier,
+    Qualifiers,
+    Path,
     Vulnerabilities,
 }
 
@@ -40,25 +44,16 @@ impl TableEntryRenderer<Column> for PackagesEntry {
         match context.column {
             Column::Name => html!(
                 <Link<AppRoute>
-                    target={AppRoute::Package{id: self.package.purl.clone().unwrap_or_default()}}
-                >{ for self.package.name.clone() }</Link<AppRoute>>
+                    target={AppRoute::Package{id: self.package.purl.clone()}}
+                >{ self.purl.name() }</Link<AppRoute>>
             ),
-            Column::Namespace => html!({ for self.package.namespace.clone() }),
-            Column::Version => html!( <>
-                {
-                    self.package.version.clone()
-                }
-            </>),
-            Column::PackageType => html!( <>
-                {
-                    self.package.package_type.clone()
-                }
-            </>),
-            Column::Supplier => html!( <>
-                {
-                    self.package.supplier.clone()
-                }
-            </>),
+            Column::Namespace => html!({ for self.purl.namespace() }),
+            Column::Version => html!({ for self.purl.version() }),
+            Column::PackageType => html!({ self.purl.ty() }),
+            Column::Path => html!({ for self.purl.subpath() }),
+            Column::Qualifiers => {
+                html!({ for self.purl.qualifiers().iter().map(|(k,v)| html!(<Label label={format!("{k}={v}")} />)) })
+            }
             Column::Vulnerabilities => {
                 let l = self.summary.len();
                 if l == 0 {
@@ -81,20 +76,27 @@ impl TableEntryRenderer<Column> for PackagesEntry {
     }
 }
 
-fn get_package_definitions(package: PackageInfo) -> PackagesEntry {
+fn get_package_definitions(package: PackageInfo) -> Option<PackagesEntry> {
     let mut summary = HashMap::new();
     for vuln in &package.vulnerabilities {
         *summary.entry(vuln.severity.clone()).or_default() += 1;
     }
 
-    PackagesEntry { package, summary }
+    match PackageUrl::from_str(&package.purl) {
+        Ok(purl) => Some(PackagesEntry { package, purl, summary }),
+        Err(_) => None,
+    }
 }
 
 #[function_component(PackagesResult)]
 pub fn package_result(props: &PackagesResultProperties) -> Html {
     let data = match &props.state {
         UseAsyncState::Ready(Ok(val)) => {
-            let data: Vec<_> = (*val.result).clone().into_iter().map(get_package_definitions).collect();
+            let data: Vec<_> = (*val.result)
+                .clone()
+                .into_iter()
+                .filter_map(get_package_definitions)
+                .collect();
             Some(data)
         }
         _ => None,
@@ -125,12 +127,12 @@ pub fn package_result(props: &PackagesResultProperties) -> Html {
         yew::props!(TableColumnProperties<Column> {
             index: Column::Name,
             label: "Name",
-            width: ColumnWidth::Percent(30),
+            width: ColumnWidth::Percent(20),
         }),
         yew::props!(TableColumnProperties<Column> {
             index: Column::Namespace,
             label: "Namespace",
-            width: ColumnWidth::Percent(30),
+            width: ColumnWidth::Percent(20),
         }),
         yew::props!(TableColumnProperties<Column> {
             index: Column::Version,
@@ -140,6 +142,16 @@ pub fn package_result(props: &PackagesResultProperties) -> Html {
         yew::props!(TableColumnProperties<Column> {
             index: Column::PackageType,
             label: "Type",
+            width: ColumnWidth::Percent(10),
+        }),
+        yew::props!(TableColumnProperties<Column> {
+            index: Column::Path,
+            label: "Path",
+            width: ColumnWidth::Percent(10),
+        }),
+        yew::props!(TableColumnProperties<Column> {
+            index: Column::Qualifiers,
+            label: "Qualifiers",
             width: ColumnWidth::Percent(10),
         }),
         yew::props!(TableColumnProperties<Column> {
