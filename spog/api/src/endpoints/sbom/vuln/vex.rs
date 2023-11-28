@@ -7,7 +7,7 @@ use csaf::Csaf;
 use futures::{stream, StreamExt, TryStreamExt};
 use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
-use tracing::instrument;
+use tracing::{info_span, instrument, Instrument};
 use trustification_api::search::SearchOptions;
 use trustification_auth::client::TokenProvider;
 
@@ -59,7 +59,12 @@ pub async fn collect_vex<'a>(
     // now fetch the documents and sort them in the result map
     let result: HashMap<String, Vec<_>> = stream::iter(cves)
         .map(|id| async move {
-            let doc: BytesMut = state.get_vex(&id, token).await?.try_collect().await?;
+            let doc: BytesMut = state
+                .get_vex(&id, token)
+                .await?
+                .try_collect()
+                .instrument(info_span!("receive vex"))
+                .await?;
 
             let mut result = Vec::new();
 
