@@ -23,10 +23,10 @@ RUN TAG=$tag cargo build -p trust --release
 FROM registry.access.redhat.com/ubi9/ubi:latest as frontendbuilder
 
 ARG RUST_VERSION="1.72.1"
-ARG SASS_VERSION="1.68.0"
+ARG SASS_VERSION="1.69.5"
 ARG WASM_PACK_VERSION="0.12.1"
-ARG WASM_BINDGEN_VERSION="0.2.87"
-ARG TRUNK_VERSION="0.17.12"
+ARG WASM_BINDGEN_VERSION="0.2.88"
+ARG TRUNK_VERSION="0.17.15"
 
 RUN dnf -y install nodejs git gcc
 
