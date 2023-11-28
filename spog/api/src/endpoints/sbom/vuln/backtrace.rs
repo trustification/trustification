@@ -10,7 +10,7 @@ pub async fn backtrace<'a>(
     _guac: &GuacService,
     _purl: &'a PackageUrl<'a>,
 ) -> Result<impl Iterator<Item = Backtrace> + 'a, Error> {
-    let mut result = vec![];
+    let result = vec![];
 
     // FIXME: This needs to be implemented
 
