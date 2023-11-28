@@ -1,9 +1,10 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::str::FromStr;
 use std::sync::Arc;
 
 use actix_web::{post, web, HttpResponse, Responder, ResponseError};
 use guac::client::intrinsic::certify_vuln::CertifyVulnSpec;
+use guac::client::intrinsic::package::PkgSpec;
 use guac::client::intrinsic::vuln_equal::VulnEqualSpec;
 use guac::client::intrinsic::vuln_metadata::{VulnerabilityMetadataSpec, VulnerabilityScoreType};
 use guac::client::intrinsic::vulnerability::VulnerabilitySpec;
@@ -12,6 +13,8 @@ use serde_json::value::RawValue;
 use utoipa::OpenApi;
 
 use exhort_model::*;
+use regex::Regex;
+use semver::Prerelease;
 use trustification_auth::authenticator::Authenticator;
 use trustification_auth::authorizer::Authorizer;
 use trustification_auth::swagger_ui::{swagger_ui_with_auth, SwaggerUiOidc};
@@ -85,7 +88,8 @@ pub fn config(
     cfg.service(
         web::scope("/api/v1")
             //.wrap(new_auth!(auth))
-            .service(analyze),
+            .service(analyze)
+            .service(recommend),
     )
     .service(swagger_ui_with_auth(ApiDoc::openapi(), swagger_ui_oidc));
 }
@@ -112,6 +116,80 @@ impl From<collectorist_client::Error> for Error {
             errors: vec![inner.to_string()],
         }
     }
+}
+
+#[utoipa::path(
+post,
+request_body = AnalyzeRequest,
+    responses(
+        (status = 200, body = RecommendationResponse, description = "Recommended pURLs"),
+    ),
+)]
+#[post("recommend")]
+async fn recommend(
+    state: web::Data<AppState>,
+    request: web::Json<AnalyzeRequest>,
+) -> actix_web::Result<impl Responder> {
+    let mut recommendations = HashMap::new();
+
+    for purl_str in &request.purls {
+        if let Ok(purl) = PackageUrl::from_str(purl_str) {
+            if let Ok(similar_packages) = state
+                .guac_client
+                .intrinsic()
+                .packages(&PkgSpec {
+                    id: None,
+                    r#type: Some(purl.ty().to_string()),
+                    //namespace: None,
+                    //name: None,
+                    namespace: purl.namespace().map(|inner| inner.to_string()),
+                    name: Some(purl.name().to_string()),
+                    version: None,
+                    qualifiers: None,
+                    match_only_empty_qualifiers: Some(false),
+                    subpath: None,
+                })
+                .await
+            {
+                let pattern = Regex::new("\\.redhat-[0-9]+$").unwrap();
+                let mut similar_purls = Vec::new();
+
+                for pkg in similar_packages {
+                    if let Ok(purls) = pkg.try_as_purls() {
+                        for similar_purl in purls {
+                            if let Some(version) = similar_purl.version() {
+                                if pattern.find(version).is_some() {
+                                    if let Some(input_version) = &purl.version() {
+                                        let input_ver = lenient_semver::parse(input_version);
+                                        let similar_ver = lenient_semver::parse(version);
+
+                                        if let (Ok(input_ver), Ok(mut similar_ver)) = (input_ver, similar_ver) {
+                                            // remove the RHT stupid renaming because semver thinks it means pre-release
+                                            // and that breaks stupid comparisions.
+                                            similar_ver.pre = Prerelease::EMPTY;
+                                            if similar_ver >= input_ver {
+                                                similar_purls.push(similar_purl.to_string());
+                                            }
+                                        }
+                                    } else {
+                                        similar_purls.push(similar_purl.to_string());
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if !similar_purls.is_empty() {
+                    recommendations.insert(purl_str.to_string(), similar_purls);
+                }
+            }
+        }
+    }
+
+    let response = RecommendResponse { recommendations };
+
+    Ok(HttpResponse::Ok().json(response))
 }
 
 #[utoipa::path(
