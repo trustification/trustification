@@ -1051,6 +1051,34 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_ngrams_scope() {
+        assert_search(|index| {
+            let result = search(&index, "openssl in:title");
+            assert_eq!(result.0.len(), 2);
+
+            let result = search(&index, "open in:title");
+            assert_eq!(result.0.len(), 2);
+
+            let result = search(&index, "ssl in:title");
+            assert_eq!(result.0.len(), 2);
+        });
+    }
+
+    #[tokio::test]
+    async fn test_ngrams_nocase() {
+        assert_search(|index| {
+            let result = search(&index, "Openssl in:title");
+            assert_eq!(result.0.len(), 2);
+
+            let result = search(&index, "Open in:title");
+            assert_eq!(result.0.len(), 2);
+
+            let result = search(&index, "SSL in:title");
+            assert_eq!(result.0.len(), 2);
+        });
+    }
+
+    #[tokio::test]
     async fn test_metadata() {
         let now = OffsetDateTime::now_utc();
         assert_search(|index| {
