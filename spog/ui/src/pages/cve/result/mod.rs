@@ -10,13 +10,15 @@ use patternfly_yew::prelude::*;
 use products::RelatedProducts;
 use spog_model::prelude::CveDetails;
 use spog_ui_backend::{use_backend, CveService};
-use spog_ui_common::components::Markdown;
+use spog_ui_common::{components::Markdown, config::use_config};
 use spog_ui_components::{async_state_renderer::async_content, cvss::Cvss3Label, editor::ReadonlyEditor, time::Date};
 use std::rc::Rc;
 use std::str::FromStr;
 use yew::prelude::*;
-use yew_more_hooks::hooks::use_page_state;
-use yew_more_hooks::{hooks::use_async_with_cloned_deps, prelude::UseAsyncState};
+use yew_more_hooks::{
+    hooks::{use_async_with_cloned_deps, use_page_state},
+    prelude::UseAsyncState,
+};
 use yew_oauth2::hook::use_latest_access_token;
 
 #[derive(PartialEq, Properties)]
@@ -27,6 +29,7 @@ pub struct ResultViewProperties {
 
 #[function_component(ResultView)]
 pub fn result_view(props: &ResultViewProperties) -> Html {
+    let config = use_config();
     let backend = use_backend();
     let access_token = use_latest_access_token();
 
@@ -122,7 +125,9 @@ pub fn result_view(props: &ResultViewProperties) -> Html {
                 <Tabs<TabIndex> r#box=true selected={page_state.tab} {onselect} detached=true>
                     <Tab<TabIndex> index={TabIndex::Products} title="Related Products" />
                     <Tab<TabIndex> index={TabIndex::Advisories} title="Related Advisories" />
-                    <Tab<TabIndex> index={TabIndex::Source} title="Source" />
+                    { for config.features.show_source.then(|| html_nested!(
+                        <Tab<TabIndex> index={TabIndex::Source} title="Source" />
+                    )) }
                 </Tabs<TabIndex>>
             </PageSection>
 

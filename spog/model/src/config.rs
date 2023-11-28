@@ -58,6 +58,9 @@ pub struct Features {
     /// Enable the "additional infos" tab on the package details page
     #[serde(default = "default_feature")]
     pub additional_package_information: bool,
+    /// Enable the "source" tabs
+    #[serde(default = "default_feature")]
+    pub show_source: bool,
 }
 
 impl Default for Features {
@@ -67,6 +70,7 @@ impl Default for Features {
             scanner: default_feature(),
             dedicated_search: default_feature(),
             additional_package_information: default_feature(),
+            show_source: default_feature(),
         }
     }
 }
