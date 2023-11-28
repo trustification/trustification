@@ -1,3 +1,4 @@
+use crate::config::use_config;
 use crate::error::{ApiErrorDetails, ApiErrorKind};
 use patternfly_yew::prelude::*;
 use yew::prelude::*;
@@ -40,11 +41,13 @@ pub struct ErrorProperties {
 
 #[function_component(Error)]
 pub fn error(props: &ErrorProperties) -> Html {
+    let config = use_config();
+
     html!(
         <Bullseye>
             <Grid gutter=true>
                 <GridItem offset={[2]} cols={[2]}>
-                    <img src="assets/images/chicken-svgrepo-com.svg" style="transform: scaleY(-1);"/>
+                    <img src={config.global.error_image_src()} style="transform: scaleY(-1);" alt="Error" />
                 </GridItem>
                 <GridItem cols={[6]}>
                     <Title>{props.title.clone()}</Title>
