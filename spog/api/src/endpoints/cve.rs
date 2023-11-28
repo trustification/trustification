@@ -18,7 +18,7 @@ use spog_model::{
 };
 use std::collections::{BTreeMap, BTreeSet, HashSet};
 use std::sync::Arc;
-use tracing::instrument;
+use tracing::{info_span, instrument, Instrument};
 use trustification_api::search::{SearchOptions, SearchResult};
 use trustification_auth::{
     authenticator::Authenticator,
@@ -181,7 +181,7 @@ where
 
     for id in advisory_ids {
         let stream = app.get_vex(&id, &provider).await?;
-        let x: BytesMut = stream.try_collect().await?;
+        let x: BytesMut = stream.try_collect().instrument(info_span!("receive vex", id)).await?;
 
         let csaf: Csaf = serde_json::from_slice(&x)?;
         let relationships = RelationshipsCache::new(&csaf);
