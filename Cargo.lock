@@ -734,17 +734,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "atty"
-version = "0.2.14"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d9b39be18770d11421cdb1b9947a45dd3f37e93092cbf377614828a319d5fee8"
-dependencies = [
- "hermit-abi 0.1.19",
- "libc",
- "winapi",
-]
-
-[[package]]
 name = "autocfg"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1316,7 +1305,7 @@ dependencies = [
  "bombastic-api",
  "bombastic-indexer",
  "bombastic-walker",
- "clap 4.4.6",
+ "clap",
  "log",
  "serde",
  "serde_json",
@@ -1333,7 +1322,7 @@ dependencies = [
  "bombastic-index",
  "bombastic-model",
  "bytesize",
- "clap 4.4.6",
+ "clap",
  "derive_more",
  "env_logger",
  "futures",
@@ -1386,7 +1375,7 @@ dependencies = [
  "anyhow",
  "bombastic-index",
  "bombastic-model",
- "clap 4.4.6",
+ "clap",
  "futures",
  "hex",
  "log",
@@ -1428,7 +1417,7 @@ dependencies = [
  "bytes",
  "bzip2",
  "chrono",
- "clap 4.4.6",
+ "clap",
  "csv",
  "humantime",
  "log",
@@ -1455,7 +1444,7 @@ dependencies = [
  "actix-ws",
  "anyhow",
  "bommer-api",
- "clap 4.4.6",
+ "clap",
  "env_logger",
  "futures",
  "k8s-openapi",
@@ -1649,29 +1638,12 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "3.2.25"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4ea181bf566f71cb9a5d17a59e1871af638180a18fb0035c92ae62b705207123"
-dependencies = [
- "atty",
- "bitflags 1.3.2",
- "clap_derive 3.2.25",
- "clap_lex 0.2.4",
- "indexmap 1.9.3",
- "once_cell",
- "strsim 0.10.0",
- "termcolor",
- "textwrap",
-]
-
-[[package]]
-name = "clap"
 version = "4.4.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d04704f56c2cde07f43e8e2c154b43f216dc5c92fc98ada720177362f953b956"
 dependencies = [
  "clap_builder",
- "clap_derive 4.4.2",
+ "clap_derive",
 ]
 
 [[package]]
@@ -1682,21 +1654,8 @@ checksum = "0e231faeaca65ebd1ea3c737966bf858971cd38c3849107aa3ea7de90a804e45"
 dependencies = [
  "anstream",
  "anstyle",
- "clap_lex 0.5.1",
+ "clap_lex",
  "strsim 0.10.0",
-]
-
-[[package]]
-name = "clap_derive"
-version = "3.2.25"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ae6371b8bdc8b7d3959e9cf7b22d4435ef3e79e138688421ec654acf8c81b008"
-dependencies = [
- "heck",
- "proc-macro-error",
- "proc-macro2",
- "quote",
- "syn 1.0.109",
 ]
 
 [[package]]
@@ -1709,15 +1668,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.38",
-]
-
-[[package]]
-name = "clap_lex"
-version = "0.2.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2850f2f5a82cbf437dd5af4d49848fbdfc27c157c3d010345776f952765261c5"
-dependencies = [
- "os_str_bytes",
 ]
 
 [[package]]
@@ -1740,7 +1690,7 @@ name = "collector"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "clap 4.4.6",
+ "clap",
  "collector-osv",
  "collector-snyk",
  "log",
@@ -1769,7 +1719,7 @@ dependencies = [
  "anyhow",
  "async-trait",
  "chrono",
- "clap 4.4.6",
+ "clap",
  "collector-client",
  "cvss",
  "derive_more",
@@ -1799,7 +1749,7 @@ dependencies = [
  "anyhow",
  "async-trait",
  "chrono",
- "clap 4.4.6",
+ "clap",
  "collector-client",
  "derive_more",
  "env_logger",
@@ -1830,7 +1780,7 @@ name = "collectorist"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "clap 4.4.6",
+ "clap",
  "collectorist-api",
  "log",
  "serde",
@@ -1846,7 +1796,7 @@ dependencies = [
  "actix-web-httpauth",
  "anyhow",
  "chrono",
- "clap 4.4.6",
+ "clap",
  "collector-client",
  "collectorist-client",
  "derive_more",
@@ -2634,7 +2584,7 @@ name = "exhort"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "clap 4.4.6",
+ "clap",
  "exhort-api",
  "log",
  "serde",
@@ -2649,7 +2599,7 @@ dependencies = [
  "actix-cors",
  "actix-web",
  "anyhow",
- "clap 4.4.6",
+ "clap",
  "collectorist-client",
  "derive_more",
  "env_logger",
@@ -2688,7 +2638,7 @@ name = "exporter"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "clap 4.4.6",
+ "clap",
  "futures",
  "guac",
  "hex",
@@ -3204,15 +3154,6 @@ dependencies = [
 
 [[package]]
 name = "hermit-abi"
-version = "0.1.19"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "62b467343b94ba476dcb2500d242dadbb39557df889310ac77c5d99100aaac33"
-dependencies = [
- "libc",
-]
-
-[[package]]
-name = "hermit-abi"
 version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d77f7ec81a6d05a3abb01ab6eb7590f6083d08449fe5a1c8b1e620283546ccb7"
@@ -3551,7 +3492,7 @@ dependencies = [
  "bombastic-indexer",
  "bytesize",
  "chrono",
- "clap 4.4.6",
+ "clap",
  "env_logger",
  "lazy_static",
  "log",
@@ -3588,7 +3529,7 @@ version = "1.0.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "eae7b9aee968036d54dce06cebaefd919e4472e753296daccd6d344e3e2df0c2"
 dependencies = [
- "hermit-abi 0.3.3",
+ "hermit-abi",
  "libc",
  "windows-sys 0.48.0",
 ]
@@ -3605,7 +3546,7 @@ version = "0.4.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cb0889898416213fab133e1d33a0e5858a48177452750691bde3666d0fdbaf8b"
 dependencies = [
- "hermit-abi 0.3.3",
+ "hermit-abi",
  "rustix 0.38.17",
  "windows-sys 0.48.0",
 ]
@@ -3897,7 +3838,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "69c58f2217377a2fa64942705a6b8aca81c4f656d32c82582b8d3249ac031918"
 dependencies = [
  "byte-unit",
- "clap 4.4.6",
+ "clap",
  "num_cpus",
  "ping",
  "reqwest",
@@ -4159,16 +4100,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d9380db4c04d219ac5c51d14996bbf2c2e9a15229771b53f8671eb6c83cf44df"
 
 [[package]]
-name = "names"
-version = "0.14.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7bddcd3bf5144b6392de80e04c347cd7fab2508f6df16a85fc496ecd5cec39bc"
-dependencies = [
- "clap 3.2.25",
- "rand 0.8.5",
-]
-
-[[package]]
 name = "native-tls"
 version = "0.2.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4344,7 +4275,7 @@ version = "1.16.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4161fcb6d602d4d2081af7c3a45852d875a03dd337a6bfdd6e06407b61342a43"
 dependencies = [
- "hermit-abi 0.3.3",
+ "hermit-abi",
  "libc",
 ]
 
@@ -4604,12 +4535,6 @@ dependencies = [
  "dlv-list",
  "hashbrown 0.12.3",
 ]
-
-[[package]]
-name = "os_str_bytes"
-version = "6.6.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e2355d85b9a3786f481747ced0e0ff2ba35213a1f9bd406ed906554d7af805a1"
 
 [[package]]
 name = "outref"
@@ -6263,7 +6188,7 @@ name = "spog"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "clap 4.4.6",
+ "clap",
  "log",
  "serde",
  "serde_json",
@@ -6286,7 +6211,7 @@ dependencies = [
  "bombastic-model",
  "bytes",
  "chrono",
- "clap 4.4.6",
+ "clap",
  "collectorist-client",
  "csaf",
  "cve",
@@ -6300,11 +6225,9 @@ dependencies = [
  "http",
  "log",
  "mime",
- "names",
  "okapi",
  "packageurl",
  "prometheus",
- "rand 0.8.5",
  "reqwest",
  "serde",
  "serde_json",
@@ -6981,12 +6904,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "textwrap"
-version = "0.16.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "222a222a5bfe1bba4a77b45ec488a741b3cb8872e5e499451fd7d0129c9c7c3d"
-
-[[package]]
 name = "thirtyfour"
 version = "0.32.0-rc.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -7489,7 +7406,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "bombastic",
- "clap 4.4.6",
+ "clap",
  "collector",
  "collectorist",
  "exhort",
@@ -7510,7 +7427,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "bombastic-model",
- "clap 4.4.6",
+ "clap",
  "env_logger",
  "futures",
  "log",
@@ -7532,7 +7449,7 @@ name = "trustification-analytics"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "clap 4.4.6",
+ "clap",
  "humantime",
  "humantime-serde",
  "log",
@@ -7565,7 +7482,7 @@ dependencies = [
  "base64 0.21.4",
  "biscuit",
  "chrono",
- "clap 4.4.6",
+ "clap",
  "futures-util",
  "humantime",
  "log",
@@ -7589,7 +7506,7 @@ name = "trustification-common"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "clap 4.4.6",
+ "clap",
  "log",
  "native-tls",
  "pem 3.0.2",
@@ -7606,7 +7523,7 @@ dependencies = [
  "aws-config",
  "aws-credential-types",
  "aws-sdk-sqs",
- "clap 4.4.6",
+ "clap",
  "futures",
  "hide",
  "log",
@@ -7621,7 +7538,7 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "bytesize",
- "clap 4.4.6",
+ "clap",
  "crc32fast",
  "env_logger",
  "humantime",
@@ -7649,7 +7566,7 @@ version = "0.1.0"
 dependencies = [
  "actix-web",
  "anyhow",
- "clap 4.4.6",
+ "clap",
  "futures",
  "hex",
  "log",
@@ -7680,7 +7597,7 @@ dependencies = [
  "anyhow",
  "async-trait",
  "bytesize",
- "clap 4.4.6",
+ "clap",
  "env_logger",
  "futures",
  "http",
@@ -7710,7 +7627,7 @@ dependencies = [
  "async-stream",
  "bombastic-model",
  "bytes",
- "clap 4.4.6",
+ "clap",
  "csaf",
  "futures",
  "hide",
@@ -7938,7 +7855,7 @@ name = "v11y"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "clap 4.4.6",
+ "clap",
  "log",
  "serde",
  "serde_json",
@@ -7956,7 +7873,7 @@ dependencies = [
  "actix-web-httpauth",
  "anyhow",
  "chrono",
- "clap 4.4.6",
+ "clap",
  "derive_more",
  "env_logger",
  "futures",
@@ -8028,7 +7945,7 @@ dependencies = [
  "actix-web",
  "anyhow",
  "chrono",
- "clap 4.4.6",
+ "clap",
  "cve",
  "env_logger",
  "futures",
@@ -8071,7 +7988,7 @@ name = "v11y-walker"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "clap 4.4.6",
+ "clap",
  "env_logger",
  "log",
  "prometheus",
@@ -8169,7 +8086,7 @@ name = "vexination"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "clap 4.4.6",
+ "clap",
  "log",
  "serde",
  "serde_json",
@@ -8187,7 +8104,7 @@ dependencies = [
  "actix-web-httpauth",
  "anyhow",
  "bytesize",
- "clap 4.4.6",
+ "clap",
  "csaf",
  "derive_more",
  "hex",
@@ -8237,7 +8154,7 @@ name = "vexination-indexer"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "clap 4.4.6",
+ "clap",
  "csaf",
  "futures",
  "hex",
@@ -8273,7 +8190,7 @@ name = "vexination-walker"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "clap 4.4.6",
+ "clap",
  "csaf",
  "csaf-walker",
  "hex",
@@ -8333,7 +8250,7 @@ dependencies = [
  "base64 0.21.4",
  "bytes",
  "bzip2",
- "clap 4.4.6",
+ "clap",
  "csv",
  "digest 0.10.7",
  "flexible-time",
@@ -8747,7 +8664,7 @@ name = "xtask"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "clap 4.4.6",
+ "clap",
  "reqwest",
  "strum 0.25.0",
  "xshell",
