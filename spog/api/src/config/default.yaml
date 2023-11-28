@@ -453,8 +453,8 @@ packages:
         options:
 
           - type: check
-            label: Redhat
-            id: Redhat
+            label: Red Hat
+            id: redhat
             terms:
               - 'supplier:"Organization: Red Hat"'
 
