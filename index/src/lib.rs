@@ -978,8 +978,14 @@ pub fn create_string_query(field: Field, primary: &Primary<'_>) -> Box<dyn Query
 /// Convert a sikula primary to a tantivy query for text fields
 pub fn create_text_query(field: Field, primary: &Primary<'_>) -> Box<dyn Query> {
     match primary {
-        Primary::Equal(value) => Box::new(TermQuery::new(Term::from_field_text(field, value), Default::default())),
-        Primary::Partial(value) => Box::new(TermQuery::new(Term::from_field_text(field, value), Default::default())),
+        Primary::Equal(value) => Box::new(TermQuery::new(
+            Term::from_field_text(field, &value.to_lowercase()),
+            Default::default(),
+        )),
+        Primary::Partial(value) => Box::new(TermQuery::new(
+            Term::from_field_text(field, &value.to_lowercase()),
+            Default::default(),
+        )),
     }
 }
 
