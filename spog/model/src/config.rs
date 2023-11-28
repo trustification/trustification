@@ -58,6 +58,9 @@ pub struct Features {
     /// Enable the "additional infos" tab on the package details page
     #[serde(default = "default_feature")]
     pub additional_package_information: bool,
+    /// Enable the "source" tabs
+    #[serde(default = "default_feature")]
+    pub show_source: bool,
 }
 
 impl Default for Features {
@@ -67,6 +70,7 @@ impl Default for Features {
             scanner: default_feature(),
             dedicated_search: default_feature(),
             additional_package_information: default_feature(),
+            show_source: default_feature(),
         }
     }
 }
@@ -99,12 +103,16 @@ pub struct Global {
 
     #[serde(default)]
     pub product_name: Option<String>,
+
+    #[serde(default)]
+    pub error_image_src: Option<String>,
 }
 
 pub const DEFAULT_BRAND_SRC: &str = "assets/brand/trustification_logo_hori_reverse.svg";
 pub const DEFAULT_ABOUT_BACKGROUND_SRC: &str = "assets/images/pfbg-icon.svg";
 pub const DEFAULT_PRODUCT_NAME: &str = "Chicken Coop";
 pub const DEFAULT_SUPPORT_CASE_LABEL: &str = "Open a support case";
+pub const DEFAULT_ERROR_IMAGE_SRC: &str = "assets/images/chicken-svgrepo-com.svg";
 
 impl Global {
     pub fn brand_image_src(&self) -> String {
@@ -126,6 +134,13 @@ impl Global {
         self.support_case_label
             .as_deref()
             .unwrap_or(DEFAULT_SUPPORT_CASE_LABEL)
+            .to_string()
+    }
+
+    pub fn error_image_src(&self) -> String {
+        self.error_image_src
+            .as_deref()
+            .unwrap_or(DEFAULT_ERROR_IMAGE_SRC)
             .to_string()
     }
 }

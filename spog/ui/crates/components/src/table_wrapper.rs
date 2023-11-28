@@ -1,4 +1,5 @@
 use patternfly_yew::prelude::*;
+use spog_ui_common::error::components::Error;
 use std::rc::Rc;
 use yew::prelude::*;
 
@@ -73,19 +74,7 @@ where
                     entries={empty_entries}
                 />
 
-                <Card>
-                    <CardBody>
-                        <Grid gutter=true>
-                            <GridItem offset={[2]} cols={[2]}>
-                                <img src="assets/images/chicken-svgrepo-com.svg" style="transform: scaleY(-1);"/>
-                            </GridItem>
-                            <GridItem cols={[6]}>
-                                <Title>{"Error"}</Title>
-                                { error }
-                            </GridItem>
-                        </Grid>
-                    </CardBody>
-                </Card>
+                <Error title={"Error"} err={error.clone()} />
             </>
         )
     } else if props.empty {
