@@ -37,7 +37,8 @@
         "additionalPackageInformation": true,
         "dedicatedSearch": true,
         "extendSection": true,
-        "scanner": true
+        "scanner": true,
+        "showSource": true
       },
       "allOf": [
         {
@@ -50,6 +51,7 @@
         "aboutBackgroundSrc": null,
         "brandImageSrc": null,
         "documentationUrl": null,
+        "errorImageSrc": null,
         "productName": null,
         "supportCaseLabel": null,
         "supportCaseUrl": null,
@@ -185,6 +187,11 @@
         },
         "scanner": {
           "description": "Enables the SBOM scanner",
+          "default": true,
+          "type": "boolean"
+        },
+        "showSource": {
+          "description": "Enable the \"source\" tabs",
           "default": true,
           "type": "boolean"
         }
@@ -366,6 +373,13 @@
             "null"
           ],
           "format": "uri"
+        },
+        "errorImageSrc": {
+          "default": null,
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "productName": {
           "default": null,

@@ -3,6 +3,7 @@
 use crate::model;
 use patternfly_yew::prelude::*;
 use spog_ui_backend::use_backend;
+use spog_ui_common::config::use_config;
 use spog_ui_common::error::components::Error;
 use spog_ui_components::{
     common::{NotFound, PageHeading},
@@ -79,6 +80,8 @@ fn details(props: &DetailsProps) -> Html {
         Source,
     }
 
+    let config = use_config();
+
     let tab = use_state_eq(|| TabIndex::Overview);
     let onselect = use_callback(tab.clone(), |index, tab| tab.set(index));
 
@@ -91,7 +94,9 @@ fn details(props: &DetailsProps) -> Html {
                             <Tab<TabIndex> index={TabIndex::Overview} title="Overview" />
                             <Tab<TabIndex> index={TabIndex::Info} title="Info" />
                             <Tab<TabIndex> index={TabIndex::Packages} title="Packages" />
-                            <Tab<TabIndex> index={TabIndex::Source} title="Source" />
+                            { for config.features.show_source.then(|| html_nested!(
+                                <Tab<TabIndex> index={TabIndex::Source} title="Source" />
+                            )) }
                         </Tabs<TabIndex>>
                     </PageSection>
 
@@ -133,7 +138,9 @@ fn details(props: &DetailsProps) -> Html {
                         <Tabs<TabIndex> inset={TabInset::Page} detached=true selected={*tab} {onselect}>
                             <Tab<TabIndex> index={TabIndex::Overview} title="Overview" />
                             <Tab<TabIndex> index={TabIndex::Info} title="Info" />
-                            <Tab<TabIndex> index={TabIndex::Source} title="Source" />
+                            { for config.features.show_source.then(|| html_nested!(
+                                <Tab<TabIndex> index={TabIndex::Source} title="Source" />
+                            )) }
                         </Tabs<TabIndex>>
                     </PageSection>
 
