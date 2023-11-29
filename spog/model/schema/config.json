@@ -413,7 +413,7 @@
           "format": "uri"
         },
         "showGithubLink": {
-          "default": true,
+          "default": false,
           "type": [
             "boolean"
           ]
