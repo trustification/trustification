@@ -6,6 +6,8 @@ testsImage: ghcr.io/trustification/trust-tests
 guacImage: ghcr.io/trustification/guac:v0.3.21
 domain: dev.trustification.dev
 replicas: 1
+graphqlReplicas: 1
+collectSubReplicas: 1
 imagePullPolicy: IfNotPresent
 region: eu-west-1
 enableTests: false
