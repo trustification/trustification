@@ -86,7 +86,6 @@ pub async fn package_search(
 )]
 pub async fn package_get(guac: web::Data<GuacService>, path: web::Path<String>) -> Result<HttpResponse, Error> {
     let purl = path.into_inner();
-
     let results = guac.certify_vex(&purl).await?;
     let vulns = results
         .iter()
@@ -95,7 +94,7 @@ pub async fn package_get(guac: web::Data<GuacService>, path: web::Path<String>) 
                 .vulnerability_ids
                 .iter()
                 .map(|id| V11yRef {
-                    cve: id.vulnerability_id.clone(),
+                    cve: id.vulnerability_id.clone().to_uppercase(),
                     severity: "unknown".to_string(),
                 })
                 .collect::<Vec<V11yRef>>()
