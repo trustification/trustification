@@ -27,6 +27,7 @@ spec:
     value: .
   - name: revision
     value: '{{revision}}'
+  timeout: 2h
   pipelineSpec:
     finally:
     - name: show-sbom
