@@ -55,7 +55,8 @@
         "productName": null,
         "supportCaseLabel": null,
         "supportCaseUrl": null,
-        "supportUrl": null
+        "supportUrl": null,
+        "showGithubLink": true
       },
       "allOf": [
         {
@@ -410,6 +411,12 @@
             "null"
           ],
           "format": "uri"
+        },
+        "showGithubLink": {
+          "default": false,
+          "type": [
+            "boolean"
+          ]
         }
       }
     },

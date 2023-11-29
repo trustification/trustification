@@ -47,7 +47,7 @@ impl TableEntryRenderer<Column> for CveEntry {
                     // means: rejected
                     <i>
                         { "Rejected" }
-                        if self.cve.title.is_some() {
+                        if self.cve.title.is_some() || !self.cve.descriptions.is_empty() {
                             {": "}
                         }
                     </i>
