@@ -479,7 +479,28 @@ landingPage:
     </section>
 
   afterInnerContent: |
-    Search me
+    <div class="pf-v5-l-bullseye pf-v5-u-mt-xl">
+      <div class="pf-v5-l-bullseye__item">
+        <div class="pf-v5-l-flex pf-m-gutter">
+          <div class="pf-v5-l-flex pf-m-column">
+            <div class="pf-v5-l-flex__item pf-m-align-self-center"><img width="64" src="branding/Icon-Red_Hat-Clipboard_Checklist-A-Black-RGB.svg"/></div>
+            <div class="pf-v5-l-flex__item pf-m-align-self-center" style="width: 192px; text-align: center;">I need an SBOM for…</div>
+          </div>
+          <div class="pf-v5-l-flex pf-m-column">
+            <div class="pf-v5-l-flex__item pf-m-align-self-center"><img width="64" src="branding/Icon-Red_Hat-Vulnerability-A-Black-RGB.svg"/></div>
+            <div class="pf-v5-l-flex__item pf-m-align-self-center" style="width: 192px; text-align: center;">I have an SBOM and need vulnerability information</div>
+          </div>
+          <div class="pf-v5-l-flex pf-m-column">
+            <div class="pf-v5-l-flex__item pf-m-align-self-center"><img width="64" src="branding/Icon-Red_Hat-Bug-A-Black-RGB.svg"/></div>
+            <div class="pf-v5-l-flex__item pf-m-align-self-center" style="width: 192px; text-align: center;">I need information on a specific vulnerability</div>
+          </div>
+          <div class="pf-v5-l-flex pf-m-column">
+            <div class="pf-v5-l-flex__item pf-m-align-self-center"><img width="64" src="branding/Icon-Red_Hat-Catalog-A-Black-RGB.svg"/></div>
+            <div class="pf-v5-l-flex__item pf-m-align-self-center" style="width: 192px; text-align: center;">I want to browse by category: UBI, RHEL, …</div>
+          </div>
+        </div>
+      </div>
+    </div>
 
   afterOuterContent: |
     <div class="pf-v5-l-grid__item pf-m-6-col">
