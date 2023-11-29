@@ -221,6 +221,9 @@ pub fn cve_details(props: &CveDetailsViewProperties) -> Html {
 
                             <GridItem cols={[12]}>
                                 <DescriptionList auto_fit=true>
+                                    if let Some(timestamp) = details.metadata.date_reserved {
+                                        <DescriptionGroup term="Reserved"><Date timestamp={timestamp.assume_utc()} /></DescriptionGroup>
+                                    }
                                     if let Some(timestamp) = details.metadata.date_published {
                                         <DescriptionGroup term="Published date"><Date timestamp={timestamp.assume_utc()} /></DescriptionGroup>
                                     }
@@ -241,6 +244,9 @@ pub fn cve_details(props: &CveDetailsViewProperties) -> Html {
 
                             <GridItem cols={[12]}>
                                 <DescriptionList auto_fit=true>
+                                    if let Some(timestamp) = details.metadata.date_reserved {
+                                        <DescriptionGroup term="Reserved"><Date timestamp={timestamp.assume_utc()} /></DescriptionGroup>
+                                    }
                                     if let Some(timestamp) = details.metadata.date_published {
                                         <DescriptionGroup term="Published date"><Date timestamp={timestamp.assume_utc()} /></DescriptionGroup>
                                     }
