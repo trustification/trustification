@@ -16,10 +16,8 @@ use trustification_index::{
         self,
         collector::TopDocs,
         doc,
-        query::{AllQuery, TermQuery},
-        query::{Occur, Query},
-        schema::INDEXED,
-        schema::{Field, Schema, Term, FAST, STORED, STRING, TEXT},
+        query::{AllQuery, Occur, Query, TermQuery},
+        schema::{Field, Schema, Term, FAST, INDEXED, STORED, STRING, TEXT},
         store::ZstdCompressor,
         DateTime, DocAddress, DocId, IndexSettings, Score, Searcher, SegmentReader,
     },
@@ -151,6 +149,10 @@ impl Index {
         self.index_common(&mut document, &cve.metadata.common, &cve.containers.cna.common);
 
         Self::add_timestamp(&mut document, self.fields.date_rejected, cve.metadata.date_rejected);
+
+        for desc in &cve.containers.cna.rejected_reasons {
+            document.add_text(self.fields.description, &desc.value);
+        }
 
         log::debug!("Indexed {:?}", document);
         documents.push((_id.to_string(), document));
