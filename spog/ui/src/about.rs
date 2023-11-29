@@ -25,7 +25,7 @@ pub fn about() -> Html {
         backend.clone(),
     );
 
-    let brand_image_src = config.global.brand_image_src();
+    let brand_image_src = config.global.about_brand_image_src();
     let background_image_src = config.global.about_background_src();
     let product_name = config.global.product_name();
 
