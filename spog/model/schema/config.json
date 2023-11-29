@@ -49,14 +49,15 @@
     "global": {
       "default": {
         "aboutBackgroundSrc": null,
+        "aboutBrandImageSrc": null,
         "brandImageSrc": null,
         "documentationUrl": null,
         "errorImageSrc": null,
         "productName": null,
+        "showGithubLink": false,
         "supportCaseLabel": null,
         "supportCaseUrl": null,
-        "supportUrl": null,
-        "showGithubLink": true
+        "supportUrl": null
       },
       "allOf": [
         {
@@ -360,6 +361,13 @@
             "null"
           ]
         },
+        "aboutBrandImageSrc": {
+          "default": null,
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "brandImageSrc": {
           "default": null,
           "type": [
@@ -389,6 +397,10 @@
             "null"
           ]
         },
+        "showGithubLink": {
+          "default": false,
+          "type": "boolean"
+        },
         "supportCaseLabel": {
           "default": null,
           "type": [
@@ -411,12 +423,6 @@
             "null"
           ],
           "format": "uri"
-        },
-        "showGithubLink": {
-          "default": false,
-          "type": [
-            "boolean"
-          ]
         }
       }
     },
