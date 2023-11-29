@@ -112,7 +112,7 @@ pub const DEFAULT_BRAND_SRC: &str = "assets/brand/trustification_logo_hori_rever
 pub const DEFAULT_ABOUT_BACKGROUND_SRC: &str = "assets/images/pfbg-icon.svg";
 pub const DEFAULT_PRODUCT_NAME: &str = "Chicken Coop";
 pub const DEFAULT_SUPPORT_CASE_LABEL: &str = "Open a support case";
-pub const DEFAULT_ERROR_IMAGE_SRC: &str = "assets/images/chicken-svgrepo-com.svg";
+pub const DEFAULT_ERROR_IMAGE_SRC: &str = "assets/images/error.svg";
 
 impl Global {
     pub fn brand_image_src(&self) -> String {
