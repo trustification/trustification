@@ -20,7 +20,6 @@ use yew_more_hooks::prelude::*;
 pub enum TabIndex {
     Advisories,
     Sboms,
-    SbomsByPackage,
     #[default]
     Cves,
     Packages,
@@ -39,7 +38,6 @@ pub struct PageState {
 
     pub advisory: TabState,
     pub sbom: TabState,
-    pub sbom_by_dependency: TabState,
     pub cve: TabState,
     pub package: TabState,
 }
@@ -104,16 +102,6 @@ pub fn search(props: &SearchProperties) -> Html {
             })
         },
     );
-    let sbom_by_dependency = use_unified_search(
-        &page_state,
-        |page_state| page_state.sbom_by_dependency.search_params.clone(),
-        |page_state| page_state.sbom_by_dependency.pagination,
-        |search_params, pagination, callback| {
-            use_sbom_search(search_params, pagination, callback, |context| {
-                format!("in:dependency ( {} )", context.search_params.as_str(&context.filters))
-            })
-        },
-    );
 
     // CVE search
 
@@ -140,14 +128,12 @@ pub fn search(props: &SearchProperties) -> Html {
             (*search_terms).clone(),
             advisory.search_params.clone(),
             sbom.search_params.clone(),
-            sbom_by_dependency.search_params.clone(),
             cve.search_params.clone(),
             package.search_params.clone(),
         ),
-        |(search_terms, advisory, sbom, sbom_by_dependency, cve, package)| {
+        |(search_terms, advisory, sbom, cve, package)| {
             advisory.dispatch(SearchModeAction::SetSimpleTerms(search_terms.clone()));
             sbom.dispatch(SearchModeAction::SetSimpleTerms(search_terms.clone()));
-            sbom_by_dependency.dispatch(SearchModeAction::SetSimpleTerms(search_terms.clone()));
             cve.dispatch(SearchModeAction::SetSimpleTerms(search_terms.clone()));
             package.dispatch(SearchModeAction::SetSimpleTerms(search_terms.clone()));
         },
@@ -167,10 +153,6 @@ pub fn search(props: &SearchProperties) -> Html {
             sbom: TabState {
                 pagination: **sbom.pagination,
                 search_params: (*sbom.search_params).clone().into(),
-            },
-            sbom_by_dependency: TabState {
-                pagination: **sbom_by_dependency.pagination,
-                search_params: (*sbom_by_dependency.search_params).clone().into(),
             },
             cve: TabState {
                 pagination: **cve.pagination,
@@ -237,9 +219,6 @@ pub fn search(props: &SearchProperties) -> Html {
                             <Visible visible={*tab == TabIndex::Sboms}>
                                 <SbomSearchControls search_params={sbom.search_params.clone()} />
                             </Visible>
-                            <Visible visible={*tab == TabIndex::SbomsByPackage}>
-                                <SbomSearchControls search_params={sbom_by_dependency.search_params.clone()} />
-                            </Visible>
                             <Visible visible={*tab == TabIndex::Cves}>
                                 <CveSearchControls search_params={cve.search_params.clone()} />
                             </Visible>
@@ -257,7 +236,6 @@ pub fn search(props: &SearchProperties) -> Html {
                             <Tab<TabIndex> index={TabIndex::Packages} title={count_tab_title("Packages", &*package.state)} />
                             <Tab<TabIndex> index={TabIndex::Sboms} title={count_tab_title("Products and containers", &*sbom.state)} />
                             <Tab<TabIndex> index={TabIndex::Advisories} title={count_tab_title("Advisories", &*advisory.state)} />
-                            // <Tab<TabIndex> index={TabIndex::SbomsByPackage} title={count_tab_title("SBOMs (by dependency)", &*sbom_by_dependency.state)} />
                         </Tabs<TabIndex>>
 
                         <div class="pf-v5-u-background-color-100">
@@ -274,11 +252,6 @@ pub fn search(props: &SearchProperties) -> Html {
                             if *tab == TabIndex::Sboms {
                                 <PaginationWrapped pagination={sbom.pagination} total={*sbom.total}>
                                     <SbomResult state={(*sbom.state).clone()} onsort={&sbom.onsort} />
-                                </PaginationWrapped>
-                            }
-                            if *tab == TabIndex::SbomsByPackage {
-                                <PaginationWrapped pagination={sbom_by_dependency.pagination} total={*sbom_by_dependency.total}>
-                                    <SbomResult state={(*sbom_by_dependency.state).clone()} onsort={&sbom_by_dependency.onsort} />
                                 </PaginationWrapped>
                             }
                             if *tab == TabIndex::Cves {
