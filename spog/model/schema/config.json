@@ -55,7 +55,8 @@
         "productName": null,
         "supportCaseLabel": null,
         "supportCaseUrl": null,
-        "supportUrl": null
+        "supportUrl": null,
+        "downstream": false
       },
       "allOf": [
         {
@@ -410,6 +411,12 @@
             "null"
           ],
           "format": "uri"
+        },
+        "downstream": {
+          "default": false,
+          "type": [
+            "boolean"
+          ]
         }
       }
     },
