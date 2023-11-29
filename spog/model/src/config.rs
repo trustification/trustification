@@ -108,7 +108,7 @@ pub struct Global {
     pub error_image_src: Option<String>,
 
     #[serde(default)]
-    pub downstream: bool,
+    pub show_github_link: bool,
 }
 
 pub const DEFAULT_BRAND_SRC: &str = "assets/brand/trustification_logo_hori_reverse.svg";

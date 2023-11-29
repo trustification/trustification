@@ -56,7 +56,7 @@
         "supportCaseLabel": null,
         "supportCaseUrl": null,
         "supportUrl": null,
-        "downstream": false
+        "showGithubLink": true
       },
       "allOf": [
         {
@@ -412,8 +412,8 @@
           ],
           "format": "uri"
         },
-        "downstream": {
-          "default": false,
+        "showGithubLink": {
+          "default": true,
           "type": [
             "boolean"
           ]

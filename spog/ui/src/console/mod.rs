@@ -121,7 +121,7 @@ fn authenticated_page(props: &ChildrenProperties) -> Html {
         <Toolbar>
             <ToolbarContent>
                 <ToolbarItem modifiers={[ToolbarElementModifier::Right]}>
-                    if !config.global.downstream {
+                    if config.global.show_github_link {
                         <Button icon={Icon::Github} onclick={callback_github} variant={ButtonVariant::Plain} />
                     }
                     <Dropdown
