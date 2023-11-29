@@ -27,6 +27,13 @@ pub struct Run {
     /// A file to read/store the last delta.
     #[arg(long = "delta-file")]
     pub delta_file: Option<PathBuf>,
+
+    /// A list of required prefixed of the file name (e.g. CVE-2023-).
+    // NOTE: we raise a conflict with delta_file to ensure that the delta processing works
+    // consistently. Adding a prefix there might consider content as "processed" while it
+    // indeed was not.
+    #[arg(long = "prefix", conflicts_with = "delta_file")]
+    pub require_prefix: Vec<String>,
 }
 
 impl Run {
@@ -92,6 +99,12 @@ impl Run {
 
                         if !name.starts_with("CVE-") {
                             continue;
+                        }
+
+                        for prefix in &self.require_prefix {
+                            if name.starts_with(prefix) {
+                                continue;
+                            }
                         }
 
                         if let Some(key) = name.strip_suffix(".json") {
