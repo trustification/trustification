@@ -104,10 +104,15 @@ pub fn segment(props: &SegmentProperties) -> Html {
 pub fn segment_page_tracker() -> Html {
     let analytics = use_analytics();
 
+    // trigger whenever it changes from here on
     use_effect_with(analytics, |analytics| {
         log::info!("Creating page tracker");
         let analytics = analytics.clone();
 
+        // trigger once
+        analytics.page();
+
+        // and whenver it changes
         let listener = yew_nested_router::History::new().clone().listen(move || {
             analytics.page();
         });
