@@ -44,7 +44,7 @@ pub fn pagination_to_offset(page: usize, per_page: usize) -> usize {
 pub struct OrNone<T>(pub Option<T>);
 
 impl<T> OrNone<T> {
-    pub const DEFAULT_NA: &'static str = "n/na";
+    pub const DEFAULT_NA: &'static str = "N/A";
 }
 
 impl<T> OrNone<T> {

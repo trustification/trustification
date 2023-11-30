@@ -74,6 +74,12 @@ pub struct Endpoints {
 
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub segment_write_key: Option<String>,
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub external_consent: bool,
+}
+
+fn is_default<D: Default + Eq>(value: &D) -> bool {
+    D::default() == *value
 }
 
 impl Endpoints {

@@ -70,7 +70,6 @@ impl PackageInfoService {
             .latest_access_token(&self.access_token)
             .send()
             .await?;
-        log::warn!("pub async fn search_packages");
         Ok(response.api_error_for_status().await?.json().await?)
     }
 }

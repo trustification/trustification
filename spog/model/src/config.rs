@@ -99,6 +99,9 @@ pub struct Global {
     pub brand_image_src: Option<String>,
 
     #[serde(default)]
+    pub about_brand_image_src: Option<String>,
+
+    #[serde(default)]
     pub about_background_src: Option<String>,
 
     #[serde(default)]
@@ -120,6 +123,13 @@ pub const DEFAULT_ERROR_IMAGE_SRC: &str = "assets/images/error.svg";
 impl Global {
     pub fn brand_image_src(&self) -> String {
         self.brand_image_src.as_deref().unwrap_or(DEFAULT_BRAND_SRC).to_string()
+    }
+
+    pub fn about_brand_image_src(&self) -> String {
+        self.about_brand_image_src
+            .as_ref()
+            .cloned()
+            .unwrap_or_else(|| self.brand_image_src())
     }
 
     pub fn about_background_src(&self) -> String {
