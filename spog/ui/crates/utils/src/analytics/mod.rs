@@ -6,6 +6,7 @@ use std::ops::Deref;
 use analytics_next::{AnalyticsBrowser, Settings, TrackingEvent, User};
 use openidconnect::LocalizedClaim;
 use serde_json::{json, Value};
+use spog_ui_backend::use_backend;
 use spog_ui_common::utils::auth::claims;
 use yew::prelude::*;
 use yew_consent::prelude::*;
@@ -75,12 +76,15 @@ pub struct SegmentProperties {
     pub children: Children,
 }
 
+/// Inject the segment tracking context, if permitted
 #[function_component(Segment)]
 pub fn segment(props: &SegmentProperties) -> Html {
     let consent = use_consent();
+    let backend = use_backend();
 
-    match consent {
-        ConsentState::Yes(()) => {
+    match (consent, backend.endpoints.external_consent) {
+        // if we have consent, or consent is managed externally
+        (_, true) | (ConsentState::Yes(()), _) => {
             let analytics = build(props.write_key.as_deref());
             let context = AnalyticsContext { analytics };
 
@@ -91,7 +95,8 @@ pub fn segment(props: &SegmentProperties) -> Html {
                 </ContextProvider<AnalyticsContext>>
             )
         }
-        ConsentState::No => props.children.iter().collect(),
+        // otherwise
+        (ConsentState::No, false) => props.children.iter().collect(),
     }
 }
 
