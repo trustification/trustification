@@ -11,12 +11,13 @@ analytics-next = "0.1.0"
 anyhow = "1"
 async-trait = "0.1"
 browser-panic-hook = "0.2.0"
-convert_case = "0.6.0"
 chrono = { version = "0.4", default-features = false, features = ["wasmbind"] }
+convert_case = "0.6.0"
 csaf = { version = "0.5.0", default-features = false }
 cve = "0.2"
 cvss = { version = "2", features = ["serde"] }
 cyclonedx-bom = "0.4"
+futures = "0.3.29"
 gloo-events = "0.2"
 gloo-net = "0.4.0"
 gloo-storage = "0.3.0"
@@ -66,7 +67,6 @@ spog-ui-components = { path = "crates/components" }
 spog-ui-common = { path = "crates/common" }
 spog-ui-utils = { path = "crates/utils" }
 spog-ui-donut = { path = "crates/donut" }
-futures = "0.3.29"
 
 [build-dependencies]
 trustification-version = { path = "../../version", features = ["build"] }
