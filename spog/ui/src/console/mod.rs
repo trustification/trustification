@@ -21,11 +21,22 @@ pub fn console() -> Html {
     let product_name = config.global.product_name();
     let render = move |route| render(route, &config);
 
-    // Set the title of the page
     use_effect_with((), move |()| {
+        // Set the title of the page
         match gloo_utils::document().query_selector("title") {
             Ok(title) => match title {
                 Some(element) => element.set_text_content(Some(&product_name)),
+                None => log::warn!("Invalid query_selector title"),
+            },
+            Err(_) => log::warn!("Could not update title"),
+        };
+
+        // Set favicon
+        match gloo_utils::document().query_selector("link[rel='icon']") {
+            Ok(link) => match link {
+                Some(element) => {
+                    element.set_attribute("href", "https://media.flaticon.com/dist/min/img/favicon.ico");
+                }
                 None => log::warn!("Invalid query_selector title"),
             },
             Err(_) => log::warn!("Could not update title"),
