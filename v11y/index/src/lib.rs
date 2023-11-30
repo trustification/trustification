@@ -8,9 +8,10 @@ use sikula::prelude::*;
 use std::time::Duration;
 use time::OffsetDateTime;
 use trustification_api::search::SearchOptions;
+use trustification_index::tantivy::schema::{IndexRecordOption, TextFieldIndexing};
 use trustification_index::{
-    create_boolean_query, create_date_query, create_float_query, create_string_query, field2bool, field2date_opt,
-    field2str, field2strvec,
+    create_boolean_query, create_date_query, create_float_query, create_string_query, create_text_query, field2bool,
+    field2date_opt, field2str, field2strvec,
     metadata::doc2metadata,
     sort_by,
     tantivy::{
@@ -60,6 +61,11 @@ impl Default for Index {
 impl Index {
     pub fn new() -> Self {
         let mut schema = Schema::builder();
+
+        let text_options = TextFieldIndexing::default()
+            .set_tokenizer("ngram")
+            .set_index_option(IndexRecordOption::WithFreqsAndPositions);
+
         let fields = Fields {
             indexed_timestamp: schema.add_date_field("indexed_timestamp", STORED),
             id: schema.add_text_field("id", STRING | FAST | STORED),
@@ -71,8 +77,11 @@ impl Index {
             date_updated: schema.add_date_field("date_updated", INDEXED | FAST | STORED),
             date_rejected: schema.add_date_field("date_rejected", INDEXED | FAST | STORED),
 
-            title: schema.add_text_field("title", TEXT | FAST | STORED),
-            description: schema.add_text_field("description", TEXT | FAST | STORED),
+            title: schema.add_text_field("title", (TEXT | STORED).set_indexing_options(text_options.clone())),
+            description: schema.add_text_field(
+                "description",
+                (TEXT | STORED).set_indexing_options(text_options.clone()),
+            ),
 
             cvss3x_score: schema.add_f64_field("cvss3x_score", FAST | INDEXED | STORED),
             severity: schema.add_text_field("severity", STRING | FAST),
@@ -168,8 +177,9 @@ impl Index {
     fn resource2query(&self, resource: &Cves) -> Box<dyn Query> {
         match resource {
             Cves::Id(value) => create_string_query(self.fields.id, value),
-            Cves::Title(value) => create_string_query(self.fields.title, value),
-            Cves::Description(value) => create_string_query(self.fields.description, value),
+
+            Cves::Title(value) => create_text_query(self.fields.title, value),
+            Cves::Description(value) => create_text_query(self.fields.description, value),
 
             Cves::Score(value) => create_float_query(&self.schema, [self.fields.cvss3x_score], value),
 
