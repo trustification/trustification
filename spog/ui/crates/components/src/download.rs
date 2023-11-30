@@ -2,7 +2,9 @@ use patternfly_yew::prelude::*;
 use serde_json::json;
 use spog_ui_backend::ApplyAccessToken;
 use spog_ui_utils::analytics::use_wrap_tracking;
+use std::rc::Rc;
 use url::Url;
+use wasm_bindgen::JsValue;
 use yew::prelude::*;
 use yew_oauth2::hook::use_latest_access_token;
 
@@ -35,5 +37,55 @@ pub fn download(props: &DownloadProperties) -> Html {
             variant={ButtonVariant::Plain}
             {onclick}
         />
+    )
+}
+
+#[derive(PartialEq, Properties)]
+pub struct InlineDownloadProperties {
+    pub data: Rc<String>,
+
+    pub r#type: String,
+    pub filename: String,
+}
+
+/// "Download" from an already loaded set of data
+#[function_component(InlineDownload)]
+pub fn inline_download(props: &InlineDownloadProperties) -> Html {
+    let onclick = use_callback((), move |_, ()| {});
+
+    let onclick = use_wrap_tracking(
+        onclick,
+        |_, (r#type, filename)| ("Download File", json!({"type": r#type, "filename": filename})),
+        (props.r#type.clone(), props.filename.clone()),
+    );
+
+    let href = use_state_eq::<Option<String>, _>(|| None);
+
+    use_effect_with((props.data.clone(), href.setter()), |(data, href)| {
+        let url = web_sys::Blob::new_with_str_sequence(&js_sys::Array::of1(&JsValue::from_str(data)))
+            .and_then(|blob| web_sys::Url::create_object_url_with_blob(&blob))
+            .ok();
+
+        log::debug!("Created object URL: {url:?}");
+
+        href.set(url.clone());
+
+        move || {
+            log::debug!("Dropping object URL: {url:?}");
+            if let Some(url) = url {
+                let _ = web_sys::Url::revoke_object_url(&url);
+            }
+        }
+    });
+
+    html!(
+        if let Some(href) = (*href).clone() {
+            <a download={props.filename.clone()} class="pf-v5-c-button pf-m-secondary" {href} {onclick}>
+                <span class="pf-v5-c-button__icon pf-m-start">
+                    { Icon::Download }
+                </span>
+                { "Download" }
+            </a>
+        }
     )
 }
