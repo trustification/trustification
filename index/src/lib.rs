@@ -5,43 +5,47 @@
 
 pub mod metadata;
 
+pub use sort::*;
+
 mod s3dir;
 mod sort;
 
-pub use sort::*;
+// Re-export to align versions
+pub use tantivy;
+pub use tantivy::schema::Document;
 
+use bytesize::ByteSize;
+use log::{debug, warn};
 use prometheus::{
     histogram_opts, opts, register_histogram_with_registry, register_int_counter_with_registry,
     register_int_gauge_with_registry, Histogram, IntCounter, IntGauge, Registry,
 };
 use s3dir::S3Directory;
-use sikula::prelude::{Ordered, Primary, Search};
+use sha2::{Digest, Sha256};
+use sikula::{
+    lir::PartialOrdered,
+    prelude::{Ordered, Primary, Search},
+};
 use std::{
+    borrow::Cow,
     fmt::{Debug, Display},
     ops::Bound,
     path::{Path, PathBuf},
+    sync::{Arc, RwLock},
+    time::Duration,
 };
-use trustification_api::search::SearchOptions;
-use trustification_storage::{Storage, StorageConfig};
-// Re-export to align versions
-use bytesize::ByteSize;
-use log::{debug, warn};
-use sha2::{Digest, Sha256};
-use sikula::lir::PartialOrdered;
-use std::sync::{Arc, RwLock};
-use std::time::Duration;
-pub use tantivy;
-pub use tantivy::schema::Document;
 use tantivy::{
     collector::TopDocs,
     directory::{MmapDirectory, INDEX_WRITER_LOCK},
-    query::{AllQuery, BooleanQuery, BoostQuery, Occur, Query, RangeQuery, RegexQuery, TermQuery},
+    query::{AllQuery, BooleanQuery, BoostQuery, FuzzyTermQuery, Occur, Query, RangeQuery, RegexQuery, TermQuery},
     schema::*,
     tokenizer::TokenizerManager,
     DateTime, Directory, DocAddress, Index as SearchIndex, IndexSettings, Order, Searcher,
 };
 use time::{OffsetDateTime, UtcOffset};
 use tokio::{spawn, sync::oneshot};
+use trustification_api::search::SearchOptions;
+use trustification_storage::{Storage, StorageConfig};
 
 /// Configuration for the index.
 #[derive(Clone, Debug, clap::Parser)]
@@ -1063,11 +1067,37 @@ pub fn create_date_query(schema: &Schema, field: Field, value: &Ordered<time::Of
 
 /// Convert a sikula primary to a tantivy query for string fields
 pub fn create_string_query(field: Field, primary: &Primary<'_>) -> Box<dyn Query> {
+    create_string_query_case(field, primary, Case::Sensitive)
+}
+
+#[derive(Copy, Clone, PartialEq, Eq, Debug, Default)]
+pub enum Case {
+    #[default]
+    Sensitive,
+    Lowercase,
+    Uppercase,
+}
+
+impl Case {
+    pub fn to_value<'a>(&self, value: &'a str) -> Cow<'a, str> {
+        match self {
+            Self::Sensitive => value.into(),
+            Self::Lowercase => value.to_lowercase().into(),
+            Self::Uppercase => value.to_uppercase().into(),
+        }
+    }
+}
+
+/// Convert a sikula primary to a tantivy query for string fields
+pub fn create_string_query_case(field: Field, primary: &Primary<'_>, case: Case) -> Box<dyn Query> {
     match primary {
-        Primary::Equal(value) => Box::new(TermQuery::new(Term::from_field_text(field, value), Default::default())),
+        Primary::Equal(value) => Box::new(TermQuery::new(
+            Term::from_field_text(field, case.to_value(value).as_ref()),
+            Default::default(),
+        )),
         Primary::Partial(value) => {
             // Note: This could be expensive so consider alternatives
-            let pattern = format!(".*{}.*", value);
+            let pattern = format!(".*{}.*", case.to_value(value));
             let mut queries: Vec<Box<dyn Query>> = Vec::new();
             if let Ok(query) = RegexQuery::from_pattern(&pattern, field) {
                 queries.push(Box::new(query));
@@ -1075,7 +1105,7 @@ pub fn create_string_query(field: Field, primary: &Primary<'_>) -> Box<dyn Query
                 warn!("Unable to partial query from {}", pattern);
             }
             queries.push(Box::new(TermQuery::new(
-                Term::from_field_text(field, value),
+                Term::from_field_text(field, case.to_value(value).as_ref()),
                 Default::default(),
             )));
             Box::new(BooleanQuery::union(queries))
@@ -1090,9 +1120,10 @@ pub fn create_text_query(field: Field, primary: &Primary<'_>) -> Box<dyn Query> 
             Term::from_field_text(field, &value.to_lowercase()),
             Default::default(),
         )),
-        Primary::Partial(value) => Box::new(TermQuery::new(
+        Primary::Partial(value) => Box::new(FuzzyTermQuery::new(
             Term::from_field_text(field, &value.to_lowercase()),
-            Default::default(),
+            2,
+            true,
         )),
     }
 }
@@ -1315,7 +1346,7 @@ mod tests {
 
         writer.commit().unwrap();
 
-        assert_eq!(store.search("is", 0, 10, SearchOptions::default(),).unwrap().1, 1);
+        assert_eq!(store.search("is", 0, 10, SearchOptions::default()).unwrap().1, 1);
     }
 
     #[tokio::test]
@@ -1330,13 +1361,13 @@ mod tests {
 
         writer.commit().unwrap();
 
-        assert_eq!(store.search("is", 0, 10, SearchOptions::default(),).unwrap().1, 1);
+        assert_eq!(store.search("is", 0, 10, SearchOptions::default()).unwrap().1, 1);
 
         let writer = store.writer().unwrap();
         writer.delete_document(store.index_as_mut(), "foo");
         writer.commit().unwrap();
 
-        assert_eq!(store.search("is", 0, 10, SearchOptions::default(),).unwrap().1, 0);
+        assert_eq!(store.search("is", 0, 10, SearchOptions::default()).unwrap().1, 0);
     }
 
     #[tokio::test]
@@ -1365,7 +1396,7 @@ mod tests {
 
         writer.commit().unwrap();
 
-        assert_eq!(store.search("is", 0, 10, SearchOptions::default(),).unwrap().1, 1);
+        assert_eq!(store.search("is", 0, 10, SearchOptions::default()).unwrap().1, 1);
 
         // Duplicates also removed if separate commits.
         let mut writer = store.writer().unwrap();
@@ -1375,7 +1406,7 @@ mod tests {
 
         writer.commit().unwrap();
 
-        assert_eq!(store.search("is", 0, 10, SearchOptions::default(),).unwrap().1, 1);
+        assert_eq!(store.search("is", 0, 10, SearchOptions::default()).unwrap().1, 1);
     }
 
     #[tokio::test]
