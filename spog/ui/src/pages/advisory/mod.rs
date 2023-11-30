@@ -7,6 +7,7 @@ use spog_ui_components::{
     advisory::{cat_label, tracking_status_str, CsafNotes, CsafProductInfo, CsafReferences, CsafVulnTable},
     common::{CardWrapper, NotFound, PageHeading},
     content::{SourceCode, UnknownContent},
+    download::InlineDownload,
     severity::Severity,
 };
 use std::rc::Rc;
@@ -44,7 +45,17 @@ pub fn vex(props: &VEXProperties) -> Html {
             html!(<NotFound/>),
         ),
         UseAsyncState::Ready(Ok(Some(data))) => (
-            html!(<PageHeading sticky=false subtitle="Advisory detail information">{ props.id.clone() } {" "} </PageHeading>),
+            html!(
+                <PageHeading
+                    sticky=false
+                    subtitle="Advisory detail information"
+                    action={html!(
+                        <InlineDownload data={data.get_source()} r#type="csaf" filename={props.id.clone()} />
+                    )}
+                >
+                    { props.id.clone() } {" "}
+                </PageHeading>
+            ),
             html!(<Details vex={data.clone()}/> ),
         ),
         UseAsyncState::Ready(Err(err)) => (
