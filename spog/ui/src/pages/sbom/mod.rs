@@ -1,6 +1,6 @@
 //! The SBOM details page
 
-use crate::model;
+use crate::{common::clean_ext, model, pages::sbom_report::SbomReport};
 use patternfly_yew::prelude::*;
 use spog_ui_backend::use_backend;
 use spog_ui_common::{config::use_config, error::components::Error};
@@ -14,8 +14,6 @@ use std::rc::Rc;
 use yew::prelude::*;
 use yew_more_hooks::prelude::*;
 use yew_oauth2::prelude::*;
-
-use crate::pages::sbom_report::SbomReport;
 
 #[derive(Clone, Debug, PartialEq, Properties)]
 pub struct SBOMProperties {
@@ -71,13 +69,6 @@ pub fn sbom(props: &SBOMProperties) -> Html {
             { content }
         </>
     )
-}
-
-fn clean_ext(name: &str) -> String {
-    match name.strip_suffix(".bz2") {
-        Some(name) => name.to_string(),
-        None => name.to_string(),
-    }
 }
 
 #[derive(Clone, PartialEq, Properties)]
