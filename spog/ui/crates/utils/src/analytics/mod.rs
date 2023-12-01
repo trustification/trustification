@@ -1,13 +1,13 @@
 mod component;
 
 pub use component::*;
-use std::ops::Deref;
 
 use analytics_next::{AnalyticsBrowser, Settings, TrackingEvent, User};
 use openidconnect::LocalizedClaim;
 use serde_json::{json, Value};
 use spog_ui_backend::use_backend;
 use spog_ui_common::utils::auth::claims;
+use std::ops::Deref;
 use yew::prelude::*;
 use yew_consent::prelude::*;
 use yew_nested_router::history::History;
@@ -32,22 +32,26 @@ pub struct AnalyticsContext {
 }
 
 impl AnalyticsContext {
+    /// check if analytics is active
     pub fn is_active(&self) -> bool {
         self.analytics.is_some()
     }
 
+    /// trigger an "identify" event, if enabled
     pub fn identify(&self, user: impl Into<User>) {
         if let Some(analytics) = &self.analytics {
             analytics.identify(user);
         }
     }
 
+    /// trigger a "tracking" event, if enabled
     pub fn track<'a>(&self, event: impl Into<TrackingEvent<'a>>) {
         if let Some(analytics) = &self.analytics {
             analytics.track(event);
         }
     }
 
+    /// trigger a "page" event, if enabled
     pub fn page(&self) {
         if let Some(analytics) = &self.analytics {
             analytics.page();
@@ -179,7 +183,7 @@ pub fn segment_identify() -> Html {
     });
 
     use_effect_with((analytics, (*user).clone()), |(analytics, user)| {
-        log::info!("User changed: {user:?}");
+        log::debug!("User changed: {user:?}");
         analytics.identify(user.clone());
     });
 
@@ -230,8 +234,6 @@ where
     let analytics = use_analytics();
 
     use_callback((analytics, deps), move |values, (analytics, deps)| {
-        if analytics.is_active() {
-            analytics.track(f(values, deps));
-        }
+        analytics.track(f(values, deps));
     })
 }
