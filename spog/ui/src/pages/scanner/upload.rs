@@ -22,7 +22,7 @@ const EMPTY_BODY_CONTENT: &str = r#"
 struct LoadFiles(u32);
 impl From<LoadFiles> for TrackingEvent<'static> {
     fn from(value: LoadFiles) -> Self {
-        ("Loading files", json!({"numerOfFiles": value.0})).into()
+        ("Loading files", json!({"numberOfFiles": value.0})).into()
     }
 }
 
