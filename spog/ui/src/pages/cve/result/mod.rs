@@ -10,13 +10,18 @@ use patternfly_yew::prelude::*;
 use products::RelatedProducts;
 use spog_model::prelude::CveDetails;
 use spog_ui_backend::{use_backend, CveService};
-use spog_ui_common::components::Markdown;
-use spog_ui_components::{async_state_renderer::async_content, cvss::Cvss3Label, editor::ReadonlyEditor, time::Date};
+use spog_ui_common::{components::Markdown, config::use_config};
+use spog_ui_components::{
+    async_state_renderer::async_content, cvss::Cvss3Label, download::LocalDownloadButton, editor::ReadonlyEditor,
+    time::Date,
+};
 use std::rc::Rc;
 use std::str::FromStr;
 use yew::prelude::*;
-use yew_more_hooks::hooks::use_page_state;
-use yew_more_hooks::{hooks::use_async_with_cloned_deps, prelude::UseAsyncState};
+use yew_more_hooks::{
+    hooks::{use_async_with_cloned_deps, use_page_state},
+    prelude::UseAsyncState,
+};
 use yew_oauth2::hook::use_latest_access_token;
 
 #[derive(PartialEq, Properties)]
@@ -27,6 +32,7 @@ pub struct ResultViewProperties {
 
 #[function_component(ResultView)]
 pub fn result_view(props: &ResultViewProperties) -> Html {
+    let config = use_config();
     let backend = use_backend();
     let access_token = use_latest_access_token();
 
@@ -93,21 +99,32 @@ pub fn result_view(props: &ResultViewProperties) -> Html {
     html!(
         <>
             <PageSection variant={PageSectionVariant::Light} >
-                <Content>
-                    <Title>
-                        {props.id.clone()} { " "}
-                        if let UseAsyncState::Ready(Ok(details)) = &*cve_details {{
-                             match details.as_ref().map(|details| details.0.as_ref()) {
-                                Some(cve::Cve::Published(published)) => cvss3(&published.containers.cna.metrics),
-                                Some(cve::Cve::Rejected(_rejected)) => html!(<Label label="Rejected" color={Color::Grey} />),
-                                None => html!(),
+                <Flex>
+                    <FlexItem>
+                        <Content>
+                            <Title>
+                                {props.id.clone()} { " "}
+                                if let UseAsyncState::Ready(Ok(details)) = &*cve_details {{
+                                     match details.as_ref().map(|details| details.0.as_ref()) {
+                                        Some(cve::Cve::Published(published)) => cvss3(&published.containers.cna.metrics),
+                                        Some(cve::Cve::Rejected(_rejected)) => html!(<Label label="Rejected" color={Color::Grey} />),
+                                        None => html!(),
+                                    }
+                                }}
+                            </Title>
+                            if let UseAsyncState::Ready(Ok(Some((details, _)))) = &*cve_details {
+                                { cve_title(details) }
                             }
-                        }}
-                    </Title>
-                    if let UseAsyncState::Ready(Ok(Some((details, _)))) = &*cve_details {
-                        { cve_title(details) }
-                    }
-                </Content>
+                        </Content>
+                    </FlexItem>
+                    <FlexItem modifiers={[FlexModifier::Align(Alignment::Right), FlexModifier::Align(Alignment::End)]}>
+                        { async_content(&*cve_details, |details| html!(
+                            if let Some((_, source)) = details.clone() {
+                                <LocalDownloadButton data={source.clone()} r#type="cve" filename={format!("{}.json", props.id)} />
+                            }
+                        )) }
+                    </FlexItem>
+                </Flex>
 
                 <div class="pf-v5-u-my-md"></div>
 
@@ -122,7 +139,9 @@ pub fn result_view(props: &ResultViewProperties) -> Html {
                 <Tabs<TabIndex> r#box=true selected={page_state.tab} {onselect} detached=true>
                     <Tab<TabIndex> index={TabIndex::Products} title="Related Products" />
                     <Tab<TabIndex> index={TabIndex::Advisories} title="Related Advisories" />
-                    <Tab<TabIndex> index={TabIndex::Source} title="Source" />
+                    { for config.features.show_source.then(|| html_nested!(
+                        <Tab<TabIndex> index={TabIndex::Source} title="Source" />
+                    )) }
                 </Tabs<TabIndex>>
             </PageSection>
 
@@ -216,6 +235,9 @@ pub fn cve_details(props: &CveDetailsViewProperties) -> Html {
 
                             <GridItem cols={[12]}>
                                 <DescriptionList auto_fit=true>
+                                    if let Some(timestamp) = details.metadata.date_reserved {
+                                        <DescriptionGroup term="Reserved"><Date timestamp={timestamp.assume_utc()} /></DescriptionGroup>
+                                    }
                                     if let Some(timestamp) = details.metadata.date_published {
                                         <DescriptionGroup term="Published date"><Date timestamp={timestamp.assume_utc()} /></DescriptionGroup>
                                     }
@@ -236,6 +258,9 @@ pub fn cve_details(props: &CveDetailsViewProperties) -> Html {
 
                             <GridItem cols={[12]}>
                                 <DescriptionList auto_fit=true>
+                                    if let Some(timestamp) = details.metadata.date_reserved {
+                                        <DescriptionGroup term="Reserved"><Date timestamp={timestamp.assume_utc()} /></DescriptionGroup>
+                                    }
                                     if let Some(timestamp) = details.metadata.date_published {
                                         <DescriptionGroup term="Published date"><Date timestamp={timestamp.assume_utc()} /></DescriptionGroup>
                                     }

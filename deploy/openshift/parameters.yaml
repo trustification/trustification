@@ -91,6 +91,10 @@ parameters:
   required: true
 - name: GUAC_GQL_AFFINITY
   value: "{}"
+- name: GUAC_GRAPHQL_REPLICAS
+  required: true
+- name: GUAC_COLLECTSUB_REPLICAS
+  required: true
 - name: BOMBASTIC_COLLECTOR_RESOURCES
   required: true
 - name: VEXINATION_COLLECTOR_RESOURCES

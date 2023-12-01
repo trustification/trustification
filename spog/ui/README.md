@@ -8,13 +8,13 @@
 
 ```shell
 rustup target add wasm32-unknown-unknown
-cargo install trunk-ng
 cargo binstall trunk-ng # if you have `cargo-binstall` installed
+cargo install trunk-ng # or, otherwise
 ```
 
 > [!NOTE]
-> `trunk-ng` is a fork of `trunk`. Both should work at the moment, but `trunk-ng` has a bunch of fixes that `trunk` has
-> not.
+> `trunk-ng` is a fork of `trunk`. However, trunk-ng has additional features that we require. Trunk-ng version 0.17.16
+> or newer is required.
 
 ### Project
 

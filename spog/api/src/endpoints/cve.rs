@@ -11,13 +11,14 @@ use bytes::BytesMut;
 use csaf::definitions::ProductIdT;
 use csaf::Csaf;
 use futures::{stream, TryStreamExt};
+use spog_model::csaf::RelationshipsCache;
 use spog_model::{
-    csaf::{find_product_relations, trace_product},
+    csaf::trace_product,
     cve::{AdvisoryOverview, CveDetails, CveSearchDocument},
 };
 use std::collections::{BTreeMap, BTreeSet, HashSet};
 use std::sync::Arc;
-use tracing::instrument;
+use tracing::{info_span, instrument, Instrument};
 use trustification_api::search::{SearchOptions, SearchResult};
 use trustification_auth::{
     authenticator::Authenticator,
@@ -180,9 +181,10 @@ where
 
     for id in advisory_ids {
         let stream = app.get_vex(&id, &provider).await?;
-        let x: BytesMut = stream.try_collect().await?;
+        let x: BytesMut = stream.try_collect().instrument(info_span!("receive vex", id)).await?;
 
         let csaf: Csaf = serde_json::from_slice(&x)?;
+        let relationships = RelationshipsCache::new(&csaf);
 
         for vuln in csaf
             .vulnerabilities
@@ -191,20 +193,52 @@ where
             .filter(|vuln| vuln.cve.as_ref().map(|cve| cve == &cve_id).unwrap_or_default())
         {
             if let Some(product_status) = &vuln.product_status {
-                extend_products(&csaf, &product_status.fixed, &mut products, "fixed");
-                extend_products(&csaf, &product_status.first_fixed, &mut products, "first_fixed");
-                extend_products(&csaf, &product_status.first_affected, &mut products, "first_affected");
-                extend_products(&csaf, &product_status.known_affected, &mut products, "known_affected");
+                extend_products(&csaf, &relationships, &product_status.fixed, &mut products, "fixed");
                 extend_products(
                     &csaf,
+                    &relationships,
+                    &product_status.first_fixed,
+                    &mut products,
+                    "first_fixed",
+                );
+                extend_products(
+                    &csaf,
+                    &relationships,
+                    &product_status.first_affected,
+                    &mut products,
+                    "first_affected",
+                );
+                extend_products(
+                    &csaf,
+                    &relationships,
+                    &product_status.known_affected,
+                    &mut products,
+                    "known_affected",
+                );
+                extend_products(
+                    &csaf,
+                    &relationships,
                     &product_status.known_not_affected,
                     &mut products,
                     "known_not_affected",
                 );
-                extend_products(&csaf, &product_status.last_affected, &mut products, "last_affected");
-                extend_products(&csaf, &product_status.recommended, &mut products, "recommended");
                 extend_products(
                     &csaf,
+                    &relationships,
+                    &product_status.last_affected,
+                    &mut products,
+                    "last_affected",
+                );
+                extend_products(
+                    &csaf,
+                    &relationships,
+                    &product_status.recommended,
+                    &mut products,
+                    "recommended",
+                );
+                extend_products(
+                    &csaf,
+                    &relationships,
                     &product_status.under_investigation,
                     &mut products,
                     "under_investigation",
@@ -232,24 +266,29 @@ where
 
 fn extend_products<'a>(
     csaf: &Csaf,
+    relationships: &RelationshipsCache,
     products: &Option<Vec<ProductIdT>>,
     target: &mut BTreeMap<&'a str, BTreeSet<String>>,
     key: &'a str,
 ) {
-    let result = collect_products(csaf, products);
+    let result = collect_products(csaf, relationships, products);
     if !result.is_empty() {
         target.entry(key).or_default().extend(result);
     }
 }
 
-fn collect_products(csaf: &Csaf, products: &Option<Vec<ProductIdT>>) -> Vec<String> {
+fn collect_products(
+    csaf: &Csaf,
+    relationships: &RelationshipsCache,
+    products: &Option<Vec<ProductIdT>>,
+) -> Vec<String> {
     let mut result = HashSet::new();
 
     for product in products.iter().flatten() {
         // add a possible main product
         add_product(csaf, product, &mut result);
         // add products by reference
-        for rel in find_product_relations(csaf, &product.0) {
+        for rel in relationships.relations(&product.0) {
             add_product(csaf, &rel.relates_to_product_reference, &mut result);
         }
     }

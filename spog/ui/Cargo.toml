@@ -11,13 +11,15 @@ analytics-next = "0.1.0"
 anyhow = "1"
 async-trait = "0.1"
 browser-panic-hook = "0.2.0"
-convert_case = "0.6.0"
 chrono = { version = "0.4", default-features = false, features = ["wasmbind"] }
+convert_case = "0.6.0"
 csaf = { version = "0.5.0", default-features = false }
 cve = "0.2"
 cvss = { version = "2", features = ["serde"] }
 cyclonedx-bom = "0.4"
+futures = "0.3.29"
 gloo-events = "0.2"
+gloo-history = "0.2"
 gloo-net = "0.4.0"
 gloo-storage = "0.3.0"
 gloo-utils = { version = "0.2.0", features = ["serde"] }
@@ -66,7 +68,6 @@ spog-ui-components = { path = "crates/components" }
 spog-ui-common = { path = "crates/common" }
 spog-ui-utils = { path = "crates/utils" }
 spog-ui-donut = { path = "crates/donut" }
-futures = "0.3.29"
 
 [build-dependencies]
 trustification-version = { path = "../../version", features = ["build"] }
@@ -94,7 +95,7 @@ members = [
 #yew-more-hooks = { git = "https://github.com/ctron/yew-more-hooks", rev = "fc0af774aa925edcd5a544e562619ecb539942f8" }
 #yew-more-hooks = { path = "../../../yew-more-hooks" }
 
-#patternfly-yew = { git = "https://github.com/ctron/patternfly-yew", rev = "17abb02bbcd6dc698f39ea1b859d2f17fae32587" } # FIXME: awaiting release
+patternfly-yew = { git = "https://github.com/ctron/patternfly-yew", rev = "b2ddb35f8fb9872452f7b64267c49d7c613913fe" } # FIXME: awaiting release
 #patternfly-yew = { path = "../../../patternfly-yew" }
 
 #analytics-next = { git = "https://github.com/ctron/analytics-next-rs", rev = "9c95122f4e6dc308c90b945bd0f1925faf7cb828" } # FIXME: awaiting release

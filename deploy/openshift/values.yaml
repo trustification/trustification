@@ -6,6 +6,8 @@ testsImage: ${INTEGRATION_TESTS_IMAGE}
 domain: ${DOMAIN}
 createRoutes: false
 replicas: ${{REPLICAS}}
+graphqlReplicas: ${{GUAC_GRAPHQL_REPLICAS}}
+collectSubReplicas: ${{GUAC_COLLECTSUB_REPLICAS}}
 imagePullPolicy: Always
 region: ${AWS_REGION}
 enableDocs: false

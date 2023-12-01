@@ -1,7 +1,7 @@
 use csaf::definitions::{Branch, BranchesT, ProductIdT};
 use csaf::product_tree::{ProductTree, Relationship};
 use csaf::Csaf;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 /// build the chain form a product ID up to the parent
 pub fn trace_product<'a>(csaf: &'a Csaf, product_id: &str) -> Vec<&'a Branch> {
@@ -141,16 +141,58 @@ where
     }
 }
 
-/// check if we have a product in our product tree
-pub fn has_product(csaf: &Csaf, product_id: &str) -> bool {
-    !trace_product(csaf, product_id).is_empty()
+pub struct ProductsCache<'a> {
+    cache: HashMap<&'a str, &'a str>,
 }
 
-/// find relations to a product id
-pub fn find_product_relations<'a>(csaf: &'a Csaf, product: &'a str) -> impl Iterator<Item = &'a Relationship> + 'a {
-    csaf.product_tree
-        .iter()
-        .flat_map(|pt| pt.relationships.iter())
-        .flat_map(|r| r.iter())
-        .filter(move |p| p.full_product_name.product_id.0 == product)
+impl<'a> ProductsCache<'a> {
+    pub fn new(csaf: &'a Csaf) -> Self {
+        let mut cache = HashMap::new();
+        walk_product_tree_branches(&csaf.product_tree, |_, branch| {
+            if let Some(full_name) = &branch.product {
+                cache.insert(full_name.product_id.0.as_str(), full_name.name.as_str());
+            }
+        });
+
+        Self { cache }
+    }
+
+    pub fn has_product(&self, id: &str) -> bool {
+        self.cache.contains_key(id)
+    }
+
+    pub fn get(&self, id: &str) -> Option<&str> {
+        self.cache.get(id).copied()
+    }
+}
+
+pub struct RelationshipsCache<'a> {
+    cache: HashMap<&'a str, Vec<&'a Relationship>>,
+}
+
+impl<'a> RelationshipsCache<'a> {
+    pub fn new(csaf: &'a Csaf) -> Self {
+        let cache: HashMap<&'a str, Vec<&'a Relationship>> = csaf
+            .product_tree
+            .iter()
+            .flat_map(|pt| pt.relationships.iter())
+            .flat_map(|r| r.iter())
+            .fold(HashMap::new(), |mut acc, i| {
+                acc.entry(i.full_product_name.product_id.0.as_str())
+                    .or_default()
+                    .push(i);
+                acc
+            });
+
+        Self { cache }
+    }
+
+    pub fn relations<'b>(&'b self, product: &'a str) -> impl Iterator<Item = &'a Relationship> + 'b {
+        static EMPTY: Vec<&Relationship> = vec![];
+        self.cache
+            .get(product)
+            .map(|r| r.iter())
+            .unwrap_or_else(|| EMPTY.iter())
+            .copied()
+    }
 }

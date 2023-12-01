@@ -84,13 +84,13 @@ impl TableEntryRenderer<Column> for PackageEntry {
         }
     }
 
+    fn is_full_width_details(&self) -> Option<bool> {
+        Some(true)
+    }
+
     fn render_details(&self) -> Vec<Span> {
         let html = html!(<PackageDetails package={Rc::new(self.clone())} />);
         vec![Span::max(html)]
-    }
-
-    fn is_full_width_details(&self) -> Option<bool> {
-        Some(true)
     }
 }
 

@@ -1,12 +1,14 @@
+use crate::common::clean_ext;
 use csaf::document::Category;
 use humansize::{format_size, BINARY};
 use patternfly_yew::prelude::*;
 use spog_ui_backend::{use_backend, Advisory, VexService};
-use spog_ui_common::error::components::Error;
+use spog_ui_common::{config::use_config, error::components::Error};
 use spog_ui_components::{
     advisory::{cat_label, tracking_status_str, CsafNotes, CsafProductInfo, CsafReferences, CsafVulnTable},
     common::{CardWrapper, NotFound, PageHeading},
     content::{SourceCode, UnknownContent},
+    download::LocalDownloadButton,
     severity::Severity,
 };
 use std::rc::Rc;
@@ -44,7 +46,17 @@ pub fn vex(props: &VEXProperties) -> Html {
             html!(<NotFound/>),
         ),
         UseAsyncState::Ready(Ok(Some(data))) => (
-            html!(<PageHeading sticky=false subtitle="Advisory detail information">{ props.id.clone() } {" "} </PageHeading>),
+            html!(
+                <PageHeading
+                    sticky=false
+                    subtitle="Advisory detail information"
+                    action={html!(
+                        <LocalDownloadButton data={data.get_source()} r#type="csaf" filename={clean_ext(&props.id)} />
+                    )}
+                >
+                    { props.id.clone() } {" "}
+                </PageHeading>
+            ),
             html!(<Details vex={data.clone()}/> ),
         ),
         UseAsyncState::Ready(Err(err)) => (
@@ -76,6 +88,8 @@ fn details(props: &DetailsProps) -> Html {
         Source,
     }
 
+    let config = use_config();
+
     let tab = use_state_eq(|| TabIndex::Overview);
     let onselect = use_callback(tab.clone(), |index, tab| tab.set(index));
 
@@ -88,7 +102,9 @@ fn details(props: &DetailsProps) -> Html {
                             <Tab<TabIndex> index={TabIndex::Overview} title="Overview" />
                             <Tab<TabIndex> index={TabIndex::Notes} title="Notes" />
                             <Tab<TabIndex> index={TabIndex::Vulnerabilities} title="Vulnerabilities" />
-                            <Tab<TabIndex> index={TabIndex::Source} title="Source" />
+                            { for config.features.show_source.then(|| html_nested!(
+                                <Tab<TabIndex> index={TabIndex::Source} title="Source" />
+                            )) }
                         </Tabs<TabIndex>>
                     </PageSection>
 

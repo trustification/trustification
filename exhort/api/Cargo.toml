@@ -29,6 +29,9 @@ utoipa-swagger-ui = { version = "4", features = ["actix-web"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = { version = "1.0.68", features = [ "raw_value" ] }
 packageurl = "0.3"
+regex = "1.9.6"
+lenient_semver = {  version = "0.4.2", features = ["parse_partial"] }
+semver = "1.0.20"
 
 [dev-dependencies]
 env_logger = "0.10"

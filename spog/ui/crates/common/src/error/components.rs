@@ -1,5 +1,7 @@
 use crate::error::{ApiErrorDetails, ApiErrorKind};
 use patternfly_yew::prelude::*;
+use spog_model::prelude::{Configuration, DEFAULT_ERROR_IMAGE_SRC};
+use std::rc::Rc;
 use yew::prelude::*;
 
 #[derive(PartialEq, Properties)]
@@ -40,11 +42,17 @@ pub struct ErrorProperties {
 
 #[function_component(Error)]
 pub fn error(props: &ErrorProperties) -> Html {
+    let error_image_src = use_context::<Rc<Configuration>>()
+        .and_then(|config| config.global.error_image_src.as_ref().map(|s| s.to_string()))
+        .unwrap_or_else(|| DEFAULT_ERROR_IMAGE_SRC.to_string());
+
     html!(
         <Bullseye>
             <Grid gutter=true>
                 <GridItem offset={[2]} cols={[2]}>
-                    <img src="assets/images/chicken-svgrepo-com.svg" style="transform: scaleY(-1);"/>
+                    <div style="text-align: center;">
+                        <img src={error_image_src} alt="Error" />
+                    </div>
                 </GridItem>
                 <GridItem cols={[6]}>
                     <Title>{props.title.clone()}</Title>

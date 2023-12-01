@@ -1,4 +1,5 @@
 use crate::app_state::AppState;
+use crate::error::Error;
 use crate::search;
 use crate::service::guac::GuacService;
 use actix_web::{
@@ -6,10 +7,8 @@ use actix_web::{
     HttpResponse,
 };
 use actix_web_httpauth::extractors::bearer::BearerAuth;
-use packageurl::PackageUrl;
 use spog_model::package_info::{PackageInfo, V11yRef};
 use spog_model::prelude::PackageProductDetails;
-use std::str::FromStr;
 use std::sync::Arc;
 use trustification_api::search::{SearchOptions, SearchResult};
 use trustification_auth::authenticator::Authenticator;
@@ -61,12 +60,7 @@ pub async fn package_search(
     for item in data.result {
         let item = item.document;
         m.push(PackageInfo {
-            purl: item.purl.into(),
-            name: item.purl_name.into(),
-            namespace: item.purl_namespace.into(),
-            version: item.purl_version.into(),
-            package_type: item.purl_type.into(),
-            supplier: item.supplier.into(),
+            purl: item.purl,
             vulnerabilities: vec![],
         });
     }
@@ -90,11 +84,9 @@ pub async fn package_search(
         ("id" = Url, Path, description = "The ID of the package to retrieve")
     )
 )]
-pub async fn package_get(guac: web::Data<GuacService>, path: web::Path<String>) -> actix_web::Result<HttpResponse> {
-    let id = path.into_inner();
-    let purl = PackageUrl::from_str(&id).unwrap();
-
-    let results = guac.certify_vex(&id).await?;
+pub async fn package_get(guac: web::Data<GuacService>, path: web::Path<String>) -> Result<HttpResponse, Error> {
+    let purl = path.into_inner();
+    let results = guac.certify_vex(&purl).await?;
     let vulns = results
         .iter()
         .flat_map(|vex| {
@@ -102,8 +94,7 @@ pub async fn package_get(guac: web::Data<GuacService>, path: web::Path<String>) 
                 .vulnerability_ids
                 .iter()
                 .map(|id| V11yRef {
-                    cve: id.vulnerability_id.clone(),
-                    href: format!("https://access.redhat.com/security/cve/{}", id.vulnerability_id.clone()),
+                    cve: id.vulnerability_id.clone().to_uppercase(),
                     severity: "unknown".to_string(),
                 })
                 .collect::<Vec<V11yRef>>()
@@ -111,12 +102,7 @@ pub async fn package_get(guac: web::Data<GuacService>, path: web::Path<String>) 
         .collect::<Vec<V11yRef>>();
 
     let pkg = PackageInfo {
-        name: Some(purl.name().to_string()),
-        namespace: purl.namespace().map(|s| s.to_string()),
-        version: purl.version().map(|s| s.to_string()),
-        package_type: Some(purl.ty().to_string()),
-        purl: Some(id),
-        supplier: "Organization: Red Hat".to_string().into(),
+        purl,
         vulnerabilities: vulns,
     };
     Ok(HttpResponse::Ok().json(&pkg))

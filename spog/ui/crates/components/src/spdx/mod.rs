@@ -7,8 +7,10 @@ use packageurl::PackageUrl;
 use patternfly_yew::prelude::*;
 use spdx_rs::models::{PackageInformation, SPDX};
 use spog_ui_common::utils::OrNone;
+use spog_ui_navigation::AppRoute;
 use std::str::FromStr;
 use yew::prelude::*;
+use yew_nested_router::components::Link;
 
 /// get the PURL of a SPDX package information
 pub fn get_purl(package: &PackageInformation) -> Option<PackageUrl<'static>> {
@@ -165,7 +167,11 @@ pub fn spdx_external_references(package: &PackageInformation) -> Html {
 
 pub fn spdx_package_list_entry(package: &PackageInformation) -> Html {
     match get_purl(package) {
-        Some(purl) => html!(<code>{ purl.to_string() }</code>),
+        Some(purl) => html!(
+            <Link<AppRoute> target={AppRoute::Package {id: purl.to_string()}}>
+                <code>{ purl.to_string() }</code>
+            </Link<AppRoute>>
+        ),
         None => match &package.package_version.as_deref() {
             Some("") | None => {
                 html!(&package.package_name)

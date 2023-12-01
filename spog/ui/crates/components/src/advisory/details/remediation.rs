@@ -2,6 +2,7 @@ use crate::advisory::{csaf_product_status_entry_details, rem_cat_str};
 use csaf::vulnerability::Remediation;
 use csaf::Csaf;
 use patternfly_yew::prelude::*;
+use spog_model::csaf::{ProductsCache, RelationshipsCache};
 use spog_ui_common::utils::OrNone;
 use std::rc::Rc;
 use yew::prelude::*;
@@ -43,6 +44,9 @@ impl TableEntryRenderer<Column> for RemediationWrapper {
     }
 
     fn render_details(&self) -> Vec<Span> {
+        let products = ProductsCache::new(&self.csaf);
+        let relationships = RelationshipsCache::new(&self.csaf);
+
         let content = html!(
             <Content>
                 { self.rem.details.clone() }
@@ -50,7 +54,7 @@ impl TableEntryRenderer<Column> for RemediationWrapper {
                 <List> {
                     for self.rem.product_ids.iter()
                         .flatten()
-                        .map(|prod| html_nested!(<ListItem> { csaf_product_status_entry_details(&self.csaf, prod) } </ListItem>))
+                        .map(|prod| html_nested!(<ListItem> { csaf_product_status_entry_details(&self.csaf, &products, &relationships, prod) } </ListItem>))
                 } </List>
             </Content>
         );

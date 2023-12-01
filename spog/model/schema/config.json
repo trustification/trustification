@@ -37,7 +37,8 @@
         "additionalPackageInformation": true,
         "dedicatedSearch": true,
         "extendSection": true,
-        "scanner": true
+        "scanner": true,
+        "showSource": true
       },
       "allOf": [
         {
@@ -48,9 +49,12 @@
     "global": {
       "default": {
         "aboutBackgroundSrc": null,
+        "aboutBrandImageSrc": null,
         "brandImageSrc": null,
         "documentationUrl": null,
+        "errorImageSrc": null,
         "productName": null,
+        "showGithubLink": false,
         "supportCaseLabel": null,
         "supportCaseUrl": null,
         "supportUrl": null
@@ -185,6 +189,11 @@
         },
         "scanner": {
           "description": "Enables the SBOM scanner",
+          "default": true,
+          "type": "boolean"
+        },
+        "showSource": {
+          "description": "Enable the \"source\" tabs",
           "default": true,
           "type": "boolean"
         }
@@ -352,6 +361,13 @@
             "null"
           ]
         },
+        "aboutBrandImageSrc": {
+          "default": null,
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "brandImageSrc": {
           "default": null,
           "type": [
@@ -367,12 +383,23 @@
           ],
           "format": "uri"
         },
+        "errorImageSrc": {
+          "default": null,
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "productName": {
           "default": null,
           "type": [
             "string",
             "null"
           ]
+        },
+        "showGithubLink": {
+          "default": false,
+          "type": "boolean"
         },
         "supportCaseLabel": {
           "default": null,

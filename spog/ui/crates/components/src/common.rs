@@ -8,6 +8,8 @@ pub struct PageHeadingProperties {
     pub subtitle: Option<String>,
     #[prop_or(true)]
     pub sticky: bool,
+    #[prop_or_default]
+    pub action: Html,
 }
 
 #[function_component(PageHeading)]
@@ -18,12 +20,19 @@ pub fn page_heading(props: &PageHeadingProperties) -> Html {
     };
     html!(
         <PageSection {sticky} variant={PageSectionVariant::Light} >
-            <Content>
-                <Title>{ for props.children.iter() }</Title>
-                if let Some(subtitle) = &props.subtitle {
-                    <p>{ &subtitle }</p>
-                }
-            </Content>
+            <Flex>
+                <FlexItem>
+                    <Content>
+                        <Title>{ for props.children.iter() }</Title>
+                        if let Some(subtitle) = &props.subtitle {
+                            <p>{ &subtitle }</p>
+                        }
+                    </Content>
+                </FlexItem>
+                <FlexItem modifiers={[FlexModifier::Align(Alignment::Right), FlexModifier::Align(Alignment::End)]}>
+                    {props.action.clone()}
+                </FlexItem>
+            </Flex>
         </PageSection>
     )
 }

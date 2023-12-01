@@ -18,7 +18,19 @@ use yew_oauth2::{openid::*, prelude::*};
 #[function_component(Console)]
 pub fn console() -> Html {
     let config = use_config();
+    let product_name = config.global.product_name();
     let render = move |route| render(route, &config);
+
+    // Set the title of the page
+    use_effect_with((), move |()| {
+        match gloo_utils::document().query_selector("title") {
+            Ok(title) => match title {
+                Some(element) => element.set_text_content(Some(&product_name)),
+                None => log::warn!("Invalid query_selector title"),
+            },
+            Err(_) => log::warn!("Could not update title"),
+        };
+    });
 
     html!(<RouterSwitch<AppRoute> {render} default={html!(<pages::NotFound />)}/>)
 }
@@ -121,7 +133,9 @@ fn authenticated_page(props: &ChildrenProperties) -> Html {
         <Toolbar>
             <ToolbarContent>
                 <ToolbarItem modifiers={[ToolbarElementModifier::Right]}>
-                    <Button icon={Icon::Github} onclick={callback_github} variant={ButtonVariant::Plain} />
+                    if config.global.show_github_link {
+                        <Button icon={Icon::Github} onclick={callback_github} variant={ButtonVariant::Plain} />
+                    }
                     <Dropdown
                         position={Position::Right}
                         variant={MenuToggleVariant::Plain}

@@ -1,20 +1,19 @@
 //! The SBOM details page
 
-use crate::model;
+use crate::{common::clean_ext, model, pages::sbom_report::SbomReport};
 use patternfly_yew::prelude::*;
 use spog_ui_backend::use_backend;
-use spog_ui_common::error::components::Error;
+use spog_ui_common::{config::use_config, error::components::Error};
 use spog_ui_components::{
     common::{NotFound, PageHeading},
     content::{SourceCode, Technical},
+    download::LocalDownloadButton,
     spdx::*,
 };
 use std::rc::Rc;
 use yew::prelude::*;
 use yew_more_hooks::prelude::*;
 use yew_oauth2::prelude::*;
-
-use crate::pages::sbom_report::SbomReport;
 
 #[derive(Clone, Debug, PartialEq, Properties)]
 pub struct SBOMProperties {
@@ -46,7 +45,16 @@ pub fn sbom(props: &SBOMProperties) -> Html {
             html!(<NotFound/>),
         ),
         UseAsyncState::Ready(Ok(Some(data))) => (
-            html!(<PageHeading sticky=false>{ props.id.clone() } {" "} <Label label={data.type_name()} color={Color::Blue} /> </PageHeading>),
+            html!(
+                <PageHeading
+                    sticky=false
+                    action={html!(
+                        <LocalDownloadButton data={data.get_source()} r#type="sbom" filename={clean_ext(&props.id)} />
+                    )}
+                >
+                    { props.id.clone() } {" "} <Label label={data.type_name()} color={Color::Blue} />
+                </PageHeading>
+            ),
             html!(<Details id={props.id.clone()} sbom={data.clone()}/> ),
         ),
         UseAsyncState::Ready(Err(err)) => (
@@ -79,6 +87,8 @@ fn details(props: &DetailsProps) -> Html {
         Source,
     }
 
+    let config = use_config();
+
     let tab = use_state_eq(|| TabIndex::Overview);
     let onselect = use_callback(tab.clone(), |index, tab| tab.set(index));
 
@@ -91,7 +101,9 @@ fn details(props: &DetailsProps) -> Html {
                             <Tab<TabIndex> index={TabIndex::Overview} title="Overview" />
                             <Tab<TabIndex> index={TabIndex::Info} title="Info" />
                             <Tab<TabIndex> index={TabIndex::Packages} title="Packages" />
-                            <Tab<TabIndex> index={TabIndex::Source} title="Source" />
+                            { for config.features.show_source.then(|| html_nested!(
+                                <Tab<TabIndex> index={TabIndex::Source} title="Source" />
+                            )) }
                         </Tabs<TabIndex>>
                     </PageSection>
 
@@ -133,7 +145,9 @@ fn details(props: &DetailsProps) -> Html {
                         <Tabs<TabIndex> inset={TabInset::Page} detached=true selected={*tab} {onselect}>
                             <Tab<TabIndex> index={TabIndex::Overview} title="Overview" />
                             <Tab<TabIndex> index={TabIndex::Info} title="Info" />
-                            <Tab<TabIndex> index={TabIndex::Source} title="Source" />
+                            { for config.features.show_source.then(|| html_nested!(
+                                <Tab<TabIndex> index={TabIndex::Source} title="Source" />
+                            )) }
                         </Tabs<TabIndex>>
                     </PageSection>
 

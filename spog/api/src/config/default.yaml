@@ -7,6 +7,7 @@ global:
   supportUrl: https://github.com/trustification/trustification/issues
   supportCaseUrl: https://github.com/trustification/trustification/issues
   supportCaseLabel: "Open a support case"
+  showGithubLink: true
 
 bombastic:
 
@@ -453,8 +454,8 @@ packages:
         options:
 
           - type: check
-            label: Redhat
-            id: Redhat
+            label: Red Hat
+            id: redhat
             terms:
               - 'supplier:"Organization: Red Hat"'
 
@@ -495,7 +496,7 @@ landingPage:
               <a
                 class="pf-v5-c-button pf-m-primary pf-m-display-lg"
                 type="button"
-                href="/scanner"
+                onclick="window.wasmBindings.spogNavigateTo('/scanner'); return false;"
               >Scan SBOM</a>
             </div>
           </div>
