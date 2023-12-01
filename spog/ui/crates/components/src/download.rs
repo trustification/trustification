@@ -25,11 +25,9 @@ pub fn download(props: &DownloadProperties) -> Html {
         let _ = gloo_utils::window().location().set_href(href.as_str());
     });
 
-    let onclick = use_wrap_tracking(
-        onclick,
-        |_, href| ("Download File", json!({"href": href})),
-        props.href.clone(),
-    );
+    let onclick = use_wrap_tracking(onclick, props.href.clone(), |_, href| {
+        ("Download File", json!({"href": href}))
+    });
 
     html!(
         <Button
@@ -55,8 +53,8 @@ pub fn inline_download(props: &LocalDownloadButtonProperties) -> Html {
 
     let onclick = use_wrap_tracking(
         onclick,
-        |_, (r#type, filename)| ("Download File", json!({"type": r#type, "filename": filename})),
         (props.r#type.clone(), props.filename.clone()),
+        |_, (r#type, filename)| ("Download File", json!({"type": r#type, "filename": filename})),
     );
 
     let href = use_state_eq::<Option<String>, _>(|| None);

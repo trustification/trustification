@@ -45,9 +45,9 @@ checksum = "0942ffc6dcaadf03badf6e6a2d0228460359d5e34b57ccdc720b7382dfbd5ec5"
 
 [[package]]
 name = "analytics-next"
-version = "0.1.0"
+version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d11ed5ffb460ae293f9039580e672e85b91a67669eefa38efafcf2ef3ea6c496"
+checksum = "edad46819ce879d493432966b87e1d0188267c5eb97d45aa16999ffd7c6343bd"
 dependencies = [
  "analytics-next-sys",
  "gloo-utils 0.2.0",
@@ -60,9 +60,9 @@ dependencies = [
 
 [[package]]
 name = "analytics-next-sys"
-version = "0.1.0"
+version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dcb69a04d306a3d10dc33029a2ea21c70801d6265b1bdf4e11e7657db9d286a4"
+checksum = "67bad223cd0efd3e385fb967d5aabe334245483272e67f1bfe4182b2535343be"
 dependencies = [
  "js-sys",
  "wasm-bindgen",
@@ -1873,8 +1873,9 @@ checksum = "de3145af08024dea9fa9914f381a17b8fc6034dfb00f3a84013f7ff43f29ed4c"
 
 [[package]]
 name = "patternfly-yew"
-version = "0.5.3"
-source = "git+https://github.com/ctron/patternfly-yew?rev=b2ddb35f8fb9872452f7b64267c49d7c613913fe#b2ddb35f8fb9872452f7b64267c49d7c613913fe"
+version = "0.5.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cdb55705511aae0f27b319017c703b89348a0842ef6b5f175ef2c87df73177d9"
 dependencies = [
  "chrono",
  "gloo-events 0.2.0",
@@ -3763,9 +3764,9 @@ dependencies = [
 
 [[package]]
 name = "yew-more-hooks"
-version = "0.3.1"
+version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e9e29ef071d90bb12bd74f1ee50b6bb76a663d3c9bc4a7b1498431d810f13152"
+checksum = "e6596bd8137e00625d92fe11ea94e2ca8118f962bf1cc37d057839110b8d2247"
 dependencies = [
  "gloo-utils 0.2.0",
  "log",

@@ -1,4 +1,5 @@
 mod component;
+mod r#macro;
 
 pub use component::*;
 
@@ -200,7 +201,7 @@ fn build(write_key: Option<&str>) -> Option<AnalyticsBrowser> {
 
 /// Wrap a callback with a tracking call
 #[hook]
-pub fn use_wrap_tracking<'a, IN, OUT, F, FO, D>(cb: Callback<IN, OUT>, f: F, deps: D) -> Callback<IN, OUT>
+pub fn use_wrap_tracking<'a, IN, OUT, F, FO, D>(cb: Callback<IN, OUT>, deps: D, f: F) -> Callback<IN, OUT>
 where
     IN: 'static,
     OUT: 'static,
@@ -211,15 +212,53 @@ where
     let analytics = use_analytics();
 
     (*use_memo((cb, (analytics, deps)), |(cb, (analytics, deps))| {
-        let cb = cb.clone();
-        let analytics = analytics.clone();
-        let deps = deps.clone();
-        Callback::from(move |value| {
-            analytics.track(f(&value, &deps).into());
-            cb.emit(value)
+        wrap_tracking(analytics.clone(), cb.clone(), {
+            let deps = deps.clone();
+            move |value| f(value, &deps)
         })
     }))
     .clone()
+}
+
+pub trait WrapTracking {
+    type Input;
+    type Output;
+
+    fn wrap_tracking<F, FO>(self, analytics: UseAnalytics, f: F) -> Callback<Self::Input, Self::Output>
+    where
+        F: Fn(&Self::Input) -> FO + 'static,
+        FO: Into<TrackingEvent<'static>> + 'static;
+}
+
+impl<IN, OUT> WrapTracking for Callback<IN, OUT>
+where
+    IN: 'static,
+    OUT: 'static,
+{
+    type Input = IN;
+    type Output = OUT;
+
+    fn wrap_tracking<F, FO>(self, analytics: UseAnalytics, f: F) -> Callback<Self::Input, Self::Output>
+    where
+        F: Fn(&IN) -> FO + 'static,
+        FO: Into<TrackingEvent<'static>> + 'static,
+    {
+        wrap_tracking(analytics, self, f)
+    }
+}
+
+/// Wrap a callback with a tracking call
+pub fn wrap_tracking<IN, OUT, F, FO>(analytics: UseAnalytics, callback: Callback<IN, OUT>, f: F) -> Callback<IN, OUT>
+where
+    IN: 'static,
+    OUT: 'static,
+    F: Fn(&IN) -> FO + 'static,
+    FO: Into<TrackingEvent<'static>> + 'static,
+{
+    Callback::from(move |value| {
+        analytics.track(f(&value).into());
+        callback.emit(value)
+    })
 }
 
 /// Create a tracking callback
