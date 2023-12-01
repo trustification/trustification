@@ -1,13 +1,44 @@
 use super::{report::Report, CommonHeader};
+use analytics_next::TrackingEvent;
 use patternfly_yew::prelude::*;
 use reqwest::Body;
+use serde_json::json;
 use spog_ui_backend::{use_backend, AnalyzeService};
 use spog_ui_common::error::components::ApiError;
+use spog_ui_common::error::ApiErrorKind;
 use spog_ui_components::editor::ReadonlyEditor;
+use spog_ui_utils::analytics::use_analytics;
 use std::rc::Rc;
 use yew::prelude::*;
 use yew_more_hooks::hooks::r#async::*;
 use yew_oauth2::hook::use_latest_access_token;
+
+struct AnalyzeResult<'a>(&'a Result<Rc<String>, spog_ui_common::error::ApiError>);
+
+impl<'a> From<AnalyzeResult<'a>> for TrackingEvent<'static> {
+    fn from(value: AnalyzeResult<'a>) -> Self {
+        (
+            "Analyze Result",
+            match &value.0 {
+                Ok(value) => {
+                    json!({"ok": {
+                        "resultLen": value.len(),
+                    }})
+                }
+                Err(err) => match &**err {
+                    ApiErrorKind::Api { status, details } => json!({
+                         "err": details.to_string(),
+                         "status": status.as_u16(),
+                    }),
+                    _ => json!({
+                        "err": err.to_string(),
+                    }),
+                },
+            },
+        )
+            .into()
+    }
+}
 
 #[derive(Clone, PartialEq, Properties)]
 pub struct InspectProperties {
@@ -23,6 +54,7 @@ pub fn inspect(props: &InspectProperties) -> Html {
         Raw,
     }
 
+    let analytics = use_analytics();
     let tab = use_state_eq(|| TabIndex::Report);
     let onselect = use_callback(tab.clone(), |index, tab| tab.set(index));
 
@@ -31,9 +63,11 @@ pub fn inspect(props: &InspectProperties) -> Html {
 
     let fetch = {
         use_async_with_cloned_deps(
-            |raw| async move {
+            move |raw| async move {
                 let service = AnalyzeService::new(backend, access_token);
-                service.report(Body::from((*raw).clone())).await.map(Rc::new)
+                let result = service.report(Body::from((*raw).clone())).await.map(Rc::new);
+                analytics.track(AnalyzeResult(&result));
+                result
             },
             props.raw.clone(),
         )

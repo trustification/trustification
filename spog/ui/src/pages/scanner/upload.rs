@@ -3,7 +3,7 @@ use analytics_next::TrackingEvent;
 use patternfly_yew::prelude::*;
 use serde_json::json;
 use spog_ui_components::editor::ReadonlyEditor;
-use spog_ui_utils::{analytics::*, config::*};
+use spog_ui_utils::{analytics::*, config::*, tracking_event};
 use std::rc::Rc;
 use wasm_bindgen_futures::JsFuture;
 use yew::prelude::*;
@@ -20,6 +20,7 @@ const EMPTY_BODY_CONTENT: &str = r#"
 "#;
 
 struct LoadFiles(u32);
+
 impl From<LoadFiles> for TrackingEvent<'static> {
     fn from(value: LoadFiles) -> Self {
         ("Loading files", json!({"numberOfFiles": value.0})).into()
@@ -29,9 +30,26 @@ impl From<LoadFiles> for TrackingEvent<'static> {
 struct SubmitSbom {
     size: usize,
 }
+
 impl From<SubmitSbom> for TrackingEvent<'static> {
     fn from(value: SubmitSbom) -> Self {
         ("Submit SBOM", json!({"size": value.size})).into()
+    }
+}
+
+struct Dropped(&'static str, usize, usize);
+
+impl From<Dropped> for TrackingEvent<'static> {
+    fn from(value: Dropped) -> Self {
+        (
+            "Dropped SBOM",
+            json!({
+                "type": value.0,
+                "items": value.1,
+                "totalSize": value.2,
+            }),
+        )
+            .into()
     }
 }
 
@@ -57,6 +75,8 @@ impl DropContent {
         matches!(self, Self::None)
     }
 }
+
+tracking_event!(Cleared: "Cleared SBOM content" => json!({}));
 
 impl std::fmt::Display for DropContent {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
@@ -104,14 +124,11 @@ pub fn upload(props: &UploadProperties) -> Html {
                 let drop_content = drop_content.clone();
                 let analytics = analytics.clone();
                 Some(Box::new(move |files, _data_transfer| {
-                    analytics.track((
-                        "Dropped SBOM",
-                        json!({
-                            "type": "files",
-                            "numberOfFiles": files.len(),
-                        }),
+                    analytics.track(Dropped(
+                        "files",
+                        files.len(),
+                        files.iter().map(|f| f.size() as usize).sum(),
                     ));
-
                     drop_content.set(DropContent::Files(files));
                 }))
             },
@@ -119,14 +136,7 @@ pub fn upload(props: &UploadProperties) -> Html {
                 let drop_content = drop_content.clone();
                 let analytics = analytics.clone();
                 Some(Box::new(move |text, _data_transfer| {
-                    analytics.track((
-                        "Dropped SBOM",
-                        json!({
-                            "type": "text",
-                            "size": text.len()
-                        }),
-                    ));
-
+                    analytics.track(Dropped("text", 1, text.len()));
                     drop_content.set(DropContent::from(text));
                 }))
             },
@@ -176,38 +186,20 @@ pub fn upload(props: &UploadProperties) -> Html {
         |_: MouseEvent, (drop_content, analytics)| {
             // clear state
             drop_content.set(DropContent::None);
-            analytics.track("Cleared SBOM content");
+            analytics.track(Cleared);
         },
     );
 
     let state = processing.error().map(
-        |(_, err)| (InputState::Error, err.clone(), html_nested!(
-            <HelperTextItem icon={HelperTextItemIcon::Visible} variant={ HelperTextItemVariant::Error }> { err.clone() } </HelperTextItem>
+        |(_, err)| (InputState::Error, html_nested!(
+            <HelperTextItem icon={HelperTextItemIcon::Visible} variant={HelperTextItemVariant::Error}> { err.clone() } </HelperTextItem>
         )),
     );
-    let (state, error_reason, helper_text) = match state {
-        Some((state, error_reason, helper_text)) => (Some(state), Some(error_reason), Some(helper_text)),
-        None => (None, None, None),
+    let (state, helper_text) = match state {
+        Some((state, helper_text)) => (Some(state), Some(helper_text)),
+        None => (None, None),
     };
     let state = state.unwrap_or_default();
-
-    use_effect_with(
-        (analytics.clone(), error_reason.clone(), *initial),
-        |(analytics, reason, initial)| {
-            if *initial {
-                // we ignore any errors if the content is empty
-                return;
-            }
-            if let Some(reason) = reason {
-                analytics.track((
-                    "SBOM parsing failed",
-                    json!({
-                        "reason": reason,
-                    }),
-                ));
-            }
-        },
-    );
 
     let content = match &*processing {
         UseAsyncState::Ready(Ok(content)) => content.clone(),
@@ -278,7 +270,7 @@ pub fn upload(props: &UploadProperties) -> Html {
             let _ = gloo_utils::window().open_with_url_and_target(url.as_ref(), "_blank");
         }
     });
-    let onlearn = use_wrap_tracking(onlearn, |_, _| ClickLearn, ());
+    let onlearn = use_wrap_tracking(onlearn, (), |_, _| ClickLearn);
 
     if config.scanner.documentation_url.is_some() {
         secondaries.push(Action::new("Learn about creating an SBOM", onlearn));
