@@ -12,7 +12,8 @@ use spog_model::prelude::CveDetails;
 use spog_ui_backend::{use_backend, CveService};
 use spog_ui_common::{components::Markdown, config::use_config};
 use spog_ui_components::{
-    async_state_renderer::async_content, cvss::Cvss3Label, download::InlineDownload, editor::ReadonlyEditor, time::Date,
+    async_state_renderer::async_content, cvss::Cvss3Label, download::LocalDownloadButton, editor::ReadonlyEditor,
+    time::Date,
 };
 use std::rc::Rc;
 use std::str::FromStr;
@@ -119,7 +120,7 @@ pub fn result_view(props: &ResultViewProperties) -> Html {
                     <FlexItem modifiers={[FlexModifier::Align(Alignment::Right), FlexModifier::Align(Alignment::End)]}>
                         { async_content(&*cve_details, |details| html!(
                             if let Some((_, source)) = details.clone() {
-                                <InlineDownload data={source.clone()} r#type="cve" filename={format!("{}.json", props.id)} />
+                                <LocalDownloadButton data={source.clone()} r#type="cve" filename={format!("{}.json", props.id)} />
                             }
                         )) }
                     </FlexItem>

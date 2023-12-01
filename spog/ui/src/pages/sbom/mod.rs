@@ -7,7 +7,7 @@ use spog_ui_common::{config::use_config, error::components::Error};
 use spog_ui_components::{
     common::{NotFound, PageHeading},
     content::{SourceCode, Technical},
-    download::InlineDownload,
+    download::LocalDownloadButton,
     spdx::*,
 };
 use std::rc::Rc;
@@ -51,7 +51,7 @@ pub fn sbom(props: &SBOMProperties) -> Html {
                 <PageHeading
                     sticky=false
                     action={html!(
-                        <InlineDownload data={data.get_source()} r#type="sbom" filename={clean_ext(&props.id)} />
+                        <LocalDownloadButton data={data.get_source()} r#type="sbom" filename={clean_ext(&props.id)} />
                     )}
                 >
                     { props.id.clone() } {" "} <Label label={data.type_name()} color={Color::Blue} />
