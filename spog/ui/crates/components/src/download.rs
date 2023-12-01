@@ -41,7 +41,7 @@ pub fn download(props: &DownloadProperties) -> Html {
 }
 
 #[derive(PartialEq, Properties)]
-pub struct InlineDownloadProperties {
+pub struct LocalDownloadButtonProperties {
     pub data: Rc<String>,
 
     pub r#type: String,
@@ -49,8 +49,8 @@ pub struct InlineDownloadProperties {
 }
 
 /// "Download" from an already loaded set of data
-#[function_component(InlineDownload)]
-pub fn inline_download(props: &InlineDownloadProperties) -> Html {
+#[function_component(LocalDownloadButton)]
+pub fn inline_download(props: &LocalDownloadButtonProperties) -> Html {
     let onclick = use_callback((), move |_, ()| {});
 
     let onclick = use_wrap_tracking(

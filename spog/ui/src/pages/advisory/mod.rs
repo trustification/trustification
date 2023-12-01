@@ -7,7 +7,7 @@ use spog_ui_components::{
     advisory::{cat_label, tracking_status_str, CsafNotes, CsafProductInfo, CsafReferences, CsafVulnTable},
     common::{CardWrapper, NotFound, PageHeading},
     content::{SourceCode, UnknownContent},
-    download::InlineDownload,
+    download::LocalDownloadButton,
     severity::Severity,
 };
 use std::rc::Rc;
@@ -50,7 +50,7 @@ pub fn vex(props: &VEXProperties) -> Html {
                     sticky=false
                     subtitle="Advisory detail information"
                     action={html!(
-                        <InlineDownload data={data.get_source()} r#type="csaf" filename={props.id.clone()} />
+                        <LocalDownloadButton data={data.get_source()} r#type="csaf" filename={props.id.clone()} />
                     )}
                 >
                     { props.id.clone() } {" "}
