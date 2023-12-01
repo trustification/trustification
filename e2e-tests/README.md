@@ -2,7 +2,8 @@
 ### Overview
 The End - End UI framework is based on [Cucumber](https://github.com/cucumber-rs/cucumber "Cucumber") and [Thrityfour](https://github.com/stevepryde/thirtyfour/tree/main/thirtyfour "Thrityfour"). The tests are written in Gherkin format and they are executed with the aid of cucumber-rs. 
 
-The tests under package e2e-tests can be run with the below command,
+For example, the tests under package e2e-tests can be run with the below command to test localhost. 
+(Make sure the localhost is up and running with the [podman](#Setting up Localhost))
 ```shell
 git clone https://github.com/trustification/trustification
 cd e2e-tests 
@@ -16,12 +17,11 @@ Execute the tests using cargo run with the following command-line arguments:
 - `--user-name:` The username for logging into the application.
 - `--password:`   The password for logging into the application.
 
-
 **Note**
 
 This framework is capable of,
 - Maintaining the driver executables for browsers. The script is available [here](/src/scripts/env.sh) for reference.
-- Indexing VEX and SBOM files from `../data/ds1/` directory to test ***localhost***.
+- Indexing VEX and SBOM files from `../data/ds1/` directory to test ***[localhost](#Setting up Localhost)***.
 
 ### Selenium
 [Selenium](https://www.selenium.dev/documentation/overview/ "Selenium") is a popular open-source framework for automating web browsers. It provides a way to automate browser activities, such as navigating to websites, interacting with web elements, and performing various tasks on web applications.
@@ -100,6 +100,16 @@ These steps are implemented on a rust file under /src/pages directory as,
 The definition of the funtions should have cucumber attributes enclosed with #[] to indicate this is test step for the scenario. On the above example, the test step `Given The user is on the Trustification home screen` defined with the cucumber attribute `#[given(expr = The user is on the Trustification home screen )]`. Please note, the keyword `given` is not used in the expression.
 
 So with this we can write our tests and its validation steps under features directory and the definitions for the test steps implemented under rust files with the aid of thirtyfour crate. 
+
+#### Setting up Localhost
+
+Make sure the localhost is up and running to execute tests on ***http://localhost:8084/***. To setup localhost run the below commands on another terminal,
+```shell
+# On another terminal
+git clone https://github.com/trustification/trustification
+cd deploy/compose
+podman-compose -f compose.yaml -f compose-trustification.yaml -f compose-guac.yaml up
+```
 
 ### References
 For more information, you can refer to the following resources:
