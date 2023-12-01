@@ -11,7 +11,9 @@ use products::RelatedProducts;
 use spog_model::prelude::CveDetails;
 use spog_ui_backend::{use_backend, CveService};
 use spog_ui_common::{components::Markdown, config::use_config};
-use spog_ui_components::{async_state_renderer::async_content, cvss::Cvss3Label, editor::ReadonlyEditor, time::Date};
+use spog_ui_components::{
+    async_state_renderer::async_content, cvss::Cvss3Label, download::InlineDownload, editor::ReadonlyEditor, time::Date,
+};
 use std::rc::Rc;
 use std::str::FromStr;
 use yew::prelude::*;
@@ -96,21 +98,32 @@ pub fn result_view(props: &ResultViewProperties) -> Html {
     html!(
         <>
             <PageSection variant={PageSectionVariant::Light} >
-                <Content>
-                    <Title>
-                        {props.id.clone()} { " "}
-                        if let UseAsyncState::Ready(Ok(details)) = &*cve_details {{
-                             match details.as_ref().map(|details| details.0.as_ref()) {
-                                Some(cve::Cve::Published(published)) => cvss3(&published.containers.cna.metrics),
-                                Some(cve::Cve::Rejected(_rejected)) => html!(<Label label="Rejected" color={Color::Grey} />),
-                                None => html!(),
+                <Flex>
+                    <FlexItem>
+                        <Content>
+                            <Title>
+                                {props.id.clone()} { " "}
+                                if let UseAsyncState::Ready(Ok(details)) = &*cve_details {{
+                                     match details.as_ref().map(|details| details.0.as_ref()) {
+                                        Some(cve::Cve::Published(published)) => cvss3(&published.containers.cna.metrics),
+                                        Some(cve::Cve::Rejected(_rejected)) => html!(<Label label="Rejected" color={Color::Grey} />),
+                                        None => html!(),
+                                    }
+                                }}
+                            </Title>
+                            if let UseAsyncState::Ready(Ok(Some((details, _)))) = &*cve_details {
+                                { cve_title(details) }
                             }
-                        }}
-                    </Title>
-                    if let UseAsyncState::Ready(Ok(Some((details, _)))) = &*cve_details {
-                        { cve_title(details) }
-                    }
-                </Content>
+                        </Content>
+                    </FlexItem>
+                    <FlexItem modifiers={[FlexModifier::Align(Alignment::Right), FlexModifier::Align(Alignment::End)]}>
+                        { async_content(&*cve_details, |details| html!(
+                            if let Some((_, source)) = details.clone() {
+                                <InlineDownload data={source.clone()} r#type="cve" filename={format!("{}.json", props.id)} />
+                            }
+                        )) }
+                    </FlexItem>
+                </Flex>
 
                 <div class="pf-v5-u-my-md"></div>
 
