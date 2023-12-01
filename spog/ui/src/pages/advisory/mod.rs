@@ -1,3 +1,4 @@
+use crate::common::clean_ext;
 use csaf::document::Category;
 use humansize::{format_size, BINARY};
 use patternfly_yew::prelude::*;
@@ -50,7 +51,7 @@ pub fn vex(props: &VEXProperties) -> Html {
                     sticky=false
                     subtitle="Advisory detail information"
                     action={html!(
-                        <LocalDownloadButton data={data.get_source()} r#type="csaf" filename={props.id.clone()} />
+                        <LocalDownloadButton data={data.get_source()} r#type="csaf" filename={clean_ext(&props.id)} />
                     )}
                 >
                     { props.id.clone() } {" "}
