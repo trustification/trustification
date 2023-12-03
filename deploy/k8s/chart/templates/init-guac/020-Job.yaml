@@ -22,7 +22,7 @@ spec:
   ttlSecondsAfterFinished: 600
   template:
     spec:
-
+      serviceAccountName: {{ .Values.k8sServiceAccountName}}
       restartPolicy: OnFailure
 
       volumes:

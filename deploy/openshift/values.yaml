@@ -13,6 +13,7 @@ region: ${AWS_REGION}
 enableDocs: false
 enableTests: false
 enableMonitoring: false
+k8sServiceAccountName: ${{K8S_SERVICE_ACCOUNT_NAME}}
 config:
   name: ${CONFIG_NAME}
 spog:
