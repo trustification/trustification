@@ -149,3 +149,5 @@ parameters:
   value: spogUi
 - name: POSTGRESQL_IMAGE
   value: "docker.io/library/postgres:15"
+- name: GUAC_INIT_JOB_SERVICE_ACCOUNT
+  value: trustification-service

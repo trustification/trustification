@@ -25,6 +25,10 @@ spec:
 
       restartPolicy: OnFailure
 
+{{ with .Values.guac.initJob.serviceAccountName }}
+      serviceAccountName: {{ . }}
+{{ end }}
+
       volumes:
         - name: init-data
           configMap:
