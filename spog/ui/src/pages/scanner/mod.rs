@@ -43,16 +43,11 @@ impl<'a> From<ParseOutcome<'a>> for TrackingEvent<'static> {
 }
 
 fn is_supported_package(purl: &str) -> bool {
-    if purl.starts_with("pkg:maven")
+    purl.starts_with("pkg:maven")
         || purl.starts_with("pkg:gradle")
         || purl.starts_with("pkg:npm")
         || purl.starts_with("pkg:gomodules")
         || purl.starts_with("pkg:pip")
-    {
-        true
-    } else {
-        false
-    }
 }
 
 fn parse(data: &[u8]) -> Result<SBOM, anyhow::Error> {
@@ -65,15 +60,15 @@ fn parse(data: &[u8]) -> Result<SBOM, anyhow::Error> {
             let json = serde_json::from_slice::<Value>(data).ok();
             let spec_version = json.as_ref().and_then(|json| json["specVersion"].as_str());
 
-            let supported_packages = json.as_ref().and_then(|json| {
+            let supported_packages = json.as_ref().map(|json| {
                 if let Some(components) = json["components"].as_array() {
                     let are_all_supported_packages = components
-                        .into_iter()
+                        .iter()
                         .filter_map(|external_ref| external_ref["purl"].as_str())
                         .all(is_supported_package);
-                    Some(are_all_supported_packages)
+                    are_all_supported_packages
                 } else {
-                    Some(false)
+                    false
                 }
             });
 
@@ -87,17 +82,17 @@ fn parse(data: &[u8]) -> Result<SBOM, anyhow::Error> {
         SBOM::SPDX(_bom) => {
             let json = serde_json::from_slice::<Value>(data).ok();
 
-            let supported_packages = json.as_ref().and_then(|json| {
+            let supported_packages = json.as_ref().map(|json| {
                 if let Some(packages) = json["packages"].as_array() {
                     let are_all_supported_packages = packages
-                        .into_iter()
+                        .iter()
                         .filter_map(|package| package["externalRefs"].as_array())
-                        .flat_map(|external_refs| external_refs)
+                        .flatten()
                         .filter_map(|external_ref| external_ref["referenceLocator"].as_str())
                         .all(is_supported_package);
-                    Some(are_all_supported_packages)
+                    are_all_supported_packages
                 } else {
-                    Some(false)
+                    false
                 }
             });
 
