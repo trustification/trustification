@@ -89,7 +89,8 @@ pub fn config(
         web::scope("/api/v1")
             //.wrap(new_auth!(auth))
             .service(analyze)
-            .service(recommend),
+            .service(recommend)
+            .service(search_vulnerabilities),
     )
     .service(swagger_ui_with_auth(ApiDoc::openapi(), swagger_ui_oidc));
 }
