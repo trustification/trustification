@@ -146,10 +146,10 @@ pub fn related_products(props: &RelatedProductsProperties) -> Html {
             .flat_map(|(map_key, map_value)| {
                 map_value
                     .iter()
-                    .map(|item| TableData {
+                    .map(|(sbom_uid, packages)| TableData {
                         status: map_key.clone(),
-                        sbom_uid: item.sbom_uid.to_string(),
-                        packages: item.packages.clone(),
+                        sbom_uid: sbom_uid.to_string(),
+                        packages: packages.clone(),
                         sbom: None,
                     })
                     .collect::<Vec<TableData>>()

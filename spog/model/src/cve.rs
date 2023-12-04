@@ -5,7 +5,7 @@ use v11y_model::search::SearchDocument;
 #[derive(Clone, Debug, PartialEq, serde::Deserialize, serde::Serialize)]
 pub struct CveDetails {
     pub id: String,
-    pub products: BTreeMap<ProductCveStatus, Vec<ProductRelatedToCve>>,
+    pub products: BTreeMap<ProductCveStatus, BTreeMap<String, Vec<PackageRelatedToProductCve>>>,
     pub advisories: Vec<AdvisoryOverview>,
 
     #[serde(default)]
