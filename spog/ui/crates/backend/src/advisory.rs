@@ -30,6 +30,13 @@ impl Advisory {
             Err(_) => Advisory::Unknown(Rc::new(source)),
         }
     }
+
+    pub fn get_source(&self) -> Rc<String> {
+        match self {
+            Self::Csaf { source, .. } => source.clone(),
+            Self::Unknown(source) => source.clone(),
+        }
+    }
 }
 
 impl VexService {

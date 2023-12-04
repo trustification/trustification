@@ -1,21 +1,19 @@
 //! The SBOM details page
 
-use crate::model;
+use crate::{common::clean_ext, model, pages::sbom_report::SbomReport};
 use patternfly_yew::prelude::*;
 use spog_ui_backend::use_backend;
-use spog_ui_common::config::use_config;
-use spog_ui_common::error::components::Error;
+use spog_ui_common::{config::use_config, error::components::Error};
 use spog_ui_components::{
     common::{NotFound, PageHeading},
     content::{SourceCode, Technical},
+    download::LocalDownloadButton,
     spdx::*,
 };
 use std::rc::Rc;
 use yew::prelude::*;
 use yew_more_hooks::prelude::*;
 use yew_oauth2::prelude::*;
-
-use crate::pages::sbom_report::SbomReport;
 
 #[derive(Clone, Debug, PartialEq, Properties)]
 pub struct SBOMProperties {
@@ -47,7 +45,16 @@ pub fn sbom(props: &SBOMProperties) -> Html {
             html!(<NotFound/>),
         ),
         UseAsyncState::Ready(Ok(Some(data))) => (
-            html!(<PageHeading sticky=false>{ props.id.clone() } {" "} <Label label={data.type_name()} color={Color::Blue} /> </PageHeading>),
+            html!(
+                <PageHeading
+                    sticky=false
+                    action={html!(
+                        <LocalDownloadButton data={data.get_source()} r#type="sbom" filename={clean_ext(&props.id)} />
+                    )}
+                >
+                    { props.id.clone() } {" "} <Label label={data.type_name()} color={Color::Blue} />
+                </PageHeading>
+            ),
             html!(<Details id={props.id.clone()} sbom={data.clone()}/> ),
         ),
         UseAsyncState::Ready(Err(err)) => (

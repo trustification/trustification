@@ -13,4 +13,7 @@ if [[ "$TRUNK_PROFILE" == "debug" ]]; then
         echo "Override with local settings..."
         cp "$TRUNK_STAGING_DIR/endpoints/backend.local.json" "$TRUNK_STAGING_DIR/endpoints/backend.json"
     fi
+
+    echo "Copy branding-default folder to branding"
+    cp -a "$TRUNK_STAGING_DIR/branding-default" "$TRUNK_STAGING_DIR/branding"
 fi

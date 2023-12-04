@@ -1,13 +1,14 @@
 mod component;
+mod r#macro;
 
 pub use component::*;
-use std::ops::Deref;
 
 use analytics_next::{AnalyticsBrowser, Settings, TrackingEvent, User};
 use openidconnect::LocalizedClaim;
 use serde_json::{json, Value};
 use spog_ui_backend::use_backend;
 use spog_ui_common::utils::auth::claims;
+use std::ops::Deref;
 use yew::prelude::*;
 use yew_consent::prelude::*;
 use yew_nested_router::history::History;
@@ -32,22 +33,26 @@ pub struct AnalyticsContext {
 }
 
 impl AnalyticsContext {
+    /// check if analytics is active
     pub fn is_active(&self) -> bool {
         self.analytics.is_some()
     }
 
+    /// trigger an "identify" event, if enabled
     pub fn identify(&self, user: impl Into<User>) {
         if let Some(analytics) = &self.analytics {
             analytics.identify(user);
         }
     }
 
+    /// trigger a "tracking" event, if enabled
     pub fn track<'a>(&self, event: impl Into<TrackingEvent<'a>>) {
         if let Some(analytics) = &self.analytics {
             analytics.track(event);
         }
     }
 
+    /// trigger a "page" event, if enabled
     pub fn page(&self) {
         if let Some(analytics) = &self.analytics {
             analytics.page();
@@ -179,7 +184,7 @@ pub fn segment_identify() -> Html {
     });
 
     use_effect_with((analytics, (*user).clone()), |(analytics, user)| {
-        log::info!("User changed: {user:?}");
+        log::debug!("User changed: {user:?}");
         analytics.identify(user.clone());
     });
 
@@ -196,7 +201,7 @@ fn build(write_key: Option<&str>) -> Option<AnalyticsBrowser> {
 
 /// Wrap a callback with a tracking call
 #[hook]
-pub fn use_wrap_tracking<'a, IN, OUT, F, FO, D>(cb: Callback<IN, OUT>, f: F, deps: D) -> Callback<IN, OUT>
+pub fn use_wrap_tracking<'a, IN, OUT, F, FO, D>(cb: Callback<IN, OUT>, deps: D, f: F) -> Callback<IN, OUT>
 where
     IN: 'static,
     OUT: 'static,
@@ -207,15 +212,53 @@ where
     let analytics = use_analytics();
 
     (*use_memo((cb, (analytics, deps)), |(cb, (analytics, deps))| {
-        let cb = cb.clone();
-        let analytics = analytics.clone();
-        let deps = deps.clone();
-        Callback::from(move |value| {
-            analytics.track(f(&value, &deps).into());
-            cb.emit(value)
+        wrap_tracking(analytics.clone(), cb.clone(), {
+            let deps = deps.clone();
+            move |value| f(value, &deps)
         })
     }))
     .clone()
+}
+
+pub trait WrapTracking {
+    type Input;
+    type Output;
+
+    fn wrap_tracking<F, FO>(self, analytics: UseAnalytics, f: F) -> Callback<Self::Input, Self::Output>
+    where
+        F: Fn(&Self::Input) -> FO + 'static,
+        FO: Into<TrackingEvent<'static>> + 'static;
+}
+
+impl<IN, OUT> WrapTracking for Callback<IN, OUT>
+where
+    IN: 'static,
+    OUT: 'static,
+{
+    type Input = IN;
+    type Output = OUT;
+
+    fn wrap_tracking<F, FO>(self, analytics: UseAnalytics, f: F) -> Callback<Self::Input, Self::Output>
+    where
+        F: Fn(&IN) -> FO + 'static,
+        FO: Into<TrackingEvent<'static>> + 'static,
+    {
+        wrap_tracking(analytics, self, f)
+    }
+}
+
+/// Wrap a callback with a tracking call
+pub fn wrap_tracking<IN, OUT, F, FO>(analytics: UseAnalytics, callback: Callback<IN, OUT>, f: F) -> Callback<IN, OUT>
+where
+    IN: 'static,
+    OUT: 'static,
+    F: Fn(&IN) -> FO + 'static,
+    FO: Into<TrackingEvent<'static>> + 'static,
+{
+    Callback::from(move |value| {
+        analytics.track(f(&value).into());
+        callback.emit(value)
+    })
 }
 
 /// Create a tracking callback
@@ -230,8 +273,6 @@ where
     let analytics = use_analytics();
 
     use_callback((analytics, deps), move |values, (analytics, deps)| {
-        if analytics.is_active() {
-            analytics.track(f(values, deps));
-        }
+        analytics.track(f(values, deps));
     })
 }

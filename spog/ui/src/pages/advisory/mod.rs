@@ -1,3 +1,4 @@
+use crate::common::clean_ext;
 use csaf::document::Category;
 use humansize::{format_size, BINARY};
 use patternfly_yew::prelude::*;
@@ -7,6 +8,7 @@ use spog_ui_components::{
     advisory::{cat_label, tracking_status_str, CsafNotes, CsafProductInfo, CsafReferences, CsafVulnTable},
     common::{CardWrapper, NotFound, PageHeading},
     content::{SourceCode, UnknownContent},
+    download::LocalDownloadButton,
     severity::Severity,
 };
 use std::rc::Rc;
@@ -44,7 +46,17 @@ pub fn vex(props: &VEXProperties) -> Html {
             html!(<NotFound/>),
         ),
         UseAsyncState::Ready(Ok(Some(data))) => (
-            html!(<PageHeading sticky=false subtitle="Advisory detail information">{ props.id.clone() } {" "} </PageHeading>),
+            html!(
+                <PageHeading
+                    sticky=false
+                    subtitle="Advisory detail information"
+                    action={html!(
+                        <LocalDownloadButton data={data.get_source()} r#type="csaf" filename={clean_ext(&props.id)} />
+                    )}
+                >
+                    { props.id.clone() } {" "}
+                </PageHeading>
+            ),
             html!(<Details vex={data.clone()}/> ),
         ),
         UseAsyncState::Ready(Err(err)) => (

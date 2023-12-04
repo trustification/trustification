@@ -40,4 +40,12 @@ impl SBOM {
             Self::Unknown(_) => "Unknown",
         }
     }
+
+    pub fn get_source(&self) -> Rc<String> {
+        match self {
+            Self::CycloneDX { source, .. } => source.clone(),
+            Self::SPDX { source, .. } => source.clone(),
+            Self::Unknown(source) => source.clone(),
+        }
+    }
 }

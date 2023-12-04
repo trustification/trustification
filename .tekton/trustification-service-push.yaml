@@ -16,6 +16,10 @@ metadata:
   name: trustification-service-on-push
   namespace: trusted-content-tenant
 spec:
+  timeouts:
+    pipeline: "2h0m0s"
+    #tasks: "1h0m0s"
+    #finally: "1h0m0s"
   params:
   - name: dockerfile
     value: container_files/Containerfile.services
@@ -27,7 +31,6 @@ spec:
     value: .
   - name: revision
     value: '{{revision}}'
-  timeout: 2h
   pipelineSpec:
     finally:
     - name: show-sbom
@@ -224,7 +227,7 @@ spec:
         - name: name
           value: buildah
         - name: bundle
-          value: quay.io/redhat-appstudio-tekton-catalog/task-buildah:0.1@sha256:93bb409637d51b37332b768ffa911f27f805229fdf4ba0841f745f83efceefa2
+          value: quay.io/redhat-appstudio-tekton-catalog/task-buildah:0.1@sha256:4f06e9b9f2af54acdf8532d8177d67364a29e3951460ea08f8f94005a5536bd6
         - name: kind
           value: task
         resolver: bundles
