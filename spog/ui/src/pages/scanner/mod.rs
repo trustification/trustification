@@ -7,6 +7,7 @@ use analytics_next::TrackingEvent;
 use anyhow::bail;
 use bombastic_model::prelude::SBOM;
 use inspect::Inspect;
+use packageurl::PackageUrl;
 use patternfly_yew::prelude::*;
 use serde_json::{json, Value};
 use spog_ui_utils::{
@@ -15,7 +16,7 @@ use spog_ui_utils::{
     hints::{Hint as HintView, Hints},
     tracking_event,
 };
-use std::rc::Rc;
+use std::{rc::Rc, str::FromStr};
 use upload::Upload;
 use yew::prelude::*;
 use yew_more_hooks::prelude::*;
@@ -43,11 +44,16 @@ impl<'a> From<ParseOutcome<'a>> for TrackingEvent<'static> {
 }
 
 fn is_supported_package(purl: &str) -> bool {
-    purl.starts_with("pkg:maven")
-        || purl.starts_with("pkg:gradle")
-        || purl.starts_with("pkg:npm")
-        || purl.starts_with("pkg:gomodules")
-        || purl.starts_with("pkg:pip")
+    match PackageUrl::from_str(purl) {
+        Ok(package) => {
+            package.ty() == "maven"
+                || package.ty() == "gradle"
+                || package.ty() == "npm"
+                || package.ty() == "gomodules"
+                || package.ty() == "pip"
+        }
+        Err(_) => false,
+    }
 }
 
 fn parse(data: &[u8]) -> Result<SBOM, anyhow::Error> {
@@ -73,10 +79,12 @@ fn parse(data: &[u8]) -> Result<SBOM, anyhow::Error> {
             });
 
             match (spec_version, supported_packages) {
-                (Some("1.3"), Some(true)) => {},
-                (Some("1.3"), Some(false)) => bail!("Unsupported packages detected. Supported packages: 'pkg:maven', 'pkg:gradle', 'pkg:npm', 'pkg:gomodules', 'pkg:pip'"),
+                (Some("1.3"), Some(true)) => {}
+                (Some("1.3"), Some(false)) => bail!(
+                    "Unsupported packages detected. Supported packages: 'maven', 'gradle', 'npm', 'gomodules', 'pip'"
+                ),
                 (Some(other), _) => bail!("Unsupported CycloneDX version: {other}"),
-                (None, _) => bail!("Unable to detect CycloneDX version")
+                (None, _) => bail!("Unable to detect CycloneDX version"),
             }
         }
         SBOM::SPDX(_bom) => {
@@ -97,8 +105,10 @@ fn parse(data: &[u8]) -> Result<SBOM, anyhow::Error> {
             });
 
             match supported_packages {
-                Some(true) => {},
-                _ => bail!("Unsupported packages detected. Supported packages: 'pkg:maven', 'pkg:gradle', 'pkg:npm', 'pkg:gomodules', 'pkg:pip'"),
+                Some(true) => {}
+                _ => bail!(
+                    "Unsupported packages detected. Supported packages: 'maven', 'gradle', 'npm', 'gomodules', 'pip'"
+                ),
             }
         }
     }
