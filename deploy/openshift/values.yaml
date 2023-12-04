@@ -146,6 +146,8 @@ guac:
   database:
     enabled: true
     image: ${POSTGRESQL_IMAGE}
+  initJob:
+    serviceAccountName: ${GUAC_INIT_JOB_SERVICE_ACCOUNT}
   graphql:
     debug: false
     affinity: ${{GUAC_GQL_AFFINITY}}
