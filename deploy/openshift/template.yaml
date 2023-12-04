@@ -2153,4 +2153,4 @@ parameters:
 - name: POSTGRESQL_IMAGE
   value: "docker.io/library/postgres:15"
 - name: K8S_SERVICE_ACCOUNT_NAME
-  value: "trustification-service"
+  value: ""
