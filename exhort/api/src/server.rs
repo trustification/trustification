@@ -121,6 +121,39 @@ impl From<collectorist_client::Error> for Error {
 #[utoipa::path(
 post,
 request_body = AnalyzeRequest,
+responses(
+(status = 200, body = VulnerabilitiesResponse, description = "Recommended pURLs"),
+),
+)]
+#[post("vulnerabilities")]
+async fn search_vulnerabilities(
+    state: web::Data<AppState>,
+    request: web::Json<AnalyzeRequest>,
+) -> actix_web::Result<impl Responder> {
+    let mut vulnerabilities = HashMap::new();
+
+    for purl_str in &request.purls {
+        if let Ok(vulns) = state
+            .guac_client
+            .semantic()
+            .find_vulnerability(purl_str, None, None)
+            .await
+        {
+            for (k, v) in vulns {
+                let purl_vulns = vulnerabilities.entry(k.to_string()).or_insert(Vec::new());
+                purl_vulns.extend(v);
+            }
+        }
+    }
+
+    let response = VulnerabilitiesResponse { vulnerabilities };
+
+    Ok(HttpResponse::Ok().json(response))
+}
+
+#[utoipa::path(
+post,
+request_body = AnalyzeRequest,
     responses(
         (status = 200, body = RecommendationResponse, description = "Recommended pURLs"),
     ),

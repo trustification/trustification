@@ -37,6 +37,11 @@ pub struct RecommendResponse {
 }
 
 #[derive(Serialize, Deserialize, Debug, Default, Clone, ToSchema)]
+pub struct VulnerabilitiesResponse {
+    pub vulnerabilities: HashMap<String, Vec<String>>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Default, Clone, ToSchema)]
 pub struct AnalyzeResponse {
     #[schema(schema_with = response_affected)]
     pub analysis: HashMap<String, Vec<VendorAnalysis>>,
