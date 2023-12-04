@@ -57,6 +57,10 @@ jobs:
       - uses: azure/setup-helm@v3
         with:
           version: v3.13.2
+      - name: add helm repositories
+        working-directory: deploy/k8s
+        run: |
+          helm repo add bitnami https://charts.bitnami.com/bitnami
       - name: install helm dependencies
         working-directory: deploy/k8s
         run: |
