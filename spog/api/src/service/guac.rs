@@ -15,7 +15,7 @@ use tracing::instrument;
 
 use spog_model::prelude::{
     CveDetails, PackageDependencies, PackageDependents, PackageRefList, PackageRelatedToProductCve, ProductCveStatus,
-    ProductRelatedToCve, ProductRelatedToPackage,
+    ProductRelatedToPackage,
 };
 use trustification_common::error::ErrorInformation;
 
@@ -202,10 +202,16 @@ impl GuacService {
         }
     }
 
+    /// Find SBOMs affected by CVE
+    /// The result contains affected packages grouped by sbom and status.
+    ///
+    /// The `id` is an identifier for an CVE.
+    ///
+    /// The result is `map<status, map<sbom_id, vec<package>>`.
     #[instrument(skip(self), err)]
     pub async fn product_by_cve(&self, id: String) -> Result<CveDetails, Error> {
         let result = self.client.semantic().product_by_cve(&id).await?;
-        let mut products = BTreeMap::<ProductCveStatus, Vec<ProductRelatedToCve>>::new();
+        let mut products = BTreeMap::<ProductCveStatus, BTreeMap<String, Vec<PackageRelatedToProductCve>>>::new();
 
         for product in result {
             let root = self.get_purl(product.root)?.clone();
@@ -215,21 +221,6 @@ impl GuacService {
                 return Err(Error::Client(format!("Cannot find an SBOM for {:?}", root).to_string()));
             }
             let uid = &sbom[0].uri;
-
-            let mut packages: Vec<PackageRelatedToProductCve> = Vec::new();
-
-            for package in product.path {
-                let p = self.get_purl(package)?.to_string();
-                packages.push(PackageRelatedToProductCve {
-                    purl: p,
-                    r#type: "Direct".to_string(),
-                })
-            }
-
-            let pr = ProductRelatedToCve {
-                sbom_uid: uid.to_string(),
-                packages,
-            };
 
             let status = match product.vex.status {
                 VexStatus::Affected => Ok(ProductCveStatus::KnownAffected),
@@ -241,7 +232,17 @@ impl GuacService {
                 )),
             };
 
-            products.entry(status?).or_insert(vec![]).push(pr);
+            let cves = products.entry(status?).or_insert(BTreeMap::new());
+
+            let packages = cves.entry(uid.to_string()).or_insert(vec![]);
+
+            for package in product.path {
+                let p = self.get_purl(package)?.to_string();
+                packages.push(PackageRelatedToProductCve {
+                    purl: p,
+                    r#type: "Direct".to_string(), // TODO support transient dependencies
+                })
+            }
         }
 
         Ok(CveDetails {
