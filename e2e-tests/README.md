@@ -5,8 +5,7 @@ The End - End UI framework is based on [Cucumber](https://github.com/cucumber-rs
 For example, the tests under package e2e-tests can be run with the below command to test localhost. 
 (Make sure the localhost is up and running with the [podman](#Setting up Localhost))
 ```shell
-git clone https://github.com/trustification/trustification
-cd e2e-tests 
+From the directory containing this README file, run the following:
 cargo run -- --application http://localhost:8084/ --user-name admin --password admin123456
 ```
 ### Usage
@@ -106,8 +105,7 @@ So with this we can write our tests and its validation steps under features dire
 Make sure the localhost is up and running to execute tests on ***http://localhost:8084/***. To setup localhost run the below commands on another terminal,
 ```shell
 # On another terminal
-git clone https://github.com/trustification/trustification
-cd deploy/compose
+cd ../deploy/compose
 podman-compose -f compose.yaml -f compose-trustification.yaml -f compose-guac.yaml up
 ```
 
