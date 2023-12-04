@@ -42,6 +42,19 @@ impl<'a> From<ParseOutcome<'a>> for TrackingEvent<'static> {
     }
 }
 
+fn is_supported_package(purl: &str) -> bool {
+    if purl.starts_with("pkg:maven")
+        || purl.starts_with("pkg:gradle")
+        || purl.starts_with("pkg:npm")
+        || purl.starts_with("pkg:gomodules")
+        || purl.starts_with("pkg:pip")
+    {
+        true
+    } else {
+        false
+    }
+}
+
 fn parse(data: &[u8]) -> Result<SBOM, anyhow::Error> {
     let sbom = SBOM::parse(data)?;
 
@@ -51,13 +64,48 @@ fn parse(data: &[u8]) -> Result<SBOM, anyhow::Error> {
             // re-parse to check for the spec version
             let json = serde_json::from_slice::<Value>(data).ok();
             let spec_version = json.as_ref().and_then(|json| json["specVersion"].as_str());
-            match spec_version {
-                Some("1.3") => {}
-                Some(other) => bail!("Unsupported CycloneDX version: {other}"),
-                None => bail!("Unable to detect CycloneDX version"),
+
+            let supported_packages = json.as_ref().and_then(|json| {
+                if let Some(components) = json["components"].as_array() {
+                    let are_all_supported_packages = components
+                        .into_iter()
+                        .filter_map(|external_ref| external_ref["purl"].as_str())
+                        .all(is_supported_package);
+                    Some(are_all_supported_packages)
+                } else {
+                    Some(false)
+                }
+            });
+
+            match (spec_version, supported_packages) {
+                (Some("1.3"), Some(true)) => {},
+                (Some("1.3"), Some(false)) => bail!("Unsupported packages detected. Supported packages: 'pkg:maven', 'pkg:gradle', 'pkg:npm', 'pkg:gomodules', 'pkg:pip'"),
+                (Some(other), _) => bail!("Unsupported CycloneDX version: {other}"),
+                (None, _) => bail!("Unable to detect CycloneDX version")
             }
         }
-        _ => {}
+        SBOM::SPDX(_bom) => {
+            let json = serde_json::from_slice::<Value>(data).ok();
+
+            let supported_packages = json.as_ref().and_then(|json| {
+                if let Some(packages) = json["packages"].as_array() {
+                    let are_all_supported_packages = packages
+                        .into_iter()
+                        .filter_map(|package| package["externalRefs"].as_array())
+                        .flat_map(|external_refs| external_refs)
+                        .filter_map(|external_ref| external_ref["referenceLocator"].as_str())
+                        .all(is_supported_package);
+                    Some(are_all_supported_packages)
+                } else {
+                    Some(false)
+                }
+            });
+
+            match supported_packages {
+                Some(true) => {},
+                _ => bail!("Unsupported packages detected. Supported packages: 'pkg:maven', 'pkg:gradle', 'pkg:npm', 'pkg:gomodules', 'pkg:pip'"),
+            }
+        }
     }
 
     Ok(sbom)
