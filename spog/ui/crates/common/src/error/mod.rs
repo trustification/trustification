@@ -3,6 +3,7 @@ pub mod components;
 use async_trait::async_trait;
 use reqwest::{Response, StatusCode};
 use std::fmt::{Display, Formatter};
+use std::ops::Deref;
 use std::rc::Rc;
 use trustification_common::error::ErrorInformation;
 use url::ParseError;
@@ -75,6 +76,14 @@ impl Display for ApiErrorDetails {
 
 #[derive(Clone, Debug)]
 pub struct ApiError(Rc<ApiErrorKind>);
+
+impl Deref for ApiError {
+    type Target = ApiErrorKind;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
 
 macro_rules! to_api_error {
     ($t:ty) => {

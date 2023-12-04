@@ -79,4 +79,13 @@ impl SBOM {
 
         Err(err)
     }
+
+    pub fn type_str(&self) -> String {
+        match self {
+            #[cfg(feature = "spdx-rs")]
+            Self::SPDX(sbom) => format!("SPDX/{}", sbom.document_creation_information.spdx_version),
+            #[cfg(feature = "cyclonedx-bom")]
+            Self::CycloneDX(_) => "CycloneDX/1.3".to_string(),
+        }
+    }
 }
