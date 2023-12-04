@@ -27,7 +27,7 @@ jobs:
   formatting:
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Check formatting
         run: |
@@ -39,7 +39,7 @@ jobs:
   uncommitted:
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Check if templates have uncommitted changes
         run: |
           pip3 install yq
@@ -50,12 +50,32 @@ jobs:
               exit 1
           fi
 
+  helm-lint:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v3
+        with:
+          version: v3.13.2
+      - name: install helm dependencies
+        working-directory: deploy/k8s
+        run: |
+          helm dependency build chart/
+      - name: helm-lint (staging)
+        working-directory: deploy/k8s
+        run: |
+          helm lint ./chart -f ./chart/trustification.dev/staging.yaml
+      - name: helm-lint (prod)
+        working-directory: deploy/k8s
+        run: |
+          helm lint ./chart -f ./chart/trustification.dev/prod.yaml
+
   ci-backend:
     runs-on: ubuntu-22.04
     needs:
       - formatting
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - run: rustup component add clippy
       - uses: actions/cache@v3
         with:
@@ -90,7 +110,7 @@ jobs:
     needs:
       - formatting
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - run: rustup component add clippy
       - run: rustup target add wasm32-unknown-unknown
       - uses: actions/cache@v3
@@ -127,7 +147,7 @@ jobs:
     needs:
       - formatting
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions/cache@v3
         with:
           path: |
@@ -160,5 +180,7 @@ jobs:
       - ci-frontend-check
       - ci-frontend-test
       - integration
+      - helm-lint
+      - uncommitted
     steps:
       - run: echo 🎉
