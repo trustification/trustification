@@ -7,6 +7,7 @@ use analytics_next::TrackingEvent;
 use anyhow::bail;
 use bombastic_model::prelude::SBOM;
 use inspect::Inspect;
+use packageurl::PackageUrl;
 use patternfly_yew::prelude::*;
 use serde_json::{json, Value};
 use spog_ui_utils::{
@@ -15,7 +16,7 @@ use spog_ui_utils::{
     hints::{Hint as HintView, Hints},
     tracking_event,
 };
-use std::rc::Rc;
+use std::{rc::Rc, str::FromStr};
 use upload::Upload;
 use yew::prelude::*;
 use yew_more_hooks::prelude::*;
@@ -42,6 +43,19 @@ impl<'a> From<ParseOutcome<'a>> for TrackingEvent<'static> {
     }
 }
 
+fn is_supported_package(purl: &str) -> bool {
+    match PackageUrl::from_str(purl) {
+        Ok(package) => {
+            package.ty() == "maven"
+                || package.ty() == "gradle"
+                || package.ty() == "npm"
+                || package.ty() == "gomodules"
+                || package.ty() == "pip"
+        }
+        Err(_) => false,
+    }
+}
+
 fn parse(data: &[u8]) -> Result<SBOM, anyhow::Error> {
     let sbom = SBOM::parse(data)?;
 
@@ -51,13 +65,52 @@ fn parse(data: &[u8]) -> Result<SBOM, anyhow::Error> {
             // re-parse to check for the spec version
             let json = serde_json::from_slice::<Value>(data).ok();
             let spec_version = json.as_ref().and_then(|json| json["specVersion"].as_str());
-            match spec_version {
-                Some("1.3") => {}
-                Some(other) => bail!("Unsupported CycloneDX version: {other}"),
-                None => bail!("Unable to detect CycloneDX version"),
+
+            let supported_packages = json.as_ref().map(|json| {
+                if let Some(components) = json["components"].as_array() {
+                    let are_all_supported_packages = components
+                        .iter()
+                        .filter_map(|external_ref| external_ref["purl"].as_str())
+                        .all(is_supported_package);
+                    are_all_supported_packages
+                } else {
+                    false
+                }
+            });
+
+            match (spec_version, supported_packages) {
+                (Some("1.3"), Some(true)) => {}
+                (Some("1.3"), Some(false)) => bail!(
+                    "Unsupported packages detected. Supported packages: 'maven', 'gradle', 'npm', 'gomodules', 'pip'"
+                ),
+                (Some(other), _) => bail!("Unsupported CycloneDX version: {other}"),
+                (None, _) => bail!("Unable to detect CycloneDX version"),
             }
         }
-        _ => {}
+        SBOM::SPDX(_bom) => {
+            let json = serde_json::from_slice::<Value>(data).ok();
+
+            let supported_packages = json.as_ref().map(|json| {
+                if let Some(packages) = json["packages"].as_array() {
+                    let are_all_supported_packages = packages
+                        .iter()
+                        .filter_map(|package| package["externalRefs"].as_array())
+                        .flatten()
+                        .filter_map(|external_ref| external_ref["referenceLocator"].as_str())
+                        .all(is_supported_package);
+                    are_all_supported_packages
+                } else {
+                    false
+                }
+            });
+
+            match supported_packages {
+                Some(true) => {}
+                _ => bail!(
+                    "Unsupported packages detected. Supported packages: 'maven', 'gradle', 'npm', 'gomodules', 'pip'"
+                ),
+            }
+        }
     }
 
     Ok(sbom)
