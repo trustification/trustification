@@ -295,7 +295,7 @@ spec:
         - name: name
           value: clair-scan
         - name: bundle
-          value: quay.io/redhat-appstudio-tekton-catalog/task-clair-scan:0.1@sha256:3691a67eae1e098959fb18ce415dbc489baf214b2bfa8321f95e096decb87538
+          value: quay.io/redhat-appstudio-tekton-catalog/task-clair-scan:0.1@sha256:ec6156c4a4a0777eb59a0355b9ad8257c1d39dc28b8eb8dea1446b3f682a77a8
         - name: kind
           value: task
         resolver: bundles
@@ -337,7 +337,7 @@ spec:
         - name: name
           value: clamav-scan
         - name: bundle
-          value: quay.io/redhat-appstudio-tekton-catalog/task-clamav-scan:0.1@sha256:034b65ed165951f526d38d290a49ff124d38257beda7a625b98244159fadd00e
+          value: quay.io/redhat-appstudio-tekton-catalog/task-clamav-scan:0.1@sha256:d4f0bffa30afd8d8f35c73761620fc9bd3830e5fbe3236cf16b3d76575f7afca
         - name: kind
           value: task
         resolver: bundles
