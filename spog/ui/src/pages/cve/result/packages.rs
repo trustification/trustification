@@ -10,6 +10,7 @@ use yew_nested_router::components::Link;
 pub enum Column {
     Name,
     Version,
+    Qualifiers,
     Type,
 }
 
@@ -22,6 +23,13 @@ impl TableEntryRenderer<Column> for PackageRelatedToProductCve {
                         { purl.name() }
                     </Link<AppRoute>>
                 ),
+                Column::Qualifiers => html!({ for purl.qualifiers().iter().map(|(k,v)| html!(
+                    html!(
+                        <>
+                            <Label compact=true label={format!("{k}: {v}")} /> {" "}
+                        </>
+                    )
+                ) ) }),
                 Column::Version => html!({ for purl.version() }),
                 Column::Type => html!({ &self.r#type }),
             }
@@ -33,6 +41,7 @@ impl TableEntryRenderer<Column> for PackageRelatedToProductCve {
                     </Link<AppRoute>>
                 ),
                 Column::Version => html!({ "N/A" }),
+                Column::Qualifiers => html!({ "N/A" }),
                 Column::Type => html!({ &self.r#type }),
             }
             .into(),
@@ -53,6 +62,7 @@ pub fn related_products(props: &PackagesTableProperties) -> Html {
         <TableHeader<Column>>
             <TableColumn<Column> label="Package name" index={Column::Name} />
             <TableColumn<Column> label="Version" index={Column::Version} />
+            <TableColumn<Column> width={ColumnWidth::Percent(50)} index={Column::Qualifiers} label="Qualifiers" />
             <TableColumn<Column> label="Dependency tree position" index={Column::Type} />
         </TableHeader<Column>>
     };
