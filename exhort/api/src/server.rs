@@ -101,6 +101,8 @@ enum Error {
     Http(reqwest::Error),
     #[error("collectorist error: {errors:?}")]
     Collectorist { errors: Vec<String> },
+    #[error("GUAC error: {0}")]
+    Guac(guac::client::Error),
 }
 
 impl ResponseError for Error {}
@@ -166,6 +168,8 @@ async fn recommend(
 ) -> actix_web::Result<impl Responder> {
     let mut recommendations = HashMap::new();
 
+    let pattern = Regex::new("\\.redhat-[0-9]+$").unwrap();
+
     for purl_str in &request.purls {
         if let Ok(purl) = PackageUrl::from_str(purl_str) {
             if let Ok(similar_packages) = state
@@ -185,7 +189,6 @@ async fn recommend(
                 })
                 .await
             {
-                let pattern = Regex::new("\\.redhat-[0-9]+$").unwrap();
                 let mut similar_purls = Vec::new();
 
                 for pkg in similar_packages {
@@ -202,11 +205,23 @@ async fn recommend(
                                             // and that breaks stupid comparisions.
                                             similar_ver.pre = Prerelease::EMPTY;
                                             if similar_ver >= input_ver {
-                                                similar_purls.push(similar_purl.to_string());
+                                                let vulns = state
+                                                    .guac_client
+                                                    .semantic()
+                                                    .find_vulnerability_statuses(&similar_purl.to_string(), None, None)
+                                                    .await
+                                                    .map_err(Error::Guac)?;
+                                                similar_purls.push(RecommendEntry {
+                                                    package: similar_purl.to_string(),
+                                                    vulnerabilities: vulns.iter().map(convert_vuln_status).collect(),
+                                                });
                                             }
                                         }
                                     } else {
-                                        similar_purls.push(similar_purl.to_string());
+                                        similar_purls.push(RecommendEntry {
+                                            package: similar_purl.to_string(),
+                                            vulnerabilities: vec![],
+                                        });
                                     }
                                 }
                             }
@@ -410,4 +425,60 @@ fn score_type_to_string(ty: VulnerabilityScoreType) -> String {
         VulnerabilityScoreType::SSVC => "SSVC".to_string(),
         VulnerabilityScoreType::Other(other) => other,
     }
+}
+
+pub fn convert_vuln_status(
+    input: &guac::client::semantic::spog::VulnerabilityStatus,
+) -> exhort_model::VulnerabilityStatus {
+    exhort_model::VulnerabilityStatus {
+        id: input.id.clone(),
+        status: convert_vex_status(&input.status),
+        justification: convert_vex_justification(&input.justification),
+    }
+}
+
+pub fn convert_vex_status(
+    input: &Option<guac::client::intrinsic::certify_vex_statement::VexStatus>,
+) -> Option<exhort_model::VexStatus> {
+    input.as_ref().map(|inner| match inner {
+        guac::client::intrinsic::certify_vex_statement::VexStatus::NotAffected => exhort_model::VexStatus::NotAffected,
+        guac::client::intrinsic::certify_vex_statement::VexStatus::Affected => exhort_model::VexStatus::Affected,
+        guac::client::intrinsic::certify_vex_statement::VexStatus::Fixed => exhort_model::VexStatus::Fixed,
+        guac::client::intrinsic::certify_vex_statement::VexStatus::UnderInvestigation => {
+            exhort_model::VexStatus::UnderInvestigation
+        }
+        guac::client::intrinsic::certify_vex_statement::VexStatus::Other(other) => {
+            exhort_model::VexStatus::Other(other.clone())
+        }
+    })
+}
+
+pub fn convert_vex_justification(
+    input: &Option<guac::client::intrinsic::certify_vex_statement::VexJustification>,
+) -> Option<exhort_model::VexJustification> {
+    input.as_ref().map(|inner| {
+        match inner {
+            guac::client::intrinsic::certify_vex_statement::VexJustification::ComponentNotPresent => {
+                exhort_model::VexJustification::ComponentNotPresent
+            }
+            guac::client::intrinsic::certify_vex_statement::VexJustification::VulnerableCodeNotPresent => {
+                exhort_model::VexJustification::VulnerableCodeNotPresent
+            }
+            guac::client::intrinsic::certify_vex_statement::VexJustification::VulnerableCodeNotInExecutePath => {
+                exhort_model::VexJustification::VulnerableCodeNotInExecutePath
+            }
+            guac::client::intrinsic::certify_vex_statement::VexJustification::VulnerableCodeCannotBeControlledByAdversary => {
+                exhort_model::VexJustification::VulnerableCodeCannotBeControlledByAdversary
+            }
+            guac::client::intrinsic::certify_vex_statement::VexJustification::InlineMitigationsAlreadyExist => {
+                exhort_model::VexJustification::InlineMitigationsAlreadyExist
+            }
+            guac::client::intrinsic::certify_vex_statement::VexJustification::NotProvided => {
+                exhort_model::VexJustification::NotProvided
+            }
+            guac::client::intrinsic::certify_vex_statement::VexJustification::Other(other) => {
+                exhort_model::VexJustification::Other(other.clone())
+            }
+        }
+    })
 }
