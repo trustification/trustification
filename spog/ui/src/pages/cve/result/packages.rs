@@ -8,32 +8,44 @@ use yew_nested_router::components::Link;
 
 #[derive(Copy, Clone, PartialEq, Eq)]
 pub enum Column {
+    Type,
+    Namespace,
     Name,
     Version,
-    Type,
+    Path,
+    Qualifiers,
+    DependencyType,
 }
 
 impl TableEntryRenderer<Column> for PackageRelatedToProductCve {
     fn render_cell(&self, context: CellContext<'_, Column>) -> Cell {
         match PackageUrl::from_str(&self.purl) {
-            Ok(purl) => match context.column {
+            Ok(package_url) => match context.column {
+                Column::Type => html!({ package_url.ty().clone() }),
+                Column::Namespace => html!({ for package_url.namespace().clone() }),
                 Column::Name => html!(
                     <Link<AppRoute> target={AppRoute::Package {id: self.purl.clone()}}>
-                        { purl.name() }
+                        { package_url.name() }
                     </Link<AppRoute>>
                 ),
-                Column::Version => html!({ for purl.version() }),
-                Column::Type => html!({ &self.r#type }),
+                Column::Version => html!({ for package_url.version() }),
+                Column::Path => html!({ for package_url.subpath() }),
+                Column::Qualifiers => html!({ for package_url.qualifiers().iter().map(|(k,v)| html!(<Label label={format!("{k}={v}")} />)) }),
+                Column::DependencyType => html!({ &self.r#type }),
             }
             .into(),
             Err(_) => match context.column {
+                Column::Type => html!({ "N/A" }),
+                Column::Namespace => html!({ "N/A" }),
                 Column::Name => html!(
                     <Link<AppRoute> target={AppRoute::Package {id: self.purl.clone()}}>
                         { self.purl.clone() }
                     </Link<AppRoute>>
                 ),
                 Column::Version => html!({ "N/A" }),
-                Column::Type => html!({ &self.r#type }),
+                Column::Path => html!({ "N/A" }),
+                Column::Qualifiers => html!({ "N/A" }),
+                Column::DependencyType => html!({ &self.r#type }),
             }
             .into(),
         }
@@ -51,9 +63,13 @@ pub fn related_products(props: &PackagesTableProperties) -> Html {
 
     let header = html_nested! {
         <TableHeader<Column>>
-            <TableColumn<Column> label="Package name" index={Column::Name} />
+            <TableColumn<Column> label="Type" index={Column::Type} />
+            <TableColumn<Column> label="Namespace" index={Column::Namespace} />
+            <TableColumn<Column> label="Name" index={Column::Name} />
             <TableColumn<Column> label="Version" index={Column::Version} />
-            <TableColumn<Column> label="Dependency tree position" index={Column::Type} />
+            <TableColumn<Column> label="Path" index={Column::Path} />
+            <TableColumn<Column> label="Qualifiers" index={Column::Qualifiers} />
+            <TableColumn<Column> label="Dependency tree position" index={Column::DependencyType} />
         </TableHeader<Column>>
     };
 
