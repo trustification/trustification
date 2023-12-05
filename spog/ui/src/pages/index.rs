@@ -26,7 +26,7 @@ pub fn index() -> Html {
         (analytics.clone(), router.clone(), text.clone()),
         |_, (analytics, router, terms)| {
             analytics.track(AnalyticEvents {
-                page: ObjectNameAnalytics::HomePage,
+                obj_name: ObjectNameAnalytics::HomePage,
                 action: ActionAnalytics::Search((**terms).clone()),
             });
 

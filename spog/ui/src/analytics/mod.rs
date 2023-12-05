@@ -2,7 +2,7 @@ use analytics_next::TrackingEvent;
 use serde_json::json;
 
 pub struct AnalyticEvents {
-    pub page: ObjectNameAnalytics,
+    pub obj_name: ObjectNameAnalytics,
     pub action: ActionAnalytics,
 }
 
@@ -36,7 +36,7 @@ impl std::fmt::Display for ActionAnalytics {
 
 impl From<AnalyticEvents> for TrackingEvent<'static> {
     fn from(value: AnalyticEvents) -> Self {
-        let event_key = format!("{} {}", value.page, value.action);
+        let event_key = format!("{} {}", value.obj_name, value.action);
         let json = match value.action {
             ActionAnalytics::Search(filter_text) => json!({ "filter_text": filter_text }),
             ActionAnalytics::SelectTab(tab_name) => json!({ "tab_name": tab_name }),
