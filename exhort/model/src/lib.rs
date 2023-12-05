@@ -31,9 +31,44 @@ fn response_affected() -> Object {
         .build()
 }
 
-#[derive(Serialize, Deserialize, Debug, Default, Clone, ToSchema)]
+#[derive(Serialize, Deserialize, Default, ToSchema)]
 pub struct RecommendResponse {
-    pub recommendations: HashMap<String, Vec<String>>,
+    pub recommendations: HashMap<String, Vec<RecommendEntry>>,
+}
+
+#[derive(Serialize, Deserialize, Default, ToSchema)]
+pub struct RecommendEntry {
+    pub package: String,
+    pub vulnerabilities: Vec<VulnerabilityStatus>,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct VulnerabilityStatus {
+    pub id: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub status: Option<VexStatus>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub justification: Option<VexJustification>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
+pub enum VexStatus {
+    NotAffected,
+    Affected,
+    Fixed,
+    UnderInvestigation,
+    Other(String),
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub enum VexJustification {
+    ComponentNotPresent,
+    VulnerableCodeNotPresent,
+    VulnerableCodeNotInExecutePath,
+    VulnerableCodeCannotBeControlledByAdversary,
+    InlineMitigationsAlreadyExist,
+    NotProvided,
+    Other(String),
 }
 
 #[derive(Serialize, Deserialize, Debug, Default, Clone, ToSchema)]
