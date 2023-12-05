@@ -22,7 +22,7 @@ impl TableEntryRenderer<Column> for PackageRelatedToProductCve {
         match PackageUrl::from_str(&self.purl) {
             Ok(package_url) => match context.column {
                 Column::Type => html!({ package_url.ty().clone() }),
-                Column::Namespace => html!({ for package_url.namespace().clone() }),
+                Column::Namespace => html!({ for package_url.namespace() }),
                 Column::Name => html!(
                     <Link<AppRoute> target={AppRoute::Package {id: self.purl.clone()}}>
                         { package_url.name() }
