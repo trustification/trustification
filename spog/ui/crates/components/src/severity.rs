@@ -80,11 +80,11 @@ impl FromStr for RedHatSeverity {
     type Err = ();
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(match s {
-            "Low" | "low" => Self::Low,
-            "Moderate" | "moderate" => Self::Moderate,
-            "Important" | "important" => Self::Important,
-            "Critical" | "critical" => Self::Critical,
+        Ok(match s.to_lowercase().as_str() {
+            "low" => Self::Low,
+            "moderate" => Self::Moderate,
+            "important" => Self::Important,
+            "critical" => Self::Critical,
             _ => return Err(()),
         })
     }
