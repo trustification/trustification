@@ -8,6 +8,7 @@ mod export;
 mod hooks;
 mod model;
 mod pages;
+mod analytics;
 
 use browser_panic_hook::{CustomBody, IntoPanicHook};
 use wasm_bindgen::prelude::*;

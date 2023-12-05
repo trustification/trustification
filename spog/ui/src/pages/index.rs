@@ -1,13 +1,15 @@
+use crate::analytics::{ActionAnalytics, AnalyticEvents, ObjectNameAnalytics};
 use patternfly_yew::prelude::*;
 use spog_ui_common::components::SafeHtml;
 use spog_ui_navigation::AppRoute;
-use spog_ui_utils::config::use_config;
+use spog_ui_utils::{analytics::use_analytics, config::use_config};
 use yew::prelude::*;
 use yew_nested_router::prelude::*;
 
 #[function_component(Index)]
 pub fn index() -> Html {
     let config = use_config();
+    let analytics = use_analytics();
 
     let text = use_state_eq(String::new);
     let onchange = use_callback(text.clone(), |new_text, text| text.set(new_text));
@@ -20,13 +22,21 @@ pub fn index() -> Html {
             });
         }
     });
-    let onsubmit = use_callback((router.clone(), text.clone()), |_, (router, terms)| {
-        if let Some(router) = router {
-            router.push(AppRoute::Search {
-                terms: (**terms).clone(),
+    let onsubmit = use_callback(
+        (analytics.clone(), router.clone(), text.clone()),
+        |_, (analytics, router, terms)| {
+            analytics.track(AnalyticEvents {
+                page: ObjectNameAnalytics::HomePage,
+                action: ActionAnalytics::Search((**terms).clone()),
             });
-        }
-    });
+
+            if let Some(router) = router {
+                router.push(AppRoute::Search {
+                    terms: (**terms).clone(),
+                });
+            }
+        },
+    );
 
     html!(
         <>

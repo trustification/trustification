@@ -11,10 +11,13 @@ use spog_ui_components::{
     sbom::{use_sbom_search, SbomResult, SbomSearchControls},
     search::{DynamicSearchParameters, HistorySearchState, SearchModeAction, SearchState},
 };
+use spog_ui_utils::analytics::use_analytics;
 use std::ops::Deref;
 use trustification_api::search::SearchResult;
 use yew::prelude::*;
 use yew_more_hooks::prelude::*;
+
+use crate::analytics::{ActionAnalytics, AnalyticEvents, ObjectNameAnalytics};
 
 #[derive(Copy, Clone, Debug, Default, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 pub enum TabIndex {
@@ -23,6 +26,17 @@ pub enum TabIndex {
     #[default]
     Cves,
     Packages,
+}
+
+impl std::fmt::Display for TabIndex {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Advisories => f.write_str("Advisories"),
+            Self::Sboms => f.write_str("Sboms"),
+            Self::Cves => f.write_str("Cves"),
+            Self::Packages => f.write_str("Packages"),
+        }
+    }
 }
 
 #[derive(PartialEq, Properties)]
@@ -51,6 +65,8 @@ pub struct TabState {
 
 #[function_component(Search)]
 pub fn search(props: &SearchProperties) -> Html {
+    let analytics = use_analytics();
+
     // page state
 
     let page_state = use_page_state(|| PageState {
@@ -69,17 +85,40 @@ pub fn search(props: &SearchProperties) -> Html {
 
     // events to activate the search terms
 
-    let onclick = use_callback((text.clone(), search_terms.clone()), |_, (terms, search_terms)| {
-        search_terms.set(split_terms(terms));
-    });
-    let onsubmit = use_callback((text.clone(), search_terms.clone()), |_, (terms, search_terms)| {
-        search_terms.set(split_terms(terms));
-    });
+    let onclick = use_callback(
+        (analytics.clone(), text.clone(), search_terms.clone()),
+        |_, (analytics, terms, search_terms)| {
+            analytics.track(AnalyticEvents {
+                page: ObjectNameAnalytics::UniversalSearchPage,
+                action: ActionAnalytics::Search((**terms).clone()),
+            });
+
+            search_terms.set(split_terms(terms));
+        },
+    );
+    let onsubmit = use_callback(
+        (analytics.clone(), text.clone(), search_terms.clone()),
+        |_, (analytics, terms, search_terms)| {
+            analytics.track(AnalyticEvents {
+                page: ObjectNameAnalytics::UniversalSearchPage,
+                action: ActionAnalytics::Search((**terms).clone()),
+            });
+
+            search_terms.set(split_terms(terms));
+        },
+    );
 
     // managing tabs
 
     let tab = use_state_eq(|| page_state.tab);
-    let onselect = use_callback(tab.clone(), |index, tab| tab.set(index));
+    let onselect = use_callback((analytics.clone(), tab.clone()), |index, (analytics, tab)| {
+        analytics.track(AnalyticEvents {
+            page: ObjectNameAnalytics::UniversalSearchPage,
+            action: ActionAnalytics::SelectTab(format!("{}", *tab.clone())),
+        });
+
+        tab.set(index)
+    });
 
     // advisory search
 
