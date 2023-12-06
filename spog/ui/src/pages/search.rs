@@ -6,7 +6,7 @@ use spog_ui_components::{
     advisory::{use_advisory_search, AdvisoryResult, AdvisorySearchControls},
     cve::{use_cve_search, CveResult, CveSearchControls},
     hooks::UseStandardSearch,
-    packages::{use_package_search, PackagesResult},
+    packages::{use_package_search, PackageSearchControls, PackagesResult},
     pagination::PaginationWrapped,
     sbom::{use_sbom_search, SbomResult, SbomSearchControls},
     search::{DynamicSearchParameters, HistorySearchState, SearchModeAction, SearchState},
@@ -214,7 +214,7 @@ pub fn search(props: &SearchProperties) -> Html {
                                 <AdvisorySearchControls search_params={advisory.search_params.clone()} />
                             </Visible>
                             <Visible visible={*tab == TabIndex::Packages}>
-                                <SbomSearchControls search_params={package.search_params.clone()} />
+                                <PackageSearchControls search_params={package.search_params.clone()} />
                             </Visible>
                             <Visible visible={*tab == TabIndex::Sboms}>
                                 <SbomSearchControls search_params={sbom.search_params.clone()} />
