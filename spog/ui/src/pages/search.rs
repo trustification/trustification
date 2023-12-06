@@ -11,12 +11,18 @@ use spog_ui_components::{
     sbom::{use_sbom_search, SbomResult, SbomSearchControls},
     search::{DynamicSearchParameters, HistorySearchState, SearchModeAction, SearchState},
 };
+use spog_ui_utils::analytics::use_analytics;
 use std::ops::Deref;
 use trustification_api::search::SearchResult;
 use yew::prelude::*;
 use yew_more_hooks::prelude::*;
 
-#[derive(Copy, Clone, Debug, Default, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
+use crate::analytics::{ActionAnalytics, AnalyticEvents, ObjectNameAnalytics};
+
+#[derive(
+    Copy, Clone, Debug, Default, Eq, PartialEq, serde::Serialize, serde::Deserialize, strum::EnumString, strum::Display,
+)]
+#[strum(serialize_all = "camelCase")]
 pub enum TabIndex {
     Advisories,
     Sboms,
@@ -51,6 +57,8 @@ pub struct TabState {
 
 #[function_component(Search)]
 pub fn search(props: &SearchProperties) -> Html {
+    let analytics = use_analytics();
+
     // page state
 
     let page_state = use_page_state(|| PageState {
@@ -69,17 +77,40 @@ pub fn search(props: &SearchProperties) -> Html {
 
     // events to activate the search terms
 
-    let onclick = use_callback((text.clone(), search_terms.clone()), |_, (terms, search_terms)| {
-        search_terms.set(split_terms(terms));
-    });
-    let onsubmit = use_callback((text.clone(), search_terms.clone()), |_, (terms, search_terms)| {
-        search_terms.set(split_terms(terms));
-    });
+    let onclick = use_callback(
+        (analytics.clone(), text.clone(), search_terms.clone()),
+        |_, (analytics, terms, search_terms)| {
+            analytics.track(AnalyticEvents {
+                obj_name: ObjectNameAnalytics::SearchPage,
+                action: ActionAnalytics::Search((**terms).clone()),
+            });
+
+            search_terms.set(split_terms(terms));
+        },
+    );
+    let onsubmit = use_callback(
+        (analytics.clone(), text.clone(), search_terms.clone()),
+        |_, (analytics, terms, search_terms)| {
+            analytics.track(AnalyticEvents {
+                obj_name: ObjectNameAnalytics::SearchPage,
+                action: ActionAnalytics::Search((**terms).clone()),
+            });
+
+            search_terms.set(split_terms(terms));
+        },
+    );
 
     // managing tabs
 
     let tab = use_state_eq(|| page_state.tab);
-    let onselect = use_callback(tab.clone(), |index, tab| tab.set(index));
+    let onselect = use_callback((analytics.clone(), tab.clone()), |index, (analytics, tab)| {
+        analytics.track(AnalyticEvents {
+            obj_name: ObjectNameAnalytics::SearchPage,
+            action: ActionAnalytics::SelectTab(format!("{}", *tab.clone())),
+        });
+
+        tab.set(index)
+    });
 
     // advisory search
 

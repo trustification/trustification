@@ -18,7 +18,7 @@ struct AnalyzeResult<'a>(&'a Result<Rc<String>, spog_ui_common::error::ApiError>
 impl<'a> From<AnalyzeResult<'a>> for TrackingEvent<'static> {
     fn from(value: AnalyzeResult<'a>) -> Self {
         (
-            "Analyze Result",
+            "ScanSBOMPage Scan Result",
             match &value.0 {
                 Ok(value) => {
                     json!({"ok": {
