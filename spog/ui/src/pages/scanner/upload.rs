@@ -23,7 +23,7 @@ struct LoadFiles(u32);
 
 impl From<LoadFiles> for TrackingEvent<'static> {
     fn from(value: LoadFiles) -> Self {
-        ("Loading files", json!({"numberOfFiles": value.0})).into()
+        ("ScanSBOMPage File Loaded", json!({"numberOfFiles": value.0})).into()
     }
 }
 
@@ -33,7 +33,7 @@ struct SubmitSbom {
 
 impl From<SubmitSbom> for TrackingEvent<'static> {
     fn from(value: SubmitSbom) -> Self {
-        ("Submit SBOM", json!({"size": value.size})).into()
+        ("ScanSBOMPage ScanButton Clicked", json!({"size": value.size})).into()
     }
 }
 
@@ -42,7 +42,7 @@ struct Dropped(&'static str, usize, usize);
 impl From<Dropped> for TrackingEvent<'static> {
     fn from(value: Dropped) -> Self {
         (
-            "Dropped SBOM",
+            "ScanSBOMPage File Dropped",
             json!({
                 "type": value.0,
                 "items": value.1,
@@ -76,7 +76,7 @@ impl DropContent {
     }
 }
 
-tracking_event!(Cleared: "Cleared SBOM content" => json!({}));
+tracking_event!(Cleared: "ScanSBOMPage ClearButton Clicked" => json!({}));
 
 impl std::fmt::Display for DropContent {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
@@ -225,7 +225,7 @@ pub fn upload(props: &UploadProperties) -> Html {
     let onopen = use_callback(
         (file_input_ref.clone(), analytics.clone()),
         |_: (), (file_input_ref, analytics)| {
-            analytics.track(("Click load button", None));
+            analytics.track(("ScanSBOMPage LoadButton Clicked", None));
             if let Some(ele) = file_input_ref.cast::<web_sys::HtmlElement>() {
                 ele.click();
             }

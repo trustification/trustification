@@ -26,7 +26,7 @@ pub fn download(props: &DownloadProperties) -> Html {
     });
 
     let onclick = use_wrap_tracking(onclick, props.href.clone(), |_, href| {
-        ("Download File", json!({"href": href}))
+        ("File Downloaded", json!({"href": href}))
     });
 
     html!(

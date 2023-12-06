@@ -1,6 +1,7 @@
 #![recursion_limit = "1024"]
 
 mod about;
+mod analytics;
 mod app;
 mod common;
 mod console;
