@@ -40,7 +40,7 @@ pub fn backend(props: &BackendProperties) -> Html {
     match &*backend {
         UseAsyncState::Pending | UseAsyncState::Processing => html!(),
         UseAsyncState::Ready(Err(err)) => html!(
-            <ApiErrorComponent error={err.clone()}/>
+            <ApiErrorComponent error={err.clone()} message="Failed to discover backend" />
         ),
         UseAsyncState::Ready(Ok(backend)) => html!(
             <ContextProvider<Rc<spog_ui_backend::Backend>> context={Rc::new(backend.clone())}>
