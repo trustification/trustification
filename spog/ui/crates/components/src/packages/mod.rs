@@ -65,7 +65,6 @@ impl TableEntryRenderer<Column> for PackagesEntry {
                 }
             }
         }
-        .into()
     }
 
     fn is_full_width_details(&self) -> Option<bool> {
