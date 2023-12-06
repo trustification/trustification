@@ -29,7 +29,7 @@ pub struct ParseOutcome<'a>(&'a Result<SBOM, anyhow::Error>);
 impl<'a> From<ParseOutcome<'a>> for TrackingEvent<'static> {
     fn from(value: ParseOutcome<'a>) -> Self {
         (
-            "SBOM preflight check",
+            "ScanSBOMPage Preflight Check",
             match &value.0 {
                 Ok(value) => json!({
                     "ok": {

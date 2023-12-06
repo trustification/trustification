@@ -8,7 +8,7 @@ pub struct AnalyticEvents {
 
 pub enum ObjectNameAnalytics {
     HomePage,
-    UniversalSearchPage,
+    SearchPage,
 }
 
 pub enum ActionAnalytics {
@@ -20,7 +20,7 @@ impl std::fmt::Display for ObjectNameAnalytics {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::HomePage => f.write_str("HomePage"),
-            Self::UniversalSearchPage => f.write_str("UniversalSearchPage"),
+            Self::SearchPage => f.write_str("SearchPage"),
         }
     }
 }

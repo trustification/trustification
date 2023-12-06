@@ -89,7 +89,7 @@ pub fn search(props: &SearchProperties) -> Html {
         (analytics.clone(), text.clone(), search_terms.clone()),
         |_, (analytics, terms, search_terms)| {
             analytics.track(AnalyticEvents {
-                obj_name: ObjectNameAnalytics::UniversalSearchPage,
+                obj_name: ObjectNameAnalytics::SearchPage,
                 action: ActionAnalytics::Search((**terms).clone()),
             });
 
@@ -100,7 +100,7 @@ pub fn search(props: &SearchProperties) -> Html {
         (analytics.clone(), text.clone(), search_terms.clone()),
         |_, (analytics, terms, search_terms)| {
             analytics.track(AnalyticEvents {
-                obj_name: ObjectNameAnalytics::UniversalSearchPage,
+                obj_name: ObjectNameAnalytics::SearchPage,
                 action: ActionAnalytics::Search((**terms).clone()),
             });
 
@@ -113,7 +113,7 @@ pub fn search(props: &SearchProperties) -> Html {
     let tab = use_state_eq(|| page_state.tab);
     let onselect = use_callback((analytics.clone(), tab.clone()), |index, (analytics, tab)| {
         analytics.track(AnalyticEvents {
-            obj_name: ObjectNameAnalytics::UniversalSearchPage,
+            obj_name: ObjectNameAnalytics::SearchPage,
             action: ActionAnalytics::SelectTab(format!("{}", *tab.clone())),
         });
 
