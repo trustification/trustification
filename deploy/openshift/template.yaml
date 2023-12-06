@@ -1033,7 +1033,7 @@ objects:
                 - name: WRITE_KEY
                   valueFrom:
                     secretKeyRef:
-                      key: ${SEGMENT_SECRET_API_KEY}
+                      key: ${SEGMENT_SECRET_UI_KEY}
                       name: ${SEGMENT_SECRET_NAME}
               volumeMounts:
                 - name: endpoints
