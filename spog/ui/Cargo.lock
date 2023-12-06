@@ -45,9 +45,9 @@ checksum = "0942ffc6dcaadf03badf6e6a2d0228460359d5e34b57ccdc720b7382dfbd5ec5"
 
 [[package]]
 name = "analytics-next"
-version = "0.1.2"
+version = "0.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b0270085e02060975ff077d6eb131df1ed577630d460353700f8e8e7bb55d073"
+checksum = "2209e4d7f284a933b786b78e8a53d805aa441aa6a8ba12401a3bc42cedd1f191"
 dependencies = [
  "analytics-next-sys",
  "gloo-utils 0.2.0",
@@ -60,9 +60,9 @@ dependencies = [
 
 [[package]]
 name = "analytics-next-sys"
-version = "0.1.2"
+version = "0.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f3b463f31b58147b512cfb23369a48a9617726cdfa56c95af7358f4882605796"
+checksum = "d221eef98497b3cdab6460cf6174d5c9e90bbc60b3f6b5e999bb47f9cd01cbf9"
 dependencies = [
  "js-sys",
  "wasm-bindgen",
