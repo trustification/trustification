@@ -21,6 +21,7 @@ spog:
   ui:
     customize: true
     resources: ${{SPOG_UI_RESOURCES}}
+    initialBackendJson: ${INITIAL_BACKEND_JSON}
     segmentWriteKey:
       valueFrom:
         secretKeyRef:
