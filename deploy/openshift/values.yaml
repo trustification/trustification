@@ -25,7 +25,7 @@ spog:
       valueFrom:
         secretKeyRef:
           name: ${SEGMENT_SECRET_NAME}
-          key: ${SEGMENT_SECRET_API_KEY}
+          key: ${SEGMENT_SECRET_UI_KEY}
   api:
     resources: ${{SPOG_API_RESOURCES}}
     logLevel: ${LOG_LEVEL}
@@ -35,7 +35,7 @@ spog:
       valueFrom:
         secretKeyRef:
           name: ${SEGMENT_SECRET_NAME}
-          key: ${SEGMENT_SECRET_UI_KEY}
+          key: ${SEGMENT_SECRET_API_KEY}
 bombastic:
   bucket: ${BOMBASTIC_STORAGE_BUCKET}
   credentials: ${BOMBASTIC_AWS_SECRET_NAME}

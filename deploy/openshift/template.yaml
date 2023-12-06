@@ -946,7 +946,7 @@ objects:
                 - name: SEGMENT_WRITE_KEY
                   valueFrom:
                     secretKeyRef:
-                      key: ${SEGMENT_SECRET_UI_KEY}
+                      key: ${SEGMENT_SECRET_API_KEY}
                       name: ${SEGMENT_SECRET_NAME}
               ports:
                 - containerPort: 8080
@@ -1033,7 +1033,7 @@ objects:
                 - name: WRITE_KEY
                   valueFrom:
                     secretKeyRef:
-                      key: ${SEGMENT_SECRET_API_KEY}
+                      key: ${SEGMENT_SECRET_UI_KEY}
                       name: ${SEGMENT_SECRET_NAME}
               volumeMounts:
                 - name: endpoints
