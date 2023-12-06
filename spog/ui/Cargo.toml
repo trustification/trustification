@@ -7,7 +7,7 @@ license = "Apache-2"
 description = "Single Pane of Glass"
 
 [dependencies]
-analytics-next = "0.1.2"
+analytics-next = "0.1.3"
 anyhow = "1"
 async-trait = "0.1"
 browser-panic-hook = "0.2.0"
