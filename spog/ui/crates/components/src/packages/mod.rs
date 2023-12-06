@@ -46,20 +46,22 @@ impl TableEntryRenderer<Column> for PackagesEntry {
                 <Link<AppRoute>
                     target={AppRoute::Package{id: self.package.purl.clone()}}
                 >{ self.purl.name() }</Link<AppRoute>>
-            ),
-            Column::Namespace => html!({ for self.purl.namespace() }),
-            Column::Version => html!({ for self.purl.version() }),
-            Column::PackageType => html!({ self.purl.ty() }),
-            Column::Path => html!({ for self.purl.subpath() }),
+            )
+            .into(),
+            Column::Namespace => html!({ for self.purl.namespace() }).into(),
+            Column::Version => Cell::from(html!({ for self.purl.version() })).text_modifier(TextModifier::Truncate),
+            Column::PackageType => html!({ self.purl.ty() }).into(),
+            Column::Path => html!({ for self.purl.subpath() }).into(),
             Column::Qualifiers => {
                 html!({ for self.purl.qualifiers().iter().map(|(k,v)| html!(<Label label={format!("{k}={v}")} />)) })
+                    .into()
             }
             Column::Vulnerabilities => {
                 let l = self.summary.len();
                 if l == 0 {
-                    "N/A".to_string().into()
+                    html!({ "N/A" }).into()
                 } else {
-                    html!(<CvssMap map={self.summary.clone()} />)
+                    html!(<CvssMap map={self.summary.clone()} />).into()
                 }
             }
         }
