@@ -215,13 +215,13 @@ pub fn vulnerability_table(props: &CsafVulnTableProperties) -> Html {
 
     let header = html_nested! {
         <TableHeader<Column>>
-            <TableColumn<Column> label="CVE ID" index={Column::Cve} />
-            <TableColumn<Column> label="Title" index={Column::Title} />
-            <TableColumn<Column> label="Discovery" index={Column::Discovery} />
-            <TableColumn<Column> label="Release" index={Column::Release} />
-            <TableColumn<Column> label="Score" index={Column::Score} />
-            <TableColumn<Column> label="CWE" index={Column::Cwe} />
-            { for (!props.expandable).then(|| html_nested!(<TableColumn<Column> label="Products" index={Column::Products} />))}
+            <TableColumn<Column> label="CVE ID" index={Column::Cve} width={ColumnWidth::Percent(10)}/>
+            <TableColumn<Column> label="Title" index={Column::Title} width={ColumnWidth::Percent(20)}/>
+            <TableColumn<Column> label="Discovery" index={Column::Discovery} width={ColumnWidth::Percent(10)}/>
+            <TableColumn<Column> label="Release" index={Column::Release} width={ColumnWidth::Percent(10)}/>
+            <TableColumn<Column> label="Score" index={Column::Score} width={ColumnWidth::Percent(10)}/>
+            <TableColumn<Column> label="CWE" index={Column::Cwe} width={ColumnWidth::Percent(10)}/>
+            { for (!props.expandable).then(|| html_nested!(<TableColumn<Column> label="Products" index={Column::Products} width={ColumnWidth::Percent(30)} />))}
         </TableHeader<Column>>
     };
 
