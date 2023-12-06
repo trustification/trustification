@@ -1035,6 +1035,8 @@ objects:
                     secretKeyRef:
                       key: ${SEGMENT_SECRET_API_KEY}
                       name: ${SEGMENT_SECRET_NAME}
+                - name: BACKEND_JSON
+                  value: ${INITIAL_BACKEND_JSON}
               volumeMounts:
                 - name: endpoints
                   mountPath: /endpoints
@@ -2154,3 +2156,5 @@ parameters:
   value: "docker.io/library/postgres:15"
 - name: GUAC_INIT_JOB_SERVICE_ACCOUNT
   value: trustification-service
+- name: INITIAL_BACKEND_JSON
+  value: "{}"
