@@ -19,24 +19,14 @@ use yew_more_hooks::prelude::*;
 
 use crate::analytics::{ActionAnalytics, AnalyticEvents, ObjectNameAnalytics};
 
-#[derive(Copy, Clone, Debug, Default, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Copy, Clone, Debug, Default, Eq, PartialEq, serde::Serialize, serde::Deserialize, strum::EnumString, strum::Display)]
+#[strum(serialize_all = "camelCase")]
 pub enum TabIndex {
     Advisories,
     Sboms,
     #[default]
     Cves,
     Packages,
-}
-
-impl std::fmt::Display for TabIndex {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Advisories => f.write_str("Advisories"),
-            Self::Sboms => f.write_str("Sboms"),
-            Self::Cves => f.write_str("Cves"),
-            Self::Packages => f.write_str("Packages"),
-        }
-    }
 }
 
 #[derive(PartialEq, Properties)]
