@@ -19,7 +19,9 @@ use yew_more_hooks::prelude::*;
 
 use crate::analytics::{ActionAnalytics, AnalyticEvents, ObjectNameAnalytics};
 
-#[derive(Copy, Clone, Debug, Default, Eq, PartialEq, serde::Serialize, serde::Deserialize, strum::EnumString, strum::Display)]
+#[derive(
+    Copy, Clone, Debug, Default, Eq, PartialEq, serde::Serialize, serde::Deserialize, strum::EnumString, strum::Display,
+)]
 #[strum(serialize_all = "camelCase")]
 pub enum TabIndex {
     Advisories,
