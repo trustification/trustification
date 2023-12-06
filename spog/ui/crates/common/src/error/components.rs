@@ -9,6 +9,8 @@ pub struct ApiErrorProperties {
     #[prop_or("Failure".into())]
     pub title: AttrValue,
     pub error: super::ApiError,
+    #[prop_or_default]
+    pub message: Option<AttrValue>,
 }
 
 #[function_component(ApiError)]
@@ -23,7 +25,7 @@ pub fn api_error(props: &ApiErrorProperties) -> Html {
             )
         }
         _ => {
-            html!(<Error title={props.title.clone()} message="Error processing request" err={props.error.to_string()} />)
+            html!(<Error title={props.title.clone()} message={props.message.clone().unwrap_or_else(|| "Error processing request".into() )} err={props.error.to_string()} />)
         }
     }
 }
@@ -34,7 +36,7 @@ pub struct ErrorProperties {
     pub title: AttrValue,
 
     #[prop_or_default]
-    pub message: Option<String>,
+    pub message: Option<AttrValue>,
 
     #[prop_or_default]
     pub err: String,
@@ -49,12 +51,12 @@ pub fn error(props: &ErrorProperties) -> Html {
     html!(
         <Bullseye>
             <Grid gutter=true>
-                <GridItem offset={[2]} cols={[2]}>
+                <GridItem cols={[2]}>
                     <div style="text-align: center;">
                         <img src={error_image_src} alt="Error" />
                     </div>
                 </GridItem>
-                <GridItem cols={[6]}>
+                <GridItem cols={[10]}>
                     <Title>{props.title.clone()}</Title>
                     <Content>
                         if let Some(message)  = &props.message {
