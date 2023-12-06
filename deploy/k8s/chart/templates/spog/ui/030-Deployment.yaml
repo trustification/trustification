@@ -52,6 +52,10 @@ spec:
             - name: WRITE_KEY
               {{ . | toYaml | nindent 14 }}
 {{- end }}
+{{- with .Values.spog.ui.initialBackendJson }}
+            - name: BACKEND_JSON
+              value: {{ . | quote }}
+{{- end }}
           volumeMounts:
             - name: endpoints
               mountPath: /endpoints
