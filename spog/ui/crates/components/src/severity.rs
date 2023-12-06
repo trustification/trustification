@@ -11,8 +11,8 @@ pub fn severity(props: &SeverityProperties) -> Html {
     let severity_text = match RedHatSeverity::from_str(&props.severity) {
         Ok(severity) => {
             format!("{}", severity)
-        },
-        Err(_) => props.severity.clone().to_string()
+        }
+        Err(_) => props.severity.clone().to_string(),
     };
     html!(
         <>
