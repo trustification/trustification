@@ -80,8 +80,20 @@ export function channelMessage(payload) {
   const users = mapper.requestedReviewers();
   const channelUsers = mapper.mapForChannel();
 
-  console.log("Users:", users)
-  console.log("Matrix Users:", channelUsers)
+  console.log("Users:", users);
+  console.log("Matrix Users:", channelUsers);
 
   return mapper.channelMessage();
+}
+
+export function directMessage(payload) {
+  const mapper = new Mapper(payload);
+
+  const users = mapper.requestedReviewers();
+  const channelUsers = mapper.mapForDirectMessage();
+
+  console.log("Users:", users);
+  console.log("Matrix Users:", channelUsers);
+
+  return mapper.directMessageArguments();
 }
