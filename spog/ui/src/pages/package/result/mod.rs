@@ -100,6 +100,9 @@ pub fn result_view(props: &ResultViewProperties) -> Html {
                             <SplitItem>{version}</SplitItem>
                             <SplitItem>{qualifiers}</SplitItem>
                         </Split>
+                        if let Some(path) = purl.subpath() {
+                            <p>{format!("Path: {path}")}</p>
+                        }
                     </Content>
                 </PageSection>
             )
