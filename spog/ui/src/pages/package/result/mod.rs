@@ -7,7 +7,7 @@ use packageurl::PackageUrl;
 use patternfly_yew::prelude::*;
 use related_products::RelatedProducts;
 use spog_ui_backend::{use_backend, PackageInfoService};
-use spog_ui_components::{async_state_renderer::async_content, common::PageHeading};
+use spog_ui_components::async_state_renderer::async_content;
 use spog_ui_utils::config::use_config;
 use std::{rc::Rc, str::FromStr};
 use vulnerabilities::Vulnerabilities;
@@ -77,19 +77,38 @@ pub fn result_view(props: &ResultViewProperties) -> Html {
 
     let page_heading = use_memo(props.id.clone(), |id| match PackageUrl::from_str(id) {
         Ok(purl) => {
-            let version = purl.version().map(|v| format!("Version: {v}"));
+            let title = match purl.namespace() {
+                Some(namespace) => match purl.ty() {
+                    "maven" => format!("{}:{}", namespace, purl.name()),
+                    _ => format!("{}/{}", namespace, purl.name()),
+                },
+                None => purl.name().to_string(),
+            };
 
-            match (purl.namespace(), purl.ty()) {
-                (Some(namespace), "maven") => {
-                    html_nested!(<PageHeading subtitle={version}>{format!("{}:{}", namespace, purl.name())}</PageHeading>)
-                }
-                (Some(namespace), _) => {
-                    html_nested!(<PageHeading subtitle={version}>{format!("{}/{}", namespace, purl.name())}</PageHeading>)
-                }
-                (None, _) => html_nested!(<PageHeading subtitle={version}>{purl.name()}</PageHeading>),
-            }
+            let version = purl
+                .version()
+                .map_or(html!(<p></p>), |v| html!(<p>{ format!("Version: {v}") }</p>));
+
+            let qualifiers =
+                html!({ for purl.qualifiers().iter().map(|(k,v)| html!(<Label label={format!("{k}={v}")} />)) });
+
+            html_nested!(
+                <PageSection variant={PageSectionVariant::Light} >
+                    <Content>
+                        <Title>{title}</Title>
+                        <Split gutter=true>
+                            <SplitItem>{version}</SplitItem>
+                            <SplitItem>{qualifiers}</SplitItem>
+                        </Split>
+                    </Content>
+                </PageSection>
+            )
         }
-        Err(_) => html_nested!(<PageHeading>{id.clone()}</PageHeading>),
+        Err(_) => html_nested!(
+            <PageSection variant={PageSectionVariant::Light} >
+                <Content><Title>{ props.id.clone() }</Title></Content>
+            </PageSection>
+        ),
     });
 
     html!(
