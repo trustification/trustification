@@ -1091,6 +1091,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "gloo-net"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "43aaa242d1239a8822c15c645f02166398da4f8b5c4bae795c1f5b44e9eee173"
+dependencies = [
+ "futures-channel",
+ "futures-core",
+ "futures-sink",
+ "gloo-utils 0.2.0",
+ "http",
+ "js-sys",
+ "pin-project",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
+]
+
+[[package]]
 name = "gloo-render"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1874,7 +1895,7 @@ checksum = "de3145af08024dea9fa9914f381a17b8fc6034dfb00f3a84013f7ff43f29ed4c"
 [[package]]
 name = "patternfly-yew"
 version = "0.5.4"
-source = "git+https://github.com/ctron/patternfly-yew?rev=454c5a296d9950ee5215f58d0b5c95eea7d528db#454c5a296d9950ee5215f58d0b5c95eea7d528db"
+source = "git+https://github.com/ctron/patternfly-yew?rev=e4b4425744d45b0fb583f03a6c962cd63301177a#e4b4425744d45b0fb583f03a6c962cd63301177a"
 dependencies = [
  "chrono",
  "gloo-events 0.2.0",
@@ -1985,9 +2006,9 @@ checksum = "26072860ba924cbfa98ea39c8c19b4dd6a4a25423dbdf219c1eca91aa0cf6964"
 
 [[package]]
 name = "popper-rs"
-version = "0.3.0"
+version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d0ce317dc768f4de3d044866a1016ffa6b42791ec250b03f63fe773e0960b928"
+checksum = "a14458f5df1782ff0999819ae4cc310d2fcddd2ec62ae61585dacf3af72ccb4f"
 dependencies = [
  "gloo-utils 0.2.0",
  "js-sys",
@@ -2001,9 +2022,9 @@ dependencies = [
 
 [[package]]
 name = "popper-rs-sys"
-version = "0.3.0"
+version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "38cf43ec59b83f270513cd1232ca47ed1eb784253b9262bdb459f5a10e671e35"
+checksum = "21ef286df3991db98cfab510303f0d7a73b185364f6bfde3584a0b99d2119c17"
 dependencies = [
  "js-sys",
  "wasm-bindgen",
@@ -2735,7 +2756,7 @@ dependencies = [
  "futures",
  "gloo-events 0.2.0",
  "gloo-history 0.2.0",
- "gloo-net 0.4.0",
+ "gloo-net 0.5.0",
  "gloo-storage 0.3.0",
  "gloo-utils 0.2.0",
  "humansize",
@@ -2747,6 +2768,7 @@ dependencies = [
  "openidconnect",
  "packageurl",
  "patternfly-yew",
+ "popper-rs",
  "reqwest",
  "roxmltree 0.19.0",
  "serde",

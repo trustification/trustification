@@ -20,7 +20,7 @@ cyclonedx-bom = "0.4"
 futures = "0.3.29"
 gloo-events = "0.2"
 gloo-history = "0.2"
-gloo-net = "0.4.0"
+gloo-net = "0.5"
 gloo-storage = "0.3.0"
 gloo-utils = { version = "0.2.0", features = ["serde"] }
 humansize = "2"
@@ -31,7 +31,8 @@ markdown = "1.0.0-alpha.11"
 monaco = { version = "0.5", features = ["yew-components"] }
 openidconnect = "3"
 packageurl = "0.3"
-patternfly-yew = { version = "0.5.4", features = ["icons-fab", "tree"] }
+patternfly-yew = { version = "0.5.4", features = ["icons-fab", "tree", "search_input"] }
+popper-rs = { version = "0.3.2", features = ["yew"] }
 reqwest = { version = "0.11", features = ["json"] }
 roxmltree = "0.19"
 serde = { version = "1", features = ["derive", "rc"] }
@@ -95,7 +96,7 @@ members = [
 #yew-more-hooks = { git = "https://github.com/ctron/yew-more-hooks", rev = "fc0af774aa925edcd5a544e562619ecb539942f8" }
 #yew-more-hooks = { path = "../../../yew-more-hooks" }
 
-patternfly-yew = { git = "https://github.com/ctron/patternfly-yew", rev = "454c5a296d9950ee5215f58d0b5c95eea7d528db" } # FIXME: awaiting release
+patternfly-yew = { git = "https://github.com/ctron/patternfly-yew", rev = "e4b4425744d45b0fb583f03a6c962cd63301177a" } # FIXME: awaiting release
 #patternfly-yew = { path = "../../../patternfly-yew" }
 
 #analytics-next = { git = "https://github.com/ctron/analytics-next-rs", rev = "9c95122f4e6dc308c90b945bd0f1925faf7cb828" } # FIXME: awaiting release

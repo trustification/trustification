@@ -61,5 +61,11 @@ header {
 // Packages
 
 .tc-package-tree .pf-v5-c-accordion__expandable-content-body {
-  padding-right: 0px !important;
+  padding-right: 0 !important;
+}
+
+// Index page
+
+#xsearch_terms {
+  --pf-v5-c-text-input-group__text-input--MinWidth: 64ch;
 }
