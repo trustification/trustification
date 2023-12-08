@@ -4,6 +4,7 @@ pub mod cve;
 pub mod index;
 pub mod package;
 pub mod sbom;
+pub mod suggestion;
 pub mod wellknown;
 
 use crate::openapi;
@@ -52,6 +53,9 @@ use utoipa::OpenApi;
             spog_model::search::AdvisorySummary,
             spog_model::search::SbomSummary,
 
+            spog_model::suggestion::Suggestion,
+            spog_model::suggestion::Action,
+
             spog_model::vuln::Remediation,
             spog_model::vuln::SbomReport,
             spog_model::vuln::SbomReportVulnerability,
@@ -72,6 +76,7 @@ use utoipa::OpenApi;
         (name = "sbom", description = "SBOM endpoints"),
         (name = "vulnerability", description = "Vulnerability endpoints"),
         (name = "well-known", description = ".well-known endpoints"),
+        (name = "search", description = "Search endpoint"),
     ),
 )]
 pub struct ApiDoc;
