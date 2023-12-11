@@ -228,7 +228,7 @@ impl trustification_index::Index for Index {
             term2query(&query.term, &|resource| self.resource2query(resource))
         };
 
-        log::debug!("Processed query: {:?}", query);
+        log::trace!("Processed query: {:?}", query);
         Ok(SearchQuery { query, sort_by })
     }
 
