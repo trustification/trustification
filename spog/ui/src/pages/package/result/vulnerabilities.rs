@@ -157,7 +157,7 @@ pub fn vulnerabilities_table(props: &VulnerabilitiesTableProperties) -> Html {
         <TableHeader<Column>>
             <TableColumn<Column> label="ID" index={Column::Id} />
             <TableColumn<Column> label="Description" index={Column::Description} />
-            <TableColumn<Column> label="Severity" index={Column::Severity} />
+            <TableColumn<Column> label="CVSS" index={Column::Severity} />
             <TableColumn<Column> label="Date published" index={Column::DatePublished} />
         </TableHeader<Column>>
     };
