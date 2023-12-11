@@ -27,6 +27,7 @@ pub enum PackageInfo<'a> {
     License(&'a str),
     #[search(default)]
     Description(&'a str),
+    Qualifier(Qualified<'a, &'a str>),
 }
 
 /// A document returned from the search index for every match.

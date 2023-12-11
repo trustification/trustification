@@ -16,8 +16,7 @@ use trustification_index::{
         self,
         collector::TopDocs,
         doc,
-        query::Query,
-        query::{AllQuery, BooleanQuery, TermSetQuery},
+        query::{AllQuery, BooleanQuery, Query, TermQuery, TermSetQuery},
         schema::{Field, Schema, Term, FAST, STORED, STRING, TEXT},
         store::ZstdCompressor,
         DateTime, DocAddress, DocId, IndexSettings, Order, Score, Searcher, SegmentReader,
@@ -279,6 +278,14 @@ impl Index {
 
             PackageInfo::Name(value) => self.create_string_query(&[self.fields.purl_name], value),
             PackageInfo::Namespace(value) => self.create_string_query(&[self.fields.purl_namespace], value),
+
+            PackageInfo::Qualifier(value) => {
+                let value = format!("{}={}", value.qualifier, value.expression);
+                Box::new(TermQuery::new(
+                    Term::from_field_text(self.fields.purl_qualifiers, &value),
+                    Default::default(),
+                ))
+            }
         }
     }
 
