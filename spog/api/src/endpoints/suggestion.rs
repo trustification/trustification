@@ -44,7 +44,7 @@ async fn search_suggestions(
 }
 
 async fn create_suggestions(v11y: &V11yService, term: &str) -> Result<Vec<Suggestion>, Error> {
-    let term = term.replace("\"", "");
+    let term = term.replace('\"', "");
     let q = format!(r#""{term}" is:published"#);
 
     let result = v11y.search(QueryParams { q, offset: 0, limit: 3 }).await?;
@@ -60,7 +60,7 @@ async fn create_suggestions(v11y: &V11yService, term: &str) -> Result<Vec<Sugges
                 if let Some(desc) = doc.document.descriptions.get(0) {
                     description = desc.chars().take(60).collect();
                     if desc.len() > 60 {
-                        description.push_str("…");
+                        description.push('…');
                     }
                 }
             }
