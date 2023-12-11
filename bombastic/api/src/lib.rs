@@ -78,9 +78,23 @@ impl Run {
                 "bombastic-api",
                 |_context| async { Ok(()) },
                 |context| async move {
-                    let (probe, check) = Probe::new("Index not synced");
-                    context.health.readiness.register("available.index", check).await;
-                    let state = Self::configure(index, storage, probe, context.metrics.registry(), self.devmode)?;
+                    let (synced_probe, synced_check) = Probe::new("Index not synced");
+                    let (available_probe, available_check) = Probe::new("Index unavailable (size went to zero)");
+
+                    context.health.readiness.register("available.index", synced_check).await;
+                    context
+                        .health
+                        .liveness
+                        .register("available.index", available_check)
+                        .await;
+                    let state = Self::configure(
+                        index,
+                        storage,
+                        synced_probe,
+                        available_probe,
+                        context.metrics.registry(),
+                        self.devmode,
+                    )?;
 
                     let mut http = HttpServerBuilder::try_from(self.http)?
                         .tracing(tracing)
@@ -110,7 +124,8 @@ impl Run {
     fn configure(
         index_config: IndexConfig,
         storage: StorageConfig,
-        probe: Probe,
+        synced_probe: Probe,
+        available_probe: Probe,
         registry: &Registry,
         devmode: bool,
     ) -> anyhow::Result<Arc<AppState>> {
@@ -146,12 +161,30 @@ impl Run {
                 }
                 tokio::time::sleep(Duration::from_secs(5)).await;
             }
-            probe.set(true);
+            synced_probe.set(true);
+            available_probe.set(true);
+            let mut size = 0;
 
             loop {
                 if let Err(e) = sinker.sync_index().await {
                     log::info!("Unable to synchronize bombastic index: {:?}", e);
                 }
+                let result = sinker.sbom_index.search("", 0, 100, Default::default());
+                match result {
+                    Ok(found) => {
+                        if size != 0 && found.1 == 0 {
+                            // index size went to zero, the service should be restarted
+                            available_probe.set(false);
+                        } else {
+                            available_probe.set(true);
+                        }
+                        size = found.1;
+                    }
+                    Err(_) => {
+                        // error accessing index
+                        available_probe.set(false);
+                    }
+                };
                 tokio::time::sleep(sync_interval).await;
             }
         });
