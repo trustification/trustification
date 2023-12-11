@@ -3,12 +3,13 @@ mod related_products;
 mod vulnerabilities;
 
 use package_info::PackageAdditionalInfo;
+use packageurl::PackageUrl;
 use patternfly_yew::prelude::*;
 use related_products::RelatedProducts;
 use spog_ui_backend::{use_backend, PackageInfoService};
-use spog_ui_components::{async_state_renderer::async_content, common::PageHeading};
+use spog_ui_components::async_state_renderer::async_content;
 use spog_ui_utils::config::use_config;
-use std::rc::Rc;
+use std::{rc::Rc, str::FromStr};
 use vulnerabilities::Vulnerabilities;
 use yew::prelude::*;
 use yew_more_hooks::prelude::{use_async_with_cloned_deps, use_page_state};
@@ -74,9 +75,48 @@ pub fn result_view(props: &ResultViewProperties) -> Html {
         state.modify(|state| state.tab = index);
     });
 
+    let page_heading = use_memo(props.id.clone(), |id| match PackageUrl::from_str(id) {
+        Ok(purl) => {
+            let title = match purl.namespace() {
+                Some(namespace) => match purl.ty() {
+                    "maven" => format!("{}:{}", namespace, purl.name()),
+                    _ => format!("{}/{}", namespace, purl.name()),
+                },
+                None => purl.name().to_string(),
+            };
+
+            let version = purl
+                .version()
+                .map_or(html!(<p></p>), |v| html!(<p>{ format!("Version: {v}") }</p>));
+
+            let qualifiers =
+                html!({ for purl.qualifiers().iter().map(|(k,v)| html!(<Label label={format!("{k}={v}")} />)) });
+
+            html_nested!(
+                <PageSection variant={PageSectionVariant::Light} >
+                    <Content>
+                        <Title>{title}</Title>
+                        <Split gutter=true>
+                            <SplitItem>{version}</SplitItem>
+                            <SplitItem>{qualifiers}</SplitItem>
+                        </Split>
+                        if let Some(path) = purl.subpath() {
+                            <p>{format!("Path: {path}")}</p>
+                        }
+                    </Content>
+                </PageSection>
+            )
+        }
+        Err(_) => html_nested!(
+            <PageSection variant={PageSectionVariant::Light} >
+                <Content><Title>{ props.id.clone() }</Title></Content>
+            </PageSection>
+        ),
+    });
+
     html!(
         <>
-            <PageHeading>{props.id.clone()}</PageHeading>
+            {(*page_heading).clone()}
             <PageSection>
                 <Tabs<TabIndex> r#box=true selected={page_state.tab} {onselect}>
                     <Tab<TabIndex> index={TabIndex::Vulnerabilities} title="Vulnerabilities">
