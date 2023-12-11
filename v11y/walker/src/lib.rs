@@ -81,7 +81,7 @@ impl Run {
                     log::info!("Filters: {:?}", filter.len());
 
                     let walker = WalkDir::new(&self.source).follow_links(true).contents_first(true);
-                    for entry in walker {
+                    'entry: for entry in walker {
                         let entry = entry?;
 
                         if !entry.file_type().is_file() {
@@ -102,8 +102,8 @@ impl Run {
                         }
 
                         for prefix in &self.require_prefix {
-                            if name.starts_with(prefix) {
-                                continue;
+                            if !name.starts_with(prefix) {
+                                continue 'entry;
                             }
                         }
 
