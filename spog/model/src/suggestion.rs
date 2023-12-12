@@ -3,7 +3,9 @@ use utoipa::ToSchema;
 /// The action triggered by a suggestion
 #[derive(Clone, Debug, PartialEq, Eq, ToSchema, serde::Serialize, serde::Deserialize)]
 pub enum Action {
-    Cve(String),
+    Cve { id: String, advisory: bool },
+    Advisory(String),
+    Sbom(String),
 }
 
 /// A search suggestion for auto-completion

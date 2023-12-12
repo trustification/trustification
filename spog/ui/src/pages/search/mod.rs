@@ -1,5 +1,7 @@
 //! Unified search
 
+pub mod search_input;
+
 use patternfly_yew::prelude::*;
 use spog_ui_common::utils::count::count_tab_title;
 use spog_ui_components::{
