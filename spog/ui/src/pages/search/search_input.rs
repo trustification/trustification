@@ -9,7 +9,9 @@ use spog_ui_backend::{use_backend, SuggestionService};
 use spog_ui_common::error::ApiError;
 use spog_ui_navigation::{AppRoute, View};
 use spog_ui_utils::analytics::use_analytics;
+use std::ops::Deref;
 use wasm_bindgen::JsCast;
+use web_tools::prelude::*;
 use yew::prelude::*;
 use yew_hooks::{use_click_away, use_debounce_state, use_event_with_window};
 use yew_more_hooks::{hooks::use_async_with_cloned_deps, prelude::UseAsyncState};
@@ -19,10 +21,48 @@ use yew_oauth2::hook::use_latest_access_token;
 #[derive(PartialEq, Properties)]
 pub struct SearchProperties {
     pub onchange: Callback<String>,
+
+    #[prop_or_default]
+    pub autofocus: bool,
+
+    #[prop_or_default]
+    pub submit_on_enter: bool,
+
+    #[prop_or_default]
+    pub initial_value: Option<String>,
 }
 
-#[function_component(Search)]
-pub fn search(props: &SearchProperties) -> Html {
+#[derive(Clone, Debug, PartialEq, Eq)]
+enum Initialized<T> {
+    Initial(T),
+    Modified(T),
+}
+
+impl<T> Initialized<T> {
+    pub fn is_initial(&self) -> bool {
+        matches!(self, Self::Initial(_))
+    }
+}
+
+impl<T> From<T> for Initialized<T> {
+    fn from(value: T) -> Self {
+        Self::Modified(value)
+    }
+}
+
+impl<T> Deref for Initialized<T> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        match self {
+            Self::Initial(value) => value,
+            Self::Modified(value) => value,
+        }
+    }
+}
+
+#[function_component(SearchInput)]
+pub fn search_input(props: &SearchProperties) -> Html {
     const ID_SEARCH_ELEMENT: &str = "search_terms";
 
     let backend = use_backend();
@@ -35,16 +75,25 @@ pub fn search(props: &SearchProperties) -> Html {
     let menu_ref = use_node_ref();
 
     // the search term
-    let value = use_state_eq(String::new);
+    let value = use_state_eq(|| Initialized::Initial(props.initial_value.clone().unwrap_or_default()));
 
     // debounced value
-    let debounced_value = use_debounce_state(String::new, 250);
+    let debounced_value = use_debounce_state(|| (*value).clone(), 250);
 
     // the values filtered by the search value
     let possible_values = use_state_eq(Vec::<Suggestion>::default);
 
     // clear the value
-    let onclear = use_callback(value.setter(), |_, value| value.set(String::new()));
+    let onclear = use_callback(
+        (value.setter(), props.submit_on_enter, input_ref.clone()),
+        |_, (value, submit_on_enter, input_ref)| {
+            value.set(String::new().into());
+
+            if *submit_on_enter {
+                input_ref.form().submit();
+            }
+        },
+    );
 
     // popper state
     let state = use_state_eq(State::default);
@@ -55,7 +104,7 @@ pub fn search(props: &SearchProperties) -> Html {
     let autocomplete_loading = use_state_eq(|| false);
 
     // consume the changes from the input
-    let onchange = use_callback(value.setter(), |value, setter| setter.set(value));
+    let onchange = use_callback(value.setter(), |value: String, setter| setter.set(value.into()));
 
     // debounce
     {
@@ -80,7 +129,7 @@ pub fn search(props: &SearchProperties) -> Html {
     // retrieve the suggestions
     let suggestions = use_async_with_cloned_deps(
         |value| async move {
-            if value.is_empty() {
+            if value.is_initial() {
                 return Ok::<_, ApiError>(vec![]);
             }
 
@@ -89,7 +138,7 @@ pub fn search(props: &SearchProperties) -> Html {
             analytics.track((
                 "Search Suggestions",
                 json!({
-                    "in": value,
+                    "in": value.deref(),
                     "out": result,
                 }),
             ));
@@ -122,6 +171,10 @@ pub fn search(props: &SearchProperties) -> Html {
                     autocomplete_open.set(false);
                 }
             }
+            UseAsyncState::Ready(Err(_)) => {
+                possible_values.set(vec![]);
+                autocomplete_open.set(false);
+            }
             _ => {}
         },
     );
@@ -152,6 +205,10 @@ pub fn search(props: &SearchProperties) -> Html {
                     }
                     e.prevent_default();
                 }
+                "Enter" => {
+                    // when the user submits the content, close the auto-complete menu
+                    autocomplete_open.set(false);
+                }
                 "Escape" => {
                     // escape should always close the menu
                     autocomplete_open.set(false);
@@ -175,20 +232,20 @@ pub fn search(props: &SearchProperties) -> Html {
         // only when the value changes, emit the callback
         let onchange = props.onchange.clone();
         use_effect_with((*value).clone(), move |value| {
-            onchange.emit(value.clone());
+            onchange.emit((**value).clone());
         });
     }
 
     html!(
         <div ref={away_ref}>
-            <SearchInput
+            <patternfly_yew::prelude::SearchInput
                 id={ID_SEARCH_ELEMENT}
                 inner_ref={input_ref.clone()}
                 placeholder="Search for an SBOM, advisory, or CVE"
-                value={(*value).clone()}
+                value={(**value).clone()}
                 {onchange}
                 {onclear}
-                autofocus=true
+                autofocus={props.autofocus}
             />
 
             <PortalToPopper
