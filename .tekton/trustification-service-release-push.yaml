@@ -18,13 +18,13 @@ metadata:
 spec:
   params:
   - name: dockerfile
-    value: https://raw.githubusercontent.com/nodeshift-starters/devfile-sample/main/Dockerfile
+    value: Dockerfile
   - name: git-url
     value: '{{repo_url}}'
   - name: output-image
     value: quay.io/redhat-user-workloads/trusted-content-tenant/trustification/trustification-service-release:{{revision}}
   - name: path-context
-    value: .
+    value: container_files/Containerfile.services
   - name: revision
     value: '{{revision}}'
   pipelineSpec:
