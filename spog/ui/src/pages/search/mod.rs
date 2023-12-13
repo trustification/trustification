@@ -2,7 +2,9 @@
 
 pub mod search_input;
 
+use crate::analytics::{ActionAnalytics, AnalyticEvents, ObjectNameAnalytics};
 use patternfly_yew::prelude::*;
+use search_input::SearchInput;
 use spog_ui_common::utils::count::count_tab_title;
 use spog_ui_components::{
     advisory::{use_advisory_search, AdvisoryResult, AdvisorySearchControls},
@@ -19,8 +21,6 @@ use trustification_api::search::SearchResult;
 use yew::prelude::*;
 use yew_more_hooks::prelude::*;
 
-use crate::analytics::{ActionAnalytics, AnalyticEvents, ObjectNameAnalytics};
-
 #[derive(
     Copy, Clone, Debug, Default, Eq, PartialEq, serde::Serialize, serde::Deserialize, strum::EnumString, strum::Display,
 )]
@@ -35,6 +35,7 @@ pub enum TabIndex {
 
 #[derive(PartialEq, Properties)]
 pub struct SearchProperties {
+    /// the initial search terms
     pub terms: String,
 }
 
@@ -79,17 +80,6 @@ pub fn search(props: &SearchProperties) -> Html {
 
     // events to activate the search terms
 
-    let onclick = use_callback(
-        (analytics.clone(), text.clone(), search_terms.clone()),
-        |_, (analytics, terms, search_terms)| {
-            analytics.track(AnalyticEvents {
-                obj_name: ObjectNameAnalytics::SearchPage,
-                action: ActionAnalytics::Search((**terms).clone()),
-            });
-
-            search_terms.set(split_terms(terms));
-        },
-    );
     let onsubmit = use_callback(
         (analytics.clone(), text.clone(), search_terms.clone()),
         |_, (analytics, terms, search_terms)| {
@@ -203,39 +193,23 @@ pub fn search(props: &SearchProperties) -> Html {
     html!(
         <>
             <PageSection sticky={[PageSectionSticky::Top]} variant={PageSectionVariant::Light}>
-                <Flex>
-                    <FlexItem>
+                <Grid>
+                    <GridItem cols={[2]}>
                         <Content>
                             <Title>{"Search Results"}</Title>
                         </Content>
-                    </FlexItem>
-                    <FlexItem modifiers={[FlexModifier::Align(Alignment::Right)]}>
+                    </GridItem>
+                    <GridItem offset={[4.lg(), 6.xl(), 8.xxl()]} cols={[10.all(), 8.lg(), 6.xl(), 4.xxl()]}>
                         <form {onsubmit}>
                             // needed to trigger submit when pressing enter in the search field
                             <input type="submit" hidden=true formmethod="dialog" />
-                            <InputGroup>
-                                <InputGroupItem>
-                                    <TextInputGroup style="--pf-v5-c-text-input-group__text-input--MinWidth: 64ch;">
-                                        <TextInputGroupMain
-                                            id="search_terms"
-                                            icon={Icon::Search}
-                                            value={(*text).clone()}
-                                            {onchange}
-                                        />
-                                    </TextInputGroup>
-                                </InputGroupItem>
-                                <InputGroupItem>
-                                    <Button
-                                        id="search"
-                                        variant={ButtonVariant::Control}
-                                        icon={Icon::ArrowRight}
-                                        {onclick}
-                                    />
-                                </InputGroupItem>
-                            </InputGroup>
+                            <SearchInput {onchange}
+                                submit_on_enter=true
+                                initial_value={props.terms.clone()}
+                            />
                         </form>
-                    </FlexItem>
-                </Flex>
+                    </GridItem>
+                </Grid>
             </PageSection>
 
             <PageSection variant={PageSectionVariant::Default} fill={PageSectionFill::Fill}>

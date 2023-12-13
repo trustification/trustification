@@ -47,6 +47,7 @@ urlencoding = "2"
 wasm-bindgen = "0.2"
 wasm-bindgen-futures = "0.4"
 wasm-logger = "0.2"
+web-tools = "0.2"
 yew = { version = "0.21", features = ["csr"] }
 yew-consent = "0.2"
 yew-hooks = "0.3"
@@ -96,7 +97,7 @@ members = [
 #yew-more-hooks = { git = "https://github.com/ctron/yew-more-hooks", rev = "fc0af774aa925edcd5a544e562619ecb539942f8" }
 #yew-more-hooks = { path = "../../../yew-more-hooks" }
 
-patternfly-yew = { git = "https://github.com/ctron/patternfly-yew", rev = "e4b4425744d45b0fb583f03a6c962cd63301177a" } # FIXME: awaiting release
+patternfly-yew = { git = "https://github.com/ctron/patternfly-yew", rev = "29c0790334c2514358b8a2cf3d34e30cf3d01d8a" } # FIXME: awaiting release
 #patternfly-yew = { path = "../../../patternfly-yew" }
 
 #analytics-next = { git = "https://github.com/ctron/analytics-next-rs", rev = "9c95122f4e6dc308c90b945bd0f1925faf7cb828" } # FIXME: awaiting release

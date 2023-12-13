@@ -3,7 +3,7 @@ use crate::{
     pages::search,
 };
 use patternfly_yew::prelude::*;
-use search::search_input::Search;
+use search::search_input::SearchInput;
 use spog_ui_common::components::SafeHtml;
 use spog_ui_navigation::AppRoute;
 use spog_ui_utils::{analytics::use_analytics, config::use_config};
@@ -62,8 +62,8 @@ pub fn index() -> Html {
                                     <input type="submit" hidden=true formmethod="dialog" />
 
                                     <Grid gutter=true>
-                                        <GridItem offset={[2]} cols={[4]}>
-                                            <Search {onchange} />
+                                        <GridItem offset={[4]} cols={[4]}>
+                                            <SearchInput {onchange} autofocus=true />
                                         </GridItem>
 
                                         <GridItem cols={[1]}>
