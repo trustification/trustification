@@ -18,7 +18,7 @@ metadata:
 spec:
   params:
   - name: dockerfile
-    value: container_files/Containerfile.services
+    value: https://raw.githubusercontent.com/trustification/trustification/release/container_files/Containerfile.services
   - name: git-url
     value: '{{repo_url}}'
   - name: output-image
