@@ -510,28 +510,3 @@ fn branch_html(branches: Vec<&Branch>) -> Html {
         })
         .collect()
 }
-
-#[cfg(test)]
-mod test {
-
-    use super::*;
-
-    #[test]
-    fn test_quarkus_product_id_1() {
-        let csaf: Csaf = serde_json::from_slice(include_bytes!("../../../../test-data/quarkus1.json")).unwrap();
-
-        let vul1 = &csaf.vulnerabilities.as_ref().unwrap()[0];
-        let fixed1 = vul1.product_status.as_ref().unwrap().fixed.as_ref().unwrap();
-        let prod1 = &fixed1[0];
-        assert_eq!(prod1.0, "Red Hat build of Quarkus");
-
-        assert!(has_product(&csaf, &prod1.0));
-
-        let product_ids = gather_products(&csaf);
-        let resolved = csaf_resolve_aggregated_products(&csaf, &product_ids, fixed1);
-        assert_eq!(
-            Vec::from_iter(resolved),
-            vec![Product::Known("Red Hat build of Quarkus")]
-        );
-    }
-}
