@@ -2139,7 +2139,7 @@ parameters:
   value: "info"
 - name: CRDA_URL
   required: false
-  value: https://rhda.rhcloud.com/
+  value: https://rhda.rhcloud.com/api/v4/analysis
 - name: BOMBASTIC_WALKER_SUSPEND
   value: "false"
 - name: V11Y_WALKER_SUSPEND
