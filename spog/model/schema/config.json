@@ -57,6 +57,7 @@
         "showGithubLink": false,
         "supportCaseLabel": null,
         "supportCaseUrl": null,
+        "supportLabel": null,
         "supportUrl": null
       },
       "allOf": [
@@ -415,6 +416,13 @@
             "null"
           ],
           "format": "uri"
+        },
+        "supportLabel": {
+          "default": null,
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "supportUrl": {
           "default": null,

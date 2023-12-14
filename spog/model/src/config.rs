@@ -90,6 +90,9 @@ pub struct Global {
     pub support_url: Option<Url>,
 
     #[serde(default)]
+    pub support_label: Option<String>,
+
+    #[serde(default)]
     pub support_case_url: Option<Url>,
 
     #[serde(default)]
@@ -117,6 +120,7 @@ pub struct Global {
 pub const DEFAULT_BRAND_SRC: &str = "assets/brand/trustification_logo_hori_reverse.svg";
 pub const DEFAULT_ABOUT_BACKGROUND_SRC: &str = "assets/images/pfbg-icon.svg";
 pub const DEFAULT_PRODUCT_NAME: &str = "Chicken Coop";
+pub const DEFAULT_SUPPORT_LABEL: &str = "Support";
 pub const DEFAULT_SUPPORT_CASE_LABEL: &str = "Open a support case";
 pub const DEFAULT_ERROR_IMAGE_SRC: &str = "assets/images/error.svg";
 
@@ -141,6 +145,13 @@ impl Global {
 
     pub fn product_name(&self) -> String {
         self.product_name.as_deref().unwrap_or(DEFAULT_PRODUCT_NAME).to_string()
+    }
+
+    pub fn support_label(&self) -> String {
+        self.support_label
+            .as_deref()
+            .unwrap_or(DEFAULT_SUPPORT_LABEL)
+            .to_string()
     }
 
     pub fn support_case_label(&self) -> String {
