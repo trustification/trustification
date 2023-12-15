@@ -29,7 +29,7 @@ pub fn configuration(props: &ConfigurationProperties) -> Html {
     match &*config {
         UseAsyncState::Pending | UseAsyncState::Processing => html!(),
         UseAsyncState::Ready(Err(err)) => html!(
-            <ApiError error={err.clone()}/>
+            <ApiError error={err.clone()} message="Failed to load application configuration" />
         ),
         UseAsyncState::Ready(Ok(config)) => html!(
             <ContextProvider<Rc<spog_model::config::Configuration>> context={config.clone()}>

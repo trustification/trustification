@@ -946,7 +946,7 @@ objects:
                 - name: SEGMENT_WRITE_KEY
                   valueFrom:
                     secretKeyRef:
-                      key: ${SEGMENT_SECRET_UI_KEY}
+                      key: ${SEGMENT_SECRET_API_KEY}
                       name: ${SEGMENT_SECRET_NAME}
               ports:
                 - containerPort: 8080
@@ -1033,8 +1033,10 @@ objects:
                 - name: WRITE_KEY
                   valueFrom:
                     secretKeyRef:
-                      key: ${SEGMENT_SECRET_API_KEY}
+                      key: ${SEGMENT_SECRET_UI_KEY}
                       name: ${SEGMENT_SECRET_NAME}
+                - name: BACKEND_JSON
+                  value: ${INITIAL_BACKEND_JSON}
               volumeMounts:
                 - name: endpoints
                   mountPath: /endpoints
@@ -1936,6 +1938,7 @@ objects:
       template:
         spec:
           restartPolicy: OnFailure
+          serviceAccountName: ${GUAC_INIT_JOB_SERVICE_ACCOUNT}
           volumes:
             - name: init-data
               configMap:
@@ -2151,3 +2154,7 @@ parameters:
   value: spogUi
 - name: POSTGRESQL_IMAGE
   value: "docker.io/library/postgres:15"
+- name: GUAC_INIT_JOB_SERVICE_ACCOUNT
+  value: trustification-service
+- name: INITIAL_BACKEND_JSON
+  value: "{}"

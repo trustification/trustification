@@ -8,6 +8,12 @@ pub struct SeverityProperties {
 
 #[function_component(Severity)]
 pub fn severity(props: &SeverityProperties) -> Html {
+    let severity_text = match RedHatSeverity::from_str(&props.severity) {
+        Ok(severity) => {
+            format!("{}", severity)
+        }
+        Err(_) => props.severity.clone().to_string(),
+    };
     html!(
         <>
             <span class={classes!("tc-c-severity")}>
@@ -16,7 +22,7 @@ pub fn severity(props: &SeverityProperties) -> Html {
                 </span>
                 <span class={classes!("tc-c-severity__text")}>
                     { " " }
-                    { &props.severity }
+                    { &severity_text }
                 </span>
             </span>
         </>
@@ -74,11 +80,11 @@ impl FromStr for RedHatSeverity {
     type Err = ();
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(match s {
-            "Low" => Self::Low,
-            "Moderate" => Self::Moderate,
-            "Important" => Self::Important,
-            "Critical" => Self::Critical,
+        Ok(match s.to_lowercase().as_str() {
+            "low" => Self::Low,
+            "moderate" => Self::Moderate,
+            "important" => Self::Important,
+            "critical" => Self::Critical,
             _ => return Err(()),
         })
     }

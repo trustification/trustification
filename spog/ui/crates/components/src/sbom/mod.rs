@@ -162,7 +162,7 @@ pub fn sbom_result(props: &SbomResultProperties) -> Html {
         }),
         yew::props!(TableColumnProperties<Column> {
             index: Column::Advisories,
-            label: "Advisories",
+            label: "Product advisories",
             width: ColumnWidth::Percent(10)
         }),
         yew::props!(TableColumnProperties<Column> {

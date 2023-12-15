@@ -21,11 +21,12 @@ spog:
   ui:
     customize: true
     resources: ${{SPOG_UI_RESOURCES}}
+    initialBackendJson: ${INITIAL_BACKEND_JSON}
     segmentWriteKey:
       valueFrom:
         secretKeyRef:
           name: ${SEGMENT_SECRET_NAME}
-          key: ${SEGMENT_SECRET_API_KEY}
+          key: ${SEGMENT_SECRET_UI_KEY}
   api:
     resources: ${{SPOG_API_RESOURCES}}
     logLevel: ${LOG_LEVEL}
@@ -35,7 +36,7 @@ spog:
       valueFrom:
         secretKeyRef:
           name: ${SEGMENT_SECRET_NAME}
-          key: ${SEGMENT_SECRET_UI_KEY}
+          key: ${SEGMENT_SECRET_API_KEY}
 bombastic:
   bucket: ${BOMBASTIC_STORAGE_BUCKET}
   credentials: ${BOMBASTIC_AWS_SECRET_NAME}
@@ -146,6 +147,8 @@ guac:
   database:
     enabled: true
     image: ${POSTGRESQL_IMAGE}
+  initJob:
+    serviceAccountName: ${GUAC_INIT_JOB_SERVICE_ACCOUNT}
   graphql:
     debug: false
     affinity: ${{GUAC_GQL_AFFINITY}}

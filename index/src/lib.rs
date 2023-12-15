@@ -755,7 +755,7 @@ impl<INDEX: Index> IndexStore<INDEX> {
 
         let query = self.index.prepare_query(q)?;
 
-        debug!("Processed query: {:?}", query);
+        log::trace!("Processed query: {:?}", query);
 
         let (top_docs, count) = if let Some(sort_by) = query.sort_by {
             let field = sort_by.0;
