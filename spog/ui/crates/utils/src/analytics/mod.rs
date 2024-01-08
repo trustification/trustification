@@ -5,6 +5,7 @@ pub use component::*;
 
 use analytics_next::{AnalyticsBrowser, Settings, TrackingEvent, User};
 use openidconnect::LocalizedClaim;
+use serde::Serialize;
 use serde_json::{json, Value};
 use spog_ui_backend::use_backend;
 use spog_ui_common::utils::auth::claims;
@@ -160,24 +161,58 @@ pub fn segment_identify() -> Html {
 
     let user = use_state_eq(User::default);
 
+    #[derive(Default, Serialize)]
+    struct IdentityTraits {
+        #[serde(skip_serializing_if = "Option::is_none")]
+        preferred_username: Option<String>,
+
+        #[serde(skip_serializing_if = "Option::is_none")]
+        name: Option<String>,
+
+        #[serde(skip_serializing_if = "Option::is_none")]
+        given_name: Option<String>,
+
+        #[serde(skip_serializing_if = "Option::is_none")]
+        family_name: Option<String>,
+
+        #[serde(skip_serializing_if = "Option::is_none")]
+        middle_name: Option<String>,
+
+        #[serde(skip_serializing_if = "Option::is_none")]
+        nickname: Option<String>,
+
+        #[serde(skip_serializing_if = "Option::is_none")]
+        email: Option<String>,
+
+        #[serde(skip_serializing_if = "Option::is_none")]
+        email_verified: Option<String>,
+
+        #[serde(skip_serializing_if = "Option::is_none")]
+        locale: Option<String>,
+    }
+
     use_effect_with((state, user.clone()), |(state, user)| {
         let claims = claims(state);
         let current = match claims {
-            Some(claims) => User {
-                id: Some(format!("{}#{}", **claims.issuer(), **claims.subject())),
-                traits: json!({
-                    "preferred_username": claims.preferred_username(),
-                    "name": claims.name().get(),
-                    "given_name": claims.given_name().get(),
-                    "family_name": claims.family_name().get(),
-                    "middle_name": claims.middle_name().get(),
-                    "nickname": claims.nickname().get(),
-                    "email": claims.email(),
-                    "email_verified": claims.email_verified(),
-                    "locale": claims.locale(),
-                }),
-                options: Value::Null,
-            },
+            Some(claims) => {
+                let traits = IdentityTraits {
+                    preferred_username: claims.preferred_username().map(|v| v.to_string()),
+                    name: claims.name().get().map(|v| v.to_string()),
+                    given_name: claims.given_name().get().map(|v| v.to_string()),
+                    family_name: claims.family_name().get().map(|v| v.to_string()),
+                    middle_name: claims.middle_name().get().map(|v| v.to_string()),
+                    nickname: claims.nickname().get().map(|v| v.to_string()),
+                    email: claims.email().map(|v| v.to_string()),
+                    email_verified: claims.email_verified().map(|v| v.to_string()),
+                    locale: claims.locale().map(|v| v.to_string()),
+                };
+
+                User {
+                    id: Some((**claims.subject()).to_string()),
+                    traits: serde_json::to_value(traits).unwrap_or(json!({})),
+                    options: Value::Null,
+                }
+            }
             None => User::default(),
         };
         user.set(current);
