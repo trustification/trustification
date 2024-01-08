@@ -65,4 +65,4 @@ Then run it locally by executing:
 trunk-ng serve
 ```
 
-Navigate to: http://localhost:6030
+Navigate to: <http://localhost:6030>

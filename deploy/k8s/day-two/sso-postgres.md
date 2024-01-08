@@ -17,6 +17,7 @@ oc exec -it trustification-prod-postgresql-0 -- bash -c 'env PGPASSWORD=$POSTGRE
   ```shell
   oc get secrets sso-postgres -o json | jq -r .data.password | base64 -d
   ```
+
 * Execute the following SQL command:
   
   ```sql
@@ -35,4 +36,5 @@ oc exec -it trustification-prod-postgresql-0 -- bash -c 'env PGPASSWORD=$POSTGRE
   DELETE FROM user_entity WHERE username='admin';
   COMMIT;
   ```
+
 * Restart the Keycloak pod
