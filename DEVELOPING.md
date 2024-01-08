@@ -12,8 +12,9 @@ For creating new services in trustification, see [NEWSERVICE.md](NEWSERVICE.md).
 Requires `docker-compose` to run dependent services.
 
 For Linux systems only:
+
 ```shell
-$ export SELINUX_VOLUME_OPTIONS=':Z'
+export SELINUX_VOLUME_OPTIONS=':Z'
 ```
 
 ```shell
@@ -23,7 +24,7 @@ docker-compose -f compose.yaml -f compose-guac.yaml up
 
 This will start MinIO and Kafka in containers and initialize them accordingly so that you don't need to configure anything. Default arguments of Vexination components will work with this setup.
 
-The MinIO console is available at http://localhost:9001
+The MinIO console is available at <http://localhost:9001>
 
 ### protobuf-compiler
 
@@ -44,8 +45,8 @@ brew install protobuf
 Trustification comes with a set of [integration
 tests](./integration-tests/) that you can run after the required
 services defined in the [default compose
-script](./deploy/compose/compose.yaml) 
-and [Guac compose script](./deploy/compose/compose-guac.yaml) are up and running. 
+script](./deploy/compose/compose.yaml)
+and [Guac compose script](./deploy/compose/compose-guac.yaml) are up and running.
 Once they're up, run the tests like so:
 
 ```shell
@@ -239,14 +240,18 @@ At this point, you can POST and GET SBOMs with the API using a unique identifier
 ```shell
 curl --json @bombastic/testdata/my-sbom.json http://localhost:8082/api/v1/sbom?id=my-sbom
 ```
+
 For large SBOM's, you may use a "chunked" `Transfer-Encoding`:
+
 ```shell
 curl -H "transfer-encoding: chunked" --json @bombastic/testdata/ubi9-sbom.json http://localhost:8082/api/v1/sbom?id=ubi9
 ```
+
 You can also post compressed SBOM's using the `Content-Encoding` header, though the `Content-Type` header
 should always be `application/json` (as is implied by the `--json` option above).
 
 Both `zstd` and `bzip2` encodings are supported:
+
 ```shell
 curl -H "transfer-encoding: chunked" \
      -H "content-encoding: bzip2" \
@@ -254,6 +259,7 @@ curl -H "transfer-encoding: chunked" \
      -T openshift-4.13.json.bz2 \
      http://localhost:8082/api/v1/sbom?id=openshift-4.13
 ```
+
 You can also crawl Red Hat security data using the walker, which will push data through bombastic:
 
 ```shell

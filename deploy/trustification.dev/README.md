@@ -32,7 +32,7 @@ The staging instance is automatically updated every night. Whenever a nightly or
 The staging workflow will update the release in the helm chart. On the cluster, ArgoCD will notice the new version and synchronize the charts.
 
 > [!NOTE]
-> The vexination-walker and bombastic-walker will both be started automatically if synchronization is complete, to re-fed the system. If there are index changes in the version being deployed, stale data may occur. 
+> The vexination-walker and bombastic-walker will both be started automatically if synchronization is complete, to re-fed the system. If there are index changes in the version being deployed, stale data may occur.
 
 ## Production
 
@@ -40,7 +40,7 @@ The production deployment requires running the `prod` workflow. Once run, go to 
 
 ## Monitoring
 
-All instances of trustification are monitored at [https://monitoring.trustification.dev](). There is a Grafana dashboard named 'Trustification', which can be used to find information about the systems. The source of that
+All instances of trustification are monitored at <https://monitoring.trustification.dev>. There is a Grafana dashboard named 'Trustification', which can be used to find information about the systems. The source of that
 dashboard can be found in the `dashboards/` folder in this repository.
 
 ## Alerting
@@ -59,14 +59,13 @@ There is no alerting configured for trustification.dev yet, but a few things wor
 
 ### post-install-keycloak job is failing
 
-During the first install/deployment, the post-install-keycloak job might fail. In the logs, you will see entries like this: 
+During the first install/deployment, the post-install-keycloak job might fail. In the logs, you will see entries like this:
 
 ``` bash
 Resource not found for url: http://trustification-staging-keycloak.trustification-staging.svc.cluster.local:80/admin/realms/chicken/identity-provider/instances/github
 ```
 
 [The issue](https://github.com/keycloak/keycloak/issues/12484) relates to creating Keycloak identity providers from the command line. The workaround is to create the initial GitHub Identity Provider in the Keycloak admin UI. You can find the credentials for Keycloak stored in a Kubernetes secret. Then, go to "Identity Providers" and create it.
-
 
 ### Inspecting Guac via GraphQL
 
@@ -77,7 +76,6 @@ oc port-forward service/guac-graphql 8080
 ```
 
 After that you will be able to access it at: `http://localhost:8080` (UI) and `http://localhost:8080/query` (API)
-
 
 ## License
 
