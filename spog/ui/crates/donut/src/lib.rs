@@ -61,7 +61,6 @@ mod test {
 
     use super::*;
     use serde_json::json;
-    use yew::prelude::*;
 
     #[function_component(Example)]
     pub fn example() -> Html {

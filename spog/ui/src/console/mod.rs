@@ -90,7 +90,7 @@ fn authenticated_page(props: &ChildrenProperties) -> Html {
                         </NavExpandable>
                     }
                     if let Some(url) = &config.global.support_url {
-                        <ExternalNavLink href={url.to_string()}>{ "Support" }</ExternalNavLink>
+                        <ExternalNavLink href={url.to_string()}>{ config.global.support_label() }</ExternalNavLink>
                     }
                 </NavList>
             </Nav>
