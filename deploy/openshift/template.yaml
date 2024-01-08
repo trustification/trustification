@@ -1027,7 +1027,7 @@ objects:
                 - name: CLIENT_ID
                   value: trusted-content-frontend
                 - name: SCOPES
-                  value: openid id.username
+                  value: openid email id.username
                 - name: WRITE_KEY
                   valueFrom:
                     secretKeyRef:
