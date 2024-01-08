@@ -1,6 +1,6 @@
 # Development instructions
 
-> Happy when helming? Most likely not! 
+> Happy when helming? Most likely not!
 
 ## Updating chart dependencies
 

@@ -14,22 +14,22 @@ Bombastic consists of:
 
 * An API for publishing and consuming SBOM data
 * Keycloak or similar (OIDC) for authentication and authorization.
-* Seedwing Policy or similar for SBOM validation 
-* A lookup index based on SQLite. 
+* Seedwing Policy or similar for SBOM validation
+* A lookup index based on SQLite.
 * Amazon S3 or similar object storage such Ceph or MinIO. This way you can run it locally with MinIO, on company infra with Ceph, or on AWS with S3.
 * Apache Kafka or similar for eventing, everybody loves Kafka.
 
-### "Why would I need all that, it's just files lol?"
+## "Why would I need all that, it's just files lol?"
 
 You're probably not a big organization, please continue to use files.
 
-### "I'll bet you need 100 gazillion cores to run that system"
+## "I'll bet you need 100 gazillion cores to run that system"
 
-It's written in Rust so it must be fast. 
+It's written in Rust so it must be fast.
 
 ## Architecture
 
-The overall design follows a (micro)-services architecture, where each component in the architecture can have clearly defined service boundaries and may be replaced independently of the other components. 
+The overall design follows a (micro)-services architecture, where each component in the architecture can have clearly defined service boundaries and may be replaced independently of the other components.
 
 ### Services
 
@@ -61,12 +61,11 @@ A bombastic identifier is used to identify a particular SBOM. Bombastic will hap
 
 ![produce](images/produce.png)
 
-
 #### Consume flow
 
 ![consume](images/consume.png)
 
-## Crates 
+## Crates
 
 Bombastic consists of the following Rust crates, of which some are common APIs and others are standalone micro-services.
 
@@ -76,4 +75,3 @@ Bombastic consists of the following Rust crates, of which some are common APIs a
 * `trustification-exporter` - Exporter process consuming events from event-bus and exporting data
 * `trustification-event-bus` - API for consuming from event bus (and publishing)
 * `trustification-storage` - facade to s3 api used by indexer and api
-

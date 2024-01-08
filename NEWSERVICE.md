@@ -43,7 +43,7 @@ With that in place, you can start to add metrics and auth.
 
 ## Metrics
 
-Using the `trustification-infrastructure` crate, you automatically get an HTTP endpoint exposed on localhost which can be used as liveness/readiness probe as well as a metrics endpoints. 
+Using the `trustification-infrastructure` crate, you automatically get an HTTP endpoint exposed on localhost which can be used as liveness/readiness probe as well as a metrics endpoints.
 
 To enable the infrastructure, first add the InfrastructureConfig to your command line arguments:
 
@@ -139,5 +139,5 @@ async fn hello(
 
 ## Further examples
 
-For more examples on the above, see the [bombastic-indexer](https://github.com/trustification/trustification/tree/main/bombastic/indexer) or 
+For more examples on the above, see the [bombastic-indexer](https://github.com/trustification/trustification/tree/main/bombastic/indexer) or
 [spog](https://github.com/trustification/trustification/tree/main/spog/api) services.

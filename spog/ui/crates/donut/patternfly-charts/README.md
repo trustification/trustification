@@ -6,14 +6,14 @@ This folder contains the code for creating `spog/ui/crates/donut/js/main.js` whi
 
 - Install dependencies:
 
-```
+```shell
 npm ci
 ```
 
 - Make the changes needed
 - Generate the bundle ESM files:
 
-```
+```shell
 npm run build
 ```
 

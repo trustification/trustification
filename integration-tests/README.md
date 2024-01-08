@@ -1,8 +1,8 @@
 # Integration tests
 
 By default, these tests expect the services defined in the
-[default compose script](../deploy/compose/compose.yaml) 
-and [Guac compose script](../deploy/compose/compose-guac.yaml) 
+[default compose script](../deploy/compose/compose.yaml)
+and [Guac compose script](../deploy/compose/compose-guac.yaml)
 -- MinIO, Kafka, and Keycloak -- to be up and running.
 Once they're ready, run the tests like so:
 
@@ -46,7 +46,7 @@ instance of trustification like so:
 docker compose -f deploy/compose/compose-trustification.yaml up
 ```
 
-The default URL for that instance is http://localhost:8084 so we'll
+The default URL for that instance is <http://localhost:8084> so we'll
 point the integs there. We first need to set `KAFKA_BOOTSTRAP_SERVERS`
 for those tests that expect events.
 

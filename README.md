@@ -39,8 +39,9 @@ the latter, v1.0.6 or higher is required.
 To start all dependencies and trustification components:
 
 For Linux systems only:
-``` shell
-$ export SELINUX_VOLUME_OPTIONS=':Z'
+
+```shell
+export SELINUX_VOLUME_OPTIONS=':Z'
 ```
 
 ``` shell
@@ -59,7 +60,7 @@ data from Red Hat sources automatically. You should be able to open
 the UI by pointing your browser to
 [http://localhost:8084](http://localhost:8084).
 
-You can also run all of the trustification services via a single binary named `trust` or using the container image `ghcr.io/trustification/trust`. 
+You can also run all of the trustification services via a single binary named `trust` or using the container image `ghcr.io/trustification/trust`.
 
 You can also try out the publicly hosted instance at [https://trustification.dev](https://trustification.dev).
 
