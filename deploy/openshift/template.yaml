@@ -1664,6 +1664,55 @@ objects:
   - apiVersion: batch/v1
     kind: CronJob
     metadata:
+      name: apply-dataset-job
+      labels:
+        app.kubernetes.io/name: apply-dataset-job
+        app.kubernetes.io/component: init
+        app.kubernetes.io/part-of: trustification
+    spec:
+      schedule: ${DATASET_SCHEDULE_JOB}
+      suspend: ${{DATASET_SUSPEND_JOB}}
+      concurrencyPolicy: Forbid
+      jobTemplate:
+        spec:
+          template:
+            metadata:
+              labels:
+                app.kubernetes.io/name: apply-dataset-manual-job
+                app.kubernetes.io/component: init
+                app.kubernetes.io/part-of: trustification
+            spec:
+              restartPolicy: OnFailure
+              containers:
+                - name: run
+                  image: ${BACKEND_IMAGE}:${IMAGE_TAG}
+                  imagePullPolicy: Always
+                  command:
+                    - /usr/bin/bash
+                  args:
+                    - -ce
+                    - 'set -e
+
+                      /trust bombastic walker --sink https://sbom.${DOMAIN} --source
+                      /data/sbom
+
+                      /trust vexination walker --sink https://vex.${DOMAIN}/api/v1/vex
+                      --source /data/csaf
+
+                      '
+                  env:
+                    - name: OIDC_PROVIDER_CLIENT_ID
+                      value: trusted-content-api
+                    - name: OIDC_PROVIDER_CLIENT_SECRET
+                      valueFrom:
+                        secretKeyRef:
+                          key: ${OIDC_PROVIDER_CLIENT_SECRET_KEY}
+                          name: ${OIDC_PROVIDER_CLIENT_SECRET_NAME}
+                    - name: OIDC_PROVIDER_ISSUER_URL
+                      value: ${ISSUER_URL}
+  - apiVersion: batch/v1
+    kind: CronJob
+    metadata:
       name: v11y-walker
       labels:
         app.kubernetes.io/name: v11y-walker
@@ -2158,3 +2207,9 @@ parameters:
   value: trustification-service
 - name: INITIAL_BACKEND_JSON
   value: "{}"
+- name: DATASET_ENABLED_JOB
+  value: "true"
+- name: DATASET_SUSPEND_JOB
+  value: "true"
+- name: DATASET_SCHEDULE_JOB
+  value: "0 * * * *"
