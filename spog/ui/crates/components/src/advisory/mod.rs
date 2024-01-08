@@ -66,7 +66,7 @@ impl TableEntryRenderer<Column> for AdvisoryEntry {
             ),
             Column::Revision => date(self.summary.date),
             Column::Download => html!(if let Some(url) = &self.url {
-                <Download href={url.clone()} />
+                <Download href={url.clone()} r#type="csaf"/>
             }),
             Column::Vulnerabilities => {
                 let l = self.summary.cves.len();

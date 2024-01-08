@@ -63,7 +63,7 @@ impl TableEntryRenderer<Column> for PackageEntry {
             Column::Created => date(self.package.created).into(),
             Column::Download => html!(
                 if let Some(url) = &self.url {
-                    <Download href={url.clone()} />
+                    <Download href={url.clone()} r#type="sbom"/>
                 }
             )
             .into(),
