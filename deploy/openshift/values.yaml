@@ -181,3 +181,6 @@ oidcClients:
       value: trusted-content-api
 dataset:
   enabled: false
+  enabledJob: ${{DATASET_ENABLED_JOB}}
+  suspendJob: ${{DATASET_SUSPEND_JOB}}
+  scheduleJob: ${DATASET_SCHEDULE_JOB}
