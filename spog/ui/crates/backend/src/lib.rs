@@ -12,6 +12,7 @@ mod package_info;
 mod pkg;
 mod sbom;
 mod search;
+mod suggestion;
 mod version;
 
 pub use self::cve::*;
@@ -24,6 +25,7 @@ pub use package_info::*;
 pub use pkg::*;
 pub use sbom::*;
 pub use search::*;
+pub use suggestion::*;
 pub use version::*;
 
 use url::Url;

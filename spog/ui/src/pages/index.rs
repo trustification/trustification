@@ -1,5 +1,9 @@
-use crate::analytics::{ActionAnalytics, AnalyticEvents, ObjectNameAnalytics};
+use crate::{
+    analytics::{ActionAnalytics, AnalyticEvents, ObjectNameAnalytics},
+    pages::search,
+};
 use patternfly_yew::prelude::*;
+use search::search_input::SearchInput;
 use spog_ui_common::components::SafeHtml;
 use spog_ui_navigation::AppRoute;
 use spog_ui_utils::{analytics::use_analytics, config::use_config};
@@ -57,31 +61,21 @@ pub fn index() -> Html {
                                     // needed to trigger submit when pressing enter in the search field
                                     <input type="submit" hidden=true formmethod="dialog" />
 
-                                    <Bullseye>
-                                        <Flex>
-                                            <FlexItem>
-                                                <TextInputGroup style="--pf-v5-c-text-input-group__text-input--MinWidth: 64ch;">
-                                                    <TextInputGroupMain
-                                                        id="search_terms"
-                                                        icon={Icon::Search}
-                                                        value={(*text).clone()}
-                                                        placeholder="Search for an SBOM, advisory, or CVE"
-                                                        {onchange}
-                                                        autofocus=true
-                                                    />
-                                                </TextInputGroup>
-                                            </FlexItem>
+                                    <Grid gutter=true>
+                                        <GridItem offset={[4]} cols={[4]}>
+                                            <SearchInput {onchange} autofocus=true />
+                                        </GridItem>
 
-                                            <FlexItem>
-                                                <Button
-                                                    id="search"
-                                                    variant={ButtonVariant::Primary}
-                                                    label="Search"
-                                                    {onclick}
-                                                />
-                                            </FlexItem>
-                                        </Flex>
-                                    </Bullseye>
+                                        <GridItem cols={[1]}>
+                                            <Button
+                                                id="search"
+                                                variant={ButtonVariant::Primary}
+                                                label="Search"
+                                                {onclick}
+                                            />
+                                        </GridItem>
+                                    </Grid>
+
                                 </form>
                                 <SafeHtml html={config.landing_page.after_inner_content.clone()} />
 
