@@ -153,3 +153,9 @@ parameters:
   value: trustification-service
 - name: INITIAL_BACKEND_JSON
   value: "{}"
+- name: DATASET_ENABLED_JOB
+  value: "true"
+- name: DATASET_SUSPEND_JOB
+  value: "true"
+- name: DATASET_SCHEDULE_JOB
+  value: "0 * * * *"
