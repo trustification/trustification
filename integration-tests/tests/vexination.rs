@@ -1,4 +1,4 @@
-use integration_tests::{get_response, id, Urlifier, VexinationContext};
+use integration_tests::{get_response, id, BombasticContext, Urlifier};
 use reqwest::StatusCode;
 use serde_json::{json, Value};
 use std::time::Duration;
@@ -7,10 +7,10 @@ use tokio::fs::{remove_file, File};
 use trustification_auth::client::TokenInjector;
 use urlencoding::encode;
 
-#[test_context(VexinationContext)]
+#[test_context(BombasticContext)]
 #[tokio::test]
 #[ntest::timeout(60_000)]
-async fn vexination_roundtrip(vexination: &mut VexinationContext) {
+async fn vexination_roundtrip(vexination: &mut BombasticContext) {
     let client = reqwest::Client::new();
     let input = serde_json::from_str(include_str!("../../vexination/testdata/rhsa-2023_1441.json")).unwrap();
     vexination.upload_vex(&input).await;
@@ -54,10 +54,10 @@ async fn vexination_roundtrip(vexination: &mut VexinationContext) {
     }
 }
 
-#[test_context(VexinationContext)]
+#[test_context(BombasticContext)]
 #[tokio::test]
 #[ntest::timeout(30_000)]
-async fn vex_bad_search_queries(context: &mut VexinationContext) {
+async fn vex_bad_search_queries(context: &mut BombasticContext) {
     // Ensure get expected errors on bad queries
     for query in &["unknown:foo", "foo sort:unknown"] {
         let response = reqwest::Client::new()
@@ -73,10 +73,10 @@ async fn vex_bad_search_queries(context: &mut VexinationContext) {
     }
 }
 
-#[test_context(VexinationContext)]
+#[test_context(BombasticContext)]
 #[tokio::test]
 #[ntest::timeout(60_000)]
-async fn upload_existing_vex_without_change(vexination: &mut VexinationContext) {
+async fn upload_existing_vex_without_change(vexination: &mut BombasticContext) {
     let mut input: serde_json::Value =
         serde_json::from_str(include_str!("../../vexination/testdata/rhsa-2023_3408.json")).unwrap();
 
@@ -97,10 +97,10 @@ async fn upload_existing_vex_without_change(vexination: &mut VexinationContext) 
     );
 }
 
-#[test_context(VexinationContext)]
+#[test_context(BombasticContext)]
 #[tokio::test]
 #[ntest::timeout(60_000)]
-async fn upload_existing_vex_with_change(vexination: &mut VexinationContext) {
+async fn upload_existing_vex_with_change(vexination: &mut BombasticContext) {
     let mut input: serde_json::Value =
         serde_json::from_str(include_str!("../../vexination/testdata/rhsa-2021_3029.json")).unwrap();
 
@@ -122,10 +122,10 @@ async fn upload_existing_vex_with_change(vexination: &mut VexinationContext) {
     );
 }
 
-#[test_context(VexinationContext)]
+#[test_context(BombasticContext)]
 #[tokio::test]
 #[ntest::timeout(60_000)]
-async fn vex_invalid_type(vexination: &mut VexinationContext) {
+async fn vex_invalid_type(vexination: &mut BombasticContext) {
     let response = reqwest::Client::new()
         .post(vexination.urlify("/api/v1/vex?id=foo"))
         .body("<foo/>")
@@ -139,10 +139,10 @@ async fn vex_invalid_type(vexination: &mut VexinationContext) {
     assert_eq!(response.status(), StatusCode::BAD_REQUEST);
 }
 
-#[test_context(VexinationContext)]
+#[test_context(BombasticContext)]
 #[tokio::test]
 #[ntest::timeout(60_000)]
-async fn vex_invalid_encoding(vexination: &mut VexinationContext) {
+async fn vex_invalid_encoding(vexination: &mut BombasticContext) {
     let response = reqwest::Client::new()
         .post(vexination.urlify("/api/v1/vex?id=foo"))
         .body("{}")
@@ -158,10 +158,10 @@ async fn vex_invalid_encoding(vexination: &mut VexinationContext) {
 }
 
 #[cfg(feature = "admin")]
-#[test_context(VexinationContext)]
+#[test_context(BombasticContext)]
 #[tokio::test]
 #[ntest::timeout(60_0000)]
-async fn upload_vex_empty_json(context: &mut VexinationContext) {
+async fn upload_vex_empty_json(context: &mut BombasticContext) {
     let id = "test-empty-file-json";
     let input = serde_json::json!({});
     let response = reqwest::Client::new()
@@ -178,10 +178,10 @@ async fn upload_vex_empty_json(context: &mut VexinationContext) {
 }
 
 #[cfg(feature = "admin")]
-#[test_context(VexinationContext)]
+#[test_context(BombasticContext)]
 #[tokio::test]
 #[ntest::timeout(90_000)]
-async fn upload_vex_empty_file(vexination: &mut VexinationContext) {
+async fn upload_vex_empty_file(vexination: &mut BombasticContext) {
     let id = "test-empty-file-upload";
     let file_path = "empty-test.txt";
     let _ = File::create(&file_path).await.expect("file creation failed");
@@ -201,10 +201,10 @@ async fn upload_vex_empty_file(vexination: &mut VexinationContext) {
 }
 
 #[cfg(feature = "admin")]
-#[test_context(VexinationContext)]
+#[test_context(BombasticContext)]
 #[tokio::test]
 #[ntest::timeout(60_000)]
-async fn vex_upload_user_not_allowed(vexination: &mut VexinationContext) {
+async fn vex_upload_user_not_allowed(vexination: &mut BombasticContext) {
     let input: serde_json::Value =
         serde_json::from_str(include_str!("../../vexination/testdata/rhsa-2023_1441.json")).unwrap();
     let id = encode(input["document"]["tracking"]["id"].as_str().unwrap());
@@ -220,10 +220,10 @@ async fn vex_upload_user_not_allowed(vexination: &mut VexinationContext) {
     assert_eq!(response.status(), StatusCode::FORBIDDEN);
 }
 
-#[test_context(VexinationContext)]
+#[test_context(BombasticContext)]
 #[tokio::test]
 #[ntest::timeout(60_000)]
-async fn vex_upload_unauthorized(vexination: &mut VexinationContext) {
+async fn vex_upload_unauthorized(vexination: &mut BombasticContext) {
     let input: serde_json::Value =
         serde_json::from_str(include_str!("../../vexination/testdata/rhsa-2023_1441.json")).unwrap();
     let id = encode(input["document"]["tracking"]["id"].as_str().unwrap());
@@ -236,18 +236,18 @@ async fn vex_upload_unauthorized(vexination: &mut VexinationContext) {
     assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
 }
 
-#[test_context(VexinationContext)]
+#[test_context(BombasticContext)]
 #[tokio::test]
 #[ntest::timeout(60_000)]
-async fn get_vex_with_missing_qualifier(vexination: &mut VexinationContext) {
+async fn get_vex_with_missing_qualifier(vexination: &mut BombasticContext) {
     let api_endpoint = vexination.urlify("api/v1/vex?id=missing_qualifier");
     get_response(&api_endpoint, StatusCode::BAD_REQUEST, &vexination.provider).await;
 }
 
-#[test_context(VexinationContext)]
+#[test_context(BombasticContext)]
 #[tokio::test]
 #[ntest::timeout(60_000)]
-async fn get_vex_invalid_advisory(vexination: &mut VexinationContext) {
+async fn get_vex_invalid_advisory(vexination: &mut BombasticContext) {
     let api_endpoint = vexination.urlify("api/v1/vex?advisory=invalid_vex");
     get_response(&api_endpoint, StatusCode::NOT_FOUND, &vexination.provider).await;
 }

@@ -1378,6 +1378,7 @@ dependencies = [
  "bombastic-model",
  "bytesize",
  "clap",
+ "csaf",
  "derive_more",
  "env_logger 0.11.1",
  "futures",
@@ -1393,6 +1394,8 @@ dependencies = [
  "trustification-storage",
  "utoipa",
  "utoipa-swagger-ui",
+ "vexination-index",
+ "vexination-model",
 ]
 
 [[package]]
@@ -3622,7 +3625,6 @@ dependencies = [
  "trustification-storage",
  "urlencoding",
  "uuid",
- "vexination-api",
  "vexination-indexer",
 ]
 
@@ -8438,42 +8440,8 @@ dependencies = [
  "serde",
  "serde_json",
  "tokio",
- "vexination-api",
  "vexination-indexer",
  "vexination-walker",
-]
-
-[[package]]
-name = "vexination-api"
-version = "0.1.0"
-dependencies = [
- "actix-web",
- "actix-web-httpauth",
- "anyhow",
- "bytesize",
- "clap",
- "csaf",
- "derive_more",
- "hex",
- "log",
- "packageurl",
- "prometheus",
- "rand 0.8.5",
- "serde",
- "serde_json",
- "sha2 0.10.8",
- "thiserror",
- "tokio",
- "trustification-api",
- "trustification-auth",
- "trustification-index",
- "trustification-infrastructure",
- "trustification-storage",
- "utoipa",
- "utoipa-swagger-ui",
- "vexination-index",
- "vexination-model",
- "zstd 0.12.4",
 ]
 
 [[package]]

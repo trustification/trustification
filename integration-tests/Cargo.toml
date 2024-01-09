@@ -25,7 +25,6 @@ trustification-auth = { path = "../auth", default-features = false, features = [
 bombastic-api = { path = "../bombastic/api" }
 bombastic-indexer = { path = "../bombastic/indexer" }
 
-vexination-api = { path = "../vexination/api" }
 vexination-indexer = { path = "../vexination/indexer" }
 
 spog-api = { path = "../spog/api" }

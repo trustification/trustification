@@ -4,7 +4,6 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-vexination-api = { path = "../api" }
 vexination-walker = { path = "../walker" }
 vexination-indexer = { path = "../indexer" }
 serde = { version = "1.0", features = ["derive"] }

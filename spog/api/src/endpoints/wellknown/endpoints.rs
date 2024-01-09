@@ -7,7 +7,6 @@ use tracing::instrument;
 
 #[derive(Clone, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize, utoipa::ToSchema)]
 pub struct Endpoints {
-    pub vexination: String,
     pub bombastic: String,
     pub collectorist: String,
     pub v11y: String,

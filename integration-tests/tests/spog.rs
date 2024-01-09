@@ -27,7 +27,6 @@ async fn spog_version(context: &mut SpogContext) {
 #[tokio::test]
 #[ntest::timeout(30_000)]
 async fn spog_endpoints(context: &mut SpogContext) {
-    let vexination_url = String::from(context.vexination.url.as_str());
     let bombastic_url = String::from(context.bombastic.url.as_str());
 
     let response = reqwest::Client::new()
@@ -40,7 +39,6 @@ async fn spog_endpoints(context: &mut SpogContext) {
         .unwrap();
     assert_eq!(response.status(), StatusCode::OK);
     let endpoints: Value = response.json().await.unwrap();
-    assert_eq!(endpoints["vexination"], vexination_url);
     assert_eq!(endpoints["bombastic"], bombastic_url);
 }
 
@@ -146,7 +144,7 @@ async fn spog_search_correlation(context: &mut SpogContext) {
     vex["document"]["tracking"]["id"] = json!(vex_id);
     vex["product_tree"]["branches"][0]["branches"][0]["branches"][0]["product"]["product_identification_helper"]
         ["cpe"] = json!(cpe_id);
-    context.vexination.upload_vex(&vex).await;
+    context.bombastic.upload_vex(&vex).await;
 
     let client = reqwest::Client::new();
     // Ensure we can search for the data. We want to allow the

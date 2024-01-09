@@ -22,6 +22,7 @@ use trustification_storage::{Storage, StorageConfig};
 
 mod sbom;
 mod server;
+mod vex;
 
 #[derive(clap::Args, Debug)]
 #[command(about = "Run the api server", args_conflicts_with_subcommands = true)]
@@ -105,7 +106,8 @@ impl Run {
                             let swagger_oidc = swagger_oidc.clone();
 
                             svc.app_data(web::Data::new(state.clone())).configure(move |svc| {
-                                server::config(svc, authenticator.clone(), swagger_oidc.clone(), publish_limit)
+                                server::config(svc, authenticator.clone(), swagger_oidc.clone(), publish_limit);
+                                vex::config(svc, authenticator, swagger_oidc, publish_limit);
                             });
                         });
 
@@ -141,12 +143,16 @@ impl Run {
             )
         })?;
 
+        let vex_index =
+            block_in_place(|| IndexStore::new(&storage, &index_config, vexination_index::Index::new(), registry))?;
+
         let storage = Storage::new(storage.process("bombastic", devmode), registry)?;
 
         let state = Arc::new(AppState {
             storage,
             sbom_index,
             package_index,
+            vex_index,
         });
 
         let sinker = state.clone();
@@ -195,10 +201,12 @@ impl Run {
 
 pub(crate) type SbomIndex = IndexStore<bombastic_index::sbom::Index>;
 pub(crate) type PackageIndex = IndexStore<bombastic_index::packages::Index>;
+pub(crate) type VexIndex = IndexStore<vexination_index::Index>;
 pub struct AppState {
     storage: Storage,
     sbom_index: SbomIndex,
     package_index: PackageIndex,
+    vex_index: VexIndex,
 }
 
 pub(crate) type SharedState = Arc<AppState>;

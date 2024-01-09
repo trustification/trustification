@@ -47,9 +47,6 @@ pub struct Run {
     #[arg(long = "bombastic-url", env, default_value_t = endpoint::Bombastic::url())]
     pub bombastic_url: Url,
 
-    #[arg(long = "vexination-url", env, default_value_t = endpoint::Vexination::url())]
-    pub vexination_url: Url,
-
     #[arg(long = "exhort-url", env, default_value_t = endpoint::Exhort::url())]
     pub exhort_url: Url,
 
