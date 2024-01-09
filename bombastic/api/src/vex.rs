@@ -264,7 +264,7 @@ async fn search_vex(
 
     let (result, total) = web::block(move || {
         state
-            .index
+            .vex_index
             .search(&params.q, params.offset, params.limit, (&params).into())
     })
     .await?

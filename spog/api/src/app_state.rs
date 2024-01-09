@@ -16,7 +16,6 @@ pub struct AppState {
     pub client: reqwest::Client,
     pub provider: Arc<dyn TokenProvider>,
     pub bombastic: reqwest::Url,
-    pub vexination: reqwest::Url,
     pub exhort: reqwest::Url,
 }
 
@@ -122,7 +121,7 @@ impl AppState {
         id: &str,
         provider: &dyn TokenProvider,
     ) -> Result<impl futures::Stream<Item = reqwest::Result<bytes::Bytes>>, Error> {
-        let url = self.vexination.join("/api/v1/vex")?;
+        let url = self.bombastic.join("/api/v1/vex")?;
         let response = self
             .client
             .get(url)
@@ -140,7 +139,7 @@ impl AppState {
 
     #[instrument(skip(self, provider), err)]
     pub async fn post_vex(&self, id: &str, provider: &dyn TokenProvider, data: Bytes) -> Result<(), Error> {
-        let url = self.vexination.join("/api/v1/vex")?;
+        let url = self.bombastic.join("/api/v1/vex")?;
         self.client
             .put(url)
             .body(data)
@@ -166,7 +165,7 @@ impl AppState {
         options: SearchOptions,
         provider: &dyn TokenProvider,
     ) -> Result<vexination_model::search::SearchResult, Error> {
-        let url = self.vexination.join("/api/v1/vex/search")?;
+        let url = self.bombastic.join("/api/v1/vex/search")?;
         let response = self
             .client
             .get(url)

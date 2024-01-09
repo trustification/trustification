@@ -36,7 +36,6 @@ impl Server {
         let state = web::Data::new(AppState {
             client: self.run.client.build_client()?,
             bombastic: self.run.bombastic_url.clone(),
-            vexination: self.run.vexination_url.clone(),
             exhort: self.run.exhort_url.clone(),
             provider: provider.clone(),
         });
@@ -67,7 +66,6 @@ impl Server {
         let crda_payload_limit = self.run.crda_payload_limit;
 
         let endpoints = Endpoints {
-            vexination: String::from(self.run.vexination_url.as_str()),
             bombastic: String::from(self.run.bombastic_url.as_str()),
             collectorist: String::from(self.run.collectorist_url.as_str()),
             v11y: String::from(self.run.v11y_url.as_str()),

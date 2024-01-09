@@ -4,6 +4,7 @@ use async_trait::async_trait;
 use bytesize::ByteSize;
 use reqwest::Url;
 use test_context::AsyncTestContext;
+use trustification_indexer::ReindexMode;
 use trustification_storage::validator::Validator;
 
 #[async_trait]
@@ -28,7 +29,6 @@ impl Urlifier for BombasticContext {
 pub struct BombasticContext {
     pub url: Url,
     pub provider: ProviderContext,
-    pub events: EventBusConfig,
     _runner: Option<Runner>,
     fixtures: Vec<String>,
 }
@@ -40,7 +40,6 @@ pub async fn start_bombastic(config: &Config) -> BombasticContext {
         return BombasticContext {
             url,
             provider: config.provider().await,
-            events: config.events(),
             _runner: None,
             fixtures: Vec::new(),
         };
@@ -51,19 +50,25 @@ pub async fn start_bombastic(config: &Config) -> BombasticContext {
         let listener = TcpListener::bind("localhost:0").unwrap();
         let port = listener.local_addr().unwrap().port();
         let url = Url::parse(&format!("http://localhost:{port}")).unwrap();
-        let indexer = bombastic_indexer();
-        let events = indexer.bus.clone();
 
         let runner = Runner::spawn(|| async {
             select! {
                 biased;
 
-                bindexer = indexer.run() => match bindexer {
+                bindexer = bombastic_indexer().run() => match bindexer {
                     Err(e) => {
                         panic!("Error running bombastic indexer: {e:?}");
                     }
                     Ok(code) => {
                         println!("Bombastic indexer exited with code {code:?}");
+                    }
+                },
+                vindexer = vexination_indexer().run() => match vindexer {
+                    Err(e) => {
+                        panic!("Error running vexination indexer: {e:?}");
+                    }
+                    Ok(code) => {
+                        println!("Vexination indexer exited with code {code:?}");
                     }
                 },
                 bapi = bombastic_api().run(Some(listener)) => match bapi {
@@ -83,7 +88,6 @@ pub async fn start_bombastic(config: &Config) -> BombasticContext {
         let context = BombasticContext {
             url,
             provider: config.provider().await,
-            events,
             _runner: Some(runner),
             fixtures: Vec::new(),
         };
@@ -128,6 +132,34 @@ impl BombasticContext {
     pub async fn delete_sbom(&self, key: &str) {
         let response = reqwest::Client::new()
             .delete(self.urlify(format!("/api/v1/sbom?id={key}")))
+            .inject_token(&self.provider.provider_manager)
+            .await
+            .unwrap()
+            .send()
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::NO_CONTENT);
+    }
+
+    pub async fn upload_vex(&mut self, input: &serde_json::Value) {
+        let response = reqwest::Client::new()
+            .post(self.urlify("/api/v1/vex"))
+            .json(input)
+            .inject_token(&self.provider.provider_manager)
+            .await
+            .unwrap()
+            .send()
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::CREATED);
+        let id = input["document"]["tracking"]["id"].as_str().unwrap().to_string();
+        self.fixtures.push(id);
+    }
+
+    pub async fn delete_vex(&self, key: &str) {
+        let id = urlencoding::encode(key);
+        let response = reqwest::Client::new()
+            .delete(self.urlify(format!("/api/v1/vex?advisory={id}")))
             .inject_token(&self.provider.provider_manager)
             .await
             .unwrap()
@@ -247,5 +279,41 @@ fn bombastic_api() -> bombastic_api::Run {
         swagger_ui_oidc: testing_swagger_ui_oidc(),
         http: Default::default(),
         publish_limit: ByteSize::mib(64).into(),
+    }
+}
+
+// Configuration for the vexination indexer
+fn vexination_indexer() -> vexination_indexer::Run {
+    vexination_indexer::Run {
+        stored_topic: "vex-stored".into(),
+        indexed_topic: "vex-indexed".into(),
+        failed_topic: "vex-failed".into(),
+        devmode: true,
+        reindex: ReindexMode::Always,
+        bus: EventBusConfig {
+            event_bus: EventBusType::Kafka,
+            kafka_bootstrap_servers: KAFKA_BOOTSTRAP_SERVERS.into(),
+            ..Default::default()
+        },
+        storage: StorageConfig {
+            region: None,
+            bucket: Some("vexination".into()),
+            endpoint: Some(STORAGE_ENDPOINT.into()),
+            access_key: Some("admin".into()),
+            secret_key: Some("password".into()),
+            validator: Validator::None,
+        },
+        infra: InfrastructureConfig {
+            infrastructure_enabled: false,
+            infrastructure_bind: "127.0.0.1".into(),
+            infrastructure_workers: 1,
+            tracing: Default::default(),
+        },
+        index: IndexConfig {
+            index_dir: None,
+            index_writer_memory_bytes: bytesize::ByteSize::mb(64),
+            mode: Default::default(),
+            sync_interval: Duration::from_secs(2).into(),
+        },
     }
 }

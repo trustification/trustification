@@ -12,7 +12,6 @@ impl AsyncTestContext for SpogContext {
     }
     async fn teardown(self) {
         self.bombastic.teardown().await;
-        self.vexination.teardown().await;
     }
 }
 
@@ -27,7 +26,6 @@ pub struct SpogContext {
     pub url: Url,
 
     pub bombastic: BombasticContext,
-    pub vexination: VexinationContext,
 
     _runner: Option<Runner>,
 }
@@ -40,7 +38,6 @@ pub async fn start_spog(config: &Config) -> SpogContext {
             url,
             provider: config.provider().await,
             bombastic: start_bombastic(config).await,
-            vexination: start_vexination(config).await,
             _runner: None,
         };
     }
@@ -54,10 +51,8 @@ pub async fn start_spog(config: &Config) -> SpogContext {
         let url = Url::parse(&format!("http://localhost:{port}")).unwrap();
 
         let bombastic = start_bombastic(config).await;
-        let vexination = start_vexination(config).await;
 
         let burl = bombastic.url.to_owned();
-        let vurl = vexination.url.to_owned();
         // FIXME: use from start_* once we have it
         let curl = endpoint::Collectorist::url();
         let wurl = endpoint::V11y::url();
@@ -67,7 +62,7 @@ pub async fn start_spog(config: &Config) -> SpogContext {
             select! {
                 biased;
 
-                spog = spog_api(burl, vurl, curl, wurl, eurl).run(Some(listener)) => match spog {
+                spog = spog_api(burl, curl, wurl, eurl).run(Some(listener)) => match spog {
                     Err(e) => {
                         panic!("Error running spog API: {e:?}");
                     }
@@ -86,7 +81,6 @@ pub async fn start_spog(config: &Config) -> SpogContext {
             url,
             provider: config.provider().await,
             bombastic,
-            vexination,
             _runner: Some(runner),
         };
 
@@ -112,13 +106,7 @@ pub async fn start_spog(config: &Config) -> SpogContext {
     }
 }
 
-fn spog_api(
-    bombastic_url: Url,
-    vexination_url: Url,
-    collectorist_url: Url,
-    v11y_url: Url,
-    exhort_url: Url,
-) -> spog_api::Run {
+fn spog_api(bombastic_url: Url, collectorist_url: Url, v11y_url: Url, exhort_url: Url) -> spog_api::Run {
     use trustification_infrastructure::endpoint;
     use trustification_infrastructure::endpoint::Endpoint;
 
@@ -127,7 +115,6 @@ fn spog_api(
         devmode: false,
         guac_url: endpoint::GuacGraphQl::url(),
         bombastic_url,
-        vexination_url,
         exhort_url,
         crda_url: option_env!("CRDA_URL").map(|url| url.parse().unwrap()),
         crda_payload_limit: DEFAULT_CRDA_PAYLOAD_LIMIT,
