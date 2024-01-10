@@ -33,8 +33,6 @@ spec:
           args:
             - "v11y"
             - "indexer"
-            - "--event-bus"
-            - "sqs"
             - "--stored-topic"
             - "{{ .Values.v11y.indexer.topics.stored }}"
             - "--indexed-topic"
@@ -52,32 +50,8 @@ spec:
           env:
             - name: RUST_LOG
               value: {{ default "info" .Values.v11y.indexer.logLevel }}
-            - name: STORAGE_ACCESS_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: "{{ .Values.v11y.credentials }}"
-                  key: aws_access_key_id
-            - name: STORAGE_SECRET_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: "{{ .Values.v11y.credentials }}"
-                  key: aws_secret_access_key
-            - name: STORAGE_REGION
-              value: "{{ .Values.region }}"
-            - name: STORAGE_BUCKET
-              value: "{{ .Values.v11y.bucket }}"
-            - name: SQS_ACCESS_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: "{{ .Values.v11y.credentials }}"
-                  key: aws_access_key_id
-            - name: SQS_SECRET_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: "{{ .Values.v11y.credentials }}"
-                  key: aws_secret_access_key
-            - name: SQS_REGION
-              value: "{{ .Values.region }}"
+            {{ include "trustification.storage-env" ( dict "root" . "config" .Values.v11y ) | nindent 12 }}
+            {{ include "trustification.event-bus-env" ( dict "root" . "config" .Values.v11y ) | nindent 12 }}
             - name: INFRASTRUCTURE_ENABLED
               value: "true"
             - name: INFRASTRUCTURE_BIND

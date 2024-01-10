@@ -8,7 +8,7 @@ metadata:
     app.kubernetes.io/component: documentation
     app.kubernetes.io/part-of: trustification
 spec:
-  replicas: 2
+  replicas: {{ .Values.replicas | default 1 }}
   selector:
     matchLabels:
       app.kubernetes.io/name: trust-docs
