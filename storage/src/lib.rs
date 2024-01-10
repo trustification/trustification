@@ -152,7 +152,14 @@ impl TryInto<Bucket> for StorageConfig {
             session_token: None,
             expiration: None,
         };
-        let region = self.region.ok_or(Error::MissingParameter("region".into()))?;
+        let mut region = self.region.ok_or(Error::MissingParameter("region".into()))?;
+        if let Some(endpoint) = self.endpoint {
+            // the only way to set a custom endpoint is via a custom region
+            region = Region::Custom {
+                region: region.to_string(),
+                endpoint,
+            }
+        }
         let bucket = self.bucket.ok_or(Error::MissingParameter("bucket".into()))?;
         let bucket = Bucket::new(&bucket, region, credentials)?.with_path_style();
         Ok(bucket)
