@@ -1,4 +1,4 @@
-{{ if .Values.enableDocs }}
+{{ if and .Values.enableDocs .Values.createRoutes }}
 apiVersion: route.openshift.io/v1
 kind: Route
 metadata:

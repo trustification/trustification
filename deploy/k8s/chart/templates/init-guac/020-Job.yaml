@@ -2,16 +2,16 @@
 kind: Job
 apiVersion: batch/v1
 metadata:
-  name: pre-install-guac
+  name: post-install-guac
   annotations:
     argocd.argoproj.io/hook: Sync
     argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
     argocd.argoproj.io/sync-wave: "0"
     helm.sh/hook-weight: "5"
-    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook: post-install,post-upgrade
     helm.sh/hook-delete-policy: before-hook-creation
   labels:
-    app.kubernetes.io/name: pre-install-guac
+    app.kubernetes.io/name: post-install-guac
     app.kubernetes.io/component: guac
     app.kubernetes.io/part-of: guac
 
@@ -32,10 +32,10 @@ spec:
       volumes:
         - name: init-data
           configMap:
-            name: pre-install-guac-config
+            name: post-install-guac-config
 
       containers:
-        - name: pre-install
+        - name: post-install
           image: {{ .Values.guac.database.image }}
           imagePullPolicy: {{ .Values.imagePullPolicy }}
           env:

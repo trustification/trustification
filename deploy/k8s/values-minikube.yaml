@@ -1,0 +1,266 @@
+release: 4022ac7983b7abc998bff09ba009c6499bd820db
+trustImage: ghcr.io/trustification/trust
+uiImage: ghcr.io/trustification/trust
+docsImage: ghcr.io/trustification/trust-docs
+testsImage: ghcr.io/trustification/trust-tests
+guacImage: ghcr.io/trustification/guac:v0.3.21
+
+deployPostgres: true
+deployMinio: true
+deployKafka: true
+disableOpenShiftCa: true
+ssoDefaults: true
+
+postgres: {}
+sso: {}
+kafka:
+  image: docker.io/bitnami/kafka@sha256:8fedaa492f1f570cade60f5ff09978cd841307b1e9f93fe6216136ca165fcc2d
+minio:
+  image: quay.io/minio/minio:RELEASE.2023-06-19T19-52-50Z
+  cliImage: quay.io/minio/mc:RELEASE.2023-06-19T19-31-19Z
+
+replicas: 1
+graphqlReplicas: 1
+collectSubReplicas: 1
+
+global:
+  postgresql:
+    auth:
+      password: admin123456
+
+imagePullPolicy: IfNotPresent
+region: eu-west-1
+enableTests: false
+createRoutes: false
+enableMonitoring: false
+enableDocs: true
+config:
+  enabled: true
+  name: trustification-config
+  authentication: trustification.dev/config/prod/auth.yaml
+  collectorist: trustification.dev/config/prod/collectorist.yaml
+default:
+spog:
+  crdaUrl: https://rhda.rhcloud.com/
+  branding: true
+  ui:
+    customize: false
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "64Mi"
+      limits:
+        memory: "64Mi"
+  api:
+    tracing: "enabled"
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "256Mi"
+      limits:
+        memory: "256Mi"
+bombastic:
+  bucket: bombastic
+  credentials: bombastic-credentials-secret
+  indexMode: file
+  collector:
+    enabled: true
+    queue: sbom-indexed
+    schedule: "0 * * * *"
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "256Mi"
+      limits:
+        cpu: "1"
+        memory: "512Mi"
+  indexer:
+    topics:
+      stored: sbom-stored
+      indexed: sbom-indexed
+      failed: sbom-failed
+    indexSyncInterval: 1m
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "1Gi"
+      limits:
+        memory: "1Gi"
+  walker:
+    enabled: true
+    suspend: true
+    schedule: "0 * * * *"
+    source: "https://access.redhat.com/security/data/sbom/beta/"
+    signingKey: "https://access.redhat.com/security/data/97f5eac4.txt#77E79ABE93673533ED09EBE2DCE3823597F5EAC4"
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "256Gi"
+      limits:
+        memory: "512Gi"
+  api:
+    tracing: "enabled"
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "1Gi"
+      limits:
+        memory: "1Gi"
+vexination:
+  bucket: vexination
+  credentials: vexination-credentials-secret
+  indexMode: file
+  collector:
+    enabled: true
+    schedule: "30 * * * *"
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "1Gi"
+      limits:
+        cpu: "1"
+        memory: "1Gi"
+  indexer:
+    topics:
+      stored: vex-stored
+      indexed: vex-indexed
+      failed: vex-failed
+    indexSyncInterval: 1m
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "1Gi"
+      limits:
+        memory: "1Gi"
+  api:
+    tracing: "enabled"
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "1Gi"
+      limits:
+        memory: "1Gi"
+  walker:
+    enabled: true
+    suspend: true
+    schedule: "0 * * * *"
+    source: https://www.redhat.com/.well-known/csaf/provider-metadata.json
+    ignore: https://access.redhat.com/security/data/csaf/v2/advisories/
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "256Mi"
+      limits:
+        memory: "512Mi"
+collectorist:
+  enabled: false
+  api:
+    resources:
+collector:
+  osv:
+    enabled: false
+    resources:
+  snyk:
+    enabled: false
+    credentials: snyk-collector-secret
+    resources:
+v11y:
+  enabled: true
+  bucket: v11y
+  credentials: v11y-credentials-secret
+  indexMode: file
+  api:
+    tracing: "enabled"
+    resources:
+  indexer:
+    topics:
+      stored: v11y-stored
+      indexed: v11y-indexed
+      failed: v11y-failed
+    indexSyncInterval: 30m
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "1Gi"
+      limits:
+        memory: "1Gi"
+  walker:
+    enabled: true
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "256Mi"
+      limits:
+        memory: "512Mi"
+exhort:
+  enabled: true
+  api:
+    resources:
+keycloakRealm:
+  redirectUris:
+    - http://localhost:*
+    - https://trustification.dev
+    - https://trustification.dev/*
+    - https://sbom.trustification.dev
+    - https://sbom.trustification.dev/*
+    - https://vex.trustification.dev
+    - https://vex.trustification.dev/*
+oidcClients:
+  frontend:
+    issuerUrl: https://sso.trustification.dev/realms/chicken
+    clientId:
+      value: frontend
+  walker:
+    issuerUrl: https://sso.trustification.dev/realms/chicken
+    clientSecret:
+      valueFrom:
+        secretKeyRef:
+          name: oidc-client-walker
+          key: client-secret
+guac:
+  enabled: true
+  database:
+    enabled: true
+    image: docker.io/library/postgres:15
+  initJob: {}
+  graphql:
+    debug: true
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "1Gi"
+      limits:
+        cpu: "1"
+        memory: "1Gi"
+keycloak:
+  enabled: true
+  production: false
+  proxy: reencrypt
+  podSecurityContext:
+    enabled: false
+  containerSecurityContext:
+    enabled: false
+  auth:
+    adminUser: admin
+    existingSecret: sso-admin
+    passwordSecretKey: password
+  tls:
+    enabled: false
+  service:
+    annotations:
+      service.beta.openshift.io/serving-cert-secret-name: sso-tls
+  ingress:
+    enabled: true
+    ingressClassName: openshift-default
+    hostname: sso.trustification.dev
+    servicePort: https
+    annotations:
+      route.openshift.io/termination: reencrypt
+  postgresql:
+    primary:
+      containerSecurityContext:
+        enabled: false
+      podSecurityContext:
+        enabled: false
+dataset:
+  enabled: true

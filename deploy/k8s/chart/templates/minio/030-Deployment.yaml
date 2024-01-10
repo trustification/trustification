@@ -1,0 +1,106 @@
+{{- if .Values.deployMinio }}
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: minio
+  labels:
+    app.kubernetes.io/name: minio
+    app.kubernetes.io/component: storage
+    app.kubernetes.io/part-of: trustification
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: minio
+      app.kubernetes.io/component: storage
+      app.kubernetes.io/part-of: trustification
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: minio
+        app.kubernetes.io/component: storage
+        app.kubernetes.io/part-of: trustification
+    spec:
+
+      containers:
+        - name: minio
+          image: {{ .Values.minio.image }}
+          imagePullPolicy: IfNotPresent
+
+          args:
+            - server
+            - --console-address
+            - ":9001"
+            - /data1
+
+          env:
+            - name: MINIO_ROOT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: minio
+                  key: username
+            - name: MINIO_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: minio
+                  key: password
+            - name: MINIO_NOTIFY_KAFKA_ENABLE_BOMBASTIC
+              value: "on"
+            - name: MINIO_NOTIFY_KAFKA_BROKERS_BOMBASTIC
+              value: "kafka.{{ .Release.Namespace }}.svc.cluster.local:9094"
+            - name: MINIO_NOTIFY_KAFKA_TOPIC_BOMBASTIC
+              value: "sbom-stored"
+            - name: MINIO_NOTIFY_KAFKA_ENABLE_VEXINATION
+              value: "on"
+            - name: MINIO_NOTIFY_KAFKA_BROKERS_VEXINATION
+              value: "kafka.{{ .Release.Namespace }}.svc.cluster.local:9094"
+            - name: MINIO_NOTIFY_KAFKA_TOPIC_VEXINATION
+              value: "vex-stored"
+            - name: MINIO_NOTIFY_KAFKA_ENABLE_V11Y
+              value: "on"
+            - name: MINIO_NOTIFY_KAFKA_BROKERS_V11Y
+              value: "kafka.{{ .Release.Namespace }}.svc.cluster.local:9094"
+            - name: MINIO_NOTIFY_KAFKA_TOPIC_V11Y
+              value: "v11y-stored"
+
+          readinessProbe:
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            httpGet:
+              port: 9000
+              path: /minio/health/live
+            timeoutSeconds: 1
+          livenessProbe:
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            httpGet:
+              port: 9000
+              path: /minio/health/live
+            timeoutSeconds: 1
+          ports:
+            - containerPort: 9000
+              name: endpoint
+              protocol: TCP
+            - containerPort: 9001
+              name: console
+              protocol: TCP
+
+          resources:
+            {{- with .Values.minio.resources }}
+            {{ . | toYaml | nindent 12 }}
+            {{- else }}
+            limits:
+              memory: 512Mi
+            {{- end }}
+
+          volumeMounts:
+            - mountPath: /data1
+              name: storage
+
+      volumes:
+        - name: storage
+          persistentVolumeClaim:
+            claimName: minio-pvc
+{{ end }}

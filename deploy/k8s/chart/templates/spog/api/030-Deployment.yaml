@@ -77,11 +77,13 @@ spec:
             - name: OTEL_TRACES_SAMPLER_ARG
               value: "0.1"
 
+{{ with (.Values.spog.api.snyk).credentials }}
             - name: SNYK_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: "{{ .Values.spog.api.snyk.credentials }}"
+                  name: "{{ . }}"
                   key: snyk_token
+{{ end }}
 
 {{- if .Values.spog.ui.customize }}
             - name: SPOG_UI_CONFIG
