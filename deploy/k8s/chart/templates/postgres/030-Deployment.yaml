@@ -24,10 +24,20 @@ spec:
         app.kubernetes.io/part-of: guac
     spec:
 
+      {{- if hasKey .Values.postgres "podSecurityContext" }}
+      securityContext:
+        {{ .Values.postgres.podSecurityContext | toYaml | nindent 8 }}
+      {{- end }}
+
       containers:
         - name: postgres
-          image: {{ .Values.guac.database.image }}
+          image: {{ .Values.postgres.image }}
           imagePullPolicy: IfNotPresent
+
+          {{- if hasKey .Values.postgres "containerSecurityContext" }}
+          securityContext:
+            {{ .Values.postgres.containerSecurityContext | toYaml | nindent 12 }}
+          {{- end }}
 
           env:
             - name: POSTGRES_DB

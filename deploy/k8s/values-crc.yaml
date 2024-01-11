@@ -4,15 +4,24 @@ uiImage: ghcr.io/trustification/trust
 docsImage: ghcr.io/trustification/trust-docs
 testsImage: ghcr.io/trustification/trust-tests
 guacImage: ghcr.io/trustification/guac:v0.3.21
+domain: trustification.apps-crc.testing
 
 deployPostgres: true
 deployMinio: true
 deployKafka: true
-disableOpenShiftCa: true
 ssoDefaults: true
 
 postgres:
   image: docker.io/bitnami/postgresql:15
+  containerSecurityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+  podSecurityContext:
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
 sso: {}
 kafka:
   image: docker.io/bitnami/kafka@sha256:8fedaa492f1f570cade60f5ff09978cd841307b1e9f93fe6216136ca165fcc2d
@@ -32,15 +41,16 @@ global:
 imagePullPolicy: IfNotPresent
 region: eu-west-1
 enableTests: false
-createRoutes: false
+createRoutes: true
 enableMonitoring: false
 enableDocs: true
 config:
   enabled: true
   name: trustification-config
-  authentication: trustification.dev/config/prod/auth.yaml
-  collectorist: trustification.dev/config/prod/collectorist.yaml
+  authentication: files/crc/auth.yaml
+  collectorist: files/crc/collectorist.yaml
 default:
+  routeAnnotations: {}
 spog:
   crdaUrl: https://rhda.rhcloud.com/
   branding: true
@@ -208,15 +218,29 @@ keycloakRealm:
     - https://vex.trustification.dev/*
 oidcClients:
   frontend:
-    issuerUrl: https://sso.trustification.dev/realms/chicken
+    issuerUrl: https://sso.trustification.apps-crc.testing/realms/chicken
     clientId:
       value: frontend
   walker:
-    issuerUrl: https://sso.trustification.dev/realms/chicken
+    issuerUrl: https://sso.trustification.apps-crc.testing/realms/chicken
     clientSecret:
       valueFrom:
         secretKeyRef:
           name: oidc-client-walker
+          key: client-secret
+  testingManager:
+    issuerUrl: https://sso.trustification.apps-crc.testing/realms/chicken
+    clientSecret:
+      valueFrom:
+        secretKeyRef:
+          name: oidc-client-testing-manager
+          key: client-secret
+  testingUser:
+    issuerUrl: https://sso.trustification.apps-crc.testing/realms/chicken
+    clientSecret:
+      valueFrom:
+        secretKeyRef:
+          name: oidc-client-testing-user
           key: client-secret
 guac:
   enabled: true
@@ -246,14 +270,16 @@ keycloak:
     existingSecret: sso-admin
     passwordSecretKey: password
   tls:
-    enabled: false
+    enabled: true
+    existingSecret: sso-tls
+    usePem: true
   service:
     annotations:
       service.beta.openshift.io/serving-cert-secret-name: sso-tls
   ingress:
     enabled: true
     ingressClassName: openshift-default
-    hostname: sso.trustification.dev
+    hostname: sso.trustification.apps-crc.testing
     servicePort: https
     annotations:
       route.openshift.io/termination: reencrypt
