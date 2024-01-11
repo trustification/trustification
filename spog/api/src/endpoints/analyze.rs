@@ -86,7 +86,7 @@ impl CrdaClient {
     ) -> Result<impl Stream<Item = reqwest::Result<Bytes>>, Error> {
         let mut req = self
             .client
-            .post(self.url.join("api/v3/analysis")?)
+            .post(self.url.clone())
             .header(header::CONTENT_TYPE, content_type)
             .header(header::ACCEPT, "text/html")
             .header(&RHDA_SOURCE_HEADER, RHDA_SOURCE_VALUE)
