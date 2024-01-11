@@ -110,6 +110,7 @@ impl Run {
                             client_id,
                             client_secret,
                             refresh_before,
+                            insecure_tls: _,
                         }) => {
                             let config = walker_common::sender::provider::OpenIdTokenProviderConfig {
                                 issuer_url,

@@ -41,6 +41,14 @@ pub struct OpenIdTokenProviderConfigArguments {
         default_value = "30s"
     )]
     pub refresh_before: humantime::Duration,
+    /// Use insecure TLS when contacting the OIDC server
+    #[arg(
+        id = "oidc_insecure_tls",
+        long = "oidc-insecure-tls",
+        env = "OIDC_PROVIDER_INSECURE_TLS",
+        default_value = "false"
+    )]
+    pub insecure_tls: bool,
 }
 
 impl OpenIdTokenProviderConfigArguments {
@@ -50,6 +58,7 @@ impl OpenIdTokenProviderConfigArguments {
             client_id: Some(devmode::SERVICE_CLIENT_ID.to_string()),
             client_secret: Some(devmode::SSO_CLIENT_SECRET.to_string()),
             refresh_before: Duration::from_secs(30).into(),
+            insecure_tls: false,
         }
     }
 }
@@ -75,6 +84,7 @@ pub struct OpenIdTokenProviderConfig {
     pub client_secret: String,
     pub issuer_url: String,
     pub refresh_before: humantime::Duration,
+    pub insecure_tls: bool,
 }
 
 impl OpenIdTokenProviderConfig {
@@ -84,6 +94,7 @@ impl OpenIdTokenProviderConfig {
             client_id: devmode::SERVICE_CLIENT_ID.to_string(),
             client_secret: devmode::SSO_CLIENT_SECRET.to_string(),
             refresh_before: Duration::from_secs(30).into(),
+            insecure_tls: false,
         }
     }
 
@@ -108,6 +119,7 @@ impl OpenIdTokenProviderConfig {
                 client_secret,
                 issuer_url,
                 refresh_before: arguments.refresh_before,
+                insecure_tls: arguments.insecure_tls,
             }),
             _ => None,
         }
@@ -152,9 +164,19 @@ impl OpenIdTokenProvider {
 
     pub async fn with_config(config: OpenIdTokenProviderConfig) -> anyhow::Result<Self> {
         let issuer = Url::parse(&config.issuer_url).context("Parse issuer URL")?;
-        let client = openid::Client::discover(config.client_id, config.client_secret, None, issuer)
-            .await
-            .context("Discover OIDC client")?;
+        let mut client = reqwest::ClientBuilder::new();
+
+        if config.insecure_tls {
+            log::warn!("Using insecure TLS when contacting the OIDC issuer");
+            client = client
+                .danger_accept_invalid_certs(true)
+                .danger_accept_invalid_hostnames(true);
+        }
+
+        let client =
+            openid::Client::discover_with_client(client.build()?, config.client_id, config.client_secret, None, issuer)
+                .await
+                .context("Discover OIDC client")?;
         Ok(Self::new(
             client,
             chrono::Duration::from_std(config.refresh_before.into())?,
