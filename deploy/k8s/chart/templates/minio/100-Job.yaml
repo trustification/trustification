@@ -60,5 +60,11 @@ spec:
                 /usr/bin/mc event add myminio/v11y arn:minio:sqs::V11Y:kafka --event put --ignore-existing;
 
                 /usr/bin/mc admin service restart myminio;
+          volumeMounts:
+            - mountPath: /.mc
+              name: settings
+      volumes:
+        - name: settings
+          emptyDir: {}
 {{ end }}
 
