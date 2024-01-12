@@ -52,6 +52,10 @@ spec:
               value: "PLAINTEXT://:9094,CONTROLLER://:9093,EXTERNAL://:9092"
             - name: KAFKA_CFG_ADVERTISED_LISTENERS
               value: "PLAINTEXT://kafka:9094,EXTERNAL://localhost:9092"
+            - name: KAFKA_HEAP_OPTS
+              value: "-verbose:gc" # Let Java figure it out
+            - name: KAFKA_KRAFT_CLUSTER_ID
+              value: "3nA2qspzReOmcxqlkmITAA"
 
           livenessProbe:
             initialDelaySeconds: 5
@@ -79,5 +83,15 @@ spec:
             limits:
               memory: 512Mi
             {{- end }}
+
+          volumeMounts:
+            - mountPath: /bitnami/kafka
+              name: storage
+
+      volumes:
+        - name: storage
+          persistentVolumeClaim:
+            claimName: kafka-pvc
+
 {{ end }}
 
