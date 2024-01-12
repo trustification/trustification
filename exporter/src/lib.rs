@@ -4,7 +4,7 @@ use guac::collector::emitter::NatsEmitter;
 use strum_macros::Display;
 use trustification_event_bus::EventBusConfig;
 use trustification_infrastructure::{Infrastructure, InfrastructureConfig};
-use trustification_storage::{Storage, StorageConfig};
+use trustification_storage::{validator::Validator, Storage, StorageConfig};
 
 pub mod exporter;
 
@@ -78,8 +78,11 @@ impl Run {
                         bucket,
                         topic
                     );
-                    let storage =
-                        Storage::new(self.storage.process(&bucket, self.devmode), context.metrics.registry())?;
+                    let storage = Storage::new(
+                        self.storage.process(&bucket, self.devmode),
+                        Validator::None,
+                        context.metrics.registry(),
+                    )?;
                     let bus = self.bus.create(context.metrics.registry()).await?;
                     let emitter = NatsEmitter::new(&self.guac_url).await?;
                     if self.devmode {

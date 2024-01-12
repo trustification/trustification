@@ -4,7 +4,7 @@ use std::ffi::OsStr;
 use std::path::PathBuf;
 use std::process::ExitCode;
 use trustification_infrastructure::{Infrastructure, InfrastructureConfig};
-use trustification_storage::{Storage, StorageConfig};
+use trustification_storage::{validator::Validator, Storage, StorageConfig};
 use walkdir::WalkDir;
 
 mod delta;
@@ -43,7 +43,11 @@ impl Run {
                 "v11y-walker",
                 |_context| async { Ok(()) },
                 |_context| async move {
-                    let storage = Storage::new(self.storage.process("v11y", self.devmode), &Registry::new())?;
+                    let storage = Storage::new(
+                        self.storage.process("v11y", self.devmode),
+                        Validator::None,
+                        &Registry::new(),
+                    )?;
 
                     let mut files = vec![];
                     let mut filter = HashSet::new();

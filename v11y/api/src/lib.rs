@@ -18,6 +18,7 @@ use trustification_infrastructure::{
     endpoint::V11y,
     Infrastructure, InfrastructureConfig,
 };
+use trustification_storage::validator::Validator;
 use trustification_storage::{Storage, StorageConfig};
 
 use crate::db::Db;
@@ -123,7 +124,7 @@ impl Run {
         let base = base.unwrap_or_else(|| ".".into());
 
         let index = block_in_place(|| IndexStore::new(&storage, &index_config, v11y_index::Index::new(), registry))?;
-        let storage = Storage::new(storage.process("v11y", devmode), registry)?;
+        let storage = Storage::new(storage.process("v11y", devmode), Validator::None, registry)?;
 
         let state = Arc::new(AppState::new(base, storage, index).await?);
 

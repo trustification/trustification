@@ -5,6 +5,7 @@ use crate::{
 use bombastic_model::prelude::SBOM as SBOMValidator;
 use bytes::Bytes;
 use futures::{future::ok, pin_mut, stream::once, StreamExt};
+use std::fmt;
 use std::str::FromStr;
 
 #[derive(Clone, Debug, Default)]
@@ -26,6 +27,17 @@ impl FromStr for Validator {
             "sbom" => Ok(SBOM),
             "vex" => Ok(VEX),
             url => Ok(Seedwing(url.to_string())),
+        }
+    }
+}
+
+impl fmt::Display for Validator {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Validator::None => write!(f, ""),
+            Validator::SBOM => write!(f, "sbom"),
+            Validator::VEX => write!(f, "vex"),
+            Validator::Seedwing(_) => write!(f, "seedwing"),
         }
     }
 }

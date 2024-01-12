@@ -104,7 +104,7 @@ async fn fetch_vex(
 ) -> actix_web::Result<HttpResponse> {
     authorizer.require(&user, Permission::ReadVex)?;
 
-    Ok(fetch_object(&state.storage, &params.advisory).await)
+    Ok(fetch_object(&state.vex_storage, &params.advisory).await)
 }
 
 /// Parameters passed when publishing advisory.
@@ -155,7 +155,7 @@ async fn publish_vex(
 
     log::debug!("Storing new VEX with id: {advisory}");
     state
-        .storage
+        .vex_storage
         .put_json_slice(&advisory, &data)
         .await
         .map_err(Error::Storage)?;
@@ -282,7 +282,7 @@ async fn delete_vex(
     let id = &params.advisory;
     log::trace!("Deleting VEX using id {}", id);
 
-    state.storage.delete(id).await.map_err(Error::Storage)?;
+    state.vex_storage.delete(id).await.map_err(Error::Storage)?;
 
     Ok(HttpResponse::NoContent().finish())
 }
@@ -296,7 +296,7 @@ async fn delete_vexes(
 ) -> actix_web::Result<impl Responder> {
     authorizer.require(&user, Permission::DeleteVex)?;
 
-    state.storage.delete_all().await.map_err(Error::Storage)?;
+    state.vex_storage.delete_all().await.map_err(Error::Storage)?;
 
     Ok(HttpResponse::NoContent().finish())
 }

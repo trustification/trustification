@@ -121,7 +121,7 @@ async fn query_sbom(
     let key = params.into_inner().id;
     let path: S3Path = S3Path::from_key(&key);
     log::trace!("Querying SBOM using id {}", key);
-    let storage = &state.storage;
+    let storage = &state.sbom_storage;
     // determine the encoding of the stored object, if any
     let encoding = storage.get_head(path.clone()).await.ok().and_then(|head| {
         head.content_encoding.and_then(|ref e| {
@@ -314,7 +314,7 @@ async fn publish_sbom(
         _ => StorageError::Io(io::Error::new(io::ErrorKind::Other, e)),
     });
     let size = state
-        .storage
+        .sbom_storage
         .put_stream(id, typ.as_ref(), enc, payload)
         .await
         .map_err(Error::Storage)?;
@@ -371,7 +371,7 @@ async fn delete_sbom(
     let params = params.into_inner();
     let id = &params.id;
     log::trace!("Deleting SBOM using id {}", id);
-    state.storage.delete(id).await.map_err(Error::Storage)?;
+    state.sbom_storage.delete(id).await.map_err(Error::Storage)?;
 
     Ok(HttpResponse::NoContent().finish())
 }
@@ -385,7 +385,7 @@ async fn delete_sboms(
 ) -> actix_web::Result<impl Responder> {
     authorizer.require(&user, Permission::DeleteSbom)?;
 
-    state.storage.delete_all().await.map_err(Error::Storage)?;
+    state.sbom_storage.delete_all().await.map_err(Error::Storage)?;
 
     Ok(HttpResponse::NoContent().finish())
 }
