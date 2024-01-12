@@ -11,10 +11,10 @@
 
 {{ define "trustification.sso.default-redirect-uris" }}
 - http://localhost:*
-- http://{{ .Values.domain }}
-- http://{{ .Values.domain }}/*
-- http://sbom.{{ .Values.domain }}
-- http://sbom.{{ .Values.domain }}/*
-- http://vex.{{ .Values.domain }}
-- http://vex.{{ .Values.domain }}/*
+- https://{{ .Values.domain }}
+- https://{{ .Values.domain }}/*
+- https://sbom.{{ .Values.domain }}
+- https://sbom.{{ .Values.domain }}/*
+- https://vex.{{ .Values.domain }}
+- https://vex.{{ .Values.domain }}/*
 {{- end }}

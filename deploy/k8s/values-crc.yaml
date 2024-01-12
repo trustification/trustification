@@ -10,6 +10,8 @@ deployPostgres: true
 deployMinio: true
 deployKafka: true
 ssoDefaults: true
+insecureSso: true
+disableSwaggerOidc: true
 
 postgres:
   image: docker.io/bitnami/postgresql:15
@@ -63,7 +65,6 @@ spog:
       limits:
         memory: "64Mi"
   api:
-    tracing: "enabled"
     resources:
       requests:
         cpu: "100m"
@@ -110,7 +111,6 @@ bombastic:
       limits:
         memory: "512Gi"
   api:
-    tracing: "enabled"
     resources:
       requests:
         cpu: "100m"
@@ -144,7 +144,6 @@ vexination:
       limits:
         memory: "1Gi"
   api:
-    tracing: "enabled"
     resources:
       requests:
         cpu: "100m"
@@ -181,7 +180,6 @@ v11y:
   credentials: v11y-credentials-secret
   indexMode: file
   api:
-    tracing: "enabled"
     resources:
   indexer:
     topics:

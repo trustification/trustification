@@ -70,8 +70,10 @@ spec:
               value: "0.1"
             - name: INDEX_SYNC_INTERVAL
               value: {{ .Values.bombastic.api.indexSyncInterval | default "1800s" }}
+{{ if not .Values.disableSwaggerOidc }}
             - name: SWAGGER_UI_OIDC_ISSUER_URL
               {{ include "trustification.authentication-frontend-issuer-url" . | nindent 14 }}
+{{ end }}
           volumeMounts:
             - name: data
               mountPath: /data
