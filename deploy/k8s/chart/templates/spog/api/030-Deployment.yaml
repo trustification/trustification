@@ -87,7 +87,7 @@ spec:
 
 {{- if .Values.spog.ui.customize }}
             - name: SPOG_UI_CONFIG
-              value: /etc/config/spog-ui.yaml
+              value: /etc/customize/spog-ui.yaml
 {{- end }}
             {{ include "trustification.authentication-client" ( dict "root" . "clientId" "walker" ) | nindent 12 }}
 {{- if not .Values.disableSwaggerOidc }}
@@ -123,9 +123,18 @@ spec:
           volumeMounts:
             - mountPath: /etc/config
               name: config
+{{- if .Values.spog.ui.customize }}
+            - mountPath: /etc/customize
+              name: customize
+{{- end }}
             {{ include "trustification.http-server-volume-mounts" . | nindent 12 }}
       volumes:
         - name: config
           configMap:
             name: {{ .Values.config.name }}
+{{- if .Values.spog.ui.customize }}
+        - name: customize
+          configMap:
+            name: {{ .Values.spog.ui.customizeName | default .Values.config.name }}
+{{- end }}
         {{ include "trustification.http-server-volumes" (dict "root" . "appName" "spog-api") | nindent 8 }}

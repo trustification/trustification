@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: spog-ui-config
+  labels:
+    app.kubernetes.io/name: spog-ui-config
+    app.kubernetes.io/component: config
+    app.kubernetes.io/part-of: trustification
+data:
+  spog-ui.yaml: |-
+    {{- .Files.Get "files/spog-ui.yaml" | nindent 4 }}
