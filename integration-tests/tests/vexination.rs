@@ -208,7 +208,7 @@ async fn vex_upload_user_not_allowed(vexination: &mut VexinationContext) {
     let input: serde_json::Value =
         serde_json::from_str(include_str!("../../vexination/testdata/rhsa-2023_1441.json")).unwrap();
     let id = encode(input["document"]["tracking"]["id"].as_str().unwrap());
-    let reponse = reqwest::Client::new()
+    let response = reqwest::Client::new()
         .post(vexination.urlify(format!("/api/v1/vex?advisory={id}")))
         .json(&input)
         .inject_token(&vexination.provider.provider_user)
@@ -217,7 +217,7 @@ async fn vex_upload_user_not_allowed(vexination: &mut VexinationContext) {
         .send()
         .await
         .unwrap();
-    assert_eq!(reponse.status(), StatusCode::FORBIDDEN);
+    assert_eq!(response.status(), StatusCode::FORBIDDEN);
 }
 
 #[test_context(VexinationContext)]
@@ -227,13 +227,13 @@ async fn vex_upload_unauthorized(vexination: &mut VexinationContext) {
     let input: serde_json::Value =
         serde_json::from_str(include_str!("../../vexination/testdata/rhsa-2023_1441.json")).unwrap();
     let id = encode(input["document"]["tracking"]["id"].as_str().unwrap());
-    let reponse = reqwest::Client::new()
+    let response = reqwest::Client::new()
         .post(vexination.urlify(format!("/api/v1/vex?advisory={id}")))
         .json(&input)
         .send()
         .await
         .unwrap();
-    assert_eq!(reponse.status(), StatusCode::UNAUTHORIZED);
+    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
 }
 
 #[test_context(VexinationContext)]
