@@ -11,8 +11,8 @@
 
 {{ define "trustification.sso.default-redirect-uris" }}
 - http://localhost:*
-- https://{{ .Values.domain }}
-- https://{{ .Values.domain }}/*
+- https://{{ .Values.spog.ui.host | default .Values.domain }}
+- https://{{ .Values.spog.ui.host | default .Values.domain }}/*
 - https://sbom.{{ .Values.domain }}
 - https://sbom.{{ .Values.domain }}/*
 - https://vex.{{ .Values.domain }}
