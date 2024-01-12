@@ -39,8 +39,13 @@ spec:
                 - "s3"
                 - "--s3-bucket"
                 - "{{ .Values.bombastic.bucket }}"
+{{ if .Values.deployMinio }}
+                - "--s3-url"
+                - "http://minio.{{ .Release.Namespace }}.svc.cluster.local:9000"
+{{ else }}
                 - "--s3-region"
                 - "{{ .Values.region }}"
+{{ end }}
                 - "--limit"
                 - "100"
               workingDir: "/guac"
