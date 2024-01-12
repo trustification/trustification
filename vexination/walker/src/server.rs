@@ -14,6 +14,7 @@ use serde::Deserialize;
 use tokio::sync::{Mutex, RwLock};
 use trustification_auth::client::{TokenInjector, TokenProvider};
 use url::Url;
+use walker_common::utils::url::Urlify;
 use walker_common::{
     fetcher::{Fetcher, FetcherOptions},
     since::Since,

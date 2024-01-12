@@ -2,9 +2,9 @@
 kind: ConfigMap
 apiVersion: v1
 metadata:
-  name: pre-install-guac-config
+  name: post-install-guac-config
   labels:
-    app.kubernetes.io/name: pre-install-guac-config
+    app.kubernetes.io/name: post-install-guac-config
     app.kubernetes.io/component: guac
     app.kubernetes.io/part-of: guac
 data:

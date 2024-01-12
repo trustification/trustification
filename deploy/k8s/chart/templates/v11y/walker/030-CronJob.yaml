@@ -61,20 +61,7 @@ spec:
               env:
                 - name: RUST_LOG
                   value: {{ default "info" .Values.v11y.walker.logLevel }}
-                - name: STORAGE_ACCESS_KEY
-                  valueFrom:
-                    secretKeyRef:
-                      name: "{{ .Values.v11y.credentials }}"
-                      key: aws_access_key_id
-                - name: STORAGE_SECRET_KEY
-                  valueFrom:
-                    secretKeyRef:
-                      name: "{{ .Values.v11y.credentials }}"
-                      key: aws_secret_access_key
-                - name: STORAGE_REGION
-                  value: "{{ .Values.region }}"
-                - name: STORAGE_BUCKET
-                  value: "{{ .Values.v11y.bucket }}"
+                {{ include "trustification.storage-env" ( dict "root" . "config" .Values.v11y ) | nindent 16 }}
                 - name: INFRASTRUCTURE_ENABLED
                   value: "true"
                 - name: INFRASTRUCTURE_BIND

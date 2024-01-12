@@ -38,9 +38,9 @@ spec:
             - "-p"
             - "8080"
             - "--bombastic-url"
-            - "https://sbom.{{ .Values.domain }}"
+            - "https://bombastic-api.$(NAMESPACE).svc"
             - "--vexination-url"
-            - "https://vex.{{ .Values.domain  }}"
+            - "https://vexination-api.$(NAMESPACE).svc"
             - "--collectorist-url"
             - "https://collectorist-api.$(NAMESPACE).svc"
             - "--v11y-url"
@@ -77,19 +77,23 @@ spec:
             - name: OTEL_TRACES_SAMPLER_ARG
               value: "0.1"
 
+{{ with (.Values.spog.api.snyk).credentials }}
             - name: SNYK_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: "{{ .Values.spog.api.snyk.credentials }}"
+                  name: "{{ . }}"
                   key: snyk_token
+{{ end }}
 
 {{- if .Values.spog.ui.customize }}
             - name: SPOG_UI_CONFIG
               value: /etc/config/spog-ui.yaml
 {{- end }}
             {{ include "trustification.authentication-client" ( dict "root" . "clientId" "walker" ) | nindent 12 }}
+{{- if not .Values.disableSwaggerOidc }}
             - name: SWAGGER_UI_OIDC_ISSUER_URL
               {{ include "trustification.authentication-frontend-issuer-url" . | nindent 14 }}
+{{- end }}
 {{- with .Values.spog.api.segmentWriteKey }}
             - name: SEGMENT_WRITE_KEY
               {{ . | toYaml | nindent 14 }}

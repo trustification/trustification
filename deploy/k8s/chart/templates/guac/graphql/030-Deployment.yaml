@@ -44,7 +44,7 @@ spec:
           command: ["/opt/guac/guacmigrate"]
           args:
             - "--db-address"
-            - "postgres://$(DB_USER):$(DB_PASSWORD)@$(PGHOST):$(PGPORT)/$(DB_NAME)"
+            - "postgres://$(DB_USER):$(DB_PASSWORD)@$(PGHOST):$(PGPORT)/$(DB_NAME)$(TC_PGOPTIONS)"
             - "--db-driver"
             - "postgres"
             - "--db-debug"
@@ -60,6 +60,11 @@ spec:
                 secretKeyRef:
                   name: guac-admin-db
                   key: "db.port"
+            - name: TC_PGOPTIONS
+              valueFrom:
+                secretKeyRef:
+                  name: guac-admin-db
+                  key: "db.options"
             - name: DB_NAME
               valueFrom:
                 secretKeyRef:
@@ -87,7 +92,7 @@ spec:
             - "--gql-backend"
             - "ent"
             - "--db-address"
-            - "postgres://$(DB_USER):$(DB_PASSWORD)@$(PGHOST):$(PGPORT)/$(DB_NAME)"
+            - "postgres://$(DB_USER):$(DB_PASSWORD)@$(PGHOST):$(PGPORT)/$(DB_NAME)$(TC_PGOPTIONS)"
             - "--db-driver"
             - "postgres"
             - "--db-debug"
@@ -118,6 +123,11 @@ spec:
                 secretKeyRef:
                   name: guac-admin-db
                   key: "db.port"
+            - name: TC_PGOPTIONS
+              valueFrom:
+                secretKeyRef:
+                  name: guac-admin-db
+                  key: "db.options"
             - name: DB_NAME
               valueFrom:
                 secretKeyRef:

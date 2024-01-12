@@ -51,21 +51,8 @@ spec:
           env:
             - name: RUST_LOG
               value: {{ default "info" .Values.vexination.api.logLevel }}
+            {{ include "trustification.storage-env" ( dict "root" . "config" .Values.vexination ) | nindent 12 }}
             {{ include "trustification.http-server" . | nindent 12 }}
-            - name: STORAGE_ACCESS_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: "{{ .Values.vexination.credentials }}"
-                  key: aws_access_key_id
-            - name: STORAGE_SECRET_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: "{{ .Values.vexination.credentials }}"
-                  key: aws_secret_access_key
-            - name: STORAGE_REGION
-              value: "{{ .Values.region }}"
-            - name: STORAGE_BUCKET
-              value: "{{ .Values.vexination.bucket }}"
             - name: INFRASTRUCTURE_ENABLED
               value: "true"
             - name: INFRASTRUCTURE_BIND
@@ -80,8 +67,10 @@ spec:
               value: "0.1"
             - name: INDEX_SYNC_INTERVAL
               value: {{ .Values.vexination.api.indexSyncInterval | default "1800s" }}
+{{ if not .Values.disableSwaggerOidc }}
             - name: SWAGGER_UI_OIDC_ISSUER_URL
               {{ include "trustification.authentication-frontend-issuer-url" . | nindent 14 }}
+{{ end }}
           volumeMounts:
             - name: data
               mountPath: /data

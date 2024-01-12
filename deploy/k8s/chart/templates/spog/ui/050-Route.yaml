@@ -10,7 +10,7 @@ metadata:
     app.kubernetes.io/part-of: trustification
   name: spog-ui
 spec:
-  host: "{{ .Values.domain }}"
+  host: {{ .Values.spog.ui.host | default .Values.domain | quote }}
   tls:
     termination: edge
     insecureEdgeTerminationPolicy: Redirect

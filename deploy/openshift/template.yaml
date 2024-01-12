@@ -40,9 +40,9 @@ objects:
   - kind: ConfigMap
     apiVersion: v1
     metadata:
-      name: pre-install-guac-config
+      name: post-install-guac-config
       labels:
-        app.kubernetes.io/name: pre-install-guac-config
+        app.kubernetes.io/name: post-install-guac-config
         app.kubernetes.io/component: guac
         app.kubernetes.io/part-of: guac
     data:
@@ -364,10 +364,10 @@ objects:
                     secretKeyRef:
                       name: ${BOMBASTIC_AWS_SECRET_NAME}
                       key: aws_secret_access_key
-                - name: STORAGE_REGION
-                  value: ${AWS_REGION}
                 - name: STORAGE_BUCKET
                   value: ${BOMBASTIC_STORAGE_BUCKET}
+                - name: STORAGE_REGION
+                  value: ${AWS_REGION}
                 - name: HTTP_SERVER_BIND_ADDR
                   value: '::'
                 - name: HTTP_SERVER_TLS_ENABLED
@@ -455,8 +455,6 @@ objects:
               args:
                 - bombastic
                 - indexer
-                - --event-bus
-                - sqs
                 - --stored-topic
                 - ${BOMBASTIC_INDEXER_STORED_TOPIC}
                 - --indexed-topic
@@ -482,10 +480,12 @@ objects:
                     secretKeyRef:
                       name: ${BOMBASTIC_AWS_SECRET_NAME}
                       key: aws_secret_access_key
-                - name: STORAGE_REGION
-                  value: ${AWS_REGION}
                 - name: STORAGE_BUCKET
                   value: ${BOMBASTIC_STORAGE_BUCKET}
+                - name: STORAGE_REGION
+                  value: ${AWS_REGION}
+                - name: EVENT_BUS
+                  value: sqs
                 - name: SQS_ACCESS_KEY
                   valueFrom:
                     secretKeyRef:
@@ -746,7 +746,7 @@ objects:
                 - /opt/guac/guacmigrate
               args:
                 - --db-address
-                - postgres://$(DB_USER):$(DB_PASSWORD)@$(PGHOST):$(PGPORT)/$(DB_NAME)
+                - postgres://$(DB_USER):$(DB_PASSWORD)@$(PGHOST):$(PGPORT)/$(DB_NAME)$(TC_PGOPTIONS)
                 - --db-driver
                 - postgres
                 - --db-debug
@@ -762,6 +762,11 @@ objects:
                     secretKeyRef:
                       name: guac-admin-db
                       key: db.port
+                - name: TC_PGOPTIONS
+                  valueFrom:
+                    secretKeyRef:
+                      name: guac-admin-db
+                      key: db.options
                 - name: DB_NAME
                   valueFrom:
                     secretKeyRef:
@@ -787,7 +792,7 @@ objects:
                 - --gql-backend
                 - ent
                 - --db-address
-                - postgres://$(DB_USER):$(DB_PASSWORD)@$(PGHOST):$(PGPORT)/$(DB_NAME)
+                - postgres://$(DB_USER):$(DB_PASSWORD)@$(PGHOST):$(PGPORT)/$(DB_NAME)$(TC_PGOPTIONS)
                 - --db-driver
                 - postgres
                 - --db-debug
@@ -817,6 +822,11 @@ objects:
                     secretKeyRef:
                       name: guac-admin-db
                       key: db.port
+                - name: TC_PGOPTIONS
+                  valueFrom:
+                    secretKeyRef:
+                      name: guac-admin-db
+                      key: db.options
                 - name: DB_NAME
                   valueFrom:
                     secretKeyRef:
@@ -881,9 +891,9 @@ objects:
                 - -p
                 - '8080'
                 - --bombastic-url
-                - https://sbom.${DOMAIN}
+                - https://bombastic-api.$(NAMESPACE).svc
                 - --vexination-url
-                - https://vex.${DOMAIN}
+                - https://vexination-api.$(NAMESPACE).svc
                 - --collectorist-url
                 - https://collectorist-api.$(NAMESPACE).svc
                 - --v11y-url
@@ -1122,10 +1132,10 @@ objects:
                     secretKeyRef:
                       name: ${V11Y_AWS_SECRET_NAME}
                       key: aws_secret_access_key
-                - name: STORAGE_REGION
-                  value: ${AWS_REGION}
                 - name: STORAGE_BUCKET
                   value: ${V11Y_STORAGE_BUCKET}
+                - name: STORAGE_REGION
+                  value: ${AWS_REGION}
                 - name: HTTP_SERVER_BIND_ADDR
                   value: '::'
                 - name: HTTP_SERVER_TLS_ENABLED
@@ -1209,8 +1219,6 @@ objects:
               args:
                 - v11y
                 - indexer
-                - --event-bus
-                - sqs
                 - --stored-topic
                 - ${V11Y_INDEXER_STORED_TOPIC}
                 - --indexed-topic
@@ -1234,10 +1242,12 @@ objects:
                     secretKeyRef:
                       name: ${V11Y_AWS_SECRET_NAME}
                       key: aws_secret_access_key
-                - name: STORAGE_REGION
-                  value: ${AWS_REGION}
                 - name: STORAGE_BUCKET
                   value: ${V11Y_STORAGE_BUCKET}
+                - name: STORAGE_REGION
+                  value: ${AWS_REGION}
+                - name: EVENT_BUS
+                  value: sqs
                 - name: SQS_ACCESS_KEY
                   valueFrom:
                     secretKeyRef:
@@ -1330,14 +1340,6 @@ objects:
               env:
                 - name: RUST_LOG
                   value: ${LOG_LEVEL}
-                - name: HTTP_SERVER_BIND_ADDR
-                  value: '::'
-                - name: HTTP_SERVER_TLS_ENABLED
-                  value: 'true'
-                - name: HTTP_SERVER_TLS_KEY_FILE
-                  value: /etc/tls/tls.key
-                - name: HTTP_SERVER_TLS_CERTIFICATE_FILE
-                  value: /etc/tls/tls.crt
                 - name: STORAGE_ACCESS_KEY
                   valueFrom:
                     secretKeyRef:
@@ -1348,10 +1350,18 @@ objects:
                     secretKeyRef:
                       name: ${VEXINATION_AWS_SECRET_NAME}
                       key: aws_secret_access_key
-                - name: STORAGE_REGION
-                  value: ${AWS_REGION}
                 - name: STORAGE_BUCKET
                   value: ${VEXINATION_STORAGE_BUCKET}
+                - name: STORAGE_REGION
+                  value: ${AWS_REGION}
+                - name: HTTP_SERVER_BIND_ADDR
+                  value: '::'
+                - name: HTTP_SERVER_TLS_ENABLED
+                  value: 'true'
+                - name: HTTP_SERVER_TLS_KEY_FILE
+                  value: /etc/tls/tls.key
+                - name: HTTP_SERVER_TLS_CERTIFICATE_FILE
+                  value: /etc/tls/tls.crt
                 - name: INFRASTRUCTURE_ENABLED
                   value: 'true'
                 - name: INFRASTRUCTURE_BIND
@@ -1431,8 +1441,6 @@ objects:
               args:
                 - vexination
                 - indexer
-                - --event-bus
-                - sqs
                 - --stored-topic
                 - ${VEXINATION_INDEXER_STORED_TOPIC}
                 - --indexed-topic
@@ -1456,10 +1464,12 @@ objects:
                     secretKeyRef:
                       name: ${VEXINATION_AWS_SECRET_NAME}
                       key: aws_secret_access_key
-                - name: STORAGE_REGION
-                  value: ${AWS_REGION}
                 - name: STORAGE_BUCKET
                   value: ${VEXINATION_STORAGE_BUCKET}
+                - name: STORAGE_REGION
+                  value: ${AWS_REGION}
+                - name: EVENT_BUS
+                  value: sqs
                 - name: SQS_ACCESS_KEY
                   valueFrom:
                     secretKeyRef:
@@ -1775,10 +1785,10 @@ objects:
                         secretKeyRef:
                           name: ${V11Y_AWS_SECRET_NAME}
                           key: aws_secret_access_key
-                    - name: STORAGE_REGION
-                      value: ${AWS_REGION}
                     - name: STORAGE_BUCKET
                       value: ${V11Y_STORAGE_BUCKET}
+                    - name: STORAGE_REGION
+                      value: ${AWS_REGION}
                     - name: INFRASTRUCTURE_ENABLED
                       value: 'true'
                     - name: INFRASTRUCTURE_BIND
@@ -1965,16 +1975,16 @@ objects:
   - kind: Job
     apiVersion: batch/v1
     metadata:
-      name: pre-install-guac
+      name: post-install-guac
       annotations:
         argocd.argoproj.io/hook: Sync
         argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
         argocd.argoproj.io/sync-wave: '0'
         helm.sh/hook-weight: '5'
-        helm.sh/hook: pre-install,pre-upgrade
+        helm.sh/hook: post-install,post-upgrade
         helm.sh/hook-delete-policy: before-hook-creation
       labels:
-        app.kubernetes.io/name: pre-install-guac
+        app.kubernetes.io/name: post-install-guac
         app.kubernetes.io/component: guac
         app.kubernetes.io/part-of: guac
     spec:
@@ -1989,9 +1999,9 @@ objects:
           volumes:
             - name: init-data
               configMap:
-                name: pre-install-guac-config
+                name: post-install-guac-config
           containers:
-            - name: pre-install
+            - name: post-install
               image: ${POSTGRESQL_IMAGE}
               imagePullPolicy: Always
               env:

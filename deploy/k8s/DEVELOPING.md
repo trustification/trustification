@@ -2,6 +2,8 @@
 
 > Happy when helming? Most likely not!
 
+**NOTE:** All commands are relative to this file.
+
 ## Updating chart dependencies
 
 ```shell
