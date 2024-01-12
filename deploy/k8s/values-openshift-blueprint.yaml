@@ -5,11 +5,15 @@
 # * field domain - the base domain of the deployment (example value is "apps.cluster-s2528.sandbox1481.opentlc.com")
 # all locations where the <domain> name is used (the example value must be replaced)
 #
+# ## Initial jobs
+#
 # After the installation you might want to run the cronjobs at least once:
 #
 # oc create job --from=cronjob/v11y-walker v11y-walker-initial
 # oc create job --from=cronjob/bombastic-collector bombastic-collector-initial
 # oc create job --from=cronjob/vexination-collector vexination-collector-initial
+#
+# ## Ingestion delay
 #
 # When will data show up?
 #
@@ -17,7 +21,21 @@
 # collecting, …), which might take some time. Most important is the period/delay the indexes get synced. For the
 # indexers, that's configurable using the "indexSyncInterval" field in the various indexers. For the guac
 # collectors, that's part of the CronJobs, which is specified in the "schedule" field of the various collectors.
-
+#
+# ## Branding
+#
+# If you want custom branding, set the following options, and customize and install the `trustification-branding`
+# chart:
+#
+# * add: .spog.ui.customize: true
+# * add: .spog.ui.customizeName: spog-ui-config
+# * set: .spog.branding: false
+#
+# You can also to this from the command line: --set spog.ui.customize=true,spog.ui.customizeName=spog-ui-config,spog.branding=false
+#
+# Install using:
+#   helm upgrade --install -n trustification trustification-branding trustification-branding/
+#
 release: ea3d3de1d3a01c80497d9a4e4697afbc6a04591f
 trustImage: ghcr.io/trustification/trust
 uiImage: ghcr.io/trustification/trust

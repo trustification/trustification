@@ -762,11 +762,6 @@ objects:
                     secretKeyRef:
                       name: guac-admin-db
                       key: db.port
-                - name: TC_PGOPTIONS
-                  valueFrom:
-                    secretKeyRef:
-                      name: guac-admin-db
-                      key: db.options
                 - name: DB_NAME
                   valueFrom:
                     secretKeyRef:
@@ -822,12 +817,6 @@ objects:
                     secretKeyRef:
                       name: guac-admin-db
                       key: db.port
-                - name: TC_PGOPTIONS
-                  valueFrom:
-                    secretKeyRef:
-                      name: guac-admin-db
-                      key: db.options
-                      optional: true
                 - name: DB_NAME
                   valueFrom:
                     secretKeyRef:
@@ -940,7 +929,7 @@ objects:
                       name: snyk-collector-secret
                       key: snyk_token
                 - name: SPOG_UI_CONFIG
-                  value: /etc/config/spog-ui.yaml
+                  value: /etc/customize/spog-ui.yaml
                 - name: OIDC_PROVIDER_CLIENT_ID
                   value: trusted-content-api
                 - name: OIDC_PROVIDER_CLIENT_SECRET
@@ -981,10 +970,15 @@ objects:
               volumeMounts:
                 - mountPath: /etc/config
                   name: config
+                - mountPath: /etc/customize
+                  name: customize
                 - mountPath: /etc/tls
                   name: tls
           volumes:
             - name: config
+              configMap:
+                name: ${CONFIG_NAME}
+            - name: customize
               configMap:
                 name: ${CONFIG_NAME}
             - name: tls

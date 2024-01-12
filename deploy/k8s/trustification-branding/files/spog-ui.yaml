@@ -1,0 +1,509 @@
+$schema: "https://raw.githubusercontent.com/trustification/trustification/main/spog/model/schema/config.json"
+
+global:
+  documentationUrl: https://github.com/trustification/trustification
+  supportUrl: https://github.com/trustification/trustification/issues
+  supportCaseUrl: https://github.com/trustification/trustification/issues
+  supportCaseLabel: "Open a support case"
+  showGithubLink: true
+
+bombastic:
+
+  filters:
+    categories:
+
+      - label: Products
+        options:
+
+          - type: check
+            label: UBI 7
+            id: ubi7
+            terms:
+              - '"pkg:oci/ubi7"'
+
+          - type: check
+            label: UBI 8
+            id: ubi8
+            terms:
+              - '"pkg:oci/ubi8"'
+
+          - type: check
+            label: UBI 9
+            id: ubi9
+            terms:
+              - '"pkg:oci/ubi9"'
+
+          - type: divider
+
+          - type: check
+            label: Red Hat Enterprise Linux 7
+            id: rhel7
+            terms:
+              - '"cpe:/o:redhat:enterprise_linux:7"'
+              - '"cpe:/o:redhat:rhel_aus:7"'
+
+          - type: check
+            label: Red Hat Enterprise Linux 8
+            id: rhel8
+            terms:
+              - '"cpe:/o:redhat:enterprise_linux:8"'
+              - '"cpe:/o:redhat:rhel_e4s:8.1"'
+
+          - type: check
+            label: Red Hat Enterprise Linux 9
+            id: rhel9
+            terms:
+              - '"cpe:/o:redhat:enterprise_linux:9"'
+
+          - type: divider
+
+          - type: check
+            label: Ansible
+            id: ansible
+            terms:
+              - '"cpe:/a:redhat:ansible_automation_platform"'
+
+          - type: check
+            label: AMQ
+            id: amq
+            terms:
+              - '"cpe:/a:redhat:amq" OR "amq-"'
+
+          - type: check
+            label: Quarkus
+            id: quarkus
+            terms:
+              - '"quarkus"'
+
+      - label: Type
+        options:
+          - type: check
+            label: Container
+            id: is_container
+            terms:
+              - 'type:oci'
+
+          - type: check
+            label: Product
+            id: is_product
+            terms:
+              - 'NOT type:oci'
+
+      - label: Suppliers
+        options:
+          - type: check
+            label: Red Hat
+            id: supplier_redhat
+            terms:
+              - 'supplier:"Organization: Red Hat"'
+
+      - label: Created on
+        options:
+          - type: select
+            group: created-on
+            default: any
+            options:
+              - id: last-week
+                label: Last 7 days
+                script: |
+                  const end = new Date();
+                  const start = new Date(end.getTime() - (7 * 24 * 60 * 60 * 1000));
+                  [
+                    "created:" + 
+                    start.toLocaleString("default", { year: "numeric" }) + "-" +
+                    start.toLocaleString("default", { month: "2-digit" }) + "-" +
+                    start.toLocaleString("default", { day: "2-digit" }) + ".." +
+                    end.toLocaleString("default", { year: "numeric" }) + "-" +
+                    end.toLocaleString("default", { month: "2-digit" }) + "-" +
+                    end.toLocaleString("default", { day: "2-digit" })
+                  ];
+              - id: last-month
+                label: Last 30 days
+                script: |
+                  const end = new Date();
+                  const start = new Date(end.getTime() - (30 * 24 * 60 * 60 * 1000));
+                  [
+                    "created:" + 
+                    start.toLocaleString("default", { year: "numeric" }) + "-" +
+                    start.toLocaleString("default", { month: "2-digit" }) + "-" +
+                    start.toLocaleString("default", { day: "2-digit" }) + ".." +
+                    end.toLocaleString("default", { year: "numeric" }) + "-" +
+                    end.toLocaleString("default", { month: "2-digit" }) + "-" +
+                    end.toLocaleString("default", { day: "2-digit" })
+                  ];
+              - id: this-year
+                label: This year
+                script: |
+                  const date = new Date();
+                  const start = new Date(date.getFullYear(), 0, 1);
+                  const end = new Date(date.getFullYear()+1, 0, 1);
+                  [
+                    "created:" + 
+                    start.toLocaleString("default", { year: "numeric" }) + "-" +
+                    start.toLocaleString("default", { month: "2-digit" }) + "-" +
+                    start.toLocaleString("default", { day: "2-digit" }) + ".." +
+                    end.toLocaleString("default", { year: "numeric" }) + "-" +
+                    end.toLocaleString("default", { month: "2-digit" }) + "-" +
+                    end.toLocaleString("default", { day: "2-digit" })
+                  ];
+              - id: "2022"
+                label: "2022"
+                terms:
+                  - 'created:2022-01-01..2023-01-01'
+              - id: "2021"
+                label: "2021"
+                terms:
+                  - 'created:2021-01-01..2022-01-01'
+              - id: "any"
+                label: "Any time"
+
+vexination:
+
+  filters:
+    categories:
+      - label: Severity
+        options:
+          - type: check
+            id: low
+            label: |
+              <span class="tc-c-severity">
+                  <span class="tc-c-severity__icon"> <span class="tc-m-severity-low"> <i class="fa fa-shield-halved"></i> </span></span>
+                  <span class="tc-c-severity__text"> Low </span>
+              </span>
+            terms:
+              - "severity:Low"
+
+          - type: check
+            id: moderate
+            label: |
+              <span class="tc-c-severity">
+                  <span class="tc-c-severity__icon"> <span class="tc-m-severity-moderate"> <i class="fa fa-shield-halved"></i> </span></span>
+                  <span class="tc-c-severity__text"> Moderate </span>
+              </span>
+            terms:
+              - "severity:Moderate"
+
+          - type: check
+            id: important
+            label: |
+              <span class="tc-c-severity">
+                  <span class="tc-c-severity__icon"> <span class="tc-m-severity-important"> <i class="fa fa-shield-halved"></i> </span></span>
+                  <span class="tc-c-severity__text"> Important </span>
+              </span>
+            terms:
+              - "severity:Important"
+
+          - type: check
+            id: critical
+            label: |
+              <span class="tc-c-severity">
+                  <span class="tc-c-severity__icon"> <span class="tc-m-severity-critical"> <i class="fa fa-shield-halved"></i> </span></span>
+                  <span class="tc-c-severity__text"> Critical </span>
+              </span>
+            terms:
+              - "severity:Critical"
+
+      - label: Products
+        options:
+
+          - type: check
+            id: rhel7
+            label: Red Hat Enterprise Linux 7
+            terms:
+              - '( "cpe:/o:redhat:rhel_eus:7" in:package )'
+
+          - type: check
+            id: rhel8
+            label: Red Hat Enterprise Linux 8
+            terms:
+              - '( "cpe:/o:redhat:rhel_eus:8" in:package )'
+
+          - type: check
+            id: rhel9
+            label: Red Hat Enterprise Linux 9
+            terms:
+              - '( "cpe:/a:redhat:enterprise_linux:9" in:package )'
+
+          - type: divider
+
+          - type: check
+            id: ocp3
+            label: OpenShift Container Platform 3
+            terms:
+              - '( "cpe:/a:redhat:openshift:3" in:package )'
+
+          - type: check
+            id: ocp4
+            label: OpenShift Container Platform 4
+            terms:
+              - '( "cpe:/a:redhat:openshift:4" in:package )'
+
+      - label: Revisions
+        options:
+          - type: select
+            group: release
+            default: any
+            options:
+              - id: last-week
+                label: Last 7 days
+                script: |
+                  const end = new Date();
+                  const start = new Date(end.getTime() - (7 * 24 * 60 * 60 * 1000));
+                  [
+                    "release:" +
+                    start.toLocaleString("default", { year: "numeric" }) + "-" +
+                    start.toLocaleString("default", { month: "2-digit" }) + "-" +
+                    start.toLocaleString("default", { day: "2-digit" }) + ".." +
+                    end.toLocaleString("default", { year: "numeric" }) + "-" +
+                    end.toLocaleString("default", { month: "2-digit" }) + "-" +
+                    end.toLocaleString("default", { day: "2-digit" })
+                  ];
+              - id: last-month
+                label: Last 30 days
+                script: |
+                  const end = new Date();
+                  const start = new Date(end.getTime() - (30 * 24 * 60 * 60 * 1000));
+                  [
+                    "release:" +
+                    start.toLocaleString("default", { year: "numeric" }) + "-" +
+                    start.toLocaleString("default", { month: "2-digit" }) + "-" +
+                    start.toLocaleString("default", { day: "2-digit" }) + ".." +
+                    end.toLocaleString("default", { year: "numeric" }) + "-" +
+                    end.toLocaleString("default", { month: "2-digit" }) + "-" +
+                    end.toLocaleString("default", { day: "2-digit" })
+                  ];
+              - id: this-year
+                label: This year
+                script: |
+                  const date = new Date();
+                  const start = new Date(date.getFullYear(), 0, 1);
+                  const end = new Date(date.getFullYear()+1, 0, 1);
+                  [
+                    "release:" +
+                    start.toLocaleString("default", { year: "numeric" }) + "-" +
+                    start.toLocaleString("default", { month: "2-digit" }) + "-" +
+                    start.toLocaleString("default", { day: "2-digit" }) + ".." +
+                    end.toLocaleString("default", { year: "numeric" }) + "-" +
+                    end.toLocaleString("default", { month: "2-digit" }) + "-" +
+                    end.toLocaleString("default", { day: "2-digit" })
+                  ];
+              - id: "2022"
+                label: "2022"
+                terms:
+                  - 'release:2022-01-01..2023-01-01'
+              - id: "2021"
+                label: "2021"
+                terms:
+                  - 'release:2021-01-01..2022-01-01'
+              - id: "any"
+                label: "Any time"
+
+cve:
+  filters:
+    categories:
+
+      - label: State
+        options:
+          - type: select
+            default: published
+            group: state
+            options:
+              - id: any
+                label: Any
+                terms: [ ]
+              - id: published
+                label: Published
+                terms:
+                  - "is:published"
+              - id: rejected
+                label: Rejected
+                terms:
+                  - "is:rejected"
+
+      - label: CVSS
+        options:
+          - type: check
+            id: low
+            label: |
+              <span class="tc-c-severity">
+                  <span class="tc-c-severity__icon"> <span class="tc-m-severity-low"> <i class="fa fa-shield-halved"></i> </span></span>
+                  <span class="tc-c-severity__text"> Low </span>
+              </span>
+            terms:
+              - "severity:low"
+
+          - type: check
+            id: moderate
+            label: |
+              <span class="tc-c-severity">
+                  <span class="tc-c-severity__icon"> <span class="tc-m-severity-moderate"> <i class="fa fa-shield-halved"></i> </span></span>
+                  <span class="tc-c-severity__text"> Medium </span>
+              </span>
+            terms:
+              - "severity:medium"
+
+          - type: check
+            id: important
+            label: |
+              <span class="tc-c-severity">
+                  <span class="tc-c-severity__icon"> <span class="tc-m-severity-important"> <i class="fa fa-shield-halved"></i> </span></span>
+                  <span class="tc-c-severity__text"> High </span>
+              </span>
+            terms:
+              - "severity:high"
+
+          - type: check
+            id: critical
+            label: |
+              <span class="tc-c-severity">
+                  <span class="tc-c-severity__icon"> <span class="tc-m-severity-critical"> <i class="fa fa-shield-halved"></i> </span></span>
+                  <span class="tc-c-severity__text"> Critical </span>
+              </span>
+            terms:
+              - "severity:critical"
+
+      - label: Published
+        options:
+          - type: select
+            group: date-published
+            default: any
+            options:
+              - id: last-week
+                label: Last 7 days
+                script: |
+                  const end = new Date();
+                  const start = new Date(end.getTime() - (7 * 24 * 60 * 60 * 1000));
+                  [
+                    "datePublished:" +
+                    start.toLocaleString("default", { year: "numeric" }) + "-" +
+                    start.toLocaleString("default", { month: "2-digit" }) + "-" +
+                    start.toLocaleString("default", { day: "2-digit" }) + ".." +
+                    end.toLocaleString("default", { year: "numeric" }) + "-" +
+                    end.toLocaleString("default", { month: "2-digit" }) + "-" +
+                    end.toLocaleString("default", { day: "2-digit" })
+                  ];
+              - id: last-month
+                label: Last 30 days
+                script: |
+                  const end = new Date();
+                  const start = new Date(end.getTime() - (30 * 24 * 60 * 60 * 1000));
+                  [
+                    "datePublished:" +
+                    start.toLocaleString("default", { year: "numeric" }) + "-" +
+                    start.toLocaleString("default", { month: "2-digit" }) + "-" +
+                    start.toLocaleString("default", { day: "2-digit" }) + ".." +
+                    end.toLocaleString("default", { year: "numeric" }) + "-" +
+                    end.toLocaleString("default", { month: "2-digit" }) + "-" +
+                    end.toLocaleString("default", { day: "2-digit" })
+                  ];
+              - id: this-year
+                label: This year
+                script: |
+                  const date = new Date();
+                  const start = new Date(date.getFullYear(), 0, 1);
+                  const end = new Date(date.getFullYear()+1, 0, 1);
+                  [
+                    "datePublished:" +
+                    start.toLocaleString("default", { year: "numeric" }) + "-" +
+                    start.toLocaleString("default", { month: "2-digit" }) + "-" +
+                    start.toLocaleString("default", { day: "2-digit" }) + ".." +
+                    end.toLocaleString("default", { year: "numeric" }) + "-" +
+                    end.toLocaleString("default", { month: "2-digit" }) + "-" +
+                    end.toLocaleString("default", { day: "2-digit" })
+                  ];
+              - id: "2022"
+                label: "2022"
+                terms:
+                  - 'datePublished:2022-01-01..2023-01-01'
+              - id: "2021"
+                label: "2021"
+                terms:
+                  - 'datePublished:2021-01-01..2022-01-01'
+              - id: "any"
+                label: "Any time"
+
+packages:
+
+  filters:
+    categories:
+
+      - label: Type
+        options:
+
+          - type: check
+            label: maven
+            id: maven
+            terms:
+              - 'type:maven'
+
+          - type: check
+            label: RPM
+            id: RPM
+            terms:
+              - 'type:rpm'
+
+          - type: check
+            label: NPM
+            id: NPM
+            terms:
+              - 'type:npm'
+
+      - label: Supplier
+        options:
+
+          - type: check
+            label: Red Hat
+            id: redhat
+            terms:
+              - 'supplier:"Organization: Red Hat"'
+
+
+scanner:
+  documentationUrl: https://www.trustification.io/blog/
+
+landingPage:
+  headerContent: |
+    <section
+      class="pf-v5-c-page__main-section pf-m-light pf-m-shadow-bottom"
+    >
+      <div class="pf-v5-l-grid pf-m-gutter">
+        <div class="pf-v5-l-grid__item pf-m-8-col">
+          <div class="pf-v5-c-content">
+            <h1 class="pf-v5-c-title pf-m-2xl">Trusted Content</h1>
+            <p class="pf-v5-u-color-200">A service for software supply chain security</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  afterOuterContent: |
+    <div class="pf-v5-l-grid__item pf-m-6-col">
+      <div class="pf-v5-c-card pf-m-full-height">
+        <div class="pf-v5-c-card__title">
+          <h2 class="pf-v5-c-card__title-text">Scan your SBOM</h2>
+        </div>
+        <div class="pf-v5-c-card__body">
+          Load a custom SBOM and have its dependencies analyzed. The system doesn't store your SBOM.
+        </div>
+        <div class="pf-v5-c-card__body">
+          <div class="pf-v5-l-bullseye">
+            <div class="pf-v5-l-bullseye__item">
+              <a
+                class="pf-v5-c-button pf-m-primary pf-m-display-lg"
+                type="button"
+                onclick="window.wasmBindings.spogNavigateTo('/scanner'); return false;"
+              >Scan SBOM</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pf-v5-l-grid__item pf-m-6-col">
+      <div class="pf-v5-c-card pf-m-full-height">
+        <div class="pf-v5-c-card__title">
+          <h2 class="pf-v5-c-card__title-text">Learn more</h2>
+        </div>
+        <div class="pf-v5-c-card__body">This content can be customized through configuration.</div>
+      </div>
+    </div>
