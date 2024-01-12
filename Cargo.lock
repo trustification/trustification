@@ -1432,7 +1432,7 @@ dependencies = [
  "trustification-auth",
  "trustification-infrastructure",
  "url",
- "walker-common",
+ "walker-common 0.5.5",
 ]
 
 [[package]]
@@ -2099,20 +2099,22 @@ dependencies = [
 
 [[package]]
 name = "csaf-walker"
-version = "0.5.3"
+version = "0.6.0-alpha.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9327701f3bea0557af6b434ff9293b46d7791df9bbfc5933e6cbee61fe696a39"
+checksum = "e89a8c1f115c53fb3a0947d40f7b7f48f40ec51225440f0505496c6ddcf2798c"
 dependencies = [
  "anyhow",
  "async-trait",
  "bytes",
  "chrono",
+ "cpe",
  "csv",
  "digest 0.10.7",
  "filetime",
  "futures",
  "humantime",
  "log",
+ "percent-encoding",
  "reqwest",
  "sequoia-openpgp",
  "serde",
@@ -2122,7 +2124,8 @@ dependencies = [
  "time",
  "tokio",
  "url",
- "walker-common",
+ "walkdir",
+ "walker-common 0.6.0-alpha.1",
  "xattr",
 ]
 
@@ -5613,7 +5616,7 @@ dependencies = [
  "time",
  "tokio",
  "url",
- "walker-common",
+ "walker-common 0.5.5",
 ]
 
 [[package]]
@@ -8240,7 +8243,7 @@ dependencies = [
  "trustification-auth",
  "trustification-infrastructure",
  "url",
- "walker-common",
+ "walker-common 0.6.0-alpha.1",
 ]
 
 [[package]]
@@ -8273,9 +8276,9 @@ dependencies = [
 
 [[package]]
 name = "walker-common"
-version = "0.5.3"
+version = "0.5.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cb942baf1d34977b720de0ba28353326e641b0b401ca4e0d27d1e557448780ed"
+checksum = "978079b7d6ec4b80a81b87ded8d4b15b0734b330de74fd60f5e3c675261dd925"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -8294,6 +8297,38 @@ dependencies = [
  "sequoia-openpgp",
  "serde",
  "serde_json",
+ "thiserror",
+ "time",
+ "tokio",
+ "tracing",
+ "url",
+]
+
+[[package]]
+name = "walker-common"
+version = "0.6.0-alpha.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "18b58c41abb43db112dc3b19499b4f327b2b176dfdf69c7534cd446ad47677ae"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "base64 0.21.4",
+ "bytes",
+ "bzip2",
+ "clap",
+ "csv",
+ "digest 0.10.7",
+ "flexible-time",
+ "futures-util",
+ "humantime",
+ "indicatif",
+ "log",
+ "openid",
+ "reqwest",
+ "sequoia-openpgp",
+ "serde",
+ "serde_json",
+ "sha2 0.10.8",
  "thiserror",
  "time",
  "tokio",

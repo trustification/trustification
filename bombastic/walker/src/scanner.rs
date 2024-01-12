@@ -11,10 +11,10 @@ use std::time::{Duration, SystemTime};
 use tokio::time::MissedTickBehavior;
 use tracing::{instrument, log};
 use url::Url;
-use walker_common::since::Since;
 use walker_common::{
     fetcher::{Fetcher, FetcherOptions},
     sender::{self, provider::TokenProvider},
+    since::Since,
     validate::ValidationOptions,
 };
 
