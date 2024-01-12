@@ -49,10 +49,10 @@ kafka:
   image: docker.io/bitnami/kafka@sha256:8fedaa492f1f570cade60f5ff09978cd841307b1e9f93fe6216136ca165fcc2d
   resources:
     requests:
-      cpu: "100m"
-      memory: "512Mi"
+      cpu: "1"
+      memory: "1Gi"
     limits:
-      memory: "512Mi"
+      memory: "1Gi"
 minio:
   image: quay.io/minio/minio:RELEASE.2023-06-19T19-52-50Z
   cliImage: quay.io/minio/mc:RELEASE.2023-06-19T19-31-19Z
