@@ -14,7 +14,10 @@ crc start --cpus 8 --memory 32768 --disk-size 80
 Next, deploy the application:
 
 ```shell
-helm upgrade --install -n trustification --create-namespace trustification chart/ --values values-crc.yaml
+
+cd deploy/k8s
+helm dependency update chart/
+helm upgrade --install --debug -n trustification --create-namespace trustification chart/ --values values-crc.yaml
 ```
 
 ### With Minikube
