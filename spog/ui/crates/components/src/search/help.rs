@@ -12,12 +12,12 @@ You can use <code>OR</code>, <code>AND</code>, <code>NOT</code>, and parenthesis
 behavior.
 </p>
 <p>
-For searching special characters, whitespaces, or for searching for the literal keywords (like entries containing <q>OR</q>), surround the word with double quotes.
+For searching special characters, white spaces, or for searching for the literal keywords (like entries containing <q>OR</q>), surround the word with double quotes.
 </p>
 
 <p>When using the <strong>complex</strong> search mode, you can add additional qualifiers to the search
 expression in order to further refine it. Qualifiers have the form of <code>qualifier:&lt;value&gt;</code>.
-Multiple values, combines with <q>or</q>, can be provided by using a comma-seperated list, like <code>qualifier:&lt;value1&gt;,&lt;value2&gt;</code>.
+Multiple values, combines with <q>or</q>, can be provided by using a comma-separated list, like <code>qualifier:&lt;value1&gt;,&lt;value2&gt;</code>.
 </p>
 
 "#;

@@ -30,7 +30,7 @@ fn set_panic_hook() {
         <i class="fas fa-fw fa-exclamation-circle" aria-hidden="true"></i>
       </div>
       <p class="pf-v5-c-alert__title">
-        <span class="pf-v5-screen-reader">Panick alert:</span>
+        <span class="pf-v5-screen-reader">Panic alert:</span>
         Application panicked
       </p>
       <div class="pf-v5-c-alert__description">
