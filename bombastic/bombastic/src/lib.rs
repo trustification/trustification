@@ -1,6 +1,7 @@
 use std::process::ExitCode;
 
 #[derive(clap::Subcommand, Debug)]
+#[allow(clippy::large_enum_variant)]
 pub enum Command {
     Api(bombastic_api::Run),
     Indexer(bombastic_indexer::Run),

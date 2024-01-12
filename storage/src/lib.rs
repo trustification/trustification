@@ -41,40 +41,63 @@ struct Metrics {
 }
 
 impl Metrics {
-    fn register(registry: &Registry) -> Result<Self, Error> {
+    fn register(registry: &Registry, prefix: String) -> Result<Self, Error> {
+        let prefix = if prefix.is_empty() {
+            prefix
+        } else {
+            format!("{prefix}_")
+        };
         let puts_total = register_int_counter_with_registry!(
-            opts!("storage_object_puts_total", "Total number of put operations"),
+            opts!(
+                format!("{prefix}storage_object_puts_total"),
+                "Total number of put operations"
+            ),
             registry
         )?;
 
         let index_puts_total = register_int_counter_with_registry!(
-            opts!("storage_index_puts_total", "Total number of put operations for index"),
+            opts!(
+                format!("{prefix}storage_index_puts_total"),
+                "Total number of put operations for index"
+            ),
             registry
         )?;
 
         let gets_total = register_int_counter_with_registry!(
-            opts!("storage_object_gets_total", "Total number of get operations"),
+            opts!(
+                format!("{prefix}storage_object_gets_total"),
+                "Total number of get operations"
+            ),
             registry
         )?;
 
         let deletes_total = register_int_counter_with_registry!(
-            opts!("storage_object_deletes_total", "Total number of delete operations"),
+            opts!(
+                format!("{prefix}storage_object_deletes_total"),
+                "Total number of delete operations"
+            ),
             registry
         )?;
 
         let puts_failed_total = register_int_counter_with_registry!(
-            opts!("storage_puts_failed_total", "Total number of failed put operations"),
+            opts!(
+                format!("{prefix}storage_puts_failed_total"),
+                "Total number of failed put operations"
+            ),
             registry
         )?;
 
         let gets_failed_total = register_int_counter_with_registry!(
-            opts!("storage_gets_failed_total", "Total number of failed get operations"),
+            opts!(
+                format!("{prefix}storage_gets_failed_total"),
+                "Total number of failed get operations"
+            ),
             registry
         )?;
 
         let deletes_failed_total = register_int_counter_with_registry!(
             opts!(
-                "storage_deletes_failed_total",
+                format!("{prefix}storage_deletes_failed_total"),
                 "Total number of failed delete operations"
             ),
             registry
@@ -82,7 +105,7 @@ impl Metrics {
 
         let put_latency_seconds = register_histogram_with_registry!(
             histogram_opts!(
-                "storage_put_latency_seconds",
+                format!("{prefix}storage_put_latency_seconds"),
                 "Put latency",
                 vec![0.0001, 0.001, 0.01, 0.1, 1.0, 10.0]
             ),
@@ -91,7 +114,7 @@ impl Metrics {
 
         let get_latency_seconds = register_histogram_with_registry!(
             histogram_opts!(
-                "storage_get_latency_seconds",
+                format!("{prefix}storage_get_latency_seconds"),
                 "Get latency",
                 vec![0.0001, 0.001, 0.01, 0.1, 1.0, 10.0]
             ),
@@ -135,9 +158,8 @@ pub struct StorageConfig {
     #[arg(env = "STORAGE_SECRET_KEY", long = "storage-secret-key")]
     pub secret_key: Option<Hide<String>>,
 
-    /// Validation choice
-    #[arg(env = "VALIDATOR", long = "validator", default_value = "none")]
-    pub validator: Validator,
+    #[arg(long = "validate", default_value_t = true)]
+    pub validate: bool,
 }
 
 impl TryInto<Bucket> for StorageConfig {
@@ -167,36 +189,37 @@ impl TryInto<Bucket> for StorageConfig {
 }
 
 impl StorageConfig {
-    pub fn process(mut self, default_bucket: &str, devmode: bool) -> StorageConfig {
+    pub fn process(&self, default_bucket: &str, devmode: bool) -> StorageConfig {
+        let mut result = self.clone();
         if devmode {
             if self.access_key.is_none() {
-                self.access_key = Some("admin".into());
+                result.access_key = Some("admin".into());
             }
 
             if self.secret_key.is_none() {
-                self.secret_key = Some("password".into());
+                result.secret_key = Some("password".into());
             }
 
             if self.bucket.is_none() {
-                self.bucket = Some(default_bucket.to_string());
+                result.bucket = Some(default_bucket.to_string());
             }
 
             if self.region.is_none() {
-                self.region = Some(Region::Custom {
+                result.region = Some(Region::Custom {
                     region: Region::EuCentral1.to_string(),
                     endpoint: self.endpoint.clone().unwrap_or("http://localhost:9000".into()),
                 });
             }
 
             if self.endpoint.is_none() {
-                self.endpoint = Some("http://localhost:9000".into());
+                result.endpoint = Some("http://localhost:9000".into());
             }
 
-            log::info!("Update config to {:#?}", self);
+            log::info!("Update config to {:#?}", result);
 
-            self
+            result
         } else {
-            self
+            result
         }
     }
 }
@@ -287,30 +310,19 @@ pub struct Head {
 }
 
 impl Storage {
-    pub fn new(config: StorageConfig, registry: &Registry) -> Result<Self, Error> {
-        let validator = config.validator.clone();
+    pub fn new(config: StorageConfig, v: Validator, registry: &Registry) -> Result<Self, Error> {
+        let prefix = v.to_string();
+        let validator = if config.validate { v } else { Validator::None };
         let bucket = config.try_into()?;
         Ok(Self {
             bucket,
-            metrics: Metrics::register(registry)?,
+            metrics: Metrics::register(registry, prefix)?,
             validator,
         })
     }
 
-    pub fn is_index(&self, key: &str) -> bool {
-        format!("/{}", key).starts_with(INDEX_PATH)
-    }
-
-    pub fn key_from_event(record: &Record) -> Result<(Cow<str>, String), Error> {
-        if let Ok(decoded) = urlencoding::decode(record.key()) {
-            let key = decoded
-                .strip_prefix("data/")
-                .map(|s| s.to_string())
-                .unwrap_or(decoded.to_string());
-            Ok((decoded, key))
-        } else {
-            Err(Error::InvalidKey(record.key().to_string()))
-        }
+    pub fn is_index(&self, path: &str) -> bool {
+        S3Path::from_path(path).path.starts_with(INDEX_PATH)
     }
 
     pub async fn put_stream<'a>(

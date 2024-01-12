@@ -7,6 +7,7 @@ use trustification_event_bus::EventBusConfig;
 use trustification_index::{IndexConfig, IndexStore, WriteIndex};
 use trustification_indexer::{actix::configure, Indexer, IndexerStatus, ReindexMode};
 use trustification_infrastructure::{Infrastructure, InfrastructureConfig};
+use trustification_storage::validator::Validator;
 use trustification_storage::{Storage, StorageConfig};
 
 #[derive(clap::Args, Debug)]
@@ -56,7 +57,11 @@ impl Run {
                     let index = block_in_place(|| {
                         IndexStore::new(&self.storage, &self.index, index, context.metrics.registry())
                     })?;
-                    let storage = Storage::new(storage.process("v11y", self.devmode), context.metrics.registry())?;
+                    let storage = Storage::new(
+                        storage.process("v11y", self.devmode),
+                        Validator::None,
+                        context.metrics.registry(),
+                    )?;
 
                     let bus = self.bus.create(context.metrics.registry()).await?;
                     if self.devmode {

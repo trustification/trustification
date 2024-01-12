@@ -19,7 +19,7 @@ use trustification_infrastructure::{
     health::checks::Probe,
     Infrastructure, InfrastructureConfig,
 };
-use trustification_storage::{Storage, StorageConfig};
+use trustification_storage::{validator::Validator, Storage, StorageConfig};
 use utoipa::OpenApi;
 
 mod sbom;
@@ -157,10 +157,12 @@ impl Run {
         let vex_index =
             block_in_place(|| IndexStore::new(&storage, &index_config, vexination_index::Index::new(), registry))?;
 
-        let storage = Storage::new(storage.process("bombastic", devmode), registry)?;
+        let sbom_storage = Storage::new(storage.process("bombastic", devmode), Validator::SBOM, registry)?;
+        let vex_storage = Storage::new(storage.process("vexination", devmode), Validator::VEX, registry)?;
 
         let state = Arc::new(AppState {
-            storage,
+            sbom_storage,
+            vex_storage,
             sbom_index,
             package_index,
             vex_index,
@@ -214,7 +216,8 @@ pub(crate) type SbomIndex = IndexStore<bombastic_index::sbom::Index>;
 pub(crate) type PackageIndex = IndexStore<bombastic_index::packages::Index>;
 pub(crate) type VexIndex = IndexStore<vexination_index::Index>;
 pub struct AppState {
-    storage: Storage,
+    sbom_storage: Storage,
+    vex_storage: Storage,
     sbom_index: SbomIndex,
     package_index: PackageIndex,
     vex_index: VexIndex,
@@ -224,9 +227,9 @@ pub(crate) type SharedState = Arc<AppState>;
 
 impl AppState {
     async fn sync_index(&self) -> Result<(), anyhow::Error> {
-        let storage = &self.storage;
-        self.sbom_index.sync(storage).await?;
-        self.package_index.sync(storage).await?;
+        self.sbom_index.sync(&self.sbom_storage).await?;
+        self.package_index.sync(&self.sbom_storage).await?;
+        self.vex_index.sync(&self.vex_storage).await?;
         Ok(())
     }
 }

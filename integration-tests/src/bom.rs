@@ -5,7 +5,6 @@ use bytesize::ByteSize;
 use reqwest::Url;
 use test_context::AsyncTestContext;
 use trustification_indexer::ReindexMode;
-use trustification_storage::validator::Validator;
 
 #[async_trait]
 impl AsyncTestContext for BombasticContext {
@@ -232,7 +231,7 @@ fn bombastic_indexer() -> bombastic_indexer::Run {
             endpoint: Some(STORAGE_ENDPOINT.into()),
             access_key: Some("admin".into()),
             secret_key: Some("password".into()),
-            validator: Validator::None,
+            validate: false,
         },
         bus: EventBusConfig {
             event_bus: EventBusType::Kafka,
@@ -267,7 +266,7 @@ fn bombastic_api() -> bombastic_api::Run {
             endpoint: Some(STORAGE_ENDPOINT.into()),
             access_key: Some("admin".into()),
             secret_key: Some("password".into()),
-            validator: Validator::SBOM,
+            validate: true,
         },
         infra: InfrastructureConfig {
             infrastructure_enabled: false,
@@ -297,11 +296,11 @@ fn vexination_indexer() -> vexination_indexer::Run {
         },
         storage: StorageConfig {
             region: None,
-            bucket: Some("vexination".into()),
+            bucket: Some("bombastic".into()),
             endpoint: Some(STORAGE_ENDPOINT.into()),
             access_key: Some("admin".into()),
             secret_key: Some("password".into()),
-            validator: Validator::None,
+            validate: false,
         },
         infra: InfrastructureConfig {
             infrastructure_enabled: false,
