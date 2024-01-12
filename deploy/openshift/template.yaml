@@ -827,6 +827,7 @@ objects:
                     secretKeyRef:
                       name: guac-admin-db
                       key: db.options
+                      optional: true
                 - name: DB_NAME
                   valueFrom:
                     secretKeyRef:
