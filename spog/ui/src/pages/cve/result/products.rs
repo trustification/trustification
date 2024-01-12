@@ -37,7 +37,7 @@ impl StatusLabel for ProductCveStatus {
             Self::FirstAffected => "First Affected",
             Self::KnownAffected => "Known affected",
             Self::LastAffected => "Last affected",
-            Self::KnownNotAffected => "Knwon not affected",
+            Self::KnownNotAffected => "Known not affected",
             Self::Recommended => "Recommended",
             Self::UnderInvestigation => "Under investigation",
         }
