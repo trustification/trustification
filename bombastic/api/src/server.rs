@@ -1,5 +1,4 @@
-use std::io::{self};
-use std::sync::Arc;
+use std::io;
 
 use crate::SharedState;
 use actix_web::{
@@ -17,14 +16,8 @@ use derive_more::{Display, Error, From};
 use futures::TryStreamExt;
 use serde::Deserialize;
 use trustification_api::search::SearchOptions;
-use trustification_auth::{
-    authenticator::{user::UserInformation, Authenticator},
-    authorizer::Authorizer,
-    swagger_ui::{swagger_ui_with_auth, SwaggerUiOidc},
-    Permission,
-};
+use trustification_auth::{authenticator::user::UserInformation, authorizer::Authorizer, Permission};
 use trustification_index::Error as IndexError;
-use trustification_infrastructure::new_auth;
 use trustification_storage::{Error as StorageError, S3Path};
 use utoipa::OpenApi;
 
@@ -35,28 +28,17 @@ use utoipa::OpenApi;
 )]
 pub struct ApiDoc;
 
-pub fn config(
-    cfg: &mut web::ServiceConfig,
-    auth: Option<Arc<Authenticator>>,
-    swagger_ui_oidc: Option<Arc<SwaggerUiOidc>>,
-    publish_limit: usize,
-) {
-    cfg.service(
-        web::scope("/api/v1")
-            .wrap(new_auth!(auth))
-            .service(query_sbom)
-            .service(search_sbom)
-            .service(search_package)
-            .service(
-                web::resource("/sbom")
-                    .app_data(web::PayloadConfig::new(publish_limit))
-                    .guard(guard::Any(guard::Method(Method::PUT)).or(guard::Method(Method::POST)))
-                    .to(publish_sbom),
-            )
-            .service(delete_sbom)
-            .service(delete_sboms),
-    )
-    .service(swagger_ui_with_auth(ApiDoc::openapi(), swagger_ui_oidc));
+pub fn config(cfg: &mut web::ServiceConfig) {
+    cfg.service(query_sbom)
+        .service(search_sbom)
+        .service(search_package)
+        .service(
+            web::resource("/sbom")
+                .guard(guard::Any(guard::Method(Method::PUT)).or(guard::Method(Method::POST)))
+                .to(publish_sbom),
+        )
+        .service(delete_sbom)
+        .service(delete_sboms);
 }
 
 const ACCEPT_ENCODINGS: [&str; 2] = ["bzip2", "zstd"];

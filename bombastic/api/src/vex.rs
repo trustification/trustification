@@ -6,16 +6,9 @@ use actix_web::{
 };
 use derive_more::{Display, Error, From};
 use serde::Deserialize;
-use std::sync::Arc;
 use trustification_api::search::SearchOptions;
-use trustification_auth::{
-    authenticator::{user::UserInformation, Authenticator},
-    authorizer::Authorizer,
-    swagger_ui::{swagger_ui_with_auth, SwaggerUiOidc},
-    Permission,
-};
+use trustification_auth::{authenticator::user::UserInformation, authorizer::Authorizer, Permission};
 use trustification_index::Error as IndexError;
-use trustification_infrastructure::new_auth;
 use trustification_storage::{Error as StorageError, S3Path, Storage};
 use utoipa::OpenApi;
 use vexination_model::prelude::*;
@@ -29,27 +22,16 @@ use crate::SharedState;
 )]
 pub struct ApiDoc;
 
-pub fn config(
-    cfg: &mut web::ServiceConfig,
-    auth: Option<Arc<Authenticator>>,
-    swagger_ui_oidc: Option<Arc<SwaggerUiOidc>>,
-    publish_limit: usize,
-) {
-    cfg.service(
-        web::scope("/api/v1")
-            .wrap(new_auth!(auth))
-            .service(fetch_vex)
-            .service(
-                web::resource("/vex")
-                    .app_data(web::PayloadConfig::new(publish_limit))
-                    .guard(guard::Any(guard::Method(Method::PUT)).or(guard::Method(Method::POST)))
-                    .to(publish_vex),
-            )
-            .service(search_vex)
-            .service(delete_vex)
-            .service(delete_vexes),
-    )
-    .service(swagger_ui_with_auth(ApiDoc::openapi(), swagger_ui_oidc));
+pub fn config(cfg: &mut web::ServiceConfig) {
+    cfg.service(fetch_vex)
+        .service(
+            web::resource("/vex")
+                .guard(guard::Any(guard::Method(Method::PUT)).or(guard::Method(Method::POST)))
+                .to(publish_vex),
+        )
+        .service(search_vex)
+        .service(delete_vex)
+        .service(delete_vexes);
 }
 
 async fn fetch_object(storage: &Storage, key: &str) -> HttpResponse {

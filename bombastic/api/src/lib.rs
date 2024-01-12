@@ -8,9 +8,10 @@ use trustification_auth::{
     auth::AuthConfigArguments,
     authenticator::Authenticator,
     authorizer::Authorizer,
-    swagger_ui::{SwaggerUiOidc, SwaggerUiOidcConfig},
+    swagger_ui::{swagger_ui_with_auth, SwaggerUiOidc, SwaggerUiOidcConfig},
 };
 use trustification_index::{IndexConfig, IndexStore};
+use trustification_infrastructure::new_auth;
 use trustification_infrastructure::{
     app::http::BinaryByteSize,
     app::http::{HttpServerBuilder, HttpServerConfig},
@@ -19,6 +20,7 @@ use trustification_infrastructure::{
     Infrastructure, InfrastructureConfig,
 };
 use trustification_storage::{Storage, StorageConfig};
+use utoipa::OpenApi;
 
 mod sbom;
 mod server;
@@ -105,9 +107,18 @@ impl Run {
                             let authenticator = authenticator.clone();
                             let swagger_oidc = swagger_oidc.clone();
 
+                            let mut api = server::ApiDoc::openapi();
+                            api.merge(vex::ApiDoc::openapi());
+
                             svc.app_data(web::Data::new(state.clone())).configure(move |svc| {
-                                server::config(svc, authenticator.clone(), swagger_oidc.clone(), publish_limit);
-                                vex::config(svc, authenticator, swagger_oidc, publish_limit);
+                                svc.service(
+                                    web::scope("/api/v1")
+                                        .wrap(new_auth!(authenticator))
+                                        .app_data(web::PayloadConfig::new(publish_limit))
+                                        .configure(server::config)
+                                        .configure(vex::config),
+                                )
+                                .service(swagger_ui_with_auth(api, swagger_oidc));
                             });
                         });
 
