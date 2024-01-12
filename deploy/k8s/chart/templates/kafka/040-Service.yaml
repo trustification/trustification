@@ -1,4 +1,4 @@
-{{ if .Values.enableDocs }}
+{{ if .Values.deployKafka }}
 apiVersion: v1
 kind: Service
 metadata:
