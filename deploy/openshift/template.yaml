@@ -762,11 +762,6 @@ objects:
                     secretKeyRef:
                       name: guac-admin-db
                       key: db.port
-                - name: TC_PGOPTIONS
-                  valueFrom:
-                    secretKeyRef:
-                      name: guac-admin-db
-                      key: db.options
                 - name: DB_NAME
                   valueFrom:
                     secretKeyRef:
@@ -822,12 +817,6 @@ objects:
                     secretKeyRef:
                       name: guac-admin-db
                       key: db.port
-                - name: TC_PGOPTIONS
-                  valueFrom:
-                    secretKeyRef:
-                      name: guac-admin-db
-                      key: db.options
-                      optional: true
                 - name: DB_NAME
                   valueFrom:
                     secretKeyRef:
