@@ -16,6 +16,11 @@
 - name: OIDC_PROVIDER_ISSUER_URL
   value: {{ $client.issuerUrl | quote }}
 
+{{- if .root.Values.insecureSso }}
+- name: OIDC_PROVIDER_INSECURE_TLS
+  value: "true"
+{{- end }}
+
 {{- end }}
 
 {{/* The client ID of the frontend client */}}
