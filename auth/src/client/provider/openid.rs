@@ -41,14 +41,14 @@ pub struct OpenIdTokenProviderConfigArguments {
         default_value = "30s"
     )]
     pub refresh_before: humantime::Duration,
-    /// Use insecure TLS when contacting the OIDC server
+    /// Use insecure TLS when contacting the OIDC issuer
     #[arg(
         id = "oidc_insecure_tls",
         long = "oidc-insecure-tls",
-        env = "OIDC_PROVIDER_INSECURE_TLS",
+        env = "OIDC_PROVIDER_TLS_INSECURE",
         default_value = "false"
     )]
-    pub insecure_tls: bool,
+    pub tls_insecure: bool,
 }
 
 impl OpenIdTokenProviderConfigArguments {
@@ -58,7 +58,7 @@ impl OpenIdTokenProviderConfigArguments {
             client_id: Some(devmode::SERVICE_CLIENT_ID.to_string()),
             client_secret: Some(devmode::SSO_CLIENT_SECRET.to_string()),
             refresh_before: Duration::from_secs(30).into(),
-            insecure_tls: false,
+            tls_insecure: false,
         }
     }
 }
@@ -84,7 +84,7 @@ pub struct OpenIdTokenProviderConfig {
     pub client_secret: String,
     pub issuer_url: String,
     pub refresh_before: humantime::Duration,
-    pub insecure_tls: bool,
+    pub tls_insecure: bool,
 }
 
 impl OpenIdTokenProviderConfig {
@@ -94,7 +94,7 @@ impl OpenIdTokenProviderConfig {
             client_id: devmode::SERVICE_CLIENT_ID.to_string(),
             client_secret: devmode::SSO_CLIENT_SECRET.to_string(),
             refresh_before: Duration::from_secs(30).into(),
-            insecure_tls: false,
+            tls_insecure: false,
         }
     }
 
@@ -119,7 +119,7 @@ impl OpenIdTokenProviderConfig {
                 client_secret,
                 issuer_url,
                 refresh_before: arguments.refresh_before,
-                insecure_tls: arguments.insecure_tls,
+                tls_insecure: arguments.tls_insecure,
             }),
             _ => None,
         }
@@ -166,7 +166,7 @@ impl OpenIdTokenProvider {
         let issuer = Url::parse(&config.issuer_url).context("Parse issuer URL")?;
         let mut client = reqwest::ClientBuilder::new();
 
-        if config.insecure_tls {
+        if config.tls_insecure {
             log::warn!("Using insecure TLS when contacting the OIDC issuer");
             client = client
                 .danger_accept_invalid_certs(true)
