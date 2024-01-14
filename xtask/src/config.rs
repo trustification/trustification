@@ -3,6 +3,7 @@ use crate::task::{Test, TestSet, WebDriver};
 use std::env;
 use std::ffi::OsStr;
 use std::path::PathBuf;
+use std::process::Command;
 use which::which_in_global;
 use xshell::cmd;
 
@@ -18,6 +19,7 @@ pub struct TestConfig {
 }
 
 impl TestConfig {
+    pub const RUSTC: &'static str = "rustc";
     pub const RUSTUP: &'static str = "rustup";
     pub const WASM32_UNKNOWN_UNKNOWN: &'static str = "wasm32-unknown-unknown";
     pub const LLVM_PROFILE_FILE: &'static str = ".profdata/cargo-test-%p-%m.profraw";
@@ -48,11 +50,11 @@ impl TestConfig {
         !self.testset.is_empty()
     }
 
-    // Try to find tool in `${HOME}/.cargo/bin;${PATH}`.
+    // Try to find tool in `$(rustc --print target-libdir)/../bin:${HOME}/.cargo/bin:${PATH}`.
     //
     // When looking for LLVM tool, update `llvm_path` needed later by `grcov`.
-    // The value of `${HOME}/.cargo/bin;${PATH}` is precomputed by `try_from`
-    // and saved to `paths`.
+    // The value of `$(rustc --print target-libdir)/../bin:${HOME}/.cargo/bin:${PATH}`
+    // is precomputed by `try_from` and saved to `paths`.
     pub fn find_tool<T: AsRef<OsStr>>(&mut self, name: T) -> anyhow::Result<PathBuf> {
         let tool = String::from(name.as_ref().to_str().unwrap());
 
@@ -137,8 +139,23 @@ impl TryFrom<&Test> for TestConfig {
         config.nocoverage = args.nocoverage;
 
         let mut paths = Vec::<PathBuf>::new();
-        if let Some(path) = env::var_os("HOME") {
-            paths.push(format!("{}/.cargo/bin", path.to_str().unwrap()).into());
+        if let Some(home) = env::var_os("HOME") {
+            let cargo_bin = format!("{}/.cargo/bin", home.to_str().unwrap());
+
+            let mut rustc = PathBuf::from(&cargo_bin);
+            rustc.push(Self::RUSTC);
+
+            // This is where binaries appears when installed via `rustup component add ...`
+            if let Ok(output) = Command::new(rustc).args(["--print", "target-libdir"]).output() {
+                let target_libdir = String::from_utf8(output.stdout)?;
+                let target_bindir = PathBuf::from(target_libdir.trim());
+                let mut target_bindir = PathBuf::from(target_bindir.parent().unwrap());
+                target_bindir.push("bin");
+
+                paths.push(target_bindir);
+            }
+
+            paths.push(cargo_bin.into());
         }
         if let Some(path) = env::var_os("PATH") {
             paths.extend(env::split_paths(&path));
