@@ -296,7 +296,7 @@ vexination:
               - id: "2023"
                 label: "2023"
                 terms:
-                  - 'created:2023-01-01..2024-01-01'
+                  - 'release:2023-01-01..2024-01-01'
               - id: "2022"
                 label: "2022"
                 terms:
