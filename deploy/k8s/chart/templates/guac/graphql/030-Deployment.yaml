@@ -41,14 +41,11 @@ spec:
         - image: {{ .Values.guacImage }}
           imagePullPolicy: {{ .Values.imagePullPolicy }}
           name: migrate
-          command: ["/opt/guac/guacmigrate"]
+          command: [ "/bin/sh" ]
           args:
-            - "--db-address"
-            - "postgres://$(DB_USER):$(DB_PASSWORD)@$(PGHOST):$(PGPORT)/$(DB_NAME)"
-            - "--db-driver"
-            - "postgres"
-            - "--db-debug"
-            - "true"
+            - -ec
+            - |
+              /opt/guac/guacmigrate "--db-address" "postgres://${DB_USER}:${DB_PASSWORD}@${PGHOST}:${PGPORT}/${DB_NAME}${TC_PGOPTIONS}" "--db-driver" "postgres" "--db-debug" "true"
           env:
             - name: PGHOST
               valueFrom:
@@ -60,6 +57,12 @@ spec:
                 secretKeyRef:
                   name: guac-admin-db
                   key: "db.port"
+            - name: TC_PGOPTIONS
+              valueFrom:
+                secretKeyRef:
+                  name: guac-admin-db
+                  key: "db.options"
+                  optional: true
             - name: DB_NAME
               valueFrom:
                 secretKeyRef:
@@ -81,24 +84,16 @@ spec:
         - image: {{ .Values.guacImage }}
           imagePullPolicy: {{ .Values.imagePullPolicy }}
           name: service
-          command: ["/opt/guac/guacgql"]
+          command: ["/bin/sh"]
           args:
-{{- if .Values.guac.database.enabled  }}
-            - "--gql-backend"
-            - "ent"
-            - "--db-address"
-            - "postgres://$(DB_USER):$(DB_PASSWORD)@$(PGHOST):$(PGPORT)/$(DB_NAME)"
-            - "--db-driver"
-            - "postgres"
-            - "--db-debug"
-            - "true"
-            # not sure why it has to be a single argument, but it won't work otherwise
-            - "--db-migrate=false"
+            - -ec
+            - |
+              /opt/guac/guacgql \
+{{- if .Values.guac.database.enabled }}
+              # not sure why --db-migrate=false has to be a single argument, but it won't work otherwise
+              "--gql-backend" "ent" "--db-address" "postgres://${DB_USER}:${DB_PASSWORD}@${PGHOST}:${PGPORT}/${DB_NAME}${TC_PGOPTIONS}" "--db-driver" "postgres" "--db-debug" "true" "--db-migrate=false"
 {{- else }}
-            - "--gql-backend"
-            - "inmem"
-            - "--gql-debug"
-            - "true"
+              "--gql-backend" "inmem" "--gql-debug" "true"
 {{- end }}
           workingDir: "/guac"
           env:
@@ -118,6 +113,12 @@ spec:
                 secretKeyRef:
                   name: guac-admin-db
                   key: "db.port"
+            - name: TC_PGOPTIONS
+              valueFrom:
+                secretKeyRef:
+                  name: guac-admin-db
+                  key: "db.options"
+                  optional: true
             - name: DB_NAME
               valueFrom:
                 secretKeyRef:
