@@ -3,6 +3,7 @@ pub use cve::Cve;
 use cve::{common, Published, Rejected, Timestamp};
 use cvss::v3::Base;
 use cvss::Severity;
+use serde_json::Value;
 use sikula::prelude::*;
 use std::time::Duration;
 use time::OffsetDateTime;
@@ -115,23 +116,28 @@ impl Index {
             document.add_text(self.fields.description, &desc.value);
         }
 
+        fn parse_score(score: &Value, version: &str) -> Option<Base> {
+            let score = score["vectorString"].as_str()?;
+
+            match Base::from_str(score) {
+                Ok(score) => Some(score),
+                Err(err) => {
+                    log::warn!("Failed to parse CVSS {version} ({score}): {err}");
+                    None
+                }
+            }
+        }
+
         for metric in &cve.containers.cna.metrics {
-            if let Some(score) = metric.cvss_v3_1.as_ref().and_then(|v| v["vectorString"].as_str()) {
-                match Base::from_str(score) {
-                    Ok(score) => {
-                        document.add_f64(self.fields.cvss3x_score, score.score().value());
-                        document.add_text(self.fields.severity, score.severity().to_string());
-                    }
-                    Err(err) => log::warn!("Failed to parse CVSS 3.1: {err}"),
-                }
-            } else if let Some(score) = metric.cvss_v3_0.as_ref().and_then(|v| v["vectorString"].as_str()) {
-                match Base::from_str(score) {
-                    Ok(score) => {
-                        document.add_f64(self.fields.cvss3x_score, score.score().value());
-                        document.add_text(self.fields.severity, score.severity().to_string());
-                    }
-                    Err(err) => log::warn!("Failed to parse CVSS 3.0: {err}"),
-                }
+            let score = metric
+                .cvss_v3_1
+                .as_ref()
+                .and_then(|score| parse_score(score, "3.1"))
+                .or_else(|| metric.cvss_v3_0.as_ref().and_then(|score| parse_score(score, "3.0")));
+
+            if let Some(score) = score {
+                document.add_f64(self.fields.cvss3x_score, score.score().value());
+                document.add_text(self.fields.severity, score.severity().to_string());
             }
         }
 
