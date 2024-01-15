@@ -3,7 +3,7 @@
 # Things to replace:
 #
 # * field domain - the base domain of the deployment (example value is "apps.cluster-s2528.sandbox1481.opentlc.com")
-# all locations where the <domain> name is used (the example value must be replaced)
+# * all locations where the <domain> name is used (the example value must be replaced)
 #
 # ## Initial jobs
 #
