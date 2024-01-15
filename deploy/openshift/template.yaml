@@ -746,7 +746,7 @@ objects:
                 - /opt/guac/guacmigrate
               args:
                 - --db-address
-                - postgres://$(DB_USER):$(DB_PASSWORD)@$(PGHOST):$(PGPORT)/$(DB_NAME)$(TC_PGOPTIONS)
+                - postgres://$(DB_USER):$(DB_PASSWORD)@$(PGHOST):$(PGPORT)/$(DB_NAME)
                 - --db-driver
                 - postgres
                 - --db-debug
@@ -787,7 +787,7 @@ objects:
                 - --gql-backend
                 - ent
                 - --db-address
-                - postgres://$(DB_USER):$(DB_PASSWORD)@$(PGHOST):$(PGPORT)/$(DB_NAME)$(TC_PGOPTIONS)
+                - postgres://$(DB_USER):$(DB_PASSWORD)@$(PGHOST):$(PGPORT)/$(DB_NAME)
                 - --db-driver
                 - postgres
                 - --db-debug
