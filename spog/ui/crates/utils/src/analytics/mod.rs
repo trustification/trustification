@@ -48,6 +48,15 @@ impl AnalyticsContext {
 
     /// trigger a "tracking" event, if enabled
     pub fn track<'a>(&self, event: impl Into<TrackingEvent<'a>>) {
+        #[cfg(debug_assertions)]
+        {
+            let event = event.into();
+            log::debug!("Tracking event: {event:?}");
+            if let Some(analytics) = &self.analytics {
+                analytics.track(event);
+            }
+        }
+        #[cfg(not(debug_assertions))]
         if let Some(analytics) = &self.analytics {
             analytics.track(event);
         }
