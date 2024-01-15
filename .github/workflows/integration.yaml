@@ -87,7 +87,7 @@ jobs:
       - name: Test
         run: |
           #RUST_LOG=tantivy=off,info cargo xtask test --ui --webdriver none --nocapture
-          RUST_LOG=tantivy=off,info cargo xtask test --nocapture --concurrent=1
+          RUST_LOG=tantivy=off,info cargo xtask test --testset integ --nocapture --concurrent=1
           docker-compose ${files} ps
 
       - name: Upload coverage report artifacts
