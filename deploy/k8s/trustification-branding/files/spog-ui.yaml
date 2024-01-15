@@ -146,6 +146,10 @@ bombastic:
                     end.toLocaleString("default", { month: "2-digit" }) + "-" +
                     end.toLocaleString("default", { day: "2-digit" })
                   ];
+              - id: "2023"
+                label: "2023"
+                terms:
+                  - 'created:2023-01-01..2024-01-01'
               - id: "2022"
                 label: "2022"
                 terms:
@@ -287,6 +291,10 @@ vexination:
                     end.toLocaleString("default", { month: "2-digit" }) + "-" +
                     end.toLocaleString("default", { day: "2-digit" })
                   ];
+              - id: "2023"
+                label: "2023"
+                terms:
+                  - 'release:2023-01-01..2024-01-01'
               - id: "2022"
                 label: "2022"
                 terms:
@@ -411,6 +419,10 @@ cve:
                     end.toLocaleString("default", { month: "2-digit" }) + "-" +
                     end.toLocaleString("default", { day: "2-digit" })
                   ];
+              - id: "2023"
+                label: "2023"
+                terms:
+                  - 'datePublished:2023-01-01..2024-01-01'
               - id: "2022"
                 label: "2022"
                 terms:
