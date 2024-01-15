@@ -78,7 +78,8 @@ impl Run {
                         }
                     }
 
-                    log::info!("Filters: {:?}", filter.len());
+                    log::info!("Filters: {}", filter.len());
+                    log::info!("Prefixes: {:?}", self.require_prefix);
 
                     let walker = WalkDir::new(&self.source).follow_links(true).contents_first(true);
                     'entry: for entry in walker {
