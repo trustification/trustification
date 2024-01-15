@@ -1,11 +1,15 @@
+use crate::analytics::SearchContext;
 use crate::search::{
     DefaultEntry, Search, SearchCategory, SearchDefaults, SearchOption, SearchOptionCheck, SearchOptionSelect,
     SearchOptionSelectItem,
 };
+use analytics_next::tracking;
 use gloo_utils::format::JsValueSerdeExt;
 use patternfly_yew::core::Order;
 use spog_model::prelude::*;
+use spog_ui_common::components::SafeHtml;
 use spog_ui_common::utils::search::{escape_terms, or_group, SimpleProperties, ToFilterExpression};
+use spog_ui_utils::analytics::UseAnalytics;
 use std::collections::HashMap;
 use std::rc::Rc;
 use yew::prelude::*;
@@ -129,7 +133,7 @@ impl ToFilterExpression for DynamicSearchParameters {
     }
 }
 
-pub fn convert_search(filters: &Filters) -> (Search, SearchDefaults) {
+pub fn convert_search(filters: &Filters, analytics: &UseAnalytics, context: SearchContext) -> (Search, SearchDefaults) {
     let mut defaults = vec![];
 
     let categories = filters
@@ -140,24 +144,49 @@ pub fn convert_search(filters: &Filters) -> (Search, SearchDefaults) {
             options: cat
                 .options
                 .iter()
-                .map(|opt| convert_option(&cat.label, opt, &mut defaults))
+                .map(|opt| convert_option(&cat.label, opt, &mut defaults, analytics, context))
                 .collect(),
         })
         .collect();
 
-    (Search { categories }, SearchDefaults(defaults))
+    (Search { categories, context }, SearchDefaults(defaults))
 }
 
-fn convert_option(cat_id: &str, opt: &FilterOption, defaults: &mut Vec<DefaultEntry>) -> SearchOption {
+fn convert_option(
+    cat_id: &str,
+    opt: &FilterOption,
+    defaults: &mut Vec<DefaultEntry>,
+    analytics: &UseAnalytics,
+    search: SearchContext,
+) -> SearchOption {
     let cat_id = Rc::new(cat_id.to_string());
+
+    #[derive(serde::Serialize)]
+    #[tracking("Filter Check Change")]
+    struct CheckEvent<'a> {
+        category: &'a str,
+        id: &'a str,
+        value: bool,
+        search: SearchContext,
+    }
+
+    #[derive(serde::Serialize)]
+    #[tracking("Filter Radio Change")]
+    struct RadioEvent<'a> {
+        category: &'a str,
+        id: &'a str,
+        value: &'a str,
+        search: SearchContext,
+    }
 
     match opt {
         FilterOption::Divider => SearchOption::Divider,
         FilterOption::Check(opt) => {
-            let label = format!("<div>{}</div>", opt.label);
             let id = Rc::new(opt.id.clone());
+            let analytics = analytics.clone();
+
             SearchOption::Check(SearchOptionCheck {
-                label: Html::from_html_unchecked(AttrValue::from(label.clone())).into(),
+                label: html!(<SafeHtml html={opt.label.clone()} />).into(),
                 getter: {
                     let cat_id = cat_id.clone();
                     let id = id.clone();
@@ -165,12 +194,19 @@ fn convert_option(cat_id: &str, opt: &FilterOption, defaults: &mut Vec<DefaultEn
                 },
                 setter: {
                     Rc::new(move |state, value| {
+                        analytics.track(CheckEvent {
+                            category: &cat_id,
+                            id: &id,
+                            value,
+                            search,
+                        });
                         state.set(cat_id.clone(), id.clone(), value.then(|| Rc::new(String::new())))
                     })
                 },
             })
         }
         FilterOption::Select(select) => {
+            let analytics = analytics.clone();
             let group = Rc::new(select.group.clone());
 
             if let Some(default) = &select.default {
@@ -189,9 +225,9 @@ fn convert_option(cat_id: &str, opt: &FilterOption, defaults: &mut Vec<DefaultEn
                         let cat_id = cat_id.clone();
                         let group = group.clone();
                         let id = Rc::new(option.id.clone());
-                        let label = format!("<div>{}</div>", option.label);
+                        let analytics = analytics.clone();
                         SearchOptionSelectItem {
-                            label: Html::from_html_unchecked(AttrValue::from(label)).into(),
+                            label: html!(<SafeHtml html={option.label.clone()} />).into(),
                             getter: {
                                 let cat_id = cat_id.clone();
                                 let group = group.clone();
@@ -203,6 +239,12 @@ fn convert_option(cat_id: &str, opt: &FilterOption, defaults: &mut Vec<DefaultEn
                             setter: {
                                 Rc::new(move |state, event_value| {
                                     if event_value {
+                                        analytics.track(RadioEvent {
+                                            category: &cat_id,
+                                            id: &group,
+                                            value: &id,
+                                            search,
+                                        });
                                         // we only set the radio button which got set to true, which is the only even we get anyway
                                         state.set(cat_id.clone(), group.clone(), Some(id.clone()));
                                     }
