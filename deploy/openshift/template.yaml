@@ -743,14 +743,13 @@ objects:
               imagePullPolicy: Always
               name: migrate
               command:
-                - /opt/guac/guacmigrate
+                - /bin/sh
               args:
-                - --db-address
-                - postgres://$(DB_USER):$(DB_PASSWORD)@$(PGHOST):$(PGPORT)/$(DB_NAME)
-                - --db-driver
-                - postgres
-                - --db-debug
-                - 'true'
+                - -ec
+                - '/opt/guac/guacmigrate "--db-address" "postgres://${DB_USER}:${DB_PASSWORD}@${PGHOST}:${PGPORT}/${DB_NAME}${TC_PGOPTIONS}"
+                  "--db-driver" "postgres" "--db-debug" "true"
+
+                  '
               env:
                 - name: PGHOST
                   valueFrom:
@@ -762,6 +761,12 @@ objects:
                     secretKeyRef:
                       name: guac-admin-db
                       key: db.port
+                - name: TC_PGOPTIONS
+                  valueFrom:
+                    secretKeyRef:
+                      name: guac-admin-db
+                      key: db.options
+                      optional: true
                 - name: DB_NAME
                   valueFrom:
                     secretKeyRef:
@@ -782,17 +787,18 @@ objects:
               imagePullPolicy: Always
               name: service
               command:
-                - /opt/guac/guacgql
+                - /bin/sh
               args:
-                - --gql-backend
-                - ent
-                - --db-address
-                - postgres://$(DB_USER):$(DB_PASSWORD)@$(PGHOST):$(PGPORT)/$(DB_NAME)
-                - --db-driver
-                - postgres
-                - --db-debug
-                - 'true'
-                - --db-migrate=false
+                - -ec
+                - '/opt/guac/guacgql \
+
+                  # not sure why --db-migrate=false has to be a single argument, but
+                  it won''t work otherwise
+
+                  "--gql-backend" "ent" "--db-address" "postgres://${DB_USER}:${DB_PASSWORD}@${PGHOST}:${PGPORT}/${DB_NAME}${TC_PGOPTIONS}"
+                  "--db-driver" "postgres" "--db-debug" "true" "--db-migrate=false"
+
+                  '
               workingDir: /guac
               env:
                 - name: NAMESPACE
@@ -817,6 +823,12 @@ objects:
                     secretKeyRef:
                       name: guac-admin-db
                       key: db.port
+                - name: TC_PGOPTIONS
+                  valueFrom:
+                    secretKeyRef:
+                      name: guac-admin-db
+                      key: db.options
+                      optional: true
                 - name: DB_NAME
                   valueFrom:
                     secretKeyRef:
