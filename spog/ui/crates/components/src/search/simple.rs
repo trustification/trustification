@@ -1,6 +1,9 @@
+use crate::analytics::SearchContext;
 use crate::search::DynamicSearchParameters;
+use analytics_next::tracking;
 use patternfly_yew::prelude::*;
 use spog_ui_common::utils::search::*;
+use spog_ui_utils::analytics::use_analytics;
 use std::collections::HashSet;
 use std::ops::{Deref, DerefMut};
 use std::rc::Rc;
@@ -32,6 +35,7 @@ pub struct DefaultEntry {
 #[derive(Clone)]
 pub struct Search {
     pub categories: Vec<SearchCategory>,
+    pub context: SearchContext,
 }
 
 impl Search {
@@ -392,6 +396,23 @@ impl PartialEq for SimpleSearchProperties {
 
 #[function_component(SimpleSearch)]
 pub fn simple_search(props: &SimpleSearchProperties) -> Html {
+    let analytics = use_analytics();
+    let search = props.search.context;
+
+    #[derive(serde::Serialize)]
+    #[tracking("Expand Section")]
+    struct ExpandSection<'a> {
+        title: &'a str,
+        expanded: bool,
+        search: SearchContext,
+    }
+
+    #[derive(serde::Serialize)]
+    #[tracking("Reset filter")]
+    struct ResetFilter {
+        search: SearchContext,
+    }
+
     let filter_expansion = {
         let search = props.search.clone();
         use_state(|| {
@@ -408,12 +429,23 @@ pub fn simple_search(props: &SimpleSearchProperties) -> Html {
         let onclick = {
             let title = title.clone();
             let filter_expansion = filter_expansion.clone();
+            let analytics = analytics.clone();
             Callback::from(move |()| {
                 let mut selection = (*filter_expansion).clone();
                 if selection.contains(&title) {
                     selection.remove(&title);
+                    analytics.track(ExpandSection {
+                        title: &title,
+                        expanded: false,
+                        search,
+                    });
                 } else {
                     selection.insert(title.clone());
+                    analytics.track(ExpandSection {
+                        title: &title,
+                        expanded: true,
+                        search,
+                    });
                 }
                 filter_expansion.set(selection);
             })
@@ -426,11 +458,15 @@ pub fn simple_search(props: &SimpleSearchProperties) -> Html {
         )
     };
 
-    let onclear = use_callback(props.search_params.clone(), |_, search_params| {
-        if let SearchMode::Simple(_) = &***search_params {
-            search_params.dispatch(SearchModeAction::Clear);
-        }
-    });
+    let onclear = use_callback(
+        (props.search_params.clone(), analytics.clone(), search),
+        |_, (search_params, analytics, search)| {
+            if let SearchMode::Simple(_) = &***search_params {
+                search_params.dispatch(SearchModeAction::Clear);
+            }
+            analytics.track(ResetFilter { search: *search });
+        },
+    );
     let canclear = props.search_params.is_simple();
 
     html!(
@@ -463,8 +499,8 @@ fn render_opt(props: &SimpleSearchProperties, opt: &SearchOption) -> Html {
         }
         SearchOption::Check(opt) => {
             let active = props.search_params.is_simple();
-
             let opt = opt.clone();
+
             html!(
                 <Checkbox
                     checked={(*props.search_params).map_bool(|s|(opt.getter)(s))}
