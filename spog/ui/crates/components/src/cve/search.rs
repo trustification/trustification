@@ -1,4 +1,5 @@
 use crate::{
+    analytics::SearchContext,
     cve::CveResult,
     hooks::{use_generic_search, UseStandardSearch},
     search::*,
@@ -7,7 +8,7 @@ use patternfly_yew::prelude::*;
 use spog_model::cve::CveSearchDocument;
 use spog_ui_backend::CveService;
 use spog_ui_common::utils::pagination_to_offset;
-use spog_ui_utils::config::use_config;
+use spog_ui_utils::{analytics::use_analytics, config::use_config};
 use std::rc::Rc;
 use trustification_api::search::SearchResult;
 use v11y_model::search::Cves;
@@ -22,11 +23,13 @@ pub struct CveSearchControlsProperties {
 #[function_component(CveSearchControls)]
 pub fn cve_search_controls(props: &CveSearchControlsProperties) -> Html {
     let config = use_config();
+    let analytics = use_analytics();
+
     let filters = use_memo((), |()| config.cve.filters.clone());
 
     let search_config = {
         use_memo((), move |()| {
-            let (search, defaults) = convert_search(&filters);
+            let (search, defaults) = convert_search(&filters, &analytics, SearchContext::Cve);
             props.search_params.dispatch(SearchModeAction::ApplyDefault(defaults));
             search
         })

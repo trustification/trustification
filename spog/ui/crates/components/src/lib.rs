@@ -1,6 +1,7 @@
 //! Re-usable component
 
 pub mod advisory;
+pub mod analytics;
 pub mod async_state_renderer;
 pub mod backend;
 pub mod common;

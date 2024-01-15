@@ -1,4 +1,5 @@
 use crate::{
+    analytics::SearchContext,
     hooks::{use_generic_search, SearchOperationContext, UseStandardSearch},
     sbom::SbomResult,
     search::*,
@@ -8,7 +9,7 @@ use patternfly_yew::prelude::*;
 use spog_model::prelude::*;
 use spog_ui_backend::{self, PackageService};
 use spog_ui_common::utils::pagination_to_offset;
-use spog_ui_utils::config::use_config;
+use spog_ui_utils::{analytics::use_analytics, config::use_config};
 use std::rc::Rc;
 use trustification_api::search::SearchResult;
 use yew::prelude::*;
@@ -22,9 +23,12 @@ pub struct SbomSearchControlsProperties {
 #[function_component(SbomSearchControls)]
 pub fn sbom_search_controls(props: &SbomSearchControlsProperties) -> Html {
     let config = use_config();
+    let analytics = use_analytics();
+
     let filters = use_memo((), |()| config.bombastic.filters.clone());
+
     let search_config = use_memo((), |()| {
-        let (search, defaults) = convert_search(&filters);
+        let (search, defaults) = convert_search(&filters, &analytics, SearchContext::Sbom);
         props.search_params.dispatch(SearchModeAction::ApplyDefault(defaults));
         search
     });
