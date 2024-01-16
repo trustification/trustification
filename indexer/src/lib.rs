@@ -62,7 +62,10 @@ pub struct Indexer<'a, DOC> {
     pub reindex: ReindexMode,
 }
 
-impl<'a, DOC> Indexer<'a, DOC> {
+impl<'a, DOC> Indexer<'a, DOC>
+where
+    DOC: 'static,
+{
     pub async fn run(&mut self) -> Result<(), anyhow::Error> {
         // Load initial indexes from storage.
         if self.reindex == ReindexMode::Always {
