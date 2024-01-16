@@ -57,7 +57,12 @@ pub fn inline_download(props: &LocalDownloadButtonProperties) -> Html {
     let onclick = use_wrap_tracking(
         onclick,
         (props.r#type.clone(), props.filename.clone()),
-        |_, (r#type, filename)| ("DetailsPage File Downloaded", json!({"type": r#type, "filename": filename})),
+        |_, (r#type, filename)| {
+            (
+                "DetailsPage File Downloaded",
+                json!({"type": r#type, "filename": filename}),
+            )
+        },
     );
 
     let href = use_state_eq::<Option<String>, _>(|| None);

@@ -1,12 +1,16 @@
-use crate::error::Error;
-use async_trait::async_trait;
-use http::StatusCode;
 use std::sync::Arc;
+
+use async_trait::async_trait;
+use bytes::Bytes;
+use http::StatusCode;
 use tracing::instrument;
+
 use trustification_api::search::SearchOptions;
 use trustification_api::Apply;
 use trustification_auth::client::{TokenInjector, TokenProvider};
 use trustification_infrastructure::tracing::PropagateCurrentContext;
+
+use crate::error::Error;
 
 pub struct AppState {
     pub client: reqwest::Client,
@@ -37,6 +41,25 @@ impl AppState {
             .await?;
 
         Ok(response.bytes_stream())
+    }
+
+    #[instrument(skip(self, provider), err)]
+    pub async fn post_sbom(&self, id: &str, provider: &dyn TokenProvider, data: Bytes) -> Result<(), Error> {
+        let url = self.bombastic.join("/api/v1/sbom")?;
+        self.client
+            .put(url)
+            .body(data)
+            .query(&[("id", id)])
+            .header("content-type", "application/json")
+            .propagate_current_context()
+            .inject_token(provider)
+            .await?
+            .send()
+            .await?
+            .or_status_error()
+            .await?;
+
+        Ok(())
     }
 
     #[instrument(skip(self, provider), err)]
@@ -153,7 +176,7 @@ pub trait ResponseError: Sized {
 #[async_trait]
 impl ResponseError for reqwest::Response {
     async fn or_status_error(self) -> Result<Self, Error> {
-        if self.status() == StatusCode::OK {
+        if self.status().is_success() {
             Ok(self)
         } else {
             let status = self.status();
