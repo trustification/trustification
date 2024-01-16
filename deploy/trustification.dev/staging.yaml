@@ -1,4 +1,4 @@
-release: 47d9735504bd1f0ccc7cc2530420895c16bd23b1
+release: fcac5dc6e66a10fa2c9fc5cd4e3499b566ef85f3
 trustImage: ghcr.io/trustification/trust
 uiImage: ghcr.io/trustification/trust
 docsImage: ghcr.io/trustification/trust-docs
