@@ -12,6 +12,7 @@ pub enum AppRoute {
     },
     Advisory(View),
     Scanner,
+    Uploader,
     Search {
         terms: String,
     },

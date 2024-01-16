@@ -1,7 +1,7 @@
 mod inspect;
 // mod unknown;
-mod report;
-mod upload;
+pub mod report;
+pub mod upload;
 
 use analytics_next::TrackingEvent;
 use anyhow::bail;
@@ -56,7 +56,7 @@ fn is_supported_package(purl: &str) -> bool {
     }
 }
 
-fn parse(data: &[u8]) -> Result<SBOM, anyhow::Error> {
+pub fn parse(data: &[u8]) -> Result<SBOM, anyhow::Error> {
     let sbom = SBOM::parse(data)?;
 
     #[allow(clippy::single_match)]

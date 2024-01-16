@@ -1,8 +1,10 @@
 //! The SBOM details page
 
+use crate::pages::scanner::report::Report;
 use crate::{common::clean_ext, model, pages::sbom_report::SbomReport};
 use patternfly_yew::prelude::*;
-use spog_ui_backend::use_backend;
+use reqwest::Body;
+use spog_ui_backend::{use_backend, AnalyzeService};
 use spog_ui_common::{config::use_config, error::components::Error};
 use spog_ui_components::{
     common::{NotFound, PageHeading},
@@ -85,6 +87,7 @@ fn details(props: &DetailsProps) -> Html {
         Info,
         Packages,
         Source,
+        Report,
     }
 
     let config = use_config();
@@ -104,6 +107,7 @@ fn details(props: &DetailsProps) -> Html {
                             { for config.features.show_source.then(|| html_nested!(
                                 <Tab<TabIndex> index={TabIndex::Source} title="Source" />
                             )) }
+                            <Tab<TabIndex> index={TabIndex::Report} title="Report" />
                         </Tabs<TabIndex>>
                     </PageSection>
 
@@ -135,6 +139,9 @@ fn details(props: &DetailsProps) -> Html {
                     <PageSection hidden={*tab != TabIndex::Source} variant={PageSectionVariant::Light} fill={PageSectionFill::Fill}>
                         <SourceCode source={source.clone()} />
                     </PageSection>
+                    <PageSection hidden={*tab != TabIndex::Report} variant={PageSectionVariant::Light} fill={PageSectionFill::Fill}>
+                        <ReportViewwer raw={source.clone()}/>
+                    </PageSection>
                 </>
             )
         }
@@ -148,6 +155,7 @@ fn details(props: &DetailsProps) -> Html {
                             { for config.features.show_source.then(|| html_nested!(
                                 <Tab<TabIndex> index={TabIndex::Source} title="Source" />
                             )) }
+                            <Tab<TabIndex> index={TabIndex::Report} title="Report" />
                         </Tabs<TabIndex>>
                     </PageSection>
 
@@ -163,6 +171,9 @@ fn details(props: &DetailsProps) -> Html {
 
                     <PageSection hidden={*tab != TabIndex::Source} fill={PageSectionFill::Fill}>
                         <SourceCode source={source.clone()} />
+                    </PageSection>
+                    <PageSection hidden={*tab != TabIndex::Report} fill={PageSectionFill::Fill}>
+                        <ReportViewwer raw={source.clone()}/>
                     </PageSection>
                 </>
             )
@@ -191,8 +202,52 @@ fn details(props: &DetailsProps) -> Html {
                     <PageSection hidden={*tab != TabIndex::Source} fill={PageSectionFill::Fill}>
                         <SourceCode source={source.clone()} />
                     </PageSection>
+                    <PageSection hidden={*tab != TabIndex::Report} fill={PageSectionFill::Fill}>
+                        <ReportViewwer raw={source.clone()}/>
+                    </PageSection>
                 </>
             )
         }
     }
+}
+
+#[derive(Clone, PartialEq, Properties)]
+pub struct ReportViewwerProperties {
+    pub raw: Rc<String>,
+}
+
+#[function_component(ReportViewwer)]
+pub fn report_viewer(props: &ReportViewwerProperties) -> Html {
+    let backend = use_backend();
+    let access_token = use_latest_access_token();
+
+    let fetch = {
+        use_async_with_cloned_deps(
+            move |raw| async move {
+                let service = AnalyzeService::new(backend, access_token);
+                service.report(Body::from((*raw).clone())).await.map(Rc::new)
+            },
+            props.raw.clone(),
+        )
+    };
+
+    html!(
+        <>
+            {
+                match &*fetch {
+                    UseAsyncState::Pending | UseAsyncState::Processing => html!(
+                        <PageSection fill={PageSectionFill::Fill}>
+                            <Spinner />
+                        </PageSection>
+                    ),
+                    UseAsyncState::Ready(Ok(data)) => html!(
+                        <Report data={data.clone()} />
+                    ),
+                    UseAsyncState::Ready(Err(_)) => html!(
+                        <Error title="Error" message="Error while generating report" />
+                    )
+                }
+            }
+        </>
+    )
 }

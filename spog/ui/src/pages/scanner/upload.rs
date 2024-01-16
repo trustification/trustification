@@ -98,6 +98,9 @@ impl std::fmt::Display for DropContent {
 
 #[derive(Clone, PartialEq, Properties)]
 pub struct UploadProperties {
+    #[prop_or("Scan".into())]
+    pub primary_btn_text: AttrValue,
+
     pub onsubmit: Callback<Rc<String>>,
     #[prop_or(default_validate())]
     pub onvalidate: Callback<Rc<String>, Result<Rc<String>, String>>,
@@ -295,7 +298,7 @@ pub fn upload(props: &UploadProperties) -> Html {
                     disabled={state == InputState::Error}
                     onclick={onsubmit}
                 >
-                    {"Scan"}
+                    {&props.primary_btn_text}
                 </Button>
             </FlexItem>
             <FlexItem>

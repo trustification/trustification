@@ -1,5 +1,5 @@
 use crate::{ApplyAccessToken, Backend, Endpoint};
-use reqwest::StatusCode;
+use reqwest::{Body, StatusCode};
 use spog_model::prelude::{SbomReport, SbomSummary};
 use spog_ui_common::error::*;
 use std::rc::Rc;
@@ -21,6 +21,20 @@ impl SBOMService {
             access_token,
             client: reqwest::Client::new(),
         }
+    }
+
+    pub async fn upload(&self, data: impl Into<Body>) -> Result<String, ApiError> {
+        let url = self.backend.join(Endpoint::Api, "/api/v1/sbom/upload")?;
+
+        let response = self
+            .client
+            .post(url)
+            .latest_access_token(&self.access_token)
+            .body(data)
+            .send()
+            .await?;
+
+        Ok(response.api_error_for_status().await?.text().await?)
     }
 
     pub async fn get(&self, id: impl AsRef<str>) -> Result<Option<String>, ApiError> {

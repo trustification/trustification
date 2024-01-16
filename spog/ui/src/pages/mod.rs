@@ -15,6 +15,7 @@ mod sbom_report;
 mod sbom_search;
 mod scanner;
 mod search;
+mod uploader;
 
 pub use self::cve::*;
 pub use advisory::*;
@@ -31,3 +32,4 @@ pub use sbom_report::SbomReport;
 pub use sbom_search::Sbom;
 pub use scanner::*;
 pub use search::Search;
+pub use uploader::*;

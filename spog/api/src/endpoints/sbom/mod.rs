@@ -1,8 +1,10 @@
 mod get;
+mod post;
 mod search;
 mod vuln;
 
 pub use get::*;
+pub use post::*;
 pub use search::*;
 pub use vuln::*;
 
@@ -25,5 +27,6 @@ pub(crate) fn configure(auth: Option<Arc<Authenticator>>) -> impl FnOnce(&mut Se
         );
         // the get operation doesn't get the authenticator added, as we check this using the access_token query parameter
         config.service(web::resource("/api/v1/sbom").to(get));
+        config.service(web::resource("/api/v1/sbom/upload").to(post));
     }
 }
