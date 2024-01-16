@@ -1,5 +1,6 @@
 use crate::{
     advisory::AdvisoryResult,
+    analytics::SearchContext,
     hooks::{use_generic_search, UseStandardSearch},
     search::*,
 };
@@ -7,7 +8,7 @@ use patternfly_yew::prelude::*;
 use spog_model::prelude::*;
 use spog_ui_backend::VexService;
 use spog_ui_common::utils::pagination_to_offset;
-use spog_ui_utils::config::use_config;
+use spog_ui_utils::{analytics::use_analytics, config::use_config};
 use std::rc::Rc;
 use trustification_api::search::SearchResult;
 use vexination_model::prelude::Vulnerabilities;
@@ -22,11 +23,13 @@ pub struct AdvisorySearchControlsProperties {
 #[function_component(AdvisorySearchControls)]
 pub fn advisory_search_controls(props: &AdvisorySearchControlsProperties) -> Html {
     let config = use_config();
+    let analytics = use_analytics();
+
     let filters = use_memo((), |()| config.vexination.filters.clone());
 
     let search_config = {
         use_memo((), move |()| {
-            let (search, defaults) = convert_search(&filters);
+            let (search, defaults) = convert_search(&filters, &analytics, SearchContext::Advisory);
             props.search_params.dispatch(SearchModeAction::ApplyDefault(defaults));
             search
         })
