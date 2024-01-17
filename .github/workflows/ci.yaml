@@ -219,6 +219,11 @@ jobs:
       - formatting
     uses: ./.github/workflows/integration.yaml
 
+  unit:
+    needs:
+      - formatting
+    uses: ./.github/workflows/unit.yaml
+
   # A virtual job, referenced by the branch protection rule
   ci:
     runs-on: ubuntu-22.04
