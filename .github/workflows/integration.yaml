@@ -63,13 +63,6 @@ jobs:
       - name: Install trunk-ng
         run: cargo binstall -y trunk-ng
 
-      - name: Install grcov
-        run: cargo binstall -y grcov
-
-      - name: Install llvm-tools-preview
-        run: |
-          rustup component add llvm-tools-preview
-
       - name: Install wasm32-unknown-unknown
         run: |
           rustup target add wasm32-unknown-unknown
@@ -82,19 +75,13 @@ jobs:
         run: |
           sudo du -sh *
           sudo du -sh $HOME/*
-          sudo rm -rf deploy/compose//container_files/pg
+          sudo rm -rf deploy/compose/container_files/pg
 
       - name: Test
         run: |
           #RUST_LOG=tantivy=off,info cargo xtask test --ui --webdriver none --nocapture
-          RUST_LOG=tantivy=off,info cargo xtask test --testset integ --nocapture --concurrent=1
+          RUST_LOG=tantivy=off,info cargo xtask test --testset integ --nocoverage --nocapture --concurrent=1
           docker-compose ${files} ps
-
-      - name: Upload coverage report artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-reports
-          path: .coverage/
 
       - name: Print logs
         if: always()
