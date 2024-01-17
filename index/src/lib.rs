@@ -28,7 +28,8 @@ use bytesize::ByteSize;
 use log::{debug, warn};
 use sha2::{Digest, Sha256};
 use sikula::lir::PartialOrdered;
-use std::sync::RwLock;
+use std::sync::{Arc, RwLock};
+use std::time::Duration;
 pub use tantivy;
 pub use tantivy::schema::Document;
 use tantivy::{
@@ -40,6 +41,7 @@ use tantivy::{
     DateTime, Directory, DocAddress, Index as SearchIndex, IndexSettings, Order, Searcher,
 };
 use time::{OffsetDateTime, UtcOffset};
+use tokio::{spawn, sync::oneshot};
 
 /// Configuration for the index.
 #[derive(Clone, Debug, clap::Parser)]
@@ -92,6 +94,9 @@ struct Metrics {
     index_size_disk_bytes: IntGauge,
     indexing_latency_seconds: Histogram,
     query_latency_seconds: Histogram,
+    documents: IntGauge,
+    count_errors: IntCounter,
+    count_latency_seconds: Histogram,
 }
 
 impl Metrics {
@@ -155,6 +160,31 @@ impl Metrics {
             registry
         )?;
 
+        let documents = register_int_gauge_with_registry!(
+            opts!(
+                format!("{}_index_documents", prefix),
+                "Amount of documents known by the index"
+            ),
+            registry
+        )?;
+
+        let count_errors = register_int_counter_with_registry!(
+            opts!(
+                format!("{}_index_count_errors", prefix),
+                "Total number of failing to count the index documents"
+            ),
+            registry
+        )?;
+
+        let count_latency_seconds = register_histogram_with_registry!(
+            histogram_opts!(
+                format!("{}_index_count_latency_seconds", prefix),
+                "Count latency",
+                vec![0.0001, 0.001, 0.01, 0.1, 1.0, 10.0]
+            ),
+            registry
+        )?;
+
         Ok(Self {
             indexed_total,
             failed_total,
@@ -163,6 +193,9 @@ impl Metrics {
             index_size_disk_bytes,
             indexing_latency_seconds,
             query_latency_seconds,
+            documents,
+            count_errors,
+            count_latency_seconds,
         })
     }
 }
@@ -171,11 +204,22 @@ impl Metrics {
 ///
 /// The index can be live-loaded and stored to/from object storage while serving queries.
 pub struct IndexStore<INDEX> {
-    inner: RwLock<SearchIndex>,
+    inner: Arc<RwLock<SearchIndex>>,
     index_dir: Option<RwLock<IndexDirectory>>,
     index: INDEX,
     index_writer_memory_bytes: usize,
     metrics: Metrics,
+
+    /// the handle running the counter for the metrics. We need to hold on to this handle.
+    shutdown_counter: Option<oneshot::Sender<()>>,
+}
+
+impl<INDEX> Drop for IndexStore<INDEX> {
+    fn drop(&mut self) {
+        if let Some(shutdown) = self.shutdown_counter.take() {
+            let _ = shutdown.send(());
+        }
+    }
 }
 
 impl<DOC> WriteIndex for Box<dyn WriteIndex<Document = DOC>> {
@@ -533,7 +577,10 @@ impl IndexState {
     }
 }
 
-impl<INDEX: WriteIndex> IndexStore<INDEX> {
+impl<INDEX> IndexStore<INDEX>
+where
+    INDEX: WriteIndex + 'static,
+{
     pub fn new_in_memory(index: INDEX) -> Result<Self, Error> {
         let schema = index.schema();
         let settings = index.settings();
@@ -545,12 +592,49 @@ impl<INDEX: WriteIndex> IndexStore<INDEX> {
         let inner = builder.create_in_ram()?;
         let name = index.name().to_string();
         Ok(Self {
-            inner: RwLock::new(inner),
+            inner: Arc::new(RwLock::new(inner)),
             index,
             index_writer_memory_bytes: 32 * 1024 * 1024,
             index_dir: None,
             metrics: Metrics::register(&Default::default(), &name)?,
+            shutdown_counter: None,
         })
+    }
+
+    /// runs an internal loop, counting documents and syncing that to the metrics
+    async fn run_index_count(inner: Arc<RwLock<SearchIndex>>, metrics: Metrics, mut shutdown: oneshot::Receiver<()>) {
+        fn count(inner: &RwLock<SearchIndex>) -> Option<u64> {
+            let count = inner.read().ok()?.reader().ok()?;
+            Some(count.searcher().num_docs())
+        }
+
+        log::info!("Starting index counter");
+
+        let mut interval = tokio::time::interval(Duration::from_secs(60));
+
+        loop {
+            tokio::select! {
+                _ = interval.tick() => {
+                     let count = {
+                        let _timer = metrics.count_latency_seconds.start_timer();
+                        count(&inner)
+                     };
+
+                    log::debug!("Counted {count:?} documents in the index");
+
+                    match count {
+                        Some(count) => metrics.documents.set(count.clamp(0, i64::MAX as _) as _),
+                        None => metrics.count_errors.inc(),
+                    }
+                },
+                _ = &mut shutdown => {
+                    log::info!("Shutting down index counter");
+                    break;
+                }
+            }
+        }
+
+        log::info!("Exiting index counter");
     }
 
     pub fn new(
@@ -578,12 +662,23 @@ impl<INDEX: WriteIndex> IndexStore<INDEX> {
                 let index_dir = IndexDirectory::new(&path)?;
                 let inner = index_dir.build(settings, schema, tokenizers)?;
                 let name = index.name().to_string();
+                let inner = Arc::new(RwLock::new(inner));
+                let metrics = Metrics::register(metrics_registry, &name)?;
+
+                let (shutdown_counter, shutdown) = oneshot::channel();
+                spawn({
+                    let inner = inner.clone();
+                    let metrics = metrics.clone();
+                    async move { Self::run_index_count(inner, metrics, shutdown).await }
+                });
+
                 Ok(Self {
-                    inner: RwLock::new(inner),
+                    inner,
                     index_writer_memory_bytes: config.index_writer_memory_bytes.as_u64() as usize,
                     index_dir: Some(RwLock::new(index_dir)),
                     index,
-                    metrics: Metrics::register(metrics_registry, &name)?,
+                    metrics,
+                    shutdown_counter: Some(shutdown_counter),
                 })
             }
             IndexMode::S3 => {
@@ -598,12 +693,23 @@ impl<INDEX: WriteIndex> IndexStore<INDEX> {
                 let dir = S3Directory::new(bucket);
                 let inner = builder.open_or_create(dir)?;
                 let name = index.name().to_string();
+                let inner = Arc::new(RwLock::new(inner));
+                let metrics = Metrics::register(metrics_registry, &name)?;
+
+                let (shutdown_counter, shutdown) = oneshot::channel();
+                spawn({
+                    let inner = inner.clone();
+                    let metrics = metrics.clone();
+                    async move { Self::run_index_count(inner, metrics, shutdown).await }
+                });
+
                 Ok(Self {
-                    inner: RwLock::new(inner),
+                    inner,
                     index_writer_memory_bytes: config.index_writer_memory_bytes.as_u64() as usize,
                     index_dir: None,
                     index,
-                    metrics: Metrics::register(metrics_registry, &name)?,
+                    metrics,
+                    shutdown_counter: Some(shutdown_counter),
                 })
             }
         }
@@ -649,6 +755,7 @@ impl<INDEX: WriteIndex> IndexStore<INDEX> {
 
     // Reset the index to an empty state.
     pub fn reset(&mut self) -> Result<(), Error> {
+        log::info!("Resetting index");
         if let Some(index_dir) = &self.index_dir {
             let mut index_dir = index_dir.write().unwrap();
             let index = index_dir.reset(self.index.settings(), self.index.schema(), self.index.tokenizers()?)?;
