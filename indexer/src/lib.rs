@@ -216,10 +216,18 @@ where
     async fn handle_reindex(&mut self, writers: &mut Vec<IndexWriter>) -> anyhow::Result<()> {
         log::info!("Reindexing all documents");
 
+        // set the indexes
         for index in &mut self.indexes {
             index.reset()?;
         }
 
+        // after resetting, we need to acquire new writers, as the old indexes are gone
+        writers.clear();
+        for index in self.indexes.iter_mut() {
+            writers.push(block_in_place(|| index.writer())?);
+        }
+
+        // now walk the full content with the new (empty) indexes
         const MAX_RETRIES: usize = 3;
         let mut retries = MAX_RETRIES;
         let mut token = ContinuationToken::default();
