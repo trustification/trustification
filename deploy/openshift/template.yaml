@@ -1188,6 +1188,8 @@ objects:
         app.kubernetes.io/part-of: trustification
     spec:
       replicas: 1
+      strategy:
+        type: Recreate
       selector:
         matchLabels:
           app.kubernetes.io/name: v11y-indexer
@@ -1412,6 +1414,8 @@ objects:
         app.kubernetes.io/part-of: trustification
     spec:
       replicas: 1
+      strategy:
+        type: Recreate
       selector:
         matchLabels:
           app.kubernetes.io/name: vexination-indexer
