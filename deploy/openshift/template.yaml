@@ -310,6 +310,8 @@ objects:
         app.kubernetes.io/part-of: trustification
     spec:
       replicas: ${{REPLICAS}}
+      strategy:
+        type: Recreate
       selector:
         matchLabels:
           app.kubernetes.io/name: bombastic-api
@@ -1305,6 +1307,8 @@ objects:
         app.kubernetes.io/part-of: trustification
     spec:
       replicas: ${{REPLICAS}}
+      strategy:
+        type: Recreate
       selector:
         matchLabels:
           app.kubernetes.io/name: vexination-api
