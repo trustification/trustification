@@ -55,7 +55,7 @@ impl Run {
                 |_context| async { Ok(()) },
                 |context| async move {
                     let sbom_index: Box<dyn WriteIndex<Document = (SBOM, String)>> = Box::new(sbom::Index::new());
-                    let index = block_in_place(|| {
+                    let sbom_store = block_in_place(|| {
                         IndexStore::new(&self.storage, &self.index, sbom_index, context.metrics.registry())
                     })?;
 
@@ -72,7 +72,7 @@ impl Run {
                     }
 
                     let mut indexer = Indexer {
-                        indexes: vec![index, package_store],
+                        indexes: vec![sbom_store, package_store],
                         storage,
                         bus,
                         stored_topic: self.stored_topic.as_str(),

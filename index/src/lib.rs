@@ -738,10 +738,11 @@ where
             ) {
                 Ok(Some(index)) => {
                     *self.inner.write().unwrap() = index;
-                    log::debug!("Index reloaded");
+                    log::debug!("Index replaced");
                 }
                 Ok(None) => {
                     // No index change
+                    log::debug!("No index change");
                 }
                 Err(e) => {
                     log::warn!("Error syncing index: {:?}, keeping old", e);

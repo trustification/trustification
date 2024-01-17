@@ -103,46 +103,7 @@ where
             select! {
                 command = self.commands.recv() => {
                     if let Some(IndexerCommand::Reindex) = command {
-                        for index in &mut self.indexes {
-                            index.reset()?;
-                        }
-                        log::info!("Reindexing all documents");
-                        const MAX_RETRIES: usize = 3;
-                        let mut retries = MAX_RETRIES;
-                        let mut token = ContinuationToken::default();
-                        loop {
-                            retries -= 1;
-                            match self.reindex(&mut writers, token).await {
-                                Ok(_) => {
-                                    log::info!("Reindexing finished");
-                                    for (index, writer) in self.indexes.iter_mut().zip(writers.drain(..)) {
-                                        match index.snapshot(writer, &self.storage, true).await {
-                                            Ok(_) => {
-                                                log::info!("Reindexed index published");
-                                            }
-                                            Err(e) => {
-                                                log::warn!("(Ignored) Error publishing index: {:?}", e);
-                                            }
-                                        }
-                                    }
-                                    for index in self.indexes.iter_mut() {
-                                        writers.push(block_in_place(|| index.writer())?);
-                                    }
-                                    *self.status.lock().await = IndexerStatus::Running;
-                                    break;
-                                }
-                                Err((e, resume_token)) => {
-                                    token = resume_token;
-                                    log::warn!("Reindexing failed: {:?}. Retries: {}", e, retries);
-                                    if retries == 0 {
-                                        panic!("Reindexing failed after {} retries, giving up", MAX_RETRIES);
-                                    } else {
-                                        *self.status.lock().await = IndexerStatus::Failed { error: e.to_string() };
-                                        tokio::time::sleep(Duration::from_secs(10)).await;
-                                    }
-                                }
-                            }
-                        }
+                        self.handle_reindex(&mut writers).await?;
                     }
                 }
                 event = consumer.next() => match event {
@@ -250,6 +211,61 @@ where
                 }
             }
         }
+    }
+
+    async fn handle_reindex(&mut self, writers: &mut Vec<IndexWriter>) -> anyhow::Result<()> {
+        log::info!("Reindexing all documents");
+
+        // set the indexes
+        for index in &mut self.indexes {
+            index.reset()?;
+        }
+
+        // after resetting, we need to acquire new writers, as the old indexes are gone
+        writers.clear();
+        for index in self.indexes.iter_mut() {
+            writers.push(block_in_place(|| index.writer())?);
+        }
+
+        // now walk the full content with the new (empty) indexes
+        const MAX_RETRIES: usize = 3;
+        let mut retries = MAX_RETRIES;
+        let mut token = ContinuationToken::default();
+        loop {
+            retries -= 1;
+            match self.reindex(writers, token).await {
+                Ok(_) => {
+                    log::info!("Reindexing finished");
+                    for (index, writer) in self.indexes.iter_mut().zip(writers.drain(..)) {
+                        match index.snapshot(writer, &self.storage, true).await {
+                            Ok(_) => {
+                                log::info!("Reindexed index published");
+                            }
+                            Err(e) => {
+                                log::warn!("(Ignored) Error publishing index: {:?}", e);
+                            }
+                        }
+                    }
+                    for index in self.indexes.iter_mut() {
+                        writers.push(block_in_place(|| index.writer())?);
+                    }
+                    *self.status.lock().await = IndexerStatus::Running;
+                    break;
+                }
+                Err((e, resume_token)) => {
+                    token = resume_token;
+                    log::warn!("Reindexing failed: {:?}. Retries: {}", e, retries);
+                    if retries == 0 {
+                        panic!("Reindexing failed after {} retries, giving up", MAX_RETRIES);
+                    } else {
+                        *self.status.lock().await = IndexerStatus::Failed { error: e.to_string() };
+                        tokio::time::sleep(Duration::from_secs(10)).await;
+                    }
+                }
+            }
+        }
+
+        Ok(())
     }
 
     async fn reindex(
