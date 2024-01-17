@@ -162,7 +162,7 @@ impl Metrics {
 
         let documents = register_int_gauge_with_registry!(
             opts!(
-                format!("{}_documents", prefix),
+                format!("{}_index_documents", prefix),
                 "Amount of documents known by the index"
             ),
             registry
@@ -170,7 +170,7 @@ impl Metrics {
 
         let count_errors = register_int_counter_with_registry!(
             opts!(
-                format!("{}_count_errors", prefix),
+                format!("{}_index_count_errors", prefix),
                 "Total number of failing to count the index documents"
             ),
             registry
