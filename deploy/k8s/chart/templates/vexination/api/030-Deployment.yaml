@@ -12,6 +12,8 @@ metadata:
 {{ end }}
 spec:
   replicas: {{ .Values.replicas }}
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app.kubernetes.io/name: vexination-api
