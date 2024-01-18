@@ -309,7 +309,7 @@ objects:
         app.kubernetes.io/component: api
         app.kubernetes.io/part-of: trustification
     spec:
-      replicas: ${{REPLICAS}}
+      replicas: ${{BOMBASTIC_API_REPLICAS}}
       strategy:
         type: Recreate
       selector:
@@ -431,7 +431,7 @@ objects:
         app.kubernetes.io/component: indexer
         app.kubernetes.io/part-of: trustification
     spec:
-      replicas: 1
+      replicas: ${{BOMBASTIC_INDEXER_REPLICAS}}
       selector:
         matchLabels:
           app.kubernetes.io/name: bombastic-indexer
@@ -541,7 +541,7 @@ objects:
       annotations:
         service.beta.openshift.io/serving-cert-secret-name: exhort-api-tls
     spec:
-      replicas: 1
+      replicas: ${{EXHORT_API_REPLICAS}}
       selector:
         matchLabels:
           app.kubernetes.io/name: exhort-api
@@ -867,7 +867,7 @@ objects:
         app.kubernetes.io/component: api
         app.kubernetes.io/part-of: trustification
     spec:
-      replicas: ${{REPLICAS}}
+      replicas: ${{SPOG_API_REPLICAS}}
       selector:
         matchLabels:
           app.kubernetes.io/name: spog-api
@@ -1007,7 +1007,7 @@ objects:
         app.kubernetes.io/component: ui
         app.kubernetes.io/part-of: trustification
     spec:
-      replicas: ${{REPLICAS}}
+      replicas: ${{SPOG_UI_REPLICAS}}
       selector:
         matchLabels:
           app.kubernetes.io/name: spog-ui
@@ -1086,7 +1086,7 @@ objects:
       annotations:
         service.beta.openshift.io/serving-cert-secret-name: v11y-api-tls
     spec:
-      replicas: 1
+      replicas: ${{V11Y_API_REPLICAS}}
       strategy:
         type: Recreate
       selector:
@@ -1202,7 +1202,7 @@ objects:
         app.kubernetes.io/component: indexer
         app.kubernetes.io/part-of: trustification
     spec:
-      replicas: 1
+      replicas: ${{V11Y_INDEXER_REPLICAS}}
       strategy:
         type: Recreate
       selector:
@@ -1308,7 +1308,7 @@ objects:
         app.kubernetes.io/component: api
         app.kubernetes.io/part-of: trustification
     spec:
-      replicas: ${{REPLICAS}}
+      replicas: ${{VEXINATION_API_REPLICAS}}
       strategy:
         type: Recreate
       selector:
@@ -1428,7 +1428,7 @@ objects:
         app.kubernetes.io/component: indexer
         app.kubernetes.io/part-of: trustification
     spec:
-      replicas: 1
+      replicas: ${{VEXINATION_INDEXER_REPLICAS}}
       strategy:
         type: Recreate
       selector:
@@ -2084,8 +2084,6 @@ parameters:
   required: true
 - name: IMAGE_TAG
   required: true
-- name: REPLICAS
-  value: "1"
 - name: AWS_REGION
   required: true
 - name: BOMBASTIC_STORAGE_BUCKET
@@ -2172,6 +2170,26 @@ parameters:
   required: true
 - name: GUAC_COLLECTSUB_REPLICAS
   required: true
+- name: BOMBASTIC_API_REPLICAS
+  required: true
+- name: BOMBASTIC_INDEXER_REPLICAS
+  required: true
+- name: COLLECTORIST_API_REPLICAS
+  required: true
+- name: EXHORT_API_REPLICAS
+  required: true
+- name: SPOG_API_REPLICAS
+  required: true
+- name: SPOG_UI_REPLICAS
+  required: true
+- name: VEXINATION_API_REPLICAS
+  required: true
+- name: VEXINATION_INDEXER_REPLICAS
+  required: true
+- name: V11Y_API_REPLICAS
+  required: true
+- name: V11Y_INDEXER_REPLICAS
+  required: true
 - name: BOMBASTIC_COLLECTOR_RESOURCES
   required: true
 - name: VEXINATION_COLLECTOR_RESOURCES
@@ -2236,3 +2254,5 @@ parameters:
   value: "true"
 - name: DATASET_SCHEDULE_JOB
   value: "0 * * * *"
+- name: REPLICAS
+  value: "1"

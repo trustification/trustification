@@ -7,8 +7,6 @@ parameters:
   required: true
 - name: IMAGE_TAG
   required: true
-- name: REPLICAS
-  value: "1"
 - name: AWS_REGION
   required: true
 - name: BOMBASTIC_STORAGE_BUCKET
@@ -95,6 +93,26 @@ parameters:
   required: true
 - name: GUAC_COLLECTSUB_REPLICAS
   required: true
+- name: BOMBASTIC_API_REPLICAS
+  required: true
+- name: BOMBASTIC_INDEXER_REPLICAS
+  required: true
+- name: COLLECTORIST_API_REPLICAS
+  required: true
+- name: EXHORT_API_REPLICAS
+  required: true
+- name: SPOG_API_REPLICAS
+  required: true
+- name: SPOG_UI_REPLICAS
+  required: true
+- name: VEXINATION_API_REPLICAS
+  required: true
+- name: VEXINATION_INDEXER_REPLICAS
+  required: true
+- name: V11Y_API_REPLICAS
+  required: true
+- name: V11Y_INDEXER_REPLICAS
+  required: true
 - name: BOMBASTIC_COLLECTOR_RESOURCES
   required: true
 - name: VEXINATION_COLLECTOR_RESOURCES
@@ -159,3 +177,5 @@ parameters:
   value: "true"
 - name: DATASET_SCHEDULE_JOB
   value: "0 * * * *"
+- name: REPLICAS
+  value: "1"
