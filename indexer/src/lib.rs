@@ -286,12 +286,11 @@ where
             select! {
                 next = objects.next() => {
                     match next {
-                        Some(Ok((path, obj))) => {
-                            let key = path.key();
+                        Some(Ok((key, obj))) => {
                             log::info!("Reindexing {:?}", key);
                             // Not sending notifications for reindexing
                             for (index, writer) in self.indexes.iter().zip(writers.iter_mut()) {
-                                if let Err(e) = self.index_doc(index.index(), writer, key, &obj).await {
+                                if let Err(e) = self.index_doc(index.index(), writer, &key, &obj).await {
                                     log::warn!("(Ignored) Internal error when indexing {}: {:?}", key, e);
                                 }
                             }

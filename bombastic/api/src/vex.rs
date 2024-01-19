@@ -9,7 +9,7 @@ use serde::Deserialize;
 use trustification_api::search::SearchOptions;
 use trustification_auth::{authenticator::user::UserInformation, authorizer::Authorizer, Permission};
 use trustification_index::Error as IndexError;
-use trustification_storage::{Error as StorageError, S3Path, Storage};
+use trustification_storage::{Error as StorageError, Storage};
 use utoipa::OpenApi;
 use vexination_model::prelude::*;
 
@@ -35,7 +35,7 @@ pub fn config(cfg: &mut web::ServiceConfig) {
 }
 
 async fn fetch_object(storage: &Storage, key: &str) -> HttpResponse {
-    match storage.get_decoded_stream(&S3Path::from_key(key)).await {
+    match storage.get_decoded_stream(key).await {
         Ok(stream) => HttpResponse::Ok().content_type(ContentType::json()).streaming(stream),
         Err(e) => {
             log::warn!("Unable to locate object with key {}: {:?}", key, e);
