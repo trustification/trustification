@@ -18,7 +18,7 @@ use serde::Deserialize;
 use trustification_api::search::SearchOptions;
 use trustification_auth::{authenticator::user::UserInformation, authorizer::Authorizer, Permission};
 use trustification_index::Error as IndexError;
-use trustification_storage::{Error as StorageError, S3Path};
+use trustification_storage::Error as StorageError;
 use utoipa::OpenApi;
 
 #[derive(OpenApi)]
@@ -119,11 +119,10 @@ async fn query_sbom(
     authorizer.require(&user, Permission::ReadSbom)?;
 
     let key = params.into_inner().id;
-    let path: S3Path = S3Path::from_key(&key);
     log::trace!("Querying SBOM using id {}", key);
     let storage = &state.sbom_storage;
     // determine the encoding of the stored object, if any
-    let encoding = storage.get_head(path.clone()).await.ok().and_then(|head| {
+    let encoding = storage.get_head(&key).await.ok().and_then(|head| {
         head.content_encoding.and_then(|ref e| {
             accept_encoding
                 .negotiate([e.parse().unwrap()].iter())
@@ -136,11 +135,11 @@ async fn query_sbom(
         Some(enc) => Ok(HttpResponse::Ok()
             .content_type(ContentType::json())
             .insert_header((header::CONTENT_ENCODING, enc))
-            .streaming(storage.get_encoded_stream(path).await.map_err(Error::Storage)?)),
+            .streaming(storage.get_encoded_stream(&key).await.map_err(Error::Storage)?)),
         // otherwise, decode the stream
         None => Ok(HttpResponse::Ok()
             .content_type(ContentType::json())
-            .streaming(storage.get_decoded_stream(&path).await.map_err(Error::Storage)?)),
+            .streaming(storage.get_decoded_stream(&key).await.map_err(Error::Storage)?)),
     }
 }
 
