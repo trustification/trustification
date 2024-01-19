@@ -279,6 +279,10 @@ impl Test {
             "integration-tests/*".to_string(),
             "--ignore".to_string(),
             "xtask/*".to_string(),
+            "--ignore".to_string(),
+            "target/*".to_string(),
+            "--ignore".to_string(),
+            format!("{target_dir}/*"),
             "--output-path".to_string(),
             TestConfig::COVERAGE_DIR.to_string(),
         ];
