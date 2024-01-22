@@ -8,10 +8,9 @@ use sikula::prelude::*;
 use std::time::Duration;
 use time::OffsetDateTime;
 use trustification_api::search::SearchOptions;
-use trustification_index::tantivy::schema::{IndexRecordOption, TextFieldIndexing};
 use trustification_index::{
-    create_boolean_query, create_date_query, create_float_query, create_string_query, create_text_query, field2bool,
-    field2date_opt, field2str, field2strvec,
+    create_boolean_query, create_date_query, create_float_query, create_string_query_case, create_text_query,
+    field2bool, field2date_opt, field2str, field2strvec,
     metadata::doc2metadata,
     sort_by,
     tantivy::{
@@ -19,11 +18,12 @@ use trustification_index::{
         collector::TopDocs,
         doc,
         query::{AllQuery, Occur, Query, TermQuery},
-        schema::{Field, Schema, Term, FAST, INDEXED, STORED, STRING, TEXT},
+        schema::{Field, IndexRecordOption, Schema, Term, TextFieldIndexing, FAST, INDEXED, STORED, STRING, TEXT},
         store::ZstdCompressor,
+        tokenizer::{Language, LowerCaser, NgramTokenizer, RemoveLongFilter, Stemmer, TextAnalyzer, TokenizerManager},
         DateTime, DocAddress, DocId, IndexSettings, Score, Searcher, SegmentReader,
     },
-    term2query, Document, Error as SearchError, SearchQuery,
+    term2query, Case, Document, Error as SearchError, SearchQuery,
 };
 use v11y_model::search::{Cves, CvesSortable, SearchDocument, SearchHit};
 
@@ -176,8 +176,9 @@ impl Index {
 
     fn resource2query(&self, resource: &Cves) -> Box<dyn Query> {
         match resource {
-            Cves::Id(value) => create_string_query(self.fields.id, value),
+            Cves::Id(value) => create_string_query_case(self.fields.id, value, Case::Uppercase),
 
+            // TODO: consider boosting the title
             Cves::Title(value) => create_text_query(self.fields.title, value),
             Cves::Description(value) => create_text_query(self.fields.description, value),
 
@@ -337,7 +338,7 @@ impl trustification_index::Index for Index {
             date_updated,
         };
 
-        let explanation: Option<serde_json::Value> = if options.explain {
+        let explanation: Option<Value> = if options.explain {
             match query.explain(searcher, doc_address) {
                 Ok(explanation) => serde_json::to_value(explanation).ok(),
                 Err(e) => {
@@ -367,6 +368,20 @@ impl trustification_index::WriteIndex for Index {
         "cve"
     }
 
+    fn tokenizers(&self) -> Result<TokenizerManager, SearchError> {
+        let manager = TokenizerManager::default();
+        let ngram = NgramTokenizer::all_ngrams(3, 8)?;
+        manager.register(
+            "ngram",
+            TextAnalyzer::builder(ngram)
+                .filter(RemoveLongFilter::limit(40))
+                .filter(LowerCaser)
+                .filter(Stemmer::new(Language::English))
+                .build(),
+        );
+        Ok(manager)
+    }
+
     fn index_doc(&self, id: &str, doc: &Cve) -> Result<Vec<(String, Document)>, SearchError> {
         match doc {
             Cve::Published(cve) => self.index_published_cve(cve, id),
@@ -394,5 +409,177 @@ impl trustification_index::WriteIndex for Index {
             .get_field("id")
             .map(|f| Term::from_field_text(f, id))
             .unwrap()
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use std::path::Path;
+    use trustification_index::{
+        tantivy::tokenizer::{SimpleTokenizer, TokenFilter, TokenStream},
+        tokenizer::ChainTokenizerExt,
+        IndexStore, IndexWriter,
+    };
+
+    const TESTDATA: &[&str] = &["../testdata/CVE-2023-44487.json"];
+
+    fn load_valid_file(store: &mut IndexStore<Index>, writer: &mut IndexWriter, path: impl AsRef<Path>) {
+        let data = std::fs::read(&path).unwrap();
+        // ensure it parses
+        serde_json::from_slice::<Cve>(&data).expect(&format!("failed to parse test data: {}", path.as_ref().display()));
+        let name = path.as_ref().file_name().unwrap().to_str().unwrap();
+        let name = name.rsplit_once('.').unwrap().0;
+        // add to index
+        writer.add_document(store.index_as_mut(), name, &data).unwrap();
+    }
+
+    fn assert_search<F>(f: F)
+    where
+        F: FnOnce(IndexStore<Index>),
+    {
+        let _ = env_logger::try_init();
+
+        let index = Index::new();
+        let mut store = IndexStore::new_in_memory(index).unwrap();
+        let mut writer = store.writer().unwrap();
+
+        for file in TESTDATA {
+            load_valid_file(&mut store, &mut writer, file);
+        }
+
+        writer.commit().unwrap();
+
+        f(store);
+    }
+
+    fn search(index: &IndexStore<Index>, query: &str) -> (Vec<SearchHit<SearchDocument>>, usize) {
+        index
+            .search(
+                query,
+                0,
+                10000,
+                SearchOptions {
+                    metadata: false,
+                    explain: false,
+                    summaries: true,
+                },
+            )
+            .unwrap()
+    }
+
+    #[tokio::test]
+    async fn test_by_id() {
+        assert_search(|index| {
+            let result = search(&index, r#"id:"CVE-2023-44487""#);
+            assert_eq!(result.0.len(), 1);
+        });
+    }
+
+    #[tokio::test]
+    async fn test_by_id_lowercase() {
+        assert_search(|index| {
+            let result = search(&index, r#"id:"cve-2023-44487""#);
+            assert_eq!(result.0.len(), 1);
+        });
+    }
+
+    #[tokio::test]
+    async fn test_in_id() {
+        assert_search(|index| {
+            let result = search(&index, r#"in:id "CVE-2023-44487""#);
+            assert_eq!(result.0.len(), 1);
+        });
+    }
+
+    #[tokio::test]
+    async fn test_in_id_lowercase() {
+        assert_search(|index| {
+            let result = search(&index, r#"in:id "cve-2023-44487""#);
+            assert_eq!(result.0.len(), 1);
+        });
+    }
+
+    #[tokio::test]
+    async fn test() {
+        assert_search(|index| {
+            let result = search(&index, r#"allow in:description"#);
+            assert_eq!(result.0.len(), 1);
+        });
+
+        assert_search(|index| {
+            let result = search(&index, r#"in:description 2023"#);
+            assert_eq!(result.0.len(), 1);
+        });
+
+        assert_search(|index| {
+            let result = search(&index, r#"in:description Octob"#);
+            assert_eq!(result.0.len(), 1);
+        });
+    }
+
+    #[tokio::test]
+    async fn test_in_description() {
+        assert_search(|index| {
+            let result = search(&index, r#"in:description October 2023"#);
+            assert_eq!(result.0.len(), 1);
+        });
+    }
+
+    #[tokio::test]
+    async fn test_in_description_lowercase() {
+        assert_search(|index| {
+            let result = search(&index, r#"in:description october 2023"#);
+            assert_eq!(result.0.len(), 1);
+        });
+    }
+
+    #[tokio::test]
+    async fn test_in_description_special() {
+        assert_search(|index| {
+            let result = search(&index, r#"in:description "HTTP/2""#);
+            assert_eq!(result.0.len(), 1);
+        });
+    }
+
+    #[tokio::test]
+    async fn test_in_description_special_lowercase() {
+        assert_search(|index| {
+            let result = search(&index, r#"in:description "http/2""#);
+            assert_eq!(result.0.len(), 1);
+        });
+    }
+
+    #[tokio::test]
+    async fn test_ngram() {
+        let ngram = NgramTokenizer::all_ngrams(3, 8).unwrap();
+        let mut text = TextAnalyzer::builder(
+            Stemmer::new(Language::English)
+                .transform(LowerCaser.transform(RemoveLongFilter::limit(40).transform(SimpleTokenizer::default())))
+                .chain(LowerCaser.transform(RemoveLongFilter::limit(40).transform(SimpleTokenizer::default())))
+                .chain(LowerCaser.transform(ngram)),
+        )
+        .build();
+
+        let mut stream = text.token_stream("September October");
+
+        while let Some(next) = stream.next() {
+            println!("{}", next.text);
+        }
+    }
+
+    #[tokio::test]
+    async fn test_simple() {
+        let mut text = TextAnalyzer::builder(SimpleTokenizer::default())
+            .filter(RemoveLongFilter::limit(40))
+            .filter(LowerCaser)
+            //.filter(Stemmer::new(Language::English))
+            .build();
+
+        let mut stream = text.token_stream("September October");
+
+        while let Some(next) = stream.next() {
+            println!("{}", next.text);
+        }
     }
 }

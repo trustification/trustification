@@ -4,6 +4,7 @@
 //!
 
 pub mod metadata;
+pub mod tokenizer;
 
 mod s3dir;
 mod sort;
@@ -16,6 +17,7 @@ use prometheus::{
 };
 use s3dir::S3Directory;
 use sikula::prelude::{Ordered, Primary, Search};
+use std::borrow::Cow;
 use std::{
     fmt::{Debug, Display},
     ops::Bound,
@@ -1063,11 +1065,37 @@ pub fn create_date_query(schema: &Schema, field: Field, value: &Ordered<time::Of
 
 /// Convert a sikula primary to a tantivy query for string fields
 pub fn create_string_query(field: Field, primary: &Primary<'_>) -> Box<dyn Query> {
+    create_string_query_case(field, primary, Case::Sensitive)
+}
+
+#[derive(Copy, Clone, PartialEq, Eq, Debug, Default)]
+pub enum Case {
+    #[default]
+    Sensitive,
+    Lowercase,
+    Uppercase,
+}
+
+impl Case {
+    pub fn to_value<'a>(&self, value: &'a str) -> Cow<'a, str> {
+        match self {
+            Self::Sensitive => value.into(),
+            Self::Lowercase => value.to_lowercase().into(),
+            Self::Uppercase => value.to_uppercase().into(),
+        }
+    }
+}
+
+/// Convert a sikula primary to a tantivy query for string fields
+pub fn create_string_query_case(field: Field, primary: &Primary<'_>, case: Case) -> Box<dyn Query> {
     match primary {
-        Primary::Equal(value) => Box::new(TermQuery::new(Term::from_field_text(field, value), Default::default())),
+        Primary::Equal(value) => Box::new(TermQuery::new(
+            Term::from_field_text(field, case.to_value(value).as_ref()),
+            Default::default(),
+        )),
         Primary::Partial(value) => {
             // Note: This could be expensive so consider alternatives
-            let pattern = format!(".*{}.*", value);
+            let pattern = format!(".*{}.*", case.to_value(value));
             let mut queries: Vec<Box<dyn Query>> = Vec::new();
             if let Ok(query) = RegexQuery::from_pattern(&pattern, field) {
                 queries.push(Box::new(query));
@@ -1075,7 +1103,7 @@ pub fn create_string_query(field: Field, primary: &Primary<'_>) -> Box<dyn Query
                 warn!("Unable to partial query from {}", pattern);
             }
             queries.push(Box::new(TermQuery::new(
-                Term::from_field_text(field, value),
+                Term::from_field_text(field, case.to_value(value).as_ref()),
                 Default::default(),
             )));
             Box::new(BooleanQuery::union(queries))
