@@ -48,6 +48,7 @@ pub fn use_advisory_search(
 ) -> UseStandardSearch {
     let config = use_config();
     use_generic_search::<Vulnerabilities, _, _, _, _>(
+        0,
         search_params,
         pagination,
         callback,

@@ -43,7 +43,7 @@ pub fn uploader() -> Html {
                     <CommonHeader />
 
                     <PageSection variant={PageSectionVariant::Light} fill=true>
-                        <Upload primary_btn_text="Upload" {onsubmit} {onvalidate} />
+                        <Upload primary_btn_text="Upload SBOM" {onsubmit} {onvalidate} />
                     </PageSection>
                 </>
             )

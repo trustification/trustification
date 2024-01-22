@@ -55,6 +55,19 @@ impl SBOMService {
         Ok(Some(response.api_error_for_status().await?.text().await?))
     }
 
+    pub async fn get_from_index(&self, id: &str) -> Result<SearchResult<Vec<SbomSummary>>, ApiError> {
+        let q = format!("id:{id}");
+        let response = self
+            .client
+            .get(self.backend.join(Endpoint::Api, "/api/v1/sbom/search")?)
+            .query(&[("q", q)])
+            .latest_access_token(&self.access_token)
+            .send()
+            .await?;
+
+        Ok(response.api_error_for_status().await?.json().await?)
+    }
+
     pub async fn get_sbom_vulns(&self, id: impl AsRef<str>) -> Result<Option<SbomReport>, ApiError> {
         let mut url = self.backend.join(Endpoint::Api, "/api/v1/sbom/vulnerabilities")?;
         url.query_pairs_mut().append_pair("id", id.as_ref()).finish();

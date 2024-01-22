@@ -59,7 +59,7 @@ where
     )));
 
     // Loading view
-    if props.loading {
+    if props.loading && props.empty {
         html!(
             <Table<C, UseTableData<C, MemoizedTableModel<SkeletonEntry>>>
                 header={header()}

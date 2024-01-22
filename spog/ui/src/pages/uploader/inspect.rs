@@ -4,7 +4,7 @@ use reqwest::Body;
 use spog_ui_backend::{use_backend, SBOMService};
 use spog_ui_common::error::components::Error;
 use spog_ui_navigation::AppRoute;
-use std::rc::Rc;
+use std::{rc::Rc, time::Duration};
 use yew::prelude::*;
 use yew_more_hooks::hooks::r#async::*;
 use yew_nested_router::prelude::*;
@@ -62,8 +62,16 @@ pub struct RedirectProps {
 pub fn redirect(props: &RedirectProps) -> Html {
     let router = use_router::<AppRoute>();
 
+    let toaster = use_toaster().expect("Must be nested inside a ToastViewer");
+
     use_effect_with(props.clone(), move |_props| {
         if let Some(router) = &router {
+            toaster.toast(Toast {
+                r#type: AlertType::Success,
+                title: "Your file has been uploaded".into(),
+                timeout: Some(Duration::from_secs(5)),
+                ..Default::default()
+            });
             router.push(AppRoute::Search { terms: "".to_string() });
         }
         || {}
