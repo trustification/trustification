@@ -42,3 +42,34 @@ where
 
     html!(<> {title.as_ref()} { badge } </>)
 }
+
+#[derive(Clone, PartialEq, Properties)]
+pub struct CountTabTitleProperties {
+    #[prop_or_default]
+    pub count: Option<usize>,
+
+    #[prop_or_default]
+    pub processing: bool,
+
+    #[prop_or_default]
+    pub title: AttrValue,
+}
+
+#[function_component(CountTabTitle)]
+pub fn grid_item(props: &CountTabTitleProperties) -> Html {
+    let count_state = use_state_eq(|| None);
+
+    use_effect_with((count_state.clone(), props.count), |(count_state, count)| {
+        if let Some(val) = count {
+            count_state.set(Some(*val));
+        }
+    });
+
+    let badge = if props.processing && count_state.is_none() {
+        html!(<> {" "} <Badge read=true> { Icon::InProgress } </Badge></>)
+    } else {
+        html!(<> {" "} <Badge> { *count_state } </Badge> </>)
+    };
+
+    html!(<> {&props.title} { badge } </>)
+}

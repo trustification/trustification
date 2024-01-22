@@ -10,19 +10,25 @@ pub struct PaginationWrappedProperties {
 
 #[function_component(PaginationWrapped)]
 pub fn pagination_wrapped(props: &PaginationWrappedProperties) -> Html {
+    let total = use_state_eq(|| None);
+
+    if let Some(val) = props.total {
+        total.set(Some(val))
+    }
+
     html!(
         <>
             <div class="pf-v5-u-p-sm">
                 <SimplePagination
                     pagination={props.pagination.clone()}
-                    total={props.total}
+                    total={*total}
                 />
             </div>
             { for props.children.iter() }
             <div class="pf-v5-u-p-sm">
                 <SimplePagination
                     pagination={props.pagination.clone()}
-                    total={props.total}
+                    total={*total}
                     position={PaginationPosition::Bottom}
                 />
             </div>

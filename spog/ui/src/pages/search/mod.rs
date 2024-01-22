@@ -5,7 +5,7 @@ pub mod search_input;
 use crate::analytics::{ActionAnalytics, AnalyticEvents, ObjectNameAnalytics};
 use patternfly_yew::prelude::*;
 use search_input::SearchInput;
-use spog_ui_common::utils::count::count_tab_title;
+use spog_ui_common::utils::count::CountTabTitle;
 use spog_ui_components::{
     advisory::{use_advisory_search, AdvisoryResult, AdvisorySearchControls},
     cve::{use_cve_search, CveResult, CveSearchControls},
@@ -27,8 +27,8 @@ use yew_more_hooks::prelude::*;
 #[strum(serialize_all = "camelCase")]
 pub enum TabIndex {
     Advisories,
-    Sboms,
     #[default]
+    Sboms,
     Cves,
     Packages,
 }
@@ -113,6 +113,9 @@ pub fn search(props: &SearchProperties) -> Html {
         use_advisory_search,
     );
 
+    let advisory_count = (*advisory.state).data().and_then(|e| e.total);
+    let advisory_is_processing = (*advisory.state).is_processing();
+
     // sbom search
 
     let sbom = use_unified_search(
@@ -126,6 +129,9 @@ pub fn search(props: &SearchProperties) -> Html {
         },
     );
 
+    let sbom_count = (*sbom.state).data().and_then(|e| e.total);
+    let sbom_is_processing = (*sbom.state).is_processing();
+
     // CVE search
 
     let cve = use_unified_search(
@@ -135,6 +141,9 @@ pub fn search(props: &SearchProperties) -> Html {
         use_cve_search,
     );
 
+    let cve_count = (*cve.state).data().and_then(|e| e.total);
+    let cve_is_processing = (*cve.state).is_processing();
+
     // Package search
 
     let package = use_unified_search(
@@ -143,6 +152,9 @@ pub fn search(props: &SearchProperties) -> Html {
         |page_state| page_state.package.pagination,
         use_package_search,
     );
+
+    let package_count = (*package.state).data().and_then(|e| e.total);
+    let package_is_processing = (*package.state).is_processing();
 
     // update search terms
 
@@ -239,10 +251,10 @@ pub fn search(props: &SearchProperties) -> Html {
                             selected={*tab} {onselect}
                             r#box=true
                         >
-                            <Tab<TabIndex> index={TabIndex::Cves} title={count_tab_title("CVEs", &*cve.state)} />
-                            <Tab<TabIndex> index={TabIndex::Packages} title={count_tab_title("Packages", &*package.state)} />
-                            <Tab<TabIndex> index={TabIndex::Sboms} title={count_tab_title("Products and containers", &*sbom.state)} />
-                            <Tab<TabIndex> index={TabIndex::Advisories} title={count_tab_title("Advisories", &*advisory.state)} />
+                            <Tab<TabIndex> index={TabIndex::Sboms} title={html!(<CountTabTitle title="Products and containers" count={sbom_count} processing={sbom_is_processing} />)} />
+                            <Tab<TabIndex> index={TabIndex::Packages} title={html!(<CountTabTitle title="Packages" count={package_count} processing={package_is_processing} />)} />
+                            <Tab<TabIndex> index={TabIndex::Cves} title={html!(<CountTabTitle title="CVEs" count={cve_count} processing={cve_is_processing} />)} />
+                            <Tab<TabIndex> index={TabIndex::Advisories} title={html!(<CountTabTitle title="Advisories" count={advisory_count} processing={advisory_is_processing} />)} />
                         </Tabs<TabIndex>>
 
                         <div class="pf-v5-u-background-color-100">

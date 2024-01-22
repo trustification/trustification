@@ -1,5 +1,11 @@
+mod report;
+mod report_button;
+mod report_viewer;
 mod search;
 
+pub use report::*;
+pub use report_button::*;
+pub use report_viewer::*;
 pub use search::*;
 
 use crate::{download::Download, table_wrapper::TableWrapper};
@@ -16,6 +22,8 @@ use yew::prelude::*;
 use yew_more_hooks::hooks::UseAsyncState;
 use yew_nested_router::components::Link;
 
+use self::report_button::ReportButton;
+
 #[derive(PartialEq, Properties)]
 pub struct SbomResultProperties {
     pub state: UseAsyncState<SearchResult<Rc<Vec<SbomSummary>>>, String>,
@@ -31,13 +39,15 @@ pub enum Column {
     Dependencies,
     Advisories,
     Version,
+    Report,
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub struct PackageEntry {
     url: Option<Url>,
     package: SbomSummary,
     link_advisories: bool,
+    id: String,
 }
 
 impl PackageEntry {
@@ -81,6 +91,10 @@ impl TableEntryRenderer<Column> for PackageEntry {
             }
             .into(),
             Column::Version => html!(&self.package.version).into(),
+            Column::Report => html!(
+                <ReportButton id={self.id.clone()}/>
+            )
+            .into(),
         }
     }
 
@@ -100,24 +114,24 @@ pub fn sbom_result(props: &SbomResultProperties) -> Html {
     let config = use_config();
     let link_advisories = config.features.dedicated_search;
 
-    let data = match &props.state {
-        UseAsyncState::Ready(Ok(val)) => {
-            let data: Vec<PackageEntry> = val
-                .result
-                .iter()
-                .map(|pkg| {
-                    let url = backend.join(Endpoint::Api, &pkg.href).ok();
-                    PackageEntry {
-                        package: pkg.clone(),
-                        url,
-                        link_advisories,
-                    }
-                })
-                .collect();
-            Some(data)
-        }
-        _ => None,
-    };
+    let data = use_state_eq(|| None);
+
+    if let UseAsyncState::Ready(Ok(val)) = &props.state {
+        let response: Vec<PackageEntry> = val
+            .result
+            .iter()
+            .map(|pkg| {
+                let url = backend.join(Endpoint::Api, &pkg.href).ok();
+                PackageEntry {
+                    package: pkg.clone(),
+                    url,
+                    link_advisories,
+                    id: pkg.id.clone(),
+                }
+            })
+            .collect();
+        data.set(Some(response));
+    }
 
     let sortby: UseStateHandle<Option<TableHeaderSortBy<Column>>> = use_state_eq(|| None);
     let onsort = use_callback(
@@ -130,7 +144,7 @@ pub fn sbom_result(props: &SbomResultProperties) -> Html {
         },
     );
 
-    let (entries, onexpand) = use_table_data(MemoizedTableModel::new(Rc::new(data.unwrap_or_default())));
+    let (entries, onexpand) = use_table_data(MemoizedTableModel::new(Rc::new((*data).clone().unwrap_or_default())));
 
     let header = vec![
         yew::props!(TableColumnProperties<Column> {
@@ -168,6 +182,11 @@ pub fn sbom_result(props: &SbomResultProperties) -> Html {
         yew::props!(TableColumnProperties<Column> {
             index: Column::Download,
             label: "Download",
+            width: ColumnWidth::FitContent
+        }),
+        yew::props!(TableColumnProperties<Column> {
+            index: Column::Report,
+            label: "Report",
             width: ColumnWidth::FitContent
         }),
     ];
