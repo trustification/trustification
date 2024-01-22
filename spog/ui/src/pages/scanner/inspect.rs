@@ -1,4 +1,4 @@
-use super::{report::Report, CommonHeader};
+use super::CommonHeader;
 use analytics_next::TrackingEvent;
 use patternfly_yew::prelude::*;
 use reqwest::Body;
@@ -7,6 +7,7 @@ use spog_ui_backend::{use_backend, AnalyzeService};
 use spog_ui_common::error::components::ApiError;
 use spog_ui_common::error::ApiErrorKind;
 use spog_ui_components::editor::ReadonlyEditor;
+use spog_ui_components::sbom::Report;
 use spog_ui_utils::analytics::use_analytics;
 use std::rc::Rc;
 use yew::prelude::*;

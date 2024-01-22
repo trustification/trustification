@@ -1,6 +1,5 @@
 mod inspect;
 // mod unknown;
-pub mod report;
 pub mod upload;
 
 use analytics_next::TrackingEvent;

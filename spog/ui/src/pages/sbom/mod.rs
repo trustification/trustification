@@ -1,6 +1,5 @@
 //! The SBOM details page
 
-use crate::pages::scanner::report::Report;
 use crate::{common::clean_ext, model, pages::sbom_report::SbomReport};
 use patternfly_yew::prelude::*;
 use reqwest::Body;
@@ -10,6 +9,7 @@ use spog_ui_components::{
     common::{NotFound, PageHeading},
     content::{SourceCode, Technical},
     download::LocalDownloadButton,
+    sbom::Report,
     spdx::*,
 };
 use std::rc::Rc;
@@ -37,13 +37,15 @@ pub fn sbom(props: &SBOMProperties) -> Html {
         (props.id.clone(), backend),
     );
 
+    let title = html!(<SBOMTitle id={props.id.clone()}/>);
+
     let (heading, content) = match &*info {
         UseAsyncState::Pending | UseAsyncState::Processing => (
-            html!(<PageHeading>{ props.id.clone() }</PageHeading>),
+            html!(<PageHeading>{title}</PageHeading>),
             html!(<PageSection fill={PageSectionFill::Fill}><Spinner/></PageSection>),
         ),
         UseAsyncState::Ready(Ok(None)) => (
-            html!(<PageHeading sticky=false>{ props.id.clone() } {" "} </PageHeading>),
+            html!(<PageHeading sticky=false>{title} {" "} </PageHeading>),
             html!(<NotFound/>),
         ),
         UseAsyncState::Ready(Ok(Some(data))) => (
@@ -54,13 +56,13 @@ pub fn sbom(props: &SBOMProperties) -> Html {
                         <LocalDownloadButton data={data.get_source()} r#type="sbom" filename={clean_ext(&props.id)} />
                     )}
                 >
-                    { props.id.clone() } {" "} <Label label={data.type_name()} color={Color::Blue} />
+                    {title} {" "} <Label label={data.type_name()} color={Color::Blue} />
                 </PageHeading>
             ),
             html!(<Details id={props.id.clone()} sbom={data.clone()}/> ),
         ),
         UseAsyncState::Ready(Err(err)) => (
-            html!(<PageHeading>{ props.id.clone() }</PageHeading>),
+            html!(<PageHeading>{title}</PageHeading>),
             html!(<PageSection fill={PageSectionFill::Fill}><Error err={err.to_string()} /></PageSection>),
         ),
     };
@@ -69,6 +71,45 @@ pub fn sbom(props: &SBOMProperties) -> Html {
         <>
             { heading }
             { content }
+        </>
+    )
+}
+
+#[derive(Clone, Debug, PartialEq, Properties)]
+pub struct SBOMTitleProperties {
+    pub id: String,
+}
+
+#[function_component(SBOMTitle)]
+pub fn sbom_title(props: &SBOMTitleProperties) -> Html {
+    let backend = use_backend();
+    let access_token = use_latest_access_token();
+
+    let sbom = use_async_with_cloned_deps(
+        |(id, backend)| async move {
+            spog_ui_backend::SBOMService::new(backend.clone(), access_token)
+                .get_from_index(&id)
+                .await
+                .map(|search_result| {
+                    if search_result.result.len() == 1 {
+                        let data = &search_result.result[0];
+                        Some(data.clone())
+                    } else {
+                        None
+                    }
+                })
+        },
+        (props.id.clone(), backend),
+    );
+
+    let title = match &*sbom {
+        UseAsyncState::Ready(Ok(Some(data))) => Some(data.name.clone()),
+        _ => None,
+    };
+
+    html!(
+        <>
+          {title.unwrap_or(props.id.clone())}
         </>
     )
 }
@@ -107,7 +148,7 @@ fn details(props: &DetailsProps) -> Html {
                             { for config.features.show_source.then(|| html_nested!(
                                 <Tab<TabIndex> index={TabIndex::Source} title="Source" />
                             )) }
-                            <Tab<TabIndex> index={TabIndex::Report} title="Report" />
+                            // <Tab<TabIndex> index={TabIndex::Report} title="Report" />
                         </Tabs<TabIndex>>
                     </PageSection>
 
@@ -155,7 +196,7 @@ fn details(props: &DetailsProps) -> Html {
                             { for config.features.show_source.then(|| html_nested!(
                                 <Tab<TabIndex> index={TabIndex::Source} title="Source" />
                             )) }
-                            <Tab<TabIndex> index={TabIndex::Report} title="Report" />
+                            // <Tab<TabIndex> index={TabIndex::Report} title="Report" />
                         </Tabs<TabIndex>>
                     </PageSection>
 

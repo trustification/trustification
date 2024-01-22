@@ -50,6 +50,7 @@ where
 {
     let config = use_config();
     use_generic_search::<Packages, _, _, _, _>(
+        10_000,
         search_params,
         pagination,
         callback,

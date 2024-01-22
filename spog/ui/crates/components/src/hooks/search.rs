@@ -6,6 +6,7 @@ use spog_ui_common::utils::search::*;
 use std::future::Future;
 use std::rc::Rc;
 use yew::prelude::*;
+use yew_hooks::prelude::*;
 use yew_more_hooks::prelude::{use_async_with_cloned_deps, UseAsyncHandleDeps};
 use yew_oauth2::prelude::{use_latest_access_token, LatestAccessToken};
 
@@ -100,6 +101,7 @@ pub struct SearchOperationContext {
 
 #[hook]
 pub fn use_generic_search<S, R, F, Fut, IF>(
+    fetch_interval: u32,
     search_params: UseReducerHandle<SearchState<DynamicSearchParameters>>,
     pagination: UsePagination,
     callback: Callback<UseAsyncHandleDeps<R, String>>,
@@ -113,6 +115,18 @@ where
     F: FnOnce(SearchOperationContext) -> Fut + 'static,
     Fut: Future<Output = Result<R, String>> + 'static,
 {
+    let interval = use_state(|| fetch_interval);
+    let fetch_number = use_state_eq(|| 0);
+    {
+        let state: UseStateHandle<i32> = fetch_number.clone();
+        use_interval(
+            move || {
+                state.set(*state + 1);
+            },
+            *interval,
+        );
+    }
+
     let backend = use_backend();
     let access_token = use_latest_access_token();
 
@@ -123,7 +137,7 @@ where
     let search_op = {
         let filters = filters.clone();
         use_async_with_cloned_deps(
-            move |(search_params, page, per_page)| async move {
+            move |(_, search_params, page, per_page)| async move {
                 f(SearchOperationContext {
                     backend: backend.clone(),
                     access_token,
@@ -134,7 +148,12 @@ where
                 })
                 .await
             },
-            ((*search_params).clone(), pagination.page, pagination.per_page),
+            (
+                *fetch_number,
+                (*search_params).clone(),
+                pagination.page,
+                pagination.per_page,
+            ),
         )
     };
 

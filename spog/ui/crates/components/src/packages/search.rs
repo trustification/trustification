@@ -47,6 +47,7 @@ pub fn use_package_search(
 ) -> UseStandardSearch {
     let config = use_config();
     use_generic_search::<PackageInfo, _, _, _, _>(
+        0,
         search_params,
         pagination,
         callback,

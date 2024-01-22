@@ -75,12 +75,14 @@ fn application_with_backend() -> Html {
                 <Configuration>
                     { consent(html!(
                         <BackdropViewer>
-                            <Segment write_key={backend.endpoints.segment_write_key.clone()}>
-                                <SegmentIdentify />
-                                <OAuth2Configured>
-                                    <Console />
-                                </OAuth2Configured>
-                            </Segment>
+                            <ToastViewer>
+                                <Segment write_key={backend.endpoints.segment_write_key.clone()}>
+                                    <SegmentIdentify />
+                                    <OAuth2Configured>
+                                        <Console />
+                                    </OAuth2Configured>
+                                </Segment>
+                            </ToastViewer>
                         </BackdropViewer>
                     )) }
                 </Configuration>
