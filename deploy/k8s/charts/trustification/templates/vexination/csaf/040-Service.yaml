@@ -1,0 +1,21 @@
+{{ if .Values.csafSnapshot }}
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/name: csaf-data
+    app.kubernetes.io/component: csaf
+    app.kubernetes.io/part-of: csaf
+  name: csaf-snapshot
+spec:
+  ports:
+  - name: endpoint
+    port: 8080
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    app.kubernetes.io/name: csaf-data
+    app.kubernetes.io/component: csaf
+    app.kubernetes.io/part-of: csaf
+  type: ClusterIP
+{{ end  }}

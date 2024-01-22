@@ -16,8 +16,8 @@ Next, deploy the application:
 ```shell
 
 cd deploy/k8s
-helm dependency update chart/
-helm upgrade --install --debug -n trustification --create-namespace trustification chart/ --values values-crc.yaml
+helm dependency update charts/trustification
+helm upgrade --install --debug -n trustification --create-namespace trustification charts/trustification --values values-crc.yaml
 ```
 
 ### With Minikube
@@ -39,5 +39,5 @@ minikube tunnel
 And, deploy the application:
 
 ```shell
-helm upgrade --install -n trustification --create-namespace trustification chart/ --values values-minikube.yaml --set-string domain=$(minikube ip).nip.io
+helm upgrade --install -n trustification --create-namespace trustification charts/trustification --values values-minikube.yaml --set-string domain=$(minikube ip).nip.io
 ```

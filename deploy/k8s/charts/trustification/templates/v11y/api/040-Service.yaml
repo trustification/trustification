@@ -1,0 +1,23 @@
+{{ if .Values.v11y.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/name: v11y-api
+    app.kubernetes.io/component: api
+    app.kubernetes.io/part-of: trustification
+  annotations:
+    service.beta.openshift.io/serving-cert-secret-name: v11y-api-tls
+  name: v11y-api
+spec:
+  ports:
+  - name: endpoint
+    port: 443
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    app.kubernetes.io/name: v11y-api
+    app.kubernetes.io/component: api
+    app.kubernetes.io/part-of: trustification
+  type: ClusterIP
+{{ end }}
