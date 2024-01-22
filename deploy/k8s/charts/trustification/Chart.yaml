@@ -5,6 +5,7 @@ description: A Helm chart for managing Trustification services on Kubernetes
 type: application
 version: 0.2.0
 appVersion: "0.2.0"
+icon:
 
 dependencies:
 - name: keycloak
