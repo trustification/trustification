@@ -6,6 +6,7 @@ type: application
 version: 0.2.0
 appVersion: "0.2.0"
 icon: https://raw.githubusercontent.com/trustification/trustification/main/docs/branding/svg/trustification_icon_default.svg
+home: https://trustification.io
 
 dependencies:
 - name: keycloak

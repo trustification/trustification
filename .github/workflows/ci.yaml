@@ -51,6 +51,15 @@ jobs:
               echo "::error::Uncommitted changes to deploy/openshift (most likely template must be updated by running `make`)"
               exit 1
           fi
+      - name: Check if values schema has uncommitted changes
+        working-directory: deploy/k8s
+        run: |
+          python3 -c 'import sys, yaml, json; print(json.dumps(yaml.safe_load(sys.stdin)))' < charts/trustification/values.schema.yaml > charts/trustification/values.schema.json
+          git diff --quiet charts/trustification
+          if [ $? -gt 0 ]; then
+              echo "::error::Uncommitted changes to deploy/k8s/charts/trustification/values.schema.json"
+              exit 1
+          fi
 
   helm-lint:
     runs-on: ubuntu-22.04
