@@ -1,0 +1,30 @@
+apiVersion: v2
+name: trustification-infrastructure
+description: A Helm chart for setting up self-hosted infrastructure components for using Trustification
+
+type: application
+version: 0.2.0
+appVersion: "0.2.0"
+icon: https://raw.githubusercontent.com/trustification/trustification/main/docs/branding/svg/trustification_icon_default.svg
+home: https://trustification.io
+
+# **NOTE:** Because of Helm dependency hell, all those versions must be in sync! In case of transient dependencies,
+# like keycloak -> postgres -> common, one might end up with different versions of those transient dependencies. If
+# that's the case, then it might just crash and burn, as Helm can't handle different versions of the same chart.
+dependencies:
+  - name: keycloak
+    repository: https://charts.bitnami.com/bitnami
+    version: 18.2.1
+    condition: keycloak.enabled
+  - name: minio
+    repository: https://charts.bitnami.com/bitnami
+    version: 13.2.0
+    condition: minio.enabled
+  - name: postgresql
+    repository: https://charts.bitnami.com/bitnami
+    version: 13.3.0
+    condition: postgresql.enabled
+  - name: kafka
+    repository: https://charts.bitnami.com/bitnami
+    version: 26.8.0
+    condition: kafka.enabled

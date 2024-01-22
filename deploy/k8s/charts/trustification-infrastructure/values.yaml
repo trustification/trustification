@@ -1,0 +1,18 @@
+minio:
+  enabled: false
+keycloak:
+  enabled: false
+postgresql:
+  enabled: false
+kafka:
+  enabled: false
+  heapOpts: "-verbose:gc" # fall back to Java defaults
+  listeners:
+    controller:
+      protocol: PLAINTEXT
+    interbroker:
+      protocol: PLAINTEXT
+  kraft:
+    enabled: true
+  controller:
+    replicaCount: 1
