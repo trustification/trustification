@@ -10,6 +10,15 @@
 helm dependency update charts/trustification
 ```
 
+## Updating the JSON schema
+
+Unfortunately Helm requires the JSON schema to be authored in JSON. To make that a little bit easier, we author it
+in YAML and then convert it to JSON. For example using:
+
+```shell
+python3 -c 'import sys, yaml, json; print(json.dumps(yaml.safe_load(sys.stdin)))' < charts/trustification/values.schema.yaml > charts/trustification/values.schema.json
+```
+
 ## Linting Helm charts
 
 ```shell
