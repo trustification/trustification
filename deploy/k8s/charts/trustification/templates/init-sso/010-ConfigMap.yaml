@@ -1,0 +1,173 @@
+{{ if ( and .Values.keycloak.enabled (not (.Values.keycloakPostInstall).disabled ) ) }}
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: post-install-keycloak-config
+  labels:
+    app.kubernetes.io/name: post-install-keycloak-config
+    app.kubernetes.io/component: sso
+    app.kubernetes.io/part-of: sso
+data:
+  client-frontend.json: |
+    {
+      "clientId": "frontend",
+      "clientAuthenticatorType": "client-secret",
+      "enabled": true,
+      "publicClient": true,
+      "implicitFlowEnabled": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "fullScopeAllowed": true,
+      "webOrigins": [
+        "*"
+      ],
+      "defaultClientScopes": [
+        "email",
+        "profile",
+        "roles",
+        "web-origins",
+        "read:document",
+        "create:document",
+        "delete:document"
+      ],
+      "optionalClientScopes": [
+        "address",
+        "microprofile-jwt",
+        "offline_access",
+        "phone"
+      ],
+      "attributes": {
+        "access.token.lifespan": "300",
+        "post.logout.redirect.uris": "+"
+      }
+    }
+  client-walker.json: |
+    {
+      "clientId": "walker",
+      "clientAuthenticatorType": "client-secret",
+      "enabled": true,
+      "publicClient": false,
+      "implicitFlowEnabled": false,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true,
+      "fullScopeAllowed": true,
+      "defaultClientScopes": [
+        "email",
+        "profile",
+        "roles",
+        "web-origins",
+        "create:document",
+        "read:document"
+      ],
+      "optionalClientScopes": [
+        "address",
+        "microprofile-jwt",
+        "offline_access",
+        "phone"
+      ],
+      "attributes": {
+        "access.token.lifespan": "300",
+        "post.logout.redirect.uris": "+"
+      }
+    }
+  client-testing-manager.json: |
+    {
+      "clientId": "testing-manager",
+      "clientAuthenticatorType": "client-secret",
+      "enabled": true,
+      "publicClient": false,
+      "implicitFlowEnabled": false,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true,
+      "fullScopeAllowed": true,
+      "defaultClientScopes": [
+        "email",
+        "profile",
+        "roles",
+        "web-origins",
+        "read:document",
+        "create:document",
+        "delete:document"
+      ],
+      "optionalClientScopes": [
+        "address",
+        "microprofile-jwt",
+        "offline_access",
+        "phone"
+      ],
+      "attributes": {
+        "access.token.lifespan": "300",
+        "post.logout.redirect.uris": "+"
+      }
+    }
+  client-testing-user.json: |
+    {
+      "clientId": "testing-user",
+      "clientAuthenticatorType": "client-secret",
+      "enabled": true,
+      "publicClient": false,
+      "implicitFlowEnabled": false,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true,
+      "fullScopeAllowed": true,
+      "defaultClientScopes": [
+        "email",
+        "profile",
+        "roles",
+        "web-origins",
+        "read:document"
+      ],
+      "optionalClientScopes": [
+        "address",
+        "microprofile-jwt",
+        "offline_access",
+        "phone"
+      ],
+      "attributes": {
+        "access.token.lifespan": "300",
+        "post.logout.redirect.uris": "+"
+      }
+    }
+
+  there-is-more.sh: |
+    # This file is "sourced" from `init.sh`, so we can use everything that was declared in there. It is intended to
+    # add additional configuration which should only be present in a cluster development.
+
+    # create testing-manager service account
+    ID=$(kcadm get clients -r "${REALM}" --query "clientId=testing-manager" --fields id --format csv --noquotes)
+    CLIENT_OPTS=()
+    if [[ -n "$ID" ]]; then
+      # TODO: replace with update once https://github.com/keycloak/keycloak/issues/12484 is fixed
+      # kcadm update "clients/${ID}" -r "${REALM}" -f /etc/init-data/client.json "${CLIENT_OPTS[@]}"
+      kcadm delete "clients/${ID}" -r "${REALM}"
+      kcadm create clients -r "${REALM}" -f "${INIT_DATA}/client-testing-manager.json" "${CLIENT_OPTS[@]}"
+    else
+      kcadm create clients -r "${REALM}" -f "${INIT_DATA}/client-testing-manager.json" "${CLIENT_OPTS[@]}"
+    fi
+    kcadm add-roles -r "${REALM}" --uusername service-account-testing-manager --rolename chicken-manager
+    # now set the client-secret
+    ID=$(kcadm get clients -r "${REALM}" --query "clientId=testing-manager" --fields id --format csv --noquotes)
+    kcadm update "clients/${ID}" -r "${REALM}" -s "secret=${TESTING_MANAGER_SECRET}"
+
+    # create testing-user service account
+    ID=$(kcadm get clients -r "${REALM}" --query "clientId=testing-user" --fields id --format csv --noquotes)
+    CLIENT_OPTS=()
+    if [[ -n "$ID" ]]; then
+      # TODO: replace with update once https://github.com/keycloak/keycloak/issues/12484 is fixed
+      # kcadm update "clients/${ID}" -r "${REALM}" -f /etc/init-data/client.json "${CLIENT_OPTS[@]}"
+      kcadm delete "clients/${ID}" -r "${REALM}"
+      kcadm create clients -r "${REALM}" -f "${INIT_DATA}/client-testing-user.json" "${CLIENT_OPTS[@]}"
+    else
+      kcadm create clients -r "${REALM}" -f "${INIT_DATA}/client-testing-user.json" "${CLIENT_OPTS[@]}"
+    fi
+    kcadm add-roles -r "${REALM}" --uusername service-account-testing-user --rolename chicken-manager
+    # now set the client-secret
+    ID=$(kcadm get clients -r "${REALM}" --query "clientId=testing-user" --fields id --format csv --noquotes)
+    kcadm update "clients/${ID}" -r "${REALM}" -s "secret=${TESTING_USER_SECRET}"
+
+
+{{ end }}

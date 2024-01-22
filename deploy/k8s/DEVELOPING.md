@@ -7,20 +7,20 @@
 ## Updating chart dependencies
 
 ```shell
-helm dependency update chart/
+helm dependency update charts/trustification
 ```
 
 ## Linting Helm charts
 
 ```shell
-helm lint ./chart -f ./chart/trustification.dev/staging.yaml
-helm lint ./chart -f ./chart/trustification.dev/prod.yaml
+helm lint ./charts/trustification -f ../trustification.dev/staging.yaml
+helm lint ./charts/trustification -f ../trustification.dev/prod.yaml
 ```
 
 ## Find that whitespace
 
 ```shell
-helm template --debug chart/ -f chart/staging.yaml # or prod.yaml
+helm template --debug charts/trustification -f chart/staging.yaml # or prod.yaml
 ```
 
 ## Update the OpenShift templates
