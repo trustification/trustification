@@ -52,3 +52,15 @@ Arguments (dict):
 http://sso{{ .root.Values.appDomain }}/realms/chicken
 {{- end }}
 {{- end }}
+
+{{/*
+Issuer URL for a specific client (by id)
+
+Arguments (dict):
+  * root - .
+  * clientId - client id
+*/}}
+{{- define "trustification.oidc.issuerUrlForClient" }}
+{{- $client := get .root.Values.oidc.clients .clientId -}}
+{{- include "trustification.oidc.issuerUrl" ( dict "root" .root "client" $client ) }}
+{{- end }}

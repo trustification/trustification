@@ -8,31 +8,6 @@ image:
   pullPolicy: IfNotPresent
   version: ea3d3de1d3a01c80497d9a4e4697afbc6a04591f
 
-authenticator:
-  content:
-    authentication:
-      clients:
-        - clientId: frontend
-          issuerUrl: https://sso.trustification.apps-crc.testing/realms/chicken
-          scopeMappings: &keycloakScopeMappings
-            "create:document": [ "create.sbom", "create.vex" ]
-            "read:document": [ "read.sbom", "read.vex" ]
-            "update:document": [ "update.sbom", "update.vex" ]
-            "delete:document": [ "delete.sbom", "delete.vex" ]
-          tlsInsecure: true
-        - clientId: walker
-          issuerUrl: https://sso.trustification.apps-crc.testing/realms/chicken
-          scopeMappings: *keycloakScopeMappings
-          tlsInsecure: true
-        - clientId: testing-user
-          issuerUrl: https://sso.trustification.apps-crc.testing/realms/chicken
-          scopeMappings: *keycloakScopeMappings
-          tlsInsecure: true
-        - clientId: testing-manager
-          issuerUrl: https://sso.trustification.apps-crc.testing/realms/chicken
-          scopeMappings: *keycloakScopeMappings
-          tlsInsecure: true
-
 ingress: {}
 
 openshift:
