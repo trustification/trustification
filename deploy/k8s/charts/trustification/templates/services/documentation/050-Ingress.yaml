@@ -1,22 +1,4 @@
 {{- if .Values.modules.documentation.enabled }}
 {{- $mod := dict "root" . "name" "documentation" "component" "documentation" "module" .Values.modules.documentation -}}
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: {{ include "trustification.common.name" $mod }}
-  labels:
-    {{- include "trustification.common.labels" $mod | nindent 4 }}
-spec:
-  {{ include "trustification.ingress.className" $mod }}
-  rules:
-    - host: {{ include "trustification.module.documentation.host" $mod }}
-      http:
-        paths:
-          - pathType: Prefix
-            path: /
-            backend:
-              service:
-                name: {{ include "trustification.common.name" $mod }}
-                port:
-                  name: endpoint
+{{- include "trustification.ingress.defaultIngress" ( set $mod "host" (include "trustification.host.documentation" $mod ) ) }}
 {{- end }}

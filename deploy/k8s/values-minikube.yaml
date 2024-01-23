@@ -1,7 +1,5 @@
 ## Trustification
 
-
-
 ## Infrastructure
 
 minio:
@@ -21,6 +19,20 @@ keycloak:
     enabled: true
     hostname: sso.trustification.dev
     servicePort: http
+
+# NOTE: the following "secrets" are obviously not SECRET. So don't rely on them except for maybe local testing.
+oidc:
+  clients:
+    walker:
+      clientId: walker
+      clientSecret:
+        value: 5460cc91-4e20-4edd-881c-b15b169f8a79
+    testingUser:
+      clientSecret:
+        value: 0e6bf990-43b4-4efb-95d7-b24f2b94a525
+    testingManager:
+      clientSecret:
+        value: ca48053c-3b82-4650-a98d-4cace7f2d567
 
 postgres:
   enabled: true

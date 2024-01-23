@@ -1,18 +1,4 @@
 {{- if .Values.modules.documentation.enabled }}
 {{- $mod := dict "root" . "name" "documentation" "component" "documentation" "module" .Values.modules.documentation -}}
-apiVersion: v1
-kind: Service
-metadata:
-  name: {{ include "trustification.common.name" $mod }}
-  labels:
-    {{- include "trustification.common.labels" $mod | nindent 4 }}
-spec:
-  ports:
-  - name: endpoint
-    port: 8080
-    protocol: TCP
-    targetPort: 8080
-  selector:
-    {{- include "trustification.common.selectorLabels" $mod | nindent 4 }}
-  type: ClusterIP
+{{- include "trustification.application.defaultService" $mod }}
 {{- end }}
