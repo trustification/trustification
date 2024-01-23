@@ -14,15 +14,13 @@ crc start --cpus 8 --memory 32768 --disk-size 80
 Next, deploy the application:
 
 ```shell
-
-cd deploy/k8s
-helm dependency update charts/trustification
+helm dependency build charts/trustification
 helm upgrade --install --debug -n trustification --create-namespace trustification charts/trustification --values values-crc.yaml
 ```
 
 ### With Minikube
 
-**NOTE:** With Minikube there's currently no ingress. Which might make is pretty useless.
+**NOTE:** With Minikube there's currently no ingress. Which might make this pretty useless.
 
 Start `minikube`:
 
@@ -39,5 +37,7 @@ minikube tunnel
 And, deploy the application:
 
 ```shell
-helm upgrade --install -n trustification --create-namespace trustification charts/trustification --values values-minikube.yaml --set-string domain=$(minikube ip).nip.io
+kubectl create ns trustification
+helm upgrade --install -n trustification infrastructure charts/trustification-infrastructure --values values-minikube.yaml --set-string keycloak.ingress.hostname=sso.$(minikube ip).nip.io
+helm upgrade --install -n trustification trustification charts/trustification --values values-minikube.yaml --set-string appDomain=.$(minikube ip).nip.io
 ```

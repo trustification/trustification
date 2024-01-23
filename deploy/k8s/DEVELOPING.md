@@ -7,7 +7,7 @@
 ## Updating chart dependencies
 
 ```shell
-helm dependency update charts/trustification
+helm dependency update charts/trustification-infrastructure
 ```
 
 ## Updating the JSON schema

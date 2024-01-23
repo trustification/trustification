@@ -1,0 +1,15 @@
+dependencies:
+- name: keycloak
+  repository: https://charts.bitnami.com/bitnami
+  version: 18.2.1
+- name: minio
+  repository: https://charts.bitnami.com/bitnami
+  version: 13.2.0
+- name: postgresql
+  repository: https://charts.bitnami.com/bitnami
+  version: 13.3.0
+- name: kafka
+  repository: https://charts.bitnami.com/bitnami
+  version: 26.8.0
+digest: sha256:46dcbbc67ff9a978f03be120b632c23a6c1d33686284dad1a97d9de37ba028cf
+generated: "2024-01-22T17:44:28.541625596+01:00"
