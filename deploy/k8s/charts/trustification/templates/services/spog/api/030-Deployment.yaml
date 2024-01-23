@@ -19,7 +19,9 @@ spec:
       labels:
         {{- include "trustification.common.selectorLabels" $mod | nindent 8 }}
         {{- include "trustification.application.podLabels" $mod | nindent 8 }}
-
+      annotations:
+        configHash/auth: {{ include (print $.Template.BasePath "/services/spog/api/020-ConfigMap-auth.yaml") . | sha256sum }}
+        configHash/ui: {{ include (print $.Template.BasePath "/services/spog/api/020-ConfigMap-ui.yaml") . | sha256sum }}
     spec:
       containers:
         - image: {{ include "trustification.common.image" $mod }}

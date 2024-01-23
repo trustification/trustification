@@ -9,10 +9,10 @@ Arguments (dict):
 - name: config-auth
   mountPath: /etc/config/auth.yaml
 
-{{- if (.root.Values.authenticator.configMapRef).key }}
-  subPath: {{ .root.Values.authenticator.configMapRef.key }}
-{{- else if ((.module.authenticator).configMapRef).key }}
+{{- if ((.module.authenticator).configMapRef).key }}
   subPath: {{ .module.authenticator.configMapRef.key }}
+{{- else if ((.root.Values.authenticator).configMapRef).key }}
+  subPath: {{ .root.Values.authenticator.configMapRef.key }}
 {{- else }}
   subPath: auth.yaml
 {{ end }}
@@ -31,13 +31,21 @@ Arguments (dict):
   configMap:
 {{- if (.module.authenticator).configMapRef }}
     name: {{ .root.Values.authenticator.configMapRef.name }}
-{{- else if .root.Values.authenticator.configMapRef }}
+{{- else if (.root.Values.authenticator).configMapRef }}
     name: {{ .root.Values.authenticator.configMapRef.name }}
 {{- else }}
     name: {{ include "trustification.common.name" (set . "name" (printf "%s-auth" .name ) ) }}
 {{- end }}
 {{- end }}
 
+{{/*
+Create a default config map for the authenticator.
+
+Arguments (dict):
+  * root - .
+  * name - name of the service
+  * module - module object
+*/}}
 {{- define "trustification.authenticator.defaultConfigMap" }}
 {{- if and (not (.root.Values.authenticator).configMapRef) (not (.module.authenticator).configMapRef) }}
 
@@ -59,11 +67,29 @@ data:
   auth.yaml: {{ .module.authenticator | quote }}
 {{- end }}
 
-{{- else if .root.Values.authenticator.content }}{{/* otherwise, use the global one */}}
+{{- else if .root.Values.authenticator }}{{/* if we have a global one, use that */}}
+
+{{- if .root.Values.authenticator.content }}{{/* otherwise, use the global one */}}
   auth.yaml: |
     {{- .root.Values.authenticator.content | toYaml | nindent 4 }}{{/* check for structured content */}}
 {{- else }}
   auth.yaml: {{ .root.Values.authenticator | quote }}
+{{- end }}
+
+{{- else }}{{/* otherwise we have no config, and try some reasonable defaults */}}
+  auth.yaml: |
+    authentication:
+      clients:
+        - clientId: frontend
+          issuerUrl: {{ include "trustification.oidc.issuerUrlForClient" ( dict "root" .root "clientId" "frontend" ) }}
+          scopeMappings: &keycloakScopeMappings
+            "create:document": [ "create.sbom", "create.vex" ]
+            "read:document": [ "read.sbom", "read.vex" ]
+            "update:document": [ "update.sbom", "update.vex" ]
+            "delete:document": [ "delete.sbom", "delete.vex" ]
+        - clientId: walker
+          issuerUrl: {{ include "trustification.oidc.issuerUrlForClient" ( dict "root" .root "clientId" "frontend" ) }}
+          scopeMappings: *keycloakScopeMappings
 {{- end }}
 
 {{- end }}{{/* external referenced config */}}
