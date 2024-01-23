@@ -20,6 +20,7 @@ pub mod spdx;
 pub mod table_wrapper;
 pub mod theme;
 pub mod time;
+pub mod upload_file;
 
 use patternfly_yew::prelude::*;
 use yew::prelude::*;

@@ -94,23 +94,22 @@ impl TableEntryRenderer<Column> for AdvisoryEntry {
 pub fn advisory_result(props: &AdvisoryResultProperties) -> Html {
     let backend = use_backend();
 
-    let data = match &props.state {
-        UseAsyncState::Ready(Ok(val)) => {
-            let data: Vec<_> = val
-                .result
-                .iter()
-                .map(|summary| {
-                    let url = backend.join(Endpoint::Api, &summary.href).ok();
-                    AdvisoryEntry {
-                        summary: summary.clone(),
-                        url,
-                    }
-                })
-                .collect();
-            Some(data)
-        }
-        _ => None,
-    };
+    let data = use_state_eq(|| None);
+
+    if let UseAsyncState::Ready(Ok(val)) = &props.state {
+        let response: Vec<_> = val
+            .result
+            .iter()
+            .map(|summary| {
+                let url = backend.join(Endpoint::Api, &summary.href).ok();
+                AdvisoryEntry {
+                    summary: summary.clone(),
+                    url,
+                }
+            })
+            .collect();
+        data.set(Some(response));
+    }
 
     let sortby: UseStateHandle<Option<TableHeaderSortBy<Column>>> = use_state_eq(|| None);
     let onsort = use_callback(
@@ -123,7 +122,7 @@ pub fn advisory_result(props: &AdvisoryResultProperties) -> Html {
         },
     );
 
-    let (entries, onexpand) = use_table_data(MemoizedTableModel::new(Rc::new(data.unwrap_or_default())));
+    let (entries, onexpand) = use_table_data(MemoizedTableModel::new(Rc::new((*data).clone().unwrap_or_default())));
 
     let header = vec![
         yew::props!(TableColumnProperties<Column> {
