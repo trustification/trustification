@@ -7,7 +7,7 @@ metadata:
   labels:
     {{- include "trustification.common.labels" $mod | nindent 4 }}
 spec:
-  replicas: {{ .Values.replicas | default $mod.module.replicas | default 1 }}
+  replicas: {{ include "trustification.application.replicas" $mod }}
   selector:
     matchLabels:
       {{- include "trustification.common.selectorLabels" $mod | nindent 6 }}
@@ -31,10 +31,9 @@ spec:
           ports:
             - containerPort: 8080
               protocol: TCP
-          {{ with $mod.module.resources }}
-          resources:
-            {{ . | toYaml | nindent 12 }}
-          {{ end }}
+
+          {{- include "trustification.application.resources" $mod | nindent 10 }}
+
           livenessProbe:
             httpGet:
               path: /

@@ -1,9 +1,12 @@
 minio:
   enabled: false
+
 keycloak:
   enabled: false
+
 postgresql:
   enabled: false
+
 kafka:
   enabled: false
   heapOpts: "-verbose:gc" # fall back to Java defaults
@@ -16,3 +19,17 @@ kafka:
     enabled: true
   controller:
     replicaCount: 1
+
+keycloakPostInstall:
+  # NOTE: this must be an image which contain things like bash, kcadm, grep, awk
+  image: docker.io/bitnami/keycloak:23
+  kcadmPath: /opt/bitnami/keycloak/bin/kcadm.sh
+  realmAdmin:
+    name: admin
+    password: admin123456
+  redirectUrls: []
+  identityProviders:
+    github: {}
+
+oidc:
+  clients: {}

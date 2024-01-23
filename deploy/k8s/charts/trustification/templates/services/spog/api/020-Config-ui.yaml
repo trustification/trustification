@@ -1,0 +1,17 @@
+{{- if and .Values.modules.spogApi.enabled .Values.modules.spogApi.uiConfiguration ( not .Values.modules.spogApi.uiConfiguration.configMapRef ) }}
+{{- $mod := dict "root" . "name" "spog-ui-config" "component" "spog" "module" .Values.modules.spogApi -}}
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: {{ include "trustification.common.name" $mod }}
+  labels:
+    {{- include "trustification.common.labels" $mod | nindent 4 }}
+data:
+{{- if .Values.modules.spogApi.uiConfiguration.content }}
+  spog-ui.yaml: |
+    {{- .Values.modules.spogApi.uiConfiguration.content | toYaml | nindent 4 }}
+{{- else }}
+  spog-ui.yaml: {{ .Values.modules.spogApi.uiConfiguration | quote }}
+{{- end }}
+
+{{- end }}
