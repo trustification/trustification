@@ -1,3 +1,108 @@
 $schema: "http://json-schema.org/draft-07/schema#"
 title: "Trustification Helm chart values"
-type: "object"
+type: object
+properties:
+
+  appDomain:
+    type: string
+
+  partOf:
+    type: string
+
+  storage:
+    $ref: "#/definitions/Storage"
+
+  postgresql:
+    $ref: "#/definitions/Postgresql"
+
+  image:
+    $ref: "#/definitions/Image"
+
+  replicas:
+    type: integer
+    minimum: 0
+
+  modules:
+    type: object
+    properties:
+      documentation:
+        allOf:
+          - $ref: "#/definitions/Feature"
+          - $ref: "#/definitions/Image"
+          - $ref: "#/definitions/Ingress"
+          - $ref: "#/definitions/Application"
+      bombastic-api:
+        allOf:
+          - $ref: "#/definitions/Feature"
+          - $ref: "#/definitions/Image"
+          - $ref: "#/definitions/Ingress"
+          - $ref: "#/definitions/Application"
+      bombastic-collector:
+        allOf:
+          - $ref: "#/definitions/Feature"
+          - $ref: "#/definitions/Image"
+          - $ref: "#/definitions/Application"
+      bombastic-indexer:
+        allOf:
+          - $ref: "#/definitions/Feature"
+          - $ref: "#/definitions/Image"
+          - $ref: "#/definitions/Application"
+
+definitions:
+
+  Application:
+    type: object
+    properties:
+      replicas:
+        type: integer
+        minimum: 0
+      resources:
+        type: object
+
+  ImageTrait:
+    type: object
+    required:
+      - image
+    properties:
+      image:
+        $ref: "#/definitions/Image"
+
+  Image:
+    type: object
+    properties:
+      registry:
+        type: string
+      pullPolicy:
+        type: string
+        enum:
+          - IfNotPresent
+          - Always
+          - Never
+
+  IngressTrait:
+    type: object
+    required:
+      - ingress
+    properties:
+      ingress:
+        $ref: "#/definitions/Ingress"
+
+  Ingress:
+    type: object
+    properties:
+      className:
+        type: string
+
+  Feature:
+    type: object
+    properties:
+      enabled:
+        type: boolean
+
+  Storage:
+    type: object
+    properties: {}
+
+  Postgresql:
+    type: object
+    properties: {}

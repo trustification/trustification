@@ -1,0 +1,36 @@
+appDomain: change-me
+
+partOf: trustification
+replicas: 1
+
+image:
+  registry: ghcr.io/trustification
+  pullPolicy: IfNotPresent
+  version: ea3d3de1d3a01c80497d9a4e4697afbc6a04591f
+
+ingress: {}
+
+modules:
+
+  documentation:
+    enabled: true
+    ingress: {}
+    image: {}
+    resources:
+      requests:
+        memory: "64Mi"
+      limits:
+        memory: "64Mi"
+
+  bombastic-api:
+    enabled: true
+    ingress: {}
+    image: {}
+
+  bombastic-collector:
+    enabled: true
+    image: {}
+
+  bombastic-indexer:
+    enabled: true
+    image: {}
