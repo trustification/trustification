@@ -13,6 +13,7 @@ pub enum AppRoute {
     Advisory(View),
     Scanner,
     SbomUploader,
+    VexUploader,
     Search {
         terms: String,
     },

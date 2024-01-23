@@ -139,6 +139,25 @@ impl AppState {
     }
 
     #[instrument(skip(self, provider), err)]
+    pub async fn post_vex(&self, id: &str, provider: &dyn TokenProvider, data: Bytes) -> Result<(), Error> {
+        let url = self.vexination.join("/api/v1/vex")?;
+        self.client
+            .put(url)
+            .body(data)
+            .query(&[("id", id)])
+            .header("content-type", "application/json")
+            .propagate_current_context()
+            .inject_token(provider)
+            .await?
+            .send()
+            .await?
+            .or_status_error()
+            .await?;
+
+        Ok(())
+    }
+
+    #[instrument(skip(self, provider), err)]
     pub async fn search_vex(
         &self,
         q: &str,

@@ -16,6 +16,7 @@ mod sbom_search;
 mod scanner;
 mod search;
 mod uploader;
+mod vex_uploader;
 
 pub use self::cve::*;
 pub use advisory::*;
@@ -33,3 +34,4 @@ pub use sbom_search::Sbom;
 pub use scanner::*;
 pub use search::Search;
 pub use uploader::*;
+pub use vex_uploader::*;
