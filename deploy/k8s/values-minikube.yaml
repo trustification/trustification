@@ -1,5 +1,25 @@
 ## Trustification
 
+tracing: {}
+appDomain: change-me
+
+storage:
+  endpoint: http://infrastructure-minio.trustification.svc.cluster.local.:9000
+  accessKey:
+    valueFrom:
+      secretKeyRef:
+        name: infrastructure-minio
+        key: root-user
+  secretKey:
+    valueFrom:
+      secretKeyRef:
+        name: infrastructure-minio
+        key: root-password
+
+eventBus:
+  type: kafka
+  bootstrapServers: infrastructure-kafka.trustification.svc.cluster.local.:9092
+
 ## Infrastructure
 
 minio:
@@ -17,7 +37,6 @@ keycloak:
   service: {}
   ingress:
     enabled: true
-    hostname: sso.trustification.dev
     servicePort: http
 
 # NOTE: the following "secrets" are obviously not SECRET. So don't rely on them except for maybe local testing.

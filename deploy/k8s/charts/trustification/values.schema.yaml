@@ -13,8 +13,17 @@ properties:
   partOf:
     type: string
 
+  eventBus:
+    $ref: "#/definitions/EventBusConfig"
+
   storage:
-    $ref: "#/definitions/Storage"
+    $ref: "#/definitions/GlobalStorageConfig"
+
+  bombastic:
+    $ref: "#/definitions/GlobalBombastic"
+
+  vexination:
+    $ref: "#/definitions/GlobalVexination"
 
   postgresql:
     $ref: "#/definitions/Postgresql"
@@ -24,6 +33,9 @@ properties:
 
   authenticator:
     $ref: "#/definitions/AuthenticatorConfig"
+
+  index:
+    $ref: "#/definitions/IndexConfig"
 
   openshift:
     type: object
@@ -70,12 +82,14 @@ properties:
     type: object
     additionalProperties: false
     properties:
+
       documentation:
         allOf:
           - $ref: "#/definitions/Feature"
           - $ref: "#/definitions/Image"
           - $ref: "#/definitions/Ingress"
           - $ref: "#/definitions/Application"
+
       bombasticApi:
         allOf:
           - $ref: "#/definitions/Feature"
@@ -86,12 +100,14 @@ properties:
           - $ref: "#/definitions/Authenticator"
           - $ref: "#/definitions/Metrics"
           - $ref: "#/definitions/Tracing"
+
       bombasticCollector:
         allOf:
           - $ref: "#/definitions/Feature"
           - $ref: "#/definitions/Image"
           - $ref: "#/definitions/Application"
           - $ref: "#/definitions/RustApplication"
+
       bombasticIndexer:
         allOf:
           - $ref: "#/definitions/Feature"
@@ -99,6 +115,16 @@ properties:
           - $ref: "#/definitions/Application"
           - $ref: "#/definitions/RustApplication"
           - $ref: "#/definitions/Metrics"
+          - $ref: "#/definitions/Tracing"
+          - $ref: "#/definitions/Index"
+          - $ref: "#/definitions/EventBus"
+          - $ref: "#/definitions/Storage"
+          - type: object
+            properties:
+              alwaysReindex:
+                type: boolean
+              topics:
+                $ref: "#/definitions/StorageTopics"
 
       spogApi:
         allOf:
@@ -114,7 +140,7 @@ properties:
             properties:
               crdaUrl:
                 type: string
-                format: url
+                format: uri
               snykToken:
                 type: string
               segmentWriteKey:
@@ -166,8 +192,6 @@ definitions:
 
   Metrics:
     type: object
-    required:
-      - metrics
     properties:
       tracing:
         $ref: "#/definitions/MetricsConfig"
@@ -196,8 +220,6 @@ definitions:
 
   Image:
     type: object
-    required:
-      - image
     properties:
       image:
         $ref: "#/definitions/ImageConfig"
@@ -237,10 +259,6 @@ definitions:
     properties:
       enabled:
         type: boolean
-
-  Storage:
-    type: object
-    properties: {}
 
   Postgresql:
     type: object
@@ -291,7 +309,7 @@ definitions:
         type: string
       issuerUrl:
         type: string
-        format: url
+        format: uri
       insecure:
         type: boolean
         description: Use insecure TLS when communicating with the issuer (DANGER!)
@@ -309,12 +327,15 @@ definitions:
           - clientSecret
         properties:
           clientSecret:
-            oneOf:
-              - type: "null"
-              - type: string
-              - $ref: "#/definitions/ValueOrRef"
+            $ref: "#/definitions/ValueOrRef"
 
   ValueOrRef:
+    oneOf:
+      - type: "null"
+      - type: string
+      - $ref: "#/definitions/ValueRef"
+
+  ValueRef:
     oneOf:
       - type: object
         additionalProperties: false
@@ -364,3 +385,177 @@ definitions:
           key:
             type: string
             description: The name of the key inside the config map
+
+  Index:
+    type: object
+    properties:
+      index:
+        $ref: "#/definitions/IndexConfig"
+
+  IndexConfig:
+    type: object
+    additionalProperties: false
+    properties:
+      mode:
+        $ref: "#/definitions/IndexMode"
+      writerMemoryBytes:
+        type: string
+      syncInterval:
+        type: string
+
+  IndexMode:
+    type: string
+    enum:
+      - file
+      # TODO: I am not sure we currently support that
+      # - s3
+
+  Storage:
+    type: object
+    properties:
+      storage:
+        $ref: "#/definitions/StorageConfig"
+
+  GlobalStorageConfig:
+    type: object
+    additionalProperties: false
+    required:
+      - accessKey
+      - secretKey
+    properties:
+      accessKey:
+        $ref: "#/definitions/ValueOrRef"
+      secretKey:
+        $ref: "#/definitions/ValueOrRef"
+      region: true
+      endpoint: true
+
+    oneOf:
+      - type: object
+        required:
+          - region
+        properties:
+          region:
+            type: string
+      - type: object
+        required:
+          - endpoint
+        properties:
+          endpoint:
+            type: string
+            format: uri
+
+  StorageConfig:
+    oneOf:
+      - type: object
+        additionalProperties: false
+        required:
+          - bucket
+        properties:
+          bucket:
+            type: string
+      - type: object
+        additionalProperties: false
+        required:
+          - accessKey
+          - secretKey
+          - bucket
+        properties:
+          accessKey:
+            $ref: "#/definitions/ValueOrRef"
+          secretKey:
+            $ref: "#/definitions/ValueOrRef"
+          bucket:
+            type: string
+          region: true
+          endpoint: true
+        oneOf:
+          - type: object
+            required:
+              - region
+            properties:
+              region:
+                type: string
+          - type: object
+            required:
+              - endpoint
+            properties:
+              endpoint:
+                type: string
+                format: uri
+
+  StorageTopics:
+    type: object
+    additionalProperties: false
+    required:
+      - stored
+      - indexed
+      - failed
+    properties:
+      stored:
+        type: string
+      indexed:
+        type: string
+      failed:
+        type: string
+
+  EventBus:
+    type: object
+    properties:
+      eventBus:
+        $ref: "#/definitions/EventBus"
+
+  EventBusConfig:
+    oneOf:
+      - $ref: "#/definitions/EventBusConfigKafka"
+      - $ref: "#/definitions/EventBusConfigSqs"
+
+  EventBusConfigKafka:
+    type: object
+    additionalProperties: false
+    required:
+      - type
+      - bootstrapServers
+    properties:
+      type:
+        type: string
+        enum:
+          - kafka
+      bootstrapServers:
+        type: string
+
+  EventBusConfigSqs:
+    type: object
+    additionalProperties: false
+    required:
+      - type
+      - accessKey
+      - secretKey
+      - region
+    properties:
+      type:
+        type: string
+        enum:
+          - sqs
+      accessKey:
+        $ref: "#/definitions/ValueOrRef"
+      secretKey:
+        $ref: "#/definitions/ValueOrRef"
+      region:
+        type: string
+
+  GlobalBombastic:
+    type: object
+    properties:
+      bucket:
+        type: string
+      topics:
+        $ref: "#/definitions/StorageTopics"
+
+  GlobalVexination:
+    type: object
+    properties:
+      bucket:
+        type: string
+      topics:
+        $ref: "#/definitions/StorageTopics"
