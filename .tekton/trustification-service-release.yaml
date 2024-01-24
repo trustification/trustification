@@ -4,11 +4,9 @@ metadata:
   annotations:
     build.appstudio.openshift.io/repo: https://github.com/trustification/trustification?rev={{revision}}
     build.appstudio.redhat.com/commit_sha: '{{revision}}'
-    build.appstudio.redhat.com/target_branch: '{{target_branch}}'
     pipelinesascode.tekton.dev/on-target-branch: "[refs/tags/*]"
     pipelinesascode.tekton.dev/on-event: "[push]"
     pipelinesascode.tekton.dev/max-keep-runs: "3"
-    pipelinesascode.tekton.dev/on-cel-expression: event == "push" && target_branch == "stable"
   creationTimestamp: null
   labels:
     appstudio.openshift.io/application: trustification
