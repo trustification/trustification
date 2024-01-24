@@ -1,0 +1,4 @@
+{{- if and .Values.modules.vexinationApi.enabled }}
+{{- $mod := dict "root" . "name" "vexination-api" "component" "vexination" "module" .Values.modules.vexinationApi -}}
+{{ include "trustification.authenticator.defaultConfigMap" $mod }}
+{{- end }}

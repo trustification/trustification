@@ -1,0 +1,4 @@
+{{- if and .Values.modules.vexinationApi.enabled }}
+{{- $mod := dict "root" . "name" "vexination-api" "component" "vexination" "module" .Values.modules.vexinationApi -}}
+{{- include "trustification.ingress.defaultIngress" ( set (deepCopy $mod) "host" (include "trustification.host.vexinationApi" $mod ) ) }}
+{{- end }}
