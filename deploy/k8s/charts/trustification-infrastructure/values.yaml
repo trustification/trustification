@@ -1,5 +1,29 @@
 minio:
   enabled: false
+  extraEnvVars:
+    - name: MINIO_NOTIFY_KAFKA_ENABLE_BOMBASTIC
+      value: "on"
+    - name: MINIO_NOTIFY_KAFKA_BROKERS_BOMBASTIC
+      value: "{{ .Release.Name }}-kafka.{{ .Release.Namespace }}.svc.cluster.local:9092"
+    - name: MINIO_NOTIFY_KAFKA_TOPIC_BOMBASTIC
+      value: "sbom-stored"
+    - name: MINIO_NOTIFY_KAFKA_ENABLE_VEXINATION
+      value: "on"
+    - name: MINIO_NOTIFY_KAFKA_BROKERS_VEXINATION
+      value: "{{ .Release.Name }}-kafka.{{ .Release.Namespace }}.svc.cluster.local:9092"
+    - name: MINIO_NOTIFY_KAFKA_TOPIC_VEXINATION
+      value: "vex-stored"
+    - name: MINIO_NOTIFY_KAFKA_ENABLE_V11Y
+      value: "on"
+    - name: MINIO_NOTIFY_KAFKA_BROKERS_V11Y
+      value: "{{ .Release.Name }}-kafka.{{ .Release.Namespace }}.svc.cluster.local:9092"
+    - name: MINIO_NOTIFY_KAFKA_TOPIC_V11Y
+      value: "v11y-stored"
+
+minioPostInstall:
+  disabled: false
+  clientImage: docker.io/bitnami/minio-client:2024.1.18-debian-11-r1
+  mcPath: /opt/bitnami/minio-client/bin/mc
 
 keycloak:
   enabled: false
@@ -21,6 +45,7 @@ kafka:
     replicaCount: 1
 
 keycloakPostInstall:
+  disabled: false
   # NOTE: this must be an image which contain things like bash, kcadm, grep, awk
   image: docker.io/bitnami/keycloak:23
   kcadmPath: /opt/bitnami/keycloak/bin/kcadm.sh
