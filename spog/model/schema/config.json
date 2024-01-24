@@ -38,7 +38,8 @@
         "dedicatedSearch": true,
         "extendSection": true,
         "scanner": true,
-        "showSource": true
+        "showSource": true,
+        "uploader": false
       },
       "allOf": [
         {
@@ -196,6 +197,11 @@
         "showSource": {
           "description": "Enable the \"source\" tabs",
           "default": true,
+          "type": "boolean"
+        },
+        "uploader": {
+          "description": "Enables the SBOM/VEX uploader",
+          "default": false,
           "type": "boolean"
         }
       }
