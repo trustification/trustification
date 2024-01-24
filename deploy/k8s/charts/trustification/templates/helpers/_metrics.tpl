@@ -6,10 +6,14 @@ Arguments (dict):
   * module - module object
 */}}
 {{ define "trustification.application.metrics.enabled"}}
+{{- if hasKey .module "metrics" }}
 {{- if hasKey .module.metrics "enabled" }}
 {{- .module.metrics.enabled }}
 {{- else }}
 {{- .root.Values.metrics.enabled }}
+{{- end }}
+{{- else -}}
+false
 {{- end }}
 {{- end }}
 

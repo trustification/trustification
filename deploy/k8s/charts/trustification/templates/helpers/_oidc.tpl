@@ -9,6 +9,16 @@ Arguments: .
 {{- end }}
 
 {{/*
+Client ID for the frontend client.
+
+Arguments: .
+*/}}
+{{- define "trustification.oidc.frontendClientId" -}}
+{{- $client := get .Values.oidc.clients "frontend" -}}
+{{- $client.clientId | default "frontend" }}
+{{- end }}
+
+{{/*
 Configuration required for setting up an OIDC client for making requests
 
 Arguments (dict):

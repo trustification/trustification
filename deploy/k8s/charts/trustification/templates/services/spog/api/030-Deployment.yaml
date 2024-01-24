@@ -35,15 +35,15 @@ spec:
             - "-p"
             - "8080"
             - "--bombastic-url"
-            - "https://bombastic-api.$(NAMESPACE).svc"
+            - "http://bombastic-api.$(NAMESPACE).svc"
             - "--vexination-url"
-            - "https://vexination-api.$(NAMESPACE).svc"
+            - "http://vexination-api.$(NAMESPACE).svc"
             - "--collectorist-url"
-            - "https://collectorist-api.$(NAMESPACE).svc"
+            - "http://collectorist-api.$(NAMESPACE).svc"
             - "--v11y-url"
-            - "https://v11y-api.$(NAMESPACE).svc"
+            - "http://v11y-api.$(NAMESPACE).svc"
             - "--exhort-url"
-            - "https://exhort-api.$(NAMESPACE).svc"
+            - "http://exhort-api.$(NAMESPACE).svc"
 {{- with $mod.crdaUrl }}
             - "--crda-url"
             - {{ . | quote }}
@@ -66,12 +66,12 @@ spec:
 
             {{- with $mod.snykToken }}
             - name: SNYK_TOKEN
-              {{- . | toYaml | nindent 14}}
+              {{- include "trustification.common.envVarValue" . | nindent 14 }}
             {{- end }}
 
             {{- with $mod.segmentWriteKey }}
             - name: SEGMENT_WRITE_KEY
-              {{- . | toYaml | nindent 14 }}
+              {{- include "trustification.common.envVarValue" . | nindent 14 }}
             {{- end }}
 
             {{- if not $mod.disableSwaggerOidc }}

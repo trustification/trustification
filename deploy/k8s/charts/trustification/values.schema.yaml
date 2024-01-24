@@ -146,9 +146,9 @@ properties:
                 type: string
                 format: uri
               snykToken:
-                type: string
+                $ref: "#/definitions/ValueOrRef"
               segmentWriteKey:
-                type: string
+                $ref: "#/definitions/ValueOrRef"
               disableSwaggerOidc:
                 type: boolean
           - type: object
@@ -162,6 +162,14 @@ properties:
           - $ref: "#/definitions/Image"
           - $ref: "#/definitions/Ingress"
           - $ref: "#/definitions/Application"
+          - type: object
+            properties:
+              initialBackendJson:
+                type: object
+              segmentWriteKey:
+                $ref: "#/definitions/ValueOrRef"
+              customBranding:
+                type: boolean
 
       vexinationApi:
         allOf:
@@ -355,6 +363,10 @@ definitions:
   OidcPublicClient:
     allOf:
       - $ref: "#/definitions/OidcClient"
+      - type: object
+        properties:
+          scopes:
+            type: string
 
   OidcSecretClient:
     allOf:
