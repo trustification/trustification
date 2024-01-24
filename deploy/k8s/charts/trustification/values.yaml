@@ -49,6 +49,13 @@ vexination:
     failed: vex-failed
     indexed: vex-indexed
 
+v11y:
+  bucket: v11y
+  topics:
+    stored: v11y-stored
+    failed: v11y-failed
+    indexed: v11y-indexed
+
 modules:
 
   documentation:
@@ -107,6 +114,19 @@ modules:
     metrics: {}
 
   vexinationIndexer:
+    enabled: true
+    image: {}
+    tracing: {}
+    metrics: {}
+
+  v11yApi:
+    enabled: true
+    ingress: {}
+    image: {}
+    tracing: {}
+    metrics: {}
+
+  v11yIndexer:
     enabled: true
     image: {}
     tracing: {}
