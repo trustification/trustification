@@ -1,0 +1,4 @@
+{{- if and .Values.modules.bombasticApi.enabled }}
+{{- $mod := dict "root" . "name" "bombastic-api" "component" "bombastic" "module" .Values.modules.bombasticApi -}}
+{{- include "trustification.application.defaultService" $mod }}
+{{- end }}

@@ -6,7 +6,7 @@ Arguments (dict):
   * module - module object
 */}}
 {{- define "trustification.host.documentation" }}
-{{- include "trustification.ingress.host" ( set . "defaultHost" "docs") }}
+{{- include "trustification.ingress.host" ( set (deepCopy .) "defaultHost" "docs") }}
 {{- end }}
 
 {{/*
@@ -17,5 +17,16 @@ Arguments (dict):
   * module - module object
 */}}
 {{- define "trustification.host.spogApi" }}
-{{- include "trustification.ingress.host" ( set . "defaultHost" "spog-api") }}
+{{- include "trustification.ingress.host" ( set (deepCopy .) "defaultHost" "console") }}
+{{- end }}
+
+{{/*
+Default host part of the Bombastic API service.
+
+Arguments (dict):
+  * root - .
+  * module - module object
+*/}}
+{{- define "trustification.host.bombasticApi" }}
+{{- include "trustification.ingress.host" ( set (deepCopy .) "defaultHost" "sbom") }}
 {{- end }}
