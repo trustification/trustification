@@ -59,10 +59,12 @@ spec:
             - name: CHICKEN_ADMIN_PASSWORD
               value: {{ .Values.keycloakPostInstall.realmAdmin.password | quote }}
 
-            {{ with .Values.keycloakPostInstall.redirectUrls }}
             - name: REDIRECT_URIS
+            {{- with .Values.keycloakPostInstall.redirectUrls }}
               value: {{ .Values.keycloakPostInstall.redirectUrls | toJson | quote }}
-            {{ end }}
+            {{- else }}
+              value: {{ include "trustification-infrastructure.keycloakPostInstall.defaultRedirectUrls" . | fromYamlArray | toJson | quote }}
+            {{- end }}
 
             {{ with .Values.keycloakPostInstall.identityProviders.github }}
             - name: GITHUB_CLIENT_ID
@@ -167,10 +169,10 @@ spec:
               kcadm create "client-scopes/${ID}/scope-mappings/realm" -r "${REALM}" -b '[{"name":"chicken-manager", "id":"'"${MANAGER_ID}"'"}]' || true
               done
 
-              {{ if .Values.oidc.clients.frontend }}
+              {{ if hasKey .Values.oidc.clients "frontend" }}
 
               # create clients - frontend
-              ID=$(kcadm get clients -r "${REALM}" --query exact=true --query "clientId={{ .Values.oidc.clients.frontend.clientId}}" --fields id --format csv --noquotes)
+              ID=$(kcadm get clients -r "${REALM}" --query exact=true --query "clientId={{ .Values.oidc.clients.frontend.clientId | default "frontend" }}" --fields id --format csv --noquotes)
               CLIENT_OPTS=()
               CLIENT_OPTS+=(-s "redirectUris=${REDIRECT_URIS}")
               if [[ -n "$ID" ]]; then
@@ -185,7 +187,8 @@ spec:
               {{ end }}
 
               # create service accounts
-              for client in {{ with .Values.oidc.clients.walker }}{{ .clientId | quote }}{{ end }} {{ if .Values.oidc.clients.testingManager }}testing-manager{{ end }} {{ if .Values.oidc.clients.testingUser }}testing-user{{ end }}
+              CLIENTS=""
+              for client in {{ with .Values.oidc.clients.walker }}{{ .clientId | default "walker" | quote }}{{ end }} {{ if .Values.oidc.clients.testingManager }}testing-manager{{ end }} {{ if .Values.oidc.clients.testingUser }}testing-user{{ end }}
               do
                   ID=$(kcadm get clients -r "${REALM}" --query exact=true --query "clientId=${client}" --fields id --format csv --noquotes)
                   CLIENT_OPTS=()

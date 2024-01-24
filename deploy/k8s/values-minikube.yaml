@@ -42,8 +42,8 @@ keycloak:
 # NOTE: the following "secrets" are obviously not SECRET. So don't rely on them except for maybe local testing.
 oidc:
   clients:
+    frontend: {}
     walker:
-      clientId: walker
       clientSecret:
         value: 5460cc91-4e20-4edd-881c-b15b169f8a79
     testingUser:

@@ -17,6 +17,17 @@ Arguments (dict):
   * module - module object
 */}}
 {{- define "trustification.host.spogApi" }}
+{{- include "trustification.ingress.host" ( set (deepCopy .) "defaultHost" "api") }}
+{{- end }}
+
+{{/*
+Default host part of the SPoG UI service.
+
+Arguments (dict):
+  * root - .
+  * module - module object
+*/}}
+{{- define "trustification.host.spogUi" }}
 {{- include "trustification.ingress.host" ( set (deepCopy .) "defaultHost" "console") }}
 {{- end }}
 

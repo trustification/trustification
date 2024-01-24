@@ -93,6 +93,11 @@ modules:
     enabled: true
     image: {}
     ingress: {}
+    resources:
+      requests:
+        memory: "64Mi"
+      limits:
+        memory: "64Mi"
 
   vexinationApi:
     enabled: true

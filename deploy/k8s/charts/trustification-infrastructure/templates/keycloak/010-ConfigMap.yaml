@@ -8,10 +8,10 @@ metadata:
     app.kubernetes.io/component: sso
     app.kubernetes.io/part-of: sso
 data:
-  {{ if .Values.oidc.clients.frontend }}
+  {{ if hasKey .Values.oidc.clients "frontend" }}
   client-frontend.json: |
     {
-      "clientId": {{ .Values.oidc.clients.frontend.clientId | toJson }},
+      "clientId": {{ .Values.oidc.clients.frontend.clientId | default "frontend" | toJson }},
       "clientAuthenticatorType": "client-secret",
       "enabled": true,
       "publicClient": true,
@@ -45,10 +45,10 @@ data:
     }
   {{ end }}
 
-  {{ if .Values.oidc.clients.walker }}
+  {{ if hasKey .Values.oidc.clients "walker" }}
   client-walker.json: |
     {
-      "clientId": {{ .Values.oidc.clients.walker.clientId | toJson }},
+      "clientId": {{ .Values.oidc.clients.walker.clientId | default "walker" | toJson }},
       "clientAuthenticatorType": "client-secret",
       "enabled": true,
       "publicClient": false,
@@ -78,10 +78,10 @@ data:
     }
   {{ end }}
 
-  {{ if .Values.oidc.clients.testingManager }}
+  {{ if hasKey .Values.oidc.clients "testingManager" }}
   client-testing-manager.json: |
     {
-      "clientId": "testing-manager",
+      "clientId": {{ .Values.oidc.clients.testingManager.clientId | default "testing-manager" | toJson }},
       "clientAuthenticatorType": "client-secret",
       "enabled": true,
       "publicClient": false,
@@ -112,10 +112,10 @@ data:
     }
   {{ end }}
 
-  {{ if .Values.oidc.clients.testingUser }}
+  {{ if hasKey .Values.oidc.clients "testingUser" }}
   client-testing-user.json: |
     {
-      "clientId": "testing-user",
+      "clientId": {{ .Values.oidc.clients.testingUser.clientId | default "testing-user" | toJson }},
       "clientAuthenticatorType": "client-secret",
       "enabled": true,
       "publicClient": false,
@@ -148,10 +148,10 @@ data:
     # This file is "sourced" from `init.sh`, so we can use everything that was declared in there. It is intended to
     # add additional configuration which should only be present in a cluster development.
 
-    {{ if .Values.oidc.clients.testingManager }}
+    {{ if hasKey .Values.oidc.clients "testingManager" }}
 
     # create testing-manager service account
-    ID=$(kcadm get clients -r "${REALM}" --query "clientId=testing-manager" --fields id --format csv --noquotes)
+    ID=$(kcadm get clients -r "${REALM}" --query "clientId="{{ .Values.oidc.clients.testingManager.clientId | default "testing-manager" | quote }} --fields id --format csv --noquotes)
     CLIENT_OPTS=()
     if [[ -n "$ID" ]]; then
       # TODO: replace with update once https://github.com/keycloak/keycloak/issues/12484 is fixed
@@ -161,17 +161,17 @@ data:
     else
       kcadm create clients -r "${REALM}" -f "${INIT_DATA}/client-testing-manager.json" "${CLIENT_OPTS[@]}"
     fi
-    kcadm add-roles -r "${REALM}" --uusername service-account-testing-manager --rolename chicken-manager
+    kcadm add-roles -r "${REALM}" --uusername service-account-{{ .Values.oidc.clients.testingManager.clientId | default "testing-manager" | quote }} --rolename chicken-manager
     # now set the client-secret
-    ID=$(kcadm get clients -r "${REALM}" --query "clientId=testing-manager" --fields id --format csv --noquotes)
+    ID=$(kcadm get clients -r "${REALM}" --query "clientId="{{ .Values.oidc.clients.testingManager.clientId | default "testing-manager" | quote }} --fields id --format csv --noquotes)
     kcadm update "clients/${ID}" -r "${REALM}" -s "secret=${TESTING_MANAGER_SECRET}"
 
     {{ end }}
 
-    {{ if .Values.oidc.clients.testingUser }}
+    {{ if hasKey .Values.oidc.clients "testingUser" }}
 
         # create testing-user service account
-    ID=$(kcadm get clients -r "${REALM}" --query "clientId=testing-user" --fields id --format csv --noquotes)
+    ID=$(kcadm get clients -r "${REALM}" --query "clientId="{{ .Values.oidc.clients.testingUser.clientId | default "testing-user" | quote }} --fields id --format csv --noquotes)
     CLIENT_OPTS=()
     if [[ -n "$ID" ]]; then
       # TODO: replace with update once https://github.com/keycloak/keycloak/issues/12484 is fixed
@@ -181,9 +181,9 @@ data:
     else
       kcadm create clients -r "${REALM}" -f "${INIT_DATA}/client-testing-user.json" "${CLIENT_OPTS[@]}"
     fi
-    kcadm add-roles -r "${REALM}" --uusername service-account-testing-user --rolename chicken-manager
+    kcadm add-roles -r "${REALM}" --uusername service-account-{{ .Values.oidc.clients.testingUser.clientId | default "testing-user" | quote }} --rolename chicken-manager
     # now set the client-secret
-    ID=$(kcadm get clients -r "${REALM}" --query "clientId=testing-user" --fields id --format csv --noquotes)
+    ID=$(kcadm get clients -r "${REALM}" --query "clientId="{{ .Values.oidc.clients.testingUser.clientId | default "testing-user" | quote }} --fields id --format csv --noquotes)
     kcadm update "clients/${ID}" -r "${REALM}" -s "secret=${TESTING_USER_SECRET}"
 
     {{ end }}
