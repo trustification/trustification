@@ -1,16 +1,22 @@
 mod inspect;
 
 use crate::pages::scanner::parse;
-use crate::pages::scanner::upload::Upload;
 use inspect::Inspect;
 use patternfly_yew::prelude::*;
+use spog_ui_components::upload_file::UploadFile;
 use spog_ui_utils::config::*;
 use std::rc::Rc;
 use yew::prelude::*;
 use yew_more_hooks::prelude::*;
 
-#[function_component(Uploader)]
-pub fn uploader() -> Html {
+const EMPTY_BODY_CONTENT: &str = r#"
+<div>
+    <p>Start by <strong>dragging and dropping a file here</strong> or clicking the <strong>Load an SBOM</strong> button.</p>
+</div>
+"#;
+
+#[function_component(SbomUploader)]
+pub fn sbom_uploader() -> Html {
     let content = use_state_eq(|| None::<Rc<String>>);
     let onsubmit = use_callback(content.clone(), |data, content| content.set(Some(data)));
 
@@ -24,7 +30,7 @@ pub fn uploader() -> Html {
         let result = parse(data.as_bytes());
         match result {
             Ok(_sbom) => Ok(data),
-            Err(err) => Err(format!("Failed to parse SBOM as CycloneDX 1.3: {err}")),
+            Err(err) => Err(format!("Failed to parse SBOM: {err}")),
         }
     });
 
@@ -43,7 +49,14 @@ pub fn uploader() -> Html {
                     <CommonHeader />
 
                     <PageSection variant={PageSectionVariant::Light} fill=true>
-                        <Upload primary_btn_text="Upload SBOM" {onsubmit} {onvalidate} />
+                        <UploadFile
+                            state_title="Get started by uploading your SBOM file"
+                            state_content={Html::from_html_unchecked(AttrValue::from(EMPTY_BODY_CONTENT))}
+                            primary_action_text="Load an SBOM"
+                            submit_btn_text="Upload SBOM"
+                            {onsubmit}
+                            {onvalidate}
+                        />
                     </PageSection>
                 </>
             )
@@ -87,7 +100,7 @@ fn common_header(props: &CommonHeaderProperties) -> Html {
                 <FlexItem modifiers={[FlexModifier::Align(Alignment::Right), FlexModifier::Align(Alignment::End)]}>
                     if let Some(onreset) = onreset {
                         <Button
-                            label={"Scan another"}
+                            label={"Upload another"}
                             icon={Icon::Redo}
                             variant={ButtonVariant::Secondary}
                             onclick={onreset}
