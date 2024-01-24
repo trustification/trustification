@@ -25,6 +25,9 @@ properties:
   vexination:
     $ref: "#/definitions/GlobalVexination"
 
+  v11y:
+    $ref: "#/definitions/GlobalV11y"
+
   postgresql:
     $ref: "#/definitions/Postgresql"
 
@@ -187,6 +190,39 @@ properties:
                 type: boolean
 
       vexinationIndexer:
+        allOf:
+          - $ref: "#/definitions/Feature"
+          - $ref: "#/definitions/Image"
+          - $ref: "#/definitions/Application"
+          - $ref: "#/definitions/RustApplication"
+          - $ref: "#/definitions/Metrics"
+          - $ref: "#/definitions/Tracing"
+          - $ref: "#/definitions/Index"
+          - $ref: "#/definitions/EventBus"
+          - $ref: "#/definitions/Storage"
+          - type: object
+            properties:
+              alwaysReindex:
+                type: boolean
+              topics:
+                $ref: "#/definitions/StorageTopics"
+
+      v11yApi:
+        allOf:
+          - $ref: "#/definitions/Feature"
+          - $ref: "#/definitions/Image"
+          - $ref: "#/definitions/Ingress"
+          - $ref: "#/definitions/Application"
+          - $ref: "#/definitions/RustApplication"
+          - $ref: "#/definitions/Authenticator"
+          - $ref: "#/definitions/Metrics"
+          - $ref: "#/definitions/Tracing"
+          - type: object
+            properties:
+              disableSwaggerOidc:
+                type: boolean
+
+      v11yIndexer:
         allOf:
           - $ref: "#/definitions/Feature"
           - $ref: "#/definitions/Image"
@@ -593,25 +629,24 @@ definitions:
       region:
         type: string
 
-  GlobalBombastic:
-    type: object
-    properties:
-      bucket:
-        type: string
-      topics:
-        $ref: "#/definitions/StorageTopics"
-      syncInterval:
-        $ref: "#/definitions/SyncInterval"
-
-  GlobalVexination:
-    type: object
-    properties:
-      bucket:
-        type: string
-      topics:
-        $ref: "#/definitions/StorageTopics"
-      syncInterval:
-        $ref: "#/definitions/SyncInterval"
-
   SyncInterval:
     type: string
+
+  GlobalIndexConfig:
+    type: object
+    properties:
+      bucket:
+        type: string
+      topics:
+        $ref: "#/definitions/StorageTopics"
+      syncInterval:
+        $ref: "#/definitions/SyncInterval"
+
+  GlobalBombastic:
+    $ref: "#/definitions/GlobalIndexConfig"
+
+  GlobalVexination:
+    $ref: "#/definitions/GlobalIndexConfig"
+
+  GlobalV11y:
+    $ref: "#/definitions/GlobalIndexConfig"
