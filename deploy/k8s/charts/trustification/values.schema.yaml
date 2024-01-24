@@ -163,6 +163,39 @@ properties:
           - $ref: "#/definitions/Ingress"
           - $ref: "#/definitions/Application"
 
+      vexinationApi:
+        allOf:
+          - $ref: "#/definitions/Feature"
+          - $ref: "#/definitions/Image"
+          - $ref: "#/definitions/Ingress"
+          - $ref: "#/definitions/Application"
+          - $ref: "#/definitions/RustApplication"
+          - $ref: "#/definitions/Authenticator"
+          - $ref: "#/definitions/Metrics"
+          - $ref: "#/definitions/Tracing"
+          - type: object
+            properties:
+              disableSwaggerOidc:
+                type: boolean
+
+      vexinationIndexer:
+        allOf:
+          - $ref: "#/definitions/Feature"
+          - $ref: "#/definitions/Image"
+          - $ref: "#/definitions/Application"
+          - $ref: "#/definitions/RustApplication"
+          - $ref: "#/definitions/Metrics"
+          - $ref: "#/definitions/Tracing"
+          - $ref: "#/definitions/Index"
+          - $ref: "#/definitions/EventBus"
+          - $ref: "#/definitions/Storage"
+          - type: object
+            properties:
+              alwaysReindex:
+                type: boolean
+              topics:
+                $ref: "#/definitions/StorageTopics"
+
 # for infrastructure
 
   kafka:

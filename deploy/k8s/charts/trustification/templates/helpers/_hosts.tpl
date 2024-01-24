@@ -30,3 +30,14 @@ Arguments (dict):
 {{- define "trustification.host.bombasticApi" }}
 {{- include "trustification.ingress.host" ( set (deepCopy .) "defaultHost" "sbom") }}
 {{- end }}
+
+{{/*
+Default host part of the Vexination API service.
+
+Arguments (dict):
+  * root - .
+  * module - module object
+*/}}
+{{- define "trustification.host.vexinationApi" }}
+{{- include "trustification.ingress.host" ( set (deepCopy .) "defaultHost" "vex") }}
+{{- end }}

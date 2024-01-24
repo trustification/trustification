@@ -93,3 +93,16 @@ modules:
     enabled: true
     image: {}
     ingress: {}
+
+  vexinationApi:
+    enabled: true
+    ingress: {}
+    image: {}
+    tracing: {}
+    metrics: {}
+
+  vexinationIndexer:
+    enabled: true
+    image: {}
+    tracing: {}
+    metrics: {}
