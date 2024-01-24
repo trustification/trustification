@@ -100,6 +100,10 @@ properties:
           - $ref: "#/definitions/Authenticator"
           - $ref: "#/definitions/Metrics"
           - $ref: "#/definitions/Tracing"
+          - type: object
+            properties:
+              disableSwaggerOidc:
+                type: boolean
 
       bombasticCollector:
         allOf:
@@ -401,7 +405,7 @@ definitions:
       writerMemoryBytes:
         type: string
       syncInterval:
-        type: string
+        $ref: "#/definitions/SyncInterval"
 
   IndexMode:
     type: string
@@ -551,6 +555,8 @@ definitions:
         type: string
       topics:
         $ref: "#/definitions/StorageTopics"
+      syncInterval:
+        $ref: "#/definitions/SyncInterval"
 
   GlobalVexination:
     type: object
@@ -559,3 +565,8 @@ definitions:
         type: string
       topics:
         $ref: "#/definitions/StorageTopics"
+      syncInterval:
+        $ref: "#/definitions/SyncInterval"
+
+  SyncInterval:
+    type: string

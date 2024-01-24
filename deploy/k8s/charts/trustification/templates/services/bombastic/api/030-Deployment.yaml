@@ -1,5 +1,5 @@
-{{- if .Values.modules.spogApi.enabled }}
-{{- $mod := dict "root" . "name" "spog-api" "component" "spog" "module" .Values.modules.spogApi -}}
+{{- if and .Values.modules.bombasticApi.enabled }}
+{{- $mod := dict "root" . "name" "bombastic-api" "component" "bombastic" "module" .Values.modules.bombasticApi -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -21,7 +21,6 @@ spec:
         {{- include "trustification.application.podLabels" $mod | nindent 8 }}
       annotations:
         configHash/auth: {{ include (print $.Template.BasePath "/services/spog/api/020-ConfigMap-auth.yaml") . | sha256sum }}
-        configHash/ui: {{ include (print $.Template.BasePath "/services/spog/api/020-ConfigMap-ui.yaml") . | sha256sum }}
 
     spec:
       containers:
@@ -30,28 +29,19 @@ spec:
           name: service
           command: ["/trust"]
           args:
-            - "spog"
+            - "bombastic"
             - "api"
             - "-p"
             - "8080"
-            - "--bombastic-url"
-            - "https://bombastic-api.$(NAMESPACE).svc"
-            - "--vexination-url"
-            - "https://vexination-api.$(NAMESPACE).svc"
-            - "--collectorist-url"
-            - "https://collectorist-api.$(NAMESPACE).svc"
-            - "--v11y-url"
-            - "https://v11y-api.$(NAMESPACE).svc"
-            - "--exhort-url"
-            - "https://exhort-api.$(NAMESPACE).svc"
-{{- with $mod.crdaUrl }}
-            - "--crda-url"
-            - {{ . | quote }}
-{{- end }}
-            - "--guac"
-            - "http://guac-graphql.$(NAMESPACE).svc:8080/query"
+            - "--validator"
+            - "sbom"
+
+            - "--index-mode"
+            - {{ $mod.indexMode | default "file" | quote }}
+
             - "--auth-configuration"
             - "/etc/config/auth.yaml"
+
           env:
 
             - name: NAMESPACE
@@ -63,26 +53,15 @@ spec:
             {{- include "trustification.application.infrastructure.envVars" $mod | nindent 12 }}
             {{- include "trustification.application.httpServer.envVars" $mod | nindent 12 }}
             {{- include "trustification.oidc.authenticationClient" ( dict "root" . "clientId" "walker" ) | nindent 12 }}
-
-            {{- with $mod.snykToken }}
-            - name: SNYK_TOKEN
-              {{- . | toYaml | nindent 14}}
-            {{- end }}
-
-            {{- with $mod.segmentWriteKey }}
-            - name: SEGMENT_WRITE_KEY
-              {{- . | toYaml | nindent 14 }}
-            {{- end }}
+            {{- include "trustification.storage.envVars" ( set (deepCopy $mod) "storage" .Values.bombastic ) | nindent 12 }}
 
             {{- if not $mod.disableSwaggerOidc }}
             - name: SWAGGER_UI_OIDC_ISSUER_URL
               value: {{ include "trustification.oidc.frontendIssuerUrl" . | quote }}
             {{- end }}
 
-            {{- if $mod.uiConfiguration }}
-            - name: SPOG_UI_CONFIG
-              value: /etc/config/spog-ui/spog-ui.yaml
-            {{- end }}
+            - name: INDEX_SYNC_INTERVAL
+              value: {{ include "trustification.index.syncInterval" ( set (deepCopy $mod) "storage" .Values.bombastic ) }}
 
           ports:
             {{- include "trustification.application.infrastructure.podPorts" $mod | nindent 12 }}

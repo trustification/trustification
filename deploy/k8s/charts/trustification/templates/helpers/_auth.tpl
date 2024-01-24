@@ -34,7 +34,7 @@ Arguments (dict):
 {{- else if (.root.Values.authenticator).configMapRef }}
     name: {{ .root.Values.authenticator.configMapRef.name }}
 {{- else }}
-    name: {{ include "trustification.common.name" (set . "name" (printf "%s-auth" .name ) ) }}
+    name: {{ include "trustification.common.name" (set (deepCopy .) "name" (printf "%s-auth" .name ) ) }}
 {{- end }}
 {{- end }}
 
@@ -52,9 +52,9 @@ Arguments (dict):
 kind: ConfigMap
 apiVersion: v1
 metadata:
-  name: {{ include "trustification.common.name" (set . "name" (printf "%s-auth" .name ) ) }}
+  name: {{ include "trustification.common.name" (set (deepCopy .) "name" (printf "%s-auth" .name ) ) }}
   labels:
-    {{- include "trustification.common.labels" (set . "name" (printf "%s-auth" .name ) ) | nindent 4 }}
+    {{- include "trustification.common.labels" (set (deepCopy .) "name" (printf "%s-auth" .name ) ) | nindent 4 }}
 
 data:
 

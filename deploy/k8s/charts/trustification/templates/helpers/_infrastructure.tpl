@@ -57,8 +57,4 @@ readinessProbe:
     path: /health/ready
     port: 9010
 
-startupProbe:
-  httpGet:
-    path: /health/startup
-    port: 9010
 {{- end }}

@@ -9,9 +9,9 @@ Arguments (dict):
 {{- define "trustification.eventBus.envVars" -}}
 
 {{- if .module.eventBus }}
-{{- include "_trustification.eventBus.envVars" ( set . "eventBus" .module.eventBus ) }}
+{{- include "_trustification.eventBus.envVars" ( set (deepCopy .) "eventBus" .module.eventBus ) }}
 {{- else }}
-{{- include "_trustification.eventBus.envVars" ( set . "eventBus" .root.Values.eventBus ) }}
+{{- include "_trustification.eventBus.envVars" ( set (deepCopy .) "eventBus" .root.Values.eventBus ) }}
 {{- end }}
 
 {{- end }}
