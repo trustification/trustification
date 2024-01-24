@@ -85,12 +85,12 @@ spec:
           imagePullPolicy: {{ .Values.imagePullPolicy }}
           name: service
           command: ["/bin/sh"]
+          # not sure why --db-migrate=false has to be a single argument, but it won't work otherwise
           args:
             - -ec
             - |
               /opt/guac/guacgql \
 {{- if .Values.guac.database.enabled }}
-              # not sure why --db-migrate=false has to be a single argument, but it won't work otherwise
               "--gql-backend" "ent" "--db-address" "postgres://${DB_USER}:${DB_PASSWORD}@${PGHOST}:${PGPORT}/${DB_NAME}${TC_PGOPTIONS}" "--db-driver" "postgres" "--db-debug" "true" "--db-migrate=false"
 {{- else }}
               "--gql-backend" "inmem" "--gql-debug" "true"

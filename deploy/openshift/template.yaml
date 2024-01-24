@@ -794,9 +794,6 @@ objects:
                 - -ec
                 - '/opt/guac/guacgql \
 
-                  # not sure why --db-migrate=false has to be a single argument, but
-                  it won''t work otherwise
-
                   "--gql-backend" "ent" "--db-address" "postgres://${DB_USER}:${DB_PASSWORD}@${PGHOST}:${PGPORT}/${DB_NAME}${TC_PGOPTIONS}"
                   "--db-driver" "postgres" "--db-debug" "true" "--db-migrate=false"
 
