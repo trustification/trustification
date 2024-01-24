@@ -22,7 +22,7 @@ spec:
         - name: run
           emptyDir: {}
       containers:
-        - image: {{ include "trustification.common.image" ( set $mod "imageName" "trust-docs" ) }}
+        - image: {{ include "trustification.common.image" ( set (deepCopy $mod) "imageName" "trust-docs" ) }}
           imagePullPolicy: {{ include "trustification.common.imagePullPolicy" $mod }}
           name: service
           volumeMounts:

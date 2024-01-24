@@ -22,6 +22,7 @@ spec:
       annotations:
         configHash/auth: {{ include (print $.Template.BasePath "/services/spog/api/020-ConfigMap-auth.yaml") . | sha256sum }}
         configHash/ui: {{ include (print $.Template.BasePath "/services/spog/api/020-ConfigMap-ui.yaml") . | sha256sum }}
+
     spec:
       containers:
         - image: {{ include "trustification.common.image" $mod }}
@@ -85,9 +86,9 @@ spec:
             {{- include "trustification.oidc.authenticationClient" ( dict "root" . "clientId" "walker" ) | nindent 12 }}
 
           ports:
+            {{- include "trustification.application.infrastructure.podPorts" $mod | nindent 12 }}
             - containerPort: 8080
               protocol: TCP
-            {{- include "trustification.application.infrastructure.podPorts" $mod | nindent 12 }}
 
           {{- include "trustification.application.resources" $mod | nindent 10 }}
           {{- include "trustification.application.infrastructure.probes" $mod | nindent 10 }}

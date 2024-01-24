@@ -10,6 +10,13 @@ image:
 
 ingress: {}
 
+storage: {}
+
+index:
+  mode: file
+  syncInterval: "1m"
+  writerMemoryBytes: "128MiB"
+
 openshift:
   enabled: false
   useServiceCa: true
@@ -27,6 +34,20 @@ metrics:
 
 tracing:
   enabled: false
+
+bombastic:
+  bucket: bombastic
+  topics:
+    stored: sbom-stored
+    failed: sbom-failed
+    indexed: sbom-indexed
+
+vexination:
+  bucket: vexination
+  topics:
+    stored: vex-stored
+    failed: vex-failed
+    indexed: vex-indexed
 
 modules:
 
@@ -54,6 +75,7 @@ modules:
   bombasticIndexer:
     enabled: true
     image: {}
+    tracing: {}
     metrics: {}
 
   spogApi:
@@ -69,5 +91,5 @@ modules:
 
   spogUi:
     enabled: true
-    image: { }
-    ingress: { }
+    image: {}
+    ingress: {}

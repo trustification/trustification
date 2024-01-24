@@ -1,4 +1,4 @@
 {{- if .Values.modules.spogApi.enabled }}
 {{- $mod := dict "root" . "name" "spog-api" "component" "spog" "module" .Values.modules.spogApi -}}
-{{- include "trustification.ingress.defaultIngress" ( set $mod "host" (include "trustification.host.spogApi" $mod ) ) }}
+{{- include "trustification.ingress.defaultIngress" ( set (deepCopy $mod) "host" (include "trustification.host.spogApi" $mod ) ) }}
 {{- end }}

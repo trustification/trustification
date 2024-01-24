@@ -1,4 +1,4 @@
 {{- if .Values.modules.documentation.enabled }}
 {{- $mod := dict "root" . "name" "documentation" "component" "documentation" "module" .Values.modules.documentation -}}
-{{- include "trustification.ingress.defaultIngress" ( set $mod "host" (include "trustification.host.documentation" $mod ) ) }}
+{{- include "trustification.ingress.defaultIngress" ( set (deepCopy $mod) "host" (include "trustification.host.documentation" $mod ) ) }}
 {{- end }}
