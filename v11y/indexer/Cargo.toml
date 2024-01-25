@@ -10,7 +10,7 @@ actix-web = "4"
 anyhow = "1"
 chrono = "0.4.26"
 clap = { version = "4", features = ["derive"] }
-cve = "0.2.0"
+cve = "0.2.1"
 futures = "0.3"
 humantime = "2"
 humantime-serde = "1.1.1"

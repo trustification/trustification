@@ -9,7 +9,7 @@ anyhow = "1"
 async-trait = "0.1"
 chrono = { version = "0.4", default-features = false, features = ["wasmbind"] }
 csaf = { version = "0.5.0", default-features = false }
-cve = "0.2"
+cve = "0.2.1"
 cyclonedx-bom = "0.4"
 gloo-events = "0.2"
 gloo-net = "0.4.0"
