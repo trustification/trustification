@@ -224,11 +224,11 @@ impl EventBusConfig {
                 let bootstrap = self.kafka_bootstrap_servers.clone();
                 let properties = self.kafka_properties()?;
 
-                if log::log_enabled!(Level::Info) {
-                    log::info!("Kafka bootstrap servers: {bootstrap}");
-                    log::info!("Kafka properties: {}", properties.len());
+                log::info!("Kafka bootstrap servers: {bootstrap}");
+                log::info!("Kafka properties: {}", properties.len());
+                if log::log_enabled!(Level::Debug) {
                     for (k, v) in &properties {
-                        log::info!("  {k} = {v}");
+                        log::debug!("  {k} = {v}");
                     }
                 }
 
