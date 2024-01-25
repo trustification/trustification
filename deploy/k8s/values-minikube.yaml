@@ -1,11 +1,8 @@
 ## Trustification
 
-tracing: {}
 appDomain: change-me
-image:
-  registry: quay.io/ctrontesting
-  version: latest
-  pullPolicy: Always
+
+tracing: {}
 
 storage:
   endpoint: http://infrastructure-minio.trustification.svc.cluster.local:9000

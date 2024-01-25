@@ -20,6 +20,27 @@ minio:
     - name: MINIO_NOTIFY_KAFKA_TOPIC_V11Y
       value: "v11y-stored"
 
+    - name: MINIO_NOTIFY_KAFKA_SASL_USERNAME_BOMBASTIC
+      value: "user1"
+    - name: MINIO_NOTIFY_KAFKA_SASL_PASSWORD_BOMBASTIC
+      value: "rIGP74jD7WpdiYWunxTHTGnjQzNG3RWy" # needs to be aligned with .kafka.sasl.client.passwords
+    - name: MINIO_NOTIFY_KAFKA_SASL_MECHANISM_BOMBASTIC
+      value: "PLAIN"
+
+    - name: MINIO_NOTIFY_KAFKA_SASL_USERNAME_VEXINATION
+      value: "user1"
+    - name: MINIO_NOTIFY_KAFKA_SASL_PASSWORD_VEXINATION
+      value: "rIGP74jD7WpdiYWunxTHTGnjQzNG3RWy" # needs to be aligned with .kafka.sasl.client.passwords
+    - name: MINIO_NOTIFY_KAFKA_SASL_MECHANISM_VEXINATION
+      value: "PLAIN"
+
+    - name: MINIO_NOTIFY_KAFKA_SASL_USERNAME_V11Y
+      value: "user1"
+    - name: MINIO_NOTIFY_KAFKA_SASL_PASSWORD_V11Y
+      value: "rIGP74jD7WpdiYWunxTHTGnjQzNG3RWy" # needs to be aligned with .kafka.sasl.client.passwords
+    - name: MINIO_NOTIFY_KAFKA_SASL_MECHANISM_V11Y
+      value: "PLAIN"
+
 minioPostInstall:
   disabled: false
   clientImage: docker.io/bitnami/minio-client:2024.1.18-debian-11-r1
@@ -39,6 +60,9 @@ kafka:
       protocol: PLAINTEXT
     interbroker:
       protocol: PLAINTEXT
+  sasl:
+    client:
+      passwords: "rIGP74jD7WpdiYWunxTHTGnjQzNG3RWy"
   kraft:
     enabled: true
   controller:
