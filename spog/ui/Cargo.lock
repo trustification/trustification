@@ -485,9 +485,9 @@ dependencies = [
 
 [[package]]
 name = "cve"
-version = "0.2.0"
+version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "884ee0d6331d2cc6fc3c33108904b426235996790a765c1bfa47ae3584ba8f17"
+checksum = "e6ee1267b66dad96f0b01a465c0bbba05d3d54ba622a13af2f3182e80fd18726"
 dependencies = [
  "serde",
  "serde_json",
