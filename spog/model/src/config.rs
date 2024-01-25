@@ -49,6 +49,9 @@ pub struct Features {
     /// Enables the SBOM scanner
     #[serde(default = "default_feature")]
     pub scanner: bool,
+    /// Enables the SBOM uploader
+    #[serde(default = "default_feature")]
+    pub uploader: bool,
     /// Enables the "extend" section
     #[serde(default = "default_feature")]
     pub extend_section: bool,
@@ -68,6 +71,7 @@ impl Default for Features {
         Self {
             extend_section: default_feature(),
             scanner: default_feature(),
+            uploader: default_feature(),
             dedicated_search: default_feature(),
             additional_package_information: default_feature(),
             show_source: default_feature(),
