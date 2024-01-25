@@ -28,16 +28,23 @@ Start `minikube`:
 minikube start --cpus 8 --memory 24576 --disk-size 20gb --addons ingress
 ```
 
-In a new tab, start (and leave it running):
-
-```shell
-minikube tunnel
-```
-
-And, deploy the application:
+Create a namespace:
 
 ```shell
 kubectl create ns trustification
+```
+
+Then, deploy the application:
+
+```shell
 helm upgrade --install -n trustification infrastructure charts/trustification-infrastructure --values values-minikube.yaml --set-string keycloak.ingress.hostname=sso.$(minikube ip).nip.io --set-string appDomain=.$(minikube ip).nip.io
 helm upgrade --install -n trustification trustification charts/trustification --values values-minikube.yaml --set-string appDomain=.$(minikube ip).nip.io
+```
+
+Speed up running initial jobs:
+
+```shell
+kubectl -n trustification create job --from=cronjob/v11y-walker v11y-walker-initial
+kubectl -n trustification create job --from=cronjob/bombastic-collector bombastic-collector-initial
+kubectl -n trustification create job --from=cronjob/vexination-collector vexination-collector-initial
 ```

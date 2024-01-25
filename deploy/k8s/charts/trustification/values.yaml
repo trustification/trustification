@@ -131,3 +131,12 @@ modules:
     image: {}
     tracing: {}
     metrics: {}
+
+  v11yWalker:
+    enabled: true
+    image: {}
+    gitImage:
+      version: "2.40.1"
+    tracing: {}
+    metrics: {}
+    storageSize: 10Gi

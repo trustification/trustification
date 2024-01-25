@@ -22,9 +22,8 @@ spec:
         - name: run
           emptyDir: {}
       containers:
-        - image: {{ include "trustification.common.image" ( set (deepCopy $mod) "imageName" "trust-docs" ) }}
-          imagePullPolicy: {{ include "trustification.common.imagePullPolicy" $mod }}
-          name: service
+        - name: service
+          {{ include "trustification.common.defaultImage" ( set (deepCopy $mod) "imageName" "trust-docs" ) | nindent 10 }}
           volumeMounts:
             - name: run
               mountPath: /run
