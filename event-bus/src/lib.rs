@@ -210,6 +210,10 @@ pub struct EventBusConfig {
     /// Kafka properties, as JSON object
     #[arg(env = "KAFKA_PROPERTIES_MAP", long = "kafka-properties-map")]
     pub kafka_properties_map: Option<String>,
+
+    /// Add all env-vars having this prefix as key/value entry
+    #[arg(env = "KAFKA_PROPERTIES_ENV_PREFIX", long = "kafka-properties-env-prefix")]
+    pub kafka_properties_env_prefix: Option<String>,
 }
 
 impl EventBusConfig {
@@ -275,8 +279,20 @@ impl EventBusConfig {
             result.extend(map);
         }
 
+        if let Some(prefix) = &self.kafka_properties_env_prefix {
+            for (key, value) in std::env::vars() {
+                if let Some(key) = key.strip_prefix(prefix) {
+                    result.push((env_to_kafka(key), value));
+                }
+            }
+        }
+
         Ok(result)
     }
+}
+
+fn env_to_kafka(name: &str) -> String {
+    name.to_lowercase().replace("__", ".")
 }
 
 #[derive(clap::ValueEnum, Debug, Clone)]
@@ -290,5 +306,16 @@ pub enum EventBusType {
 impl Default for EventBusType {
     fn default() -> Self {
         Self::Kafka
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_kafka_name() {
+        assert_eq!("foo.bar", env_to_kafka("FOO__BAR"));
+        assert_eq!("foo.bar_baz", env_to_kafka("FOO__BAR_BAZ"));
     }
 }
