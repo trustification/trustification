@@ -240,6 +240,26 @@ properties:
               topics:
                 $ref: "#/definitions/StorageTopics"
 
+      v11yWalker:
+        allOf:
+          - $ref: "#/definitions/Feature"
+          - $ref: "#/definitions/Image"
+          - $ref: "#/definitions/Application"
+          - $ref: "#/definitions/RustApplication"
+          - $ref: "#/definitions/Metrics"
+          - $ref: "#/definitions/Tracing"
+          - $ref: "#/definitions/Storage"
+          - type: object
+            properties:
+              storageSize:
+                type: string
+              schedule:
+                type: string
+              suspend:
+                type: boolean
+              gitImage:
+                $ref: "#/definitions/ImageConfig"
+
 # for infrastructure
 
   kafka:

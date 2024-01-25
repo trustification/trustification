@@ -35,9 +35,8 @@ spec:
         {{- end }}
 
       containers:
-        - image: {{ include "trustification.common.image" $mod }}
-          imagePullPolicy: {{ include "trustification.common.imagePullPolicy" $mod }}
-          name: service
+        - name: service
+          {{ include "trustification.common.defaultImage" $mod | nindent 10 }}
           command: ["/nginx.sh"]
           env:
             - name: API_URL
