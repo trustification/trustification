@@ -19,7 +19,7 @@ bytes = "1"
 chrono = "0.4.23"
 clap = { version = "4.0.29", features = ["derive"] }
 csaf = "0.5"
-cve = "0.2"
+cve = "0.2.1"
 cvss = "2"
 derive_more = "0.99"
 env_logger = "0.10"
