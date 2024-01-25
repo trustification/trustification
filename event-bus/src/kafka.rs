@@ -30,15 +30,16 @@ impl From<KafkaError> for Error {
 impl KafkaEventBus {
     pub(crate) fn new(brokers: String, properties: Vec<(String, String)>) -> Result<Self, Error> {
         let mut config = ClientConfig::new();
-        config
-            .set("message.timeout.ms", "5000")
-            .set("bootstrap.servers", &brokers);
+        config.set("bootstrap.servers", &brokers);
 
         for (key, value) in properties {
             config.set(key, value);
         }
 
-        let producer: FutureProducer = config.create()?;
+        let mut producer_config = config.clone();
+        producer_config.set("message.timeout.ms", "5000");
+        let producer: FutureProducer = producer_config.create()?;
+
         Ok(Self { config, producer })
     }
 
