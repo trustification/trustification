@@ -7565,6 +7565,7 @@ dependencies = [
  "log",
  "prometheus",
  "rdkafka",
+ "serde_json",
  "thiserror",
 ]
 

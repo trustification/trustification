@@ -113,7 +113,7 @@ impl Metrics {
 }
 
 #[derive(Clone, Debug, Default, clap::Parser)]
-#[command(rename_all_env = "SCREAMING_SNAKE_CASE")]
+#[command(rename_all_env = "SCREAMING_SNAKE_CASE", next_help_heading = "Storage")]
 pub struct StorageConfig {
     /// Bucket name to use for storing data and index
     #[arg(env = "STORAGE_BUCKET", long = "storage-bucket")]
