@@ -20,6 +20,8 @@ minio:
     - name: MINIO_NOTIFY_KAFKA_TOPIC_V11Y
       value: "v11y-stored"
 
+    - name: MINIO_NOTIFY_KAFKA_SASL_BOMBASTIC
+      value: "on"
     - name: MINIO_NOTIFY_KAFKA_SASL_USERNAME_BOMBASTIC
       value: "user1"
     - name: MINIO_NOTIFY_KAFKA_SASL_PASSWORD_BOMBASTIC
@@ -27,6 +29,8 @@ minio:
     - name: MINIO_NOTIFY_KAFKA_SASL_MECHANISM_BOMBASTIC
       value: "PLAIN"
 
+    - name: MINIO_NOTIFY_KAFKA_SASL_VEXINATION
+      value: "on"
     - name: MINIO_NOTIFY_KAFKA_SASL_USERNAME_VEXINATION
       value: "user1"
     - name: MINIO_NOTIFY_KAFKA_SASL_PASSWORD_VEXINATION
@@ -34,6 +38,8 @@ minio:
     - name: MINIO_NOTIFY_KAFKA_SASL_MECHANISM_VEXINATION
       value: "PLAIN"
 
+    - name: MINIO_NOTIFY_KAFKA_SASL_V11Y
+      value: "on"
     - name: MINIO_NOTIFY_KAFKA_SASL_USERNAME_V11Y
       value: "user1"
     - name: MINIO_NOTIFY_KAFKA_SASL_PASSWORD_V11Y
@@ -62,6 +68,7 @@ kafka:
       protocol: PLAINTEXT
   sasl:
     client:
+      users: ["user1"]
       passwords: "rIGP74jD7WpdiYWunxTHTGnjQzNG3RWy"
   kraft:
     enabled: true
