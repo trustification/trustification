@@ -2,9 +2,13 @@
 
 tracing: {}
 appDomain: change-me
+image:
+  registry: quay.io/ctrontesting
+  version: latest
+  pullPolicy: Always
 
 storage:
-  endpoint: http://infrastructure-minio.trustification.svc.cluster.local.:9000
+  endpoint: http://infrastructure-minio.trustification.svc.cluster.local:9000
   accessKey:
     valueFrom:
       secretKeyRef:
@@ -18,7 +22,16 @@ storage:
 
 eventBus:
   type: kafka
-  bootstrapServers: infrastructure-kafka.trustification.svc.cluster.local.:9092
+  bootstrapServers: infrastructure-kafka.trustification.svc.cluster.local:9092
+  config:
+    securityProtocol: SASL_PLAINTEXT
+    username: "user1"
+    password:
+      valueFrom:
+        secretKeyRef:
+          name: infrastructure-kafka-user-passwords
+          key: client-passwords
+    mechanism: PLAIN
 
 ## Infrastructure
 
