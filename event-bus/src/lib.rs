@@ -1,7 +1,10 @@
 //! Event bus used in Trustification.
 
+use anyhow::{bail, Context};
 use hide::Hide;
+use log::Level;
 use prometheus::{opts, register_int_counter_vec_with_registry, IntCounterVec, Registry};
+use std::collections::HashMap;
 
 mod kafka;
 mod sqs;
@@ -174,7 +177,7 @@ impl EventConsumer {
 }
 
 #[derive(Clone, Debug, clap::Parser, Default)]
-#[command(rename_all_env = "SCREAMING_SNAKE_CASE")]
+#[command(rename_all_env = "SCREAMING_SNAKE_CASE", next_help_heading = "Event bus")]
 pub struct EventBusConfig {
     /// Event bus to configure
     #[arg(env = "EVENT_BUS", long = "event-bus", value_enum, default_value = "kafka")]
@@ -199,6 +202,18 @@ pub struct EventBusConfig {
         default_value = "localhost:9092"
     )]
     pub kafka_bootstrap_servers: String,
+
+    /// Kafka properties, comma seperated list of 'variable=value'
+    #[arg(env = "KAFKA_PROPERTIES", long = "kafka-properties", value_delimiter = ',', num_args = 0..)]
+    pub kafka_properties: Vec<String>,
+
+    /// Kafka properties, as JSON object
+    #[arg(env = "KAFKA_PROPERTIES_MAP", long = "kafka-properties-map")]
+    pub kafka_properties_map: Option<String>,
+
+    /// Add all env-vars having this prefix as key/value entry
+    #[arg(env = "KAFKA_PROPERTIES_ENV_PREFIX", long = "kafka-properties-env-prefix")]
+    pub kafka_properties_env_prefix: Option<String>,
 }
 
 impl EventBusConfig {
@@ -206,8 +221,19 @@ impl EventBusConfig {
     pub async fn create(&self, registry: &Registry) -> Result<EventBus, anyhow::Error> {
         match self.event_bus {
             EventBusType::Kafka => {
-                let bootstrap = &self.kafka_bootstrap_servers;
-                let bus = kafka::KafkaEventBus::new(bootstrap.to_string())?;
+                let bootstrap = self.kafka_bootstrap_servers.clone();
+                let properties = self.kafka_properties()?;
+
+                if log::log_enabled!(Level::Info) {
+                    log::info!("Kafka bootstrap servers: {bootstrap}");
+                    log::info!("Kafka properties: {}", properties.len());
+                    for (k, v) in &properties {
+                        log::info!("  {k} = {v}");
+                    }
+                }
+
+                let bus = kafka::KafkaEventBus::new(bootstrap, properties)?;
+
                 Ok(EventBus {
                     metrics: Metrics::register(registry)?,
                     inner: InnerBus::Kafka(bus),
@@ -234,6 +260,39 @@ impl EventBusConfig {
             }
         }
     }
+
+    /// Get Kafka properties as `Vec<(key, value)>`
+    fn kafka_properties(&self) -> anyhow::Result<Vec<(String, String)>> {
+        let mut result = Vec::<(String, String)>::new();
+
+        for pair in &self.kafka_properties {
+            match pair.split_once('=') {
+                Some((key, value)) => result.push((key.to_owned(), value.to_owned())),
+                None => bail!("Wrong format for Kafka argument. Expected 'key=value', found: {pair}"),
+            }
+        }
+
+        if let Some(map) = &self.kafka_properties_map {
+            let map: HashMap<String, String> = serde_json::from_str(map)
+                .context("Failed to parse Kafka properties map. Must be a JSON object with only string values.")?;
+
+            result.extend(map);
+        }
+
+        if let Some(prefix) = &self.kafka_properties_env_prefix {
+            for (key, value) in std::env::vars() {
+                if let Some(key) = key.strip_prefix(prefix) {
+                    result.push((env_to_kafka(key), value));
+                }
+            }
+        }
+
+        Ok(result)
+    }
+}
+
+fn env_to_kafka(name: &str) -> String {
+    name.to_lowercase().replace("__", ".")
 }
 
 #[derive(clap::ValueEnum, Debug, Clone)]
@@ -247,5 +306,16 @@ pub enum EventBusType {
 impl Default for EventBusType {
     fn default() -> Self {
         Self::Kafka
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_kafka_name() {
+        assert_eq!("foo.bar", env_to_kafka("FOO__BAR"));
+        assert_eq!("foo.bar_baz", env_to_kafka("FOO__BAR_BAZ"));
     }
 }

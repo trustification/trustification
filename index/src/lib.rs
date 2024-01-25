@@ -45,7 +45,7 @@ use tokio::{spawn, sync::oneshot};
 
 /// Configuration for the index.
 #[derive(Clone, Debug, clap::Parser)]
-#[command(rename_all_env = "SCREAMING_SNAKE_CASE")]
+#[command(rename_all_env = "SCREAMING_SNAKE_CASE", next_help_heading = "Index")]
 pub struct IndexConfig {
     /// Local folder to store index.
     #[arg(env = "INDEX_DIR", short = 'i', long = "index-dir")]

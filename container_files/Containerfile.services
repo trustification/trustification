@@ -1,6 +1,6 @@
 FROM registry.access.redhat.com/ubi9/ubi:latest as backendbuilder
 
-RUN dnf install -y gcc openssl openssl-devel cmake gcc-c++ git curl-minimal unzip
+RUN dnf install -y gcc openssl openssl-devel cmake gcc-c++ git curl-minimal unzip cyrus-sasl-devel
 
 RUN curl https://sh.rustup.rs -sSf | sh -s -- -y --profile minimal
 ENV PATH "$PATH:/root/.cargo/bin"

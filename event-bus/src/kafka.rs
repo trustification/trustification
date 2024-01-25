@@ -14,7 +14,7 @@ use rdkafka::{
 
 #[allow(unused)]
 pub struct KafkaEventBus {
-    brokers: String,
+    config: ClientConfig,
     producer: FutureProducer,
 }
 
@@ -28,16 +28,23 @@ impl From<KafkaError> for Error {
 }
 
 impl KafkaEventBus {
-    pub(crate) fn new(brokers: String) -> Result<Self, Error> {
-        let producer: FutureProducer = ClientConfig::new()
-            .set("message.timeout.ms", "5000")
-            .set("bootstrap.servers", &brokers)
-            .create()?;
-        Ok(Self { brokers, producer })
+    pub(crate) fn new(brokers: String, properties: Vec<(String, String)>) -> Result<Self, Error> {
+        let mut config = ClientConfig::new();
+        config.set("bootstrap.servers", &brokers);
+
+        for (key, value) in properties {
+            config.set(key, value);
+        }
+
+        let mut producer_config = config.clone();
+        producer_config.set("message.timeout.ms", "5000");
+        let producer: FutureProducer = producer_config.create()?;
+
+        Ok(Self { config, producer })
     }
 
     pub(crate) async fn create(&self, topics: &[&str]) -> Result<(), Error> {
-        let admin: AdminClient<_> = ClientConfig::new().set("bootstrap.servers", &self.brokers).create()?;
+        let admin: AdminClient<_> = self.config.create()?;
         let topics: Vec<NewTopic> = topics
             .iter()
             .map(|t| NewTopic::new(t, 1, rdkafka::admin::TopicReplication::Fixed(1)))
@@ -47,14 +54,15 @@ impl KafkaEventBus {
     }
 
     pub(crate) async fn subscribe(&self, group: &str, topics: &[&str]) -> Result<KafkaConsumer, Error> {
-        let consumer: StreamConsumer = ClientConfig::new()
+        let mut config = self.config.clone();
+        config
             .set("group.id", group)
-            .set("bootstrap.servers", &self.brokers)
             .set("enable.partition.eof", "false")
             .set("session.timeout.ms", "6000")
             .set("enable.auto.commit", "false")
-            .set("auto.offset.reset", "earliest")
-            .create()?;
+            .set("auto.offset.reset", "earliest");
+
+        let consumer: StreamConsumer = config.create()?;
         let topics: Vec<&str> = topics.into();
         consumer.subscribe(&topics[..])?;
         Ok(KafkaConsumer { consumer })
