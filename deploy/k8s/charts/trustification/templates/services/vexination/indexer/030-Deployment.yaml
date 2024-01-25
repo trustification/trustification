@@ -9,7 +9,12 @@ metadata:
   annotations:
     {{- include "trustification.application.annotations" $mod | nindent 4 }}
 spec:
+
   replicas: 1 # must be one
+
+  strategy:
+    type: Recreate
+
   selector:
     matchLabels:
       {{- include "trustification.common.selectorLabels" $mod | nindent 6 }}

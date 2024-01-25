@@ -10,14 +10,20 @@ metadata:
     {{- include "trustification.application.annotations" $mod | nindent 4 }}
 spec:
   replicas: 1 # must be one
+
+  strategy:
+    type: Recreate
+
   selector:
     matchLabels:
       {{- include "trustification.common.selectorLabels" $mod | nindent 6 }}
+
   template:
     metadata:
       labels:
         {{- include "trustification.common.selectorLabels" $mod | nindent 8 }}
         {{- include "trustification.application.podLabels" $mod | nindent 8 }}
+
     spec:
 
       volumes:
