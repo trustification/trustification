@@ -34,6 +34,25 @@ Arguments (dict):
 - name: KAFKA_BOOTSTRAP_SERVERS
   value: {{ .eventBus.bootstrapServers | quote }}
 
+- name: KAFKA_PROPERTIES_ENV_PREFIX
+  value: TCK_
+
+- name: TCK_SECURITY__PROTOCOL
+  value: {{ .eventBus.config.securityProtocol }}
+
+{{- if eq .eventBus.config.securityProtocol "SASL_PLAINTEXT" }}
+
+- name: TCK_SASL__USERNAME
+  {{- include "trustification.common.envVarValue" .eventBus.config.username | nindent 2 }}
+
+- name: TCK_SASL__PASSWORD
+  {{- include "trustification.common.envVarValue" .eventBus.config.password | nindent 2 }}
+
+- name: TCK_SASL__MECHANISM
+  {{- include "trustification.common.envVarValue" .eventBus.config.mechanism | nindent 2 }}
+
+{{- end }}
+
 {{- else if eq .eventBus.type "sqs" }}
 
 - name: EVENT_BUS

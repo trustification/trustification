@@ -621,6 +621,7 @@ definitions:
     required:
       - type
       - bootstrapServers
+      - config
     properties:
       type:
         type: string
@@ -628,6 +629,8 @@ definitions:
           - kafka
       bootstrapServers:
         type: string
+      config:
+        $ref: "#/definitions/KafkaConfig"
 
   EventBusConfigSqs:
     type: object
@@ -670,3 +673,67 @@ definitions:
 
   GlobalV11y:
     $ref: "#/definitions/GlobalIndexConfig"
+
+  KafkaConfig:
+    type: object
+    required:
+      - securityProtocol
+    properties:
+      securityProtocol:
+        $ref: "#/definitions/KafkaSecurityProtocol"
+    oneOf:
+      - $ref: "#/definitions/KafkaConfigPlaintext"
+      - $ref: "#/definitions/KafkaConfigSaslPlaintext"
+      # - $ref: "#/definitions/KafkaConfigSsl"
+      # - $ref: "#/definitions/KafkaConfigSaslSsl"
+
+  KafkaConfigPlaintext:
+    type: object
+    additionalProperties: false
+    properties:
+      securityProtocol:
+        type: string
+        enum:
+          - PLAINTEXT
+
+  KafkaConfigSaslPlaintext:
+    additionalProperties: false
+    $ref: "#/definitions/KafkaSaslConfig"
+
+  KafkaSaslConfig:
+    type: object
+    required:
+      - username
+      - password
+      - mechanism
+    properties:
+      securityProtocol:
+        type: string
+        enum:
+          - SASL_PLAINTEXT
+      username:
+        $ref: "#/definitions/ValueOrRef"
+      password:
+        $ref: "#/definitions/ValueOrRef"
+      mechanism:
+        $ref: "#/definitions/KafkaSaslMechanismOrRef"
+
+  KafkaSaslMechanismOrRef:
+    oneOf:
+      - $ref: "#/definitions/KafkaSaslMechanism"
+      - $ref: "#/definitions/ValueRef"
+
+  KafkaSaslMechanism:
+    type: string
+    enum:
+      - PLAIN
+      - SCRAM-SHA-256
+      - SCRAM-SHA-512
+
+  KafkaSecurityProtocol:
+    type: string
+    enum:
+      - PLAINTEXT
+      - SASL_PLAINTEXT
+      # - SSL
+      # - SASL_SSL
