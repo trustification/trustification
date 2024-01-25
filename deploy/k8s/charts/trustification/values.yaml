@@ -6,7 +6,7 @@ replicas: 1
 image:
   registry: ghcr.io/trustification
   pullPolicy: IfNotPresent
-  version: ea3d3de1d3a01c80497d9a4e4697afbc6a04591f
+  version: da4cd55d978d7e910cb3b075d8acf1e28f4504d4
 
 ingress: {}
 
