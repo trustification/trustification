@@ -113,9 +113,7 @@ where
                                 log::debug!("Received {} records", data.records.len());
                                 let mut indexed = 0;
                                 for data in data.records {
-                                    if self.storage.is_index(data.key()) {
-                                        log::trace!("It's an index event, ignoring");
-                                    } else {
+                                    if self.storage.is_relevant(data.key()) {
                                         match data.event_type() {
                                             EventType::Put => {
                                                 match self.storage.get_for_event(&data, true).await {
@@ -134,7 +132,7 @@ where
                                                 }
                                             },
                                             EventType::Delete => {
-                                                let (_, key) = Storage::key_from_event(&data)?;
+                                                let (_, key) = self.storage.key_from_event(&data)?;
                                                 for (index, writer) in self.indexes.iter().zip(writers.iter_mut()) {
                                                     block_in_place(|| writer.delete_document(index.index(), key.as_str()));
                                                 }

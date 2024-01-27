@@ -17,34 +17,30 @@ pub async fn run<M: Emitter + Send + Sync>(
                     if let Some(payload) = event.payload() {
                         if let Ok(data) = storage.decode_event(payload) {
                             for data in data.records {
-                                if data.event_type() == EventType::Put {
-                                    if storage.is_index(data.key()) {
-                                        log::trace!("It's an index event, ignoring");
-                                    } else {
-                                        match storage.get_for_event(&data, false).await {
-                                            Ok(res) => {
-                                                let document = Document {
-                                                    blob: res.data,
-                                                    r#type: DocumentType::UNKNOWN,
-                                                    format: FormatType::UNKNOWN,
-                                                    encoding: EncodingType::from(res.encoding.clone()),
-                                                    source_information: SourceInformation {
-                                                        collector: "S3Collector".into(),
-                                                        source: res.key.to_string(),
-                                                    },
-                                                };
-                                                match emitter.publish(document).await {
-                                                    Ok(_) => {
-                                                        log::info!("Successfully exported the document {} encoded as {}", res.key, res.encoding.unwrap_or("None".to_string()));
-                                                    }
-                                                    Err(e) => {
-                                                        log::warn!("Error exporting entry: {:?}", e)
-                                                    }
+                                if data.event_type() == EventType::Put && storage.is_relevant(data.key()) {
+                                    match storage.get_for_event(&data, false).await {
+                                        Ok(res) => {
+                                            let document = Document {
+                                                blob: res.data,
+                                                r#type: DocumentType::UNKNOWN,
+                                                format: FormatType::UNKNOWN,
+                                                encoding: EncodingType::from(res.encoding.clone()),
+                                                source_information: SourceInformation {
+                                                    collector: "S3Collector".into(),
+                                                    source: res.key.to_string(),
+                                                },
+                                            };
+                                            match emitter.publish(document).await {
+                                                Ok(_) => {
+                                                    log::info!("Successfully exported the document {} encoded as {}", res.key, res.encoding.unwrap_or("None".to_string()));
+                                                }
+                                                Err(e) => {
+                                                    log::warn!("Error exporting entry: {:?}", e)
                                                 }
                                             }
-                                            Err(e) => {
-                                                log::debug!("Error retrieving document event data, ignoring (error: {:?})", e);
-                                            }
+                                        }
+                                        Err(e) => {
+                                            log::debug!("Error retrieving document event data, ignoring (error: {:?})", e);
                                         }
                                     }
                                 }
