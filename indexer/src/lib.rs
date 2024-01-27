@@ -185,7 +185,7 @@ where
                                     log::trace!("Event committed successfully");
                                 }
                                 Err(e) => {
-                                    log::warn!("Error committing event: {:?}", e)
+                                    log::trace!("Error committing event: {:?}", e)
                                 }
                             }
                             processed_events.clear();

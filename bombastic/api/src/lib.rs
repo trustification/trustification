@@ -156,9 +156,9 @@ impl Run {
 
         let vex_index =
             block_in_place(|| IndexStore::new(&storage, &index_config, vexination_index::Index::new(), registry))?;
-
-        let sbom_storage = Storage::new(storage.process("bombastic", devmode), Validator::SBOM, registry)?;
-        let vex_storage = Storage::new(storage.process("vexination", devmode), Validator::VEX, registry)?;
+        let sc = storage.process("bombastic", devmode);
+        let sbom_storage = Storage::new(sc.clone(), Validator::SBOM, registry)?;
+        let vex_storage = Storage::new(sc.clone(), Validator::VEX, registry)?;
 
         let state = Arc::new(AppState {
             sbom_storage,
