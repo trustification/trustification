@@ -91,7 +91,10 @@ where
         for index in &mut self.indexes {
             writers.push(block_in_place(|| index.writer())?);
         }
-        let consumer = self.bus.subscribe("indexer", &[self.stored_topic]).await?;
+        let consumer = self
+            .bus
+            .subscribe(&format!("indexer-{}", self.storage.name()), &[self.stored_topic])
+            .await?;
         let mut processed_events = Vec::new();
         let mut indexed_events = Vec::new();
         let mut events = 0;
@@ -335,7 +338,7 @@ where
     ) -> Result<(), anyhow::Error> {
         match block_in_place(|| writer.add_document(index, key, data)) {
             Ok(_) => {
-                log::debug!("Inserted entry '{key}' into index");
+                log::debug!("Inserted entry '{key}' into index '{}'", index.name());
             }
             Err(e) => {
                 let failure = serde_json::json!( {
