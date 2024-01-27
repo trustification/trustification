@@ -647,7 +647,8 @@ impl Resolver {
             None => format!("/{}/", Self::BASE),
             Some(p) => format!("/{}/{p}/", Self::BASE),
         };
-        Self::normalize(path).starts_with(&pat)
+        let decoded = urlencoding::decode(path).unwrap().into_owned();
+        Self::normalize(&decoded).starts_with(&pat)
     }
 }
 
@@ -730,15 +731,17 @@ mod tests {
         assert_eq!(res.id_from_key(""), "/data/");
 
         let res = Resolver {
-            prefix: Some("sub".to_string()),
+            prefix: Some("sbom".to_string()),
         };
         let p = res.id_from_key("FOO");
         assert_eq!(res.key_from(&p), "FOO");
-        assert_eq!(res.key_from("/data/sub/FOO"), "FOO");
-        assert_eq!(res.key_from("data/sub/FOO"), "FOO");
-        assert_eq!(res.key_from("/data/sub/foo/BAR"), "foo/BAR");
-        assert!(res.is_relevant("/data/sub/baz"));
+        assert_eq!(res.key_from("/data/sbom/FOO"), "FOO");
+        assert_eq!(res.key_from("data/sbom/FOO"), "FOO");
+        assert_eq!(res.key_from("/data/sbom/foo/BAR"), "foo/BAR");
+        assert!(res.is_relevant("/data/sbom/baz"));
+        assert!(res.is_relevant("data%2Fsbom%2Ftest-package-search-8b2a3068"));
         assert!(!res.is_relevant("/index/baz"));
-        assert_eq!(res.id_from_key(""), "/data/sub/");
+        assert!(!res.is_relevant("index%2Fbaz"));
+        assert_eq!(res.id_from_key(""), "/data/sbom/");
     }
 }
