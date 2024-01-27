@@ -22,6 +22,7 @@ pub struct Storage {
     bucket: Bucket,
     metrics: Metrics,
     validator: Validator,
+    resolver: Resolver,
 }
 
 #[derive(Clone)]
@@ -298,7 +299,6 @@ impl From<prometheus::Error> for Error {
     }
 }
 
-const DATA_PATH: &str = "/data/";
 const INDEX_PATH: &str = "/index";
 const VERSION_HEADER: &str = "x-amz-meta-version";
 const VERSION: u32 = 1;
@@ -311,18 +311,24 @@ pub struct Head {
 
 impl Storage {
     pub fn new(config: StorageConfig, v: Validator, registry: &Registry) -> Result<Self, Error> {
-        let prefix = v.to_string();
-        let validator = if config.validate { v } else { Validator::None };
+        let resolver = match &v {
+            Validator::None => Resolver { prefix: None },
+            _ => Resolver {
+                prefix: Some(v.to_string()),
+            },
+        };
+        let validator = if config.validate { v.to_owned() } else { Validator::None };
         let bucket = config.try_into()?;
         Ok(Self {
             bucket,
-            metrics: Metrics::register(registry, prefix)?,
+            metrics: Metrics::register(registry, v.to_string())?,
             validator,
+            resolver,
         })
     }
 
-    pub fn is_index(&self, path: &str) -> bool {
-        S3Path::from_path(path).path.starts_with(INDEX_PATH)
+    pub fn is_relevant(&self, path: &str) -> bool {
+        self.resolver.is_relevant(path)
     }
 
     pub async fn put_stream<'a>(
@@ -344,7 +350,7 @@ impl Storage {
 
         let data = self.validator.validate(encoding, Box::pin(data)).await?;
         let mut rdr = stream::encoded_reader(DEFAULT_ENCODING, encoding, data)?;
-        let path = format!("{}{}", DATA_PATH, key);
+        let path = self.resolver.id_from_key(key);
 
         let len = bucket
             .put_object_stream_with_content_type(&mut rdr, path, content_type)
@@ -364,17 +370,17 @@ impl Storage {
     }
 
     pub async fn get_head(&self, key: &str) -> Result<Head, Error> {
-        let path: S3Path = S3Path::from_key(key);
-        let (head, status) = self.bucket.head_object(&path.path).await?;
+        let path = self.resolver.id_from_key(key);
+        let (head, status) = self.bucket.head_object(&path).await?;
         Ok(Head {
             status: StatusCode::from_u16(status).map_err(|_| Error::Internal)?,
             content_encoding: head.content_encoding,
         })
     }
 
-    pub fn key_from_event(record: &Record) -> Result<(Cow<str>, String), Error> {
+    pub fn key_from_event<'a>(&'a self, record: &'a Record) -> Result<(Cow<str>, String), Error> {
         if let Ok(decoded) = urlencoding::decode(record.key()) {
-            let key = S3Path::from_path(&decoded).key().to_string();
+            let key = self.resolver.key_from(&decoded);
             Ok((decoded, key))
         } else {
             Err(Error::InvalidKey(record.key().to_string()))
@@ -385,7 +391,7 @@ impl Storage {
     // This will load the entire S3 object into memory
     pub async fn get_for_event(&self, record: &Record, decode: bool) -> Result<S3Result, Error> {
         // Record keys are URL encoded
-        if let Ok((decoded, key)) = Self::key_from_event(record) {
+        if let Ok((decoded, key)) = self.key_from_event(record) {
             if decode {
                 let data = self.get_decoded_object(&key).await?;
                 Ok(S3Result {
@@ -411,15 +417,15 @@ impl Storage {
         &self,
         mut continuation_token: ContinuationToken,
     ) -> impl Stream<Item = Result<(String, Vec<u8>), (Error, ContinuationToken)>> + '_ {
-        let prefix = DATA_PATH[1..].to_string();
+        let prefix = self.resolver.id_from_key("")[1..].to_string();
 
         try_stream! {
             loop {
-                let (result, _) = self.bucket.list_page(prefix.clone(), None, continuation_token.0.clone(), None, None).await.map_err(|e| (Error::S3(e), continuation_token.clone()))?;
+                let (result, _) = self.bucket.list_page(prefix.to_owned(), None, continuation_token.0.clone(), None, None).await.map_err(|e| (Error::S3(e), continuation_token.clone()))?;
                 let next_continuation_token = result.next_continuation_token.clone();
 
                 for obj in result.contents {
-                    let key = S3Path::from_path(&obj.key).key().to_string();
+                    let key = self.resolver.key_from(&obj.key);
                     let o = self.get_decoded_object(&key).await.map_err(|e| (e, continuation_token.clone()))?;
                     yield (key, o);
                 }
@@ -451,10 +457,10 @@ impl Storage {
     }
 
     pub async fn get_decoded_stream(&self, key: &str) -> Result<impl Stream<Item = Result<Bytes, Error>>, Error> {
-        let path: S3Path = S3Path::from_key(key);
+        let path = self.resolver.id_from_key(key);
         self.metrics.gets_total.inc();
         let res = {
-            let (head, _status) = self.bucket.head_object(&path.path).await?;
+            let (head, _status) = self.bucket.head_object(&path).await?;
             let stream = self.get_encoded_stream(key).await?;
             stream::decode(head.content_encoding.as_deref(), Box::pin(stream))
         };
@@ -465,14 +471,14 @@ impl Storage {
     }
 
     pub async fn get_encoded_stream(&self, key: &str) -> Result<impl Stream<Item = Result<Bytes, Error>>, Error> {
-        let path: S3Path = S3Path::from_key(key);
-        let mut s = self.bucket.get_object_stream(&path.path).await?;
+        let path = self.resolver.id_from_key(key);
+        let mut s = self.bucket.get_object_stream(&path).await?;
         Ok(try_stream! { while let Some(chunk) = s.bytes().next().await { yield chunk?; }})
     }
 
     pub async fn delete(&self, key: &str) -> Result<u16, Error> {
         self.metrics.deletes_total.inc();
-        let path = format!("{}{}", DATA_PATH, key);
+        let path = self.resolver.id_from_key(key);
         let res = self
             .bucket
             .delete_object(path)
@@ -487,7 +493,10 @@ impl Storage {
 
     // Deletes all data in the bucket (except index)
     pub async fn delete_all(&self) -> Result<(), Error> {
-        let results = self.bucket.list(DATA_PATH[1..].to_string(), None).await?;
+        let results = self
+            .bucket
+            .list(self.resolver.id_from_key("")[1..].to_string(), None)
+            .await?;
         for result in results {
             for obj in result.contents {
                 self.metrics.deletes_total.inc();
@@ -577,33 +586,6 @@ impl Record {
     }
 }
 
-#[derive(Clone, Debug)]
-struct S3Path {
-    path: String,
-}
-
-impl S3Path {
-    // Absolute path
-    pub fn from_path(path: &str) -> S3Path {
-        let path = if path.starts_with('/') {
-            path.to_string()
-        } else {
-            format!("/{}", path)
-        };
-        S3Path { path }
-    }
-    // Relative to base
-    pub fn from_key(key: &str) -> S3Path {
-        S3Path {
-            path: format!("{}{}", DATA_PATH, key),
-        }
-    }
-    // Key without prefix
-    pub fn key(&self) -> &str {
-        self.path.strip_prefix(DATA_PATH).unwrap_or(&self.path)
-    }
-}
-
 #[derive(Deserialize, Debug)]
 struct S3Data {
     #[serde(rename = "object")]
@@ -628,6 +610,45 @@ pub struct S3Result {
     pub key: String,
     pub data: Vec<u8>,
     pub encoding: Option<String>,
+}
+
+struct Resolver {
+    prefix: Option<String>,
+}
+
+impl Resolver {
+    const BASE: &str = "data";
+    // Absolute path
+    pub fn normalize(path: &str) -> String {
+        if path.starts_with('/') {
+            path.to_string()
+        } else {
+            format!("/{}", path)
+        }
+    }
+    // Relative to base
+    pub fn id_from_key(&self, key: &str) -> String {
+        match &self.prefix {
+            None => format!("/{}/{key}", Self::BASE),
+            Some(pfx) => format!("/{}/{pfx}/{key}", Self::BASE),
+        }
+    }
+    // Key without base or prefix, e.g. /base/prefix/key
+    pub fn key_from<'a>(&'a self, path: &'a str) -> String {
+        let pfx = match &self.prefix {
+            None => format!("/{}/", Self::BASE),
+            Some(p) => format!("/{}/{p}/", Self::BASE),
+        };
+        Self::normalize(path).strip_prefix(&pfx).unwrap_or(path).to_string()
+    }
+    // Does the path start with /base/prefix?
+    pub fn is_relevant<'a>(&'a self, path: &'a str) -> bool {
+        let pat = match &self.prefix {
+            None => format!("/{}/", Self::BASE),
+            Some(p) => format!("/{}/{p}/", Self::BASE),
+        };
+        Self::normalize(path).starts_with(&pat)
+    }
 }
 
 #[cfg(test)]
@@ -697,17 +718,27 @@ mod tests {
     }
 
     #[test]
-    fn test_s3_path_keys() {
-        let p = S3Path::from_key("FOO");
-        assert_eq!(p.key(), "FOO");
+    fn test_resolver() {
+        let res = Resolver { prefix: None };
+        let p = res.id_from_key("FOO");
+        assert_eq!(res.key_from(&p), "FOO");
+        assert_eq!(res.key_from("/data/FOO"), "FOO");
+        assert_eq!(res.key_from("data/FOO"), "FOO");
+        assert_eq!(res.key_from("/data/foo/BAR"), "foo/BAR");
+        assert!(res.is_relevant("/data/baz"));
+        assert!(!res.is_relevant("/index/baz"));
+        assert_eq!(res.id_from_key(""), "/data/");
 
-        let p = S3Path::from_path("/data/FOO");
-        assert_eq!(p.key(), "FOO");
-
-        let p = S3Path::from_path("data/FOO");
-        assert_eq!(p.key(), "FOO");
-
-        let p = S3Path::from_path("/data/foo/BAR");
-        assert_eq!(p.key(), "foo/BAR");
+        let res = Resolver {
+            prefix: Some("sub".to_string()),
+        };
+        let p = res.id_from_key("FOO");
+        assert_eq!(res.key_from(&p), "FOO");
+        assert_eq!(res.key_from("/data/sub/FOO"), "FOO");
+        assert_eq!(res.key_from("data/sub/FOO"), "FOO");
+        assert_eq!(res.key_from("/data/sub/foo/BAR"), "foo/BAR");
+        assert!(res.is_relevant("/data/sub/baz"));
+        assert!(!res.is_relevant("/index/baz"));
+        assert_eq!(res.id_from_key(""), "/data/sub/");
     }
 }
