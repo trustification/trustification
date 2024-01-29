@@ -11,7 +11,7 @@ metadata:
     sidecar.jaegertracing.io/inject: "true"
 {{ end }}
 spec:
-  replicas: {{ .Values.replicas }}
+  replicas: {{ .Values.spog.api.replicas | default 1 }}
   selector:
     matchLabels:
       app.kubernetes.io/name: spog-api
