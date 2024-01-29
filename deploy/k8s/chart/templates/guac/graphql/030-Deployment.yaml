@@ -8,7 +8,7 @@ metadata:
     app.kubernetes.io/component: graphql
     app.kubernetes.io/part-of: trustification
 spec:
-  replicas: {{.Values.graphqlReplicas}}
+  replicas: {{.Values.graphqlReplicas | default 1  }}
   selector:
     matchLabels:
       app.kubernetes.io/name: guac-graphql

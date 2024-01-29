@@ -10,7 +10,7 @@ metadata:
   annotations:
     service.beta.openshift.io/serving-cert-secret-name: exhort-api-tls
 spec:
-  replicas: 1
+  replicas: {{ .Values.exhort.api.replicas | default 1 }}
   selector:
     matchLabels:
       app.kubernetes.io/name: exhort-api
