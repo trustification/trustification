@@ -13,3 +13,28 @@ value: {{ . | quote }}
 {{- end }}
 
 {{- end }}
+
+{{/*
+Create an env-var value, either from a string, or by providing the full value section.
+
+Arguments: (dict)
+  * value - the value
+  * msg - error message when value is missing
+*/}}
+{{- define "trustification.common.requiredEnvVarValue" }}
+{{- $_ := required .msg .value }}
+{{- include "trustification.common.envVarValue" .value }}
+{{- end }}
+
+{{/*
+Inject service account field, when necessary.
+
+Arguments (dict):
+  * root - .
+  * module - module object
+*/}}
+{{- define "trustification.common.serviceAccount" }}
+{{- with .module.serviceAccountName }}
+serviceAccountName: {{ . | quote }}
+{{- end }}
+{{- end }}

@@ -5,6 +5,8 @@ moment, for various reasons.
 
 ### With CRC
 
+**NOTE:** Due to the nature of CRC's handling of TLS, this is currently not really usable.
+
 Get and setup `crc`, then start `crc`:
 
 ```shell
@@ -19,8 +21,6 @@ helm upgrade --install --debug -n trustification --create-namespace trustificati
 ```
 
 ### With Minikube
-
-**NOTE:** With Minikube there's currently no ingress. Which might make this pretty useless.
 
 Start `minikube`:
 
