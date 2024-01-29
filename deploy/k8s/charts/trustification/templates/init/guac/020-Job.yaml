@@ -1,0 +1,68 @@
+{{- if .Values.modules.guacInitDb.enabled }}
+{{- $mod := dict "root" . "name" "init-guac-db" "component" "guac" "module" .Values.modules.guacInitDb -}}
+kind: Job
+apiVersion: batch/v1
+metadata:
+  name: {{ include "trustification.common.name" $mod }}
+  labels:
+    {{- include "trustification.common.labels" $mod | nindent 4 }}
+
+  annotations:
+    {{- include "trustification.application.annotations" $mod | nindent 4 }}
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+    argocd.argoproj.io/sync-wave: "0"
+    helm.sh/hook-weight: "5"
+    helm.sh/hook: "pre-install,pre-upgrade"
+    helm.sh/hook-delete-policy: before-hook-creation
+
+spec:
+  backoffLimit: 1000
+  completions: 1
+  parallelism: 1
+  ttlSecondsAfterFinished: 600
+
+  template:
+    spec:
+
+      restartPolicy: OnFailure
+
+      {{- include "trustification.common.serviceAccount" $mod | nindent 6 }}
+
+      volumes:
+        - name: init-data
+          configMap:
+            name: init-guac-db
+
+      containers:
+        - name: setup
+          {{- include "trustification.guac.defaultImage" $mod | nindent 10 }}
+
+          env:
+            {{- include "trustification.postgres.envVars" ( set (deepCopy $mod) "defaults" .Values.guac.database ) | nindent 12 }}
+
+            - name: DB_NAME
+              {{- include "trustification.common.envVarValue" (($mod.targetDatabase).name | default .Values.guac.database.name ) | nindent 14 }}
+            - name: DB_USERNAME
+              {{- include "trustification.common.envVarValue" (($mod.targetDatabase).username | default .Values.guac.database.username ) | nindent 14 }}
+            - name: DB_PASSWORD
+              {{- include "trustification.common.envVarValue" (($mod.targetDatabase).password | default .Values.guac.database.password ) | nindent 14 }}
+
+          volumeMounts:
+            - mountPath: /etc/init-data
+              name: init-data
+
+          command:
+            - psql
+            - -v
+            - ON_ERROR_STOP=1
+            - -v
+            - db_name=$(DB_NAME)
+            - -v
+            - db_user=$(DB_USERNAME)
+            - -v
+            - db_password=$(DB_PASSWORD)
+            - -f
+            - /etc/init-data/init.sql
+
+{{- end }}

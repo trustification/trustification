@@ -4,9 +4,18 @@ partOf: trustification
 replicas: 1
 
 image:
+  name: trust
   registry: ghcr.io/trustification
   pullPolicy: IfNotPresent
   version: 61c7f8608867b1246ec11ca9f27d5428254d9d74
+
+guac:
+  image:
+    name: trust
+    registry: ghcr.io/guac
+    pullPolicy: IfNotPresent
+    version: 61c7f8608867b1246ec11ca9f27d5428254d9d74
+  database: {}
 
 ingress: {}
 
@@ -140,3 +149,14 @@ modules:
     tracing: {}
     metrics: {}
     storageSize: 10Gi
+
+  guacGraphql:
+    enabled: true
+    image: {}
+
+  guacInitDb:
+    enabled: true
+    image:
+      registry: docker.io/library
+      name: postgres
+      version: "15"

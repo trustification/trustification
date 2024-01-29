@@ -81,6 +81,15 @@ properties:
   rustLogFilter:
     type: string
 
+  guac:
+    type: object
+    additionalProperties: false
+    properties:
+      image:
+        $ref: "#/definitions/ImageConfig"
+      database:
+        $ref: "#/definitions/PostgresConfig"
+
   modules:
     type: object
     additionalProperties: false
@@ -92,6 +101,7 @@ properties:
           - $ref: "#/definitions/Image"
           - $ref: "#/definitions/Ingress"
           - $ref: "#/definitions/Application"
+          - $ref: "#/definitions/Scalable"
 
       bombasticApi:
         allOf:
@@ -99,6 +109,7 @@ properties:
           - $ref: "#/definitions/Image"
           - $ref: "#/definitions/Ingress"
           - $ref: "#/definitions/Application"
+          - $ref: "#/definitions/Scalable"
           - $ref: "#/definitions/RustApplication"
           - $ref: "#/definitions/Authenticator"
           - $ref: "#/definitions/Metrics"
@@ -139,6 +150,7 @@ properties:
           - $ref: "#/definitions/Image"
           - $ref: "#/definitions/Ingress"
           - $ref: "#/definitions/Application"
+          - $ref: "#/definitions/Scalable"
           - $ref: "#/definitions/RustApplication"
           - $ref: "#/definitions/Authenticator"
           - $ref: "#/definitions/Metrics"
@@ -165,6 +177,7 @@ properties:
           - $ref: "#/definitions/Image"
           - $ref: "#/definitions/Ingress"
           - $ref: "#/definitions/Application"
+          - $ref: "#/definitions/Scalable"
           - type: object
             properties:
               initialBackendJson:
@@ -180,6 +193,7 @@ properties:
           - $ref: "#/definitions/Image"
           - $ref: "#/definitions/Ingress"
           - $ref: "#/definitions/Application"
+          - $ref: "#/definitions/Scalable"
           - $ref: "#/definitions/RustApplication"
           - $ref: "#/definitions/Authenticator"
           - $ref: "#/definitions/Metrics"
@@ -194,6 +208,7 @@ properties:
           - $ref: "#/definitions/Feature"
           - $ref: "#/definitions/Image"
           - $ref: "#/definitions/Application"
+          - $ref: "#/definitions/Scalable"
           - $ref: "#/definitions/RustApplication"
           - $ref: "#/definitions/Metrics"
           - $ref: "#/definitions/Tracing"
@@ -213,6 +228,7 @@ properties:
           - $ref: "#/definitions/Image"
           - $ref: "#/definitions/Ingress"
           - $ref: "#/definitions/Application"
+          - $ref: "#/definitions/Scalable"
           - $ref: "#/definitions/RustApplication"
           - $ref: "#/definitions/Authenticator"
           - $ref: "#/definitions/Metrics"
@@ -227,6 +243,7 @@ properties:
           - $ref: "#/definitions/Feature"
           - $ref: "#/definitions/Image"
           - $ref: "#/definitions/Application"
+          - $ref: "#/definitions/Scalable"
           - $ref: "#/definitions/RustApplication"
           - $ref: "#/definitions/Metrics"
           - $ref: "#/definitions/Tracing"
@@ -245,6 +262,7 @@ properties:
           - $ref: "#/definitions/Feature"
           - $ref: "#/definitions/Image"
           - $ref: "#/definitions/Application"
+          - $ref: "#/definitions/Scalable"
           - $ref: "#/definitions/RustApplication"
           - $ref: "#/definitions/Metrics"
           - $ref: "#/definitions/Tracing"
@@ -259,6 +277,37 @@ properties:
                 type: boolean
               gitImage:
                 $ref: "#/definitions/ImageConfig"
+
+      guacGraphql:
+        allOf:
+          - $ref: "#/definitions/Feature"
+          - $ref: "#/definitions/Image"
+          - $ref: "#/definitions/Application"
+          - $ref: "#/definitions/Scalable"
+          - $ref: "#/definitions/Postgres"
+
+      guacInitDb:
+        allOf:
+          - $ref: "#/definitions/Feature"
+          - $ref: "#/definitions/Image"
+          - $ref: "#/definitions/Application"
+          - $ref: "#/definitions/Postgres"
+          - type: object
+            properties:
+              targetDatabase:
+                type: object
+                additionalProperties: false
+                required:
+                  - name
+                  - username
+                  - password
+                properties:
+                  name:
+                    $ref: "#/definitions/ValueOrRef"
+                  username:
+                    $ref: "#/definitions/ValueOrRef"
+                  password:
+                    $ref: "#/definitions/ValueOrRef"
 
 # for infrastructure
 
@@ -276,12 +325,19 @@ properties:
 
 definitions:
 
+  Scalable:
+    allOf:
+      - type: object
+        properties:
+          replicas:
+            type: integer
+            minimum: 0
+
   Application:
     type: object
     properties:
-      replicas:
-        type: integer
-        minimum: 0
+      serviceAccountName:
+        type: string
       resources:
         type: object
 
@@ -329,6 +385,8 @@ definitions:
     type: object
     additionalProperties: false
     properties:
+      name:
+        type: string
       registry:
         type: string
       pullPolicy:
@@ -737,3 +795,23 @@ definitions:
       - SASL_PLAINTEXT
       # - SSL
       # - SASL_SSL
+
+  Postgres:
+    type: object
+    properties:
+      database:
+        $ref: "#/definitions/PostgresConfig"
+
+  PostgresConfig:
+    type: object
+    properties:
+      host:
+        $ref: "#/definitions/ValueOrRef"
+      port:
+        $ref: "#/definitions/ValueOrRef"
+      name:
+        $ref: "#/definitions/ValueOrRef"
+      username:
+        $ref: "#/definitions/ValueOrRef"
+      password:
+        $ref: "#/definitions/ValueOrRef"

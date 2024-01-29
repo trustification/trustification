@@ -5,7 +5,7 @@ appDomain: change-me
 tracing: {}
 
 storage:
-  endpoint: http://infrastructure-minio.trustification.svc.cluster.local:9000
+  endpoint: http://infrastructure-minio:9000
   accessKey:
     valueFrom:
       secretKeyRef:
@@ -19,7 +19,7 @@ storage:
 
 eventBus:
   type: kafka
-  bootstrapServers: infrastructure-kafka.trustification.svc.cluster.local:9092
+  bootstrapServers: infrastructure-kafka:9092
   config:
     securityProtocol: SASL_PLAINTEXT
     username: "user1"
@@ -74,3 +74,21 @@ kafka:
   enabled: true
   kraft:
     clusterId: "3nA2qspzReOmcxqlkmITAA"
+
+guac:
+  database:
+    name: guac
+    host: infrastructure-postgresql
+    username: "guac"
+    password: "guac1234"
+
+modules:
+  guacInitDb:
+    database:
+      name: postgres
+      username: postgres
+      password:
+        valueFrom:
+          secretKeyRef:
+            name: infrastructure-postgresql
+            key: postgres-password
