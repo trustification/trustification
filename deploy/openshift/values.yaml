@@ -6,8 +6,8 @@ testsImage: ${INTEGRATION_TESTS_IMAGE}
 domain: ${DOMAIN}
 createRoutes: false
 replicas: ${{REPLICAS}}
-graphqlReplicas: ${{GUAC_GRAPHQL_REPLICAS}}
 collectSubReplicas: ${{GUAC_COLLECTSUB_REPLICAS}}
+graphqlReplicas: ${{GUAC_GRAPHQL_REPLICAS}}
 imagePullPolicy: Always
 region: ${AWS_REGION}
 enableDocs: false
@@ -19,6 +19,7 @@ spog:
   branding: false
   crdaUrl: ${CRDA_URL}
   ui:
+    replicas: ${{SPOG_UI_REPLICAS}}
     customize: true
     resources: ${{SPOG_UI_RESOURCES}}
     initialBackendJson: ${INITIAL_BACKEND_JSON}
@@ -28,6 +29,7 @@ spog:
           name: ${SEGMENT_SECRET_NAME}
           key: ${SEGMENT_SECRET_UI_KEY}
   api:
+    replicas: ${{SPOG_API_REPLICAS}}
     resources: ${{SPOG_API_RESOURCES}}
     logLevel: ${LOG_LEVEL}
     snyk:
@@ -46,6 +48,7 @@ bombastic:
     schedule: ${BOMBASTIC_COLLECTOR_SCHEDULE}
     resources: ${{BOMBASTIC_COLLECTOR_RESOURCES}}
   indexer:
+    replicas: ${{BOMBASTIC_INDEXER_REPLICAS}}
     reindex: true
     indexSyncInterval: ${BOMBASTIC_INDEXER_INDEX_SYNC_INTERVAL}
     indexWriterMemoryBytes: ${BOMBASTIC_INDEXER_INDEX_WRITER_MEMORY_BYTES}
@@ -67,6 +70,7 @@ bombastic:
     indexSyncInterval: ${BOMBASTIC_API_INDEX_SYNC_INTERVAL}
     resources: ${{BOMBASTIC_API_RESOURCES}}
     logLevel: ${LOG_LEVEL}
+    replicas: ${{BOMBASTIC_API_REPLICAS}}
 v11y:
   enabled: true
   bucket: ${V11Y_STORAGE_BUCKET}
@@ -76,7 +80,9 @@ v11y:
     indexSyncInterval: ${V11Y_API_INDEX_SYNC_INTERVAL}
     resources: ${{V11Y_API_RESOURCES}}
     logLevel: ${LOG_LEVEL}
+    replicas: ${{V11Y_API_REPLICAS}}
   indexer:
+    replicas: ${{V11Y_INDEXER_REPLICAS}}
     reindex: false
     indexSyncInterval: ${V11Y_INDEXER_INDEX_SYNC_INTERVAL}
     indexWriterMemoryBytes: ${V11Y_INDEXER_INDEX_WRITER_MEMORY_BYTES}
@@ -94,11 +100,13 @@ v11y:
 collectorist:
   enabled: false
   api:
+    replicas: ${{COLLECTORIST_API_REPLICAS}}
     resources: ${{COLLECTORIST_RESOURCES}}
     logLevel: ${LOG_LEVEL}
 exhort:
   enabled: true
   api:
+    replicas: ${{EXHORT_API_REPLICAS}}
     resources: ${{EXHORT_API_RESOURCES}}
     logLevel: ${LOG_LEVEL}
 collector:
@@ -127,6 +135,7 @@ vexination:
     ignore: https://access.redhat.com/security/data/csaf/v2/advisories/
     logLevel: ${LOG_LEVEL}
   indexer:
+    replicas: ${{VEXINATION_INDEXER_REPLICAS}}
     reindex: false
     indexSyncInterval: ${VEXINATION_INDEXER_INDEX_SYNC_INTERVAL}
     indexWriterMemoryBytes: ${VEXINATION_INDEXER_INDEX_WRITER_MEMORY_BYTES}
@@ -137,6 +146,7 @@ vexination:
     resources: ${{VEXINATION_INDEXER_RESOURCES}}
     logLevel: ${LOG_LEVEL}
   api:
+    replicas: ${{VEXINATION_API_REPLICAS}}
     indexSyncInterval: ${VEXINATION_API_INDEX_SYNC_INTERVAL}
     resources: ${{VEXINATION_API_RESOURCES}}
     logLevel: ${LOG_LEVEL}
