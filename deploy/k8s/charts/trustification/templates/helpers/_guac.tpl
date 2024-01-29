@@ -8,4 +8,4 @@ Arguments (dict):
 */}}
 {{- define "trustification.guac.defaultImage" }}
 {{- include "trustification.common.image" ( dict "root" .root "image" .module.image "imageName" .imageName "defaults" .root.Values.guac.image )}}
-{{- end
+{{- end }}
