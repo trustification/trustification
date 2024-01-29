@@ -5,11 +5,11 @@ Arguments: string or object
 */}}
 {{- define "trustification.common.envVarValue" }}
 
-{{- if kindIs "string" . }}{{/* if it's a string, we use it as value */}}
+{{- if kindIs "string" . }}{{/* if it's a string, we use it as value */ -}}
 value: {{ . | quote }}
-{{- else if empty . }}{{/* if it's empty, we drop the value section */}}
+{{- else if empty . }}{{/* if it's empty, we drop the value section */ -}}
 {{- else }}
-{{ . | toYaml }}{{/* otherwise, it must be an oject */}}
+{{- . | toYaml }}{{/* otherwise, it must be an oject */ -}}
 {{- end }}
 
 {{- end }}
@@ -24,17 +24,4 @@ Arguments: (dict)
 {{- define "trustification.common.requiredEnvVarValue" }}
 {{- $_ := required .msg .value }}
 {{- include "trustification.common.envVarValue" .value }}
-{{- end }}
-
-{{/*
-Inject service account field, when necessary.
-
-Arguments (dict):
-  * root - .
-  * module - module object
-*/}}
-{{- define "trustification.common.serviceAccount" }}
-{{- with .module.serviceAccountName }}
-serviceAccountName: {{ . | quote }}
-{{- end }}
 {{- end }}

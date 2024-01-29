@@ -24,6 +24,8 @@ spec:
         configHash/ui: {{ include (print $.Template.BasePath "/services/spog/api/020-ConfigMap-ui.yaml") . | sha256sum }}
 
     spec:
+      {{- include "trustification.application.pod" $mod | nindent 6 }}
+
       containers:
         - name: service
           {{ include "trustification.common.defaultImage" $mod | nindent 10 }}
@@ -88,7 +90,7 @@ spec:
             - containerPort: 8080
               protocol: TCP
 
-          {{- include "trustification.application.resources" $mod | nindent 10 }}
+          {{- include "trustification.application.container" $mod | nindent 10 }}
           {{- include "trustification.application.infrastructure.probes" $mod | nindent 10 }}
 
           volumeMounts:

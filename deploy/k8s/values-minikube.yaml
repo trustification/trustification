@@ -82,13 +82,12 @@ guac:
     username: "guac"
     password: "guac1234"
 
-modules:
-  guacInitDb:
-    database:
-      name: postgres
-      username: postgres
-      password:
-        valueFrom:
-          secretKeyRef:
-            name: infrastructure-postgresql
-            key: postgres-password
+  initDatabase:
+    name: postgres
+    host: infrastructure-postgresql
+    username: postgres
+    password:
+      valueFrom:
+        secretKeyRef:
+          name: infrastructure-postgresql
+          key: postgres-password

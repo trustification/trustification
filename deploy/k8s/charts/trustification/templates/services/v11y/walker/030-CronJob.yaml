@@ -19,6 +19,8 @@ spec:
             {{- include "trustification.common.selectorLabels" $mod | nindent 12 }}
 
         spec:
+          {{- include "trustification.application.pod" $mod | nindent 10 }}
+
           restartPolicy: Never
           volumes:
             - name: cvelist
@@ -28,6 +30,7 @@ spec:
           initContainers:
             - name: git-fetch
               {{- include "trustification.common.image" (merge (deepCopy $mod) (dict "image" $mod.module.gitImage "imageName" "git" ) ) | nindent 14 }}
+              {{- include "trustification.application.container" $mod | nindent 14 }}
 
               volumeMounts:
                 - mountPath: /git
@@ -69,7 +72,7 @@ spec:
               ports:
                 {{- include "trustification.application.infrastructure.podPorts" $mod | nindent 16 }}
 
-              {{- include "trustification.application.resources" $mod | nindent 14 }}
+              {{- include "trustification.application.pod" $mod | nindent 14 }}
               {{- include "trustification.application.infrastructure.probes" $mod | nindent 14 }}
 
 {{ end }}

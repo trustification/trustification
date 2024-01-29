@@ -20,17 +20,38 @@ Arguments (dict):
 {{- include "trustification.application.metrics.podLabels" . }}
 {{- end }}
 
-
 {{/*
-Resource section for applications.
+Pod settings
 
 Arguments (dict):
-  * root -.
+  * root - .
   * module - module object
 */}}
-{{- define "trustification.application.resources" }}
+{{- define "trustification.application.pod" }}
+
+{{- with .module.serviceAccountName }}
+serviceAccountName: {{ . | quote }}
+{{- end }}
+
+{{- with .module.affinity }}
+affinity:
+  {{- . | toYaml | nindent 2 }}
+{{- end }}
+
+{{- end }}
+
+{{/*
+Default container settings
+
+Arguments (dict):
+  * root - .
+  * module - module object
+*/}}
+{{- define "trustification.application.container" }}
+
 {{- with .module.resources }}
 resources:
   {{- . | toYaml | nindent 2 }}
 {{ end }}
+
 {{- end }}

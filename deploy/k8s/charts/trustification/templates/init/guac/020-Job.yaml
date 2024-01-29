@@ -27,7 +27,7 @@ spec:
 
       restartPolicy: OnFailure
 
-      {{- include "trustification.common.serviceAccount" $mod | nindent 6 }}
+      {{- include "trustification.application.pod" $mod | nindent 6 }}
 
       volumes:
         - name: init-data
@@ -37,16 +37,19 @@ spec:
       containers:
         - name: setup
           {{- include "trustification.guac.defaultImage" $mod | nindent 10 }}
+          {{- include "trustification.application.container" $mod | nindent 6 }}
 
           env:
-            {{- include "trustification.postgres.envVars" ( set (deepCopy $mod) "defaults" .Values.guac.database ) | nindent 12 }}
+            # connect using the `initDatabase` settings
+            {{- include "trustification.postgres.envVars" ( dict "root" . "database" ( required "Using guacInitDb requires setting .Values.guac.initDatabase" .Values.guac.initDatabase )  "defaults" .Values.guac.database ) | nindent 12 }}
 
+            # create a user with the `database` settings
             - name: DB_NAME
-              {{- include "trustification.common.envVarValue" (($mod.targetDatabase).name | default .Values.guac.database.name ) | nindent 14 }}
+              {{- include "trustification.common.envVarValue" .Values.guac.database.name | nindent 14 }}
             - name: DB_USERNAME
-              {{- include "trustification.common.envVarValue" (($mod.targetDatabase).username | default .Values.guac.database.username ) | nindent 14 }}
+              {{- include "trustification.common.envVarValue" .Values.guac.database.username | nindent 14 }}
             - name: DB_PASSWORD
-              {{- include "trustification.common.envVarValue" (($mod.targetDatabase).password | default .Values.guac.database.password ) | nindent 14 }}
+              {{- include "trustification.common.envVarValue" .Values.guac.database.password | nindent 14 }}
 
           volumeMounts:
             - mountPath: /etc/init-data
