@@ -55,14 +55,12 @@ services:
         /usr/bin/mc policy download myminio/bombastic;
         /usr/bin/mc event add myminio/bombastic arn:minio:sqs::BOMBASTIC:kafka --event "put,delete";
 
-        /usr/bin/mc mb myminio/vexination || true;
-        /usr/bin/mc policy download myminio/vexination;
-        /usr/bin/mc event add myminio/vexination arn:minio:sqs::VEXINATION:kafka --event put;
-        /usr/bin/mc admin service restart myminio;
+        /usr/bin/mc event add myminio/bombastic arn:minio:sqs::VEXINATION:kafka --event put;
 
         /usr/bin/mc mb myminio/v11y || true;
         /usr/bin/mc policy download myminio/v11y;
         /usr/bin/mc event add myminio/v11y arn:minio:sqs::V11Y:kafka --event put;
+
         /usr/bin/mc admin service restart myminio;
 
   kafka:
