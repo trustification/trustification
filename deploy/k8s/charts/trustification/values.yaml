@@ -157,6 +157,10 @@ modules:
       enabled: true
       database: {}
 
+  guacCollectsub:
+    enabled: true
+    image: {}
+
   guacInitDb:
     enabled: true
     image:

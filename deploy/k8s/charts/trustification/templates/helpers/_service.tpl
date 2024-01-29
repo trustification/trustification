@@ -18,7 +18,7 @@ spec:
   - name: endpoint
     port: 80
     protocol: TCP
-    targetPort: 8080
+    targetPort: endpoint
   selector:
     {{- include "trustification.common.selectorLabels" . | nindent 4 }}
   type: ClusterIP

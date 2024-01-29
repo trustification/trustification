@@ -1,0 +1,52 @@
+{{- if .Values.modules.guacCollectsub.enabled }}
+{{- $mod := dict "root" . "name" "guac-collectsub" "component" "guac" "module" .Values.modules.guacCollectsub -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "trustification.common.name" $mod }}
+  labels:
+    {{- include "trustification.common.labels" $mod | nindent 4 }}
+  annotations:
+    {{- include "trustification.application.annotations" $mod | nindent 4 }}
+
+spec:
+  replicas: 1 # must be one
+
+  selector:
+    matchLabels:
+      {{- include "trustification.common.selectorLabels" $mod | nindent 6 }}
+
+  template:
+    metadata:
+      labels:
+        {{- include "trustification.common.selectorLabels" $mod | nindent 8 }}
+        {{- include "trustification.application.podLabels" $mod | nindent 8 }}
+      annotations:
+        config/checksum: {{ include (print $.Template.BasePath "/services/guac/020-ConfigMap.yaml") . | sha256sum }}
+
+    spec:
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "trustification.common.name" (dict "root" . "name" "guac") }}
+
+      containers:
+        - name: service
+          {{- include "trustification.guac.defaultImage" $mod | nindent 10 }}
+          command: ["/opt/guac/guaccsub"]
+          args: []
+          workingDir: "/guac"
+          volumeMounts:
+            - mountPath: /etc/config
+              name: config
+              readOnly: true
+
+          livenessProbe:
+            tcpSocket:
+              port: 2782
+
+          ports:
+            - containerPort: 2782
+              protocol: TCP
+              name: endpoint
+{{ end }}
