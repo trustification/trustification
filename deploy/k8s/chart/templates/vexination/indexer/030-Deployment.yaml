@@ -7,7 +7,7 @@ metadata:
     app.kubernetes.io/component: indexer
     app.kubernetes.io/part-of: trustification
 spec:
-  replicas: 1
+  replicas: {{ .Values.vexination.indexer.replicas | default 1}}
   strategy:
     type: Recreate
   selector:
