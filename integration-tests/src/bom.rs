@@ -284,9 +284,9 @@ fn bombastic_api() -> bombastic_api::Run {
 // Configuration for the vexination indexer
 fn vexination_indexer() -> vexination_indexer::Run {
     vexination_indexer::Run {
-        stored_topic: "sbom-stored".into(),
-        failed_topic: "sbom-failed".into(),
-        indexed_topic: "sbom-indexed".into(),
+        stored_topic: "vex-stored".into(),
+        indexed_topic: "vex-indexed".into(),
+        failed_topic: "vex-failed".into(),
         devmode: true,
         reindex: ReindexMode::Always,
         bus: EventBusConfig {

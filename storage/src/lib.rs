@@ -327,13 +327,6 @@ impl Storage {
         })
     }
 
-    pub fn name(&self) -> String {
-        match &self.resolver.prefix {
-            None => String::new(),
-            Some(n) => n.to_string(),
-        }
-    }
-
     pub fn is_relevant(&self, path: &str) -> bool {
         self.resolver.is_relevant(path)
     }

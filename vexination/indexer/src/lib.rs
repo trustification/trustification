@@ -59,7 +59,7 @@ impl Run {
                         IndexStore::new(&self.storage, &self.index, index, context.metrics.registry())
                     })?;
                     let storage = Storage::new(
-                        storage.process("bombastic", self.devmode),
+                        storage.process("vexination", self.devmode),
                         Validator::VEX,
                         context.metrics.registry(),
                     )?;
