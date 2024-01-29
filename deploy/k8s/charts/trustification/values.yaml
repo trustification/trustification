@@ -11,10 +11,10 @@ image:
 
 guac:
   image:
-    name: trust
-    registry: ghcr.io/guac
+    name: guac
+    registry: ghcr.io/trustification
     pullPolicy: IfNotPresent
-    version: 61c7f8608867b1246ec11ca9f27d5428254d9d74
+    version: "v0.3.21"
   database: {}
 
 ingress: {}
@@ -153,6 +153,9 @@ modules:
   guacGraphql:
     enabled: true
     image: {}
+    initDatabase:
+      enabled: true
+      database: {}
 
   guacInitDb:
     enabled: true

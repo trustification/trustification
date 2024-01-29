@@ -26,6 +26,8 @@ spec:
 
     spec:
 
+      {{- include "trustification.application.pod" $mod | nindent 6 }}
+
       volumes:
         - name: data
           emptyDir: {}
@@ -74,6 +76,6 @@ spec:
           ports:
             {{- include "trustification.application.infrastructure.podPorts" $mod | nindent 12 }}
 
-          {{- include "trustification.application.resources" $mod | nindent 10 }}
+          {{- include "trustification.application.container" $mod | nindent 10 }}
           {{- include "trustification.application.infrastructure.probes" $mod | nindent 10 }}
 {{ end }}

@@ -15,7 +15,10 @@ spec:
     metadata:
       labels:
         {{- include "trustification.common.selectorLabels" $mod | nindent 8 }}
+
     spec:
+      {{- include "trustification.application.pod" $mod | nindent 6 }}
+
       volumes:
         - name: endpoints
           emptyDir: {}
@@ -31,7 +34,7 @@ spec:
             - containerPort: 8080
               protocol: TCP
 
-          {{- include "trustification.application.resources" $mod | nindent 10 }}
+          {{- include "trustification.application.container" $mod | nindent 10 }}
 
           livenessProbe:
             httpGet:

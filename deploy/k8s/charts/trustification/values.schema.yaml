@@ -89,6 +89,10 @@ properties:
         $ref: "#/definitions/ImageConfig"
       database:
         $ref: "#/definitions/PostgresConfig"
+      migrateDatabase:
+        $ref: "#/definitions/GuacMigrateDatabaseConfig"
+      initDatabase:
+        $ref: "#/definitions/PostgresConfig"
 
   modules:
     type: object
@@ -284,30 +288,13 @@ properties:
           - $ref: "#/definitions/Image"
           - $ref: "#/definitions/Application"
           - $ref: "#/definitions/Scalable"
-          - $ref: "#/definitions/Postgres"
 
       guacInitDb:
         allOf:
           - $ref: "#/definitions/Feature"
           - $ref: "#/definitions/Image"
           - $ref: "#/definitions/Application"
-          - $ref: "#/definitions/Postgres"
-          - type: object
-            properties:
-              targetDatabase:
-                type: object
-                additionalProperties: false
-                required:
-                  - name
-                  - username
-                  - password
-                properties:
-                  name:
-                    $ref: "#/definitions/ValueOrRef"
-                  username:
-                    $ref: "#/definitions/ValueOrRef"
-                  password:
-                    $ref: "#/definitions/ValueOrRef"
+
 
 # for infrastructure
 
@@ -339,6 +326,8 @@ definitions:
       serviceAccountName:
         type: string
       resources:
+        type: object
+      affinity:
         type: object
 
   RustApplication:
@@ -804,6 +793,12 @@ definitions:
 
   PostgresConfig:
     type: object
+    additionalProperties: false
+    required:
+      - host
+      - name
+      - username
+      - password
     properties:
       host:
         $ref: "#/definitions/ValueOrRef"
@@ -811,6 +806,18 @@ definitions:
         $ref: "#/definitions/ValueOrRef"
       name:
         $ref: "#/definitions/ValueOrRef"
+      username:
+        $ref: "#/definitions/ValueOrRef"
+      password:
+        $ref: "#/definitions/ValueOrRef"
+
+  GuacMigrateDatabaseConfig:
+    type: object
+    additionalProperties: false
+    required:
+      - username
+      - password
+    properties:
       username:
         $ref: "#/definitions/ValueOrRef"
       password:
