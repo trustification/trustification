@@ -289,6 +289,12 @@ properties:
           - $ref: "#/definitions/Application"
           - $ref: "#/definitions/Scalable"
 
+      guacCollectsub:
+        allOf:
+          - $ref: "#/definitions/Feature"
+          - $ref: "#/definitions/Image"
+          - $ref: "#/definitions/Application"
+
       guacInitDb:
         allOf:
           - $ref: "#/definitions/Feature"

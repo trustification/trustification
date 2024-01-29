@@ -1,0 +1,18 @@
+{{- if .Values.modules.guacCollectsub.enabled }}
+{{- $mod := dict "root" . "name" "guac-collectsub" "component" "guac" "module" .Values.modules.guacCollectsub -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "trustification.common.name" $mod }}
+  labels:
+    {{- include "trustification.common.labels" $mod | nindent 4 }}
+spec:
+  ports:
+    - name: endpoint
+      port: 2782
+      protocol: TCP
+      targetPort: endpoint
+  selector:
+    {{- include "trustification.common.selectorLabels" $mod | nindent 4 }}
+  type: ClusterIP
+{{- end }}

@@ -19,6 +19,8 @@ spec:
       labels:
         {{- include "trustification.common.selectorLabels" $mod | nindent 8 }}
         {{- include "trustification.application.podLabels" $mod | nindent 8 }}
+      annotations:
+        config/checksum: {{ include (print $.Template.BasePath "/services/guac/020-ConfigMap.yaml") . | sha256sum }}
 
     spec:
       {{- include "trustification.application.pod" $mod | nindent 6 }}
@@ -26,7 +28,7 @@ spec:
       volumes:
         - name: config
           configMap:
-            name: guac
+            name: {{ include "trustification.common.name" (dict "root" . "name" "guac") }}
 
       initContainers:
         - name: migrate
@@ -74,7 +76,7 @@ spec:
           {{- include "trustification.application.container" $mod | nindent 10 }}
 
           livenessProbe:
-            httpGet:
+            tcpSocket:
               port: 8080
 
           ports:
