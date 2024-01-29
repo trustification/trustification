@@ -128,7 +128,6 @@ properties:
           - $ref: "#/definitions/Feature"
           - $ref: "#/definitions/Image"
           - $ref: "#/definitions/Application"
-          - $ref: "#/definitions/RustApplication"
 
       bombasticIndexer:
         allOf:
@@ -225,6 +224,12 @@ properties:
                 type: boolean
               topics:
                 $ref: "#/definitions/StorageTopics"
+
+      vexinationCollector:
+        allOf:
+          - $ref: "#/definitions/Feature"
+          - $ref: "#/definitions/Image"
+          - $ref: "#/definitions/Application"
 
       v11yApi:
         allOf:
