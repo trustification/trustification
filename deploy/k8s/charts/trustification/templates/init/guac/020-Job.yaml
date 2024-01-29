@@ -23,6 +23,10 @@ spec:
   ttlSecondsAfterFinished: 600
 
   template:
+    metadata:
+      labels:
+        {{- include "trustification.common.selectorLabels" $mod | nindent 12 }}
+
     spec:
 
       restartPolicy: OnFailure

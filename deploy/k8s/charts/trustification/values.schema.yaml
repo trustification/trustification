@@ -266,7 +266,6 @@ properties:
           - $ref: "#/definitions/Feature"
           - $ref: "#/definitions/Image"
           - $ref: "#/definitions/Application"
-          - $ref: "#/definitions/Scalable"
           - $ref: "#/definitions/RustApplication"
           - $ref: "#/definitions/Metrics"
           - $ref: "#/definitions/Tracing"
@@ -301,6 +300,11 @@ properties:
           - $ref: "#/definitions/Image"
           - $ref: "#/definitions/Application"
 
+      initDataset:
+        allOf:
+          - $ref: "#/definitions/Feature"
+          - $ref: "#/definitions/Image"
+          - $ref: "#/definitions/Application"
 
 # for infrastructure
 

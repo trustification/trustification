@@ -34,8 +34,6 @@ spec:
             - "api"
             - "-p"
             - "8080"
-            - "--validator"
-            - "sbom"
 
             - "--index-mode"
             - {{ $mod.indexMode | default "file" | quote }}
@@ -67,6 +65,7 @@ spec:
           ports:
             {{- include "trustification.application.infrastructure.podPorts" $mod | nindent 12 }}
             - containerPort: 8080
+              name: endpoint
               protocol: TCP
 
           {{- include "trustification.application.container" $mod | nindent 10 }}

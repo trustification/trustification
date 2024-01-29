@@ -8,6 +8,7 @@ metadata:
     {{- include "trustification.common.labels" $mod | nindent 4 }}
   annotations:
     {{- include "trustification.application.annotations" $mod | nindent 4 }}
+
 spec:
   replicas: 1 # must be one
 

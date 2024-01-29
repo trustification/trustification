@@ -78,6 +78,7 @@ spec:
 
           ports:
             - containerPort: 8080
+              name: endpoint
               protocol: TCP
 
           {{- include "trustification.application.container" $mod | nindent 10 }}
