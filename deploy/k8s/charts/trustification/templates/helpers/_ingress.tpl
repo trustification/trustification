@@ -17,10 +17,10 @@ Hostname for a common service
 Arguments (dict):
   * root - .
   * defaultHost - default name of the host (in addition to the domain)
-  * module - module object
+  * ingress - default ingress object
 */}}
 {{ define "trustification.ingress.host" }}
-{{- with .module.ingress.host }}
+{{- with .ingress.host }}
 {{- . }}
 {{- else -}}
 {{- .defaultHost }}{{- .root.Values.appDomain }}

@@ -153,12 +153,9 @@ modules:
   guacGraphql:
     enabled: true
     image: {}
-    initDatabase:
-      enabled: true
-      database: {}
 
   guacCollectsub:
-    enabled: true
+    enabled: false
     image: {}
 
   guacInitDb:
@@ -167,3 +164,7 @@ modules:
       registry: docker.io/library
       name: postgres
       version: "15"
+
+  initDataset:
+    enabled: true
+    image: {}
