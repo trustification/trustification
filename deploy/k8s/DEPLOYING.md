@@ -48,3 +48,22 @@ kubectl -n trustification create job --from=cronjob/v11y-walker v11y-walker-init
 kubectl -n trustification create job --from=cronjob/bombastic-collector bombastic-collector-initial
 kubectl -n trustification create job --from=cronjob/vexination-collector vexination-collector-initial
 ```
+
+### OpenShift (without AWS)
+
+Ensure you are logged in to an OpenShift cluster and have the permission to create new projects and workload.
+
+Create a namespace:
+
+```shell
+oc new-project trustification
+```
+
+Then, deploy the application:
+
+```shell
+# APP_DOMAIN=""
+APP_DOMAIN=$(kubectl -n openshift-ingress-operator get ingresscontrollers.operator.openshift.io default -o jsonpath='{.status.domain}')
+helm upgrade --install -n trustification infrastructure charts/trustification-infrastructure --values values-ocp-no-aws.yaml --set-string keycloak.ingress.hostname=sso.$APP_DOMAIN --set-string appDomain=$APP_DOMAIN
+helm upgrade --install -n trustification trustification charts/trustification --values values-ocp-no-aws.yaml --set-string appDomain=$APP_DOMAIN
+```

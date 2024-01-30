@@ -1,0 +1,130 @@
+## Trustification
+
+appDomain: change-me
+
+tracing: {}
+
+storage:
+  endpoint: http://infrastructure-minio:9000
+  accessKey:
+    valueFrom:
+      secretKeyRef:
+        name: infrastructure-minio
+        key: root-user
+  secretKey:
+    valueFrom:
+      secretKeyRef:
+        name: infrastructure-minio
+        key: root-password
+
+eventBus:
+  type: kafka
+  bootstrapServers: infrastructure-kafka:9092
+  config:
+    securityProtocol: SASL_PLAINTEXT
+    username: "user1"
+    password:
+      valueFrom:
+        secretKeyRef:
+          name: infrastructure-kafka-user-passwords
+          key: client-passwords
+    mechanism: PLAIN
+
+## Infrastructure
+
+minio:
+  enabled: true
+  rootPassword: minio123456
+  podSecurityContext:
+    enabled: false
+  containerSecurityContext:
+    enabled: false
+
+keycloak:
+  enabled: true
+  production: true
+  proxy: reencrypt
+  podSecurityContext:
+    enabled: false
+  containerSecurityContext:
+    enabled: false
+  auth:
+    adminUser: admin
+    adminPassword: admin123456
+  tls:
+    enabled: true
+    existingSecret: sso-tls
+    usePem: true
+  service:
+    annotations:
+      service.beta.openshift.io/serving-cert-secret-name: sso-tls
+  ingress:
+    enabled: true
+    ingressClassName: openshift-default
+    servicePort: https
+    annotations:
+      route.openshift.io/termination: reencrypt
+  postgresql:
+    primary:
+      containerSecurityContext:
+        enabled: false
+      podSecurityContext:
+        enabled: false
+
+# NOTE: the following "secrets" are obviously not SECRET. So don't rely on them except for maybe local testing.
+oidc:
+  clients:
+    frontend: {}
+    walker:
+      clientSecret:
+        value: 5460cc91-4e20-4edd-881c-b15b169f8a79
+    testingUser:
+      clientSecret:
+        value: 0e6bf990-43b4-4efb-95d7-b24f2b94a525
+    testingManager:
+      clientSecret:
+        value: ca48053c-3b82-4650-a98d-4cace7f2d567
+
+postgres:
+  enabled: true
+  auth:
+    postgresPassword: postgres123456
+    username: trustification
+    password: postgres1234
+  primary:
+    podSecurityContext:
+      enabled: false
+    containerSecurityContext:
+      enabled: false
+
+kafka:
+  enabled: true
+  kraft:
+    clusterId: "3nA2qspzReOmcxqlkmITAA"
+  controller:
+    podSecurityContext:
+      enabled: false
+    containerSecurityContext:
+      enabled: false
+  provisioning:
+    podSecurityContext:
+      enabled: false
+    containerSecurityContext:
+      enabled: false
+
+guac:
+  database:
+    name: guac
+    host: infrastructure-postgresql
+    username: "guac"
+    password: "guac1234"
+
+  initDatabase:
+    name: postgres
+    host: infrastructure-postgresql
+    username: postgres
+    password:
+      valueFrom:
+        secretKeyRef:
+          name: infrastructure-postgresql
+          key: postgres-password
