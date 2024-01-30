@@ -119,7 +119,7 @@ csaf = { git = "https://github.com/voteblake/csaf-rs", rev = "76cb9ede10adb1fbb4
 #sbom-walker = { git = "https://github.com/ctron/csaf-walker", rev = "08884c1b3db9d717fc0365b0df50cd4dd114a5fd" } # FIXME: waiting for release
 
 # also check: spog/ui/Cargo.toml
-cyclonedx-bom = { git = "https://github.com/trustification/cyclonedx-rust-cargo", branch = "trustification" }
+#cyclonedx-bom = { git = "https://github.com/trustification/cyclonedx-rust-cargo", branch = "trustification" }
 #spdx-rs = { git = "https://github.com/trustification/spdx-rs", rev = "c65be086e898dae88609f07bbc5a224ba4e0838d" } # FIXME: awaiting doubleopen-project/spdx-rs#/27
 
 #cve = { git = "https://github.com/ctron/cve", rev = "77341768d893098f1f8b1397364fecfb16b4d776" } # FIXME: awaiting release

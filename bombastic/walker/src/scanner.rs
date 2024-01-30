@@ -3,7 +3,6 @@ use sbom_walker::model::metadata::Key;
 use sbom_walker::retrieve::RetrievingVisitor;
 use sbom_walker::source::{DispatchSource, FileSource, HttpOptions, HttpSource};
 use sbom_walker::validation::ValidationVisitor;
-use sbom_walker::visitors::send::SendVisitor;
 use sbom_walker::walker::Walker;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -26,6 +25,8 @@ pub struct Options {
     pub validation_date: Option<SystemTime>,
     pub fix_licenses: bool,
     pub since_file: Option<PathBuf>,
+    pub retries: usize,
+    pub retry_delay: Option<Duration>,
 }
 
 pub struct Scanner {
@@ -67,9 +68,11 @@ impl Scanner {
 
         let sender = sender::HttpSender::new(self.options.provider.clone(), sender::Options::default()).await?;
 
-        let storage = SendVisitor {
+        let storage = walker_extras::visitors::SendVisitor {
             url: self.options.target.clone(),
             sender,
+            retries: self.options.retries,
+            retry_delay: self.options.retry_delay,
         };
 
         let process = ProcessVisitor {
