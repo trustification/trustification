@@ -50,7 +50,7 @@ spec:
             - {{ . | quote }}
 {{- end }}
             - "--guac"
-            - "http://guac-graphql.{{ .Release.Namespace }}.svc.cluster.local/query"
+            - "{{ include "trustification.tls.http.protocol" $mod }}://guac-graphql.{{ .Release.Namespace }}.svc.cluster.local/query"
             - "--auth-configuration"
             - "/etc/config/auth.yaml"
           env:
