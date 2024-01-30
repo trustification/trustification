@@ -84,6 +84,12 @@ impl GuacService {
         }
     }
 
+    pub fn with_client(url: impl Into<String>, client: reqwest::Client) -> Self {
+        Self {
+            client: GuacClient::with_client(url.into(), client),
+        }
+    }
+
     /// Lookup related packages for a provided Package URL
     #[instrument(skip(self), err)]
     pub async fn get_packages(&self, purl: &str) -> Result<PackageRefList, Error> {

@@ -3171,7 +3171,7 @@ dependencies = [
 [[package]]
 name = "guac"
 version = "0.1.0"
-source = "git+https://github.com/trustification/guac-rs.git?rev=a36282f462c80b79b22547340f0d5416d1a46a44#a36282f462c80b79b22547340f0d5416d1a46a44"
+source = "git+https://github.com/trustification/guac-rs.git?rev=561931b314e4ed486ef0372c6afe9f6b83fa3dd4#561931b314e4ed486ef0372c6afe9f6b83fa3dd4"
 dependencies = [
  "anyhow",
  "async-nats",
