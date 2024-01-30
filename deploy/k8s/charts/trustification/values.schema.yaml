@@ -416,6 +416,8 @@ definitions:
     properties:
       className:
         type: string
+      additionalAnnotations:
+        type: object
 
   Feature:
     type: object
