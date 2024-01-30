@@ -14,13 +14,14 @@ use serde::Deserialize;
 use tokio::sync::{Mutex, RwLock};
 use trustification_auth::client::{TokenInjector, TokenProvider};
 use url::Url;
-use walker_common::utils::url::Urlify;
 use walker_common::{
     fetcher::{Fetcher, FetcherOptions},
     since::Since,
+    utils::url::Urlify,
     validate::ValidationOptions,
 };
 
+#[allow(clippy::too_many_arguments)]
 pub async fn run(
     workers: usize,
     source: String,
@@ -29,9 +30,17 @@ pub async fn run(
     options: ValidationOptions,
     ignore_distributions: Vec<Url>,
     since_file: Option<PathBuf>,
+    additional_root_certificates: Vec<PathBuf>,
 ) -> Result<(), anyhow::Error> {
     let fetcher = Fetcher::new(Default::default()).await?;
-    let client = Arc::new(reqwest::Client::new());
+
+    let mut client = reqwest::ClientBuilder::new();
+    for cert in additional_root_certificates {
+        let pem = std::fs::read(&cert)?;
+        client = client.add_root_certificate(reqwest::tls::Certificate::from_pem(&pem)?);
+    }
+
+    let client = Arc::new(client.build()?);
 
     let validation = ValidationVisitor::new(|advisory: Result<ValidatedAdvisory, ValidationError>| {
         let sink = sink.clone();
