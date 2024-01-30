@@ -73,7 +73,10 @@ impl Server {
             v11y: String::from(self.run.v11y_url.as_str()),
         };
 
-        let guac = web::Data::new(GuacService::new(self.run.guac_url));
+        let guac = web::Data::new(GuacService::with_client(
+            self.run.guac_url,
+            self.run.client.build_client()?,
+        ));
 
         let v11y = web::Data::new(V11yService::new(
             self.run.client.build_client()?,
