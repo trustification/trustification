@@ -18,7 +18,7 @@ trustification-auth = { path = "../../auth" }
 trustification-infrastructure = { path = "../../infrastructure" }
 
 [dev-dependencies]
-tokio = "*"
+tokio = "1"
 
 
 

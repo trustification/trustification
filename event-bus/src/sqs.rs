@@ -10,6 +10,7 @@ use aws_sdk_sqs::{
 impl From<aws_sdk_sqs::Error> for crate::Error {
     fn from(e: aws_sdk_sqs::Error) -> Self {
         match e {
+            #[allow(deprecated)]
             aws_sdk_sqs::Error::Unhandled(_) => Self::Critical(e.to_string()),
             _ => Self::Transient(e.to_string()),
         }
@@ -93,7 +94,7 @@ impl SqsConsumer {
         let (result, idx, _) = futures::future::select_all(queue_futs).await;
         let topic = &self.queues[idx];
         let message: ReceiveMessageOutput = result?;
-        if let Some(messages) = message.messages() {
+        if let Some(messages) = message.messages {
             if let Some(message) = messages.first() {
                 return Ok(Some(SqsEvent {
                     queue: topic.as_str(),

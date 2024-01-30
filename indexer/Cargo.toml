@@ -18,6 +18,6 @@ actix-web = "4"
 clap = { version = "4", features = ["derive"] }
 anyhow = "1"
 futures = "0.3"
-zstd = "0.12"
+zstd = "0.13"
 rand = "0.8"
 prometheus = "0.13.3"
