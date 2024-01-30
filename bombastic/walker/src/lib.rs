@@ -70,6 +70,17 @@ pub struct Run {
     /// A file to read/store the last sync timestamp to at the end of a successful run.
     #[arg(long = "since-file")]
     pub since_file: Option<PathBuf>,
+
+    /// Retry sending a file
+    #[arg(long = "retries", default_value_t = 5)]
+    pub retries: usize,
+
+    /// Retry delay
+    pub retry_delay: Option<humantime::Duration>,
+
+    /// Additional root certificates for the destination
+    #[arg(long = "sender-root-certificates")]
+    pub additional_root_certificates: Vec<PathBuf>,
 }
 
 impl Run {
@@ -133,6 +144,9 @@ impl Run {
                         validation_date,
                         fix_licenses: self.fix_licenses,
                         since_file: self.since_file,
+                        retries: self.retries,
+                        retry_delay: self.retry_delay.map(|d| d.into()),
+                        additional_root_certificates: self.additional_root_certificates,
                     });
 
                     if let Some(interval) = self.scan_interval {

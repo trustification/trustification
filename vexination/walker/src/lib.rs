@@ -57,6 +57,10 @@ pub struct Run {
     /// A file to read/store the last sync timestamp to at the end of a successful run.
     #[arg(long = "since-file")]
     pub since_file: Option<PathBuf>,
+
+    /// Additional root certificates for the destination
+    #[arg(long = "sender-root-certificates")]
+    pub additional_root_certificates: Vec<PathBuf>,
 }
 
 impl Run {
@@ -91,6 +95,7 @@ impl Run {
                         options,
                         self.ignore_distributions,
                         self.since_file,
+                        self.additional_root_certificates,
                     )
                     .await
                 },

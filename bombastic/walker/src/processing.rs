@@ -7,6 +7,7 @@ use sbom_walker::Sbom;
 use serde_json::Value;
 use std::io::Write;
 use walker_common::compression::decompress_opt;
+use walker_common::utils::url::Urlify;
 
 pub struct ProcessVisitor<V> {
     /// if processing is enabled
