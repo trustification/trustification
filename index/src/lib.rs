@@ -1398,7 +1398,7 @@ mod tests {
 
         let store = good.build(Default::default(), old_schema, Default::default()).unwrap();
 
-        let mut w = store.writer(10_000_000).unwrap();
+        let mut w = store.writer(15_000_000).unwrap();
         w.add_document(doc!(old_id => "foo")).unwrap();
         w.commit().unwrap();
         w.wait_merging_threads().unwrap();
@@ -1435,7 +1435,7 @@ mod tests {
         let settings = store.settings();
         let tokenizers = store.tokenizers();
 
-        let mut w = store.writer(10_000_000).unwrap();
+        let mut w = store.writer(15_000_000).unwrap();
         w.add_document(doc!(id => "foo")).unwrap();
         w.commit().unwrap();
         w.wait_merging_threads().unwrap();
