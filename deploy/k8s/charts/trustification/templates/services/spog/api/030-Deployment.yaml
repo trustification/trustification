@@ -85,6 +85,11 @@ spec:
               value: /etc/config/spog-ui/spog-ui.yaml
             {{- end }}
 
+            {{- if eq ( include "trustification.openshift.useServiceCa" .root ) "true" }}
+            - name: CLIENT_TLS_CA_CERTIFICATES
+              value: /run/secrets/kubernetes.io/serviceaccount/service-ca.crt
+            {{- end }}
+
           ports:
             {{- include "trustification.application.infrastructure.podPorts" $mod | nindent 12 }}
             - containerPort: 8080
