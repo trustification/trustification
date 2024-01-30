@@ -27,6 +27,7 @@ pub struct Options {
     pub since_file: Option<PathBuf>,
     pub retries: usize,
     pub retry_delay: Option<Duration>,
+    pub additional_root_certificates: Vec<PathBuf>,
 }
 
 pub struct Scanner {
@@ -66,7 +67,14 @@ impl Scanner {
             Err(_) => FileSource::new(&self.options.source, None)?.into(),
         };
 
-        let sender = sender::HttpSender::new(self.options.provider.clone(), sender::Options::default()).await?;
+        let sender = sender::HttpSender::new(
+            self.options.provider.clone(),
+            sender::Options {
+                additional_root_certificates: self.options.additional_root_certificates.clone(),
+                ..sender::Options::default()
+            },
+        )
+        .await?;
 
         let storage = walker_extras::visitors::SendVisitor {
             url: self.options.target.clone(),

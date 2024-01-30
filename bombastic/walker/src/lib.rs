@@ -77,6 +77,10 @@ pub struct Run {
 
     /// Retry delay
     pub retry_delay: Option<humantime::Duration>,
+
+    /// Additional root certificates for the destination
+    #[arg(long = "sender-root-certificates")]
+    pub additional_root_certificates: Vec<PathBuf>,
 }
 
 impl Run {
@@ -142,6 +146,7 @@ impl Run {
                         since_file: self.since_file,
                         retries: self.retries,
                         retry_delay: self.retry_delay.map(|d| d.into()),
+                        additional_root_certificates: self.additional_root_certificates,
                     });
 
                     if let Some(interval) = self.scan_interval {
