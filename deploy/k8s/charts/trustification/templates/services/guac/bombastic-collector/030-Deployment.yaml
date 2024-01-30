@@ -44,7 +44,7 @@ spec:
             - name: GUAC_S3_QUEUES
               value: {{ ($mod.topics).indexed | default .Values.bombastic.topics.indexed | quote }}
 
-            - name: GUAC_GQL_ADDDR
+            - name: GUAC_GQL_ADDR
               value: http://guac-graphql.{{ .Release.Namespace }}.svc.cluster.local/query
             - name: GUAC_CSUB_ADDR
               value: guac-collectsub.{{ .Release.Namespace }}.svc.cluster.local:2782
