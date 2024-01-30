@@ -4,6 +4,9 @@ appDomain: change-me
 
 tracing: {}
 
+ingress:
+  className: openshift-default
+
 storage:
   endpoint: http://infrastructure-minio:9000
   accessKey:

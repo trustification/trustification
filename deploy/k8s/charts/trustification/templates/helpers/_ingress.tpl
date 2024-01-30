@@ -7,7 +7,7 @@ Arguments (dict):
 */}}
 {{ define "trustification.ingress.className" }}
 {{- with .module.ingress.className | default .root.Values.ingress.className }}
-ingressClassName: {{- . }}
+ingressClassName: {{ . | quote }}
 {{- end }}
 {{- end }}
 
@@ -43,8 +43,12 @@ metadata:
   name: {{ include "trustification.common.name" . }}
   labels:
     {{- include "trustification.common.labels" . | nindent 4 }}
+  annotations:
+    {{- with .module.ingress.additionalAnnotations | default .root.Values.ingress.additionalAnnotations }}
+    {{- . | toYaml | nindent 4 }}
+    {{- end }}
 spec:
-  {{ include "trustification.ingress.className" . }}
+  {{- include "trustification.ingress.className" . | nindent 2 }}
   rules:
     - host: {{ .host | quote }}
       http:
