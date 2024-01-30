@@ -386,21 +386,34 @@ definitions:
         $ref: "#/definitions/ImageConfig"
 
   ImageConfig:
-    type: object
-    additionalProperties: false
-    properties:
-      name:
-        type: string
-      registry:
-        type: string
-      pullPolicy:
-        type: string
-        enum:
-          - IfNotPresent
-          - Always
-          - Never
-      version:
-        type: string
+    oneOf:
+      - type: object
+        additionalProperties: false
+        required:
+          - fullName
+        properties:
+          fullName:
+            type: string
+          pullPolicy:
+            $ref: "#/definitions/ImagePullPolicy"
+      - type: object
+        additionalProperties: false
+        properties:
+          name:
+            type: string
+          registry:
+            type: string
+          pullPolicy:
+            $ref: "#/definitions/ImagePullPolicy"
+          version:
+            type: string
+
+  ImagePullPolicy:
+    type: string
+    enum:
+      - IfNotPresent
+      - Always
+      - Never
 
   Ingress:
     type: object
