@@ -1306,10 +1306,6 @@ dependencies = [
  "bombastic-indexer",
  "bombastic-walker",
  "clap",
- "log",
- "serde",
- "serde_json",
- "tokio",
 ]
 
 [[package]]
@@ -1317,7 +1313,6 @@ name = "bombastic-api"
 version = "0.1.0"
 dependencies = [
  "actix-web",
- "actix-web-httpauth",
  "anyhow",
  "bombastic-index",
  "bombastic-model",
@@ -1326,15 +1321,10 @@ dependencies = [
  "derive_more",
  "env_logger",
  "futures",
- "hex",
  "log",
- "packageurl",
  "prometheus",
- "rand 0.8.5",
  "serde",
  "serde_json",
- "sha2 0.10.8",
- "thiserror",
  "tokio",
  "trustification-api",
  "trustification-auth",
@@ -1360,12 +1350,10 @@ dependencies = [
  "sha256",
  "sikula",
  "spdx-rs",
- "tar",
  "time",
  "tokio",
  "trustification-api",
  "trustification-index",
- "zstd",
 ]
 
 [[package]]
@@ -1376,20 +1364,12 @@ dependencies = [
  "bombastic-index",
  "bombastic-model",
  "clap",
- "futures",
- "hex",
- "log",
- "prometheus",
- "rand 0.8.5",
- "serde",
- "serde_json",
  "tokio",
  "trustification-event-bus",
  "trustification-index",
  "trustification-indexer",
  "trustification-infrastructure",
  "trustification-storage",
- "zstd",
 ]
 
 [[package]]
@@ -1416,14 +1396,10 @@ dependencies = [
  "async-trait",
  "bytes",
  "bzip2",
- "chrono",
  "clap",
- "csv",
  "humantime",
  "log",
- "reqwest",
  "sbom-walker",
- "serde",
  "serde_json",
  "spdx-expression",
  "time",
