@@ -14,6 +14,7 @@ spec:
   selector:
     matchLabels:
       {{- include "trustification.common.selectorLabels" $mod | nindent 6 }}
+
   template:
     metadata:
       labels:
@@ -24,11 +25,6 @@ spec:
 
     spec:
       {{- include "trustification.application.pod" $mod | nindent 6 }}
-
-      volumes:
-        - name: config
-          configMap:
-            name: {{ include "trustification.common.name" (dict "root" . "name" "guac") }}
 
       initContainers:
         - name: migrate
@@ -41,8 +37,7 @@ spec:
             - |
               TC_PGOPTIONS="?"
               TC_PGOPTIONS="${TC_PGOPTIONS}sslmode=${TC_PGSSLMODE}&"
-              /opt/guac/guacmigrate "--db-address" "postgres://${TC_PGUSER}:${TC_PGPASSWORD}@${TC_PGHOST}:${TC_PGPORT}/${TC_PGDATABASE}${TC_PGOPTIONS}" "--db-driver" "postgres" "--db-debug" "true"
-              # migrate -> fall back to initdatabase -> fall back to database
+              exec /opt/guac/guacmigrate "--db-address" "postgres://${TC_PGUSER}:${TC_PGPASSWORD}@${TC_PGHOST}:${TC_PGPORT}/${TC_PGDATABASE}${TC_PGOPTIONS}" "--db-driver" "postgres" "--db-debug" "true"
 
           env:
             {{- if .Values.guac.migrateDatabase }}{{/* if we have .migrate database settings, use them */}}
@@ -62,13 +57,20 @@ spec:
             - |
               TC_PGOPTIONS="?"
               TC_PGOPTIONS="${TC_PGOPTIONS}sslmode=${TC_PGSSLMODE}&"
-              /opt/guac/guacgql "--gql-backend" "ent" "--db-address" "postgres://${TC_PGUSER}:${TC_PGPASSWORD}@${TC_PGHOST}:${TC_PGPORT}/${TC_PGDATABASE}${TC_PGOPTIONS}" "--db-driver" "postgres" "--db-migrate=false"
+              exec /opt/guac/guacgql "--gql-backend" "ent" "--db-address" "postgres://${TC_PGUSER}:${TC_PGPASSWORD}@${TC_PGHOST}:${TC_PGPORT}/${TC_PGDATABASE}${TC_PGOPTIONS}" "--db-driver" "postgres" "--db-migrate=false"
 
           workingDir: "/guac"
           env:
             {{- include "trustification.postgres.envVars" ( dict "root" . "database" .Values.guac.database "prefix" "TC_" ) | nindent 12 }}
+            {{- if eq ( include "trustification.openshift.useServiceCa" . ) "true" }}
+            - name: GUAC_GQL_TLS_CERT_FILE
+              value: /etc/tls/tls.crt
+            - name: GUAC_GQL_TLS_KEY_FILE
+              value: /etc/tls/tls.key
+            {{- end }}
 
           volumeMounts:
+            {{- include "trustification.application.httpServerVolumesMounts" $mod | nindent 12 }}
             - mountPath: /etc/config
               name: config
               readOnly: true
@@ -83,4 +85,11 @@ spec:
             - containerPort: 8080
               protocol: TCP
               name: endpoint
+
+      volumes:
+        {{- include "trustification.application.httpServerVolumes" $mod | nindent 8 }}
+        - name: config
+          configMap:
+            name: {{ include "trustification.common.name" (dict "root" . "name" "guac") }}
+
 {{ end }}

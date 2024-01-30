@@ -32,6 +32,7 @@ Arguments (dict):
 {{ if eq ( include "trustification.openshift.useServiceCa" .root ) "true" }}
 - mountPath: /etc/tls
   name: tls
+  readOnly: true
 {{ end }}
 
 {{- end }}
