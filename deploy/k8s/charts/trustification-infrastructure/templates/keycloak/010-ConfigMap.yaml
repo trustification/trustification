@@ -7,13 +7,6 @@ metadata:
     app.kubernetes.io/name: post-install-keycloak-config
     app.kubernetes.io/component: sso
     app.kubernetes.io/part-of: sso
-  annotations:
-    argocd.argoproj.io/hook: Sync
-    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
-    argocd.argoproj.io/sync-wave: "0"
-    helm.sh/hook-weight: "10"
-    helm.sh/hook: post-install,post-upgrade
-    helm.sh/hook-delete-policy: before-hook-creation
 data:
   {{ if hasKey .Values.oidc.clients "frontend" }}
   client-frontend.json: |
