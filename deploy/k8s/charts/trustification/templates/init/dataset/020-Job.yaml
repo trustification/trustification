@@ -39,8 +39,8 @@ spec:
           args:
             - "-ce"
             - |
-              /trust bombastic walker --sink http://bombastic-api.{{ .Release.Namespace }}.svc.cluster.local --source /data/sbom
-              /trust vexination walker --sink http://vexination-api.{{ .Release.Namespace }}.svc.cluster.local/api/v1/vex --source /data/csaf
+              /trust bombastic walker --sink {{ include "trustification.tls.http.protocol" $mod }}://bombastic-api.{{ .Release.Namespace }}.svc.cluster.local --source /data/sbom
+              /trust vexination walker --sink {{ include "trustification.tls.http.protocol" $mod }}://vexination-api.{{ .Release.Namespace }}.svc.cluster.local/api/v1/vex --source /data/csaf
 
           env:
             {{- include "trustification.oidc.authenticationClient" ( dict "root" . "clientId" "walker" ) | nindent 12 }}

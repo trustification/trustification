@@ -27,7 +27,6 @@ index:
   writerMemoryBytes: "128MiB"
 
 openshift:
-  enabled: false
   useServiceCa: true
 
 oidc:
