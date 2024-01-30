@@ -36,7 +36,7 @@ spec:
       volumes:
         - name: init-data
           configMap:
-            name: init-guac-db
+            name: {{ include "trustification.common.name" $mod }}
 
       containers:
         - name: setup
