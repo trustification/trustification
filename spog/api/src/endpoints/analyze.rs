@@ -100,7 +100,7 @@ impl CrdaClient {
 
         log::info!("CRDA status code: {}", res.status());
 
-        if res.status() == StatusCode::PRECONDITION_FAILED {
+        if res.status().is_client_error() {
             let message = res.text().await?;
             log::info!("CRDA error: {message}");
             Err(Error::Crda(message))

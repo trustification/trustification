@@ -1,7 +1,7 @@
 use patternfly_yew::prelude::*;
 use reqwest::Body;
 use spog_ui_backend::{use_backend, AnalyzeService};
-use spog_ui_common::error::components::Error;
+use spog_ui_common::error::components::ApiError;
 use std::rc::Rc;
 use yew::prelude::*;
 use yew_more_hooks::prelude::*;
@@ -41,8 +41,8 @@ pub fn report_viewer(props: &ReportViewwerProperties) -> Html {
                     UseAsyncState::Ready(Ok(data)) => html!(
                         <Report data={data.clone()} />
                     ),
-                    UseAsyncState::Ready(Err(_)) => html!(
-                        <Error title="Error" message="Error while generating report" />
+                    UseAsyncState::Ready(Err(err)) => html!(
+                        <ApiError error={err.clone()} message="Error while generating report" />
                     )
                 }
             }
