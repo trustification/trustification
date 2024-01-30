@@ -1,4 +1,7 @@
 {{- if .Values.modules.spogUi.enabled }}
 {{- $mod := dict "root" . "name" "spog-ui" "component" "spog" "module" .Values.modules.spogUi -}}
-{{- include "trustification.ingress.defaultIngress" ( set (deepCopy $mod) "host" (include "trustification.host.spogUi" $mod ) ) }}
+{{- include "trustification.ingress.defaultIngress" ( merge (deepCopy $mod) (dict
+  "host" (include "trustification.host.spogUi" $mod )
+  "tlsMode" "edge"
+))}}
 {{- end }}

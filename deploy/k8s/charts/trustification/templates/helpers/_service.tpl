@@ -13,10 +13,14 @@ metadata:
   name: {{ include "trustification.common.name" . }}
   labels:
     {{- include "trustification.common.labels" . | nindent 4 }}
+  annotations:
+    {{- if eq (include "trustification.openshift.useServiceCa" .root ) "true" }}
+    service.beta.openshift.io/serving-cert-secret-name: {{ .name }}-tls
+    {{- end }}
 spec:
   ports:
   - name: endpoint
-    port: 80
+    port: {{ include "trustification.tls.http.port" (dict "root" .root "ingress" .module.ingress ) }}
     protocol: TCP
     targetPort: endpoint
   selector:

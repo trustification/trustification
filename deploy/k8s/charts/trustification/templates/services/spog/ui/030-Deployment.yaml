@@ -42,11 +42,11 @@ spec:
           command: ["/nginx.sh"]
           env:
             - name: API_URL
-              value: http://{{ include "trustification.host.spogApi" $mod }}
+              value: {{ include "trustification.tls.http.protocol" $mod }}://{{ include "trustification.host.spogApi" $mod }}
             - name: BOMBASTIC_URL
-              value: http://{{ include "trustification.host.bombasticApi" $mod }}
+              value: {{ include "trustification.tls.http.protocol" $mod }}://{{ include "trustification.host.bombasticApi" $mod }}
             - name: VEXINATION_URL
-              value: http://{{ include "trustification.host.vexinationApi" $mod }}
+              value: {{ include "trustification.tls.http.protocol" $mod }}://{{ include "trustification.host.vexinationApi" $mod }}
             - name: ISSUER_URL
               value: {{ include "trustification.oidc.frontendIssuerUrl" . }}
             - name: CLIENT_ID

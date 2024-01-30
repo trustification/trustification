@@ -30,7 +30,6 @@ Arguments (dict):
 {{- $client := get .root.Values.oidc.clients .clientId -}}
 {{- $clientId := $client.clientId | default .clientId }}
 
-# OIDC client settings
 - name: OIDC_PROVIDER_CLIENT_ID
   {{- include "trustification.common.envVarValue" $clientId | nindent 2 }}
 - name: OIDC_PROVIDER_CLIENT_SECRET
@@ -59,7 +58,7 @@ Arguments (dict):
 {{- else if .root.Values.oidc.issuerUrl }}
 {{- .root.Values.oidc.issuerUrl | quote }}
 {{- else -}}
-http://sso{{ .root.Values.appDomain }}/realms/chicken
+{{ include "trustification.tls.http.protocol" . }}://sso{{ .root.Values.appDomain }}/realms/chicken
 {{- end }}
 {{- end }}
 
