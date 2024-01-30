@@ -19,6 +19,6 @@ anyhow = "1"
 futures = "0.3"
 rand = "0.8"
 guac = { workspace = true }
-strum = "0.24"
-strum_macros = "0.24"
+strum = "0.26"
+strum_macros = "0.26"
 prometheus = "0.13.3"

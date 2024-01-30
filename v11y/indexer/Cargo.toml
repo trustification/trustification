@@ -28,7 +28,7 @@ trustification-storage = { path = "../../storage" }
 trustification-index = { path = "../../index" }
 trustification-indexer = { path = "../../indexer" }
 walkdir = "2"
-env_logger = "0.10"
+env_logger = "0.11"
 
 v11y-model = { path = "../model" }
 v11y-index = { path = "../index" }
