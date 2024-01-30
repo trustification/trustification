@@ -29,6 +29,7 @@ spec:
 
     spec:
       volumes:
+        {{- include "trustification.application.httpServerVolumes" $mod | nindent 8 }}
         - name: config
           configMap:
             name: {{ include "trustification.common.name" (dict "root" . "name" "guac") }}
@@ -36,10 +37,21 @@ spec:
       containers:
         - name: service
           {{- include "trustification.guac.defaultImage" $mod | nindent 10 }}
+
           command: ["/opt/guac/guaccsub"]
           args: []
           workingDir: "/guac"
+
+          env:
+            {{- if eq ( include "trustification.openshift.useServiceCa" . ) "true" }}
+            - name: GUAC_CSUB_TLS_CERT_FILE
+              value: /etc/tls/tls.crt
+            - name: GUAC_CSUB_TLS_KEY_FILE
+              value: /etc/tls/tls.key
+            {{- end }}
+
           volumeMounts:
+            {{- include "trustification.application.httpServerVolumesMounts" $mod | nindent 12 }}
             - mountPath: /etc/config
               name: config
               readOnly: true
