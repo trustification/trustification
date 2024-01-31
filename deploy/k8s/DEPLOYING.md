@@ -1,26 +1,6 @@
 # Deploying
 
-This is more a collection of notes rather than a proper documentation. Besides, neither CRC nor Minikube work at this
-moment, for various reasons.
-
-### With CRC
-
-**NOTE:** Due to the nature of CRC's handling of TLS, this is currently not really usable.
-
-Get and setup `crc`, then start `crc`:
-
-```shell
-crc start --cpus 8 --memory 32768 --disk-size 80
-```
-
-Next, deploy the application:
-
-```shell
-helm dependency build charts/trustification
-helm upgrade --install --debug -n trustification --create-namespace trustification charts/trustification --values values-crc.yaml
-```
-
-### With Minikube
+## With Minikube
 
 Start `minikube`:
 
@@ -49,7 +29,7 @@ kubectl -n trustification create job --from=cronjob/bombastic-collector bombasti
 kubectl -n trustification create job --from=cronjob/vexination-collector vexination-collector-initial
 ```
 
-### OpenShift (without AWS)
+## OpenShift (without AWS)
 
 Ensure you are logged in to an OpenShift cluster and have the permission to create new projects and workload.
 
