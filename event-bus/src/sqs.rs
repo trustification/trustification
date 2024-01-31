@@ -1,5 +1,5 @@
 use crate::Event;
-use aws_config::SdkConfig;
+use aws_config::{BehaviorVersion, SdkConfig};
 use aws_credential_types::credential_fn::provide_credentials_fn;
 use aws_credential_types::provider::SharedCredentialsProvider;
 use aws_sdk_sqs::config::Region;
@@ -32,6 +32,7 @@ impl SqsEventBus {
         let region = Region::new(region.into());
         let config = SdkConfig::builder()
             .region(region)
+            .behavior_version(BehaviorVersion::latest())
             .credentials_provider(SharedCredentialsProvider::new(provide_credentials_fn(move || {
                 let creds = creds.clone();
                 async { Ok(creds) }
