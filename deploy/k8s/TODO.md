@@ -10,7 +10,7 @@
   --csub-tls-key-file string    path to the TLS key in PEM format for collect-sub service
   ```
 
-* [ ] GUAC Auth
+* [x] GUAC Auth
 
   There is no auth. We need to apply some network policies.
 
