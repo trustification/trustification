@@ -80,7 +80,7 @@ jobs:
       - name: helm-lint
         working-directory: deploy/k8s
         run: |
-          helm lint ./charts/trustification
+          helm lint ./charts/trustification --values values-minikube.yaml --set--string appDomain=.localhost
 
       - name: helm-lint (branding)
         working-directory: deploy/k8s
