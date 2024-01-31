@@ -148,6 +148,7 @@ modules:
     enabled: true
     image: {}
     gitImage:
+      registry: quay.io/trustification
       version: "2.40.1"
     tracing: {}
     metrics: {}
