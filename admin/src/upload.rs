@@ -122,7 +122,7 @@ async fn upload(
     headers: Vec<String>,
     id: Option<String>,
 ) -> anyhow::Result<()> {
-    let mut builder = client.post(url.clone());
+    let mut builder = client.post(url);
     if let Some(id) = id {
         builder = builder.query(&[("id", id)]);
     }
