@@ -68,7 +68,7 @@ spec:
                 - "vexination"
                 - "walker"
                 - "--sink"
-                - "{{ include "trustification.tls.http.protocol" $mod }}://vexination-api.{{ $.Release.Namespace }}.svc.cluster.local"
+                - "{{ include "trustification.tls.http.protocol" $mod }}://vexination-api.{{ $.Release.Namespace }}.svc.cluster.local/api/v1/vex"
                 - "--source"
                 - {{ $source.url | quote }}
                 - "--since-file"
