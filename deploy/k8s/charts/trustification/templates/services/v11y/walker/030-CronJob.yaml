@@ -8,8 +8,8 @@ metadata:
     {{- include "trustification.common.labels" $mod | nindent 4 }}
 
 spec:
-  schedule: {{ .Values.modules.v11yWalker.schedule | default "0 1 * * *" | quote }}
-  suspend: {{ .Values.modules.v11yWalker.suspend | default false }}
+  schedule: {{ $mod.module.schedule | default "0 1 * * *" | quote }}
+  suspend: {{ $mod.module.suspend | default false }}
   concurrencyPolicy: Forbid
   jobTemplate:
     spec:

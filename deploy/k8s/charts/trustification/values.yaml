@@ -93,6 +93,11 @@ modules:
     tracing: {}
     metrics: {}
 
+  bombasticWalker:
+    enabled: true
+    image: {}
+    sources: {}
+
   spogApi:
     enabled: true
     image: {}

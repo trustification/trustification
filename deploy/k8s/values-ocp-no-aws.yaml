@@ -33,6 +33,17 @@ eventBus:
           key: client-passwords
     mechanism: PLAIN
 
+modules:
+  bombasticWalker:
+    sources:
+      redhat:
+        url: https://access.redhat.com/security/data/sbom/beta/
+        signingKeyUrl: https://access.redhat.com/security/data/97f5eac4.txt#77E79ABE93673533ED09EBE2DCE3823597F5EAC4
+        acceptV3Signatures: true
+        fixLicenses: true
+        job:
+          schedule: "0 * * * *"
+
 ## Infrastructure
 
 minio:
