@@ -63,8 +63,7 @@ pub async fn run(
                             .header(header::CONTENT_TYPE, "application/json")
                             .body(data.clone())
                             .inject_token(&provider)
-                            .await
-                            .unwrap()
+                            .await?
                             .send()
                             .await
                         {
