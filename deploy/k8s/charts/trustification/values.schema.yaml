@@ -275,14 +275,11 @@ properties:
           - $ref: "#/definitions/Metrics"
           - $ref: "#/definitions/Tracing"
           - $ref: "#/definitions/Storage"
+          - $ref: "#/definitions/Scheduled"
           - type: object
             properties:
               storageSize:
                 type: string
-              schedule:
-                type: string
-              suspend:
-                type: boolean
               gitImage:
                 $ref: "#/definitions/ImageConfig"
 
@@ -311,6 +308,41 @@ properties:
           - $ref: "#/definitions/Image"
           - $ref: "#/definitions/Application"
 
+      bombasticWalker:
+        allOf:
+          - $ref: "#/definitions/Feature"
+          - $ref: "#/definitions/Image"
+          - $ref: "#/definitions/Application"
+          - type: object
+            required:
+              - sources
+            properties:
+              stateStorageSize:
+                type: string
+              sources:
+                type: object
+                additionalProperties: false
+                patternProperties:
+                  "^[a-z0-9A-Z_\\-.]*[a-z0-9A-Z]$":
+                    $ref: "#/definitions/BombasticWalkerSource"
+
+      vexinationWalker:
+        allOf:
+          - $ref: "#/definitions/Feature"
+          - $ref: "#/definitions/Image"
+          - $ref: "#/definitions/Application"
+          - type: object
+            required:
+              - sources
+            properties:
+              stateStorageSize:
+                type: string
+              sources:
+                type: object
+                patternProperties:
+                  "^[a-z0-9A-Z_\\-.]*[a-z0-9A-Z]$":
+                    $ref: "#/definitions/VexinationWalkerSource"
+
 # for infrastructure
 
   kafka:
@@ -324,6 +356,8 @@ properties:
 
   postgres:
     $ref: "#/definitions/Feature"
+
+# all the definitions
 
 definitions:
 
@@ -852,3 +886,52 @@ definitions:
         $ref: "#/definitions/ValueOrRef"
       password:
         $ref: "#/definitions/ValueOrRef"
+
+  BombasticWalkerSource:
+    type: object
+    additionalProperties: false
+    required:
+      - url
+    properties:
+      url:
+        type: string
+        format: uri
+      fixLicenses:
+        type: boolean
+      acceptV3Signatures:
+        type: boolean
+      signingKeyUrl:
+        type: string
+        format: uri
+      job:
+        type: object
+        description: Overrides for the Job
+        allOf:
+          - $ref: "#/definitions/Application"
+          - $ref: "#/definitions/Scheduled"
+
+  VexinationWalkerSource:
+    type: object
+    additionalProperties: false
+    required:
+      - url
+    properties:
+      url:
+        type: string
+        format: uri
+      acceptV3Signatures:
+        type: boolean
+      job:
+        type: object
+        description: Overrides for the Job
+        allOf:
+          - $ref: "#/definitions/Application"
+          - $ref: "#/definitions/Scheduled"
+
+  Scheduled:
+    type: object
+    properties:
+      schedule:
+        type: string
+      suspend:
+        type: boolean
