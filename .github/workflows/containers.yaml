@@ -47,6 +47,8 @@ jobs:
             containerfile: container_files/Containerfile.docs
           - name: trust-tests
             containerfile: container_files/Containerfile.tests
+          - name: git
+            containerfile: container_files/Containerfile.git
 
     steps:
 
