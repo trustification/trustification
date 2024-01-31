@@ -1,0 +1,49 @@
+= Preparing the environment
+
+[#using_aws]
+== Using AWS
+
+=== Storage
+
+It is required to set up the following S3 buckets:
+
+* `bombastic`
+* `vexination`
+* `v11y`
+
+=== Events
+
+The following SQS queues need to be created:
+
+* `sbom-stored`
+* `sbom-indexed`
+* `sbom-failed`
+* `vex-stored`
+* `vex-indexed`
+* `vex-failed`
+* `v11y-stored`
+* `v11y-indexed`
+* `v11y-failed`
+
+== Using AWS alternatives for production
+
+It is possible to use AWS compatible services, and Kafka instead of SQS/SNS.However, it is up to the user to provide
+such services. You can follow the instructions in <<using_aws>>, and create compatible replacements.
+
+== Using AWS alternatives for testing
+
+In order to set up an infrastructure suitable for testing, you can use our provided "infrastructure" Helm chart.
+
+[NOTE]
+====
+The testing infrastructure is highly opinionated and will only work with Minikube.
+====
+
+To install this, run the following command:
+
+[source,bash]
+----
+cd deploy/k8s
+kubectl create ns trustification
+helm upgrade --install -n trustification infrastructure charts/trustification-infrastructure --values values-minikube.yaml --set-string keycloak.ingress.hostname=sso.$(minikube ip).nip.io --set-string appDomain=.$(minikube ip).nip.io
+----
