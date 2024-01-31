@@ -75,7 +75,8 @@ spec:
                 - "/walker-state/since"
 
                 {{- if eq ( include "trustification.openshift.useServiceCa" $ ) "true" }}
-                - --sender-root-certificates /run/secrets/kubernetes.io/serviceaccount/service-ca.crt
+                - --sender-root-certificates
+                - /run/secrets/kubernetes.io/serviceaccount/service-ca.crt
                 {{- end }}
 
                 {{- if $source.acceptV3Signatures }}
