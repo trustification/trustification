@@ -20,8 +20,6 @@ spec:
       labels:
         {{- include "trustification.common.selectorLabels" $mod | nindent 8 }}
         {{- include "trustification.application.podLabels" $mod | nindent 8 }}
-      annotations:
-        config/checksum: {{ include (print $.Template.BasePath "/services/guac/020-ConfigMap.yaml") . | sha256sum }}
 
     spec:
       {{- include "trustification.application.pod" $mod | nindent 6 }}
@@ -71,9 +69,6 @@ spec:
 
           volumeMounts:
             {{- include "trustification.application.httpServerVolumesMounts" $mod | nindent 12 }}
-            - mountPath: /etc/config
-              name: config
-              readOnly: true
 
           {{- include "trustification.application.container" $mod | nindent 10 }}
 
@@ -88,8 +83,5 @@ spec:
 
       volumes:
         {{- include "trustification.application.httpServerVolumes" $mod | nindent 8 }}
-        - name: config
-          configMap:
-            name: {{ include "trustification.common.name" (dict "root" . "name" "guac") }}
 
 {{ end }}
