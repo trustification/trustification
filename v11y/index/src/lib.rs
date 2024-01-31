@@ -329,7 +329,7 @@ impl trustification_index::Index for Index {
 
         let explanation: Option<serde_json::Value> = if options.explain {
             match query.explain(searcher, doc_address) {
-                Ok(explanation) => Some(serde_json::to_value(explanation).ok()).unwrap_or(None),
+                Ok(explanation) => serde_json::to_value(explanation).ok(),
                 Err(e) => {
                     log::warn!("Error producing explanation for document {:?}: {:?}", doc_address, e);
                     None
