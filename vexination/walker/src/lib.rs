@@ -61,6 +61,10 @@ pub struct Run {
     /// Additional root certificates for the destination
     #[arg(long = "sender-root-certificates")]
     pub additional_root_certificates: Vec<PathBuf>,
+
+    /// Only upload if a document's name has any of these prefixes.
+    #[arg(long = "require-prefix")]
+    pub required_prefixes: Vec<String>,
 }
 
 impl Run {
@@ -96,6 +100,7 @@ impl Run {
                         self.ignore_distributions,
                         self.since_file,
                         self.additional_root_certificates,
+                        self.required_prefixes,
                     )
                     .await
                 },
