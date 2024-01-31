@@ -1,3 +1,9 @@
 * xref:index.adoc[Administration Guide]
-** xref:installing.adoc[Installing Trustification locally]
+** xref:local.adoc[Installing Trustification locally]
+** Installing on a Kubernetes cluster
+*** xref:cluster-prereq.adoc[Pre-requisites]
+*** xref:cluster-preparing.adoc[Preparing the infrastructure]
+*** Installing the application
+*** Post installation tasks
+*** Day two tasks
 ** xref:openapi.adoc[OpenAPI reference]
