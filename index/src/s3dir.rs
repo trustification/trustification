@@ -6,7 +6,6 @@ use std::{
     sync::Arc,
 };
 
-pub use s3::{creds::Credentials, Region};
 use s3::{error::S3Error, Bucket};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::thread;
