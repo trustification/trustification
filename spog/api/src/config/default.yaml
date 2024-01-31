@@ -490,9 +490,6 @@ landingPage:
       </div>
     </section>
 
-  afterInnerContent: |
-    Search me
-
   afterOuterContent: |
     <div class="pf-v5-l-grid__item pf-m-6-col">
       <div class="pf-v5-c-card pf-m-full-height">
@@ -521,6 +518,5 @@ landingPage:
         <div class="pf-v5-c-card__title">
           <h2 class="pf-v5-c-card__title-text">Learn more</h2>
         </div>
-        <div class="pf-v5-c-card__body">This content can be customized through configuration.</div>
       </div>
     </div>
