@@ -9,5 +9,5 @@ content:
       branches: HEAD
 ui:
   bundle:
-    url: https://github.com/trustification/trustification-antora-ui/releases/download/v0.1.2/ui-bundle.zip
+    url: https://github.com/trustification/trustification-antora-ui/releases/download/v0.2.2/ui-bundle.zip
     snapshot: true
