@@ -136,6 +136,11 @@ modules:
     enabled: true
     image: {}
 
+  vexinationWalker:
+    enabled: true
+    image: {}
+    sources: {}
+
   v11yApi:
     enabled: true
     ingress: {}

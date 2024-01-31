@@ -44,6 +44,17 @@ modules:
         job:
           schedule: "0 * * * *"
 
+  vexinationWalker:
+    sources:
+      redhat:
+        url: https://www.redhat.com/.well-known/csaf/provider-metadata.json
+        acceptV3Signatures: true
+        ignoreDistributions:
+          - https://access.redhat.com/security/data/csaf/v2/advisories/
+        job:
+          schedule: "0 * * * *"
+
+
 ## Infrastructure
 
 minio:

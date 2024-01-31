@@ -343,7 +343,7 @@ properties:
                   "^[a-z0-9A-Z_\\-.]*[a-z0-9A-Z]$":
                     $ref: "#/definitions/VexinationWalkerSource"
 
-# for infrastructure
+  # for infrastructure
 
   kafka:
     $ref: "#/definitions/Feature"
@@ -474,7 +474,7 @@ definitions:
 
   Postgresql:
     type: object
-    properties: {}
+    properties: { }
 
   Authenticator:
     type: object
@@ -921,6 +921,11 @@ definitions:
         format: uri
       acceptV3Signatures:
         type: boolean
+      ignoreDistributions:
+        type: array
+        items:
+          type: string
+          format: uri
       job:
         type: object
         description: Overrides for the Job

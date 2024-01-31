@@ -1,12 +1,12 @@
-{{- if .Values.modules.bombasticWalker.enabled }}
+{{- if .Values.modules.vexinationWalker.enabled }}
 
-{{- range $sourceName, $source := .Values.modules.bombasticWalker.sources }}
+{{- range $sourceName, $source := .Values.modules.vexinationWalker.sources }}
 
 {{/* A unique name for the walker */}}
-{{- $name := print "bombastic-walker-" $sourceName }}
+{{- $name := print "vexination-walker-" $sourceName }}
 
 {{/* Override job properties from source */}}
-{{- $module := deepCopy $.Values.modules.bombasticWalker }}
+{{- $module := deepCopy $.Values.modules.vexinationWalker }}
 {{- if hasKey $source "job" }}
 {{ $_ := mergeOverwrite $module $source.job }}
 {{- end }}
@@ -14,7 +14,7 @@
 {{- $mod := dict
   "root" $
   "name" $name
-  "component" "bombastic"
+  "component" "vexination"
   "module" $module
 -}}
 
@@ -65,10 +65,10 @@ spec:
 
               command: ["/trust"]
               args:
-                - "bombastic"
+                - "vexination"
                 - "walker"
                 - "--sink"
-                - "{{ include "trustification.tls.http.protocol" $mod }}://bombastic-api.{{ $.Release.Namespace }}.svc.cluster.local"
+                - "{{ include "trustification.tls.http.protocol" $mod }}://vexination-api.{{ $.Release.Namespace }}.svc.cluster.local"
                 - "--source"
                 - {{ $source.url | quote }}
                 - "--since-file"
@@ -82,14 +82,9 @@ spec:
                 - "-3"
                 {{- end }}
 
-                {{- with $source.signingKeyUrl }}
-                - "--signing-key"
-                - {{ . | quote }}
-                {{- end }}
-
-                {{- if $source.fixLicenses }}
-                - "--fix-licenses"
-                - "true"
+                {{- range $ignore := $source.ignoreDistributions }}
+                - "--ignore-distributions"
+                - {{ $ignore | quote }}
                 {{- end }}
 
               env:

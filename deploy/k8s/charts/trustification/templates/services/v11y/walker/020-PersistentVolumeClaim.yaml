@@ -12,4 +12,4 @@ spec:
   resources:
     requests:
       storage: {{ $mod.module.storageSize | quote }}
-{{ end }}
+{{- end }}
