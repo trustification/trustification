@@ -152,7 +152,7 @@ async fn create_cve_suggestions(v11y: &V11yService, term: &str) -> Result<Vec<Su
 
             // no title? try description next.
             if description.is_empty() {
-                if let Some(desc) = hit.document.descriptions.get(0) {
+                if let Some(desc) = hit.document.descriptions.first() {
                     description = desc.chars().take(60).collect();
                     if desc.len() > 60 {
                         description.push('…');

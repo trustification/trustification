@@ -1,6 +1,5 @@
 use gloo_storage::Storage;
 use patternfly_yew::prelude::*;
-use yew::function_component;
 pub use yew::prelude::*;
 
 pub const THEME_SETTINGS_KEY: &str = "chicken-theme-settings";

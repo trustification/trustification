@@ -165,7 +165,7 @@ impl Directory for S3Directory {
             let result = bucket.head_object_blocking(p);
 
             match result {
-                Err(S3Error::HttpFailWithBody(status, _)) if status == 404 => Ok(false),
+                Err(S3Error::HttpFailWithBody(404, _)) => Ok(false),
                 Err(e) => {
                     // log::info!("EXISTS ERROR: {:?}", e);
                     Err(OpenReadError::IoError {
@@ -214,9 +214,7 @@ impl Directory for S3Directory {
             let result = bucket.get_object_blocking(p);
 
             match result {
-                Err(S3Error::HttpFailWithBody(status, _)) if status == 404 => {
-                    Err(OpenReadError::FileDoesNotExist(path.to_path_buf()))
-                }
+                Err(S3Error::HttpFailWithBody(404, _)) => Err(OpenReadError::FileDoesNotExist(path.to_path_buf())),
                 Err(e) => {
                     // log::info!("aTOMIC READ ERROR: {:?}", e);
                     Err(OpenReadError::IoError {

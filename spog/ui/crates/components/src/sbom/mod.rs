@@ -22,8 +22,6 @@ use yew::prelude::*;
 use yew_more_hooks::hooks::UseAsyncState;
 use yew_nested_router::components::Link;
 
-use self::report_button::ReportButton;
-
 #[derive(PartialEq, Properties)]
 pub struct SbomResultProperties {
     pub state: UseAsyncState<SearchResult<Rc<Vec<SbomSummary>>>, String>,

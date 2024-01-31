@@ -132,16 +132,11 @@ impl From<Vulnerability> for v11y_client::Vulnerability {
             withdrawn: vuln.withdrawn,
             summary: vuln.summary.clone().unwrap_or("".to_string()),
             details: vuln.details.clone().unwrap_or("".to_string()),
-            aliases: vuln.aliases.clone().unwrap_or(Default::default()),
+            aliases: vuln.aliases.clone().unwrap_or_default(),
             affected: vec![],
             severities: Default::default(),
-            related: vuln.related.clone().unwrap_or(Default::default()),
-            references: vuln
-                .references
-                .unwrap_or(Default::default())
-                .iter()
-                .map(|e| e.into())
-                .collect(),
+            related: vuln.related.clone().unwrap_or_default(),
+            references: vuln.references.unwrap_or_default().iter().map(|e| e.into()).collect(),
         }
     }
 }

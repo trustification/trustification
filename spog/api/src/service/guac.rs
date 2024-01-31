@@ -238,9 +238,9 @@ impl GuacService {
                 )),
             };
 
-            let cves = products.entry(status?).or_insert(BTreeMap::new());
+            let cves = products.entry(status?).or_default();
 
-            let packages = cves.entry(uid.to_string()).or_insert(vec![]);
+            let packages = cves.entry(uid.to_string()).or_default();
 
             for package in product.path {
                 let p = self.get_purl(package)?.to_string();

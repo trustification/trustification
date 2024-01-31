@@ -123,7 +123,7 @@ impl SnykClient {
         if let Some(issues) = result.data {
             Ok(issues)
         } else {
-            Err(Error::Snyk(result.errors.unwrap_or(vec![])))
+            Err(Error::Snyk(result.errors.unwrap_or_default()))
         }
     }
 }
