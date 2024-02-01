@@ -1,49 +1,86 @@
 = Preparing the environment
 
-[#using_aws]
-== Using AWS
+The deployment requires a few services outside the Kubernetes based infrastructure. This includes:
 
-=== Storage
+* S3 storage
+* Change events from S3 to SQS/SNS
+* A PostgreSQL database instance
+* A set of OIDC clients for frontend and backend authentication
 
-It is required to set up the following S3 buckets:
+The following sections will explain what is required in more detail. Each step will result in some information
+which needs to be captured and which needs to be used later on in the Helm chart's values file.
+
+[NOTE]
+.AWS regions
+====
+While it is possible to split the AWS services to different regions, that might have an impact on the cost of running
+the services, as well as on the performance. Therefore, it is recommended to keep everything in a single region. The
+rest of the document will assume that this is the case.
+====
+
+In the following sections the document will refer to "document types". The expectation is that those are the document
+types: SBOMs, CSAF documents, CVEs. For creating S3 resources, we will use the following naming pattern:
+
+* `bombastic` for SBOMs
+* `vexination` for CSAF documents
+* `v11y` for CVEs
+
+Examples will use a placeholder of the format `<type>` when it is necessary to replace this with the actual types.
+
+[#s3_storage]
+== S3 storage
+
+It is required to set up three S3 buckets, each with the same configuration:
+
+* For storing SBOMs
+* For storing CSAF documents
+* For storing CVE detail information
+
+From here on, the examples will use:
+
+* `bombastic` for the SBOM bucket
+* `vexination` for the CSAF document bucket
+* `v11y` for the CVE details bucket
+
+== Event queues
+
+For each bucket created in <<s3_storage>>, the following three SQS queues have to be created:
+
+* A queue for receiving events when a new document was stored
+* A queue for receiving events when a document was indexed successfully
+* A queue for receiving events when a document could not be processed
+
+It is recommended to follow the following pattern:
+
+* `<type>-stored` For events when a new document was stored
+* `<type>-indexed` For events when a document was indexed successfully
+* `<type>-failed` For events when a document could not be processed
+
+This will result in the following names, which will be used from here on for examples in this document:
+
+* `bombastic-stored`
+* `bombastic-indexed`
+* `bombastic-failed`
+* `vexination-stored`
+* `vexination-indexed`
+* `vexination-failed`
+* `v11y-stored`
+* `v11y-indexed`
+* `v11y-failed`
+
+== S3 change notifications
+
+For each bucket a change notification needs to be set up publish the events for `s3:ObjectCreated:*` and
+`s3:ObjectRemoved:*` to the `<type>-stored` queue.
+
+== Users
+
+For each document type an AWS IAM user must be created. From here on, the examples will use:
 
 * `bombastic`
 * `vexination`
 * `v11y`
 
-=== Events
+== Access policies
 
-The following SQS queues need to be created:
 
-* `sbom-stored`
-* `sbom-indexed`
-* `sbom-failed`
-* `vex-stored`
-* `vex-indexed`
-* `vex-failed`
-* `v11y-stored`
-* `v11y-indexed`
-* `v11y-failed`
-
-== Using AWS alternatives for production
-
-It is possible to use AWS compatible services, and Kafka instead of SQS/SNS.However, it is up to the user to provide
-such services. You can follow the instructions in <<using_aws>>, and create compatible replacements.
-
-== Using AWS alternatives for testing
-
-In order to set up an infrastructure suitable for testing, you can use our provided "infrastructure" Helm chart.
-
-[NOTE]
-====
-The testing infrastructure is highly opinionated and will only work with Minikube.
-====
-
-To install this, run the following command:
-
-[source,bash]
-----
-cd deploy/k8s
-kubectl create ns trustification
-helm upgrade --install -n trustification infrastructure charts/trustification-infrastructure --values values-minikube.yaml --set-string keycloak.ingress.hostname=sso.$(minikube ip).nip.io --set-string appDomain=.$(minikube ip).nip.io
-----
