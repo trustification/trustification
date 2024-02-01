@@ -5,7 +5,7 @@
 Start `minikube`:
 
 ```shell
-minikube start --cpus 8 --memory 24576 --disk-size 20gb --addons ingress
+minikube start --cpus 8 --memory 24576 --disk-size 20gb --addons ingress,dashboard
 ```
 
 Create a namespace:
@@ -26,6 +26,9 @@ Speed up running initial jobs:
 ```shell
 kubectl -n trustification create job --from=cronjob/v11y-walker v11y-walker-initial
 ```
+
+Once it is installed, you can open the SPoG UI console at: `http://console.$(minikube ip).nip.io`, using the credentials
+from the values file.
 
 ## OpenShift (without AWS)
 

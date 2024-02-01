@@ -22,7 +22,7 @@ python3 -c 'import sys, yaml, json; print(json.dumps(yaml.safe_load(sys.stdin)))
 ## Linting Helm charts
 
 ```shell
-helm lint ./charts/trustification
+helm lint ./charts/trustification --values values-minikube.yaml --set-string appDomain=.localhost
 ```
 
 ## Find that whitespace
