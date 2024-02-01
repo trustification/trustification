@@ -25,8 +25,6 @@ Speed up running initial jobs:
 
 ```shell
 kubectl -n trustification create job --from=cronjob/v11y-walker v11y-walker-initial
-kubectl -n trustification create job --from=cronjob/bombastic-collector bombastic-collector-initial
-kubectl -n trustification create job --from=cronjob/vexination-collector vexination-collector-initial
 ```
 
 ## OpenShift (without AWS)
