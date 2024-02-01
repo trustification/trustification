@@ -55,15 +55,21 @@ It is recommended to follow the following pattern:
 * `<type>-stored` For events when a new document was stored
 * `<type>-indexed` For events when a document was indexed successfully
 * `<type>-failed` For events when a document could not be processed
+* `<type>-guac` For events when a document should be processed by GUAC
+
+NOTE: There is one exception to that rule. GUAC does not require notifications for CVE documents. So the topic
+`v11y-guac` must not be created.
 
 This will result in the following names, which will be used from here on for examples in this document:
 
 * `bombastic-stored`
 * `bombastic-indexed`
 * `bombastic-failed`
+* `bombastic-guac`
 * `vexination-stored`
 * `vexination-indexed`
 * `vexination-failed`
+* `vexination-guac`
 * `v11y-stored`
 * `v11y-indexed`
 * `v11y-failed`
@@ -71,13 +77,67 @@ This will result in the following names, which will be used from here on for exa
 == S3 change notifications
 
 For each bucket a change notification needs to be set up publish the events for `s3:ObjectCreated:*` and
-`s3:ObjectRemoved:*` to the `<type>-stored` queue.
+`s3:ObjectRemoved:*` to the `<type>-stored-topic` topic.
+
+For this we need to set up a topic (named `<type>-stored-topic`) as well as a bucket notification, publishing to that
+topic. This bucket notification must publish events for: `["s3:ObjectCreated:*", "s3:ObjectRemoved:*"]`.
+
+This also requires granting the S3 bucket access to the topic. For example:
+
+[source,json5]
+----
+{
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": "*",
+      "Action": "SNS:Publish",
+      "Resource": "arn:aws:sns:*:*:*",
+      "Condition": {
+        "ArnEquals": {
+          "aws:SourceArn": "arn:aws:s3:::bombastic" // <1>
+        }
+      }
+    }
+  ]
+}
+----
+<1> S3 bucket name
 
 == Queue subscriptions
 
-For each of the `<type>-stored` queues, we need two (with one exception) topic subscriptions:
+In order to deliver those change events, we need to connect the change topic to the `<type>-stored` and `<type>-guac`
+queue by creating "topic subscriptions".
 
-* `<type>-stored` to `
+There should be two subscriptions for each document type of the protocol type `SQS`, using "raw message delivery":
+
+* Topic: `<type>-stored` -> `<type>-stored`
+* `<type>-stored` -> `<type>-guac`
+
+NOTE: There is one exception to that rule. The `v11y-stored-topic` does not need to be connected to the `v11y-guac`
+as it does not exist.
+
+This also requires granting the S3 SNS topic access to the queue. For example:
+
+[source,json5]
+----
+{
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": "*",
+      "Action": "sqs:SendMessage",
+      "Resource": "arn:aws:sqs:*:*:*",
+      "Condition": {
+        "ArnEquals": {
+          "aws:SourceArn": "arn:aws:sns:region:123456789012:bombastic-stored" // <1>
+        }
+      }
+    }
+  ]
+}
+----
+<1> Name of the SNS topic
 
 == Users
 
@@ -87,6 +147,36 @@ For each document type an AWS IAM user must be created. From here on, the exampl
 * `vexination`
 * `v11y`
 
-== Access policies
+For each user an access key must be created.
 
+Also does each user require access to its S3 bucket and corresponding queues. For example for the SBOM user (`bombastic`):
 
+[source,json5]
+----
+{
+    "Statement": [
+        {
+            "Action": [
+                "sqs:SendMessage",
+                "sqs:ReceiveMessage",
+                "sqs:GetQueueUrl",
+                "sqs:DeleteMessage"
+            ],
+            "Effect": "Allow",
+            "Resource": "arn:aws:sqs:*:*:bombastic-*" // <1>
+        },
+        {
+            "Action": [
+                "s3:PutObject",
+                "s3:ListBucket",
+                "s3:GetObject",
+                "s3:DeleteObject"
+            ],
+            "Effect": "Allow",
+            "Resource": "arn:aws:s3:::bombastic" // <2>
+        }
+    ]
+}
+----
+<1> SQS queues
+<2> S3 bucket
