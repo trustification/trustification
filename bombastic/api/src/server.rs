@@ -144,7 +144,7 @@ async fn query_sbom(
     let encoding = storage.get_head(path.clone()).await.ok().and_then(|head| {
         head.content_encoding.and_then(|ref e| {
             accept_encoding
-                .negotiate(vec![e.parse().unwrap()].iter())
+                .negotiate([e.parse().unwrap()].iter())
                 .map(|s| s.to_string())
                 .filter(|x| x == e)
         })

@@ -59,7 +59,7 @@ impl Coordinator {
                                     Entry::Git(_) => {}
                                     Entry::Oci(_) => {}
                                     Entry::Purl(purl) => {
-                                        self.add_purl(state.clone(), purl.as_str()).await.ok();
+                                        self.add_purl(state, purl.as_str()).await.ok();
                                     }
                                     Entry::GithubRelease(_) => {}
                                 }
@@ -85,7 +85,7 @@ impl Coordinator {
         state: &AppState,
         request: CollectPackagesRequest,
     ) -> Vec<CollectPackagesResponse> {
-        state.collectors.collect_packages(state.clone(), request).await
+        state.collectors.collect_packages(state, request).await
     }
 
     pub async fn add_purl(&self, state: &AppState, purl: &str) -> Result<(), anyhow::Error> {

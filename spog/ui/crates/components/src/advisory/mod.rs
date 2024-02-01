@@ -375,7 +375,7 @@ fn csaf_resolve_aggregated_products<'a>(
                 .collect::<Vec<_>>();
 
             if products_cache.has_product(id) {
-                products.push(id.clone());
+                products.push(id);
             }
 
             if products.is_empty() {

@@ -59,7 +59,7 @@ impl Collectors {
             log::info!("check pkgs {}", collector.id);
             if collector.config.interests.contains(&Interest::Package) {
                 log::info!("dispatch pkgs {}", collector.id);
-                futures.push(collector.collect_packages(state.clone(), request.purls.clone()));
+                futures.push(collector.collect_packages(state, request.purls.clone()));
             }
         }
 

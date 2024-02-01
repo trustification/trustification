@@ -161,10 +161,10 @@ impl From<IssueAttributes> for Vec<v11y_client::Vulnerability> {
         let mut vulns = Vec::new();
 
         let severities: Vec<_> = issue.severities.iter().map(|e| e.into()).collect();
-        let references = issue
+        let references: Vec<_> = issue
             .slots
             .map(|slot| slot.references.iter().map(|e| e.into()).collect())
-            .unwrap_or(vec![]);
+            .unwrap_or_default();
 
         for problem in issue.problems {
             let vuln = Vulnerability {

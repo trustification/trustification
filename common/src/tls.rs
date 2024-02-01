@@ -34,10 +34,7 @@ impl ClientConfig {
             }
         };
 
-        self.ca_certificates
-            .iter()
-            .map(|s| s.as_str())
-            .chain(service_ca.into_iter())
+        self.ca_certificates.iter().map(|s| s.as_str()).chain(service_ca)
     }
 
     /// Create a [`reqwest::Client`].

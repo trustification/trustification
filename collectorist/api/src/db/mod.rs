@@ -33,8 +33,8 @@ impl Db {
             r#"insert or ignore into purls (purl) values ($1)
             "#,
         )
-        .bind(purl.clone())
-        .bind(purl.clone())
+        .bind(purl)
+        .bind(purl)
         .execute(&self.pool)
         .await?;
 
@@ -46,7 +46,7 @@ impl Db {
             r#"insert or ignore into vulnerabilities (id) values ($1)
             "#,
         )
-        .bind(vuln_id.clone())
+        .bind(vuln_id)
         .execute(&self.pool)
         .await?;
 
@@ -77,7 +77,7 @@ impl Db {
         as_of: DateTime<Utc>,
     ) -> Result<(), anyhow::Error> {
         sqlx::query(r#"replace into collector_purls (collector, purl, timestamp) VALUES ($1, $2, $3)"#)
-            .bind(collector_id.clone())
+            .bind(collector_id)
             .bind(purl)
             .bind(as_of)
             .execute(&self.pool)
@@ -101,7 +101,7 @@ impl Db {
             where
                 collector = $1 and purl = $2"#,
         )
-        .bind(collector_id.clone())
+        .bind(collector_id)
         .bind(purl.clone())
         .fetch_optional(&self.pool)
         .await?
