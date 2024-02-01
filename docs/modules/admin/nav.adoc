@@ -3,7 +3,7 @@
 ** Installing on a Kubernetes cluster
 *** xref:cluster-prereq.adoc[Pre-requisites]
 *** xref:cluster-preparing.adoc[Preparing the infrastructure]
-*** Installing the application
+*** xref:cluster-install.adoc[Installing the application]
 ** Post installation tasks
 ** Day two tasks
 ** xref:cluster-alternatives.adoc[Alternative installation methods]
