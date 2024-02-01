@@ -73,6 +73,12 @@ This will result in the following names, which will be used from here on for exa
 For each bucket a change notification needs to be set up publish the events for `s3:ObjectCreated:*` and
 `s3:ObjectRemoved:*` to the `<type>-stored` queue.
 
+== Queue subscriptions
+
+For each of the `<type>-stored` queues, we need two (with one exception) topic subscriptions:
+
+* `<type>-stored` to `
+
 == Users
 
 For each document type an AWS IAM user must be created. From here on, the examples will use:
