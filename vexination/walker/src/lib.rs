@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
+use csaf_walker::report::RenderOptions;
 use std::{
     path::PathBuf,
     process::ExitCode,
@@ -61,6 +62,13 @@ pub struct Run {
     /// Additional root certificates for the destination
     #[arg(long = "sender-root-certificates")]
     pub additional_root_certificates: Vec<PathBuf>,
+    /// Path of the HTML output file
+    #[arg(long, default_value = "report.html")]
+    pub output: PathBuf,
+
+    /// Make links relative to this URL.
+    #[arg(short = 'B', long)]
+    pub base_url: Option<Url>,
 }
 
 impl Run {
@@ -93,6 +101,10 @@ impl Run {
                         self.sink,
                         provider,
                         options,
+                        RenderOptions {
+                            output: self.output,
+                            base_url: self.base_url,
+                        },
                         self.ignore_distributions,
                         self.since_file,
                         self.additional_root_certificates,

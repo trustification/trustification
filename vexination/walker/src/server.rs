@@ -1,12 +1,20 @@
+use std::collections::BTreeMap;
 use std::path::PathBuf;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::SystemTime;
 use std::{net::SocketAddr, sync::Arc, time::Duration};
 
+use csaf_walker::discover::AsDiscovered;
+use csaf_walker::report::{render, DocumentKey, Duplicates, RenderOptions, ReportResult};
 use csaf_walker::{
     discover::DiscoveredAdvisory,
     retrieve::{RetrievedAdvisory, RetrievingVisitor},
     source::{FileSource, HttpSource},
     validation::{ValidatedAdvisory, ValidationError, ValidationVisitor},
+    verification::{
+        check::{init_verifying_visitor, CheckError},
+        VerificationError, VerifiedAdvisory, VerifyingVisitor,
+    },
     walker::Walker,
 };
 use reqwest::{header, StatusCode};
@@ -28,6 +36,7 @@ pub async fn run(
     sink: Url,
     provider: Arc<dyn TokenProvider>,
     options: ValidationOptions,
+    render_options: RenderOptions,
     ignore_distributions: Vec<Url>,
     since_file: Option<PathBuf>,
     additional_root_certificates: Vec<PathBuf>,
@@ -40,39 +49,49 @@ pub async fn run(
         client = client.add_root_certificate(reqwest::tls::Certificate::from_pem(&pem)?);
     }
 
-    let client = Arc::new(client.build()?);
+    let total = Arc::new(AtomicUsize::default());
+    let duplicates: Arc<std::sync::Mutex<Duplicates>> = Default::default();
+    let errors: Arc<std::sync::Mutex<BTreeMap<DocumentKey, String>>> = Default::default();
+    let warnings: Arc<std::sync::Mutex<BTreeMap<DocumentKey, Vec<CheckError>>>> = Default::default();
 
-    let validation = ValidationVisitor::new(|advisory: Result<ValidatedAdvisory, ValidationError>| {
-        let sink = sink.clone();
-        let provider = provider.clone();
-        let client = client.clone();
-        async move {
-            match advisory {
-                Ok(ValidatedAdvisory {
-                    retrieved:
-                        RetrievedAdvisory {
-                            data,
-                            discovered: DiscoveredAdvisory { url, .. },
-                            ..
-                        },
-                }) => {
-                    let name = url.path_segments().and_then(|s| s.last()).unwrap_or_else(|| url.path());
-                    match serde_json::from_slice::<csaf::Csaf>(&data) {
-                        Ok(doc) => match client
+    {
+        let client = Arc::new(client.build()?);
+        let total = total.clone();
+        let duplicates = duplicates.clone();
+        let errors = errors.clone();
+        let warnings = warnings.clone();
+
+        let visitor = move |advisory: Result<
+            VerifiedAdvisory<ValidatedAdvisory, &'static str>,
+            VerificationError<ValidationError, ValidatedAdvisory>,
+        >| {
+            (*total).fetch_add(1, Ordering::Release);
+
+            let errors = errors.clone();
+            let warnings = warnings.clone();
+            let client = client.clone();
+            let sink = sink.clone();
+            let provider = provider.clone();
+            async move {
+                let adv = match advisory {
+                    Ok(adv) => {
+                        let sink = sink.clone();
+                        let name = adv
+                            .url
+                            .path_segments()
+                            .and_then(|s| s.last())
+                            .unwrap_or_else(|| adv.url.path());
+                        match client
                             .post(sink)
                             .header(header::CONTENT_TYPE, "application/json")
-                            .body(data.clone())
+                            .body(serde_json::to_string(&adv.csaf.clone()).unwrap())
                             .inject_token(&provider)
                             .await?
                             .send()
                             .await
                         {
                             Ok(r) if r.status() == StatusCode::CREATED => {
-                                log::info!(
-                                    "VEX ({}) of size {} stored successfully",
-                                    doc.document.tracking.id,
-                                    &data[..].len()
-                                );
+                                log::info!("VEX ({}) stored successfully", &adv.csaf.document.tracking.id);
                             }
                             Ok(r) => {
                                 log::warn!("(Skipped) {name}: Error storing VEX: {}", r.status());
@@ -80,47 +99,88 @@ pub async fn run(
                             Err(e) => {
                                 log::warn!("(Skipped) {name}: Error storing VEX: {e:?}");
                             }
-                        },
-                        Err(e) => {
-                            log::warn!("(Ignored) {name}: Error parsing advisory to retrieve ID: {e:?}");
-                        }
+                        };
+                        adv
                     }
+                    Err(err) => {
+                        let name = match err.as_discovered().relative_base_and_url() {
+                            Some((base, relative)) => DocumentKey {
+                                distribution_url: base.clone(),
+                                url: relative,
+                            },
+                            None => DocumentKey {
+                                distribution_url: err.url().clone(),
+                                url: Default::default(),
+                            },
+                        };
+
+                        // let name = err.url().to_string();
+
+                        errors.lock().unwrap().insert(name, err.to_string());
+                        return Ok::<_, anyhow::Error>(());
+                    }
+                };
+
+                if !adv.failures.is_empty() {
+                    let name = DocumentKey::for_document(&adv);
+                    warnings
+                        .lock()
+                        .unwrap()
+                        .entry(name)
+                        .or_default()
+                        .extend(adv.failures.into_values().flatten());
                 }
-                Err(e) => {
-                    log::warn!("Ignoring advisory {}: {:?}", e.url(), e);
-                }
+
+                Ok::<_, anyhow::Error>(())
             }
-            Ok::<_, anyhow::Error>(())
-        }
-    })
-    .with_options(options);
-
-    if let Ok(url) = Url::parse(&source) {
-        let since = Since::new(None::<SystemTime>, since_file, Default::default())?;
-        log::info!("Walking VEX docs: source='{source}' workers={workers}");
-        let source = HttpSource {
-            url,
-            fetcher,
-            options: csaf_walker::source::HttpOptions { since: *since },
         };
-        Walker::new(source.clone())
-            .with_distribution_filter(Box::new(move |distribution| {
-                !ignore_distributions.contains(&distribution.directory_url)
-            }))
-            .walk_parallel(workers, RetrievingVisitor::new(source.clone(), validation))
-            .await?;
+        let visitor = VerifyingVisitor::with_checks(visitor, init_verifying_visitor());
+        let visitor = ValidationVisitor::new(visitor).with_options(options);
 
-        since.store()?;
-    } else {
-        log::info!("Walking VEX docs: path='{source}' workers={workers}");
-        let source = FileSource::new(source, None)?;
-        Walker::new(source.clone())
-            .with_distribution_filter(Box::new(move |distribution| {
-                !ignore_distributions.contains(&distribution.directory_url)
-            }))
-            .walk(RetrievingVisitor::new(source.clone(), validation))
-            .await?;
+        if let Ok(url) = Url::parse(&source) {
+            let since = Since::new(None::<SystemTime>, since_file, Default::default())?;
+            log::info!("Walking VEX docs: source='{source}' workers={workers}");
+            let source = HttpSource {
+                url,
+                fetcher,
+                options: csaf_walker::source::HttpOptions { since: *since },
+            };
+            Walker::new(source.clone())
+                .with_distribution_filter(Box::new(move |distribution| {
+                    !ignore_distributions.contains(&distribution.directory_url)
+                }))
+                .walk_parallel(workers, RetrievingVisitor::new(source.clone(), visitor))
+                .await?;
+
+            since.store()?;
+        } else {
+            log::info!("Walking VEX docs: path='{source}' workers={workers}");
+            let source = FileSource::new(source, None)?;
+            Walker::new(source.clone())
+                .with_distribution_filter(Box::new(move |distribution| {
+                    !ignore_distributions.contains(&distribution.directory_url)
+                }))
+                .walk(RetrievingVisitor::new(source.clone(), visitor))
+                .await?;
+        }
     }
+
+    let total = (*total).load(Ordering::Acquire);
+    render(
+        render_options,
+        ReportResult {
+            total,
+            duplicates: &duplicates.lock().unwrap(),
+            errors: &errors.lock().unwrap(),
+            warnings: &warnings.lock().unwrap(),
+        },
+    )?;
+    Ok(())
+}
+
+fn render(render: RenderOptions, report: ReportResult) -> anyhow::Result<()> {
+    let mut out = std::fs::File::create(&render.output)?;
+    render::render_to_html(&mut out, &report, &render)?;
 
     Ok(())
 }
