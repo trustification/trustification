@@ -39,6 +39,7 @@
         "extendSection": true,
         "scanner": true,
         "showSource": true,
+        "showReport": true,
         "uploader": false
       },
       "allOf": [
@@ -196,6 +197,11 @@
         },
         "showSource": {
           "description": "Enable the \"source\" tabs",
+          "default": true,
+          "type": "boolean"
+        },
+        "showReport": {
+          "description": "Enable the \"report\" tabs",
           "default": true,
           "type": "boolean"
         },

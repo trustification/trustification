@@ -64,6 +64,9 @@ pub struct Features {
     /// Enable the "source" tabs
     #[serde(default = "default_feature")]
     pub show_source: bool,
+    /// Enable the "report" tabs
+    #[serde(default = "default_feature")]
+    pub show_report: bool,
 }
 
 impl Default for Features {
@@ -75,6 +78,7 @@ impl Default for Features {
             dedicated_search: default_feature(),
             additional_package_information: default_feature(),
             show_source: default_feature(),
+            show_report: default_feature(),
         }
     }
 }
