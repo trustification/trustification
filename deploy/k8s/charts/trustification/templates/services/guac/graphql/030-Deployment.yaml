@@ -1,0 +1,87 @@
+{{- if .Values.modules.guacGraphql.enabled }}
+{{- $mod := dict "root" . "name" "guac-graphql" "component" "guac" "module" .Values.modules.guacGraphql -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "trustification.common.name" $mod }}
+  labels:
+    {{- include "trustification.common.labels" $mod | nindent 4 }}
+  annotations:
+    {{- include "trustification.application.annotations" $mod | nindent 4 }}
+
+spec:
+  replicas: {{ include "trustification.application.replicas" $mod }}
+  selector:
+    matchLabels:
+      {{- include "trustification.common.selectorLabels" $mod | nindent 6 }}
+
+  template:
+    metadata:
+      labels:
+        {{- include "trustification.common.selectorLabels" $mod | nindent 8 }}
+        {{- include "trustification.application.podLabels" $mod | nindent 8 }}
+
+    spec:
+      {{- include "trustification.application.pod" $mod | nindent 6 }}
+
+      initContainers:
+        - name: migrate
+          {{- include "trustification.guac.defaultImage" $mod | nindent 10 }}
+          {{- include "trustification.application.container" $mod | nindent 10 }}
+
+          command: [ "/bin/sh" ]
+          args:
+            - -ec
+            - |
+              TC_PGOPTIONS="?"
+              TC_PGOPTIONS="${TC_PGOPTIONS}sslmode=${TC_PGSSLMODE}&"
+              exec /opt/guac/guacmigrate "--db-address" "postgres://${TC_PGUSER}:${TC_PGPASSWORD}@${TC_PGHOST}:${TC_PGPORT}/${TC_PGDATABASE}${TC_PGOPTIONS}" "--db-driver" "postgres" "--db-debug" "true"
+
+          env:
+            {{- if .Values.guac.migrateDatabase }}{{/* if we have .migrate database settings, use them */}}
+            {{- include "trustification.postgres.envVars" ( dict "root" . "database" ( merge (deepCopy .Values.guac.database) .Values.guac.migrateDatabase ) "prefix" "TC_" ) | nindent 12 }}
+            {{- else }}{{/* otherwise fall back to the init database credentials, but replace the database name */}}
+            {{- include "trustification.postgres.envVars" ( dict "root" . "database" ( set (deepCopy .Values.guac.initDatabase) "name" .Values.guac.database.name  ) "prefix" "TC_" ) | nindent 12 }}
+            {{- end }}
+
+      containers:
+        - name: service
+          {{- include "trustification.guac.defaultImage" $mod | nindent 10 }}
+          command: ["/bin/sh"]
+
+          # not sure why --db-migrate=false has to be a single argument, but it won't work otherwise
+          args:
+            - -ec
+            - |
+              TC_PGOPTIONS="?"
+              TC_PGOPTIONS="${TC_PGOPTIONS}sslmode=${TC_PGSSLMODE}&"
+              exec /opt/guac/guacgql "--gql-backend" "ent" "--db-address" "postgres://${TC_PGUSER}:${TC_PGPASSWORD}@${TC_PGHOST}:${TC_PGPORT}/${TC_PGDATABASE}${TC_PGOPTIONS}" "--db-driver" "postgres" "--db-migrate=false"
+
+          workingDir: "/guac"
+          env:
+            {{- include "trustification.postgres.envVars" ( dict "root" . "database" .Values.guac.database "prefix" "TC_" ) | nindent 12 }}
+            {{- if eq ( include "trustification.openshift.useServiceCa" . ) "true" }}
+            - name: GUAC_GQL_TLS_CERT_FILE
+              value: /etc/tls/tls.crt
+            - name: GUAC_GQL_TLS_KEY_FILE
+              value: /etc/tls/tls.key
+            {{- end }}
+
+          volumeMounts:
+            {{- include "trustification.application.httpServerVolumesMounts" $mod | nindent 12 }}
+
+          {{- include "trustification.application.container" $mod | nindent 10 }}
+
+          livenessProbe:
+            tcpSocket:
+              port: 8080
+
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+              name: endpoint
+
+      volumes:
+        {{- include "trustification.application.httpServerVolumes" $mod | nindent 8 }}
+
+{{ end }}

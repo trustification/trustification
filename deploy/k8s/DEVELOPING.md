@@ -7,20 +7,28 @@
 ## Updating chart dependencies
 
 ```shell
-helm dependency update chart/
+helm dependency update charts/trustification-infrastructure
+```
+
+## Updating the JSON schema
+
+Unfortunately Helm requires the JSON schema to be authored in JSON. To make that a little bit easier, we author it
+in YAML and then convert it to JSON. For example using:
+
+```shell
+python3 -c 'import sys, yaml, json; print(json.dumps(yaml.safe_load(sys.stdin)))' < charts/trustification/values.schema.yaml > charts/trustification/values.schema.json
 ```
 
 ## Linting Helm charts
 
 ```shell
-helm lint ./chart -f ./chart/trustification.dev/staging.yaml
-helm lint ./chart -f ./chart/trustification.dev/prod.yaml
+helm lint ./charts/trustification --values values-minikube.yaml --set-string appDomain=.localhost
 ```
 
 ## Find that whitespace
 
 ```shell
-helm template --debug chart/ -f chart/staging.yaml # or prod.yaml
+helm template --debug charts/trustification
 ```
 
 ## Update the OpenShift templates

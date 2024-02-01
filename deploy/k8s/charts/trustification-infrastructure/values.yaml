@@ -1,0 +1,105 @@
+minio:
+  enabled: false
+  extraEnvVars:
+    - name: MINIO_NOTIFY_KAFKA_ENABLE_BOMBASTIC
+      value: "on"
+    - name: MINIO_NOTIFY_KAFKA_BROKERS_BOMBASTIC
+      value: "{{ .Release.Name }}-kafka.{{ .Release.Namespace }}.svc.cluster.local:9092"
+    - name: MINIO_NOTIFY_KAFKA_TOPIC_BOMBASTIC
+      value: "sbom-stored"
+    - name: MINIO_NOTIFY_KAFKA_ENABLE_VEXINATION
+      value: "on"
+    - name: MINIO_NOTIFY_KAFKA_BROKERS_VEXINATION
+      value: "{{ .Release.Name }}-kafka.{{ .Release.Namespace }}.svc.cluster.local:9092"
+    - name: MINIO_NOTIFY_KAFKA_TOPIC_VEXINATION
+      value: "vex-stored"
+    - name: MINIO_NOTIFY_KAFKA_ENABLE_V11Y
+      value: "on"
+    - name: MINIO_NOTIFY_KAFKA_BROKERS_V11Y
+      value: "{{ .Release.Name }}-kafka.{{ .Release.Namespace }}.svc.cluster.local:9092"
+    - name: MINIO_NOTIFY_KAFKA_TOPIC_V11Y
+      value: "v11y-stored"
+
+    - name: MINIO_NOTIFY_KAFKA_SASL_BOMBASTIC
+      value: "on"
+    - name: MINIO_NOTIFY_KAFKA_SASL_USERNAME_BOMBASTIC
+      value: "user1"
+    - name: MINIO_NOTIFY_KAFKA_SASL_PASSWORD_BOMBASTIC
+      value: "rIGP74jD7WpdiYWunxTHTGnjQzNG3RWy" # needs to be aligned with .kafka.sasl.client.passwords
+    - name: MINIO_NOTIFY_KAFKA_SASL_MECHANISM_BOMBASTIC
+      value: "PLAIN"
+
+    - name: MINIO_NOTIFY_KAFKA_SASL_VEXINATION
+      value: "on"
+    - name: MINIO_NOTIFY_KAFKA_SASL_USERNAME_VEXINATION
+      value: "user1"
+    - name: MINIO_NOTIFY_KAFKA_SASL_PASSWORD_VEXINATION
+      value: "rIGP74jD7WpdiYWunxTHTGnjQzNG3RWy" # needs to be aligned with .kafka.sasl.client.passwords
+    - name: MINIO_NOTIFY_KAFKA_SASL_MECHANISM_VEXINATION
+      value: "PLAIN"
+
+    - name: MINIO_NOTIFY_KAFKA_SASL_V11Y
+      value: "on"
+    - name: MINIO_NOTIFY_KAFKA_SASL_USERNAME_V11Y
+      value: "user1"
+    - name: MINIO_NOTIFY_KAFKA_SASL_PASSWORD_V11Y
+      value: "rIGP74jD7WpdiYWunxTHTGnjQzNG3RWy" # needs to be aligned with .kafka.sasl.client.passwords
+    - name: MINIO_NOTIFY_KAFKA_SASL_MECHANISM_V11Y
+      value: "PLAIN"
+
+minioPostInstall:
+  disabled: false
+  clientImage: docker.io/bitnami/minio-client:2024.1.18-debian-11-r1
+  mcPath: /opt/bitnami/minio-client/bin/mc
+
+keycloak:
+  enabled: false
+
+postgresql:
+  enabled: false
+
+kafka:
+  enabled: false
+  heapOpts: "-verbose:gc" # fall back to Java defaults
+  listeners:
+    controller:
+      protocol: PLAINTEXT
+    interbroker:
+      protocol: PLAINTEXT
+  sasl:
+    client:
+      users: ["user1"]
+      passwords: "rIGP74jD7WpdiYWunxTHTGnjQzNG3RWy"
+  kraft:
+    enabled: true
+  controller:
+    replicaCount: 1
+  provisioning:
+    enabled: true
+    topics:
+      - name: sbom-stored
+      - name: sbom-failed
+      - name: sbom-indexed
+      - name: vex-stored
+      - name: vex-failed
+      - name: vex-indexed
+      - name: v11y-stored
+      - name: v11y-failed
+      - name: v11y-indexed
+  extraConfig: |
+    offsets.topic.replication.factor=1
+
+keycloakPostInstall:
+  disabled: false
+  # NOTE: this must be an image which contain things like bash, kcadm, grep, awk
+  image: docker.io/bitnami/keycloak:23
+  kcadmPath: /opt/bitnami/keycloak/bin/kcadm.sh
+  realmAdmin:
+    name: admin
+    password: admin123456
+  redirectUrls: []
+  identityProviders:
+    github: {}
+
+oidc:
+  clients: {}

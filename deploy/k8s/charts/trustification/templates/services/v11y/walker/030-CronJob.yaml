@@ -1,0 +1,78 @@
+{{- if .Values.modules.v11yWalker.enabled }}
+{{- $mod := dict "root" . "name" "v11y-walker" "component" "v11y" "module" .Values.modules.v11yWalker -}}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "trustification.common.name" $mod }}
+  labels:
+    {{- include "trustification.common.labels" $mod | nindent 4 }}
+
+spec:
+  schedule: {{ $mod.module.schedule | default "0 1 * * *" | quote }}
+  suspend: {{ $mod.module.suspend | default false }}
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            {{- include "trustification.common.selectorLabels" $mod | nindent 12 }}
+
+        spec:
+          {{- include "trustification.application.pod" $mod | nindent 10 }}
+
+          restartPolicy: Never
+          volumes:
+            - name: cvelist
+              persistentVolumeClaim:
+                claimName: {{ include "trustification.common.name" $mod }}
+
+          initContainers:
+            - name: git-fetch
+              {{- include "trustification.common.image" (merge (deepCopy $mod) (dict "image" $mod.module.gitImage "imageName" "git" ) ) | nindent 14 }}
+              {{- include "trustification.application.container" $mod | nindent 14 }}
+
+              volumeMounts:
+                - mountPath: /git
+                  name: cvelist
+
+              command: ["/bin/sh"]
+              args:
+                - "-ec"
+                - |
+                  if test -d cvelistV5; then
+                    cd cvelistV5
+                    git pull
+                  else
+                    git clone https://github.com/CVEProject/cvelistV5
+                  fi
+
+          containers:
+            - name: walker
+              {{- include "trustification.common.defaultImage" $mod | nindent 14 }}
+
+              volumeMounts:
+                - mountPath: /mnt
+                  name: cvelist
+
+              command: ["/trust"]
+              args:
+                - "v11y"
+                - "walker"
+                - "--source"
+                - "/mnt/cvelistV5"
+                - "--delta-file"
+                - "/mnt/last-delta"
+
+              env:
+                {{- include "trustification.application.rust.envVars" $mod | nindent 16 }}
+                {{- include "trustification.application.infrastructure.envVars" $mod | nindent 16 }}
+                {{- include "trustification.storage.envVars" ( set (deepCopy $mod) "storage" .Values.v11y ) | nindent 16 }}
+
+              ports:
+                {{- include "trustification.application.infrastructure.podPorts" $mod | nindent 16 }}
+
+              {{- include "trustification.application.pod" $mod | nindent 14 }}
+              {{- include "trustification.application.infrastructure.probes" $mod | nindent 14 }}
+
+{{- end }}

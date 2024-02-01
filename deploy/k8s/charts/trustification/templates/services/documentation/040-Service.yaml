@@ -1,0 +1,4 @@
+{{- if .Values.modules.documentation.enabled }}
+{{- $mod := dict "root" . "name" "documentation" "component" "documentation" "module" .Values.modules.documentation -}}
+{{- include "trustification.application.defaultService" $mod }}
+{{- end }}

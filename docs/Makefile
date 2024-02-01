@@ -16,7 +16,7 @@ build:
 
 .PHONY: local
 local:
-	$(ANTORA_CLI) local-antora-playbook.yaml --log-level info  $(ANTORA_ARGS)
+	$(ANTORA_CLI) antora-playbook.yaml --log-level info  $(ANTORA_ARGS)
 
 
 .PHONY: version

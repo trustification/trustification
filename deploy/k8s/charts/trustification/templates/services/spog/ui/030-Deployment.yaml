@@ -1,0 +1,96 @@
+{{- if .Values.modules.spogUi.enabled }}
+{{- $mod := dict "root" . "name" "spog-ui" "component" "spog" "module" .Values.modules.spogUi -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "trustification.common.name" $mod }}
+  labels:
+    {{- include "trustification.common.labels" $mod | nindent 4 }}
+  annotations:
+    {{- include "trustification.application.annotations" $mod | nindent 4 }}
+
+spec:
+  replicas: {{ include "trustification.application.replicas" $mod }}
+  selector:
+    matchLabels:
+      {{- include "trustification.common.selectorLabels" $mod | nindent 6 }}
+
+  template:
+    metadata:
+      labels:
+        {{- include "trustification.common.selectorLabels" $mod | nindent 8 }}
+        {{- include "trustification.application.podLabels" $mod | nindent 8 }}
+
+    spec:
+      {{- include "trustification.application.pod" $mod | nindent 6 }}
+
+      volumes:
+        - name: endpoints
+          emptyDir: {}
+        - name: run
+          emptyDir: {}
+
+        {{- if $mod.customBranding }}
+        - name: branding
+          configMap:
+            name: spog-ui-branding
+        {{- end }}
+
+      containers:
+        - name: service
+          {{ include "trustification.common.defaultImage" $mod | nindent 10 }}
+          command: ["/nginx.sh"]
+          env:
+            - name: API_URL
+              value: {{ include "trustification.tls.http.protocol" $mod }}://{{ include "trustification.host.spogApi" $mod }}
+            - name: BOMBASTIC_URL
+              value: {{ include "trustification.tls.http.protocol" $mod }}://{{ include "trustification.host.bombasticApi" $mod }}
+            - name: VEXINATION_URL
+              value: {{ include "trustification.tls.http.protocol" $mod }}://{{ include "trustification.host.vexinationApi" $mod }}
+            - name: ISSUER_URL
+              value: {{ include "trustification.oidc.frontendIssuerUrl" . }}
+            - name: CLIENT_ID
+              value: {{ include "trustification.oidc.frontendClientId" . }}
+
+            {{- with .Values.oidc.clients.frontend.scopes }}
+            - name: SCOPES
+              value: {{ . | quote }}
+            {{- end }}
+            {{- with $mod.segmentWriteKey }}
+            - name: SEGMENT_WRITE_KEY
+              {{- include "trustification.common.envVarValue" . | nindent 14 }}
+            {{- end }}
+            {{- with $mod.initialBackendJson }}
+            - name: BACKEND_JSON
+              value: {{ . | toJson | quote }}
+            {{- end }}
+
+          volumeMounts:
+            - name: endpoints
+              mountPath: /endpoints
+            - name: run
+              mountPath: /run
+
+            {{- if $mod.customBranding }}
+            - name: branding
+              mountPath: /public/branding
+            {{- end }}
+
+          ports:
+            - containerPort: 8080
+              name: endpoint
+              protocol: TCP
+
+          {{- include "trustification.application.container" $mod | nindent 10 }}
+
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 2
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 2
+{{- end }}

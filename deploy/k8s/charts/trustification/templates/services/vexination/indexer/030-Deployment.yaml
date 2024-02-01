@@ -1,0 +1,79 @@
+{{- if .Values.modules.vexinationIndexer.enabled }}
+{{- $mod := dict "root" . "name" "vexination-indexer" "component" "vexination" "module" .Values.modules.vexinationIndexer -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "trustification.common.name" $mod }}
+  labels:
+    {{- include "trustification.common.labels" $mod | nindent 4 }}
+  annotations:
+    {{- include "trustification.application.annotations" $mod | nindent 4 }}
+spec:
+
+  replicas: 1 # must be one
+
+  strategy:
+    type: Recreate
+
+  selector:
+    matchLabels:
+      {{- include "trustification.common.selectorLabels" $mod | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "trustification.common.selectorLabels" $mod | nindent 8 }}
+        {{- include "trustification.application.podLabels" $mod | nindent 8 }}
+    spec:
+      {{- include "trustification.application.pod" $mod | nindent 6 }}
+
+      volumes:
+        - name: data
+          emptyDir: {}
+
+      containers:
+        - name: service
+          {{- include "trustification.common.defaultImage" $mod | nindent 10 }}
+          command: ["/trust"]
+          args:
+            - "vexination"
+            - "indexer"
+
+            - "--stored-topic"
+            - {{ ($mod.topics).stored | default .Values.vexination.topics.stored | quote }}
+            - "--indexed-topic"
+            - {{ ($mod.topics).indexed | default .Values.vexination.topics.indexed | quote }}
+            - "--failed-topic"
+            - {{ ($mod.topics).failed | default .Values.vexination.topics.failed | quote }}
+
+            - "--index-mode"
+            - {{ $mod.indexMode | default "file" | quote }}
+            - "--index-dir"
+            - "/data/index"
+
+            {{- if $mod.alwaysReindex }}
+            - "--reindex"
+            - "always"
+            {{- end }}
+
+          env:
+            {{- include "trustification.application.rust.envVars" $mod | nindent 12 }}
+            {{- include "trustification.application.infrastructure.envVars" $mod | nindent 12 }}
+
+            {{- include "trustification.storage.envVars" ( set (deepCopy $mod) "storage" .Values.vexination ) | nindent 12 }}
+            {{- include "trustification.eventBus.envVars" $mod | nindent 12 }}
+
+            - name: INDEX_WRITER_MEMORY_BYTES
+              value: {{ ($mod.index).writerMemoryBytes | default .Values.index.writerMemoryBytes | default "128MiB" }}
+            - name: INDEX_SYNC_INTERVAL
+              value: {{ ($mod.index).syncInterval | default .Values.index.syncInterval | default "1800s" }}
+
+          volumeMounts:
+            - name: data
+              mountPath: /data
+
+          ports:
+            {{- include "trustification.application.infrastructure.podPorts" $mod | nindent 12 }}
+
+          {{- include "trustification.application.container" $mod | nindent 10 }}
+          {{- include "trustification.application.infrastructure.probes" $mod | nindent 10 }}
+{{ end }}

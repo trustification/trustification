@@ -2,6 +2,7 @@ use std::path::PathBuf;
 use std::time::SystemTime;
 use std::{net::SocketAddr, sync::Arc, time::Duration};
 
+use csaf_walker::visitors::filter::{FilterConfig, FilteringVisitor};
 use csaf_walker::{
     discover::DiscoveredAdvisory,
     retrieve::{RetrievedAdvisory, RetrievingVisitor},
@@ -31,6 +32,7 @@ pub async fn run(
     ignore_distributions: Vec<Url>,
     since_file: Option<PathBuf>,
     additional_root_certificates: Vec<PathBuf>,
+    only_prefixes: Vec<String>,
 ) -> Result<(), anyhow::Error> {
     let fetcher = Fetcher::new(Default::default()).await?;
 
@@ -95,6 +97,13 @@ pub async fn run(
     })
     .with_options(options);
 
+    let config = FilterConfig {
+        // we use the walker level filtering for this
+        ignored_distributions: Default::default(),
+        ignored_prefixes: vec![],
+        only_prefixes,
+    };
+
     if let Ok(url) = Url::parse(&source) {
         let since = Since::new(None::<SystemTime>, since_file, Default::default())?;
         log::info!("Walking VEX docs: source='{source}' workers={workers}");
@@ -107,7 +116,13 @@ pub async fn run(
             .with_distribution_filter(Box::new(move |distribution| {
                 !ignore_distributions.contains(&distribution.directory_url)
             }))
-            .walk_parallel(workers, RetrievingVisitor::new(source.clone(), validation))
+            .walk_parallel(
+                workers,
+                FilteringVisitor {
+                    config,
+                    visitor: RetrievingVisitor::new(source.clone(), validation),
+                },
+            )
             .await?;
 
         since.store()?;
@@ -118,7 +133,10 @@ pub async fn run(
             .with_distribution_filter(Box::new(move |distribution| {
                 !ignore_distributions.contains(&distribution.directory_url)
             }))
-            .walk(RetrievingVisitor::new(source.clone(), validation))
+            .walk(FilteringVisitor {
+                config,
+                visitor: RetrievingVisitor::new(source.clone(), validation),
+            })
             .await?;
     }
 

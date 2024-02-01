@@ -1,0 +1,50 @@
+{{- if .Values.modules.documentation.enabled }}
+{{- $mod := dict "root" . "name" "documentation" "component" "documentation" "module" .Values.modules.documentation -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "trustification.common.name" $mod }}
+  labels:
+    {{- include "trustification.common.labels" $mod | nindent 4 }}
+spec:
+  replicas: {{ include "trustification.application.replicas" $mod }}
+  selector:
+    matchLabels:
+      {{- include "trustification.common.selectorLabels" $mod | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "trustification.common.selectorLabels" $mod | nindent 8 }}
+
+    spec:
+      {{- include "trustification.application.pod" $mod | nindent 6 }}
+
+      volumes:
+        - name: endpoints
+          emptyDir: {}
+        - name: run
+          emptyDir: {}
+      containers:
+        - name: service
+          {{ include "trustification.common.defaultImage" ( set (deepCopy $mod) "imageName" "trust-docs" ) | nindent 10 }}
+          volumeMounts:
+            - name: run
+              mountPath: /run
+          ports:
+            - containerPort: 8080
+              name: endpoint
+              protocol: TCP
+
+          {{- include "trustification.application.container" $mod | nindent 10 }}
+
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 2
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 2
+{{- end }}

@@ -1,0 +1,58 @@
+{{- if .Values.modules.guacCollectsub.enabled }}
+{{- $mod := dict "root" . "name" "guac-collectsub" "component" "guac" "module" .Values.modules.guacCollectsub -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "trustification.common.name" $mod }}
+  labels:
+    {{- include "trustification.common.labels" $mod | nindent 4 }}
+  annotations:
+    {{- include "trustification.application.annotations" $mod | nindent 4 }}
+
+spec:
+  replicas: 1 # must be one
+
+  strategy:
+    type: Recreate
+
+  selector:
+    matchLabels:
+      {{- include "trustification.common.selectorLabels" $mod | nindent 6 }}
+
+  template:
+    metadata:
+      labels:
+        {{- include "trustification.common.selectorLabels" $mod | nindent 8 }}
+        {{- include "trustification.application.podLabels" $mod | nindent 8 }}
+
+    spec:
+      volumes:
+        {{- include "trustification.application.httpServerVolumes" $mod | nindent 8 }}
+
+      containers:
+        - name: service
+          {{- include "trustification.guac.defaultImage" $mod | nindent 10 }}
+
+          command: ["/opt/guac/guaccsub"]
+          args: []
+
+          env:
+            {{- if eq ( include "trustification.openshift.useServiceCa" . ) "true" }}
+            - name: GUAC_CSUB_TLS_CERT_FILE
+              value: /etc/tls/tls.crt
+            - name: GUAC_CSUB_TLS_KEY_FILE
+              value: /etc/tls/tls.key
+            {{- end }}
+
+          volumeMounts:
+            {{- include "trustification.application.httpServerVolumesMounts" $mod | nindent 12 }}
+
+          livenessProbe:
+            tcpSocket:
+              port: 2782
+
+          ports:
+            - containerPort: 2782
+              protocol: TCP
+              name: endpoint
+{{ end }}

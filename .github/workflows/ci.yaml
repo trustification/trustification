@@ -51,6 +51,15 @@ jobs:
               echo "::error::Uncommitted changes to deploy/openshift (most likely template must be updated by running `make`)"
               exit 1
           fi
+      - name: Check if values schema has uncommitted changes
+        working-directory: deploy/k8s
+        run: |
+          python3 -c 'import sys, yaml, json; print(json.dumps(yaml.safe_load(sys.stdin)))' < charts/trustification/values.schema.yaml > charts/trustification/values.schema.json
+          git diff --quiet charts/trustification
+          if [ $? -gt 0 ]; then
+              echo "::error::Uncommitted changes to deploy/k8s/charts/trustification/values.schema.json"
+              exit 1
+          fi
 
   helm-lint:
     runs-on: ubuntu-22.04
@@ -66,15 +75,27 @@ jobs:
       - name: install helm dependencies
         working-directory: deploy/k8s
         run: |
-          helm dependency build chart/
-      - name: helm-lint (staging)
+          helm dependency build charts/trustification
+
+      - name: helm-lint
         working-directory: deploy/k8s
         run: |
-          helm lint ./chart -f ./chart/trustification.dev/staging.yaml
-      - name: helm-lint (prod)
+          helm lint ./charts/trustification --values values-minikube.yaml --set-string appDomain=.localhost
+
+      - name: helm-lint (branding)
         working-directory: deploy/k8s
         run: |
-          helm lint ./chart -f ./chart/trustification.dev/prod.yaml
+          helm lint ./charts/trustification-branding
+
+      # also lint the deprecated charts for now
+      - name: helm-lint-deprecated (staging)
+        working-directory: deploy/k8s
+        run: |
+          helm lint ./chart -f ../trustification.dev/staging.yaml
+      - name: helm-lint-deprecated (prod)
+        working-directory: deploy/k8s
+        run: |
+          helm lint ./chart -f ../trustification.dev/prod.yaml
 
   ci-backend:
     runs-on: ubuntu-22.04

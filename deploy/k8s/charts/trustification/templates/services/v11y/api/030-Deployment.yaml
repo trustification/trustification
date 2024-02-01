@@ -1,0 +1,89 @@
+{{- if and .Values.modules.v11yApi.enabled }}
+{{- $mod := dict "root" . "name" "v11y-api" "component" "v11y" "module" .Values.modules.v11yApi -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "trustification.common.name" $mod }}
+  labels:
+    {{- include "trustification.common.labels" $mod | nindent 4 }}
+  annotations:
+    {{- include "trustification.application.annotations" $mod | nindent 4 }}
+
+spec:
+  replicas: {{ include "trustification.application.replicas" $mod }}
+  selector:
+    matchLabels:
+      {{- include "trustification.common.selectorLabels" $mod | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "trustification.common.selectorLabels" $mod | nindent 8 }}
+        {{- include "trustification.application.podLabels" $mod | nindent 8 }}
+      annotations:
+        configHash/auth: {{ include (print $.Template.BasePath "/services/spog/api/020-ConfigMap-auth.yaml") . | sha256sum }}
+
+    spec:
+      {{- include "trustification.application.pod" $mod | nindent 6 }}
+
+      containers:
+        - name: service
+          {{ include "trustification.common.defaultImage" $mod | nindent 10 }}
+          command: ["/trust"]
+          args:
+            - "v11y"
+            - "api"
+            - "-p"
+            - "8080"
+
+            - "--index-mode"
+            - {{ $mod.indexMode | default "file" | quote }}
+
+            - "--auth-configuration"
+            - "/etc/config/auth.yaml"
+
+          env:
+
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+
+            {{- include "trustification.application.rust.envVars" $mod | nindent 12 }}
+            {{- include "trustification.application.infrastructure.envVars" $mod | nindent 12 }}
+            {{- include "trustification.application.httpServer.envVars" $mod | nindent 12 }}
+            {{- include "trustification.oidc.authenticationClient" ( dict "root" . "clientId" "walker" ) | nindent 12 }}
+            {{- include "trustification.storage.envVars" ( set (deepCopy $mod) "storage" .Values.v11y ) | nindent 12 }}
+
+            - name: INDEX_SYNC_INTERVAL
+              value: {{ include "trustification.index.syncInterval" ( set (deepCopy $mod) "storage" .Values.v11y ) }}
+
+          ports:
+            {{- include "trustification.application.infrastructure.podPorts" $mod | nindent 12 }}
+            - containerPort: 8080
+              name: endpoint
+              protocol: TCP
+
+          {{- include "trustification.application.container" $mod | nindent 10 }}
+          {{- include "trustification.application.infrastructure.probes" $mod | nindent 10 }}
+
+          volumeMounts:
+            {{- include "trustification.application.httpServerVolumesMounts" $mod | nindent 12 }}
+            {{- include "trustification.authenticator.volumeMount" $mod | nindent 12 }}
+
+            {{- if $mod.uiConfiguration }}
+            - name: config-ui
+              mountPath: /etc/config/spog-ui.yaml
+              subPath: {{ if ($mod.uiConfiguration.configMapRef).key }}{{ $mod.uiConfiguration.configMapRef.key }}{{ else }}spog-ui.yaml{{ end }}
+            {{- end }}
+
+      volumes:
+        {{- include "trustification.application.httpServerVolumes" $mod | nindent 8 }}
+        {{- include "trustification.authenticator.volume" $mod | nindent 8 }}
+
+        {{- if $mod.uiConfiguration }}
+        - name: config-ui
+          configMap:
+            name: {{ with $mod.uiConfiguration.configMapRef }}{{ .name }}{{ else }}{{ .Release.Name }}-spog-ui-config{{ end }}
+        {{- end }}
+
+{{ end }}

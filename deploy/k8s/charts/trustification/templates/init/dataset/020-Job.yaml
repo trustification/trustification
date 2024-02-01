@@ -1,0 +1,53 @@
+{{- if .Values.modules.initDataset.enabled }}
+{{- $mod := dict "root" . "name" "init-dataset" "component" "init" "module" .Values.modules.initDataset -}}
+kind: Job
+apiVersion: batch/v1
+metadata:
+  name: {{ include "trustification.common.name" $mod }}
+  labels:
+    {{- include "trustification.common.labels" $mod | nindent 4 }}
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+    argocd.argoproj.io/sync-wave: "2"
+    helm.sh/hook-weight: "20"
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-delete-policy: before-hook-creation
+
+spec:
+  backoffLimit: 1000
+  completions: 1
+  parallelism: 1
+  ttlSecondsAfterFinished: 600
+
+  template:
+    metadata:
+      labels:
+        {{- include "trustification.common.selectorLabels" $mod | nindent 12 }}
+
+    spec:
+
+      {{- include "trustification.application.pod" $mod | nindent 10 }}
+
+      restartPolicy: OnFailure
+
+      containers:
+        - name: run
+          {{ include "trustification.common.defaultImage" $mod | nindent 10 }}
+
+          command: ["/usr/bin/bash"]
+          args:
+            - "-ce"
+            - |
+              ARGS=""
+              if [[ -f /run/secrets/kubernetes.io/serviceaccount/service-ca.crt ]]; then
+                ARGS="--sender-root-certificates /run/secrets/kubernetes.io/serviceaccount/service-ca.crt"
+              fi
+              /trust bombastic walker $ARGS --sink {{ include "trustification.tls.http.protocol" $mod }}://bombastic-api.{{ .Release.Namespace }}.svc.cluster.local --source /data/sbom
+              /trust vexination walker $ARGS --sink {{ include "trustification.tls.http.protocol" $mod }}://vexination-api.{{ .Release.Namespace }}.svc.cluster.local/api/v1/vex --source /data/csaf
+
+          env:
+            {{- include "trustification.oidc.authenticationClient" ( dict "root" . "clientId" "walker" ) | nindent 12 }}
+
+          {{- include "trustification.application.container" $mod | nindent 10 }}
+{{ end }}

@@ -1,0 +1,184 @@
+appDomain: change-me
+
+partOf: trustification
+replicas: 1
+
+image:
+  name: trust
+  registry: ghcr.io/trustification
+  pullPolicy: IfNotPresent
+  version: 332b706db5877dcf537f623eaa79eddfbc78986a
+
+guac:
+  image:
+    name: guac
+    registry: ghcr.io/trustification
+    pullPolicy: IfNotPresent
+    version: "v0.3.24"
+  database: {}
+
+ingress: {}
+
+storage: {}
+
+index:
+  mode: file
+  syncInterval: "1m"
+  writerMemoryBytes: "128MiB"
+
+openshift:
+  useServiceCa: true
+
+oidc:
+  clients:
+    frontend:
+      clientId: frontend
+    walker:
+      clientId: walker
+      clientSecret:
+
+metrics:
+  enabled: false
+
+tracing:
+  enabled: false
+
+bombastic:
+  bucket: bombastic
+  topics:
+    stored: sbom-stored
+    failed: sbom-failed
+    indexed: sbom-indexed
+
+vexination:
+  bucket: vexination
+  topics:
+    stored: vex-stored
+    failed: vex-failed
+    indexed: vex-indexed
+
+v11y:
+  bucket: v11y
+  topics:
+    stored: v11y-stored
+    failed: v11y-failed
+    indexed: v11y-indexed
+
+modules:
+
+  documentation:
+    enabled: true
+    ingress: {}
+    image: {}
+    resources:
+      requests:
+        memory: "64Mi"
+      limits:
+        memory: "64Mi"
+
+  bombasticApi:
+    enabled: true
+    ingress: {}
+    image: {}
+    tracing: {}
+    metrics: {}
+
+  bombasticCollector:
+    enabled: true
+    image: {}
+
+  bombasticIndexer:
+    enabled: true
+    image: {}
+    tracing: {}
+    metrics: {}
+
+  bombasticWalker:
+    enabled: true
+    image: {}
+    sources: {}
+
+  spogApi:
+    enabled: true
+    image: {}
+    ingress: {}
+    tracing: {}
+    metrics: {}
+    uiConfiguration:
+      content:
+        global:
+          productName: All Chickens
+
+  spogUi:
+    enabled: true
+    image: {}
+    ingress: {}
+    resources:
+      requests:
+        memory: "64Mi"
+      limits:
+        memory: "64Mi"
+
+  vexinationApi:
+    enabled: true
+    ingress: {}
+    image: {}
+    tracing: {}
+    metrics: {}
+
+  vexinationIndexer:
+    enabled: true
+    image: {}
+    tracing: {}
+    metrics: {}
+
+  vexinationCollector:
+    enabled: true
+    image: {}
+
+  vexinationWalker:
+    enabled: true
+    image: {}
+    sources: {}
+
+  v11yApi:
+    enabled: true
+    ingress: {}
+    image: {}
+    tracing: {}
+    metrics: {}
+
+  v11yIndexer:
+    enabled: true
+    image: {}
+    tracing: {}
+    metrics: {}
+
+  v11yWalker:
+    enabled: true
+    image: {}
+    gitImage:
+      registry: quay.io/trustification
+      version: "2.40.1"
+    tracing: {}
+    metrics: {}
+    storageSize: 10Gi
+
+  guacGraphql:
+    enabled: true
+    image: {}
+
+  guacCollectsub:
+    enabled: false
+    image: {}
+
+  guacInitDb:
+    enabled: true
+    image:
+      registry: docker.io/library
+      name: postgres
+      version: "15"
+
+  initDataset:
+    enabled: true
+    image: {}

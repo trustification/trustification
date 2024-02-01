@@ -1,0 +1,118 @@
+{{- if .Values.modules.bombasticWalker.enabled }}
+
+{{- range $sourceName, $source := .Values.modules.bombasticWalker.sources }}
+
+{{/* A unique name for the walker */}}
+{{- $name := print "bombastic-walker-" $sourceName }}
+
+{{/* Override job properties from source */}}
+{{- $module := deepCopy $.Values.modules.bombasticWalker }}
+{{- if hasKey $source "job" }}
+{{ $_ := mergeOverwrite $module $source.job }}
+{{- end }}
+
+{{- $mod := dict
+  "root" $
+  "name" $name
+  "component" "bombastic"
+  "module" $module
+-}}
+
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: {{ include "trustification.common.name" $mod }}
+  labels:
+    {{- include "trustification.common.labels" $mod | nindent 4 }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ $mod.module.stateStorageSize | default "1Mi" | quote }}
+
+---
+
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "trustification.common.name" $mod }}
+  labels:
+    {{- include "trustification.common.labels" $mod | nindent 4 }}
+  annotations:
+    source: {{ $source.url | quote }}
+
+spec:
+  schedule: {{ $mod.module.schedule | default "0 1 * * *" | quote }}
+  suspend: {{ $mod.module.suspend | default false }}
+  concurrencyPolicy: Forbid
+
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            {{- include "trustification.common.selectorLabels" $mod | nindent 12 }}
+
+        spec:
+          {{- include "trustification.application.pod" $mod | nindent 10 }}
+
+          restartPolicy: OnFailure
+
+          containers:
+            - name: walker
+              {{- include "trustification.common.defaultImage" $mod | nindent 14 }}
+
+              command: ["/trust"]
+              args:
+                - "bombastic"
+                - "walker"
+                - "--sink"
+                - "{{ include "trustification.tls.http.protocol" $mod }}://bombastic-api.{{ $.Release.Namespace }}.svc.cluster.local"
+                - "--source"
+                - {{ $source.url | quote }}
+                - "--since-file"
+                - "/walker-state/since"
+
+                {{- if eq ( include "trustification.openshift.useServiceCa" $ ) "true" }}
+                - --sender-root-certificates
+                - /run/secrets/kubernetes.io/serviceaccount/service-ca.crt
+                {{- end }}
+
+                {{- if $source.acceptV3Signatures }}
+                - "-3"
+                {{- end }}
+
+                {{- with $source.signingKeyUrl }}
+                - "--signing-key"
+                - {{ . | quote }}
+                {{- end }}
+
+                {{- if $source.fixLicenses }}
+                - "--fix-licenses"
+                - "true"
+                {{- end }}
+
+              env:
+                {{- include "trustification.application.rust.envVars" $mod | nindent 16 }}
+                {{- include "trustification.application.infrastructure.envVars" $mod | nindent 16 }}
+                {{- include "trustification.oidc.authenticationClient" ( dict "root" $ "clientId" "walker" ) | nindent 16 }}
+
+              ports:
+                {{- include "trustification.application.infrastructure.podPorts" $mod | nindent 16 }}
+
+              {{- include "trustification.application.pod" $mod | nindent 14 }}
+              {{- include "trustification.application.infrastructure.probes" $mod | nindent 14 }}
+
+              volumeMounts:
+                - mountPath: /walker-state
+                  name: walker-state
+
+          volumes:
+            - name: walker-state
+              persistentVolumeClaim:
+                claimName: {{ include "trustification.common.name" $mod }}
+
+{{- end }}{{/* range */}}
+
+{{- end }}

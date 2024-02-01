@@ -1,0 +1,4 @@
+{{- if .Values.modules.guacGraphql.enabled }}
+{{- $mod := dict "root" . "name" "guac-graphql" "component" "guac" "module" .Values.modules.guacGraphql -}}
+{{- include "trustification.application.defaultService" $mod }}
+{{- end }}

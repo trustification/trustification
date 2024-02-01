@@ -1,0 +1,182 @@
+= Preparing the environment
+
+The deployment requires a few services outside the Kubernetes based infrastructure. This includes:
+
+* S3 storage
+* Change events from S3 to SQS/SNS
+* A PostgreSQL database instance
+* A set of OIDC clients for frontend and backend authentication
+
+The following sections will explain what is required in more detail. Each step will result in some information
+which needs to be captured and which needs to be used later on in the Helm chart's values file.
+
+[NOTE]
+.AWS regions
+====
+While it is possible to split the AWS services to different regions, that might have an impact on the cost of running
+the services, as well as on the performance. Therefore, it is recommended to keep everything in a single region. The
+rest of the document will assume that this is the case.
+====
+
+In the following sections the document will refer to "document types". The expectation is that those are the document
+types: SBOMs, CSAF documents, CVEs. For creating S3 resources, we will use the following naming pattern:
+
+* `bombastic` for SBOMs
+* `vexination` for CSAF documents
+* `v11y` for CVEs
+
+Examples will use a placeholder of the format `<type>` when it is necessary to replace this with the actual types.
+
+[#s3_storage]
+== S3 storage
+
+It is required to set up three S3 buckets, each with the same configuration:
+
+* For storing SBOMs
+* For storing CSAF documents
+* For storing CVE detail information
+
+From here on, the examples will use:
+
+* `bombastic` for the SBOM bucket
+* `vexination` for the CSAF document bucket
+* `v11y` for the CVE details bucket
+
+== Event queues
+
+For each bucket created in <<s3_storage>>, the following three SQS queues have to be created:
+
+* A queue for receiving events when a new document was stored
+* A queue for receiving events when a document was indexed successfully
+* A queue for receiving events when a document could not be processed
+
+It is recommended to follow the following pattern:
+
+* `<type>-stored` For events when a new document was stored
+* `<type>-indexed` For events when a document was indexed successfully
+* `<type>-failed` For events when a document could not be processed
+* `<type>-guac` For events when a document should be processed by GUAC
+
+NOTE: There is one exception to that rule. GUAC does not require notifications for CVE documents. So the topic
+`v11y-guac` must not be created.
+
+This will result in the following names, which will be used from here on for examples in this document:
+
+* `bombastic-stored`
+* `bombastic-indexed`
+* `bombastic-failed`
+* `bombastic-guac`
+* `vexination-stored`
+* `vexination-indexed`
+* `vexination-failed`
+* `vexination-guac`
+* `v11y-stored`
+* `v11y-indexed`
+* `v11y-failed`
+
+== S3 change notifications
+
+For each bucket a change notification needs to be set up publish the events for `s3:ObjectCreated:*` and
+`s3:ObjectRemoved:*` to the `<type>-stored-topic` topic.
+
+For this we need to set up a topic (named `<type>-stored-topic`) as well as a bucket notification, publishing to that
+topic. This bucket notification must publish events for: `["s3:ObjectCreated:*", "s3:ObjectRemoved:*"]`.
+
+This also requires granting the S3 bucket access to the topic. For example:
+
+[source,json5]
+----
+{
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": "*",
+      "Action": "SNS:Publish",
+      "Resource": "arn:aws:sns:*:*:*",
+      "Condition": {
+        "ArnEquals": {
+          "aws:SourceArn": "arn:aws:s3:::bombastic" // <1>
+        }
+      }
+    }
+  ]
+}
+----
+<1> S3 bucket name
+
+== Queue subscriptions
+
+In order to deliver those change events, we need to connect the change topic to the `<type>-stored` and `<type>-guac`
+queue by creating "topic subscriptions".
+
+There should be two subscriptions for each document type of the protocol type `SQS`, using "raw message delivery":
+
+* Topic: `<type>-stored` -> `<type>-stored`
+* `<type>-stored` -> `<type>-guac`
+
+NOTE: There is one exception to that rule. The `v11y-stored-topic` does not need to be connected to the `v11y-guac`
+as it does not exist.
+
+This also requires granting the S3 SNS topic access to the queue. For example:
+
+[source,json5]
+----
+{
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": "*",
+      "Action": "sqs:SendMessage",
+      "Resource": "arn:aws:sqs:*:*:*",
+      "Condition": {
+        "ArnEquals": {
+          "aws:SourceArn": "arn:aws:sns:region:123456789012:bombastic-stored" // <1>
+        }
+      }
+    }
+  ]
+}
+----
+<1> Name of the SNS topic
+
+== Users
+
+For each document type an AWS IAM user must be created. From here on, the examples will use:
+
+* `bombastic`
+* `vexination`
+* `v11y`
+
+For each user an access key must be created.
+
+Also does each user require access to its S3 bucket and corresponding queues. For example for the SBOM user (`bombastic`):
+
+[source,json5]
+----
+{
+    "Statement": [
+        {
+            "Action": [
+                "sqs:SendMessage",
+                "sqs:ReceiveMessage",
+                "sqs:GetQueueUrl",
+                "sqs:DeleteMessage"
+            ],
+            "Effect": "Allow",
+            "Resource": "arn:aws:sqs:*:*:bombastic-*" // <1>
+        },
+        {
+            "Action": [
+                "s3:PutObject",
+                "s3:ListBucket",
+                "s3:GetObject",
+                "s3:DeleteObject"
+            ],
+            "Effect": "Allow",
+            "Resource": "arn:aws:s3:::bombastic" // <2>
+        }
+    ]
+}
+----
+<1> SQS queues
+<2> S3 bucket
