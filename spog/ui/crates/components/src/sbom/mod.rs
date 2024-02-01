@@ -1,10 +1,8 @@
 mod report;
-mod report_button;
 mod report_viewer;
 mod search;
 
 pub use report::*;
-pub use report_button::*;
 pub use report_viewer::*;
 pub use search::*;
 
@@ -37,7 +35,6 @@ pub enum Column {
     Dependencies,
     Advisories,
     Version,
-    Report,
 }
 
 #[derive(Clone, PartialEq)]
@@ -89,10 +86,6 @@ impl TableEntryRenderer<Column> for PackageEntry {
             }
             .into(),
             Column::Version => html!(&self.package.version).into(),
-            Column::Report => html!(
-                <ReportButton id={self.id.clone()}/>
-            )
-            .into(),
         }
     }
 
@@ -180,11 +173,6 @@ pub fn sbom_result(props: &SbomResultProperties) -> Html {
         yew::props!(TableColumnProperties<Column> {
             index: Column::Download,
             label: "Download",
-            width: ColumnWidth::FitContent
-        }),
-        yew::props!(TableColumnProperties<Column> {
-            index: Column::Report,
-            label: "Report",
             width: ColumnWidth::FitContent
         }),
     ];
