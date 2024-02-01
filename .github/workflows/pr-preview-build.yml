@@ -5,7 +5,7 @@ jobs:
   build-pr-preview:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Install cargo binstall
         run: |
@@ -14,7 +14,7 @@ jobs:
       - name: Install trunk-ng
         run: cargo binstall -y trunk-ng
 
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
         with:
           node-version: "18"
       - name: Install NPM dependencies
