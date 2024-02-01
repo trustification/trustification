@@ -65,6 +65,14 @@ pub struct Run {
     /// Only upload if a document's name has any of these prefixes.
     #[arg(long = "require-prefix")]
     pub required_prefixes: Vec<String>,
+
+    /// Path of the HTML output file
+    #[arg(long, default_value = "report.html")]
+    pub output: PathBuf,
+
+    /// Make links relative to this URL.
+    #[arg(short = 'B', long)]
+    pub base_url: Option<Url>,
 }
 
 impl Run {
@@ -89,7 +97,7 @@ impl Run {
 
                     log::debug!("Policy date: {validation_date:?}");
 
-                    let options = ValidationOptions { validation_date };
+                    let options = ValidationOptions::new().validation_date(validation_date);
 
                     server::run(
                         self.workers,
@@ -97,6 +105,8 @@ impl Run {
                         self.sink,
                         provider,
                         options,
+                        self.output,
+                        self.base_url,
                         self.ignore_distributions,
                         self.since_file,
                         self.additional_root_certificates,
