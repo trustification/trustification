@@ -121,3 +121,8 @@ cyclonedx-bom = { git = "https://github.com/carlosthe19916/cyclonedx-rust-cargo"
 
 #cve = { git = "https://github.com/ctron/cve", rev = "77341768d893098f1f8b1397364fecfb16b4d776" } # FIXME: awaiting release
 #hide = { git = "https://github.com/ctron/hide", rev = "109059cce66fd85dbe40f59ad40b7dab47b70fe1" } # FIXME: awaiting release
+
+csaf-walker = { git = "https://github.com/ctron/csaf-walker", rev ="dff3991f7a31601a9521f423ab2e49aeffc025ae" } # FIXME: awaiting release
+walker-common = { git = "https://github.com/ctron/csaf-walker", rev ="dff3991f7a31601a9521f423ab2e49aeffc025ae" } # FIXME: awaiting release
+walker-extras = { git = "https://github.com/ctron/csaf-walker", rev ="dff3991f7a31601a9521f423ab2e49aeffc025ae" } # FIXME: awaiting release
+sbom-walker = { git = "https://github.com/ctron/csaf-walker", rev ="dff3991f7a31601a9521f423ab2e49aeffc025ae" } # FIXME: awaiting release
