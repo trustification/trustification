@@ -1,0 +1,26 @@
+= Installing the application
+
+== Creating a "values file"
+
+== Create a new namespace
+
+Create a new namespace for the deployment. In the examples we will assume it is named `trustification`. You can
+do this from the command line using the following command:
+
+[source,bash]
+----
+kubectl create ns trustification
+----
+
+== Running the Helm installation
+
+Once the values file is generated and the namespace is created, run the Helm chart by executing:
+
+[source,bash]
+----
+NAMESPACE=trustification # <1>
+APP_DOMAIN=-$NAMESPACE.$(kubectl -n openshift-ingress-operator get ingresscontrollers.operator.openshift.io default -o jsonpath='{.status.domain}')
+helm upgrade --install -n $NAMESPACE trustification charts/trustification --values <values-file> --set-string appDomain=$APP_DOMAIN # <2>
+----
+<1> The name of the namespace you created for the deployment
+<2> The name of the "values" file
