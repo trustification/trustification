@@ -38,6 +38,9 @@ jobs:
             spog/ui/target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
+      - name: Install libsasl2-dev
+        run: sudo apt-get install -y libsasl2-dev
+
       - name: Install Protoc
         uses: arduino/setup-protoc@v2
         with:
