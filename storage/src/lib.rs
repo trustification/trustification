@@ -617,7 +617,7 @@ struct Resolver {
 }
 
 impl Resolver {
-    const BASE: &str = "data";
+    const BASE: &'static str = "data";
     // Absolute path
     pub fn normalize(path: &str) -> String {
         if path.starts_with('/') {
