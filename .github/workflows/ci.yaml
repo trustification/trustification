@@ -6,11 +6,13 @@ on:
     branches:
       - main
       - stable
+      - develop
   # Also on PRs, just be careful not to publish anything
   pull_request:
     branches:
       - main
       - stable
+      - develop
   # Allow to be called from other workflows (like "release")
   workflow_call:
   # But don't trigger on tags, as they are covered by the "release.yaml" workflow
