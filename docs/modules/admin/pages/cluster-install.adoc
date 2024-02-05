@@ -62,6 +62,9 @@ the resources.
 include::../../../../deploy/k8s/values-ocp-aws.yaml[]
 ----
 
+NOTE: The example values file contains some placeholders in the format of `<name>`. Those placeholders must be replaced
+with actual values.
+
 == Create a new namespace
 
 Create a new namespace for the deployment. In the examples we will assume it is named `trustification`. You can
