@@ -375,6 +375,8 @@ spec:
         - "false"
     workspaces:
     - name: workspace
+    - name: git-auth
+      optional: true
     - name: docker-credentials
       optional: true
   taskRunTemplate: {}
@@ -393,4 +395,7 @@ spec:
   - name: docker-credentials
     secret:
       secretName: trustification-service-release
+  - name: git-auth
+    secret:
+      secretName: '{{ git_auth_secret }}'
 status: {}
