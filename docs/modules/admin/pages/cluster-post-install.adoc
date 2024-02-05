@@ -1,0 +1,73 @@
+= Post installation tasks
+
+== Adding a CSAF data source
+
+In order to pull in CSAF data (advisories, VEX) into the system, you can set up a cron job, fetching and uploading
+new data from a trusted CSAF provider.
+
+In order to do this, you need to:
+
+* Add this to the configuration of the values file
+* Re-run the Helm chart deployment
+
+In order to add the Red Hat CSAF documents, add the following section to the values file:
+
+[source,yaml]
+----
+modules:
+  vexinationWalker:
+    sources:
+      redhat: # <1>
+        url: https://www.redhat.com/.well-known/csaf/provider-metadata.json # <2>
+        acceptV3Signatures: true # <3>
+        ignoreDistributions: # <4>
+          - https://access.redhat.com/security/data/csaf/v2/advisories/
+        job:
+          schedule: "0 * * * *" # <5>
+----
+<1> The name of the source to add, this must be unique for all CSAF sources and is the basis for the created Kubernetes resources
+<2> The URL to the CSAF source
+<3> An option to still support GPG v3 signatures
+<4> A list of distributions to ignore from the provider metadata
+<5> A Kubernetes cron job expression when the job should be scheduled
+
+== Adding an SBOM source
+
+In order to pull in SBOMs from a remote source, you can set up a cron job, fetching and uploading new data from source
+that following a certain convention:
+
+* List all available documents in a CSV document named `changed.csv`, relative to the base URL.
++
+The format must be a CSV (comma separated values) file, having to columns and no header. The first column is the
+location of the SBOM relative to the base URL, the second column is the last modified timestamp in RFC 3339
+format. For example:
++
+[source,csv]
+----
+"spdx/quarkus-bom-3.2.9.Final-redhat-00003.json.bz2","2024-02-04T14:00:11+00:00"
+"spdx/quarkus-bom-2.13.8.SP2-redhat-00001.json.bz2","2024-02-04T14:00:04+00:00"
+----
+* If documents are signed with a GPG key, that key must be publicly available through HTTPS
+* SBOMs must be available in JSON format, and maybe BZip2 compressed
+
+In order to add the Red Hat SBOM documents, add the following section to the values file:
+
+[source,yaml]
+----
+modules:
+  bombasticWalker:
+    sources:
+      redhat: # <1>
+        url: https://access.redhat.com/security/data/sbom/beta/ # <2>
+        signingKeyUrl: https://access.redhat.com/security/data/97f5eac4.txt#77E79ABE93673533ED09EBE2DCE3823597F5EAC4 # <3>
+        acceptV3Signatures: true # <4>
+        fixLicenses: true # <5>
+        job:
+          schedule: "0 * * * *" # <6>
+----
+<1> The name of the source to add, this must be unique for all SBOM sources and is the basis for the created Kubernetes resources
+<2> The base URL of the SBOM storage
+<3> The public GPG key the documents have been signed with. The fragment part of the URL is the key ID.
+<4> An option to still support GPG v3 signatures
+<5> If invalid SPDX licenses should be replaced with `NOASSERTION` when importing
+<6> A Kubernetes cron job expression when the job should be scheduled
