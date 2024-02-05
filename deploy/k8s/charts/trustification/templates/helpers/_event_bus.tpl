@@ -59,9 +59,9 @@ Arguments (dict):
   value: sqs
 
 - name: SQS_ACCESS_KEY
-  {{- include "trustification.common.envVarValue" .event.accessKey | nindent 2 }}
+  {{- include "trustification.common.envVarValue" .eventBus.accessKey | nindent 2 }}
 - name: SQS_SECRET_KEY
-  {{- include "trustification.common.envVarValue" .event.secretKey | nindent 2 }}
+  {{- include "trustification.common.envVarValue" .eventBus.secretKey | nindent 2 }}
 
 - name: SQS_REGION
   value: {{ .eventBus.region | quote }}
@@ -134,9 +134,9 @@ Arguments (dict):
   value: sqs
 
 - name: SQS_ACCESS_KEY
-  {{- include "trustification.common.envVarValue" .event.accessKey | nindent 2 }}
+  {{- include "trustification.common.envVarValue" .eventBus.accessKey | nindent 2 }}
 - name: SQS_SECRET_KEY
-  {{- include "trustification.common.envVarValue" .event.secretKey | nindent 2 }}
+  {{- include "trustification.common.envVarValue" .eventBus.secretKey | nindent 2 }}
 
 - name: SQS_REGION
   value: {{ .eventBus.region | quote }}
