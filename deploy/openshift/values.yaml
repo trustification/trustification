@@ -166,7 +166,7 @@ guac:
 oidcClients:
   frontend:
     issuerUrl: ${ISSUER_URL}
-    scopes: "openid email id.username"
+    scopes: "openid email id.username api.trusted_content"
     clientId:
       value: trusted-content-frontend
   walker:
