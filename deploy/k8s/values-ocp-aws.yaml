@@ -44,7 +44,7 @@ oidc:
       clientSecret:
         valueFrom:
           secretKeyRef:
-            name: oidc-walker-client
+            name: oidc-walker
             key: client-secret
 
 guac:
