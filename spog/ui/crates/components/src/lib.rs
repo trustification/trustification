@@ -8,6 +8,7 @@ pub mod common;
 pub mod content;
 pub mod cve;
 pub mod cvss;
+pub mod cyclonedx;
 pub mod download;
 pub mod editor;
 pub mod hooks;

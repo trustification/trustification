@@ -9,6 +9,7 @@ use spog_ui_common::{config::use_config, error::components::Error};
 use spog_ui_components::{
     common::{NotFound, PageHeading},
     content::{SourceCode, Technical},
+    cyclonedx::*,
     download::LocalDownloadButton,
     sbom::Report,
     spdx::*,
@@ -189,12 +190,13 @@ fn details(props: &DetailsProps) -> Html {
                 </>
             )
         }
-        model::SBOM::CycloneDX { bom: _, source } => {
+        model::SBOM::CycloneDX { bom, source } => {
             html!(
                 <>
                     <PageSection r#type={PageSectionType::Tabs} variant={PageSectionVariant::Light} sticky={[PageSectionSticky::Top]}>
                         <Tabs<TabIndex> inset={TabInset::Page} detached=true selected={*tab} {onselect}>
                             <Tab<TabIndex> index={TabIndex::Info} title="Info" />
+                            <Tab<TabIndex> index={TabIndex::Packages} title="Packages" />
                             <Tab<TabIndex> index={TabIndex::Overview} title="Related advisories" />
                             { for config.features.show_report.then(|| html_nested!(
                                 <Tab<TabIndex> index={TabIndex::Report} title="Report" />
@@ -210,9 +212,21 @@ fn details(props: &DetailsProps) -> Html {
                     </PageSection>
 
                     <PageSection hidden={*tab != TabIndex::Info} fill={PageSectionFill::Fill}>
-                        <Grid gutter=true>
-                            <GridItem cols={[2]}><Technical size={source.as_bytes().len()}/></GridItem>
-                        </Grid>
+                        <Stack gutter=true>
+                            <StackItem>
+                                <Grid gutter=true>
+                                    <GridItem cols={[6]}>{cyclonedx_meta(bom)}</GridItem>
+                                    <GridItem cols={[3]}>{cyclonedx_creator(bom)}</GridItem>
+                                    <GridItem cols={[3]}>
+                                        <GridItem cols={[2]}><Technical size={source.as_bytes().len()}/></GridItem>
+                                    </GridItem>
+                                </Grid>
+                            </StackItem>
+                        </Stack>
+                    </PageSection>
+
+                    <PageSection hidden={*tab != TabIndex::Packages} fill={PageSectionFill::Fill}>
+                        <CycloneDxPackages bom={bom.clone()} />
                     </PageSection>
 
                     <PageSection hidden={*tab != TabIndex::Source} fill={PageSectionFill::Fill}>
