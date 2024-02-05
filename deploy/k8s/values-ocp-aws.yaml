@@ -73,7 +73,7 @@ guac:
       valueFrom:
         secretKeyRef:
           name: postgresql-credentials
-          key: password
+          key: db.password
 
   initDatabase:
     name:
@@ -100,4 +100,4 @@ guac:
       valueFrom:
         secretKeyRef:
           name: postgresql-admin-credentials
-          key: password
+          key: db.password
