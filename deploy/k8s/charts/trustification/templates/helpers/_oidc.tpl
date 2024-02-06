@@ -54,9 +54,9 @@ Arguments (dict):
 */}}
 {{- define "trustification.oidc.issuerUrl" }}
 {{- if .client.issuerUrl }}
-{{- .client.issuerUrl | quote }}
+{{- .client.issuerUrl }}
 {{- else if .root.Values.oidc.issuerUrl }}
-{{- .root.Values.oidc.issuerUrl | quote }}
+{{- .root.Values.oidc.issuerUrl }}
 {{- else -}}
 {{ include "trustification.tls.http.protocol" . }}://sso{{ .root.Values.appDomain }}/realms/chicken
 {{- end }}
