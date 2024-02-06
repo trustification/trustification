@@ -79,12 +79,14 @@ guac:
   database:
     name: guac
     host: infrastructure-postgresql
+    sslMode: disable
     username: "guac"
     password: "guac1234"
 
   initDatabase:
     name: postgres
     host: infrastructure-postgresql
+    sslMode: disable
     username: postgres
     password:
       valueFrom:

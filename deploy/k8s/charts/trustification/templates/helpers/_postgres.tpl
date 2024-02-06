@@ -20,9 +20,9 @@ Arguments (dict):
   {{- include "trustification.common.requiredEnvVarValue" (dict "value" .database.password "msg" "Missing value for database password" ) | nindent 2 }}
 
 {{/*
-NOTE: The mode "allow" is not support by Go
+NOTE: The mode "allow" is not supported by Go
 */}}
 - name: {{ .prefix | default "" }}PGSSLMODE
-  value: disable
+  value: {{ .database.sslMode | default "require" }}
 
 {{- end }}
