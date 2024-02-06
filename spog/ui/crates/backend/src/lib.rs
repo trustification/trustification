@@ -44,6 +44,12 @@ pub struct OpenIdConnect {
     pub scopes: String,
     #[serde(default = "default::after_logout")]
     pub after_logout: String,
+    /// The name of the query parameter receiving the `after_logout` URL
+    #[serde(default)]
+    pub post_logout_redirect_name: Option<String>,
+    /// The URL to navigate to for ending the session
+    #[serde(default)]
+    pub end_session_url: Option<String>,
 }
 
 impl OpenIdConnect {
