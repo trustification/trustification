@@ -24,3 +24,4 @@ spog-model = { path = "../../../model" }
 spog-ui-backend = { path = "../backend" }
 spog-ui-common = { path = "../common" }
 serde = "1.0.193"
+jsonwebtokens = "1.2.0"
