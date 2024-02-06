@@ -26,7 +26,7 @@ resource "aws_cognito_user" "admin" {
 }
 
 resource "aws_cognito_user_pool_client" "walker" {
-  name         = "frontend-${var.environment}"
+  name         = "walker-${var.environment}"
   user_pool_id = aws_cognito_user_pool.pool.id
 
   supported_identity_providers = ["COGNITO"]
@@ -52,7 +52,7 @@ resource "kubernetes_secret" "oidc-walker" {
 }
 
 resource "aws_cognito_user_pool_client" "frontend" {
-  name         = "walker-${var.environment}"
+  name         = "frontend-${var.environment}"
   user_pool_id = aws_cognito_user_pool.pool.id
 
   supported_identity_providers = ["COGNITO"]
