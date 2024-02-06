@@ -16,8 +16,8 @@ yew = "0.21"
 yew-consent = "0.2"
 yew-hooks = "0.3.0"
 yew-more-hooks = "0.3"
-yew-nested-router = "0.4.0"
-yew-oauth2 = { version = "0.8.0", features = ["openid"] }
+yew-nested-router = "0.6.0"
+yew-oauth2 = { version = "0.10.1", features = ["openid"] }
 
 spog-model = { path = "../../../model" }
 

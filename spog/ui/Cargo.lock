@@ -1961,7 +1961,7 @@ dependencies = [
  "web-tools",
  "yew",
  "yew-hooks",
- "yew-nested-router",
+ "yew-nested-router 0.4.0",
 ]
 
 [[package]]
@@ -2867,7 +2867,7 @@ dependencies = [
  "yew-consent",
  "yew-hooks",
  "yew-more-hooks",
- "yew-nested-router",
+ "yew-nested-router 0.6.3",
  "yew-oauth2",
 ]
 
@@ -2957,7 +2957,7 @@ dependencies = [
  "yew-consent",
  "yew-hooks",
  "yew-more-hooks",
- "yew-nested-router",
+ "yew-nested-router 0.6.3",
  "yew-oauth2",
 ]
 
@@ -3013,7 +3013,7 @@ dependencies = [
  "yew-consent",
  "yew-hooks",
  "yew-more-hooks",
- "yew-nested-router",
+ "yew-nested-router 0.6.3",
  "yew-oauth2",
 ]
 
@@ -3033,7 +3033,7 @@ dependencies = [
 name = "spog-ui-navigation"
 version = "0.1.0"
 dependencies = [
- "yew-nested-router",
+ "yew-nested-router 0.6.3",
 ]
 
 [[package]]
@@ -3056,7 +3056,7 @@ dependencies = [
  "yew-consent",
  "yew-hooks",
  "yew-more-hooks",
- "yew-nested-router",
+ "yew-nested-router 0.6.3",
  "yew-oauth2",
 ]
 
@@ -3892,7 +3892,26 @@ dependencies = [
  "wasm-bindgen",
  "web-sys",
  "yew",
- "yew-nested-router-macros",
+ "yew-nested-router-macros 0.4.0",
+]
+
+[[package]]
+name = "yew-nested-router"
+version = "0.6.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e0661392a774d6713c453c959e2654f971f1c61bb470faa2ad5e654c2df40c60"
+dependencies = [
+ "gloo-events 0.2.0",
+ "gloo-utils 0.2.0",
+ "js-sys",
+ "log",
+ "serde",
+ "serde_json",
+ "urlencoding",
+ "wasm-bindgen",
+ "web-sys",
+ "yew",
+ "yew-nested-router-macros 0.6.3",
 ]
 
 [[package]]
@@ -3909,10 +3928,23 @@ dependencies = [
 ]
 
 [[package]]
-name = "yew-oauth2"
-version = "0.8.0"
+name = "yew-nested-router-macros"
+version = "0.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0a027a8eb1818da6962bdfcb110b25390c9cb0d5d8a0696b24fd89f54e43e533"
+checksum = "075bd5b69cf9c0bbc5132c4a99a589e3878a2e0419bab880bed43a648d9e7c2d"
+dependencies = [
+ "convert_case",
+ "darling 0.20.3",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.48",
+]
+
+[[package]]
+name = "yew-oauth2"
+version = "0.10.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1f5e4b596730b7fa38d8aa3e1afdab43f13793dd92371287f4779e001595222a"
 dependencies = [
  "async-trait",
  "gloo-storage 0.3.0",
@@ -3925,12 +3957,13 @@ dependencies = [
  "openidconnect",
  "reqwest",
  "serde",
+ "time",
  "tokio",
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "web-sys",
  "yew",
- "yew-nested-router",
+ "yew-nested-router 0.6.3",
 ]
 
 [[package]]
