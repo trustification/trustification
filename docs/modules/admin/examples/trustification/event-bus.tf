@@ -18,8 +18,8 @@ resource "kubernetes_secret" "event-bus-credentials" {
   }
 
   data = {
-    aws_access_key_id     = aws_iam_access_key.storage.id
-    aws_secret_access_key = aws_iam_access_key.storage.secret
+    aws_access_key_id     = aws_iam_access_key.event-bus.id
+    aws_secret_access_key = aws_iam_access_key.event-bus.secret
   }
 
   type = "Opaque"
