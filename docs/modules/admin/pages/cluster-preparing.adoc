@@ -34,7 +34,7 @@ You will need:
 === Preparing
 
 You will also need to create a wrapper/main module referencing the `trustification` module. A simple wrapper module
-will (named `main.tf`) will look like this:
+(named `main.tf`) should look like this:
 
 [source,hcl-terraform]
 ----
@@ -51,9 +51,13 @@ provider "kubernetes" {
 module "trustification" {
   source = "./trustification" # <5>
 
-  cluster-vpc-id = "vpc-07e1a8e2128a5850a" # <6>
-
+  cluster-vpc-id = "vpc-12345678901234567" # <6>
   availability-zone = "eu-west-1a" # <7>
+
+  namespace = "trustification"
+
+  admin-email = "me@my.domain"
+  sso-domain = "some-free-cognito-console-domain"
 }
 ----
 <1> The AWS region you want to create the resources in
