@@ -60,7 +60,11 @@ resource "aws_cognito_user_pool_client" "frontend" {
   allowed_oauth_flows_user_pool_client = true
   allowed_oauth_flows                  = ["code"]
   allowed_oauth_scopes                 = ["email", "openid"]
-  callback_urls                        = ["https://console-trustification-jreimann.apps.cluster.trustification.rocks"]
+  callback_urls                        = [
+    "https://console-trustification-jreimann.apps.cluster.trustification.rocks",
+    "https://console-trustification-jreimann.apps.cluster.trustification.rocks/",
+    "https://console-trustification-jreimann.apps.cluster.trustification.rocks/*",
+  ]
 }
 
 resource "kubernetes_secret" "oidc-frontend" {
