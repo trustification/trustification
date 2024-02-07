@@ -733,8 +733,6 @@ dependencies = [
 name = "exhort-model"
 version = "0.1.0"
 dependencies = [
- "log",
- "packageurl",
  "serde",
  "serde_json",
  "utoipa",
@@ -3383,7 +3381,6 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "serde",
- "serde_json",
  "vergen",
 ]
 
@@ -3503,9 +3500,7 @@ dependencies = [
 name = "v11y-model"
 version = "0.1.0"
 dependencies = [
- "anyhow",
  "chrono",
- "log",
  "serde",
  "serde_json",
  "sikula",

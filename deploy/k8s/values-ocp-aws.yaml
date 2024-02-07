@@ -1,0 +1,124 @@
+## Trustification
+
+appDomain: change-me # placeholder value, will be replaced during helm chart installation
+
+tracing: {}
+
+ingress:
+  className: openshift-default
+
+storage:
+  region: <region> # your AWS region
+  accessKey:
+    valueFrom:
+      secretKeyRef:
+        name: storage-credentials
+        key: aws_access_key_id
+  secretKey:
+    valueFrom:
+      secretKeyRef:
+        name: storage-credentials
+        key: aws_secret_access_key
+
+eventBus:
+  type: sqs
+  region: <region> # your AWS region
+  accessKey:
+    valueFrom:
+      secretKeyRef:
+        name: event-bus-credentials
+        key: aws_access_key_id
+  secretKey:
+    valueFrom:
+      secretKeyRef:
+        name: event-bus-credentials
+        key: aws_secret_access_key
+
+bombastic:
+  bucket: bombastic-default
+  topics:
+    failed: bombastic-default-failed
+    indexed: bombastic-default-indexed
+    stored: bombastic-default-stored
+
+vexination:
+  bucket: vexination-default
+  topics:
+    failed: vexination-default-failed
+    indexed: vexination-default-indexed
+    stored: vexination-default-stored
+
+v11y:
+  bucket: v11y-default
+  topics:
+    failed: v11y-default-failed
+    indexed: v11y-default-indexed
+    stored: v11y-default-stored
+
+oidc:
+  issuerUrl: <issuer-url> # OIDC issuer URL
+  clients:
+    frontend:
+      clientId: <client-id> # frontend client ID (public client)
+    walker:
+      clientId: <client-id> # walker client (protected client)
+      clientSecret:
+        valueFrom:
+          secretKeyRef:
+            name: oidc-walker
+            key: client-secret
+
+guac:
+  database:
+    name:
+      valueFrom:
+        secretKeyRef:
+          name: postgresql-credentials
+          key: db.name
+    host:
+      valueFrom:
+        secretKeyRef:
+          name: postgresql-credentials
+          key: db.host
+    port:
+      valueFrom:
+        secretKeyRef:
+          name: postgresql-credentials
+          key: db.port
+    username:
+      valueFrom:
+        secretKeyRef:
+          name: postgresql-credentials
+          key: db.user
+    password:
+      valueFrom:
+        secretKeyRef:
+          name: postgresql-credentials
+          key: db.password
+
+  initDatabase:
+    name:
+      valueFrom:
+        secretKeyRef:
+          name: postgresql-admin-credentials
+          key: db.name
+    host:
+      valueFrom:
+        secretKeyRef:
+          name: postgresql-admin-credentials
+          key: db.host
+    port:
+      valueFrom:
+        secretKeyRef:
+          name: postgresql-admin-credentials
+          key: db.port
+    username:
+      valueFrom:
+        secretKeyRef:
+          name: postgresql-admin-credentials
+          key: db.user
+    password:
+      valueFrom:
+        secretKeyRef:
+          name: postgresql-admin-credentials
+          key: db.password

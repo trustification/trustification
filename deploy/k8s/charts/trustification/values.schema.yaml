@@ -78,8 +78,8 @@ properties:
       enabled:
         type: boolean
 
-  rustLogFilter:
-    type: string
+  rust:
+    $ref: "#/definitions/RustApplication"
 
   guac:
     type: object
@@ -384,6 +384,8 @@ definitions:
     properties:
       logFilter:
         type: string
+      backtrace:
+        type: boolean
 
   Metrics:
     type: object
@@ -874,6 +876,15 @@ definitions:
         $ref: "#/definitions/ValueOrRef"
       password:
         $ref: "#/definitions/ValueOrRef"
+      sslMode:
+        $ref: "#/definitions/PostgresSslMode"
+
+  PostgresSslMode:
+    type: string
+    enum:
+      # postgres also supports "allow", but Go's postgres driver doesn't
+      - disable
+      - require
 
   GuacMigrateDatabaseConfig:
     type: object
@@ -940,3 +951,4 @@ definitions:
         type: string
       suspend:
         type: boolean
+

@@ -56,11 +56,11 @@ spec:
             - name: SCOPES
               value: {{ . | quote }}
             {{- end }}
-            {{- with $mod.segmentWriteKey }}
+            {{- with $mod.module.segmentWriteKey }}
             - name: SEGMENT_WRITE_KEY
               {{- include "trustification.common.envVarValue" . | nindent 14 }}
             {{- end }}
-            {{- with $mod.initialBackendJson }}
+            {{- with $mod.module.initialBackendJson }}
             - name: BACKEND_JSON
               value: {{ . | toJson | quote }}
             {{- end }}
@@ -71,7 +71,7 @@ spec:
             - name: run
               mountPath: /run
 
-            {{- if $mod.customBranding }}
+            {{- if $mod.module.customBranding }}
             - name: branding
               mountPath: /public/branding
             {{- end }}

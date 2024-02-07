@@ -6,6 +6,11 @@ Arguments (dict):
   * module - module object
 */}}
 {{- define "trustification.application.rust.envVars" -}}
+{{- $rust := merge (deepCopy .module.rust ) .root.Values.rust }}
 - name: RUST_LOG
-  value: {{ .module.logFilter | default .root.Values.rustLogFilter | default "info" | quote }}
+  value: {{ $rust.logFilter  | default "info" | quote }}
+{{- if $rust.backtrace }}
+- name: RUST_BACKTRACE
+  value: "1"
+{{- end }}
 {{- end }}

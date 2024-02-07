@@ -88,7 +88,7 @@ data:
             "update:document": [ "update.sbom", "update.vex" ]
             "delete:document": [ "delete.sbom", "delete.vex" ]
         - clientId: walker
-          issuerUrl: {{ include "trustification.oidc.issuerUrlForClient" ( dict "root" .root "clientId" "frontend" ) }}
+          issuerUrl: {{ include "trustification.oidc.issuerUrlForClient" ( dict "root" .root "clientId" "walker" ) }}
           scopeMappings: *keycloakScopeMappings
 {{- end }}
 
