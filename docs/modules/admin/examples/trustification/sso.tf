@@ -1,7 +1,3 @@
-resource "aws_cognito_user_pool" "pool" {
-  name = "trustification-${var.environment}"
-}
-
 variable "sso-domain" {
   type = string
 }
@@ -10,9 +6,22 @@ variable "admin-email" {
   type = string
 }
 
+variable "console-url" {
+  type = string
+}
+
+resource "aws_cognito_user_pool" "pool" {
+  name = "trustification-${var.environment}"
+}
+
 resource "aws_cognito_user_pool_domain" "main" {
   domain       = var.sso-domain
   user_pool_id = aws_cognito_user_pool.pool.id
+}
+
+resource "aws_cognito_user_group" "manager" {
+  user_pool_id = aws_cognito_user_pool.pool.id
+  name         = "manager"
 }
 
 resource "aws_cognito_user" "admin" {
@@ -23,6 +32,12 @@ resource "aws_cognito_user" "admin" {
     email          = var.admin-email
     email_verified = true
   }
+}
+
+resource "aws_cognito_user_in_group" "admin-manager" {
+  group_name   = aws_cognito_user_group.manager.name
+  user_pool_id = aws_cognito_user_pool.pool.id
+  username     = aws_cognito_user.admin.username
 }
 
 resource "aws_cognito_user_pool_client" "walker" {
@@ -59,11 +74,10 @@ resource "aws_cognito_user_pool_client" "frontend" {
 
   allowed_oauth_flows_user_pool_client = true
   allowed_oauth_flows                  = ["code"]
-  allowed_oauth_scopes                 = ["email", "openid"]
-  callback_urls                        = [
-    "https://console-trustification-jreimann.apps.cluster.trustification.rocks",
-    "https://console-trustification-jreimann.apps.cluster.trustification.rocks/",
-    "https://console-trustification-jreimann.apps.cluster.trustification.rocks/*",
+  allowed_oauth_scopes = ["email", "openid"]
+  callback_urls        = [
+    var.console-url,
+    "${var.console-url}/",
   ]
 }
 
