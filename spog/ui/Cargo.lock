@@ -2892,6 +2892,7 @@ dependencies = [
  "openidconnect",
  "packageurl",
  "reqwest",
+ "schemars",
  "serde",
  "serde_json",
  "spog-model",
