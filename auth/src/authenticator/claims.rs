@@ -35,14 +35,14 @@ impl CompactJson for AccessTokenClaims {}
 #[derive(Clone, Debug)]
 pub struct ValidatedAccessToken {
     pub access_token: AccessTokenClaims,
-    pub mapped_scopes: Vec<String>,
+    pub permissions: Vec<String>,
 }
 
 impl From<ValidatedAccessToken> for UserDetails {
     fn from(token: ValidatedAccessToken) -> Self {
         Self {
             id: token.access_token.sub,
-            scopes: token.mapped_scopes,
+            permissions: token.permissions,
         }
     }
 }
