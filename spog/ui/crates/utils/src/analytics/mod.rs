@@ -13,7 +13,7 @@ use spog_ui_common::utils::auth::claims;
 use std::ops::Deref;
 use yew::prelude::*;
 use yew_consent::prelude::*;
-use yew_nested_router::history::History;
+use yew_nested_router::History;
 use yew_oauth2::prelude::use_auth_state;
 
 #[derive(Clone, PartialEq)]
@@ -128,8 +128,8 @@ pub fn segment_page_tracker() -> Html {
         // trigger once
         analytics.page();
 
-        // and whenver it changes
-        let listener = yew_nested_router::History::new().clone().listen(move || {
+        // and whenever it changes
+        let listener = History::listener(move || {
             analytics.page();
         });
 

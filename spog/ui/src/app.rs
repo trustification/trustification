@@ -34,19 +34,16 @@ pub fn app() -> Html {
 fn application_with_backend() -> Html {
     let backend = use_backend();
 
-    let config = Config {
-        client_id: backend.endpoints.oidc.client_id.clone(),
-        issuer_url: backend.endpoints.oidc.issuer.clone(),
-        additional: Additional {
-            /*
-            Set the after logout URL to a public URL. Otherwise, the SSO server will redirect
-            back to the current page, which is detected as a new session, and will try to login
-            again, if the page requires this.
-            */
-            after_logout_url: Some(backend.endpoints.oidc.after_logout.clone()),
-            ..Default::default()
-        },
-    };
+    let mut config = Config::new(&backend.endpoints.oidc.client_id, &backend.endpoints.oidc.issuer)
+        /*
+        Set the after logout URL to a public URL. Otherwise, the SSO server will redirect
+        back to the current page, which is detected as a new session, and will try to login
+        again, if the page requires this.
+        */
+        .with_after_logout_url(&backend.endpoints.oidc.after_logout);
+
+    config.end_session_url = backend.endpoints.oidc.end_session_url.clone();
+    config.post_logout_redirect_name = backend.endpoints.oidc.post_logout_redirect_name.clone();
 
     let ask = use_callback((), |_, ()| html!(<AskConsent />));
 

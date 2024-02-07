@@ -6,8 +6,6 @@ use patternfly_yew::prelude::*;
 use yew::prelude::*;
 
 pub fn cyclonedx_meta(bom: &cyclonedx_bom::prelude::Bom) -> Html {
-    let title = html!(<Title>{"Metadata"}</Title>);
-
     let name = bom
         .metadata
         .as_ref()
@@ -21,7 +19,8 @@ pub fn cyclonedx_meta(bom: &cyclonedx_bom::prelude::Bom) -> Html {
     let serial_number = bom.serial_number.as_ref().map(|s| s.to_string());
 
     html!(
-        <Card {title} full_height=true>
+        <Card full_height=true>
+            <CardTitle><Title>{"Metadata"}</Title></CardTitle>
             <CardBody>
                 <DescriptionList>
                     <DescriptionGroup term="Name">{name}</DescriptionGroup>
@@ -34,8 +33,6 @@ pub fn cyclonedx_meta(bom: &cyclonedx_bom::prelude::Bom) -> Html {
 }
 
 pub fn cyclonedx_creator(bom: &cyclonedx_bom::prelude::Bom) -> Html {
-    let title = html!(<Title>{"Creation"}</Title>);
-
     let created = bom
         .metadata
         .as_ref()
@@ -43,7 +40,8 @@ pub fn cyclonedx_creator(bom: &cyclonedx_bom::prelude::Bom) -> Html {
         .map(|t| t.to_string());
 
     html!(
-        <Card {title} full_height=true>
+        <Card  full_height=true>
+            <CardTitle><Title>{"Creation"}</Title></CardTitle>
             <CardBody>
                 <DescriptionList>
                     <DescriptionGroup term="Created">{created}</DescriptionGroup>

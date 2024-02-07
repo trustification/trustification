@@ -22,10 +22,9 @@ pub fn get_purl(package: &PackageInformation) -> Option<PackageUrl<'static>> {
 }
 
 pub fn spdx_creator(bom: &SPDX) -> Html {
-    let title = html!(<Title>{"Creation"}</Title>);
-
     html!(
-        <Card {title} full_height=true>
+        <Card full_height=true>
+            <CardTitle><Title>{"Creation"}</Title></CardTitle>
             <CardBody>
                 <DescriptionList>
                     <DescriptionGroup term="Created">{ bom.document_creation_information.creation_info.created.to_string() }</DescriptionGroup>
@@ -63,10 +62,9 @@ pub fn spdx_creator(bom: &SPDX) -> Html {
 }
 
 pub fn spdx_meta(bom: &SPDX) -> Html {
-    let title = html!(<Title>{"Metadata"}</Title>);
-
     html!(
-        <Card {title} full_height=true>
+        <Card full_height=true>
+            <CardTitle><Title>{"Metadata"}</Title></CardTitle>
             <CardBody>
                 <DescriptionList>
                     <DescriptionGroup term="Name">{ bom.document_creation_information.document_name.clone() }</DescriptionGroup>
@@ -87,8 +85,6 @@ pub fn spdx_main(bom: &SPDX) -> Html {
         .document_describes
         .iter()
         .map(|desc| {
-            let title = html!(<Title>{ "Package" }</Title>);
-
             let content = match bom
                 .package_information
                 .iter()
@@ -121,7 +117,8 @@ pub fn spdx_main(bom: &SPDX) -> Html {
             };
 
             html!(
-                <Card {title} full_height=true>
+                <Card full_height=true>
+                    <CardTitle><Title>{ "Package" }</Title></CardTitle>
                     {
                         for content.into_iter()
                             .map(|content|html_nested!(<CardBody>{content}</CardBody>))
@@ -133,9 +130,9 @@ pub fn spdx_main(bom: &SPDX) -> Html {
 }
 
 pub fn spdx_stats(size: usize, bom: &SPDX) -> Html {
-    let title = html!(<Title>{"Statistics"}</Title>);
     html!(
-        <Card {title} full_height=true>
+        <Card full_height=true>
+            <CardTitle><Title>{"Statistics"}</Title></CardTitle>
             <CardBody>
                 <DescriptionList>
                     <DescriptionGroup term="Size">{ format_size(size, BINARY) }</DescriptionGroup>
