@@ -47,9 +47,9 @@ resource "aws_cognito_user_pool_client" "walker" {
   supported_identity_providers = ["COGNITO"]
 
   #allowed_oauth_flows_user_pool_client = true
-  allowed_oauth_flows                  = ["client_credentials"]
-  allowed_oauth_scopes                 = []
-  generate_secret                      = true
+  allowed_oauth_flows  = ["client_credentials"]
+  allowed_oauth_scopes = []
+  generate_secret      = true
 }
 
 resource "kubernetes_secret" "oidc-walker" {
@@ -74,10 +74,14 @@ resource "aws_cognito_user_pool_client" "frontend" {
 
   allowed_oauth_flows_user_pool_client = true
   allowed_oauth_flows                  = ["code"]
-  allowed_oauth_scopes = ["email", "openid"]
-  callback_urls        = [
+  allowed_oauth_scopes                 = ["email", "openid"]
+
+  callback_urls = [
     var.console-url,
     "${var.console-url}/",
+  ]
+  logout_urls = [
+    "${var.console-url}/notloggedin",
   ]
 }
 
