@@ -7,7 +7,7 @@ use std::path::PathBuf;
 #[derive(Clone, Debug, Default, clap::Args)]
 #[command(rename_all_env = "SCREAMING_SNAKE_CASE", next_help_heading = "Authentication")]
 pub struct AuthenticatorConfigArguments {
-    /// Flag to to disable authentication, default is on.
+    /// Flag to disable authentication, default is on.
     #[arg(
         id = "authentication-disabled",
         default_value_t = false,
@@ -36,8 +36,10 @@ impl AuthenticatorConfig {
                     client_id: client_id.to_string(),
                     issuer_url: devmode::issuer_url(),
                     scope_mappings: default_scope_mappings(),
-                    additional_scopes: Default::default(),
+                    additional_permissions: Default::default(),
                     required_audience: None,
+                    group_selector: None,
+                    group_mappings: Default::default(),
                     tls_insecure: false,
                     tls_ca_certificates: Default::default(),
                 })
@@ -103,7 +105,7 @@ pub struct AuthenticatorClientConfig {
     /// The issuer URL
     pub issuer_url: String,
 
-    /// Mapping table for scopes returned by the issuer to scopes which are expected by us.
+    /// Mapping table for scopes returned by the issuer to permissions.
     #[serde(default, skip_serializing_if = "HashMap::is_empty")]
     pub scope_mappings: HashMap<String, Vec<String>>,
 
@@ -112,7 +114,8 @@ pub struct AuthenticatorClientConfig {
     /// This can be useful if a client is considered to only provide identities which are supposed
     /// to have certain scopes, but don't provide them.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub additional_scopes: Vec<String>,
+    #[serde(alias = "additional_scopes")]
+    pub additional_permissions: Vec<String>,
 
     /// Enforce an audience claim (`aud`) for tokens.
     ///
@@ -120,9 +123,18 @@ pub struct AuthenticatorClientConfig {
     #[serde(default)]
     pub required_audience: Option<String>,
 
+    /// JSON path extracting a list of groups from the access token
+    #[serde(default)]
+    pub group_selector: Option<String>,
+
+    /// Mapping table for groups returned found through the `groups_selector` to permissions.
+    #[serde(default, skip_serializing_if = "HashMap::is_empty")]
+    pub group_mappings: HashMap<String, Vec<String>>,
+
     /// Ignore TLS checks when contacting the issuer
     #[serde(default)]
     pub tls_insecure: bool,
+
     /// Add additional certificates as trust anchor for contacting the issuer
     #[serde(default)]
     pub tls_ca_certificates: Vec<PathBuf>,
@@ -139,7 +151,9 @@ impl SingleAuthenticatorClientConfig {
                 tls_insecure: self.tls_insecure,
                 required_audience: self.required_audience.clone(),
                 scope_mappings: default_scope_mappings(),
-                additional_scopes: Default::default(),
+                group_selector: None,
+                group_mappings: Default::default(),
+                additional_permissions: Default::default(),
             })
     }
 }

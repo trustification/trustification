@@ -19,7 +19,7 @@ impl Authorizer {
 
     /// Require a permission from a user.
     ///
-    /// If the user passes the check, the function will return `Ok(())`. Otherwise an error will be
+    /// If the user passes the check, the function will return `Ok(())`. Otherwise, an error will be
     /// returned.
     pub fn require(&self, user: &UserInformation, permission: Permission) -> Result<(), AuthorizationError> {
         if self.config.is_none() {
@@ -34,7 +34,7 @@ impl Authorizer {
             UserInformation::Anonymous => return Err(AuthorizationError::Failed),
         };
 
-        user.require_scope(permission)?;
+        user.require_permission(permission)?;
 
         // we passed
         Ok(())
