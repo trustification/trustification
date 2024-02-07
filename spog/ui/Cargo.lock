@@ -1938,8 +1938,8 @@ checksum = "de3145af08024dea9fa9914f381a17b8fc6034dfb00f3a84013f7ff43f29ed4c"
 
 [[package]]
 name = "patternfly-yew"
-version = "0.5.5"
-source = "git+https://github.com/ctron/patternfly-yew?rev=29c0790334c2514358b8a2cf3d34e30cf3d01d8a#29c0790334c2514358b8a2cf3d34e30cf3d01d8a"
+version = "0.6.0"
+source = "git+https://github.com/patternfly-yew/patternfly-yew?rev=74e20e4429248cbc3b2c8085b9a4f8d9002fe456#74e20e4429248cbc3b2c8085b9a4f8d9002fe456"
 dependencies = [
  "chrono",
  "gloo-events 0.2.0",
@@ -1961,7 +1961,7 @@ dependencies = [
  "web-tools",
  "yew",
  "yew-hooks",
- "yew-nested-router 0.4.0",
+ "yew-nested-router",
 ]
 
 [[package]]
@@ -2867,7 +2867,7 @@ dependencies = [
  "yew-consent",
  "yew-hooks",
  "yew-more-hooks",
- "yew-nested-router 0.6.3",
+ "yew-nested-router",
  "yew-oauth2",
 ]
 
@@ -2957,7 +2957,7 @@ dependencies = [
  "yew-consent",
  "yew-hooks",
  "yew-more-hooks",
- "yew-nested-router 0.6.3",
+ "yew-nested-router",
  "yew-oauth2",
 ]
 
@@ -3013,7 +3013,7 @@ dependencies = [
  "yew-consent",
  "yew-hooks",
  "yew-more-hooks",
- "yew-nested-router 0.6.3",
+ "yew-nested-router",
  "yew-oauth2",
 ]
 
@@ -3033,7 +3033,7 @@ dependencies = [
 name = "spog-ui-navigation"
 version = "0.1.0"
 dependencies = [
- "yew-nested-router 0.6.3",
+ "yew-nested-router",
 ]
 
 [[package]]
@@ -3056,7 +3056,7 @@ dependencies = [
  "yew-consent",
  "yew-hooks",
  "yew-more-hooks",
- "yew-nested-router 0.6.3",
+ "yew-nested-router",
  "yew-oauth2",
 ]
 
@@ -3880,23 +3880,6 @@ dependencies = [
 
 [[package]]
 name = "yew-nested-router"
-version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f398a0cbe7e8ef1333414afacd20400ffa6b685fe914423275d723f7f903a9cb"
-dependencies = [
- "gloo-events 0.2.0",
- "gloo-history 0.2.0",
- "gloo-utils 0.2.0",
- "log",
- "urlencoding",
- "wasm-bindgen",
- "web-sys",
- "yew",
- "yew-nested-router-macros 0.4.0",
-]
-
-[[package]]
-name = "yew-nested-router"
 version = "0.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e0661392a774d6713c453c959e2654f971f1c61bb470faa2ad5e654c2df40c60"
@@ -3911,20 +3894,7 @@ dependencies = [
  "wasm-bindgen",
  "web-sys",
  "yew",
- "yew-nested-router-macros 0.6.3",
-]
-
-[[package]]
-name = "yew-nested-router-macros"
-version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f54fbea868d4691113743ccdb5d71485d3f528598da335384a0f1acc2238e2ff"
-dependencies = [
- "convert_case",
- "darling 0.20.3",
- "proc-macro2",
- "quote",
- "syn 2.0.48",
+ "yew-nested-router-macros",
 ]
 
 [[package]]
@@ -3963,7 +3933,7 @@ dependencies = [
  "wasm-bindgen-futures",
  "web-sys",
  "yew",
- "yew-nested-router 0.6.3",
+ "yew-nested-router",
 ]
 
 [[package]]

@@ -43,10 +43,12 @@ pub fn hint(props: &HintProperties) -> Html {
         },
     );
 
-    let title = html!(<SafeHtml html={props.hint.title.clone()} />);
     let actions = Some(html!(
-        <Button onclick={onhide} variant={ButtonVariant::Plain}> { Icon::Times } </Button>
+        <CardActions>
+            <Button onclick={onhide} variant={ButtonVariant::Plain}> { Icon::Times } </Button>
+        </CardActions>
     ));
+    let actions = yew::props!(CardHeaderActionsObject { actions });
 
     html!(
         if !hide {
@@ -54,9 +56,11 @@ pub fn hint(props: &HintProperties) -> Html {
                 variant={PageSectionVariant::Light}
                 r#type={PageSectionType::Breadcrumbs}
             >
-                <Card {actions} {title}
+                <Card
                     style="--pf-v5-c-card--BackgroundColor: var(--pf-v5-global--BackgroundColor--200);"
                 >
+                    <CardHeader {actions} />
+                    <CardTitle><SafeHtml html={props.hint.title.clone()} /></CardTitle>
                     <CardBody>
                         <SafeHtml html={props.hint.body.clone()} />
                     </CardBody>

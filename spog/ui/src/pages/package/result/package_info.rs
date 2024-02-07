@@ -20,14 +20,16 @@ pub fn package_additional_info(props: &PackageAdditionalInfoProperties) -> Html 
                 <CardBody>
                     <Grid gutter=true>
                         <GridItem cols={[4]}>
-                            <Card title={html!(<Title>{"Package versions discovered"}</Title>)}>
+                            <Card>
+                                <CardTitle><Title>{"Package versions discovered"}</Title></CardTitle>
                                 <CardBody>
                                     <RelatedVersions package_id={props.package_id.clone()}/>
                                 </CardBody>
                             </Card>
                         </GridItem>
                         <GridItem cols={[8]}>
-                            <Card title={html!(<Title>{"Package dependents"}</Title>)}>
+                            <Card>
+                                <CardTitle><Title>{"Package dependents"}</Title></CardTitle>
                                 <CardBody>
                                     <Tree package_id={props.package_id.clone()}/>
                                 </CardBody>
