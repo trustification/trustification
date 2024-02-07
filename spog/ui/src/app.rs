@@ -45,6 +45,10 @@ fn application_with_backend() -> Html {
     config.end_session_url = backend.endpoints.oidc.end_session_url.clone();
     config.post_logout_redirect_name = backend.endpoints.oidc.post_logout_redirect_name.clone();
 
+    let mut login_options = LoginOptions::new().with_nested_router_redirect();
+
+    login_options.redirect_url = backend.endpoints.oidc.redirect_url.clone();
+
     let ask = use_callback((), |_, ()| html!(<AskConsent />));
 
     let consent = |main: Html| match (
@@ -68,6 +72,7 @@ fn application_with_backend() -> Html {
             <OAuth2
                 {config}
                 scopes={backend.endpoints.oidc.scopes()}
+                {login_options}
             >
                 <Configuration>
                     { consent(html!(

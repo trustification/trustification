@@ -10,6 +10,11 @@ pub struct OpenIdConnect {
     pub client_id: String,
     #[serde(default = "default::scopes")]
     pub scopes: String,
+    /// The URL the issuer should redirect to.
+    ///
+    /// If unset, this defaults to the current page, when starting the login process.
+    #[serde(default)]
+    pub redirect_url: Option<Url>,
     #[serde(default = "default::after_logout")]
     pub after_logout: String,
     /// The name of the query parameter receiving the `after_logout` URL
