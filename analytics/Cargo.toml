@@ -7,7 +7,6 @@ edition = "2021"
 anyhow = "1"
 clap = { version = "4", features = ["derive", "env"] }
 humantime = "2"
-humantime-serde = "1"
 log = "0.4"
 segment = { version = "0.2" }
 serde = { version = "1", features = ["derive"] }

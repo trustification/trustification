@@ -24,7 +24,6 @@ opentelemetry-jaeger = { version = "0.19", features = ["rt-tokio"] }
 prometheus = "0.13.3"
 serde = { version = "1", features = ["derive", "rc"] }
 serde_json = "1"
-thiserror = "1.0"
 tokio = { version = "1", features = ["time", "signal"] }
 tracing-bunyan-formatter = "0.3.7"
 tracing-opentelemetry = "0.20"
