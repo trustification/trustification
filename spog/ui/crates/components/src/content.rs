@@ -55,9 +55,9 @@ pub struct TechnicalProperties {
 
 #[function_component(Technical)]
 pub fn technical(props: &TechnicalProperties) -> Html {
-    let title = html!(<Title>{"Statistics"}</Title>);
     html!(
-        <Card {title}>
+        <Card>
+            <CardTitle><Title>{"Statistics"}</Title></CardTitle>
             <CardBody>
                 <DescriptionList>
                     <DescriptionGroup term="Size">{ format_size(props.size, BINARY) }</DescriptionGroup>

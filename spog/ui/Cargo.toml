@@ -31,7 +31,7 @@ markdown = "1.0.0-alpha.11"
 monaco = { version = "0.5", features = ["yew-components"] }
 openidconnect = "3"
 packageurl = "0.3"
-patternfly-yew = { version = "0.5.4", features = ["icons-fab", "tree", "search_input"] }
+patternfly-yew = { version = "0.6", features = ["icons-fab", "tree"] }
 popper-rs = { version = "0.3.2", features = ["yew"] }
 reqwest = { version = "0.11", features = ["json"] }
 roxmltree = "0.19"
@@ -97,7 +97,7 @@ members = [
 #yew-more-hooks = { git = "https://github.com/ctron/yew-more-hooks", rev = "fc0af774aa925edcd5a544e562619ecb539942f8" }
 #yew-more-hooks = { path = "../../../yew-more-hooks" }
 
-patternfly-yew = { git = "https://github.com/ctron/patternfly-yew", rev = "29c0790334c2514358b8a2cf3d34e30cf3d01d8a" } # FIXME: awaiting release
+patternfly-yew = { git = "https://github.com/patternfly-yew/patternfly-yew", rev = "74e20e4429248cbc3b2c8085b9a4f8d9002fe456" } # FIXME: awaiting release
 #patternfly-yew = { path = "../../../patternfly-yew" }
 
 #analytics-next = { git = "https://github.com/ctron/analytics-next-rs", rev = "9c95122f4e6dc308c90b945bd0f1925faf7cb828" } # FIXME: awaiting release

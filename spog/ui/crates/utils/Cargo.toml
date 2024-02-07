@@ -9,7 +9,7 @@ analytics-next = "0.1"
 gloo-storage = "0.3"
 log ="0.4.20"
 openidconnect = "3"
-patternfly-yew = "0.5.0"
+patternfly-yew = "0.6.0"
 serde_json = "1"
 strum = { version = "0.25", features = ["derive"] }
 yew = "0.21"
