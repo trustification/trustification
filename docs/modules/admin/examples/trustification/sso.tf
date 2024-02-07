@@ -14,6 +14,25 @@ resource "aws_cognito_user_pool" "pool" {
   name = "trustification-${var.environment}"
 }
 
+resource "aws_cognito_resource_server" "trustification" {
+  identifier   = "trustification"
+  name         = "trustification"
+  user_pool_id = aws_cognito_user_pool.pool.id
+
+  scope {
+    scope_description = "bombastic"
+    scope_name        = "bombastic"
+  }
+  scope {
+    scope_description = "vexination"
+    scope_name        = "vexination"
+  }
+  scope {
+    scope_description = "v11y"
+    scope_name        = "v11y"
+  }
+}
+
 resource "aws_cognito_user_pool_domain" "main" {
   domain       = var.sso-domain
   user_pool_id = aws_cognito_user_pool.pool.id
@@ -46,10 +65,12 @@ resource "aws_cognito_user_pool_client" "walker" {
 
   supported_identity_providers = ["COGNITO"]
 
-  #allowed_oauth_flows_user_pool_client = true
+  allowed_oauth_flows_user_pool_client = true
+
   allowed_oauth_flows  = ["client_credentials"]
-  allowed_oauth_scopes = []
-  generate_secret      = true
+  allowed_oauth_scopes = aws_cognito_resource_server.trustification.scope_identifiers
+
+  generate_secret = true
 }
 
 resource "kubernetes_secret" "oidc-walker" {
