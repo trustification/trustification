@@ -30,15 +30,15 @@ use crate::authenticator::error::AuthorizationError;
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct UserDetails {
     pub id: String,
-    pub scopes: Vec<String>,
+    pub permissions: Vec<String>,
 }
 
 impl UserDetails {
-    pub fn require_scope(&self, scope: impl AsRef<str>) -> Result<(), AuthorizationError> {
-        let scope = scope.as_ref();
-        log::debug!("Requiring scope: {scope}");
+    pub fn require_permission(&self, permission: impl AsRef<str>) -> Result<(), AuthorizationError> {
+        let permission = permission.as_ref();
+        log::debug!("Requiring scope: {permission}");
 
-        if self.scopes.iter().any(|r| r == scope) {
+        if self.permissions.iter().any(|r| r == permission) {
             Ok(())
         } else {
             Err(AuthorizationError::Failed)

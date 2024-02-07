@@ -13,12 +13,17 @@ pub mod error;
 pub mod user;
 
 use crate::{authenticator::claims::ValidatedAccessToken, authenticator::config::AuthenticatorConfig};
+use anyhow::anyhow;
 use biscuit::jws::Compact;
 use claims::AccessTokenClaims;
 use config::AuthenticatorClientConfig;
 use error::AuthenticationError;
 use futures_util::{stream, StreamExt, TryStreamExt};
+use jsonpath_rust::parser::model::JsonPath;
+use jsonpath_rust::path::json_path_instance;
+use jsonpath_rust::JsonPathValue;
 use openid::{Client, Configurable, Discovered, Empty, Jws};
+use serde_json::Value;
 use std::collections::HashMap;
 use std::ops::Deref;
 use tracing::instrument;
@@ -145,11 +150,26 @@ async fn create_client(config: AuthenticatorClientConfig) -> anyhow::Result<Auth
 
     log::debug!("Discovered OpenID: {:#?}", client.config());
 
+    let group_selector = config
+        .group_selector
+        .map(|selector| {
+            jsonpath_rust::parser::parser::parse_json_path(&selector).map_err(|err| {
+                anyhow!(
+                    "Unable to parse JSON path group selector for client '{}' / '{}': {err}",
+                    config.issuer_url,
+                    client.client_id,
+                )
+            })
+        })
+        .transpose()?;
+
     Ok(AuthenticatorClient {
         client,
         audience: config.required_audience,
         scope_mappings: config.scope_mappings,
-        additional_scopes: config.additional_scopes,
+        additional_permissions: config.additional_permissions,
+        group_selector,
+        group_mappings: config.group_mappings,
     })
 }
 
@@ -158,20 +178,44 @@ pub struct AuthenticatorClient {
     client: Client<Discovered>,
     audience: Option<String>,
     scope_mappings: HashMap<String, Vec<String>>,
-    additional_scopes: Vec<String>,
+    additional_permissions: Vec<String>,
+    group_selector: Option<JsonPath>,
+    group_mappings: HashMap<String, Vec<String>>,
 }
 
 impl AuthenticatorClient {
     /// Convert from a set of (verified!) access token claims into a [`ValidatedAccessToken`] struct.
     pub fn convert_token(&self, access_token: AccessTokenClaims) -> ValidatedAccessToken {
-        let mut mapped_scopes = Self::map_scopes(&access_token.scope, &self.scope_mappings);
-        mapped_scopes.extend(self.additional_scopes.clone());
+        let mut permissions = Self::map_scopes(&access_token.scope, &self.scope_mappings);
+        permissions.extend(self.additional_permissions.clone());
+        let groups = self
+            .group_selector
+            .as_ref()
+            .map(|selector| Self::extract_groups(&access_token.extended_claims, selector))
+            .unwrap_or_default();
+
+        permissions.extend(Self::map_groups(groups, &self.group_mappings));
+
         ValidatedAccessToken {
             access_token,
-            mapped_scopes,
+            permissions,
         }
     }
 
+    /// Extract the groups from the value/access token
+    fn extract_groups(value: &Value, selector: &JsonPath) -> Vec<String> {
+        json_path_instance(selector, value)
+            .find(JsonPathValue::from_root(value))
+            .into_iter()
+            .filter_map(|group| match group {
+                JsonPathValue::Slice(data, _) => data.as_str().map(|s| s.to_string()),
+                JsonPathValue::NewValue(data) => data.as_str().map(|s| s.to_string()),
+                _ => None,
+            })
+            .collect()
+    }
+
+    /// Run the scopes through the scope mapping configuration
     fn map_scopes(scopes: &str, scope_mappings: &HashMap<String, Vec<String>>) -> Vec<String> {
         scopes
             .split(' ')
@@ -180,6 +224,17 @@ impl AuthenticatorClient {
                     .get(scope)
                     .cloned()
                     .unwrap_or_else(|| vec![scope.to_string()])
+            })
+            .collect()
+    }
+
+    /// Run the groups through the group mapping configuration
+    fn map_groups(groups: Vec<String>, group_mappings: &HashMap<String, Vec<String>>) -> Vec<String> {
+        groups
+            .into_iter()
+            .flat_map(|group| match group_mappings.get(&group) {
+                Some(permissions) => permissions.clone(),
+                None => vec![group],
             })
             .collect()
     }
@@ -196,6 +251,7 @@ impl Deref for AuthenticatorClient {
 #[cfg(test)]
 mod test {
     use super::*;
+    use jsonpath_rust::JsonPathFinder;
 
     fn assert_scope_mapping(scopes: &str, mappings: &[(&str, &[&str])], expected: &[&str]) {
         let mappings = mappings
@@ -219,5 +275,49 @@ mod test {
     #[test]
     fn test_no_scope_mapping() {
         assert_scope_mapping("foo bar baz", &[], &["foo", "bar", "baz"]);
+    }
+
+    #[test]
+    fn test_groups() {
+        let token = r#"{
+  "sub": "dfbf2b67-eb5e-44e5-8d70-581bf6fa4eff",
+  "foo:bar": [
+    "manager",
+    "reader"
+  ],
+  "iss": "https://foo/bar",
+  "version": 2,
+  "client_id": "1m4qeejd6v593cd4bimueircjk",
+  "origin_jti": "a49f30ee-a4d3-4f16-aff1-d334ab4e3b00",
+  "token_use": "access",
+  "scope": "openid",
+  "auth_time": 1707311332,
+  "exp": 1707314932,
+  "iat": 1707311332,
+  "jti": "524d55bf-da6b-41a6-91d2-8c16f9dfd198",
+  "username": "admin"
+}"#;
+
+        let value: Value = serde_json::from_str(token).unwrap();
+
+        const PATH: &str = r#"$.['foo:bar'][*]"#;
+        let alternative = JsonPathFinder::from_str(token, PATH)
+            .unwrap()
+            .find_slice()
+            .into_iter()
+            .flat_map(|v| {
+                // println!("Found: {v:?}");
+                match v {
+                    JsonPathValue::Slice(data, _) => data.as_str().map(ToString::to_string),
+                    JsonPathValue::NewValue(data) => data.as_str().map(ToString::to_string),
+                    _ => None,
+                }
+            })
+            .collect::<Vec<_>>();
+        assert_eq!(&alternative, &["manager", "reader"]);
+
+        let selector = jsonpath_rust::parser::parser::parse_json_path(PATH).unwrap();
+        let groups = AuthenticatorClient::extract_groups(&value, &selector);
+        assert_eq!(&groups, &["manager", "reader"]);
     }
 }
