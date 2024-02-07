@@ -68,6 +68,15 @@
             "null"
           ]
         },
+        "redirect_url": {
+          "description": "The URL the issuer should redirect to.\n\nIf unset, this defaults to the current page, when starting the login process.",
+          "default": null,
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "uri"
+        },
         "scopes": {
           "default": "openid",
           "type": "string"
