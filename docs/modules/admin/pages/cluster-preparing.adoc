@@ -48,6 +48,10 @@ provider "kubernetes" {
   config_context = "admin" # <4>
 }
 
+variable "app-domain" {
+  type = string
+}
+
 module "trustification" {
   source = "./trustification" # <5>
 
@@ -56,8 +60,9 @@ module "trustification" {
 
   namespace = "trustification"
 
-  admin-email = "me@my.domain"
-  sso-domain = "some-free-cognito-console-domain"
+  admin-email = "me@my.domain" # <8>
+  sso-domain = "some-free-cognito-console-domain" # <9>
+  console-url = "https://console${var.app-domain}"
 }
 ----
 <1> The AWS region you want to create the resources in
@@ -67,6 +72,8 @@ module "trustification" {
 <5> The location of the `trustification` Terraform module
 <6> The VPC ID of the OpenShift cluster, used to allow access to the RDS database
 <7> The availability zone the RDS instance should be created it, must be valid for the AWS region
+<8> The e-mail of the admin user, which will get frontend access to Trustification
+<9> An AWS Cognito domain prefix. It is globally unique and has to be free.
 
 === Creating the resources
 
@@ -77,11 +84,20 @@ First, initialize the OpenTofu instance. This will set up the required provides 
 tofu init
 ----
 
+The following commands require the environment variable `APP_DOMAIN` to be set. You can do this using the following
+command:
+
+[source,bash]
+----
+NAMESPACE=trustification
+APP_DOMAIN=-$NAMESPACE.$(kubectl -n openshift-ingress-operator get ingresscontrollers.operator.openshift.io default -o jsonpath='{.status.domain}')
+----
+
 Then, check if the resources can be created. This also does not yet create the resources:
 
 [source,bash]
 ----
-tofu plan
+tofu plan --var app-domain=$APP_DOMAIN
 ----
 
 This will show you the resources which will get created and check if the creation is expected to be successful.
@@ -90,7 +106,7 @@ If this worked fine, proceed with actually creating the resources:
 
 [source,bash]
 ----
-tofu apply
+tofu apply --var app-domain=$APP_DOMAIN
 ----
 
 === Extracting secrets
