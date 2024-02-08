@@ -85,7 +85,7 @@ Arugments: (dict)
 */}}
 {{- define "trustification.authenticator.defaultContent" }}
 
-{{- if eq .root.Values.authenticator.type "cognito" -}}
+{{- if eq (.root.Values.authenticator).type "cognito" -}}
 authentication:
   clients:
     - clientId: {{ include "trustification.oidc.clientId" (dict "root" .root "clientId" "frontend" ) }}
