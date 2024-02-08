@@ -512,7 +512,19 @@ definitions:
             type: string
             enum:
               - keycloak
+      - type: object
+        additionalProperties: false
+        required:
+          - type
+          - cognitoDomainUrl
+        properties:
+          type:
+            type: string
+            enum:
               - cognito
+          cognitoDomainUrl:
+            type: string
+            format: url
 
   Oidc:
     type: object
