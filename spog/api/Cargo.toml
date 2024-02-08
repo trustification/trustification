@@ -54,6 +54,7 @@ trustification-common = { path = "../../common" }
 trustification-infrastructure = { path = "../../infrastructure" }
 v11y-client = { path = "../../v11y/client" }
 trustification-version = { path = "../../version", features = ["actix-web"] }
+time = "0.3.31"
 
 [build-dependencies]
 trustification-version = { path = "../../version", features = ["build"] }

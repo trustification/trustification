@@ -23,6 +23,8 @@ use spog_model::{
 };
 use std::collections::{BTreeMap, HashMap};
 use std::str::FromStr;
+use time::macros::format_description;
+use time::OffsetDateTime;
 use tracing::{info_span, instrument, Instrument};
 use trustification_auth::client::TokenProvider;
 use trustification_common::error::ErrorInformation;
@@ -131,7 +133,41 @@ async fn process_get_vulnerabilities(
 
             (name, version, created, cve_to_purl, purl_to_backtrace)
         }
-        _ => return Err(Error::Generic("Unsupported format".to_string())),
+        SBOM::CycloneDX(cyclone) => {
+            let name = cyclone
+                .metadata
+                .as_ref()
+                .and_then(|metadata| metadata.component.as_ref())
+                .map(|component| component.name.to_string())
+                .unwrap_or("".to_string());
+            let version = Some(
+                cyclone
+                    .metadata
+                    .as_ref()
+                    .and_then(|metadata| metadata.component.as_ref())
+                    .map(|component| component.version.to_string())
+                    .unwrap_or("".to_string()),
+            );
+            let created = cyclone
+                .metadata
+                .as_ref()
+                .and_then(|metadata| metadata.timestamp.as_ref())
+                .and_then(|timestamp| {
+                    let format = format_description!("[year]-[month]-[day]");
+                    match OffsetDateTime::parse(&timestamp.to_string(), &format) {
+                        Ok(time) => Some(time),
+                        Err(_) => None,
+                    }
+                });
+
+            let sbom_id = cyclone.serial_number.map(|e| e.to_string()).unwrap_or("".to_string());
+            let AnalyzeOutcome {
+                cve_to_purl,
+                purl_to_backtrace,
+            } = analyze_spdx(state, guac, access_token, &sbom_id, offset, limit).await?;
+
+            (name, version, created, cve_to_purl, purl_to_backtrace)
+        }
     };
 
     // fetch CVE details
