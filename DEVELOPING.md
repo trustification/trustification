@@ -40,7 +40,7 @@ On OSX, try:
 brew install protobuf
 ```
 
-## Integration tests
+## Integration and unit tests
 
 Trustification comes with a set of [integration
 tests](./integration-tests/) that you can run after the required
@@ -59,18 +59,71 @@ To see more detailed output:
 RUST_LOG=info cargo test -p integration-tests -- --nocapture
 ```
 
-In order to run UI tests, you need a fresh build of the UI as well as a running instance of `chromedriver` on port 4444.
-By using `cargo xtask test`, you can perform this automatically:
+In order to run UI tests, a special subset of integration tests, you need
+a fresh build of the UI as well as a running instance of `chromedriver`
+on port 4444. Then you can enable them via `--features ui`:
 
 ```shell
-RUST_LOG=info cargo xtask test --ui
+cargo test -p integration-tests --features ui
 ```
 
-It is also possible to run only a selected set of tests:
+Unit tests can be run just by `cargo test`. Unlike integration tests, neither
+running instance of `chromedriver` nor other additional services running
+are needed:
 
 ```shell
-RUST_LOG=info cargo xtask test --ui --test ui issue_tc_587
+cargo test
+RUST_LOG=info cargo test -- --nocapture
 ```
+
+### `cargo xtask test`
+
+To make running tests more user friendly, trustification implements `cargo xtask test`.
+By default, `cargo xtask test` perform these actions:
+1. run unit tests
+1. run integration tests except UI ones (unless `UI` env var says otherwise)
+1. if all tests passed, generate coverage reports using [`grcov`](https://github.com/mozilla/grcov)
+
+After coverage reports were successfully generated they are stored in `.coverage`
+directory. Coverage reports are stored here in three formats:
+* HTML
+* markdown
+* a text file containing a list of files that were covered in some way
+
+To see coverage reports in HTML format, you can for example spawn a simple HTTP
+server, e.g. run `python -m http.server 8898 .coverage/html`, and then open
+[http://0.0.0.0:8898/](http://0.0.0.0:8898/) in your browser.
+
+Default behavior can be further tweaked using CLI options and environment variables
+that `cargo xtask test` supports (for greater detail, type `cargo xtask test --help`).
+Some examples:
+* `--testset` allows to choose whether to run unit tests or integration tests or both:
+  ```shell
+  # Run unit tests only
+  cargo xtask test --testset unit
+  # Run integration tests only
+  cargo xtask test --testset integ
+  # Run both unit and integration tests (default behavior)
+  cargo xtask test --testset unit,integ
+  ```
+* `--ui` spawns a webdriver (by default `chromedriver` at port 4444), builds UI
+  (unless disabled by `--skip-build`) and enable running UI tests:
+  ```shell
+  # Run unit tests, integration tests, and UI tests
+  RUST_LOG=info cargo xtask test --ui
+  # Run integration tests and UI tests
+  RUST_LOG=info cargo xtask test --testset integ --ui
+  ```
+* `--nocoverage` disables generating coverage reports:
+  ```shell
+  # Run integration tests, skip reporting coverage
+  cargo xtask test --testset integ --nocoverage
+  ```
+* run only a selected set of tests:
+  ```shell
+  # Run only issue_tc_587 test from the UI tests, skip coverage
+  RUST_LOG=info cargo xtask test --nocoverage --testset integ --ui --test ui issue_tc_587
+  ```
 
 ## Single sign on
 

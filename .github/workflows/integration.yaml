@@ -8,7 +8,7 @@ jobs:
   integration-tests:
     runs-on: ubuntu-22.04
     env:
-      COMPOSE_FILES: "compose.yaml compose-guac.yaml compose-ui-testing.yaml"
+      COMPOSE_FILES: "compose.yaml compose-guac.yaml"
     steps:
       - name: Init compose file list
         run: |
@@ -75,12 +75,12 @@ jobs:
         run: |
           sudo du -sh *
           sudo du -sh $HOME/*
-          sudo rm -rf deploy/compose//container_files/pg
+          sudo rm -rf deploy/compose/container_files/pg
 
       - name: Test
         run: |
           #RUST_LOG=tantivy=off,info cargo xtask test --ui --webdriver none --nocapture
-          RUST_LOG=tantivy=off,info cargo xtask test --nocapture --concurrent=1
+          RUST_LOG=tantivy=off,info cargo xtask test --testset integ --nocoverage --nocapture --concurrent=1
           docker-compose ${files} ps
 
       - name: Print logs
