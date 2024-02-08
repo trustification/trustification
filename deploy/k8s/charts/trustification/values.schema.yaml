@@ -184,7 +184,9 @@ properties:
           - type: object
             properties:
               initialBackendJson:
-                type: object
+                oneOf:
+                  - type: string
+                  - $ref: "https://raw.githubusercontent.com/trustification/trustification/main/spog/ui/crates/backend/schema/config.json"
               segmentWriteKey:
                 $ref: "#/definitions/ValueOrRef"
               customBranding:
