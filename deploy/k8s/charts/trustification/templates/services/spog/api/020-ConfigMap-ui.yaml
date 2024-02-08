@@ -6,6 +6,7 @@ metadata:
   name: {{ include "trustification.common.name" $mod }}
   labels:
     {{- include "trustification.common.labels" $mod | nindent 4 }}
+
 data:
 {{- if .Values.modules.spogApi.uiConfiguration.content }}
   spog-ui.yaml: |

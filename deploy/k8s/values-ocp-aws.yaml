@@ -1,6 +1,4 @@
-## Trustification
-
-appDomain: change-me # placeholder value, will be replaced during helm chart installation
+appDomain: change-me # <1>
 
 tracing: {}
 
@@ -8,7 +6,7 @@ ingress:
   className: openshift-default
 
 storage:
-  region: <region> # your AWS region
+  region: <region> # <2>
   accessKey:
     valueFrom:
       secretKeyRef:
@@ -22,7 +20,7 @@ storage:
 
 eventBus:
   type: sqs
-  region: <region> # your AWS region
+  region: <region> # <2>
   accessKey:
     valueFrom:
       secretKeyRef:
@@ -33,6 +31,23 @@ eventBus:
       secretKeyRef:
         name: event-bus-credentials
         key: aws_secret_access_key
+
+authenticator:
+  type: cognito
+  cognitoDomainUrl: <cognito-domain-url> # <3>
+
+oidc:
+  issuerUrl: <issuer-url> # <4>
+  clients:
+    frontend:
+      clientId: <client-id> # <5>
+    walker:
+      clientId: <client-id> # <6>
+      clientSecret:
+        valueFrom:
+          secretKeyRef:
+            name: oidc-walker
+            key: client-secret
 
 bombastic:
   bucket: bombastic-default
@@ -54,19 +69,6 @@ v11y:
     failed: v11y-default-failed
     indexed: v11y-default-indexed
     stored: v11y-default-stored
-
-oidc:
-  issuerUrl: <issuer-url> # OIDC issuer URL
-  clients:
-    frontend:
-      clientId: <client-id> # frontend client ID (public client)
-    walker:
-      clientId: <client-id> # walker client (protected client)
-      clientSecret:
-        valueFrom:
-          secretKeyRef:
-            name: oidc-walker
-            key: client-secret
 
 guac:
   database:

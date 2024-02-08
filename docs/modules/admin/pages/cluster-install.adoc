@@ -57,10 +57,16 @@ are required.
 Otherwise, you will need to create these secrets yourself with the information noted during the manual creation of
 the resources.
 
-[,yaml]
+[source, yaml]
 ----
-include::../../../../deploy/k8s/values-ocp-aws.yaml[]
+include::../examples/values-ocp-aws.yaml[]
 ----
+<1> Application domain, will be provided from the CLI
+<2> AWS region
+<3> URL of the Cognito domain
+<4> The OIDC issuer URL
+<5> Client ID of the frontend client
+<6> Client ID of the walker client
 
 NOTE: The example values file contains some placeholders in the format of `<name>`. Those placeholders must be replaced
 with actual values.
