@@ -20,7 +20,7 @@ data:
 
 {{- else }}{{/* Some reasonble defaults */}}
 
-{{- if  eq .Values.authenticator.type "cognito" }}
+{{- if  eq (.Values.authenticator).type "cognito" }}
   backend.json: |
     { "oidc": {
       "end_session_url": "{{ .Values.authenticator.cognitoDomainUrl }}/logout?client_id={{ include "trustification.oidc.frontendClientId" . }}",
