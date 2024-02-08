@@ -18,7 +18,7 @@ pub enum SBOM {
 impl SBOM {
     pub fn parse(source: String) -> Self {
         let source = Rc::new(source);
-        if let Ok(bom) = cyclonedx_bom::prelude::Bom::parse_from_json_v1_3(source.as_bytes()) {
+        if let Ok(bom) = cyclonedx_bom::prelude::Bom::parse_from_json(source.as_bytes()) {
             SBOM::CycloneDX {
                 bom: Rc::new(bom),
                 source,

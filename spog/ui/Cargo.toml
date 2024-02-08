@@ -111,7 +111,8 @@ packageurl = { git = "https://github.com/ctron/packageurl.rs", rev = "c9a0c192ff
 #sikula = { git = "https://github.com/ctron/sikula", rev = "023c27232f016b80a34c8ed77b88d1c30dcae6e0" }
 
 # also check root level Cargo.toml
-cyclonedx-bom = { git = "https://github.com/trustification/cyclonedx-rust-cargo", branch = "trustification" }
+# TODO Switch to the official repository once https://github.com/CycloneDX/cyclonedx-rust-cargo/issues/615 is fixed
+cyclonedx-bom = { git = "https://github.com/carlosthe19916/cyclonedx-rust-cargo", branch = "issue-615-trustification" }
 #spdx-rs = { git = "https://github.com/trustification/spdx-rs", rev = "c65be086e898dae88609f07bbc5a224ba4e0838d" } # FIXME: awaiting doubleopen-project/spdx-rs#/27
 
 # release profile settings to reduce the final binary size

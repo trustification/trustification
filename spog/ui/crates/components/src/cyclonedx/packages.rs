@@ -70,7 +70,7 @@ pub fn cyclonedx_packages(props: &CycloneDxPackagesProperties) -> Html {
             e.0.iter()
                 .map(|c| TableData {
                     name: c.name.to_string(),
-                    version: c.version.to_string(),
+                    version: c.version.as_ref().map(|e| e.to_string()).unwrap_or_default(),
                     purl: c.purl.clone(),
                 })
                 .collect::<Vec<_>>()
