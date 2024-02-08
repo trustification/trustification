@@ -79,7 +79,7 @@ properties:
         type: boolean
 
   rust:
-    $ref: "#/definitions/RustApplication"
+    $ref: "#/definitions/RustApplicationConfig"
 
   guac:
     type: object
@@ -380,6 +380,12 @@ definitions:
         type: object
 
   RustApplication:
+    type: object
+    properties:
+      rust:
+        $ref: "#/definitions/RustApplicationConfig"
+
+  RustApplicationConfig:
     type: object
     properties:
       logFilter:
