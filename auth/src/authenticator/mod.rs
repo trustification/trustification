@@ -71,28 +71,43 @@ impl Authenticator {
             AuthenticationError::Failed
         })?;
 
-        let client_id = &unverified_payload.azp;
+        let Some(client_id) = &unverified_payload
+            .azp
+            .or_else(|| match &unverified_payload.extended_claims {
+                Value::Object(values) => values
+                    .get("client_id")
+                    .and_then(|value| value.as_str().map(ToString::to_string)),
+                _ => None,
+            })
+        else {
+            // Right now, we do require the client id of the access token. For some, this comes in
+            // form of the `azp` claim. For others, that might be different. Right now we know about
+            // AWS using 'client_id'.
+            log::warn!("Token did neither contain an 'azp' nor a 'client_id' claim. We do require this.");
+            return Err(AuthenticationError::Failed);
+        };
 
-        log::debug!("Searching client for: {} / {:?}", unverified_payload.iss, client_id);
+        log::debug!("Searching client for: {} / {}", unverified_payload.iss, client_id);
 
         // find the client to use
 
         let client = self.clients.iter().find(|client| {
             let provider_iss = &client.provider.config().issuer;
-            let provider_id = &client.client_id;
+            let provider_client_id = &client.client_id;
 
-            log::debug!("Checking client: {} / {}", provider_iss, provider_id);
+            log::debug!("Checking client: {} / {}", provider_iss, provider_client_id);
             if provider_iss != &unverified_payload.iss {
                 return false;
             }
-            if let Some(client_id) = client_id {
-                if client_id != provider_id {
-                    return false;
-                }
+
+            if client_id != provider_client_id {
+                return false;
             }
 
             true
         });
+
+        // return the result
 
         Ok(client)
     }
