@@ -1,6 +1,4 @@
-## Trustification
-
-appDomain: change-me # placeholder value, will be replaced during helm chart installation
+appDomain: change-me # <1>
 
 tracing: {}
 
@@ -8,7 +6,7 @@ ingress:
   className: openshift-default
 
 storage:
-  region: <region> # your AWS region
+  region: <region> # <2>
   accessKey:
     valueFrom:
       secretKeyRef:
@@ -22,7 +20,7 @@ storage:
 
 eventBus:
   type: sqs
-  region: <region> # your AWS region
+  region: <region> # <2>
   accessKey:
     valueFrom:
       secretKeyRef:
@@ -36,15 +34,15 @@ eventBus:
 
 authenticator:
   type: cognito
-  cognitoDomainUrl: <cognito-domain-url> # The "cognito domain" URL
+  cognitoDomainUrl: <cognito-domain-url> # <3>
 
 oidc:
-  issuerUrl: <issuer-url> # OIDC issuer URL
+  issuerUrl: <issuer-url> # <4>
   clients:
     frontend:
-      clientId: <client-id> # frontend client ID (public client)
+      clientId: <client-id> # <5>
     walker:
-      clientId: <client-id> # walker client (protected client)
+      clientId: <client-id> # <6>
       clientSecret:
         valueFrom:
           secretKeyRef:
