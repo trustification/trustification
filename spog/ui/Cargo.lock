@@ -203,6 +203,12 @@ checksum = "9e1b586273c5702936fe7b7d6896644d8be71e6314cfe09d3167c95f712589e8"
 
 [[package]]
 name = "base64"
+version = "0.20.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0ea22880d78093b0cbe17c89f64a7d457941e65759157ec6cb31a31d652b05e5"
+
+[[package]]
+name = "base64"
 version = "0.21.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9ba43ea6f343b788c8764558649e08df62f86c6ef251fdaeb1ffd010a9ae50a2"
@@ -507,12 +513,13 @@ dependencies = [
 
 [[package]]
 name = "cyclonedx-bom"
-version = "0.4.0"
-source = "git+https://github.com/trustification/cyclonedx-rust-cargo?branch=trustification#63d912ad5a8a157820d01f15d9c81599c909f134"
+version = "0.4.3"
+source = "git+https://github.com/carlosthe19916/cyclonedx-rust-cargo?branch=issue-615-trustification#4445530b39f1a6fd61743db725e755173c30db9a"
 dependencies = [
  "base64 0.21.4",
- "http",
+ "fluent-uri",
  "once_cell",
+ "ordered-float 4.2.0",
  "packageurl",
  "regex",
  "serde",
@@ -727,8 +734,6 @@ dependencies = [
 name = "exhort-model"
 version = "0.1.0"
 dependencies = [
- "log",
- "packageurl",
  "serde",
  "serde_json",
  "utoipa",
@@ -749,6 +754,15 @@ checksum = "ded41244b729663b1e574f1b4fb731469f69f79c17667b5d776b16cda0479449"
 dependencies = [
  "rand_core",
  "subtle",
+]
+
+[[package]]
+name = "fluent-uri"
+version = "0.1.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "17c704e9dbe1ddd863da1e6ff3567795087b1eb201ce80d8fa81162e1516500d"
+dependencies = [
+ "bitflags 1.3.2",
 ]
 
 [[package]]
@@ -1553,6 +1567,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "jsonwebtokens"
+version = "1.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5fb4c5f203abfb17d5f30a9f8e44c91c222fe5dcff9d6f57090167c4cfc22b70"
+dependencies = [
+ "base64 0.20.0",
+ "pem",
+ "regex",
+ "ring",
+ "serde",
+ "serde_json",
+ "simple_asn1",
+]
+
+[[package]]
 name = "language-tags"
 version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1676,6 +1705,17 @@ checksum = "d273983c5a657a70a3e8f2a01329822f3b8c8172b73826411a55751e404a0a4a"
 dependencies = [
  "memchr",
  "minimal-lexical",
+]
+
+[[package]]
+name = "num-bigint"
+version = "0.4.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "608e7659b5c3d7cba262d894801b9ec9d00de989e8a82bd4bef91d08da45cdc0"
+dependencies = [
+ "autocfg",
+ "num-integer",
+ "num-traits",
 ]
 
 [[package]]
@@ -1865,6 +1905,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "ordered-float"
+version = "4.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a76df7075c7d4d01fdcb46c912dd17fba5b60c78ea480b475f2b6ab6f666584e"
+dependencies = [
+ "num-traits",
+]
+
+[[package]]
 name = "p256"
 version = "0.13.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1906,8 +1955,8 @@ checksum = "de3145af08024dea9fa9914f381a17b8fc6034dfb00f3a84013f7ff43f29ed4c"
 
 [[package]]
 name = "patternfly-yew"
-version = "0.5.5"
-source = "git+https://github.com/ctron/patternfly-yew?rev=29c0790334c2514358b8a2cf3d34e30cf3d01d8a#29c0790334c2514358b8a2cf3d34e30cf3d01d8a"
+version = "0.6.0"
+source = "git+https://github.com/patternfly-yew/patternfly-yew?rev=74e20e4429248cbc3b2c8085b9a4f8d9002fe456#74e20e4429248cbc3b2c8085b9a4f8d9002fe456"
 dependencies = [
  "chrono",
  "gloo-events 0.2.0",
@@ -1930,6 +1979,15 @@ dependencies = [
  "yew",
  "yew-hooks",
  "yew-nested-router",
+]
+
+[[package]]
+name = "pem"
+version = "1.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a8835c273a76a90455d7344889b0964598e3316e2a79ede8e36f16bdcf2228b8"
+dependencies = [
+ "base64 0.13.1",
 ]
 
 [[package]]
@@ -2487,7 +2545,7 @@ version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f3a1a3341211875ef120e117ea7fd5228530ae7e7036a779fdc9117be6b3282c"
 dependencies = [
- "ordered-float",
+ "ordered-float 2.10.1",
  "serde",
 ]
 
@@ -2526,9 +2584,9 @@ dependencies = [
 
 [[package]]
 name = "serde_json"
-version = "1.0.107"
+version = "1.0.109"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6b420ce6e3d8bd882e9b243c6eed35dbc9a6110c9769e74b584e0d68d1f20c65"
+checksum = "cb0652c533506ad7a2e353cce269330d6afd8bdfb6d75e0ace5b35aacbd7b9e9"
 dependencies = [
  "itoa",
  "ryu",
@@ -2639,6 +2697,18 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.48",
+]
+
+[[package]]
+name = "simple_asn1"
+version = "0.6.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "adc4e5204eb1910f40f9cfa375f6f05b68c3abac4b6fd879c8ff5e7ae8a0a085"
+dependencies = [
+ "num-bigint",
+ "num-traits",
+ "thiserror",
+ "time",
 ]
 
 [[package]]
@@ -2839,6 +2909,7 @@ dependencies = [
  "openidconnect",
  "packageurl",
  "reqwest",
+ "schemars",
  "serde",
  "serde_json",
  "spog-model",
@@ -2989,6 +3060,7 @@ version = "0.1.0"
 dependencies = [
  "analytics-next",
  "gloo-storage 0.3.0",
+ "jsonwebtokens",
  "log",
  "openidconnect",
  "patternfly-yew",
@@ -3328,7 +3400,6 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "serde",
- "serde_json",
  "vergen",
 ]
 
@@ -3435,9 +3506,9 @@ dependencies = [
 
 [[package]]
 name = "uuid"
-version = "1.4.1"
+version = "1.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "79daa5ed5740825c40b389c5e50312b9c86df53fccd33f281df655642b43869d"
+checksum = "f00cc9702ca12d3c81455259621e676d0f7251cec66a21e98fe2e9a37db93b2a"
 dependencies = [
  "getrandom",
  "serde",
@@ -3448,9 +3519,7 @@ dependencies = [
 name = "v11y-model"
 version = "0.1.0"
 dependencies = [
- "anyhow",
  "chrono",
- "log",
  "serde",
  "serde_json",
  "sikula",
@@ -3826,14 +3895,16 @@ dependencies = [
 
 [[package]]
 name = "yew-nested-router"
-version = "0.4.0"
+version = "0.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f398a0cbe7e8ef1333414afacd20400ffa6b685fe914423275d723f7f903a9cb"
+checksum = "e0661392a774d6713c453c959e2654f971f1c61bb470faa2ad5e654c2df40c60"
 dependencies = [
  "gloo-events 0.2.0",
- "gloo-history 0.2.0",
  "gloo-utils 0.2.0",
+ "js-sys",
  "log",
+ "serde",
+ "serde_json",
  "urlencoding",
  "wasm-bindgen",
  "web-sys",
@@ -3843,9 +3914,9 @@ dependencies = [
 
 [[package]]
 name = "yew-nested-router-macros"
-version = "0.4.0"
+version = "0.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f54fbea868d4691113743ccdb5d71485d3f528598da335384a0f1acc2238e2ff"
+checksum = "075bd5b69cf9c0bbc5132c4a99a589e3878a2e0419bab880bed43a648d9e7c2d"
 dependencies = [
  "convert_case",
  "darling 0.20.3",
@@ -3856,9 +3927,9 @@ dependencies = [
 
 [[package]]
 name = "yew-oauth2"
-version = "0.8.0"
+version = "0.10.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0a027a8eb1818da6962bdfcb110b25390c9cb0d5d8a0696b24fd89f54e43e533"
+checksum = "1f5e4b596730b7fa38d8aa3e1afdab43f13793dd92371287f4779e001595222a"
 dependencies = [
  "async-trait",
  "gloo-storage 0.3.0",
@@ -3871,6 +3942,7 @@ dependencies = [
  "openidconnect",
  "reqwest",
  "serde",
+ "time",
  "tokio",
  "wasm-bindgen",
  "wasm-bindgen-futures",

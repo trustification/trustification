@@ -7,7 +7,7 @@ image:
   name: trust
   registry: ghcr.io/trustification
   pullPolicy: IfNotPresent
-  version: 332b706db5877dcf537f623eaa79eddfbc78986a
+  version: ec77b84be0c2c1e9cbd62fed7759d5e379477bf1
 
 guac:
   image:
@@ -16,6 +16,8 @@ guac:
     pullPolicy: IfNotPresent
     version: "v0.3.24"
   database: {}
+
+rust: {}
 
 ingress: {}
 
@@ -82,6 +84,7 @@ modules:
     image: {}
     tracing: {}
     metrics: {}
+    rust: {}
 
   bombasticCollector:
     enabled: true
@@ -92,11 +95,13 @@ modules:
     image: {}
     tracing: {}
     metrics: {}
+    rust: {}
 
   bombasticWalker:
     enabled: true
     image: {}
     sources: {}
+    rust: {}
 
   spogApi:
     enabled: true
@@ -104,6 +109,7 @@ modules:
     ingress: {}
     tracing: {}
     metrics: {}
+    rust: {}
     uiConfiguration:
       content:
         global:
@@ -125,12 +131,14 @@ modules:
     image: {}
     tracing: {}
     metrics: {}
+    rust: {}
 
   vexinationIndexer:
     enabled: true
     image: {}
     tracing: {}
     metrics: {}
+    rust: {}
 
   vexinationCollector:
     enabled: true
@@ -140,6 +148,7 @@ modules:
     enabled: true
     image: {}
     sources: {}
+    rust: {}
 
   v11yApi:
     enabled: true
@@ -147,12 +156,14 @@ modules:
     image: {}
     tracing: {}
     metrics: {}
+    rust: {}
 
   v11yIndexer:
     enabled: true
     image: {}
     tracing: {}
     metrics: {}
+    rust: {}
 
   v11yWalker:
     enabled: true
@@ -162,6 +173,7 @@ modules:
       version: "2.40.1"
     tracing: {}
     metrics: {}
+    rust: {}
     storageSize: 10Gi
 
   guacGraphql:

@@ -154,7 +154,8 @@ pub fn spdx_packages(props: &SpdxPackagesProperties) -> Html {
                         <Grid gutter=true>
 
                             <GridItem cols={[4.all(), 5.lg()]}>
-                                <Card plain=true title={html!(<Title>{"Packages"}</Title>)}>
+                                <Card plain=true>
+                                    <CardTitle><Title>{"Packages"}</Title></CardTitle>
                                     <CardBody>
                                         <List r#type={ListType::Basic}>
                                             { for packages.iter().map(|i| html_nested!(
@@ -168,7 +169,8 @@ pub fn spdx_packages(props: &SpdxPackagesProperties) -> Html {
                             </GridItem>
 
                             <GridItem cols={[4.all(), 3.lg()]}>
-                                <Card plain=true title={html!(<Title>{"Details"}</Title>)}>
+                                <Card plain=true>
+                                    <CardTitle><Title>{"Details"}</Title></CardTitle>
                                     <CardBody>
                                         <DescriptionList>
                                             <DescriptionGroup term="Base Package"><code>{base.to_string()}</code></DescriptionGroup>
@@ -178,7 +180,8 @@ pub fn spdx_packages(props: &SpdxPackagesProperties) -> Html {
                             </GridItem>
 
                             <GridItem cols={[4.all(), 2.lg()]}>
-                                <Card plain=true title={html!(<Title>{"Qualifiers"}</Title>)}>
+                                <Card plain=true>
+                                    <CardTitle><Title>{"Qualifiers"}</Title></CardTitle>
                                     <CardBody>
                                         <DescriptionList mode={[DescriptionListMode::Horizontal]}>
                                         { for qualifiers.iter().map(|(k,v)| {
@@ -196,7 +199,8 @@ pub fn spdx_packages(props: &SpdxPackagesProperties) -> Html {
                             </GridItem>
 
                             <GridItem cols={[4.all(), 2.lg()]}>
-                                <Card plain=true title={html!(<Title>{"Versions"}</Title>)}>
+                                <Card plain=true>
+                                    <CardTitle><Title>{"Versions"}</Title></CardTitle>
                                     <CardBody>
                                         <List r#type={ListType::Basic}>
                                             { for versions.iter().map(|i| html_nested!(<ListItem> {i} </ListItem>)) }
@@ -418,7 +422,8 @@ pub fn render_single_details(
     let content = html!(
         <Grid gutter=true>
             <GridItem cols={[4]}>
-                <Card plain=true title={html!(<Title>{"Information"}</Title>)}>
+                <Card plain=true>
+                    <CardTitle><Title>{"Information"}</Title></CardTitle>
                     <CardBody>
                         <DescriptionList>
                             <DescriptionGroup term="Download">{ package.package_download_location.clone() }</DescriptionGroup>
@@ -437,7 +442,8 @@ pub fn render_single_details(
             </GridItem>
 
             <GridItem cols={[4]}>
-                <Card plain=true title={html!(<Title>{"External References"}</Title>)}>
+                <Card plain=true>
+                    <CardTitle><Title>{"External References"}</Title></CardTitle>
                     <CardBody>
                         { spdx_external_references(package) }
                     </CardBody>
@@ -445,7 +451,8 @@ pub fn render_single_details(
             </GridItem>
 
             <GridItem cols={[4]}>
-                <Card plain=true title={html!(<Title>{"Relationships"}</Title>)}>
+                <Card plain=true>
+                    <CardTitle><Title>{"Relationships"}</Title></CardTitle>
                     { if !outgoing.is_empty() {
                         Some(html_nested!(<CardBody>
                             <Title level={Level::H3}>{"Outgoing"}</Title>

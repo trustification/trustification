@@ -17,6 +17,9 @@ spec:
 
   template:
     metadata:
+      annotations:
+        configHash/backend: {{ include (print $.Template.BasePath "/services/spog/ui/020-ConfigMap-backend.yaml") . | sha256sum }}
+
       labels:
         {{- include "trustification.common.selectorLabels" $mod | nindent 8 }}
         {{- include "trustification.application.podLabels" $mod | nindent 8 }}
@@ -29,6 +32,10 @@ spec:
           emptyDir: {}
         - name: run
           emptyDir: {}
+        - name: config
+          configMap:
+            optional: true
+            name: {{ include "trustification.common.name" (dict "root" . "name" (printf "%s-backend" $mod.name ) ) }}
 
         {{- if $mod.customBranding }}
         - name: branding
@@ -56,22 +63,25 @@ spec:
             - name: SCOPES
               value: {{ . | quote }}
             {{- end }}
-            {{- with $mod.segmentWriteKey }}
+            {{- with $mod.module.segmentWriteKey }}
             - name: SEGMENT_WRITE_KEY
               {{- include "trustification.common.envVarValue" . | nindent 14 }}
             {{- end }}
-            {{- with $mod.initialBackendJson }}
-            - name: BACKEND_JSON
-              value: {{ . | toJson | quote }}
-            {{- end }}
+
+            - name: BACKEND_JSON_FILE
+              value: /etc/config/backend.json
 
           volumeMounts:
+            - name: config
+              mountPath: /etc/config
+              readOnly: true
+
             - name: endpoints
               mountPath: /endpoints
             - name: run
               mountPath: /run
 
-            {{- if $mod.customBranding }}
+            {{- if $mod.module.customBranding }}
             - name: branding
               mountPath: /public/branding
             {{- end }}

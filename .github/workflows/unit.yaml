@@ -1,0 +1,69 @@
+name: Unit Tests
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Maximize build space
+        run: |
+          df -h
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /opt/hostedtoolcache/CodeQL
+          sudo docker image prune --all --force
+          sudo rm -Rf ${JAVA_HOME_8_X64}
+          sudo rm -Rf ${JAVA_HOME_11_X64}
+          sudo rm -Rf ${JAVA_HOME_17_X64}
+          sudo rm -Rf ${RUBY_PATH}
+          df -h
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/.crates.toml
+            ~/.cargo/.crates2.json
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+            bommer/bommer-ui/target/
+            spog/ui/target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Install libsasl2-dev
+        run: sudo apt-get install -y libsasl2-dev
+
+      - name: Install Protoc
+        uses: arduino/setup-protoc@v2
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install llvm-tools-preview
+        run: |
+          rustup component add llvm-tools-preview
+
+      - name: Install grcov
+        run: cargo install grcov
+
+      - name: Print storage use
+        run: |
+          sudo du -sh *
+          sudo du -sh $HOME/*
+
+      - name: Test
+        run: |
+          cargo xtask test --testset unit --nocapture --concurrent=1
+
+      - name: Upload coverage report artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-reports
+          path: .coverage/

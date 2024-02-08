@@ -20,6 +20,7 @@ log = "0.4"
 openidconnect = "3"
 packageurl = "0.3"
 reqwest = { version = "0.11", features = ["json"] }
+schemars = "0.8"
 serde = { version = "1", features = ["derive", "rc"] }
 serde_json = "1"
 thiserror = "1"
@@ -30,7 +31,7 @@ wasm-bindgen = "0.2"
 wasm-bindgen-futures = "0.4"
 yew = { version = "0.21", features = ["csr"] }
 yew-more-hooks = "0.3.0"
-yew-oauth2 = { version = "0.8.0", features = ["router", "openid"] }
+yew-oauth2 = { version = "0.10.1", features = ["nested-router", "openid"] }
 
 bombastic-model = { path = "../../../../bombastic/model" }
 exhort-model = { path = "../../../../exhort/model" }

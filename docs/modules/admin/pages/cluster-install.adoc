@@ -2,10 +2,79 @@
 
 == Creating a "values file"
 
+The Helm chart requires a set of information which the user needs to provide, and for which there are no defaults. For
+this it is required to create a "values" file, amending the default values. The values file has to be provided when
+performing the installation.
+
+The values files is a simple YAML file, which has a structure defined by the JSON schema of the Helm chart.
+
+TIP: As the chart offers a JSON schema, using an editor/IDE with supports for Helm Charts and JSON schema will make
+it easier creating the file, as it will show schema violations and offer code completion while editing.
+
+=== Providing secrets
+
+The chart allows providing secrets either by providing the actual value, or by providing a reference to a secret.
+
+Taking the storage configuration as an example, it requires the following credentials:
+
+[source,yaml]
+----
+storage:
+  accessKey: …
+  secretKey: …
+----
+
+For both `accessKey` as well as `secretKey`, the information can be provided as either a direct value, or as a
+reference. Also, a mixed version possible. For example:
+
+[source,yaml]
+----
+storage:
+  accessKey: "12345" # <1>
+  secretKey:
+    valueFrom:
+      secretValueRef:
+        name: secret-name # <2>
+        key: secret-key # <3>
+----
+<1> A literal value for the access key
+<2> The name of the secret containing the secret key value
+<3> The name of the key the containing the value inside the secret
+
+NOTE: The helm chart will only reference the values. It will not create the secrets or update the deployments when
+the values of the secrets change. In the case of using a plain value, a changed value will result in a changed
+deployment, and thus Kubernetes will perform a new rollout with the changed value.
+
+TIP: When using the object form, it is possible to provide the object one would provide for a Kubernetes `envVar`
+object, including `value` and `valueFrom`. For more information, see the Kubernetes documentation.
+
+=== A reasonable values file
+
+The following values file is a reasonable example. If you used the OpenTofu method of setting up the AWS resources,
+all secrets are already created in the expected format of the values files and no modifications of the secrets
+are required.
+
+Otherwise, you will need to create these secrets yourself with the information noted during the manual creation of
+the resources.
+
+[source, yaml]
+----
+include::../examples/values-ocp-aws.yaml[]
+----
+<1> Application domain, will be provided from the CLI
+<2> AWS region
+<3> URL of the Cognito domain
+<4> The OIDC issuer URL
+<5> Client ID of the frontend client
+<6> Client ID of the walker client
+
+NOTE: The example values file contains some placeholders in the format of `<name>`. Those placeholders must be replaced
+with actual values.
+
 == Create a new namespace
 
 Create a new namespace for the deployment. In the examples we will assume it is named `trustification`. You can
-do this from the command line using the following command:
+create it from the command line using the following command:
 
 [source,bash]
 ----
@@ -24,3 +93,6 @@ helm upgrade --install -n $NAMESPACE trustification charts/trustification --valu
 ----
 <1> The name of the namespace you created for the deployment
 <2> The name of the "values" file
+
+TIP: The command is actually a mix of "install or upgrade". Which means that you can re-run it multiple times, and it
+will apply the currently configured state from the values file.

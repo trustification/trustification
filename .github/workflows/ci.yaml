@@ -79,10 +79,20 @@ jobs:
         run: |
           helm dependency build charts/trustification
 
-      - name: helm-lint
+      - name: helm-lint (minikube)
         working-directory: deploy/k8s
         run: |
           helm lint ./charts/trustification --values values-minikube.yaml --set-string appDomain=.localhost
+
+      - name: helm-lint (ocp-no-aws)
+        working-directory: deploy/k8s
+        run: |
+          helm lint ./charts/trustification --values values-ocp-no-aws.yaml --set-string appDomain=.localhost
+
+      - name: helm-lint (ocp-aws)
+        working-directory: deploy/k8s
+        run: |
+          helm lint ./charts/trustification --values values-ocp-aws.yaml --values values-ocp-aws-lint.yaml --set-string appDomain=.localhost
 
       - name: helm-lint (branding)
         working-directory: deploy/k8s
@@ -220,6 +230,11 @@ jobs:
     needs:
       - formatting
     uses: ./.github/workflows/integration.yaml
+
+  unit:
+    needs:
+      - formatting
+    uses: ./.github/workflows/unit.yaml
 
   # A virtual job, referenced by the branch protection rule
   ci:

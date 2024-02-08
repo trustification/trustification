@@ -7,6 +7,9 @@ required:
   - tracing
 properties:
 
+  global:
+    type: object
+
   appDomain:
     type: string
 
@@ -78,8 +81,8 @@ properties:
       enabled:
         type: boolean
 
-  rustLogFilter:
-    type: string
+  rust:
+    $ref: "#/definitions/RustApplicationConfig"
 
   guac:
     type: object
@@ -184,7 +187,9 @@ properties:
           - type: object
             properties:
               initialBackendJson:
-                type: object
+                oneOf:
+                  - type: string
+                  - $ref: "https://raw.githubusercontent.com/trustification/trustification/main/spog/ui/crates/backend/schema/config.json"
               segmentWriteKey:
                 $ref: "#/definitions/ValueOrRef"
               customBranding:
@@ -382,8 +387,16 @@ definitions:
   RustApplication:
     type: object
     properties:
+      rust:
+        $ref: "#/definitions/RustApplicationConfig"
+
+  RustApplicationConfig:
+    type: object
+    properties:
       logFilter:
         type: string
+      backtrace:
+        type: boolean
 
   Metrics:
     type: object
@@ -493,6 +506,28 @@ definitions:
         properties:
           content:
             $ref: "https://raw.githubusercontent.com/trustification/trustification/main/auth/schema/auth.json"
+      - type: object
+        additionalProperties: false
+        required:
+          - type
+        properties:
+          type:
+            type: string
+            enum:
+              - keycloak
+      - type: object
+        additionalProperties: false
+        required:
+          - type
+          - cognitoDomainUrl
+        properties:
+          type:
+            type: string
+            enum:
+              - cognito
+          cognitoDomainUrl:
+            type: string
+            format: url
 
   Oidc:
     type: object
@@ -874,6 +909,15 @@ definitions:
         $ref: "#/definitions/ValueOrRef"
       password:
         $ref: "#/definitions/ValueOrRef"
+      sslMode:
+        $ref: "#/definitions/PostgresSslMode"
+
+  PostgresSslMode:
+    type: string
+    enum:
+      # postgres also supports "allow", but Go's postgres driver doesn't
+      - disable
+      - require
 
   GuacMigrateDatabaseConfig:
     type: object
@@ -940,3 +984,4 @@ definitions:
         type: string
       suspend:
         type: boolean
+

@@ -20,7 +20,7 @@ echo "$BACKEND_JSON" | \
   jq --arg url "$API_URL" '. + {url: $url}' | \
   jq --arg url "$BOMBASTIC_URL" '. + {bombastic: $url}' | \
   jq --arg url "$VEXINATION_URL" '. + {vexination: $url}' | \
-  jq --arg url "$ISSUER_URL" '. + {oidc: {issuer: $url}}' | \
+  jq --arg url "$ISSUER_URL" '. * {oidc: {issuer: $url}}' | \
   tee /endpoints/backend.json
 
 if [[ -n "$CLIENT_ID" ]]; then

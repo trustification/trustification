@@ -23,6 +23,8 @@ python3 -c 'import sys, yaml, json; print(json.dumps(yaml.safe_load(sys.stdin)))
 
 ```shell
 helm lint ./charts/trustification --values values-minikube.yaml --set-string appDomain=.localhost
+helm lint ./charts/trustification --values values-ocp-no-aws.yaml --set-string appDomain=.localhost
+helm lint ./charts/trustification --values values-ocp-aws.yaml --values values-ocp-aws-lint.yaml --set-string appDomain=.localhost
 ```
 
 ## Find that whitespace

@@ -4,6 +4,7 @@ mod r#macro;
 pub use component::*;
 
 use analytics_next::{AnalyticsBrowser, Settings, TrackingEvent, User};
+use jsonwebtokens::raw::{self, TokenSlices};
 use openidconnect::LocalizedClaim;
 use serde::Serialize;
 use serde_json::{json, Value};
@@ -12,7 +13,7 @@ use spog_ui_common::utils::auth::claims;
 use std::ops::Deref;
 use yew::prelude::*;
 use yew_consent::prelude::*;
-use yew_nested_router::history::History;
+use yew_nested_router::History;
 use yew_oauth2::prelude::use_auth_state;
 
 #[derive(Clone, PartialEq)]
@@ -127,8 +128,8 @@ pub fn segment_page_tracker() -> Html {
         // trigger once
         analytics.page();
 
-        // and whenver it changes
-        let listener = yew_nested_router::History::new().clone().listen(move || {
+        // and whenever it changes
+        let listener = History::listener(move || {
             analytics.page();
         });
 
@@ -173,47 +174,36 @@ pub fn segment_identify() -> Html {
     #[derive(Default, Serialize)]
     struct IdentityTraits {
         #[serde(skip_serializing_if = "Option::is_none")]
-        preferred_username: Option<String>,
-
-        #[serde(skip_serializing_if = "Option::is_none")]
-        name: Option<String>,
-
-        #[serde(skip_serializing_if = "Option::is_none")]
-        given_name: Option<String>,
-
-        #[serde(skip_serializing_if = "Option::is_none")]
-        family_name: Option<String>,
-
-        #[serde(skip_serializing_if = "Option::is_none")]
-        middle_name: Option<String>,
-
-        #[serde(skip_serializing_if = "Option::is_none")]
-        nickname: Option<String>,
-
-        #[serde(skip_serializing_if = "Option::is_none")]
-        email: Option<String>,
-
-        #[serde(skip_serializing_if = "Option::is_none")]
-        email_verified: Option<String>,
-
-        #[serde(skip_serializing_if = "Option::is_none")]
         locale: Option<String>,
+
+        #[serde(skip_serializing_if = "Option::is_none")]
+        organization_id: Option<String>,
     }
 
     use_effect_with((state, user.clone()), |(state, user)| {
+        let organization_id =
+            state
+                .as_ref()
+                .and_then(|e| e.access_token())
+                .and_then(|token| match raw::split_token(token) {
+                    Ok(TokenSlices { claims, .. }) => match raw::decode_json_token_slice(claims) {
+                        Ok(claims) => claims
+                            .get("organization")
+                            .and_then(|o| o.get("id"))
+                            .and_then(|v| v.as_str())
+                            .map(|v| v.to_string()),
+                        _ => None,
+                    },
+                    _ => None,
+                });
+
         let claims = claims(state);
+
         let current = match claims {
             Some(claims) => {
                 let traits = IdentityTraits {
-                    preferred_username: claims.preferred_username().map(|v| v.to_string()),
-                    name: claims.name().get().map(|v| v.to_string()),
-                    given_name: claims.given_name().get().map(|v| v.to_string()),
-                    family_name: claims.family_name().get().map(|v| v.to_string()),
-                    middle_name: claims.middle_name().get().map(|v| v.to_string()),
-                    nickname: claims.nickname().get().map(|v| v.to_string()),
-                    email: claims.email().map(|v| v.to_string()),
-                    email_verified: claims.email_verified().map(|v| v.to_string()),
                     locale: claims.locale().map(|v| v.to_string()),
+                    organization_id,
                 };
 
                 User {

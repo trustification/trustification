@@ -58,40 +58,85 @@ metadata:
 
 data:
 
-{{- if .module.authenticator }}{{/* if we have module specific config, that overrides the global */}}
+{{ $auth := .module.authenticator | default .root.Values.authenticator }}
 
-{{- if .module.authenticator.content }}{{/* check for structured content */}}
+{{- if kindIs "string" $auth }} {{/* Plain string */}}
+  auth.yaml: {{ $auth | quote }}
+
+{{- else if hasKey $auth "content" }} {{/* Structured content */}}
   auth.yaml: |
-    {{- .module.authenticator.content | toYaml | nindent 4 }}
-{{- else }}
-  auth.yaml: {{ .module.authenticator | quote }}
-{{- end }}
+    {{ $auth | toYaml | nindent 4 }}
 
-{{- else if .root.Values.authenticator }}{{/* if we have a global one, use that */}}
-
-{{- if .root.Values.authenticator.content }}{{/* otherwise, use the global one */}}
+{{- else }} {{/* Empty */}}
   auth.yaml: |
-    {{- .root.Values.authenticator.content | toYaml | nindent 4 }}{{/* check for structured content */}}
-{{- else }}
-  auth.yaml: {{ .root.Values.authenticator | quote }}
-{{- end }}
+    {{- include "trustification.authenticator.defaultContent" . | nindent 4 }}
 
-{{- else }}{{/* otherwise we have no config, and try some reasonable defaults */}}
-  auth.yaml: |
-    authentication:
-      clients:
-        - clientId: frontend
-          issuerUrl: {{ include "trustification.oidc.issuerUrlForClient" ( dict "root" .root "clientId" "frontend" ) }}
-          scopeMappings: &keycloakScopeMappings
-            "create:document": [ "create.sbom", "create.vex" ]
-            "read:document": [ "read.sbom", "read.vex" ]
-            "update:document": [ "update.sbom", "update.vex" ]
-            "delete:document": [ "delete.sbom", "delete.vex" ]
-        - clientId: walker
-          issuerUrl: {{ include "trustification.oidc.issuerUrlForClient" ( dict "root" .root "clientId" "frontend" ) }}
-          scopeMappings: *keycloakScopeMappings
 {{- end }}
 
 {{- end }}{{/* external referenced config */}}
+{{- end }}
 
+{{/*
+Create the authenticator default configuration.
+
+Arugments: (dict)
+  * root - .
+  * module - module object
+*/}}
+{{- define "trustification.authenticator.defaultContent" }}
+
+{{- if eq (.root.Values.authenticator).type "cognito" -}}
+authentication:
+  clients:
+    - clientId: {{ include "trustification.oidc.clientId" (dict "root" .root "clientId" "frontend" ) }}
+      issuerUrl: {{ include "trustification.oidc.issuerUrlForClient" (dict "root" .root "clientId" "frontend" ) }}
+
+      additionalPermissions:
+        - "read.sbom"
+        - "read.vex"
+        - "read.cve"
+
+      groupSelector: "$.['cognito:groups'][*]"
+
+      groupMappings:
+        manager:
+          - "create.sbom"
+          - "create.vex"
+          - "update.sbom"
+          - "update.vex"
+          - "delete.sbom"
+          - "delete.vex"
+
+    - clientId: {{ include "trustification.oidc.clientId" (dict "root" .root "clientId" "walker" ) }}
+      issuerUrl: {{ include "trustification.oidc.issuerUrlForClient" (dict "root" .root "clientId" "walker" ) }}
+
+      scopeMappings:
+        "trustification/bombastic":
+          - "create.sbom"
+          - "read.sbom"
+          - "update.sbom"
+          - "delete.sbom"
+        "trustification/vexination":
+          - "create.vex"
+          - "read.vex"
+          - "update.vex"
+          - "delete.vex"
+        "trustification/v11y":
+          - "read.cve"
+
+{{- else -}}{{/* Keycloak is the default */}}
+authentication:
+  clients:
+    - clientId: {{ include "trustification.oidc.clientId" (dict "root" .root "clientId" "frontend" ) }}
+      issuerUrl: {{ include "trustification.oidc.issuerUrlForClient" (dict "root" .root "clientId" "frontend" ) }}
+      scopeMappings: &keycloakScopeMappings
+        "create:document": [ "create.sbom", "create.vex" ]
+        "read:document": [ "read.sbom", "read.vex" ]
+        "update:document": [ "update.sbom", "update.vex" ]
+        "delete:document": [ "delete.sbom", "delete.vex" ]
+    - clientId: {{ include "trustification.oidc.clientId" (dict "root" .root "clientId" "walker" ) }}
+      issuerUrl: {{ include "trustification.oidc.issuerUrlForClient" (dict "root" .root "clientId" "walker" ) }}
+      scopeMappings: *keycloakScopeMappings
+
+{{- end }}
 {{- end }}

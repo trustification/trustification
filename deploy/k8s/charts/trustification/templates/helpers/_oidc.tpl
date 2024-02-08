@@ -1,12 +1,3 @@
-{{/*
-Issuer URL for the frontend client.
-
-Arguments: .
-*/}}
-{{- define "trustification.oidc.frontendIssuerUrl" -}}
-{{- $client := get .Values.oidc.clients "frontend" -}}
-{{- include "trustification.oidc.issuerUrl" (dict "root" . "client" $client ) -}}
-{{- end }}
 
 {{/*
 Client ID for the frontend client.
@@ -14,8 +5,19 @@ Client ID for the frontend client.
 Arguments: .
 */}}
 {{- define "trustification.oidc.frontendClientId" -}}
-{{- $client := get .Values.oidc.clients "frontend" -}}
-{{- $client.clientId | default "frontend" }}
+{{- include "trustification.oidc.clientId" (dict "root" . "clientId" "frontend") }}
+{{- end }}
+
+{{/*
+Client ID for some client
+
+Arguments: (dict)
+  * root - .
+  * clientId - the client id to look up, might resolve into a different client id
+*/}}
+{{- define "trustification.oidc.clientId" }}
+{{- $client := get .root.Values.oidc.clients .clientId -}}
+{{- $client.clientId | default .clientId }}
 {{- end }}
 
 {{/*
@@ -54,9 +56,9 @@ Arguments (dict):
 */}}
 {{- define "trustification.oidc.issuerUrl" }}
 {{- if .client.issuerUrl }}
-{{- .client.issuerUrl | quote }}
+{{- .client.issuerUrl }}
 {{- else if .root.Values.oidc.issuerUrl }}
-{{- .root.Values.oidc.issuerUrl | quote }}
+{{- .root.Values.oidc.issuerUrl }}
 {{- else -}}
 {{ include "trustification.tls.http.protocol" . }}://sso{{ .root.Values.appDomain }}/realms/chicken
 {{- end }}
@@ -71,5 +73,15 @@ Arguments (dict):
 */}}
 {{- define "trustification.oidc.issuerUrlForClient" }}
 {{- $client := get .root.Values.oidc.clients .clientId -}}
-{{- include "trustification.oidc.issuerUrl" ( dict "root" .root "client" $client ) }}
+{{- include "trustification.oidc.issuerUrl" ( dict "root" .root "client" (required (print "Unable to find client for " .clientId) $client ) ) }}
+{{- end }}
+
+
+{{/*
+Issuer URL for the frontend client.
+
+Arguments: .
+*/}}
+{{- define "trustification.oidc.frontendIssuerUrl" -}}
+{{- include "trustification.oidc.issuerUrlForClient" (dict "root" . "clientId" "frontend" ) }}
 {{- end }}

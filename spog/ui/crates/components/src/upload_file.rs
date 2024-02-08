@@ -263,7 +263,7 @@ pub fn upload_file(props: &UploadFileProperties) -> Html {
                         full_height=true
                         plain=true
                         style="--pf-v5-c-card--BackgroundColor: var(--pf-v5-global--BackgroundColor--200);"
-                        compact=true
+                        size={CardSize::Compact}
                     >
                         <CardBody>
                             <div ref={node.clone()} {class} style="background-color: var(--pf-v5-global--BackgroundColor--100);">

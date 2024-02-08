@@ -31,7 +31,7 @@ markdown = "1.0.0-alpha.11"
 monaco = { version = "0.5", features = ["yew-components"] }
 openidconnect = "3"
 packageurl = "0.3"
-patternfly-yew = { version = "0.5.4", features = ["icons-fab", "tree", "search_input"] }
+patternfly-yew = { version = "0.6", features = ["icons-fab", "tree"] }
 popper-rs = { version = "0.3.2", features = ["yew"] }
 reqwest = { version = "0.11", features = ["json"] }
 roxmltree = "0.19"
@@ -52,8 +52,8 @@ yew = { version = "0.21", features = ["csr"] }
 yew-consent = "0.2"
 yew-hooks = "0.3"
 yew-more-hooks = "0.3.2"
-yew-nested-router = "0.4.0"
-yew-oauth2 = { version = "0.8.0", features = ["router", "openid"] }
+yew-nested-router = "0.6.0"
+yew-oauth2 = { version = "0.10.1", features = ["nested-router", "openid"] }
 
 bombastic-model = { path = "../../bombastic/model" }
 exhort-model = { path = "../../exhort/model" }
@@ -97,7 +97,7 @@ members = [
 #yew-more-hooks = { git = "https://github.com/ctron/yew-more-hooks", rev = "fc0af774aa925edcd5a544e562619ecb539942f8" }
 #yew-more-hooks = { path = "../../../yew-more-hooks" }
 
-patternfly-yew = { git = "https://github.com/ctron/patternfly-yew", rev = "29c0790334c2514358b8a2cf3d34e30cf3d01d8a" } # FIXME: awaiting release
+patternfly-yew = { git = "https://github.com/patternfly-yew/patternfly-yew", rev = "74e20e4429248cbc3b2c8085b9a4f8d9002fe456" } # FIXME: awaiting release
 #patternfly-yew = { path = "../../../patternfly-yew" }
 
 #analytics-next = { git = "https://github.com/ctron/analytics-next-rs", rev = "9c95122f4e6dc308c90b945bd0f1925faf7cb828" } # FIXME: awaiting release
@@ -111,7 +111,8 @@ packageurl = { git = "https://github.com/ctron/packageurl.rs", rev = "c9a0c192ff
 #sikula = { git = "https://github.com/ctron/sikula", rev = "023c27232f016b80a34c8ed77b88d1c30dcae6e0" }
 
 # also check root level Cargo.toml
-cyclonedx-bom = { git = "https://github.com/trustification/cyclonedx-rust-cargo", branch = "trustification" }
+# TODO Switch to the official repository once https://github.com/CycloneDX/cyclonedx-rust-cargo/issues/615 is fixed
+cyclonedx-bom = { git = "https://github.com/carlosthe19916/cyclonedx-rust-cargo", branch = "issue-615-trustification" }
 #spdx-rs = { git = "https://github.com/trustification/spdx-rs", rev = "c65be086e898dae88609f07bbc5a224ba4e0838d" } # FIXME: awaiting doubleopen-project/spdx-rs#/27
 
 # release profile settings to reduce the final binary size

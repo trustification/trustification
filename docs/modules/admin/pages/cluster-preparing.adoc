@@ -7,14 +7,124 @@ The deployment requires a few services outside the Kubernetes based infrastructu
 * A PostgreSQL database instance
 * A set of OIDC clients for frontend and backend authentication
 
-The following sections will explain what is required in more detail. Each step will result in some information
+Setting up those resources is explained in <<manually_creating_aws_resources>>. However, if you're just looking for a
+quick way to generate all those resources, see <<opentofu_terraform>> for some automation.
+
+[#opentofu_terraform]
+== OpenTofu / Terraform
+
+This describes an opinionated way to set up all AWS resources quickly using OpenTofu. Be sure to inspect the scripts
+before running them.
+
+[NOTE]
+.OpenTofu vs Terraform
+====
+OpenTofu is the open source fork of Terraform. While it should be possible to also use Terraform, Trustification focuses
+on OpenTofu. If you prefer Terraform, replace the `tofu` commands with `terraform`.
+====
+
+=== Pre-requisites
+
+You will need:
+
+* The AWS CLI and OpenTofu CLI installed
+* An AWS account configured with the AWS CLI
+* An OpenShift cluster already set up in the same AWS region/profile/account
+
+=== Preparing
+
+You will also need to create a wrapper/main module referencing the `trustification` module. A simple wrapper module
+(named `main.tf`) should look like this:
+
+[source,hcl-terraform]
+----
+provider "aws" {
+  region  = "eu-west-1"  # <1>
+  profile = "my-profile" # <2>
+}
+
+provider "kubernetes" {
+  config_path    = "../instance/config/auth/kubeconfig" # <3>
+  config_context = "admin" # <4>
+}
+
+variable "app-domain" {
+  type = string
+}
+
+module "trustification" {
+  source = "./trustification" # <5>
+
+  cluster-vpc-id = "vpc-12345678901234567" # <6>
+  availability-zone = "eu-west-1a" # <7>
+
+  namespace = "trustification"
+
+  admin-email = "me@my.domain" # <8>
+  sso-domain = "some-free-cognito-console-domain" # <9>
+  console-url = "https://console${var.app-domain}"
+}
+----
+<1> The AWS region you want to create the resources in
+<2> The name of the profile of the AWS that you want to use
+<3> The location to the "kubeconfig", required for accessing the Kubernetes cluster
+<4> The name of the Kubernetes client content to use
+<5> The location of the `trustification` Terraform module
+<6> The VPC ID of the OpenShift cluster, used to allow access to the RDS database
+<7> The availability zone the RDS instance should be created it, must be valid for the AWS region
+<8> The e-mail of the admin user, which will get frontend access to Trustification
+<9> An AWS Cognito domain prefix. It is globally unique and has to be free.
+
+=== Creating the resources
+
+First, initialize the OpenTofu instance. This will set up the required provides and does not yet create any resources:
+
+[source,bash]
+----
+tofu init
+----
+
+The following commands require the environment variable `APP_DOMAIN` to be set. You can do this using the following
+command:
+
+[source,bash]
+----
+NAMESPACE=trustification
+APP_DOMAIN=-$NAMESPACE.$(kubectl -n openshift-ingress-operator get ingresscontrollers.operator.openshift.io default -o jsonpath='{.status.domain}')
+----
+
+Then, check if the resources can be created. This also does not yet create the resources:
+
+[source,bash]
+----
+tofu plan --var app-domain=$APP_DOMAIN
+----
+
+This will show you the resources which will get created and check if the creation is expected to be successful.
+
+If this worked fine, proceed with actually creating the resources:
+
+[source,bash]
+----
+tofu apply --var app-domain=$APP_DOMAIN
+----
+
+=== Extracting secrets
+
+All secrets required for the deployment of Trustification have already been created in the Kubernetes cluster as
+`Secrets`. The next step will use those generated secrets by default.
+
+[#manually_creating_aws_resources]
+== Manually creating AWS resources
+
+The following sections will explain what is required in more detail.Some steps will result in some information
 which needs to be captured and which needs to be used later on in the Helm chart's values file.
 
 [NOTE]
 .AWS regions
 ====
 While it is possible to split the AWS services to different regions, that might have an impact on the cost of running
-the services, as well as on the performance. Therefore, it is recommended to keep everything in a single region. The
+the services, as well as on the performance.Therefore, it is recommended to keep everything in a single region.The
 rest of the document will assume that this is the case.
 ====
 
@@ -28,7 +138,7 @@ types: SBOMs, CSAF documents, CVEs. For creating S3 resources, we will use the f
 Examples will use a placeholder of the format `<type>` when it is necessary to replace this with the actual types.
 
 [#s3_storage]
-== S3 storage
+=== S3 storage
 
 It is required to set up three S3 buckets, each with the same configuration:
 
@@ -42,7 +152,7 @@ From here on, the examples will use:
 * `vexination` for the CSAF document bucket
 * `v11y` for the CVE details bucket
 
-== Event queues
+=== Event queues
 
 For each bucket created in <<s3_storage>>, the following three SQS queues have to be created:
 
@@ -74,7 +184,7 @@ This will result in the following names, which will be used from here on for exa
 * `v11y-indexed`
 * `v11y-failed`
 
-== S3 change notifications
+=== S3 change notifications
 
 For each bucket a change notification needs to be set up publish the events for `s3:ObjectCreated:*` and
 `s3:ObjectRemoved:*` to the `<type>-stored-topic` topic.
@@ -104,7 +214,7 @@ This also requires granting the S3 bucket access to the topic. For example:
 ----
 <1> S3 bucket name
 
-== Queue subscriptions
+=== Queue subscriptions
 
 In order to deliver those change events, we need to connect the change topic to the `<type>-stored` and `<type>-guac`
 queue by creating "topic subscriptions".
@@ -139,7 +249,7 @@ This also requires granting the S3 SNS topic access to the queue. For example:
 ----
 <1> Name of the SNS topic
 
-== Users
+=== Users
 
 For each document type an AWS IAM user must be created. From here on, the examples will use:
 
@@ -180,3 +290,11 @@ Also does each user require access to its S3 bucket and corresponding queues. Fo
 ----
 <1> SQS queues
 <2> S3 bucket
+
+=== RDS
+
+Also, a PostgreSQL instance of RDS is required. The instance must be accessible from the cluster you're installing
+Trustification on. The actual RDS size (CPU, RAM, Storage, …) depends on the amount of data you are considering to
+store in the system.
+
+In order to try out Trustification, a single instance of type `db.m7g.large` will be sufficient.

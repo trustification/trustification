@@ -18,7 +18,6 @@ time = "0.3"
 zstd = "0.13"
 rust-s3 = { git = "https://github.com/trustification/rust-s3.git", branch = "trustification", features = ["blocking"] }
 crc32fast = "1.3.2"
-async-trait = "0.1"
 trustification-storage = { path = "../storage"}
 thiserror = "1"
 trustification-api = { path = "../api"}
