@@ -36,6 +36,7 @@ eventBus:
 
 authenticator:
   type: cognito
+  cognitoDomainUrl: <cognito-domain-url> # The "cognito domain" URL
 
 oidc:
   issuerUrl: <issuer-url> # OIDC issuer URL
