@@ -15,7 +15,7 @@ pub fn cyclonedx_meta(bom: &cyclonedx_bom::prelude::Bom) -> Html {
         .metadata
         .as_ref()
         .and_then(|m| m.component.as_ref())
-        .map(|c| c.version.to_string());
+        .map(|c| c.version.as_ref().map(|e| e.to_string()).unwrap_or_default());
     let serial_number = bom.serial_number.as_ref().map(|s| s.to_string());
 
     html!(

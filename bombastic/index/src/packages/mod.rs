@@ -196,7 +196,9 @@ impl Index {
         }
 
         document.add_text(fields.name, component.name.to_string());
-        document.add_text(fields.version, component.version.to_string());
+        if let Some(version) = &component.version {
+            document.add_text(fields.version, version.to_string());
+        };
         let mut package_id = "".to_string();
         if let Some(purl) = &component.purl {
             let purl = purl.to_string();
