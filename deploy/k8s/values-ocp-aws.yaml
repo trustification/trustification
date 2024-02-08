@@ -34,6 +34,22 @@ eventBus:
         name: event-bus-credentials
         key: aws_secret_access_key
 
+authenticator:
+  type: cognito
+
+oidc:
+  issuerUrl: <issuer-url> # OIDC issuer URL
+  clients:
+    frontend:
+      clientId: <client-id> # frontend client ID (public client)
+    walker:
+      clientId: <client-id> # walker client (protected client)
+      clientSecret:
+        valueFrom:
+          secretKeyRef:
+            name: oidc-walker
+            key: client-secret
+
 bombastic:
   bucket: bombastic-default
   topics:
@@ -54,19 +70,6 @@ v11y:
     failed: v11y-default-failed
     indexed: v11y-default-indexed
     stored: v11y-default-stored
-
-oidc:
-  issuerUrl: <issuer-url> # OIDC issuer URL
-  clients:
-    frontend:
-      clientId: <client-id> # frontend client ID (public client)
-    walker:
-      clientId: <client-id> # walker client (protected client)
-      clientSecret:
-        valueFrom:
-          secretKeyRef:
-            name: oidc-walker
-            key: client-secret
 
 guac:
   database:

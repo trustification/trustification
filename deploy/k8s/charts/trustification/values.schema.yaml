@@ -501,6 +501,16 @@ definitions:
         properties:
           content:
             $ref: "https://raw.githubusercontent.com/trustification/trustification/main/auth/schema/auth.json"
+      - type: object
+        additionalProperties: false
+        required:
+          - type
+        properties:
+          type:
+            type: string
+            enum:
+              - keycloak
+              - cognito
 
   Oidc:
     type: object
