@@ -7,6 +7,9 @@ required:
   - tracing
 properties:
 
+  global:
+    type: object
+
   appDomain:
     type: string
 
