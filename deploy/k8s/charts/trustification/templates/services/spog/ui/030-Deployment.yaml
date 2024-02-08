@@ -60,9 +60,14 @@ spec:
             - name: SEGMENT_WRITE_KEY
               {{- include "trustification.common.envVarValue" . | nindent 14 }}
             {{- end }}
+
             {{- with $mod.module.initialBackendJson }}
             - name: BACKEND_JSON
+              {{- if kindIs "string" . }}
+              value: {{ . | quote }}
+              {{- else }}
               value: {{ . | toJson | quote }}
+              {{- end }}
             {{- end }}
 
           volumeMounts:
