@@ -64,8 +64,7 @@ impl SBOM {
 
         #[cfg(feature = "cyclonedx-bom")]
         {
-            let result =
-                info_span!("parse cyclonedx").in_scope(|| cyclonedx_bom::prelude::Bom::parse_from_json_v1_3(data));
+            let result = info_span!("parse cyclonedx").in_scope(|| cyclonedx_bom::prelude::Bom::parse_from_json(data));
             match result.map_err(|e| {
                 log::info!("Error parsing CycloneDX: {:?}", e);
                 e

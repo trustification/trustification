@@ -78,8 +78,8 @@ pub fn parse(data: &[u8]) -> Result<SBOM, anyhow::Error> {
             });
 
             match (spec_version, supported_packages) {
-                (Some("1.3"), Some(true)) => {}
-                (Some("1.3"), Some(false)) => bail!(
+                (Some("1.3"), Some(true)) | (Some("1.4"), Some(true)) => {}
+                (Some("1.3"), Some(false)) | (Some("1.4"), Some(false)) => bail!(
                     "Unsupported packages detected. Supported packages: 'maven', 'gradle', 'npm', 'gomodules', 'pip'"
                 ),
                 (Some(other), _) => bail!("Unsupported CycloneDX version: {other}"),
@@ -132,7 +132,7 @@ pub fn scanner() -> Html {
         analytics.track(ParseOutcome(&result));
         match result {
             Ok(_sbom) => Ok(data),
-            Err(err) => Err(format!("Failed to parse SBOM as CycloneDX 1.3: {err}")),
+            Err(err) => Err(format!("Failed to parse SBOM: {err}")),
         }
     });
 
@@ -189,7 +189,7 @@ fn common_header(props: &CommonHeaderProperties) -> Html {
                     <Content>
                         <Title>{"Scan an SBOM"}</Title>
                         <p>
-                            {"Load an existing CycloneDX 1.3 or SPDX 2.2 file"}
+                            {"Load an existing CycloneDX 1.3,1.4 or SPDX 2.2 file"}
                             if let Some(url) = &config.scanner.documentation_url {
                                 {" or "}
                                 <a
