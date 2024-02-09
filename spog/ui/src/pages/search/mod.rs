@@ -251,7 +251,23 @@ pub fn search(props: &SearchProperties) -> Html {
                             selected={*tab} {onselect}
                             r#box=true
                         >
-                            <Tab<TabIndex> index={TabIndex::Sboms} title={html!(<CountTabTitle title="Products and containers" count={sbom_count} processing={sbom_is_processing} />)} />
+                            <Tab<TabIndex> index={TabIndex::Sboms} title={html!(
+                                <>
+                                    <CountTabTitle title="SBOMs" count={sbom_count} processing={sbom_is_processing} />
+                                    <Popover
+                                        target={html!(
+                                            <button class="pf-v5-c-button pf-m-plain pf-m-small" type="button" style="padding: 0px 0px 0px 5px;">
+                                                <span class="pf-v5-c-tabs__item-action-icon">
+                                                { Icon::QuestionCircle }
+                                                </span>
+                                            </button>
+                                        )}
+                                        body={html_nested!(
+                                            <PopoverBody>{"Software Bill of Materials for Products and Containers."}</PopoverBody>
+                                        )}
+                                    />
+                                </>
+                            )}/>
                             <Tab<TabIndex> index={TabIndex::Packages} title={html!(<CountTabTitle title="Packages" count={package_count} processing={package_is_processing} />)} />
                             <Tab<TabIndex> index={TabIndex::Cves} title={html!(<CountTabTitle title="CVEs" count={cve_count} processing={cve_is_processing} />)} />
                             <Tab<TabIndex> index={TabIndex::Advisories} title={html!(<CountTabTitle title="Advisories" count={advisory_count} processing={advisory_is_processing} />)} />
