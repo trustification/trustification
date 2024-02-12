@@ -82,7 +82,7 @@ spec:
 
             {{- if $mod.module.uiConfiguration }}
             - name: SPOG_UI_CONFIG
-              value: /etc/config/spog-ui/spog-ui.yaml
+              value: /etc/config/spog-ui.yaml
             {{- end }}
 
             {{- if eq ( include "trustification.openshift.useServiceCa" .root ) "true" }}
