@@ -15,7 +15,7 @@ modules:
   spogApi:
     uiConfiguration:
       configMapRef:
-        name: spog-ui-config
+        name: spog-ui-custom-config
         key: spog-ui.yaml
 
   spogUi:
