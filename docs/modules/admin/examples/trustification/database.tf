@@ -99,7 +99,7 @@ resource "aws_db_instance" "guac" {
 
   db_name             = "postgres"
   engine              = "postgres"
-  engine_version      = "15.4"
+  engine_version      = "15.5"
   instance_class      = "db.m7g.large"
   username            = var.db-master-user
   password            = random_password.guac-db-admin-password.result
