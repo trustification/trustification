@@ -45,7 +45,7 @@ spec:
             - "{{ include "trustification.tls.http.protocol" $mod }}://v11y-api.{{ .Release.Namespace }}.svc.cluster.local"
             - "--exhort-url"
             - "{{ include "trustification.tls.http.protocol" $mod }}://exhort-api.{{ .Release.Namespace }}.svc.cluster.local"
-{{- with $mod.crdaUrl }}
+{{- with $mod.module.crdaUrl }}
             - "--crda-url"
             - {{ . | quote }}
 {{- end }}
@@ -65,22 +65,22 @@ spec:
             {{- include "trustification.application.httpServer.envVars" $mod | nindent 12 }}
             {{- include "trustification.oidc.authenticationClient" ( dict "root" . "clientId" "walker" ) | nindent 12 }}
 
-            {{- with $mod.snykToken }}
+            {{- with $mod.module.snykToken }}
             - name: SNYK_TOKEN
               {{- include "trustification.common.envVarValue" . | nindent 14 }}
             {{- end }}
 
-            {{- with $mod.segmentWriteKey }}
+            {{- with $mod.module.segmentWriteKey }}
             - name: SEGMENT_WRITE_KEY
               {{- include "trustification.common.envVarValue" . | nindent 14 }}
             {{- end }}
 
-            {{- if not $mod.disableSwaggerOidc }}
+            {{- if not $mod.module.disableSwaggerOidc }}
             - name: SWAGGER_UI_OIDC_ISSUER_URL
               value: {{ include "trustification.oidc.frontendIssuerUrl" . | quote }}
             {{- end }}
 
-            {{- if $mod.uiConfiguration }}
+            {{- if $mod.module.uiConfiguration }}
             - name: SPOG_UI_CONFIG
               value: /etc/config/spog-ui/spog-ui.yaml
             {{- end }}
@@ -103,20 +103,20 @@ spec:
             {{- include "trustification.application.httpServerVolumesMounts" $mod | nindent 12 }}
             {{- include "trustification.authenticator.volumeMount" $mod | nindent 12 }}
 
-            {{- if $mod.uiConfiguration }}
+            {{- if $mod.module.uiConfiguration }}
             - name: config-ui
               mountPath: /etc/config/spog-ui.yaml
-              subPath: {{ if ($mod.uiConfiguration.configMapRef).key }}{{ $mod.uiConfiguration.configMapRef.key }}{{ else }}spog-ui.yaml{{ end }}
+              subPath: {{ if ($mod.module.uiConfiguration.configMapRef).key }}{{ $mod.module.uiConfiguration.configMapRef.key }}{{ else }}spog-ui.yaml{{ end }}
             {{- end }}
 
       volumes:
         {{- include "trustification.application.httpServerVolumes" $mod | nindent 8 }}
         {{- include "trustification.authenticator.volume" $mod | nindent 8 }}
 
-        {{- if $mod.uiConfiguration }}
+        {{- if $mod.module.uiConfiguration }}
         - name: config-ui
           configMap:
-            name: {{ with $mod.uiConfiguration.configMapRef }}{{ .name }}{{ else }}{{ .Release.Name }}-spog-ui-config{{ end }}
+            name: {{ with $mod.module.uiConfiguration.configMapRef }}{{ .name }}{{ else }}{{ .Release.Name }}-spog-ui-config{{ end }}
         {{- end }}
 
 {{ end }}
