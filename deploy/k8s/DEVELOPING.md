@@ -33,6 +33,22 @@ helm lint ./charts/trustification --values values-ocp-aws.yaml --values values-o
 helm template --debug charts/trustification
 ```
 
+## Run the chart checks
+
+> [!NOTE]
+> This will only work when using OCP and having the AWS resources provisioned first.
+
+```shell
+podman run --rm \
+    -e KUBECONFIG=/.kube/config \
+    -v "${HOME}/.kube":/.kube:z \
+    -v $(pwd):/charts:z \
+    "quay.io/redhat-certification/chart-verifier:latest" \
+    verify \
+    -F /charts/values-ocp-aws.yaml -F /charts/values-ocp-aws-lint.yaml \
+    /charts/charts/trustification
+```
+
 ## Update the OpenShift templates
 
 Helm charts are used to render the OpenShift templates in `../openshift`.

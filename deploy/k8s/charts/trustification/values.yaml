@@ -110,10 +110,6 @@ modules:
     tracing: {}
     metrics: {}
     rust: {}
-    uiConfiguration:
-      content:
-        global:
-          productName: All Chickens
 
   spogUi:
     enabled: true

@@ -42,7 +42,7 @@ spec:
             {{- include "trustification.eventBus.guac.envVars" $mod | nindent 12 }}
 
             - name: GUAC_S3_QUEUES
-              value: {{ ($mod.topics).indexed | default .Values.bombastic.topics.indexed | quote }}
+              value: {{ ($mod.module.topics).indexed | default .Values.bombastic.topics.indexed | quote }}
 
             - name: GUAC_GQL_ADDR
               value: {{ include "trustification.tls.http.protocol" $mod }}://guac-graphql.{{ .Release.Namespace }}.svc.cluster.local/query

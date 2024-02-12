@@ -37,10 +37,10 @@ spec:
             optional: true
             name: {{ include "trustification.common.name" (dict "root" . "name" (printf "%s-backend" $mod.name ) ) }}
 
-        {{- if $mod.customBranding }}
+        {{- with $mod.module.brandingConfigMap }}
         - name: branding
           configMap:
-            name: spog-ui-branding
+            name: {{ . }}
         {{- end }}
 
       containers:
@@ -81,7 +81,7 @@ spec:
             - name: run
               mountPath: /run
 
-            {{- if $mod.module.customBranding }}
+            {{- if $mod.module.brandingConfigMap }}
             - name: branding
               mountPath: /public/branding
             {{- end }}
