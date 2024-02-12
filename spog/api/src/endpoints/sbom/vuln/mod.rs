@@ -145,7 +145,7 @@ async fn process_get_vulnerabilities(
                     .metadata
                     .as_ref()
                     .and_then(|metadata| metadata.component.as_ref())
-                    .map(|component| component.version.to_string())
+                    .and_then(|component| component.version.as_ref().map(|version| version.to_string()))
                     .unwrap_or("".to_string()),
             );
             let created = cyclone
