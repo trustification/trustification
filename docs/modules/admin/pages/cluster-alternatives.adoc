@@ -23,10 +23,13 @@ In order to set up an infrastructure suitable for testing, you can use our provi
 
 [NOTE]
 ====
-The testing infrastructure is highly opinionated and will only work with Minikube.
+The testing infrastructure is highly opinionated and will only work with Minikube or OpenShift.
 ====
 
-To install this, run the following command:
+IMPORTANT: It is required to keep the same settings, and even the namespace of the example commands. Otherwise, it won't
+work.
+
+To install this on minikube, run the following command:
 
 [source,bash]
 ----
@@ -37,5 +40,13 @@ helm upgrade --install -n trustification infrastructure charts/trustification-in
 
 Then, you need to use the same `values-minishift.yaml` values file for installing the actual deployment.
 
-IMPORTANT: It is required to keep the same settings, and even the namespace of the example commands. Otherwise, it won't
-work.
+To install this on OpenShift, run the following command:
+
+[source,bash]
+----
+cd deploy/k8s
+NAMESPACE=trustification
+APP_DOMAIN=-$NAMESPACE.$(oc -n openshift-ingress-operator get ingresscontrollers.operator.openshift.io default -o jsonpath='{.status.domain}')
+oc create ns $NAMESPACE
+helm upgrade --install -n $NAMESPACE infrastructure charts/trustification-infrastructure --values values-ocp-no-aws.yaml --set-string keycloak.ingress.hostname=sso$APP_DOMAIN --set-string appDomain=$APP_DOMAIN
+----
