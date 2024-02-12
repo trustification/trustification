@@ -66,18 +66,18 @@ module "trustification" {
 }
 ----
 <1> The AWS region you want to create the resources in
-<2> The name of the profile of the AWS that you want to use
-<3> The location to the "kubeconfig", required for accessing the Kubernetes cluster
-<4> The name of the Kubernetes client content to use
+<2> The name of the AWS CLI profile you want to use
+<3> The location to the "kubeconfig" file, required for accessing the Kubernetes cluster
+<4> The name of the Kubernetes client context (in the kubeconfig) to use
 <5> The location of the `trustification` Terraform module
 <6> The VPC ID of the OpenShift cluster, used to allow access to the RDS database
-<7> The availability zone the RDS instance should be created it, must be valid for the AWS region
+<7> The availability zone the RDS instance should be created in, must be valid for the AWS region
 <8> The e-mail of the admin user, which will get frontend access to Trustification
-<9> An AWS Cognito domain prefix. It is globally unique and has to be free.
+<9> An AWS Cognito domain prefix. It is globally unique and has to be still available.
 
 === Creating the resources
 
-First, initialize the OpenTofu instance. This will set up the required provides and does not yet create any resources:
+First, initialize the OpenTofu instance. This will set up the required providers and does not yet create any resources:
 
 [source,bash]
 ----
