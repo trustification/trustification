@@ -49,3 +49,11 @@ APP_DOMAIN=-$NAMESPACE.$(kubectl -n openshift-ingress-operator get ingresscontro
 helm upgrade --install -n $NAMESPACE infrastructure charts/trustification-infrastructure --values values-ocp-no-aws.yaml --set-string keycloak.ingress.hostname=sso$APP_DOMAIN --set-string appDomain=$APP_DOMAIN
 helm upgrade --install -n $NAMESPACE trustification charts/trustification --values values-ocp-no-aws.yaml --set-string appDomain=$APP_DOMAIN
 ```
+
+## Branding
+
+Install the branding Helm chart using:
+
+```shell
+helm upgrade --install -n trustification branding charts/trustification-branding
+```

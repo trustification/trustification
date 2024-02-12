@@ -1,0 +1,10 @@
+modules:
+
+  spogApi:
+    uiConfiguration:
+      configMapRef:
+        name: spog-ui-config
+        key: spog-ui.yaml
+
+  spogUi:
+    brandingConfigMap: spog-ui-branding
