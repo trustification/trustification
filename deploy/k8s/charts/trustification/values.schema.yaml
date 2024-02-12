@@ -192,8 +192,8 @@ properties:
                   - $ref: "https://raw.githubusercontent.com/trustification/trustification/main/spog/ui/crates/backend/schema/config.json"
               segmentWriteKey:
                 $ref: "#/definitions/ValueOrRef"
-              customBranding:
-                type: boolean
+              brandingConfigMap:
+                type: string
 
       vexinationApi:
         allOf:
