@@ -106,7 +106,7 @@ pub fn search(props: &SearchProperties) -> Html {
     let onselect = use_callback((analytics.clone(), tab.clone()), |index, (analytics, tab)| {
         analytics.track(AnalyticEvents {
             obj_name: ObjectNameAnalytics::SearchPage,
-            action: ActionAnalytics::SelectTab(format!("{}", *tab.clone())),
+            action: ActionAnalytics::SelectTab(format!("{}", &index)),
         });
 
         tab.set(index)
