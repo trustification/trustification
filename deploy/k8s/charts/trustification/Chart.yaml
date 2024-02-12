@@ -2,7 +2,7 @@ apiVersion: v2
 name: trustification
 description: A Helm chart for managing Trustification services on Kubernetes
 
-kubeVersion: 1.16
+kubeVersion: ^1.26.0
 
 type: application
 version: 0.2.0
