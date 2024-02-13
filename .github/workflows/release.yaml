@@ -150,18 +150,8 @@ jobs:
           path: target/release/trust-${{ matrix.target }}${{ matrix.exe }}
           if-no-files-found: error
 
-  containers:
-      needs: [ init, ci ]
-
-      uses: ./.github/workflows/containers.yaml
-      secrets: inherit
-
-      with:
-        imageTag: ${{ needs.init.outputs.version }}
-        platforms: "linux/amd64"
-
   publish:
-    needs: [ init, build, containers ]
+    needs: [ init, build ]
     permissions:
       contents: write
       packages: write
@@ -307,7 +297,7 @@ jobs:
           for container in $CONTAINERS; do
             IMAGE="ghcr.io/${{ github.repository_owner }}/${container}:${{ needs.init.outputs.version }}"
             podman push \
-              "${container}:${{ needs.init.outputs.version }}" \
+              "${container}:ci" \
               "${IMAGE}" \
               --digestfile "${RUNNER_TEMP}/push.${container}.digest"
           done
@@ -319,7 +309,7 @@ jobs:
           for container in $CONTAINERS; do
             IMAGE="ghcr.io/${{ github.repository_owner }}/${container}:latest"
             podman push \
-              "${container}:${{ needs.init.outputs.version }}" \
+              "${container}:ci" \
               "${IMAGE}"
           done
 

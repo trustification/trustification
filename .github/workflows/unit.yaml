@@ -38,7 +38,7 @@ jobs:
             ~/.cargo/git/db/
             target/
             spog/ui/target/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-unit-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Install libsasl2-dev
         run: sudo apt-get install -y libsasl2-dev
