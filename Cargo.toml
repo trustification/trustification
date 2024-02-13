@@ -124,3 +124,6 @@ csaf = { git = "https://github.com/voteblake/csaf-rs", rev = "76cb9ede10adb1fbb4
 
 #cve = { git = "https://github.com/ctron/cve", rev = "77341768d893098f1f8b1397364fecfb16b4d776" } # FIXME: awaiting release
 #hide = { git = "https://github.com/ctron/hide", rev = "109059cce66fd85dbe40f59ad40b7dab47b70fe1" } # FIXME: awaiting release
+
+csaf-walker = { git = "https://github.com/bxf12315/csaf-walker.git", rev ="dff3991f7a31601a9521f423ab2e49aeffc025ae",  default-features = false, features = ["crypto-openssl", "csaf"] }
+walker-common = { git = "https://github.com/bxf12315/csaf-walker.git", rev ="dff3991f7a31601a9521f423ab2e49aeffc025ae", features = [] }

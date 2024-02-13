@@ -1,7 +1,6 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use csaf_walker::report::RenderOptions;
 use std::{
     path::PathBuf,
     process::ExitCode,
@@ -93,7 +92,7 @@ impl Run {
 
                     log::debug!("Policy date: {validation_date:?}");
 
-                    let options = ValidationOptions { validation_date };
+                    let options = ValidationOptions::new().validation_date(validation_date);
 
                     server::run(
                         self.workers,
@@ -101,10 +100,8 @@ impl Run {
                         self.sink,
                         provider,
                         options,
-                        RenderOptions {
-                            output: self.output,
-                            base_url: self.base_url,
-                        },
+                        self.output,
+                        self.base_url,
                         self.ignore_distributions,
                         self.since_file,
                         self.additional_root_certificates,
