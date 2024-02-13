@@ -4,6 +4,9 @@ on:
   workflow_call:
   workflow_dispatch:
 
+env:
+  GRCOV_VERSION: 0.8.19
+
 jobs:
   unit-tests:
     runs-on: ubuntu-22.04
@@ -50,8 +53,11 @@ jobs:
         run: |
           rustup component add llvm-tools-preview
 
-      - name: Install grcov
-        run: cargo install grcov
+      - name: Install grcov (${{ env.GRCOV_VERSION }})
+        run: |
+          wget https://github.com/mozilla/grcov/releases/download/v${GRCOV_VERSION}/grcov-x86_64-unknown-linux-gnu.tar.bz2
+          tar xavf grcov-x86_64-unknown-linux-gnu.tar.bz2
+          sudo install grcov /usr/local/bin/
 
       - name: Print storage use
         run: |
