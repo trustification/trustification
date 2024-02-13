@@ -60,8 +60,8 @@ jobs:
         run: |
           curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
 
-      - name: Install trunk-ng
-        run: cargo binstall -y trunk-ng
+      - name: Install trunk
+        run: cargo binstall -y trunk
 
       - name: Install wasm32-unknown-unknown
         run: |
