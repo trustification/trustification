@@ -4,6 +4,11 @@ description: A Helm chart for managing Trustification services on Kubernetes
 
 kubeVersion: ^1.26.0
 
+maintainers:
+  - name: ctron
+    url: https://dentrassi.de
+    email: ctron@dentrassi.de
+
 type: application
 version: 0.2.0
 appVersion: "0.2.0"
