@@ -7,7 +7,7 @@ The deployment requires a few services outside the Kubernetes based infrastructu
 * A PostgreSQL database instance
 * A set of OIDC clients for frontend and backend authentication
 
-Setting up those resources is explained in <<manually_creating_aws_resources>>. However, if you're just looking for a
+Setting up those resources is explained in <<manually_creating_resources>>. However, if you're just looking for a
 quick way to generate all those resources, see <<opentofu_terraform>> for some automation.
 
 [#opentofu_terraform]
@@ -66,18 +66,18 @@ module "trustification" {
 }
 ----
 <1> The AWS region you want to create the resources in
-<2> The name of the profile of the AWS that you want to use
-<3> The location to the "kubeconfig", required for accessing the Kubernetes cluster
-<4> The name of the Kubernetes client content to use
+<2> The name of the AWS CLI profile you want to use
+<3> The location to the "kubeconfig" file, required for accessing the Kubernetes cluster
+<4> The name of the Kubernetes client context (in the kubeconfig) to use
 <5> The location of the `trustification` Terraform module
 <6> The VPC ID of the OpenShift cluster, used to allow access to the RDS database
-<7> The availability zone the RDS instance should be created it, must be valid for the AWS region
+<7> The availability zone the RDS instance should be created in, must be valid for the AWS region
 <8> The e-mail of the admin user, which will get frontend access to Trustification
-<9> An AWS Cognito domain prefix. It is globally unique and has to be free.
+<9> An AWS Cognito domain prefix. It is globally unique and has to be still available.
 
 === Creating the resources
 
-First, initialize the OpenTofu instance. This will set up the required provides and does not yet create any resources:
+First, initialize the OpenTofu instance. This will set up the required providers and does not yet create any resources:
 
 [source,bash]
 ----
@@ -109,13 +109,48 @@ If this worked fine, proceed with actually creating the resources:
 tofu apply --var app-domain=$APP_DOMAIN
 ----
 
-=== Extracting secrets
+=== Extracting information
 
-All secrets required for the deployment of Trustification have already been created in the Kubernetes cluster as
+Most secrets required for the deployment of Trustification have already been created in the Kubernetes cluster as
 `Secrets`. The next step will use those generated secrets by default.
 
-[#manually_creating_aws_resources]
-== Manually creating AWS resources
+If you are using AWS Cognito, you will also need to transfer the following information to the Helm chart values file
+manually:
+
+* The issuer URL
+* The client IDs of the OIDC clients
+* The Cognito hosted UI domain
+
+The following is an example snippet of the relevant sections (values in the format `<value>` are expected to be replaced
+with their actual values):
+
+[source,yaml]
+----
+authenticator:
+  type: cognito
+  cognitoDomainUrl: https://<cognito-domain>.auth.<region>.amazoncognito.com # <1>
+
+oidc:
+  issuerUrl: https://cognito-idp.<region>.amazonaws.com/<cognito issuer id> # <2>
+  clients:
+    frontend:
+      clientId: <frontend client id> # <3>
+    walker:
+      clientId: <walker client id> # <3>
+      clientSecret:
+        valueFrom:
+          secretKeyRef:
+            name: oidc-walker
+            key: client-secret
+----
+<1> The Cognito hosted UI domain URL.
+<2> The URL of the issuer. A combination of the region and the issuer ID.
+<3> The OIDC client IDs
+
+All information can be found in the AWS console.
+
+[#manually_creating_resources]
+== Manually creating the resources
 
 The following sections will explain what is required in more detail.Some steps will result in some information
 which needs to be captured and which needs to be used later on in the Helm chart's values file.
@@ -298,3 +333,40 @@ Trustification on. The actual RDS size (CPU, RAM, Storage, …) depends on the a
 store in the system.
 
 In order to try out Trustification, a single instance of type `db.m7g.large` will be sufficient.
+
+=== Keycloak
+
+Trustification requires an OIDC issuer. The recommended setup to use Keycloak as OIDC issuer. For this, you will need
+to:
+
+* Install Keycloak
+* Create a new realm
+* Create the following roles for this realm
+    ** `chicken-user`
+    ** `chicken-manager`
+    ** `chicken-admin`
+* Make the `chicken-user` a default role
+* Create the following scopes for this realm
+    ** `read:document`
+    ** `create:document`
+    ** `delete:document`
+* Add the `create:document` and `delete:document` scope to the `chicken-manager` role
+* Create two clients
+    ** One public client
+        *** Set `standardFlowEnabled` to `true`
+        *** Set `fullScopedAllowed` to `true`
+        *** Set the following `defaultClientScopes`
+            **** `read:document`
+            **** `create:document`
+            **** `delete:document`
+    ** One protected client
+        *** Set `publicClient` to `false`
+        *** Set `serviecAccountsEnabled` to `true`
+        *** Set `fullScopedAllowed` to `true`
+        *** Set the following `defaultClientScopes`
+            **** `read:document`
+            **** `create:document`
+        *** Add role `chicken-manager` to the service account of this client
+    ** Increase the token timeout for both clients to at least 5 minutes
+* Create a user, acting as administrator
+    ** Add the `chicken-manager` and `chicken-admin` role to this user

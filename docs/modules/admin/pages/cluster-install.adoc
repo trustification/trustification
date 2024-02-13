@@ -78,7 +78,7 @@ create it from the command line using the following command:
 
 [source,bash]
 ----
-kubectl create ns trustification
+oc new-project trustification
 ----
 
 == Running the Helm installation

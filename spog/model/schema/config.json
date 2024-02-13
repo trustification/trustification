@@ -38,9 +38,9 @@
         "dedicatedSearch": true,
         "extendSection": true,
         "scanner": true,
-        "showSource": true,
         "showReport": true,
-        "uploader": false
+        "showSource": true,
+        "uploader": true
       },
       "allOf": [
         {
@@ -195,19 +195,19 @@
           "default": true,
           "type": "boolean"
         },
-        "showSource": {
-          "description": "Enable the \"source\" tabs",
-          "default": true,
-          "type": "boolean"
-        },
         "showReport": {
           "description": "Enable the \"report\" tabs",
           "default": true,
           "type": "boolean"
         },
+        "showSource": {
+          "description": "Enable the \"source\" tabs",
+          "default": true,
+          "type": "boolean"
+        },
         "uploader": {
-          "description": "Enables the SBOM/VEX uploader",
-          "default": false,
+          "description": "Enables the SBOM uploader",
+          "default": true,
           "type": "boolean"
         }
       }

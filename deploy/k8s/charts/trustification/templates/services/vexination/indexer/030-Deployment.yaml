@@ -39,18 +39,18 @@ spec:
             - "indexer"
 
             - "--stored-topic"
-            - {{ ($mod.topics).stored | default .Values.vexination.topics.stored | quote }}
+            - {{ ($mod.module.topics).stored | default .Values.vexination.topics.stored | quote }}
             - "--indexed-topic"
-            - {{ ($mod.topics).indexed | default .Values.vexination.topics.indexed | quote }}
+            - {{ ($mod.module.topics).indexed | default .Values.vexination.topics.indexed | quote }}
             - "--failed-topic"
-            - {{ ($mod.topics).failed | default .Values.vexination.topics.failed | quote }}
+            - {{ ($mod.module.topics).failed | default .Values.vexination.topics.failed | quote }}
 
             - "--index-mode"
-            - {{ $mod.indexMode | default "file" | quote }}
+            - {{ $mod.module.indexMode | default "file" | quote }}
             - "--index-dir"
             - "/data/index"
 
-            {{- if $mod.alwaysReindex }}
+            {{- if $mod.module.alwaysReindex }}
             - "--reindex"
             - "always"
             {{- end }}
@@ -63,9 +63,9 @@ spec:
             {{- include "trustification.eventBus.envVars" $mod | nindent 12 }}
 
             - name: INDEX_WRITER_MEMORY_BYTES
-              value: {{ ($mod.index).writerMemoryBytes | default .Values.index.writerMemoryBytes | default "128MiB" }}
+              value: {{ ($mod.module.index).writerMemoryBytes | default .Values.index.writerMemoryBytes | default "128MiB" }}
             - name: INDEX_SYNC_INTERVAL
-              value: {{ ($mod.index).syncInterval | default .Values.index.syncInterval | default "1800s" }}
+              value: {{ ($mod.module.index).syncInterval | default .Values.index.syncInterval | default "1800s" }}
 
           volumeMounts:
             - name: data

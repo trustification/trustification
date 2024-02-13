@@ -36,7 +36,7 @@ spec:
             - "8080"
 
             - "--index-mode"
-            - {{ $mod.indexMode | default "file" | quote }}
+            - {{ $mod.module.indexMode | default "file" | quote }}
 
             - "--auth-configuration"
             - "/etc/config/auth.yaml"
@@ -54,7 +54,7 @@ spec:
             {{- include "trustification.oidc.authenticationClient" ( dict "root" . "clientId" "walker" ) | nindent 12 }}
             {{- include "trustification.storage.envVars" ( set (deepCopy $mod) "storage" .Values.vexination ) | nindent 12 }}
 
-            {{- if not $mod.disableSwaggerOidc }}
+            {{- if not $mod.module.disableSwaggerOidc }}
             - name: SWAGGER_UI_OIDC_ISSUER_URL
               value: {{ include "trustification.oidc.frontendIssuerUrl" . | quote }}
             {{- end }}
@@ -75,20 +75,8 @@ spec:
             {{- include "trustification.application.httpServerVolumesMounts" $mod | nindent 12 }}
             {{- include "trustification.authenticator.volumeMount" $mod | nindent 12 }}
 
-            {{- if $mod.uiConfiguration }}
-            - name: config-ui
-              mountPath: /etc/config/spog-ui.yaml
-              subPath: {{ if ($mod.uiConfiguration.configMapRef).key }}{{ $mod.uiConfiguration.configMapRef.key }}{{ else }}spog-ui.yaml{{ end }}
-            {{- end }}
-
       volumes:
         {{- include "trustification.application.httpServerVolumes" $mod | nindent 8 }}
         {{- include "trustification.authenticator.volume" $mod | nindent 8 }}
-
-        {{- if $mod.uiConfiguration }}
-        - name: config-ui
-          configMap:
-            name: {{ with $mod.uiConfiguration.configMapRef }}{{ .name }}{{ else }}{{ .Release.Name }}-spog-ui-config{{ end }}
-        {{- end }}
 
 {{ end }}
