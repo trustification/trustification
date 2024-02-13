@@ -26,7 +26,7 @@ ARG RUST_VERSION="1.75.0"
 ARG SASS_VERSION="1.69.5"
 ARG WASM_PACK_VERSION="0.12.1"
 ARG WASM_BINDGEN_VERSION="0.2.89"
-ARG TRUNK_VERSION="0.18.6"
+ARG TRUNK_VERSION="0.18.8"
 
 RUN dnf -y install nodejs git gcc
 
@@ -44,7 +44,9 @@ RUN \
 
 ENV PATH "$PATH:/root/.cargo/bin"
 
-RUN cargo install trunk --locked --version ${TRUNK_VERSION}
+RUN curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
+
+RUN cargo binstall trunk -y --version ${TRUNK_VERSION}
 
 RUN npm install -g sass@${SASS_VERSION} && sass --version
 
