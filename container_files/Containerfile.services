@@ -50,7 +50,7 @@ RUN cargo binstall trunk -y --version ${TRUNK_VERSION}
 RUN npm install -g sass@${SASS_VERSION} && sass --version
 
 RUN \
-    case "$(uname -p)" in \
+    case "$(uname -m)" in \
         aarch64) \
             curl -sSL https://github.com/rustwasm/wasm-bindgen/releases/download/${WASM_BINDGEN_VERSION}/wasm-bindgen-${WASM_BINDGEN_VERSION}-aarch64-unknown-linux-gnu.tar.gz  -o wasm-bingen.tar.gz \
             && tar --strip-components=1 -xzvf wasm-bingen.tar.gz '*/wasm-bindgen' \
