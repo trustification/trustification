@@ -37,7 +37,7 @@ tracing = "0.1"
 url = "2"
 urlencoding = "2.1.2"
 utoipa = { version = "4", features = ["actix_extras", "yaml", "time"] }
-utoipa-swagger-ui = { version = "4", features = ["actix-web"] }
+utoipa-swagger-ui = { version = "6", features = ["actix-web"] }
 uuid = { version = "1", features = ["v4"] }
 v11y-model = { path = "../../v11y/model" }
 
