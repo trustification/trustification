@@ -4,6 +4,9 @@ on:
   workflow_call:
   workflow_dispatch:
 
+env:
+  GRCOV_VERSION: 0.8.19
+
 jobs:
   unit-tests:
     runs-on: ubuntu-22.04
@@ -24,7 +27,7 @@ jobs:
 
       - uses: actions/checkout@v4
 
-      - uses: actions/cache@v3
+      - uses: actions/cache@v4
         with:
           path: |
             ~/.cargo/bin/
@@ -34,7 +37,6 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-            bommer/bommer-ui/target/
             spog/ui/target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
@@ -42,7 +44,7 @@ jobs:
         run: sudo apt-get install -y libsasl2-dev
 
       - name: Install Protoc
-        uses: arduino/setup-protoc@v2
+        uses: arduino/setup-protoc@v3
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -50,8 +52,11 @@ jobs:
         run: |
           rustup component add llvm-tools-preview
 
-      - name: Install grcov
-        run: cargo install grcov
+      - name: Install grcov (${{ env.GRCOV_VERSION }})
+        run: |
+          wget https://github.com/mozilla/grcov/releases/download/v${GRCOV_VERSION}/grcov-x86_64-unknown-linux-gnu.tar.bz2
+          tar xavf grcov-x86_64-unknown-linux-gnu.tar.bz2
+          sudo install grcov /usr/local/bin/
 
       - name: Print storage use
         run: |

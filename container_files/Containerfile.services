@@ -20,13 +20,12 @@ WORKDIR /usr/src/project
 ARG tag
 RUN TAG=$tag cargo build -p trust --release
 
-FROM registry.access.redhat.com/ubi9/ubi:latest as frontendbuilder
+FROM docker.io/library/fedora:39 as frontendbuilder
 
 ARG RUST_VERSION="1.75.0"
 ARG SASS_VERSION="1.69.5"
-ARG WASM_PACK_VERSION="0.12.1"
 ARG WASM_BINDGEN_VERSION="0.2.89"
-ARG TRUNK_VERSION="0.18.6"
+ARG TRUNK_VERSION="0.18.8"
 
 RUN dnf -y install nodejs git gcc
 
@@ -44,19 +43,14 @@ RUN \
 
 ENV PATH "$PATH:/root/.cargo/bin"
 
-RUN cargo install trunk --locked --version ${TRUNK_VERSION}
+RUN curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
+
+RUN cargo binstall trunk -y --version ${TRUNK_VERSION}
 
 RUN npm install -g sass@${SASS_VERSION} && sass --version
 
-RUN true \
-    && curl -sSL https://github.com/rustwasm/wasm-pack/releases/download/v${WASM_PACK_VERSION}/wasm-pack-v${WASM_PACK_VERSION}-$(uname -p)-unknown-linux-musl.tar.gz -o wasm-pack.tar.gz \
-    && tar --strip-components=1 -xvzf wasm-pack.tar.gz '*/wasm-pack' \
-    && rm wasm-pack.tar.gz \
-    && cp wasm-pack /usr/local/bin/ && rm wasm-pack \
-    && wasm-pack --version
-
 RUN \
-    case "$(uname -p)" in \
+    case "$(uname -m)" in \
         aarch64) \
             curl -sSL https://github.com/rustwasm/wasm-bindgen/releases/download/${WASM_BINDGEN_VERSION}/wasm-bindgen-${WASM_BINDGEN_VERSION}-aarch64-unknown-linux-gnu.tar.gz  -o wasm-bingen.tar.gz \
             && tar --strip-components=1 -xzvf wasm-bingen.tar.gz '*/wasm-bindgen' \
