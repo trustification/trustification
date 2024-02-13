@@ -20,7 +20,7 @@ WORKDIR /usr/src/project
 ARG tag
 RUN TAG=$tag cargo build -p trust --release
 
-FROM registry.access.redhat.com/ubi9/ubi:latest as frontendbuilder
+FROM docker.io/library/fedora:39 as frontendbuilder
 
 ARG RUST_VERSION="1.75.0"
 ARG SASS_VERSION="1.69.5"
