@@ -143,10 +143,15 @@ properties:
           - $ref: "#/definitions/Authenticator"
           - $ref: "#/definitions/Metrics"
           - $ref: "#/definitions/Tracing"
+          - $ref: "#/definitions/HttpApplication"
           - type: object
             properties:
               disableSwaggerOidc:
                 type: boolean
+              uploadLimit:
+                description: |
+                  Maximum size of an upload request
+                $ref: "#/definitions/ByteSize"
 
       bombasticCollector:
         description: |
@@ -189,6 +194,7 @@ properties:
           - $ref: "#/definitions/Authenticator"
           - $ref: "#/definitions/Metrics"
           - $ref: "#/definitions/Tracing"
+          - $ref: "#/definitions/HttpApplication"
           - type: object
             properties:
               crdaUrl:
@@ -238,10 +244,15 @@ properties:
           - $ref: "#/definitions/Authenticator"
           - $ref: "#/definitions/Metrics"
           - $ref: "#/definitions/Tracing"
+          - $ref: "#/definitions/HttpApplication"
           - type: object
             properties:
               disableSwaggerOidc:
                 type: boolean
+              uploadLimit:
+                description: |
+                  Maximum size of an upload request
+                $ref: "#/definitions/ByteSize"
 
       vexinationIndexer:
         description: |
@@ -285,10 +296,15 @@ properties:
           - $ref: "#/definitions/Authenticator"
           - $ref: "#/definitions/Metrics"
           - $ref: "#/definitions/Tracing"
+          - $ref: "#/definitions/HttpApplication"
           - type: object
             properties:
               disableSwaggerOidc:
                 type: boolean
+              uploadLimit:
+                description: |
+                  Maximum size of an upload request
+                $ref: "#/definitions/ByteSize"
 
       v11yIndexer:
         description: |
@@ -1098,3 +1114,17 @@ definitions:
         description: |
           Allows to suspend, but keep, a `CronJob`.
 
+  ByteSize:
+    oneOf:
+      - type: integer
+      - type: string
+        description: Size in bytes, allowing to use a unit such as KiB or MB.
+        pattern: ^[0-9]+([KMG]i?B)?$
+
+  HttpApplication:
+    type: object
+    properties:
+      requestLimit:
+        $ref: "#/definitions/ByteSize"
+      jsonLimit:
+        $ref: "#/definitions/ByteSize"

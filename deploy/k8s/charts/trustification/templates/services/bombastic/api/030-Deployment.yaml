@@ -64,6 +64,11 @@ spec:
             - name: INDEX_SYNC_INTERVAL
               value: {{ include "trustification.index.syncInterval" ( set (deepCopy $mod) "storage" .Values.bombastic ) }}
 
+            {{- with $mod.module.uploadLimit }}
+            - name: PUBLISH_LIMIT
+              value: {{ include "trustification.common.byteSizeValue" . }}
+            {{- end }}
+
           ports:
             {{- include "trustification.application.infrastructure.podPorts" $mod | nindent 12 }}
             - containerPort: 8080
