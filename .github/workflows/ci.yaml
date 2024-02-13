@@ -237,5 +237,15 @@ jobs:
       - integration
       - helm-lint
       - uncommitted
+    if: always()
     steps:
-      - run: echo 🎉
+      - name: Success
+        if: ${{ !(contains(needs.*.result, 'failure')) }}
+        run: |
+          echo 🎉
+          exit 0
+      - name: Failure
+        if: ${{ contains(needs.*.result, 'failure') }}
+        run: |
+          echo 😥
+          exit 1
