@@ -752,7 +752,7 @@ definitions:
     type: string
     enum:
       - file
-      # TODO: I am not sure we currently support that
+      # In theory there's S3, but we never tested that
       # - s3
 
   Storage:
@@ -931,6 +931,7 @@ definitions:
     oneOf:
       - $ref: "#/definitions/KafkaConfigPlaintext"
       - $ref: "#/definitions/KafkaConfigSaslPlaintext"
+      # Not supported by GUAC right now
       # - $ref: "#/definitions/KafkaConfigSsl"
       # - $ref: "#/definitions/KafkaConfigSaslSsl"
 
@@ -982,6 +983,7 @@ definitions:
     enum:
       - PLAINTEXT
       - SASL_PLAINTEXT
+      # Not supported by GUAC right now
       # - SSL
       # - SASL_SSL
 
