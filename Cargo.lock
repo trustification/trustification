@@ -6279,7 +6279,6 @@ dependencies = [
  "urlencoding",
  "utoipa",
  "utoipa-swagger-ui",
- "uuid",
  "v11y-client",
  "v11y-model",
  "vexination-model",
