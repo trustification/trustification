@@ -247,7 +247,7 @@ jobs:
       - helm-lint
 
     env:
-      CONTAINERS: "trust trust-docs trust-tests git"
+      CONTAINERS: "trust trust-docs trust-tests"
 
     steps:
       - uses: actions/checkout@v4

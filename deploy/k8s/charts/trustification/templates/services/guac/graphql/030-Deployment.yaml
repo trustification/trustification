@@ -47,6 +47,8 @@ spec:
       containers:
         - name: service
           {{- include "trustification.guac.defaultImage" $mod | nindent 10 }}
+          {{- include "trustification.application.container" $mod | nindent 10 }}
+
           command: ["/bin/sh"]
 
           # not sure why --db-migrate=false has to be a single argument, but it won't work otherwise
@@ -69,8 +71,6 @@ spec:
 
           volumeMounts:
             {{- include "trustification.application.httpServerVolumesMounts" $mod | nindent 12 }}
-
-          {{- include "trustification.application.container" $mod | nindent 10 }}
 
           livenessProbe:
             tcpSocket:

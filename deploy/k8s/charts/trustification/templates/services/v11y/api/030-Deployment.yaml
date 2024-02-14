@@ -28,6 +28,9 @@ spec:
       containers:
         - name: service
           {{ include "trustification.common.defaultImage" $mod | nindent 10 }}
+          {{- include "trustification.application.container" $mod | nindent 10 }}
+          {{- include "trustification.application.infrastructure.probes" $mod | nindent 10 }}
+
           command: ["/trust"]
           args:
             - "v11y"
@@ -67,9 +70,6 @@ spec:
             - containerPort: 8080
               name: endpoint
               protocol: TCP
-
-          {{- include "trustification.application.container" $mod | nindent 10 }}
-          {{- include "trustification.application.infrastructure.probes" $mod | nindent 10 }}
 
           volumeMounts:
             {{- include "trustification.application.httpServerVolumesMounts" $mod | nindent 12 }}

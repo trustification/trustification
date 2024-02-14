@@ -34,6 +34,9 @@ spec:
       containers:
         - name: service
           {{ include "trustification.common.defaultImage" $mod | nindent 10 }}
+          {{- include "trustification.application.container" $mod | nindent 10 }}
+          {{- include "trustification.application.infrastructure.probes" $mod | nindent 10 }}
+
           command: ["/trust"]
           args:
             - "v11y"
@@ -74,7 +77,4 @@ spec:
 
           ports:
             {{- include "trustification.application.infrastructure.podPorts" $mod | nindent 12 }}
-
-          {{- include "trustification.application.container" $mod | nindent 10 }}
-          {{- include "trustification.application.infrastructure.probes" $mod | nindent 10 }}
 {{ end }}

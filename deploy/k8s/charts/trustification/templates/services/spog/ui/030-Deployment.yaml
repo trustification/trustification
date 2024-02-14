@@ -45,7 +45,9 @@ spec:
 
       containers:
         - name: service
-          {{ include "trustification.common.defaultImage" $mod | nindent 10 }}
+          {{- include "trustification.common.defaultImage" $mod | nindent 10 }}
+          {{- include "trustification.application.container" $mod | nindent 10 }}
+
           command: ["/nginx.sh"]
           env:
             - name: API_URL
@@ -90,8 +92,6 @@ spec:
             - containerPort: 8080
               name: endpoint
               protocol: TCP
-
-          {{- include "trustification.application.container" $mod | nindent 10 }}
 
           livenessProbe:
             httpGet:
