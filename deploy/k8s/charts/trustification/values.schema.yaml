@@ -81,9 +81,21 @@ properties:
       className:
         type: string
 
+  serviceMonitor:
+    type: object
+    description: |
+      Configure the service monitor for scraping metrics.
+      
+      Enabling the serviceMonitor feature will create a `ServiceMonitor` (which must be installed upfront) to
+      scrape metrics. Metrics should also be enabled in addition, otherwise the service monitor will not find
+      any relevant services.
+    allOf:
+      - $ref: "#/definitions/Feature"
+
   metrics:
     type: object
     additionalProperties: false
+
     properties:
       enabled:
         type: boolean
