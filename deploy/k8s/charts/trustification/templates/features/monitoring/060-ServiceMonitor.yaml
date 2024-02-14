@@ -1,0 +1,18 @@
+{{- if .Values.serviceMonitor.enabled }}
+{{- $mod := dict "root" . "name" "monitoring" "component" "monitoring" -}}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "trustification.common.name" $mod }}
+  labels:
+    {{- include "trustification.common.labels" $mod | nindent 4 }}
+spec:
+  endpoints:
+  - interval: 30s
+    path: /metrics
+    port: metrics
+    scheme: http
+  selector:
+    matchLabels:
+      {{ include "trustification.common.selectorLabels" (dict "root" . "name" "monitoring" "component" "monitoring") }}
+{{- end }}

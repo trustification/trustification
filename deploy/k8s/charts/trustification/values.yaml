@@ -39,6 +39,9 @@ oidc:
       clientId: walker
       clientSecret:
 
+serviceMonitor:
+  enabled: false
+
 metrics:
   enabled: false
 
