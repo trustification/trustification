@@ -54,7 +54,7 @@ jobs:
     runs-on: ubuntu-22.04
 
     env:
-      CONTAINERS: "trust trust-docs trust-tests git"
+      CONTAINERS: "trust trust-docs trust-tests"
 
     steps:
       - name: Checkout
