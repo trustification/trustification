@@ -9,7 +9,7 @@ Arguments (dict):
 - name: INFRASTRUCTURE_ENABLED
   value: "true"
 - name: INFRASTRUCTURE_BIND
-  value: "[::]:9010"
+  value: "[::]:"{{ .Values.infrastructure.port }}
 
 {{- if eq ( include "trustification.application.tracing.enabled" . ) "true" }}
 - name: TRACING
@@ -32,7 +32,7 @@ Arguments (dict):
   * module - module object
 */}}
 {{- define "trustification.application.infrastructure.podPorts" }}
-- containerPort: 9010
+- containerPort: {{ .Values.infrastructure.port }}
   protocol: TCP
   name: infra
 {{- end}}
@@ -49,12 +49,12 @@ livenessProbe:
   initialDelaySeconds: 2
   httpGet:
     path: /health/live
-    port: 9010
+    port: {{ .Values.infrastructure.port }}
 
 readinessProbe:
   initialDelaySeconds: 2
   httpGet:
     path: /health/ready
-    port: 9010
+    port: {{ .Values.infrastructure.port }}
 
 {{- end }}

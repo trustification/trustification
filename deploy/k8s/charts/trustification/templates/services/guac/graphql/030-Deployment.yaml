@@ -69,7 +69,7 @@ spec:
               value: /etc/tls/tls.key
             {{- end }}
             - name: GUAC_PROMETHEUS_ADDR
-              value: "9010"
+              value: {{ .Values.infrastructure.port }}
 
           volumeMounts:
             {{- include "trustification.application.httpServerVolumesMounts" $mod | nindent 12 }}
