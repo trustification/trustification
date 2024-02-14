@@ -8192,6 +8192,7 @@ name = "vexination-walker"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "async-trait",
  "clap",
  "csaf",
  "csaf-walker",
@@ -8207,6 +8208,7 @@ dependencies = [
  "trustification-infrastructure",
  "url",
  "walker-common",
+ "walker-extras",
 ]
 
 [[package]]
