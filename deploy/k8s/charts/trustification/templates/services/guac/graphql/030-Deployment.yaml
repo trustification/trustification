@@ -68,6 +68,8 @@ spec:
             - name: GUAC_GQL_TLS_KEY_FILE
               value: /etc/tls/tls.key
             {{- end }}
+            - name: GUAC_PROMETHEUS_ADDR
+              value: "9010"
 
           volumeMounts:
             {{- include "trustification.application.httpServerVolumesMounts" $mod | nindent 12 }}
@@ -77,6 +79,7 @@ spec:
               port: 8080
 
           ports:
+            {{- include "trustification.application.infrastructure.podPorts" $mod | nindent 12 }}
             - containerPort: 8080
               protocol: TCP
               name: endpoint
