@@ -343,8 +343,6 @@ properties:
             properties:
               storageSize:
                 type: string
-              gitImage:
-                $ref: "#/definitions/ImageConfig"
 
       guacGraphql:
         description: |
