@@ -190,3 +190,7 @@ modules:
   initDataset:
     enabled: true
     image: {}
+
+  integrationTests:
+    enabled: false
+    image: {}

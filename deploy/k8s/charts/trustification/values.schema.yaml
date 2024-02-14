@@ -396,6 +396,7 @@ properties:
           - $ref: "#/definitions/Feature"
           - $ref: "#/definitions/Image"
           - $ref: "#/definitions/Application"
+          - $ref: "#/definitions/RustApplication"
           - type: object
             required:
               - sources
@@ -416,6 +417,7 @@ properties:
           - $ref: "#/definitions/Feature"
           - $ref: "#/definitions/Image"
           - $ref: "#/definitions/Application"
+          - $ref: "#/definitions/RustApplication"
           - type: object
             required:
               - sources
@@ -427,6 +429,15 @@ properties:
                 patternProperties:
                   "^[a-z0-9A-Z_\\-.]*[a-z0-9A-Z]$":
                     $ref: "#/definitions/VexinationWalkerSource"
+
+      integrationTests:
+        description: |
+          Integration tests which can be run as part of the Helm chart.
+        allOf:
+          - $ref: "#/definitions/Feature"
+          - $ref: "#/definitions/Image"
+          - $ref: "#/definitions/Application"
+          - $ref: "#/definitions/RustApplication"
 
   # allowing settings when using the infrastructure Helm chart
 
