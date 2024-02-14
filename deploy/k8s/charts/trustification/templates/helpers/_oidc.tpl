@@ -85,3 +85,15 @@ Arguments: .
 {{- define "trustification.oidc.frontendIssuerUrl" -}}
 {{- include "trustification.oidc.issuerUrlForClient" (dict "root" . "clientId" "frontend" ) }}
 {{- end }}
+
+{{/*
+"Value" part for an env-var, consuming the client secret.
+
+Arguments (dict):
+  * root - .
+  * clientId - client id
+*/}}
+{{- define "trustification.oidc.clientSecretValue" }}
+{{- $client := required (print "Unable to find client for " .clientId) (get .root.Values.oidc.clients .clientId)  -}}
+{{- include "trustification.common.envVarValue" $client.clientSecret | nindent 2 }}
+{{- end }}
