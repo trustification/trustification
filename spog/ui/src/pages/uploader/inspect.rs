@@ -68,7 +68,7 @@ pub fn redirect(props: &RedirectProps) -> Html {
         if let Some(router) = &router {
             toaster.toast(Toast {
                 r#type: AlertType::Success,
-                title: "Your file has been uploaded".into(),
+                title: "File uploaded. It will take some time for it to be available.".into(),
                 timeout: Some(Duration::from_secs(5)),
                 ..Default::default()
             });
