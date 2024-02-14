@@ -127,3 +127,5 @@ csaf = { git = "https://github.com/voteblake/csaf-rs", rev = "76cb9ede10adb1fbb4
 
 csaf-walker = { git = "https://github.com/ctron/csaf-walker", rev ="dff3991f7a31601a9521f423ab2e49aeffc025ae" } # FIXME: awaiting release
 walker-common = { git = "https://github.com/ctron/csaf-walker", rev ="dff3991f7a31601a9521f423ab2e49aeffc025ae" } # FIXME: awaiting release
+walker-extras = { git = "https://github.com/ctron/csaf-walker", rev ="dff3991f7a31601a9521f423ab2e49aeffc025ae" } # FIXME: awaiting release
+sbom-walker = { git = "https://github.com/ctron/csaf-walker", rev ="dff3991f7a31601a9521f423ab2e49aeffc025ae" } # FIXME: awaiting release
