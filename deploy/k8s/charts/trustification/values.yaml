@@ -191,3 +191,4 @@ modules:
   integrationTests:
     enabled: false
     image: {}
+    rust: {}

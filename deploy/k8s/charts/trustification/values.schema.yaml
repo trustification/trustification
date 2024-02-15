@@ -669,6 +669,15 @@ definitions:
               OIDC client configuration for the backend.
             $ref: "#/definitions/OidcSecretClient"
 
+          testing-user:
+            description: |
+              OIDC client for testing user operations during the Integration Test
+            $ref: "#/definitions/OidcSecretClient"
+          testing-manager:
+            description: |
+              OIDC client for testing manager operations during the Integration Test
+            $ref: "#/definitions/OidcSecretClient"
+
   OidcClient:
     type: object
     properties:

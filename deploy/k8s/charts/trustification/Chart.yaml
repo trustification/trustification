@@ -2,7 +2,7 @@ apiVersion: v2
 name: trustification
 description: A Helm chart for managing Trustification services on Kubernetes
 
-kubeVersion: ^1.26.0
+kubeVersion: ^1.25.0
 
 maintainers:
   - name: ctron
