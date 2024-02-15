@@ -312,6 +312,32 @@ jobs:
           echo "APP_DOMAIN=$APP_DOMAIN" >> $GITHUB_ENV
           echo "NAMESPACE=trustification" >> $GITHUB_ENV
 
+      # Workaround for [helm#10733](https://github.com/helm/helm/issues/10733):
+      - name: Create workaround PV
+        run: |
+          kubectl create -f - << __EOF__
+          apiVersion: v1
+          kind: PersistentVolume
+          metadata:
+            name: pv-workaround
+          spec:
+            accessModes:
+              - ReadWriteOnce
+            capacity:
+              storage: 20Gi
+            claimRef:
+              apiVersion: v1
+              kind: PersistentVolumeClaim
+              name: v11y-walker
+              namespace: trustification
+            persistentVolumeReclaimPolicy: Delete
+            storageClassName: standard
+            volumeMode: Filesystem
+            hostPath:
+              type: DirectoryOrCreate
+              path: /var/local-path-provisioner/pv-workaround
+          __EOF__
+
       - name: Create namespace
         run: |
           kubectl create ns $NAMESPACE
@@ -338,7 +364,7 @@ jobs:
         run: |
           ct install \
             --helm-extra-set-args "--values deploy/k8s/values-minikube.yaml --set-string appDomain=$APP_DOMAIN --set-string image.version=ci --set-string image.registry=localhost" \
-            --helm-extra-args "--timeout 10m" \
+            --helm-extra-args "--timeout 10m --debug" \
             --namespace $NAMESPACE --charts deploy/k8s/charts/trustification \
             --target-branch ${{ github.event.repository.default_branch }}
 
