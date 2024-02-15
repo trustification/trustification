@@ -95,5 +95,5 @@ Arguments (dict):
 */}}
 {{- define "trustification.oidc.clientSecretValue" }}
 {{- $client := required (print "Unable to find client for " .clientId) (get .root.Values.oidc.clients .clientId)  -}}
-{{- include "trustification.common.envVarValue" $client.clientSecret | nindent 2 }}
+{{- include "trustification.common.envVarValue" $client.clientSecret }}
 {{- end }}
