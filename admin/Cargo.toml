@@ -7,7 +7,7 @@ edition = "2021"
 log = "0.4"
 clap = { version = "4", features = ["derive"] }
 anyhow = "1"
-env_logger = "0.10"
+env_logger = "0.11"
 
 reqwest = { version = "0.11.16", features = ["json", "stream"] }
 regex = "1.9.5"
