@@ -1,4 +1,5 @@
 use actix_web::web;
+use bytesize::ByteSize;
 use prometheus::Registry;
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
@@ -12,10 +13,10 @@ use trustification_auth::{
     swagger_ui::{SwaggerUiOidc, SwaggerUiOidcConfig},
 };
 use trustification_index::{IndexConfig, IndexStore};
-use trustification_infrastructure::health::checks::Probe;
 use trustification_infrastructure::{
-    app::http::{HttpServerBuilder, HttpServerConfig},
+    app::http::{BinaryByteSize, HttpServerBuilder, HttpServerConfig},
     endpoint::V11y,
+    health::checks::Probe,
     Infrastructure, InfrastructureConfig,
 };
 use trustification_storage::{Storage, StorageConfig};
@@ -52,6 +53,10 @@ pub struct Run {
 
     #[command(flatten)]
     pub http: HttpServerConfig<V11y>,
+
+    /// Request limit for publish requests
+    #[arg(long, default_value_t = ByteSize::mib(64).into())]
+    pub publish_limit: BinaryByteSize,
 }
 
 impl Run {
@@ -92,6 +97,8 @@ impl Run {
                     )
                     .await?;
 
+                    let publish_limit = self.publish_limit.as_u64() as usize;
+
                     let http = HttpServerBuilder::try_from(self.http)?
                         .tracing(tracing)
                         .metrics(context.metrics.registry().clone(), "v11y_api")
@@ -101,7 +108,7 @@ impl Run {
                             let swagger_oidc = swagger_oidc.clone();
 
                             svc.app_data(web::Data::from(state.clone()))
-                                .configure(|cfg| server::config(cfg, authenticator, swagger_oidc));
+                                .configure(|cfg| server::config(cfg, authenticator, swagger_oidc, publish_limit));
                         });
 
                     http.run().await

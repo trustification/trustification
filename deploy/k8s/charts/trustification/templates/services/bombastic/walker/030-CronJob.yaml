@@ -62,6 +62,8 @@ spec:
           containers:
             - name: walker
               {{- include "trustification.common.defaultImage" $mod | nindent 14 }}
+              {{- include "trustification.application.container" $mod | nindent 14 }}
+              {{- include "trustification.application.infrastructure.probes" $mod | nindent 14 }}
 
               command: ["/trust"]
               args:
@@ -100,9 +102,6 @@ spec:
 
               ports:
                 {{- include "trustification.application.infrastructure.podPorts" $mod | nindent 16 }}
-
-              {{- include "trustification.application.pod" $mod | nindent 14 }}
-              {{- include "trustification.application.infrastructure.probes" $mod | nindent 14 }}
 
               volumeMounts:
                 - mountPath: /walker-state

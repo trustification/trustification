@@ -27,6 +27,8 @@ spec:
       containers:
         - name: service
           {{ include "trustification.common.defaultImage" ( set (deepCopy $mod) "imageName" "trust-docs" ) | nindent 10 }}
+          {{- include "trustification.application.container" $mod | nindent 10 }}
+
           volumeMounts:
             - name: run
               mountPath: /run
@@ -35,7 +37,7 @@ spec:
               name: endpoint
               protocol: TCP
 
-          {{- include "trustification.application.container" $mod | nindent 10 }}
+
 
           livenessProbe:
             httpGet:

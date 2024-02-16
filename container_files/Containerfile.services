@@ -1,8 +1,12 @@
 FROM registry.access.redhat.com/ubi9/ubi:latest as backendbuilder
 
+ARG RUST_VERSION="1.75.0"
+
 RUN dnf install -y gcc openssl openssl-devel cmake gcc-c++ git curl-minimal unzip cyrus-sasl-devel
 
-RUN curl https://sh.rustup.rs -sSf | sh -s -- -y --profile minimal
+# the 'sed' workaround is required due to https://github.com/rust-lang/rustup/issues/2700
+RUN curl https://sh.rustup.rs -sSf | sed 's#/proc/self/exe#\/bin\/sh#g' | sh -s -- -y --profile minimal --default-toolchain ${RUST_VERSION}
+
 ENV PATH "$PATH:/root/.cargo/bin"
 
 ARG protoc_version="23.4"
@@ -29,19 +33,12 @@ ARG TRUNK_VERSION="0.18.8"
 
 RUN dnf -y install nodejs git gcc
 
-ENV \
-    RUSTUP_HOME=/opt/rust \
-    CARGO_HOME=/opt/rust
-
-# add cargo home to the path, must be in a new step to table able to reference CARGO_HOME
-ENV PATH="$PATH:$CARGO_HOME/bin"
+ENV PATH "$PATH:/root/.cargo/bin"
 
 # the 'sed' workaround is required due to https://github.com/rust-lang/rustup/issues/2700
 RUN \
-    curl https://sh.rustup.rs -sSf | sed 's#/proc/self/exe#\/bin\/sh#g' | sh -s -- -y --default-toolchain ${RUST_VERSION} && \
+    curl https://sh.rustup.rs -sSf | sed 's#/proc/self/exe#\/bin\/sh#g' | sh -s -- -y --profile minimal --default-toolchain ${RUST_VERSION} && \
     rustup target add wasm32-unknown-unknown
-
-ENV PATH "$PATH:/root/.cargo/bin"
 
 RUN curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
 
@@ -69,15 +66,6 @@ RUN \
             ;; \
     esac ; \
     wasm-bindgen --version
-
-# Set the cache directory after installing tools using npm, and make it accessible
-ENV npm_config_cache=/opt/npm
-RUN mkdir $npm_config_cache && chmod a+rwx $npm_config_cache
-
-RUN install -m 0777 -d /usr/src
-VOLUME /usr/src/
-
-EXPOSE 8080
 
 # cannot use /usr/src as it is configured as `VOLUME` in the base image, which seems to be an issue
 # for buildah (not for podman build): https://github.com/containers/buildah/issues/4845

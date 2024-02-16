@@ -1,0 +1,45 @@
+{{ if .Values.modules.integrationTests.enabled }}
+{{- $mod := dict "root" . "name" "integration-tests" "component" "testing" "module" .Values.modules.integrationTests -}}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "trustification.common.name" $mod }}
+  labels:
+    {{- include "trustification.common.labels" $mod | nindent 4 }}
+  annotations:
+    helm.sh/hook: test
+
+spec:
+  template:
+    metadata:
+      labels:
+        {{- include "trustification.common.selectorLabels" $mod | nindent 8 }}
+
+    spec:
+      restartPolicy: Never
+
+      {{- include "trustification.application.pod" $mod | nindent 6 }}
+
+      containers:
+        - name: integration-tests
+          {{- include "trustification.common.image" ( dict "root" . "image" $mod.module.image "imageName" "trust-tests" "defaults" .Values.image ) | nindent 10 }}
+
+          env:
+            {{- include "trustification.application.rust.envVars" $mod | nindent 12 }}
+
+            - name: TRUST_URL
+              value: "{{ include "trustification.tls.http.protocol" $mod }}://{{ include "trustification.host.spogUi" $mod }}"
+
+            - name: ISSUER_URL
+              value: {{ include "trustification.oidc.issuerUrlForClient" ( dict "root" . "clientId" "testingManager" ) }}
+
+            - name: TRUST_ID
+              value: {{ include "trustification.oidc.clientId" ( dict "root" . "clientId" "testingManager" )}}
+            - name: TRUST_SECRET
+              {{- include "trustification.oidc.clientSecretValue" ( dict "root" . "clientId" "testingManager" ) | nindent 14 }}
+
+            - name: TRUST_USER_ID
+              value: {{ include "trustification.oidc.clientId" ( dict "root" . "clientId" "testingUser" ) }}
+            - name: TRUST_USER_SECRET
+              {{- include "trustification.oidc.clientSecretValue" ( dict "root" . "clientId" "testingUser" ) | nindent 14 }}
+{{ end }}

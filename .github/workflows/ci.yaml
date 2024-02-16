@@ -24,6 +24,9 @@ on:
 # check and clippy, but test as a dedicated job, as we don't have a WASM test runner. Yet, check and clippy for wasm32
 # are different.
 
+env:
+  HELM_VERSION: "3.14.0"
+
 jobs:
 
   formatting:
@@ -64,9 +67,9 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
-      - uses: azure/setup-helm@v3
+      - uses: azure/setup-helm@v4.0.0
         with:
-          version: v3.13.2
+          version: ${{ env.HELM_VERSION }}
       - name: add helm repositories
         working-directory: deploy/k8s
         run: |
@@ -227,15 +230,164 @@ jobs:
       - formatting
     uses: ./.github/workflows/unit.yaml
 
+  containers:
+    needs:
+      - formatting
+    uses: ./.github/workflows/containers.yaml
+    secrets: inherit
+
+    with:
+      imageTag: ci
+      platforms: "linux/amd64"
+
+  helm-test:
+    runs-on: ubuntu-22.04
+    needs:
+      - containers
+      - helm-lint
+
+    env:
+      CONTAINERS: "trust trust-docs trust-tests"
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-kubectl@v4.0.0
+      - uses: azure/setup-helm@v4.0.0
+        with:
+          version: ${{ env.HELM_VERSION }}
+
+      - name: add helm repositories
+        working-directory: deploy/k8s
+        run: |
+          helm repo add bitnami https://charts.bitnami.com/bitnami
+
+      - name: Fetch Helm dependencies
+        working-directory: deploy/k8s
+        run: |
+          helm dependency build charts/trustification-infrastructure
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: ~/download
+
+      - name: Display downloaded content
+        run: ls -R ~/download
+
+      - name: Create Kind cluster
+        uses: helm/kind-action@v1
+        with:
+          config: .github/kind-config.yaml
+          wait: 120s
+
+      - name: Install NGINX ingress controller
+        run: kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/86f3af8dead82f2d0905dceddeba213751e15b50/deploy/static/provider/kind/deploy.yaml
+
+      - name: Wait for NGINX ingress controller
+        run: |
+          kubectl wait --namespace ingress-nginx \
+            --for=condition=ready pod \
+            --selector=app.kubernetes.io/component=controller \
+            --timeout=90s
+
+      - name: Load containers
+        run: |
+          for container in $CONTAINERS; do
+            kind load image-archive ~/download/${container}-container/${container}-image.tar --name chart-testing
+          done
+
+      - name: Check images
+        run: |
+          docker exec -t chart-testing-control-plane crictl images
+
+      - name: Set up chart-testing
+        uses: helm/chart-testing-action@v2.6.1
+
+      - name: check nodes
+        run: kubectl get nodes -o json
+
+      - name: Eval app-domain and namespace
+        run: |
+          APP_DOMAIN=.$(kubectl get node chart-testing-control-plane -o jsonpath='{.status.addresses[?(@.type == "InternalIP")].address}' | awk '// { print $1 }').nip.io
+          echo "App domain: $APP_DOMAIN"
+          echo "APP_DOMAIN=$APP_DOMAIN" >> $GITHUB_ENV
+          echo "NAMESPACE=trustification" >> $GITHUB_ENV
+
+      # Workaround for [helm#10733](https://github.com/helm/helm/issues/10733):
+      - name: Create workaround PV
+        run: |
+          kubectl create -f - << __EOF__
+          apiVersion: v1
+          kind: PersistentVolume
+          metadata:
+            name: pv-workaround
+          spec:
+            accessModes:
+              - ReadWriteOnce
+            capacity:
+              storage: 20Gi
+            claimRef:
+              apiVersion: v1
+              kind: PersistentVolumeClaim
+              name: v11y-walker
+              namespace: trustification
+            persistentVolumeReclaimPolicy: Delete
+            storageClassName: standard
+            volumeMode: Filesystem
+            hostPath:
+              type: DirectoryOrCreate
+              path: /var/local-path-provisioner/pv-workaround
+          __EOF__
+
+      - name: Create namespace
+        run: |
+          kubectl create ns $NAMESPACE
+
+      - name: Deploy infrastructure chart first
+        working-directory: deploy/k8s
+        run: |
+          # we use the minikube values file, which works the same way with kind
+          helm upgrade --install -n $NAMESPACE \
+            infrastructure charts/trustification-infrastructure \
+            --wait --timeout 10m \
+            --values values-minikube.yaml \
+            --set-string keycloak.ingress.hostname=sso$APP_DOMAIN \
+            --set-string appDomain=$APP_DOMAIN
+
+      - name: Lint chart-testing
+        run: |
+          ct lint \
+            --helm-lint-extra-args "--values deploy/k8s/values-minikube.yaml --set-string appDomain=$APP_DOMAIN" \
+            --charts deploy/k8s/charts/trustification \
+            --target-branch ${{ github.event.repository.default_branch }}
+
+      - name: Install chart-testing
+        run: |
+          ct install \
+            --helm-extra-set-args "--values deploy/k8s/values-minikube.yaml --set-string appDomain=$APP_DOMAIN --set-string image.version=ci --set-string image.registry=localhost" \
+            --helm-extra-args "--timeout 10m --debug" \
+            --namespace $NAMESPACE --charts deploy/k8s/charts/trustification \
+            --target-branch ${{ github.event.repository.default_branch }}
+
   # A virtual job, referenced by the branch protection rule
   ci:
     runs-on: ubuntu-22.04
     needs:
+      - unit
+      - uncommitted
       - ci-backend
       - ci-frontend-check
       - ci-frontend-test
       - integration
-      - helm-lint
-      - uncommitted
+      - helm-test
+    if: always()
     steps:
-      - run: echo 🎉
+      - name: Success
+        if: ${{ !(contains(needs.*.result, 'failure')) }}
+        run: |
+          echo 🎉
+          exit 0
+      - name: Failure
+        if: ${{ contains(needs.*.result, 'failure') }}
+        run: |
+          echo 😥
+          exit 1

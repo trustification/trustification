@@ -40,7 +40,7 @@ spec:
 
       containers:
         - name: setup
-          {{- include "trustification.guac.defaultImage" $mod | nindent 10 }}
+          {{- include "trustification.common.defaultImage" $mod | nindent 10 }}
           {{- include "trustification.application.container" $mod | nindent 6 }}
 
           env:

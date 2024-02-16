@@ -7,7 +7,7 @@ image:
   name: trust
   registry: ghcr.io/trustification
   pullPolicy: IfNotPresent
-  version: ec77b84be0c2c1e9cbd62fed7759d5e379477bf1
+  version: f8005acc1848bb72f2dbe0ecffa175c59b24eeca
 
 guac:
   image:
@@ -38,6 +38,9 @@ oidc:
     walker:
       clientId: walker
       clientSecret:
+
+serviceMonitor:
+  enabled: false
 
 metrics:
   enabled: false
@@ -164,9 +167,6 @@ modules:
   v11yWalker:
     enabled: true
     image: {}
-    gitImage:
-      registry: quay.io/trustification
-      version: "2.40.1"
     tracing: {}
     metrics: {}
     rust: {}
@@ -182,11 +182,13 @@ modules:
 
   guacInitDb:
     enabled: true
-    image:
-      registry: docker.io/library
-      name: postgres
-      version: "15"
+    image: {}
 
   initDataset:
     enabled: true
     image: {}
+
+  integrationTests:
+    enabled: false
+    image: {}
+    rust: {}

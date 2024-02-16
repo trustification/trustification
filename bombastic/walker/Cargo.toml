@@ -11,15 +11,15 @@ bzip2 = "0.4"
 clap = "4.3.3"
 humantime = "2.1.0"
 log = "0.4"
-sbom-walker = { version = "=0.6.0-alpha.6", features = ["crypto-openssl", "spdx-rs", "cyclonedx-bom"], default-features = false }
+sbom-walker = { version = "=0.6.0-alpha.7", features = ["crypto-openssl", "spdx-rs", "cyclonedx-bom"], default-features = false }
 serde_json = "1"
 spdx-expression = "0.5"
 time = "0.3.21"
 tokio = "1.28.2"
 tracing = "0.1"
 url = "2.4.0"
-walker-common = "=0.6.0-alpha.6"
-walker-extras = "=0.6.0-alpha.6"
+walker-common = "=0.6.0-alpha.7"
+walker-extras = "=0.6.0-alpha.7"
 
 trustification-auth = { path = "../../auth" }
 trustification-infrastructure = { path = "../../infrastructure" }

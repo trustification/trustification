@@ -27,6 +27,12 @@ helm lint ./charts/trustification --values values-ocp-no-aws.yaml --set-string a
 helm lint ./charts/trustification --values values-ocp-aws.yaml --values values-ocp-aws-lint.yaml --set-string appDomain=.localhost
 ```
 
+Lint even more:
+
+```shell
+ct lint --charts ./charts/trustification  --helm-lint-extra-args "--values values-minikube.yaml --set-string appDomain=.localhost"
+```
+
 ## Find that whitespace
 
 ```shell
@@ -59,4 +65,4 @@ You can update those using:
 make -C ../openshift
 ```
 
-Read more in [../openshift/DEVELOPING.md](../openshift/DEVE****LOPING.md).
+Read more in [../openshift/DEVELOPING.md](../openshift/DEVELOPING.md).

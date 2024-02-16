@@ -81,9 +81,21 @@ properties:
       className:
         type: string
 
+  serviceMonitor:
+    type: object
+    description: |
+      Configure the service monitor for scraping metrics.
+      
+      Enabling the serviceMonitor feature will create a `ServiceMonitor` (which must be installed upfront) to
+      scrape metrics. Metrics should also be enabled in addition, otherwise the service monitor will not find
+      any relevant services.
+    allOf:
+      - $ref: "#/definitions/Feature"
+
   metrics:
     type: object
     additionalProperties: false
+
     properties:
       enabled:
         type: boolean
@@ -143,10 +155,15 @@ properties:
           - $ref: "#/definitions/Authenticator"
           - $ref: "#/definitions/Metrics"
           - $ref: "#/definitions/Tracing"
+          - $ref: "#/definitions/HttpApplication"
           - type: object
             properties:
               disableSwaggerOidc:
                 type: boolean
+              uploadLimit:
+                description: |
+                  Maximum size of an upload request
+                $ref: "#/definitions/ByteSize"
 
       bombasticCollector:
         description: |
@@ -189,6 +206,7 @@ properties:
           - $ref: "#/definitions/Authenticator"
           - $ref: "#/definitions/Metrics"
           - $ref: "#/definitions/Tracing"
+          - $ref: "#/definitions/HttpApplication"
           - type: object
             properties:
               crdaUrl:
@@ -238,10 +256,15 @@ properties:
           - $ref: "#/definitions/Authenticator"
           - $ref: "#/definitions/Metrics"
           - $ref: "#/definitions/Tracing"
+          - $ref: "#/definitions/HttpApplication"
           - type: object
             properties:
               disableSwaggerOidc:
                 type: boolean
+              uploadLimit:
+                description: |
+                  Maximum size of an upload request
+                $ref: "#/definitions/ByteSize"
 
       vexinationIndexer:
         description: |
@@ -285,10 +308,15 @@ properties:
           - $ref: "#/definitions/Authenticator"
           - $ref: "#/definitions/Metrics"
           - $ref: "#/definitions/Tracing"
+          - $ref: "#/definitions/HttpApplication"
           - type: object
             properties:
               disableSwaggerOidc:
                 type: boolean
+              uploadLimit:
+                description: |
+                  Maximum size of an upload request
+                $ref: "#/definitions/ByteSize"
 
       v11yIndexer:
         description: |
@@ -327,8 +355,6 @@ properties:
             properties:
               storageSize:
                 type: string
-              gitImage:
-                $ref: "#/definitions/ImageConfig"
 
       guacGraphql:
         description: |
@@ -370,6 +396,7 @@ properties:
           - $ref: "#/definitions/Feature"
           - $ref: "#/definitions/Image"
           - $ref: "#/definitions/Application"
+          - $ref: "#/definitions/RustApplication"
           - type: object
             required:
               - sources
@@ -390,6 +417,7 @@ properties:
           - $ref: "#/definitions/Feature"
           - $ref: "#/definitions/Image"
           - $ref: "#/definitions/Application"
+          - $ref: "#/definitions/RustApplication"
           - type: object
             required:
               - sources
@@ -401,6 +429,15 @@ properties:
                 patternProperties:
                   "^[a-z0-9A-Z_\\-.]*[a-z0-9A-Z]$":
                     $ref: "#/definitions/VexinationWalkerSource"
+
+      integrationTests:
+        description: |
+          Integration tests which can be run as part of the Helm chart.
+        allOf:
+          - $ref: "#/definitions/Feature"
+          - $ref: "#/definitions/Image"
+          - $ref: "#/definitions/Application"
+          - $ref: "#/definitions/RustApplication"
 
   # allowing settings when using the infrastructure Helm chart
 
@@ -630,6 +667,15 @@ definitions:
           walker:
             description: |
               OIDC client configuration for the backend.
+            $ref: "#/definitions/OidcSecretClient"
+
+          testing-user:
+            description: |
+              OIDC client for testing user operations during the Integration Test
+            $ref: "#/definitions/OidcSecretClient"
+          testing-manager:
+            description: |
+              OIDC client for testing manager operations during the Integration Test
             $ref: "#/definitions/OidcSecretClient"
 
   OidcClient:
@@ -1098,3 +1144,17 @@ definitions:
         description: |
           Allows to suspend, but keep, a `CronJob`.
 
+  ByteSize:
+    oneOf:
+      - type: integer
+      - type: string
+        description: Size in bytes, allowing to use a unit such as KiB or MB.
+        pattern: ^[0-9]+([KMG]i?B)?$
+
+  HttpApplication:
+    type: object
+    properties:
+      requestLimit:
+        $ref: "#/definitions/ByteSize"
+      jsonLimit:
+        $ref: "#/definitions/ByteSize"
