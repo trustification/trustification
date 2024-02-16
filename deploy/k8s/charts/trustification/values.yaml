@@ -14,7 +14,7 @@ guac:
     name: guac
     registry: ghcr.io/trustification
     pullPolicy: IfNotPresent
-    version: "v0.3.24"
+    version: "v0.3.26"
   database: {}
 
 rust: {}
