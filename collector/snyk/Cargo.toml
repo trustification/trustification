@@ -35,7 +35,7 @@ hide = "0.1"
 tokio = { version = "1.0", features = ["full"] }
 env_logger = "0.11"
 test-with = { version = "0.12", features = ["runtime"] }
-libtest-with = { version = "0.6.1-0", features = ["net", "resource", "user", "executable"] }
+libtest-with = { version = "0.7.0-1", features = ["net", "resource", "user", "executable"] }
 
 [build-dependencies]
 
