@@ -18,6 +18,7 @@ Follow these steps to create a release:
 * Update Cargo.toml with 'next release' versions
 
 NOTE: The last step is important to ensure nightly versions appear as being newer than the latest release.
+Ensure the robot on Quay using the correct permissions
 
 ### Create a git tag 
 
