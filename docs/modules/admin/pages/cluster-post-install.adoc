@@ -1,16 +1,45 @@
 = Post installation tasks
 
+== Configuring the CVE import job
+
+By default, a `CronJob` will be created which imports the full CVE project data. This job is scheduled by default to
+running during the night. An initial import will take several hours. Afterwards only changes will be applied.
+
+The initial job can run once by executing:
+
+[source,bash]
+----
+kubectl -n trustification create job --from=cronjob/v11y-walker v11y-walker-initial
+----
+
+It is also possible to limit the data the job will import. This can be done using the following variables in the
+Helm chart:
+
+TIP: As filenames use the CVE ID, and CVE IDs are structured in the form of `CVE-<year>-`, this can be used to limit
+the import based on years.
+
+IMPORTANT: Enabling the prefix filter will disable the delta import.
+
+[source,yaml]
+----
+modules:
+  v11yWalker:
+    onlyPrefixes:
+      - "CVE-2023-"
+      - "CVE-2024-"
+----
+
 == Adding a CSAF data source
 
-In order to pull in CSAF data (advisories, VEX) into the system, you can set up a cron job, fetching and uploading
+To pull in CSAF data (advisories, VEX) into the system, you can set up a cron job, fetching and uploading
 new data from a trusted CSAF provider.
 
-In order to do this, you need to:
+To do this, you need to:
 
 * Add this to the configuration of the values file
 * Re-run the Helm chart deployment
 
-In order to add the Red Hat CSAF documents, add the following section to the values file:
+To add the Red Hat CSAF documents, add the following section to the values file:
 
 [source,yaml]
 ----
@@ -33,8 +62,8 @@ modules:
 
 == Adding an SBOM source
 
-In order to pull in SBOMs from a remote source, you can set up a cron job, fetching and uploading new data from source
-that following a certain convention:
+To pull in SBOMs from a remote source, you can set up a cron job, fetching and uploading new data from source
+that follows a certain convention:
 
 * List all available documents in a CSV document named `changed.csv`, relative to the base URL.
 +
@@ -50,7 +79,7 @@ format. For example:
 * If documents are signed with a GPG key, that key must be publicly available through HTTPS
 * SBOMs must be available in JSON format, and maybe BZip2 compressed
 
-In order to add the Red Hat SBOM documents, add the following section to the values file:
+To add the Red Hat SBOM documents, add the following section to the values file:
 
 [source,yaml]
 ----
@@ -105,8 +134,8 @@ include::../examples/values-branding.yaml[]
 ----
 
 As HTML snippets it is possible to inject kind of content as long as it is wrapped in a single root element. Styling
-of content can be done by using the PatternFly CSS classes, which are already part of the page. It is also possible
-navigating to a different page without actually reloading it. The following snippet shows an example using a button:
+of content can be done by using the PatternFly CSS classes, which are already part of the page. It is also possible to
+ navigate to a different page without actually reloading it. The following snippet shows an example using a button:
 
 [source,html]
 ----

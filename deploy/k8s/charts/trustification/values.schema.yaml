@@ -355,6 +355,14 @@ properties:
             properties:
               storageSize:
                 type: string
+                description: |
+                  Size of the PVC storing the CVE project data checked out from git
+              onlyPrefixes:
+                type: array
+                description: |
+                  A list of prefixed will be imported only. Any other files will be ignored.
+                items:
+                  type: string
 
       guacGraphql:
         description: |

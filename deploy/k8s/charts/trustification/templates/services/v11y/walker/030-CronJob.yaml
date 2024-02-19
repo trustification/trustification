@@ -63,8 +63,16 @@ spec:
                 - "walker"
                 - "--source"
                 - "/mnt/cvelistV5"
+
+              {{ with .Values.modules.v11yWalker.onlyPrefixes }}
+                {{ range . }}
+                - --require-prefix
+                - {{ . | quote }}
+                {{ end }}
+              {{ else }}
                 - "--delta-file"
                 - "/mnt/last-delta"
+              {{ end }}
 
               env:
                 {{- include "trustification.application.rust.envVars" $mod | nindent 16 }}
