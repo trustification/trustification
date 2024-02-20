@@ -3,6 +3,7 @@ on:
     branches:
       - main
       - stable
+      - release/*
     types:
       - review_requested
 
