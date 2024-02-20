@@ -10,7 +10,7 @@ use trustification_infrastructure::endpoint;
 use trustification_infrastructure::endpoint::Endpoint;
 use url::Url;
 
-/// Uplaod documents to trustification
+/// Upload documents to trustification
 #[derive(clap::Subcommand, Debug)]
 pub enum Upload {
     Bombastic(BombasticUpload),
