@@ -1,3 +1,5 @@
+use colored_json::to_colored_json_auto;
+use serde_json::Value;
 use std::process::ExitCode;
 
 use reqwest::StatusCode;
@@ -59,12 +61,20 @@ pub struct ReindexStatus {
     #[arg(long = "devmode", default_value_t = false)]
     pub devmode: bool,
 
-    #[arg(short = 'i', long = "indexer", default_value = "http://localhost:8080/")]
+    #[arg(short = 'i', long = "indexer", default_value = "http://localhost:9010/reindex")]
     pub indexer_url: String,
+
+    #[command(flatten)]
+    pub client: ClientConfig,
 }
 
 impl ReindexStatus {
     pub async fn run(self) -> anyhow::Result<ExitCode> {
+        let client = self.client.build_client()?;
+        let status = client.get(self.indexer_url).send().await?.json::<Value>().await?;
+
+        println!("{}", to_colored_json_auto(&status)?);
+
         Ok(ExitCode::SUCCESS)
     }
 }
