@@ -3,6 +3,7 @@ use std::process::ExitCode;
 use reqwest::StatusCode;
 use trustification_common::tls::ClientConfig;
 
+/// Reindex
 #[derive(clap::Subcommand, Debug)]
 pub enum Reindex {
     Status(ReindexStatus),
