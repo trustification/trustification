@@ -145,3 +145,47 @@ of content can be done by using the PatternFly CSS classes, which are already pa
 >Scan SBOM</a>
 ----
 <1> JavaScript event handler to navigate to a different page
+
+== Tweaking index distribution
+
+Once documents have been uploaded to one of the different Trustification services, an indexing process will pick those
+changes up. It will extract relevant information from the uploaded document and store this into an index, so that it is
+available for the search functionality.
+
+There is a time between the uploading process has finished, and the index was made available to the API endpoints
+though. This means that after uploading, you will not be able to find this document using the search functionality until
+the indexing process has been completed and distributed to the search endpoint processes.
+
+=== Configuration
+
+There is a scheduled delay for distributing an updated index to the API endpoints. This value has some reasonable
+default, which can be changes in the values file using the following fields:
+
+[source,yaml]
+----
+bombastic:
+  syncInterval: 5m
+
+vexination:
+  syncInterval: 5m
+
+v11y:
+  syncInterval: 30m
+----
+
+[TIP]
+.Duration format
+====
+The format of the interval duration is the "humantime" format. For example: 30 seconds is written as `30s`, five minutes
+is written as `5m`.
+
+For more information see: <https://docs.rs/humantime/latest/humantime/fn.parse_duration.html>.
+====
+
+NOTE: After changing the values in values file, be sure to re-apply the Helm chart.
+
+=== Choosing a reasonable interval
+
+Choosing a reasonable interval depends on various factors. On the one side, the more often the indexes are
+ synchronized, the sooner a search result will be visiable to the user. On the other side, the more frequent indexes
+are being synchronized, the more bytes will be transferred. And transferred bytes might add to your AWS bill.
