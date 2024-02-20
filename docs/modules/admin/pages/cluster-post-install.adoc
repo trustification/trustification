@@ -119,13 +119,13 @@ customizing it. The JSON schema describing the file can help identifying places 
 
 ==== Branding Helm Chart
 
-There is an example Helm chart, which can help creating a custom branding chart. The chart itself is just considered
+There is an example Helm chart, which can help create a custom branding chart. The chart itself is just considered
 a blueprint, so it is recommended to copy and alter it according to your needs. It can be found here: https://github.com/trustification/trustification/tree/main/deploy/k8s/charts/trustification-branding
 
 Put the branding assets into the `files/branding` folder to have them served by the `spog-ui` deployment. Then
 update the UI configuration file `files/spog-ui.yaml`. Afterwards, install or update the Helm chart.
 
-In order to have the Trustification use these resources, you will need to update the values file of the Trustification
+To have the Trustification use these resources, you will need to update the values file of the Trustification
 deployment and re-apply it. Ensure the following values are set:
 
 [source,yaml]
