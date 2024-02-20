@@ -11,9 +11,9 @@ In order to install Trustification on a Kubernetes cluster, you will need:
 * A Kubernetes cluster
 ** Including support for the `Ingress` resource
 ** Access to the cluster from your local machine, using `kubectl`
-** DNS set up in a way that, based on an "application domain", it is possible to build all other domains
+** DNS is set up in a way that, based on an "application domain", it is possible to build all other domains
 * Storage and events
 ** Either AWS S3 and SQS/SNS
 ** Or another S3 compatible service, with support for Kafka change notifications
 * OpenID Connect
-** An OpenID connect service for authentication, like Keycloak
+** An OpenID Connect service for authentication, like Keycloak

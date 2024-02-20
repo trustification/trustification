@@ -36,16 +36,19 @@ You will need:
 You will also need to create a wrapper/main module referencing the `trustification` module. A simple wrapper module
 (named `main.tf`) should look like this:
 
+NOTE: The following example file needs to be adapted to your needs. Example values have to be replaced with values
+that suit your deployment.
+
 [source,hcl-terraform]
 ----
 provider "aws" {
-  region  = "eu-west-1"  # <1>
-  profile = "my-profile" # <2>
+  region  = "<your region>"  # <1>
+  profile = "<your aws cli profile>" # <2>
 }
 
 provider "kubernetes" {
-  config_path    = "../instance/config/auth/kubeconfig" # <3>
-  config_context = "admin" # <4>
+  config_path    = "<path to kubeconfig>" # <3>
+  config_context = "<name of the kubectl context>" # <4>
 }
 
 variable "app-domain" {
@@ -55,23 +58,23 @@ variable "app-domain" {
 module "trustification" {
   source = "./trustification" # <5>
 
-  cluster-vpc-id = "vpc-12345678901234567" # <6>
-  availability-zone = "eu-west-1a" # <7>
+  cluster-vpc-id = "<your cluster vpc>" # <6>
+  availability-zone = "<your availability zone inside your region>" # <7>
 
   namespace = "trustification"
 
-  admin-email = "me@my.domain" # <8>
-  sso-domain = "some-free-cognito-console-domain" # <9>
+  admin-email = "<your e-mail address>" # <8>
+  sso-domain = "<a free cognito console domain name>" # <9>
   console-url = "https://console${var.app-domain}"
 }
 ----
 <1> The AWS region you want to create the resources in
 <2> The name of the AWS CLI profile you want to use
 <3> The location to the "kubeconfig" file, required for accessing the Kubernetes cluster
-<4> The name of the Kubernetes client context (in the kubeconfig) to use
+<4> The name of the Kubernetes client context (in the `kubeconfig`) to use
 <5> The location of the `trustification` Terraform module
 <6> The VPC ID of the OpenShift cluster, used to allow access to the RDS database
-<7> The availability zone the RDS instance should be created in, must be valid for the AWS region
+<7> The availability zone the RDS instance should be created in. Must be valid for the AWS region.
 <8> The e-mail of the admin user, which will get frontend access to Trustification
 <9> An AWS Cognito domain prefix. It is globally unique and has to be still available.
 
@@ -152,7 +155,7 @@ All information can be found in the AWS console.
 [#manually_creating_resources]
 == Manually creating the resources
 
-The following sections will explain what is required in more detail.Some steps will result in some information
+The following sections will explain what is required in more detail. Some steps will result in some information
 which needs to be captured and which needs to be used later on in the Helm chart's values file.
 
 [NOTE]

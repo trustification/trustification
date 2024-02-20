@@ -1,16 +1,45 @@
 = Post installation tasks
 
+== Configuring the CVE import job
+
+By default, a `CronJob` will be created which imports the full CVE project data. This job is scheduled by default to
+running during the night. An initial import will take several hours. Afterwards only changes will be applied.
+
+The initial job can run once by executing:
+
+[source,bash]
+----
+kubectl -n trustification create job --from=cronjob/v11y-walker v11y-walker-initial
+----
+
+It is also possible to limit the data the job will import. This can be done using the following variables in the
+Helm chart:
+
+TIP: As filenames use the CVE ID, and CVE IDs are structured in the form of `CVE-<year>-`, this can be used to limit
+the import based on years.
+
+IMPORTANT: Enabling the prefix filter will disable the delta import.
+
+[source,yaml]
+----
+modules:
+  v11yWalker:
+    onlyPrefixes:
+      - "CVE-2023-"
+      - "CVE-2024-"
+----
+
 == Adding a CSAF data source
 
-In order to pull in CSAF data (advisories, VEX) into the system, you can set up a cron job, fetching and uploading
+To pull in CSAF data (advisories, VEX) into the system, you can set up a cron job, fetching and uploading
 new data from a trusted CSAF provider.
 
-In order to do this, you need to:
+To do this, you need to:
 
 * Add this to the configuration of the values file
 * Re-run the Helm chart deployment
 
-In order to add the Red Hat CSAF documents, add the following section to the values file:
+To add the Red Hat CSAF documents, add the following section to the values file:
 
 [source,yaml]
 ----
@@ -33,8 +62,8 @@ modules:
 
 == Adding an SBOM source
 
-In order to pull in SBOMs from a remote source, you can set up a cron job, fetching and uploading new data from source
-that following a certain convention:
+To pull in SBOMs from a remote source, you can set up a cron job, fetching and uploading new data from source
+that follows a certain convention:
 
 * List all available documents in a CSV document named `changed.csv`, relative to the base URL.
 +
@@ -50,7 +79,7 @@ format. For example:
 * If documents are signed with a GPG key, that key must be publicly available through HTTPS
 * SBOMs must be available in JSON format, and maybe BZip2 compressed
 
-In order to add the Red Hat SBOM documents, add the following section to the values file:
+To add the Red Hat SBOM documents, add the following section to the values file:
 
 [source,yaml]
 ----
@@ -90,13 +119,13 @@ customizing it. The JSON schema describing the file can help identifying places 
 
 ==== Branding Helm Chart
 
-There is an example Helm chart, which can help creating a custom branding chart. The chart itself is just considered
+There is an example Helm chart, which can help create a custom branding chart. The chart itself is just considered
 a blueprint, so it is recommended to copy and alter it according to your needs. It can be found here: https://github.com/trustification/trustification/tree/main/deploy/k8s/charts/trustification-branding
 
 Put the branding assets into the `files/branding` folder to have them served by the `spog-ui` deployment. Then
 update the UI configuration file `files/spog-ui.yaml`. Afterwards, install or update the Helm chart.
 
-In order to have the Trustification use these resources, you will need to update the values file of the Trustification
+To have the Trustification use these resources, you will need to update the values file of the Trustification
 deployment and re-apply it. Ensure the following values are set:
 
 [source,yaml]
@@ -105,8 +134,8 @@ include::../examples/values-branding.yaml[]
 ----
 
 As HTML snippets it is possible to inject kind of content as long as it is wrapped in a single root element. Styling
-of content can be done by using the PatternFly CSS classes, which are already part of the page. It is also possible
-navigating to a different page without actually reloading it. The following snippet shows an example using a button:
+of content can be done by using the PatternFly CSS classes, which are already part of the page. It is also possible to
+ navigate to a different page without actually reloading it. The following snippet shows an example using a button:
 
 [source,html]
 ----
@@ -116,3 +145,47 @@ navigating to a different page without actually reloading it. The following snip
 >Scan SBOM</a>
 ----
 <1> JavaScript event handler to navigate to a different page
+
+== Tweaking index distribution
+
+Once documents have been uploaded to one of the different Trustification services, an indexing process will pick those
+changes up. It will extract relevant information from the uploaded document and store this into an index, so that it is
+available for the search functionality.
+
+There is a time between the uploading process has finished, and the index was made available to the API endpoints
+though. This means that after uploading, you will not be able to find this document using the search functionality until
+the indexing process has been completed and distributed to the search endpoint processes.
+
+=== Configuration
+
+There is a scheduled delay for distributing an updated index to the API endpoints. This value has some reasonable
+default, which can be changes in the values file using the following fields:
+
+[source,yaml]
+----
+bombastic:
+  syncInterval: 5m
+
+vexination:
+  syncInterval: 5m
+
+v11y:
+  syncInterval: 30m
+----
+
+[TIP]
+.Duration format
+====
+The format of the interval duration is the "humantime" format. For example: 30 seconds is written as `30s`, five minutes
+is written as `5m`.
+
+For more information see: <https://docs.rs/humantime/latest/humantime/fn.parse_duration.html>.
+====
+
+NOTE: After changing the values in values file, be sure to re-apply the Helm chart.
+
+=== Choosing a reasonable interval
+
+Choosing a reasonable interval depends on various factors. On the one side, the more often the indexes are
+ synchronized, the sooner a search result will be visiable to the user. On the other side, the more frequent indexes
+are being synchronized, the more bytes will be transferred. And transferred bytes might add to your AWS bill.
