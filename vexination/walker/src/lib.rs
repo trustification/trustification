@@ -1,14 +1,5 @@
-#![allow(dead_code)]
-#![allow(unused_variables)]
-#![allow(unused_imports)]
-use std::{
-    path::PathBuf,
-    process::ExitCode,
-    str::FromStr,
-    time::{Duration, SystemTime},
-};
+use std::{path::PathBuf, process::ExitCode, time::SystemTime};
 
-use prometheus::Registry;
 use time::{Date, Month, UtcOffset};
 use trustification_auth::client::OpenIdTokenProviderConfigArguments;
 use trustification_infrastructure::{Infrastructure, InfrastructureConfig};
@@ -81,7 +72,7 @@ impl Run {
             .run(
                 "vexination-walker",
                 |_context| async { Ok(()) },
-                |context| async move {
+                |_context| async move {
                     let provider = self.oidc.clone().into_provider_or_devmode(self.devmode).await?;
 
                     let validation_date: Option<SystemTime> = match (self.policy_date, self.v3_signatures) {
