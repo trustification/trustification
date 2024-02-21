@@ -1,26 +1,28 @@
 = Preparing the environment
 
-The deployment requires a few services outside the Kubernetes based infrastructure. This includes:
+The deployment requires a few services outside the Kubernetes-based infrastructure.
+This includes:
 
 * S3 storage
 * Change events from S3 to SQS/SNS
 * A PostgreSQL database instance
 * A set of OIDC clients for frontend and backend authentication
 
-Setting up those resources is explained in <<manually_creating_resources>>. However, if you're just looking for a
-quick way to generate all those resources, see <<opentofu_terraform>> for some automation.
+Setting up those resources is explained in <<manually_creating_resources>>.
+However, if you're just looking for a quick way to generate all those resources, see <<opentofu_terraform>> for some automation.
 
 [#opentofu_terraform]
 == OpenTofu / Terraform
 
-This describes an opinionated way to set up all AWS resources quickly using OpenTofu. Be sure to inspect the scripts
-before running them.
+This describes an opinionated way to set up all AWS resources quickly using OpenTofu.
+Be sure to inspect the scripts before running them.
 
 [NOTE]
 .OpenTofu vs Terraform
 ====
-OpenTofu is the open source fork of Terraform. While it should be possible to also use Terraform, Trustification focuses
-on OpenTofu. If you prefer Terraform, replace the `tofu` commands with `terraform`.
+OpenTofu is the open source fork of Terraform.
+While it should be possible to also use Terraform, Trustification focuses on OpenTofu.
+If you prefer Terraform, replace the `tofu` commands with `terraform`.
 ====
 
 === Pre-requisites
@@ -33,11 +35,11 @@ You will need:
 
 === Preparing
 
-You will also need to create a wrapper/main module referencing the `trustification` module. A simple wrapper module
-(named `main.tf`) should look like this:
+You will also need to create a wrapper/main module referencing the `trustification` module.
+A simple wrapper module (named `main.tf`) should look like this:
 
-NOTE: The following example file needs to be adapted to your needs. Example values have to be replaced with values
-that suit your deployment.
+NOTE: The following example file needs to be adapted to your needs.
+Example values have to be replaced with values that suit your deployment.
 
 [source,hcl-terraform]
 ----
@@ -68,27 +70,31 @@ module "trustification" {
   console-url = "https://console${var.app-domain}"
 }
 ----
+
 <1> The AWS region you want to create the resources in
 <2> The name of the AWS CLI profile you want to use
 <3> The location to the "kubeconfig" file, required for accessing the Kubernetes cluster
 <4> The name of the Kubernetes client context (in the `kubeconfig`) to use
 <5> The location of the `trustification` Terraform module
 <6> The VPC ID of the OpenShift cluster, used to allow access to the RDS database
-<7> The availability zone the RDS instance should be created in. Must be valid for the AWS region.
+<7> The availability zone the RDS instance should be created in.
+Must be valid for the AWS region.
 <8> The e-mail of the admin user, which will get frontend access to Trustification
-<9> An AWS Cognito domain prefix. It is globally unique and has to be still available.
+<9> An AWS Cognito domain prefix.
+It is globally unique and has to be still available.
 
 === Creating the resources
 
-First, initialize the OpenTofu instance. This will set up the required providers and does not yet create any resources:
+First, initialize the OpenTofu instance.
+This will set up the required providers and does not yet create any resources:
 
 [source,bash]
 ----
 tofu init
 ----
 
-The following commands require the environment variable `APP_DOMAIN` to be set. You can do this using the following
-command:
+The following commands require the environment variable `APP_DOMAIN` to be set.
+You can do this using the following command:
 
 [source,bash]
 ----
@@ -96,7 +102,8 @@ NAMESPACE=trustification
 APP_DOMAIN=-$NAMESPACE.$(kubectl -n openshift-ingress-operator get ingresscontrollers.operator.openshift.io default -o jsonpath='{.status.domain}')
 ----
 
-Then, check if the resources can be created. This also does not yet create the resources:
+Then, check if the resources can be created.
+This also does not yet create the resources:
 
 [source,bash]
 ----
@@ -115,17 +122,16 @@ tofu apply --var app-domain=$APP_DOMAIN
 === Extracting information
 
 Most secrets required for the deployment of Trustification have already been created in the Kubernetes cluster as
-`Secrets`. The next step will use those generated secrets by default.
+`Secrets`.
+The next step will use those generated secrets by default.
 
-If you are using AWS Cognito, you will also need to transfer the following information to the Helm chart values file
-manually:
+If you are using AWS Cognito, you will also need to transfer the following information to the Helm chart values file manually:
 
 * The issuer URL
 * The client IDs of the OIDC clients
 * The Cognito hosted UI domain
 
-The following is an example snippet of the relevant sections (values in the format `<value>` are expected to be replaced
-with their actual values):
+The following is an example snippet of the relevant sections (values in the format `<value>` are expected to be replaced with their actual values):
 
 [source,yaml]
 ----
@@ -146,8 +152,10 @@ oidc:
             name: oidc-walker
             key: client-secret
 ----
+
 <1> The Cognito hosted UI domain URL.
-<2> The URL of the issuer. A combination of the region and the issuer ID.
+<2> The URL of the issuer.
+A combination of the region and the issuer ID.
 <3> The OIDC client IDs
 
 All information can be found in the AWS console.
@@ -155,19 +163,18 @@ All information can be found in the AWS console.
 [#manually_creating_resources]
 == Manually creating the resources
 
-The following sections will explain what is required in more detail. Some steps will result in some information
-which needs to be captured and which needs to be used later on in the Helm chart's values file.
+The following sections will explain what is required in more detail.
+Some steps will result in some information which needs to be captured and which needs to be used later on in the Helm chart's values file.
 
 [NOTE]
 .AWS regions
 ====
-While it is possible to split the AWS services to different regions, that might have an impact on the cost of running
-the services, as well as on the performance.Therefore, it is recommended to keep everything in a single region.The
-rest of the document will assume that this is the case.
+While it is possible to split the AWS services to different regions, that might have an impact on the cost of running the services, as well as on the performance.Therefore, it is recommended to keep everything in a single region.The rest of the document will assume that this is the case.
 ====
 
-In the following sections the document will refer to "document types". The expectation is that those are the document
-types: SBOMs, CSAF documents, CVEs. For creating S3 resources, we will use the following naming pattern:
+In the following sections the document will refer to "document types".
+The expectation is that those are the document types: SBOMs, CSAF documents, CVEs.
+For creating S3 resources, we will use the following naming pattern:
 
 * `bombastic` for SBOMs
 * `vexination` for CSAF documents
@@ -205,7 +212,9 @@ It is recommended to follow the following pattern:
 * `<type>-failed` For events when a document could not be processed
 * `<type>-guac` For events when a document should be processed by GUAC
 
-NOTE: There is one exception to that rule. GUAC does not require notifications for CVE documents. So the topic
+NOTE: There is one exception to that rule.
+GUAC does not require notifications for CVE documents.
+So the topic
 `v11y-guac` must not be created.
 
 This will result in the following names, which will be used from here on for examples in this document:
@@ -227,10 +236,11 @@ This will result in the following names, which will be used from here on for exa
 For each bucket a change notification needs to be set up publish the events for `s3:ObjectCreated:*` and
 `s3:ObjectRemoved:*` to the `<type>-stored-topic` topic.
 
-For this we need to set up a topic (named `<type>-stored-topic`) as well as a bucket notification, publishing to that
-topic. This bucket notification must publish events for: `["s3:ObjectCreated:*", "s3:ObjectRemoved:*"]`.
+For this we need to set up a topic (named `<type>-stored-topic`) as well as a bucket notification, publishing to that topic.
+This bucket notification must publish events for: `["s3:ObjectCreated:*", "s3:ObjectRemoved:*"]`.
 
-This also requires granting the S3 bucket access to the topic. For example:
+This also requires granting the S3 bucket access to the topic.
+For example:
 
 [source,json5]
 ----
@@ -250,6 +260,7 @@ This also requires granting the S3 bucket access to the topic. For example:
   ]
 }
 ----
+
 <1> S3 bucket name
 
 === Queue subscriptions
@@ -262,10 +273,12 @@ There should be two subscriptions for each document type of the protocol type `S
 * Topic: `<type>-stored` -> `<type>-stored`
 * `<type>-stored` -> `<type>-guac`
 
-NOTE: There is one exception to that rule. The `v11y-stored-topic` does not need to be connected to the `v11y-guac`
+NOTE: There is one exception to that rule.
+The `v11y-stored-topic` does not need to be connected to the `v11y-guac`
 as it does not exist.
 
-This also requires granting the S3 SNS topic access to the queue. For example:
+This also requires granting the S3 SNS topic access to the queue.
+For example:
 
 [source,json5]
 ----
@@ -285,11 +298,13 @@ This also requires granting the S3 SNS topic access to the queue. For example:
   ]
 }
 ----
+
 <1> Name of the SNS topic
 
 === Users
 
-For each document type an AWS IAM user must be created. From here on, the examples will use:
+For each document type an AWS IAM user must be created.
+From here on, the examples will use:
 
 * `bombastic`
 * `vexination`
@@ -297,7 +312,8 @@ For each document type an AWS IAM user must be created. From here on, the exampl
 
 For each user an access key must be created.
 
-Also does each user require access to its S3 bucket and corresponding queues. For example for the SBOM user (`bombastic`):
+Also does each user require access to its S3 bucket and corresponding queues.
+For example for the SBOM user (`bombastic`):
 
 [source,json5]
 ----
@@ -326,50 +342,52 @@ Also does each user require access to its S3 bucket and corresponding queues. Fo
     ]
 }
 ----
+
 <1> SQS queues
 <2> S3 bucket
 
 === RDS
 
-Also, a PostgreSQL instance of RDS is required. The instance must be accessible from the cluster you're installing
-Trustification on. The actual RDS size (CPU, RAM, Storage, …) depends on the amount of data you are considering to
-store in the system.
+Also, a PostgreSQL instance of RDS is required.
+The instance must be accessible from the cluster you're installing Trustification on.
+The actual RDS size (CPU, RAM, Storage, …) depends on the amount of data you are considering to store in the system.
 
 In order to try out Trustification, a single instance of type `db.m7g.large` will be sufficient.
 
 === Keycloak
 
-Trustification requires an OIDC issuer. The recommended setup to use Keycloak as OIDC issuer. For this, you will need
-to:
+Trustification requires an OIDC issuer.
+The recommended setup to use Keycloak as OIDC issuer.
+For this, you will need to:
 
 * Install Keycloak
 * Create a new realm
 * Create the following roles for this realm
-    ** `chicken-user`
-    ** `chicken-manager`
-    ** `chicken-admin`
+** `chicken-user`
+** `chicken-manager`
+** `chicken-admin`
 * Make the `chicken-user` a default role
 * Create the following scopes for this realm
-    ** `read:document`
-    ** `create:document`
-    ** `delete:document`
+** `read:document`
+** `create:document`
+** `delete:document`
 * Add the `create:document` and `delete:document` scope to the `chicken-manager` role
 * Create two clients
-    ** One public client
-        *** Set `standardFlowEnabled` to `true`
-        *** Set `fullScopedAllowed` to `true`
-        *** Set the following `defaultClientScopes`
-            **** `read:document`
-            **** `create:document`
-            **** `delete:document`
-    ** One protected client
-        *** Set `publicClient` to `false`
-        *** Set `serviecAccountsEnabled` to `true`
-        *** Set `fullScopedAllowed` to `true`
-        *** Set the following `defaultClientScopes`
-            **** `read:document`
-            **** `create:document`
-        *** Add role `chicken-manager` to the service account of this client
-    ** Increase the token timeout for both clients to at least 5 minutes
+** One public client
+*** Set `standardFlowEnabled` to `true`
+*** Set `fullScopedAllowed` to `true`
+*** Set the following `defaultClientScopes`
+**** `read:document`
+**** `create:document`
+**** `delete:document`
+** One protected client
+*** Set `publicClient` to `false`
+*** Set `serviecAccountsEnabled` to `true`
+*** Set `fullScopedAllowed` to `true`
+*** Set the following `defaultClientScopes`
+**** `read:document`
+**** `create:document`
+*** Add role `chicken-manager` to the service account of this client
+** Increase the token timeout for both clients to at least 5 minutes
 * Create a user, acting as administrator
-    ** Add the `chicken-manager` and `chicken-admin` role to this user
+** Add the `chicken-manager` and `chicken-admin` role to this user

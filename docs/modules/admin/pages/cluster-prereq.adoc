@@ -1,6 +1,10 @@
-= Pre-requisites
+= Before you start
 
-In order to install Trustification on a Kubernetes cluster, you will need:
+A few tips you might find useful before you start.
+
+== Pre-requisites
+
+To install Trustification on a Kubernetes cluster, you will need:
 
 * A few command line tools on your local machine
 ** `kubectl` (or `oc`)
@@ -17,3 +21,11 @@ In order to install Trustification on a Kubernetes cluster, you will need:
 ** Or another S3 compatible service, with support for Kafka change notifications
 * OpenID Connect
 ** An OpenID Connect service for authentication, like Keycloak
+
+== Kubernetes Namespace
+
+This documentation will use `trustification` as the default namespace for the installation.
+It is possible to use a different name, but you will need to adapt the following commands, replacing the use of
+`trustification` as a namespace with your actual namespace.
+
+NOTE: Not every time `trusification` is used as a Kubernetes namespace, be sure to not just search & replace all occasions of `trustification`.
