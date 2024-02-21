@@ -22,6 +22,21 @@ resource "aws_db_subnet_group" "database" {
   subnet_ids = data.aws_subnets.cluster-private.ids
 }
 
+resource "aws_security_group" "database" {
+  name   = "trustification-postgresql"
+  vpc_id = data.aws_vpc.cluster.id
+}
+
+resource "aws_security_group_rule" "allow-postgres" {
+  protocol          = "TCP"
+  security_group_id = aws_security_group.database.id
+  from_port         = 5432
+  to_port           = 5432
+  type              = "ingress"
+  cidr_blocks       = [data.aws_vpc.cluster.cidr_block]
+  ipv6_cidr_blocks  = [data.aws_vpc.cluster.ipv6_cidr_block]
+}
+
 variable "db-master-user" {
   type        = string
   default     = "postgres"
