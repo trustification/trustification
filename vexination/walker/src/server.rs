@@ -1,8 +1,8 @@
 use std::collections::BTreeMap;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::Arc;
 use std::time::SystemTime;
-use std::{net::SocketAddr, sync::Arc, time::Duration};
 
 use csaf_walker::discover::AsDiscovered;
 use csaf_walker::model::metadata::Distribution;
@@ -10,8 +10,7 @@ use csaf_walker::report::{render_to_html, DocumentKey, Duplicates, ReportRenderO
 use csaf_walker::visitors::duplicates::DetectDuplicatesVisitor;
 use csaf_walker::visitors::filter::{FilterConfig, FilteringVisitor};
 use csaf_walker::{
-    discover::DiscoveredAdvisory,
-    retrieve::{RetrievedAdvisory, RetrievingVisitor},
+    retrieve::RetrievingVisitor,
     source::{FileSource, HttpSource},
     validation::{ValidatedAdvisory, ValidationError, ValidationVisitor},
     verification::{
@@ -21,16 +20,9 @@ use csaf_walker::{
     walker::Walker,
 };
 use reqwest::{header, StatusCode};
-use serde::Deserialize;
-use tokio::sync::{Mutex, RwLock};
 use trustification_auth::client::{TokenInjector, TokenProvider};
 use url::Url;
-use walker_common::{
-    fetcher::{Fetcher, FetcherOptions},
-    since::Since,
-    utils::url::Urlify,
-    validate::ValidationOptions,
-};
+use walker_common::{fetcher::Fetcher, since::Since, utils::url::Urlify, validate::ValidationOptions};
 
 #[allow(clippy::too_many_arguments)]
 pub async fn run(
