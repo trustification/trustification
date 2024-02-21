@@ -6383,6 +6383,7 @@ dependencies = [
  "spdx-rs",
  "spog-model",
  "thiserror",
+ "time",
  "tokio",
  "tracing",
  "trustification-analytics",
