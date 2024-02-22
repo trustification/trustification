@@ -897,6 +897,24 @@ mod tests {
         });
     }
 
+    /// Test if we can find a word containing special characters in title or description
+    #[tokio::test]
+    #[ignore]
+    async fn test_title_special() {
+        assert_search(|index| {
+            let result = search(&index, r#"microcode_ctl in:title"#);
+            assert_eq!(result.0.len(), 1);
+        });
+        assert_search(|index| {
+            let result = search(&index, r#"Microcode_Ctl in:title"#);
+            assert_eq!(result.0.len(), 1);
+        });
+        assert_search(|index| {
+            let result = search(&index, r#"MICROCODE_CTL in:title"#);
+            assert_eq!(result.0.len(), 1);
+        });
+    }
+
     #[tokio::test]
     async fn test_severity() {
         assert_search(|index| {
@@ -941,7 +959,7 @@ mod tests {
     async fn test_query_and_products() {
         assert_search(|index| {
             let result = search(&index, "kernel");
-            assert_eq!(result.0.len(), 1, "should find one kernel");
+            assert_eq!(result.0.len(), 1);
 
             let result = search(&index, "\"cpe:/a:redhat:enterprise_linux:9\" in:package");
             assert_eq!(result.0.len(), 1);
