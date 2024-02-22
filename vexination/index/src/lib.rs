@@ -473,7 +473,7 @@ impl trustification_index::WriteIndex for Index {
         self.schema
             .get_field("advisory_id")
             .map(|f| Term::from_field_text(f, id))
-            .unwrap()
+            .expect("the document schema defines this field")
     }
 
     fn schema(&self) -> Schema {

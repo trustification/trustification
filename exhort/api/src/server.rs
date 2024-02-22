@@ -168,7 +168,7 @@ async fn recommend(
 ) -> actix_web::Result<impl Responder> {
     let mut recommendations = HashMap::new();
 
-    let pattern = Regex::new("redhat-[0-9]+$").unwrap();
+    let pattern = Regex::new("redhat-[0-9]+$").expect("known regexp which must parse");
 
     for purl_str in &request.purls {
         if let Ok(purl) = PackageUrl::from_str(purl_str) {

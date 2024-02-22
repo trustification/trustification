@@ -1,8 +1,9 @@
-use std::time::Duration;
+#![allow(clippy::unwrap_used)]
 
 use integration_tests::{id, SpogContext, Urlifier};
 use reqwest::StatusCode;
 use serde_json::{json, Value};
+use std::time::Duration;
 use test_context::test_context;
 use trustification_auth::client::TokenInjector;
 

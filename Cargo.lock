@@ -1755,6 +1755,7 @@ dependencies = [
  "reqwest",
  "serde",
  "trustification-auth",
+ "url",
 ]
 
 [[package]]
@@ -1810,6 +1811,7 @@ dependencies = [
  "trustification-auth",
  "trustification-common",
  "trustification-infrastructure",
+ "url",
  "url-escape",
  "utoipa",
  "utoipa-swagger-ui",
@@ -1862,11 +1864,12 @@ name = "collectorist-client"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "derive_more",
  "reqwest",
  "serde",
  "serde_json",
+ "thiserror",
  "trustification-auth",
+ "url",
 ]
 
 [[package]]
@@ -7730,6 +7733,7 @@ dependencies = [
  "env_logger 0.11.2",
  "humantime",
  "log",
+ "parking_lot",
  "prometheus",
  "rand 0.8.5",
  "rust-s3",
@@ -8098,6 +8102,7 @@ dependencies = [
  "trustification-api",
  "trustification-auth",
  "trustification-infrastructure",
+ "url",
  "v11y-model",
 ]
 

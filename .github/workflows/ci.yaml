@@ -160,7 +160,7 @@ jobs:
         run: cargo check
 
       - name: Clippy
-        run: cargo clippy --all-targets --all-features -- -D warnings
+        run: cargo clippy --all-targets --all-features -- -D warnings -D clippy::unwrap_used
 
       - name: Test
         run: cargo test
@@ -197,7 +197,7 @@ jobs:
 
       - name: Clippy
         run: |
-          cargo clippy --target wasm32-unknown-unknown --all-targets --all-features --manifest-path spog/ui/Cargo.toml -- -D warnings
+          cargo clippy --target wasm32-unknown-unknown --all-targets --all-features --manifest-path spog/ui/Cargo.toml -- -D warnings -D clippy::unwrap_used
 
   ci-frontend-test:
     runs-on: ubuntu-22.04

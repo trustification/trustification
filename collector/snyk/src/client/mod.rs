@@ -1,7 +1,7 @@
+use crate::client::schema::{Issue, Response};
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
-
-use crate::client::schema::{Issue, Response};
+use url::ParseError;
 
 pub mod schema;
 
@@ -13,6 +13,8 @@ pub enum Error {
     Serialization(serde_json::Error),
     #[error("Snyk error: {0:?}")]
     Snyk(Vec<schema::Error>),
+    #[error("URL error: {0:?}")]
+    Url(#[from] ParseError),
 }
 
 impl From<reqwest::Error> for Error {
@@ -40,14 +42,13 @@ impl SnykUrl {
     }
      */
 
-    pub fn issues(&self, org_id: &str, purl: &str) -> Url {
+    pub fn issues(&self, org_id: &str, purl: &str) -> Result<Url, ParseError> {
         Url::parse(&format!(
             "{}/orgs/{}/packages/{}/issues",
             self.0,
             org_id,
             url_escape::encode_component(purl),
         ))
-        .unwrap()
     }
 }
 
@@ -111,7 +112,7 @@ impl SnykClient {
     pub async fn issues(&self, purl: &str) -> Result<Vec<Issue>, Error> {
         let result: Response<Vec<Issue>> = self
             .client
-            .get(SNYK_URL.issues(&self.org_id, purl))
+            .get(SNYK_URL.issues(&self.org_id, purl)?)
             .header("Authorization", format!("token {}", &self.token))
             .header("Content-Type", "application/vnd.api+json")
             .query(&[("version", "2023-08-31~beta")])
