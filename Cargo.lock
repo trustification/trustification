@@ -8338,21 +8338,22 @@ name = "vexination-walker"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "async-trait",
+ "bytes",
  "clap",
  "csaf",
  "csaf-walker",
  "humantime",
  "log",
- "prometheus",
- "reqwest",
- "serde",
  "serde_json",
  "time",
  "tokio",
+ "tracing",
  "trustification-auth",
  "trustification-infrastructure",
  "url",
  "walker-common",
+ "walker-extras",
 ]
 
 [[package]]

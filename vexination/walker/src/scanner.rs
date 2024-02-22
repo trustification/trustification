@@ -1,12 +1,14 @@
-use crate::processing::ProcessVisitor;
-use sbom_walker::model::metadata::Key;
-use sbom_walker::retrieve::RetrievingVisitor;
-use sbom_walker::source::{DispatchSource, FileSource, HttpSource};
-use sbom_walker::validation::ValidationVisitor;
-use sbom_walker::walker::Walker;
+use std::collections::HashSet;
+use std::iter::FromIterator;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
+
+use csaf_walker::retrieve::RetrievingVisitor;
+use csaf_walker::source::{DispatchSource, FileSource, HttpSource};
+use csaf_walker::validation::ValidationVisitor;
+use csaf_walker::visitors::filter::{FilterConfig, FilteringVisitor};
+use csaf_walker::walker::Walker;
 use tokio::time::MissedTickBehavior;
 use tracing::{instrument, log};
 use url::Url;
@@ -20,14 +22,14 @@ use walker_common::{
 pub struct Options {
     pub source: String,
     pub target: Url,
-    pub keys: Vec<Key>,
     pub provider: Arc<dyn TokenProvider>,
     pub validation_date: Option<SystemTime>,
-    pub fix_licenses: bool,
+    pub required_prefixes: Vec<String>,
+    pub ignore_distributions: Vec<String>,
     pub since_file: Option<PathBuf>,
+    pub additional_root_certificates: Vec<PathBuf>,
     pub retries: usize,
     pub retry_delay: Option<Duration>,
-    pub additional_root_certificates: Vec<PathBuf>,
 }
 
 pub struct Scanner {
@@ -54,15 +56,11 @@ impl Scanner {
     #[instrument(skip(self))]
     pub async fn run_once(&self) -> anyhow::Result<()> {
         let since = Since::new(None::<SystemTime>, self.options.since_file.clone(), Default::default())?;
-
         let source: DispatchSource = match Url::parse(&self.options.source) {
             Ok(url) => HttpSource {
                 url,
                 fetcher: Fetcher::new(FetcherOptions::default()).await?,
-                options: sbom_walker::source::HttpOptions {
-                    since: *since,
-                    keys: self.options.keys.clone(),
-                },
+                options: csaf_walker::source::HttpOptions { since: *since },
             }
             .into(),
             Err(_) => FileSource::new(&self.options.source, None)?.into(),
@@ -84,17 +82,23 @@ impl Scanner {
             retry_delay: self.options.retry_delay,
         };
 
-        let process = ProcessVisitor {
-            enabled: self.options.fix_licenses,
-            next: storage,
-        };
-
-        let validation = ValidationVisitor::new(process).with_options(ValidationOptions {
+        let validation = ValidationVisitor::new(storage).with_options(ValidationOptions {
             validation_date: self.options.validation_date,
         });
 
+        let retriever = RetrievingVisitor::new(source.clone(), validation);
+
+        let filtered = FilteringVisitor {
+            visitor: retriever,
+            config: FilterConfig {
+                ignored_distributions: HashSet::from_iter(self.options.ignore_distributions.clone().into_iter()),
+                ignored_prefixes: vec![],
+                only_prefixes: self.options.required_prefixes.clone(),
+            },
+        };
+
         let walker = Walker::new(source.clone());
-        walker.walk(RetrievingVisitor::new(source.clone(), validation)).await?;
+        walker.walk(filtered).await?;
 
         since.store()?;
 
