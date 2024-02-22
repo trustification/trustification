@@ -12,7 +12,7 @@ use tracing::{instrument, log};
 use url::Url;
 use walker_common::{
     fetcher::{Fetcher, FetcherOptions},
-    sender::{self, provider::TokenProvider, HttpSenderOptions},
+    sender::{self, provider::TokenProvider},
     since::Since,
     validate::ValidationOptions,
 };
@@ -55,12 +55,13 @@ impl Scanner {
     pub async fn run_once(&self) -> anyhow::Result<()> {
         let since = Since::new(None::<SystemTime>, self.options.since_file.clone(), Default::default())?;
         let source: DispatchSource = match Url::parse(&self.options.source) {
-            Ok(url) => {
-                HttpSource::new(
-                    url,
-                    Fetcher::new(FetcherOptions::default()).await?,
-                    HttpOptions::new().since(*since).keys(self.options.keys.clone()),
-                )
+            Ok(url) => HttpSource {
+                url,
+                fetcher: Fetcher::new(FetcherOptions::default()).await?,
+                options: HttpOptions {
+                    keys: self.options.keys.clone(),
+                    since: *since,
+                },
             }
             .into(),
             Err(_) => FileSource::new(&self.options.source, None)?.into(),
@@ -68,22 +69,28 @@ impl Scanner {
 
         let sender = sender::HttpSender::new(
             self.options.provider.clone(),
-            HttpSenderOptions::default()
-                .additional_root_certificates(self.options.additional_root_certificates.clone()),
+            sender::Options {
+                additional_root_certificates: self.options.additional_root_certificates.clone(),
+                ..sender::Options::default()
+            },
         )
         .await?;
 
-        let storage = walker_extras::visitors::SendVisitor::new(self.options.target.clone(), sender)
-            .retries(self.options.retries)
-            .retry_delay(self.options.retry_delay.unwrap_or_default());
+        let storage = walker_extras::visitors::SendVisitor {
+            url: self.options.target.clone(),
+            sender,
+            retries: self.options.retries,
+            retry_delay: self.options.retry_delay,
+        };
 
         let process = ProcessVisitor {
             enabled: self.options.fix_licenses,
             next: storage,
         };
 
-        let validation = ValidationVisitor::new(process)
-            .with_options(ValidationOptions::new().validation_date(self.options.validation_date));
+        let validation = ValidationVisitor::new(process).with_options(ValidationOptions {
+            validation_date: self.options.validation_date,
+        });
 
         let walker = Walker::new(source.clone());
         walker.walk(RetrievingVisitor::new(source.clone(), validation)).await?;
