@@ -1,3 +1,5 @@
+#![allow(clippy::unwrap_used)]
+
 use integration_tests::SpogUiContext;
 use std::io::Write;
 use std::time::Duration;

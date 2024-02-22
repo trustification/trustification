@@ -4,7 +4,7 @@ use aws_credential_types::{credential_fn::provide_credentials_fn, provider::Shar
 use aws_sdk_sqs::{
     config::{Credentials, Region},
     operation::receive_message::ReceiveMessageOutput,
-    types::Message,
+    types::{error::UnsupportedOperation, Message},
     Client, Error,
 };
 
@@ -61,7 +61,13 @@ impl SqsEventBus {
     }
 
     pub(crate) async fn send(&self, topic: &str, data: &[u8]) -> Result<(), Error> {
-        let s = core::str::from_utf8(data).unwrap();
+        let s = core::str::from_utf8(data).map_err(|_| {
+            Error::UnsupportedOperation(
+                UnsupportedOperation::builder()
+                    .message("unable to encode data as string")
+                    .build(),
+            )
+        })?;
         self.client
             .send_message()
             .queue_url(topic)

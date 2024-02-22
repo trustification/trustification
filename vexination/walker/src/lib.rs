@@ -77,7 +77,7 @@ impl Run {
                     let validation_date: Option<SystemTime> = match (self.policy_date, self.v3_signatures) {
                         (_, true) => Some(SystemTime::from(
                             Date::from_calendar_date(2007, Month::January, 1)
-                                .unwrap()
+                                .expect("known calendar date should parse")
                                 .midnight()
                                 .assume_offset(UtcOffset::UTC),
                         )),

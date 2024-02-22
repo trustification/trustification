@@ -15,7 +15,7 @@ pub use tantivy;
 pub use tantivy::schema::Document;
 
 use bytesize::ByteSize;
-use log::{debug, warn};
+use parking_lot::RwLock;
 use prometheus::{
     histogram_opts, opts, register_histogram_with_registry, register_int_counter_with_registry,
     register_int_gauge_with_registry, Histogram, IntCounter, IntGauge, Registry,
@@ -31,7 +31,7 @@ use std::{
     fmt::{Debug, Display},
     ops::Bound,
     path::{Path, PathBuf},
-    sync::{Arc, RwLock},
+    sync::Arc,
     time::Duration,
 };
 use tantivy::{
@@ -608,7 +608,7 @@ where
     /// runs an internal loop, counting documents and syncing that to the metrics
     async fn run_index_count(inner: Arc<RwLock<SearchIndex>>, metrics: Metrics, mut shutdown: oneshot::Receiver<()>) {
         fn count(inner: &RwLock<SearchIndex>) -> Option<u64> {
-            let count = inner.read().ok()?.reader().ok()?;
+            let count = inner.read().reader().ok()?;
             Some(count.searcher().num_docs())
         }
 
@@ -733,7 +733,7 @@ where
     pub async fn sync(&self, storage: &Storage) -> Result<(), Error> {
         if let Some(index_dir) = &self.index_dir {
             let data = storage.get_index(self.index.name()).await?;
-            let mut index_dir = index_dir.write().unwrap();
+            let mut index_dir = index_dir.write();
             match index_dir.sync(
                 self.index.schema(),
                 self.index.settings(),
@@ -741,7 +741,7 @@ where
                 &data,
             ) {
                 Ok(Some(index)) => {
-                    *self.inner.write().unwrap() = index;
+                    *self.inner.write() = index;
                     log::debug!("Index replaced");
                 }
                 Ok(None) => {
@@ -762,9 +762,9 @@ where
     pub fn reset(&mut self) -> Result<(), Error> {
         log::info!("Resetting index");
         if let Some(index_dir) = &self.index_dir {
-            let mut index_dir = index_dir.write().unwrap();
+            let mut index_dir = index_dir.write();
             let index = index_dir.reset(self.index.settings(), self.index.schema(), self.index.tokenizers()?)?;
-            let mut inner = self.inner.write().unwrap();
+            let mut inner = self.inner.write();
             *inner = index;
         }
         Ok(())
@@ -786,8 +786,8 @@ where
         if let Some(index_dir) = &self.index_dir {
             writer.commit()?;
 
-            let mut dir = index_dir.write().unwrap();
-            let mut inner = self.inner.write().unwrap();
+            let mut dir = index_dir.write();
+            let mut inner = self.inner.write();
             inner.directory_mut().sync_directory().map_err(Error::Io)?;
             let lock = inner.directory_mut().acquire_lock(&INDEX_WRITER_LOCK);
 
@@ -838,7 +838,7 @@ where
     }
 
     pub fn writer(&mut self) -> Result<IndexWriter, Error> {
-        let writer = self.inner.write().unwrap().writer(self.index_writer_memory_bytes)?;
+        let writer = self.inner.write().writer(self.index_writer_memory_bytes)?;
         Ok(IndexWriter {
             writer,
             metrics: self.metrics.clone(),
@@ -861,7 +861,7 @@ impl<INDEX: Index> IndexStore<INDEX> {
             return Err(Error::InvalidLimitParameter(limit));
         }
 
-        let inner = self.inner.read().unwrap();
+        let inner = self.inner.read();
         let reader = inner.reader()?;
         let searcher = reader.searcher();
 
@@ -967,16 +967,16 @@ impl<INDEX: Index> IndexStore<INDEX> {
             for hit in top_docs {
                 match self.index.process_hit(hit.1, hit.0, &searcher, &query.query, &options) {
                     Ok(value) => {
-                        debug!("HIT: {:?}", value);
+                        log::debug!("HIT: {:?}", value);
                         hits.push(value);
                     }
                     Err(e) => {
-                        warn!("Error processing hit {:?}: {:?}", hit, e);
+                        log::warn!("Error processing hit {:?}: {:?}", hit, e);
                     }
                 }
             }
 
-            debug!("Filtered to {}", hits.len());
+            log::debug!("Filtered to {}", hits.len());
 
             latency.observe_duration();
             Ok((hits, count))
@@ -1102,7 +1102,7 @@ pub fn create_string_query_case(field: Field, primary: &Primary<'_>, case: Case)
             if let Ok(query) = RegexQuery::from_pattern(&pattern, field) {
                 queries.push(Box::new(query));
             } else {
-                warn!("Unable to partial query from {}", pattern);
+                log::warn!("Unable to partial query from {}", pattern);
             }
             queries.push(Box::new(TermQuery::new(
                 Term::from_field_text(field, case.to_value(value).as_ref()),
@@ -1166,7 +1166,7 @@ where
 
     let query = move |lower, upper| {
         if fields.len() == 1 {
-            query_field(fields.pop().unwrap(), lower, upper)
+            query_field(fields.pop().expect("just checked it was one"), lower, upper)
         } else {
             let mut query_terms = Vec::new();
             for field in fields {

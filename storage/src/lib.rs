@@ -1,8 +1,6 @@
 mod stream;
 pub mod validator;
 
-use std::borrow::Cow;
-
 use async_stream::try_stream;
 use bytes::Bytes;
 use futures::pin_mut;
@@ -16,6 +14,7 @@ use prometheus::{
 use s3::{creds::error::CredentialsError, error::S3Error, Bucket};
 pub use s3::{creds::Credentials, Region};
 use serde::Deserialize;
+use std::borrow::Cow;
 use validator::Validator;
 
 pub struct Storage {
@@ -326,7 +325,7 @@ impl Storage {
         headers.insert(VERSION_HEADER, VERSION.into());
         headers.insert(
             CONTENT_ENCODING,
-            HeaderValue::from_str(encoding.unwrap_or(DEFAULT_ENCODING)).unwrap(),
+            HeaderValue::from_str(encoding.unwrap_or(DEFAULT_ENCODING))?,
         );
         let bucket = self.bucket.with_extra_headers(headers);
 

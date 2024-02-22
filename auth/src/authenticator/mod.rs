@@ -113,7 +113,7 @@ impl Authenticator {
     }
 
     /// Validate a bearer token.
-    #[instrument(level = "debug", skip_all, fields(token=token.as_ref()), ret)]
+    #[instrument(level = "debug", skip_all, fields(token = token.as_ref()), ret)]
     pub async fn validate_token<S: AsRef<str>>(&self, token: S) -> Result<ValidatedAccessToken, AuthenticationError> {
         let mut token: Compact<AccessTokenClaims, Empty> = Jws::new_encoded(token.as_ref());
 

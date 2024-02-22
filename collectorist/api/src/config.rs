@@ -18,7 +18,9 @@ impl CollectorsConfig {
         collectors.insert(
             "osv".into(),
             CollectorConfig {
-                url: endpoint::CollectorOsv::url().join(DEFAULT_BASE).unwrap(),
+                url: endpoint::CollectorOsv::url()
+                    .join(DEFAULT_BASE)
+                    .expect("devmode url must parse"),
                 interests: vec![Interest::Package, Interest::Vulnerability],
                 cadence: default_cadence(),
             },
@@ -26,7 +28,9 @@ impl CollectorsConfig {
         collectors.insert(
             "snyk".into(),
             CollectorConfig {
-                url: endpoint::CollectorSnyk::url().join(DEFAULT_BASE).unwrap(),
+                url: endpoint::CollectorSnyk::url()
+                    .join(DEFAULT_BASE)
+                    .expect("devmode url must parse"),
                 interests: vec![Interest::Package],
                 cadence: default_cadence(),
             },

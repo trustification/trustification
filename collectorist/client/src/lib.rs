@@ -1,9 +1,9 @@
-use derive_more::Display;
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
 use trustification_auth::client::{TokenInjector, TokenProvider};
+use url::ParseError;
 
 #[derive(Clone, Debug)]
 pub struct CollectoristUrl {
@@ -16,24 +16,20 @@ impl CollectoristUrl {
         Self { collector_id, base_url }
     }
 
-    pub fn register_collector_url(&self) -> Url {
-        self.base_url
-            .join(&format!("/api/v1/collector/{}", self.collector_id))
-            .unwrap()
+    pub fn register_collector_url(&self) -> Result<Url, ParseError> {
+        self.base_url.join(&format!("/api/v1/collector/{}", self.collector_id))
     }
 
-    pub fn deregister_collector_url(&self) -> Url {
-        self.base_url
-            .join(&format!("/api/v1/collector/{}", self.collector_id))
-            .unwrap()
+    pub fn deregister_collector_url(&self) -> Result<Url, ParseError> {
+        self.base_url.join(&format!("/api/v1/collector/{}", self.collector_id))
     }
 
-    pub fn collect_packages_url(&self) -> Url {
-        self.base_url.join("/api/v1/packages").unwrap()
+    pub fn collect_packages_url(&self) -> Result<Url, ParseError> {
+        self.base_url.join("/api/v1/packages")
     }
 
-    pub fn collect_vulnerabilities_url(&self) -> Url {
-        self.base_url.join("/api/v1/vulnerabilities").unwrap()
+    pub fn collect_vulnerabilities_url(&self) -> Result<Url, ParseError> {
+        self.base_url.join("/api/v1/vulnerabilities")
     }
 }
 
@@ -49,22 +45,14 @@ pub struct RegisterResponse {
     pub guac_url: Url,
 }
 
-#[derive(Debug, Display)]
+#[derive(Debug, thiserror::Error)]
 pub enum Error {
-    Auth(trustification_auth::client::Error),
-    Http(reqwest::Error),
-}
-
-impl From<reqwest::Error> for Error {
-    fn from(inner: reqwest::Error) -> Self {
-        Self::Http(inner)
-    }
-}
-
-impl From<trustification_auth::client::Error> for Error {
-    fn from(inner: trustification_auth::client::Error) -> Self {
-        Self::Auth(inner)
-    }
+    #[error(transparent)]
+    Auth(#[from] trustification_auth::client::Error),
+    #[error(transparent)]
+    Http(#[from] reqwest::Error),
+    #[error(transparent)]
+    Url(#[from] url::ParseError),
 }
 
 impl CollectoristClient {
@@ -82,7 +70,7 @@ impl CollectoristClient {
     pub async fn collect_packages(&self, purls: Vec<String>) -> Result<CollectPackagesResponse, Error> {
         let response: CollectPackagesResponse = self
             .client
-            .post(self.collectorist_url.collect_packages_url())
+            .post(self.collectorist_url.collect_packages_url()?)
             .inject_token(self.provider.as_ref())
             .await?
             .json(&CollectPackagesRequest { purls })
@@ -96,7 +84,7 @@ impl CollectoristClient {
 
     pub async fn collect_vulnerabilities(&self, vuln_ids: Vec<String>) -> Result<(), anyhow::Error> {
         self.client
-            .post(self.collectorist_url.collect_vulnerabilities_url())
+            .post(self.collectorist_url.collect_vulnerabilities_url()?)
             .inject_token(self.provider.as_ref())
             .await?
             .json(&CollectVulnerabilitiesRequest { vuln_ids })
