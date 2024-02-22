@@ -33,8 +33,8 @@ resource "aws_security_group_rule" "allow-postgres" {
   from_port         = 5432
   to_port           = 5432
   type              = "ingress"
-  cidr_blocks       = [data.aws_vpc.cluster.cidr_block]
-  ipv6_cidr_blocks  = [data.aws_vpc.cluster.ipv6_cidr_block]
+  cidr_blocks       = data.aws_vpc.cluster.cidr_block != "" ? [data.aws_vpc.cluster.cidr_block] : []
+  ipv6_cidr_blocks  = data.aws_vpc.cluster.ipv6_cidr_block != "" ? [data.aws_vpc.cluster.ipv6_cidr_block] : []
 }
 
 variable "db-master-user" {
