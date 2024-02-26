@@ -1,5 +1,4 @@
 use crate::health::Check;
-use async_trait::async_trait;
 
 /// A check which always fails.
 ///
@@ -8,7 +7,6 @@ use async_trait::async_trait;
 /// a success (as no failed checks where present).
 pub struct UninitializedCheck;
 
-#[async_trait]
 impl Check for UninitializedCheck {
     type Error = &'static str;
 
