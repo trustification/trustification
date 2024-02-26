@@ -29,4 +29,4 @@ This documentation will use `trustification` as the default namespace for the in
 It is possible to use a different name, but you will need to adapt the following commands, replacing the use of
 `trustification` as a namespace with your actual namespace.
 
-NOTE: Not every time `trusification` is used as a Kubernetes namespace, be sure to not just search & replace all occasions of `trustification`.
+NOTE: Not every time `trustification` is used as a Kubernetes namespace, be sure to not just search & replace all occasions of `trustification`.
