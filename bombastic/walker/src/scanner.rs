@@ -10,6 +10,7 @@ use std::time::{Duration, SystemTime};
 use tokio::time::MissedTickBehavior;
 use tracing::{instrument, log};
 use url::Url;
+use walker_common::sender::HttpSenderOptions;
 use walker_common::{
     fetcher::{Fetcher, FetcherOptions},
     sender::{self, provider::TokenProvider},
@@ -56,42 +57,34 @@ impl Scanner {
         let since = Since::new(None::<SystemTime>, self.options.since_file.clone(), Default::default())?;
 
         let source: DispatchSource = match Url::parse(&self.options.source) {
-            Ok(url) => HttpSource {
+            Ok(url) => HttpSource::new(
                 url,
-                fetcher: Fetcher::new(FetcherOptions::default()).await?,
-                options: sbom_walker::source::HttpOptions {
-                    since: *since,
-                    keys: self.options.keys.clone(),
-                },
-            }
+                Fetcher::new(FetcherOptions::default()).await?,
+                sbom_walker::source::HttpOptions::new()
+                    .since(*since)
+                    .keys(self.options.keys.clone()),
+            )
             .into(),
             Err(_) => FileSource::new(&self.options.source, None)?.into(),
         };
 
         let sender = sender::HttpSender::new(
             self.options.provider.clone(),
-            sender::Options {
-                additional_root_certificates: self.options.additional_root_certificates.clone(),
-                ..sender::Options::default()
-            },
+            HttpSenderOptions::new().additional_root_certificates(self.options.additional_root_certificates.clone()),
         )
         .await?;
 
-        let storage = walker_extras::visitors::SendVisitor {
-            url: self.options.target.clone(),
-            sender,
-            retries: self.options.retries,
-            retry_delay: self.options.retry_delay,
-        };
+        let mut storage = walker_extras::visitors::SendVisitor::new(self.options.target.clone(), sender)
+            .retries(self.options.retries);
+        storage.retry_delay = self.options.retry_delay;
 
         let process = ProcessVisitor {
             enabled: self.options.fix_licenses,
             next: storage,
         };
 
-        let validation = ValidationVisitor::new(process).with_options(ValidationOptions {
-            validation_date: self.options.validation_date,
-        });
+        let validation = ValidationVisitor::new(process)
+            .with_options(ValidationOptions::new().validation_date(self.options.validation_date));
 
         let walker = Walker::new(source.clone());
         walker.walk(RetrievingVisitor::new(source.clone(), validation)).await?;

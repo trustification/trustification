@@ -12,7 +12,7 @@ use walker_common::utils::url::Urlify;
 pub struct ProcessVisitor<V> {
     /// if processing is enabled
     pub enabled: bool,
-    /// then next visitor to call
+    /// the next visitor to call
     pub next: V,
 }
 
