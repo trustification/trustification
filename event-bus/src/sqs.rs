@@ -1,17 +1,19 @@
 use crate::Event;
 use aws_config::{BehaviorVersion, SdkConfig};
-use aws_credential_types::credential_fn::provide_credentials_fn;
-use aws_credential_types::provider::SharedCredentialsProvider;
-use aws_sdk_sqs::config::Region;
+use aws_credential_types::{credential_fn::provide_credentials_fn, provider::SharedCredentialsProvider};
 use aws_sdk_sqs::{
-    config::Credentials, operation::receive_message::ReceiveMessageOutput, types::Message, Client, Error,
+    config::{Credentials, Region},
+    operation::receive_message::ReceiveMessageOutput,
+    types::Message,
+    Client, Error,
 };
 
-impl From<aws_sdk_sqs::Error> for crate::Error {
-    fn from(e: aws_sdk_sqs::Error) -> Self {
+impl From<Error> for crate::Error {
+    fn from(e: Error) -> Self {
         match e {
             #[allow(deprecated)]
-            aws_sdk_sqs::Error::Unhandled(_) => Self::Critical(e.to_string()),
+            Error::Unhandled(_) => Self::Critical(e.to_string()),
+            Error::QueueDoesNotExist(_) => Self::Critical(e.to_string()),
             _ => Self::Transient(e.to_string()),
         }
     }
