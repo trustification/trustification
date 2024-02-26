@@ -14,6 +14,7 @@ To install Trustification on a Kubernetes cluster, you will need:
 * To use `bash` as your shell
 * A Kubernetes cluster
 ** Including support for the `Ingress` resource
+** The Ingress operator serving publicly trusted certificates when using HTTPS
 ** Access to the cluster from your local machine, using `kubectl`
 ** DNS is set up in a way that, based on an "application domain", it is possible to build all other domains
 * Storage and events
