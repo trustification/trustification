@@ -1,5 +1,5 @@
 use csaf::{
-    definitions::{NoteCategory, ProductIdT},
+    definitions::{BranchesT, NoteCategory, ProductIdT, ProductIdentificationHelper},
     product_tree::ProductTree,
     Csaf,
 };
@@ -14,17 +14,16 @@ use time::OffsetDateTime;
 use trustification_api::search::SearchOptions;
 use trustification_index::{
     boost, create_date_query, create_float_query, create_string_query, create_text_query, field2date, field2float,
-    field2str, field2strvec, sort_by,
+    field2str, field2strvec,
+    metadata::doc2metadata,
+    sort_by,
     tantivy::{
         self,
         collector::TopDocs,
         doc,
-        query::{AllQuery, TermSetQuery},
-        query::{BooleanQuery, Query},
+        query::{AllQuery, BooleanQuery, Query, TermSetQuery},
         schema::{Field, Schema, Term, FAST, INDEXED, STORED, STRING, TEXT},
-        schema::{IndexRecordOption, TextFieldIndexing},
         store::ZstdCompressor,
-        tokenizer::{Language, LowerCaser, NgramTokenizer, RemoveLongFilter, Stemmer, TextAnalyzer, TokenizerManager},
         DateTime, DocAddress, DocId, IndexSettings, Score, Searcher, SegmentReader, SnippetGenerator,
     },
     term2query, Document, Error as SearchError, SearchQuery,
@@ -201,7 +200,7 @@ impl trustification_index::Index for Index {
             cve_severity_count,
         };
 
-        let explanation: Option<serde_json::Value> = if options.explain {
+        let explanation = if options.explain {
             match query.explain(searcher, doc_address) {
                 Ok(explanation) => serde_json::to_value(explanation).ok(),
                 Err(e) => {
@@ -231,20 +230,6 @@ impl trustification_index::WriteIndex for Index {
         "vex"
     }
 
-    fn tokenizers(&self) -> Result<TokenizerManager, SearchError> {
-        let manager = TokenizerManager::default();
-        let ngram = NgramTokenizer::all_ngrams(3, 8)?;
-        manager.register(
-            "ngram",
-            TextAnalyzer::builder(ngram)
-                .filter(RemoveLongFilter::limit(40))
-                .filter(LowerCaser)
-                .filter(Stemmer::new(Language::English))
-                .build(),
-        );
-        Ok(manager)
-    }
-
     fn settings(&self) -> IndexSettings {
         IndexSettings {
             docstore_compression: tantivy::store::Compressor::Zstd(ZstdCompressor::default()),
@@ -253,7 +238,7 @@ impl trustification_index::WriteIndex for Index {
     }
 
     fn parse_doc(&self, data: &[u8]) -> Result<Csaf, SearchError> {
-        serde_json::from_slice::<csaf::Csaf>(data).map_err(|e| SearchError::DocParser(e.to_string()))
+        serde_json::from_slice::<Csaf>(data).map_err(|e| SearchError::DocParser(e.to_string()))
     }
 
     fn index_doc(&self, id: &str, csaf: &Csaf) -> Result<Vec<(String, Document)>, SearchError> {
@@ -266,7 +251,7 @@ impl trustification_index::WriteIndex for Index {
         let mut documents: Vec<(String, Document)> = Vec::new();
 
         let mut document = doc!(
-            self.fields.advisory_id => id,
+            self.fields.advisory_id => id.to_uppercase(),
             self.fields.advisory_status => document_status,
             self.fields.advisory_title => csaf.document.title.clone(),
         );
@@ -327,7 +312,7 @@ impl trustification_index::WriteIndex for Index {
                 }
 
                 if let Some(cve) = &vuln.cve {
-                    document.add_text(self.fields.cve_id, cve);
+                    document.add_text(self.fields.cve_id, cve.to_uppercase());
                 }
 
                 if let Some(scores) = &vuln.scores {
@@ -507,20 +492,11 @@ impl Index {
     pub fn new() -> Self {
         let mut schema = Schema::builder();
         let indexed_timestamp = schema.add_date_field("indexed_timestamp", STORED);
-        let text_options = TextFieldIndexing::default()
-            .set_tokenizer("ngram")
-            .set_index_option(IndexRecordOption::WithFreqsAndPositions);
 
         let advisory_id = schema.add_text_field("advisory_id", STRING | FAST | STORED);
         let advisory_status = schema.add_text_field("advisory_status", STRING);
-        let advisory_title = schema.add_text_field(
-            "advisory_title",
-            (TEXT | STORED).set_indexing_options(text_options.clone()),
-        );
-        let advisory_description = schema.add_text_field(
-            "advisory_description",
-            (TEXT | STORED).set_indexing_options(text_options.clone()),
-        );
+        let advisory_title = schema.add_text_field("advisory_title", TEXT | STORED);
+        let advisory_description = schema.add_text_field("advisory_description", TEXT | STORED);
         let advisory_revision = schema.add_text_field("advisory_revision", STRING | STORED);
         let advisory_severity = schema.add_text_field("advisory_severity", STRING | STORED);
         let advisory_initial = schema.add_date_field("advisory_initial_date", INDEXED);
@@ -528,9 +504,8 @@ impl Index {
         let advisory_severity_score = schema.add_f64_field("advisory_severity_score", FAST);
 
         let cve_id = schema.add_text_field("cve_id", STRING | FAST | STORED);
-        let cve_title = schema.add_text_field("cve_title", (TEXT | STORED).set_indexing_options(text_options.clone()));
-        let cve_description =
-            schema.add_text_field("cve_description", (TEXT | STORED).set_indexing_options(text_options));
+        let cve_title = schema.add_text_field("cve_title", TEXT | STORED);
+        let cve_description = schema.add_text_field("cve_description", TEXT | STORED);
         let cve_discovery = schema.add_date_field("cve_discovery_date", INDEXED);
         let cve_release = schema.add_date_field("cve_release_date", INDEXED | STORED);
         let cve_severity = schema.add_text_field("cve_severity", STRING | FAST);
@@ -584,7 +559,7 @@ impl Index {
             Vulnerabilities::Id(value) => boost(
                 Box::new(TermSetQuery::new(vec![Term::from_field_text(
                     self.fields.advisory_id,
-                    value,
+                    &value.to_uppercase(),
                 )])),
                 ID_WEIGHT,
             ),
@@ -592,7 +567,7 @@ impl Index {
             Vulnerabilities::Cve(value) => boost(
                 Box::new(TermSetQuery::new(vec![Term::from_field_text(
                     self.fields.cve_id,
-                    value,
+                    &value.to_uppercase(),
                 )])),
                 CVE_ID_WEIGHT,
             ),
@@ -660,9 +635,6 @@ impl Index {
         }
     }
 }
-
-use csaf::definitions::{BranchesT, ProductIdentificationHelper};
-use trustification_index::metadata::doc2metadata;
 
 fn find_product_identifier<'m, F: Fn(&'m ProductIdentificationHelper) -> Option<R>, R>(
     branches: &'m BranchesT,
@@ -789,7 +761,17 @@ mod tests {
     }
 
     fn search(index: &IndexStore<Index>, query: &str) -> (Vec<SearchHit>, usize) {
-        index.search(query, 0, 10000, SearchOptions::default()).unwrap()
+        index
+            .search(
+                query,
+                0,
+                10000,
+                SearchOptions {
+                    explain: true,
+                    ..Default::default()
+                },
+            )
+            .unwrap()
     }
 
     #[tokio::test]
@@ -804,6 +786,14 @@ mod tests {
     async fn test_free_form_simple_primary_2() {
         assert_search(|index| {
             let result = search(&index, "CVE-2023-0286");
+            assert_eq!(result.0.len(), 1);
+        });
+    }
+
+    #[tokio::test]
+    async fn test_free_form_simple_primary_lowercase_2() {
+        assert_search(|index| {
+            let result = search(&index, "cve-2023-0286");
             assert_eq!(result.0.len(), 1);
         });
     }
@@ -888,6 +878,40 @@ mod tests {
 
             let result = search(&index, "release:2023-03-22");
             assert_eq!(result.0.len(), 0);
+        });
+    }
+
+    #[tokio::test]
+    async fn test_title_case_insensitive() {
+        assert_search(|index| {
+            let result = search(&index, r#""microcode" in:title"#);
+            assert_eq!(result.0.len(), 1);
+        });
+        assert_search(|index| {
+            let result = search(&index, r#""Microcode" in:title"#);
+            assert_eq!(result.0.len(), 1);
+        });
+        assert_search(|index| {
+            let result = search(&index, r#""MICROCODE" in:title"#);
+            assert_eq!(result.0.len(), 1);
+        });
+    }
+
+    /// Test if we can find a word containing special characters in title or description
+    #[tokio::test]
+    #[ignore]
+    async fn test_title_special() {
+        assert_search(|index| {
+            let result = search(&index, r#"microcode_ctl in:title"#);
+            assert_eq!(result.0.len(), 1);
+        });
+        assert_search(|index| {
+            let result = search(&index, r#"Microcode_Ctl in:title"#);
+            assert_eq!(result.0.len(), 1);
+        });
+        assert_search(|index| {
+            let result = search(&index, r#"MICROCODE_CTL in:title"#);
+            assert_eq!(result.0.len(), 1);
         });
     }
 
@@ -1033,48 +1057,6 @@ mod tests {
             assert_eq!(result.0[2].document.advisory_id, "RHSA-2023:1441");
             assert_eq!(result.0[3].document.advisory_id, "RHSA-2021:3029");
             assert!(result.0[0].document.advisory_date > result.0[1].document.advisory_date);
-        });
-    }
-
-    #[tokio::test]
-    async fn test_ngrams() {
-        assert_search(|index| {
-            let result = search(&index, "title:openssl");
-            assert_eq!(result.0.len(), 2);
-
-            let result = search(&index, "title:open");
-            assert_eq!(result.0.len(), 2);
-
-            let result = search(&index, "title:ssl");
-            assert_eq!(result.0.len(), 2);
-        });
-    }
-
-    #[tokio::test]
-    async fn test_ngrams_scope() {
-        assert_search(|index| {
-            let result = search(&index, "openssl in:title");
-            assert_eq!(result.0.len(), 2);
-
-            let result = search(&index, "open in:title");
-            assert_eq!(result.0.len(), 2);
-
-            let result = search(&index, "ssl in:title");
-            assert_eq!(result.0.len(), 2);
-        });
-    }
-
-    #[tokio::test]
-    async fn test_ngrams_nocase() {
-        assert_search(|index| {
-            let result = search(&index, "Openssl in:title");
-            assert_eq!(result.0.len(), 2);
-
-            let result = search(&index, "Open in:title");
-            assert_eq!(result.0.len(), 2);
-
-            let result = search(&index, "SSL in:title");
-            assert_eq!(result.0.len(), 2);
         });
     }
 
