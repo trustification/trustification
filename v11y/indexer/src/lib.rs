@@ -1,11 +1,13 @@
 use std::process::ExitCode;
 
 use std::sync::Arc;
+use std::time::Duration;
 use tokio::sync::{mpsc, Mutex};
 use tokio::task::block_in_place;
 use trustification_event_bus::EventBusConfig;
 use trustification_index::{IndexConfig, IndexStore, WriteIndex};
 use trustification_indexer::{actix::configure, Indexer, IndexerStatus, ReindexMode};
+use trustification_infrastructure::health::checks::FailureRate;
 use trustification_infrastructure::{Infrastructure, InfrastructureConfig};
 use trustification_storage::{Storage, StorageConfig};
 
@@ -63,6 +65,10 @@ impl Run {
                         bus.create(&[self.stored_topic.as_str()]).await?;
                     }
 
+                    let check = FailureRate::new(Duration::from_secs(1), 1, 5, "Index status");
+                    let state = check.handle();
+                    context.health.liveness.register("index_state", check).await;
+
                     let mut indexer = Indexer {
                         indexes: vec![index],
                         storage,
@@ -75,6 +81,7 @@ impl Run {
                         commands: command_receiver,
                         command_sender: c,
                         reindex: self.reindex,
+                        state,
                     };
                     indexer.run().await
                 },

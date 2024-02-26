@@ -7788,6 +7788,7 @@ dependencies = [
  "openssl",
  "opentelemetry",
  "opentelemetry-jaeger",
+ "parking_lot",
  "prometheus",
  "reqwest",
  "serde",
