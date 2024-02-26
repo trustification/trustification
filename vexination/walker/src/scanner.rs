@@ -1,17 +1,15 @@
-use std::collections::HashSet;
-use std::iter::FromIterator;
-use std::path::PathBuf;
-use std::sync::Arc;
-use std::time::{Duration, SystemTime};
-
 use csaf_walker::retrieve::RetrievingVisitor;
 use csaf_walker::source::{DispatchSource, FileSource, HttpSource};
 use csaf_walker::validation::ValidationVisitor;
 use csaf_walker::visitors::filter::{FilterConfig, FilteringVisitor};
 use csaf_walker::walker::Walker;
+use std::path::PathBuf;
+use std::sync::Arc;
+use std::time::{Duration, SystemTime};
 use tokio::time::MissedTickBehavior;
 use tracing::{instrument, log};
 use url::Url;
+use walker_common::sender::HttpSenderOptions;
 use walker_common::{
     fetcher::{Fetcher, FetcherOptions},
     sender::{self, provider::TokenProvider},
@@ -57,44 +55,35 @@ impl Scanner {
     pub async fn run_once(&self) -> anyhow::Result<()> {
         let since = Since::new(None::<SystemTime>, self.options.since_file.clone(), Default::default())?;
         let source: DispatchSource = match Url::parse(&self.options.source) {
-            Ok(url) => HttpSource {
+            Ok(url) => HttpSource::new(
                 url,
-                fetcher: Fetcher::new(FetcherOptions::default()).await?,
-                options: csaf_walker::source::HttpOptions { since: *since },
-            }
+                Fetcher::new(FetcherOptions::default()).await?,
+                csaf_walker::source::HttpOptions::new().since(*since),
+            )
             .into(),
             Err(_) => FileSource::new(&self.options.source, None)?.into(),
         };
 
         let sender = sender::HttpSender::new(
             self.options.provider.clone(),
-            sender::Options {
-                additional_root_certificates: self.options.additional_root_certificates.clone(),
-                ..sender::Options::default()
-            },
+            HttpSenderOptions::new().additional_root_certificates(self.options.additional_root_certificates.clone()),
         )
         .await?;
 
-        let storage = walker_extras::visitors::SendVisitor {
-            url: self.options.target.clone(),
-            sender,
-            retries: self.options.retries,
-            retry_delay: self.options.retry_delay,
-        };
+        let mut storage = walker_extras::visitors::SendVisitor::new(self.options.target.clone(), sender)
+            .retries(self.options.retries);
+        storage.retry_delay = self.options.retry_delay;
 
-        let validation = ValidationVisitor::new(storage).with_options(ValidationOptions {
-            validation_date: self.options.validation_date,
-        });
+        let validation = ValidationVisitor::new(storage)
+            .with_options(ValidationOptions::new().validation_date(self.options.validation_date));
 
         let retriever = RetrievingVisitor::new(source.clone(), validation);
 
         let filtered = FilteringVisitor {
             visitor: retriever,
-            config: FilterConfig {
-                ignored_distributions: HashSet::from_iter(self.options.ignore_distributions.clone().into_iter()),
-                ignored_prefixes: vec![],
-                only_prefixes: self.options.required_prefixes.clone(),
-            },
+            config: FilterConfig::new()
+                .ignored_distributions(self.options.ignore_distributions.clone())
+                .only_prefixes(self.options.required_prefixes.clone()),
         };
 
         let walker = Walker::new(source.clone());
