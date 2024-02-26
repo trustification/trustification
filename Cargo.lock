@@ -2121,9 +2121,9 @@ dependencies = [
 
 [[package]]
 name = "csaf-walker"
-version = "0.6.0-alpha.6"
+version = "0.6.0-alpha.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f55ae0f7a5422567c2fd37c8af2ef71d6770ce3f9b89f3371003ff267955ca3c"
+checksum = "c0e70d128e0f8b39a236d07acb43b9bf0f3227c04266e7d4c3c7ba39ddac7df4"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2134,6 +2134,7 @@ dependencies = [
  "digest 0.10.7",
  "filetime",
  "futures",
+ "html-escape",
  "humantime",
  "log",
  "percent-encoding",
@@ -5762,9 +5763,9 @@ dependencies = [
 
 [[package]]
 name = "sbom-walker"
-version = "0.6.0-alpha.6"
+version = "0.6.0-alpha.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "689dc1dc60f3dad4c59921393a36276177b9b4f184916f31782a040b08e3b36b"
+checksum = "a1d78b9ad34d18f79ea291cc108b0a46e21aba40eae186854e30e8725580d5bf"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -8386,9 +8387,9 @@ dependencies = [
 
 [[package]]
 name = "walker-common"
-version = "0.6.0-alpha.6"
+version = "0.6.0-alpha.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "68792c84b081097284ba1295ba811fd3064979b29813e1ec543538619137c29b"
+checksum = "8940e1df614f17b3a1a7b4631cebde0e193feacb796a509333c5085ce818682b"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -8419,9 +8420,9 @@ dependencies = [
 
 [[package]]
 name = "walker-extras"
-version = "0.6.0-alpha.6"
+version = "0.6.0-alpha.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "712ee4caf230dca176ac0fc52424d322a800fedda067ae44298521bac8ead9ff"
+checksum = "44820372e1d1304fa470eca47159dfb24f74bb59df92a1f2b3c3492c6ac172d0"
 dependencies = [
  "anyhow",
  "async-trait",
