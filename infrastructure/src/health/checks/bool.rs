@@ -1,5 +1,4 @@
 use crate::health::Check;
-use async_trait::async_trait;
 use std::marker::PhantomData;
 use std::sync::atomic::{AtomicBool, Ordering};
 
@@ -33,7 +32,6 @@ where
     }
 }
 
-#[async_trait]
 impl<'s, T, F> Check for AtomicBoolStateCheck<'s, T, F>
 where
     T: Send + Sync + 's,

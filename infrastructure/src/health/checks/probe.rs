@@ -1,5 +1,4 @@
 use crate::health::Check;
-use async_trait::async_trait;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
@@ -32,7 +31,6 @@ impl Probe {
     }
 }
 
-#[async_trait]
 impl Check for ProbeCheck {
     type Error = String;
 
