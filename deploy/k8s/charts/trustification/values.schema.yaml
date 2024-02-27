@@ -480,7 +480,7 @@ properties:
   keycloak:
     $ref: "#/definitions/Feature"
 
-  postgres:
+  postgresql:
     $ref: "#/definitions/Feature"
 
 # all the definitions
