@@ -26,5 +26,5 @@ Arguments (dict):
   value: /etc/tls/tls.key
 {{- end }}
 - name: GUAC_PROMETHEUS_ADDR
-  value: "{{ include "trustification.application.infrastructure.port" . }}"
+  value: {{ include "trustification.application.infrastructure.port" . | quote }}
 {{- end }}
