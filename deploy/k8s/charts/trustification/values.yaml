@@ -108,6 +108,7 @@ modules:
   bombasticWalker:
     enabled: true
     image: {}
+    infrastructure: {}
     sources: {}
     rust: {}
 
@@ -155,6 +156,7 @@ modules:
   vexinationWalker:
     enabled: true
     image: {}
+    infrastructure: {}
     sources: {}
     rust: {}
 

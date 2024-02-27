@@ -364,6 +364,7 @@ properties:
           - $ref: "#/definitions/Image"
           - $ref: "#/definitions/Application"
           - $ref: "#/definitions/RustApplication"
+          - $ref: "#/definitions/Infrastructure"
           - $ref: "#/definitions/Metrics"
           - $ref: "#/definitions/Tracing"
           - $ref: "#/definitions/Storage"
@@ -387,6 +388,7 @@ properties:
         allOf:
           - $ref: "#/definitions/Feature"
           - $ref: "#/definitions/Image"
+          - $ref: "#/definitions/Infrastructure"
           - $ref: "#/definitions/Metrics"
           - $ref: "#/definitions/Application"
           - $ref: "#/definitions/Scalable"
@@ -421,6 +423,7 @@ properties:
         allOf:
           - $ref: "#/definitions/Feature"
           - $ref: "#/definitions/Image"
+          - $ref: "#/definitions/Infrastructure"
           - $ref: "#/definitions/Application"
           - $ref: "#/definitions/RustApplication"
           - type: object
@@ -442,6 +445,7 @@ properties:
         allOf:
           - $ref: "#/definitions/Feature"
           - $ref: "#/definitions/Image"
+          - $ref: "#/definitions/Infrastructure"
           - $ref: "#/definitions/Application"
           - $ref: "#/definitions/RustApplication"
           - type: object
