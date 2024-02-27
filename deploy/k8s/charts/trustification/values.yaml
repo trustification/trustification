@@ -113,6 +113,7 @@ modules:
     tracing: {}
     metrics: {}
     rust: {}
+    crdaUrl: https://rhda.rhcloud.com/api/v4/analysis
 
   spogUi:
     enabled: true
