@@ -1,4 +1,23 @@
 {{/*
+Evaluate the infrastructure port.
+
+Arguments: (dict)
+  * root - .
+  * module - module object
+*/}}
+{{- define "trustification.application.infrastructure.port"}}
+{{- if hasKey .module "infrastructure" }}
+{{- if hasKey .module.infrastructure "port" }}
+{{- .module.infrastructure.port }}
+{{- else }}
+{{- .root.Values.infrastructure.port }}
+{{- end }}
+{{- else -}}
+9010
+{{- end }}
+{{- end }}
+
+{{/*
 Additional env-vars for configuring the infrastructure endpoint.
 
 Arguments (dict):
@@ -9,7 +28,7 @@ Arguments (dict):
 - name: INFRASTRUCTURE_ENABLED
   value: "true"
 - name: INFRASTRUCTURE_BIND
-  value: "[::]:"{{ .Values.infrastructure.port }}
+  value: "[::]:{{- include "trustification.application.infrastructure.port" . }}"
 
 {{- if eq ( include "trustification.application.tracing.enabled" . ) "true" }}
 - name: TRACING
@@ -32,7 +51,7 @@ Arguments (dict):
   * module - module object
 */}}
 {{- define "trustification.application.infrastructure.podPorts" }}
-- containerPort: {{ .Values.infrastructure.port }}
+- containerPort: {{ include "trustification.application.infrastructure.port" . }}
   protocol: TCP
   name: infra
 {{- end}}
@@ -49,12 +68,12 @@ livenessProbe:
   initialDelaySeconds: 2
   httpGet:
     path: /health/live
-    port: {{ .Values.infrastructure.port }}
+    port: {{ include "trustification.application.infrastructure.port" . }}
 
 readinessProbe:
   initialDelaySeconds: 2
   httpGet:
     path: /health/ready
-    port: {{ .Values.infrastructure.port }}
+    port: {{ include "trustification.application.infrastructure.port" . }}
 
 {{- end }}

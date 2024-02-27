@@ -92,6 +92,16 @@ properties:
     allOf:
       - $ref: "#/definitions/Feature"
 
+  infrastructure:
+    type: object
+    additionalProperties: false
+
+    properties:
+      port:
+        type: integer
+        description: |
+          Port on which infrastructure services are exposed.
+
   metrics:
     type: object
     additionalProperties: false
@@ -153,6 +163,7 @@ properties:
           - $ref: "#/definitions/Scalable"
           - $ref: "#/definitions/RustApplication"
           - $ref: "#/definitions/Authenticator"
+          - $ref: "#/definitions/Infrastructure"
           - $ref: "#/definitions/Metrics"
           - $ref: "#/definitions/Tracing"
           - $ref: "#/definitions/HttpApplication"
@@ -181,6 +192,7 @@ properties:
           - $ref: "#/definitions/Image"
           - $ref: "#/definitions/Application"
           - $ref: "#/definitions/RustApplication"
+          - $ref: "#/definitions/Infrastructure"
           - $ref: "#/definitions/Metrics"
           - $ref: "#/definitions/Tracing"
           - $ref: "#/definitions/Index"
@@ -204,6 +216,7 @@ properties:
           - $ref: "#/definitions/Scalable"
           - $ref: "#/definitions/RustApplication"
           - $ref: "#/definitions/Authenticator"
+          - $ref: "#/definitions/Infrastructure"
           - $ref: "#/definitions/Metrics"
           - $ref: "#/definitions/Tracing"
           - $ref: "#/definitions/HttpApplication"
@@ -254,6 +267,7 @@ properties:
           - $ref: "#/definitions/Scalable"
           - $ref: "#/definitions/RustApplication"
           - $ref: "#/definitions/Authenticator"
+          - $ref: "#/definitions/Infrastructure"
           - $ref: "#/definitions/Metrics"
           - $ref: "#/definitions/Tracing"
           - $ref: "#/definitions/HttpApplication"
@@ -275,6 +289,7 @@ properties:
           - $ref: "#/definitions/Application"
           - $ref: "#/definitions/Scalable"
           - $ref: "#/definitions/RustApplication"
+          - $ref: "#/definitions/Infrastructure"
           - $ref: "#/definitions/Metrics"
           - $ref: "#/definitions/Tracing"
           - $ref: "#/definitions/Index"
@@ -306,6 +321,7 @@ properties:
           - $ref: "#/definitions/Scalable"
           - $ref: "#/definitions/RustApplication"
           - $ref: "#/definitions/Authenticator"
+          - $ref: "#/definitions/Infrastructure"
           - $ref: "#/definitions/Metrics"
           - $ref: "#/definitions/Tracing"
           - $ref: "#/definitions/HttpApplication"
@@ -327,6 +343,7 @@ properties:
           - $ref: "#/definitions/Application"
           - $ref: "#/definitions/Scalable"
           - $ref: "#/definitions/RustApplication"
+          - $ref: "#/definitions/Infrastructure"
           - $ref: "#/definitions/Metrics"
           - $ref: "#/definitions/Tracing"
           - $ref: "#/definitions/Index"
@@ -370,6 +387,7 @@ properties:
         allOf:
           - $ref: "#/definitions/Feature"
           - $ref: "#/definitions/Image"
+          - $ref: "#/definitions/Metrics"
           - $ref: "#/definitions/Application"
           - $ref: "#/definitions/Scalable"
 
@@ -504,6 +522,18 @@ definitions:
         type: boolean
         description: |
           Allow enabling backtraces in Rust based application, by setting the value of `RUST_BACKTRACE` to `1`.
+
+  Infrastructure:
+    type: object
+    properties:
+      infrastructure:
+        $ref: "#/definitions/InfrastructureConfig"
+
+  InfrastructureConfig:
+    type: object
+    properties:
+      port:
+        $ref: "#/definitions/ValueOrRef"
 
   Metrics:
     type: object
