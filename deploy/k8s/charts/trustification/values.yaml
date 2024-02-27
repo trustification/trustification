@@ -42,6 +42,9 @@ oidc:
 serviceMonitor:
   enabled: false
 
+infrastructure:
+  port: 9010
+
 metrics:
   enabled: false
 
@@ -85,6 +88,7 @@ modules:
     enabled: true
     ingress: {}
     image: {}
+    infrastructure: {}
     tracing: {}
     metrics: {}
     rust: {}
@@ -96,6 +100,7 @@ modules:
   bombasticIndexer:
     enabled: true
     image: {}
+    infrastructure: {}
     tracing: {}
     metrics: {}
     rust: {}
@@ -103,12 +108,14 @@ modules:
   bombasticWalker:
     enabled: true
     image: {}
+    infrastructure: {}
     sources: {}
     rust: {}
 
   spogApi:
     enabled: true
     image: {}
+    infrastructure: {}
     ingress: {}
     tracing: {}
     metrics: {}
@@ -129,6 +136,7 @@ modules:
     enabled: true
     ingress: {}
     image: {}
+    infrastructure: {}
     tracing: {}
     metrics: {}
     rust: {}
@@ -136,6 +144,7 @@ modules:
   vexinationIndexer:
     enabled: true
     image: {}
+    infrastructure: {}
     tracing: {}
     metrics: {}
     rust: {}
@@ -147,6 +156,7 @@ modules:
   vexinationWalker:
     enabled: true
     image: {}
+    infrastructure: {}
     sources: {}
     rust: {}
 
@@ -154,6 +164,7 @@ modules:
     enabled: true
     ingress: {}
     image: {}
+    infrastructure: {}
     tracing: {}
     metrics: {}
     rust: {}
@@ -161,6 +172,7 @@ modules:
   v11yIndexer:
     enabled: true
     image: {}
+    infrastructure: {}
     tracing: {}
     metrics: {}
     rust: {}
@@ -168,6 +180,7 @@ modules:
   v11yWalker:
     enabled: true
     image: {}
+    infrastructure: {}
     tracing: {}
     metrics: {}
     rust: {}
@@ -176,6 +189,8 @@ modules:
   guacGraphql:
     enabled: true
     image: {}
+    infrastructure: {}
+    metrics: {}
 
   guacCollectsub:
     enabled: false
