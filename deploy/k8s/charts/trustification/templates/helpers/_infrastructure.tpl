@@ -6,15 +6,8 @@ Arguments: (dict)
   * module - module object
 */}}
 {{- define "trustification.application.infrastructure.port"}}
-{{- if hasKey .module "infrastructure" }}
-{{- if hasKey .module.infrastructure "port" }}
-{{- .module.infrastructure.port }}
-{{- else }}
-{{- .root.Values.infrastructure.port }}
-{{- end }}
-{{- else -}}
-9010
-{{- end }}
+{{- $infra := merge (deepCopy .module.infrastructure ) .root.Values.infrastructure }}
+{{- $infra.port | default 9010 -}}
 {{- end }}
 
 {{/*
