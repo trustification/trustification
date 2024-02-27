@@ -1,7 +1,6 @@
 pub mod checks;
 
 use crate::health::checks::UninitializedCheck;
-use async_trait::async_trait;
 use futures::{
     future::TryFutureExt,
     stream::{iter, StreamExt},
@@ -21,7 +20,7 @@ pub struct HealthChecks {
     pub readiness: Checks,
 }
 
-/// State state of a check
+/// State of a check
 #[derive(Copy, Clone, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum State {
@@ -61,15 +60,13 @@ impl CheckResults {
     }
 }
 
-#[async_trait]
 pub trait Check: Send + Sync {
     type Error: std::fmt::Display;
 
     /// Run the check. If it returns an error, the check is considered failed/down.
-    async fn run(&self) -> Result<(), Self::Error>;
+    fn run(&self) -> impl Future<Output = Result<(), Self::Error>> + Send;
 }
 
-#[async_trait]
 impl<F, Fut, E> Check for F
 where
     F: Fn() -> Fut + Send + Sync,
