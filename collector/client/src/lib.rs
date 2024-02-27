@@ -3,6 +3,7 @@ use trustification_auth::client::{TokenInjector, TokenProvider};
 
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
+use url::ParseError;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct CollectPackagesRequest {
@@ -38,12 +39,12 @@ impl CollectorUrl {
         Self { base_url }
     }
 
-    pub fn packages_url(&self) -> Url {
-        self.base_url.join("packages").unwrap()
+    pub fn packages_url(&self) -> Result<Url, ParseError> {
+        self.base_url.join("packages")
     }
 
-    pub fn vulnerabilities_url(&self) -> Url {
-        self.base_url.join("vulnerabilities").unwrap()
+    pub fn vulnerabilities_url(&self) -> Result<Url, ParseError> {
+        self.base_url.join("vulnerabilities")
     }
 }
 
@@ -71,7 +72,7 @@ impl CollectorClient {
     ) -> Result<CollectPackagesResponse, anyhow::Error> {
         let response = self
             .client
-            .post(self.url.packages_url())
+            .post(self.url.packages_url()?)
             .inject_token(self.provider.as_ref())
             .await?
             .json(&request)

@@ -78,7 +78,7 @@ impl Injector for HeaderInjector {
 
 /// Try getting the sampling rate from the environment variables
 fn sampling_from_env() -> Option<f64> {
-    std::env::var_os("OTEL_TRACES_SAMPLER_ARG").and_then(|s| s.to_str().map(|s| s.parse::<f64>().ok()).unwrap())
+    std::env::var_os("OTEL_TRACES_SAMPLER_ARG").and_then(|s| s.to_str().and_then(|s| s.parse::<f64>().ok()))
 }
 
 fn sampler() -> opentelemetry::sdk::trace::Sampler {
@@ -115,7 +115,9 @@ fn init_jaeger(name: &str) {
     println!("Using Jaeger tracing.");
     println!("{:#?}", pipeline);
 
-    let tracer = pipeline.install_batch(opentelemetry::runtime::Tokio).unwrap();
+    let tracer = pipeline
+        .install_batch(opentelemetry::runtime::Tokio)
+        .expect("unable to setup tracing pipeline");
 
     let formatting_layer = tracing_subscriber::fmt::Layer::default();
 

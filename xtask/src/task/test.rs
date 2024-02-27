@@ -1,5 +1,6 @@
 use crate::common::project_root;
 use crate::config::TestConfig;
+use anyhow::anyhow;
 use globset::Glob;
 use reqwest::blocking::get;
 use std::fs;
@@ -99,7 +100,7 @@ impl Test {
             return Ok(());
         }
 
-        sh.change_dir(project_root());
+        sh.change_dir(project_root().ok_or_else(|| anyhow!("failed to get project root"))?);
         if let Err(e) = Self::setup_coverage(&sh, &mut config) {
             eprintln!(
                 "Error: {e}\n\n\
