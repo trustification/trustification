@@ -9,9 +9,6 @@ image:
   pullPolicy: IfNotPresent
   version: c7faf57c87b809466e5334c7c84734392f93bd15
 
-infrastructure:
-  port: 9010
-
 guac:
   image:
     name: guac
@@ -44,6 +41,9 @@ oidc:
 
 serviceMonitor:
   enabled: false
+
+infrastructure:
+  port: 9010
 
 metrics:
   enabled: false
@@ -88,6 +88,7 @@ modules:
     enabled: true
     ingress: {}
     image: {}
+    infrastructure: {}
     tracing: {}
     metrics: {}
     rust: {}
@@ -99,6 +100,7 @@ modules:
   bombasticIndexer:
     enabled: true
     image: {}
+    infrastructure: {}
     tracing: {}
     metrics: {}
     rust: {}
@@ -112,6 +114,7 @@ modules:
   spogApi:
     enabled: true
     image: {}
+    infrastructure: {}
     ingress: {}
     tracing: {}
     metrics: {}
@@ -131,6 +134,7 @@ modules:
     enabled: true
     ingress: {}
     image: {}
+    infrastructure: {}
     tracing: {}
     metrics: {}
     rust: {}
@@ -138,6 +142,7 @@ modules:
   vexinationIndexer:
     enabled: true
     image: {}
+    infrastructure: {}
     tracing: {}
     metrics: {}
     rust: {}
@@ -156,6 +161,7 @@ modules:
     enabled: true
     ingress: {}
     image: {}
+    infrastructure: {}
     tracing: {}
     metrics: {}
     rust: {}
@@ -163,6 +169,7 @@ modules:
   v11yIndexer:
     enabled: true
     image: {}
+    infrastructure: {}
     tracing: {}
     metrics: {}
     rust: {}
@@ -170,6 +177,7 @@ modules:
   v11yWalker:
     enabled: true
     image: {}
+    infrastructure: {}
     tracing: {}
     metrics: {}
     rust: {}
@@ -178,6 +186,8 @@ modules:
   guacGraphql:
     enabled: true
     image: {}
+    infrastructure: {}
+    metrics: {}
 
   guacCollectsub:
     enabled: false

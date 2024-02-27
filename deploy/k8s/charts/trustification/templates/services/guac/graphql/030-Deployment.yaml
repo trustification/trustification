@@ -62,14 +62,7 @@ spec:
           workingDir: "/guac"
           env:
             {{- include "trustification.postgres.envVars" ( dict "root" . "database" .Values.guac.database "prefix" "TC_" ) | nindent 12 }}
-            {{- if eq ( include "trustification.openshift.useServiceCa" . ) "true" }}
-            - name: GUAC_GQL_TLS_CERT_FILE
-              value: /etc/tls/tls.crt
-            - name: GUAC_GQL_TLS_KEY_FILE
-              value: /etc/tls/tls.key
-            {{- end }}
-            - name: GUAC_PROMETHEUS_ADDR
-              value: {{ .Values.infrastructure.port }}
+            {{- include "trustification.guac.graphql.envVars" $mod | nindent 12 }}
 
           volumeMounts:
             {{- include "trustification.application.httpServerVolumesMounts" $mod | nindent 12 }}
