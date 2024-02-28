@@ -1,6 +1,6 @@
 mod inspect;
 
-use crate::pages::scanner::parse;
+use crate::pages::scanner::{parse, validate};
 use inspect::Inspect;
 use patternfly_yew::prelude::*;
 use spog_ui_components::upload_file::UploadFile;
@@ -34,6 +34,14 @@ pub fn sbom_uploader() -> Html {
         }
     });
 
+    let onvalidate_warnings = use_callback((), |data: Rc<String>, ()| {
+        let result = validate(data.as_bytes());
+        match result {
+            Ok(_sbom) => Ok(data),
+            Err(err) => Err(format!("Warning: {err}")),
+        }
+    });
+
     // allow resetting the form
     let onreset = use_callback(content.clone(), move |_, content| {
         content.set(None);
@@ -56,6 +64,7 @@ pub fn sbom_uploader() -> Html {
                             submit_btn_text="Upload SBOM"
                             {onsubmit}
                             {onvalidate}
+                            {onvalidate_warnings}
                         />
                     </PageSection>
                 </>

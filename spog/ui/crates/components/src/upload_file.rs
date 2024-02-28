@@ -69,6 +69,9 @@ pub struct UploadFileProperties {
 
     #[prop_or(default_validate())]
     pub onvalidate: Callback<Rc<String>, Result<Rc<String>, String>>,
+
+    #[prop_or(default_validate())]
+    pub onvalidate_warnings: Callback<Rc<String>, Result<Rc<String>, String>>,
 }
 
 fn default_validate() -> Callback<Rc<String>, Result<Rc<String>, String>> {
@@ -80,6 +83,7 @@ pub fn upload_file(props: &UploadFileProperties) -> Html {
     let node = use_node_ref();
 
     let initial = use_state_eq(|| true);
+    let warning_message = use_state_eq(|| None);
 
     let drop_content = use_state(|| DropContent::None);
 
@@ -104,7 +108,7 @@ pub fn upload_file(props: &UploadFileProperties) -> Html {
     );
 
     let processing = use_async_with_cloned_deps(
-        |(content, onvalidate)| async move {
+        |(content, onvalidate, onvalidate_warnings, warning_message)| async move {
             let content = match &*content {
                 DropContent::Files(files) => {
                     let mut content = String::new();
@@ -133,10 +137,17 @@ pub fn upload_file(props: &UploadFileProperties) -> Html {
                 Err((Default::default(), "Requires a valid file".to_string()))
             } else {
                 // return success, as validated JSON
+                let warning = onvalidate_warnings.emit(content.clone()).err().map(|e| e.to_string());
+                warning_message.set(warning);
                 onvalidate.emit(content.clone()).map_err(|err| (content, err))
             }
         },
-        (drop_content.clone(), props.onvalidate.clone()),
+        (
+            drop_content.clone(),
+            props.onvalidate.clone(),
+            props.onvalidate_warnings.clone(),
+            warning_message.clone(),
+        ),
     );
 
     let onclear = use_callback(drop_content.clone(), |_: MouseEvent, drop_content| {
@@ -247,6 +258,10 @@ pub fn upload_file(props: &UploadFileProperties) -> Html {
                 if let Some(helper_text) = helper_text {
                     <HelperText id="file-help-text" live_region=true>
                         { helper_text }
+                    </HelperText>
+                } else if let Some(warning_message) = &*warning_message {
+                    <HelperText live_region=true>
+                        <HelperTextItem icon={HelperTextItemIcon::Visible} variant={HelperTextItemVariant::Warning}> { warning_message } </HelperTextItem>
                     </HelperText>
                 }
             </FlexItem>
