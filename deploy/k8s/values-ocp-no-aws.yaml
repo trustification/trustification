@@ -110,18 +110,6 @@ oidc:
       clientSecret:
         value: ca48053c-3b82-4650-a98d-4cace7f2d567
 
-postgres:
-  enabled: true
-  auth:
-    postgresPassword: postgres123456
-    username: trustification
-    password: postgres1234
-  primary:
-    podSecurityContext:
-      enabled: false
-    containerSecurityContext:
-      enabled: false
-
 kafka:
   enabled: true
   kraft:

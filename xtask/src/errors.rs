@@ -32,7 +32,7 @@ impl fmt::Display for Error {
 
 fn hint(tool: &String) -> String {
     match tool.as_str() {
-        TestConfig::GRCOV | TestConfig::NPM | TestConfig::TRUNK_NG | TestConfig::CHROME => {
+        TestConfig::GRCOV | TestConfig::NPM | TestConfig::TRUNK | TestConfig::CHROME => {
             format!("\n\nHint: To get {tool}, run {}.", install_cmd(tool))
         }
         TestConfig::RUSTUP => {
@@ -48,7 +48,7 @@ fn hint(tool: &String) -> String {
 
 fn install_cmd(tool: &String) -> String {
     match tool.as_str() {
-        TestConfig::GRCOV | TestConfig::TRUNK_NG => format!("`cargo install {tool}`"),
+        TestConfig::GRCOV | TestConfig::TRUNK => format!("`cargo install {tool}`"),
         TestConfig::NPM | TestConfig::CHROME => format!(
             "`dnf install {}` (Fedora/CentOS/RHEL)",
             match tool.as_str() {

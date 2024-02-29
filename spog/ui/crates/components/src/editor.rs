@@ -35,7 +35,7 @@ pub fn readonly_editor(props: &ReadonlyEditorProperties) -> Html {
     });
 
     let model = use_memo(props.content.clone(), |content| {
-        TextModel::create(content, Some("json"), None).unwrap()
+        TextModel::create(content, Some("json"), None).expect("JSON type won't fail")
     });
 
     html!(

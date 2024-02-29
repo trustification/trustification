@@ -30,7 +30,7 @@ impl TestConfig {
     pub const LLVM_COV: &'static str = "llvm-cov";
     pub const GRCOV: &'static str = "grcov";
     pub const NPM: &'static str = "npm";
-    pub const TRUNK_NG: &'static str = "trunk-ng";
+    pub const TRUNK: &'static str = "trunk";
     pub const CHROME: &'static str = "chromedriver";
 
     pub fn new() -> Self {

@@ -1,3 +1,4 @@
+use crate::server::vulnerability::ingest_vulnerability;
 use actix_web::{web, ResponseError};
 use derive_more::{Display, Error, From};
 use std::sync::Arc;
@@ -43,13 +44,18 @@ pub fn config(
     cfg: &mut web::ServiceConfig,
     auth: Option<Arc<Authenticator>>,
     swagger_ui_oidc: Option<Arc<SwaggerUiOidc>>,
+    publish_limit: usize,
 ) {
     cfg.service(
         web::scope("/api/v1")
             .wrap(new_auth!(auth))
-            .service(vulnerability::ingest_vulnerability)
+            .service(
+                web::resource("/vulnerability")
+                    .post(ingest_vulnerability)
+                    .app_data(web::PayloadConfig::new(publish_limit))
+                    .app_data(web::JsonConfig::default().limit(publish_limit)),
+            )
             .service(vulnerability::get_cve)
-            //.service(vulnerability::get_by_alias),
             .service(search::search_cve),
     )
     .service(swagger_ui_with_auth(ApiDoc::openapi(), swagger_ui_oidc));

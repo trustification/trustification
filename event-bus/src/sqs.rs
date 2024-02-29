@@ -1,17 +1,19 @@
 use crate::Event;
 use aws_config::{BehaviorVersion, SdkConfig};
-use aws_credential_types::credential_fn::provide_credentials_fn;
-use aws_credential_types::provider::SharedCredentialsProvider;
-use aws_sdk_sqs::config::Region;
+use aws_credential_types::{credential_fn::provide_credentials_fn, provider::SharedCredentialsProvider};
 use aws_sdk_sqs::{
-    config::Credentials, operation::receive_message::ReceiveMessageOutput, types::Message, Client, Error,
+    config::{Credentials, Region},
+    operation::receive_message::ReceiveMessageOutput,
+    types::{error::UnsupportedOperation, Message},
+    Client, Error,
 };
 
-impl From<aws_sdk_sqs::Error> for crate::Error {
-    fn from(e: aws_sdk_sqs::Error) -> Self {
+impl From<Error> for crate::Error {
+    fn from(e: Error) -> Self {
         match e {
             #[allow(deprecated)]
-            aws_sdk_sqs::Error::Unhandled(_) => Self::Critical(e.to_string()),
+            Error::Unhandled(_) => Self::Critical(e.to_string()),
+            Error::QueueDoesNotExist(_) => Self::Critical(e.to_string()),
             _ => Self::Transient(e.to_string()),
         }
     }
@@ -59,7 +61,13 @@ impl SqsEventBus {
     }
 
     pub(crate) async fn send(&self, topic: &str, data: &[u8]) -> Result<(), Error> {
-        let s = core::str::from_utf8(data).unwrap();
+        let s = core::str::from_utf8(data).map_err(|_| {
+            Error::UnsupportedOperation(
+                UnsupportedOperation::builder()
+                    .message("unable to encode data as string")
+                    .build(),
+            )
+        })?;
         self.client
             .send_message()
             .queue_url(topic)

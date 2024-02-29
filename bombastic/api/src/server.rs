@@ -6,7 +6,7 @@ use actix_web::{
     error::{self, PayloadError},
     get, guard,
     http::{
-        header::{self, Accept, AcceptEncoding, ContentType, HeaderValue, CONTENT_ENCODING},
+        header::{self, Accept, AcceptEncoding, ContentType, Encoding, HeaderValue, CONTENT_ENCODING},
         Method, StatusCode,
     },
     web, HttpRequest, HttpResponse, Responder,
@@ -62,7 +62,10 @@ impl error::ResponseError for Error {
         match self {
             Self::InvalidContentType => res.insert_header(Accept::json()),
             Self::InvalidContentEncoding => res.insert_header(AcceptEncoding(
-                ACCEPT_ENCODINGS.iter().map(|s| s.parse().unwrap()).collect(),
+                ACCEPT_ENCODINGS
+                    .iter()
+                    .map(|s| s.parse().expect("known values must parse"))
+                    .collect(),
             )),
             _ => &mut res,
         }
@@ -123,18 +126,16 @@ async fn query_sbom(
     let storage = &state.sbom_storage;
     // determine the encoding of the stored object, if any
     let encoding = storage.get_head(&key).await.ok().and_then(|head| {
-        head.content_encoding.and_then(|ref e| {
-            accept_encoding
-                .negotiate([e.parse().unwrap()].iter())
-                .map(|s| s.to_string())
-                .filter(|x| x == e)
-        })
+        head.content_encoding
+            .as_ref()
+            .and_then(|e| e.parse::<Encoding>().ok())
+            .and_then(|e| accept_encoding.negotiate([&e].into_iter()).filter(|x| x == &e))
     });
     match encoding {
         // if client's accept-encoding includes S3 encoding, return encoded stream
         Some(enc) => Ok(HttpResponse::Ok()
             .content_type(ContentType::json())
-            .insert_header((header::CONTENT_ENCODING, enc))
+            .insert_header((header::CONTENT_ENCODING, enc.to_string()))
             .streaming(storage.get_encoded_stream(&key).await.map_err(Error::Storage)?)),
         // otherwise, decode the stream
         None => Ok(HttpResponse::Ok()

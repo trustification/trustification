@@ -25,3 +25,12 @@ Arguments: (dict)
 {{- $_ := required .msg .value }}
 {{- include "trustification.common.envVarValue" .value }}
 {{- end }}
+
+{{/*
+Byte-size as a string value.
+
+Arguments: int or string
+*/}}
+{{- define "trustification.common.byteSizeValue" }}
+{{ . | quote }}
+{{- end }}

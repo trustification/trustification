@@ -55,6 +55,10 @@ fn is_supported_package(purl: &str) -> bool {
     }
 }
 
+pub fn parse_and_validate(data: &[u8]) -> Result<SBOM, anyhow::Error> {
+    parse(data).and_then(|_| validate(data))
+}
+
 pub fn parse(data: &[u8]) -> Result<SBOM, anyhow::Error> {
     let sbom = SBOM::parse(data)?;
 
@@ -64,6 +68,29 @@ pub fn parse(data: &[u8]) -> Result<SBOM, anyhow::Error> {
             // re-parse to check for the spec version
             let json = serde_json::from_slice::<Value>(data).ok();
             let spec_version = json.as_ref().and_then(|json| json["specVersion"].as_str());
+
+            match spec_version {
+                Some("1.3") | Some("1.4") => {}
+                Some(other) => bail!("Unsupported CycloneDX version: {other}"),
+                None => bail!("Unable to detect CycloneDX version"),
+            }
+        }
+        SBOM::SPDX(_bom) => {
+            let _json = serde_json::from_slice::<Value>(data).ok();
+        }
+    }
+
+    Ok(sbom)
+}
+
+pub fn validate(data: &[u8]) -> Result<SBOM, anyhow::Error> {
+    let sbom = SBOM::parse(data)?;
+
+    #[allow(clippy::single_match)]
+    match &sbom {
+        SBOM::CycloneDX(_bom) => {
+            // re-parse to check for the spec version
+            let json = serde_json::from_slice::<Value>(data).ok();
 
             let supported_packages = json.as_ref().map(|json| {
                 if let Some(components) = json["components"].as_array() {
@@ -77,13 +104,11 @@ pub fn parse(data: &[u8]) -> Result<SBOM, anyhow::Error> {
                 }
             });
 
-            match (spec_version, supported_packages) {
-                (Some("1.3"), Some(true)) | (Some("1.4"), Some(true)) => {}
-                (Some("1.3"), Some(false)) | (Some("1.4"), Some(false)) => bail!(
-                    "Unsupported packages detected. Supported packages: 'maven', 'gradle', 'npm', 'gomodules', 'pip'"
+            match supported_packages {
+                Some(false) => bail!(
+                    "The SBOM contains package type(s) not supported by Dependency Analytics. The Dependency Analytics report may be unavailable for this SBOM."
                 ),
-                (Some(other), _) => bail!("Unsupported CycloneDX version: {other}"),
-                (None, _) => bail!("Unable to detect CycloneDX version"),
+                _ => {}
             }
         }
         SBOM::SPDX(_bom) => {
@@ -106,7 +131,7 @@ pub fn parse(data: &[u8]) -> Result<SBOM, anyhow::Error> {
             match supported_packages {
                 Some(true) => {}
                 _ => bail!(
-                    "Unsupported packages detected. Supported packages: 'maven', 'gradle', 'npm', 'gomodules', 'pip'"
+                    "The SBOM contains package type(s) not supported by Dependency Analytics. The Dependency Analytics report may be unavailable for this SBOM."
                 ),
             }
         }
@@ -122,13 +147,15 @@ pub fn scanner() -> Html {
     let onsubmit = use_callback(content.clone(), |data, content| content.set(Some(data)));
 
     let sbom = use_memo(content.clone(), |content| {
-        content
-            .as_ref()
-            .and_then(|data| parse(data.as_bytes()).ok().map(|sbom| (data.clone(), Rc::new(sbom))))
+        content.as_ref().and_then(|data| {
+            parse_and_validate(data.as_bytes())
+                .ok()
+                .map(|sbom| (data.clone(), Rc::new(sbom)))
+        })
     });
 
     let onvalidate = use_callback(analytics.clone(), |data: Rc<String>, analytics| {
-        let result = parse(data.as_bytes());
+        let result = parse_and_validate(data.as_bytes());
         analytics.track(ParseOutcome(&result));
         match result {
             Ok(_sbom) => Ok(data),
@@ -189,7 +216,7 @@ fn common_header(props: &CommonHeaderProperties) -> Html {
                     <Content>
                         <Title>{"Scan an SBOM"}</Title>
                         <p>
-                            {"Load an existing CycloneDX 1.3, 1.4 or SPDX 2.2 file"}
+                            {"Load an existing CycloneDX 1.4 or SPDX 2.2 file"}
                             if let Some(url) = &config.scanner.documentation_url {
                                 {" or "}
                                 <a

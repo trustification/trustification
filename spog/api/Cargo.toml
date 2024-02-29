@@ -37,8 +37,7 @@ tracing = "0.1"
 url = "2"
 urlencoding = "2.1.2"
 utoipa = { version = "4", features = ["actix_extras", "yaml", "time"] }
-utoipa-swagger-ui = { version = "4", features = ["actix-web"] }
-uuid = { version = "1", features = ["v4"] }
+utoipa-swagger-ui = { version = "6", features = ["actix-web"] }
 v11y-model = { path = "../../v11y/model" }
 
 spog-model = { path = "../model" }
@@ -55,6 +54,7 @@ trustification-common = { path = "../../common" }
 trustification-infrastructure = { path = "../../infrastructure" }
 v11y-client = { path = "../../v11y/client" }
 trustification-version = { path = "../../version", features = ["actix-web"] }
+time = "0.3.31"
 
 [build-dependencies]
 trustification-version = { path = "../../version", features = ["build"] }

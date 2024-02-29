@@ -4,6 +4,7 @@ use spog_model::prelude::{SbomReport, SbomSummary};
 use spog_ui_common::error::*;
 use std::rc::Rc;
 use trustification_api::search::SearchResult;
+use uuid::Uuid;
 use yew_oauth2::prelude::*;
 
 #[allow(unused)]
@@ -24,11 +25,16 @@ impl SBOMService {
     }
 
     pub async fn upload(&self, data: impl Into<Body>) -> Result<String, ApiError> {
-        let url = self.backend.join(Endpoint::Api, "/api/v1/sbom/upload")?;
+        let id = Uuid::new_v4().to_string();
+
+        let url = self
+            .backend
+            .join(Endpoint::Bombastic, &format!("/api/v1/sbom?id={id}"))?;
 
         let response = self
             .client
             .post(url)
+            .header("Content-Type", "application/json")
             .latest_access_token(&self.access_token)
             .body(data)
             .send()

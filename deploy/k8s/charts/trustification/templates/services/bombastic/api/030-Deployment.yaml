@@ -27,7 +27,10 @@ spec:
 
       containers:
         - name: service
-          {{ include "trustification.common.defaultImage" $mod | nindent 10 }}
+          {{- include "trustification.common.defaultImage" $mod | nindent 10 }}
+          {{- include "trustification.application.container" $mod | nindent 10 }}
+          {{- include "trustification.application.infrastructure.probes" $mod | nindent 10 }}
+
           command: ["/trust"]
           args:
             - "bombastic"
@@ -64,14 +67,16 @@ spec:
             - name: INDEX_SYNC_INTERVAL
               value: {{ include "trustification.index.syncInterval" ( set (deepCopy $mod) "storage" .Values.bombastic ) }}
 
+            {{- with $mod.module.uploadLimit }}
+            - name: PUBLISH_LIMIT
+              value: {{ include "trustification.common.byteSizeValue" . }}
+            {{- end }}
+
           ports:
             {{- include "trustification.application.infrastructure.podPorts" $mod | nindent 12 }}
             - containerPort: 8080
               name: endpoint
               protocol: TCP
-
-          {{- include "trustification.application.container" $mod | nindent 10 }}
-          {{- include "trustification.application.infrastructure.probes" $mod | nindent 10 }}
 
           volumeMounts:
             {{- include "trustification.application.httpServerVolumesMounts" $mod | nindent 12 }}

@@ -30,8 +30,9 @@ spec:
       containers:
         - name: service
           {{- include "trustification.guac.defaultImage" $mod | nindent 10 }}
-          command: ["/opt/guac/guacone"]
+          {{- include "trustification.application.container" $mod | nindent 10 }}
 
+          command: ["/opt/guac/guacone"]
           args:
             - collect
             - s3
@@ -48,7 +49,5 @@ spec:
               value: {{ include "trustification.tls.http.protocol" $mod }}://guac-graphql.{{ .Release.Namespace }}.svc.cluster.local/query
             - name: GUAC_CSUB_ADDR
               value: guac-collectsub.{{ .Release.Namespace }}.svc.cluster.local:2782
-
-          {{- include "trustification.application.container" $mod | nindent 10 }}
 
 {{- end }}

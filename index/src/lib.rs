@@ -5,43 +5,47 @@
 
 pub mod metadata;
 
+pub use sort::*;
+
 mod s3dir;
 mod sort;
 
-pub use sort::*;
+// Re-export to align versions
+pub use tantivy;
+pub use tantivy::schema::Document;
 
+use bytesize::ByteSize;
+use parking_lot::RwLock;
 use prometheus::{
     histogram_opts, opts, register_histogram_with_registry, register_int_counter_with_registry,
     register_int_gauge_with_registry, Histogram, IntCounter, IntGauge, Registry,
 };
 use s3dir::S3Directory;
-use sikula::prelude::{Ordered, Primary, Search};
+use sha2::{Digest, Sha256};
+use sikula::{
+    lir::PartialOrdered,
+    prelude::{Ordered, Primary, Search},
+};
 use std::{
+    borrow::Cow,
     fmt::{Debug, Display},
     ops::Bound,
     path::{Path, PathBuf},
+    sync::Arc,
+    time::Duration,
 };
-use trustification_api::search::SearchOptions;
-use trustification_storage::{Storage, StorageConfig};
-// Re-export to align versions
-use bytesize::ByteSize;
-use log::{debug, warn};
-use sha2::{Digest, Sha256};
-use sikula::lir::PartialOrdered;
-use std::sync::{Arc, RwLock};
-use std::time::Duration;
-pub use tantivy;
-pub use tantivy::schema::Document;
 use tantivy::{
     collector::TopDocs,
     directory::{MmapDirectory, INDEX_WRITER_LOCK},
-    query::{AllQuery, BooleanQuery, BoostQuery, Occur, Query, RangeQuery, RegexQuery, TermQuery},
+    query::{AllQuery, BooleanQuery, BoostQuery, FuzzyTermQuery, Occur, Query, RangeQuery, RegexQuery, TermQuery},
     schema::*,
     tokenizer::TokenizerManager,
     DateTime, Directory, DocAddress, Index as SearchIndex, IndexSettings, Order, Searcher,
 };
 use time::{OffsetDateTime, UtcOffset};
 use tokio::{spawn, sync::oneshot};
+use trustification_api::search::SearchOptions;
+use trustification_storage::{Storage, StorageConfig};
 
 /// Configuration for the index.
 #[derive(Clone, Debug, clap::Parser)]
@@ -604,7 +608,7 @@ where
     /// runs an internal loop, counting documents and syncing that to the metrics
     async fn run_index_count(inner: Arc<RwLock<SearchIndex>>, metrics: Metrics, mut shutdown: oneshot::Receiver<()>) {
         fn count(inner: &RwLock<SearchIndex>) -> Option<u64> {
-            let count = inner.read().ok()?.reader().ok()?;
+            let count = inner.read().reader().ok()?;
             Some(count.searcher().num_docs())
         }
 
@@ -729,7 +733,7 @@ where
     pub async fn sync(&self, storage: &Storage) -> Result<(), Error> {
         if let Some(index_dir) = &self.index_dir {
             let data = storage.get_index(self.index.name()).await?;
-            let mut index_dir = index_dir.write().unwrap();
+            let mut index_dir = index_dir.write();
             match index_dir.sync(
                 self.index.schema(),
                 self.index.settings(),
@@ -737,7 +741,7 @@ where
                 &data,
             ) {
                 Ok(Some(index)) => {
-                    *self.inner.write().unwrap() = index;
+                    *self.inner.write() = index;
                     log::debug!("Index replaced");
                 }
                 Ok(None) => {
@@ -758,9 +762,9 @@ where
     pub fn reset(&mut self) -> Result<(), Error> {
         log::info!("Resetting index");
         if let Some(index_dir) = &self.index_dir {
-            let mut index_dir = index_dir.write().unwrap();
+            let mut index_dir = index_dir.write();
             let index = index_dir.reset(self.index.settings(), self.index.schema(), self.index.tokenizers()?)?;
-            let mut inner = self.inner.write().unwrap();
+            let mut inner = self.inner.write();
             *inner = index;
         }
         Ok(())
@@ -782,8 +786,8 @@ where
         if let Some(index_dir) = &self.index_dir {
             writer.commit()?;
 
-            let mut dir = index_dir.write().unwrap();
-            let mut inner = self.inner.write().unwrap();
+            let mut dir = index_dir.write();
+            let mut inner = self.inner.write();
             inner.directory_mut().sync_directory().map_err(Error::Io)?;
             let lock = inner.directory_mut().acquire_lock(&INDEX_WRITER_LOCK);
 
@@ -834,7 +838,7 @@ where
     }
 
     pub fn writer(&mut self) -> Result<IndexWriter, Error> {
-        let writer = self.inner.write().unwrap().writer(self.index_writer_memory_bytes)?;
+        let writer = self.inner.write().writer(self.index_writer_memory_bytes)?;
         Ok(IndexWriter {
             writer,
             metrics: self.metrics.clone(),
@@ -857,7 +861,7 @@ impl<INDEX: Index> IndexStore<INDEX> {
             return Err(Error::InvalidLimitParameter(limit));
         }
 
-        let inner = self.inner.read().unwrap();
+        let inner = self.inner.read();
         let reader = inner.reader()?;
         let searcher = reader.searcher();
 
@@ -963,16 +967,16 @@ impl<INDEX: Index> IndexStore<INDEX> {
             for hit in top_docs {
                 match self.index.process_hit(hit.1, hit.0, &searcher, &query.query, &options) {
                     Ok(value) => {
-                        debug!("HIT: {:?}", value);
+                        log::debug!("HIT: {:?}", value);
                         hits.push(value);
                     }
                     Err(e) => {
-                        warn!("Error processing hit {:?}: {:?}", hit, e);
+                        log::warn!("Error processing hit {:?}: {:?}", hit, e);
                     }
                 }
             }
 
-            debug!("Filtered to {}", hits.len());
+            log::debug!("Filtered to {}", hits.len());
 
             latency.observe_duration();
             Ok((hits, count))
@@ -1063,19 +1067,45 @@ pub fn create_date_query(schema: &Schema, field: Field, value: &Ordered<time::Of
 
 /// Convert a sikula primary to a tantivy query for string fields
 pub fn create_string_query(field: Field, primary: &Primary<'_>) -> Box<dyn Query> {
+    create_string_query_case(field, primary, Case::Sensitive)
+}
+
+#[derive(Copy, Clone, PartialEq, Eq, Debug, Default)]
+pub enum Case {
+    #[default]
+    Sensitive,
+    Lowercase,
+    Uppercase,
+}
+
+impl Case {
+    pub fn to_value<'a>(&self, value: &'a str) -> Cow<'a, str> {
+        match self {
+            Self::Sensitive => value.into(),
+            Self::Lowercase => value.to_lowercase().into(),
+            Self::Uppercase => value.to_uppercase().into(),
+        }
+    }
+}
+
+/// Convert a sikula primary to a tantivy query for string fields
+pub fn create_string_query_case(field: Field, primary: &Primary<'_>, case: Case) -> Box<dyn Query> {
     match primary {
-        Primary::Equal(value) => Box::new(TermQuery::new(Term::from_field_text(field, value), Default::default())),
+        Primary::Equal(value) => Box::new(TermQuery::new(
+            Term::from_field_text(field, case.to_value(value).as_ref()),
+            Default::default(),
+        )),
         Primary::Partial(value) => {
             // Note: This could be expensive so consider alternatives
-            let pattern = format!(".*{}.*", value);
+            let pattern = format!(".*{}.*", case.to_value(value));
             let mut queries: Vec<Box<dyn Query>> = Vec::new();
             if let Ok(query) = RegexQuery::from_pattern(&pattern, field) {
                 queries.push(Box::new(query));
             } else {
-                warn!("Unable to partial query from {}", pattern);
+                log::warn!("Unable to partial query from {}", pattern);
             }
             queries.push(Box::new(TermQuery::new(
-                Term::from_field_text(field, value),
+                Term::from_field_text(field, case.to_value(value).as_ref()),
                 Default::default(),
             )));
             Box::new(BooleanQuery::union(queries))
@@ -1090,9 +1120,10 @@ pub fn create_text_query(field: Field, primary: &Primary<'_>) -> Box<dyn Query> 
             Term::from_field_text(field, &value.to_lowercase()),
             Default::default(),
         )),
-        Primary::Partial(value) => Box::new(TermQuery::new(
+        Primary::Partial(value) => Box::new(FuzzyTermQuery::new(
             Term::from_field_text(field, &value.to_lowercase()),
-            Default::default(),
+            2,
+            true,
         )),
     }
 }
@@ -1135,7 +1166,7 @@ where
 
     let query = move |lower, upper| {
         if fields.len() == 1 {
-            query_field(fields.pop().unwrap(), lower, upper)
+            query_field(fields.pop().expect("just checked it was one"), lower, upper)
         } else {
             let mut query_terms = Vec::new();
             for field in fields {
@@ -1315,7 +1346,7 @@ mod tests {
 
         writer.commit().unwrap();
 
-        assert_eq!(store.search("is", 0, 10, SearchOptions::default(),).unwrap().1, 1);
+        assert_eq!(store.search("is", 0, 10, SearchOptions::default()).unwrap().1, 1);
     }
 
     #[tokio::test]
@@ -1330,13 +1361,13 @@ mod tests {
 
         writer.commit().unwrap();
 
-        assert_eq!(store.search("is", 0, 10, SearchOptions::default(),).unwrap().1, 1);
+        assert_eq!(store.search("is", 0, 10, SearchOptions::default()).unwrap().1, 1);
 
         let writer = store.writer().unwrap();
         writer.delete_document(store.index_as_mut(), "foo");
         writer.commit().unwrap();
 
-        assert_eq!(store.search("is", 0, 10, SearchOptions::default(),).unwrap().1, 0);
+        assert_eq!(store.search("is", 0, 10, SearchOptions::default()).unwrap().1, 0);
     }
 
     #[tokio::test]
@@ -1365,7 +1396,7 @@ mod tests {
 
         writer.commit().unwrap();
 
-        assert_eq!(store.search("is", 0, 10, SearchOptions::default(),).unwrap().1, 1);
+        assert_eq!(store.search("is", 0, 10, SearchOptions::default()).unwrap().1, 1);
 
         // Duplicates also removed if separate commits.
         let mut writer = store.writer().unwrap();
@@ -1375,7 +1406,7 @@ mod tests {
 
         writer.commit().unwrap();
 
-        assert_eq!(store.search("is", 0, 10, SearchOptions::default(),).unwrap().1, 1);
+        assert_eq!(store.search("is", 0, 10, SearchOptions::default()).unwrap().1, 1);
     }
 
     #[tokio::test]

@@ -335,7 +335,7 @@ impl S3FileWatcher {
     }
 
     fn compute_checksum(bucket: &Bucket, path: &Path) -> Result<u32, io::Error> {
-        match bucket.get_object_blocking(path.to_str().unwrap()) {
+        match bucket.get_object_blocking(path.to_string_lossy()) {
             Ok(response) => {
                 let data = response.to_vec();
 

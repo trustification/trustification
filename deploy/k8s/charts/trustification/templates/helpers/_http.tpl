@@ -18,6 +18,16 @@ Arguments (dict):
   value: "/etc/tls/tls.crt"
 {{ end }}
 
+{{- with .module.requestLimit }}
+- name: HTTP_SERVER_REQUEST_LIMIT
+  value: {{ include "trustification.common.byteSizeValue" . }}
+{{- end }}
+
+{{- with .module.jsonLimit }}
+- name: HTTP_SERVER_JSON_LIMIT
+  value: {{ include "trustification.common.byteSizeValue" . }}
+{{- end }}
+
 {{- end }}
 
 {{/*

@@ -1,3 +1,5 @@
+#![allow(clippy::unwrap_used)]
+
 use integration_tests::{get_response, id, BombasticContext, Urlifier};
 use reqwest::StatusCode;
 use serde_json::{json, Value};

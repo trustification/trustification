@@ -1,7 +1,8 @@
+use anyhow::{bail, Context};
 use std::path::PathBuf;
 use std::process::ExitCode;
 
-use reqwest::header::HeaderMap;
+use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
 use reqwest::StatusCode;
 use trustification_auth::client::OpenIdTokenProviderConfigArguments;
 use trustification_auth::client::TokenInjector;
@@ -10,7 +11,7 @@ use trustification_infrastructure::endpoint;
 use trustification_infrastructure::endpoint::Endpoint;
 use url::Url;
 
-/// Uplaod documents to trustification
+/// Upload documents to trustification
 #[derive(clap::Subcommand, Debug)]
 pub enum Upload {
     Bombastic(BombasticUpload),
@@ -131,12 +132,19 @@ async fn upload(
     let headers: HeaderMap = headers
         .iter()
         .map(|s| {
-            let mut parts = s.splitn(2, ':');
-            let key = parts.next().unwrap().trim();
-            let value = parts.next().unwrap().trim();
-            (key.parse().unwrap(), value.parse().unwrap())
+            let Some((key, value)) = s.split_once(':') else {
+                bail!("Header value must be in the format of 'key:value'");
+            };
+
+            Ok((
+                key.parse::<HeaderName>()
+                    .with_context(|| format!("Unable to parse '{key}' as header name"))?,
+                value
+                    .parse::<HeaderValue>()
+                    .with_context(|| format!("Unable to parse '{value}' as header value"))?,
+            ))
         })
-        .collect();
+        .collect::<Result<_, _>>()?;
     builder = builder.headers(headers);
     builder = builder.body(data);
 

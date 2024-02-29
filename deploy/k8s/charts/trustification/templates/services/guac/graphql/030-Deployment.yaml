@@ -47,6 +47,8 @@ spec:
       containers:
         - name: service
           {{- include "trustification.guac.defaultImage" $mod | nindent 10 }}
+          {{- include "trustification.application.container" $mod | nindent 10 }}
+
           command: ["/bin/sh"]
 
           # not sure why --db-migrate=false has to be a single argument, but it won't work otherwise
@@ -60,23 +62,17 @@ spec:
           workingDir: "/guac"
           env:
             {{- include "trustification.postgres.envVars" ( dict "root" . "database" .Values.guac.database "prefix" "TC_" ) | nindent 12 }}
-            {{- if eq ( include "trustification.openshift.useServiceCa" . ) "true" }}
-            - name: GUAC_GQL_TLS_CERT_FILE
-              value: /etc/tls/tls.crt
-            - name: GUAC_GQL_TLS_KEY_FILE
-              value: /etc/tls/tls.key
-            {{- end }}
+            {{- include "trustification.guac.graphql.envVars" $mod | nindent 12 }}
 
           volumeMounts:
             {{- include "trustification.application.httpServerVolumesMounts" $mod | nindent 12 }}
-
-          {{- include "trustification.application.container" $mod | nindent 10 }}
 
           livenessProbe:
             tcpSocket:
               port: 8080
 
           ports:
+            {{- include "trustification.application.infrastructure.podPorts" $mod | nindent 12 }}
             - containerPort: 8080
               protocol: TCP
               name: endpoint

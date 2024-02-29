@@ -11,6 +11,12 @@ home: https://trustification.io
 # **NOTE:** Because of Helm dependency hell, all those versions must be in sync! In case of transient dependencies,
 # like keycloak -> postgres -> common, one might end up with different versions of those transient dependencies. If
 # that's the case, then it might just crash and burn, as Helm can't handle different versions of the same chart.
+
+# **NOTE:** Also because of Helm dependency Hell, it is not possible to enable keycloak and postgresql at the same
+# time. The reason is that both installations will create the same resources, creating a conflict in the deployment.
+# When enabling keycloak, you automatically enable postgresql too. I order to use postgresql when keycloak is disabled,
+# you can still enable postgresql independently.
+
 dependencies:
   - name: keycloak
     repository: https://charts.bitnami.com/bitnami

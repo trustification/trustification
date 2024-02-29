@@ -8,5 +8,4 @@ target/
 spog/ui/node_modules/
 *.db
 # the next two are claimed redundant, but they aren't
-bommer/bommer-ui/target/
 spog/ui/target/

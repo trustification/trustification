@@ -11,6 +11,7 @@ use tokio::time::Instant;
 use tokio::{select, sync::Mutex};
 use trustification_event_bus::{Error as BusError, EventBus};
 use trustification_index::{IndexStore, IndexWriter, WriteIndex};
+use trustification_infrastructure::health::checks::FailureRateHandle;
 use trustification_storage::ContinuationToken;
 use trustification_storage::{EventType, Storage};
 
@@ -60,6 +61,7 @@ pub struct Indexer<'a, DOC> {
     pub commands: Receiver<IndexerCommand>,
     pub command_sender: Sender<IndexerCommand>,
     pub reindex: ReindexMode,
+    pub state: FailureRateHandle,
 }
 
 impl<'a, DOC> Indexer<'a, DOC>
@@ -200,6 +202,7 @@ where
 
                         }
                         Err(e) => {
+                            self.state.increment();
                             log::warn!("Error taking index snapshot: {:?}", e);
                         }
                     }

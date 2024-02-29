@@ -1,3 +1,5 @@
+#![allow(clippy::unwrap_used)]
+
 mod bom;
 mod config;
 mod provider;

@@ -1,5 +1,5 @@
 use crate::scanner::{Options, Scanner};
-use anyhow::anyhow;
+use anyhow::{anyhow, Context};
 use clap::{arg, command, ArgAction, Args};
 use std::path::PathBuf;
 use std::process::ExitCode;
@@ -98,14 +98,18 @@ impl Run {
                     let keys = self
                         .signing_key
                         .into_iter()
-                        .chain(self.devmode.then(|| Url::parse(DEVMODE_KEY).unwrap()))
+                        .chain(
+                            self.devmode
+                                .then(|| Url::parse(DEVMODE_KEY).context("failed to parse devmode key"))
+                                .transpose()?,
+                        )
                         .map(|key| key.into())
                         .collect();
 
                     let validation_date: Option<SystemTime> = match (self.policy_date, self.v3_signatures) {
                         (_, true) => Some(SystemTime::from(
                             Date::from_calendar_date(2007, Month::January, 1)
-                                .unwrap()
+                                .expect("valid date that must parse")
                                 .midnight()
                                 .assume_offset(UtcOffset::UTC),
                         )),

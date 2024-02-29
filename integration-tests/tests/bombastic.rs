@@ -1,3 +1,5 @@
+#![allow(clippy::unwrap_used)]
+
 use integration_tests::{
     get_response, id, wait_for_package_search_result, wait_for_sbom_search_result, BombasticContext, Urlifier,
 };

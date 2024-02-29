@@ -64,7 +64,7 @@ impl VexService {
     }
 
     pub async fn upload(&self, data: impl Into<Body>) -> Result<String, ApiError> {
-        let url = self.backend.join(Endpoint::Api, "/api/v1/advisory/upload")?;
+        let url = self.backend.join(Endpoint::Vexination, "/api/v1/vex")?;
 
         let response = self
             .client

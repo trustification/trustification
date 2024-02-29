@@ -1,8 +1,7 @@
-use std::{net::TcpListener, process::ExitCode, sync::Arc, time::Duration};
-
 use actix_web::web;
 use bytesize::ByteSize;
 use prometheus::Registry;
+use std::{net::TcpListener, process::ExitCode, sync::Arc, time::Duration};
 use tokio::task::block_in_place;
 use trustification_auth::{
     auth::AuthConfigArguments,

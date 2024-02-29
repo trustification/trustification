@@ -519,7 +519,7 @@ impl trustification_index::WriteIndex for Index {
         self.schema
             .get_field("package_url")
             .map(|f| Term::from_field_text(f, id))
-            .unwrap()
+            .expect("the document schema defines this field")
     }
 }
 

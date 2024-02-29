@@ -12,8 +12,12 @@ helm dependency update charts/trustification-infrastructure
 
 ## Updating the JSON schema
 
-Unfortunately Helm requires the JSON schema to be authored in JSON. To make that a little bit easier, we author it
-in YAML and then convert it to JSON. For example using:
+The JSON schema must cover all values in the values file used by the Helm chart. The only exception are sections in
+the values which are intended to be used by other charts, re-using the same values file. An example of this is the
+`.global` section.
+
+Unfortunately, Helm requires the JSON schema to be authored in JSON. To make that a little bit easier, we author it
+in YAML and then convert it to JSON. For example, using:
 
 ```shell
 python3 -c 'import sys, yaml, json; print(json.dumps(yaml.safe_load(sys.stdin)))' < charts/trustification/values.schema.yaml > charts/trustification/values.schema.json
@@ -25,6 +29,12 @@ python3 -c 'import sys, yaml, json; print(json.dumps(yaml.safe_load(sys.stdin)))
 helm lint ./charts/trustification --values values-minikube.yaml --set-string appDomain=.localhost
 helm lint ./charts/trustification --values values-ocp-no-aws.yaml --set-string appDomain=.localhost
 helm lint ./charts/trustification --values values-ocp-aws.yaml --values values-ocp-aws-lint.yaml --set-string appDomain=.localhost
+```
+
+Lint even more:
+
+```shell
+ct lint --charts ./charts/trustification  --helm-lint-extra-args "--values values-minikube.yaml --set-string appDomain=.localhost"
 ```
 
 ## Find that whitespace
@@ -59,4 +69,4 @@ You can update those using:
 make -C ../openshift
 ```
 
-Read more in [../openshift/DEVELOPING.md](../openshift/DEVE****LOPING.md).
+Read more in [../openshift/DEVELOPING.md](../openshift/DEVELOPING.md).

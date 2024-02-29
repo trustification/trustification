@@ -32,6 +32,7 @@ spec:
       containers:
         - name: service
           {{- include "trustification.guac.defaultImage" $mod | nindent 10 }}
+          {{- include "trustification.application.container" $mod | nindent 10 }}
 
           command: ["/opt/guac/guaccsub"]
           args: []

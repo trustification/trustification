@@ -1,5 +1,6 @@
 use crate::common::project_root;
 use crate::config::TestConfig;
+use anyhow::anyhow;
 use globset::Glob;
 use reqwest::blocking::get;
 use std::fs;
@@ -99,7 +100,7 @@ impl Test {
             return Ok(());
         }
 
-        sh.change_dir(project_root());
+        sh.change_dir(project_root().ok_or_else(|| anyhow!("failed to get project root"))?);
         if let Err(e) = Self::setup_coverage(&sh, &mut config) {
             eprintln!(
                 "Error: {e}\n\n\
@@ -180,16 +181,16 @@ impl Test {
                 // of error
                 if !self.skip_build {
                     let npm = TestConfig::NPM;
-                    let trunk_ng = TestConfig::TRUNK_NG;
+                    let trunk = TestConfig::TRUNK;
 
                     config.find_tool(npm)?;
-                    config.find_tool(trunk_ng)?;
+                    config.find_tool(trunk)?;
                     config.check_target(sh, TestConfig::WASM32_UNKNOWN_UNKNOWN)?;
 
                     let _dir = sh.push_dir("spog/ui");
                     let _env = sh.push_env("PATH", &config.paths);
                     cmd!(sh, "{npm} ci").run()?;
-                    cmd!(sh, "{trunk_ng} build").run()?;
+                    cmd!(sh, "{trunk} build").run()?;
                 }
 
                 // Try to spawn a web driver. In case of success enable user
