@@ -15,6 +15,7 @@ use url::Url;
 use walker_common::sender::provider::TokenProvider;
 
 mod processing;
+mod report;
 mod scanner;
 
 const DEVMODE_SOURCE: &str = "https://access.redhat.com/security/data/sbom/beta/";

@@ -1,4 +1,6 @@
 use crate::processing::ProcessVisitor;
+use crate::report::{Report, ReportBuilder, ReportVisitor};
+use parking_lot::Mutex;
 use sbom_walker::model::metadata::Key;
 use sbom_walker::retrieve::RetrievingVisitor;
 use sbom_walker::source::{DispatchSource, FileSource, HttpSource};
@@ -10,10 +12,9 @@ use std::time::{Duration, SystemTime};
 use tokio::time::MissedTickBehavior;
 use tracing::{instrument, log};
 use url::Url;
-use walker_common::sender::HttpSenderOptions;
 use walker_common::{
     fetcher::{Fetcher, FetcherOptions},
-    sender::{self, provider::TokenProvider},
+    sender::{self, provider::TokenProvider, HttpSenderOptions},
     since::Since,
     validate::ValidationOptions,
 };
@@ -53,7 +54,9 @@ impl Scanner {
     }
 
     #[instrument(skip(self))]
-    pub async fn run_once(&self) -> anyhow::Result<()> {
+    pub async fn run_once(&self) -> anyhow::Result<Report> {
+        let report = Arc::new(Mutex::new(ReportBuilder::new()));
+
         let since = Since::new(None::<SystemTime>, self.options.since_file.clone(), Default::default())?;
 
         let source: DispatchSource = match Url::parse(&self.options.source) {
@@ -80,7 +83,8 @@ impl Scanner {
 
         let process = ProcessVisitor {
             enabled: self.options.fix_licenses,
-            next: storage,
+            next: ReportVisitor::new(report.clone(), storage),
+            report: report.clone(),
         };
 
         let validation = ValidationVisitor::new(process)
@@ -91,6 +95,10 @@ impl Scanner {
 
         since.store()?;
 
-        Ok(())
+        Ok(match Arc::try_unwrap(report) {
+            Ok(report) => report.into_inner(),
+            Err(report) => report.lock().clone(),
+        }
+        .build())
     }
 }
