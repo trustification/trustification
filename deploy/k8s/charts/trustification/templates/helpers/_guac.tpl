@@ -19,7 +19,10 @@ Arguments (dict):
   * module - module object
 */}}
 {{- define "trustification.guac.graphql.envVars"}}
-{{- if eq ( include "trustification.openshift.useServiceCa" .root ) "true" }}
+{{- if and
+      (eq (include "trustification.openshift.useServiceCa" .root) "true")
+      (ne .root.Values.guac.database.sslMode "disable")
+}}
 - name: GUAC_GQL_TLS_CERT_FILE
   value: /etc/tls/tls.crt
 - name: GUAC_GQL_TLS_KEY_FILE
