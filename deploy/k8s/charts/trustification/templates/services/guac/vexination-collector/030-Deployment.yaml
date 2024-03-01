@@ -49,5 +49,5 @@ spec:
               value: {{ include "trustification.tls.http.protocol" $mod }}://guac-graphql.{{ .Release.Namespace }}.svc.cluster.local/query
             - name: GUAC_CSUB_ADDR
               value: guac-collectsub.{{ .Release.Namespace }}.svc.cluster.local:2782
-
+            {{- include "trustification.guac.client.envVars" $mod | nindent 12 }}
 {{- end }}
