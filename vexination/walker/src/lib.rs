@@ -60,6 +60,7 @@ pub struct Run {
     pub retries: usize,
 
     /// Retry delay
+    #[arg(long = "retry-delay")]
     pub retry_delay: Option<humantime::Duration>,
 
     /// Long-running mode. The index file will be scanned for changes every interval.

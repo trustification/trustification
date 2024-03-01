@@ -77,6 +77,7 @@ pub struct Run {
     pub retries: usize,
 
     /// Retry delay
+    #[arg(long = "retry-delay")]
     pub retry_delay: Option<humantime::Duration>,
 
     /// Additional root certificates for the destination
