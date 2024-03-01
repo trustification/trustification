@@ -1,16 +1,17 @@
-use crate::report::{Phase, ReportBuilder, Severity};
 use async_trait::async_trait;
 use bytes::Bytes;
 use bzip2::Compression;
 use parking_lot::Mutex;
-use sbom_walker::model::sbom::ParserKind;
-use sbom_walker::validation::{ValidatedSbom, ValidatedVisitor, ValidationContext, ValidationError};
-use sbom_walker::Sbom;
+use sbom_walker::{
+    model::sbom::ParserKind,
+    validation::{ValidatedSbom, ValidatedVisitor, ValidationContext, ValidationError},
+    Sbom,
+};
 use serde_json::Value;
 use std::io::Write;
 use std::sync::Arc;
-use walker_common::compression::decompress_opt;
-use walker_common::utils::url::Urlify;
+use trustification_common_walker::report::{Phase, ReportBuilder, Severity};
+use walker_common::{compression::decompress_opt, utils::url::Urlify};
 
 pub struct ProcessVisitor<V> {
     /// if processing is enabled

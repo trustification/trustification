@@ -1,7 +1,5 @@
-use crate::{
-    processing::ProcessVisitor,
-    report::{Report, ReportBuilder, ReportVisitor, ScannerError},
-};
+use crate::processing::ProcessVisitor;
+use crate::report::SbomReportVisitor;
 use parking_lot::Mutex;
 use sbom_walker::{
     model::metadata::Key,
@@ -15,6 +13,7 @@ use std::sync::Arc;
 use std::time::{Duration, SystemTime};
 use tokio::time::MissedTickBehavior;
 use tracing::{instrument, log};
+use trustification_common_walker::report::{Report, ReportBuilder, ReportVisitor, ScannerError};
 use url::Url;
 use walker_common::{
     fetcher::{Fetcher, FetcherOptions},
@@ -87,7 +86,7 @@ impl Scanner {
 
         let process = ProcessVisitor {
             enabled: self.options.fix_licenses,
-            next: ReportVisitor::new(report.clone(), storage),
+            next: SbomReportVisitor(ReportVisitor::new(report.clone(), storage)),
             report: report.clone(),
         };
 
