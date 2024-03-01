@@ -15,33 +15,33 @@ mod scanner;
 pub struct Run {
     /// Source URL or path
     #[arg(short, long)]
-    pub(crate) source: String,
+    pub source: String,
 
     /// Vexination upload url
     #[arg(short = 'S', long)]
-    pub(crate) sink: Url,
+    pub sink: Url,
 
     /// Distributions to ignore
     #[arg(long, default_value = "Vec::new()")]
-    ignore_distributions: Vec<String>,
+    pub ignore_distributions: Vec<String>,
 
     /// OpenPGP policy date.
     #[arg(long)]
-    policy_date: Option<humantime::Timestamp>,
+    pub policy_date: Option<humantime::Timestamp>,
 
     /// Enable OpenPGP v3 signatures. Conflicts with 'policy_date'.
     #[arg(short = '3', long = "v3-signatures", conflicts_with = "policy_date")]
-    v3_signatures: bool,
+    pub v3_signatures: bool,
 
     #[arg(long = "devmode", default_value_t = false)]
-    pub(crate) devmode: bool,
+    pub devmode: bool,
 
     #[command(flatten)]
     pub infra: InfrastructureConfig,
 
     /// OIDC client
     #[command(flatten)]
-    pub(crate) oidc: OpenIdTokenProviderConfigArguments,
+    pub oidc: OpenIdTokenProviderConfigArguments,
 
     /// A file to read/store the last sync timestamp to at the end of a successful run.
     #[arg(long = "since-file")]
