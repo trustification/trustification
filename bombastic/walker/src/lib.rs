@@ -1,4 +1,7 @@
-use crate::scanner::{Options, Scanner};
+use crate::{
+    report::{handle_report, SplitScannerError},
+    scanner::{Options, Scanner},
+};
 use anyhow::{anyhow, Context};
 use clap::{arg, command, ArgAction, Args};
 use std::path::PathBuf;
@@ -158,7 +161,9 @@ impl Run {
                     if let Some(interval) = self.scan_interval {
                         scanner.run(interval.into()).await?;
                     } else {
-                        scanner.run_once().await?;
+                        let (report, result) = scanner.run_once().await.split()?;
+                        handle_report(report).await?;
+                        result?;
                     }
 
                     Ok(())

@@ -17,6 +17,7 @@ pub struct ProcessVisitor<V> {
     pub enabled: bool,
     /// the next visitor to call
     pub next: V,
+    /// the report to report our messages to
     pub report: Arc<Mutex<ReportBuilder>>,
 }
 

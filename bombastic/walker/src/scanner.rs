@@ -1,11 +1,15 @@
-use crate::processing::ProcessVisitor;
-use crate::report::{Report, ReportBuilder, ReportVisitor};
+use crate::{
+    processing::ProcessVisitor,
+    report::{Report, ReportBuilder, ReportVisitor, ScannerError},
+};
 use parking_lot::Mutex;
-use sbom_walker::model::metadata::Key;
-use sbom_walker::retrieve::RetrievingVisitor;
-use sbom_walker::source::{DispatchSource, FileSource, HttpSource};
-use sbom_walker::validation::ValidationVisitor;
-use sbom_walker::walker::Walker;
+use sbom_walker::{
+    model::metadata::Key,
+    retrieve::RetrievingVisitor,
+    source::{DispatchSource, FileSource, HttpSource},
+    validation::ValidationVisitor,
+    walker::Walker,
+};
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
@@ -54,7 +58,7 @@ impl Scanner {
     }
 
     #[instrument(skip(self))]
-    pub async fn run_once(&self) -> anyhow::Result<Report> {
+    pub async fn run_once(&self) -> Result<Report, ScannerError> {
         let report = Arc::new(Mutex::new(ReportBuilder::new()));
 
         let since = Since::new(None::<SystemTime>, self.options.since_file.clone(), Default::default())?;
@@ -91,10 +95,20 @@ impl Scanner {
             .with_options(ValidationOptions::new().validation_date(self.options.validation_date));
 
         let walker = Walker::new(source.clone());
-        walker.walk(RetrievingVisitor::new(source.clone(), validation)).await?;
+        walker
+            .walk(RetrievingVisitor::new(source.clone(), validation))
+            .await
+            // if the walker fails, we record the outcome as part of the report, but skip any
+            // further processing, like storing the marker
+            .map_err(|err| ScannerError::Normal {
+                err: err.into(),
+                report: report.lock().clone().build(),
+            })?;
 
+        // if we fail to store the marker, we fail altogether
         since.store()?;
 
+        // we're done and return the report
         Ok(match Arc::try_unwrap(report) {
             Ok(report) => report.into_inner(),
             Err(report) => report.lock().clone(),
