@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 use parking_lot::Mutex;
-use sbom_walker::validation::ValidationError;
+use sbom_walker::{retrieve::RetrievalError, validation::ValidationError};
 use std::collections::BTreeMap;
 use std::sync::Arc;
 use time::OffsetDateTime;
@@ -115,13 +115,22 @@ impl sbom_walker::validation::ValidatedVisitor for ReportVisitor {
 
         if let Err(err) = &result {
             match err {
-                SendValidatedSbomError::Validation(ValidationError::Retrieval(err)) => {
+                SendValidatedSbomError::Validation(ValidationError::Retrieval(RetrievalError::InvalidResponse {
+                    code,
+                    ..
+                })) => {
                     self.report.lock().add_error(
                         Phase::Retrieval,
                         file,
                         Severity::Error,
-                        format!("retrieval of document: {err}"),
+                        format!("retrieval of document failed: {code}"),
                     );
+
+                    if code.is_client_error() {
+                        // If it's a client error, there's no need to re-try. We simply claim
+                        // success after we logged it.
+                        return Ok(());
+                    }
                 }
                 SendValidatedSbomError::Validation(ValidationError::DigestMismatch { expected, actual, .. }) => {
                     self.report.lock().add_error(
@@ -130,6 +139,10 @@ impl sbom_walker::validation::ValidatedVisitor for ReportVisitor {
                         Severity::Error,
                         format!("digest mismatch - expected: {expected}, actual: {actual}"),
                     );
+
+                    // If there's a digest error, we can't do much other than ignoring the
+                    // current file. Once it gets updated, we can reprocess it.
+                    return Ok(());
                 }
                 SendValidatedSbomError::Validation(ValidationError::Signature { error, .. }) => {
                     self.report.lock().add_error(
@@ -138,6 +151,9 @@ impl sbom_walker::validation::ValidatedVisitor for ReportVisitor {
                         Severity::Error,
                         format!("unable to verify signature: {error}"),
                     );
+
+                    // If there's a signature error, we can't do much other than ignoring the
+                    // current file. Once it gets updated, we can reprocess it.
                 }
                 SendValidatedSbomError::Store(err) => {
                     self.report
@@ -149,4 +165,41 @@ impl sbom_walker::validation::ValidatedVisitor for ReportVisitor {
 
         result
     }
+}
+
+/// Fail a scanner process.
+#[derive(Debug, thiserror::Error)]
+pub enum ScannerError {
+    /// A critical error occurred, we don't even have a report.
+    #[error(transparent)]
+    Critical(#[from] anyhow::Error),
+    /// A normal error occurred, we did capture some information in the report.
+    #[error("{err}")]
+    Normal {
+        #[source]
+        err: anyhow::Error,
+        report: Report,
+    },
+}
+
+pub trait SplitScannerError {
+    /// Split a [`ScannerError`] into a result and a report, unless it was critical.
+    fn split(self) -> anyhow::Result<(Report, anyhow::Result<()>)>;
+}
+
+impl SplitScannerError for Result<Report, ScannerError> {
+    fn split(self) -> anyhow::Result<(Report, anyhow::Result<()>)> {
+        match self {
+            Ok(report) => Ok((report, Ok(()))),
+            Err(ScannerError::Normal { err, report }) => Ok((report, Err(err))),
+            Err(ScannerError::Critical(err)) => Err(err),
+        }
+    }
+}
+
+/// Handle the report
+pub async fn handle_report(report: Report) -> anyhow::Result<()> {
+    // FIXME: this is a very simplistic version of handling the error
+    log::info!("Import report: {report:#?}");
+    Ok(())
 }
