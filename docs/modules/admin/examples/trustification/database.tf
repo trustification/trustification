@@ -23,7 +23,7 @@ resource "aws_db_subnet_group" "database" {
 }
 
 resource "aws_security_group" "database" {
-  name   = "trustification-postgresql"
+  name   = "trustification-postgresql-${var.environment}"
   vpc_id = data.aws_vpc.cluster.id
 }
 
