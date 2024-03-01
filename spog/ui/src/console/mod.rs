@@ -56,7 +56,7 @@ fn brand() -> Html {
 
 #[function_component(AuthenticatedPage)]
 fn authenticated_page(props: &ChildrenProperties) -> Html {
-    let brand = html!(<Brand/>);
+    let brand: yew::virtual_dom::VNode = html!(<Brand/>);
 
     let backend = use_backend();
     let config = use_config();
@@ -204,6 +204,34 @@ fn authenticated_page(props: &ChildrenProperties) -> Html {
 
     html!(
         <Page {brand} {sidebar} {tools}>
+            <div class="pf-v5-c-banner pf-m-blue pf-v5-u-text-align-center">
+                {html!(
+                    <Popover
+                        target={html!{
+                            <u style="cursor: pointer;">
+                                {"Tech Preview"}
+                            </u>
+                        }}
+                        body={html_nested!(
+                            <PopoverBody
+                                header={html!("Tech Preview")}
+                                footer={html!(
+                                    <>
+                                        <p>
+                                            <a href={support_case_url.clone()} target="_blank">
+                                                {"Contact support"}{" "}
+                                                {Icon::ExternalLinkAlt}
+                                            </a>
+                                        </p>
+                                    </>
+                                )}
+                            >
+                                <p>{"This feature is still in a Preview pre-release stage. You might find bugs or issues with availability, stability, data or performance."}</p>
+                            </PopoverBody>
+                        )}
+                    />
+                )}
+            </div>
             { props.children.clone() }
         </Page>
     )
