@@ -1,13 +1,13 @@
+use crate::scanner::{Options, Scanner};
 use std::{path::PathBuf, process::ExitCode, sync::Arc, time::SystemTime};
-
 use time::{Date, Month, UtcOffset};
 use trustification_auth::client::{OpenIdTokenProviderConfig, OpenIdTokenProviderConfigArguments};
+use trustification_common_walker::report::{handle_report, SplitScannerError};
 use trustification_infrastructure::{Infrastructure, InfrastructureConfig};
 use url::Url;
 use walker_common::sender::provider::TokenProvider;
 
-use crate::scanner::{Options, Scanner};
-
+mod report;
 mod scanner;
 
 #[derive(clap::Args, Debug)]
@@ -78,7 +78,7 @@ impl Run {
                     let validation_date: Option<SystemTime> = match (self.policy_date, self.v3_signatures) {
                         (_, true) => Some(SystemTime::from(
                             Date::from_calendar_date(2007, Month::January, 1)
-                                .expect("known calendar date should parse")
+                                .expect("known calendar date must parse")
                                 .midnight()
                                 .assume_offset(UtcOffset::UTC),
                         )),
@@ -125,7 +125,9 @@ impl Run {
                     if let Some(interval) = self.scan_interval {
                         scanner.run(interval.into()).await?;
                     } else {
-                        scanner.run_once().await?;
+                        let (report, result) = scanner.run_once().await.split()?;
+                        handle_report(report).await?;
+                        result?;
                     }
 
                     Ok(())

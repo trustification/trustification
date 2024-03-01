@@ -1,5 +1,4 @@
-use crate::processing::ProcessVisitor;
-use crate::report::SbomReportVisitor;
+use crate::{processing::ProcessVisitor, report::SbomReportVisitor};
 use parking_lot::Mutex;
 use sbom_walker::{
     model::metadata::Key,
