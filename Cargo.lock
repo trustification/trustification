@@ -1455,6 +1455,7 @@ dependencies = [
  "tokio",
  "tracing",
  "trustification-auth",
+ "trustification-common-walker",
  "trustification-infrastructure",
  "url",
  "walker-common",
@@ -7706,6 +7707,21 @@ dependencies = [
  "pem",
  "reqwest",
  "serde",
+]
+
+[[package]]
+name = "trustification-common-walker"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "log",
+ "parking_lot",
+ "serde",
+ "thiserror",
+ "time",
+ "walker-common",
+ "walker-extras",
 ]
 
 [[package]]

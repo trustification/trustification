@@ -1,0 +1,17 @@
+[package]
+name = "trustification-common-walker"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+description = "Common tools for walkers"
+
+[dependencies]
+anyhow = "1"
+async-trait = "0.1"
+log = "0.4"
+parking_lot = "0.12"
+serde = { version = "1", features = ["derive"] }
+thiserror = "1"
+time = { version = "0.3", features = ["serde-well-known"] }
+walker-common = "=0.6.0-alpha.8"
+walker-extras = "=0.6.0-alpha.8"

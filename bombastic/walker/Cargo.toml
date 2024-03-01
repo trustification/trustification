@@ -24,5 +24,6 @@ url = "2.4.0"
 walker-common = "=0.6.0-alpha.8"
 walker-extras = "=0.6.0-alpha.8"
 
+trustification-common-walker = { path = "../../common/walker" }
 trustification-auth = { path = "../../auth" }
 trustification-infrastructure = { path = "../../infrastructure" }

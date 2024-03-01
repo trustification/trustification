@@ -1,7 +1,4 @@
-use crate::{
-    report::{handle_report, SplitScannerError},
-    scanner::{Options, Scanner},
-};
+use crate::scanner::{Options, Scanner};
 use anyhow::{anyhow, Context};
 use clap::{arg, command, ArgAction, Args};
 use std::path::PathBuf;
@@ -10,6 +7,7 @@ use std::sync::Arc;
 use std::time::SystemTime;
 use time::{Date, Month, UtcOffset};
 use trustification_auth::client::{OpenIdTokenProviderConfig, OpenIdTokenProviderConfigArguments};
+use trustification_common_walker::report::{handle_report, SplitScannerError};
 use trustification_infrastructure::{
     endpoint::{self, Endpoint},
     Infrastructure, InfrastructureConfig,
