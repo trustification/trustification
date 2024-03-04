@@ -20,7 +20,7 @@ pub fn cyclonedx_meta(bom: &cyclonedx_bom::prelude::Bom) -> Html {
 
     html!(
         <Card full_height=true>
-            <CardTitle><Title>{"Metadata"}</Title></CardTitle>
+            <CardTitle><Title size={Size::XLarge}>{"Metadata"}</Title></CardTitle>
             <CardBody>
                 <DescriptionList>
                     <DescriptionGroup term="Name">{name}</DescriptionGroup>
@@ -41,7 +41,7 @@ pub fn cyclonedx_creator(bom: &cyclonedx_bom::prelude::Bom) -> Html {
 
     html!(
         <Card  full_height=true>
-            <CardTitle><Title>{"Creation"}</Title></CardTitle>
+            <CardTitle><Title size={Size::XLarge}>{"Creation"}</Title></CardTitle>
             <CardBody>
                 <DescriptionList>
                     <DescriptionGroup term="Created">{created}</DescriptionGroup>
