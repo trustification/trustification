@@ -65,7 +65,7 @@ pub struct CardWrapperProperties {
 pub fn card_wrapper(props: &CardWrapperProperties) -> Html {
     html!(
         <Card plain={props.plain} full_height=true>
-            <CardTitle><Title>{ props.title.clone() }</Title></CardTitle>
+            <CardTitle><Title size={Size::XLarge}>{ props.title.clone() }</Title></CardTitle>
             <CardBody>
                 { for props.children.iter() }
             </CardBody>
