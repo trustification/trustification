@@ -24,7 +24,7 @@ pub fn get_purl(package: &PackageInformation) -> Option<PackageUrl<'static>> {
 pub fn spdx_creator(bom: &SPDX) -> Html {
     html!(
         <Card full_height=true>
-            <CardTitle><Title>{"Creation"}</Title></CardTitle>
+            <CardTitle><Title size={Size::XLarge}>{"Creation"}</Title></CardTitle>
             <CardBody>
                 <DescriptionList>
                     <DescriptionGroup term="Created">{ bom.document_creation_information.creation_info.created.to_string() }</DescriptionGroup>
@@ -64,7 +64,7 @@ pub fn spdx_creator(bom: &SPDX) -> Html {
 pub fn spdx_meta(bom: &SPDX) -> Html {
     html!(
         <Card full_height=true>
-            <CardTitle><Title>{"Metadata"}</Title></CardTitle>
+            <CardTitle><Title size={Size::XLarge}>{"Metadata"}</Title></CardTitle>
             <CardBody>
                 <DescriptionList>
                     <DescriptionGroup term="Name">{ bom.document_creation_information.document_name.clone() }</DescriptionGroup>
@@ -118,7 +118,7 @@ pub fn spdx_main(bom: &SPDX) -> Html {
 
             html!(
                 <Card full_height=true>
-                    <CardTitle><Title>{ "Package" }</Title></CardTitle>
+                    <CardTitle><Title size={Size::XLarge}>{ "Package" }</Title></CardTitle>
                     {
                         for content.into_iter()
                             .map(|content|html_nested!(<CardBody>{content}</CardBody>))
@@ -132,7 +132,7 @@ pub fn spdx_main(bom: &SPDX) -> Html {
 pub fn spdx_stats(size: usize, bom: &SPDX) -> Html {
     html!(
         <Card full_height=true>
-            <CardTitle><Title>{"Statistics"}</Title></CardTitle>
+            <CardTitle><Title size={Size::XLarge}>{"Statistics"}</Title></CardTitle>
             <CardBody>
                 <DescriptionList>
                     <DescriptionGroup term="Size">{ format_size(size, BINARY) }</DescriptionGroup>

@@ -57,7 +57,7 @@ pub struct TechnicalProperties {
 pub fn technical(props: &TechnicalProperties) -> Html {
     html!(
         <Card>
-            <CardTitle><Title>{"Statistics"}</Title></CardTitle>
+            <CardTitle><Title size={Size::XLarge}>{"Statistics"}</Title></CardTitle>
             <CardBody>
                 <DescriptionList>
                     <DescriptionGroup term="Size">{ format_size(props.size, BINARY) }</DescriptionGroup>
