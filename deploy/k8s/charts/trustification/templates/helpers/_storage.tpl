@@ -81,8 +81,6 @@ Arguments (dict):
 {{ else }}
 - name: STORAGE_REGION
   value: "{{ .storage.region }}"
-- name: STORAGE_REGION
-  value: "{{ .storage.region }}"
 {{ end }}
 
 {{- end }}
