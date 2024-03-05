@@ -11,7 +11,6 @@ use spog_ui_navigation::{AppRoute, View};
 use spog_ui_utils::analytics::use_analytics;
 use std::ops::Deref;
 use wasm_bindgen::JsCast;
-use web_tools::prelude::*;
 use yew::prelude::*;
 use yew_hooks::{use_click_away, use_debounce_state, use_event_with_window};
 use yew_more_hooks::{hooks::use_async_with_cloned_deps, prelude::UseAsyncState};
@@ -23,10 +22,10 @@ pub struct SearchProperties {
     pub onchange: Callback<String>,
 
     #[prop_or_default]
-    pub autofocus: bool,
+    pub onclear: Callback<()>,
 
     #[prop_or_default]
-    pub submit_on_enter: bool,
+    pub autofocus: bool,
 
     #[prop_or_default]
     pub initial_value: Option<String>,
@@ -84,16 +83,10 @@ pub fn search_input(props: &SearchProperties) -> Html {
     let possible_values = use_state_eq(Vec::<Suggestion>::default);
 
     // clear the value
-    let onclear = use_callback(
-        (value.setter(), props.submit_on_enter, input_ref.clone()),
-        |_, (value, submit_on_enter, input_ref)| {
-            value.set(String::new().into());
-
-            if *submit_on_enter {
-                input_ref.form().submit();
-            }
-        },
-    );
+    let onclear = use_callback((value.setter(), props.onclear.clone()), |_, (value, onclear)| {
+        onclear.emit(());
+        value.set(String::new().into());
+    });
 
     // popper state
     let state = use_state_eq(State::default);

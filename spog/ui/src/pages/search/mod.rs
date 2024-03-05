@@ -80,17 +80,23 @@ pub fn search(props: &SearchProperties) -> Html {
 
     // events to activate the search terms
 
-    let onsubmit = use_callback(
-        (analytics.clone(), text.clone(), search_terms.clone()),
-        |_, (analytics, terms, search_terms)| {
+    let onsearch = use_callback(
+        (analytics.clone(), search_terms.clone()),
+        |terms: String, (analytics, search_terms)| {
             analytics.track(AnalyticEvents {
                 obj_name: ObjectNameAnalytics::SearchPage,
-                action: ActionAnalytics::Search((**terms).clone()),
+                action: ActionAnalytics::Search(terms.clone()),
             });
 
-            search_terms.set(split_terms(terms));
+            search_terms.set(split_terms(&terms));
         },
     );
+    let onsubmit = use_callback((onsearch.clone(), (*text).clone()), |_, (onsearch, terms)| {
+        onsearch.emit(terms.clone());
+    });
+    let onclear = use_callback(onsearch.clone(), |_, onsearch| {
+        onsearch.emit(String::new());
+    });
 
     // managing tabs
 
@@ -215,8 +221,7 @@ pub fn search(props: &SearchProperties) -> Html {
                         <form {onsubmit}>
                             // needed to trigger submit when pressing enter in the search field
                             <input type="submit" hidden=true formmethod="dialog" />
-                            <SearchInput {onchange}
-                                submit_on_enter=true
+                            <SearchInput {onchange} {onclear}
                                 initial_value={props.terms.clone()}
                             />
                         </form>
