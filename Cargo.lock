@@ -1445,13 +1445,17 @@ dependencies = [
  "clap",
  "humantime",
  "log",
+ "parking_lot",
  "sbom-walker",
+ "serde",
  "serde_json",
  "spdx-expression",
+ "thiserror",
  "time",
  "tokio",
  "tracing",
  "trustification-auth",
+ "trustification-common-walker",
  "trustification-infrastructure",
  "url",
  "walker-common",
@@ -7706,6 +7710,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "trustification-common-walker"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "log",
+ "parking_lot",
+ "serde",
+ "thiserror",
+ "time",
+ "walker-common",
+ "walker-extras",
+]
+
+[[package]]
 name = "trustification-event-bus"
 version = "0.1.0"
 dependencies = [
@@ -8352,11 +8371,13 @@ dependencies = [
  "csaf-walker",
  "humantime",
  "log",
+ "parking_lot",
  "serde_json",
  "time",
  "tokio",
  "tracing",
  "trustification-auth",
+ "trustification-common-walker",
  "trustification-infrastructure",
  "url",
  "walker-common",

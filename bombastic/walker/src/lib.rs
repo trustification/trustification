@@ -7,6 +7,7 @@ use std::sync::Arc;
 use std::time::SystemTime;
 use time::{Date, Month, UtcOffset};
 use trustification_auth::client::{OpenIdTokenProviderConfig, OpenIdTokenProviderConfigArguments};
+use trustification_common_walker::report::{handle_report, SplitScannerError};
 use trustification_infrastructure::{
     endpoint::{self, Endpoint},
     Infrastructure, InfrastructureConfig,
@@ -15,6 +16,7 @@ use url::Url;
 use walker_common::sender::provider::TokenProvider;
 
 mod processing;
+mod report;
 mod scanner;
 
 const DEVMODE_SOURCE: &str = "https://access.redhat.com/security/data/sbom/beta/";
@@ -76,6 +78,7 @@ pub struct Run {
     pub retries: usize,
 
     /// Retry delay
+    #[arg(long = "retry-delay")]
     pub retry_delay: Option<humantime::Duration>,
 
     /// Additional root certificates for the destination
@@ -109,7 +112,7 @@ impl Run {
                     let validation_date: Option<SystemTime> = match (self.policy_date, self.v3_signatures) {
                         (_, true) => Some(SystemTime::from(
                             Date::from_calendar_date(2007, Month::January, 1)
-                                .expect("valid date that must parse")
+                                .expect("known calendar date must parse")
                                 .midnight()
                                 .assume_offset(UtcOffset::UTC),
                         )),
@@ -156,7 +159,9 @@ impl Run {
                     if let Some(interval) = self.scan_interval {
                         scanner.run(interval.into()).await?;
                     } else {
-                        scanner.run_once().await?;
+                        let (report, result) = scanner.run_once().await.split()?;
+                        handle_report(report).await?;
+                        result?;
                     }
 
                     Ok(())

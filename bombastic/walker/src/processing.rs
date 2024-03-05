@@ -1,19 +1,25 @@
 use async_trait::async_trait;
 use bytes::Bytes;
 use bzip2::Compression;
-use sbom_walker::model::sbom::ParserKind;
-use sbom_walker::validation::{ValidatedSbom, ValidatedVisitor, ValidationContext, ValidationError};
-use sbom_walker::Sbom;
+use parking_lot::Mutex;
+use sbom_walker::{
+    model::sbom::ParserKind,
+    validation::{ValidatedSbom, ValidatedVisitor, ValidationContext, ValidationError},
+    Sbom,
+};
 use serde_json::Value;
 use std::io::Write;
-use walker_common::compression::decompress_opt;
-use walker_common::utils::url::Urlify;
+use std::sync::Arc;
+use trustification_common_walker::report::{Phase, ReportBuilder, Severity};
+use walker_common::{compression::decompress_opt, utils::url::Urlify};
 
 pub struct ProcessVisitor<V> {
     /// if processing is enabled
     pub enabled: bool,
     /// the next visitor to call
     pub next: V,
+    /// the report to report our messages to
+    pub report: Arc<Mutex<ReportBuilder>>,
 }
 
 #[async_trait(?Send)]
@@ -48,8 +54,18 @@ where
                     }
                 };
 
+                let reporter = {
+                    let report = self.report.clone();
+                    let file = sbom.url().to_string();
+                    move |msg| {
+                        report
+                            .lock()
+                            .add_error(Phase::Validation, file.clone(), Severity::Warning, msg);
+                    }
+                };
                 let (outcome, mut sbom) =
-                    tokio::task::spawn_blocking(move || (process(sbom.data.clone(), sbom.url.path()), sbom)).await?;
+                    tokio::task::spawn_blocking(move || (process(sbom.data.clone(), sbom.url.path(), reporter), sbom))
+                        .await?;
 
                 match outcome {
                     Err(err) => log::warn!("Failed processing, moving on: {err}"),
@@ -73,7 +89,7 @@ where
     }
 }
 
-fn process(data: Bytes, name: &str) -> anyhow::Result<Option<Bytes>> {
+fn process(data: Bytes, name: &str, reporter: impl Fn(String)) -> anyhow::Result<Option<Bytes>> {
     let (data, compressed) = match decompress_opt(&data, name).transpose()? {
         Some(data) => (data, true),
         None => (data, false),
@@ -91,7 +107,7 @@ fn process(data: Bytes, name: &str) -> anyhow::Result<Option<Bytes>> {
                     return Ok(None);
                 }
                 Ok(json) => {
-                    let (json, changed) = fix_license(json);
+                    let (json, changed) = fix_license(json, reporter);
                     match changed {
                         true => {
                             let mut data = serde_json::to_vec_pretty(&json)?;
@@ -119,13 +135,16 @@ fn compress(data: &[u8]) -> anyhow::Result<Vec<u8>> {
     Ok(out)
 }
 
-fn fix_license(mut json: Value) -> (Value, bool) {
+fn fix_license(mut json: Value, reporter: impl Fn(String)) -> (Value, bool) {
     let mut changed = false;
     if let Some(packages) = json["packages"].as_array_mut() {
         for package in packages {
             if let Some(declared) = package["licenseDeclared"].as_str() {
                 if let Err(err) = spdx_expression::SpdxExpression::parse(declared) {
                     log::warn!("Replacing faulty SPDX license expression with NOASSERTION: {err}");
+                    reporter(format!(
+                        "Replacing faulty SPDX license expression with NOASSERTION: {err}"
+                    ));
                     package["licenseDeclared"] = "NOASSERTION".into();
                     changed = true;
                 }
