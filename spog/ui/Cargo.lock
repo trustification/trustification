@@ -2030,8 +2030,9 @@ checksum = "de3145af08024dea9fa9914f381a17b8fc6034dfb00f3a84013f7ff43f29ed4c"
 
 [[package]]
 name = "patternfly-yew"
-version = "0.6.0"
-source = "git+https://github.com/patternfly-yew/patternfly-yew?rev=74e20e4429248cbc3b2c8085b9a4f8d9002fe456#74e20e4429248cbc3b2c8085b9a4f8d9002fe456"
+version = "0.6.0-alpha.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7269eb37c5773fd7147198e71e62fb855277444e94f9c5bfd1b56b3762cc1440"
 dependencies = [
  "chrono",
  "gloo-events 0.2.0",
@@ -2044,8 +2045,8 @@ dependencies = [
  "popper-rs",
  "serde",
  "serde_json",
- "strum 0.25.0",
- "strum_macros 0.25.3",
+ "strum 0.26.1",
+ "strum_macros 0.26.1",
  "uuid",
  "wasm-bindgen",
  "wasm-bindgen-futures",
@@ -2053,6 +2054,7 @@ dependencies = [
  "web-tools",
  "yew",
  "yew-hooks",
+ "yew-more-hooks",
  "yew-nested-router",
 ]
 
@@ -2442,15 +2444,6 @@ dependencies = [
  "spin 0.9.8",
  "untrusted 0.9.0",
  "windows-sys 0.52.0",
-]
-
-[[package]]
-name = "roxmltree"
-version = "0.18.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "862340e351ce1b271a378ec53f304a5558f7db87f3769dc655a8f6ecbb68b302"
-dependencies = [
- "xmlparser",
 ]
 
 [[package]]
@@ -2967,7 +2960,7 @@ dependencies = [
  "patternfly-yew",
  "popper-rs",
  "reqwest",
- "roxmltree 0.19.0",
+ "roxmltree",
  "serde",
  "serde_json",
  "sikula",
@@ -3015,7 +3008,7 @@ dependencies = [
  "cyclonedx-bom",
  "exhort-model",
  "gloo-events 0.2.0",
- "gloo-net 0.4.0",
+ "gloo-net 0.5.0",
  "gloo-storage 0.3.0",
  "gloo-utils 0.2.0",
  "js-sys",
@@ -3057,7 +3050,7 @@ dependencies = [
  "csaf",
  "cvss",
  "gloo-events 0.2.0",
- "gloo-net 0.4.0",
+ "gloo-net 0.5.0",
  "gloo-storage 0.3.0",
  "gloo-utils 0.2.0",
  "humansize",
@@ -3069,12 +3062,12 @@ dependencies = [
  "packageurl",
  "patternfly-yew",
  "reqwest",
- "roxmltree 0.18.1",
+ "roxmltree",
  "serde",
  "serde_json",
  "spdx-rs",
  "spog-model",
- "strum 0.25.0",
+ "strum 0.26.1",
  "thiserror",
  "time",
  "trustification-api",
@@ -3107,7 +3100,7 @@ dependencies = [
  "cvss",
  "cyclonedx-bom",
  "gloo-events 0.2.0",
- "gloo-net 0.4.0",
+ "gloo-net 0.5.0",
  "gloo-storage 0.3.0",
  "gloo-utils 0.2.0",
  "humansize",
@@ -3119,7 +3112,7 @@ dependencies = [
  "packageurl",
  "patternfly-yew",
  "reqwest",
- "roxmltree 0.19.0",
+ "roxmltree",
  "serde",
  "serde_json",
  "sikula",
@@ -3129,7 +3122,7 @@ dependencies = [
  "spog-ui-common",
  "spog-ui-navigation",
  "spog-ui-utils",
- "strum 0.25.0",
+ "strum 0.26.1",
  "thiserror",
  "time",
  "trustification-api",
@@ -3184,7 +3177,7 @@ dependencies = [
  "spog-model",
  "spog-ui-backend",
  "spog-ui-common",
- "strum 0.25.0",
+ "strum 0.26.1",
  "yew",
  "yew-consent",
  "yew-hooks",
@@ -3227,6 +3220,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "strum"
+version = "0.26.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "723b93e8addf9aa965ebe2d11da6d7540fa2283fcea14b3371ff055f7ba13f5f"
+dependencies = [
+ "strum_macros 0.26.1",
+]
+
+[[package]]
 name = "strum_macros"
 version = "0.24.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3244,6 +3246,19 @@ name = "strum_macros"
 version = "0.25.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "23dc1fa9ac9c169a78ba62f0b841814b7abae11bdd047b9c58f893439e309ea0"
+dependencies = [
+ "heck",
+ "proc-macro2",
+ "quote",
+ "rustversion",
+ "syn 2.0.52",
+]
+
+[[package]]
+name = "strum_macros"
+version = "0.26.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7a3417fc93d76740d974a01654a09777cb500428cc874ca9f45edfe0c4d4cd18"
 dependencies = [
  "heck",
  "proc-macro2",
@@ -4002,12 +4017,6 @@ name = "xml-rs"
 version = "0.8.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0fcb9cbac069e033553e8bb871be2fbdffcab578eb25bd0f7c508cedc6dcd75a"
-
-[[package]]
-name = "xmlparser"
-version = "0.13.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "66fee0b777b0f5ac1c69bb06d361268faafa61cd4682ae064a171c16c433e9e4"
 
 [[package]]
 name = "yew"

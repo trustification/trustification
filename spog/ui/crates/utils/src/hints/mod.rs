@@ -6,7 +6,7 @@ use gloo_storage::Storage;
 use strum::VariantNames;
 use yew::html::IntoPropValue;
 
-#[derive(Copy, Clone, PartialEq, Eq, strum::AsRefStr, strum::Display, strum::EnumVariantNames)]
+#[derive(Copy, Clone, PartialEq, Eq, strum::AsRefStr, strum::Display, strum::VariantNames)]
 pub enum Hints {
     #[strum(serialize = "hint.scanner.welcome")]
     ScannerWelcome,

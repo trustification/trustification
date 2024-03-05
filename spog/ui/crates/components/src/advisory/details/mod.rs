@@ -94,6 +94,7 @@ pub struct CsafProperties {
     pub csaf: Rc<Csaf>,
 }
 
+#[derive(Clone)]
 pub struct VulnerabilityWrapper {
     vuln: Vulnerability,
     csaf: Rc<Csaf>,
