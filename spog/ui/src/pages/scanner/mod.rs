@@ -48,8 +48,8 @@ fn is_supported_package(purl: &str) -> bool {
             package.ty() == "maven"
                 || package.ty() == "gradle"
                 || package.ty() == "npm"
-                || package.ty() == "gomodules"
-                || package.ty() == "pip"
+                || package.ty() == "golang"
+                || package.ty() == "pypi"
         }
         Err(_) => false,
     }
