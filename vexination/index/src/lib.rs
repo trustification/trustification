@@ -13,8 +13,8 @@ use std::{
 use time::OffsetDateTime;
 use trustification_api::search::SearchOptions;
 use trustification_index::{
-    boost, create_date_query, create_float_query, create_string_query, create_text_query, field2date, field2float,
-    field2str, field2strvec,
+    boost, create_date_query, create_float_query, create_string_query, create_string_query_case, create_text_query,
+    field2date, field2float, field2str, field2strvec,
     metadata::doc2metadata,
     sort_by,
     tantivy::{
@@ -26,7 +26,7 @@ use trustification_index::{
         store::ZstdCompressor,
         DateTime, DocAddress, DocId, IndexSettings, Score, Searcher, SegmentReader, SnippetGenerator,
     },
-    term2query, Document, Error as SearchError, SearchQuery,
+    term2query, Case, Document, Error as SearchError, SearchQuery,
 };
 use vexination_model::prelude::*;
 
@@ -556,19 +556,12 @@ impl Index {
         const ADV_TITLE_WEIGHT: f32 = 1.3;
         const CVE_TITLE_WEIGHT: f32 = 1.3;
         match resource {
-            Vulnerabilities::Id(value) => boost(
-                Box::new(TermSetQuery::new(vec![Term::from_field_text(
-                    self.fields.advisory_id,
-                    &value.to_uppercase(),
-                )])),
+            Vulnerabilities::Id(primary) => boost(
+                create_string_query_case(self.fields.advisory_id, primary, Case::Uppercase),
                 ID_WEIGHT,
             ),
-
-            Vulnerabilities::Cve(value) => boost(
-                Box::new(TermSetQuery::new(vec![Term::from_field_text(
-                    self.fields.cve_id,
-                    &value.to_uppercase(),
-                )])),
+            Vulnerabilities::Cve(primary) => boost(
+                create_string_query_case(self.fields.cve_id, primary, Case::Uppercase),
                 CVE_ID_WEIGHT,
             ),
 
@@ -794,6 +787,14 @@ mod tests {
     async fn test_free_form_simple_primary_lowercase_2() {
         assert_search(|index| {
             let result = search(&index, "cve-2023-0286");
+            assert_eq!(result.0.len(), 1);
+        });
+    }
+
+    #[tokio::test]
+    async fn test_free_form_simple_primary_lowercase_partial() {
+        assert_search(|index| {
+            let result = search(&index, "cve-2023-028");
             assert_eq!(result.0.len(), 1);
         });
     }
