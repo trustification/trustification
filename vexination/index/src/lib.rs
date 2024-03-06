@@ -14,7 +14,7 @@ use time::OffsetDateTime;
 use trustification_api::search::SearchOptions;
 use trustification_index::{
     boost, create_date_query, create_float_query, create_string_query, create_string_query_case, create_text_query,
-    field2date, field2float, field2str, field2strvec,
+    field2date, field2float, field2str, field2str_opt, field2strvec,
     metadata::doc2metadata,
     sort_by,
     tantivy::{
@@ -168,7 +168,7 @@ impl trustification_index::Index for Index {
 
         let advisory_id = field2str(&self.schema, &doc, self.fields.advisory_id)?;
         let advisory_title = field2str(&self.schema, &doc, self.fields.advisory_title)?;
-        let advisory_severity = field2str(&self.schema, &doc, self.fields.advisory_severity)?;
+        let advisory_severity = field2str_opt(&doc, self.fields.advisory_severity);
         let advisory_date = field2date(&self.schema, &doc, self.fields.advisory_current)?;
         let advisory_desc = field2str(&self.schema, &doc, self.fields.advisory_description).unwrap_or("");
 
@@ -193,7 +193,7 @@ impl trustification_index::Index for Index {
             advisory_title: advisory_title.to_string(),
             advisory_date,
             advisory_snippet,
-            advisory_severity: advisory_severity.to_string(),
+            advisory_severity: advisory_severity.map(ToString::to_string),
             advisory_desc: advisory_desc.to_string(),
             cves,
             cvss_max,
