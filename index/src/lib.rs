@@ -1200,6 +1200,10 @@ pub fn field2str<'m>(schema: &'m Schema, doc: &'m Document, field: Field) -> Res
         .unwrap_or_else(|| Err(Error::FieldNotFound(schema.get_field_name(field).to_string())))
 }
 
+pub fn field2str_opt(doc: &Document, field: Field) -> Option<&str> {
+    doc.get_first(field).map(|s| s.as_text()).unwrap_or(None)
+}
+
 pub fn field2bool<'m>(schema: &'m Schema, doc: &'m Document, field: Field) -> Result<bool, Error> {
     let value = doc.get_first(field).map(|s| s.as_bool()).unwrap_or(None);
     value
