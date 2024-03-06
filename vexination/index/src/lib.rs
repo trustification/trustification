@@ -38,7 +38,11 @@ pub struct Index {
 struct Fields {
     indexed_timestamp: Field,
 
+    /// the ID of the advisory, converted to uppercase for case-insensitive search
     advisory_id: Field,
+    /// the original ID of the advisory, as stored in the document
+    advisory_id_raw: Field,
+
     advisory_status: Field,
     advisory_title: Field,
     advisory_description: Field,
@@ -166,7 +170,8 @@ impl trustification_index::Index for Index {
         let snippet_generator = SnippetGenerator::create(searcher, query, self.fields.advisory_description)?;
         let advisory_snippet = snippet_generator.snippet_from_doc(&doc).to_html();
 
-        let advisory_id = field2str(&self.schema, &doc, self.fields.advisory_id)?;
+        let advisory_id = field2str(&self.schema, &doc, self.fields.advisory_id_raw)?;
+
         let advisory_title = field2str(&self.schema, &doc, self.fields.advisory_title)?;
         let advisory_severity = field2str_opt(&doc, self.fields.advisory_severity);
         let advisory_date = field2date(&self.schema, &doc, self.fields.advisory_current)?;
@@ -252,6 +257,7 @@ impl trustification_index::WriteIndex for Index {
 
         let mut document = doc!(
             self.fields.advisory_id => id.to_uppercase(),
+            self.fields.advisory_id_raw => id,
             self.fields.advisory_status => document_status,
             self.fields.advisory_title => csaf.document.title.clone(),
         );
@@ -493,7 +499,8 @@ impl Index {
         let mut schema = Schema::builder();
         let indexed_timestamp = schema.add_date_field("indexed_timestamp", STORED);
 
-        let advisory_id = schema.add_text_field("advisory_id", STRING | FAST | STORED);
+        let advisory_id = schema.add_text_field("advisory_id", STRING | FAST);
+        let advisory_id_raw = schema.add_text_field("advisory_id_raw", STRING | STORED);
         let advisory_status = schema.add_text_field("advisory_status", STRING);
         let advisory_title = schema.add_text_field("advisory_title", TEXT | STORED);
         let advisory_description = schema.add_text_field("advisory_description", TEXT | STORED);
@@ -524,6 +531,7 @@ impl Index {
                 indexed_timestamp,
 
                 advisory_id,
+                advisory_id_raw,
                 advisory_status,
                 advisory_title,
                 advisory_description,
