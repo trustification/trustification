@@ -208,7 +208,6 @@ pub fn related_products_table(props: &RelatedProductsTableProperties) -> Html {
         <div class="pf-v5-u-background-color-100">
             <PaginationWrapped {pagination} {total}>
                 <Table<Column, UseTableData<Column, MemoizedTableModel<TableData>>>
-                    mode={TableMode::Expandable}
                     {header}
                     {entries}
                     {onexpand}
