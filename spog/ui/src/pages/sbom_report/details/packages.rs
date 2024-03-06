@@ -154,7 +154,7 @@ pub fn build_packages<'a>(
 
 pub type AffectedPackage = (PackageKey, PackageValue);
 
-#[derive(PartialEq, Eq, Ord, PartialOrd)]
+#[derive(Clone, PartialEq, Eq, Ord, PartialOrd)]
 pub struct PackageKey {
     pub r#type: String,
     pub namespace: Option<String>,
@@ -177,7 +177,7 @@ impl PackageKey {
     }
 }
 
-#[derive(PartialEq)]
+#[derive(Clone, PartialEq)]
 pub struct PackageValue {
     pub qualifiers: BTreeMap<String, BTreeSet<String>>,
     pub backtraces: Rc<BTreeMap<String, BTreeSet<Backtrace>>>,
