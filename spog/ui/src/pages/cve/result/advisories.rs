@@ -35,7 +35,11 @@ pub fn related_advisories(props: &RelatedAdvisoriesProperties) -> Html {
                     )
                 }
                 Column::Title => html!(self.title.clone()),
-                Column::AggregatedSeverity => html!(<Severity severity={self.severity.clone()} />),
+                Column::AggregatedSeverity => html!(
+                    if let Some(severity) = self.severity.clone() {
+                        <Severity {severity} />
+                    }
+                ),
                 Column::Revision => html!(<Date timestamp={self.date} />),
                 Column::Vulnerabilities => html!(self.cves.len()),
             }

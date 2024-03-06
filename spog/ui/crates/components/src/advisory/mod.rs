@@ -62,7 +62,9 @@ impl TableEntryRenderer<Column> for AdvisoryEntry {
             ),
             Column::Title => html!(&self.summary.title),
             Column::Severity => html!(
-                <Severity severity={self.summary.severity.clone()} />
+                if let Some(severity) = self.summary.severity.clone() {
+                    <Severity {severity} />
+                }
             ),
             Column::Revision => date(self.summary.date),
             Column::Download => html!(if let Some(url) = &self.url {
@@ -434,7 +436,7 @@ fn csaf_product_status_entry_details(
             let component = product_html(trace_product(csaf, &r.product_reference.0));
 
             html!(<>
-                { component } {" "} { relationship } {" "} { product }  
+                { component } {" "} { relationship } {" "} { product }
             </>)
         })
         .chain(actual.map(|product| {
