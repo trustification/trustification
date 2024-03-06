@@ -7,9 +7,9 @@ use utoipa::ToSchema;
 #[derive(Clone, Debug, PartialEq, Search)]
 pub enum Vulnerabilities<'a> {
     #[search(default)]
-    Id(&'a str),
+    Id(Primary<'a>),
     #[search(default)]
-    Cve(&'a str),
+    Cve(Primary<'a>),
     #[search(default)]
     Title(Primary<'a>),
     #[search(default)]
