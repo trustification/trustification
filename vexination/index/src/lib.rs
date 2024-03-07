@@ -477,7 +477,7 @@ impl trustification_index::WriteIndex for Index {
 
     fn doc_id_to_term(&self, id: &str) -> Term {
         self.schema
-            .get_field("advisory_id")
+            .get_field("advisory_id_raw")
             .map(|f| Term::from_field_text(f, id))
             .expect("the document schema defines this field")
     }
@@ -734,6 +734,7 @@ fn rewrite_cpe_partial(value: &str) -> String {
 
 #[cfg(test)]
 mod tests {
+    use std::fmt::Display;
     use time::format_description;
     use trustification_index::IndexStore;
 
@@ -743,12 +744,25 @@ mod tests {
     where
         F: FnOnce(IndexStore<Index>),
     {
+        assert_search_with(
+            ["rhsa-2023_1441", "rhsa-2021_3029", "rhsa-2023_3408", "rhsa-2023_4378"],
+            f,
+        )
+    }
+
+    fn assert_search_with<F, I, S>(advisories: I, f: F)
+    where
+        F: FnOnce(IndexStore<Index>),
+        I: IntoIterator<Item = S>,
+        S: Display,
+    {
         let _ = env_logger::try_init();
 
         let index = Index::new();
         let mut store = IndexStore::new_in_memory(index).unwrap();
+
         let mut writer = store.writer().unwrap();
-        for advisory in &["rhsa-2023_1441", "rhsa-2021_3029", "rhsa-2023_3408", "rhsa-2023_4378"] {
+        for advisory in advisories {
             let data = std::fs::read_to_string(format!("../testdata/{}.json", advisory)).unwrap();
             let csaf: Csaf = serde_json::from_str(&data).unwrap();
 
@@ -758,6 +772,7 @@ mod tests {
         }
 
         writer.commit().unwrap();
+
         f(store);
     }
 
@@ -773,6 +788,22 @@ mod tests {
                 },
             )
             .unwrap()
+    }
+
+    #[tokio::test]
+    async fn test_lowercase_id() {
+        assert_search_with(["lowercase-id"], |index| {
+            let result = search(&index, "security");
+            assert_eq!(result.0.len(), 1);
+        });
+    }
+
+    #[tokio::test]
+    async fn test_lowercase_id_reupload() {
+        assert_search_with(["lowercase-id", "lowercase-id"], |index| {
+            let result = search(&index, "security");
+            assert_eq!(result.0.len(), 1);
+        });
     }
 
     #[tokio::test]
