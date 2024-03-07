@@ -67,9 +67,11 @@ spec:
           volumeMounts:
             {{- include "trustification.application.httpServerVolumesMounts" $mod | nindent 12 }}
 
-          livenessProbe:
-            tcpSocket:
+          readinessProbe:
+            httpGet:
+              path: /healthz
               port: 8080
+              scheme: {{ include "trustification.tls.http.protocol" $mod | upper }}
 
           ports:
             {{- include "trustification.application.infrastructure.podPorts" $mod | nindent 12 }}
