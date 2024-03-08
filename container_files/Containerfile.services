@@ -90,6 +90,12 @@ RUN test -f /public/*.wasm
 FROM registry.access.redhat.com/ubi9/ubi-minimal:latest
 
 LABEL org.opencontainers.image.source="https://github.com/trustification/trustification"
+LABEL description="Trustification"
+LABEL io.k8s.description ="Trustification"
+LABEL io.k8s.display-name ="Trustification"
+LABEL summary ="Trustification"
+LABEL io.openshift.tags ="Trustification"
+LABEL name ="Trustification"
 
 RUN microdnf update -y && microdnf install -y nginx jq git postgresql
 RUN true \

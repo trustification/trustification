@@ -19,7 +19,7 @@ metadata:
 spec:
   params:
   - name: dockerfile
-    value: https://raw.githubusercontent.com/trustification/trustification/release/1.0.z/container_files/Containerfile.services
+    value: ./container_files/Containerfile.services
   - name: git-url
     value: '{{source_url}}'
   - name: image-expires-after
