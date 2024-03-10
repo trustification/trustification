@@ -24,7 +24,7 @@ WORKDIR /usr/src/project
 ARG tag
 RUN TAG=$tag cargo build -p trust --release
 
-FROM docker.io/library/fedora:39 as frontendbuilder
+FROM quay.io/fedora/fedora:39 as frontendbuilder
 
 ARG RUST_VERSION="1.75.0"
 ARG SASS_VERSION="1.69.5"
