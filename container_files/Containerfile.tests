@@ -25,6 +25,12 @@ RUN find target/release/deps/ -type f ! -name "*.*" ! -name "integration_tests*"
 FROM registry.access.redhat.com/ubi9/ubi-minimal:latest
 
 LABEL org.opencontainers.image.source="https://github.com/trustification/trustification"
+LABEL description="Trustification"
+LABEL io.k8s.description ="Trustification"
+LABEL io.k8s.display-name ="Trustification"
+LABEL summary ="Trustification"
+LABEL io.openshift.tags ="Trustification"
+LABEL name ="Trustification"
 
 COPY --from=builder /usr/src/project/test-binaries /tests
 COPY --from=builder /usr/src/project/integration-tests/run-test-binaries.sh /
