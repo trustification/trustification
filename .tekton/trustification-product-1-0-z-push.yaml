@@ -27,8 +27,8 @@ spec:
     value: .
   - name: revision
     value: '{{revision}}'
-  - name: hermetic
-    value: 'true'
+  #- name: hermetic
+  #  value: 'true'
   - name: build-source-image
     value: 'true'
   pipelineSpec:
