@@ -24,12 +24,12 @@ WORKDIR /usr/src/project
 ARG tag
 RUN TAG=$tag cargo build -p trust --release
 
-FROM docker.io/library/fedora:39 as frontendbuilder
+FROM registry.access.redhat.com/ubi9/ubi:latest as frontendbuilder
 
 ARG RUST_VERSION="1.75.0"
 ARG SASS_VERSION="1.69.5"
 ARG WASM_BINDGEN_VERSION="0.2.89"
-ARG TRUNK_VERSION="0.18.8"
+ARG TRUNK_VERSION="0.19.0"
 
 RUN dnf -y install nodejs git gcc
 
@@ -40,9 +40,10 @@ RUN \
     curl https://sh.rustup.rs -sSf | sed 's#/proc/self/exe#\/bin\/sh#g' | sh -s -- -y --profile minimal --default-toolchain ${RUST_VERSION} && \
     rustup target add wasm32-unknown-unknown
 
-RUN curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
-
-RUN cargo binstall trunk -y --version ${TRUNK_VERSION}
+RUN \
+    curl -sSL https://github.com/trunk-rs/trunk/releases/download/v0.19.0/trunk-x86_64-unknown-linux-musl.tar.gz -o trunk-x86_64-unknown-linux-musl.tar.gz && \
+    tar xavf trunk-x86_64-unknown-linux-musl.tar.gz && \
+    install trunk /usr/local/bin && rm trunk
 
 RUN npm install -g sass@${SASS_VERSION} && sass --version
 
