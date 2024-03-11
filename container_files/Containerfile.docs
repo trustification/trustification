@@ -1,4 +1,6 @@
-FROM ghcr.io/ctron/trunk:latest as builder
+FROM registry.access.redhat.com/ubi9/ubi:latest as builder
+
+RUN dnf install -y npm make
 
 RUN mkdir /trustification
 
