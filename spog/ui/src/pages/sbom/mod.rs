@@ -215,7 +215,7 @@ fn details(props: &DetailsProps) -> Html {
                         <Stack gutter=true>
                             <StackItem>
                                 <Grid gutter=true>
-                                    <GridItem cols={[6]}>{cyclonedx_meta(bom)}</GridItem>
+                                    <GridItem cols={[6]}><CycloneDXMeta bom={bom.clone()} source={source.clone()}/></GridItem>
                                     <GridItem cols={[3]}>{cyclonedx_creator(bom)}</GridItem>
                                     <GridItem cols={[3]}>
                                         <GridItem cols={[2]}><Technical size={source.as_bytes().len()}/></GridItem>
