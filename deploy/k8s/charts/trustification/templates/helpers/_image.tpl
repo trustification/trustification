@@ -35,7 +35,8 @@ Arguments (dict):
   * image - image object
 */}}
 {{- define "trustification.common.imageName" }}
-{{- with .image.fullName }}
+{{- $fullName := .image.fullName | default .defaults.fullName }}
+{{- with $fullName }}
 {{- . }}
 {{- else }}
 {{- include "trustification.common.imageRegistry" . }}/{{ .image.name | default .imageName | default .defaults.name | default "trust" }}:{{ include "trustification.common.imageVersion" . }}
