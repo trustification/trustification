@@ -52,14 +52,27 @@ pub fn sbom(props: &SBOMProperties) -> Html {
         ),
         UseAsyncState::Ready(Ok(Some(data))) => (
             html!(
-                <PageHeading
-                    sticky=false
-                    action={html!(
-                        <LocalDownloadButton data={data.get_source()} r#type="sbom" filename={clean_ext(&props.id)} />
-                    )}
-                >
-                    {title} {" "} <Label label={data.type_name()} color={Color::Blue} />
-                </PageHeading>
+                <PageSection variant={PageSectionVariant::Light} >
+                    <Flex>
+                        <FlexItem>
+                            <Content>
+                                <Title>
+                                    {title} {" "} <Label label={data.type_name()} color={Color::Blue} />
+                                </Title>
+                                <p>
+                                    {"To generate a report, SBOM content will be processed by Red Hat’s Dependency Analytics Service. The SBOM data will be deleted from the Dependency Analytics Service once the report has been generated. Contact"}
+                                    {" "}<a href="mailto:rhtpa-support@redhat.com">{"rhtpa-support@redhat.com"}</a>{" "}
+                                    {"if you have any questions or concerns."}
+                                </p>
+                            </Content>
+                        </FlexItem>
+                        <FlexItem modifiers={[FlexModifier::Align(Alignment::Right), FlexModifier::Align(Alignment::End)]}>
+                            {html!(
+                                <LocalDownloadButton data={data.get_source()} r#type="sbom" filename={clean_ext(&props.id)} />
+                            )}
+                        </FlexItem>
+                    </Flex>
+                </PageSection>
             ),
             html!(<Details id={props.id.clone()} sbom={data.clone()}/> ),
         ),
