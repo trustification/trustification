@@ -48,6 +48,9 @@ properties:
   index:
     $ref: "#/definitions/IndexConfig"
 
+  workarounds:
+    $ref: "#/definitions/WorkaroundConfig"
+
   openshift:
     type: object
     additionalProperties: false
@@ -1200,3 +1203,22 @@ definitions:
         $ref: "#/definitions/ByteSize"
       jsonLimit:
         $ref: "#/definitions/ByteSize"
+
+  WorkaroundConfig:
+    type: object
+    properties:
+      initCronJobPvcs:
+        type: boolean
+        default: false
+        description: |
+          When using `--wait` with `helm`, then `helm` will wait for all resources to be created, including all PVCs.
+          
+          However, some storage controllers will lazy-bind PVCs, which in the case of `CronJob` with PVCs will make
+          Helm wait forever.
+          
+          Also see: https://github.com/helm/helm/issues/10733
+          
+          **NOTE:** This workaround can be used to create a persistent volume during the deployment. Which might be
+          good enough for use cases where it is required to use `--wait`. But it might not be what you want in
+          production.
+
