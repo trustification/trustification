@@ -1,0 +1,48 @@
+{{- if .Values.modules.v11yWalker.enabled }}
+{{- if .Values.workarounds.initCronJobPvcs }}
+
+{{/*
+For more details "why" this is necessary, see the description of the field .workarounds.initCronJobPvcs.
+
+In order to trigger the creation of a volume, and getting the PVC out of the `WaitForFirstConsumer` state, we
+simply create a pod.
+
+**NOTE:** This pod will claim the PVC and thus might prevent the CronJob from working correctly. Do not use this in
+production!
+*/}}
+
+{{- $mod := dict "root" . "name" "init-pvc-v11y-walker" "component" "v11y"  -}}
+{{- $ref := dict "root" . "name" "v11y-walker" "component" "v11y" -}}
+
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "trustification.common.name" $mod }}
+  labels:
+    {{- include "trustification.common.labels" $mod | nindent 12 }}
+
+spec:
+  backoffLimit: 1000
+  completions: 1
+  parallelism: 1
+  ttlSecondsAfterFinished: 600
+
+  template:
+    metadata:
+      labels:
+        {{- include "trustification.common.selectorLabels" $mod | nindent 12 }}
+    spec:
+      restartPolicy: OnFailure
+      volumes:
+        - name: init
+          persistentVolumeClaim:
+            claimName: {{ include "trustification.common.name" $ref }}
+      containers:
+        - image: registry.access.redhat.com/ubi9/ubi-minimal:latest
+          name: init
+          command: ["/bin/true"]
+          volumeMounts:
+            - mountPath: /mnt
+              name: init
+{{- end }}
+{{- end }}
