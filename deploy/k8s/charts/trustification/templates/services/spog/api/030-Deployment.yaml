@@ -116,7 +116,7 @@ spec:
         {{- if $mod.module.uiConfiguration }}
         - name: config-ui
           configMap:
-            name: {{ with $mod.module.uiConfiguration.configMapRef }}{{ .name }}{{ else }}{{ .Release.Name }}-spog-ui-config{{ end }}
+            name: {{ with $mod.module.uiConfiguration.configMapRef }}{{ .name }}{{ else }}{{ include "trustification.common.name" (dict "root" . "name" "spog-ui-config" )}}{{ end }}
         {{- end }}
 
 {{ end }}
