@@ -8,6 +8,7 @@ use bombastic_model::prelude::SBOM;
 use bytes::Bytes;
 use futures::Stream;
 use http::{header, StatusCode};
+use std::time::Duration;
 use tracing::instrument;
 use trustification_analytics::Tracker;
 use trustification_common::error::ErrorInformation;
@@ -70,7 +71,11 @@ pub struct CrdaClient {
 
 impl CrdaClient {
     pub fn new(url: Url, snyk_token: Option<String>) -> Self {
-        let client = reqwest::Client::new();
+        let client = reqwest::Client::builder()
+            .timeout(Duration::from_secs(60 * 3))
+            .build()
+            .expect("Could not create the crda client");
+
         Self {
             client,
             url,
