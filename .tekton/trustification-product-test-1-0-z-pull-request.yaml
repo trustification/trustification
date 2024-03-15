@@ -17,6 +17,10 @@ metadata:
   name: trustification-product-test-1-0-z-on-pull-request
   namespace: trusted-content-tenant
 spec:
+  timeouts:
+    pipeline: "2h0m0s"
+    #tasks: "1h0m0s"
+    #finally: "0h30m0s"
   params:
   - name: dockerfile
     value: ./container_files/Containerfile.tests
