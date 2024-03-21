@@ -75,7 +75,7 @@ impl Display for ApiErrorDetails {
 }
 
 #[derive(Clone, Debug)]
-pub struct ApiError(Rc<ApiErrorKind>);
+pub struct ApiError(pub Rc<ApiErrorKind>);
 
 impl Deref for ApiError {
     type Target = ApiErrorKind;

@@ -8,7 +8,10 @@ use patternfly_yew::prelude::*;
 use serde_json::{json, Value};
 use spog_model::prelude::*;
 use spog_ui_backend::use_backend;
-use spog_ui_common::error::components::ApiError;
+use spog_ui_common::error::{
+    components::{ApiError, Error},
+    ApiErrorKind,
+};
 use spog_ui_components::{
     common::{NotFound, PageHeading},
     time::Date,
@@ -115,14 +118,33 @@ pub fn sbom(props: &SbomReportProperties) -> Html {
                 </>
             )
         }
-        UseAsyncState::Ready(Err(err)) => html!(
-            <>
-                <PageHeading sticky=false>{ props.id.clone() }</PageHeading>
-                <PageSection fill={PageSectionFill::Fill} variant={PageSectionVariant::Light}>
-                    <ApiError error={err.clone()} />
-                </PageSection>
-            </>
-        ),
+        UseAsyncState::Ready(Err(err)) => {
+            let error_component = match &*err.0 {
+                // If >= 500 error then assume we did something wrong and just render a nice message rather than the verbose but not friendly message drom the API
+                ApiErrorKind::Api { status, details: _ } if status.as_u16() >= 500 => {
+                    html!(
+                        <Error
+                            title={"Internal server error"}
+                            message={"The error might be caused due to inconsistencies in the content of the SBOM file."}
+                            // actions={html!(
+                            //     <>
+                            //         <a href="http://redhat.com.com">{"SBOM best practices"}{" "}{Icon::ExternalLinkAlt}</a>
+                            //     </>
+                            // )}
+                        />
+                    )
+                }
+                _ => html!(<ApiError error={err.clone()} />),
+            };
+
+            html!(
+                <>
+                    <PageSection fill={PageSectionFill::Fill} variant={PageSectionVariant::Light}>
+                        {error_component}
+                    </PageSection>
+                </>
+            )
+        }
     }
 }
 
