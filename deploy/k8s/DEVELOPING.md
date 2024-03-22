@@ -20,7 +20,7 @@ Unfortunately, Helm requires the JSON schema to be authored in JSON. To make tha
 in YAML and then convert it to JSON. For example, using:
 
 ```shell
-python3 -c 'import sys, yaml, json; print(json.dumps(yaml.safe_load(sys.stdin)))' < charts/trustification/values.schema.yaml > charts/trustification/values.schema.json
+python3 -c 'import sys, yaml, json; print(json.dumps(yaml.safe_load(sys.stdin), indent=2))' < charts/trustification/values.schema.yaml > charts/trustification/values.schema.json
 ```
 
 ## Linting Helm charts
