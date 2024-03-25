@@ -18,6 +18,11 @@ properties:
       When using OpenShift, this should be the application domain, when can be evaluated by running the following
       command: `oc -n openshift-ingress-operator get ingresscontrollers.operator.openshift.io default -o jsonpath='{.status.domain}'`.
 
+  ssoServiceName:
+    type: string
+    description: |
+      The Kubernetes service name of the Keycloak instance running inside the same OCP Cluster.      
+
   partOf:
     type: string
     default: trustification

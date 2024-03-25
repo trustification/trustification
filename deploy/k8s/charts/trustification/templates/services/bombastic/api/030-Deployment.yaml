@@ -43,8 +43,6 @@ spec:
             - "--index-mode"
             - {{ $mod.module.indexMode | default "file" | quote }}
 
-            - "--auth-configuration"
-            - "/etc/config/auth.yaml"
 
           env:
 

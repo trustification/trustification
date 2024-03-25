@@ -38,7 +38,11 @@ Arguments (dict):
   {{- include "trustification.common.envVarValue" $client.clientSecret | nindent 2 }}
 
 - name: OIDC_PROVIDER_ISSUER_URL
+  {{- if .root.Values.ssoServiceName }}
+  value: http://{{ .root.Values.ssoServiceName }}.svc/realms/chicken
+  {{- else -}}
   value: {{ include "trustification.oidc.issuerUrl" ( dict "root" .root "client" $client ) }}
+  {{- end }}
 
 {{- if or $client.insecure .root.Values.oidc.insecure }}
 - name: OIDC_PROVIDER_INSECURE_TLS
