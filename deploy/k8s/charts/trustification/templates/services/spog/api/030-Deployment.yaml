@@ -54,8 +54,6 @@ spec:
 {{- end }}
             - "--guac"
             - "{{ include "trustification.tls.http.protocol" $mod }}://guac-graphql.{{ .Release.Namespace }}.svc.cluster.local/query"
-            - "--auth-configuration"
-            - "/etc/config/auth.yaml"
           env:
 
             - name: NAMESPACE
