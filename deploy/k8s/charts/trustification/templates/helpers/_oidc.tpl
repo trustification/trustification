@@ -65,7 +65,6 @@ Arguments (dict):
 {{- .root.Values.oidc.issuerUrl }}
 {{- else -}}
 {{ include "trustification.tls.http.protocol" . }}://sso{{ .root.Values.appDomain }}/realms/chicken
-{{/*http://infrastructure-keycloak.trustification.svc/realms/chicken*/}}
 {{- end }}
 {{- end }}
 
