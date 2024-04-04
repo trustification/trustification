@@ -58,12 +58,12 @@ impl PackageEntry {
 impl TableEntryRenderer<Column> for PackageEntry {
     fn render_cell(&self, context: CellContext<'_, Column>) -> Cell {
         match context.column {
-            Column::Name => html!(
+            Column::Name => Cell::from(html!(
                 <Link<AppRoute>
                     target={AppRoute::Sbom(View::Content{id: self.package.id.clone()})}
                 >{ self.package_name() }</Link<AppRoute>>
-            )
-            .into(),
+            ))
+            .text_modifier(TextModifier::Truncate),
             Column::Supplier => html!(&self.package.supplier).into(),
             Column::Created => date(self.package.created).into(),
             Column::Download => html!(
@@ -141,12 +141,12 @@ pub fn sbom_result(props: &SbomResultProperties) -> Html {
         yew::props!(TableColumnProperties<Column> {
             index: Column::Name,
             label: "Name",
-            width: ColumnWidth::Percent(15)
+            width: ColumnWidth::Percent(25)
         }),
         yew::props!(TableColumnProperties<Column> {
             index: Column::Version,
             label: "Version",
-            width: ColumnWidth::Percent(20)
+            width: ColumnWidth::Percent(15)
         }),
         yew::props!(TableColumnProperties<Column> {
             index: Column::Supplier,
