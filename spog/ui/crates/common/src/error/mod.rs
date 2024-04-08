@@ -65,7 +65,7 @@ impl Display for ApiErrorDetails {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Information(info) => {
-                write!(f, "{} ({})", info.message, info.error)
+                write!(f, "{} ({}) - {}", info.message, info.error, info.details)
             }
             Self::Plain(s) => f.write_str(s),
             Self::Empty => f.write_str("no information"),
@@ -75,7 +75,7 @@ impl Display for ApiErrorDetails {
 }
 
 #[derive(Clone, Debug)]
-pub struct ApiError(Rc<ApiErrorKind>);
+pub struct ApiError(pub Rc<ApiErrorKind>);
 
 impl Deref for ApiError {
     type Target = ApiErrorKind;
