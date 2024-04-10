@@ -67,6 +67,7 @@ spec:
             {{- include "trustification.application.infrastructure.envVars" $mod | nindent 12 }}
             {{- include "trustification.application.httpServer.envVars" $mod | nindent 12 }}
             {{- include "trustification.oidc.authenticationClient" ( dict "root" . "clientId" "walker" ) | nindent 12 }}
+            {{- include "trustification.oidc.swaggerUi" $mod | nindent 12 }}
 
             {{- with $mod.module.snykToken }}
             - name: SNYK_TOKEN
@@ -76,11 +77,6 @@ spec:
             {{- with $mod.module.segmentWriteKey }}
             - name: SEGMENT_WRITE_KEY
               {{- include "trustification.common.envVarValue" . | nindent 14 }}
-            {{- end }}
-
-            {{- if not $mod.module.disableSwaggerOidc }}
-            - name: SWAGGER_UI_OIDC_ISSUER_URL
-              value: {{ include "trustification.oidc.frontendIssuerUrl" . | quote }}
             {{- end }}
 
             {{- if $mod.module.uiConfiguration }}
@@ -109,6 +105,8 @@ spec:
               subPath: {{ if ($mod.module.uiConfiguration.configMapRef).key }}{{ $mod.module.uiConfiguration.configMapRef.key }}{{ else }}spog-ui.yaml{{ end }}
             {{- end }}
 
+            {{- include "trustification.application.extraVolumeMounts" $mod | nindent 12 }}
+
       volumes:
         {{- include "trustification.application.httpServerVolumes" $mod | nindent 8 }}
         {{- include "trustification.authenticator.volume" $mod | nindent 8 }}
@@ -118,5 +116,7 @@ spec:
           configMap:
             name: {{ with $mod.module.uiConfiguration.configMapRef }}{{ .name }}{{ else }}{{ include "trustification.common.name" (dict "root" . "name" "spog-ui-config" )}}{{ end }}
         {{- end }}
+
+        {{- include "trustification.application.extraVolumes" $mod | nindent 8 }}
 
 {{ end }}

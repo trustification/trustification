@@ -1,11 +1,8 @@
 use crate::{processing::ProcessVisitor, report::SbomReportVisitor};
 use parking_lot::Mutex;
 use sbom_walker::{
-    model::metadata::Key,
-    retrieve::RetrievingVisitor,
-    source::{DispatchSource, FileSource, HttpSource},
-    validation::ValidationVisitor,
-    walker::Walker,
+    discover::DiscoverConfig, model::metadata::Key, retrieve::RetrievingVisitor, source::new_source,
+    validation::ValidationVisitor, walker::Walker,
 };
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -15,7 +12,7 @@ use tracing::{instrument, log};
 use trustification_common_walker::report::{Report, ReportBuilder, ReportVisitor, ScannerError};
 use url::Url;
 use walker_common::{
-    fetcher::{Fetcher, FetcherOptions},
+    fetcher::FetcherOptions,
     sender::{self, provider::TokenProvider, HttpSenderOptions},
     since::Since,
     validate::ValidationOptions,
@@ -61,17 +58,15 @@ impl Scanner {
 
         let since = Since::new(None::<SystemTime>, self.options.since_file.clone(), Default::default())?;
 
-        let source: DispatchSource = match Url::parse(&self.options.source) {
-            Ok(url) => HttpSource::new(
-                url,
-                Fetcher::new(FetcherOptions::default()).await?,
-                sbom_walker::source::HttpOptions::new()
-                    .since(*since)
-                    .keys(self.options.keys.clone()),
-            )
-            .into(),
-            Err(_) => FileSource::new(&self.options.source, None)?.into(),
-        };
+        let source = new_source(
+            DiscoverConfig {
+                source: self.options.source.clone(),
+                since: *since,
+                keys: self.options.keys.clone(),
+            },
+            FetcherOptions::default(),
+        )
+        .await?;
 
         let sender = sender::HttpSender::new(
             self.options.provider.clone(),

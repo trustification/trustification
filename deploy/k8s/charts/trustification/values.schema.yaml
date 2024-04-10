@@ -24,6 +24,16 @@ properties:
     description: |
       The "part of" label when creating resources. This can help grouping together deployments.
 
+  extraVolumes:
+    type: array
+    items:
+      $ref: "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.29.0/_definitions.json#/definitions/io.k8s.api.core.v1.Volume"
+
+  extraVolumeMounts:
+    type: array
+    items:
+      $ref: "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.29.0/_definitions.json#/definitions/io.k8s.api.core.v1.VolumeMount"
+
   eventBus:
     $ref: "#/definitions/EventBusConfig"
 
@@ -139,6 +149,13 @@ properties:
         $ref: "#/definitions/GuacMigrateDatabaseConfig"
       initDatabase:
         $ref: "#/definitions/PostgresConfig"
+
+  tls:
+    type: object
+    properties:
+      additionalTrustAnchor:
+        type: string
+        description: The path of the certificate to add to the list of trust anchors
 
   modules:
     type: object

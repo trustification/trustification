@@ -37,6 +37,7 @@ spec:
         - name: init-data
           configMap:
             name: {{ include "trustification.common.name" $mod }}
+        {{- include "trustification.application.extraVolumes" $mod | nindent 8 }}
 
       containers:
         - name: setup
@@ -58,6 +59,7 @@ spec:
           volumeMounts:
             - mountPath: /etc/init-data
               name: init-data
+            {{- include "trustification.application.extraVolumeMounts" $mod | nindent 12 }}
 
           command:
             - psql

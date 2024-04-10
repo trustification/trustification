@@ -58,11 +58,7 @@ spec:
             {{- include "trustification.application.httpServer.envVars" $mod | nindent 12 }}
             {{- include "trustification.oidc.authenticationClient" ( dict "root" . "clientId" "walker" ) | nindent 12 }}
             {{- include "trustification.storage.envVars" ( set (deepCopy $mod) "storage" .Values.bombastic ) | nindent 12 }}
-
-            {{- if not $mod.module.disableSwaggerOidc }}
-            - name: SWAGGER_UI_OIDC_ISSUER_URL
-              value: {{ include "trustification.oidc.frontendIssuerUrl" . | quote }}
-            {{- end }}
+            {{- include "trustification.oidc.swaggerUi" $mod | nindent 12 }}
 
             - name: INDEX_SYNC_INTERVAL
               value: {{ include "trustification.index.syncInterval" ( set (deepCopy $mod) "storage" .Values.bombastic ) }}
@@ -81,9 +77,11 @@ spec:
           volumeMounts:
             {{- include "trustification.application.httpServerVolumesMounts" $mod | nindent 12 }}
             {{- include "trustification.authenticator.volumeMount" $mod | nindent 12 }}
+            {{- include "trustification.application.extraVolumeMounts" $mod | nindent 12 }}
 
       volumes:
         {{- include "trustification.application.httpServerVolumes" $mod | nindent 8 }}
         {{- include "trustification.authenticator.volume" $mod | nindent 8 }}
+        {{- include "trustification.application.extraVolumes" $mod | nindent 8 }}
 
 {{ end }}

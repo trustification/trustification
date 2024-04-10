@@ -28,6 +28,7 @@ spec:
     spec:
       volumes:
         {{- include "trustification.application.httpServerVolumes" $mod | nindent 8 }}
+        {{- include "trustification.application.extraVolumes" $mod | nindent 8 }}
 
       containers:
         - name: service
@@ -47,6 +48,7 @@ spec:
 
           volumeMounts:
             {{- include "trustification.application.httpServerVolumesMounts" $mod | nindent 12 }}
+            {{- include "trustification.application.extraVolumeMounts" $mod | nindent 12 }}
 
           livenessProbe:
             tcpSocket:
