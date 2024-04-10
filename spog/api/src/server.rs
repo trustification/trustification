@@ -10,6 +10,7 @@ use crate::{
     Run,
 };
 use actix_web::web;
+use anyhow::Context;
 use futures::future::select_all;
 use hide::Hide;
 use std::future::Future;
@@ -44,7 +45,10 @@ impl Server {
         let config_configurator = config::configurator(self.run.config).await?;
 
         let (authn, authz) = self.run.auth.split(self.run.devmode)?.unzip();
-        let authenticator: Option<Arc<Authenticator>> = Authenticator::from_config(authn).await?.map(Arc::new);
+        let authenticator: Option<Arc<Authenticator>> = Authenticator::from_config(authn)
+            .await
+            .context("failed to create authenticator")?
+            .map(Arc::new);
         let authorizer = Authorizer::new(authz);
 
         let swagger_oidc: Option<Arc<SwaggerUiOidc>> =

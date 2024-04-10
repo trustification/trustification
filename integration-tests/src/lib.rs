@@ -75,6 +75,8 @@ fn testing_auth() -> AuthConfigArguments {
 
 fn testing_swagger_ui_oidc() -> SwaggerUiOidcConfig {
     SwaggerUiOidcConfig {
+        tls_insecure: false,
+        ca_certificates: vec![],
         swagger_ui_oidc_issuer_url: Some(devmode::issuer_url()),
         swagger_ui_oidc_client_id: "frontend".to_string(),
     }
