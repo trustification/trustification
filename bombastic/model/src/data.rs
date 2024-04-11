@@ -51,12 +51,10 @@ impl SBOM {
         #[cfg(feature = "spdx-rs")]
         {
             let result = info_span!("parse spdx").in_scope(|| serde_json::from_slice::<spdx_rs::models::SPDX>(data));
-            match result.map_err(|e| {
-                log::info!("Error parsing SPDX: {:?}", e);
-                e
-            }) {
+            match result {
                 Ok(spdx) => return Ok(SBOM::SPDX(spdx)),
                 Err(e) => {
+                    log::info!("Error parsing SPDX: {:?}", e);
                     err.spdx = Some(e);
                 }
             }
@@ -64,14 +62,11 @@ impl SBOM {
 
         #[cfg(feature = "cyclonedx-bom")]
         {
-            let result =
-                info_span!("parse cyclonedx").in_scope(|| cyclonedx_bom::prelude::Bom::parse_from_json_v1_3(data));
-            match result.map_err(|e| {
-                log::info!("Error parsing CycloneDX: {:?}", e);
-                e
-            }) {
+            let result = info_span!("parse cyclonedx").in_scope(|| cyclonedx_bom::prelude::Bom::parse_from_json(data));
+            match result {
                 Ok(bom) => return Ok(SBOM::CycloneDX(bom)),
                 Err(e) => {
+                    log::info!("Error parsing CycloneDX: {:?}", e);
                     err.cyclonedx = Some(e);
                 }
             }
