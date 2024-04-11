@@ -377,6 +377,7 @@ impl HttpServerBuilder {
         self
     }
 
+    #[allow(clippy::useless_asref)]
     pub fn metrics(mut self, registry: impl Into<Registry>, namespace: impl AsRef<str>) -> Self {
         let metrics = PrometheusMetricsBuilder::new(namespace.as_ref())
             .registry(registry.into())
