@@ -39,11 +39,11 @@ impl CollectorUrl {
     }
 
     pub fn packages_url(&self) -> Url {
-        self.base_url.join("packages").unwrap()
+        self.base_url.join("packages").expect("")
     }
 
     pub fn vulnerabilities_url(&self) -> Url {
-        self.base_url.join("vulnerabilities").unwrap()
+        self.base_url.join("vulnerabilities").expect("")
     }
 }
 
