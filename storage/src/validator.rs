@@ -86,7 +86,7 @@ mod tests {
         let mut bytes = vec![];
         pin_mut!(data);
         while let Some(chunk) = data.next().await {
-            bytes.extend_from_slice(&chunk.unwrap())
+            bytes.extend_from_slice(&chunk.expect(""))
         }
         bytes
     }

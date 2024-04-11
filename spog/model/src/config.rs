@@ -373,7 +373,7 @@ mod test {
                     "terms": [],
                 }
             ]))
-            .unwrap(),
+            .expect(""),
             vec![mock_check("id1", "label1")],
         )
     }
@@ -396,7 +396,7 @@ mod test {
                     "terms": [],
                 },
             ]))
-            .unwrap(),
+            .expect(""),
             vec![
                 mock_check("id1", "label1"),
                 FilterOption::Divider,
@@ -432,7 +432,7 @@ mod test {
                 ],
             },
         ]))
-        .unwrap();
+        .expect("");
 
         let f = Filters {
             categories: vec![FilterCategory {
@@ -441,7 +441,7 @@ mod test {
             }],
         };
 
-        let f: Filters = serde_json::from_value(serde_json::to_value(f).unwrap()).unwrap();
+        let f: Filters = serde_json::from_value(serde_json::to_value(f).expect("")).expect("");
 
         assert_eq!(
             f,

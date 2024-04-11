@@ -319,7 +319,7 @@ impl Storage {
         headers.insert(VERSION_HEADER, VERSION.into());
         headers.insert(
             CONTENT_ENCODING,
-            HeaderValue::from_str(encoding.unwrap_or(DEFAULT_ENCODING)).unwrap(),
+            HeaderValue::from_str(encoding.unwrap_or(DEFAULT_ENCODING)).expect(""),
         );
         let bucket = self.bucket.with_extra_headers(headers);
 
@@ -663,7 +663,7 @@ mod tests {
         ]
         }"#;
 
-        let decoded = serde_json::from_str::<StorageEvent>(event).unwrap();
+        let decoded = serde_json::from_str::<StorageEvent>(event).expect("");
 
         assert_eq!(1, decoded.records.len());
         let decoded = &decoded.records[0];
@@ -675,7 +675,7 @@ mod tests {
     #[test]
     fn test_minio_decode() {
         let event = r#"{"EventName":"s3:ObjectCreated:Put","Key":"vexination/index","Records":[{"eventVersion":"2.0","eventSource":"minio:s3","awsRegion":"","eventTime":"2023-06-05T11:04:06.851Z","eventName":"s3:ObjectCreated:Put","userIdentity":{"principalId":"admin"},"requestParameters":{"principalId":"admin","region":"","sourceIPAddress":"10.89.1.9"},"responseElements":{"content-length":"0","x-amz-id-2":"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855","x-amz-request-id":"1765BE755F95378E","x-minio-deployment-id":"7637fbd9-a700-4918-bc9d-f7929adf0d8f","x-minio-origin-endpoint":"http://10.89.1.9:9000"},"s3":{"s3SchemaVersion":"1.0","configurationId":"Config","bucket":{"name":"vexination","ownerIdentity":{"principalId":"admin"},"arn":"arn:aws:s3:::vexination"},"object":{"key":"index","size":2851,"eTag":"8aebf225551d1a9c71914a91bf36c7e3","contentType":"application/octet-stream","userMetadata":{"content-type":"application/octet-stream"},"sequencer":"1765BE756000DEDE"}},"source":{"host":"10.89.1.9","port":"","userAgent":""}}]}"#;
-        let decoded = serde_json::from_str::<StorageEvent>(event).unwrap();
+        let decoded = serde_json::from_str::<StorageEvent>(event).expect("");
 
         assert_eq!(1, decoded.records.len());
         let decoded = &decoded.records[0];
