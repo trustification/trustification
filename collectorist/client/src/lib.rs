@@ -19,13 +19,13 @@ impl CollectoristUrl {
     pub fn register_collector_url(&self) -> Url {
         self.base_url
             .join(&format!("/api/v1/collector/{}", self.collector_id))
-            .unwrap()
+            .expect("")
     }
 
     pub fn deregister_collector_url(&self) -> Url {
         self.base_url
             .join(&format!("/api/v1/collector/{}", self.collector_id))
-            .unwrap()
+            .expect("")
     }
 
     pub fn collect_packages_url(&self) -> Url {
