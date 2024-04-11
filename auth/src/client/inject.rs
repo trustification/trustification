@@ -12,6 +12,7 @@ pub trait TokenInjector: Sized + Send + Sync {
 #[async_trait]
 impl TokenInjector for reqwest::RequestBuilder {
     #[instrument(level = "debug", skip(token_provider), err)]
+    #[allow(clippy::blocks_in_conditions)]
     async fn inject_token(self, token_provider: &dyn TokenProvider) -> Result<Self, Error> {
         if let Some(credentials) = token_provider.provide_access_token().await? {
             Ok(match credentials {
