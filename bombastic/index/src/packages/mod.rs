@@ -457,7 +457,7 @@ impl trustification_index::Index for Index {
 
         let explanation: Option<serde_json::Value> = if options.explain {
             match query.explain(searcher, doc_address) {
-                Ok(explanation) => Some(serde_json::to_value(explanation).ok()).unwrap_or(None),
+                Ok(explanation) => serde_json::to_value(explanation).ok(),
                 Err(e) => {
                     warn!("Error producing explanation for document {:?}: {:?}", doc_address, e);
                     None
@@ -517,7 +517,7 @@ impl trustification_index::WriteIndex for Index {
         self.schema
             .get_field("package_url")
             .map(|f| Term::from_field_text(f, id))
-            .unwrap()
+            .expect("")
     }
 }
 
@@ -532,13 +532,13 @@ mod tests {
     const TESTDATA: &[&str] = &["../testdata/ubi9-sbom.json", "../testdata/ubi9-sbom.json"];
 
     fn load_valid_file(store: &mut IndexStore<Index>, writer: &mut IndexWriter, path: impl AsRef<Path>) {
-        let data = std::fs::read(&path).unwrap();
+        let data = std::fs::read(&path).expect("");
         // ensure it parses
         Sbom::try_parse_any(&data).unwrap_or_else(|_| panic!("failed to parse test data: {}", path.as_ref().display()));
-        let name = path.as_ref().file_name().unwrap().to_str().unwrap();
-        let name = name.rsplit_once('.').unwrap().0;
+        let name = path.as_ref().file_name().unwrap().to_str().expect("");
+        let name = name.rsplit_once('.').expect("").0;
         // add to index
-        writer.add_document(store.index_as_mut(), name, &data).unwrap();
+        writer.add_document(store.index_as_mut(), name, &data).expect("");
     }
 
     fn assert_search<F>(f: F)
@@ -548,14 +548,14 @@ mod tests {
         let _ = env_logger::try_init();
 
         let index = Index::new();
-        let mut store = IndexStore::new_in_memory(index).unwrap();
-        let mut writer = store.writer().unwrap();
+        let mut store = IndexStore::new_in_memory(index).expect("");
+        let mut writer = store.writer().expect("");
 
         for file in TESTDATA {
             load_valid_file(&mut store, &mut writer, file);
         }
 
-        writer.commit().unwrap();
+        writer.commit().expect("");
 
         f(store);
     }
@@ -572,7 +572,7 @@ mod tests {
                     summaries: true,
                 },
             )
-            .unwrap()
+            .expect("")
     }
 
     #[tokio::test]

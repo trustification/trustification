@@ -203,7 +203,7 @@ impl trustification_index::Index for Index {
 
         let explanation: Option<serde_json::Value> = if options.explain {
             match query.explain(searcher, doc_address) {
-                Ok(explanation) => Some(serde_json::to_value(explanation).ok()).unwrap_or(None),
+                Ok(explanation) => serde_json::to_value(explanation).ok(),
                 Err(e) => {
                     warn!("Error producing explanation for document {:?}: {:?}", doc_address, e);
                     None
@@ -488,7 +488,7 @@ impl trustification_index::WriteIndex for Index {
         self.schema
             .get_field("advisory_id")
             .map(|f| Term::from_field_text(f, id))
-            .unwrap()
+            .expect("")
     }
 
     fn schema(&self) -> Schema {
@@ -773,23 +773,23 @@ mod tests {
         let _ = env_logger::try_init();
 
         let index = Index::new();
-        let mut store = IndexStore::new_in_memory(index).unwrap();
-        let mut writer = store.writer().unwrap();
+        let mut store = IndexStore::new_in_memory(index).expect("");
+        let mut writer = store.writer().expect("");
         for advisory in &["rhsa-2023_1441", "rhsa-2021_3029", "rhsa-2023_3408", "rhsa-2023_4378"] {
-            let data = std::fs::read_to_string(format!("../testdata/{}.json", advisory)).unwrap();
-            let csaf: Csaf = serde_json::from_str(&data).unwrap();
+            let data = std::fs::read_to_string(format!("../testdata/{}.json", advisory)).expect("");
+            let csaf: Csaf = serde_json::from_str(&data).expect("");
 
             writer
                 .add_document(store.index_as_mut(), &csaf.document.tracking.id, data.as_bytes())
-                .unwrap();
+                .expect("");
         }
 
-        writer.commit().unwrap();
+        writer.commit().expect("");
         f(store);
     }
 
     fn search(index: &IndexStore<Index>, query: &str) -> (Vec<SearchHit>, usize) {
-        index.search(query, 0, 10000, SearchOptions::default()).unwrap()
+        index.search(query, 0, 10000, SearchOptions::default()).expect("")
     }
 
     #[tokio::test]
