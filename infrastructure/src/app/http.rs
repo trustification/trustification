@@ -539,6 +539,6 @@ mod test {
 
     #[test]
     fn default_config_converts() {
-        HttpServerBuilder::try_from(HttpServerConfig::<MockEndpoint>::default()).unwrap();
+        HttpServerBuilder::try_from(HttpServerConfig::<MockEndpoint>::default()).expect("");
     }
 }

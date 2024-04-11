@@ -10,7 +10,7 @@ pub trait Endpoint: Debug {
     }
 
     fn url() -> Url {
-        Url::parse(&format!("http://localhost:{}{}", Self::PORT, Self::PATH)).unwrap()
+        Url::parse(&format!("http://localhost:{}{}", Self::PORT, Self::PATH)).expect("")
     }
 }
 

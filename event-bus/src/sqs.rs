@@ -57,7 +57,7 @@ impl SqsEventBus {
     }
 
     pub(crate) async fn send(&self, topic: &str, data: &[u8]) -> Result<(), Error> {
-        let s = core::str::from_utf8(data).unwrap();
+        let s = core::str::from_utf8(data).expect("");
         self.client
             .send_message()
             .queue_url(topic)

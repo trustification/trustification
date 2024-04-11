@@ -165,7 +165,7 @@ impl Directory for S3Directory {
             let result = bucket.head_object_blocking(p);
 
             match result {
-                Err(S3Error::HttpFailWithBody(status, _)) if status == 404 => Ok(false),
+                Err(S3Error::HttpFailWithBody(404, _)) => Ok(false),
                 Err(e) => {
                     // log::info!("EXISTS ERROR: {:?}", e);
                     Err(OpenReadError::IoError {
@@ -214,7 +214,7 @@ impl Directory for S3Directory {
             let result = bucket.get_object_blocking(p);
 
             match result {
-                Err(S3Error::HttpFailWithBody(status, _)) if status == 404 => {
+                Err(S3Error::HttpFailWithBody(404, _)) => {
                     Err(OpenReadError::FileDoesNotExist(path.to_path_buf()))
                 }
                 Err(e) => {
@@ -337,7 +337,7 @@ impl S3FileWatcher {
     }
 
     fn compute_checksum(bucket: &Bucket, path: &Path) -> Result<u32, io::Error> {
-        match bucket.get_object_blocking(path.to_str().unwrap()) {
+        match bucket.get_object_blocking(path.to_str().expect("")) {
             Ok(response) => {
                 let data = response.to_vec();
 

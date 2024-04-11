@@ -729,7 +729,7 @@ where
     pub async fn sync(&self, storage: &Storage) -> Result<(), Error> {
         if let Some(index_dir) = &self.index_dir {
             let data = storage.get_index(self.index.name()).await?;
-            let mut index_dir = index_dir.write().unwrap();
+            let mut index_dir = index_dir.write().expect("");
             match index_dir.sync(
                 self.index.schema(),
                 self.index.settings(),
@@ -737,7 +737,7 @@ where
                 &data,
             ) {
                 Ok(Some(index)) => {
-                    *self.inner.write().unwrap() = index;
+                    *self.inner.write().expect("") = index;
                     log::debug!("Index replaced");
                 }
                 Ok(None) => {
@@ -758,9 +758,9 @@ where
     pub fn reset(&mut self) -> Result<(), Error> {
         log::info!("Resetting index");
         if let Some(index_dir) = &self.index_dir {
-            let mut index_dir = index_dir.write().unwrap();
+            let mut index_dir = index_dir.write().expect("");
             let index = index_dir.reset(self.index.settings(), self.index.schema(), self.index.tokenizers()?)?;
-            let mut inner = self.inner.write().unwrap();
+            let mut inner = self.inner.write().expect("");
             *inner = index;
         }
         Ok(())
@@ -782,8 +782,8 @@ where
         if let Some(index_dir) = &self.index_dir {
             writer.commit()?;
 
-            let mut dir = index_dir.write().unwrap();
-            let mut inner = self.inner.write().unwrap();
+            let mut dir = index_dir.write().expect("");
+            let mut inner = self.inner.write().expect("");
             inner.directory_mut().sync_directory().map_err(Error::Io)?;
             let lock = inner.directory_mut().acquire_lock(&INDEX_WRITER_LOCK);
 
@@ -834,7 +834,7 @@ where
     }
 
     pub fn writer(&mut self) -> Result<IndexWriter, Error> {
-        let writer = self.inner.write().unwrap().writer(self.index_writer_memory_bytes)?;
+        let writer = self.inner.write().expect("").writer(self.index_writer_memory_bytes)?;
         Ok(IndexWriter {
             writer,
             metrics: self.metrics.clone(),
@@ -857,7 +857,7 @@ impl<INDEX: Index> IndexStore<INDEX> {
             return Err(Error::InvalidLimitParameter(limit));
         }
 
-        let inner = self.inner.read().unwrap();
+        let inner = self.inner.read().expect("");
         let reader = inner.reader()?;
         let searcher = reader.searcher();
 
@@ -1135,7 +1135,7 @@ where
 
     let query = move |lower, upper| {
         if fields.len() == 1 {
-            query_field(fields.pop().unwrap(), lower, upper)
+            query_field(fields.pop().expect(""), lower, upper)
         } else {
             let mut query_terms = Vec::new();
             for field in fields {
@@ -1306,43 +1306,43 @@ mod tests {
     #[tokio::test]
     async fn test_basic_index() {
         let _ = env_logger::try_init();
-        let mut store = IndexStore::new_in_memory(TestIndex::new()).unwrap();
-        let mut writer = store.writer().unwrap();
+        let mut store = IndexStore::new_in_memory(TestIndex::new()).expect("");
+        let mut writer = store.writer().expect("");
 
         writer
             .add_document(store.index_as_mut(), "foo", b"Foo is great")
-            .unwrap();
+            .expect("");
 
-        writer.commit().unwrap();
+        writer.commit().expect("");
 
-        assert_eq!(store.search("is", 0, 10, SearchOptions::default(),).unwrap().1, 1);
+        assert_eq!(store.search("is", 0, 10, SearchOptions::default(),).expect("").1, 1);
     }
 
     #[tokio::test]
     async fn test_index_removal() {
         let _ = env_logger::try_init();
-        let mut store = IndexStore::new_in_memory(TestIndex::new()).unwrap();
-        let mut writer = store.writer().unwrap();
+        let mut store = IndexStore::new_in_memory(TestIndex::new()).expect("");
+        let mut writer = store.writer().expect("");
 
         writer
             .add_document(store.index_as_mut(), "foo", b"Foo is great")
-            .unwrap();
+            .expect("");
 
-        writer.commit().unwrap();
+        writer.commit().expect("");
 
-        assert_eq!(store.search("is", 0, 10, SearchOptions::default(),).unwrap().1, 1);
+        assert_eq!(store.search("is", 0, 10, SearchOptions::default(),).expect("").1, 1);
 
         let writer = store.writer().unwrap();
         writer.delete_document(store.index_as_mut(), "foo");
         writer.commit().unwrap();
 
-        assert_eq!(store.search("is", 0, 10, SearchOptions::default(),).unwrap().1, 0);
+        assert_eq!(store.search("is", 0, 10, SearchOptions::default(),).expect("").1, 0);
     }
 
     #[tokio::test]
     async fn test_zero_limit() {
         let _ = env_logger::try_init();
-        let store = IndexStore::new_in_memory(TestIndex::new()).unwrap();
+        let store = IndexStore::new_in_memory(TestIndex::new()).expect("");
         assert!(matches!(
             store.search("is", 0, 0, SearchOptions::default()),
             Err(Error::InvalidLimitParameter(0))
