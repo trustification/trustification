@@ -15,8 +15,15 @@ impl ConfigService {
         Self { backend, access_token }
     }
 
-    pub async fn get_config(&self) -> Result<Configuration, ApiError> {
-        let url = self.backend.join(Endpoint::Api, "/api/v1/config")?;
+    pub async fn get_config(&self, public: bool) -> Result<Configuration, ApiError> {
+        let url = self.backend.join(
+            Endpoint::Api,
+            if public {
+                "/api/v1/config/public"
+            } else {
+                "/api/v1/config"
+            },
+        )?;
 
         let response = gloo_net::http::Request::get(url.as_str())
             .latest_access_token(&self.access_token)

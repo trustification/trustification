@@ -9,6 +9,8 @@ use yew_oauth2::hook::use_latest_access_token;
 pub struct ConfigurationProperties {
     #[prop_or_default]
     pub children: Children,
+    #[prop_or_default]
+    pub public: bool,
 }
 
 #[function_component(Configuration)]
@@ -17,13 +19,13 @@ pub fn configuration(props: &ConfigurationProperties) -> Html {
     let access_token = use_latest_access_token();
 
     let config = use_async_with_cloned_deps(
-        |backend| async {
+        |(backend, public)| async move {
             ConfigService::new(backend, access_token)
-                .get_config()
+                .get_config(public)
                 .await
                 .map(Rc::new)
         },
-        backend,
+        (backend, props.public),
     );
 
     match &*config {

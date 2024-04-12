@@ -6,7 +6,10 @@ use anyhow::bail;
 use spog_model::config::Configuration;
 use std::borrow::Cow;
 use std::path::PathBuf;
+use std::sync::Arc;
 use tracing::instrument;
+use trustification_auth::authenticator::Authenticator;
+use trustification_infrastructure::new_auth;
 
 pub struct Config {
     content: Configuration,
@@ -15,27 +18,49 @@ pub struct Config {
 
 impl Config {
     #[instrument(skip(self), err)]
-    async fn retrieve(&self) -> anyhow::Result<Cow<'_, Configuration>> {
+    async fn retrieve(&self, public: bool) -> anyhow::Result<Cow<'_, Configuration>> {
         Ok(match &self.source {
             Some(config) => {
                 // FIXME: need to cache instead re-parsing every time
                 // TODO: when we cache the result, attach a probe to it which fails if loading fails
                 let content = tokio::fs::read(config).await?;
-                Cow::Owned(serde_yaml::from_slice(&content)?)
+                let mut result = serde_yaml::from_slice(&content)?;
+                if public {
+                    result = Self::make_public(result);
+                }
+                Cow::Owned(result)
             }
             None => Cow::Borrowed(&self.content),
         })
     }
+
+    fn make_public(config: Configuration) -> Configuration {
+        Configuration {
+            global: config.global,
+            ..Default::default()
+        }
+    }
 }
 
-pub async fn get_config(config: web::Data<Config>) -> HttpResponse {
-    match config.retrieve().await {
+pub async fn get_config(config: &Config, public: bool) -> HttpResponse {
+    match config.retrieve(public).await {
         Ok(config) => HttpResponse::Ok().json(&config),
         Err(err) => HttpResponse::InternalServerError().body(err.to_string()),
     }
 }
 
-pub(crate) async fn configurator(source: Option<PathBuf>) -> anyhow::Result<impl Fn(&mut ServiceConfig) + Clone> {
+pub async fn get_private_config(config: web::Data<Config>) -> HttpResponse {
+    get_config(&config, false).await
+}
+
+pub async fn get_public_config(config: web::Data<Config>) -> HttpResponse {
+    get_config(&config, true).await
+}
+
+pub(crate) async fn configurator(
+    source: Option<PathBuf>,
+    auth: Option<Arc<Authenticator>>,
+) -> anyhow::Result<impl Fn(&mut ServiceConfig) + Clone> {
     let content = serde_yaml::from_slice(include_bytes!("default.yaml"))?;
 
     // do an initial check
@@ -53,7 +78,7 @@ pub(crate) async fn configurator(source: Option<PathBuf>) -> anyhow::Result<impl
                 source: Some(source),
             };
 
-            let _ = config.retrieve().await?;
+            let _ = config.retrieve(false).await?;
 
             config
         }
@@ -69,7 +94,12 @@ pub(crate) async fn configurator(source: Option<PathBuf>) -> anyhow::Result<impl
     Ok(move |service_config: &mut ServiceConfig| {
         service_config
             .app_data(config.clone())
-            .service(web::resource("/api/v1/config").to(get_config));
+            .service(
+                web::resource("/api/v1/config")
+                    .wrap(new_auth!(auth.clone()))
+                    .to(get_private_config),
+            )
+            .service(web::resource("/api/v1/config/public").to(get_public_config));
     })
 }
 
