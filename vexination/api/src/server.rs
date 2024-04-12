@@ -16,7 +16,7 @@ use trustification_auth::{
 };
 use trustification_index::Error as IndexError;
 use trustification_infrastructure::new_auth;
-use trustification_storage::{Error as StorageError, S3Path, Storage};
+use trustification_storage::{Error as StorageError, Key, S3Path, Storage};
 use utoipa::OpenApi;
 use vexination_model::prelude::*;
 
@@ -52,7 +52,7 @@ pub fn config(
     .service(swagger_ui_with_auth(ApiDoc::openapi(), swagger_ui_oidc));
 }
 
-async fn fetch_object(storage: &Storage, key: &str) -> HttpResponse {
+async fn fetch_object(storage: &Storage, key: Key<'_>) -> HttpResponse {
     match storage.get_decoded_stream(&S3Path::from_key(key)).await {
         Ok(stream) => HttpResponse::Ok().content_type(ContentType::json()).streaming(stream),
         Err(e) => {
@@ -122,7 +122,7 @@ async fn fetch_vex(
 ) -> actix_web::Result<HttpResponse> {
     authorizer.require(&user, Permission::ReadVex)?;
 
-    Ok(fetch_object(&state.storage, &params.advisory).await)
+    Ok(fetch_object(&state.storage, (&params.advisory).into()).await)
 }
 
 /// Parameters passed when publishing advisory.
@@ -174,7 +174,7 @@ async fn publish_vex(
     log::debug!("Storing new VEX with id: {advisory}");
     state
         .storage
-        .put_json_slice(&advisory, &data)
+        .put_json_slice((&advisory).into(), &data)
         .await
         .map_err(Error::Storage)?;
     let msg = format!("VEX of size {} stored successfully", &data[..].len());
@@ -298,9 +298,9 @@ async fn delete_vex(
 
     let params = params.into_inner();
     let id = &params.advisory;
-    log::trace!("Deleting VEX using id {}", id);
+    log::trace!("Deleting VEX using id {id}");
 
-    state.storage.delete(id).await.map_err(Error::Storage)?;
+    state.storage.delete(id.into()).await.map_err(Error::Storage)?;
 
     Ok(HttpResponse::NoContent().finish())
 }

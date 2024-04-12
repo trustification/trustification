@@ -1,5 +1,8 @@
+mod key;
 mod stream;
 pub mod validator;
+
+pub use key::*;
 
 use async_stream::try_stream;
 use bytes::Bytes;
@@ -15,6 +18,7 @@ use s3::{creds::error::CredentialsError, error::S3Error, Bucket};
 pub use s3::{creds::Credentials, Region};
 use serde::Deserialize;
 use std::borrow::Cow;
+use urlencoding::decode;
 use validator::Validator;
 
 pub struct Storage {
@@ -301,11 +305,12 @@ impl Storage {
     }
 
     pub fn key_from_event(record: &Record) -> Result<(Cow<str>, String), Error> {
-        if let Ok(decoded) = urlencoding::decode(record.key()) {
+        if let Ok(decoded) = decode(record.key()) {
             let key = decoded
                 .strip_prefix("data/")
-                .map(|s| s.to_string())
-                .unwrap_or(decoded.to_string());
+                .and_then(|s| decode(s).ok())
+                .unwrap_or_else(|| decoded.clone())
+                .to_string();
             Ok((decoded, key))
         } else {
             Err(Error::InvalidKey(record.key().to_string()))
@@ -314,7 +319,7 @@ impl Storage {
 
     pub async fn put_stream<'a>(
         &self,
-        key: &'a str,
+        key: Key<'a>,
         content_type: &'a str,
         encoding: Option<&str>,
         data: impl Stream<Item = Result<Bytes, Error>>,
@@ -345,7 +350,7 @@ impl Storage {
         Ok(len)
     }
 
-    pub async fn put_json_slice<'a>(&self, key: &'a str, json: &'a [u8]) -> Result<usize, Error> {
+    pub async fn put_json_slice<'a>(&self, key: Key<'a>, json: &'a [u8]) -> Result<usize, Error> {
         let stream = once(ok::<_, Error>(Bytes::copy_from_slice(json)));
         self.put_stream(key, "application/json", None, stream).await
     }
@@ -393,8 +398,8 @@ impl Storage {
         let s = try_stream! {
             for result in results {
                 for obj in result.contents {
-                    let key = obj.key.strip_prefix("data/").map(|s| s.to_string()).unwrap_or(obj.key.to_string());
                     let path = S3Path::from_path(&obj.key);
+                    let key = path.key().to_string();
                     let o = self.get_decoded_object(&path).await.map_err(|e| (path, e))?;
                     yield (key, o);
                 }
@@ -487,7 +492,7 @@ impl Storage {
         Ok(try_stream! { while let Some(chunk) = s.bytes().next().await { yield chunk?; }})
     }
 
-    pub async fn delete(&self, key: &str) -> Result<u16, Error> {
+    pub async fn delete(&self, key: Key<'_>) -> Result<u16, Error> {
         self.metrics.deletes_total.inc();
         let path = format!("{}{}", DATA_PATH, key);
         let res = self
@@ -586,15 +591,20 @@ impl S3Path {
         };
         S3Path { path }
     }
+
     // Relative to base
-    pub fn from_key(key: &str) -> S3Path {
+    pub fn from_key(key: Key<'_>) -> S3Path {
         S3Path {
-            path: format!("{}{}", DATA_PATH, key),
+            path: format!("{}{key}", DATA_PATH),
         }
     }
+
     // Key without prefix
-    pub fn key(&self) -> &str {
-        self.path.strip_prefix(DATA_PATH).unwrap_or(&self.path)
+    pub fn key(&self) -> Cow<'_, str> {
+        self.path
+            .strip_prefix(DATA_PATH)
+            .and_then(|key| decode(key).ok())
+            .unwrap_or(Cow::Borrowed(&self.path))
     }
 }
 
@@ -692,7 +702,7 @@ mod tests {
 
     #[test]
     fn test_s3_path_keys() {
-        let p = S3Path::from_key("FOO");
+        let p = S3Path::from_key("FOO".into());
         assert_eq!(p.key(), "FOO");
 
         let p = S3Path::from_path("/data/FOO");

@@ -47,6 +47,7 @@ async fn vexination_roundtrip(vexination: &mut VexinationContext) {
 
             assert_eq!(response.status(), StatusCode::OK);
             let payload: Value = response.json().await.unwrap();
+
             if payload["total"].as_u64().unwrap() >= 1 {
                 assert_eq!(id, payload["result"][0]["document"]["advisory_id"].as_str().unwrap());
                 break;

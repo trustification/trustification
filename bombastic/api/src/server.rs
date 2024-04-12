@@ -25,7 +25,7 @@ use trustification_auth::{
 };
 use trustification_index::Error as IndexError;
 use trustification_infrastructure::new_auth;
-use trustification_storage::{Error as StorageError, S3Path};
+use trustification_storage::{Error as StorageError, Key, S3Path};
 use utoipa::OpenApi;
 
 #[derive(OpenApi)]
@@ -140,7 +140,7 @@ async fn query_sbom(
     authorizer.require(&user, Permission::ReadSbom)?;
 
     let key = params.into_inner().id;
-    let path: S3Path = S3Path::from_key(&key);
+    let path: S3Path = S3Path::from_key(Key::from(&key));
     log::trace!("Querying SBOM using id {}", key);
     let storage = &state.storage;
     // determine the encoding of the stored object, if any
@@ -334,7 +334,7 @@ async fn publish_sbom(
     });
     let size = state
         .storage
-        .put_stream(id, typ.as_ref(), enc, payload)
+        .put_stream(id.into(), typ.as_ref(), enc, payload)
         .await
         .map_err(Error::Storage)?;
     let msg = format!("Successfully uploaded SBOM: id={id}, size={size}");
@@ -389,8 +389,8 @@ async fn delete_sbom(
 
     let params = params.into_inner();
     let id = &params.id;
-    log::trace!("Deleting SBOM using id {}", id);
-    state.storage.delete(id).await.map_err(Error::Storage)?;
+    log::trace!("Deleting SBOM using id {id}");
+    state.storage.delete(id.into()).await.map_err(Error::Storage)?;
 
     Ok(HttpResponse::NoContent().finish())
 }
