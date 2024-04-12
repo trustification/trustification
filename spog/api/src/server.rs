@@ -42,8 +42,6 @@ impl Server {
             provider: provider.clone(),
         });
 
-        let config_configurator = config::configurator(self.run.config).await?;
-
         let (authn, authz) = self.run.auth.split(self.run.devmode)?.unzip();
         let authenticator: Option<Arc<Authenticator>> = Authenticator::from_config(authn)
             .await
@@ -62,6 +60,8 @@ impl Server {
         if self.run.snyk_token.is_some() {
             log::info!("Snyk token is present");
         }
+
+        let config_configurator = config::configurator(self.run.config, authenticator.clone()).await?;
 
         let crda = self
             .run
