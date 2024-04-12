@@ -201,6 +201,7 @@ fn bombastic_indexer() -> bombastic_indexer::Run {
             access_key: Some("admin".into()),
             secret_key: Some("password".into()),
             validator: Validator::None,
+            max_size: ByteSize::gb(1),
         },
         bus: EventBusConfig {
             event_bus: EventBusType::Kafka,
@@ -236,6 +237,7 @@ fn bombastic_api() -> bombastic_api::Run {
             access_key: Some("admin".into()),
             secret_key: Some("password".into()),
             validator: Validator::SBOM,
+            max_size: ByteSize::gb(1),
         },
         infra: InfrastructureConfig {
             infrastructure_enabled: false,

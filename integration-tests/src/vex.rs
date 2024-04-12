@@ -161,6 +161,7 @@ fn vexination_indexer() -> vexination_indexer::Run {
             access_key: Some("admin".into()),
             secret_key: Some("password".into()),
             validator: Validator::None,
+            max_size: ByteSize::gb(1),
         },
         infra: InfrastructureConfig {
             infrastructure_enabled: false,
@@ -198,6 +199,7 @@ fn vexination_api() -> vexination_api::Run {
             access_key: Some("admin".into()),
             secret_key: Some("password".into()),
             validator: Validator::VEX,
+            max_size: ByteSize::gb(1),
         },
         infra: InfrastructureConfig {
             infrastructure_enabled: false,
