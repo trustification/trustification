@@ -7,6 +7,7 @@ use spog_ui_components::{
     theme::DarkModeEntry,
 };
 use spog_ui_navigation::{AppRoute, View};
+use spog_ui_utils::config::components::Configuration;
 use spog_ui_utils::{analytics::*, config::*, hints::*};
 use yew::prelude::*;
 use yew_consent::hook::use_consent_context;
@@ -203,9 +204,11 @@ fn authenticated_page(props: &ChildrenProperties) -> Html {
     );
 
     html!(
-        <Page {brand} {sidebar} {tools}>
-            { props.children.clone() }
-        </Page>
+        <Configuration>
+            <Page {brand} {sidebar} {tools}>
+                { props.children.clone() }
+            </Page>
+        </Configuration>
     )
 }
 
