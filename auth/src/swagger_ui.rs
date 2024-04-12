@@ -2,6 +2,7 @@ use crate::devmode::{self, SWAGGER_UI_CLIENT_ID};
 use actix_web::dev::HttpServiceFactory;
 use openid::{Client, Discovered, Provider, StandardClaims};
 use std::sync::Arc;
+use trustification_common::tls::ClientConfig;
 use url::Url;
 use utoipa::openapi::{
     security::{AuthorizationCode, Flow, OAuth2, Scopes, SecurityScheme},
@@ -12,17 +13,36 @@ use utoipa_swagger_ui::{oauth, SwaggerUi};
 #[derive(Clone, Debug, Default, clap::Args)]
 #[command(rename_all_env = "SCREAMING_SNAKE_CASE", next_help_heading = "Swagger UI OIDC")]
 pub struct SwaggerUiOidcConfig {
+    /// Make the TLS client insecure, disabling all validation (DANGER!).
+    #[arg(
+        id = "swagger-ui-tls-insecure",
+        long,
+        env = "SWAGGER_UI_OIDC_TLS_INSECURE",
+        default_value_t = false
+    )]
+    pub tls_insecure: bool,
+
+    /// Additional certificates which will be added as trust anchors.
+    #[arg(
+        id = "swagger-ui-tls-ca-certificates",
+        long,
+        env = "SWAGGER_UI_OIDC_TLS_CA_CERTIFICATES"
+    )]
+    pub ca_certificates: Vec<String>,
+
     /// The issuer URL used by the Swagger UI, disabled if none.
-    #[arg(long, env)]
+    #[arg(long, env = "SWAGGER_UI_OIDC_ISSUER_URL")]
     pub swagger_ui_oidc_issuer_url: Option<String>,
     /// The client ID use by the swagger UI frontend
-    #[arg(long, env, default_value = "frontend")]
+    #[arg(long, env = "SWAGGER_UI_OIDC_CLIENT_ID", default_value = "frontend")]
     pub swagger_ui_oidc_client_id: String,
 }
 
 impl SwaggerUiOidcConfig {
     pub fn devmode() -> Self {
         Self {
+            tls_insecure: false,
+            ca_certificates: vec![],
             swagger_ui_oidc_issuer_url: Some(devmode::issuer_url()),
             swagger_ui_oidc_client_id: SWAGGER_UI_CLIENT_ID.to_string(),
         }
@@ -37,13 +57,27 @@ pub struct SwaggerUiOidc {
 
 impl SwaggerUiOidc {
     pub async fn new(config: SwaggerUiOidcConfig) -> anyhow::Result<Option<Self>> {
-        let issuer_url = match config.swagger_ui_oidc_issuer_url {
+        let SwaggerUiOidcConfig {
+            tls_insecure,
+            ca_certificates,
+            swagger_ui_oidc_issuer_url,
+            swagger_ui_oidc_client_id,
+        } = config;
+
+        let client = ClientConfig {
+            tls_insecure,
+            ca_certificates,
+        }
+        .build_client()?;
+
+        let issuer_url = match swagger_ui_oidc_issuer_url {
             None => return Ok(None),
             Some(issuer_url) => issuer_url,
         };
 
-        let client: Client<Discovered, StandardClaims> = openid::Client::discover(
-            config.swagger_ui_oidc_client_id.clone(),
+        let client: Client<Discovered, StandardClaims> = Client::discover_with_client(
+            client,
+            swagger_ui_oidc_client_id.clone(),
             None,
             None,
             Url::parse(&issuer_url)?,

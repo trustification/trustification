@@ -74,9 +74,11 @@ spec:
           volumeMounts:
             {{- include "trustification.application.httpServerVolumesMounts" $mod | nindent 12 }}
             {{- include "trustification.authenticator.volumeMount" $mod | nindent 12 }}
+            {{- include "trustification.application.extraVolumeMounts" $mod | nindent 12 }}
 
       volumes:
         {{- include "trustification.application.httpServerVolumes" $mod | nindent 8 }}
         {{- include "trustification.authenticator.volume" $mod | nindent 8 }}
+        {{- include "trustification.application.extraVolumes" $mod | nindent 8 }}
 
 {{ end }}

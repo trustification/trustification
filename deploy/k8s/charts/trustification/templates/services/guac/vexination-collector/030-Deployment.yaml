@@ -50,4 +50,11 @@ spec:
             - name: GUAC_CSUB_ADDR
               value: guac-collectsub.{{ .Release.Namespace }}.svc.cluster.local:2782
             {{- include "trustification.guac.client.envVars" $mod | nindent 12 }}
+
+          volumeMounts:
+            {{- include "trustification.application.extraVolumeMounts" $mod | nindent 12 }}
+
+      volumes:
+        {{- include "trustification.application.extraVolumes" $mod | nindent 8 }}
+
 {{- end }}
