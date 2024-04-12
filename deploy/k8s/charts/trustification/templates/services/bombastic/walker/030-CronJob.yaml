@@ -106,11 +106,13 @@ spec:
               volumeMounts:
                 - mountPath: /walker-state
                   name: walker-state
+                {{- include "trustification.application.extraVolumeMounts" $mod | nindent 16 }}
 
           volumes:
             - name: walker-state
               persistentVolumeClaim:
                 claimName: {{ include "trustification.common.name" $mod }}
+            {{- include "trustification.application.extraVolumes" $mod | nindent 12 }}
 
 {{- end }}{{/* range */}}
 

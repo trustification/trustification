@@ -111,8 +111,11 @@ guac = { git = "https://github.com/trustification/guac-rs.git", rev="561931b314e
 # walker-common = { path = "../csaf-walker/common" }
 #cpe = { git = "https://github.com/trustification/cpe-rs", rev = "dc2c5661d436410cc9562596ab16a2e771261eb2" }
 csaf = { git = "https://github.com/ctron/csaf-rs", rev = "183326beac525d58962f78be8eca973017702753" } # FIXME: waiting for release #16 #28
-#walker-common = { git = "https://github.com/ctron/csaf-walker", rev = "08884c1b3db9d717fc0365b0df50cd4dd114a5fd" } # FIXME: waiting for release
-#sbom-walker = { git = "https://github.com/ctron/csaf-walker", rev = "08884c1b3db9d717fc0365b0df50cd4dd114a5fd" } # FIXME: waiting for release
+
+walker-common = { git = "https://github.com/ctron/csaf-walker", rev = "38e76054b756325069f02caa8e6d029029a68a75" } # FIXME: waiting for release
+walker-extras = { git = "https://github.com/ctron/csaf-walker", rev = "38e76054b756325069f02caa8e6d029029a68a75" } # FIXME: waiting for release
+csaf-walker = { git = "https://github.com/ctron/csaf-walker", rev = "38e76054b756325069f02caa8e6d029029a68a75" } # FIXME: waiting for release
+sbom-walker = { git = "https://github.com/ctron/csaf-walker", rev = "38e76054b756325069f02caa8e6d029029a68a75" } # FIXME: waiting for release
 
 # also check: spog/ui/Cargo.toml
 # TODO Switch to the official repository once https://github.com/CycloneDX/cyclonedx-rust-cargo/issues/615 is fixed

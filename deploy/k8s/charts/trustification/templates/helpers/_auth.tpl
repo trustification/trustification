@@ -91,6 +91,11 @@ authentication:
     - clientId: {{ include "trustification.oidc.clientId" (dict "root" .root "clientId" "frontend" ) }}
       issuerUrl: {{ include "trustification.oidc.issuerUrlForClient" (dict "root" .root "clientId" "frontend" ) }}
 
+      {{- with .root.Values.tls.additionalTrustAnchor }}
+      tlsCaCertificates:
+        - {{ . | quote }}
+      {{- end }}
+
       additionalPermissions:
         - "read.sbom"
         - "read.vex"
@@ -110,6 +115,11 @@ authentication:
     - clientId: {{ include "trustification.oidc.clientId" (dict "root" .root "clientId" "walker" ) }}
       issuerUrl: {{ include "trustification.oidc.issuerUrlForClient" (dict "root" .root "clientId" "walker" ) }}
 
+      {{- with .root.Values.tls.additionalTrustAnchor }}
+      tlsCaCertificates:
+        - {{ . | quote }}
+      {{- end }}
+
       scopeMappings:
         "trustification/bombastic":
           - "create.sbom"
@@ -127,6 +137,7 @@ authentication:
 {{- else -}}{{/* Keycloak is the default */}}
 authentication:
   clients:
+
     - clientId: {{ include "trustification.oidc.clientId" (dict "root" .root "clientId" "frontend" ) }}
       issuerUrl: {{ include "trustification.oidc.issuerUrlForClient" (dict "root" .root "clientId" "frontend" ) }}
       scopeMappings: &keycloakScopeMappings
@@ -134,9 +145,18 @@ authentication:
         "read:document": [ "read.sbom", "read.vex" ]
         "update:document": [ "update.sbom", "update.vex" ]
         "delete:document": [ "delete.sbom", "delete.vex" ]
+      {{- with .root.Values.tls.additionalTrustAnchor }}
+      tlsCaCertificates:
+        - {{ . | quote }}
+      {{- end }}
+
     - clientId: {{ include "trustification.oidc.clientId" (dict "root" .root "clientId" "walker" ) }}
       issuerUrl: {{ include "trustification.oidc.issuerUrlForClient" (dict "root" .root "clientId" "walker" ) }}
       scopeMappings: *keycloakScopeMappings
+      {{- with .root.Values.tls.additionalTrustAnchor }}
+      tlsCaCertificates:
+        - {{ . | quote }}
+      {{- end }}
 
 {{- end }}
 {{- end }}

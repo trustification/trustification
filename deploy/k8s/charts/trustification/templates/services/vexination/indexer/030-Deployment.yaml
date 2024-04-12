@@ -29,6 +29,7 @@ spec:
       volumes:
         - name: data
           emptyDir: {}
+        {{- include "trustification.application.extraVolumes" $mod | nindent 8 }}
 
       containers:
         - name: service
@@ -70,6 +71,7 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /data
+            {{- include "trustification.application.extraVolumeMounts" $mod | nindent 12 }}
 
           ports:
             {{- include "trustification.application.infrastructure.podPorts" $mod | nindent 12 }}

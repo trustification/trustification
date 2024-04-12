@@ -21,6 +21,8 @@ rust: {}
 
 ingress: {}
 
+tls: {}
+
 storage: {}
 
 index:
@@ -203,6 +205,7 @@ modules:
   initDataset:
     enabled: true
     image: {}
+    rust: {}
 
   integrationTests:
     enabled: false

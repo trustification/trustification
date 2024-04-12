@@ -1,9 +1,8 @@
 use crate::processing::ProcessVisitor;
-use sbom_walker::model::metadata::Key;
-use sbom_walker::retrieve::RetrievingVisitor;
-use sbom_walker::source::{DispatchSource, FileSource, HttpSource};
-use sbom_walker::validation::ValidationVisitor;
-use sbom_walker::walker::Walker;
+use sbom_walker::{
+    discover::DiscoverConfig, model::metadata::Key, retrieve::RetrievingVisitor, source::new_source,
+    validation::ValidationVisitor, walker::Walker,
+};
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
@@ -12,7 +11,7 @@ use tracing::{instrument, log};
 use url::Url;
 use walker_common::sender::HttpSenderOptions;
 use walker_common::{
-    fetcher::{Fetcher, FetcherOptions},
+    fetcher::FetcherOptions,
     sender::{self, provider::TokenProvider},
     since::Since,
     validate::ValidationOptions,
@@ -56,17 +55,15 @@ impl Scanner {
     pub async fn run_once(&self) -> anyhow::Result<()> {
         let since = Since::new(None::<SystemTime>, self.options.since_file.clone(), Default::default())?;
 
-        let source: DispatchSource = match Url::parse(&self.options.source) {
-            Ok(url) => HttpSource::new(
-                url,
-                Fetcher::new(FetcherOptions::default()).await?,
-                sbom_walker::source::HttpOptions::new()
-                    .since(*since)
-                    .keys(self.options.keys.clone()),
-            )
-            .into(),
-            Err(_) => FileSource::new(&self.options.source, None)?.into(),
-        };
+        let source = new_source(
+            DiscoverConfig {
+                source: self.options.source.clone(),
+                since: *since,
+                keys: self.options.keys.clone(),
+            },
+            FetcherOptions::default(),
+        )
+        .await?;
 
         let sender = sender::HttpSender::new(
             self.options.provider.clone(),

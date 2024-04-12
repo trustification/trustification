@@ -41,8 +41,13 @@ Arguments (dict):
   value: {{ include "trustification.oidc.issuerUrl" ( dict "root" .root "client" $client ) }}
 
 {{- if or $client.insecure .root.Values.oidc.insecure }}
-- name: OIDC_PROVIDER_INSECURE_TLS
+- name: OIDC_PROVIDER_TLS_INSECURE
   value: "true"
+{{- end }}
+
+{{- with .root.Values.tls.additionalTrustAnchor }}
+- name: OIDC_PROVIDER_TLS_CA_CERTIFICATES
+  value: {{ . | quote }}
 {{- end }}
 
 {{- end }}
@@ -96,4 +101,34 @@ Arguments (dict):
 {{- define "trustification.oidc.clientSecretValue" }}
 {{- $client := required (print "Unable to find client for " .clientId) (get .root.Values.oidc.clients .clientId)  -}}
 {{- include "trustification.common.envVarValue" $client.clientSecret }}
+{{- end }}
+
+
+{{/*
+"Value" part for an env-var, consuming the client secret.
+
+Arguments (dict):
+  * root - .
+  * module - module object
+*/}}
+{{- define "trustification.oidc.swaggerUi" }}
+
+{{- if not .module.disableSwaggerOidc }}
+- name: SWAGGER_UI_OIDC_ISSUER_URL
+  value: {{ include "trustification.oidc.frontendIssuerUrl" .root | quote }}
+
+{{- $client := required "Unable to find client for 'frontend'" (get .root.Values.oidc.clients "frontend" ) -}}
+
+{{- if or $client.insecure .root.Values.oidc.insecure }}
+- name: SWAGGER_UI_OIDC_TLS_INSECURE
+  value: "true"
+{{- end }}
+
+{{- with .root.Values.tls.additionalTrustAnchor }}
+- name: SWAGGER_UI_OIDC_TLS_CA_CERTIFICATES
+  value: {{ . | quote }}
+{{- end }}
+
+{{- end }}{{/* if not .module.disableSwaggerOidc */}}
+
 {{- end }}

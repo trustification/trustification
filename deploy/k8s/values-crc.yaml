@@ -1,0 +1,12 @@
+tls:
+  additionalTrustAnchor: /etc/trust-anchor/tls.crt
+
+extraVolumes:
+  - name: trust-anchor
+    configMap:
+      name: crc-trust-anchor
+
+extraVolumeMounts:
+  - name: trust-anchor
+    readOnly: true
+    mountPath: /etc/trust-anchor

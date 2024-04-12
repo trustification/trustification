@@ -113,6 +113,36 @@ helm upgrade --install --dependency-update -n $NAMESPACE infrastructure charts/t
 helm upgrade --install -n $NAMESPACE trustification charts/trustification --values values-ocp-no-aws.yaml --set-string appDomain=$APP_DOMAIN
 ```
 
+## CRC
+
+**NOTE:** You might need to set up CRC first. This step is not part of this documentation.
+
+Start `crc`:
+
+```bash
+crc start --cpus 8 --memory 32768 --disk-size 80
+```
+
+Create a namespace:
+
+```shell
+oc new-project trustification
+```
+
+Then deploy the application:
+
+```bash
+NAMESPACE=trustification
+APP_DOMAIN=-$NAMESPACE.$(oc -n openshift-ingress-operator get ingresscontrollers.operator.openshift.io default -o jsonpath='{.status.domain}')
+
+oc get secret -n openshift-ingress  router-certs-default -o go-template='{{index .data "tls.crt"}}' | base64 -d > tls.crt
+oc create configmap crc-trust-anchor --from-file=tls.crt -n $NAMESPACE
+rm tls.crt
+
+helm upgrade --install --dependency-update -n $NAMESPACE infrastructure charts/trustification-infrastructure --values values-ocp-no-aws.yaml --set-string keycloak.ingress.hostname=sso$APP_DOMAIN --set-string appDomain=$APP_DOMAIN
+helm upgrade --install -n $NAMESPACE trustification charts/trustification --values values-ocp-no-aws.yaml --set-string appDomain=$APP_DOMAIN --values values-crc.yaml
+```
+
 ## Branding
 
 Install the branding Helm chart using:

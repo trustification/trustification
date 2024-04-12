@@ -4,10 +4,13 @@ use super::{
 };
 use crate::devmode;
 use anyhow::Context;
+use clap::ArgAction;
 use core::fmt::{self, Debug, Formatter};
+use std::path::PathBuf;
 use std::time::Duration;
 use std::{ops::Deref, sync::Arc};
 use tokio::sync::RwLock;
+use trustification_common::reqwest::ClientFactory;
 use url::Url;
 
 #[derive(Clone, Debug, PartialEq, Eq, clap::Args)]
@@ -49,6 +52,14 @@ pub struct OpenIdTokenProviderConfigArguments {
         default_value = "false"
     )]
     pub tls_insecure: bool,
+    /// Enable additional TLS certificates for communication with the SSO server
+    #[arg(
+        id = "oidc_tls_certificate",
+        long = "oidc-tls-certificate",
+        env = "OIDC_PROVIDER_TLS_CA_CERTIFICATES",
+        action = ArgAction::Append
+    )]
+    pub tls_ca_certificates: Vec<PathBuf>,
 }
 
 impl OpenIdTokenProviderConfigArguments {
@@ -59,6 +70,7 @@ impl OpenIdTokenProviderConfigArguments {
             client_secret: Some(devmode::SSO_CLIENT_SECRET.to_string()),
             refresh_before: Duration::from_secs(30).into(),
             tls_insecure: false,
+            tls_ca_certificates: vec![],
         }
     }
 }
@@ -85,6 +97,7 @@ pub struct OpenIdTokenProviderConfig {
     pub issuer_url: String,
     pub refresh_before: humantime::Duration,
     pub tls_insecure: bool,
+    pub tls_ca_certificates: Vec<PathBuf>,
 }
 
 impl OpenIdTokenProviderConfig {
@@ -95,6 +108,7 @@ impl OpenIdTokenProviderConfig {
             client_secret: devmode::SSO_CLIENT_SECRET.to_string(),
             refresh_before: Duration::from_secs(30).into(),
             tls_insecure: false,
+            tls_ca_certificates: vec![],
         }
     }
 
@@ -120,6 +134,7 @@ impl OpenIdTokenProviderConfig {
                 issuer_url,
                 refresh_before: arguments.refresh_before,
                 tls_insecure: arguments.tls_insecure,
+                tls_ca_certificates: arguments.tls_ca_certificates,
             }),
             _ => None,
         }
@@ -164,14 +179,14 @@ impl OpenIdTokenProvider {
 
     pub async fn with_config(config: OpenIdTokenProviderConfig) -> anyhow::Result<Self> {
         let issuer = Url::parse(&config.issuer_url).context("Parse issuer URL")?;
-        let mut client = reqwest::ClientBuilder::new();
+        let mut client = ClientFactory::new();
 
         if config.tls_insecure {
             log::warn!("Using insecure TLS when contacting the OIDC issuer");
-            client = client
-                .danger_accept_invalid_certs(true)
-                .danger_accept_invalid_hostnames(true);
+            client = client.make_insecure();
         }
+
+        client = client.add_ca_certs(config.tls_ca_certificates);
 
         let client =
             openid::Client::discover_with_client(client.build()?, config.client_id, config.client_secret, None, issuer)
