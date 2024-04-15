@@ -96,9 +96,6 @@ RUN test -f /public/*.wasm
 # Runtime
 FROM registry.access.redhat.com/ubi9/ubi-minimal:latest
 
-RUN groupadd -r rhtpauser -g 433 && \
-    useradd -u 431 -r -g rhtpauser -s /sbin/nologin -c "Rhtpa Docker image user" rhtpauser
-
 LABEL org.opencontainers.image.source="https://github.com/trustification/trustification"
 LABEL description="Trustification"
 LABEL io.k8s.description ="Trustification"
@@ -111,7 +108,7 @@ user root
 
 RUN microdnf update -y && microdnf install -y nginx jq git postgresql
 
-user rhtpauser
+USER 1001
 
 RUN true \
     && mkdir /public \
