@@ -74,7 +74,7 @@ fn application_with_backend() -> Html {
                 scopes={backend.endpoints.oidc.scopes()}
                 {login_options}
             >
-                <Configuration>
+                <Configuration public=true>
                     { consent(html!(
                         <BackdropViewer>
                             <ToastViewer>

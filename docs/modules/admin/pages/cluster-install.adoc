@@ -96,3 +96,87 @@ helm upgrade --install -n $NAMESPACE trustification charts/trustification --valu
 
 TIP: The command is actually a mix of "install or upgrade". Which means that you can re-run it multiple times, and it
 will apply the currently configured state from the values file.
+
+=== Custom trust anchor
+
+If you are using a custom trust anchor (custom CA certificate), you will need to add this during the deployment. This
+might be required if you have a corporate CA, or are using the self-signed CA which comes by default with OpenShift or
+CRC.
+
+WARNING: It is not recommended to use the default, self-signed OpenShift CA certificate for any production workloads.
+
+[IMPORTANT]
+.Scope of the additional trust anchor
+====
+The trust anchor can only be added to the deployment of trustification. Be sure to read the full section on this, and
+what is required for the web browser.
+====
+
+The first step is to get the root level certificate file in PKCS #1 format. For OpenShift and CRC, it is possible to
+extract this using the following command:
+
+[source,bash]
+----
+oc get secret -n openshift-ingress  router-certs-default -o go-template='{{index .data "tls.crt"}}' | base64 -d > tls.crt
+----
+
+This will create a local file named `tls.crt`.
+
+NOTE: If you have your own root level certificate, the next steps assume that you have it in your local path,
+named `tls.crt`, and in the PKCS #1 format. Just like the previous command extracted it.
+
+Next, the certificate needs to be loaded this into a `ConfigMap`, so that we can reference it using the Helm values
+file:
+
+[source,bash]
+----
+oc create configmap custom-trust-anchor --from-file=tls.crt -n $NAMESPACE
+----
+
+NOTE: It is possible to use a different name than `custom-trust-anchor`. In this case, you will also need to replace the
+name in the following examples.
+
+In your custom Helm values override file, set the following options:
+
+[source,yaml]
+----
+tls:
+  additionalTrustAnchor: /etc/trust-anchor/tls.crt
+
+extraVolumes:
+  - name: trust-anchor
+    configMap:
+      name: custom-trust-anchor # <1>
+
+extraVolumeMounts:
+  - name: trust-anchor
+    readOnly: true
+    mountPath: /etc/trust-anchor
+----
+<1> The name of the `ConfigMap` holding the root level certificate.
+
+If configured, an additional trust anchor will be added to outgoing HTTPS (client) connections for trustification.
+Meaning that in cases like trustification calling out to the OIDC service, that trust anchor will be in effect.
+
+However, due to the nature of this, it is not possible to add the trust anchor to components outside of this
+deployment with Helm. Most important, the web browser you might use to interact with the system. Trust anchors have to
+be added on the client side of the HTTPS connection. So if you want this trust anchor to be in effect, you will need
+to add it to your web browser, or command line tooling. The way this works depends on the tool in question.
+
+WARNING: It is not recommended to add any self-signed CA used for testing or development purposes to a production
+system. Including your local machine.
+
+An alternative to adding the trust anchor to your local web browser, is to add an exception in the browser for this
+specific site. However, it is necessary to add this exception to **all** endpoints used. Normally this includes:
+
+* The static frontend endpoint
+* The API backends for SPoG, Bomabastic, Vexination
+* The OIDC frontend
+
+The exact procedure depends on your browser, but it should follow the following pattern:
+
+* You enter a URL of the service into the URL bar of your browser and load it
+* The browser will warn you about this being a possibly insecure site and ask you to either "navigate away" or add an exception
+* You add an exception and continue with the next URL
+
+Once this is done, the exception will be in place and the connection should work without a problem.
