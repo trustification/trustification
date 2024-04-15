@@ -2,6 +2,8 @@ FROM registry.access.redhat.com/ubi9/ubi:latest as backendbuilder
 
 ARG RUST_VERSION="1.77.2"
 
+user root
+
 RUN dnf install -y gcc openssl openssl-devel cmake gcc-c++ git curl-minimal unzip cyrus-sasl-devel
 
 # the 'sed' workaround is required due to https://github.com/rust-lang/rustup/issues/2700
@@ -10,6 +12,9 @@ RUN curl https://sh.rustup.rs -sSf | sed 's#/proc/self/exe#\/bin\/sh#g' | sh -s 
 ENV PATH "$PATH:/root/.cargo/bin"
 
 ARG protoc_version="23.4"
+
+user root
+
 RUN mkdir protoc && cd protoc && \
     curl -sSL https://github.com/protocolbuffers/protobuf/releases/download/v${protoc_version}/protoc-${protoc_version}-linux-x86_64.zip -o protoc.zip && \
     unzip protoc.zip && \
@@ -23,6 +28,7 @@ WORKDIR /usr/src/project
 
 ARG tag
 RUN TAG=$tag cargo build -p trust --release
+
 
 FROM registry.access.redhat.com/ubi9/ubi:latest as frontendbuilder
 
@@ -90,6 +96,9 @@ RUN test -f /public/*.wasm
 # Runtime
 FROM registry.access.redhat.com/ubi9/ubi-minimal:latest
 
+RUN groupadd -r rhtpauser -g 433 && \
+    useradd -u 431 -r -g rhtpauser -s /sbin/nologin -c "Rhtpa Docker image user" rhtpauser
+
 LABEL org.opencontainers.image.source="https://github.com/trustification/trustification"
 LABEL description="Trustification"
 LABEL io.k8s.description ="Trustification"
@@ -98,7 +107,12 @@ LABEL summary ="Trustification"
 LABEL io.openshift.tags ="Trustification"
 LABEL name ="Trustification"
 
+user root
+
 RUN microdnf update -y && microdnf install -y nginx jq git postgresql
+
+user rhtpauser
+
 RUN true \
     && mkdir /public \
     && mkdir /endpoints
