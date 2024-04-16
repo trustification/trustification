@@ -3,10 +3,10 @@ FROM registry.access.redhat.com/ubi9/ubi:latest as backendbuilder
 
 USER root
 
-RUN dnf install -y gcc openssl openssl-devel cmake gcc-c++ git curl-minimal unzip cyrus-sasl-devel shadow-utils
+RUN dnf install -y gcc openssl openssl-devel cmake gcc-c++ git unzip cyrus-sasl-devel
 
-RUN groupadd -r -g 1000 rhtpa \
-  && useradd -r -u 1000 -g rhtpa -m -d /home/rhtpa -s /bin/bash rhtpa
+RUN groupadd -r -g 999 rhtpa \
+  && useradd -r -u 999 -g rhtpa -m -d /home/rhtpa -s /bin/bash rhtpa
 
 USER rhtpa
 
@@ -30,7 +30,7 @@ RUN mkdir protoc && cd protoc && \
 
 USER root
 
-RUN mkdir /home/rhtpa/src/project
+RUN mkdir -p /home/rhtpa/src/project
 COPY . /home/rhtpa/src/project
 WORKDIR /home/rhtpa/src/project
 
