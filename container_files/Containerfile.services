@@ -32,9 +32,9 @@ RUN mkdir protoc && cd protoc && \
 
 USER rhtpa
 
-RUN mkdir /home/rhtpa/src/project
-COPY . /home/rhtpa/src/project
-WORKDIR /home/rhtpa/src/project
+RUN mkdir $HOME/src/project
+COPY . $HOME/src/project
+WORKDIR $HOME/src/project
 
 ARG tag
 RUN TAG=$tag cargo build -p trust --release
