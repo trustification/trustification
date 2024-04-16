@@ -12,12 +12,10 @@ USER rhtpa
 
 ARG RUST_VERSION="1.77.2"
 
-USER rhtpa
-
 # the 'sed' workaround is required due to https://github.com/rust-lang/rustup/issues/2700
 RUN curl https://sh.rustup.rs -sSf | sed 's#/proc/self/exe#\/bin\/sh#g' | sh -s -- -y --profile minimal --default-toolchain ${RUST_VERSION}
 
-ENV PATH "$PATH:$HOME/.cargo/bin"
+ENV PATH "$PATH:/home/rhtpa/.cargo/bin"
 
 ARG protoc_version="23.4"
 
@@ -30,11 +28,13 @@ RUN mkdir protoc && cd protoc && \
     cd .. && rm -Rf protoc && \
     protoc --version
 
-USER rhtpa
+USER root
 
-RUN mkdir $HOME/src/project
-COPY . $HOME/src/project
-WORKDIR $HOME/src/project
+RUN mkdir /home/rhtpa/src/project
+COPY . /home/rhtpa/src/project
+WORKDIR /home/rhtpa/src/project
+
+USER rhtpa
 
 ARG tag
 RUN TAG=$tag cargo build -p trust --release
