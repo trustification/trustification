@@ -1,16 +1,16 @@
 # backendbuilder
 FROM registry.access.redhat.com/ubi9/ubi:latest as backendbuilder
 
+USER root
+
+RUN dnf install -y gcc openssl openssl-devel cmake gcc-c++ git curl-minimal unzip cyrus-sasl-devel shadow-utils
+
 RUN groupadd -r -g 1000 rhtpa \
-  && useradd -r -u 1000 -g rhtpa -m -d /opt/rhtpa -s /bin/bash rhtpa
+  && useradd -r -u 1000 -g rhtpa -m -d /home/rhtpa -s /bin/bash rhtpa
 
 USER rhtpa
 
 ARG RUST_VERSION="1.77.2"
-
-USER root
-
-RUN dnf install -y gcc openssl openssl-devel cmake gcc-c++ git curl-minimal unzip cyrus-sasl-devel
 
 USER rhtpa
 
