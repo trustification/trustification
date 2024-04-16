@@ -108,11 +108,11 @@ user root
 
 RUN microdnf update -y && microdnf install -y nginx jq git postgresql
 
-USER 1001
-
 RUN true \
     && mkdir /public \
     && mkdir /endpoints
+
+USER 1001
 
 COPY --from=frontendbuilder /public /public/
 COPY spog/ui/config/nginx.conf /etc/nginx/nginx.conf
