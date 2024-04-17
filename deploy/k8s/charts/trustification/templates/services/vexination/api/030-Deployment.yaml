@@ -77,6 +77,8 @@ spec:
             {{- include "trustification.authenticator.volumeMount" $mod | nindent 12 }}
             {{- include "trustification.application.extraVolumeMounts" $mod | nindent 12 }}
 
+          {{- template "trustification.ocp.ssc" }}
+
       volumes:
         {{- include "trustification.application.httpServerVolumes" $mod | nindent 8 }}
         {{- include "trustification.authenticator.volume" $mod | nindent 8 }}

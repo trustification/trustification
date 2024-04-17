@@ -64,6 +64,7 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /data
+          {{- template "trustification.ocp.ssc" }}
           ports:
             - containerPort: 9010
               protocol: TCP

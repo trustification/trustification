@@ -50,6 +50,8 @@ spec:
             {{- include "trustification.application.httpServerVolumesMounts" $mod | nindent 12 }}
             {{- include "trustification.application.extraVolumeMounts" $mod | nindent 12 }}
 
+          {{- template "trustification.ocp.ssc" }}
+
           livenessProbe:
             tcpSocket:
               port: 2782

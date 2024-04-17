@@ -1,15 +1,26 @@
+# Backendbuilder
 FROM registry.access.redhat.com/ubi9/ubi:latest as backendbuilder
 
-ARG RUST_VERSION="1.77.2"
+USER root
 
-RUN dnf install -y gcc openssl openssl-devel cmake gcc-c++ git curl-minimal unzip cyrus-sasl-devel
+RUN dnf install -y gcc openssl openssl-devel cmake gcc-c++ git unzip cyrus-sasl-devel
+
+RUN groupadd -r -g 1001 rhtpa \
+  && useradd -r -u 1001 -g rhtpa -m -d /home/rhtpa -s /bin/bash rhtpa
+
+USER rhtpa
+
+ARG RUST_VERSION="1.77.2"
 
 # the 'sed' workaround is required due to https://github.com/rust-lang/rustup/issues/2700
 RUN curl https://sh.rustup.rs -sSf | sed 's#/proc/self/exe#\/bin\/sh#g' | sh -s -- -y --profile minimal --default-toolchain ${RUST_VERSION}
 
-ENV PATH "$PATH:/root/.cargo/bin"
+ENV PATH "$PATH:/home/rhtpa/.cargo/bin"
 
 ARG protoc_version="23.4"
+
+USER root
+
 RUN mkdir protoc && cd protoc && \
     curl -sSL https://github.com/protocolbuffers/protobuf/releases/download/v${protoc_version}/protoc-${protoc_version}-linux-x86_64.zip -o protoc.zip && \
     unzip protoc.zip && \
@@ -17,13 +28,19 @@ RUN mkdir protoc && cd protoc && \
     cd .. && rm -Rf protoc && \
     protoc --version
 
-RUN mkdir /usr/src/project
-COPY . /usr/src/project
-WORKDIR /usr/src/project
+USER rhtpa
+
+WORKDIR /home/rhtpa
+RUN mkdir -p /home/rhtpa/src/project
+
+#RUN mkdir /usr/src/project
+COPY . /home/rhtpa/src/project
+WORKDIR /home/rhtpa/src/project
 
 ARG tag
 RUN TAG=$tag cargo build -p trust --release
 
+# Frontendbuilder
 FROM registry.access.redhat.com/ubi9/ubi:latest as frontendbuilder
 
 ARG RUST_VERSION="1.77.2"
@@ -105,7 +122,7 @@ RUN chmod a+x /nginx.sh
 
 EXPOSE 80
 
-COPY --from=backendbuilder /usr/src/project/target/release/trust /
+COPY --from=backendbuilder /home/rhtpa/src/project/target/release/trust /
 COPY ./collectorist.yaml /
 
 RUN mkdir /data

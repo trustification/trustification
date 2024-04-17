@@ -54,6 +54,8 @@ spec:
           volumeMounts:
             {{- include "trustification.application.extraVolumeMounts" $mod | nindent 12 }}
 
+          {{- template "trustification.ocp.ssc" }}
+
       volumes:
         {{- include "trustification.application.extraVolumes" $mod | nindent 8 }}
 

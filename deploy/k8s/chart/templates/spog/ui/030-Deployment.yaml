@@ -63,6 +63,7 @@ spec:
               mountPath: /public/branding
             - name: run
               mountPath: /run
+          {{- template "trustification.ocp.ssc" }}
           ports:
             - containerPort: 8080
               protocol: TCP

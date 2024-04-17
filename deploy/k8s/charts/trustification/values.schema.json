@@ -72,6 +72,10 @@
           "type": "boolean",
           "default": true,
           "description": "Control the usage of the OpenShift service CA.\n"
+        },
+        "securityContextConstraints": {
+          "type": "boolean",
+          "description": "Enable the inclusion of the SecurityContextConstraints for ocp.    \n"
         }
       }
     },

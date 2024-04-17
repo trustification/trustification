@@ -99,6 +99,16 @@ spec:
             - mountPath: /data1
               name: storage
 
+          {{- template "trustification.ocp.ssc" }}
+
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            privileged: false
+            runAsNonRoot: true
+
       volumes:
         - name: storage
           persistentVolumeClaim:

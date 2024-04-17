@@ -1,3 +1,4 @@
+
 {{ if .Values.guac.enabled }}
 apiVersion: apps/v1
 kind: Deployment
@@ -142,6 +143,7 @@ spec:
             - mountPath: /etc/config
               name: config
             {{ include "trustification.http-server-volume-mounts" . | nindent 12 }}
+          {{- template "trustification.ocp.ssc" }}
           resources:
             {{- toYaml .Values.guac.graphql.resources | nindent 12 }}
           ports:

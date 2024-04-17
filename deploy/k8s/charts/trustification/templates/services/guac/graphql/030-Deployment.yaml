@@ -47,6 +47,8 @@ spec:
           volumeMounts:
             {{- include "trustification.application.extraVolumeMounts" $mod | nindent 12 }}
 
+          {{- template "trustification.ocp.ssc" }}
+
       containers:
         - name: service
           {{- include "trustification.guac.defaultImage" $mod | nindent 10 }}

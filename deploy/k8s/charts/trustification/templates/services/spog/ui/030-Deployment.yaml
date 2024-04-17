@@ -91,6 +91,8 @@ spec:
 
             {{- include "trustification.application.extraVolumeMounts" $mod | nindent 12 }}
 
+          {{- template "trustification.ocp.ssc" }}
+
           ports:
             - containerPort: 8080
               name: endpoint

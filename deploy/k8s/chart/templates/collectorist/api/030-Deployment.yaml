@@ -67,6 +67,7 @@ spec:
             - mountPath: /etc/config
               name: config
             {{ include "trustification.http-server-volume-mounts" . | nindent 12 }}
+          {{- template "trustification.ocp.ssc" }}
           ports:
             - containerPort: 8080
               protocol: TCP

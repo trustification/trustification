@@ -32,6 +32,7 @@ index:
 
 openshift:
   useServiceCa: true
+  securityContextConstraints: true
 
 oidc:
   clients:
@@ -57,6 +58,7 @@ bombastic:
   bucket: bombastic
   topics:
     stored: sbom-stored
+
     failed: sbom-failed
     indexed: sbom-indexed
 

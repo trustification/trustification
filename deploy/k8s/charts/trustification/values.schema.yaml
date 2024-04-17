@@ -77,6 +77,10 @@ properties:
         default: true
         description: |
           Control the usage of the OpenShift service CA.
+      securityContextConstraints:
+        type: boolean
+        description: |
+          Enable the inclusion of the SecurityContextConstraints for ocp.    
 
   oidc:
     $ref: "#/definitions/Oidc"

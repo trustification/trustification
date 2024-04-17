@@ -88,6 +88,8 @@ spec:
             - mountPath: /bitnami/kafka
               name: storage
 
+          {{- template "trustification.ocp.ssc" }}
+
       volumes:
         - name: storage
           persistentVolumeClaim:

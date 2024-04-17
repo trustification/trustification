@@ -79,6 +79,8 @@ spec:
               mountPath: /data
             {{- include "trustification.application.extraVolumeMounts" $mod | nindent 12 }}
 
+          {{- template "trustification.ocp.ssc" }}
+
           ports:
             {{- include "trustification.application.infrastructure.podPorts" $mod | nindent 12 }}
 {{ end }}
