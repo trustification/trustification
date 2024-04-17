@@ -59,11 +59,14 @@ fn brand() -> Html {
 fn authenticated_page(props: &ChildrenProperties) -> Html {
     let brand: yew::virtual_dom::VNode = html!(<Brand/>);
 
-    let backend = use_backend();
     let config = use_config();
 
-    let sidebar = html_nested!(
-        <PageSidebar>
+    #[function_component(Sidebar)]
+    fn sidebar() -> Html {
+        let backend = use_backend();
+        let config = use_config();
+
+        html!(
             <Nav>
                 <NavList>
                     <NavRouterItem<AppRoute> to={AppRoute::Index}>{ "Home" }</NavRouterItem<AppRoute>>
@@ -99,6 +102,12 @@ fn authenticated_page(props: &ChildrenProperties) -> Html {
                     }
                 </NavList>
             </Nav>
+        )
+    }
+
+    let sidebar = html_nested!(
+        <PageSidebar>
+            <Sidebar/>
         </PageSidebar>
     );
 
