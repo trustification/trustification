@@ -1371,7 +1371,7 @@ dependencies = [
  "bytesize",
  "clap",
  "derive_more",
- "env_logger 0.11.3",
+ "env_logger",
  "futures",
  "log",
  "prometheus",
@@ -1393,7 +1393,7 @@ version = "0.1.0"
 dependencies = [
  "bombastic-model",
  "cyclonedx-bom 0.4.3",
- "env_logger 0.10.2",
+ "env_logger",
  "log",
  "packageurl",
  "sbom-walker",
@@ -1779,7 +1779,7 @@ dependencies = [
  "collector-client",
  "cvss",
  "derive_more",
- "env_logger 0.11.3",
+ "env_logger",
  "guac",
  "log",
  "packageurl",
@@ -1805,7 +1805,7 @@ dependencies = [
  "chrono",
  "clap",
  "collector-client",
- "env_logger 0.11.3",
+ "env_logger",
  "guac",
  "hide",
  "libtest-with",
@@ -1849,7 +1849,7 @@ dependencies = [
  "collector-client",
  "collectorist-client",
  "derive_more",
- "env_logger 0.11.3",
+ "env_logger",
  "futures",
  "guac",
  "humantime",
@@ -2134,8 +2134,9 @@ dependencies = [
 
 [[package]]
 name = "csaf-walker"
-version = "0.6.0-alpha.8"
-source = "git+https://github.com/ctron/csaf-walker?rev=38e76054b756325069f02caa8e6d029029a68a75#38e76054b756325069f02caa8e6d029029a68a75"
+version = "0.6.0-rc.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "997642174dfa0a4bd476657d3e7efae903cbeb6586bc631c7cd9868f630e2b86"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2606,19 +2607,6 @@ dependencies = [
 
 [[package]]
 name = "env_logger"
-version = "0.10.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4cd405aab171cb85d6735e5c8d9db038c17d3ca007a4d2c25f337935c3d90580"
-dependencies = [
- "humantime",
- "is-terminal",
- "log",
- "regex",
- "termcolor",
-]
-
-[[package]]
-name = "env_logger"
 version = "0.11.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "38b35839ba51819680ba087cd351788c9a3c476841207e0b8cee0b04722343b9"
@@ -2732,7 +2720,7 @@ dependencies = [
  "anyhow",
  "clap",
  "collectorist-client",
- "env_logger 0.11.3",
+ "env_logger",
  "exhort-model",
  "guac",
  "lenient_semver",
@@ -3684,7 +3672,7 @@ dependencies = [
  "bytesize",
  "chrono",
  "clap",
- "env_logger 0.11.3",
+ "env_logger",
  "lazy_static",
  "log",
  "ntest",
@@ -3751,17 +3739,6 @@ checksum = "21859b667d66a4c1dacd9df0863b3efb65785474255face87f5bca39dd8407c0"
 dependencies = [
  "memchr",
  "serde",
-]
-
-[[package]]
-name = "is-terminal"
-version = "0.4.12"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f23ff5ef2b80d608d61efee834934d862cd92461afc0560dedf493e4c033738b"
-dependencies = [
- "hermit-abi",
- "libc",
- "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -5980,8 +5957,9 @@ dependencies = [
 
 [[package]]
 name = "sbom-walker"
-version = "0.6.0-alpha.8"
-source = "git+https://github.com/ctron/csaf-walker?rev=38e76054b756325069f02caa8e6d029029a68a75#38e76054b756325069f02caa8e6d029029a68a75"
+version = "0.6.0-rc.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "43190e4285ebcb65e64ab15d3546dc2e688e5662c28391563a4b563b4861101b"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -6073,9 +6051,9 @@ checksum = "1c107b6f4780854c8b126e228ea8869f4d7b71260f962fefb57b996b8959ba6b"
 
 [[package]]
 name = "sectxtlib"
-version = "0.2.6"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "db8022f916b171ebe02273c0f87fe16b683708edd38c760a9823e429c55dd0e9"
+checksum = "e69ec9000d087995d821c9731505aa9939edac132cea538af70621865ffa74ed"
 dependencies = [
  "chrono",
  "iri-string",
@@ -7320,7 +7298,7 @@ version = "0.2.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7b319995299c65d522680decf80f2c108d85b861d81dfe340a10d16cee29d9e6"
 dependencies = [
- "env_logger 0.11.3",
+ "env_logger",
  "test-log-macros",
  "tracing-subscriber",
 ]
@@ -7873,7 +7851,7 @@ dependencies = [
  "bombastic-model",
  "clap",
  "colored_json",
- "env_logger 0.11.3",
+ "env_logger",
  "log",
  "regex",
  "reqwest",
@@ -7995,7 +7973,7 @@ dependencies = [
  "bytesize",
  "clap",
  "crc32fast",
- "env_logger 0.11.3",
+ "env_logger",
  "humantime",
  "log",
  "parking_lot",
@@ -8050,7 +8028,7 @@ dependencies = [
  "async-trait",
  "bytesize",
  "clap",
- "env_logger 0.11.3",
+ "env_logger",
  "futures",
  "http 0.2.12",
  "log",
@@ -8336,7 +8314,7 @@ dependencies = [
  "bytesize",
  "clap",
  "derive_more",
- "env_logger 0.11.3",
+ "env_logger",
  "log",
  "prometheus",
  "serde",
@@ -8380,7 +8358,7 @@ version = "0.1.0"
 dependencies = [
  "cve",
  "cvss",
- "env_logger 0.11.3",
+ "env_logger",
  "log",
  "serde",
  "serde_json",
@@ -8582,7 +8560,7 @@ version = "0.1.0"
 dependencies = [
  "cpe",
  "csaf",
- "env_logger 0.11.3",
+ "env_logger",
  "log",
  "serde",
  "serde_json",
@@ -8677,8 +8655,9 @@ dependencies = [
 
 [[package]]
 name = "walker-common"
-version = "0.6.0-alpha.8"
-source = "git+https://github.com/ctron/csaf-walker?rev=38e76054b756325069f02caa8e6d029029a68a75#38e76054b756325069f02caa8e6d029029a68a75"
+version = "0.6.0-rc.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ea9e85dc6ac91be238aff1bc0acdbc0e300d92f8ed24bea3bf711b8c176978c4"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -8712,8 +8691,9 @@ dependencies = [
 
 [[package]]
 name = "walker-extras"
-version = "0.6.0-alpha.8"
-source = "git+https://github.com/ctron/csaf-walker?rev=38e76054b756325069f02caa8e6d029029a68a75#38e76054b756325069f02caa8e6d029029a68a75"
+version = "0.6.0-rc.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cd21694a5001808c0a848a2eecae99ab92866434321fedeaac739b5401391dd3"
 dependencies = [
  "anyhow",
  "async-trait",
