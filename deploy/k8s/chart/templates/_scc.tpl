@@ -12,5 +12,6 @@ securityContext:
             - ALL
     privileged: false
     runAsNonRoot: true
+    unAsUser: 1001
 {{ end }}
 {{ end }}

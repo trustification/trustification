@@ -114,6 +114,7 @@ spec:
                 - ALL
             privileged: false
             runAsNonRoot: true
+            runAsUser: 1001
 
       volumes:
         {{- include "trustification.application.httpServerVolumes" $mod | nindent 8 }}

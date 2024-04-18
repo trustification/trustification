@@ -135,6 +135,7 @@ spec:
             - ALL
         privileged: false
         runAsNonRoot: true
+        runAsUser: 1001
       volumes:
         - name: config
           configMap:

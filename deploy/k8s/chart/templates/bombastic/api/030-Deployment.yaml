@@ -83,6 +83,7 @@ spec:
                 - ALL
             privileged: false
             runAsNonRoot: true
+            runAsUser: 1001
           volumeMounts:
             - name: data
               mountPath: /data

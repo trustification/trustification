@@ -150,6 +150,7 @@ spec:
                 - ALL
             privileged: false
             runAsNonRoot: true
+            runAsUser: 1001
           resources:
             {{- toYaml .Values.guac.graphql.resources | nindent 12 }}
           ports:
