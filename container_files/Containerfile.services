@@ -158,11 +158,19 @@ RUN cp /home/trustuser/trustification/spog/ui/config/nginx.conf /etc/nginx/nginx
 RUN cp /home/trustuser/trustification/spog/ui/config/nginx.sh /nginx.sh
 RUN chmod a+x /nginx.sh
 RUN mkdir -p /var/lib/nginx/tmp/client_body
-RUN chown -R trustuser:trustuser /var/lib/nginx/tmp/client_body
-
-RUN chown -R trustuser:trustuser /var/log/nginx && \
-        chown -R trustuser:trustuser /etc/nginx/conf.d && \
-        chown -R trustuser:trustuser /var/lib/nginx/tmp/
+RUN mkdir -p /var/lib/nginx/tmp/fastcgi && \
+    mkdir -p /var/lib/nginx/tmp/proxy && \
+    mkdir -p /var/lib/nginx/tmp/scgi && \
+    mkdir -p /var/lib/nginx/tmp/uwsgi
+    
+RUN chown -R trustuser:trustuser /var/lib/nginx/tmp/client_body && \
+    chown -R trustuser:trustuser /var/lib/nginx/tmp/fastcgi && \
+    chown -R trustuser:trustuser /var/lib/nginx/tmp/proxy && \
+    chown -R trustuser:trustuser /var/lib/nginx/tmp/scgi && \
+    chown -R trustuser:trustuser /var/lib/nginx/tmp/uwsgi && \
+    chown -R trustuser:trustuser /var/log/nginx && \
+    chown -R trustuser:trustuser /etc/nginx/conf.d && \
+    chown -R trustuser:trustuser /var/lib/nginx/tmp/
 
 RUN touch /var/run/nginx.pid && \
         chown -R trustuser:trustuser /var/run/nginx.pid
