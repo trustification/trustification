@@ -170,8 +170,15 @@ An alternative to adding the trust anchor to your local web browser, is to add a
 specific site. However, it is necessary to add this exception to **all** endpoints used. Normally this includes:
 
 * The static frontend endpoint
-* The API backends for SPoG, Bomabastic, Vexination
+* The API backends for SPoG, Bombastic, Vexination
 * The OIDC frontend
+
+In order to get the list of the URLs for the endpoints used, execute:
+
+[source,bash]
+----
+oc get routes -n $NAMESPACE --selector app.kubernetes.io/part-of=trusted-profile-analyzer -o jsonpath='{range .items[*]}{"https://"}{@.status.ingress[0].host}{"\n"}{end}'
+----
 
 The exact procedure depends on your browser, but it should follow the following pattern:
 
