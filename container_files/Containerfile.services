@@ -1,21 +1,21 @@
-# Backendbuilder
+# backendbuilder
 FROM registry.access.redhat.com/ubi9/ubi:latest as backendbuilder
 
 USER root
 
 RUN dnf install -y gcc openssl openssl-devel cmake gcc-c++ git unzip cyrus-sasl-devel
 
-RUN groupadd -r -g 1001 rhtpa \
-  && useradd -r -u 1001 -g rhtpa -m -d /home/rhtpa -s /bin/bash rhtpa
+RUN groupadd -r -g 1001 trustuser \
+  && useradd -r -u 1001 -g trustuser -m -d /home/trustuser -s /bin/bash trustuser
 
-USER rhtpa
+USER trustuser
 
 ARG RUST_VERSION="1.77.2"
 
 # the 'sed' workaround is required due to https://github.com/rust-lang/rustup/issues/2700
 RUN curl https://sh.rustup.rs -sSf | sed 's#/proc/self/exe#\/bin\/sh#g' | sh -s -- -y --profile minimal --default-toolchain ${RUST_VERSION}
 
-ENV PATH "$PATH:/home/rhtpa/.cargo/bin"
+ENV PATH "$PATH:/home/trustuser/.cargo/bin"
 
 ARG protoc_version="23.4"
 
@@ -28,41 +28,52 @@ RUN mkdir protoc && cd protoc && \
     cd .. && rm -Rf protoc && \
     protoc --version
 
-USER rhtpa
+USER trustuser
 
-WORKDIR /home/rhtpa
-RUN mkdir -p /home/rhtpa/src/project
+WORKDIR /home/trustuser
+RUN mkdir -p /home/trustuser/src/project
 
-#RUN mkdir /usr/src/project
-COPY . /home/rhtpa/src/project
-WORKDIR /home/rhtpa/src/project
+COPY . /home/trustuser/src/project
+WORKDIR /home/trustuser/src/project
 
 ARG tag
 RUN TAG=$tag cargo build -p trust --release
 
-# Frontendbuilder
+# frontendbuilder
 FROM registry.access.redhat.com/ubi9/ubi:latest as frontendbuilder
+
+RUN groupadd -r -g 1001 trustuser \
+  && useradd -r -u 1001 -g trustuser -m -d /home/trustuser -s /bin/bash trustuser
+
+USER trustuser
 
 ARG RUST_VERSION="1.77.2"
 ARG SASS_VERSION="1.69.5"
 ARG WASM_BINDGEN_VERSION="0.2.89"
 ARG TRUNK_VERSION="0.19.2"
 
+USER root
+
 RUN dnf -y install nodejs git gcc
 
-ENV PATH "$PATH:/root/.cargo/bin"
+USER trustuser
+
+ENV PATH "$PATH:/home/trustuser/.cargo/bin"
 
 # the 'sed' workaround is required due to https://github.com/rust-lang/rustup/issues/2700
 RUN \
     curl https://sh.rustup.rs -sSf | sed 's#/proc/self/exe#\/bin\/sh#g' | sh -s -- -y --profile minimal --default-toolchain ${RUST_VERSION} && \
     rustup target add wasm32-unknown-unknown
 
-RUN \
-    curl -sSL https://github.com/trunk-rs/trunk/releases/download/v0.19.0/trunk-x86_64-unknown-linux-musl.tar.gz -o trunk-x86_64-unknown-linux-musl.tar.gz && \
-    tar xavf trunk-x86_64-unknown-linux-musl.tar.gz && \
-    install trunk /usr/local/bin && rm trunk
+RUN mkdir -p /home/trustuser/.local/bin
+WORKDIR /home/trustuser/.local
 
-RUN npm install -g sass@${SASS_VERSION} && sass --version
+RUN \
+    curl -sSL https://github.com/trunk-rs/trunk/releases/download/v${TRUNK_VERSION}/trunk-x86_64-unknown-linux-musl.tar.gz -o trunk-x86_64-unknown-linux-musl.tar.gz && \
+    tar xavf trunk-x86_64-unknown-linux-musl.tar.gz
+
+RUN cp trunk /home/trustuser/.local/bin
+RUN chmod +x /home/trustuser/.local/bin/trunk
 
 RUN \
     case "$(uname -m)" in \
@@ -70,62 +81,88 @@ RUN \
             curl -sSL https://github.com/rustwasm/wasm-bindgen/releases/download/${WASM_BINDGEN_VERSION}/wasm-bindgen-${WASM_BINDGEN_VERSION}-aarch64-unknown-linux-gnu.tar.gz  -o wasm-bingen.tar.gz \
             && tar --strip-components=1 -xzvf wasm-bingen.tar.gz '*/wasm-bindgen' \
             && rm wasm-bingen.tar.gz \
-            && install wasm-bindgen /usr/local/bin && rm wasm-bindgen \
+            && install wasm-bindgen /home/trustuser/.local/bin && rm wasm-bindgen \
             ;; \
         x86_64) \
             curl -sSL https://github.com/rustwasm/wasm-bindgen/releases/download/${WASM_BINDGEN_VERSION}/wasm-bindgen-${WASM_BINDGEN_VERSION}-x86_64-unknown-linux-musl.tar.gz -o wasm-bingen.tar.gz \
             && tar --strip-components=1 -xzvf wasm-bingen.tar.gz '*/wasm-bindgen' \
             && rm wasm-bingen.tar.gz \
-            && install wasm-bindgen /usr/local/bin && rm wasm-bindgen \
+            && install wasm-bindgen /home/trustuser/.local/bin && rm wasm-bindgen \
             ;; \
         *) \
             echo "Build platform not supported: $(uname -p)" ; \
             exit 1 \
             ;; \
-    esac ; \
-    wasm-bindgen --version
+    esac ;
+
+RUN chmod +x /home/trustuser/.local/bin/wasm-bindgen
+ENV PATH "$PATH:/home/trustuser/.local/bin"
+
+RUN wasm-bindgen --version
+
+USER trustuser
+
+RUN npm config set prefix '/home/trustuser/.local/'
+RUN npm install -g sass@${SASS_VERSION} && sass --version
+
 
 # cannot use /usr/src as it is configured as `VOLUME` in the base image, which seems to be an issue
 # for buildah (not for podman build): https://github.com/containers/buildah/issues/4845
 
-RUN mkdir /trustification
+WORKDIR /home/trustuser
+RUN mkdir -p /home/trustuser/trustification
+RUN mkdir -p /home/trustuser/trustification/public
+RUN mkdir -p /home/trustuser/trustification/spog/ui/node_modules
+RUN mkdir -p /home/trustuser/trustification/spog/ui/target
 
-COPY . /trustification
+COPY . /home/trustuser/trustification
+WORKDIR /home/trustuser/trustification
+RUN ls /home/trustuser/trustification
 
-RUN ls /trustification
-
-WORKDIR /trustification/spog/ui
+WORKDIR /home/trustuser/trustification/spog/ui
 
 RUN true \
     && npm ci \
-    && trunk build --release --dist /public
+    && trunk build --release --dist /home/trustuser/trustification/public
 
 # safeguard to ensure the project was built
 
-RUN test -f /public/*.wasm
+RUN test -f /home/trustuser/trustification/public/*.wasm
 
-# Runtime
+# runtime
 FROM registry.access.redhat.com/ubi9/ubi-minimal:latest
+RUN microdnf update -y && microdnf install -y nginx jq git postgresql shadow-utils
+
+RUN groupadd -r -g 1001 trustuser \
+  && useradd -r -u 1001 -g trustuser -m -d /home/trustuser -s /bin/bash trustuser
 
 LABEL org.opencontainers.image.source="https://github.com/trustification/trustification"
+LABEL description="Trustification"
+LABEL io.k8s.description ="Trustification"
+LABEL io.k8s.display-name ="Trustification"
+LABEL summary ="Trustification"
+LABEL io.openshift.tags ="Trustification"
+LABEL name ="Trustification"
 
-RUN microdnf update -y && microdnf install -y nginx jq git postgresql
-RUN true \
-    && mkdir /public \
-    && mkdir /endpoints
+USER trustuser
 
-COPY --from=frontendbuilder /public /public/
-COPY spog/ui/config/nginx.conf /etc/nginx/nginx.conf
+RUN mkdir -p /home/trustuser/public
+RUN mkdir -p /home/trustuser/endpoints
+COPY --from=frontendbuilder /home/trustuser/trustification/public /home/trustuser/trustification/public
+COPY --from=frontendbuilder /home/trustuser/trustification/spog /home/trustuser/trustification/spog
 
-COPY spog/ui/config/nginx.sh /nginx.sh
+USER root
+RUN cp /home/trustuser/trustification/spog/ui/config/nginx.conf /etc/nginx/nginx.conf
+RUN cp /home/trustuser/trustification/spog/ui/config/nginx.sh /nginx.sh
 RUN chmod a+x /nginx.sh
+
+USER trustuser
 
 EXPOSE 80
 
-COPY --from=backendbuilder /home/rhtpa/src/project/target/release/trust /
+COPY --from=backendbuilder /home/trustuser/src/project/target/release/trust /
 COPY ./collectorist.yaml /
 
-RUN mkdir /data
 COPY ./data/ds1 /data
 
 ENV RUST_LOG info
