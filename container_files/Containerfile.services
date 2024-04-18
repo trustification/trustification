@@ -157,9 +157,9 @@ RUN cp /home/trustuser/trustification/spog/ui/config/nginx.sh /nginx.sh
 RUN chmod a+x /nginx.sh
 
 RUN chown -R trustuser:trustuser /var/log/nginx && \
-        chown -R trustuser:trustuser /etc/nginx/conf.d \
+        chown -R trustuser:trustuser /etc/nginx/conf.d && \
         chown -R trustuser:trustuser /var/lib/nginx/tmp/
-        
+
 RUN touch /var/run/nginx.pid && \
         chown -R trustuser:trustuser /var/run/nginx.pid
 
