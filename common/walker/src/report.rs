@@ -1,8 +1,10 @@
 use parking_lot::Mutex;
-use std::collections::BTreeMap;
-use std::sync::Arc;
+use std::{collections::BTreeMap, env, ffi::OsString, fs, fs::File, io::Write, sync::Arc};
+use tera::{Context, Tera};
 use time::OffsetDateTime;
 use walker_extras::visitors::SendVisitor;
+
+const REPORT_OUTPUT_PATH: &str = "/tmp/share/reports";
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Ord, PartialOrd, serde::Deserialize, serde::Serialize)]
 pub enum Phase {
@@ -126,6 +128,82 @@ impl SplitScannerError for Result<Report, ScannerError> {
 /// Handle the report
 pub async fn handle_report(report: Report) -> anyhow::Result<()> {
     // FIXME: this is a very simplistic version of handling the error
-    log::info!("Import report: {report:#?}");
+    log::warn!("Import report: {report:#?}");
+
+    let path = env::var_os("REPORT_PATH").unwrap_or_else(|| OsString::from(REPORT_OUTPUT_PATH));
+    let path = path.to_str().unwrap_or_else(|| REPORT_OUTPUT_PATH).to_string();
+
+    let template_content = include_str!("../templates/report.html");
+    let mut tera = Tera::default();
+    tera.add_raw_template("report.html", template_content)?;
+
+    let mut context = Context::new();
+    let current_time = OffsetDateTime::now_utc();
+    context.insert("report", &report);
+    context.insert("current_time", &current_time);
+
+    match tera.render("report.html", &context) {
+        Ok(rendered_html) => {
+            let out_put_path = format!("{path}/report-{current_time:#?}.html");
+            if let Some(parent) = std::path::Path::new(&out_put_path).parent() {
+                fs::create_dir_all(parent)?;
+            }
+            let mut file = match File::create(out_put_path.clone()) {
+                Ok(file) => file,
+                Err(e) => {
+                    log::warn!(" The {} created failed. {:?}", out_put_path.clone(), e);
+                    return Err(e.into());
+                }
+            };
+
+            let _ = writeln!(file, "{}", rendered_html);
+            let _ = file.sync_all();
+        }
+        Err(e) => {
+            log::warn!(
+                "There was an error generating the page, please check your files. {:?}",
+                e
+            )
+        }
+    }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::report::{handle_report, Message, Phase, ReportBuilder, Severity};
+
+    #[tokio::test]
+    async fn test_handle_report() {
+        let mut report = ReportBuilder::new();
+        report
+            .report
+            .messages
+            .entry(Phase::Validation)
+            .or_default()
+            .entry("test1".to_string())
+            .or_default()
+            .push(Message {
+                severity: Severity::Error,
+                message: "test1 message one".to_string(),
+            });
+
+        report
+            .report
+            .messages
+            .entry(Phase::Upload)
+            .or_default()
+            .entry("test2".to_string())
+            .or_default()
+            .push(Message {
+                severity: Severity::Error,
+                message: "test2 message two".to_string(),
+            });
+
+        let rs = handle_report(report.report).await;
+        match rs {
+            Ok(_rt) => assert_eq!(true, true),
+            Err(_e) => assert_eq!(true, false),
+        };
+    }
 }
