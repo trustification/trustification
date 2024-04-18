@@ -52,7 +52,13 @@ spec:
             - mountPath: /etc/config
               name: config
             {{ include "trustification.http-server-volume-mounts" . | nindent 12 }}
-          {{- template "trustification.ocp.ssc" }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            privileged: false
+            runAsNonRoot: true
           ports:
             - containerPort: 2782
               protocol: TCP

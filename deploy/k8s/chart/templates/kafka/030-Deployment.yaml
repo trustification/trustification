@@ -88,7 +88,13 @@ spec:
             - mountPath: /bitnami/kafka
               name: storage
 
-          {{- template "trustification.ocp.ssc" }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            privileged: false
+            runAsNonRoot: true
 
       volumes:
         - name: storage

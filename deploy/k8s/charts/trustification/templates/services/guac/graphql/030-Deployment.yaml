@@ -47,7 +47,13 @@ spec:
           volumeMounts:
             {{- include "trustification.application.extraVolumeMounts" $mod | nindent 12 }}
 
-          {{- template "trustification.ocp.ssc" }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            privileged: false
+            runAsNonRoot: true
 
       containers:
         - name: service

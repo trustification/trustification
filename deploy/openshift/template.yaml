@@ -394,6 +394,13 @@ objects:
                   value: ${BOMBASTIC_API_INDEX_SYNC_INTERVAL}
                 - name: SWAGGER_UI_OIDC_ISSUER_URL
                   value: ${ISSUER_URL}
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop:
+                    - ALL
+                privileged: false
+                runAsNonRoot: true
               volumeMounts:
                 - name: data
                   mountPath: /data
@@ -511,6 +518,13 @@ objects:
               volumeMounts:
                 - name: data
                   mountPath: /data
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop:
+                    - ALL
+                privileged: false
+                runAsNonRoot: true
               ports:
                 - containerPort: 9010
                   protocol: TCP
@@ -616,6 +630,13 @@ objects:
                   name: config
                 - mountPath: /etc/tls
                   name: tls
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop:
+                    - ALL
+                privileged: false
+                runAsNonRoot: true
               ports:
                 - containerPort: 8080
                   protocol: TCP
@@ -701,6 +722,13 @@ objects:
                   name: config
                 - mountPath: /etc/tls
                   name: tls
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop:
+                    - ALL
+                privileged: false
+                runAsNonRoot: true
               ports:
                 - containerPort: 2782
                   protocol: TCP
@@ -851,6 +879,13 @@ objects:
                   name: config
                 - mountPath: /etc/tls
                   name: tls
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop:
+                    - ALL
+                privileged: false
+                runAsNonRoot: true
               resources: ${{GUAC_GQL_RESOURCES}}
               ports:
                 - containerPort: 8080
@@ -985,6 +1020,13 @@ objects:
                   name: customize
                 - mountPath: /etc/tls
                   name: tls
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            privileged: false
+            runAsNonRoot: true
           volumes:
             - name: config
               configMap:
@@ -1058,6 +1100,13 @@ objects:
                   mountPath: /public/branding
                 - name: run
                   mountPath: /run
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop:
+                    - ALL
+                privileged: false
+                runAsNonRoot: true
               ports:
                 - containerPort: 8080
                   protocol: TCP
@@ -1169,6 +1218,13 @@ objects:
                   name: config
                 - mountPath: /etc/tls
                   name: tls
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop:
+                    - ALL
+                privileged: false
+                runAsNonRoot: true
               ports:
                 - containerPort: 8080
                   protocol: TCP
@@ -1277,6 +1333,13 @@ objects:
               volumeMounts:
                 - name: data
                   mountPath: /data
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop:
+                    - ALL
+                privileged: false
+                runAsNonRoot: true
               ports:
                 - containerPort: 9010
                   protocol: TCP
@@ -1395,6 +1458,13 @@ objects:
                   name: config
                 - mountPath: /etc/tls
                   name: tls
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop:
+                    - ALL
+                privileged: false
+                runAsNonRoot: true
               ports:
                 - containerPort: 8080
                   protocol: TCP
@@ -1505,6 +1575,13 @@ objects:
               volumeMounts:
                 - name: data
                   mountPath: /data
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop:
+                    - ALL
+                privileged: false
+                runAsNonRoot: true
               ports:
                 - containerPort: 9010
                   protocol: TCP

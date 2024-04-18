@@ -91,7 +91,13 @@ spec:
 
             {{- include "trustification.application.extraVolumeMounts" $mod | nindent 12 }}
 
-          {{- template "trustification.ocp.ssc" }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            privileged: false
+            runAsNonRoot: true
 
           ports:
             - containerPort: 8080

@@ -33,7 +33,13 @@ spec:
           volumeMounts:
             - name: run
               mountPath: /run
-          {{- template "trustification.ocp.ssc" }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            privileged: false
+            runAsNonRoot: true
           ports:
             - containerPort: 8080
               protocol: TCP

@@ -74,7 +74,13 @@ spec:
             - name: SWAGGER_UI_OIDC_ISSUER_URL
               {{ include "trustification.authentication-frontend-issuer-url" . | nindent 14 }}
             {{ include "trustification.authentication-client" ( dict "root" . "clientId" "walker" ) | nindent 12 }}
-          {{- template "trustification.ocp.ssc" }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            privileged: false
+            runAsNonRoot: true
           volumeMounts:
             - name: data
               mountPath: /data
