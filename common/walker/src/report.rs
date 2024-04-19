@@ -4,7 +4,8 @@ use tera::{Context, Tera};
 use time::OffsetDateTime;
 use walker_extras::visitors::SendVisitor;
 
-const REPORT_OUTPUT_PATH: &str = "/tmp/share/reports";
+const DEFAULT_REPORT_OUTPUT_PATH: &str = "/tmp/share/reports";
+const DEFAULT_REPORT_TYPE: &str = "Default";
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Ord, PartialOrd, serde::Deserialize, serde::Serialize)]
 pub enum Phase {
@@ -130,8 +131,11 @@ pub async fn handle_report(report: Report) -> anyhow::Result<()> {
     // FIXME: this is a very simplistic version of handling the error
     log::warn!("Import report: {report:#?}");
 
-    let path = env::var_os("REPORT_PATH").unwrap_or_else(|| OsString::from(REPORT_OUTPUT_PATH));
-    let path = path.to_str().unwrap_or_else(|| REPORT_OUTPUT_PATH).to_string();
+    let path = env::var_os("REPORT_PATH").unwrap_or_else(|| OsString::from(DEFAULT_REPORT_OUTPUT_PATH));
+    let path = path.to_str().unwrap_or(DEFAULT_REPORT_OUTPUT_PATH).to_string();
+
+    let report_type = env::var_os("REPORT_TYPE").unwrap_or_else(|| OsString::from(DEFAULT_REPORT_TYPE));
+    let report_type = report_type.to_str().unwrap_or(DEFAULT_REPORT_TYPE).to_string();
 
     let template_content = include_str!("../templates/report.html");
     let mut tera = Tera::default();
@@ -140,6 +144,7 @@ pub async fn handle_report(report: Report) -> anyhow::Result<()> {
     let mut context = Context::new();
     let current_time = OffsetDateTime::now_utc();
     context.insert("report", &report);
+    context.insert("type", &report_type);
     context.insert("current_time", &current_time);
 
     match tera.render("report.html", &context) {

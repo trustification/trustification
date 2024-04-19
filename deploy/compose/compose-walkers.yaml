@@ -11,6 +11,7 @@ services:
       INFRASTRUCTURE_ENABLED: "true"
       OPENID_CONFIGURATION: "http://keycloak:8080/realms/chicken/.well-known/openid-configuration"
       REPORT_PATH: $VEXINATION_WALKER_REPORT_PATH
+      REPORT_TYPE: Vexination
     volumes:
       - $REPORT_VOLUMES:$LOCAL_REPORT_PATH
 
@@ -25,5 +26,6 @@ services:
       INFRASTRUCTURE_ENABLED: "true"
       OPENID_CONFIGURATION: "http://keycloak:8080/realms/chicken/.well-known/openid-configuration"
       REPORT_PATH: $BOMBASTIC_WALKER_REPORT_PATH
+      REPORT_TYPE: Sbom
     volumes:
       - $REPORT_VOLUMES:$LOCAL_REPORT_PATH
