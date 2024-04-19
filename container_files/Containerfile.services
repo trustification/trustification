@@ -110,10 +110,10 @@ RUN npm install -g sass@${SASS_VERSION} && sass --version
 # for buildah (not for podman build): https://github.com/containers/buildah/issues/4845
 
 WORKDIR /home/trustuser
-RUN mkdir -p /home/trustuser/trustification
-RUN mkdir -p /home/trustuser/trustification/public
-RUN mkdir -p /home/trustuser/trustification/spog/ui/node_modules
-RUN mkdir -p /home/trustuser/trustification/spog/ui/target
+RUN mkdir -p /home/trustuser/trustification \
+    && mkdir -p /home/trustuser/trustification/public \
+    && mkdir -p /home/trustuser/trustification/spog/ui/node_modules \
+    && mkdir -p /home/trustuser/trustification/spog/ui/target
 
 COPY . /home/trustuser/trustification
 WORKDIR /home/trustuser/trustification
@@ -148,8 +148,7 @@ LABEL name ="Trustification"
 
 USER trustuser
 
-RUN mkdir -p /home/trustuser/public
-RUN mkdir -p /home/trustuser/endpoint
+RUN mkdir -p /home/trustuser/public && mkdir -p home/trustuser/endpoints
 COPY --from=frontendbuilder /home/trustuser/trustification/public /home/trustuser/trustification/public
 COPY --from=frontendbuilder /home/trustuser/trustification/spog /home/trustuser/trustification/spog
 
@@ -160,7 +159,7 @@ RUN chmod a+x /nginx.sh
 
 ENV NGINX_USER="trustuser" \
     NGINXR_UID="1001" \
-    NGINX_GROUP="atrustuser" \
+    NGINX_GROUP="trustuser" \
     NGINX_GID="1001"
 
 RUN mkdir -p /var/lib/nginx/tmp /var/log/nginx \
