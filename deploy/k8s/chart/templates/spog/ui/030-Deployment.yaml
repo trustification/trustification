@@ -58,7 +58,7 @@ spec:
 {{- end }}
           volumeMounts:
             - name: endpoints
-              mountPath: /home/trustuser/trustification/endpoints
+              mountPath: /endpoints
             - name: branding
               mountPath: /public/branding
             - name: run

@@ -80,7 +80,7 @@ spec:
               readOnly: true
 
             - name: endpoints
-              mountPath: /home/trustuser/trustification/endpoints
+              mountPath: /endpoints
             - name: run
               mountPath: /run
 
