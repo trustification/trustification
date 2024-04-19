@@ -61,7 +61,7 @@ pub fn sbom(props: &SBOMProperties) -> Html {
                                 </Title>
                                 <p>
                                     {"To generate a report, SBOM content will be processed by Red Hat’s Dependency Analytics Service. The SBOM data will be deleted from the Dependency Analytics Service once the report has been generated. Contact"}
-                                    {" "}<a href="mailto:rhtpa-support@redhat.com">{"rhtpa-support@redhat.com"}</a>{" "}
+                                    {" "}<a href="mailto:trustuser-support@redhat.com">{"trustuser-support@redhat.com"}</a>{" "}
                                     {"if you have any questions or concerns."}
                                 </p>
                             </Content>
