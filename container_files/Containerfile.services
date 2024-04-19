@@ -138,6 +138,8 @@ RUN microdnf update -y && microdnf install -y nginx jq git postgresql shadow-uti
 RUN groupadd -r -g 1001 trustuser \
   && useradd -r -u 1001 -g trustuser -m -d /home/trustuser -s /bin/bash trustuser
 
+RUN mkdir /public && mkdir /endpoints
+
 LABEL org.opencontainers.image.source="https://github.com/trustification/trustification"
 LABEL description="Trustification"
 LABEL io.k8s.description ="Trustification"
@@ -148,9 +150,7 @@ LABEL name ="Trustification"
 
 USER trustuser
 
-RUN mkdir -p /home/trustuser/public && mkdir -p home/trustuser/endpoints
-COPY --from=frontendbuilder /home/trustuser/trustification/public /home/trustuser/trustification/public
-COPY --from=frontendbuilder /home/trustuser/trustification/spog /home/trustuser/trustification/spog
+COPY --from=frontendbuilder /home/trustuser/trustification/public /public
 
 USER root
 RUN cp /home/trustuser/trustification/spog/ui/config/nginx.conf /etc/nginx/nginx.conf
