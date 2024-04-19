@@ -133,7 +133,7 @@ RUN test -f /home/trustuser/trustification/public/*.wasm
 FROM registry.access.redhat.com/ubi9/ubi-minimal:latest
 
 user root
-RUN microdnf update -y && microdnf install -y nginx jq git postgresql shadow-util
+RUN microdnf update -y && microdnf install -y nginx jq git postgresql shadow-utils
 
 RUN groupadd -r -g 1001 trustuser \
   && useradd -r -u 1001 -g trustuser -m -d /home/trustuser -s /bin/bash trustuser
