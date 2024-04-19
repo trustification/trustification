@@ -6,6 +6,7 @@ pub use key::*;
 
 use async_stream::try_stream;
 use bytes::Bytes;
+use bytesize::ByteSize;
 use futures::pin_mut;
 use futures::{future::ok, stream::once, Stream, StreamExt};
 use hide::Hide;
@@ -25,6 +26,7 @@ pub struct Storage {
     bucket: Bucket,
     metrics: Metrics,
     validator: Validator,
+    max_size: ByteSize,
 }
 
 #[derive(Clone)]
@@ -141,6 +143,10 @@ pub struct StorageConfig {
     /// Validation choice
     #[arg(env = "VALIDATOR", long = "validator", default_value = "none")]
     pub validator: Validator,
+
+    /// Maximum document size
+    #[arg(long, default_value_t = ByteSize::gb(1))]
+    pub max_size: ByteSize,
 }
 
 impl TryInto<Bucket> for StorageConfig {
@@ -222,6 +228,8 @@ pub enum Error {
     InvalidKey(String),
     #[error("invalid storage content")]
     InvalidContent,
+    #[error("content exceeds max size: {0}")]
+    ExceedsMaxSize(ByteSize),
     #[error("unexpected encoding {0}")]
     Encoding(String),
     #[error("Prometheus error {0}")]
@@ -292,11 +300,13 @@ pub struct Head {
 impl Storage {
     pub fn new(config: StorageConfig, registry: &Registry) -> Result<Self, Error> {
         let validator = config.validator.clone();
+        let max_size = config.max_size;
         let bucket = config.try_into()?;
         Ok(Self {
             bucket,
             metrics: Metrics::register(registry)?,
             validator,
+            max_size,
         })
     }
 
@@ -334,7 +344,7 @@ impl Storage {
         );
         let bucket = self.bucket.with_extra_headers(headers);
 
-        let data = self.validator.validate(encoding, Box::pin(data)).await?;
+        let data = self.validator.validate(self.max_size, encoding, Box::pin(data)).await?;
         let mut rdr = stream::encoded_reader(DEFAULT_ENCODING, encoding, data)?;
         let path = format!("{}{}", DATA_PATH, key);
 
