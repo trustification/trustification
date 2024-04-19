@@ -138,6 +138,9 @@ RUN microdnf update -y && microdnf install -y nginx jq git postgresql shadow-uti
 RUN groupadd -r -g 1001 trustuser \
   && useradd -r -u 1001 -g trustuser -m -d /home/trustuser -s /bin/bash trustuser
 
+RUN groupadd -r -g 1002 nginx \
+  && useradd -r -u 1002 -g nginx -m -d /home/nginx -s /bin/bash nginx
+
 LABEL org.opencontainers.image.source="https://github.com/trustification/trustification"
 LABEL description="Trustification"
 LABEL io.k8s.description ="Trustification"
@@ -175,9 +178,11 @@ RUN chown -R nginx:nginx /var/lib/nginx/tmp/client_body && \
 RUN touch /var/run/nginx.pid && \
         chown -R nginx:nginx /var/run/nginx.pid
 
-USER trustuser
+USER nginx
 
 EXPOSE 80
+
+user trustuser
 
 COPY --from=backendbuilder /home/trustuser/src/project/target/release/trust /
 COPY ./collectorist.yaml /
