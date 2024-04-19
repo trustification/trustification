@@ -157,25 +157,15 @@ USER root
 RUN cp /home/trustuser/trustification/spog/ui/config/nginx.conf /etc/nginx/nginx.conf
 RUN cp /home/trustuser/trustification/spog/ui/config/nginx.sh /nginx.sh
 RUN chmod a+x /nginx.sh
-RUN mkdir -p /var/lib/nginx/tmp/client_body
-RUN mkdir -p /var/lib/nginx/tmp/fastcgi && \
-    mkdir -p /var/lib/nginx/tmp/proxy && \
-    mkdir -p /var/lib/nginx/tmp/scgi && \
-    mkdir -p /var/lib/nginx/tmp/uwsgi
-    
-RUN chown -R nginx:nginx /var/lib/nginx/tmp/client_body && \
-    chown -R nginx:nginx /var/lib/nginx/tmp/fastcgi && \
-    chown -R nginx:nginx /var/lib/nginx/tmp/proxy && \
-    chown -R nginx:nginx /var/lib/nginx/tmp/scgi && \
-    chown -R nginx:nginx /var/lib/nginx/tmp/uwsgi && \
-    chown -R nginx:nginx /var/log/nginx && \
-    chown -R nginx:nginx /etc/nginx/conf.d && \
-    chown -R nginx:nginx /var/lib/nginx/tmp/
 
-RUN touch /var/run/nginx.pid && \
-        chown -R nginx:nginx /var/run/nginx.pid
+ENV NGINX_USER="trustuser" \
+    NGINXR_UID="1001" \
+    NGINX_GROUP="atrustuser" \
+    NGINX_GID="1001"
 
-USER nginx
+RUN mkdir -p /var/lib/nginx/tmp /var/log/nginx \
+    && chown -R trustuser:trustuser /var/lib/nginx /var/log/nginx \
+    && chmod -R 755 /var/lib/nginx /var/log/nginx
 
 EXPOSE 80
 
