@@ -9,7 +9,7 @@ use patternfly_yew::prelude::*;
 use spog_model::prelude::*;
 use spog_ui_backend::{self, PackageService};
 use spog_ui_common::utils::pagination_to_offset;
-use spog_ui_utils::{analytics::use_analytics, config::use_config};
+use spog_ui_utils::{analytics::use_analytics, config::use_config_private};
 use std::rc::Rc;
 use trustification_api::search::SearchResult;
 use yew::prelude::*;
@@ -22,7 +22,7 @@ pub struct SbomSearchControlsProperties {
 
 #[function_component(SbomSearchControls)]
 pub fn sbom_search_controls(props: &SbomSearchControlsProperties) -> Html {
-    let config = use_config();
+    let config = use_config_private();
     let analytics = use_analytics();
 
     let filters = use_memo((), |()| config.bombastic.filters.clone());
@@ -48,7 +48,7 @@ pub fn use_sbom_search<S>(
 where
     S: FnOnce(&SearchOperationContext) -> String + 'static,
 {
-    let config = use_config();
+    let config = use_config_private();
     use_generic_search::<Packages, _, _, _, _>(
         10_000,
         search_params,

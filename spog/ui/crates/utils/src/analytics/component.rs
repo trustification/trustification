@@ -1,4 +1,4 @@
-use crate::config::use_config;
+use crate::config::use_config_private;
 use patternfly_yew::prelude::*;
 use spog_ui_common::components::SafeHtml;
 use yew::prelude::*;
@@ -64,7 +64,7 @@ pub struct ConsentModalProperties {
 
 #[function_component(ConsentModal)]
 pub fn consent_modal(props: &ConsentModalProperties) -> Html {
-    let config = use_config();
+    let config = use_config_private();
     let context = use_consent_context().expect("Should be wrapped by the Consent component");
 
     let onyes = use_callback(context.clone(), |_, consent| consent.set(ConsentState::Yes(())));
