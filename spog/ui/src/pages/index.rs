@@ -6,13 +6,13 @@ use patternfly_yew::prelude::*;
 use search::search_input::SearchInput;
 use spog_ui_common::components::SafeHtml;
 use spog_ui_navigation::AppRoute;
-use spog_ui_utils::{analytics::use_analytics, config::use_config};
+use spog_ui_utils::{analytics::use_analytics, config::use_config_private};
 use yew::prelude::*;
 use yew_nested_router::prelude::*;
 
 #[function_component(Index)]
 pub fn index() -> Html {
-    let config = use_config();
+    let config = use_config_private();
     let analytics = use_analytics();
 
     let text = use_state_eq(String::new);

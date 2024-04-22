@@ -26,6 +26,9 @@ pub struct Configuration {
     pub packages: Packages,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PrivateConfiguration(pub Configuration);
+
 /// Configuration for the consent dialog
 #[derive(Clone, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]

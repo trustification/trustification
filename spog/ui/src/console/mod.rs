@@ -1,13 +1,13 @@
 use crate::{about, pages};
 use patternfly_yew::prelude::*;
 use spog_ui_backend::{use_backend, Endpoint};
-use spog_ui_common::utils::auth::from_auth;
+use spog_ui_common::{config::use_config_public, utils::auth::from_auth};
 use spog_ui_components::{
     common::{ExternalLinkMarker, ExternalNavLink},
     theme::DarkModeEntry,
 };
 use spog_ui_navigation::{AppRoute, View};
-use spog_ui_utils::config::components::Configuration;
+use spog_ui_utils::config::components::PrivateConfigurationComponent;
 use spog_ui_utils::{analytics::*, config::*, hints::*};
 use yew::prelude::*;
 use yew_consent::hook::use_consent_context;
@@ -18,7 +18,7 @@ use yew_oauth2::{openid::*, prelude::*};
 /// The main console component
 #[function_component(Console)]
 pub fn console() -> Html {
-    let config = use_config();
+    let config = use_config_public();
     let product_name = config.global.product_name();
     let render = move |route| render(route, &config);
 
@@ -38,7 +38,7 @@ pub fn console() -> Html {
 
 #[function_component(Brand)]
 fn brand() -> Html {
-    let config = use_config();
+    let config = use_config_public();
 
     let src = config.global.brand_image_src();
 
@@ -55,52 +55,55 @@ fn brand() -> Html {
     )
 }
 
+#[function_component(Sidebar)]
+fn sidebar() -> Html {
+    let backend = use_backend();
+    let config = use_config_private();
+
+    html!(
+        <Nav>
+            <NavList>
+                <NavRouterItem<AppRoute> to={AppRoute::Index}>{ "Home" }</NavRouterItem<AppRoute>>
+                if config.features.dedicated_search {
+                    <NavExpandable expanded=true title="Search">
+                        <NavRouterItem<AppRoute> to={AppRoute::Advisory(Default::default())} predicate={AppRoute::is_advisory}>{ "Advisories" }</NavRouterItem<AppRoute>>
+                        <NavRouterItem<AppRoute> to={AppRoute::Sbom(Default::default())} predicate={AppRoute::is_sbom}>{ "SBOMs" }</NavRouterItem<AppRoute>>
+                        <NavRouterItem<AppRoute> to={AppRoute::Cve(Default::default())} predicate={AppRoute::is_cve}>{ "CVEs" }</NavRouterItem<AppRoute>>
+                        <NavRouterItem<AppRoute> to={AppRoute::Packages(Default::default())} predicate={AppRoute::is_package}>{ "Packages" }</NavRouterItem<AppRoute>>
+                    </NavExpandable>
+                } else {
+                    <NavRouterItem<AppRoute> to={AppRoute::Search{terms: String::new()}}>{ "Search" }</NavRouterItem<AppRoute>>
+                }
+                if config.features.scanner {
+                    <NavRouterItem<AppRoute> to={AppRoute::Scanner}>{ "Scan SBOM" }</NavRouterItem<AppRoute>>
+                }
+                if config.features.uploader {
+                    <NavRouterItem<AppRoute> to={AppRoute::SbomUploader}>{ "Upload SBOM" }</NavRouterItem<AppRoute>>
+                    <NavRouterItem<AppRoute> to={AppRoute::VexUploader}>{ "Upload CSAF" }</NavRouterItem<AppRoute>>
+                }
+                if config.features.extend_section {
+                    <NavExpandable title="Extend">
+                        if let Ok(url) = backend.join(Endpoint::Bombastic, "/swagger-ui/") {
+                            <ExternalNavLink href={url.to_string()}>{ "SBOM API" }</ExternalNavLink>
+                        }
+                        if let Ok(url) = backend.join(Endpoint::Vexination, "/swagger-ui/") {
+                            <ExternalNavLink href={url.to_string()}>{ "VEX API" }</ExternalNavLink>
+                        }
+                    </NavExpandable>
+                }
+                if let Some(url) = &config.global.support_url {
+                    <ExternalNavLink href={url.to_string()}>{ config.global.support_label() }</ExternalNavLink>
+                }
+            </NavList>
+        </Nav>
+    )
+}
+
 #[function_component(AuthenticatedPage)]
 fn authenticated_page(props: &ChildrenProperties) -> Html {
     let brand: yew::virtual_dom::VNode = html!(<Brand/>);
 
-    let backend = use_backend();
-    let config = use_config();
-
-    let sidebar = html_nested!(
-        <PageSidebar>
-            <Nav>
-                <NavList>
-                    <NavRouterItem<AppRoute> to={AppRoute::Index}>{ "Home" }</NavRouterItem<AppRoute>>
-                    if config.features.dedicated_search {
-                        <NavExpandable expanded=true title="Search">
-                            <NavRouterItem<AppRoute> to={AppRoute::Advisory(Default::default())} predicate={AppRoute::is_advisory}>{ "Advisories" }</NavRouterItem<AppRoute>>
-                            <NavRouterItem<AppRoute> to={AppRoute::Sbom(Default::default())} predicate={AppRoute::is_sbom}>{ "SBOMs" }</NavRouterItem<AppRoute>>
-                            <NavRouterItem<AppRoute> to={AppRoute::Cve(Default::default())} predicate={AppRoute::is_cve}>{ "CVEs" }</NavRouterItem<AppRoute>>
-                            <NavRouterItem<AppRoute> to={AppRoute::Packages(Default::default())} predicate={AppRoute::is_package}>{ "Packages" }</NavRouterItem<AppRoute>>
-                        </NavExpandable>
-                    } else {
-                        <NavRouterItem<AppRoute> to={AppRoute::Search{terms: String::new()}}>{ "Search" }</NavRouterItem<AppRoute>>
-                    }
-                    if config.features.scanner {
-                        <NavRouterItem<AppRoute> to={AppRoute::Scanner}>{ "Scan SBOM" }</NavRouterItem<AppRoute>>
-                    }
-                    if config.features.uploader {
-                        <NavRouterItem<AppRoute> to={AppRoute::SbomUploader}>{ "Upload SBOM" }</NavRouterItem<AppRoute>>
-                        <NavRouterItem<AppRoute> to={AppRoute::VexUploader}>{ "Upload CSAF" }</NavRouterItem<AppRoute>>
-                    }
-                    if config.features.extend_section {
-                        <NavExpandable title="Extend">
-                            if let Ok(url) = backend.join(Endpoint::Bombastic, "/swagger-ui/") {
-                                <ExternalNavLink href={url.to_string()}>{ "SBOM API" }</ExternalNavLink>
-                            }
-                            if let Ok(url) = backend.join(Endpoint::Vexination, "/swagger-ui/") {
-                                <ExternalNavLink href={url.to_string()}>{ "VEX API" }</ExternalNavLink>
-                            }
-                        </NavExpandable>
-                    }
-                    if let Some(url) = &config.global.support_url {
-                        <ExternalNavLink href={url.to_string()}>{ config.global.support_label() }</ExternalNavLink>
-                    }
-                </NavList>
-            </Nav>
-        </PageSidebar>
-    );
+    let config = use_config_public();
 
     let callback_github = use_open("https://github.com/trustification/trustification", "_blank");
 
@@ -204,11 +207,15 @@ fn authenticated_page(props: &ChildrenProperties) -> Html {
     );
 
     html!(
-        <Configuration>
-            <Page {brand} {sidebar} {tools}>
+        <PrivateConfigurationComponent>
+            <Page {brand} sidebar={html_nested!(
+                <PageSidebar>
+                    <Sidebar/>
+                </PageSidebar>
+            )} {tools}>
                 { props.children.clone() }
             </Page>
-        </Configuration>
+        </PrivateConfigurationComponent>
     )
 }
 

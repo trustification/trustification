@@ -8,7 +8,7 @@ use bombastic_model::packages::PackageInfo;
 use patternfly_yew::prelude::*;
 use spog_ui_backend::PackageInfoService;
 use spog_ui_common::utils::pagination_to_offset;
-use spog_ui_utils::{analytics::use_analytics, config::use_config};
+use spog_ui_utils::{analytics::use_analytics, config::use_config_private};
 use std::rc::Rc;
 use trustification_api::search::SearchResult;
 use yew::prelude::*;
@@ -21,7 +21,7 @@ pub struct PackageSearchControlsProperties {
 
 #[function_component(PackageSearchControls)]
 pub fn packages_search_controls(props: &PackageSearchControlsProperties) -> Html {
-    let config = use_config();
+    let config = use_config_private();
     let analytics = use_analytics();
 
     let filters = use_memo((), |()| config.packages.filters.clone());
@@ -45,7 +45,7 @@ pub fn use_package_search(
     pagination: UsePagination,
     callback: Callback<UseAsyncHandleDeps<SearchResult<Rc<Vec<spog_model::prelude::PackageInfo>>>, String>>,
 ) -> UseStandardSearch {
-    let config = use_config();
+    let config = use_config_private();
     use_generic_search::<PackageInfo, _, _, _, _>(
         0,
         search_params,

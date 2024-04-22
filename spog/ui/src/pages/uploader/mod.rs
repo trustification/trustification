@@ -81,7 +81,7 @@ pub struct CommonHeaderProperties {
 
 #[function_component(CommonHeader)]
 fn common_header(props: &CommonHeaderProperties) -> Html {
-    let config = use_config();
+    let config = use_config_private();
 
     let onreset = use_map(props.onreset.clone(), move |callback| callback.reform(|_| ()));
 
