@@ -10,7 +10,7 @@ use patternfly_yew::prelude::*;
 use products::RelatedProducts;
 use spog_model::prelude::CveDetails;
 use spog_ui_backend::{use_backend, CveService};
-use spog_ui_common::{components::Markdown, config::use_config};
+use spog_ui_common::{components::Markdown, config::use_config_private};
 use spog_ui_components::{
     async_state_renderer::async_content, cvss::Cvss3Label, download::LocalDownloadButton, editor::ReadonlyEditor,
     time::Date,
@@ -32,7 +32,7 @@ pub struct ResultViewProperties {
 
 #[function_component(ResultView)]
 pub fn result_view(props: &ResultViewProperties) -> Html {
-    let config = use_config();
+    let config = use_config_private();
     let backend = use_backend();
     let access_token = use_latest_access_token();
 
