@@ -63,14 +63,14 @@ spec:
               mountPath: /public/branding
             - name: run
               mountPath: /run
-          #securityContext:
-          #  allowPrivilegeEscalation: false
-          #  capabilities:
-          #    drop:
-          #      - ALL
-          #  privileged: false
-          #  runAsNonRoot: true
-          #  runAsUser: 1001
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            privileged: false
+            runAsNonRoot: true
+            runAsUser: 1001
           ports:
             - containerPort: 8080
               protocol: TCP
