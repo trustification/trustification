@@ -12,7 +12,7 @@ use spog_model::prelude::*;
 use spog_ui_backend::{use_backend, Endpoint};
 use spog_ui_common::{components::SafeHtml, utils::time::date};
 use spog_ui_navigation::{AppRoute, View};
-use spog_ui_utils::config::use_config;
+use spog_ui_utils::config::use_config_private;
 use std::rc::Rc;
 use trustification_api::search::SearchResult;
 use url::Url;
@@ -102,7 +102,7 @@ impl TableEntryRenderer<Column> for PackageEntry {
 #[function_component(SbomResult)]
 pub fn sbom_result(props: &SbomResultProperties) -> Html {
     let backend = use_backend();
-    let config = use_config();
+    let config = use_config_private();
     let link_advisories = config.features.dedicated_search;
 
     let data = use_state_eq(|| None);

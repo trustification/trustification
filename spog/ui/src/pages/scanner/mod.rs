@@ -169,7 +169,7 @@ pub fn scanner() -> Html {
         analytics.track(Reset);
     });
 
-    let config = use_config();
+    let config = use_config_private();
 
     match &*sbom {
         Some((raw, _bom)) => {
@@ -201,7 +201,7 @@ pub struct CommonHeaderProperties {
 
 #[function_component(CommonHeader)]
 fn common_header(props: &CommonHeaderProperties) -> Html {
-    let config = use_config();
+    let config = use_config_private();
     let analytics = use_analytics();
 
     let onlearn = use_tracking(|_, _| ClickLearn, ());
