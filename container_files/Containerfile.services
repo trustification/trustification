@@ -99,22 +99,9 @@ LABEL io.openshift.tags ="Trustification"
 LABEL name ="Trustification"
 
 RUN microdnf update -y && microdnf install -y nginx jq git postgresql
-
-RUN groupadd -r -g 1001 trustuser \
-  && useradd -r -u 1001 -g trustuser -m -d /home/trustuser -s /bin/bash trustuser
-
-ENV NGINX_USER="trustuser" \
-    NGINXR_UID="1001" \
-    NGINX_GROUP="atrustuser" \
-    NGINX_GID="1001"
-
 RUN true \
     && mkdir /public \
     && mkdir /endpoints
-
-RUN mkdir -p /var/lib/nginx/tmp /var/log/nginx \
-    && chown -R trustuser:trustuser /var/lib/nginx /var/log/nginx \
-    && chmod -R 755 /var/lib/nginx /var/log/nginx
 
 COPY --from=frontendbuilder /public /public/
 COPY spog/ui/config/nginx.conf /etc/nginx/nginx.conf
