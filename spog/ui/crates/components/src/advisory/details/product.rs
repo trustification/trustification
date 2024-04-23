@@ -63,6 +63,7 @@ pub fn product_info(props: &CsafProperties) -> Html {
             mode={TreeTableMode::Compact}
             {header}
             {model}
+            default_expansion=false
         />
     )
 }
