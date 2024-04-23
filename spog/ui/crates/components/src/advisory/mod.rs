@@ -57,7 +57,7 @@ impl TableEntryRenderer<Column> for AdvisoryEntry {
         match context.column {
             Column::Id => html!(
                 <Link<AppRoute>
-                    target={AppRoute::Advisory(View::Content {id: self.summary.id.clone()})}
+                    to={AppRoute::Advisory(View::Content {id: self.summary.id.clone()})}
                 >{ self.summary.id.clone() }</Link<AppRoute>>
             ),
             Column::Title => html!(&self.summary.title),

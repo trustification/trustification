@@ -60,7 +60,7 @@ impl TableEntryRenderer<Column> for PackageEntry {
         match context.column {
             Column::Name => Cell::from(html!(
                 <Link<AppRoute>
-                    target={AppRoute::Sbom(View::Content{id: self.package.id.clone()})}
+                    to={AppRoute::Sbom(View::Content{id: self.package.id.clone()})}
                 >{ self.package_name() }</Link<AppRoute>>
             ))
             .text_modifier(TextModifier::Truncate),
@@ -76,7 +76,7 @@ impl TableEntryRenderer<Column> for PackageEntry {
             Column::Advisories => match self.package.advisories_query() {
                 Some(query) if self.link_advisories => html!(
                     <Link<AppRoute>
-                        target={AppRoute::Advisory(View::Search { query })}
+                        to={AppRoute::Advisory(View::Search { query })}
                     >
                         { for self.package.advisories }
                     </Link<AppRoute>>

@@ -30,7 +30,7 @@ markdown = "1.0.0-alpha.11"
 monaco = { version = "0.5", features = ["yew-components"] }
 openidconnect = "3"
 packageurl = "0.3"
-patternfly-yew = { version = "=0.6.0-alpha.1", features = ["icons-fab", "tree"] }
+patternfly-yew = { version = "0.6.0", features = ["icons-fab", "tree"] }
 popper-rs = { version = "0.3.2", features = ["yew"] }
 reqwest = { version = "0.11", features = ["json"] }
 roxmltree = "0.19"
@@ -51,8 +51,8 @@ yew = { version = "0.21", features = ["csr"] }
 yew-consent = "0.2"
 yew-hooks = "0.3"
 yew-more-hooks = "0.3.2"
-yew-nested-router = "0.6.0"
-yew-oauth2 = { version = "0.10.1", features = ["nested-router", "openid"] }
+yew-nested-router = "0.7.0"
+yew-oauth2 = { version = "0.11.0", features = ["yew-nested-router", "openid"] }
 
 bombastic-model = { path = "../../bombastic/model" }
 exhort-model = { path = "../../exhort/model" }
