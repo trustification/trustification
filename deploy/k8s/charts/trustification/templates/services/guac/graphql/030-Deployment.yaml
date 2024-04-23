@@ -44,6 +44,9 @@ spec:
             {{- include "trustification.postgres.envVars" ( dict "root" . "database" ( set (deepCopy .Values.guac.initDatabase) "name" .Values.guac.database.name  ) "prefix" "TC_" ) | nindent 12 }}
             {{- end }}
 
+          volumeMounts:
+            {{- include "trustification.application.extraVolumeMounts" $mod | nindent 12 }}
+
       containers:
         - name: service
           {{- include "trustification.guac.defaultImage" $mod | nindent 10 }}
@@ -66,6 +69,7 @@ spec:
 
           volumeMounts:
             {{- include "trustification.application.httpServerVolumesMounts" $mod | nindent 12 }}
+            {{- include "trustification.application.extraVolumeMounts" $mod | nindent 12 }}
 
           readinessProbe:
             httpGet:
@@ -81,5 +85,6 @@ spec:
 
       volumes:
         {{- include "trustification.application.httpServerVolumes" $mod | nindent 8 }}
+        {{- include "trustification.application.extraVolumes" $mod | nindent 8 }}
 
 {{ end }}

@@ -26,6 +26,7 @@ spec:
             - name: cvelist
               persistentVolumeClaim:
                 claimName: {{ include "trustification.common.name" $mod }}
+            {{- include "trustification.application.extraVolumes" $mod | nindent 12 }}
 
           initContainers:
             - name: git-fetch
@@ -57,6 +58,7 @@ spec:
               volumeMounts:
                 - mountPath: /mnt
                   name: cvelist
+                {{- include "trustification.application.extraVolumeMounts" $mod | nindent 16 }}
 
               command: ["/trust"]
               args:

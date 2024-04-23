@@ -8,7 +8,7 @@ use patternfly_yew::prelude::*;
 use spog_model::prelude::*;
 use spog_ui_backend::VexService;
 use spog_ui_common::utils::pagination_to_offset;
-use spog_ui_utils::{analytics::use_analytics, config::use_config};
+use spog_ui_utils::{analytics::use_analytics, config::use_config_private};
 use std::rc::Rc;
 use trustification_api::search::SearchResult;
 use vexination_model::prelude::Vulnerabilities;
@@ -22,7 +22,7 @@ pub struct AdvisorySearchControlsProperties {
 
 #[function_component(AdvisorySearchControls)]
 pub fn advisory_search_controls(props: &AdvisorySearchControlsProperties) -> Html {
-    let config = use_config();
+    let config = use_config_private();
     let analytics = use_analytics();
 
     let filters = use_memo((), |()| config.vexination.filters.clone());
@@ -46,7 +46,7 @@ pub fn use_advisory_search(
     pagination: UsePagination,
     callback: Callback<UseAsyncHandleDeps<SearchResult<Rc<Vec<AdvisorySummary>>>, String>>,
 ) -> UseStandardSearch {
-    let config = use_config();
+    let config = use_config_private();
     use_generic_search::<Vulnerabilities, _, _, _, _>(
         10_000,
         search_params,

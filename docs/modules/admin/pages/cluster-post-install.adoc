@@ -101,7 +101,7 @@ modules:
 <5> If invalid SPDX licenses should be replaced with `NOASSERTION` when importing
 <6> A Kubernetes cron job expression when the job should be scheduled
 
-=== Adding some branding
+== Adding some branding
 
 It is possible to change some of the visual aspects of the console. This consists of two aspects:
 
@@ -117,7 +117,7 @@ to create a copy of the
 https://github.com/trustification/trustification/blob/main/spog/api/src/config/default.yaml[default file], and start
 customizing it. The JSON schema describing the file can help identifying places for customization.
 
-==== Branding Helm Chart
+=== Branding Helm Chart
 
 There is an example Helm chart, which can help create a custom branding chart. The chart itself is just considered
 a blueprint, so it is recommended to copy and alter it according to your needs. It can be found here: https://github.com/trustification/trustification/tree/main/deploy/k8s/charts/trustification-branding

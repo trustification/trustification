@@ -12,7 +12,7 @@ use spog_model::prelude::*;
 use spog_ui_backend::{use_backend, Endpoint};
 use spog_ui_common::{components::SafeHtml, utils::time::date};
 use spog_ui_navigation::{AppRoute, View};
-use spog_ui_utils::config::use_config;
+use spog_ui_utils::config::use_config_private;
 use std::rc::Rc;
 use trustification_api::search::SearchResult;
 use url::Url;
@@ -58,12 +58,12 @@ impl PackageEntry {
 impl TableEntryRenderer<Column> for PackageEntry {
     fn render_cell(&self, context: CellContext<'_, Column>) -> Cell {
         match context.column {
-            Column::Name => html!(
+            Column::Name => Cell::from(html!(
                 <Link<AppRoute>
                     target={AppRoute::Sbom(View::Content{id: self.package.id.clone()})}
                 >{ self.package_name() }</Link<AppRoute>>
-            )
-            .into(),
+            ))
+            .text_modifier(TextModifier::Truncate),
             Column::Supplier => html!(&self.package.supplier).into(),
             Column::Created => date(self.package.created).into(),
             Column::Download => html!(
@@ -102,7 +102,7 @@ impl TableEntryRenderer<Column> for PackageEntry {
 #[function_component(SbomResult)]
 pub fn sbom_result(props: &SbomResultProperties) -> Html {
     let backend = use_backend();
-    let config = use_config();
+    let config = use_config_private();
     let link_advisories = config.features.dedicated_search;
 
     let data = use_state_eq(|| None);
@@ -141,12 +141,12 @@ pub fn sbom_result(props: &SbomResultProperties) -> Html {
         yew::props!(TableColumnProperties<Column> {
             index: Column::Name,
             label: "Name",
-            width: ColumnWidth::Percent(15)
+            width: ColumnWidth::Percent(25)
         }),
         yew::props!(TableColumnProperties<Column> {
             index: Column::Version,
             label: "Version",
-            width: ColumnWidth::Percent(20)
+            width: ColumnWidth::Percent(15)
         }),
         yew::props!(TableColumnProperties<Column> {
             index: Column::Supplier,

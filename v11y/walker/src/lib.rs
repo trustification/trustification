@@ -125,7 +125,7 @@ impl Run {
 
                         const MAX_RETRIES: usize = 10;
                         for retry in 0..MAX_RETRIES {
-                            match storage.put_json_slice(key, &data).await {
+                            match storage.put_json_slice(key.into(), &data).await {
                                 Ok(_) => break,
                                 Err(e) => {
                                     log::warn!("Failed to store {} (attempt {}/{}): {:?}", key, retry, MAX_RETRIES, e);

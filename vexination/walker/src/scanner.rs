@@ -1,7 +1,8 @@
 use crate::report::AdvisoryReportVisitor;
 use csaf_walker::{
+    discover::DiscoverConfig,
     retrieve::RetrievingVisitor,
-    source::{DispatchSource, FileSource, HttpSource},
+    source::new_source,
     validation::ValidationVisitor,
     visitors::filter::{FilterConfig, FilteringVisitor},
     walker::Walker,
@@ -15,7 +16,7 @@ use tracing::{instrument, log};
 use trustification_common_walker::report::{Report, ReportBuilder, ReportVisitor, ScannerError};
 use url::Url;
 use walker_common::{
-    fetcher::{Fetcher, FetcherOptions},
+    fetcher::FetcherOptions,
     sender::{self, provider::TokenProvider, HttpSenderOptions},
     since::Since,
     validate::ValidationOptions,
@@ -61,15 +62,14 @@ impl Scanner {
 
         let since = Since::new(None::<SystemTime>, self.options.since_file.clone(), Default::default())?;
 
-        let source: DispatchSource = match Url::parse(&self.options.source) {
-            Ok(url) => HttpSource::new(
-                url,
-                Fetcher::new(FetcherOptions::default()).await?,
-                csaf_walker::source::HttpOptions::new().since(*since),
-            )
-            .into(),
-            Err(_) => FileSource::new(&self.options.source, None)?.into(),
-        };
+        let source = new_source(
+            DiscoverConfig {
+                source: self.options.source.clone(),
+                since: *since,
+            },
+            FetcherOptions::default(),
+        )
+        .await?;
 
         let sender = sender::HttpSender::new(
             self.options.provider.clone(),

@@ -8,7 +8,7 @@ use patternfly_yew::prelude::*;
 use related_products::RelatedProducts;
 use spog_ui_backend::{use_backend, PackageInfoService};
 use spog_ui_components::async_state_renderer::async_content;
-use spog_ui_utils::config::use_config;
+use spog_ui_utils::config::use_config_private;
 use std::{rc::Rc, str::FromStr};
 use vulnerabilities::Vulnerabilities;
 use yew::prelude::*;
@@ -25,7 +25,7 @@ pub fn result_view(props: &ResultViewProperties) -> Html {
     let backend = use_backend();
     let access_token = use_latest_access_token();
 
-    let config = use_config();
+    let config = use_config_private();
 
     let package = {
         let backend = backend.clone();

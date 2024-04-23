@@ -150,9 +150,7 @@ async fn create_client(config: AuthenticatorClientConfig) -> anyhow::Result<Auth
         client = client.make_insecure();
     }
 
-    for ca in config.tls_ca_certificates {
-        client = client.add_ca_cert(ca);
-    }
+    client = client.add_ca_certs(config.tls_ca_certificates);
 
     let client = Client::<Discovered>::discover_with_client(
         client.build()?,

@@ -3,7 +3,7 @@ use csaf::document::Category;
 use humansize::{format_size, BINARY};
 use patternfly_yew::prelude::*;
 use spog_ui_backend::{use_backend, Advisory, VexService};
-use spog_ui_common::{config::use_config, error::components::Error};
+use spog_ui_common::{config::use_config_private, error::components::Error};
 use spog_ui_components::{
     advisory::{cat_label, tracking_status_str, CsafNotes, CsafProductInfo, CsafReferences, CsafVulnTable},
     common::{CardWrapper, NotFound, PageHeading},
@@ -88,7 +88,7 @@ fn details(props: &DetailsProps) -> Html {
         Source,
     }
 
-    let config = use_config();
+    let config = use_config_private();
 
     let tab = use_state_eq(|| TabIndex::Overview);
     let onselect = use_callback(tab.clone(), |index, tab| tab.set(index));

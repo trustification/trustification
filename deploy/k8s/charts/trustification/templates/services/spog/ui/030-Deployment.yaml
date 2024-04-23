@@ -42,6 +42,7 @@ spec:
           configMap:
             name: {{ . }}
         {{- end }}
+        {{- include "trustification.application.extraVolumes" $mod | nindent 8 }}
 
       containers:
         - name: service
@@ -87,6 +88,8 @@ spec:
             - name: branding
               mountPath: /public/branding
             {{- end }}
+
+            {{- include "trustification.application.extraVolumeMounts" $mod | nindent 12 }}
 
           ports:
             - containerPort: 8080

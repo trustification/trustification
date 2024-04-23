@@ -6,7 +6,7 @@ use spog_ui_components::{backend::Backend, theme::Themed};
 use spog_ui_navigation::AppRoute;
 use spog_ui_utils::{
     analytics::{AskConsent, Segment, SegmentIdentify},
-    config::components::Configuration,
+    config::components::PublicConfigurationComponent,
 };
 use yew::prelude::*;
 use yew_consent::prelude::*;
@@ -74,7 +74,7 @@ fn application_with_backend() -> Html {
                 scopes={backend.endpoints.oidc.scopes()}
                 {login_options}
             >
-                <Configuration>
+                <PublicConfigurationComponent>
                     { consent(html!(
                         <BackdropViewer>
                             <ToastViewer>
@@ -87,7 +87,7 @@ fn application_with_backend() -> Html {
                             </ToastViewer>
                         </BackdropViewer>
                     )) }
-                </Configuration>
+                </PublicConfigurationComponent>
             </OAuth2>
         </Router<AppRoute>>
     )

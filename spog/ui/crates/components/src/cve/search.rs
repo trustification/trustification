@@ -8,7 +8,7 @@ use patternfly_yew::prelude::*;
 use spog_model::cve::CveSearchDocument;
 use spog_ui_backend::CveService;
 use spog_ui_common::utils::pagination_to_offset;
-use spog_ui_utils::{analytics::use_analytics, config::use_config};
+use spog_ui_utils::{analytics::use_analytics, config::use_config_private};
 use std::rc::Rc;
 use trustification_api::search::SearchResult;
 use v11y_model::search::Cves;
@@ -22,7 +22,7 @@ pub struct CveSearchControlsProperties {
 
 #[function_component(CveSearchControls)]
 pub fn cve_search_controls(props: &CveSearchControlsProperties) -> Html {
-    let config = use_config();
+    let config = use_config_private();
     let analytics = use_analytics();
 
     let filters = use_memo((), |()| config.cve.filters.clone());
@@ -46,7 +46,7 @@ pub fn use_cve_search(
     pagination: UsePagination,
     callback: Callback<UseAsyncHandleDeps<SearchResult<Rc<Vec<CveSearchDocument>>>, String>>,
 ) -> UseStandardSearch {
-    let config = use_config();
+    let config = use_config_private();
     use_generic_search::<Cves, _, _, _, _>(
         0,
         search_params,

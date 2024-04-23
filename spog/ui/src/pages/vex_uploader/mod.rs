@@ -91,7 +91,7 @@ fn common_header(props: &CommonHeaderProperties) -> Html {
                 <FlexItem modifiers={[FlexModifier::Align(Alignment::Right), FlexModifier::Align(Alignment::End)]}>
                     if let Some(onreset) = onreset {
                         <Button
-                            label={"Scan another"}
+                            label={"Upload another"}
                             icon={Icon::Redo}
                             variant={ButtonVariant::Secondary}
                             onclick={onreset}

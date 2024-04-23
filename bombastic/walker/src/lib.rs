@@ -128,14 +128,16 @@ impl Run {
                             client_id,
                             client_secret,
                             refresh_before,
-                            tls_insecure: insecure_tls,
+                            tls_insecure,
+                            tls_ca_certificates,
                         }) => {
                             let config = walker_common::sender::provider::OpenIdTokenProviderConfig {
                                 issuer_url,
                                 client_id,
                                 client_secret,
                                 refresh_before,
-                                tls_insecure: insecure_tls,
+                                tls_insecure,
+                                tls_ca_certificates,
                             };
                             Arc::new(walker_common::sender::provider::OpenIdTokenProvider::with_config(config).await?)
                                 as Arc<dyn TokenProvider>

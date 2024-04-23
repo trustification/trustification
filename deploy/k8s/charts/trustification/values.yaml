@@ -14,12 +14,14 @@ guac:
     name: guac
     registry: ghcr.io/trustification
     pullPolicy: IfNotPresent
-    version: "v0.3.29"
+    version: "v0.3.30"
   database: {}
 
 rust: {}
 
 ingress: {}
+
+tls: {}
 
 storage: {}
 
@@ -203,6 +205,7 @@ modules:
   initDataset:
     enabled: true
     image: {}
+    rust: {}
 
   integrationTests:
     enabled: false

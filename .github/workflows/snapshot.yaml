@@ -53,7 +53,7 @@ jobs:
           fetch-depth: 0
 
       - name: Install cosign
-        uses: sigstore/cosign-installer@v2
+        uses: sigstore/cosign-installer@v3
 
       - name: Check cosign
         run: cosign version

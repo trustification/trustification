@@ -267,7 +267,7 @@ pub fn upload(props: &UploadProperties) -> Html {
     let load_action = Action::new("Load an SBOM", onopen);
     let mut secondaries = vec![];
 
-    let config = use_config();
+    let config = use_config_private();
     let onlearn = use_callback(config.scanner.documentation_url.clone(), |_, url| {
         if let Some(url) = &url {
             let _ = gloo_utils::window().open_with_url_and_target(url.as_ref(), "_blank");
