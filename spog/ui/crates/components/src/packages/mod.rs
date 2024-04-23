@@ -44,7 +44,7 @@ impl TableEntryRenderer<Column> for PackagesEntry {
         match context.column {
             Column::Name => html!(
                 <Link<AppRoute>
-                    target={AppRoute::Package{id: self.package.purl.clone()}}
+                    to={AppRoute::Package{id: self.package.purl.clone()}}
                 >{ self.purl.name() }</Link<AppRoute>>
             )
             .into(),

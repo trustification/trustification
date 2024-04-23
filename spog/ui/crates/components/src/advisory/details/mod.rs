@@ -114,7 +114,7 @@ impl TableEntryRenderer<Column> for VulnerabilityWrapper {
             Column::Cve => match &self.cve {
                 Some(cve) => html!(
                     <Link<AppRoute>
-                        target={AppRoute::Cve(View::Content { id: cve.clone() })}
+                        to={AppRoute::Cve(View::Content { id: cve.clone() })}
                     >
                         {cve.clone()}
                     </Link<AppRoute>>
