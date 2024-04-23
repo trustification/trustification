@@ -36,7 +36,7 @@ impl TableEntryRenderer<Column> for TableData {
             Column::Name => match &self.sbom {
                 Some(sbom) => html!(
                     <Link<AppRoute>
-                        target={AppRoute::Sbom(View::Content{id: sbom.id.clone()})}
+                        to={AppRoute::Sbom(View::Content{id: sbom.id.clone()})}
                     >{sbom.name.clone()}</Link<AppRoute>>
                 ),
                 // missing source
