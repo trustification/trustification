@@ -1714,10 +1714,10 @@ objects:
                     - 'set -e
 
                       /trust bombastic walker --sink https://sbom.${DOMAIN} --source
-                      /data/sbom
+                      file:/data/sbom
 
                       /trust vexination walker --sink https://vex.${DOMAIN}/api/v1/vex
-                      --source /data/csaf
+                      --source file:/data/csaf
 
                       '
                   env:
