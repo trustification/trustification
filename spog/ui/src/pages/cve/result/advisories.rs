@@ -29,7 +29,7 @@ pub fn related_advisories(props: &RelatedAdvisoriesProperties) -> Html {
             match context.column {
                 Column::Id => {
                     html! (
-                        <Link<AppRoute> target={AppRoute::Advisory(View::Content {id: self.id.clone()})} >
+                        <Link<AppRoute> to={AppRoute::Advisory(View::Content {id: self.id.clone()})} >
                             { self.id.clone() }
                         </Link<AppRoute>>
                     )
