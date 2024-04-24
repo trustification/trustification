@@ -238,8 +238,8 @@ fn render(route: AppRoute, config: &spog_model::config::Configuration) -> Html {
 
         AppRoute::Chicken => html!(<pages::Chicken/>),
         AppRoute::Scanner if config.features.scanner => html!(<pages::Scanner/>),
-        AppRoute::SbomUploader => html!(<pages::SbomUploader/>),
-        AppRoute::VexUploader => html!(<pages::VexUploader/>),
+        AppRoute::SbomUploader if config.features.uploader => html!(<pages::SbomUploader/>),
+        AppRoute::VexUploader if config.features.uploader => html!(<pages::VexUploader/>),
 
         AppRoute::Sbom(View::Search { query }) if config.features.dedicated_search => {
             html!(<pages::Sbom {query} />)
