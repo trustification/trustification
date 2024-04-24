@@ -13,6 +13,7 @@ pub struct CsafRemediationTableProperties {
     pub remediations: Option<Vec<Remediation>>,
 }
 
+#[derive(Clone)]
 struct RemediationWrapper {
     csaf: Rc<Csaf>,
     rem: Remediation,

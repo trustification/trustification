@@ -31,7 +31,7 @@ pub fn affected_packages(props: &AffectedPackagesProperties) -> Html {
                 Column::Type => html!({ self.0.r#type.clone() }),
                 Column::Namespace => html!({ for self.0.namespace.clone() }),
                 Column::Name => html!(
-                    <Link<AppRoute> target={AppRoute::Package {id: self.0.purl.clone()}}>
+                    <Link<AppRoute> to={AppRoute::Package {id: self.0.purl.clone()}}>
                         { self.0.name.clone() }
                     </Link<AppRoute>>
                 ),
@@ -154,7 +154,7 @@ pub fn build_packages<'a>(
 
 pub type AffectedPackage = (PackageKey, PackageValue);
 
-#[derive(PartialEq, Eq, Ord, PartialOrd)]
+#[derive(Clone, PartialEq, Eq, Ord, PartialOrd)]
 pub struct PackageKey {
     pub r#type: String,
     pub namespace: Option<String>,
@@ -177,7 +177,7 @@ impl PackageKey {
     }
 }
 
-#[derive(PartialEq)]
+#[derive(Clone, PartialEq)]
 pub struct PackageValue {
     pub qualifiers: BTreeMap<String, BTreeSet<String>>,
     pub backtraces: Rc<BTreeMap<String, BTreeSet<Backtrace>>>,

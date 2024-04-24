@@ -94,6 +94,7 @@ pub struct CsafProperties {
     pub csaf: Rc<Csaf>,
 }
 
+#[derive(Clone)]
 pub struct VulnerabilityWrapper {
     vuln: Vulnerability,
     csaf: Rc<Csaf>,
@@ -113,7 +114,7 @@ impl TableEntryRenderer<Column> for VulnerabilityWrapper {
             Column::Cve => match &self.cve {
                 Some(cve) => html!(
                     <Link<AppRoute>
-                        target={AppRoute::Cve(View::Content { id: cve.clone() })}
+                        to={AppRoute::Cve(View::Content { id: cve.clone() })}
                     >
                         {cve.clone()}
                     </Link<AppRoute>>
@@ -152,7 +153,7 @@ impl TableEntryRenderer<Column> for VulnerabilityWrapper {
 
                 <GridItem cols={[7]}>
                     <CardWrapper plain=true title="Product Status">
-                        <CsafProductStatus status={self.product_status.clone()} csaf={self.csaf.clone()} overview=false />
+                        <CsafProductStatus status={self.product_status.clone()} csaf={self.csaf.clone()} overview=true />
                     </CardWrapper>
                 </GridItem>
 

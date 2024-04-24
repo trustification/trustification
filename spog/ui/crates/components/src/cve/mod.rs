@@ -39,7 +39,7 @@ impl TableEntryRenderer<Column> for CveEntry {
         match context.column {
             Column::Id => html!(
                 <Link<AppRoute>
-                    target={AppRoute::Cve(View::Content{id: self.cve.id.clone()})}
+                    to={AppRoute::Cve(View::Content{id: self.cve.id.clone()})}
                 >{ self.cve.id.clone() }</Link<AppRoute>>
             ),
             Column::Description => html!( <>
