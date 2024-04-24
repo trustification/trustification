@@ -165,7 +165,7 @@ pub fn spdx_external_references(package: &PackageInformation) -> Html {
 pub fn spdx_package_list_entry(package: &PackageInformation) -> Html {
     match get_purl(package) {
         Some(purl) => html!(
-            <Link<AppRoute> target={AppRoute::Package {id: purl.to_string()}}>
+            <Link<AppRoute> to={AppRoute::Package {id: purl.to_string()}}>
                 <code>{ purl.to_string() }</code>
             </Link<AppRoute>>
         ),

@@ -24,7 +24,7 @@ impl TableEntryRenderer<Column> for PackageRelatedToProductCve {
                 Column::Type => html!({ package_url.ty() }),
                 Column::Namespace => html!({ for package_url.namespace() }),
                 Column::Name => html!(
-                    <Link<AppRoute> target={AppRoute::Package {id: self.purl.clone()}}>
+                    <Link<AppRoute> to={AppRoute::Package {id: self.purl.clone()}}>
                         { package_url.name() }
                     </Link<AppRoute>>
                 ),
@@ -38,7 +38,7 @@ impl TableEntryRenderer<Column> for PackageRelatedToProductCve {
                 Column::Type => html!({ "N/A" }),
                 Column::Namespace => html!({ "N/A" }),
                 Column::Name => html!(
-                    <Link<AppRoute> target={AppRoute::Package {id: self.purl.clone()}}>
+                    <Link<AppRoute> to={AppRoute::Package {id: self.purl.clone()}}>
                         { self.purl.clone() }
                     </Link<AppRoute>>
                 ),

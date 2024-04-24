@@ -31,7 +31,7 @@ pub fn affected_packages(props: &AffectedPackagesProperties) -> Html {
                 Column::Type => html!({ self.0.r#type.clone() }),
                 Column::Namespace => html!({ for self.0.namespace.clone() }),
                 Column::Name => html!(
-                    <Link<AppRoute> target={AppRoute::Package {id: self.0.purl.clone()}}>
+                    <Link<AppRoute> to={AppRoute::Package {id: self.0.purl.clone()}}>
                         { self.0.name.clone() }
                     </Link<AppRoute>>
                 ),

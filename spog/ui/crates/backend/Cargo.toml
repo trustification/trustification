@@ -27,11 +27,12 @@ thiserror = "1"
 time = { version = "0.3", features = ["formatting", "macros", "wasm-bindgen"] }
 url = { version = "2", features = ["serde"] }
 urlencoding = "2"
+uuid = "1.7.0"
 wasm-bindgen = "0.2"
 wasm-bindgen-futures = "0.4"
 yew = { version = "0.21", features = ["csr"] }
 yew-more-hooks = "0.3.0"
-yew-oauth2 = { version = "0.10.1", features = ["nested-router", "openid"] }
+yew-oauth2 = { version = "0.11.0", features = ["yew-nested-router", "openid"] }
 
 bombastic-model = { path = "../../../../bombastic/model" }
 exhort-model = { path = "../../../../exhort/model" }
@@ -42,7 +43,7 @@ trustification-common = { path = "../../../../common", default-features = false 
 trustification-version = { path = "../../../../version" }
 v11y-model = { path = "../../../../v11y/model" }
 vexination-model = { path = "../../../../vexination/model" }
-uuid = "1.7.0"
+
 
 [dependencies.web-sys]
 version = "0.3.61"
