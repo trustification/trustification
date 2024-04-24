@@ -3,6 +3,9 @@ version: "3"
 services:
   postgres:
     image: docker.io/library/postgres:16
+    # If you wish to add additional configuration parameters to the database, uncomment the section below
+    # The example below contains configuration for logging queries with duration longer than 500ms
+    #command: postgres -c log_min_duration_statement=500 -c listen_addresses='*'
     environment:
       POSTGRES_USER: guac
       POSTGRES_DB: guac
