@@ -1,6 +1,6 @@
 use patternfly_yew::prelude::*;
 use spog_ui_backend::{use_backend, VersionService};
-use spog_ui_utils::config::use_config_private;
+use spog_ui_common::config::use_config_public;
 use std::rc::Rc;
 use trustification_version::{version, VersionInformation};
 use yew::prelude::*;
@@ -9,7 +9,7 @@ use yew_oauth2::hook::use_latest_access_token;
 
 #[function_component(About)]
 pub fn about() -> Html {
-    let config = use_config_private();
+    let config = use_config_public();
     let backend = use_backend();
     let access_token = use_latest_access_token();
 
