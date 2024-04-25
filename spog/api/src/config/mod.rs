@@ -37,6 +37,7 @@ impl Config {
     fn make_public(config: Configuration) -> Configuration {
         Configuration {
             global: config.global,
+            features: config.features,
             ..Default::default()
         }
     }
