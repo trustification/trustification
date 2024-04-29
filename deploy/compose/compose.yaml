@@ -134,13 +134,3 @@ services:
       - ./container_files/init-sso:/init-sso${SELINUX_VOLUME_OPTIONS}
     entrypoint: /usr/bin/bash
     command: /init-sso/init.sh
-
-  nginx:
-    image: nginx:latest
-    volumes:
-      - ./container_files/nginx/default.conf:/etc/nginx/conf.d/default.conf
-      - $REPORT_VOLUMES:$LOCAL_REPORT_PATH
-    ports:
-      - "$REPORT_SERVICE_PORT:80"
-    expose:
-      - "80"

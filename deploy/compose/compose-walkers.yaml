@@ -1,5 +1,15 @@
 version: '3'
 services:
+  nginx:
+    image: nginx:latest
+    volumes:
+      - ./container_files/nginx/default.conf:/etc/nginx/conf.d/default.conf
+      - $REPORT_VOLUMES:$LOCAL_REPORT_PATH
+    ports:
+      - "8018:80"
+    expose:
+      - "80"
+  
   vexination-walker:
     image: $TRUST_IMAGE:${TRUST_VERSION:?TRUST_VERSION is required}
     command: /trust vexination walker --devmode -3 --source https://www.redhat.com/.well-known/csaf/provider-metadata.json --sink http://vexination-api:$VEXINATION_API_PORT/api/v1/vex
