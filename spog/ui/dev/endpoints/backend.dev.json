@@ -1,8 +1,0 @@
-{
-  "url": "http://localhost:8025",
-  "vexination": "http://localhost:8081",
-  "bombastic": "http://localhost:8082",
-  "oidc": {
-    "issuer": "http://localhost:8090/realms/chicken"
-  }
-}
