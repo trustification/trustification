@@ -29,7 +29,7 @@ spec:
   - name: image-expires-after
     value: 5d
   - name: output-image
-    value: quay.io/redhat-user-workloads/trusted-content-tenant/trustification/trustification-test-1-0-z:on-pr-{{revision}}
+    value: quay.io/redhat-user-workloads/trusted-content-tenant/trustification/trustification-tests:on-pr-{{revision}}
   - name: path-context
     value: .
   - name: revision
