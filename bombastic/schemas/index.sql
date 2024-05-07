@@ -1,5 +1,0 @@
-CREATE TABLE sboms (
-    purl TEXT NOT NULL UNIQUE,
-    sha256 TEXT NOT NULL UNIQUE,
-    obj TEXT NOT NULL
-);

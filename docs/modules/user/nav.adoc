@@ -1,4 +1,0 @@
-* xref:index.adoc[User Guide]
-** xref:bombastic.adoc[SBOM]
-** xref:vexination.adoc[VEX]
-** xref:search.adoc[Search]
