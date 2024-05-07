@@ -26,7 +26,7 @@ spec:
   - name: git-url
     value: '{{source_url}}'
   - name: output-image
-    value: quay.io/redhat-user-workloads/trusted-content-tenant/trustification/trustification-test-1-0-z:{{revision}}
+    value: quay.io/redhat-user-workloads/trusted-content-tenant/trustification/trustification-tests:{{revision}}
   - name: path-context
     value: .
   - name: revision
