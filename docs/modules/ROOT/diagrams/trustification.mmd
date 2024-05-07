@@ -5,7 +5,7 @@ Person(user, "Incident Response Team", "Incident Response Team")
 
 Container_Boundary(c1, "Internet Banking") {
     Container(spog, "SPoG", "Rust microservices", "Provides unified API and UI for consuming data")
-    Container(guac, "GUAC", "Golang services and Postgres DB", "Stores relations between products, packages, vulnerabilities and advisories")
+    Container(guac, "GUAC", "Golang services and Postgres DB", "Stores relations between products, packages, vulnerabilities and advisories", $offsetY="60")
     Container(bombastic, "Bombastic", "Rust microservices", "Stores and indexes SBOMs from external sources. Provides API for searching SBOMs")
     Container(vexination, "Vexination", "Rust microservices", "Stores and indexes VEXs from external sources. Provides API for searching VEXs")
     Container(v11y, "V11y", "Rust microservices", "Stores vulnerability and advisory (CVEs) information")
