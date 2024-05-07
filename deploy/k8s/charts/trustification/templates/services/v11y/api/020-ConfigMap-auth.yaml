@@ -1,0 +1,4 @@
+{{- if and .Values.modules.v11yApi.enabled }}
+{{- $mod := dict "root" . "name" "v11y-api" "component" "v11y" "module" .Values.modules.v11yApi -}}
+{{ include "trustification.authenticator.defaultConfigMap" $mod }}
+{{- end }}

@@ -1,0 +1,23 @@
+{{ if .Values.collector.osv.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/name: collector-osv
+    app.kubernetes.io/component: collector
+    app.kubernetes.io/part-of: trustification
+  annotations:
+    service.beta.openshift.io/serving-cert-secret-name: collector-osv-tls
+  name: collector-osv
+spec:
+  ports:
+  - name: endpoint
+    port: 443
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    app.kubernetes.io/name: collector-osv
+    app.kubernetes.io/component: collector
+    app.kubernetes.io/part-of: trustification
+  type: ClusterIP
+{{ end }}

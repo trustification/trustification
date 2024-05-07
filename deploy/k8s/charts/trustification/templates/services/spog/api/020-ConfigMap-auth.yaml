@@ -1,0 +1,4 @@
+{{- if and .Values.modules.spogApi.enabled }}
+{{- $mod := dict "root" . "name" "spog-api" "component" "spog" "module" .Values.modules.spogApi -}}
+{{ include "trustification.authenticator.defaultConfigMap" $mod }}
+{{- end }}

@@ -1,0 +1,91 @@
+{{ if .Values.exhort.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: exhort-api
+  labels:
+    app.kubernetes.io/name: exhort-api
+    app.kubernetes.io/component: api
+    app.kubernetes.io/part-of: trustification
+  annotations:
+    service.beta.openshift.io/serving-cert-secret-name: exhort-api-tls
+spec:
+  replicas: {{ .Values.exhort.api.replicas | default 1 }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: exhort-api
+      app.kubernetes.io/component: api
+      app.kubernetes.io/part-of: trustification
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: exhort-api
+        app.kubernetes.io/component: api
+        app.kubernetes.io/part-of: trustification
+        metrics: "true"
+      annotations:
+        config/checksum: {{ include (print $.Template.BasePath "/config/020-ConfigMap.yaml") . | sha256sum }}
+    spec:
+      volumes:
+        - name: config
+          configMap:
+            name: {{ .Values.config.name }}
+        {{ include "trustification.http-server-volumes" (dict "root" . "appName" "exhort-api") | nindent 8 }}
+      containers:
+        - image: {{ .Values.trustImage }}:{{ .Values.release }}
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          name: service
+          command: ["/trust"]
+          args:
+            - "exhort"
+            - "api"
+            - "-p"
+            - "8080"
+            - "--auth-configuration"
+            - "/etc/config/auth.yaml"
+          env:
+            - name: RUST_LOG
+              value: {{ default "info" .Values.exhort.api.logLevel }}
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            {{ include "trustification.http-server" . | nindent 12 }}
+            - name: INFRASTRUCTURE_ENABLED
+              value: "true"
+            - name: INFRASTRUCTURE_BIND
+              value: "[::]:9010"
+            - name: COLLECTORIST_URL
+              value: "https://collectorist-api.$(NAMESPACE).svc"
+            - name: V11Y_URL
+              value: "https://v11y-api.$(NAMESPACE).svc"
+            - name: GUAC_URL
+              value: "http://guac-graphql:8080/query"
+            {{ include "trustification.authentication-client" ( dict "root" . "clientId" "walker" ) | nindent 12 }}
+          volumeMounts:
+            - mountPath: /etc/config
+              name: config
+            {{ include "trustification.http-server-volume-mounts" . | nindent 12 }}
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+            - containerPort: 9010
+              protocol: TCP
+              name: infra
+          resources:
+            {{- toYaml .Values.exhort.api.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: 9010
+            initialDelaySeconds: 2
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: 9010
+            initialDelaySeconds: 2
+          startupProbe:
+            httpGet:
+              path: /health/startup
+              port: 9010
+{{ end }}

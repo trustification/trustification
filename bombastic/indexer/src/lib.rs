@@ -1,0 +1,103 @@
+use std::process::ExitCode;
+
+use bombastic_index::{packages, sbom};
+use bombastic_model::prelude::SBOM;
+use std::sync::Arc;
+use std::time::Duration;
+use tokio::sync::{mpsc, Mutex};
+use tokio::task::block_in_place;
+use trustification_event_bus::EventBusConfig;
+use trustification_index::{IndexConfig, IndexStore, WriteIndex};
+use trustification_indexer::{actix::configure, Indexer, IndexerStatus, ReindexMode};
+use trustification_infrastructure::health::checks::FailureRate;
+use trustification_infrastructure::{Infrastructure, InfrastructureConfig};
+use trustification_storage::{Storage, StorageConfig};
+
+#[derive(clap::Args, Debug)]
+#[command(about = "Run the indexer", args_conflicts_with_subcommands = true)]
+pub struct Run {
+    #[arg(long = "stored-topic", default_value = "sbom-stored")]
+    pub stored_topic: String,
+
+    #[arg(long = "indexed-topic", default_value = "sbom-indexed")]
+    pub indexed_topic: String,
+
+    #[arg(long = "failed-topic", default_value = "sbom-failed")]
+    pub failed_topic: String,
+
+    #[arg(long = "devmode", default_value_t = false)]
+    pub devmode: bool,
+
+    #[arg(long = "reindex", default_value_t = ReindexMode::OnFailure)]
+    pub reindex: ReindexMode,
+
+    #[command(flatten)]
+    pub bus: EventBusConfig,
+
+    #[command(flatten)]
+    pub storage: StorageConfig,
+
+    #[command(flatten)]
+    pub infra: InfrastructureConfig,
+
+    #[command(flatten)]
+    pub index: IndexConfig,
+}
+
+impl Run {
+    pub async fn run(self) -> anyhow::Result<ExitCode> {
+        let (command_sender, command_receiver) = mpsc::channel(1);
+        let status = Arc::new(Mutex::new(IndexerStatus::Running));
+        let s = status.clone();
+        let c = command_sender.clone();
+        let storage = self.storage.clone();
+        Infrastructure::from(self.infra)
+            .run_with_config(
+                "bombastic-indexer",
+                |_context| async { Ok(()) },
+                |context| async move {
+                    let sbom_index: Box<dyn WriteIndex<Document = (SBOM, String)>> = Box::new(sbom::Index::new());
+                    let sbom_store = block_in_place(|| {
+                        IndexStore::new(&self.storage, &self.index, sbom_index, context.metrics.registry())
+                    })?;
+
+                    let package_index: Box<dyn WriteIndex<Document = (SBOM, String)>> =
+                        Box::new(packages::Index::new());
+                    let package_store = block_in_place(|| {
+                        IndexStore::new(&self.storage, &self.index, package_index, context.metrics.registry())
+                    })?;
+                    let storage = Storage::new(storage.process("bombastic", self.devmode), context.metrics.registry())?;
+
+                    let bus = self.bus.create(context.metrics.registry()).await?;
+                    if self.devmode {
+                        bus.create(&[self.stored_topic.as_str()]).await?;
+                    }
+
+                    let check = FailureRate::new(Duration::from_secs(1), 1, 5, "Index status");
+                    let state = check.handle();
+                    context.health.liveness.register("index_state", check).await;
+
+                    let mut indexer = Indexer {
+                        indexes: vec![sbom_store, package_store],
+                        storage,
+                        bus,
+                        stored_topic: self.stored_topic.as_str(),
+                        indexed_topic: self.indexed_topic.as_str(),
+                        failed_topic: self.failed_topic.as_str(),
+                        sync_interval: self.index.sync_interval.into(),
+                        status: s.clone(),
+                        commands: command_receiver,
+                        command_sender: c,
+                        reindex: self.reindex,
+                        state,
+                    };
+                    indexer.run().await
+                },
+                move |config| {
+                    configure(status, command_sender, config);
+                },
+            )
+            .await?;
+        Ok(ExitCode::SUCCESS)
+    }
+}

@@ -1,0 +1,65 @@
+// only required if you are using the icons-far or icons-fab feature
+$fa-font-path: "webfonts";
+@import "../node_modules/@fortawesome/fontawesome-free/scss/fontawesome";
+@import "../node_modules/@fortawesome/fontawesome-free/scss/brands";
+
+// PatternFly styles
+@import "../node_modules/@patternfly/patternfly/patternfly.scss";
+@import "../node_modules/@patternfly/patternfly/patternfly-addons.scss";
+
+// navbar brand
+
+header {
+  --pf-v5-c-page__header-brand-link--c-brand--MaxHeight: 2.5rem;
+}
+
+// highlight
+
+.tc-c-highlight__match {
+  background-color: yellow;
+}
+
+// severities
+
+@import "severity";
+
+// CRDA report
+
+.tc-c-crda-report-viewer {
+  width: 100%;
+  height: 100%;
+}
+
+// Monaco
+
+.tc-c-editor {
+  height: 100%;
+}
+
+.tc-c-drop-area {
+  height: 100%;
+  position: relative;
+}
+
+.tc-c-drop-area.pf-m-drag-over:before {
+  position: absolute;
+  top: 0; right: 0; left: 0; bottom: 0;
+  content: "";
+
+  border: var(--pf-v5-global--BorderWidth--sm) solid var(--pf-v5-global--primary-color--100);
+}
+
+.tc-c-drop-area.pf-m-drag-over:after {
+  position: absolute;
+  top: 0; right: 0; left: 0; bottom: 0;
+  content: "";
+
+  background-color: var(--pf-v5-global--primary-color--100);
+  opacity: .1;
+}
+
+// Packages
+
+.tc-package-tree .pf-v5-c-accordion__expandable-content-body {
+  padding-right: 0 !important;
+}

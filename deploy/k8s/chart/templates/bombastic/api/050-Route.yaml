@@ -1,0 +1,24 @@
+{{ if .Values.createRoutes }}
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  annotations:
+    {{- .Values.bombastic.api.routeAnnotations | default .Values.default.routeAnnotations | toYaml | nindent 4 }}
+  labels:
+    app.kubernetes.io/name: bombastic-api
+    app.kubernetes.io/component: api
+    app.kubernetes.io/part-of: trustification
+  name: bombastic-api
+spec:
+  host: "sbom.{{ .Values.domain }}"
+  tls:
+    termination: reencrypt
+    insecureEdgeTerminationPolicy: Redirect
+  port:
+    targetPort: endpoint
+  to:
+    kind: Service
+    name: bombastic-api
+    weight: 100
+  wildcardPolicy: None
+{{ end }}

@@ -1,0 +1,16 @@
+apiVersion: v2
+name: trustification
+description: A Helm chart for managing Trustification services on Kubernetes
+
+kubeVersion: ^1.25.0
+
+maintainers:
+  - name: ctron
+    url: https://dentrassi.de
+    email: ctron@dentrassi.de
+
+type: application
+version: 0.2.0
+appVersion: "0.2.0"
+icon: https://raw.githubusercontent.com/trustification/trustification/main/docs/branding/svg/trustification_icon_default.svg
+home: https://trustification.io

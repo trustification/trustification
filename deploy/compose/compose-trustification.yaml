@@ -1,0 +1,164 @@
+version: '3'
+
+services:
+  vexination-api:
+    image: $TRUST_IMAGE:${TRUST_VERSION:?TRUST_VERSION is required}
+    depends_on:
+      - init-keycloak
+    expose:
+      - "$VEXINATION_API_PORT"
+    ports:
+      - "$VEXINATION_API_PORT:$VEXINATION_API_PORT"
+    command:
+      - -c
+      - |
+        while [[ "$$(curl --connect-timeout 2 \
+                  -s -o /dev/null -w ''%{http_code}'' \
+                  $$OPENID_CONFIGURATION)" != "200" ]]; do
+          echo waiting for keycloak...
+          sleep 5
+        done
+        echo keycloak is up
+        /trust vexination api --devmode
+    entrypoint: /usr/bin/bash
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:9010" ]
+    restart: on-failure
+    environment:
+      STORAGE_ENDPOINT: http://minio:9000
+      ISSUER_URL: http://keycloak:8080/realms/chicken
+      INFRASTRUCTURE_ENABLED: "true"
+      OPENID_CONFIGURATION: "http://keycloak:8080/realms/chicken/.well-known/openid-configuration"
+      HTTP_SERVER_BIND_ADDR: "::"
+
+  vexination-indexer:
+    image: $TRUST_IMAGE:${TRUST_VERSION:?TRUST_VERSION is required}
+    command: /trust vexination indexer --devmode --kafka-bootstrap-servers kafka:9094
+    restart: on-failure
+    environment:
+      STORAGE_ENDPOINT: http://minio:9000
+
+  bombastic-api:
+    image: $TRUST_IMAGE:${TRUST_VERSION:?TRUST_VERSION is required}
+    depends_on:
+      - init-keycloak
+    expose:
+      - "$BOMBASTIC_API_PORT"
+    ports:
+      - "$BOMBASTIC_API_PORT:$BOMBASTIC_API_PORT"
+    command:
+      - -c
+      - |
+        while [[ "$$(curl --connect-timeout 2 \
+                  -s -o /dev/null -w ''%{http_code}'' \
+                  $$OPENID_CONFIGURATION)" != "200" ]]; do
+          echo waiting for keycloak...
+          sleep 5
+        done
+        echo keycloak is up
+        /trust bombastic api --devmode --validator sbom
+    entrypoint: /usr/bin/bash
+    restart: on-failure
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:9010" ]
+    environment:
+      ISSUER_URL: http://keycloak:8080/realms/chicken
+      INFRASTRUCTURE_ENABLED: "true"
+      OPENID_CONFIGURATION: "http://keycloak:8080/realms/chicken/.well-known/openid-configuration"
+      STORAGE_ENDPOINT: http://minio:9000
+      HTTP_SERVER_BIND_ADDR: "::"
+
+  bombastic-indexer:
+    image: $TRUST_IMAGE:${TRUST_VERSION:?TRUST_VERSION is required}
+    command: /trust bombastic indexer --devmode --kafka-bootstrap-servers kafka:9094
+    restart: on-failure
+    environment:
+      STORAGE_ENDPOINT: http://minio:9000
+
+  spog-api:
+    image: $TRUST_IMAGE:${TRUST_VERSION:?TRUST_VERSION is required}
+    depends_on:
+      - init-keycloak
+      - bombastic-api
+      - vexination-api
+      - guac-graphql
+    expose:
+      - "$SPOG_API_PORT"
+    ports:
+      - "$SPOG_API_PORT:$SPOG_API_PORT"
+    command:
+      - -c
+      - |
+        while [[ "$$(curl --connect-timeout 2 \
+                  -s -o /dev/null -w ''%{http_code}'' \
+                  $$OPENID_CONFIGURATION)" != "200" ]]; do
+          echo waiting for keycloak...
+          sleep 5
+        done
+        echo keycloak is up
+        /trust spog api --devmode --bombastic-url http://bombastic-api:$BOMBASTIC_API_PORT --vexination-url http://vexination-api:$VEXINATION_API_PORT --guac http://guac-graphql:$GUAC_API_PORT/query --v11y-url http://v11y-api:$V11Y_API_PORT
+    entrypoint: /usr/bin/bash
+    restart: on-failure
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:9010" ]
+    environment:
+      ISSUER_URL: http://keycloak:8080/realms/chicken
+      INFRASTRUCTURE_ENABLED: "true"
+      OPENID_CONFIGURATION: "http://keycloak:8080/realms/chicken/.well-known/openid-configuration"
+      HTTP_SERVER_BIND_ADDR: "::"
+
+  spog-ui:
+    command: /nginx.sh
+    image: $TRUST_UI_IMAGE:${TRUST_VERSION:?TRUST_VERSION is required}
+    environment:
+      - API_URL=http://localhost:$SPOG_API_PORT
+      - BOMBASTIC_URL=http://localhost:$BOMBASTIC_API_PORT
+      - VEXINATION_URL=http://localhost:$VEXINATION_API_PORT
+      - V11Y_URL=http://localhost:$V11Y_API_PORT
+      # the issuer URL is passed to the browser, which is running on the host, not inside the container. So the
+      # URL is "localhost" instead.
+      - ISSUER_URL=http://localhost:8090/realms/chicken
+    depends_on:
+      - spog-api
+    restart: on-failure
+    expose:
+      - "$SPOG_UI_PORT"
+    ports:
+      - "$SPOG_UI_PORT:8080"
+
+  v11y-api:
+    image: $TRUST_IMAGE:${TRUST_VERSION:?TRUST_VERSION is required}
+    depends_on:
+      - init-keycloak
+    expose:
+      - "$V11Y_API_PORT"
+    ports:
+      - "$V11Y_API_PORT:$V11Y_API_PORT"
+    command:
+      - -c
+      - |
+        while [[ "$$(curl --connect-timeout 2 \
+                  -s -o /dev/null -w ''%{http_code}'' \
+                  $$OPENID_CONFIGURATION)" != "200" ]]; do
+          echo waiting for keycloak...
+          sleep 5
+        done
+        echo keycloak is up
+        /trust v11y api -p $V11Y_API_PORT --devmode
+    entrypoint: /usr/bin/bash
+    restart: on-failure
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:9010" ]
+    environment:
+      HTTP_SERVER_BIND_ADDR: "::"
+      ISSUER_URL: http://keycloak:8080/realms/chicken
+      INFRASTRUCTURE_ENABLED: "true"
+      OPENID_CONFIGURATION: "http://keycloak:8080/realms/chicken/.well-known/openid-configuration"
+      STORAGE_ENDPOINT: http://minio:9000
+
+  v11y-indexer:
+    image: $TRUST_IMAGE:${TRUST_VERSION:?TRUST_VERSION is required}
+    command: /trust v11y indexer --devmode --kafka-bootstrap-servers kafka:9094
+    restart: on-failure
+    environment:
+      STORAGE_ENDPOINT: http://minio:9000

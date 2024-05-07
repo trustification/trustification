@@ -1,0 +1,1323 @@
+{
+  "document": {
+    "aggregate_severity": {
+      "namespace": "https://access.redhat.com/security/updates/classification/",
+      "text": "Moderate"
+    },
+    "category": "csaf_vex",
+    "csaf_version": "2.0",
+    "distribution": {
+      "text": "Copyright \u00a9 2023 Red Hat, Inc. All rights reserved.",
+      "tlp": {
+        "label": "WHITE",
+        "url": "https://www.first.org/tlp/"
+      }
+    },
+    "lang": "en",
+    "notes": [
+      {
+        "category": "summary",
+        "text": "An update for openssl is now available for Red Hat Enterprise Linux 8.6 Extended Update Support.\n\nRed Hat Product Security has rated this update as having a security impact of Moderate. A Common Vulnerability Scoring System (CVSS) base score, which gives a detailed severity rating, is available for each vulnerability from the CVE link(s) in the References section.",
+        "title": "Topic"
+      },
+      {
+        "category": "general",
+        "text": "OpenSSL is a toolkit that implements the Secure Sockets Layer (SSL) and Transport Layer Security (TLS) protocols, as well as a full-strength general-purpose cryptography library.\n\nSecurity Fix(es):\n\n* openssl: timing attack in RSA Decryption implementation (CVE-2022-4304)\n\n* openssl: double free after calling PEM_read_bio_ex (CVE-2022-4450)\n\n* openssl: use-after-free following BIO_new_NDEF (CVE-2023-0215)\n\nFor more details about the security issue(s), including the impact, a CVSS score, acknowledgments, and other related information, refer to the CVE page(s) listed in the References section.",
+        "title": "Details"
+      },
+      {
+        "category": "legal_disclaimer",
+        "text": "This content is licensed under the Creative Commons Attribution 4.0 International License (https://creativecommons.org/licenses/by/4.0/). If you distribute this content, or a modified version of it, you must provide attribution to Red Hat Inc. and provide a link to the original.",
+        "title": "Terms of Use"
+      }
+    ],
+    "publisher": {
+      "category": "vendor",
+      "contact_details": "https://access.redhat.com/security/team/contact/",
+      "issuing_authority": "Red Hat Product Security is responsible for vulnerability handling across all Red Hat offerings.",
+      "name": "Red Hat Product Security",
+      "namespace": "https://www.redhat.com"
+    },
+    "references": [
+      {
+        "category": "self",
+        "summary": "https://access.redhat.com/errata/RHSA-2023:3408",
+        "url": "https://access.redhat.com/errata/RHSA-2023:3408"
+      },
+      {
+        "category": "external",
+        "summary": "https://access.redhat.com/security/updates/classification/#moderate",
+        "url": "https://access.redhat.com/security/updates/classification/#moderate"
+      },
+      {
+        "category": "self",
+        "summary": "Canonical URL",
+        "url": "https://access.redhat.com/security/data/csaf/v2/advisories/2023/rhsa-2023_3408.json"
+      }
+    ],
+    "title": "Red Hat Security Advisory: openssl security update",
+    "tracking": {
+      "current_release_date": "2023-05-31T18:42:00Z",
+      "generator": {
+        "date": "2023-06-01T01:38:00Z",
+        "engine": {
+          "name": "Red Hat SDEngine",
+          "version": "3.16.0"
+        }
+      },
+      "id": "RHSA-2023:3408",
+      "initial_release_date": "2023-05-31T18:42:00Z",
+      "revision_history": [
+        {
+          "date": "2023-05-31T18:42:00Z",
+          "number": "1",
+          "summary": "Current version"
+        }
+      ],
+      "status": "final",
+      "version": "1"
+    }
+  },
+  "product_tree": {
+    "branches": [
+      {
+        "branches": [
+          {
+            "branches": [
+              {
+                "category": "product_name",
+                "name": "Red Hat Enterprise Linux BaseOS EUS (v.8.6)",
+                "product": {
+                  "name": "Red Hat Enterprise Linux BaseOS EUS (v.8.6)",
+                  "product_id": "BaseOS-8.6.0.Z.EUS",
+                  "product_identification_helper": {
+                    "cpe": "cpe:/o:redhat:rhel_eus:8.6::baseos"
+                  }
+                }
+              }
+            ],
+            "category": "product_family",
+            "name": "Red Hat Enterprise Linux"
+          },
+          {
+            "branches": [
+              {
+                "category": "product_version",
+                "name": "openssl-1:1.1.1k-9.el8_6.src",
+                "product": {
+                  "name": "openssl-1:1.1.1k-9.el8_6.src",
+                  "product_id": "openssl-1:1.1.1k-9.el8_6.src"
+                }
+              }
+            ],
+            "category": "architecture",
+            "name": "src"
+          },
+          {
+            "branches": [
+              {
+                "category": "product_version",
+                "name": "openssl-1:1.1.1k-9.el8_6.aarch64",
+                "product": {
+                  "name": "openssl-1:1.1.1k-9.el8_6.aarch64",
+                  "product_id": "openssl-1:1.1.1k-9.el8_6.aarch64"
+                }
+              },
+              {
+                "category": "product_version",
+                "name": "openssl-debuginfo-1:1.1.1k-9.el8_6.aarch64",
+                "product": {
+                  "name": "openssl-debuginfo-1:1.1.1k-9.el8_6.aarch64",
+                  "product_id": "openssl-debuginfo-1:1.1.1k-9.el8_6.aarch64"
+                }
+              },
+              {
+                "category": "product_version",
+                "name": "openssl-debugsource-1:1.1.1k-9.el8_6.aarch64",
+                "product": {
+                  "name": "openssl-debugsource-1:1.1.1k-9.el8_6.aarch64",
+                  "product_id": "openssl-debugsource-1:1.1.1k-9.el8_6.aarch64"
+                }
+              },
+              {
+                "category": "product_version",
+                "name": "openssl-devel-1:1.1.1k-9.el8_6.aarch64",
+                "product": {
+                  "name": "openssl-devel-1:1.1.1k-9.el8_6.aarch64",
+                  "product_id": "openssl-devel-1:1.1.1k-9.el8_6.aarch64"
+                }
+              },
+              {
+                "category": "product_version",
+                "name": "openssl-libs-1:1.1.1k-9.el8_6.aarch64",
+                "product": {
+                  "name": "openssl-libs-1:1.1.1k-9.el8_6.aarch64",
+                  "product_id": "openssl-libs-1:1.1.1k-9.el8_6.aarch64"
+                }
+              },
+              {
+                "category": "product_version",
+                "name": "openssl-libs-debuginfo-1:1.1.1k-9.el8_6.aarch64",
+                "product": {
+                  "name": "openssl-libs-debuginfo-1:1.1.1k-9.el8_6.aarch64",
+                  "product_id": "openssl-libs-debuginfo-1:1.1.1k-9.el8_6.aarch64"
+                }
+              },
+              {
+                "category": "product_version",
+                "name": "openssl-perl-1:1.1.1k-9.el8_6.aarch64",
+                "product": {
+                  "name": "openssl-perl-1:1.1.1k-9.el8_6.aarch64",
+                  "product_id": "openssl-perl-1:1.1.1k-9.el8_6.aarch64"
+                }
+              }
+            ],
+            "category": "architecture",
+            "name": "aarch64"
+          },
+          {
+            "branches": [
+              {
+                "category": "product_version",
+                "name": "openssl-1:1.1.1k-9.el8_6.ppc64le",
+                "product": {
+                  "name": "openssl-1:1.1.1k-9.el8_6.ppc64le",
+                  "product_id": "openssl-1:1.1.1k-9.el8_6.ppc64le"
+                }
+              },
+              {
+                "category": "product_version",
+                "name": "openssl-debuginfo-1:1.1.1k-9.el8_6.ppc64le",
+                "product": {
+                  "name": "openssl-debuginfo-1:1.1.1k-9.el8_6.ppc64le",
+                  "product_id": "openssl-debuginfo-1:1.1.1k-9.el8_6.ppc64le"
+                }
+              },
+              {
+                "category": "product_version",
+                "name": "openssl-debugsource-1:1.1.1k-9.el8_6.ppc64le",
+                "product": {
+                  "name": "openssl-debugsource-1:1.1.1k-9.el8_6.ppc64le",
+                  "product_id": "openssl-debugsource-1:1.1.1k-9.el8_6.ppc64le"
+                }
+              },
+              {
+                "category": "product_version",
+                "name": "openssl-devel-1:1.1.1k-9.el8_6.ppc64le",
+                "product": {
+                  "name": "openssl-devel-1:1.1.1k-9.el8_6.ppc64le",
+                  "product_id": "openssl-devel-1:1.1.1k-9.el8_6.ppc64le"
+                }
+              },
+              {
+                "category": "product_version",
+                "name": "openssl-libs-1:1.1.1k-9.el8_6.ppc64le",
+                "product": {
+                  "name": "openssl-libs-1:1.1.1k-9.el8_6.ppc64le",
+                  "product_id": "openssl-libs-1:1.1.1k-9.el8_6.ppc64le"
+                }
+              },
+              {
+                "category": "product_version",
+                "name": "openssl-libs-debuginfo-1:1.1.1k-9.el8_6.ppc64le",
+                "product": {
+                  "name": "openssl-libs-debuginfo-1:1.1.1k-9.el8_6.ppc64le",
+                  "product_id": "openssl-libs-debuginfo-1:1.1.1k-9.el8_6.ppc64le"
+                }
+              },
+              {
+                "category": "product_version",
+                "name": "openssl-perl-1:1.1.1k-9.el8_6.ppc64le",
+                "product": {
+                  "name": "openssl-perl-1:1.1.1k-9.el8_6.ppc64le",
+                  "product_id": "openssl-perl-1:1.1.1k-9.el8_6.ppc64le"
+                }
+              }
+            ],
+            "category": "architecture",
+            "name": "ppc64le"
+          },
+          {
+            "branches": [
+              {
+                "category": "product_version",
+                "name": "openssl-1:1.1.1k-9.el8_6.x86_64",
+                "product": {
+                  "name": "openssl-1:1.1.1k-9.el8_6.x86_64",
+                  "product_id": "openssl-1:1.1.1k-9.el8_6.x86_64"
+                }
+              },
+              {
+                "category": "product_version",
+                "name": "openssl-debuginfo-1:1.1.1k-9.el8_6.x86_64",
+                "product": {
+                  "name": "openssl-debuginfo-1:1.1.1k-9.el8_6.x86_64",
+                  "product_id": "openssl-debuginfo-1:1.1.1k-9.el8_6.x86_64"
+                }
+              },
+              {
+                "category": "product_version",
+                "name": "openssl-debugsource-1:1.1.1k-9.el8_6.x86_64",
+                "product": {
+                  "name": "openssl-debugsource-1:1.1.1k-9.el8_6.x86_64",
+                  "product_id": "openssl-debugsource-1:1.1.1k-9.el8_6.x86_64"
+                }
+              },
+              {
+                "category": "product_version",
+                "name": "openssl-devel-1:1.1.1k-9.el8_6.x86_64",
+                "product": {
+                  "name": "openssl-devel-1:1.1.1k-9.el8_6.x86_64",
+                  "product_id": "openssl-devel-1:1.1.1k-9.el8_6.x86_64"
+                }
+              },
+              {
+                "category": "product_version",
+                "name": "openssl-libs-1:1.1.1k-9.el8_6.x86_64",
+                "product": {
+                  "name": "openssl-libs-1:1.1.1k-9.el8_6.x86_64",
+                  "product_id": "openssl-libs-1:1.1.1k-9.el8_6.x86_64"
+                }
+              },
+              {
+                "category": "product_version",
+                "name": "openssl-libs-debuginfo-1:1.1.1k-9.el8_6.x86_64",
+                "product": {
+                  "name": "openssl-libs-debuginfo-1:1.1.1k-9.el8_6.x86_64",
+                  "product_id": "openssl-libs-debuginfo-1:1.1.1k-9.el8_6.x86_64"
+                }
+              },
+              {
+                "category": "product_version",
+                "name": "openssl-perl-1:1.1.1k-9.el8_6.x86_64",
+                "product": {
+                  "name": "openssl-perl-1:1.1.1k-9.el8_6.x86_64",
+                  "product_id": "openssl-perl-1:1.1.1k-9.el8_6.x86_64"
+                }
+              }
+            ],
+            "category": "architecture",
+            "name": "x86_64"
+          },
+          {
+            "branches": [
+              {
+                "category": "product_version",
+                "name": "openssl-debuginfo-1:1.1.1k-9.el8_6.i686",
+                "product": {
+                  "name": "openssl-debuginfo-1:1.1.1k-9.el8_6.i686",
+                  "product_id": "openssl-debuginfo-1:1.1.1k-9.el8_6.i686"
+                }
+              },
+              {
+                "category": "product_version",
+                "name": "openssl-debugsource-1:1.1.1k-9.el8_6.i686",
+                "product": {
+                  "name": "openssl-debugsource-1:1.1.1k-9.el8_6.i686",
+                  "product_id": "openssl-debugsource-1:1.1.1k-9.el8_6.i686"
+                }
+              },
+              {
+                "category": "product_version",
+                "name": "openssl-devel-1:1.1.1k-9.el8_6.i686",
+                "product": {
+                  "name": "openssl-devel-1:1.1.1k-9.el8_6.i686",
+                  "product_id": "openssl-devel-1:1.1.1k-9.el8_6.i686"
+                }
+              },
+              {
+                "category": "product_version",
+                "name": "openssl-libs-1:1.1.1k-9.el8_6.i686",
+                "product": {
+                  "name": "openssl-libs-1:1.1.1k-9.el8_6.i686",
+                  "product_id": "openssl-libs-1:1.1.1k-9.el8_6.i686"
+                }
+              },
+              {
+                "category": "product_version",
+                "name": "openssl-libs-debuginfo-1:1.1.1k-9.el8_6.i686",
+                "product": {
+                  "name": "openssl-libs-debuginfo-1:1.1.1k-9.el8_6.i686",
+                  "product_id": "openssl-libs-debuginfo-1:1.1.1k-9.el8_6.i686"
+                }
+              }
+            ],
+            "category": "architecture",
+            "name": "i686"
+          },
+          {
+            "branches": [
+              {
+                "category": "product_version",
+                "name": "openssl-1:1.1.1k-9.el8_6.s390x",
+                "product": {
+                  "name": "openssl-1:1.1.1k-9.el8_6.s390x",
+                  "product_id": "openssl-1:1.1.1k-9.el8_6.s390x"
+                }
+              },
+              {
+                "category": "product_version",
+                "name": "openssl-debuginfo-1:1.1.1k-9.el8_6.s390x",
+                "product": {
+                  "name": "openssl-debuginfo-1:1.1.1k-9.el8_6.s390x",
+                  "product_id": "openssl-debuginfo-1:1.1.1k-9.el8_6.s390x"
+                }
+              },
+              {
+                "category": "product_version",
+                "name": "openssl-debugsource-1:1.1.1k-9.el8_6.s390x",
+                "product": {
+                  "name": "openssl-debugsource-1:1.1.1k-9.el8_6.s390x",
+                  "product_id": "openssl-debugsource-1:1.1.1k-9.el8_6.s390x"
+                }
+              },
+              {
+                "category": "product_version",
+                "name": "openssl-devel-1:1.1.1k-9.el8_6.s390x",
+                "product": {
+                  "name": "openssl-devel-1:1.1.1k-9.el8_6.s390x",
+                  "product_id": "openssl-devel-1:1.1.1k-9.el8_6.s390x"
+                }
+              },
+              {
+                "category": "product_version",
+                "name": "openssl-libs-1:1.1.1k-9.el8_6.s390x",
+                "product": {
+                  "name": "openssl-libs-1:1.1.1k-9.el8_6.s390x",
+                  "product_id": "openssl-libs-1:1.1.1k-9.el8_6.s390x"
+                }
+              },
+              {
+                "category": "product_version",
+                "name": "openssl-libs-debuginfo-1:1.1.1k-9.el8_6.s390x",
+                "product": {
+                  "name": "openssl-libs-debuginfo-1:1.1.1k-9.el8_6.s390x",
+                  "product_id": "openssl-libs-debuginfo-1:1.1.1k-9.el8_6.s390x"
+                }
+              },
+              {
+                "category": "product_version",
+                "name": "openssl-perl-1:1.1.1k-9.el8_6.s390x",
+                "product": {
+                  "name": "openssl-perl-1:1.1.1k-9.el8_6.s390x",
+                  "product_id": "openssl-perl-1:1.1.1k-9.el8_6.s390x"
+                }
+              }
+            ],
+            "category": "architecture",
+            "name": "s390x"
+          }
+        ],
+        "category": "vendor",
+        "name": "Red Hat"
+      }
+    ],
+    "relationships": [
+      {
+        "category": "default_component_of",
+        "full_product_name": {
+          "name": "openssl-1:1.1.1k-9.el8_6.aarch64 as a component of Red Hat Enterprise Linux BaseOS EUS (v.8.6)",
+          "product_id": "BaseOS-8.6.0.Z.EUS:openssl-1:1.1.1k-9.el8_6.aarch64"
+        },
+        "product_reference": "openssl-1:1.1.1k-9.el8_6.aarch64",
+        "relates_to_product_reference": "BaseOS-8.6.0.Z.EUS"
+      },
+      {
+        "category": "default_component_of",
+        "full_product_name": {
+          "name": "openssl-1:1.1.1k-9.el8_6.ppc64le as a component of Red Hat Enterprise Linux BaseOS EUS (v.8.6)",
+          "product_id": "BaseOS-8.6.0.Z.EUS:openssl-1:1.1.1k-9.el8_6.ppc64le"
+        },
+        "product_reference": "openssl-1:1.1.1k-9.el8_6.ppc64le",
+        "relates_to_product_reference": "BaseOS-8.6.0.Z.EUS"
+      },
+      {
+        "category": "default_component_of",
+        "full_product_name": {
+          "name": "openssl-1:1.1.1k-9.el8_6.s390x as a component of Red Hat Enterprise Linux BaseOS EUS (v.8.6)",
+          "product_id": "BaseOS-8.6.0.Z.EUS:openssl-1:1.1.1k-9.el8_6.s390x"
+        },
+        "product_reference": "openssl-1:1.1.1k-9.el8_6.s390x",
+        "relates_to_product_reference": "BaseOS-8.6.0.Z.EUS"
+      },
+      {
+        "category": "default_component_of",
+        "full_product_name": {
+          "name": "openssl-1:1.1.1k-9.el8_6.src as a component of Red Hat Enterprise Linux BaseOS EUS (v.8.6)",
+          "product_id": "BaseOS-8.6.0.Z.EUS:openssl-1:1.1.1k-9.el8_6.src"
+        },
+        "product_reference": "openssl-1:1.1.1k-9.el8_6.src",
+        "relates_to_product_reference": "BaseOS-8.6.0.Z.EUS"
+      },
+      {
+        "category": "default_component_of",
+        "full_product_name": {
+          "name": "openssl-1:1.1.1k-9.el8_6.x86_64 as a component of Red Hat Enterprise Linux BaseOS EUS (v.8.6)",
+          "product_id": "BaseOS-8.6.0.Z.EUS:openssl-1:1.1.1k-9.el8_6.x86_64"
+        },
+        "product_reference": "openssl-1:1.1.1k-9.el8_6.x86_64",
+        "relates_to_product_reference": "BaseOS-8.6.0.Z.EUS"
+      },
+      {
+        "category": "default_component_of",
+        "full_product_name": {
+          "name": "openssl-debuginfo-1:1.1.1k-9.el8_6.aarch64 as a component of Red Hat Enterprise Linux BaseOS EUS (v.8.6)",
+          "product_id": "BaseOS-8.6.0.Z.EUS:openssl-debuginfo-1:1.1.1k-9.el8_6.aarch64"
+        },
+        "product_reference": "openssl-debuginfo-1:1.1.1k-9.el8_6.aarch64",
+        "relates_to_product_reference": "BaseOS-8.6.0.Z.EUS"
+      },
+      {
+        "category": "default_component_of",
+        "full_product_name": {
+          "name": "openssl-debuginfo-1:1.1.1k-9.el8_6.i686 as a component of Red Hat Enterprise Linux BaseOS EUS (v.8.6)",
+          "product_id": "BaseOS-8.6.0.Z.EUS:openssl-debuginfo-1:1.1.1k-9.el8_6.i686"
+        },
+        "product_reference": "openssl-debuginfo-1:1.1.1k-9.el8_6.i686",
+        "relates_to_product_reference": "BaseOS-8.6.0.Z.EUS"
+      },
+      {
+        "category": "default_component_of",
+        "full_product_name": {
+          "name": "openssl-debuginfo-1:1.1.1k-9.el8_6.ppc64le as a component of Red Hat Enterprise Linux BaseOS EUS (v.8.6)",
+          "product_id": "BaseOS-8.6.0.Z.EUS:openssl-debuginfo-1:1.1.1k-9.el8_6.ppc64le"
+        },
+        "product_reference": "openssl-debuginfo-1:1.1.1k-9.el8_6.ppc64le",
+        "relates_to_product_reference": "BaseOS-8.6.0.Z.EUS"
+      },
+      {
+        "category": "default_component_of",
+        "full_product_name": {
+          "name": "openssl-debuginfo-1:1.1.1k-9.el8_6.s390x as a component of Red Hat Enterprise Linux BaseOS EUS (v.8.6)",
+          "product_id": "BaseOS-8.6.0.Z.EUS:openssl-debuginfo-1:1.1.1k-9.el8_6.s390x"
+        },
+        "product_reference": "openssl-debuginfo-1:1.1.1k-9.el8_6.s390x",
+        "relates_to_product_reference": "BaseOS-8.6.0.Z.EUS"
+      },
+      {
+        "category": "default_component_of",
+        "full_product_name": {
+          "name": "openssl-debuginfo-1:1.1.1k-9.el8_6.x86_64 as a component of Red Hat Enterprise Linux BaseOS EUS (v.8.6)",
+          "product_id": "BaseOS-8.6.0.Z.EUS:openssl-debuginfo-1:1.1.1k-9.el8_6.x86_64"
+        },
+        "product_reference": "openssl-debuginfo-1:1.1.1k-9.el8_6.x86_64",
+        "relates_to_product_reference": "BaseOS-8.6.0.Z.EUS"
+      },
+      {
+        "category": "default_component_of",
+        "full_product_name": {
+          "name": "openssl-debugsource-1:1.1.1k-9.el8_6.aarch64 as a component of Red Hat Enterprise Linux BaseOS EUS (v.8.6)",
+          "product_id": "BaseOS-8.6.0.Z.EUS:openssl-debugsource-1:1.1.1k-9.el8_6.aarch64"
+        },
+        "product_reference": "openssl-debugsource-1:1.1.1k-9.el8_6.aarch64",
+        "relates_to_product_reference": "BaseOS-8.6.0.Z.EUS"
+      },
+      {
+        "category": "default_component_of",
+        "full_product_name": {
+          "name": "openssl-debugsource-1:1.1.1k-9.el8_6.i686 as a component of Red Hat Enterprise Linux BaseOS EUS (v.8.6)",
+          "product_id": "BaseOS-8.6.0.Z.EUS:openssl-debugsource-1:1.1.1k-9.el8_6.i686"
+        },
+        "product_reference": "openssl-debugsource-1:1.1.1k-9.el8_6.i686",
+        "relates_to_product_reference": "BaseOS-8.6.0.Z.EUS"
+      },
+      {
+        "category": "default_component_of",
+        "full_product_name": {
+          "name": "openssl-debugsource-1:1.1.1k-9.el8_6.ppc64le as a component of Red Hat Enterprise Linux BaseOS EUS (v.8.6)",
+          "product_id": "BaseOS-8.6.0.Z.EUS:openssl-debugsource-1:1.1.1k-9.el8_6.ppc64le"
+        },
+        "product_reference": "openssl-debugsource-1:1.1.1k-9.el8_6.ppc64le",
+        "relates_to_product_reference": "BaseOS-8.6.0.Z.EUS"
+      },
+      {
+        "category": "default_component_of",
+        "full_product_name": {
+          "name": "openssl-debugsource-1:1.1.1k-9.el8_6.s390x as a component of Red Hat Enterprise Linux BaseOS EUS (v.8.6)",
+          "product_id": "BaseOS-8.6.0.Z.EUS:openssl-debugsource-1:1.1.1k-9.el8_6.s390x"
+        },
+        "product_reference": "openssl-debugsource-1:1.1.1k-9.el8_6.s390x",
+        "relates_to_product_reference": "BaseOS-8.6.0.Z.EUS"
+      },
+      {
+        "category": "default_component_of",
+        "full_product_name": {
+          "name": "openssl-debugsource-1:1.1.1k-9.el8_6.x86_64 as a component of Red Hat Enterprise Linux BaseOS EUS (v.8.6)",
+          "product_id": "BaseOS-8.6.0.Z.EUS:openssl-debugsource-1:1.1.1k-9.el8_6.x86_64"
+        },
+        "product_reference": "openssl-debugsource-1:1.1.1k-9.el8_6.x86_64",
+        "relates_to_product_reference": "BaseOS-8.6.0.Z.EUS"
+      },
+      {
+        "category": "default_component_of",
+        "full_product_name": {
+          "name": "openssl-devel-1:1.1.1k-9.el8_6.aarch64 as a component of Red Hat Enterprise Linux BaseOS EUS (v.8.6)",
+          "product_id": "BaseOS-8.6.0.Z.EUS:openssl-devel-1:1.1.1k-9.el8_6.aarch64"
+        },
+        "product_reference": "openssl-devel-1:1.1.1k-9.el8_6.aarch64",
+        "relates_to_product_reference": "BaseOS-8.6.0.Z.EUS"
+      },
+      {
+        "category": "default_component_of",
+        "full_product_name": {
+          "name": "openssl-devel-1:1.1.1k-9.el8_6.i686 as a component of Red Hat Enterprise Linux BaseOS EUS (v.8.6)",
+          "product_id": "BaseOS-8.6.0.Z.EUS:openssl-devel-1:1.1.1k-9.el8_6.i686"
+        },
+        "product_reference": "openssl-devel-1:1.1.1k-9.el8_6.i686",
+        "relates_to_product_reference": "BaseOS-8.6.0.Z.EUS"
+      },
+      {
+        "category": "default_component_of",
+        "full_product_name": {
+          "name": "openssl-devel-1:1.1.1k-9.el8_6.ppc64le as a component of Red Hat Enterprise Linux BaseOS EUS (v.8.6)",
+          "product_id": "BaseOS-8.6.0.Z.EUS:openssl-devel-1:1.1.1k-9.el8_6.ppc64le"
+        },
+        "product_reference": "openssl-devel-1:1.1.1k-9.el8_6.ppc64le",
+        "relates_to_product_reference": "BaseOS-8.6.0.Z.EUS"
+      },
+      {
+        "category": "default_component_of",
+        "full_product_name": {
+          "name": "openssl-devel-1:1.1.1k-9.el8_6.s390x as a component of Red Hat Enterprise Linux BaseOS EUS (v.8.6)",
+          "product_id": "BaseOS-8.6.0.Z.EUS:openssl-devel-1:1.1.1k-9.el8_6.s390x"
+        },
+        "product_reference": "openssl-devel-1:1.1.1k-9.el8_6.s390x",
+        "relates_to_product_reference": "BaseOS-8.6.0.Z.EUS"
+      },
+      {
+        "category": "default_component_of",
+        "full_product_name": {
+          "name": "openssl-devel-1:1.1.1k-9.el8_6.x86_64 as a component of Red Hat Enterprise Linux BaseOS EUS (v.8.6)",
+          "product_id": "BaseOS-8.6.0.Z.EUS:openssl-devel-1:1.1.1k-9.el8_6.x86_64"
+        },
+        "product_reference": "openssl-devel-1:1.1.1k-9.el8_6.x86_64",
+        "relates_to_product_reference": "BaseOS-8.6.0.Z.EUS"
+      },
+      {
+        "category": "default_component_of",
+        "full_product_name": {
+          "name": "openssl-libs-1:1.1.1k-9.el8_6.aarch64 as a component of Red Hat Enterprise Linux BaseOS EUS (v.8.6)",
+          "product_id": "BaseOS-8.6.0.Z.EUS:openssl-libs-1:1.1.1k-9.el8_6.aarch64"
+        },
+        "product_reference": "openssl-libs-1:1.1.1k-9.el8_6.aarch64",
+        "relates_to_product_reference": "BaseOS-8.6.0.Z.EUS"
+      },
+      {
+        "category": "default_component_of",
+        "full_product_name": {
+          "name": "openssl-libs-1:1.1.1k-9.el8_6.i686 as a component of Red Hat Enterprise Linux BaseOS EUS (v.8.6)",
+          "product_id": "BaseOS-8.6.0.Z.EUS:openssl-libs-1:1.1.1k-9.el8_6.i686"
+        },
+        "product_reference": "openssl-libs-1:1.1.1k-9.el8_6.i686",
+        "relates_to_product_reference": "BaseOS-8.6.0.Z.EUS"
+      },
+      {
+        "category": "default_component_of",
+        "full_product_name": {
+          "name": "openssl-libs-1:1.1.1k-9.el8_6.ppc64le as a component of Red Hat Enterprise Linux BaseOS EUS (v.8.6)",
+          "product_id": "BaseOS-8.6.0.Z.EUS:openssl-libs-1:1.1.1k-9.el8_6.ppc64le"
+        },
+        "product_reference": "openssl-libs-1:1.1.1k-9.el8_6.ppc64le",
+        "relates_to_product_reference": "BaseOS-8.6.0.Z.EUS"
+      },
+      {
+        "category": "default_component_of",
+        "full_product_name": {
+          "name": "openssl-libs-1:1.1.1k-9.el8_6.s390x as a component of Red Hat Enterprise Linux BaseOS EUS (v.8.6)",
+          "product_id": "BaseOS-8.6.0.Z.EUS:openssl-libs-1:1.1.1k-9.el8_6.s390x"
+        },
+        "product_reference": "openssl-libs-1:1.1.1k-9.el8_6.s390x",
+        "relates_to_product_reference": "BaseOS-8.6.0.Z.EUS"
+      },
+      {
+        "category": "default_component_of",
+        "full_product_name": {
+          "name": "openssl-libs-1:1.1.1k-9.el8_6.x86_64 as a component of Red Hat Enterprise Linux BaseOS EUS (v.8.6)",
+          "product_id": "BaseOS-8.6.0.Z.EUS:openssl-libs-1:1.1.1k-9.el8_6.x86_64"
+        },
+        "product_reference": "openssl-libs-1:1.1.1k-9.el8_6.x86_64",
+        "relates_to_product_reference": "BaseOS-8.6.0.Z.EUS"
+      },
+      {
+        "category": "default_component_of",
+        "full_product_name": {
+          "name": "openssl-libs-debuginfo-1:1.1.1k-9.el8_6.aarch64 as a component of Red Hat Enterprise Linux BaseOS EUS (v.8.6)",
+          "product_id": "BaseOS-8.6.0.Z.EUS:openssl-libs-debuginfo-1:1.1.1k-9.el8_6.aarch64"
+        },
+        "product_reference": "openssl-libs-debuginfo-1:1.1.1k-9.el8_6.aarch64",
+        "relates_to_product_reference": "BaseOS-8.6.0.Z.EUS"
+      },
+      {
+        "category": "default_component_of",
+        "full_product_name": {
+          "name": "openssl-libs-debuginfo-1:1.1.1k-9.el8_6.i686 as a component of Red Hat Enterprise Linux BaseOS EUS (v.8.6)",
+          "product_id": "BaseOS-8.6.0.Z.EUS:openssl-libs-debuginfo-1:1.1.1k-9.el8_6.i686"
+        },
+        "product_reference": "openssl-libs-debuginfo-1:1.1.1k-9.el8_6.i686",
+        "relates_to_product_reference": "BaseOS-8.6.0.Z.EUS"
+      },
+      {
+        "category": "default_component_of",
+        "full_product_name": {
+          "name": "openssl-libs-debuginfo-1:1.1.1k-9.el8_6.ppc64le as a component of Red Hat Enterprise Linux BaseOS EUS (v.8.6)",
+          "product_id": "BaseOS-8.6.0.Z.EUS:openssl-libs-debuginfo-1:1.1.1k-9.el8_6.ppc64le"
+        },
+        "product_reference": "openssl-libs-debuginfo-1:1.1.1k-9.el8_6.ppc64le",
+        "relates_to_product_reference": "BaseOS-8.6.0.Z.EUS"
+      },
+      {
+        "category": "default_component_of",
+        "full_product_name": {
+          "name": "openssl-libs-debuginfo-1:1.1.1k-9.el8_6.s390x as a component of Red Hat Enterprise Linux BaseOS EUS (v.8.6)",
+          "product_id": "BaseOS-8.6.0.Z.EUS:openssl-libs-debuginfo-1:1.1.1k-9.el8_6.s390x"
+        },
+        "product_reference": "openssl-libs-debuginfo-1:1.1.1k-9.el8_6.s390x",
+        "relates_to_product_reference": "BaseOS-8.6.0.Z.EUS"
+      },
+      {
+        "category": "default_component_of",
+        "full_product_name": {
+          "name": "openssl-libs-debuginfo-1:1.1.1k-9.el8_6.x86_64 as a component of Red Hat Enterprise Linux BaseOS EUS (v.8.6)",
+          "product_id": "BaseOS-8.6.0.Z.EUS:openssl-libs-debuginfo-1:1.1.1k-9.el8_6.x86_64"
+        },
+        "product_reference": "openssl-libs-debuginfo-1:1.1.1k-9.el8_6.x86_64",
+        "relates_to_product_reference": "BaseOS-8.6.0.Z.EUS"
+      },
+      {
+        "category": "default_component_of",
+        "full_product_name": {
+          "name": "openssl-perl-1:1.1.1k-9.el8_6.aarch64 as a component of Red Hat Enterprise Linux BaseOS EUS (v.8.6)",
+          "product_id": "BaseOS-8.6.0.Z.EUS:openssl-perl-1:1.1.1k-9.el8_6.aarch64"
+        },
+        "product_reference": "openssl-perl-1:1.1.1k-9.el8_6.aarch64",
+        "relates_to_product_reference": "BaseOS-8.6.0.Z.EUS"
+      },
+      {
+        "category": "default_component_of",
+        "full_product_name": {
+          "name": "openssl-perl-1:1.1.1k-9.el8_6.ppc64le as a component of Red Hat Enterprise Linux BaseOS EUS (v.8.6)",
+          "product_id": "BaseOS-8.6.0.Z.EUS:openssl-perl-1:1.1.1k-9.el8_6.ppc64le"
+        },
+        "product_reference": "openssl-perl-1:1.1.1k-9.el8_6.ppc64le",
+        "relates_to_product_reference": "BaseOS-8.6.0.Z.EUS"
+      },
+      {
+        "category": "default_component_of",
+        "full_product_name": {
+          "name": "openssl-perl-1:1.1.1k-9.el8_6.s390x as a component of Red Hat Enterprise Linux BaseOS EUS (v.8.6)",
+          "product_id": "BaseOS-8.6.0.Z.EUS:openssl-perl-1:1.1.1k-9.el8_6.s390x"
+        },
+        "product_reference": "openssl-perl-1:1.1.1k-9.el8_6.s390x",
+        "relates_to_product_reference": "BaseOS-8.6.0.Z.EUS"
+      },
+      {
+        "category": "default_component_of",
+        "full_product_name": {
+          "name": "openssl-perl-1:1.1.1k-9.el8_6.x86_64 as a component of Red Hat Enterprise Linux BaseOS EUS (v.8.6)",
+          "product_id": "BaseOS-8.6.0.Z.EUS:openssl-perl-1:1.1.1k-9.el8_6.x86_64"
+        },
+        "product_reference": "openssl-perl-1:1.1.1k-9.el8_6.x86_64",
+        "relates_to_product_reference": "BaseOS-8.6.0.Z.EUS"
+      }
+    ]
+  },
+  "vulnerabilities": [
+    {
+      "cve": "CVE-2022-4304",
+      "discovery_date": "2023-01-25T00:00:00Z",
+      "ids": [
+        {
+          "system_name": "Red Hat Bugzilla",
+          "text": "https://bugzilla.redhat.com/show_bug.cgi?id=2164487"
+        }
+      ],
+      "notes": [
+        {
+          "category": "general",
+          "text": "The CVSS score(s) listed for this vulnerability do not reflect the associated product's status, and are included for informational purposes to better understand the severity of this vulnerability.",
+          "title": "CVSS score applicability"
+        },
+        {
+          "category": "description",
+          "text": "A timing-based side channel exists in the OpenSSL RSA Decryption implementation, which could be sufficient to recover a ciphertext across a network in a Bleichenbacher style attack. To achieve a successful decryption, an attacker would have to be able to send a very large number of trial messages for decryption. This issue affects all RSA padding modes: PKCS#1 v1.5, RSA-OEAP, and RSASVE.",
+          "title": "Vulnerability description"
+        },
+        {
+          "category": "summary",
+          "text": "timing attack in RSA Decryption implementation",
+          "title": "Vulnerability summary"
+        }
+      ],
+      "product_status": {
+        "fixed": [
+          "BaseOS-8.6.0.Z.EUS:openssl-1:1.1.1k-9.el8_6.aarch64",
+          "BaseOS-8.6.0.Z.EUS:openssl-1:1.1.1k-9.el8_6.ppc64le",
+          "BaseOS-8.6.0.Z.EUS:openssl-1:1.1.1k-9.el8_6.s390x",
+          "BaseOS-8.6.0.Z.EUS:openssl-1:1.1.1k-9.el8_6.src",
+          "BaseOS-8.6.0.Z.EUS:openssl-1:1.1.1k-9.el8_6.x86_64",
+          "BaseOS-8.6.0.Z.EUS:openssl-debuginfo-1:1.1.1k-9.el8_6.aarch64",
+          "BaseOS-8.6.0.Z.EUS:openssl-debuginfo-1:1.1.1k-9.el8_6.i686",
+          "BaseOS-8.6.0.Z.EUS:openssl-debuginfo-1:1.1.1k-9.el8_6.ppc64le",
+          "BaseOS-8.6.0.Z.EUS:openssl-debuginfo-1:1.1.1k-9.el8_6.s390x",
+          "BaseOS-8.6.0.Z.EUS:openssl-debuginfo-1:1.1.1k-9.el8_6.x86_64",
+          "BaseOS-8.6.0.Z.EUS:openssl-debugsource-1:1.1.1k-9.el8_6.aarch64",
+          "BaseOS-8.6.0.Z.EUS:openssl-debugsource-1:1.1.1k-9.el8_6.i686",
+          "BaseOS-8.6.0.Z.EUS:openssl-debugsource-1:1.1.1k-9.el8_6.ppc64le",
+          "BaseOS-8.6.0.Z.EUS:openssl-debugsource-1:1.1.1k-9.el8_6.s390x",
+          "BaseOS-8.6.0.Z.EUS:openssl-debugsource-1:1.1.1k-9.el8_6.x86_64",
+          "BaseOS-8.6.0.Z.EUS:openssl-devel-1:1.1.1k-9.el8_6.aarch64",
+          "BaseOS-8.6.0.Z.EUS:openssl-devel-1:1.1.1k-9.el8_6.i686",
+          "BaseOS-8.6.0.Z.EUS:openssl-devel-1:1.1.1k-9.el8_6.ppc64le",
+          "BaseOS-8.6.0.Z.EUS:openssl-devel-1:1.1.1k-9.el8_6.s390x",
+          "BaseOS-8.6.0.Z.EUS:openssl-devel-1:1.1.1k-9.el8_6.x86_64",
+          "BaseOS-8.6.0.Z.EUS:openssl-libs-1:1.1.1k-9.el8_6.aarch64",
+          "BaseOS-8.6.0.Z.EUS:openssl-libs-1:1.1.1k-9.el8_6.i686",
+          "BaseOS-8.6.0.Z.EUS:openssl-libs-1:1.1.1k-9.el8_6.ppc64le",
+          "BaseOS-8.6.0.Z.EUS:openssl-libs-1:1.1.1k-9.el8_6.s390x",
+          "BaseOS-8.6.0.Z.EUS:openssl-libs-1:1.1.1k-9.el8_6.x86_64",
+          "BaseOS-8.6.0.Z.EUS:openssl-libs-debuginfo-1:1.1.1k-9.el8_6.aarch64",
+          "BaseOS-8.6.0.Z.EUS:openssl-libs-debuginfo-1:1.1.1k-9.el8_6.i686",
+          "BaseOS-8.6.0.Z.EUS:openssl-libs-debuginfo-1:1.1.1k-9.el8_6.ppc64le",
+          "BaseOS-8.6.0.Z.EUS:openssl-libs-debuginfo-1:1.1.1k-9.el8_6.s390x",
+          "BaseOS-8.6.0.Z.EUS:openssl-libs-debuginfo-1:1.1.1k-9.el8_6.x86_64",
+          "BaseOS-8.6.0.Z.EUS:openssl-perl-1:1.1.1k-9.el8_6.aarch64",
+          "BaseOS-8.6.0.Z.EUS:openssl-perl-1:1.1.1k-9.el8_6.ppc64le",
+          "BaseOS-8.6.0.Z.EUS:openssl-perl-1:1.1.1k-9.el8_6.s390x",
+          "BaseOS-8.6.0.Z.EUS:openssl-perl-1:1.1.1k-9.el8_6.x86_64"
+        ]
+      },
+      "references": [
+        {
+          "category": "external",
+          "summary": "https://www.cve.org/CVERecord?id=CVE-2022-4304",
+          "url": "https://www.cve.org/CVERecord?id=CVE-2022-4304"
+        },
+        {
+          "category": "external",
+          "summary": "https://nvd.nist.gov/vuln/detail/CVE-2022-4304",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2022-4304"
+        },
+        {
+          "category": "external",
+          "summary": "https://www.openssl.org/news/secadv/20230207.txt",
+          "url": "https://www.openssl.org/news/secadv/20230207.txt"
+        },
+        {
+          "category": "external",
+          "summary": "CVE-2022-4304",
+          "url": "https://access.redhat.com/security/cve/CVE-2022-4304"
+        },
+        {
+          "category": "external",
+          "summary": "bz#2164487: timing attack in RSA Decryption implementation",
+          "url": "https://bugzilla.redhat.com/show_bug.cgi?id=2164487"
+        }
+      ],
+      "release_date": "2023-02-07T00:00:00Z",
+      "remediations": [
+        {
+          "category": "vendor_fix",
+          "details": "For details on how to apply this update, which includes the changes described in this advisory, refer to:\n\nhttps://access.redhat.com/articles/11258\n\nFor the update to take effect, all services linked to the OpenSSL library must be restarted, or the system rebooted.",
+          "product_ids": [
+            "BaseOS-8.6.0.Z.EUS:openssl-1:1.1.1k-9.el8_6.aarch64",
+            "BaseOS-8.6.0.Z.EUS:openssl-1:1.1.1k-9.el8_6.ppc64le",
+            "BaseOS-8.6.0.Z.EUS:openssl-1:1.1.1k-9.el8_6.s390x",
+            "BaseOS-8.6.0.Z.EUS:openssl-1:1.1.1k-9.el8_6.src",
+            "BaseOS-8.6.0.Z.EUS:openssl-1:1.1.1k-9.el8_6.x86_64",
+            "BaseOS-8.6.0.Z.EUS:openssl-debuginfo-1:1.1.1k-9.el8_6.aarch64",
+            "BaseOS-8.6.0.Z.EUS:openssl-debuginfo-1:1.1.1k-9.el8_6.i686",
+            "BaseOS-8.6.0.Z.EUS:openssl-debuginfo-1:1.1.1k-9.el8_6.ppc64le",
+            "BaseOS-8.6.0.Z.EUS:openssl-debuginfo-1:1.1.1k-9.el8_6.s390x",
+            "BaseOS-8.6.0.Z.EUS:openssl-debuginfo-1:1.1.1k-9.el8_6.x86_64",
+            "BaseOS-8.6.0.Z.EUS:openssl-debugsource-1:1.1.1k-9.el8_6.aarch64",
+            "BaseOS-8.6.0.Z.EUS:openssl-debugsource-1:1.1.1k-9.el8_6.i686",
+            "BaseOS-8.6.0.Z.EUS:openssl-debugsource-1:1.1.1k-9.el8_6.ppc64le",
+            "BaseOS-8.6.0.Z.EUS:openssl-debugsource-1:1.1.1k-9.el8_6.s390x",
+            "BaseOS-8.6.0.Z.EUS:openssl-debugsource-1:1.1.1k-9.el8_6.x86_64",
+            "BaseOS-8.6.0.Z.EUS:openssl-devel-1:1.1.1k-9.el8_6.aarch64",
+            "BaseOS-8.6.0.Z.EUS:openssl-devel-1:1.1.1k-9.el8_6.i686",
+            "BaseOS-8.6.0.Z.EUS:openssl-devel-1:1.1.1k-9.el8_6.ppc64le",
+            "BaseOS-8.6.0.Z.EUS:openssl-devel-1:1.1.1k-9.el8_6.s390x",
+            "BaseOS-8.6.0.Z.EUS:openssl-devel-1:1.1.1k-9.el8_6.x86_64",
+            "BaseOS-8.6.0.Z.EUS:openssl-libs-1:1.1.1k-9.el8_6.aarch64",
+            "BaseOS-8.6.0.Z.EUS:openssl-libs-1:1.1.1k-9.el8_6.i686",
+            "BaseOS-8.6.0.Z.EUS:openssl-libs-1:1.1.1k-9.el8_6.ppc64le",
+            "BaseOS-8.6.0.Z.EUS:openssl-libs-1:1.1.1k-9.el8_6.s390x",
+            "BaseOS-8.6.0.Z.EUS:openssl-libs-1:1.1.1k-9.el8_6.x86_64",
+            "BaseOS-8.6.0.Z.EUS:openssl-libs-debuginfo-1:1.1.1k-9.el8_6.aarch64",
+            "BaseOS-8.6.0.Z.EUS:openssl-libs-debuginfo-1:1.1.1k-9.el8_6.i686",
+            "BaseOS-8.6.0.Z.EUS:openssl-libs-debuginfo-1:1.1.1k-9.el8_6.ppc64le",
+            "BaseOS-8.6.0.Z.EUS:openssl-libs-debuginfo-1:1.1.1k-9.el8_6.s390x",
+            "BaseOS-8.6.0.Z.EUS:openssl-libs-debuginfo-1:1.1.1k-9.el8_6.x86_64",
+            "BaseOS-8.6.0.Z.EUS:openssl-perl-1:1.1.1k-9.el8_6.aarch64",
+            "BaseOS-8.6.0.Z.EUS:openssl-perl-1:1.1.1k-9.el8_6.ppc64le",
+            "BaseOS-8.6.0.Z.EUS:openssl-perl-1:1.1.1k-9.el8_6.s390x",
+            "BaseOS-8.6.0.Z.EUS:openssl-perl-1:1.1.1k-9.el8_6.x86_64"
+          ],
+          "url": "https://access.redhat.com/errata/RHSA-2023:3408"
+        }
+      ],
+      "scores": [
+        {
+          "cvss_v3": {
+            "attackComplexity": "HIGH",
+            "attackVector": "NETWORK",
+            "availabilityImpact": "NONE",
+            "baseScore": 5.9,
+            "baseSeverity": "MEDIUM",
+            "confidentialityImpact": "NONE",
+            "integrityImpact": "HIGH",
+            "privilegesRequired": "NONE",
+            "scope": "UNCHANGED",
+            "userInteraction": "NONE",
+            "vectorString": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:H/A:N",
+            "version": "3.1"
+          },
+          "products": [
+            "BaseOS-8.6.0.Z.EUS:openssl-1:1.1.1k-9.el8_6.aarch64",
+            "BaseOS-8.6.0.Z.EUS:openssl-1:1.1.1k-9.el8_6.ppc64le",
+            "BaseOS-8.6.0.Z.EUS:openssl-1:1.1.1k-9.el8_6.s390x",
+            "BaseOS-8.6.0.Z.EUS:openssl-1:1.1.1k-9.el8_6.src",
+            "BaseOS-8.6.0.Z.EUS:openssl-1:1.1.1k-9.el8_6.x86_64",
+            "BaseOS-8.6.0.Z.EUS:openssl-debuginfo-1:1.1.1k-9.el8_6.aarch64",
+            "BaseOS-8.6.0.Z.EUS:openssl-debuginfo-1:1.1.1k-9.el8_6.i686",
+            "BaseOS-8.6.0.Z.EUS:openssl-debuginfo-1:1.1.1k-9.el8_6.ppc64le",
+            "BaseOS-8.6.0.Z.EUS:openssl-debuginfo-1:1.1.1k-9.el8_6.s390x",
+            "BaseOS-8.6.0.Z.EUS:openssl-debuginfo-1:1.1.1k-9.el8_6.x86_64",
+            "BaseOS-8.6.0.Z.EUS:openssl-debugsource-1:1.1.1k-9.el8_6.aarch64",
+            "BaseOS-8.6.0.Z.EUS:openssl-debugsource-1:1.1.1k-9.el8_6.i686",
+            "BaseOS-8.6.0.Z.EUS:openssl-debugsource-1:1.1.1k-9.el8_6.ppc64le",
+            "BaseOS-8.6.0.Z.EUS:openssl-debugsource-1:1.1.1k-9.el8_6.s390x",
+            "BaseOS-8.6.0.Z.EUS:openssl-debugsource-1:1.1.1k-9.el8_6.x86_64",
+            "BaseOS-8.6.0.Z.EUS:openssl-devel-1:1.1.1k-9.el8_6.aarch64",
+            "BaseOS-8.6.0.Z.EUS:openssl-devel-1:1.1.1k-9.el8_6.i686",
+            "BaseOS-8.6.0.Z.EUS:openssl-devel-1:1.1.1k-9.el8_6.ppc64le",
+            "BaseOS-8.6.0.Z.EUS:openssl-devel-1:1.1.1k-9.el8_6.s390x",
+            "BaseOS-8.6.0.Z.EUS:openssl-devel-1:1.1.1k-9.el8_6.x86_64",
+            "BaseOS-8.6.0.Z.EUS:openssl-libs-1:1.1.1k-9.el8_6.aarch64",
+            "BaseOS-8.6.0.Z.EUS:openssl-libs-1:1.1.1k-9.el8_6.i686",
+            "BaseOS-8.6.0.Z.EUS:openssl-libs-1:1.1.1k-9.el8_6.ppc64le",
+            "BaseOS-8.6.0.Z.EUS:openssl-libs-1:1.1.1k-9.el8_6.s390x",
+            "BaseOS-8.6.0.Z.EUS:openssl-libs-1:1.1.1k-9.el8_6.x86_64",
+            "BaseOS-8.6.0.Z.EUS:openssl-libs-debuginfo-1:1.1.1k-9.el8_6.aarch64",
+            "BaseOS-8.6.0.Z.EUS:openssl-libs-debuginfo-1:1.1.1k-9.el8_6.i686",
+            "BaseOS-8.6.0.Z.EUS:openssl-libs-debuginfo-1:1.1.1k-9.el8_6.ppc64le",
+            "BaseOS-8.6.0.Z.EUS:openssl-libs-debuginfo-1:1.1.1k-9.el8_6.s390x",
+            "BaseOS-8.6.0.Z.EUS:openssl-libs-debuginfo-1:1.1.1k-9.el8_6.x86_64",
+            "BaseOS-8.6.0.Z.EUS:openssl-perl-1:1.1.1k-9.el8_6.aarch64",
+            "BaseOS-8.6.0.Z.EUS:openssl-perl-1:1.1.1k-9.el8_6.ppc64le",
+            "BaseOS-8.6.0.Z.EUS:openssl-perl-1:1.1.1k-9.el8_6.s390x",
+            "BaseOS-8.6.0.Z.EUS:openssl-perl-1:1.1.1k-9.el8_6.x86_64"
+          ]
+        }
+      ],
+      "threats": [
+        {
+          "category": "impact",
+          "date": "2023-01-25T00:00:00Z",
+          "details": "Moderate"
+        }
+      ],
+      "title": "timing attack in RSA Decryption implementation"
+    },
+    {
+      "cve": "CVE-2022-4450",
+      "cwe": {
+        "id": "CWE-415",
+        "name": "Double Free"
+      },
+      "discovery_date": "2023-01-25T00:00:00Z",
+      "ids": [
+        {
+          "system_name": "Red Hat Bugzilla",
+          "text": "https://bugzilla.redhat.com/show_bug.cgi?id=2164494"
+        }
+      ],
+      "notes": [
+        {
+          "category": "general",
+          "text": "The CVSS score(s) listed for this vulnerability do not reflect the associated product's status, and are included for informational purposes to better understand the severity of this vulnerability.",
+          "title": "CVSS score applicability"
+        },
+        {
+          "category": "description",
+          "text": "A double-free vulnerability was found in OpenSSL's PEM_read_bio_ex function. The function PEM_read_bio_ex() reads a PEM file from a BIO and parses and decodes the \"name\" (for example, \"CERTIFICATE\"), any header data, and the payload data. If the function succeeds, then the \"name_out,\" \"header,\" and \"data\" arguments are populated with pointers to buffers containing the relevant decoded data. The caller is responsible for freeing those buffers. Constructing a PEM file that results in 0 bytes of payload data is possible. In this case, PEM_read_bio_ex() will return a failure code but will populate the header argument with a pointer to a freed buffer. A double-free will occur if the caller also frees this buffer. This will most likely lead to a crash. This could be exploited by an attacker who can supply malicious PEM files for parsing to achieve a denial of service attack.",
+          "title": "Vulnerability description"
+        },
+        {
+          "category": "summary",
+          "text": "double free after calling PEM_read_bio_ex",
+          "title": "Vulnerability summary"
+        }
+      ],
+      "product_status": {
+        "fixed": [
+          "BaseOS-8.6.0.Z.EUS:openssl-1:1.1.1k-9.el8_6.aarch64",
+          "BaseOS-8.6.0.Z.EUS:openssl-1:1.1.1k-9.el8_6.ppc64le",
+          "BaseOS-8.6.0.Z.EUS:openssl-1:1.1.1k-9.el8_6.s390x",
+          "BaseOS-8.6.0.Z.EUS:openssl-1:1.1.1k-9.el8_6.src",
+          "BaseOS-8.6.0.Z.EUS:openssl-1:1.1.1k-9.el8_6.x86_64",
+          "BaseOS-8.6.0.Z.EUS:openssl-debuginfo-1:1.1.1k-9.el8_6.aarch64",
+          "BaseOS-8.6.0.Z.EUS:openssl-debuginfo-1:1.1.1k-9.el8_6.i686",
+          "BaseOS-8.6.0.Z.EUS:openssl-debuginfo-1:1.1.1k-9.el8_6.ppc64le",
+          "BaseOS-8.6.0.Z.EUS:openssl-debuginfo-1:1.1.1k-9.el8_6.s390x",
+          "BaseOS-8.6.0.Z.EUS:openssl-debuginfo-1:1.1.1k-9.el8_6.x86_64",
+          "BaseOS-8.6.0.Z.EUS:openssl-debugsource-1:1.1.1k-9.el8_6.aarch64",
+          "BaseOS-8.6.0.Z.EUS:openssl-debugsource-1:1.1.1k-9.el8_6.i686",
+          "BaseOS-8.6.0.Z.EUS:openssl-debugsource-1:1.1.1k-9.el8_6.ppc64le",
+          "BaseOS-8.6.0.Z.EUS:openssl-debugsource-1:1.1.1k-9.el8_6.s390x",
+          "BaseOS-8.6.0.Z.EUS:openssl-debugsource-1:1.1.1k-9.el8_6.x86_64",
+          "BaseOS-8.6.0.Z.EUS:openssl-devel-1:1.1.1k-9.el8_6.aarch64",
+          "BaseOS-8.6.0.Z.EUS:openssl-devel-1:1.1.1k-9.el8_6.i686",
+          "BaseOS-8.6.0.Z.EUS:openssl-devel-1:1.1.1k-9.el8_6.ppc64le",
+          "BaseOS-8.6.0.Z.EUS:openssl-devel-1:1.1.1k-9.el8_6.s390x",
+          "BaseOS-8.6.0.Z.EUS:openssl-devel-1:1.1.1k-9.el8_6.x86_64",
+          "BaseOS-8.6.0.Z.EUS:openssl-libs-1:1.1.1k-9.el8_6.aarch64",
+          "BaseOS-8.6.0.Z.EUS:openssl-libs-1:1.1.1k-9.el8_6.i686",
+          "BaseOS-8.6.0.Z.EUS:openssl-libs-1:1.1.1k-9.el8_6.ppc64le",
+          "BaseOS-8.6.0.Z.EUS:openssl-libs-1:1.1.1k-9.el8_6.s390x",
+          "BaseOS-8.6.0.Z.EUS:openssl-libs-1:1.1.1k-9.el8_6.x86_64",
+          "BaseOS-8.6.0.Z.EUS:openssl-libs-debuginfo-1:1.1.1k-9.el8_6.aarch64",
+          "BaseOS-8.6.0.Z.EUS:openssl-libs-debuginfo-1:1.1.1k-9.el8_6.i686",
+          "BaseOS-8.6.0.Z.EUS:openssl-libs-debuginfo-1:1.1.1k-9.el8_6.ppc64le",
+          "BaseOS-8.6.0.Z.EUS:openssl-libs-debuginfo-1:1.1.1k-9.el8_6.s390x",
+          "BaseOS-8.6.0.Z.EUS:openssl-libs-debuginfo-1:1.1.1k-9.el8_6.x86_64",
+          "BaseOS-8.6.0.Z.EUS:openssl-perl-1:1.1.1k-9.el8_6.aarch64",
+          "BaseOS-8.6.0.Z.EUS:openssl-perl-1:1.1.1k-9.el8_6.ppc64le",
+          "BaseOS-8.6.0.Z.EUS:openssl-perl-1:1.1.1k-9.el8_6.s390x",
+          "BaseOS-8.6.0.Z.EUS:openssl-perl-1:1.1.1k-9.el8_6.x86_64"
+        ]
+      },
+      "references": [
+        {
+          "category": "external",
+          "summary": "https://www.cve.org/CVERecord?id=CVE-2022-4450",
+          "url": "https://www.cve.org/CVERecord?id=CVE-2022-4450"
+        },
+        {
+          "category": "external",
+          "summary": "https://nvd.nist.gov/vuln/detail/CVE-2022-4450",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2022-4450"
+        },
+        {
+          "category": "external",
+          "summary": "https://www.openssl.org/news/secadv/20230207.txt",
+          "url": "https://www.openssl.org/news/secadv/20230207.txt"
+        },
+        {
+          "category": "external",
+          "summary": "CVE-2022-4450",
+          "url": "https://access.redhat.com/security/cve/CVE-2022-4450"
+        },
+        {
+          "category": "external",
+          "summary": "bz#2164494: double free after calling PEM_read_bio_ex",
+          "url": "https://bugzilla.redhat.com/show_bug.cgi?id=2164494"
+        }
+      ],
+      "release_date": "2023-02-07T00:00:00Z",
+      "remediations": [
+        {
+          "category": "vendor_fix",
+          "details": "For details on how to apply this update, which includes the changes described in this advisory, refer to:\n\nhttps://access.redhat.com/articles/11258\n\nFor the update to take effect, all services linked to the OpenSSL library must be restarted, or the system rebooted.",
+          "product_ids": [
+            "BaseOS-8.6.0.Z.EUS:openssl-1:1.1.1k-9.el8_6.aarch64",
+            "BaseOS-8.6.0.Z.EUS:openssl-1:1.1.1k-9.el8_6.ppc64le",
+            "BaseOS-8.6.0.Z.EUS:openssl-1:1.1.1k-9.el8_6.s390x",
+            "BaseOS-8.6.0.Z.EUS:openssl-1:1.1.1k-9.el8_6.src",
+            "BaseOS-8.6.0.Z.EUS:openssl-1:1.1.1k-9.el8_6.x86_64",
+            "BaseOS-8.6.0.Z.EUS:openssl-debuginfo-1:1.1.1k-9.el8_6.aarch64",
+            "BaseOS-8.6.0.Z.EUS:openssl-debuginfo-1:1.1.1k-9.el8_6.i686",
+            "BaseOS-8.6.0.Z.EUS:openssl-debuginfo-1:1.1.1k-9.el8_6.ppc64le",
+            "BaseOS-8.6.0.Z.EUS:openssl-debuginfo-1:1.1.1k-9.el8_6.s390x",
+            "BaseOS-8.6.0.Z.EUS:openssl-debuginfo-1:1.1.1k-9.el8_6.x86_64",
+            "BaseOS-8.6.0.Z.EUS:openssl-debugsource-1:1.1.1k-9.el8_6.aarch64",
+            "BaseOS-8.6.0.Z.EUS:openssl-debugsource-1:1.1.1k-9.el8_6.i686",
+            "BaseOS-8.6.0.Z.EUS:openssl-debugsource-1:1.1.1k-9.el8_6.ppc64le",
+            "BaseOS-8.6.0.Z.EUS:openssl-debugsource-1:1.1.1k-9.el8_6.s390x",
+            "BaseOS-8.6.0.Z.EUS:openssl-debugsource-1:1.1.1k-9.el8_6.x86_64",
+            "BaseOS-8.6.0.Z.EUS:openssl-devel-1:1.1.1k-9.el8_6.aarch64",
+            "BaseOS-8.6.0.Z.EUS:openssl-devel-1:1.1.1k-9.el8_6.i686",
+            "BaseOS-8.6.0.Z.EUS:openssl-devel-1:1.1.1k-9.el8_6.ppc64le",
+            "BaseOS-8.6.0.Z.EUS:openssl-devel-1:1.1.1k-9.el8_6.s390x",
+            "BaseOS-8.6.0.Z.EUS:openssl-devel-1:1.1.1k-9.el8_6.x86_64",
+            "BaseOS-8.6.0.Z.EUS:openssl-libs-1:1.1.1k-9.el8_6.aarch64",
+            "BaseOS-8.6.0.Z.EUS:openssl-libs-1:1.1.1k-9.el8_6.i686",
+            "BaseOS-8.6.0.Z.EUS:openssl-libs-1:1.1.1k-9.el8_6.ppc64le",
+            "BaseOS-8.6.0.Z.EUS:openssl-libs-1:1.1.1k-9.el8_6.s390x",
+            "BaseOS-8.6.0.Z.EUS:openssl-libs-1:1.1.1k-9.el8_6.x86_64",
+            "BaseOS-8.6.0.Z.EUS:openssl-libs-debuginfo-1:1.1.1k-9.el8_6.aarch64",
+            "BaseOS-8.6.0.Z.EUS:openssl-libs-debuginfo-1:1.1.1k-9.el8_6.i686",
+            "BaseOS-8.6.0.Z.EUS:openssl-libs-debuginfo-1:1.1.1k-9.el8_6.ppc64le",
+            "BaseOS-8.6.0.Z.EUS:openssl-libs-debuginfo-1:1.1.1k-9.el8_6.s390x",
+            "BaseOS-8.6.0.Z.EUS:openssl-libs-debuginfo-1:1.1.1k-9.el8_6.x86_64",
+            "BaseOS-8.6.0.Z.EUS:openssl-perl-1:1.1.1k-9.el8_6.aarch64",
+            "BaseOS-8.6.0.Z.EUS:openssl-perl-1:1.1.1k-9.el8_6.ppc64le",
+            "BaseOS-8.6.0.Z.EUS:openssl-perl-1:1.1.1k-9.el8_6.s390x",
+            "BaseOS-8.6.0.Z.EUS:openssl-perl-1:1.1.1k-9.el8_6.x86_64"
+          ],
+          "url": "https://access.redhat.com/errata/RHSA-2023:3408"
+        }
+      ],
+      "scores": [
+        {
+          "cvss_v3": {
+            "attackComplexity": "LOW",
+            "attackVector": "NETWORK",
+            "availabilityImpact": "HIGH",
+            "baseScore": 7.5,
+            "baseSeverity": "HIGH",
+            "confidentialityImpact": "NONE",
+            "integrityImpact": "NONE",
+            "privilegesRequired": "NONE",
+            "scope": "UNCHANGED",
+            "userInteraction": "NONE",
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+            "version": "3.1"
+          },
+          "products": [
+            "BaseOS-8.6.0.Z.EUS:openssl-1:1.1.1k-9.el8_6.aarch64",
+            "BaseOS-8.6.0.Z.EUS:openssl-1:1.1.1k-9.el8_6.ppc64le",
+            "BaseOS-8.6.0.Z.EUS:openssl-1:1.1.1k-9.el8_6.s390x",
+            "BaseOS-8.6.0.Z.EUS:openssl-1:1.1.1k-9.el8_6.src",
+            "BaseOS-8.6.0.Z.EUS:openssl-1:1.1.1k-9.el8_6.x86_64",
+            "BaseOS-8.6.0.Z.EUS:openssl-debuginfo-1:1.1.1k-9.el8_6.aarch64",
+            "BaseOS-8.6.0.Z.EUS:openssl-debuginfo-1:1.1.1k-9.el8_6.i686",
+            "BaseOS-8.6.0.Z.EUS:openssl-debuginfo-1:1.1.1k-9.el8_6.ppc64le",
+            "BaseOS-8.6.0.Z.EUS:openssl-debuginfo-1:1.1.1k-9.el8_6.s390x",
+            "BaseOS-8.6.0.Z.EUS:openssl-debuginfo-1:1.1.1k-9.el8_6.x86_64",
+            "BaseOS-8.6.0.Z.EUS:openssl-debugsource-1:1.1.1k-9.el8_6.aarch64",
+            "BaseOS-8.6.0.Z.EUS:openssl-debugsource-1:1.1.1k-9.el8_6.i686",
+            "BaseOS-8.6.0.Z.EUS:openssl-debugsource-1:1.1.1k-9.el8_6.ppc64le",
+            "BaseOS-8.6.0.Z.EUS:openssl-debugsource-1:1.1.1k-9.el8_6.s390x",
+            "BaseOS-8.6.0.Z.EUS:openssl-debugsource-1:1.1.1k-9.el8_6.x86_64",
+            "BaseOS-8.6.0.Z.EUS:openssl-devel-1:1.1.1k-9.el8_6.aarch64",
+            "BaseOS-8.6.0.Z.EUS:openssl-devel-1:1.1.1k-9.el8_6.i686",
+            "BaseOS-8.6.0.Z.EUS:openssl-devel-1:1.1.1k-9.el8_6.ppc64le",
+            "BaseOS-8.6.0.Z.EUS:openssl-devel-1:1.1.1k-9.el8_6.s390x",
+            "BaseOS-8.6.0.Z.EUS:openssl-devel-1:1.1.1k-9.el8_6.x86_64",
+            "BaseOS-8.6.0.Z.EUS:openssl-libs-1:1.1.1k-9.el8_6.aarch64",
+            "BaseOS-8.6.0.Z.EUS:openssl-libs-1:1.1.1k-9.el8_6.i686",
+            "BaseOS-8.6.0.Z.EUS:openssl-libs-1:1.1.1k-9.el8_6.ppc64le",
+            "BaseOS-8.6.0.Z.EUS:openssl-libs-1:1.1.1k-9.el8_6.s390x",
+            "BaseOS-8.6.0.Z.EUS:openssl-libs-1:1.1.1k-9.el8_6.x86_64",
+            "BaseOS-8.6.0.Z.EUS:openssl-libs-debuginfo-1:1.1.1k-9.el8_6.aarch64",
+            "BaseOS-8.6.0.Z.EUS:openssl-libs-debuginfo-1:1.1.1k-9.el8_6.i686",
+            "BaseOS-8.6.0.Z.EUS:openssl-libs-debuginfo-1:1.1.1k-9.el8_6.ppc64le",
+            "BaseOS-8.6.0.Z.EUS:openssl-libs-debuginfo-1:1.1.1k-9.el8_6.s390x",
+            "BaseOS-8.6.0.Z.EUS:openssl-libs-debuginfo-1:1.1.1k-9.el8_6.x86_64",
+            "BaseOS-8.6.0.Z.EUS:openssl-perl-1:1.1.1k-9.el8_6.aarch64",
+            "BaseOS-8.6.0.Z.EUS:openssl-perl-1:1.1.1k-9.el8_6.ppc64le",
+            "BaseOS-8.6.0.Z.EUS:openssl-perl-1:1.1.1k-9.el8_6.s390x",
+            "BaseOS-8.6.0.Z.EUS:openssl-perl-1:1.1.1k-9.el8_6.x86_64"
+          ]
+        }
+      ],
+      "threats": [
+        {
+          "category": "impact",
+          "date": "2023-01-25T00:00:00Z",
+          "details": "Moderate"
+        }
+      ],
+      "title": "double free after calling PEM_read_bio_ex"
+    },
+    {
+      "cve": "CVE-2023-0215",
+      "cwe": {
+        "id": "CWE-416",
+        "name": "Use After Free"
+      },
+      "discovery_date": "2023-01-25T00:00:00Z",
+      "ids": [
+        {
+          "system_name": "Red Hat Bugzilla",
+          "text": "https://bugzilla.redhat.com/show_bug.cgi?id=2164492"
+        }
+      ],
+      "notes": [
+        {
+          "category": "general",
+          "text": "The CVSS score(s) listed for this vulnerability do not reflect the associated product's status, and are included for informational purposes to better understand the severity of this vulnerability.",
+          "title": "CVSS score applicability"
+        },
+        {
+          "category": "description",
+          "text": "A use-after-free vulnerability was found in OpenSSL's BIO_new_NDEF function. The public API function BIO_new_NDEF is a helper function used for streaming ASN.1 data via a BIO. It is primarily used internally by OpenSSL to support the SMIME, CMS, and PKCS7 streaming capabilities, but it may also be called directly by end-user applications. The function receives a BIO from the caller, prepends a new BIO_f_asn1 filter BIO onto the front of it to form a BIO chain, and then returns the new head of the BIO chain to the caller. Under certain conditions. For example, if a CMS recipient public key is invalid, the new filter BIO is freed, and the function returns a NULL result indicating a failure. However, in this case, the BIO chain is not properly cleaned up, and the BIO passed by the caller still retains internal pointers to the previously freed filter BIO. If the caller then calls BIO_pop() on the BIO, a use-after-free will occur, possibly resulting in a crash.",
+          "title": "Vulnerability description"
+        },
+        {
+          "category": "summary",
+          "text": "use-after-free following BIO_new_NDEF",
+          "title": "Vulnerability summary"
+        }
+      ],
+      "product_status": {
+        "fixed": [
+          "BaseOS-8.6.0.Z.EUS:openssl-1:1.1.1k-9.el8_6.aarch64",
+          "BaseOS-8.6.0.Z.EUS:openssl-1:1.1.1k-9.el8_6.ppc64le",
+          "BaseOS-8.6.0.Z.EUS:openssl-1:1.1.1k-9.el8_6.s390x",
+          "BaseOS-8.6.0.Z.EUS:openssl-1:1.1.1k-9.el8_6.src",
+          "BaseOS-8.6.0.Z.EUS:openssl-1:1.1.1k-9.el8_6.x86_64",
+          "BaseOS-8.6.0.Z.EUS:openssl-debuginfo-1:1.1.1k-9.el8_6.aarch64",
+          "BaseOS-8.6.0.Z.EUS:openssl-debuginfo-1:1.1.1k-9.el8_6.i686",
+          "BaseOS-8.6.0.Z.EUS:openssl-debuginfo-1:1.1.1k-9.el8_6.ppc64le",
+          "BaseOS-8.6.0.Z.EUS:openssl-debuginfo-1:1.1.1k-9.el8_6.s390x",
+          "BaseOS-8.6.0.Z.EUS:openssl-debuginfo-1:1.1.1k-9.el8_6.x86_64",
+          "BaseOS-8.6.0.Z.EUS:openssl-debugsource-1:1.1.1k-9.el8_6.aarch64",
+          "BaseOS-8.6.0.Z.EUS:openssl-debugsource-1:1.1.1k-9.el8_6.i686",
+          "BaseOS-8.6.0.Z.EUS:openssl-debugsource-1:1.1.1k-9.el8_6.ppc64le",
+          "BaseOS-8.6.0.Z.EUS:openssl-debugsource-1:1.1.1k-9.el8_6.s390x",
+          "BaseOS-8.6.0.Z.EUS:openssl-debugsource-1:1.1.1k-9.el8_6.x86_64",
+          "BaseOS-8.6.0.Z.EUS:openssl-devel-1:1.1.1k-9.el8_6.aarch64",
+          "BaseOS-8.6.0.Z.EUS:openssl-devel-1:1.1.1k-9.el8_6.i686",
+          "BaseOS-8.6.0.Z.EUS:openssl-devel-1:1.1.1k-9.el8_6.ppc64le",
+          "BaseOS-8.6.0.Z.EUS:openssl-devel-1:1.1.1k-9.el8_6.s390x",
+          "BaseOS-8.6.0.Z.EUS:openssl-devel-1:1.1.1k-9.el8_6.x86_64",
+          "BaseOS-8.6.0.Z.EUS:openssl-libs-1:1.1.1k-9.el8_6.aarch64",
+          "BaseOS-8.6.0.Z.EUS:openssl-libs-1:1.1.1k-9.el8_6.i686",
+          "BaseOS-8.6.0.Z.EUS:openssl-libs-1:1.1.1k-9.el8_6.ppc64le",
+          "BaseOS-8.6.0.Z.EUS:openssl-libs-1:1.1.1k-9.el8_6.s390x",
+          "BaseOS-8.6.0.Z.EUS:openssl-libs-1:1.1.1k-9.el8_6.x86_64",
+          "BaseOS-8.6.0.Z.EUS:openssl-libs-debuginfo-1:1.1.1k-9.el8_6.aarch64",
+          "BaseOS-8.6.0.Z.EUS:openssl-libs-debuginfo-1:1.1.1k-9.el8_6.i686",
+          "BaseOS-8.6.0.Z.EUS:openssl-libs-debuginfo-1:1.1.1k-9.el8_6.ppc64le",
+          "BaseOS-8.6.0.Z.EUS:openssl-libs-debuginfo-1:1.1.1k-9.el8_6.s390x",
+          "BaseOS-8.6.0.Z.EUS:openssl-libs-debuginfo-1:1.1.1k-9.el8_6.x86_64",
+          "BaseOS-8.6.0.Z.EUS:openssl-perl-1:1.1.1k-9.el8_6.aarch64",
+          "BaseOS-8.6.0.Z.EUS:openssl-perl-1:1.1.1k-9.el8_6.ppc64le",
+          "BaseOS-8.6.0.Z.EUS:openssl-perl-1:1.1.1k-9.el8_6.s390x",
+          "BaseOS-8.6.0.Z.EUS:openssl-perl-1:1.1.1k-9.el8_6.x86_64"
+        ]
+      },
+      "references": [
+        {
+          "category": "external",
+          "summary": "https://www.cve.org/CVERecord?id=CVE-2023-0215",
+          "url": "https://www.cve.org/CVERecord?id=CVE-2023-0215"
+        },
+        {
+          "category": "external",
+          "summary": "https://nvd.nist.gov/vuln/detail/CVE-2023-0215",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2023-0215"
+        },
+        {
+          "category": "external",
+          "summary": "CVE-2023-0215",
+          "url": "https://access.redhat.com/security/cve/CVE-2023-0215"
+        },
+        {
+          "category": "external",
+          "summary": "bz#2164492: use-after-free following BIO_new_NDEF",
+          "url": "https://bugzilla.redhat.com/show_bug.cgi?id=2164492"
+        }
+      ],
+      "release_date": "2023-02-07T00:00:00Z",
+      "remediations": [
+        {
+          "category": "vendor_fix",
+          "details": "For details on how to apply this update, which includes the changes described in this advisory, refer to:\n\nhttps://access.redhat.com/articles/11258\n\nFor the update to take effect, all services linked to the OpenSSL library must be restarted, or the system rebooted.",
+          "product_ids": [
+            "BaseOS-8.6.0.Z.EUS:openssl-1:1.1.1k-9.el8_6.aarch64",
+            "BaseOS-8.6.0.Z.EUS:openssl-1:1.1.1k-9.el8_6.ppc64le",
+            "BaseOS-8.6.0.Z.EUS:openssl-1:1.1.1k-9.el8_6.s390x",
+            "BaseOS-8.6.0.Z.EUS:openssl-1:1.1.1k-9.el8_6.src",
+            "BaseOS-8.6.0.Z.EUS:openssl-1:1.1.1k-9.el8_6.x86_64",
+            "BaseOS-8.6.0.Z.EUS:openssl-debuginfo-1:1.1.1k-9.el8_6.aarch64",
+            "BaseOS-8.6.0.Z.EUS:openssl-debuginfo-1:1.1.1k-9.el8_6.i686",
+            "BaseOS-8.6.0.Z.EUS:openssl-debuginfo-1:1.1.1k-9.el8_6.ppc64le",
+            "BaseOS-8.6.0.Z.EUS:openssl-debuginfo-1:1.1.1k-9.el8_6.s390x",
+            "BaseOS-8.6.0.Z.EUS:openssl-debuginfo-1:1.1.1k-9.el8_6.x86_64",
+            "BaseOS-8.6.0.Z.EUS:openssl-debugsource-1:1.1.1k-9.el8_6.aarch64",
+            "BaseOS-8.6.0.Z.EUS:openssl-debugsource-1:1.1.1k-9.el8_6.i686",
+            "BaseOS-8.6.0.Z.EUS:openssl-debugsource-1:1.1.1k-9.el8_6.ppc64le",
+            "BaseOS-8.6.0.Z.EUS:openssl-debugsource-1:1.1.1k-9.el8_6.s390x",
+            "BaseOS-8.6.0.Z.EUS:openssl-debugsource-1:1.1.1k-9.el8_6.x86_64",
+            "BaseOS-8.6.0.Z.EUS:openssl-devel-1:1.1.1k-9.el8_6.aarch64",
+            "BaseOS-8.6.0.Z.EUS:openssl-devel-1:1.1.1k-9.el8_6.i686",
+            "BaseOS-8.6.0.Z.EUS:openssl-devel-1:1.1.1k-9.el8_6.ppc64le",
+            "BaseOS-8.6.0.Z.EUS:openssl-devel-1:1.1.1k-9.el8_6.s390x",
+            "BaseOS-8.6.0.Z.EUS:openssl-devel-1:1.1.1k-9.el8_6.x86_64",
+            "BaseOS-8.6.0.Z.EUS:openssl-libs-1:1.1.1k-9.el8_6.aarch64",
+            "BaseOS-8.6.0.Z.EUS:openssl-libs-1:1.1.1k-9.el8_6.i686",
+            "BaseOS-8.6.0.Z.EUS:openssl-libs-1:1.1.1k-9.el8_6.ppc64le",
+            "BaseOS-8.6.0.Z.EUS:openssl-libs-1:1.1.1k-9.el8_6.s390x",
+            "BaseOS-8.6.0.Z.EUS:openssl-libs-1:1.1.1k-9.el8_6.x86_64",
+            "BaseOS-8.6.0.Z.EUS:openssl-libs-debuginfo-1:1.1.1k-9.el8_6.aarch64",
+            "BaseOS-8.6.0.Z.EUS:openssl-libs-debuginfo-1:1.1.1k-9.el8_6.i686",
+            "BaseOS-8.6.0.Z.EUS:openssl-libs-debuginfo-1:1.1.1k-9.el8_6.ppc64le",
+            "BaseOS-8.6.0.Z.EUS:openssl-libs-debuginfo-1:1.1.1k-9.el8_6.s390x",
+            "BaseOS-8.6.0.Z.EUS:openssl-libs-debuginfo-1:1.1.1k-9.el8_6.x86_64",
+            "BaseOS-8.6.0.Z.EUS:openssl-perl-1:1.1.1k-9.el8_6.aarch64",
+            "BaseOS-8.6.0.Z.EUS:openssl-perl-1:1.1.1k-9.el8_6.ppc64le",
+            "BaseOS-8.6.0.Z.EUS:openssl-perl-1:1.1.1k-9.el8_6.s390x",
+            "BaseOS-8.6.0.Z.EUS:openssl-perl-1:1.1.1k-9.el8_6.x86_64"
+          ],
+          "url": "https://access.redhat.com/errata/RHSA-2023:3408"
+        }
+      ],
+      "scores": [
+        {
+          "cvss_v3": {
+            "attackComplexity": "LOW",
+            "attackVector": "NETWORK",
+            "availabilityImpact": "HIGH",
+            "baseScore": 7.5,
+            "baseSeverity": "HIGH",
+            "confidentialityImpact": "NONE",
+            "integrityImpact": "NONE",
+            "privilegesRequired": "NONE",
+            "scope": "UNCHANGED",
+            "userInteraction": "NONE",
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+            "version": "3.1"
+          },
+          "products": [
+            "BaseOS-8.6.0.Z.EUS:openssl-1:1.1.1k-9.el8_6.aarch64",
+            "BaseOS-8.6.0.Z.EUS:openssl-1:1.1.1k-9.el8_6.ppc64le",
+            "BaseOS-8.6.0.Z.EUS:openssl-1:1.1.1k-9.el8_6.s390x",
+            "BaseOS-8.6.0.Z.EUS:openssl-1:1.1.1k-9.el8_6.src",
+            "BaseOS-8.6.0.Z.EUS:openssl-1:1.1.1k-9.el8_6.x86_64",
+            "BaseOS-8.6.0.Z.EUS:openssl-debuginfo-1:1.1.1k-9.el8_6.aarch64",
+            "BaseOS-8.6.0.Z.EUS:openssl-debuginfo-1:1.1.1k-9.el8_6.i686",
+            "BaseOS-8.6.0.Z.EUS:openssl-debuginfo-1:1.1.1k-9.el8_6.ppc64le",
+            "BaseOS-8.6.0.Z.EUS:openssl-debuginfo-1:1.1.1k-9.el8_6.s390x",
+            "BaseOS-8.6.0.Z.EUS:openssl-debuginfo-1:1.1.1k-9.el8_6.x86_64",
+            "BaseOS-8.6.0.Z.EUS:openssl-debugsource-1:1.1.1k-9.el8_6.aarch64",
+            "BaseOS-8.6.0.Z.EUS:openssl-debugsource-1:1.1.1k-9.el8_6.i686",
+            "BaseOS-8.6.0.Z.EUS:openssl-debugsource-1:1.1.1k-9.el8_6.ppc64le",
+            "BaseOS-8.6.0.Z.EUS:openssl-debugsource-1:1.1.1k-9.el8_6.s390x",
+            "BaseOS-8.6.0.Z.EUS:openssl-debugsource-1:1.1.1k-9.el8_6.x86_64",
+            "BaseOS-8.6.0.Z.EUS:openssl-devel-1:1.1.1k-9.el8_6.aarch64",
+            "BaseOS-8.6.0.Z.EUS:openssl-devel-1:1.1.1k-9.el8_6.i686",
+            "BaseOS-8.6.0.Z.EUS:openssl-devel-1:1.1.1k-9.el8_6.ppc64le",
+            "BaseOS-8.6.0.Z.EUS:openssl-devel-1:1.1.1k-9.el8_6.s390x",
+            "BaseOS-8.6.0.Z.EUS:openssl-devel-1:1.1.1k-9.el8_6.x86_64",
+            "BaseOS-8.6.0.Z.EUS:openssl-libs-1:1.1.1k-9.el8_6.aarch64",
+            "BaseOS-8.6.0.Z.EUS:openssl-libs-1:1.1.1k-9.el8_6.i686",
+            "BaseOS-8.6.0.Z.EUS:openssl-libs-1:1.1.1k-9.el8_6.ppc64le",
+            "BaseOS-8.6.0.Z.EUS:openssl-libs-1:1.1.1k-9.el8_6.s390x",
+            "BaseOS-8.6.0.Z.EUS:openssl-libs-1:1.1.1k-9.el8_6.x86_64",
+            "BaseOS-8.6.0.Z.EUS:openssl-libs-debuginfo-1:1.1.1k-9.el8_6.aarch64",
+            "BaseOS-8.6.0.Z.EUS:openssl-libs-debuginfo-1:1.1.1k-9.el8_6.i686",
+            "BaseOS-8.6.0.Z.EUS:openssl-libs-debuginfo-1:1.1.1k-9.el8_6.ppc64le",
+            "BaseOS-8.6.0.Z.EUS:openssl-libs-debuginfo-1:1.1.1k-9.el8_6.s390x",
+            "BaseOS-8.6.0.Z.EUS:openssl-libs-debuginfo-1:1.1.1k-9.el8_6.x86_64",
+            "BaseOS-8.6.0.Z.EUS:openssl-perl-1:1.1.1k-9.el8_6.aarch64",
+            "BaseOS-8.6.0.Z.EUS:openssl-perl-1:1.1.1k-9.el8_6.ppc64le",
+            "BaseOS-8.6.0.Z.EUS:openssl-perl-1:1.1.1k-9.el8_6.s390x",
+            "BaseOS-8.6.0.Z.EUS:openssl-perl-1:1.1.1k-9.el8_6.x86_64"
+          ]
+        }
+      ],
+      "threats": [
+        {
+          "category": "impact",
+          "date": "2023-01-25T00:00:00Z",
+          "details": "Moderate"
+        }
+      ],
+      "title": "use-after-free following BIO_new_NDEF"
+    }
+  ]
+}

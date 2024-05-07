@@ -1,0 +1,8 @@
+= Day two tasks
+
+> It worked yesterday, Nothing's changed!!
+
+== Change of referenced values
+
+When having used values references from e.g. secrets, using `valueFrom`, it is required to restart pods in order to
+pick up those changes.

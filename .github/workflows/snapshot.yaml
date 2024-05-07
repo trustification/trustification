@@ -35,18 +35,8 @@ jobs:
   ci:
     uses: ./.github/workflows/ci.yaml
 
-  containers:
-      needs: [ init, ci ]
-
-      uses: ./.github/workflows/containers.yaml
-      secrets: inherit
-
-      with:
-        imageTag: ${{ needs.init.outputs.version }}
-        platforms: "linux/amd64"
-
   publish:
-    needs: [ init, containers ]
+    needs: [ init, ci ]
     permissions:
       contents: write
       packages: write
@@ -58,7 +48,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -68,7 +58,7 @@ jobs:
       - name: Check cosign
         run: cosign version
 
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           path: ~/download
 
@@ -94,7 +84,7 @@ jobs:
           for container in $CONTAINERS; do
             IMAGE="ghcr.io/${{ github.repository_owner }}/${container}:${{ needs.init.outputs.version }}"
             podman push \
-              "${container}:${{ needs.init.outputs.version }}" \
+              "${container}:ci" \
               "${IMAGE}" \
               --digestfile "${RUNNER_TEMP}/push.${container}.digest"
           done
@@ -105,7 +95,7 @@ jobs:
           for container in $CONTAINERS; do
             IMAGE="ghcr.io/${{ github.repository_owner }}/${container}:latest"
             podman push \
-              "${container}:${{ needs.init.outputs.version }}" \
+              "${container}:ci" \
               "${IMAGE}"
           done
 

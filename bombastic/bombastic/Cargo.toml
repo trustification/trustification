@@ -1,0 +1,11 @@
+[package]
+name = "bombastic"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+bombastic-api = { path = "../api" }
+bombastic-indexer = { path = "../indexer" }
+bombastic-walker = { path = "../walker" }
+clap = { version = "4", features = ["derive"] }
+anyhow = "1"

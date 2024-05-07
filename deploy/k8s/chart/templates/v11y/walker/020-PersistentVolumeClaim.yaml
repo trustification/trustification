@@ -1,0 +1,16 @@
+{{ if and .Values.v11y.walker.enabled .Values.v11y.walker.enabled }}
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: v11y-cvelist
+  labels:
+    app.kubernetes.io/name: v11y-cvelist
+    app.kubernetes.io/component: walker
+    app.kubernetes.io/part-of: trustification
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+{{ end }}

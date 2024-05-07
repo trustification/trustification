@@ -1,0 +1,19 @@
+{{- if .Values.deployPostgres }}
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: minio-pvc
+  labels:
+    app.kubernetes.io/name: minio-pvc
+    app.kubernetes.io/component: storage
+    app.kubernetes.io/part-of: trustification
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.minio.storageSize | default "10Gi" | quote }}
+  {{- with .Values.minio.storageClassName }}
+  storageClassName: {{ . | quote }}
+  {{- end }}
+{{ end }}

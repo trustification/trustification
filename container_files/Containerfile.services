@@ -1,0 +1,121 @@
+FROM registry.access.redhat.com/ubi9/ubi:latest as backendbuilder
+
+ARG RUST_VERSION="1.77.2"
+
+RUN dnf install -y gcc openssl openssl-devel cmake gcc-c++ git curl-minimal unzip cyrus-sasl-devel
+
+# the 'sed' workaround is required due to https://github.com/rust-lang/rustup/issues/2700
+RUN curl https://sh.rustup.rs -sSf | sed 's#/proc/self/exe#\/bin\/sh#g' | sh -s -- -y --profile minimal --default-toolchain ${RUST_VERSION}
+
+ENV PATH "$PATH:/root/.cargo/bin"
+
+ARG protoc_version="23.4"
+RUN mkdir protoc && cd protoc && \
+    curl -sSL https://github.com/protocolbuffers/protobuf/releases/download/v${protoc_version}/protoc-${protoc_version}-linux-x86_64.zip -o protoc.zip && \
+    unzip protoc.zip && \
+    install bin/protoc /usr/local/bin && \
+    cd .. && rm -Rf protoc && \
+    protoc --version
+
+RUN mkdir /usr/src/project
+COPY . /usr/src/project
+WORKDIR /usr/src/project
+
+ARG tag
+RUN TAG=$tag cargo build -p trust --release
+
+FROM registry.access.redhat.com/ubi9/ubi:latest as frontendbuilder
+
+ARG RUST_VERSION="1.77.2"
+ARG SASS_VERSION="1.69.5"
+ARG WASM_BINDGEN_VERSION="0.2.89"
+ARG TRUNK_VERSION="0.19.2"
+
+RUN dnf -y install nodejs git gcc
+
+ENV PATH "$PATH:/root/.cargo/bin"
+
+# the 'sed' workaround is required due to https://github.com/rust-lang/rustup/issues/2700
+RUN \
+    curl https://sh.rustup.rs -sSf | sed 's#/proc/self/exe#\/bin\/sh#g' | sh -s -- -y --profile minimal --default-toolchain ${RUST_VERSION} && \
+    rustup target add wasm32-unknown-unknown
+
+RUN \
+    curl -sSL https://github.com/trunk-rs/trunk/releases/download/v0.19.0/trunk-x86_64-unknown-linux-musl.tar.gz -o trunk-x86_64-unknown-linux-musl.tar.gz && \
+    tar xavf trunk-x86_64-unknown-linux-musl.tar.gz && \
+    install trunk /usr/local/bin && rm trunk
+
+RUN npm install -g sass@${SASS_VERSION} && sass --version
+
+RUN \
+    case "$(uname -m)" in \
+        aarch64) \
+            curl -sSL https://github.com/rustwasm/wasm-bindgen/releases/download/${WASM_BINDGEN_VERSION}/wasm-bindgen-${WASM_BINDGEN_VERSION}-aarch64-unknown-linux-gnu.tar.gz  -o wasm-bingen.tar.gz \
+            && tar --strip-components=1 -xzvf wasm-bingen.tar.gz '*/wasm-bindgen' \
+            && rm wasm-bingen.tar.gz \
+            && install wasm-bindgen /usr/local/bin && rm wasm-bindgen \
+            ;; \
+        x86_64) \
+            curl -sSL https://github.com/rustwasm/wasm-bindgen/releases/download/${WASM_BINDGEN_VERSION}/wasm-bindgen-${WASM_BINDGEN_VERSION}-x86_64-unknown-linux-musl.tar.gz -o wasm-bingen.tar.gz \
+            && tar --strip-components=1 -xzvf wasm-bingen.tar.gz '*/wasm-bindgen' \
+            && rm wasm-bingen.tar.gz \
+            && install wasm-bindgen /usr/local/bin && rm wasm-bindgen \
+            ;; \
+        *) \
+            echo "Build platform not supported: $(uname -p)" ; \
+            exit 1 \
+            ;; \
+    esac ; \
+    wasm-bindgen --version
+
+# cannot use /usr/src as it is configured as `VOLUME` in the base image, which seems to be an issue
+# for buildah (not for podman build): https://github.com/containers/buildah/issues/4845
+
+RUN mkdir /trustification
+
+COPY . /trustification
+
+RUN ls /trustification
+
+WORKDIR /trustification/spog/ui
+
+RUN true \
+    && npm ci \
+    && trunk build --release --dist /public
+
+# safeguard to ensure the project was built
+
+RUN test -f /public/*.wasm
+
+# Runtime
+FROM registry.access.redhat.com/ubi9/ubi-minimal:latest
+
+LABEL com.redhat.component ="Trustification"
+LABEL description ="Trustification"
+LABEL io.k8s.description ="Trustification"
+LABEL io.k8s.display-name ="Trustification"
+LABEL io.openshift.tags ="Trustification"
+LABEL name ="Trustification"
+LABEL org.opencontainers.image.source="https://github.com/trustification/trustification"
+LABEL summary ="Trustification"
+
+RUN microdnf update -y && microdnf install -y nginx jq git postgresql
+RUN true \
+    && mkdir /public \
+    && mkdir /endpoints
+
+COPY --from=frontendbuilder /public /public/
+COPY spog/ui/config/nginx.conf /etc/nginx/nginx.conf
+
+COPY spog/ui/config/nginx.sh /nginx.sh
+RUN chmod a+x /nginx.sh
+
+EXPOSE 80
+
+COPY --from=backendbuilder /usr/src/project/target/release/trust /
+COPY ./collectorist.yaml /
+
+RUN mkdir /data
+COPY ./data/ds1 /data
+
+ENV RUST_LOG info

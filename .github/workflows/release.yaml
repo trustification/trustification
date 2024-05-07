@@ -110,8 +110,8 @@ jobs:
         run: |
           curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
 
-      - name: Install trunk-ng
-        run: cargo binstall -y trunk-ng
+      - name: Install trunk
+        run: cargo binstall -y trunk
 
       - name: Install additional targets target
         run: |
@@ -144,24 +144,14 @@ jobs:
         run: cp -pv target/${{ matrix.rustTarget }}/release/trust${{ matrix.exe }} target/release/trust-${{ matrix.target }}${{ matrix.exe }}
 
       - name: Upload binary
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: trust-binary-${{ matrix.target }}
           path: target/release/trust-${{ matrix.target }}${{ matrix.exe }}
           if-no-files-found: error
 
-  containers:
-      needs: [ init, ci ]
-
-      uses: ./.github/workflows/containers.yaml
-      secrets: inherit
-
-      with:
-        imageTag: ${{ needs.init.outputs.version }}
-        platforms: "linux/amd64"
-
   publish:
-    needs: [ init, build, containers ]
+    needs: [ init, build ]
     permissions:
       contents: write
       packages: write
@@ -226,7 +216,7 @@ jobs:
         run: |
           convco changelog -s --max-majors=1 --max-minors=1 --max-patches=1 > /tmp/changelog.md
 
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           path: ~/download
 
@@ -307,7 +297,7 @@ jobs:
           for container in $CONTAINERS; do
             IMAGE="ghcr.io/${{ github.repository_owner }}/${container}:${{ needs.init.outputs.version }}"
             podman push \
-              "${container}:${{ needs.init.outputs.version }}" \
+              "${container}:ci" \
               "${IMAGE}" \
               --digestfile "${RUNNER_TEMP}/push.${container}.digest"
           done
@@ -319,7 +309,7 @@ jobs:
           for container in $CONTAINERS; do
             IMAGE="ghcr.io/${{ github.repository_owner }}/${container}:latest"
             podman push \
-              "${container}:${{ needs.init.outputs.version }}" \
+              "${container}:ci" \
               "${IMAGE}"
           done
 

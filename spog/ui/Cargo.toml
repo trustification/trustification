@@ -1,0 +1,122 @@
+[package]
+name = "spog-ui"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2"
+# Will be present in the about dialog too
+description = "Single Pane of Glass"
+
+[dependencies]
+analytics-next = "0.1.6"
+anyhow = "1"
+async-trait = "0.1"
+browser-panic-hook = "0.2.0"
+chrono = { version = "0.4", default-features = false, features = ["wasmbind"] }
+convert_case = "0.6.0"
+csaf = { version = "0.5.0", default-features = false }
+cve = "0.2.1"
+cvss = { version = "2", features = ["serde"] }
+cyclonedx-bom = "0.4"
+futures = "0.3.29"
+gloo-events = "0.2"
+gloo-net = "0.5"
+gloo-storage = "0.3.0"
+gloo-utils = { version = "0.2.0", features = ["serde"] }
+humansize = "2"
+itertools = "0.12.0"
+js-sys = "0.3"
+log = "0.4"
+markdown = "1.0.0-alpha.11"
+monaco = { version = "0.5", features = ["yew-components"] }
+openidconnect = "3"
+packageurl = "0.3"
+patternfly-yew = { version = "0.6.0", features = ["icons-fab", "tree"] }
+popper-rs = { version = "0.3.2", features = ["yew"] }
+reqwest = { version = "0.11", features = ["json"] }
+roxmltree = "0.19"
+serde = { version = "1", features = ["derive", "rc"] }
+serde_json = "1"
+sikula = { version = "0.4.1", default-features = false, features = ["time"] }
+spdx-rs = "0.5.5"
+strum = { version = "0.25", features = ["derive"] }
+thiserror = "1"
+time = { version = "0.3", features = ["formatting", "macros", "wasm-bindgen"] }
+url = { version = "2", features = ["serde"] }
+urlencoding = "2"
+wasm-bindgen = "0.2"
+wasm-bindgen-futures = "0.4"
+wasm-logger = "0.2"
+web-tools = "0.2"
+yew = { version = "0.21", features = ["csr"] }
+yew-consent = "0.2"
+yew-hooks = "0.3"
+yew-more-hooks = "0.3.2"
+yew-nested-router = "0.7.0"
+yew-oauth2 = { version = "0.11.0", features = ["yew-nested-router", "openid"] }
+
+bombastic-model = { path = "../../bombastic/model" }
+exhort-model = { path = "../../exhort/model" }
+spog-model = { path = "../model" }
+trustification-api = { path = "../../api" }
+trustification-common = { path = "../../common", default-features = false }
+trustification-version = { path = "../../version" }
+v11y-model = { path = "../../v11y/model" }
+vexination-model = { path = "../../vexination/model" }
+
+spog-ui-navigation = { path = "crates/navigation" }
+spog-ui-backend = { path = "crates/backend" }
+spog-ui-components = { path = "crates/components" }
+spog-ui-common = { path = "crates/common" }
+spog-ui-utils = { path = "crates/utils" }
+spog-ui-donut = { path = "crates/donut" }
+
+[build-dependencies]
+trustification-version = { path = "../../version", features = ["build"] }
+
+[dependencies.web-sys]
+version = "0.3.61"
+features = [
+    "DataTransfer",
+    "File",
+]
+
+[workspace]
+resolver = "2"
+members = [
+    "crates/backend",
+    "crates/common",
+    "crates/components",
+    "crates/navigation",
+    "crates/utils",
+]
+
+[patch.crates-io]
+#yew-nested-router = { path = "../../../yew-nested-router" }
+#yew-nested-router = { git = "https://github.com/ctron/yew-nested-router", rev = "9689db446dee7030325884df768d0c2e84f353d6" }
+#yew-more-hooks = { git = "https://github.com/ctron/yew-more-hooks", rev = "fc0af774aa925edcd5a544e562619ecb539942f8" }
+#yew-more-hooks = { path = "../../../yew-more-hooks" }
+
+#patternfly-yew = { git = "https://github.com/patternfly-yew/patternfly-yew", rev = "74e20e4429248cbc3b2c8085b9a4f8d9002fe456" } # FIXME: awaiting release
+#patternfly-yew = { path = "../../../patternfly-yew" }
+
+#analytics-next = { git = "https://github.com/ctron/analytics-next-rs", rev = "9c95122f4e6dc308c90b945bd0f1925faf7cb828" } # FIXME: awaiting release
+#analytics-next = { path = "../../../analytics-next-rs" }
+
+csaf = { git = "https://github.com/ctron/csaf-rs", rev = "183326beac525d58962f78be8eca973017702753" } # FIXME: waiting for release #16 #28
+monaco = { git = "https://github.com/siku2/rust-monaco", rev = "8b8eb78004709058399c2d0dfa7c460d30fe62fd" } # FIXME: waiting for release 0.5.0
+
+packageurl = { git = "https://github.com/ctron/packageurl.rs", rev = "c9a0c192ff0cba5d75b8cbf8be0b1e4dc14320aa" }
+
+#sikula = { git = "https://github.com/ctron/sikula", rev = "023c27232f016b80a34c8ed77b88d1c30dcae6e0" }
+
+# also check root level Cargo.toml
+# TODO Switch to the official repository once https://github.com/CycloneDX/cyclonedx-rust-cargo/issues/615 is fixed
+cyclonedx-bom = { git = "https://github.com/carlosthe19916/cyclonedx-rust-cargo", branch = "issue-615-trustification" }
+#spdx-rs = { git = "https://github.com/trustification/spdx-rs", rev = "c65be086e898dae88609f07bbc5a224ba4e0838d" } # FIXME: awaiting doubleopen-project/spdx-rs#/27
+
+# release profile settings to reduce the final binary size
+[profile.release]
+panic = 'abort'
+codegen-units = 1
+opt-level = 's'
+lto = true

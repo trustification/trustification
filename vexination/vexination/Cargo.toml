@@ -1,0 +1,11 @@
+[package]
+name = "vexination"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+vexination-api = { path = "../api" }
+vexination-walker = { path = "../walker" }
+vexination-indexer = { path = "../indexer" }
+clap = { version = "4", features = ["derive"] }
+anyhow = "1"

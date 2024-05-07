@@ -1,0 +1,2255 @@
+apiVersion: v1
+kind: Template
+metadata:
+  name: trustification
+objects:
+  - apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: guac-cm
+      labels:
+        app.kubernetes.io/name: guac-cm
+        app.kubernetes.io/component: cm
+        app.kubernetes.io/part-of: trustification
+    data:
+      guac.yaml: '# CSub setup
+
+        csub-addr: "guac-collectsub.${K8S_NAMESPACE}.svc.cluster.local:2782"
+
+        csub-listen-port: 2782
+
+
+        # GQL setup
+
+        gql-listen-port: 8080
+
+        gql-debug: false
+
+        gql-test-data: false
+
+        gql-addr: http://guac-graphql.${K8S_NAMESPACE}.svc:8080/query
+
+
+        # Collector behavior
+
+        service-poll: false
+
+        use-csub: true
+
+        '
+  - kind: ConfigMap
+    apiVersion: v1
+    metadata:
+      name: post-install-guac-config
+      labels:
+        app.kubernetes.io/name: post-install-guac-config
+        app.kubernetes.io/component: guac
+        app.kubernetes.io/part-of: guac
+    data:
+      init.sql: "-- ensure we have the database\nSELECT 'CREATE DATABASE ' || :'db_name'\n\
+        WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = :'db_name')\\gexec\n\
+        \n-- create the user (if it doesn't exist)\nCREATE OR REPLACE FUNCTION add_user_if_not_exists(username\
+        \ NAME) RETURNS integer\n    AS $$\nBEGIN\n    IF NOT EXISTS (SELECT FROM\
+        \ pg_roles\n        WHERE rolname = username) THEN\n\n        EXECUTE FORMAT('CREATE\
+        \ ROLE \"%I\" LOGIN', username);\n\n    END IF;\n    RETURN NULL;\nEND;\n\
+        $$ language plpgsql;\n\nSELECT add_user_if_not_exists(:'db_user');\n\n-- now\
+        \ set the password\nALTER USER :db_user WITH PASSWORD :'db_password';\n\n\
+        -- grant permission to connect\nGRANT CONNECT ON DATABASE :db_name TO :db_user;\n\
+        \n-- grant permissions on database\n\\connect :db_name\n\nGRANT USAGE ON SCHEMA\
+        \ public TO :db_user;\n\n-- grant on existing tables\nGRANT SELECT, INSERT,\
+        \ UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO :db_user;\n\n-- grant on\
+        \ future tables\nALTER DEFAULT PRIVILEGES\n    IN SCHEMA public\n    GRANT\
+        \ SELECT, INSERT, UPDATE, DELETE ON TABLES TO :db_user;\n"
+  - kind: PersistentVolumeClaim
+    apiVersion: v1
+    metadata:
+      name: bombastic-walker-state
+      labels:
+        app.kubernetes.io/name: bombastic-walker-state
+        app.kubernetes.io/component: walker
+        app.kubernetes.io/part-of: trustification
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 1Mi
+  - kind: PersistentVolumeClaim
+    apiVersion: v1
+    metadata:
+      name: v11y-storage
+      labels:
+        app.kubernetes.io/name: v11y-api
+        app.kubernetes.io/component: api
+        app.kubernetes.io/part-of: trustification
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 1Gi
+  - kind: PersistentVolumeClaim
+    apiVersion: v1
+    metadata:
+      name: v11y-cvelist
+      labels:
+        app.kubernetes.io/name: v11y-cvelist
+        app.kubernetes.io/component: walker
+        app.kubernetes.io/part-of: trustification
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 10Gi
+  - kind: PersistentVolumeClaim
+    apiVersion: v1
+    metadata:
+      name: vexination-walker-state
+      labels:
+        app.kubernetes.io/name: vexination-walker-state
+        app.kubernetes.io/component: walker
+        app.kubernetes.io/part-of: trustification
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 1Mi
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      labels:
+        app.kubernetes.io/name: bombastic-api
+        app.kubernetes.io/component: api
+        app.kubernetes.io/part-of: trustification
+      annotations:
+        service.beta.openshift.io/serving-cert-secret-name: bombastic-api-tls
+      name: bombastic-api
+    spec:
+      ports:
+        - name: endpoint
+          port: 443
+          protocol: TCP
+          targetPort: 8080
+      selector:
+        app.kubernetes.io/name: bombastic-api
+        app.kubernetes.io/component: api
+        app.kubernetes.io/part-of: trustification
+      type: ClusterIP
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      labels:
+        app.kubernetes.io/name: exhort-api
+        app.kubernetes.io/component: api
+        app.kubernetes.io/part-of: trustification
+      annotations:
+        service.beta.openshift.io/serving-cert-secret-name: exhort-api-tls
+      name: exhort-api
+    spec:
+      ports:
+        - name: endpoint
+          port: 443
+          protocol: TCP
+          targetPort: 8080
+      selector:
+        app.kubernetes.io/name: exhort-api
+        app.kubernetes.io/component: api
+        app.kubernetes.io/part-of: trustification
+      type: ClusterIP
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      labels:
+        app.kubernetes.io/name: guac-collectsub
+        app.kubernetes.io/component: collectsub
+        app.kubernetes.io/part-of: trustification
+      annotations:
+        service.beta.openshift.io/serving-cert-secret-name: guac-collectsub-tls
+      name: guac-collectsub
+    spec:
+      ports:
+        - name: endpoint
+          port: 2782
+          protocol: TCP
+          targetPort: 2782
+      selector:
+        app.kubernetes.io/name: guac-collectsub
+        app.kubernetes.io/component: collectsub
+        app.kubernetes.io/part-of: trustification
+      type: ClusterIP
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      labels:
+        app.kubernetes.io/name: guac-graphql
+        app.kubernetes.io/component: graphql
+        app.kubernetes.io/part-of: trustification
+      annotations:
+        service.beta.openshift.io/serving-cert-secret-name: guac-graphql-tls
+      name: guac-graphql
+    spec:
+      ports:
+        - name: endpoint
+          port: 8080
+          protocol: TCP
+          targetPort: 8080
+      selector:
+        app.kubernetes.io/name: guac-graphql
+        app.kubernetes.io/component: graphql
+        app.kubernetes.io/part-of: trustification
+      type: ClusterIP
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      labels:
+        app.kubernetes.io/name: trustification-monitoring
+        app.kubernetes.io/component: monitoring
+        app.kubernetes.io/part-of: trustification
+      name: trustification-monitoring
+    spec:
+      ports:
+        - name: metrics
+          port: 9010
+          protocol: TCP
+          targetPort: 9010
+      selector:
+        app.kubernetes.io/part-of: trustification
+        metrics: 'true'
+      type: ClusterIP
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      labels:
+        app.kubernetes.io/name: spog-api
+        app.kubernetes.io/component: api
+        app.kubernetes.io/part-of: trustification
+      annotations:
+        service.beta.openshift.io/serving-cert-secret-name: spog-api-tls
+      name: spog-api
+    spec:
+      ports:
+        - name: endpoint
+          port: 443
+          protocol: TCP
+          targetPort: 8080
+      selector:
+        app.kubernetes.io/name: spog-api
+        app.kubernetes.io/component: api
+        app.kubernetes.io/part-of: trustification
+      type: ClusterIP
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      labels:
+        app.kubernetes.io/name: spog-ui
+        app.kubernetes.io/component: ui
+        app.kubernetes.io/part-of: trustification
+      name: spog-ui
+    spec:
+      ports:
+        - name: endpoint
+          port: 8080
+          protocol: TCP
+          targetPort: 8080
+      selector:
+        app.kubernetes.io/name: spog-ui
+        app.kubernetes.io/component: ui
+        app.kubernetes.io/part-of: trustification
+      type: ClusterIP
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      labels:
+        app.kubernetes.io/name: v11y-api
+        app.kubernetes.io/component: api
+        app.kubernetes.io/part-of: trustification
+      annotations:
+        service.beta.openshift.io/serving-cert-secret-name: v11y-api-tls
+      name: v11y-api
+    spec:
+      ports:
+        - name: endpoint
+          port: 443
+          protocol: TCP
+          targetPort: 8080
+      selector:
+        app.kubernetes.io/name: v11y-api
+        app.kubernetes.io/component: api
+        app.kubernetes.io/part-of: trustification
+      type: ClusterIP
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      labels:
+        app.kubernetes.io/name: vexination-api
+        app.kubernetes.io/component: api
+        app.kubernetes.io/part-of: trustification
+      annotations:
+        service.beta.openshift.io/serving-cert-secret-name: vexination-api-tls
+      name: vexination-api
+    spec:
+      ports:
+        - name: endpoint
+          port: 443
+          protocol: TCP
+          targetPort: 8080
+      selector:
+        app.kubernetes.io/name: vexination-api
+        app.kubernetes.io/component: api
+        app.kubernetes.io/part-of: trustification
+      type: ClusterIP
+  - apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: bombastic-api
+      labels:
+        app.kubernetes.io/name: bombastic-api
+        app.kubernetes.io/component: api
+        app.kubernetes.io/part-of: trustification
+    spec:
+      replicas: ${{BOMBASTIC_API_REPLICAS}}
+      strategy:
+        type: Recreate
+      selector:
+        matchLabels:
+          app.kubernetes.io/name: bombastic-api
+          app.kubernetes.io/component: api
+          app.kubernetes.io/part-of: trustification
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: bombastic-api
+            app.kubernetes.io/component: api
+            app.kubernetes.io/part-of: trustification
+            metrics: 'true'
+          annotations:
+            config/checksum: 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
+        spec:
+          volumes:
+            - name: data
+              emptyDir: {}
+            - name: config
+              configMap:
+                name: ${CONFIG_NAME}
+            - name: tls
+              secret:
+                secretName: bombastic-api-tls
+          containers:
+            - image: ${BACKEND_IMAGE}:${IMAGE_TAG}
+              imagePullPolicy: Always
+              name: service
+              command:
+                - /trust
+              args:
+                - bombastic
+                - api
+                - -p
+                - '8080'
+                - --validator
+                - sbom
+                - --index-mode
+                - file
+                - --auth-configuration
+                - /etc/config/auth.yaml
+              env:
+                - name: RUST_LOG
+                  value: ${LOG_LEVEL}
+                - name: STORAGE_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${BOMBASTIC_AWS_SECRET_NAME}
+                      key: aws_access_key_id
+                - name: STORAGE_SECRET_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${BOMBASTIC_AWS_SECRET_NAME}
+                      key: aws_secret_access_key
+                - name: STORAGE_BUCKET
+                  value: ${BOMBASTIC_STORAGE_BUCKET}
+                - name: STORAGE_REGION
+                  value: ${AWS_REGION}
+                - name: HTTP_SERVER_BIND_ADDR
+                  value: '::'
+                - name: HTTP_SERVER_TLS_ENABLED
+                  value: 'true'
+                - name: HTTP_SERVER_TLS_KEY_FILE
+                  value: /etc/tls/tls.key
+                - name: HTTP_SERVER_TLS_CERTIFICATE_FILE
+                  value: /etc/tls/tls.crt
+                - name: INFRASTRUCTURE_ENABLED
+                  value: 'true'
+                - name: INFRASTRUCTURE_BIND
+                  value: '[::]:9010'
+                - name: TRACING
+                  value: disabled
+                - name: OTEL_BSP_MAX_EXPORT_BATCH_SIZE
+                  value: '32'
+                - name: OTEL_TRACES_SAMPLER
+                  value: parentbased_traceidratio
+                - name: OTEL_TRACES_SAMPLER_ARG
+                  value: '0.1'
+                - name: INDEX_SYNC_INTERVAL
+                  value: ${BOMBASTIC_API_INDEX_SYNC_INTERVAL}
+                - name: SWAGGER_UI_OIDC_ISSUER_URL
+                  value: ${ISSUER_URL}
+              volumeMounts:
+                - name: data
+                  mountPath: /data
+                - mountPath: /etc/config
+                  name: config
+                - mountPath: /etc/tls
+                  name: tls
+              ports:
+                - containerPort: 8080
+                  protocol: TCP
+                - containerPort: 9010
+                  protocol: TCP
+                  name: infra
+              resources: ${{BOMBASTIC_API_RESOURCES}}
+              livenessProbe:
+                httpGet:
+                  path: /health/live
+                  port: 9010
+                initialDelaySeconds: 2
+              readinessProbe:
+                httpGet:
+                  path: /health/ready
+                  port: 9010
+                initialDelaySeconds: 2
+              startupProbe:
+                httpGet:
+                  path: /health/startup
+                  port: 9010
+  - apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: bombastic-indexer
+      labels:
+        app.kubernetes.io/name: bombastic-indexer
+        app.kubernetes.io/component: indexer
+        app.kubernetes.io/part-of: trustification
+    spec:
+      replicas: ${{BOMBASTIC_INDEXER_REPLICAS}}
+      selector:
+        matchLabels:
+          app.kubernetes.io/name: bombastic-indexer
+          app.kubernetes.io/component: indexer
+          app.kubernetes.io/part-of: trustification
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: bombastic-indexer
+            app.kubernetes.io/component: indexer
+            app.kubernetes.io/part-of: trustification
+            metrics: 'true'
+        spec:
+          volumes:
+            - name: data
+              emptyDir: {}
+          containers:
+            - image: ${BACKEND_IMAGE}:${IMAGE_TAG}
+              imagePullPolicy: Always
+              name: service
+              command:
+                - /trust
+              args:
+                - bombastic
+                - indexer
+                - --stored-topic
+                - ${BOMBASTIC_INDEXER_STORED_TOPIC}
+                - --indexed-topic
+                - ${BOMBASTIC_INDEXER_INDEXED_TOPIC}
+                - --failed-topic
+                - ${BOMBASTIC_INDEXER_FAILED_TOPIC}
+                - --index-mode
+                - file
+                - --index-dir
+                - /data/index
+                - --reindex
+                - always
+              env:
+                - name: RUST_LOG
+                  value: ${LOG_LEVEL}
+                - name: STORAGE_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${BOMBASTIC_AWS_SECRET_NAME}
+                      key: aws_access_key_id
+                - name: STORAGE_SECRET_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${BOMBASTIC_AWS_SECRET_NAME}
+                      key: aws_secret_access_key
+                - name: STORAGE_BUCKET
+                  value: ${BOMBASTIC_STORAGE_BUCKET}
+                - name: STORAGE_REGION
+                  value: ${AWS_REGION}
+                - name: EVENT_BUS
+                  value: sqs
+                - name: SQS_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${BOMBASTIC_AWS_SECRET_NAME}
+                      key: aws_access_key_id
+                - name: SQS_SECRET_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${BOMBASTIC_AWS_SECRET_NAME}
+                      key: aws_secret_access_key
+                - name: SQS_REGION
+                  value: ${AWS_REGION}
+                - name: INFRASTRUCTURE_ENABLED
+                  value: 'true'
+                - name: INFRASTRUCTURE_BIND
+                  value: '[::]:9010'
+                - name: INDEX_WRITER_MEMORY_BYTES
+                  value: ${BOMBASTIC_INDEXER_INDEX_WRITER_MEMORY_BYTES}
+                - name: INDEX_SYNC_INTERVAL
+                  value: ${BOMBASTIC_INDEXER_INDEX_SYNC_INTERVAL}
+              volumeMounts:
+                - name: data
+                  mountPath: /data
+              ports:
+                - containerPort: 9010
+                  protocol: TCP
+                  name: infra
+              resources: ${{BOMBASTIC_INDEXER_RESOURCES}}
+              livenessProbe:
+                httpGet:
+                  path: /health/live
+                  port: 9010
+                initialDelaySeconds: 2
+              readinessProbe:
+                httpGet:
+                  path: /health/ready
+                  port: 9010
+                initialDelaySeconds: 2
+              startupProbe:
+                httpGet:
+                  path: /health/startup
+                  port: 9010
+  - apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: exhort-api
+      labels:
+        app.kubernetes.io/name: exhort-api
+        app.kubernetes.io/component: api
+        app.kubernetes.io/part-of: trustification
+      annotations:
+        service.beta.openshift.io/serving-cert-secret-name: exhort-api-tls
+    spec:
+      replicas: ${{EXHORT_API_REPLICAS}}
+      selector:
+        matchLabels:
+          app.kubernetes.io/name: exhort-api
+          app.kubernetes.io/component: api
+          app.kubernetes.io/part-of: trustification
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: exhort-api
+            app.kubernetes.io/component: api
+            app.kubernetes.io/part-of: trustification
+            metrics: 'true'
+          annotations:
+            config/checksum: 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
+        spec:
+          volumes:
+            - name: config
+              configMap:
+                name: ${CONFIG_NAME}
+            - name: tls
+              secret:
+                secretName: exhort-api-tls
+          containers:
+            - image: ${BACKEND_IMAGE}:${IMAGE_TAG}
+              imagePullPolicy: Always
+              name: service
+              command:
+                - /trust
+              args:
+                - exhort
+                - api
+                - -p
+                - '8080'
+                - --auth-configuration
+                - /etc/config/auth.yaml
+              env:
+                - name: RUST_LOG
+                  value: ${LOG_LEVEL}
+                - name: NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.namespace
+                - name: HTTP_SERVER_BIND_ADDR
+                  value: '::'
+                - name: HTTP_SERVER_TLS_ENABLED
+                  value: 'true'
+                - name: HTTP_SERVER_TLS_KEY_FILE
+                  value: /etc/tls/tls.key
+                - name: HTTP_SERVER_TLS_CERTIFICATE_FILE
+                  value: /etc/tls/tls.crt
+                - name: INFRASTRUCTURE_ENABLED
+                  value: 'true'
+                - name: INFRASTRUCTURE_BIND
+                  value: '[::]:9010'
+                - name: COLLECTORIST_URL
+                  value: https://collectorist-api.$(NAMESPACE).svc
+                - name: V11Y_URL
+                  value: https://v11y-api.$(NAMESPACE).svc
+                - name: GUAC_URL
+                  value: http://guac-graphql:8080/query
+                - name: OIDC_PROVIDER_CLIENT_ID
+                  value: trusted-content-api
+                - name: OIDC_PROVIDER_CLIENT_SECRET
+                  valueFrom:
+                    secretKeyRef:
+                      key: ${OIDC_PROVIDER_CLIENT_SECRET_KEY}
+                      name: ${OIDC_PROVIDER_CLIENT_SECRET_NAME}
+                - name: OIDC_PROVIDER_ISSUER_URL
+                  value: ${ISSUER_URL}
+              volumeMounts:
+                - mountPath: /etc/config
+                  name: config
+                - mountPath: /etc/tls
+                  name: tls
+              ports:
+                - containerPort: 8080
+                  protocol: TCP
+                - containerPort: 9010
+                  protocol: TCP
+                  name: infra
+              resources: ${{EXHORT_API_RESOURCES}}
+              livenessProbe:
+                httpGet:
+                  path: /health/live
+                  port: 9010
+                initialDelaySeconds: 2
+              readinessProbe:
+                httpGet:
+                  path: /health/ready
+                  port: 9010
+                initialDelaySeconds: 2
+              startupProbe:
+                httpGet:
+                  path: /health/startup
+                  port: 9010
+  - apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: guac-collectsub
+      labels:
+        app.kubernetes.io/name: guac-collectsub
+        app.kubernetes.io/component: collectsub
+        app.kubernetes.io/part-of: trustification
+    spec:
+      replicas: ${{GUAC_COLLECTSUB_REPLICAS}}
+      selector:
+        matchLabels:
+          app.kubernetes.io/name: guac-collectsub
+          app.kubernetes.io/component: collectsub
+          app.kubernetes.io/part-of: trustification
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: guac-collectsub
+            app.kubernetes.io/component: collectsub
+            app.kubernetes.io/part-of: trustification
+            metrics: 'true'
+          annotations:
+            config/checksum: 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
+        spec:
+          volumes:
+            - name: config
+              configMap:
+                name: ${CONFIG_NAME}
+            - name: guac-config
+              configMap:
+                name: guac-cm
+            - name: tls
+              secret:
+                secretName: guac-collectsub-tls
+          containers:
+            - image: ${GUAC_IMAGE}
+              imagePullPolicy: Always
+              name: service
+              command:
+                - /opt/guac/guaccsub
+              args: []
+              workingDir: /guac
+              env:
+                - name: NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.namespace
+                - name: HTTP_SERVER_BIND_ADDR
+                  value: '::'
+                - name: HTTP_SERVER_TLS_ENABLED
+                  value: 'true'
+                - name: HTTP_SERVER_TLS_KEY_FILE
+                  value: /etc/tls/tls.key
+                - name: HTTP_SERVER_TLS_CERTIFICATE_FILE
+                  value: /etc/tls/tls.crt
+              volumeMounts:
+                - name: guac-config
+                  mountPath: /guac
+                  readOnly: true
+                - mountPath: /etc/config
+                  name: config
+                - mountPath: /etc/tls
+                  name: tls
+              ports:
+                - containerPort: 2782
+                  protocol: TCP
+  - apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: guac-graphql
+      labels:
+        app.kubernetes.io/name: guac-graphql
+        app.kubernetes.io/component: graphql
+        app.kubernetes.io/part-of: trustification
+    spec:
+      replicas: ${{GUAC_GRAPHQL_REPLICAS}}
+      selector:
+        matchLabels:
+          app.kubernetes.io/name: guac-graphql
+          app.kubernetes.io/component: graphql
+          app.kubernetes.io/part-of: trustification
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: guac-graphql
+            app.kubernetes.io/component: graphql
+            app.kubernetes.io/part-of: trustification
+            metrics: 'true'
+          annotations:
+            config/checksum: 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
+        spec:
+          affinity: ${{GUAC_GQL_AFFINITY}}
+          volumes:
+            - name: config
+              configMap:
+                name: ${CONFIG_NAME}
+            - name: guac-config
+              configMap:
+                name: guac-cm
+            - name: tls
+              secret:
+                secretName: guac-graphql-tls
+          initContainers:
+            - image: ${GUAC_IMAGE}
+              imagePullPolicy: Always
+              name: migrate
+              command:
+                - /bin/sh
+              args:
+                - -ec
+                - '/opt/guac/guacmigrate "--db-address" "postgres://${DB_USER}:${DB_PASSWORD}@${PGHOST}:${PGPORT}/${DB_NAME}${TC_PGOPTIONS}"
+                  "--db-driver" "postgres" "--db-debug" "true"
+
+                  '
+              env:
+                - name: PGHOST
+                  valueFrom:
+                    secretKeyRef:
+                      name: guac-admin-db
+                      key: db.host
+                - name: PGPORT
+                  valueFrom:
+                    secretKeyRef:
+                      name: guac-admin-db
+                      key: db.port
+                - name: TC_PGOPTIONS
+                  valueFrom:
+                    secretKeyRef:
+                      name: guac-admin-db
+                      key: db.options
+                      optional: true
+                - name: DB_NAME
+                  valueFrom:
+                    secretKeyRef:
+                      name: guac-user-db
+                      key: db.name
+                - name: DB_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: guac-admin-db
+                      key: db.user
+                - name: DB_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: guac-admin-db
+                      key: db.password
+          containers:
+            - image: ${GUAC_IMAGE}
+              imagePullPolicy: Always
+              name: service
+              command:
+                - /bin/sh
+              args:
+                - -ec
+                - '/opt/guac/guacgql \
+
+                  "--gql-backend" "ent" "--db-address" "postgres://${DB_USER}:${DB_PASSWORD}@${PGHOST}:${PGPORT}/${DB_NAME}${TC_PGOPTIONS}"
+                  "--db-driver" "postgres" "--db-debug" "true" "--db-migrate=false"
+
+                  '
+              workingDir: /guac
+              env:
+                - name: NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.namespace
+                - name: HTTP_SERVER_BIND_ADDR
+                  value: '::'
+                - name: HTTP_SERVER_TLS_ENABLED
+                  value: 'true'
+                - name: HTTP_SERVER_TLS_KEY_FILE
+                  value: /etc/tls/tls.key
+                - name: HTTP_SERVER_TLS_CERTIFICATE_FILE
+                  value: /etc/tls/tls.crt
+                - name: PGHOST
+                  valueFrom:
+                    secretKeyRef:
+                      name: guac-admin-db
+                      key: db.host
+                - name: PGPORT
+                  valueFrom:
+                    secretKeyRef:
+                      name: guac-admin-db
+                      key: db.port
+                - name: TC_PGOPTIONS
+                  valueFrom:
+                    secretKeyRef:
+                      name: guac-admin-db
+                      key: db.options
+                      optional: true
+                - name: DB_NAME
+                  valueFrom:
+                    secretKeyRef:
+                      name: guac-user-db
+                      key: db.name
+                - name: DB_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: guac-user-db
+                      key: db.user
+                - name: DB_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: guac-user-db
+                      key: db.password
+              volumeMounts:
+                - name: guac-config
+                  mountPath: /guac
+                  readOnly: true
+                - mountPath: /etc/config
+                  name: config
+                - mountPath: /etc/tls
+                  name: tls
+              resources: ${{GUAC_GQL_RESOURCES}}
+              ports:
+                - containerPort: 8080
+                  protocol: TCP
+  - apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: spog-api
+      labels:
+        app.kubernetes.io/name: spog-api
+        app.kubernetes.io/component: api
+        app.kubernetes.io/part-of: trustification
+    spec:
+      replicas: ${{SPOG_API_REPLICAS}}
+      selector:
+        matchLabels:
+          app.kubernetes.io/name: spog-api
+          app.kubernetes.io/component: api
+          app.kubernetes.io/part-of: trustification
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: spog-api
+            app.kubernetes.io/component: api
+            app.kubernetes.io/part-of: trustification
+            metrics: 'true'
+          annotations:
+            config/checksum: 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
+        spec:
+          containers:
+            - image: ${BACKEND_IMAGE}:${IMAGE_TAG}
+              imagePullPolicy: Always
+              name: service
+              command:
+                - /trust
+              args:
+                - spog
+                - api
+                - -p
+                - '8080'
+                - --bombastic-url
+                - https://bombastic-api.$(NAMESPACE).svc
+                - --vexination-url
+                - https://vexination-api.$(NAMESPACE).svc
+                - --collectorist-url
+                - https://collectorist-api.$(NAMESPACE).svc
+                - --v11y-url
+                - https://v11y-api.$(NAMESPACE).svc
+                - --exhort-url
+                - https://exhort-api.$(NAMESPACE).svc
+                - --crda-url
+                - ${CRDA_URL}
+                - --guac
+                - http://guac-graphql.$(NAMESPACE).svc:8080/query
+                - --auth-configuration
+                - /etc/config/auth.yaml
+              env:
+                - name: RUST_LOG
+                  value: ${LOG_LEVEL}
+                - name: NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.namespace
+                - name: HTTP_SERVER_BIND_ADDR
+                  value: '::'
+                - name: HTTP_SERVER_TLS_ENABLED
+                  value: 'true'
+                - name: HTTP_SERVER_TLS_KEY_FILE
+                  value: /etc/tls/tls.key
+                - name: HTTP_SERVER_TLS_CERTIFICATE_FILE
+                  value: /etc/tls/tls.crt
+                - name: INFRASTRUCTURE_ENABLED
+                  value: 'true'
+                - name: INFRASTRUCTURE_BIND
+                  value: '[::]:9010'
+                - name: TRACING
+                  value: disabled
+                - name: OTEL_BSP_MAX_EXPORT_BATCH_SIZE
+                  value: '32'
+                - name: OTEL_TRACES_SAMPLER
+                  value: parentbased_traceidratio
+                - name: OTEL_TRACES_SAMPLER_ARG
+                  value: '0.1'
+                - name: SNYK_TOKEN
+                  valueFrom:
+                    secretKeyRef:
+                      name: snyk-collector-secret
+                      key: snyk_token
+                - name: SPOG_UI_CONFIG
+                  value: /etc/customize/spog-ui.yaml
+                - name: OIDC_PROVIDER_CLIENT_ID
+                  value: trusted-content-api
+                - name: OIDC_PROVIDER_CLIENT_SECRET
+                  valueFrom:
+                    secretKeyRef:
+                      key: ${OIDC_PROVIDER_CLIENT_SECRET_KEY}
+                      name: ${OIDC_PROVIDER_CLIENT_SECRET_NAME}
+                - name: OIDC_PROVIDER_ISSUER_URL
+                  value: ${ISSUER_URL}
+                - name: SWAGGER_UI_OIDC_ISSUER_URL
+                  value: ${ISSUER_URL}
+                - name: SEGMENT_WRITE_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      key: ${SEGMENT_SECRET_API_KEY}
+                      name: ${SEGMENT_SECRET_NAME}
+              ports:
+                - containerPort: 8080
+                  protocol: TCP
+                - containerPort: 9010
+                  protocol: TCP
+                  name: infra
+              resources: ${{SPOG_API_RESOURCES}}
+              livenessProbe:
+                httpGet:
+                  path: /health/live
+                  port: 9010
+                initialDelaySeconds: 2
+              readinessProbe:
+                httpGet:
+                  path: /health/ready
+                  port: 9010
+                initialDelaySeconds: 2
+              startupProbe:
+                httpGet:
+                  path: /health/startup
+                  port: 9010
+              volumeMounts:
+                - mountPath: /etc/config
+                  name: config
+                - mountPath: /etc/customize
+                  name: customize
+                - mountPath: /etc/tls
+                  name: tls
+          volumes:
+            - name: config
+              configMap:
+                name: ${CONFIG_NAME}
+            - name: customize
+              configMap:
+                name: ${CONFIG_NAME}
+            - name: tls
+              secret:
+                secretName: spog-api-tls
+  - apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: spog-ui
+      labels:
+        app.kubernetes.io/name: spog-ui
+        app.kubernetes.io/component: ui
+        app.kubernetes.io/part-of: trustification
+    spec:
+      replicas: ${{SPOG_UI_REPLICAS}}
+      selector:
+        matchLabels:
+          app.kubernetes.io/name: spog-ui
+          app.kubernetes.io/component: ui
+          app.kubernetes.io/part-of: trustification
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: spog-ui
+            app.kubernetes.io/component: ui
+            app.kubernetes.io/part-of: trustification
+        spec:
+          volumes:
+            - name: endpoints
+              emptyDir: {}
+            - name: run
+              emptyDir: {}
+            - name: branding
+              configMap:
+                name: spog-ui-branding
+          containers:
+            - image: ${FRONTEND_IMAGE}:${IMAGE_TAG}
+              imagePullPolicy: Always
+              name: service
+              command:
+                - /nginx.sh
+              env:
+                - name: API_URL
+                  value: https://api.${DOMAIN}
+                - name: BOMBASTIC_URL
+                  value: https://sbom.${DOMAIN}
+                - name: VEXINATION_URL
+                  value: https://vex.${DOMAIN}
+                - name: ISSUER_URL
+                  value: ${ISSUER_URL}
+                - name: CLIENT_ID
+                  value: trusted-content-frontend
+                - name: SCOPES
+                  value: openid email id.username api.trusted_content
+                - name: WRITE_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      key: ${SEGMENT_SECRET_UI_KEY}
+                      name: ${SEGMENT_SECRET_NAME}
+                - name: BACKEND_JSON
+                  value: ${INITIAL_BACKEND_JSON}
+              volumeMounts:
+                - name: endpoints
+                  mountPath: /endpoints
+                - name: branding
+                  mountPath: /public/branding
+                - name: run
+                  mountPath: /run
+              ports:
+                - containerPort: 8080
+                  protocol: TCP
+              resources: ${{SPOG_UI_RESOURCES}}
+              livenessProbe:
+                httpGet:
+                  path: /
+                  port: 8080
+                initialDelaySeconds: 2
+              readinessProbe:
+                httpGet:
+                  path: /
+                  port: 8080
+                initialDelaySeconds: 2
+  - apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: v11y-api
+      labels:
+        app.kubernetes.io/name: v11y-api
+        app.kubernetes.io/component: api
+        app.kubernetes.io/part-of: trustification
+      annotations:
+        service.beta.openshift.io/serving-cert-secret-name: v11y-api-tls
+    spec:
+      replicas: ${{V11Y_API_REPLICAS}}
+      strategy:
+        type: Recreate
+      selector:
+        matchLabels:
+          app.kubernetes.io/name: v11y-api
+          app.kubernetes.io/component: api
+          app.kubernetes.io/part-of: trustification
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: v11y-api
+            app.kubernetes.io/component: api
+            app.kubernetes.io/part-of: trustification
+            metrics: 'true'
+          annotations:
+            config/checksum: 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
+        spec:
+          volumes:
+            - name: data
+              persistentVolumeClaim:
+                claimName: v11y-storage
+            - name: config
+              configMap:
+                name: ${CONFIG_NAME}
+            - name: tls
+              secret:
+                secretName: v11y-api-tls
+          containers:
+            - image: ${BACKEND_IMAGE}:${IMAGE_TAG}
+              imagePullPolicy: Always
+              name: service
+              command:
+                - /trust
+              args:
+                - v11y
+                - api
+                - -p
+                - '8080'
+                - --auth-disabled
+                - --storage-base
+                - /data
+              env:
+                - name: RUST_LOG
+                  value: ${LOG_LEVEL}
+                - name: STORAGE_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${V11Y_AWS_SECRET_NAME}
+                      key: aws_access_key_id
+                - name: STORAGE_SECRET_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${V11Y_AWS_SECRET_NAME}
+                      key: aws_secret_access_key
+                - name: STORAGE_BUCKET
+                  value: ${V11Y_STORAGE_BUCKET}
+                - name: STORAGE_REGION
+                  value: ${AWS_REGION}
+                - name: HTTP_SERVER_BIND_ADDR
+                  value: '::'
+                - name: HTTP_SERVER_TLS_ENABLED
+                  value: 'true'
+                - name: HTTP_SERVER_TLS_KEY_FILE
+                  value: /etc/tls/tls.key
+                - name: HTTP_SERVER_TLS_CERTIFICATE_FILE
+                  value: /etc/tls/tls.crt
+                - name: INFRASTRUCTURE_ENABLED
+                  value: 'true'
+                - name: INFRASTRUCTURE_BIND
+                  value: '[::]:9010'
+                - name: TRACING
+                  value: disabled
+                - name: OTEL_BSP_MAX_EXPORT_BATCH_SIZE
+                  value: '32'
+                - name: OTEL_TRACES_SAMPLER
+                  value: parentbased_traceidratio
+                - name: OTEL_TRACES_SAMPLER_ARG
+                  value: '0.1'
+              volumeMounts:
+                - name: data
+                  mountPath: /data
+                - mountPath: /etc/config
+                  name: config
+                - mountPath: /etc/tls
+                  name: tls
+              ports:
+                - containerPort: 8080
+                  protocol: TCP
+                - containerPort: 9010
+                  protocol: TCP
+                  name: infra
+              resources: ${{V11Y_API_RESOURCES}}
+              livenessProbe:
+                httpGet:
+                  path: /health/live
+                  port: 9010
+                initialDelaySeconds: 2
+              readinessProbe:
+                httpGet:
+                  path: /health/ready
+                  port: 9010
+                initialDelaySeconds: 2
+              startupProbe:
+                httpGet:
+                  path: /health/startup
+                  port: 9010
+  - apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: v11y-indexer
+      labels:
+        app.kubernetes.io/name: v11y-indexer
+        app.kubernetes.io/component: indexer
+        app.kubernetes.io/part-of: trustification
+    spec:
+      replicas: ${{V11Y_INDEXER_REPLICAS}}
+      strategy:
+        type: Recreate
+      selector:
+        matchLabels:
+          app.kubernetes.io/name: v11y-indexer
+          app.kubernetes.io/component: indexer
+          app.kubernetes.io/part-of: trustification
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: v11y-indexer
+            app.kubernetes.io/component: indexer
+            app.kubernetes.io/part-of: trustification
+            metrics: 'true'
+        spec:
+          volumes:
+            - name: data
+              emptyDir: {}
+          containers:
+            - image: ${BACKEND_IMAGE}:${IMAGE_TAG}
+              imagePullPolicy: Always
+              name: service
+              command:
+                - /trust
+              args:
+                - v11y
+                - indexer
+                - --stored-topic
+                - ${V11Y_INDEXER_STORED_TOPIC}
+                - --indexed-topic
+                - ${V11Y_INDEXER_INDEXED_TOPIC}
+                - --failed-topic
+                - ${V11Y_INDEXER_FAILED_TOPIC}
+                - --index-mode
+                - file
+                - --index-dir
+                - /data/index
+              env:
+                - name: RUST_LOG
+                  value: ${LOG_LEVEL}
+                - name: STORAGE_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${V11Y_AWS_SECRET_NAME}
+                      key: aws_access_key_id
+                - name: STORAGE_SECRET_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${V11Y_AWS_SECRET_NAME}
+                      key: aws_secret_access_key
+                - name: STORAGE_BUCKET
+                  value: ${V11Y_STORAGE_BUCKET}
+                - name: STORAGE_REGION
+                  value: ${AWS_REGION}
+                - name: EVENT_BUS
+                  value: sqs
+                - name: SQS_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${V11Y_AWS_SECRET_NAME}
+                      key: aws_access_key_id
+                - name: SQS_SECRET_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${V11Y_AWS_SECRET_NAME}
+                      key: aws_secret_access_key
+                - name: SQS_REGION
+                  value: ${AWS_REGION}
+                - name: INFRASTRUCTURE_ENABLED
+                  value: 'true'
+                - name: INFRASTRUCTURE_BIND
+                  value: '[::]:9010'
+                - name: INDEX_SYNC_INTERVAL
+                  value: ${V11Y_INDEXER_INDEX_SYNC_INTERVAL}
+              volumeMounts:
+                - name: data
+                  mountPath: /data
+              ports:
+                - containerPort: 9010
+                  protocol: TCP
+                  name: infra
+              resources: ${{V11Y_INDEXER_RESOURCES}}
+              livenessProbe:
+                httpGet:
+                  path: /health/live
+                  port: 9010
+                initialDelaySeconds: 2
+              readinessProbe:
+                httpGet:
+                  path: /health/ready
+                  port: 9010
+                initialDelaySeconds: 2
+              startupProbe:
+                httpGet:
+                  path: /health/startup
+                  port: 9010
+  - apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: vexination-api
+      labels:
+        app.kubernetes.io/name: vexination-api
+        app.kubernetes.io/component: api
+        app.kubernetes.io/part-of: trustification
+    spec:
+      replicas: ${{VEXINATION_API_REPLICAS}}
+      strategy:
+        type: Recreate
+      selector:
+        matchLabels:
+          app.kubernetes.io/name: vexination-api
+          app.kubernetes.io/component: api
+          app.kubernetes.io/part-of: trustification
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: vexination-api
+            app.kubernetes.io/component: api
+            app.kubernetes.io/part-of: trustification
+            metrics: 'true'
+          annotations:
+            config/checksum: 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
+        spec:
+          volumes:
+            - name: data
+              emptyDir: {}
+            - name: config
+              configMap:
+                name: ${CONFIG_NAME}
+            - name: tls
+              secret:
+                secretName: vexination-api-tls
+          containers:
+            - image: ${BACKEND_IMAGE}:${IMAGE_TAG}
+              imagePullPolicy: Always
+              name: service
+              command:
+                - /trust
+              args:
+                - vexination
+                - api
+                - -p
+                - '8080'
+                - --index-mode
+                - file
+                - --auth-configuration
+                - /etc/config/auth.yaml
+              env:
+                - name: RUST_LOG
+                  value: ${LOG_LEVEL}
+                - name: STORAGE_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${VEXINATION_AWS_SECRET_NAME}
+                      key: aws_access_key_id
+                - name: STORAGE_SECRET_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${VEXINATION_AWS_SECRET_NAME}
+                      key: aws_secret_access_key
+                - name: STORAGE_BUCKET
+                  value: ${VEXINATION_STORAGE_BUCKET}
+                - name: STORAGE_REGION
+                  value: ${AWS_REGION}
+                - name: HTTP_SERVER_BIND_ADDR
+                  value: '::'
+                - name: HTTP_SERVER_TLS_ENABLED
+                  value: 'true'
+                - name: HTTP_SERVER_TLS_KEY_FILE
+                  value: /etc/tls/tls.key
+                - name: HTTP_SERVER_TLS_CERTIFICATE_FILE
+                  value: /etc/tls/tls.crt
+                - name: INFRASTRUCTURE_ENABLED
+                  value: 'true'
+                - name: INFRASTRUCTURE_BIND
+                  value: '[::]:9010'
+                - name: TRACING
+                  value: disabled
+                - name: OTEL_BSP_MAX_EXPORT_BATCH_SIZE
+                  value: '32'
+                - name: OTEL_TRACES_SAMPLER
+                  value: parentbased_traceidratio
+                - name: OTEL_TRACES_SAMPLER_ARG
+                  value: '0.1'
+                - name: INDEX_SYNC_INTERVAL
+                  value: ${VEXINATION_API_INDEX_SYNC_INTERVAL}
+                - name: SWAGGER_UI_OIDC_ISSUER_URL
+                  value: ${ISSUER_URL}
+              volumeMounts:
+                - name: data
+                  mountPath: /data
+                - mountPath: /etc/config
+                  name: config
+                - mountPath: /etc/tls
+                  name: tls
+              ports:
+                - containerPort: 8080
+                  protocol: TCP
+                - containerPort: 9010
+                  protocol: TCP
+                  name: infra
+              resources: ${{VEXINATION_API_RESOURCES}}
+              livenessProbe:
+                httpGet:
+                  path: /health/live
+                  port: 9010
+                initialDelaySeconds: 2
+              readinessProbe:
+                httpGet:
+                  path: /health/ready
+                  port: 9010
+                initialDelaySeconds: 2
+              startupProbe:
+                httpGet:
+                  path: /health/startup
+                  port: 9010
+  - apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: vexination-indexer
+      labels:
+        app.kubernetes.io/name: vexination-indexer
+        app.kubernetes.io/component: indexer
+        app.kubernetes.io/part-of: trustification
+    spec:
+      replicas: ${{VEXINATION_INDEXER_REPLICAS}}
+      strategy:
+        type: Recreate
+      selector:
+        matchLabels:
+          app.kubernetes.io/name: vexination-indexer
+          app.kubernetes.io/component: indexer
+          app.kubernetes.io/part-of: trustification
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: vexination-indexer
+            app.kubernetes.io/component: indexer
+            app.kubernetes.io/part-of: trustification
+            metrics: 'true'
+        spec:
+          volumes:
+            - name: data
+              emptyDir: {}
+          containers:
+            - image: ${BACKEND_IMAGE}:${IMAGE_TAG}
+              imagePullPolicy: Always
+              name: service
+              command:
+                - /trust
+              args:
+                - vexination
+                - indexer
+                - --stored-topic
+                - ${VEXINATION_INDEXER_STORED_TOPIC}
+                - --indexed-topic
+                - ${VEXINATION_INDEXER_INDEXED_TOPIC}
+                - --failed-topic
+                - ${VEXINATION_INDEXER_FAILED_TOPIC}
+                - --index-mode
+                - file
+                - --index-dir
+                - /data/index
+              env:
+                - name: RUST_LOG
+                  value: ${LOG_LEVEL}
+                - name: STORAGE_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${VEXINATION_AWS_SECRET_NAME}
+                      key: aws_access_key_id
+                - name: STORAGE_SECRET_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${VEXINATION_AWS_SECRET_NAME}
+                      key: aws_secret_access_key
+                - name: STORAGE_BUCKET
+                  value: ${VEXINATION_STORAGE_BUCKET}
+                - name: STORAGE_REGION
+                  value: ${AWS_REGION}
+                - name: EVENT_BUS
+                  value: sqs
+                - name: SQS_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${VEXINATION_AWS_SECRET_NAME}
+                      key: aws_access_key_id
+                - name: SQS_SECRET_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${VEXINATION_AWS_SECRET_NAME}
+                      key: aws_secret_access_key
+                - name: SQS_REGION
+                  value: ${AWS_REGION}
+                - name: INFRASTRUCTURE_ENABLED
+                  value: 'true'
+                - name: INFRASTRUCTURE_BIND
+                  value: '[::]:9010'
+                - name: INDEX_WRITER_MEMORY_BYTES
+                  value: ${VEXINATION_INDEXER_INDEX_WRITER_MEMORY_BYTES}
+                - name: INDEX_SYNC_INTERVAL
+                  value: ${VEXINATION_INDEXER_INDEX_SYNC_INTERVAL}
+              volumeMounts:
+                - name: data
+                  mountPath: /data
+              ports:
+                - containerPort: 9010
+                  protocol: TCP
+                  name: infra
+              resources: ${{VEXINATION_INDEXER_RESOURCES}}
+              livenessProbe:
+                httpGet:
+                  path: /health/live
+                  port: 9010
+                initialDelaySeconds: 2
+              readinessProbe:
+                httpGet:
+                  path: /health/ready
+                  port: 9010
+                initialDelaySeconds: 2
+              startupProbe:
+                httpGet:
+                  path: /health/startup
+                  port: 9010
+  - apiVersion: batch/v1
+    kind: CronJob
+    metadata:
+      name: bombastic-collector
+      labels:
+        app.kubernetes.io/name: bombastic-collector
+        app.kubernetes.io/component: collector
+        app.kubernetes.io/part-of: trustification
+    spec:
+      schedule: ${BOMBASTIC_COLLECTOR_SCHEDULE}
+      suspend: false
+      concurrencyPolicy: Forbid
+      jobTemplate:
+        spec:
+          template:
+            metadata:
+              labels:
+                app.kubernetes.io/name: bombastic-collector
+                app.kubernetes.io/component: collector
+                app.kubernetes.io/part-of: trustification
+                metrics: 'true'
+            spec:
+              restartPolicy: Never
+              volumes:
+                - name: config
+                  configMap:
+                    name: ${CONFIG_NAME}
+                - name: guac-config
+                  configMap:
+                    name: guac-cm
+              containers:
+                - image: ${GUAC_IMAGE}
+                  imagePullPolicy: Always
+                  name: service
+                  command:
+                    - /opt/guac/guacone
+                  args:
+                    - collect
+                    - s3
+                    - --s3-bucket
+                    - ${BOMBASTIC_STORAGE_BUCKET}
+                    - --s3-region
+                    - ${AWS_REGION}
+                    - --limit
+                    - '100'
+                  workingDir: /guac
+                  env:
+                    - name: NAMESPACE
+                      valueFrom:
+                        fieldRef:
+                          fieldPath: metadata.namespace
+                    - name: AWS_ACCESS_KEY_ID
+                      valueFrom:
+                        secretKeyRef:
+                          name: ${BOMBASTIC_AWS_SECRET_NAME}
+                          key: aws_access_key_id
+                    - name: AWS_SECRET_ACCESS_KEY
+                      valueFrom:
+                        secretKeyRef:
+                          name: ${BOMBASTIC_AWS_SECRET_NAME}
+                          key: aws_secret_access_key
+                    - name: AWS_REGION
+                      value: ${AWS_REGION}
+                  ports:
+                    - containerPort: 2782
+                      protocol: TCP
+                  resources: ${{BOMBASTIC_COLLECTOR_RESOURCES}}
+                  volumeMounts:
+                    - name: guac-config
+                      mountPath: /guac
+                      readOnly: true
+                    - mountPath: /etc/config
+                      name: config
+  - apiVersion: batch/v1
+    kind: CronJob
+    metadata:
+      name: bombastic-walker
+      labels:
+        app.kubernetes.io/name: bombastic-walker
+        app.kubernetes.io/component: walker
+        app.kubernetes.io/part-of: trustification
+    spec:
+      schedule: ${BOMBASTIC_WALKER_SCHEDULE}
+      suspend: ${{BOMBASTIC_WALKER_SUSPEND}}
+      concurrencyPolicy: Forbid
+      jobTemplate:
+        spec:
+          template:
+            metadata:
+              labels:
+                app.kubernetes.io/name: bombastic-walker
+                app.kubernetes.io/component: walker
+                app.kubernetes.io/part-of: trustification
+            spec:
+              restartPolicy: OnFailure
+              volumes:
+                - name: walker-state
+                  persistentVolumeClaim:
+                    claimName: bombastic-walker-state
+              containers:
+                - image: ${BACKEND_IMAGE}:${IMAGE_TAG}
+                  imagePullPolicy: Always
+                  name: walker
+                  command:
+                    - /trust
+                  args:
+                    - bombastic
+                    - walker
+                    - --sink
+                    - https://sbom.${DOMAIN}
+                    - --source
+                    - https://access.redhat.com/security/data/sbom/beta/
+                    - '-3'
+                    - --signing-key
+                    - https://access.redhat.com/security/data/97f5eac4.txt#77E79ABE93673533ED09EBE2DCE3823597F5EAC4
+                    - --fix-licenses
+                    - 'true'
+                    - --since-file
+                    - /walker-state/since
+                  env:
+                    - name: RUST_LOG
+                      value: ${LOG_LEVEL}
+                    - name: INFRASTRUCTURE_ENABLED
+                      value: 'true'
+                    - name: INFRASTRUCTURE_BIND
+                      value: '[::]:9010'
+                    - name: OIDC_PROVIDER_CLIENT_ID
+                      value: trusted-content-api
+                    - name: OIDC_PROVIDER_CLIENT_SECRET
+                      valueFrom:
+                        secretKeyRef:
+                          key: ${OIDC_PROVIDER_CLIENT_SECRET_KEY}
+                          name: ${OIDC_PROVIDER_CLIENT_SECRET_NAME}
+                    - name: OIDC_PROVIDER_ISSUER_URL
+                      value: ${ISSUER_URL}
+                  ports:
+                    - containerPort: 9010
+                      protocol: TCP
+                      name: infra
+                  volumeMounts:
+                    - mountPath: /walker-state
+                      name: walker-state
+                  resources: ${{BOMBASTIC_WALKER_RESOURCES}}
+                  livenessProbe:
+                    httpGet:
+                      path: /health/live
+                      port: 9010
+                    initialDelaySeconds: 2
+                  readinessProbe:
+                    httpGet:
+                      path: /health/ready
+                      port: 9010
+                    initialDelaySeconds: 2
+                  startupProbe:
+                    httpGet:
+                      path: /health/startup
+                      port: 9010
+  - apiVersion: batch/v1
+    kind: CronJob
+    metadata:
+      name: apply-dataset-job
+      labels:
+        app.kubernetes.io/name: apply-dataset-job
+        app.kubernetes.io/component: init
+        app.kubernetes.io/part-of: trustification
+    spec:
+      schedule: ${DATASET_SCHEDULE_JOB}
+      suspend: ${{DATASET_SUSPEND_JOB}}
+      concurrencyPolicy: Forbid
+      jobTemplate:
+        spec:
+          template:
+            metadata:
+              labels:
+                app.kubernetes.io/name: apply-dataset-manual-job
+                app.kubernetes.io/component: init
+                app.kubernetes.io/part-of: trustification
+            spec:
+              restartPolicy: OnFailure
+              containers:
+                - name: run
+                  image: ${BACKEND_IMAGE}:${IMAGE_TAG}
+                  imagePullPolicy: Always
+                  command:
+                    - /usr/bin/bash
+                  args:
+                    - -ce
+                    - 'set -e
+
+                      /trust bombastic walker --sink https://sbom.${DOMAIN} --source
+                      /data/sbom
+
+                      /trust vexination walker --sink https://vex.${DOMAIN}/api/v1/vex
+                      --source /data/csaf
+
+                      '
+                  env:
+                    - name: OIDC_PROVIDER_CLIENT_ID
+                      value: trusted-content-api
+                    - name: OIDC_PROVIDER_CLIENT_SECRET
+                      valueFrom:
+                        secretKeyRef:
+                          key: ${OIDC_PROVIDER_CLIENT_SECRET_KEY}
+                          name: ${OIDC_PROVIDER_CLIENT_SECRET_NAME}
+                    - name: OIDC_PROVIDER_ISSUER_URL
+                      value: ${ISSUER_URL}
+  - apiVersion: batch/v1
+    kind: CronJob
+    metadata:
+      name: v11y-walker
+      labels:
+        app.kubernetes.io/name: v11y-walker
+        app.kubernetes.io/component: walker
+        app.kubernetes.io/part-of: trustification
+    spec:
+      schedule: ${V11Y_WALKER_SCHEDULE}
+      suspend: ${{V11Y_WALKER_SUSPEND}}
+      concurrencyPolicy: Forbid
+      jobTemplate:
+        spec:
+          template:
+            metadata:
+              labels:
+                app.kubernetes.io/name: v11y-walker
+                app.kubernetes.io/component: walker
+                app.kubernetes.io/part-of: trustification
+            spec:
+              restartPolicy: Never
+              volumes:
+                - name: cvelist
+                  persistentVolumeClaim:
+                    claimName: v11y-cvelist
+              initContainers:
+                - name: git-fetch
+                  image: quay.io/trustification/git:2.40.1
+                  volumeMounts:
+                    - mountPath: /git
+                      name: cvelist
+                  command:
+                    - /bin/sh
+                  args:
+                    - -ec
+                    - "if test -d cvelistV5; then\n  cd cvelistV5\n  git pull\nelse\n\
+                      \  git clone https://github.com/CVEProject/cvelistV5\nfi\n"
+              containers:
+                - image: ${BACKEND_IMAGE}:${IMAGE_TAG}
+                  imagePullPolicy: Always
+                  name: walker
+                  volumeMounts:
+                    - mountPath: /mnt
+                      name: cvelist
+                  command:
+                    - /trust
+                  args:
+                    - v11y
+                    - walker
+                    - --source
+                    - /mnt/cvelistV5
+                    - --delta-file
+                    - /mnt/last-delta
+                  env:
+                    - name: RUST_LOG
+                      value: info
+                    - name: STORAGE_ACCESS_KEY
+                      valueFrom:
+                        secretKeyRef:
+                          name: ${V11Y_AWS_SECRET_NAME}
+                          key: aws_access_key_id
+                    - name: STORAGE_SECRET_KEY
+                      valueFrom:
+                        secretKeyRef:
+                          name: ${V11Y_AWS_SECRET_NAME}
+                          key: aws_secret_access_key
+                    - name: STORAGE_BUCKET
+                      value: ${V11Y_STORAGE_BUCKET}
+                    - name: STORAGE_REGION
+                      value: ${AWS_REGION}
+                    - name: INFRASTRUCTURE_ENABLED
+                      value: 'true'
+                    - name: INFRASTRUCTURE_BIND
+                      value: '[::]:9010'
+                    - name: OIDC_PROVIDER_CLIENT_ID
+                      value: trusted-content-api
+                    - name: OIDC_PROVIDER_CLIENT_SECRET
+                      valueFrom:
+                        secretKeyRef:
+                          key: ${OIDC_PROVIDER_CLIENT_SECRET_KEY}
+                          name: ${OIDC_PROVIDER_CLIENT_SECRET_NAME}
+                    - name: OIDC_PROVIDER_ISSUER_URL
+                      value: ${ISSUER_URL}
+                  ports:
+                    - containerPort: 9010
+                      protocol: TCP
+                      name: infra
+                  resources: ${{V11Y_WALKER_RESOURCES}}
+                  livenessProbe:
+                    httpGet:
+                      path: /health/live
+                      port: 9010
+                    initialDelaySeconds: 2
+                  readinessProbe:
+                    httpGet:
+                      path: /health/ready
+                      port: 9010
+                    initialDelaySeconds: 2
+                  startupProbe:
+                    httpGet:
+                      path: /health/startup
+                      port: 9010
+  - apiVersion: batch/v1
+    kind: CronJob
+    metadata:
+      name: vexination-collector
+      labels:
+        app.kubernetes.io/name: vexination-collector
+        app.kubernetes.io/component: collector
+        app.kubernetes.io/part-of: trustification
+    spec:
+      schedule: ${VEXINATION_COLLECTOR_SCHEDULE}
+      suspend: false
+      concurrencyPolicy: Forbid
+      jobTemplate:
+        spec:
+          template:
+            metadata:
+              labels:
+                app.kubernetes.io/name: vexination-collector
+                app.kubernetes.io/component: collector
+                app.kubernetes.io/part-of: trustification
+                metrics: 'true'
+            spec:
+              restartPolicy: Never
+              volumes:
+                - name: config
+                  configMap:
+                    name: ${CONFIG_NAME}
+                - name: guac-config
+                  configMap:
+                    name: guac-cm
+              containers:
+                - image: ${GUAC_IMAGE}
+                  imagePullPolicy: Always
+                  name: service
+                  command:
+                    - /opt/guac/guacone
+                  args:
+                    - collect
+                    - s3
+                    - --s3-bucket
+                    - ${VEXINATION_STORAGE_BUCKET}
+                    - --s3-region
+                    - ${AWS_REGION}
+                    - --limit
+                    - '100'
+                  workingDir: /guac
+                  env:
+                    - name: NAMESPACE
+                      valueFrom:
+                        fieldRef:
+                          fieldPath: metadata.namespace
+                    - name: AWS_ACCESS_KEY_ID
+                      valueFrom:
+                        secretKeyRef:
+                          name: ${VEXINATION_AWS_SECRET_NAME}
+                          key: aws_access_key_id
+                    - name: AWS_SECRET_ACCESS_KEY
+                      valueFrom:
+                        secretKeyRef:
+                          name: ${VEXINATION_AWS_SECRET_NAME}
+                          key: aws_secret_access_key
+                    - name: AWS_REGION
+                      value: ${AWS_REGION}
+                  ports:
+                    - containerPort: 2782
+                      protocol: TCP
+                  resources: ${{VEXINATION_COLLECTOR_RESOURCES}}
+                  volumeMounts:
+                    - name: guac-config
+                      mountPath: /guac
+                      readOnly: true
+                    - mountPath: /etc/config
+                      name: config
+  - apiVersion: batch/v1
+    kind: CronJob
+    metadata:
+      name: vexination-walker
+      labels:
+        app.kubernetes.io/name: vexination-walker
+        app.kubernetes.io/component: walker
+        app.kubernetes.io/part-of: trustification
+    spec:
+      schedule: ${VEXINATION_WALKER_SCHEDULE}
+      suspend: ${{VEXINATION_WALKER_SUSPEND}}
+      concurrencyPolicy: Forbid
+      jobTemplate:
+        spec:
+          template:
+            metadata:
+              labels:
+                app.kubernetes.io/name: vexination-walker
+                app.kubernetes.io/component: walker
+                app.kubernetes.io/part-of: trustification
+            spec:
+              restartPolicy: Never
+              volumes:
+                - name: walker-state
+                  persistentVolumeClaim:
+                    claimName: vexination-walker-state
+              containers:
+                - image: ${BACKEND_IMAGE}:${IMAGE_TAG}
+                  imagePullPolicy: Always
+                  name: walker
+                  command:
+                    - /trust
+                  args:
+                    - vexination
+                    - walker
+                    - --sink
+                    - https://vex.${DOMAIN}/api/v1/vex
+                    - --source
+                    - https://www.redhat.com/.well-known/csaf/provider-metadata.json
+                    - --ignore-distributions
+                    - https://access.redhat.com/security/data/csaf/v2/advisories/
+                    - '-3'
+                    - --since-file
+                    - /walker-state/since
+                  env:
+                    - name: RUST_LOG
+                      value: ${LOG_LEVEL}
+                    - name: INFRASTRUCTURE_ENABLED
+                      value: 'true'
+                    - name: INFRASTRUCTURE_BIND
+                      value: '[::]:9010'
+                    - name: OIDC_PROVIDER_CLIENT_ID
+                      value: trusted-content-api
+                    - name: OIDC_PROVIDER_CLIENT_SECRET
+                      valueFrom:
+                        secretKeyRef:
+                          key: ${OIDC_PROVIDER_CLIENT_SECRET_KEY}
+                          name: ${OIDC_PROVIDER_CLIENT_SECRET_NAME}
+                    - name: OIDC_PROVIDER_ISSUER_URL
+                      value: ${ISSUER_URL}
+                  volumeMounts:
+                    - mountPath: /walker-state
+                      name: walker-state
+                  resources: null
+                  livenessProbe:
+                    httpGet:
+                      path: /health/live
+                      port: 9010
+                    initialDelaySeconds: 2
+                  readinessProbe:
+                    httpGet:
+                      path: /health/ready
+                      port: 9010
+                    initialDelaySeconds: 2
+                  startupProbe:
+                    httpGet:
+                      path: /health/startup
+                      port: 9010
+  - kind: Job
+    apiVersion: batch/v1
+    metadata:
+      name: post-install-guac
+      annotations:
+        argocd.argoproj.io/hook: Sync
+        argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+        argocd.argoproj.io/sync-wave: '0'
+        helm.sh/hook-weight: '5'
+        helm.sh/hook: post-install,post-upgrade
+        helm.sh/hook-delete-policy: before-hook-creation
+      labels:
+        app.kubernetes.io/name: post-install-guac
+        app.kubernetes.io/component: guac
+        app.kubernetes.io/part-of: guac
+    spec:
+      backoffLimit: 1000
+      completions: 1
+      parallelism: 1
+      ttlSecondsAfterFinished: 600
+      template:
+        spec:
+          restartPolicy: OnFailure
+          serviceAccountName: ${GUAC_INIT_JOB_SERVICE_ACCOUNT}
+          volumes:
+            - name: init-data
+              configMap:
+                name: post-install-guac-config
+          containers:
+            - name: post-install
+              image: ${POSTGRESQL_IMAGE}
+              imagePullPolicy: Always
+              env:
+                - name: PGHOST
+                  valueFrom:
+                    secretKeyRef:
+                      name: guac-admin-db
+                      key: db.host
+                - name: PGPORT
+                  valueFrom:
+                    secretKeyRef:
+                      name: guac-admin-db
+                      key: db.port
+                - name: PGDATABASE
+                  valueFrom:
+                    secretKeyRef:
+                      name: guac-admin-db
+                      key: db.name
+                - name: PGUSER
+                  valueFrom:
+                    secretKeyRef:
+                      name: guac-admin-db
+                      key: db.user
+                - name: PGPASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: guac-admin-db
+                      key: db.password
+                - name: DB_NAME
+                  valueFrom:
+                    secretKeyRef:
+                      name: guac-user-db
+                      key: db.name
+                - name: DB_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: guac-user-db
+                      key: db.user
+                - name: DB_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: guac-user-db
+                      key: db.password
+              volumeMounts:
+                - mountPath: /etc/init-data
+                  name: init-data
+              command:
+                - psql
+                - -v
+                - ON_ERROR_STOP=1
+                - -v
+                - db_name=$(DB_NAME)
+                - -v
+                - db_user=$(DB_USER)
+                - -v
+                - db_password=$(DB_PASSWORD)
+                - -f
+                - /etc/init-data/init.sql
+parameters:
+- name: BACKEND_IMAGE
+  required: true
+- name: FRONTEND_IMAGE
+  required: true
+- name: INTEGRATION_TESTS_IMAGE
+  required: true
+- name: IMAGE_TAG
+  required: true
+- name: AWS_REGION
+  required: true
+- name: BOMBASTIC_STORAGE_BUCKET
+  required: true
+- name: BOMBASTIC_AWS_SECRET_NAME
+  required: true
+- name: BOMBASTIC_INDEXER_STORED_TOPIC
+  required: true
+- name: BOMBASTIC_INDEXER_INDEXED_TOPIC
+  required: true
+- name: BOMBASTIC_INDEXER_FAILED_TOPIC
+  required: true
+- name: BOMBASTIC_INDEXER_GUAC_TOPIC
+  required: true
+- name: BOMBASTIC_WALKER_RESOURCES
+  required: true
+- name: VEXINATION_STORAGE_BUCKET
+  required: true
+- name: VEXINATION_AWS_SECRET_NAME
+  required: true
+- name: VEXINATION_INDEXER_STORED_TOPIC
+  required: true
+- name: VEXINATION_INDEXER_INDEXED_TOPIC
+  required: true
+- name: VEXINATION_INDEXER_FAILED_TOPIC
+  required: true
+- name: VEXINATION_INDEXER_GUAC_TOPIC
+  required: true
+- name: ISSUER_URL
+  required: true
+- name: CONFIG_NAME
+  required: true
+- name: DOMAIN
+  required: true
+- name: BOMBASTIC_INDEXER_RESOURCES
+  required: true
+- name: BOMBASTIC_API_RESOURCES
+  required: true
+- name: VEXINATION_API_RESOURCES
+  required: true
+- name: VEXINATION_INDEXER_RESOURCES
+  required: true
+- name: V11Y_INDEXER_RESOURCES
+  required: true
+- name: V11Y_WALKER_RESOURCES
+  required: true
+- name: SPOG_API_RESOURCES
+  required: true
+- name: SPOG_UI_RESOURCES
+  required: true
+- name: OIDC_PROVIDER_CLIENT_SECRET_NAME
+  required: true
+- name: OIDC_PROVIDER_CLIENT_SECRET_KEY
+  required: true
+- name: V11Y_API_RESOURCES
+  required: true
+- name: V11Y_STORAGE_BUCKET
+  required: true
+- name: V11Y_AWS_SECRET_NAME
+  required: true
+- name: V11Y_INDEXER_STORED_TOPIC
+  required: true
+- name: V11Y_INDEXER_INDEXED_TOPIC
+  required: true
+- name: V11Y_INDEXER_FAILED_TOPIC
+  required: true
+- name: V11Y_INDEXER_GUAC_TOPIC
+  required: true
+- name: COLLECTORIST_RESOURCES
+  required: true
+- name: COLLECTOR_OSV_RESOURCES
+  required: true
+- name: COLLECTOR_SNYK_RESOURCES
+  required: true
+- name: EXHORT_API_RESOURCES
+  required: true
+- name: GUAC_IMAGE
+  required: true
+- name: GUAC_GQL_RESOURCES
+  required: true
+- name: GUAC_GQL_AFFINITY
+  value: "{}"
+- name: GUAC_GRAPHQL_REPLICAS
+  required: true
+- name: GUAC_COLLECTSUB_REPLICAS
+  required: true
+- name: BOMBASTIC_API_REPLICAS
+  required: true
+- name: BOMBASTIC_INDEXER_REPLICAS
+  required: true
+- name: COLLECTORIST_API_REPLICAS
+  required: true
+- name: EXHORT_API_REPLICAS
+  required: true
+- name: SPOG_API_REPLICAS
+  required: true
+- name: SPOG_UI_REPLICAS
+  required: true
+- name: VEXINATION_API_REPLICAS
+  required: true
+- name: VEXINATION_INDEXER_REPLICAS
+  required: true
+- name: V11Y_API_REPLICAS
+  required: true
+- name: V11Y_INDEXER_REPLICAS
+  required: true
+- name: BOMBASTIC_COLLECTOR_RESOURCES
+  required: true
+- name: VEXINATION_COLLECTOR_RESOURCES
+  required: true
+- name: K8S_NAMESPACE
+  required: true
+- name: VEXINATION_WALKER_SCHEDULE
+  value: "10 * * * *"
+- name: BOMBASTIC_WALKER_SCHEDULE
+  value: "10 * * * *"
+- name: V11Y_WALKER_SCHEDULE
+  value: "1 0 * * *"
+- name: VEXINATION_COLLECTOR_SCHEDULE
+  value: "30 * * * *"
+- name: BOMBASTIC_COLLECTOR_SCHEDULE
+  value: "0 * * * *"
+- name: V11Y_API_INDEX_SYNC_INTERVAL
+  value: "1800s"
+- name: V11Y_INDEXER_INDEX_SYNC_INTERVAL
+  value: "1800s"
+- name: V11Y_INDEXER_INDEX_WRITER_MEMORY_BYTES
+  value: "134217728"
+- name: BOMBASTIC_API_INDEX_SYNC_INTERVAL
+  value: "1800s"
+- name: BOMBASTIC_INDEXER_INDEX_SYNC_INTERVAL
+  value: "1800s"
+- name: BOMBASTIC_INDEXER_INDEX_WRITER_MEMORY_BYTES
+  value: "134217728"
+- name: VEXINATION_API_INDEX_SYNC_INTERVAL
+  value: "1800s"
+- name: VEXINATION_INDEXER_INDEX_SYNC_INTERVAL
+  value: "1800s"
+- name: VEXINATION_INDEXER_INDEX_WRITER_MEMORY_BYTES
+  value: "134217728"
+- name: LOG_LEVEL
+  required: false
+  value: "info"
+- name: CRDA_URL
+  required: false
+  value: https://rhda.rhcloud.com/api/v4/analysis
+- name: BOMBASTIC_WALKER_SUSPEND
+  value: "false"
+- name: V11Y_WALKER_SUSPEND
+  value: "false"
+- name: VEXINATION_WALKER_SUSPEND
+  value: "false"
+- name: SEGMENT_SECRET_NAME
+  value: segment-write-keys
+- name: SEGMENT_SECRET_API_KEY
+  value: spogApi
+- name: SEGMENT_SECRET_UI_KEY
+  value: spogUi
+- name: POSTGRESQL_IMAGE
+  value: "docker.io/library/postgres:15"
+- name: GUAC_INIT_JOB_SERVICE_ACCOUNT
+  value: trustification-service
+- name: INITIAL_BACKEND_JSON
+  value: "{}"
+- name: DATASET_ENABLED_JOB
+  value: "true"
+- name: DATASET_SUSPEND_JOB
+  value: "true"
+- name: DATASET_SCHEDULE_JOB
+  value: "0 * * * *"
+- name: REPLICAS
+  value: "1"

@@ -1,0 +1,3 @@
+= User Guide
+
+This User Guide covers various ways to access security and vulnerability data by using Trustification's services, and its application programming interface (API).

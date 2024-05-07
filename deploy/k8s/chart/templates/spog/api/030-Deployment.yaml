@@ -1,0 +1,140 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spog-api
+  labels:
+    app.kubernetes.io/name: spog-api
+    app.kubernetes.io/component: api
+    app.kubernetes.io/part-of: trustification
+{{ if eq "enabled" .Values.spog.api.tracing }}
+  annotations:
+    sidecar.jaegertracing.io/inject: "true"
+{{ end }}
+spec:
+  replicas: {{ .Values.spog.api.replicas | default 1 }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: spog-api
+      app.kubernetes.io/component: api
+      app.kubernetes.io/part-of: trustification
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: spog-api
+        app.kubernetes.io/component: api
+        app.kubernetes.io/part-of: trustification
+        metrics: "true"
+      annotations:
+        config/checksum: {{ include (print $.Template.BasePath "/config/020-ConfigMap.yaml") . | sha256sum }}
+    spec:
+      containers:
+        - image: {{ .Values.trustImage }}:{{ .Values.release }}
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          name: service
+          command: ["/trust"]
+          args:
+            - "spog"
+            - "api"
+            - "-p"
+            - "8080"
+            - "--bombastic-url"
+            - "https://bombastic-api.$(NAMESPACE).svc"
+            - "--vexination-url"
+            - "https://vexination-api.$(NAMESPACE).svc"
+            - "--collectorist-url"
+            - "https://collectorist-api.$(NAMESPACE).svc"
+            - "--v11y-url"
+            - "https://v11y-api.$(NAMESPACE).svc"
+            - "--exhort-url"
+            - "https://exhort-api.$(NAMESPACE).svc"
+{{- with .Values.spog.crdaUrl }}
+            - "--crda-url"
+            - {{ . | quote }}
+{{- end }}
+            - "--guac"
+            - "http://guac-graphql.$(NAMESPACE).svc:8080/query"
+            - "--auth-configuration"
+            - "/etc/config/auth.yaml"
+          env:
+            - name: RUST_LOG
+              value: {{ default "info" .Values.spog.api.logLevel }}
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            {{ include "trustification.http-server" . | nindent 12 }}
+
+            - name: INFRASTRUCTURE_ENABLED
+              value: "true"
+            - name: INFRASTRUCTURE_BIND
+              value: "[::]:9010"
+            - name: TRACING
+              value: {{ default "disabled" .Values.spog.api.tracing }}
+            - name: OTEL_BSP_MAX_EXPORT_BATCH_SIZE
+              value: "32"
+            - name: OTEL_TRACES_SAMPLER
+              value: parentbased_traceidratio
+            - name: OTEL_TRACES_SAMPLER_ARG
+              value: "0.1"
+
+{{ with (.Values.spog.api.snyk).credentials }}
+            - name: SNYK_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ . }}"
+                  key: snyk_token
+{{ end }}
+
+{{- if .Values.spog.ui.customize }}
+            - name: SPOG_UI_CONFIG
+              value: /etc/customize/spog-ui.yaml
+{{- end }}
+            {{ include "trustification.authentication-client" ( dict "root" . "clientId" "walker" ) | nindent 12 }}
+{{- if not .Values.disableSwaggerOidc }}
+            - name: SWAGGER_UI_OIDC_ISSUER_URL
+              {{ include "trustification.authentication-frontend-issuer-url" . | nindent 14 }}
+{{- end }}
+{{- with .Values.spog.api.segmentWriteKey }}
+            - name: SEGMENT_WRITE_KEY
+              {{ . | toYaml | nindent 14 }}
+{{- end }}
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+            - containerPort: 9010
+              protocol: TCP
+              name: infra
+          resources:
+            {{- toYaml .Values.spog.api.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: 9010
+            initialDelaySeconds: 2
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: 9010
+            initialDelaySeconds: 2
+          startupProbe:
+            httpGet:
+              path: /health/startup
+              port: 9010
+          volumeMounts:
+            - mountPath: /etc/config
+              name: config
+{{- if .Values.spog.ui.customize }}
+            - mountPath: /etc/customize
+              name: customize
+{{- end }}
+            {{ include "trustification.http-server-volume-mounts" . | nindent 12 }}
+      volumes:
+        - name: config
+          configMap:
+            name: {{ .Values.config.name }}
+{{- if .Values.spog.ui.customize }}
+        - name: customize
+          configMap:
+            name: {{ .Values.spog.ui.customizeName | default .Values.config.name }}
+{{- end }}
+        {{ include "trustification.http-server-volumes" (dict "root" . "appName" "spog-api") | nindent 8 }}

@@ -1,0 +1,8 @@
+apiVersion: v2
+name: trustification-branding
+description: A Helm chart for branding Trustification
+
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+icon: https://raw.githubusercontent.com/trustification/trustification/main/docs/branding/svg/trustification_icon_default.svg

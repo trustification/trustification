@@ -1,0 +1,65 @@
+////
+Module Type: PROCEDURE
+////
+
+[id="installing-trustification-locally"]
+
+= Installing Trustification locally
+
+The Trustification services use a web-based user interface, and the `trust` command-line tool.
+The command-line `trust` tool can run any of Trustification's services by using argument flags.
+
+.Prerequisites 
+You must use the following infrastructure components, and software:
+
+* Two S3 buckets named, `vexination` and `bombastic` for storing data, and the search index.
+* Three topics or queues named, `sbom-stored`, `sbom-indexed`, and `sbom-failed` for Bombastic.
+* Three topics or queues named, `vex-stored`, `vex-indexed`, and `vex-failed` for Vexination.
+* Read and write credentials for the above resources.
+* An implementation of the link:https://www.compose-spec.io/[Compose specification], as used in:
+** The link:https://www.docker.com/products/docker-desktop/[Docker Desktop] application.
+** The link:https://github.com/containers/podman-compose[`podman-compose`] tool, version 1.0.6 or higher.
+
+[NOTE]
+====
+You can use unique names by adjusting command-line flags in the manifests.
+Depending on your choice of infrastructure, you can create these resources, and manage access using your favorite tool, such as terraform.
+====
+
+.Procedure
+
+. Clone the link:https://github.com/trustification/trustification[Trustification GitHub project] locally.
+
+. Copy the most recent link:https://github.com/trustification/trustification/tags[version tag] from the Trustification GitHub project.
+
+. Set the `TRUST_VERSION` environment variable to the most recent version tag:
++
+.Syntax
+[source,subs="verbatim,quotes"]
+----
+export TRUST_VERSION=_VERSION_TAG_
+----
++
+.Example
+----
+$ export TRUST_VERSION=0.1.0-nightly.8fce4fcf
+----
+
+. Change to the `deploy/compose` directory:
++
+.Example
+----
+$ cd deploy/compose
+----
+
+. Start the Trustification containers:
++
+.Example
+----
+$ podman-compose -f compose.yaml -f compose-trustification.yaml -f compose-guac.yaml -f compose-walkers.yaml up
+----
++
+This command starts MinIO and Apache Kafka containers, one container for object storage, and another for event sharing and notifications.
+Vulnerability data automatically starts loading from Red Hat sources after the containers start.
+
+. To access the Trustification user interface, open a web browser and point it to `http://localhost:8084`.

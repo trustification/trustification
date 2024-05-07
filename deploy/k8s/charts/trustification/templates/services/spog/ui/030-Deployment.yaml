@@ -1,0 +1,109 @@
+{{- if .Values.modules.spogUi.enabled }}
+{{- $mod := dict "root" . "name" "spog-ui" "component" "spog" "module" .Values.modules.spogUi -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "trustification.common.name" $mod }}
+  labels:
+    {{- include "trustification.common.labels" $mod | nindent 4 }}
+  annotations:
+    {{- include "trustification.application.annotations" $mod | nindent 4 }}
+
+spec:
+  replicas: {{ include "trustification.application.replicas" $mod }}
+  selector:
+    matchLabels:
+      {{- include "trustification.common.selectorLabels" $mod | nindent 6 }}
+
+  template:
+    metadata:
+      annotations:
+        configHash/backend: {{ include (print $.Template.BasePath "/services/spog/ui/020-ConfigMap-backend.yaml") . | sha256sum }}
+
+      labels:
+        {{- include "trustification.common.selectorLabels" $mod | nindent 8 }}
+        {{- include "trustification.application.podLabels" $mod | nindent 8 }}
+
+    spec:
+      {{- include "trustification.application.pod" $mod | nindent 6 }}
+
+      volumes:
+        - name: endpoints
+          emptyDir: {}
+        - name: run
+          emptyDir: {}
+        - name: config
+          configMap:
+            optional: true
+            name: {{ include "trustification.common.name" (dict "root" . "name" (printf "%s-backend" $mod.name ) ) }}
+
+        {{- with $mod.module.brandingConfigMap }}
+        - name: branding
+          configMap:
+            name: {{ . }}
+        {{- end }}
+        {{- include "trustification.application.extraVolumes" $mod | nindent 8 }}
+
+      containers:
+        - name: service
+          {{- include "trustification.common.defaultImage" $mod | nindent 10 }}
+          {{- include "trustification.application.container" $mod | nindent 10 }}
+
+          command: ["/nginx.sh"]
+          env:
+            - name: API_URL
+              value: {{ include "trustification.tls.http.protocol" $mod }}://{{ include "trustification.host.spogApi" $mod }}
+            - name: BOMBASTIC_URL
+              value: {{ include "trustification.tls.http.protocol" $mod }}://{{ include "trustification.host.bombasticApi" $mod }}
+            - name: VEXINATION_URL
+              value: {{ include "trustification.tls.http.protocol" $mod }}://{{ include "trustification.host.vexinationApi" $mod }}
+            - name: ISSUER_URL
+              value: {{ include "trustification.oidc.frontendIssuerUrl" . }}
+            - name: CLIENT_ID
+              value: {{ include "trustification.oidc.frontendClientId" . }}
+
+            {{- with .Values.oidc.clients.frontend.scopes }}
+            - name: SCOPES
+              value: {{ . | quote }}
+            {{- end }}
+            {{- with $mod.module.segmentWriteKey }}
+            - name: SEGMENT_WRITE_KEY
+              {{- include "trustification.common.envVarValue" . | nindent 14 }}
+            {{- end }}
+
+            - name: BACKEND_JSON_FILE
+              value: /etc/config/backend.json
+
+          volumeMounts:
+            - name: config
+              mountPath: /etc/config
+              readOnly: true
+
+            - name: endpoints
+              mountPath: /endpoints
+            - name: run
+              mountPath: /run
+
+            {{- if $mod.module.brandingConfigMap }}
+            - name: branding
+              mountPath: /public/branding
+            {{- end }}
+
+            {{- include "trustification.application.extraVolumeMounts" $mod | nindent 12 }}
+
+          ports:
+            - containerPort: 8080
+              name: endpoint
+              protocol: TCP
+
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 2
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 2
+{{- end }}

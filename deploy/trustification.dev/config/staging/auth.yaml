@@ -1,0 +1,20 @@
+$schema: "https://raw.githubusercontent.com/trustification/trustification/main/auth/schema/auth.json"
+
+authentication:
+  clients:
+    - clientId: frontend
+      issuerUrl: https://sso.staging.trustification.dev/realms/chicken
+      scopeMappings: &keycloakScopeMappings
+        "create:document": [ "create.sbom", "create.vex" ]
+        "read:document": [ "read.sbom", "read.vex" ]
+        "update:document": [ "update.sbom", "update.vex" ]
+        "delete:document": [ "delete.sbom", "delete.vex" ]
+    - clientId: walker
+      issuerUrl: https://sso.staging.trustification.dev/realms/chicken
+      scopeMappings: *keycloakScopeMappings
+    - clientId: testing-user
+      issuerUrl: https://sso.staging.trustification.dev/realms/chicken
+      scopeMappings: *keycloakScopeMappings
+    - clientId: testing-manager
+      issuerUrl: https://sso.staging.trustification.dev/realms/chicken
+      scopeMappings: *keycloakScopeMappings

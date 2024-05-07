@@ -1,0 +1,15 @@
+{{- if .Values.modules.v11yWalker.enabled }}
+{{- $mod := dict "root" . "name" "v11y-walker" "component" "v11y" "module" .Values.modules.v11yWalker -}}
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: {{ include "trustification.common.name" $mod }}
+  labels:
+    {{- include "trustification.common.labels" $mod | nindent 4 }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ $mod.module.storageSize | quote }}
+{{- end }}

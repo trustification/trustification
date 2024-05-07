@@ -1,0 +1,57 @@
+apiVersion: v1
+kind: Template
+metadata:
+  name: trustification-dataset
+objects:
+- apiVersion: batch/v1
+  kind: Job
+  metadata:
+    name: dataset-${IMAGE_TAG}-${JOBID}
+  spec:
+    backoffLimit: 10
+    completions: 1
+    parallelism: 1
+    ttlSecondsAfterFinished: 600
+    template:
+      spec:
+        restartPolicy: OnFailure
+        containers:
+          - image: ${IMAGE}:${IMAGE_TAG}
+            imagePullPolicy: Always
+            name: dataset
+            command: ["/usr/bin/bash"]
+            args:
+              - "-ce"
+              - |
+                set -e
+                /trust bombastic walker --sink https://sbom.${DOMAIN} --source /data/sbom
+                /trust vexination walker --sink https://vex.${DOMAIN}/api/v1/vex --source /data/csaf
+
+            env:
+              - name: RUST_LOG
+                value: info
+              - name: OIDC_PROVIDER_CLIENT_ID
+                value: trusted-content-api
+              - name: OIDC_PROVIDER_ISSUER_URL
+                value: "${ISSUER_URL}"
+              - name: OIDC_PROVIDER_CLIENT_SECRET
+                valueFrom:
+                  secretKeyRef:
+                    name: ${OIDC_CLIENT_SECRET}
+                    key: ${OIDC_CLIENT_SECRET_KEY}
+parameters:
+- name: IMAGE
+  required: true
+- name: IMAGE_TAG
+  required: true
+- name: JOBID
+  generate: expression
+  from: "[0-9a-z]{7}"
+- name: DOMAIN
+  required: true
+- name: ISSUER_URL
+  required: true
+- name: OIDC_CLIENT_SECRET
+  required: true
+- name: OIDC_CLIENT_SECRET_KEY
+  required: true

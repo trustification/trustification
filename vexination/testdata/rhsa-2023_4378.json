@@ -1,0 +1,1585 @@
+{
+  "document": {
+    "aggregate_severity": {
+      "namespace": "https://access.redhat.com/security/updates/classification/",
+      "text": "Important"
+    },
+    "category": "csaf_vex",
+    "csaf_version": "2.0",
+    "distribution": {
+      "text": "Copyright \u00a9 2023 Red Hat, Inc. All rights reserved.",
+      "tlp": {
+        "label": "WHITE",
+        "url": "https://www.first.org/tlp/"
+      }
+    },
+    "lang": "en",
+    "notes": [
+      {
+        "category": "summary",
+        "text": "An update for kernel-rt is now available for Red Hat Enterprise Linux 9.\n\nRed Hat Product Security has rated this update as having a security impact of Important. A Common Vulnerability Scoring System (CVSS) base score, which gives a detailed severity rating, is available for each vulnerability from the CVE link(s) in the References section.",
+        "title": "Topic"
+      },
+      {
+        "category": "general",
+        "text": "The kernel-rt packages provide the Real Time Linux Kernel, which enables fine-tuning for systems with extremely high determinism requirements.\n\nSecurity Fix(es):\n\n* kernel: ipvlan: out-of-bounds write caused by unclear skb->cb (CVE-2023-3090)\n\n* kernel: cls_flower: out-of-bounds write in fl_set_geneve_opt() (CVE-2023-35788)\n\n* kernel: KVM: x86/mmu: race condition in direct_page_fault() (CVE-2022-45869)\n\n* kernel: speculative pointer dereference in do_prlimit() in kernel/sys.c (CVE-2023-0458)\n\n* kernel: Spectre v2 SMT mitigations problem (CVE-2023-1998)\n\nFor more details about the security issue(s), including the impact, a CVSS score, acknowledgments, and other related information, refer to the CVE page(s) listed in the References section.\n\nBug Fix(es):\n\n* RHEL9 rt: blktests block/024 failed (BZ#2209920)\n\n* Backport pinned timers RT specific behavior for FIFO tasks (BZ#2210071)\n\n* kernel-rt: update RT source tree to the RHEL-9.2z2 source tree (BZ#2215122)\n\n* kernel-rt: update RT source tree to the RHEL-9.2z2b source tree (BZ#2222796)",
+        "title": "Details"
+      },
+      {
+        "category": "legal_disclaimer",
+        "text": "This content is licensed under the Creative Commons Attribution 4.0 International License (https://creativecommons.org/licenses/by/4.0/). If you distribute this content, or a modified version of it, you must provide attribution to Red Hat Inc. and provide a link to the original.",
+        "title": "Terms of Use"
+      }
+    ],
+    "publisher": {
+      "category": "vendor",
+      "contact_details": "https://access.redhat.com/security/team/contact/",
+      "issuing_authority": "Red Hat Product Security is responsible for vulnerability handling across all Red Hat offerings.",
+      "name": "Red Hat Product Security",
+      "namespace": "https://www.redhat.com"
+    },
+    "references": [
+      {
+        "category": "self",
+        "summary": "https://access.redhat.com/errata/RHSA-2023:4378",
+        "url": "https://access.redhat.com/errata/RHSA-2023:4378"
+      },
+      {
+        "category": "external",
+        "summary": "https://access.redhat.com/security/updates/classification/#important",
+        "url": "https://access.redhat.com/security/updates/classification/#important"
+      },
+      {
+        "category": "self",
+        "summary": "Canonical URL",
+        "url": "https://access.redhat.com/security/data/csaf/v2/advisories/2023/rhsa-2023_4378.json"
+      }
+    ],
+    "title": "Red Hat Security Advisory: kernel-rt security and bug fix update",
+    "tracking": {
+      "current_release_date": "2023-08-01T09:08:00Z",
+      "generator": {
+        "date": "2023-08-01T15:17:00Z",
+        "engine": {
+          "name": "Red Hat SDEngine",
+          "version": "3.20.1"
+        }
+      },
+      "id": "RHSA-2023:4378",
+      "initial_release_date": "2023-08-01T09:08:00Z",
+      "revision_history": [
+        {
+          "date": "2023-08-01T09:08:00Z",
+          "number": "1",
+          "summary": "Current version"
+        }
+      ],
+      "status": "final",
+      "version": "1"
+    }
+  },
+  "product_tree": {
+    "branches": [
+      {
+        "branches": [
+          {
+            "branches": [
+              {
+                "category": "product_name",
+                "name": "Red Hat Enterprise Linux NFV (v. 9)",
+                "product": {
+                  "name": "Red Hat Enterprise Linux NFV (v. 9)",
+                  "product_id": "NFV-9.2.0.Z.MAIN.EUS",
+                  "product_identification_helper": {
+                    "cpe": "cpe:/a:redhat:enterprise_linux:9::nfv"
+                  }
+                }
+              },
+              {
+                "category": "product_name",
+                "name": "Red Hat Enterprise Linux RT (v. 9)",
+                "product": {
+                  "name": "Red Hat Enterprise Linux RT (v. 9)",
+                  "product_id": "RT-9.2.0.Z.MAIN.EUS",
+                  "product_identification_helper": {
+                    "cpe": "cpe:/a:redhat:enterprise_linux:9::realtime"
+                  }
+                }
+              }
+            ],
+            "category": "product_family",
+            "name": "Red Hat Enterprise Linux"
+          },
+          {
+            "branches": [
+              {
+                "category": "product_version",
+                "name": "kernel-rt-0:5.14.0-284.25.1.rt14.310.el9_2.src",
+                "product": {
+                  "name": "kernel-rt-0:5.14.0-284.25.1.rt14.310.el9_2.src",
+                  "product_id": "kernel-rt-0:5.14.0-284.25.1.rt14.310.el9_2.src"
+                }
+              }
+            ],
+            "category": "architecture",
+            "name": "src"
+          },
+          {
+            "branches": [
+              {
+                "category": "product_version",
+                "name": "kernel-rt-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+                "product": {
+                  "name": "kernel-rt-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+                  "product_id": "kernel-rt-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64"
+                }
+              },
+              {
+                "category": "product_version",
+                "name": "kernel-rt-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+                "product": {
+                  "name": "kernel-rt-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+                  "product_id": "kernel-rt-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64"
+                }
+              },
+              {
+                "category": "product_version",
+                "name": "kernel-rt-debug-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+                "product": {
+                  "name": "kernel-rt-debug-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+                  "product_id": "kernel-rt-debug-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64"
+                }
+              },
+              {
+                "category": "product_version",
+                "name": "kernel-rt-debug-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+                "product": {
+                  "name": "kernel-rt-debug-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+                  "product_id": "kernel-rt-debug-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64"
+                }
+              },
+              {
+                "category": "product_version",
+                "name": "kernel-rt-debug-debuginfo-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+                "product": {
+                  "name": "kernel-rt-debug-debuginfo-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+                  "product_id": "kernel-rt-debug-debuginfo-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64"
+                }
+              },
+              {
+                "category": "product_version",
+                "name": "kernel-rt-debug-devel-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+                "product": {
+                  "name": "kernel-rt-debug-devel-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+                  "product_id": "kernel-rt-debug-devel-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64"
+                }
+              },
+              {
+                "category": "product_version",
+                "name": "kernel-rt-debug-kvm-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+                "product": {
+                  "name": "kernel-rt-debug-kvm-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+                  "product_id": "kernel-rt-debug-kvm-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64"
+                }
+              },
+              {
+                "category": "product_version",
+                "name": "kernel-rt-debug-modules-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+                "product": {
+                  "name": "kernel-rt-debug-modules-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+                  "product_id": "kernel-rt-debug-modules-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64"
+                }
+              },
+              {
+                "category": "product_version",
+                "name": "kernel-rt-debug-modules-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+                "product": {
+                  "name": "kernel-rt-debug-modules-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+                  "product_id": "kernel-rt-debug-modules-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64"
+                }
+              },
+              {
+                "category": "product_version",
+                "name": "kernel-rt-debug-modules-extra-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+                "product": {
+                  "name": "kernel-rt-debug-modules-extra-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+                  "product_id": "kernel-rt-debug-modules-extra-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64"
+                }
+              },
+              {
+                "category": "product_version",
+                "name": "kernel-rt-debuginfo-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+                "product": {
+                  "name": "kernel-rt-debuginfo-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+                  "product_id": "kernel-rt-debuginfo-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64"
+                }
+              },
+              {
+                "category": "product_version",
+                "name": "kernel-rt-debuginfo-common-x86_64-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+                "product": {
+                  "name": "kernel-rt-debuginfo-common-x86_64-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+                  "product_id": "kernel-rt-debuginfo-common-x86_64-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64"
+                }
+              },
+              {
+                "category": "product_version",
+                "name": "kernel-rt-devel-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+                "product": {
+                  "name": "kernel-rt-devel-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+                  "product_id": "kernel-rt-devel-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64"
+                }
+              },
+              {
+                "category": "product_version",
+                "name": "kernel-rt-kvm-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+                "product": {
+                  "name": "kernel-rt-kvm-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+                  "product_id": "kernel-rt-kvm-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64"
+                }
+              },
+              {
+                "category": "product_version",
+                "name": "kernel-rt-modules-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+                "product": {
+                  "name": "kernel-rt-modules-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+                  "product_id": "kernel-rt-modules-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64"
+                }
+              },
+              {
+                "category": "product_version",
+                "name": "kernel-rt-modules-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+                "product": {
+                  "name": "kernel-rt-modules-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+                  "product_id": "kernel-rt-modules-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64"
+                }
+              },
+              {
+                "category": "product_version",
+                "name": "kernel-rt-modules-extra-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+                "product": {
+                  "name": "kernel-rt-modules-extra-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+                  "product_id": "kernel-rt-modules-extra-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64"
+                }
+              }
+            ],
+            "category": "architecture",
+            "name": "x86_64"
+          }
+        ],
+        "category": "vendor",
+        "name": "Red Hat"
+      }
+    ],
+    "relationships": [
+      {
+        "category": "default_component_of",
+        "full_product_name": {
+          "name": "kernel-rt-0:5.14.0-284.25.1.rt14.310.el9_2.src as a component of Red Hat Enterprise Linux NFV (v. 9)",
+          "product_id": "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-0:5.14.0-284.25.1.rt14.310.el9_2.src"
+        },
+        "product_reference": "kernel-rt-0:5.14.0-284.25.1.rt14.310.el9_2.src",
+        "relates_to_product_reference": "NFV-9.2.0.Z.MAIN.EUS"
+      },
+      {
+        "category": "default_component_of",
+        "full_product_name": {
+          "name": "kernel-rt-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64 as a component of Red Hat Enterprise Linux NFV (v. 9)",
+          "product_id": "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64"
+        },
+        "product_reference": "kernel-rt-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+        "relates_to_product_reference": "NFV-9.2.0.Z.MAIN.EUS"
+      },
+      {
+        "category": "default_component_of",
+        "full_product_name": {
+          "name": "kernel-rt-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64 as a component of Red Hat Enterprise Linux NFV (v. 9)",
+          "product_id": "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64"
+        },
+        "product_reference": "kernel-rt-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+        "relates_to_product_reference": "NFV-9.2.0.Z.MAIN.EUS"
+      },
+      {
+        "category": "default_component_of",
+        "full_product_name": {
+          "name": "kernel-rt-debug-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64 as a component of Red Hat Enterprise Linux NFV (v. 9)",
+          "product_id": "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64"
+        },
+        "product_reference": "kernel-rt-debug-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+        "relates_to_product_reference": "NFV-9.2.0.Z.MAIN.EUS"
+      },
+      {
+        "category": "default_component_of",
+        "full_product_name": {
+          "name": "kernel-rt-debug-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64 as a component of Red Hat Enterprise Linux NFV (v. 9)",
+          "product_id": "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64"
+        },
+        "product_reference": "kernel-rt-debug-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+        "relates_to_product_reference": "NFV-9.2.0.Z.MAIN.EUS"
+      },
+      {
+        "category": "default_component_of",
+        "full_product_name": {
+          "name": "kernel-rt-debug-debuginfo-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64 as a component of Red Hat Enterprise Linux NFV (v. 9)",
+          "product_id": "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-debuginfo-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64"
+        },
+        "product_reference": "kernel-rt-debug-debuginfo-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+        "relates_to_product_reference": "NFV-9.2.0.Z.MAIN.EUS"
+      },
+      {
+        "category": "default_component_of",
+        "full_product_name": {
+          "name": "kernel-rt-debug-devel-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64 as a component of Red Hat Enterprise Linux NFV (v. 9)",
+          "product_id": "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-devel-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64"
+        },
+        "product_reference": "kernel-rt-debug-devel-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+        "relates_to_product_reference": "NFV-9.2.0.Z.MAIN.EUS"
+      },
+      {
+        "category": "default_component_of",
+        "full_product_name": {
+          "name": "kernel-rt-debug-kvm-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64 as a component of Red Hat Enterprise Linux NFV (v. 9)",
+          "product_id": "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-kvm-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64"
+        },
+        "product_reference": "kernel-rt-debug-kvm-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+        "relates_to_product_reference": "NFV-9.2.0.Z.MAIN.EUS"
+      },
+      {
+        "category": "default_component_of",
+        "full_product_name": {
+          "name": "kernel-rt-debug-modules-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64 as a component of Red Hat Enterprise Linux NFV (v. 9)",
+          "product_id": "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64"
+        },
+        "product_reference": "kernel-rt-debug-modules-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+        "relates_to_product_reference": "NFV-9.2.0.Z.MAIN.EUS"
+      },
+      {
+        "category": "default_component_of",
+        "full_product_name": {
+          "name": "kernel-rt-debug-modules-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64 as a component of Red Hat Enterprise Linux NFV (v. 9)",
+          "product_id": "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64"
+        },
+        "product_reference": "kernel-rt-debug-modules-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+        "relates_to_product_reference": "NFV-9.2.0.Z.MAIN.EUS"
+      },
+      {
+        "category": "default_component_of",
+        "full_product_name": {
+          "name": "kernel-rt-debug-modules-extra-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64 as a component of Red Hat Enterprise Linux NFV (v. 9)",
+          "product_id": "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-extra-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64"
+        },
+        "product_reference": "kernel-rt-debug-modules-extra-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+        "relates_to_product_reference": "NFV-9.2.0.Z.MAIN.EUS"
+      },
+      {
+        "category": "default_component_of",
+        "full_product_name": {
+          "name": "kernel-rt-debuginfo-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64 as a component of Red Hat Enterprise Linux NFV (v. 9)",
+          "product_id": "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debuginfo-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64"
+        },
+        "product_reference": "kernel-rt-debuginfo-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+        "relates_to_product_reference": "NFV-9.2.0.Z.MAIN.EUS"
+      },
+      {
+        "category": "default_component_of",
+        "full_product_name": {
+          "name": "kernel-rt-debuginfo-common-x86_64-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64 as a component of Red Hat Enterprise Linux NFV (v. 9)",
+          "product_id": "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debuginfo-common-x86_64-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64"
+        },
+        "product_reference": "kernel-rt-debuginfo-common-x86_64-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+        "relates_to_product_reference": "NFV-9.2.0.Z.MAIN.EUS"
+      },
+      {
+        "category": "default_component_of",
+        "full_product_name": {
+          "name": "kernel-rt-devel-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64 as a component of Red Hat Enterprise Linux NFV (v. 9)",
+          "product_id": "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-devel-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64"
+        },
+        "product_reference": "kernel-rt-devel-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+        "relates_to_product_reference": "NFV-9.2.0.Z.MAIN.EUS"
+      },
+      {
+        "category": "default_component_of",
+        "full_product_name": {
+          "name": "kernel-rt-kvm-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64 as a component of Red Hat Enterprise Linux NFV (v. 9)",
+          "product_id": "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-kvm-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64"
+        },
+        "product_reference": "kernel-rt-kvm-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+        "relates_to_product_reference": "NFV-9.2.0.Z.MAIN.EUS"
+      },
+      {
+        "category": "default_component_of",
+        "full_product_name": {
+          "name": "kernel-rt-modules-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64 as a component of Red Hat Enterprise Linux NFV (v. 9)",
+          "product_id": "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-modules-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64"
+        },
+        "product_reference": "kernel-rt-modules-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+        "relates_to_product_reference": "NFV-9.2.0.Z.MAIN.EUS"
+      },
+      {
+        "category": "default_component_of",
+        "full_product_name": {
+          "name": "kernel-rt-modules-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64 as a component of Red Hat Enterprise Linux NFV (v. 9)",
+          "product_id": "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-modules-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64"
+        },
+        "product_reference": "kernel-rt-modules-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+        "relates_to_product_reference": "NFV-9.2.0.Z.MAIN.EUS"
+      },
+      {
+        "category": "default_component_of",
+        "full_product_name": {
+          "name": "kernel-rt-modules-extra-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64 as a component of Red Hat Enterprise Linux NFV (v. 9)",
+          "product_id": "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-modules-extra-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64"
+        },
+        "product_reference": "kernel-rt-modules-extra-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+        "relates_to_product_reference": "NFV-9.2.0.Z.MAIN.EUS"
+      },
+      {
+        "category": "default_component_of",
+        "full_product_name": {
+          "name": "kernel-rt-0:5.14.0-284.25.1.rt14.310.el9_2.src as a component of Red Hat Enterprise Linux RT (v. 9)",
+          "product_id": "RT-9.2.0.Z.MAIN.EUS:kernel-rt-0:5.14.0-284.25.1.rt14.310.el9_2.src"
+        },
+        "product_reference": "kernel-rt-0:5.14.0-284.25.1.rt14.310.el9_2.src",
+        "relates_to_product_reference": "RT-9.2.0.Z.MAIN.EUS"
+      },
+      {
+        "category": "default_component_of",
+        "full_product_name": {
+          "name": "kernel-rt-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64 as a component of Red Hat Enterprise Linux RT (v. 9)",
+          "product_id": "RT-9.2.0.Z.MAIN.EUS:kernel-rt-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64"
+        },
+        "product_reference": "kernel-rt-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+        "relates_to_product_reference": "RT-9.2.0.Z.MAIN.EUS"
+      },
+      {
+        "category": "default_component_of",
+        "full_product_name": {
+          "name": "kernel-rt-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64 as a component of Red Hat Enterprise Linux RT (v. 9)",
+          "product_id": "RT-9.2.0.Z.MAIN.EUS:kernel-rt-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64"
+        },
+        "product_reference": "kernel-rt-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+        "relates_to_product_reference": "RT-9.2.0.Z.MAIN.EUS"
+      },
+      {
+        "category": "default_component_of",
+        "full_product_name": {
+          "name": "kernel-rt-debug-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64 as a component of Red Hat Enterprise Linux RT (v. 9)",
+          "product_id": "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64"
+        },
+        "product_reference": "kernel-rt-debug-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+        "relates_to_product_reference": "RT-9.2.0.Z.MAIN.EUS"
+      },
+      {
+        "category": "default_component_of",
+        "full_product_name": {
+          "name": "kernel-rt-debug-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64 as a component of Red Hat Enterprise Linux RT (v. 9)",
+          "product_id": "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64"
+        },
+        "product_reference": "kernel-rt-debug-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+        "relates_to_product_reference": "RT-9.2.0.Z.MAIN.EUS"
+      },
+      {
+        "category": "default_component_of",
+        "full_product_name": {
+          "name": "kernel-rt-debug-debuginfo-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64 as a component of Red Hat Enterprise Linux RT (v. 9)",
+          "product_id": "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-debuginfo-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64"
+        },
+        "product_reference": "kernel-rt-debug-debuginfo-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+        "relates_to_product_reference": "RT-9.2.0.Z.MAIN.EUS"
+      },
+      {
+        "category": "default_component_of",
+        "full_product_name": {
+          "name": "kernel-rt-debug-devel-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64 as a component of Red Hat Enterprise Linux RT (v. 9)",
+          "product_id": "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-devel-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64"
+        },
+        "product_reference": "kernel-rt-debug-devel-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+        "relates_to_product_reference": "RT-9.2.0.Z.MAIN.EUS"
+      },
+      {
+        "category": "default_component_of",
+        "full_product_name": {
+          "name": "kernel-rt-debug-modules-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64 as a component of Red Hat Enterprise Linux RT (v. 9)",
+          "product_id": "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64"
+        },
+        "product_reference": "kernel-rt-debug-modules-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+        "relates_to_product_reference": "RT-9.2.0.Z.MAIN.EUS"
+      },
+      {
+        "category": "default_component_of",
+        "full_product_name": {
+          "name": "kernel-rt-debug-modules-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64 as a component of Red Hat Enterprise Linux RT (v. 9)",
+          "product_id": "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64"
+        },
+        "product_reference": "kernel-rt-debug-modules-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+        "relates_to_product_reference": "RT-9.2.0.Z.MAIN.EUS"
+      },
+      {
+        "category": "default_component_of",
+        "full_product_name": {
+          "name": "kernel-rt-debug-modules-extra-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64 as a component of Red Hat Enterprise Linux RT (v. 9)",
+          "product_id": "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-extra-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64"
+        },
+        "product_reference": "kernel-rt-debug-modules-extra-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+        "relates_to_product_reference": "RT-9.2.0.Z.MAIN.EUS"
+      },
+      {
+        "category": "default_component_of",
+        "full_product_name": {
+          "name": "kernel-rt-debuginfo-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64 as a component of Red Hat Enterprise Linux RT (v. 9)",
+          "product_id": "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debuginfo-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64"
+        },
+        "product_reference": "kernel-rt-debuginfo-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+        "relates_to_product_reference": "RT-9.2.0.Z.MAIN.EUS"
+      },
+      {
+        "category": "default_component_of",
+        "full_product_name": {
+          "name": "kernel-rt-debuginfo-common-x86_64-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64 as a component of Red Hat Enterprise Linux RT (v. 9)",
+          "product_id": "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debuginfo-common-x86_64-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64"
+        },
+        "product_reference": "kernel-rt-debuginfo-common-x86_64-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+        "relates_to_product_reference": "RT-9.2.0.Z.MAIN.EUS"
+      },
+      {
+        "category": "default_component_of",
+        "full_product_name": {
+          "name": "kernel-rt-devel-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64 as a component of Red Hat Enterprise Linux RT (v. 9)",
+          "product_id": "RT-9.2.0.Z.MAIN.EUS:kernel-rt-devel-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64"
+        },
+        "product_reference": "kernel-rt-devel-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+        "relates_to_product_reference": "RT-9.2.0.Z.MAIN.EUS"
+      },
+      {
+        "category": "default_component_of",
+        "full_product_name": {
+          "name": "kernel-rt-modules-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64 as a component of Red Hat Enterprise Linux RT (v. 9)",
+          "product_id": "RT-9.2.0.Z.MAIN.EUS:kernel-rt-modules-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64"
+        },
+        "product_reference": "kernel-rt-modules-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+        "relates_to_product_reference": "RT-9.2.0.Z.MAIN.EUS"
+      },
+      {
+        "category": "default_component_of",
+        "full_product_name": {
+          "name": "kernel-rt-modules-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64 as a component of Red Hat Enterprise Linux RT (v. 9)",
+          "product_id": "RT-9.2.0.Z.MAIN.EUS:kernel-rt-modules-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64"
+        },
+        "product_reference": "kernel-rt-modules-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+        "relates_to_product_reference": "RT-9.2.0.Z.MAIN.EUS"
+      },
+      {
+        "category": "default_component_of",
+        "full_product_name": {
+          "name": "kernel-rt-modules-extra-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64 as a component of Red Hat Enterprise Linux RT (v. 9)",
+          "product_id": "RT-9.2.0.Z.MAIN.EUS:kernel-rt-modules-extra-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64"
+        },
+        "product_reference": "kernel-rt-modules-extra-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+        "relates_to_product_reference": "RT-9.2.0.Z.MAIN.EUS"
+      }
+    ]
+  },
+  "vulnerabilities": [
+    {
+      "cve": "CVE-2022-45869",
+      "cwe": {
+        "id": "CWE-362",
+        "name": "Concurrent Execution using Shared Resource with Improper Synchronization ('Race Condition')"
+      },
+      "discovery_date": "2022-11-30T00:00:00Z",
+      "ids": [
+        {
+          "system_name": "Red Hat Bugzilla",
+          "text": "https://bugzilla.redhat.com/show_bug.cgi?id=2151317"
+        }
+      ],
+      "notes": [
+        {
+          "category": "general",
+          "text": "The CVSS score(s) listed for this vulnerability do not reflect the associated product's status, and are included for informational purposes to better understand the severity of this vulnerability.",
+          "title": "CVSS score applicability"
+        },
+        {
+          "category": "description",
+          "text": "A flaw was found in the Linux kernel in the KVM. A race condition in direct_page_fault allows guest OS users to cause a denial of service (host OS crash or host OS memory corruption) when nested virtualization and the TDP MMU are enabled.",
+          "title": "Vulnerability description"
+        },
+        {
+          "category": "summary",
+          "text": "race condition in direct_page_fault()",
+          "title": "Vulnerability summary"
+        }
+      ],
+      "product_status": {
+        "fixed": [
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-0:5.14.0-284.25.1.rt14.310.el9_2.src",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-debuginfo-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-devel-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-kvm-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-extra-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debuginfo-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debuginfo-common-x86_64-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-devel-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-kvm-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-modules-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-modules-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-modules-extra-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "RT-9.2.0.Z.MAIN.EUS:kernel-rt-0:5.14.0-284.25.1.rt14.310.el9_2.src",
+          "RT-9.2.0.Z.MAIN.EUS:kernel-rt-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "RT-9.2.0.Z.MAIN.EUS:kernel-rt-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-debuginfo-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-devel-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-extra-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debuginfo-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debuginfo-common-x86_64-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "RT-9.2.0.Z.MAIN.EUS:kernel-rt-devel-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "RT-9.2.0.Z.MAIN.EUS:kernel-rt-modules-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "RT-9.2.0.Z.MAIN.EUS:kernel-rt-modules-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "RT-9.2.0.Z.MAIN.EUS:kernel-rt-modules-extra-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64"
+        ]
+      },
+      "references": [
+        {
+          "category": "external",
+          "summary": "https://www.cve.org/CVERecord?id=CVE-2022-45869",
+          "url": "https://www.cve.org/CVERecord?id=CVE-2022-45869"
+        },
+        {
+          "category": "external",
+          "summary": "https://nvd.nist.gov/vuln/detail/CVE-2022-45869",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2022-45869"
+        },
+        {
+          "category": "external",
+          "summary": "CVE-2022-45869",
+          "url": "https://access.redhat.com/security/cve/CVE-2022-45869"
+        },
+        {
+          "category": "external",
+          "summary": "bz#2151317: race condition in direct_page_fault()",
+          "url": "https://bugzilla.redhat.com/show_bug.cgi?id=2151317"
+        }
+      ],
+      "release_date": "2022-11-23T00:00:00Z",
+      "remediations": [
+        {
+          "category": "vendor_fix",
+          "details": "For details on how to apply this update, which includes the changes described in this advisory, refer to:\n\nhttps://access.redhat.com/articles/11258\n\nThe system must be rebooted for this update to take effect.",
+          "product_ids": [
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-0:5.14.0-284.25.1.rt14.310.el9_2.src",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-debuginfo-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-devel-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-kvm-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-extra-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debuginfo-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debuginfo-common-x86_64-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-devel-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-kvm-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-modules-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-modules-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-modules-extra-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-0:5.14.0-284.25.1.rt14.310.el9_2.src",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-debuginfo-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-devel-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-extra-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debuginfo-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debuginfo-common-x86_64-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-devel-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-modules-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-modules-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-modules-extra-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64"
+          ],
+          "url": "https://access.redhat.com/errata/RHSA-2023:4378"
+        }
+      ],
+      "scores": [
+        {
+          "cvss_v3": {
+            "attackComplexity": "LOW",
+            "attackVector": "LOCAL",
+            "availabilityImpact": "HIGH",
+            "baseScore": 5.5,
+            "baseSeverity": "MEDIUM",
+            "confidentialityImpact": "NONE",
+            "integrityImpact": "NONE",
+            "privilegesRequired": "LOW",
+            "scope": "UNCHANGED",
+            "userInteraction": "NONE",
+            "vectorString": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:H",
+            "version": "3.1"
+          },
+          "products": [
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-0:5.14.0-284.25.1.rt14.310.el9_2.src",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-debuginfo-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-devel-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-kvm-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-extra-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debuginfo-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debuginfo-common-x86_64-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-devel-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-kvm-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-modules-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-modules-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-modules-extra-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-0:5.14.0-284.25.1.rt14.310.el9_2.src",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-debuginfo-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-devel-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-extra-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debuginfo-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debuginfo-common-x86_64-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-devel-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-modules-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-modules-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-modules-extra-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64"
+          ]
+        }
+      ],
+      "threats": [
+        {
+          "category": "impact",
+          "date": "2022-11-30T00:00:00Z",
+          "details": "Moderate"
+        }
+      ],
+      "title": "race condition in direct_page_fault()"
+    },
+    {
+      "cve": "CVE-2023-0458",
+      "cwe": {
+        "id": "CWE-476",
+        "name": "NULL Pointer Dereference"
+      },
+      "discovery_date": "2023-04-26T00:00:00Z",
+      "ids": [
+        {
+          "system_name": "Red Hat Bugzilla",
+          "text": "https://bugzilla.redhat.com/show_bug.cgi?id=2193219"
+        }
+      ],
+      "notes": [
+        {
+          "category": "general",
+          "text": "The CVSS score(s) listed for this vulnerability do not reflect the associated product's status, and are included for informational purposes to better understand the severity of this vulnerability.",
+          "title": "CVSS score applicability"
+        },
+        {
+          "category": "description",
+          "text": "A speculative pointer dereference problem exists in the Linux Kernel on the do_prlimit() function. The resource argument value is controlled and is used in pointer arithmetic for the 'rlim' variable and can be used to leak the contents. We recommend upgrading past version 6.1.8 or commit 739790605705ddcf18f21782b9c99ad7d53a8c11",
+          "title": "Vulnerability description"
+        },
+        {
+          "category": "summary",
+          "text": "speculative pointer dereference in do_prlimit() in kernel/sys.c",
+          "title": "Vulnerability summary"
+        }
+      ],
+      "product_status": {
+        "fixed": [
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-0:5.14.0-284.25.1.rt14.310.el9_2.src",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-debuginfo-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-devel-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-kvm-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-extra-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debuginfo-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debuginfo-common-x86_64-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-devel-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-kvm-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-modules-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-modules-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-modules-extra-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "RT-9.2.0.Z.MAIN.EUS:kernel-rt-0:5.14.0-284.25.1.rt14.310.el9_2.src",
+          "RT-9.2.0.Z.MAIN.EUS:kernel-rt-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "RT-9.2.0.Z.MAIN.EUS:kernel-rt-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-debuginfo-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-devel-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-extra-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debuginfo-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debuginfo-common-x86_64-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "RT-9.2.0.Z.MAIN.EUS:kernel-rt-devel-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "RT-9.2.0.Z.MAIN.EUS:kernel-rt-modules-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "RT-9.2.0.Z.MAIN.EUS:kernel-rt-modules-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "RT-9.2.0.Z.MAIN.EUS:kernel-rt-modules-extra-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64"
+        ]
+      },
+      "references": [
+        {
+          "category": "external",
+          "summary": "https://www.cve.org/CVERecord?id=CVE-2023-0458",
+          "url": "https://www.cve.org/CVERecord?id=CVE-2023-0458"
+        },
+        {
+          "category": "external",
+          "summary": "https://nvd.nist.gov/vuln/detail/CVE-2023-0458",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2023-0458"
+        },
+        {
+          "category": "external",
+          "summary": "https://github.com/torvalds/linux/commit/739790605705ddcf18f21782b9c99ad7d53a8c11",
+          "url": "https://github.com/torvalds/linux/commit/739790605705ddcf18f21782b9c99ad7d53a8c11"
+        },
+        {
+          "category": "external",
+          "summary": "CVE-2023-0458",
+          "url": "https://access.redhat.com/security/cve/CVE-2023-0458"
+        },
+        {
+          "category": "external",
+          "summary": "bz#2193219: speculative pointer dereference in do_prlimit() in kernel/sys.c",
+          "url": "https://bugzilla.redhat.com/show_bug.cgi?id=2193219"
+        }
+      ],
+      "release_date": "2023-01-21T00:00:00Z",
+      "remediations": [
+        {
+          "category": "vendor_fix",
+          "details": "For details on how to apply this update, which includes the changes described in this advisory, refer to:\n\nhttps://access.redhat.com/articles/11258\n\nThe system must be rebooted for this update to take effect.",
+          "product_ids": [
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-0:5.14.0-284.25.1.rt14.310.el9_2.src",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-debuginfo-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-devel-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-kvm-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-extra-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debuginfo-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debuginfo-common-x86_64-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-devel-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-kvm-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-modules-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-modules-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-modules-extra-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-0:5.14.0-284.25.1.rt14.310.el9_2.src",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-debuginfo-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-devel-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-extra-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debuginfo-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debuginfo-common-x86_64-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-devel-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-modules-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-modules-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-modules-extra-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64"
+          ],
+          "url": "https://access.redhat.com/errata/RHSA-2023:4378"
+        }
+      ],
+      "scores": [
+        {
+          "cvss_v3": {
+            "attackComplexity": "HIGH",
+            "attackVector": "LOCAL",
+            "availabilityImpact": "NONE",
+            "baseScore": 4.7,
+            "baseSeverity": "MEDIUM",
+            "confidentialityImpact": "HIGH",
+            "integrityImpact": "NONE",
+            "privilegesRequired": "LOW",
+            "scope": "UNCHANGED",
+            "userInteraction": "NONE",
+            "vectorString": "CVSS:3.1/AV:L/AC:H/PR:L/UI:N/S:U/C:H/I:N/A:N",
+            "version": "3.1"
+          },
+          "products": [
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-0:5.14.0-284.25.1.rt14.310.el9_2.src",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-debuginfo-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-devel-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-kvm-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-extra-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debuginfo-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debuginfo-common-x86_64-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-devel-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-kvm-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-modules-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-modules-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-modules-extra-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-0:5.14.0-284.25.1.rt14.310.el9_2.src",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-debuginfo-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-devel-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-extra-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debuginfo-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debuginfo-common-x86_64-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-devel-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-modules-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-modules-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-modules-extra-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64"
+          ]
+        }
+      ],
+      "threats": [
+        {
+          "category": "impact",
+          "date": "2023-04-26T00:00:00Z",
+          "details": "Moderate"
+        }
+      ],
+      "title": "speculative pointer dereference in do_prlimit() in kernel/sys.c"
+    },
+    {
+      "cve": "CVE-2023-1998",
+      "cwe": {
+        "id": "CWE-200",
+        "name": "Exposure of Sensitive Information to an Unauthorized Actor"
+      },
+      "discovery_date": "2023-04-17T00:00:00Z",
+      "ids": [
+        {
+          "system_name": "Red Hat Bugzilla",
+          "text": "https://bugzilla.redhat.com/show_bug.cgi?id=2187257"
+        }
+      ],
+      "notes": [
+        {
+          "category": "general",
+          "text": "The CVSS score(s) listed for this vulnerability do not reflect the associated product's status, and are included for informational purposes to better understand the severity of this vulnerability.",
+          "title": "CVSS score applicability"
+        },
+        {
+          "category": "description",
+          "text": "It was found that the Linux Kernel still left the victim process exposed to attacks in some cases even after enabling the spectre-BTI mitigation with prctl. The kernel failed to protect applications that attempted to protect against Spectre v2 leaving them open to attack from other processes running on the same physical core in another hyperthread.",
+          "title": "Vulnerability description"
+        },
+        {
+          "category": "summary",
+          "text": "Spectre v2 SMT mitigations problem",
+          "title": "Vulnerability summary"
+        }
+      ],
+      "product_status": {
+        "fixed": [
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-0:5.14.0-284.25.1.rt14.310.el9_2.src",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-debuginfo-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-devel-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-kvm-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-extra-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debuginfo-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debuginfo-common-x86_64-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-devel-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-kvm-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-modules-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-modules-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-modules-extra-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "RT-9.2.0.Z.MAIN.EUS:kernel-rt-0:5.14.0-284.25.1.rt14.310.el9_2.src",
+          "RT-9.2.0.Z.MAIN.EUS:kernel-rt-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "RT-9.2.0.Z.MAIN.EUS:kernel-rt-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-debuginfo-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-devel-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-extra-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debuginfo-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debuginfo-common-x86_64-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "RT-9.2.0.Z.MAIN.EUS:kernel-rt-devel-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "RT-9.2.0.Z.MAIN.EUS:kernel-rt-modules-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "RT-9.2.0.Z.MAIN.EUS:kernel-rt-modules-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "RT-9.2.0.Z.MAIN.EUS:kernel-rt-modules-extra-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64"
+        ]
+      },
+      "references": [
+        {
+          "category": "external",
+          "summary": "https://www.cve.org/CVERecord?id=CVE-2023-1998",
+          "url": "https://www.cve.org/CVERecord?id=CVE-2023-1998"
+        },
+        {
+          "category": "external",
+          "summary": "https://nvd.nist.gov/vuln/detail/CVE-2023-1998",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2023-1998"
+        },
+        {
+          "category": "external",
+          "summary": "https://github.com/google/security-research/security/advisories/GHSA-mj4w-6495-6crx",
+          "url": "https://github.com/google/security-research/security/advisories/GHSA-mj4w-6495-6crx"
+        },
+        {
+          "category": "external",
+          "summary": "CVE-2023-1998",
+          "url": "https://access.redhat.com/security/cve/CVE-2023-1998"
+        },
+        {
+          "category": "external",
+          "summary": "bz#2187257: Spectre v2 SMT mitigations problem",
+          "url": "https://bugzilla.redhat.com/show_bug.cgi?id=2187257"
+        }
+      ],
+      "release_date": "2023-04-12T00:00:00Z",
+      "remediations": [
+        {
+          "category": "vendor_fix",
+          "details": "For details on how to apply this update, which includes the changes described in this advisory, refer to:\n\nhttps://access.redhat.com/articles/11258\n\nThe system must be rebooted for this update to take effect.",
+          "product_ids": [
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-0:5.14.0-284.25.1.rt14.310.el9_2.src",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-debuginfo-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-devel-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-kvm-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-extra-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debuginfo-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debuginfo-common-x86_64-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-devel-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-kvm-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-modules-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-modules-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-modules-extra-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-0:5.14.0-284.25.1.rt14.310.el9_2.src",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-debuginfo-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-devel-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-extra-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debuginfo-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debuginfo-common-x86_64-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-devel-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-modules-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-modules-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-modules-extra-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64"
+          ],
+          "url": "https://access.redhat.com/errata/RHSA-2023:4378"
+        }
+      ],
+      "scores": [
+        {
+          "cvss_v3": {
+            "attackComplexity": "HIGH",
+            "attackVector": "LOCAL",
+            "availabilityImpact": "NONE",
+            "baseScore": 5.6,
+            "baseSeverity": "MEDIUM",
+            "confidentialityImpact": "HIGH",
+            "integrityImpact": "NONE",
+            "privilegesRequired": "LOW",
+            "scope": "CHANGED",
+            "userInteraction": "NONE",
+            "vectorString": "CVSS:3.0/AV:L/AC:H/PR:L/UI:N/S:C/C:H/I:N/A:N",
+            "version": "3.0"
+          },
+          "products": [
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-0:5.14.0-284.25.1.rt14.310.el9_2.src",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-debuginfo-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-devel-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-kvm-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-extra-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debuginfo-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debuginfo-common-x86_64-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-devel-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-kvm-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-modules-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-modules-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-modules-extra-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-0:5.14.0-284.25.1.rt14.310.el9_2.src",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-debuginfo-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-devel-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-extra-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debuginfo-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debuginfo-common-x86_64-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-devel-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-modules-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-modules-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-modules-extra-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64"
+          ]
+        }
+      ],
+      "threats": [
+        {
+          "category": "impact",
+          "date": "2023-04-17T00:00:00Z",
+          "details": "Moderate"
+        }
+      ],
+      "title": "Spectre v2 SMT mitigations problem"
+    },
+    {
+      "cve": "CVE-2023-3090",
+      "cwe": {
+        "id": "CWE-787",
+        "name": "Out-of-bounds Write"
+      },
+      "discovery_date": "2023-06-28T00:00:00Z",
+      "ids": [
+        {
+          "system_name": "Red Hat Bugzilla",
+          "text": "https://bugzilla.redhat.com/show_bug.cgi?id=2218672"
+        }
+      ],
+      "notes": [
+        {
+          "category": "general",
+          "text": "The CVSS score(s) listed for this vulnerability do not reflect the associated product's status, and are included for informational purposes to better understand the severity of this vulnerability.",
+          "title": "CVSS score applicability"
+        },
+        {
+          "category": "description",
+          "text": "A flaw was found in the IPVLAN network driver in the Linux kernel. This issue is caused by missing skb->cb initialization in `__ip_options_echo` and can lead to an out-of-bounds write stack overflow. This may allow a local user to cause a denial of service or potentially achieve local privilege escalation.",
+          "title": "Vulnerability description"
+        },
+        {
+          "category": "summary",
+          "text": "out-of-bounds write caused by unclear skb->cb",
+          "title": "Vulnerability summary"
+        }
+      ],
+      "product_status": {
+        "fixed": [
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-0:5.14.0-284.25.1.rt14.310.el9_2.src",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-debuginfo-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-devel-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-kvm-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-extra-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debuginfo-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debuginfo-common-x86_64-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-devel-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-kvm-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-modules-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-modules-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-modules-extra-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "RT-9.2.0.Z.MAIN.EUS:kernel-rt-0:5.14.0-284.25.1.rt14.310.el9_2.src",
+          "RT-9.2.0.Z.MAIN.EUS:kernel-rt-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "RT-9.2.0.Z.MAIN.EUS:kernel-rt-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-debuginfo-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-devel-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-extra-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debuginfo-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debuginfo-common-x86_64-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "RT-9.2.0.Z.MAIN.EUS:kernel-rt-devel-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "RT-9.2.0.Z.MAIN.EUS:kernel-rt-modules-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "RT-9.2.0.Z.MAIN.EUS:kernel-rt-modules-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "RT-9.2.0.Z.MAIN.EUS:kernel-rt-modules-extra-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64"
+        ]
+      },
+      "references": [
+        {
+          "category": "external",
+          "summary": "https://www.cve.org/CVERecord?id=CVE-2023-3090",
+          "url": "https://www.cve.org/CVERecord?id=CVE-2023-3090"
+        },
+        {
+          "category": "external",
+          "summary": "https://nvd.nist.gov/vuln/detail/CVE-2023-3090",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2023-3090"
+        },
+        {
+          "category": "external",
+          "summary": "CVE-2023-3090",
+          "url": "https://access.redhat.com/security/cve/CVE-2023-3090"
+        },
+        {
+          "category": "external",
+          "summary": "bz#2218672: out-of-bounds write caused by unclear skb->cb",
+          "url": "https://bugzilla.redhat.com/show_bug.cgi?id=2218672"
+        }
+      ],
+      "release_date": "2023-05-10T00:00:00Z",
+      "remediations": [
+        {
+          "category": "vendor_fix",
+          "details": "For details on how to apply this update, which includes the changes described in this advisory, refer to:\n\nhttps://access.redhat.com/articles/11258\n\nThe system must be rebooted for this update to take effect.",
+          "product_ids": [
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-0:5.14.0-284.25.1.rt14.310.el9_2.src",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-debuginfo-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-devel-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-kvm-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-extra-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debuginfo-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debuginfo-common-x86_64-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-devel-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-kvm-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-modules-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-modules-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-modules-extra-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-0:5.14.0-284.25.1.rt14.310.el9_2.src",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-debuginfo-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-devel-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-extra-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debuginfo-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debuginfo-common-x86_64-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-devel-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-modules-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-modules-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-modules-extra-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64"
+          ],
+          "url": "https://access.redhat.com/errata/RHSA-2023:4378"
+        }
+      ],
+      "scores": [
+        {
+          "cvss_v3": {
+            "attackComplexity": "LOW",
+            "attackVector": "LOCAL",
+            "availabilityImpact": "HIGH",
+            "baseScore": 7.8,
+            "baseSeverity": "HIGH",
+            "confidentialityImpact": "HIGH",
+            "integrityImpact": "HIGH",
+            "privilegesRequired": "LOW",
+            "scope": "UNCHANGED",
+            "userInteraction": "NONE",
+            "vectorString": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H",
+            "version": "3.1"
+          },
+          "products": [
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-0:5.14.0-284.25.1.rt14.310.el9_2.src",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-debuginfo-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-devel-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-kvm-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-extra-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debuginfo-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debuginfo-common-x86_64-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-devel-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-kvm-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-modules-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-modules-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-modules-extra-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-0:5.14.0-284.25.1.rt14.310.el9_2.src",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-debuginfo-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-devel-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-extra-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debuginfo-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debuginfo-common-x86_64-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-devel-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-modules-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-modules-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-modules-extra-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64"
+          ]
+        }
+      ],
+      "threats": [
+        {
+          "category": "impact",
+          "date": "2023-06-28T00:00:00Z",
+          "details": "Important"
+        }
+      ],
+      "title": "out-of-bounds write caused by unclear skb->cb"
+    },
+    {
+      "cve": "CVE-2023-35788",
+      "cwe": {
+        "id": "CWE-787",
+        "name": "Out-of-bounds Write"
+      },
+      "discovery_date": "2023-06-17T00:00:00Z",
+      "ids": [
+        {
+          "system_name": "Red Hat Bugzilla",
+          "text": "https://bugzilla.redhat.com/show_bug.cgi?id=2215768"
+        }
+      ],
+      "notes": [
+        {
+          "category": "general",
+          "text": "The CVSS score(s) listed for this vulnerability do not reflect the associated product's status, and are included for informational purposes to better understand the severity of this vulnerability.",
+          "title": "CVSS score applicability"
+        },
+        {
+          "category": "description",
+          "text": "A flaw was found in the TC flower classifier (cls_flower) in the Networking subsystem of the Linux kernel. This issue occurs when sending two TCA_FLOWER_KEY_ENC_OPTS_GENEVE packets with a total size of 252 bytes, which results in an out-of-bounds write when the third packet enters fl_set_geneve_opt, potentially leading to a denial of service or privilege escalation.",
+          "title": "Vulnerability description"
+        },
+        {
+          "category": "summary",
+          "text": "out-of-bounds write in fl_set_geneve_opt()",
+          "title": "Vulnerability summary"
+        }
+      ],
+      "product_status": {
+        "fixed": [
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-0:5.14.0-284.25.1.rt14.310.el9_2.src",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-debuginfo-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-devel-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-kvm-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-extra-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debuginfo-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debuginfo-common-x86_64-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-devel-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-kvm-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-modules-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-modules-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-modules-extra-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "RT-9.2.0.Z.MAIN.EUS:kernel-rt-0:5.14.0-284.25.1.rt14.310.el9_2.src",
+          "RT-9.2.0.Z.MAIN.EUS:kernel-rt-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "RT-9.2.0.Z.MAIN.EUS:kernel-rt-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-debuginfo-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-devel-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-extra-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debuginfo-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debuginfo-common-x86_64-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "RT-9.2.0.Z.MAIN.EUS:kernel-rt-devel-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "RT-9.2.0.Z.MAIN.EUS:kernel-rt-modules-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "RT-9.2.0.Z.MAIN.EUS:kernel-rt-modules-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+          "RT-9.2.0.Z.MAIN.EUS:kernel-rt-modules-extra-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64"
+        ]
+      },
+      "references": [
+        {
+          "category": "external",
+          "summary": "https://www.cve.org/CVERecord?id=CVE-2023-35788",
+          "url": "https://www.cve.org/CVERecord?id=CVE-2023-35788"
+        },
+        {
+          "category": "external",
+          "summary": "https://nvd.nist.gov/vuln/detail/CVE-2023-35788",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2023-35788"
+        },
+        {
+          "category": "external",
+          "summary": "https://www.openwall.com/lists/oss-security/2023/06/07/1",
+          "url": "https://www.openwall.com/lists/oss-security/2023/06/07/1"
+        },
+        {
+          "category": "external",
+          "summary": "CVE-2023-35788",
+          "url": "https://access.redhat.com/security/cve/CVE-2023-35788"
+        },
+        {
+          "category": "external",
+          "summary": "bz#2215768: out-of-bounds write in fl_set_geneve_opt()",
+          "url": "https://bugzilla.redhat.com/show_bug.cgi?id=2215768"
+        }
+      ],
+      "release_date": "2023-05-29T00:00:00Z",
+      "remediations": [
+        {
+          "category": "vendor_fix",
+          "details": "For details on how to apply this update, which includes the changes described in this advisory, refer to:\n\nhttps://access.redhat.com/articles/11258\n\nThe system must be rebooted for this update to take effect.",
+          "product_ids": [
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-0:5.14.0-284.25.1.rt14.310.el9_2.src",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-debuginfo-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-devel-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-kvm-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-extra-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debuginfo-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debuginfo-common-x86_64-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-devel-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-kvm-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-modules-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-modules-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-modules-extra-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-0:5.14.0-284.25.1.rt14.310.el9_2.src",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-debuginfo-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-devel-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-extra-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debuginfo-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debuginfo-common-x86_64-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-devel-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-modules-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-modules-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-modules-extra-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64"
+          ],
+          "url": "https://access.redhat.com/errata/RHSA-2023:4378"
+        }
+      ],
+      "scores": [
+        {
+          "cvss_v3": {
+            "attackComplexity": "HIGH",
+            "attackVector": "NETWORK",
+            "availabilityImpact": "HIGH",
+            "baseScore": 8.1,
+            "baseSeverity": "HIGH",
+            "confidentialityImpact": "HIGH",
+            "integrityImpact": "HIGH",
+            "privilegesRequired": "NONE",
+            "scope": "UNCHANGED",
+            "userInteraction": "NONE",
+            "vectorString": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:H",
+            "version": "3.1"
+          },
+          "products": [
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-0:5.14.0-284.25.1.rt14.310.el9_2.src",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-debuginfo-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-devel-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-kvm-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-extra-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debuginfo-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-debuginfo-common-x86_64-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-devel-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-kvm-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-modules-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-modules-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "NFV-9.2.0.Z.MAIN.EUS:kernel-rt-modules-extra-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-0:5.14.0-284.25.1.rt14.310.el9_2.src",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-debuginfo-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-devel-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debug-modules-extra-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debuginfo-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-debuginfo-common-x86_64-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-devel-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-modules-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-modules-core-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64",
+            "RT-9.2.0.Z.MAIN.EUS:kernel-rt-modules-extra-0:5.14.0-284.25.1.rt14.310.el9_2.x86_64"
+          ]
+        }
+      ],
+      "threats": [
+        {
+          "category": "impact",
+          "date": "2023-06-17T00:00:00Z",
+          "details": "Important"
+        }
+      ],
+      "title": "out-of-bounds write in fl_set_geneve_opt()"
+    }
+  ]
+}

@@ -6,11 +6,13 @@ on:
     branches:
       - main
       - stable
+      - release/*
   # Also on PRs, just be careful not to publish anything
   pull_request:
     branches:
       - main
       - stable
+      - release/*
   # Allow to be called from other workflows (like "release")
   workflow_call:
   # But don't trigger on tags, as they are covered by the "release.yaml" workflow
@@ -24,6 +26,9 @@ on:
 # check and clippy, but test as a dedicated job, as we don't have a WASM test runner. Yet, check and clippy for wasm32
 # are different.
 
+env:
+  HELM_VERSION: "3.14.0"
+
 jobs:
 
   formatting:
@@ -34,7 +39,6 @@ jobs:
       - name: Check formatting
         run: |
           cargo fmt --check
-          cargo fmt --check --manifest-path bommer/bommer-ui/Cargo.toml
           cargo fmt --check --manifest-path spog/ui/Cargo.toml
 
 
@@ -51,14 +55,23 @@ jobs:
               echo "::error::Uncommitted changes to deploy/openshift (most likely template must be updated by running `make`)"
               exit 1
           fi
+      - name: Check if values schema has uncommitted changes
+        working-directory: deploy/k8s
+        run: |
+          python3 -c 'import sys, yaml, json; print(json.dumps(yaml.safe_load(sys.stdin), indent=2))' < charts/trustification/values.schema.yaml > charts/trustification/values.schema.json
+          git diff --quiet charts/trustification
+          if [ $? -gt 0 ]; then
+              echo "::error::Uncommitted changes to deploy/k8s/charts/trustification/values.schema.json"
+              exit 1
+          fi
 
   helm-lint:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
-      - uses: azure/setup-helm@v3
+      - uses: azure/setup-helm@v4.0.0
         with:
-          version: v3.13.2
+          version: ${{ env.HELM_VERSION }}
       - name: add helm repositories
         working-directory: deploy/k8s
         run: |
@@ -66,24 +79,60 @@ jobs:
       - name: install helm dependencies
         working-directory: deploy/k8s
         run: |
-          helm dependency build chart/
-      - name: helm-lint (staging)
+          helm dependency build charts/trustification
+
+      - name: helm-lint (minikube)
         working-directory: deploy/k8s
         run: |
-          helm lint ./chart -f ./chart/trustification.dev/staging.yaml
-      - name: helm-lint (prod)
+          helm lint ./charts/trustification --values values-minikube.yaml --set-string appDomain=.localhost
+
+      - name: helm-lint (ocp-no-aws)
         working-directory: deploy/k8s
         run: |
-          helm lint ./chart -f ./chart/trustification.dev/prod.yaml
+          helm lint ./charts/trustification --values values-ocp-no-aws.yaml --set-string appDomain=.localhost
+
+      - name: helm-lint (ocp-aws)
+        working-directory: deploy/k8s
+        run: |
+          helm lint ./charts/trustification --values values-ocp-aws.yaml --values values-ocp-aws-lint.yaml --set-string appDomain=.localhost
+
+      - name: helm-lint (branding)
+        working-directory: deploy/k8s
+        run: |
+          helm lint ./charts/trustification-branding
+
+      # also lint the deprecated charts for now
+      - name: helm-lint-deprecated (staging)
+        working-directory: deploy/k8s
+        run: |
+          helm lint ./chart -f ../trustification.dev/staging.yaml
+      - name: helm-lint-deprecated (prod)
+        working-directory: deploy/k8s
+        run: |
+          helm lint ./chart -f ../trustification.dev/prod.yaml
 
   ci-backend:
     runs-on: ubuntu-22.04
     needs:
       - formatting
     steps:
+      - name: Maximize build space
+        run: |
+          df -h
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /opt/hostedtoolcache/CodeQL
+          sudo docker image prune --all --force
+          sudo rm -Rf ${JAVA_HOME_8_X64}
+          sudo rm -Rf ${JAVA_HOME_11_X64}
+          sudo rm -Rf ${JAVA_HOME_17_X64}
+          sudo rm -Rf ${RUBY_PATH}
+          df -h
+
       - uses: actions/checkout@v4
       - run: rustup component add clippy
-      - uses: actions/cache@v3
+      - uses: actions/cache@v4
         with:
           path: |
             ~/.cargo/bin/
@@ -93,20 +142,25 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-            bommer/bommer-ui/target/
             spog/ui/target/
           key: ${{ runner.os }}-cargo-backend-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Install Protoc
-        uses: arduino/setup-protoc@v2
+        uses: arduino/setup-protoc@v3
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install dependencies
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          sudo apt-get install -y libsasl2-dev
 
       - name: Check
         run: cargo check
 
       - name: Clippy
-        run: cargo clippy --all-targets --all-features -- -D warnings
+        run: cargo clippy --all-targets --all-features -- -D warnings -D clippy::unwrap_used
 
       - name: Test
         run: cargo test
@@ -119,7 +173,7 @@ jobs:
       - uses: actions/checkout@v4
       - run: rustup component add clippy
       - run: rustup target add wasm32-unknown-unknown
-      - uses: actions/cache@v3
+      - uses: actions/cache@v4
         with:
           path: |
             ~/.cargo/bin/
@@ -129,24 +183,21 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-            bommer/bommer-ui/target/
             spog/ui/target/
           key: ${{ runner.os }}-cargo-frontend-check-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Install Protoc
-        uses: arduino/setup-protoc@v2
+        uses: arduino/setup-protoc@v3
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Check
         run: |
-          cargo check --target wasm32-unknown-unknown --manifest-path bommer/bommer-ui/Cargo.toml
           cargo check --target wasm32-unknown-unknown --manifest-path spog/ui/Cargo.toml
 
       - name: Clippy
         run: |
-          cargo clippy --target wasm32-unknown-unknown --all-targets --all-features --manifest-path bommer/bommer-ui/Cargo.toml -- -D warnings
-          cargo clippy --target wasm32-unknown-unknown --all-targets --all-features --manifest-path spog/ui/Cargo.toml -- -D warnings
+          cargo clippy --target wasm32-unknown-unknown --all-targets --all-features --manifest-path spog/ui/Cargo.toml -- -D warnings -D clippy::unwrap_used
 
   ci-frontend-test:
     runs-on: ubuntu-22.04
@@ -154,7 +205,7 @@ jobs:
       - formatting
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/cache@v3
+      - uses: actions/cache@v4
         with:
           path: |
             ~/.cargo/bin/
@@ -164,13 +215,11 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-            bommer/bommer-ui/target/
             spog/ui/target/
           key: ${{ runner.os }}-cargo-frontend-test-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Test
         run: |
-          cargo test --manifest-path bommer/bommer-ui/Cargo.toml
           cargo test --manifest-path spog/ui/Cargo.toml
 
   integration:
@@ -178,15 +227,143 @@ jobs:
       - formatting
     uses: ./.github/workflows/integration.yaml
 
+  unit:
+    needs:
+      - formatting
+    uses: ./.github/workflows/unit.yaml
+
+  containers:
+    needs:
+      - formatting
+    uses: ./.github/workflows/containers.yaml
+    secrets: inherit
+
+    with:
+      imageTag: ci
+      platforms: "linux/amd64"
+
+  helm-test:
+    runs-on: ubuntu-22.04
+    needs:
+      - containers
+      - helm-lint
+
+    env:
+      CONTAINERS: "trust trust-docs trust-tests"
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-kubectl@v4.0.0
+      - uses: azure/setup-helm@v4.0.0
+        with:
+          version: ${{ env.HELM_VERSION }}
+
+      - name: add helm repositories
+        working-directory: deploy/k8s
+        run: |
+          helm repo add bitnami https://charts.bitnami.com/bitnami
+
+      - name: Fetch Helm dependencies
+        working-directory: deploy/k8s
+        run: |
+          helm dependency build charts/trustification-infrastructure
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: ~/download
+
+      - name: Display downloaded content
+        run: ls -R ~/download
+
+      - name: Create Kind cluster
+        uses: helm/kind-action@v1
+        with:
+          config: .github/kind-config.yaml
+          wait: 120s
+
+      - name: Install NGINX ingress controller
+        run: kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/86f3af8dead82f2d0905dceddeba213751e15b50/deploy/static/provider/kind/deploy.yaml
+
+      - name: Wait for NGINX ingress controller
+        run: |
+          kubectl wait --namespace ingress-nginx \
+            --for=condition=ready pod \
+            --selector=app.kubernetes.io/component=controller \
+            --timeout=90s
+
+      - name: Load containers
+        run: |
+          for container in $CONTAINERS; do
+            kind load image-archive ~/download/${container}-container/${container}-image.tar --name chart-testing
+          done
+
+      - name: Check images
+        run: |
+          docker exec -t chart-testing-control-plane crictl images
+
+      - name: Set up chart-testing
+        uses: helm/chart-testing-action@v2.6.1
+
+      - name: check nodes
+        run: kubectl get nodes -o json
+
+      - name: Eval app-domain and namespace
+        run: |
+          APP_DOMAIN=.$(kubectl get node chart-testing-control-plane -o jsonpath='{.status.addresses[?(@.type == "InternalIP")].address}' | awk '// { print $1 }').nip.io
+          echo "App domain: $APP_DOMAIN"
+          echo "APP_DOMAIN=$APP_DOMAIN" >> $GITHUB_ENV
+          echo "NAMESPACE=trustification" >> $GITHUB_ENV
+
+      - name: Create namespace
+        run: |
+          kubectl create ns $NAMESPACE
+
+      - name: Deploy infrastructure chart first
+        working-directory: deploy/k8s
+        run: |
+          # we use the minikube values file, which works the same way with kind
+          helm upgrade --install -n $NAMESPACE \
+            infrastructure charts/trustification-infrastructure \
+            --wait --timeout 10m \
+            --values values-minikube.yaml \
+            --set-string keycloak.ingress.hostname=sso$APP_DOMAIN \
+            --set-string appDomain=$APP_DOMAIN
+
+      - name: Lint chart-testing
+        run: |
+          ct lint \
+            --helm-lint-extra-args "--values deploy/k8s/values-minikube.yaml --set-string appDomain=$APP_DOMAIN" \
+            --charts deploy/k8s/charts/trustification \
+            --target-branch ${{ github.event.repository.default_branch }}
+
+      - name: Install chart-testing
+        run: |
+          ct install \
+            --helm-extra-set-args "--values deploy/k8s/values-minikube.yaml --set-string appDomain=$APP_DOMAIN --set-string image.version=ci --set-string image.registry=localhost --set workarounds.initCronJobPvcs=true" \
+            --helm-extra-args "--timeout 10m --debug" \
+            --namespace $NAMESPACE --charts deploy/k8s/charts/trustification \
+            --target-branch ${{ github.event.repository.default_branch }}
+
   # A virtual job, referenced by the branch protection rule
   ci:
     runs-on: ubuntu-22.04
     needs:
+      - unit
+      - uncommitted
       - ci-backend
       - ci-frontend-check
       - ci-frontend-test
       - integration
-      - helm-lint
-      - uncommitted
+      - helm-test
+    if: always()
     steps:
-      - run: echo 🎉
+      - name: Success
+        if: ${{ !(contains(needs.*.result, 'failure')) }}
+        run: |
+          echo 🎉
+          exit 0
+      - name: Failure
+        if: ${{ contains(needs.*.result, 'failure') }}
+        run: |
+          echo 😥
+          exit 1

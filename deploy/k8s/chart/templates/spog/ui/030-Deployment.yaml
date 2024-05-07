@@ -1,0 +1,80 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spog-ui
+  labels:
+    app.kubernetes.io/name: spog-ui
+    app.kubernetes.io/component: ui
+    app.kubernetes.io/part-of: trustification
+spec:
+  replicas: {{ .Values.spog.ui.replicas | default 1 }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: spog-ui
+      app.kubernetes.io/component: ui
+      app.kubernetes.io/part-of: trustification
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: spog-ui
+        app.kubernetes.io/component: ui
+        app.kubernetes.io/part-of: trustification
+    spec:
+      volumes:
+        - name: endpoints
+          emptyDir: {}
+        - name: run
+          emptyDir: {}
+        - name: branding
+          configMap:
+            name: spog-ui-branding
+      containers:
+        - image: {{ .Values.uiImage }}:{{ .Values.release }}
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          name: service
+          command: ["/nginx.sh"]
+          env:
+            - name: API_URL
+              value: https://api.{{ .Values.domain }}
+            - name: BOMBASTIC_URL
+              value: https://sbom.{{ .Values.domain }}
+            - name: VEXINATION_URL
+              value: https://vex.{{ .Values.domain }}
+            - name: ISSUER_URL
+              {{ include "trustification.authentication-frontend-issuer-url" . | nindent 14 }}
+            - name: CLIENT_ID
+              {{ include "trustification.authentication-frontend-client-id" . | nindent 14 }}
+{{- with .Values.oidcClients.frontend.scopes }}
+            - name: SCOPES
+              value: {{ . | quote }}
+{{- end }}
+{{- with .Values.spog.ui.segmentWriteKey }}
+            - name: WRITE_KEY
+              {{ . | toYaml | nindent 14 }}
+{{- end }}
+{{- with .Values.spog.ui.initialBackendJson }}
+            - name: BACKEND_JSON
+              value: {{ . | quote }}
+{{- end }}
+          volumeMounts:
+            - name: endpoints
+              mountPath: /endpoints
+            - name: branding
+              mountPath: /public/branding
+            - name: run
+              mountPath: /run
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+          resources:
+            {{- toYaml .Values.spog.ui.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 2
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 2

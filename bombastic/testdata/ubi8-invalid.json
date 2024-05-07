@@ -1,0 +1,1883 @@
+{
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "creationInfo": {
+    "created": "2023-10-12T13:31:00Z",
+    "creators": [
+      "Organization: Red Hat Product Security (secalert@redhat.com)"
+    ],
+    "licenseListVersion": "3.8"
+  },
+  "dataLicense": "CC0-1.0",
+    "SPDXRef-68742c19-0a25-4792-957a-b9508add8ded"
+  ],
+  "documentNamespace": "https://access.redhat.com/security/data/sbom/beta/spdx/ubi8-micro-container-68742c19-0a25-4792-957a-b9508add8ded",
+  "name": "ubi8-micro-container",
+  "packages": [
+    {
+      "SPDXID": "SPDXRef-4f101b3c-25f0-45ae-b1ae-16e71bede7e2",
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://catalog.redhat.com/software/containers/search",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:oci/ubi-micro@sha256:aabe8148d20daa0f16339ee9ce1203dff71eed041a01a0232a58c14821e99967?arch=ppc64le&repository_url=registry.redhat.io/ubi8/ubi-micro&tag=8.7-4",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseComments": "Licensing information is automatically generated and may be incomplete or incorrect.",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "name": "ubi8-micro-container",
+      "originator": "NOASSERTION",
+      "packageFileName": "NOASSERTION",
+      "supplier": "Organization: Red Hat",
+      "versionInfo": "8.7-4"
+    },
+    {
+      "SPDXID": "SPDXRef-4cef1f2a-87ec-49f4-bd17-1dd5eb119348",
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://access.redhat.com/downloads/content/package-browser",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:rpm/redhat/glibc-common@2.28-211.el8?arch=ppc64le",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseComments": "Licensing information is automatically generated and may be incomplete or incorrect.",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "LGPLV2+ AND LGPLV2+ WITH EXCEPTIONS AND GPLV2+ AND GPLV2+ WITH EXCEPTIONS AND BSD AND INNER-NET AND ISC AND PUBLIC-DOMAIN AND GFDL",
+      "name": "glibc-common",
+      "originator": "NOASSERTION",
+      "packageFileName": "glibc-common-2.28-211.el8.ppc64le.rpm",
+      "supplier": "Organization: Red Hat",
+      "versionInfo": "2.28-211.el8"
+    },
+    {
+      "SPDXID": "SPDXRef-7d6679d5-a996-4de3-833a-edd78d9b8547",
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://access.redhat.com/downloads/content/package-browser",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:rpm/redhat/redhat-release@8.7-0.3.el8?arch=ppc64le",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseComments": "Licensing information is automatically generated and may be incomplete or incorrect.",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "GPLV2",
+      "name": "redhat-release",
+      "originator": "NOASSERTION",
+      "packageFileName": "redhat-release-8.7-0.3.el8.ppc64le.rpm",
+      "supplier": "Organization: Red Hat",
+      "versionInfo": "8.7-0.3.el8"
+    },
+    {
+      "SPDXID": "SPDXRef-0e96b473-4de3-4b14-8a79-ec7e9269a6dc",
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://access.redhat.com/downloads/content/package-browser",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:rpm/redhat/bash@4.4.20-4.el8_6?arch=aarch64",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseComments": "Licensing information is automatically generated and may be incomplete or incorrect.",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "GPLV3+",
+      "name": "bash",
+      "originator": "NOASSERTION",
+      "packageFileName": "bash-4.4.20-4.el8_6.aarch64.rpm",
+      "supplier": "Organization: Red Hat",
+      "versionInfo": "4.4.20-4.el8_6"
+    },
+    {
+      "SPDXID": "SPDXRef-c66836e9-0972-4c95-ac83-d7b4437acf26",
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://access.redhat.com/downloads/content/package-browser",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:rpm/redhat/glibc@2.28-211.el8?arch=aarch64",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseComments": "Licensing information is automatically generated and may be incomplete or incorrect.",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "LGPLV2+ AND LGPLV2+ WITH EXCEPTIONS AND GPLV2+ AND GPLV2+ WITH EXCEPTIONS AND BSD AND INNER-NET AND ISC AND PUBLIC-DOMAIN AND GFDL",
+      "name": "glibc",
+      "originator": "NOASSERTION",
+      "packageFileName": "glibc-2.28-211.el8.aarch64.rpm",
+      "supplier": "Organization: Red Hat",
+      "versionInfo": "2.28-211.el8"
+    },
+    {
+      "SPDXID": "SPDXRef-2295a5f0-8411-457c-8d3f-8a05f961e81d",
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://access.redhat.com/downloads/content/package-browser",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:rpm/redhat/libattr@2.4.48-3.el8?arch=aarch64",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseComments": "Licensing information is automatically generated and may be incomplete or incorrect.",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "LGPLV2+",
+      "name": "libattr",
+      "originator": "NOASSERTION",
+      "packageFileName": "libattr-2.4.48-3.el8.aarch64.rpm",
+      "supplier": "Organization: Red Hat",
+      "versionInfo": "2.4.48-3.el8"
+    },
+    {
+      "SPDXID": "SPDXRef-bb4f1ed6-0497-454a-8f4e-c43eb92ecd89",
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://access.redhat.com/downloads/content/package-browser",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:rpm/redhat/redhat-release@8.7-0.3.el8?arch=aarch64",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseComments": "Licensing information is automatically generated and may be incomplete or incorrect.",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "GPLV2",
+      "name": "redhat-release",
+      "originator": "NOASSERTION",
+      "packageFileName": "redhat-release-8.7-0.3.el8.aarch64.rpm",
+      "supplier": "Organization: Red Hat",
+      "versionInfo": "8.7-0.3.el8"
+    },
+    {
+      "SPDXID": "SPDXRef-bb368cb8-fe2d-4c72-9b27-346550c81949",
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://catalog.redhat.com/software/containers/search",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:oci/ubi-micro@sha256:a2b12742ce4c3943e76e7c8e724634c3727456ff8db535acba4f7a1a64c406f6?arch=aarch64&repository_url=registry.redhat.io/ubi8/ubi-micro&tag=8.7-4",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseComments": "Licensing information is automatically generated and may be incomplete or incorrect.",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "name": "ubi8-micro-container",
+      "originator": "NOASSERTION",
+      "packageFileName": "NOASSERTION",
+      "supplier": "Organization: Red Hat",
+      "versionInfo": "8.7-4"
+    },
+    {
+      "SPDXID": "SPDXRef-a8aa61fe-f673-418c-bf05-0cae0a87177d",
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://catalog.redhat.com/software/containers/search",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:oci/ubi-micro@sha256:812b83b480d370f5bab7b41454dd443066752ae9d7349fdc36e5ef0c127046a7?arch=x86_64&repository_url=registry.redhat.io/ubi8/ubi-micro&tag=8.7-4",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseComments": "Licensing information is automatically generated and may be incomplete or incorrect.",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "name": "ubi8-micro-container",
+      "originator": "NOASSERTION",
+      "packageFileName": "NOASSERTION",
+      "supplier": "Organization: Red Hat",
+      "versionInfo": "8.7-4"
+    },
+    {
+      "SPDXID": "SPDXRef-12b5ecbd-c0a0-40bc-a459-3b53ce1210a4",
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://access.redhat.com/downloads/content/package-browser",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:rpm/redhat/basesystem@11-5.el8?arch=noarch",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseComments": "Licensing information is automatically generated and may be incomplete or incorrect.",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "PUBLIC-DOMAIN",
+      "name": "basesystem",
+      "originator": "NOASSERTION",
+      "packageFileName": "basesystem-11-5.el8.noarch.rpm",
+      "supplier": "Organization: Red Hat",
+      "versionInfo": "11-5.el8"
+    },
+    {
+      "SPDXID": "SPDXRef-ac41cc00-61bf-480e-b2af-595cdbe373f2",
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://access.redhat.com/downloads/content/package-browser",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:rpm/redhat/filesystem@3.8-6.el8?arch=ppc64le",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseComments": "Licensing information is automatically generated and may be incomplete or incorrect.",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "PUBLIC-DOMAIN",
+      "name": "filesystem",
+      "originator": "NOASSERTION",
+      "packageFileName": "filesystem-3.8-6.el8.ppc64le.rpm",
+      "supplier": "Organization: Red Hat",
+      "versionInfo": "3.8-6.el8"
+    },
+    {
+      "SPDXID": "SPDXRef-6716afe2-663e-4cbb-80ab-473ef04281a2",
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://access.redhat.com/downloads/content/package-browser",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:rpm/redhat/libacl@2.2.53-1.el8?arch=aarch64",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseComments": "Licensing information is automatically generated and may be incomplete or incorrect.",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "LGPLV2+",
+      "name": "libacl",
+      "originator": "NOASSERTION",
+      "packageFileName": "libacl-2.2.53-1.el8.aarch64.rpm",
+      "supplier": "Organization: Red Hat",
+      "versionInfo": "2.2.53-1.el8"
+    },
+    {
+      "SPDXID": "SPDXRef-5cd4573f-743d-474b-b86d-1f4554c82228",
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://access.redhat.com/downloads/content/package-browser",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:rpm/redhat/libattr@2.4.48-3.el8?arch=x86_64",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseComments": "Licensing information is automatically generated and may be incomplete or incorrect.",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "LGPLV2+",
+      "name": "libattr",
+      "originator": "NOASSERTION",
+      "packageFileName": "libattr-2.4.48-3.el8.x86_64.rpm",
+      "supplier": "Organization: Red Hat",
+      "versionInfo": "2.4.48-3.el8"
+    },
+    {
+      "SPDXID": "SPDXRef-cb88069a-4cd4-4114-9e65-2aba77e9adc6",
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://access.redhat.com/downloads/content/package-browser",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:rpm/redhat/libcap@2.48-4.el8?arch=x86_64",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseComments": "Licensing information is automatically generated and may be incomplete or incorrect.",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "BSD OR GPLV2",
+      "name": "libcap",
+      "originator": "NOASSERTION",
+      "packageFileName": "libcap-2.48-4.el8.x86_64.rpm",
+      "supplier": "Organization: Red Hat",
+      "versionInfo": "2.48-4.el8"
+    },
+    {
+      "SPDXID": "SPDXRef-a073b375-5516-452b-a485-d7ed279cc019",
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://access.redhat.com/downloads/content/package-browser",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:rpm/redhat/pcre2@10.32-3.el8_6?arch=aarch64",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseComments": "Licensing information is automatically generated and may be incomplete or incorrect.",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "BSD",
+      "name": "pcre2",
+      "originator": "NOASSERTION",
+      "packageFileName": "pcre2-10.32-3.el8_6.aarch64.rpm",
+      "supplier": "Organization: Red Hat",
+      "versionInfo": "10.32-3.el8_6"
+    },
+    {
+      "SPDXID": "SPDXRef-60147020-be8c-4f6b-bc12-3714e0cf4b2b",
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://access.redhat.com/downloads/content/package-browser",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:rpm/redhat/libgcc@8.5.0-15.el8?arch=aarch64",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseComments": "Licensing information is automatically generated and may be incomplete or incorrect.",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "GPLV3+ AND GPLV3+ WITH EXCEPTIONS AND GPLV2+ WITH EXCEPTIONS AND LGPLV2+ AND BSD",
+      "name": "libgcc",
+      "originator": "NOASSERTION",
+      "packageFileName": "libgcc-8.5.0-15.el8.aarch64.rpm",
+      "supplier": "Organization: Red Hat",
+      "versionInfo": "8.5.0-15.el8"
+    },
+    {
+      "SPDXID": "SPDXRef-4a5003a1-31dc-4596-b409-5748d6efae5c",
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://access.redhat.com/downloads/content/package-browser",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:rpm/redhat/tzdata@2022g-1.el8?arch=noarch",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseComments": "Licensing information is automatically generated and may be incomplete or incorrect.",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "PUBLIC-DOMAIN",
+      "name": "tzdata",
+      "originator": "NOASSERTION",
+      "packageFileName": "tzdata-2022g-1.el8.noarch.rpm",
+      "supplier": "Organization: Red Hat",
+      "versionInfo": "2022g-1.el8"
+    },
+    {
+      "SPDXID": "SPDXRef-523dede0-ed2d-47e3-b6b1-58b0a7d558f5",
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://access.redhat.com/downloads/content/package-browser",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:rpm/redhat/libacl@2.2.53-1.el8?arch=ppc64le",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseComments": "Licensing information is automatically generated and may be incomplete or incorrect.",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "LGPLV2+",
+      "name": "libacl",
+      "originator": "NOASSERTION",
+      "packageFileName": "libacl-2.2.53-1.el8.ppc64le.rpm",
+      "supplier": "Organization: Red Hat",
+      "versionInfo": "2.2.53-1.el8"
+    },
+    {
+      "SPDXID": "SPDXRef-a0bbda50-b51f-468b-87b3-e542467dfca5",
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://access.redhat.com/downloads/content/package-browser",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:rpm/redhat/glibc-common@2.28-211.el8?arch=x86_64",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseComments": "Licensing information is automatically generated and may be incomplete or incorrect.",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "LGPLV2+ AND LGPLV2+ WITH EXCEPTIONS AND GPLV2+ AND GPLV2+ WITH EXCEPTIONS AND BSD AND INNER-NET AND ISC AND PUBLIC-DOMAIN AND GFDL",
+      "name": "glibc-common",
+      "originator": "NOASSERTION",
+      "packageFileName": "glibc-common-2.28-211.el8.x86_64.rpm",
+      "supplier": "Organization: Red Hat",
+      "versionInfo": "2.28-211.el8"
+    },
+    {
+      "SPDXID": "SPDXRef-7e85098d-3f27-4af5-9b76-383ac03f985f",
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://access.redhat.com/downloads/content/package-browser",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:rpm/redhat/libcap@2.48-4.el8?arch=ppc64le",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseComments": "Licensing information is automatically generated and may be incomplete or incorrect.",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "BSD OR GPLV2",
+      "name": "libcap",
+      "originator": "NOASSERTION",
+      "packageFileName": "libcap-2.48-4.el8.ppc64le.rpm",
+      "supplier": "Organization: Red Hat",
+      "versionInfo": "2.48-4.el8"
+    },
+    {
+      "SPDXID": "SPDXRef-cc9e892d-d1dd-46dc-9040-58b7b62f5c15",
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://access.redhat.com/downloads/content/package-browser",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:rpm/redhat/libselinux@2.9-6.el8?arch=ppc64le",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseComments": "Licensing information is automatically generated and may be incomplete or incorrect.",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "PUBLIC-DOMAIN",
+      "name": "libselinux",
+      "originator": "NOASSERTION",
+      "packageFileName": "libselinux-2.9-6.el8.ppc64le.rpm",
+      "supplier": "Organization: Red Hat",
+      "versionInfo": "2.9-6.el8"
+    },
+    {
+      "SPDXID": "SPDXRef-af3ff1b3-3352-4f64-9334-b0e1ba010f5d",
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://access.redhat.com/downloads/content/package-browser",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:rpm/redhat/glibc@2.28-211.el8?arch=ppc64le",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseComments": "Licensing information is automatically generated and may be incomplete or incorrect.",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "LGPLV2+ AND LGPLV2+ WITH EXCEPTIONS AND GPLV2+ AND GPLV2+ WITH EXCEPTIONS AND BSD AND INNER-NET AND ISC AND PUBLIC-DOMAIN AND GFDL",
+      "name": "glibc",
+      "originator": "NOASSERTION",
+      "packageFileName": "glibc-2.28-211.el8.ppc64le.rpm",
+      "supplier": "Organization: Red Hat",
+      "versionInfo": "2.28-211.el8"
+    },
+    {
+      "SPDXID": "SPDXRef-9e6e1e43-9614-4d2c-8af6-e8f1345edaa5",
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://access.redhat.com/downloads/content/package-browser",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:rpm/redhat/ncurses-libs@6.1-9.20180224.el8?arch=x86_64",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseComments": "Licensing information is automatically generated and may be incomplete or incorrect.",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "MIT",
+      "name": "ncurses-libs",
+      "originator": "NOASSERTION",
+      "packageFileName": "ncurses-libs-6.1-9.20180224.el8.x86_64.rpm",
+      "supplier": "Organization: Red Hat",
+      "versionInfo": "6.1-9.20180224.el8"
+    },
+    {
+      "SPDXID": "SPDXRef-119b45e3-4da8-4b69-9ec8-c90062be1a60",
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://catalog.redhat.com/software/containers/search",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:oci/ubi-micro@sha256:dab9af45ca6bb1b61a7cd065c1cb6ee5b6076e593922dad80f09ce1421c1fa92?arch=s390x&repository_url=registry.redhat.io/ubi8/ubi-micro&tag=8.7-4",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseComments": "Licensing information is automatically generated and may be incomplete or incorrect.",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "name": "ubi8-micro-container",
+      "originator": "NOASSERTION",
+      "packageFileName": "NOASSERTION",
+      "supplier": "Organization: Red Hat",
+      "versionInfo": "8.7-4"
+    },
+    {
+      "SPDXID": "SPDXRef-93c5d4ac-1cc2-4e7c-b7f4-77fd9c5714a8",
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://access.redhat.com/downloads/content/package-browser",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:rpm/redhat/glibc-common@2.28-211.el8?arch=aarch64",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseComments": "Licensing information is automatically generated and may be incomplete or incorrect.",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "LGPLV2+ AND LGPLV2+ WITH EXCEPTIONS AND GPLV2+ AND GPLV2+ WITH EXCEPTIONS AND BSD AND INNER-NET AND ISC AND PUBLIC-DOMAIN AND GFDL",
+      "name": "glibc-common",
+      "originator": "NOASSERTION",
+      "packageFileName": "glibc-common-2.28-211.el8.aarch64.rpm",
+      "supplier": "Organization: Red Hat",
+      "versionInfo": "2.28-211.el8"
+    },
+    {
+      "SPDXID": "SPDXRef-4fad9821-3726-4646-b6c1-7ff45dcf77e9",
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://access.redhat.com/downloads/content/package-browser",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:rpm/redhat/libattr@2.4.48-3.el8?arch=ppc64le",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseComments": "Licensing information is automatically generated and may be incomplete or incorrect.",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "LGPLV2+",
+      "name": "libattr",
+      "originator": "NOASSERTION",
+      "packageFileName": "libattr-2.4.48-3.el8.ppc64le.rpm",
+      "supplier": "Organization: Red Hat",
+      "versionInfo": "2.4.48-3.el8"
+    },
+    {
+      "SPDXID": "SPDXRef-c911a178-d013-41cf-b35b-edaa90ecd585",
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://access.redhat.com/downloads/content/package-browser",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:rpm/redhat/libsepol@2.9-3.el8?arch=ppc64le",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseComments": "Licensing information is automatically generated and may be incomplete or incorrect.",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "LGPLV2+",
+      "name": "libsepol",
+      "originator": "NOASSERTION",
+      "packageFileName": "libsepol-2.9-3.el8.ppc64le.rpm",
+      "supplier": "Organization: Red Hat",
+      "versionInfo": "2.9-3.el8"
+    },
+    {
+      "SPDXID": "SPDXRef-78f68d7a-dc2f-4fd2-97a5-a8439d59b583",
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://access.redhat.com/downloads/content/package-browser",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:rpm/redhat/bash@4.4.20-4.el8_6?arch=ppc64le",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseComments": "Licensing information is automatically generated and may be incomplete or incorrect.",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "GPLV3+",
+      "name": "bash",
+      "originator": "NOASSERTION",
+      "packageFileName": "bash-4.4.20-4.el8_6.ppc64le.rpm",
+      "supplier": "Organization: Red Hat",
+      "versionInfo": "4.4.20-4.el8_6"
+    },
+    {
+      "SPDXID": "SPDXRef-a8ce206a-a3b7-47b0-90b8-b776517ce109",
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://access.redhat.com/downloads/content/package-browser",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:rpm/redhat/libselinux@2.9-6.el8?arch=x86_64",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseComments": "Licensing information is automatically generated and may be incomplete or incorrect.",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "PUBLIC-DOMAIN",
+      "name": "libselinux",
+      "originator": "NOASSERTION",
+      "packageFileName": "libselinux-2.9-6.el8.x86_64.rpm",
+      "supplier": "Organization: Red Hat",
+      "versionInfo": "2.9-6.el8"
+    },
+    {
+      "SPDXID": "SPDXRef-0537f072-4fe9-4287-accc-f185358ca0fa",
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://access.redhat.com/downloads/content/package-browser",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:rpm/redhat/libgcc@8.5.0-15.el8?arch=s390x",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseComments": "Licensing information is automatically generated and may be incomplete or incorrect.",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "GPLV3+ AND GPLV3+ WITH EXCEPTIONS AND GPLV2+ WITH EXCEPTIONS AND LGPLV2+ AND BSD",
+      "name": "libgcc",
+      "originator": "NOASSERTION",
+      "packageFileName": "libgcc-8.5.0-15.el8.s390x.rpm",
+      "supplier": "Organization: Red Hat",
+      "versionInfo": "8.5.0-15.el8"
+    },
+    {
+      "SPDXID": "SPDXRef-88a23cac-590f-47e6-aec3-8840c9befbe2",
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://access.redhat.com/downloads/content/package-browser",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:rpm/redhat/redhat-release@8.7-0.3.el8?arch=x86_64",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseComments": "Licensing information is automatically generated and may be incomplete or incorrect.",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "GPLV2",
+      "name": "redhat-release",
+      "originator": "NOASSERTION",
+      "packageFileName": "redhat-release-8.7-0.3.el8.x86_64.rpm",
+      "supplier": "Organization: Red Hat",
+      "versionInfo": "8.7-0.3.el8"
+    },
+    {
+      "SPDXID": "SPDXRef-4a7df61f-c7cf-4d58-9392-2f3d61f16963",
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://access.redhat.com/downloads/content/package-browser",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:rpm/redhat/glibc-minimal-langpack@2.28-211.el8?arch=x86_64",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseComments": "Licensing information is automatically generated and may be incomplete or incorrect.",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "LGPLV2+ AND LGPLV2+ WITH EXCEPTIONS AND GPLV2+ AND GPLV2+ WITH EXCEPTIONS AND BSD AND INNER-NET AND ISC AND PUBLIC-DOMAIN AND GFDL",
+      "name": "glibc-minimal-langpack",
+      "originator": "NOASSERTION",
+      "packageFileName": "glibc-minimal-langpack-2.28-211.el8.x86_64.rpm",
+      "supplier": "Organization: Red Hat",
+      "versionInfo": "2.28-211.el8"
+    },
+    {
+      "SPDXID": "SPDXRef-2fe1e7f4-ab4f-413a-88fa-a52724064659",
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://access.redhat.com/downloads/content/package-browser",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:rpm/redhat/pcre2@10.32-3.el8_6?arch=s390x",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseComments": "Licensing information is automatically generated and may be incomplete or incorrect.",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "BSD",
+      "name": "pcre2",
+      "originator": "NOASSERTION",
+      "packageFileName": "pcre2-10.32-3.el8_6.s390x.rpm",
+      "supplier": "Organization: Red Hat",
+      "versionInfo": "10.32-3.el8_6"
+    },
+    {
+      "SPDXID": "SPDXRef-8854083b-89ba-4418-acc6-8a108b6babd5",
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://access.redhat.com/downloads/content/package-browser",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:rpm/redhat/coreutils-single@8.30-13.el8?arch=x86_64",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseComments": "Licensing information is automatically generated and may be incomplete or incorrect.",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "GPLV3+",
+      "name": "coreutils-single",
+      "originator": "NOASSERTION",
+      "packageFileName": "coreutils-single-8.30-13.el8.x86_64.rpm",
+      "supplier": "Organization: Red Hat",
+      "versionInfo": "8.30-13.el8"
+    },
+    {
+      "SPDXID": "SPDXRef-2bd6960c-4c05-41fa-b3f3-0a67a9c99e5e",
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://access.redhat.com/downloads/content/package-browser",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:rpm/redhat/glibc-minimal-langpack@2.28-211.el8?arch=ppc64le",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseComments": "Licensing information is automatically generated and may be incomplete or incorrect.",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "LGPLV2+ AND LGPLV2+ WITH EXCEPTIONS AND GPLV2+ AND GPLV2+ WITH EXCEPTIONS AND BSD AND INNER-NET AND ISC AND PUBLIC-DOMAIN AND GFDL",
+      "name": "glibc-minimal-langpack",
+      "originator": "NOASSERTION",
+      "packageFileName": "glibc-minimal-langpack-2.28-211.el8.ppc64le.rpm",
+      "supplier": "Organization: Red Hat",
+      "versionInfo": "2.28-211.el8"
+    },
+    {
+      "SPDXID": "SPDXRef-7d9c7293-96a2-4190-8ff3-73d559587e1d",
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://access.redhat.com/downloads/content/package-browser",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:rpm/redhat/libselinux@2.9-6.el8?arch=aarch64",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseComments": "Licensing information is automatically generated and may be incomplete or incorrect.",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "PUBLIC-DOMAIN",
+      "name": "libselinux",
+      "originator": "NOASSERTION",
+      "packageFileName": "libselinux-2.9-6.el8.aarch64.rpm",
+      "supplier": "Organization: Red Hat",
+      "versionInfo": "2.9-6.el8"
+    },
+    {
+      "SPDXID": "SPDXRef-6b1b94dd-1122-414b-a3b5-ab936f2e70cb",
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://access.redhat.com/downloads/content/package-browser",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:rpm/redhat/libcap@2.48-4.el8?arch=aarch64",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseComments": "Licensing information is automatically generated and may be incomplete or incorrect.",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "BSD OR GPLV2",
+      "name": "libcap",
+      "originator": "NOASSERTION",
+      "packageFileName": "libcap-2.48-4.el8.aarch64.rpm",
+      "supplier": "Organization: Red Hat",
+      "versionInfo": "2.48-4.el8"
+    },
+    {
+      "SPDXID": "SPDXRef-f65b56a5-08eb-4ca8-abe2-14225c7082c0",
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://access.redhat.com/downloads/content/package-browser",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:rpm/redhat/pcre2@10.32-3.el8_6?arch=x86_64",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseComments": "Licensing information is automatically generated and may be incomplete or incorrect.",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "BSD",
+      "name": "pcre2",
+      "originator": "NOASSERTION",
+      "packageFileName": "pcre2-10.32-3.el8_6.x86_64.rpm",
+      "supplier": "Organization: Red Hat",
+      "versionInfo": "10.32-3.el8_6"
+    },
+    {
+      "SPDXID": "SPDXRef-b5ecddab-025c-40af-8a0e-fc715a45b099",
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://access.redhat.com/downloads/content/package-browser",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:rpm/redhat/filesystem@3.8-6.el8?arch=s390x",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseComments": "Licensing information is automatically generated and may be incomplete or incorrect.",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "PUBLIC-DOMAIN",
+      "name": "filesystem",
+      "originator": "NOASSERTION",
+      "packageFileName": "filesystem-3.8-6.el8.s390x.rpm",
+      "supplier": "Organization: Red Hat",
+      "versionInfo": "3.8-6.el8"
+    },
+    {
+      "SPDXID": "SPDXRef-734b3b35-adca-4c15-bd8d-e48fbef6b979",
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://access.redhat.com/downloads/content/package-browser",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:rpm/redhat/ncurses-libs@6.1-9.20180224.el8?arch=s390x",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseComments": "Licensing information is automatically generated and may be incomplete or incorrect.",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "MIT",
+      "name": "ncurses-libs",
+      "originator": "NOASSERTION",
+      "packageFileName": "ncurses-libs-6.1-9.20180224.el8.s390x.rpm",
+      "supplier": "Organization: Red Hat",
+      "versionInfo": "6.1-9.20180224.el8"
+    },
+    {
+      "SPDXID": "SPDXRef-504efb58-0805-4ca0-ac41-7610285640ad",
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://access.redhat.com/downloads/content/package-browser",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:rpm/redhat/libacl@2.2.53-1.el8?arch=s390x",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseComments": "Licensing information is automatically generated and may be incomplete or incorrect.",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "LGPLV2+",
+      "name": "libacl",
+      "originator": "NOASSERTION",
+      "packageFileName": "libacl-2.2.53-1.el8.s390x.rpm",
+      "supplier": "Organization: Red Hat",
+      "versionInfo": "2.2.53-1.el8"
+    },
+    {
+      "SPDXID": "SPDXRef-e0ed96c6-cc09-45a5-8e50-64af4f61bc64",
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://access.redhat.com/downloads/content/package-browser",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:rpm/redhat/glibc-minimal-langpack@2.28-211.el8?arch=aarch64",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseComments": "Licensing information is automatically generated and may be incomplete or incorrect.",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "LGPLV2+ AND LGPLV2+ WITH EXCEPTIONS AND GPLV2+ AND GPLV2+ WITH EXCEPTIONS AND BSD AND INNER-NET AND ISC AND PUBLIC-DOMAIN AND GFDL",
+      "name": "glibc-minimal-langpack",
+      "originator": "NOASSERTION",
+      "packageFileName": "glibc-minimal-langpack-2.28-211.el8.aarch64.rpm",
+      "supplier": "Organization: Red Hat",
+      "versionInfo": "2.28-211.el8"
+    },
+    {
+      "SPDXID": "SPDXRef-9b39ffe0-1d93-4302-ba9a-c97e42880c0e",
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://access.redhat.com/downloads/content/package-browser",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:rpm/redhat/libsepol@2.9-3.el8?arch=aarch64",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseComments": "Licensing information is automatically generated and may be incomplete or incorrect.",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "LGPLV2+",
+      "name": "libsepol",
+      "originator": "NOASSERTION",
+      "packageFileName": "libsepol-2.9-3.el8.aarch64.rpm",
+      "supplier": "Organization: Red Hat",
+      "versionInfo": "2.9-3.el8"
+    },
+    {
+      "SPDXID": "SPDXRef-ba444249-5dc8-4e0e-adac-3ae8de9832a8",
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://access.redhat.com/downloads/content/package-browser",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:rpm/redhat/libselinux@2.9-6.el8?arch=s390x",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseComments": "Licensing information is automatically generated and may be incomplete or incorrect.",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "PUBLIC-DOMAIN",
+      "name": "libselinux",
+      "originator": "NOASSERTION",
+      "packageFileName": "libselinux-2.9-6.el8.s390x.rpm",
+      "supplier": "Organization: Red Hat",
+      "versionInfo": "2.9-6.el8"
+    },
+    {
+      "SPDXID": "SPDXRef-61bf25e6-8b7e-4d87-b733-1342a97eec7c",
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://access.redhat.com/downloads/content/package-browser",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:rpm/redhat/libattr@2.4.48-3.el8?arch=s390x",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseComments": "Licensing information is automatically generated and may be incomplete or incorrect.",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "LGPLV2+",
+      "name": "libattr",
+      "originator": "NOASSERTION",
+      "packageFileName": "libattr-2.4.48-3.el8.s390x.rpm",
+      "supplier": "Organization: Red Hat",
+      "versionInfo": "2.4.48-3.el8"
+    },
+    {
+      "SPDXID": "SPDXRef-b1e9b7af-4981-4916-8eee-db95ceccad72",
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://access.redhat.com/downloads/content/package-browser",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:rpm/redhat/ncurses-libs@6.1-9.20180224.el8?arch=ppc64le",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseComments": "Licensing information is automatically generated and may be incomplete or incorrect.",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "MIT",
+      "name": "ncurses-libs",
+      "originator": "NOASSERTION",
+      "packageFileName": "ncurses-libs-6.1-9.20180224.el8.ppc64le.rpm",
+      "supplier": "Organization: Red Hat",
+      "versionInfo": "6.1-9.20180224.el8"
+    },
+    {
+      "SPDXID": "SPDXRef-75b6d339-5751-470c-8556-d43ab20b1a53",
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://access.redhat.com/downloads/content/package-browser",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:rpm/redhat/pcre2@10.32-3.el8_6?arch=ppc64le",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseComments": "Licensing information is automatically generated and may be incomplete or incorrect.",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "BSD",
+      "name": "pcre2",
+      "originator": "NOASSERTION",
+      "packageFileName": "pcre2-10.32-3.el8_6.ppc64le.rpm",
+      "supplier": "Organization: Red Hat",
+      "versionInfo": "10.32-3.el8_6"
+    },
+    {
+      "SPDXID": "SPDXRef-3d96f201-d849-452b-aed8-d4c390cfedea",
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://access.redhat.com/downloads/content/package-browser",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:rpm/redhat/glibc-minimal-langpack@2.28-211.el8?arch=s390x",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseComments": "Licensing information is automatically generated and may be incomplete or incorrect.",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "LGPLV2+ AND LGPLV2+ WITH EXCEPTIONS AND GPLV2+ AND GPLV2+ WITH EXCEPTIONS AND BSD AND INNER-NET AND ISC AND PUBLIC-DOMAIN AND GFDL",
+      "name": "glibc-minimal-langpack",
+      "originator": "NOASSERTION",
+      "packageFileName": "glibc-minimal-langpack-2.28-211.el8.s390x.rpm",
+      "supplier": "Organization: Red Hat",
+      "versionInfo": "2.28-211.el8"
+    },
+    {
+      "SPDXID": "SPDXRef-40b57d22-29db-4bca-aebd-022282998c72",
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://access.redhat.com/downloads/content/package-browser",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:rpm/redhat/libgcc@8.5.0-15.el8?arch=x86_64",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseComments": "Licensing information is automatically generated and may be incomplete or incorrect.",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "GPLV3+ AND GPLV3+ WITH EXCEPTIONS AND GPLV2+ WITH EXCEPTIONS AND LGPLV2+ AND BSD",
+      "name": "libgcc",
+      "originator": "NOASSERTION",
+      "packageFileName": "libgcc-8.5.0-15.el8.x86_64.rpm",
+      "supplier": "Organization: Red Hat",
+      "versionInfo": "8.5.0-15.el8"
+    },
+    {
+      "SPDXID": "SPDXRef-1603babe-e200-474a-b795-366d291e4b7c",
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://access.redhat.com/downloads/content/package-browser",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:rpm/redhat/coreutils-single@8.30-13.el8?arch=ppc64le",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseComments": "Licensing information is automatically generated and may be incomplete or incorrect.",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "GPLV3+",
+      "name": "coreutils-single",
+      "originator": "NOASSERTION",
+      "packageFileName": "coreutils-single-8.30-13.el8.ppc64le.rpm",
+      "supplier": "Organization: Red Hat",
+      "versionInfo": "8.30-13.el8"
+    },
+    {
+      "SPDXID": "SPDXRef-7de70630-7365-4c73-aa0f-a25b3b9e109f",
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://access.redhat.com/downloads/content/package-browser",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:rpm/redhat/bash@4.4.20-4.el8_6?arch=x86_64",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseComments": "Licensing information is automatically generated and may be incomplete or incorrect.",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "GPLV3+",
+      "name": "bash",
+      "originator": "NOASSERTION",
+      "packageFileName": "bash-4.4.20-4.el8_6.x86_64.rpm",
+      "supplier": "Organization: Red Hat",
+      "versionInfo": "4.4.20-4.el8_6"
+    },
+    {
+      "SPDXID": "SPDXRef-7f04d69e-6f87-489f-a12b-0f8c980448c0",
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://access.redhat.com/downloads/content/package-browser",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:rpm/redhat/glibc@2.28-211.el8?arch=x86_64",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseComments": "Licensing information is automatically generated and may be incomplete or incorrect.",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "LGPLV2+ AND LGPLV2+ WITH EXCEPTIONS AND GPLV2+ AND GPLV2+ WITH EXCEPTIONS AND BSD AND INNER-NET AND ISC AND PUBLIC-DOMAIN AND GFDL",
+      "name": "glibc",
+      "originator": "NOASSERTION",
+      "packageFileName": "glibc-2.28-211.el8.x86_64.rpm",
+      "supplier": "Organization: Red Hat",
+      "versionInfo": "2.28-211.el8"
+    },
+    {
+      "SPDXID": "SPDXRef-be077158-a693-4c99-9d71-13959bb0f55f",
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://access.redhat.com/downloads/content/package-browser",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:rpm/redhat/libsepol@2.9-3.el8?arch=x86_64",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseComments": "Licensing information is automatically generated and may be incomplete or incorrect.",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "LGPLV2+",
+      "name": "libsepol",
+      "originator": "NOASSERTION",
+      "packageFileName": "libsepol-2.9-3.el8.x86_64.rpm",
+      "supplier": "Organization: Red Hat",
+      "versionInfo": "2.9-3.el8"
+    },
+    {
+      "SPDXID": "SPDXRef-deef65c8-7f8b-48ca-8ad0-112ac4d41652",
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://access.redhat.com/downloads/content/package-browser",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:rpm/redhat/glibc-common@2.28-211.el8?arch=s390x",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseComments": "Licensing information is automatically generated and may be incomplete or incorrect.",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "LGPLV2+ AND LGPLV2+ WITH EXCEPTIONS AND GPLV2+ AND GPLV2+ WITH EXCEPTIONS AND BSD AND INNER-NET AND ISC AND PUBLIC-DOMAIN AND GFDL",
+      "name": "glibc-common",
+      "originator": "NOASSERTION",
+      "packageFileName": "glibc-common-2.28-211.el8.s390x.rpm",
+      "supplier": "Organization: Red Hat",
+      "versionInfo": "2.28-211.el8"
+    },
+    {
+      "SPDXID": "SPDXRef-a7ccafa2-20e2-4eb5-b709-354d0002ec06",
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://access.redhat.com/downloads/content/package-browser",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:rpm/redhat/coreutils-single@8.30-13.el8?arch=s390x",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseComments": "Licensing information is automatically generated and may be incomplete or incorrect.",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "GPLV3+",
+      "name": "coreutils-single",
+      "originator": "NOASSERTION",
+      "packageFileName": "coreutils-single-8.30-13.el8.s390x.rpm",
+      "supplier": "Organization: Red Hat",
+      "versionInfo": "8.30-13.el8"
+    },
+    {
+      "SPDXID": "SPDXRef-5fec5f57-8e4b-4d2b-ae4b-f7263da7766b",
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://access.redhat.com/downloads/content/package-browser",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:rpm/redhat/filesystem@3.8-6.el8?arch=x86_64",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseComments": "Licensing information is automatically generated and may be incomplete or incorrect.",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "PUBLIC-DOMAIN",
+      "name": "filesystem",
+      "originator": "NOASSERTION",
+      "packageFileName": "filesystem-3.8-6.el8.x86_64.rpm",
+      "supplier": "Organization: Red Hat",
+      "versionInfo": "3.8-6.el8"
+    },
+    {
+      "SPDXID": "SPDXRef-7954eada-cd8e-43ad-b842-7cc42c15cf54",
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://access.redhat.com/downloads/content/package-browser",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:rpm/redhat/ncurses-base@6.1-9.20180224.el8?arch=noarch",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseComments": "Licensing information is automatically generated and may be incomplete or incorrect.",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "MIT",
+      "name": "ncurses-base",
+      "originator": "NOASSERTION",
+      "packageFileName": "ncurses-base-6.1-9.20180224.el8.noarch.rpm",
+      "supplier": "Organization: Red Hat",
+      "versionInfo": "6.1-9.20180224.el8"
+    },
+    {
+      "SPDXID": "SPDXRef-05421e12-ead6-471f-beba-a5906740bae4",
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://access.redhat.com/downloads/content/package-browser",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:rpm/redhat/filesystem@3.8-6.el8?arch=aarch64",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseComments": "Licensing information is automatically generated and may be incomplete or incorrect.",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "PUBLIC-DOMAIN",
+      "name": "filesystem",
+      "originator": "NOASSERTION",
+      "packageFileName": "filesystem-3.8-6.el8.aarch64.rpm",
+      "supplier": "Organization: Red Hat",
+      "versionInfo": "3.8-6.el8"
+    },
+    {
+      "SPDXID": "SPDXRef-bb040b80-f3db-4c76-9677-94549d8be382",
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://access.redhat.com/downloads/content/package-browser",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:rpm/redhat/bash@4.4.20-4.el8_6?arch=s390x",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseComments": "Licensing information is automatically generated and may be incomplete or incorrect.",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "GPLV3+",
+      "name": "bash",
+      "originator": "NOASSERTION",
+      "packageFileName": "bash-4.4.20-4.el8_6.s390x.rpm",
+      "supplier": "Organization: Red Hat",
+      "versionInfo": "4.4.20-4.el8_6"
+    },
+    {
+      "SPDXID": "SPDXRef-74cea680-785b-47f5-ad70-aa32a863b025",
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://access.redhat.com/downloads/content/package-browser",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:rpm/redhat/setup@2.12.2-7.el8?arch=noarch",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseComments": "Licensing information is automatically generated and may be incomplete or incorrect.",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "PUBLIC-DOMAIN",
+      "name": "setup",
+      "originator": "NOASSERTION",
+      "packageFileName": "setup-2.12.2-7.el8.noarch.rpm",
+      "supplier": "Organization: Red Hat",
+      "versionInfo": "2.12.2-7.el8"
+    },
+    {
+      "SPDXID": "SPDXRef-124ed411-f202-40c9-bb63-3827cb21649f",
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://access.redhat.com/downloads/content/package-browser",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:rpm/redhat/ncurses-libs@6.1-9.20180224.el8?arch=aarch64",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseComments": "Licensing information is automatically generated and may be incomplete or incorrect.",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "MIT",
+      "name": "ncurses-libs",
+      "originator": "NOASSERTION",
+      "packageFileName": "ncurses-libs-6.1-9.20180224.el8.aarch64.rpm",
+      "supplier": "Organization: Red Hat",
+      "versionInfo": "6.1-9.20180224.el8"
+    },
+    {
+      "SPDXID": "SPDXRef-6f8d5c9a-8196-4ae0-bbea-f0d5d678ded1",
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://access.redhat.com/downloads/content/package-browser",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:rpm/redhat/libsepol@2.9-3.el8?arch=s390x",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseComments": "Licensing information is automatically generated and may be incomplete or incorrect.",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "LGPLV2+",
+      "name": "libsepol",
+      "originator": "NOASSERTION",
+      "packageFileName": "libsepol-2.9-3.el8.s390x.rpm",
+      "supplier": "Organization: Red Hat",
+      "versionInfo": "2.9-3.el8"
+    },
+    {
+      "SPDXID": "SPDXRef-e3ea27c3-2c83-4fdf-bf2f-bf3129f2863c",
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://access.redhat.com/downloads/content/package-browser",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:rpm/redhat/libgcc@8.5.0-15.el8?arch=ppc64le",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseComments": "Licensing information is automatically generated and may be incomplete or incorrect.",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "GPLV3+ AND GPLV3+ WITH EXCEPTIONS AND GPLV2+ WITH EXCEPTIONS AND LGPLV2+ AND BSD",
+      "name": "libgcc",
+      "originator": "NOASSERTION",
+      "packageFileName": "libgcc-8.5.0-15.el8.ppc64le.rpm",
+      "supplier": "Organization: Red Hat",
+      "versionInfo": "8.5.0-15.el8"
+    },
+    {
+      "SPDXID": "SPDXRef-a0de44f5-5ce1-4a17-9a4e-309c8f736991",
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://access.redhat.com/downloads/content/package-browser",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:rpm/redhat/glibc@2.28-211.el8?arch=s390x",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseComments": "Licensing information is automatically generated and may be incomplete or incorrect.",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "LGPLV2+ AND LGPLV2+ WITH EXCEPTIONS AND GPLV2+ AND GPLV2+ WITH EXCEPTIONS AND BSD AND INNER-NET AND ISC AND PUBLIC-DOMAIN AND GFDL",
+      "name": "glibc",
+      "originator": "NOASSERTION",
+      "packageFileName": "glibc-2.28-211.el8.s390x.rpm",
+      "supplier": "Organization: Red Hat",
+      "versionInfo": "2.28-211.el8"
+    },
+    {
+      "SPDXID": "SPDXRef-632d291b-2ded-4216-98e0-707f62e0272a",
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://access.redhat.com/downloads/content/package-browser",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:rpm/redhat/coreutils-single@8.30-13.el8?arch=aarch64",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseComments": "Licensing information is automatically generated and may be incomplete or incorrect.",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "GPLV3+",
+      "name": "coreutils-single",
+      "originator": "NOASSERTION",
+      "packageFileName": "coreutils-single-8.30-13.el8.aarch64.rpm",
+      "supplier": "Organization: Red Hat",
+      "versionInfo": "8.30-13.el8"
+    },
+    {
+      "SPDXID": "SPDXRef-83224006-3739-4320-98ca-54d4244be657",
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://access.redhat.com/downloads/content/package-browser",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:rpm/redhat/libcap@2.48-4.el8?arch=s390x",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseComments": "Licensing information is automatically generated and may be incomplete or incorrect.",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "BSD OR GPLV2",
+      "name": "libcap",
+      "originator": "NOASSERTION",
+      "packageFileName": "libcap-2.48-4.el8.s390x.rpm",
+      "supplier": "Organization: Red Hat",
+      "versionInfo": "2.48-4.el8"
+    },
+    {
+      "SPDXID": "SPDXRef-7220b279-e5d6-43c6-afab-af546dd8972b",
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://access.redhat.com/downloads/content/package-browser",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:rpm/redhat/libacl@2.2.53-1.el8?arch=x86_64",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseComments": "Licensing information is automatically generated and may be incomplete or incorrect.",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "LGPLV2+",
+      "name": "libacl",
+      "originator": "NOASSERTION",
+      "packageFileName": "libacl-2.2.53-1.el8.x86_64.rpm",
+      "supplier": "Organization: Red Hat",
+      "versionInfo": "2.2.53-1.el8"
+    },
+    {
+      "SPDXID": "SPDXRef-04b55486-953e-42c4-9e66-ab76ba92ded8",
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://access.redhat.com/downloads/content/package-browser",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:rpm/redhat/redhat-release@8.7-0.3.el8?arch=s390x",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "homepage": "NOASSERTION",
+      "licenseComments": "Licensing information is automatically generated and may be incomplete or incorrect.",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "GPLV2",
+      "name": "redhat-release",
+      "originator": "NOASSERTION",
+      "packageFileName": "redhat-release-8.7-0.3.el8.s390x.rpm",
+      "supplier": "Organization: Red Hat",
+      "versionInfo": "8.7-0.3.el8"
+    },
+    {
+      "SPDXID": "SPDXRef-68742c19-0a25-4792-957a-b9508add8ded",
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "registry.redhat.io/ubi8/ubi-micro:8.7-4",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceLocator": "pkg:oci/ubi-micro@sha256:26abf79040679e3a1acfabb86dfd25ea582009d4981a57b151351291535d1ea9?repository_url=registry.redhat.io/ubi8/ubi-micro&tag=8.7-4",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "homepage": "registry.redhat.io/ubi8/ubi-micro",
+      "licenseComments": "Licensing information is automatically generated and may be incomplete or incorrect.",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "name": "ubi8-micro-container",
+      "originator": "NOASSERTION",
+      "packageFileName": "NOASSERTION",
+      "supplier": "Organization: Red Hat",
+      "versionInfo": "8.7-4"
+    }
+  ],
+  "relationships": [
+    {
+      "relatedSpdxElement": "SPDXRef-68742c19-0a25-4792-957a-b9508add8ded",
+      "relationshipType": "CONTAINED_BY",
+      "spdxElementId": "SPDXRef-04b55486-953e-42c4-9e66-ab76ba92ded8"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-68742c19-0a25-4792-957a-b9508add8ded",
+      "relationshipType": "CONTAINED_BY",
+      "spdxElementId": "SPDXRef-0537f072-4fe9-4287-accc-f185358ca0fa"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-68742c19-0a25-4792-957a-b9508add8ded",
+      "relationshipType": "CONTAINED_BY",
+      "spdxElementId": "SPDXRef-05421e12-ead6-471f-beba-a5906740bae4"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-68742c19-0a25-4792-957a-b9508add8ded",
+      "relationshipType": "CONTAINED_BY",
+      "spdxElementId": "SPDXRef-0e96b473-4de3-4b14-8a79-ec7e9269a6dc"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-68742c19-0a25-4792-957a-b9508add8ded",
+      "relationshipType": "VARIANT_OF",
+      "spdxElementId": "SPDXRef-119b45e3-4da8-4b69-9ec8-c90062be1a60"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-68742c19-0a25-4792-957a-b9508add8ded",
+      "relationshipType": "CONTAINED_BY",
+      "spdxElementId": "SPDXRef-124ed411-f202-40c9-bb63-3827cb21649f"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-68742c19-0a25-4792-957a-b9508add8ded",
+      "relationshipType": "CONTAINED_BY",
+      "spdxElementId": "SPDXRef-12b5ecbd-c0a0-40bc-a459-3b53ce1210a4"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-68742c19-0a25-4792-957a-b9508add8ded",
+      "relationshipType": "CONTAINED_BY",
+      "spdxElementId": "SPDXRef-1603babe-e200-474a-b795-366d291e4b7c"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-68742c19-0a25-4792-957a-b9508add8ded",
+      "relationshipType": "CONTAINED_BY",
+      "spdxElementId": "SPDXRef-2295a5f0-8411-457c-8d3f-8a05f961e81d"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-68742c19-0a25-4792-957a-b9508add8ded",
+      "relationshipType": "CONTAINED_BY",
+      "spdxElementId": "SPDXRef-2bd6960c-4c05-41fa-b3f3-0a67a9c99e5e"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-68742c19-0a25-4792-957a-b9508add8ded",
+      "relationshipType": "CONTAINED_BY",
+      "spdxElementId": "SPDXRef-2fe1e7f4-ab4f-413a-88fa-a52724064659"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-68742c19-0a25-4792-957a-b9508add8ded",
+      "relationshipType": "CONTAINED_BY",
+      "spdxElementId": "SPDXRef-3d96f201-d849-452b-aed8-d4c390cfedea"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-68742c19-0a25-4792-957a-b9508add8ded",
+      "relationshipType": "CONTAINED_BY",
+      "spdxElementId": "SPDXRef-40b57d22-29db-4bca-aebd-022282998c72"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-68742c19-0a25-4792-957a-b9508add8ded",
+      "relationshipType": "CONTAINED_BY",
+      "spdxElementId": "SPDXRef-4a5003a1-31dc-4596-b409-5748d6efae5c"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-68742c19-0a25-4792-957a-b9508add8ded",
+      "relationshipType": "CONTAINED_BY",
+      "spdxElementId": "SPDXRef-4a7df61f-c7cf-4d58-9392-2f3d61f16963"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-68742c19-0a25-4792-957a-b9508add8ded",
+      "relationshipType": "CONTAINED_BY",
+      "spdxElementId": "SPDXRef-4cef1f2a-87ec-49f4-bd17-1dd5eb119348"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-68742c19-0a25-4792-957a-b9508add8ded",
+      "relationshipType": "VARIANT_OF",
+      "spdxElementId": "SPDXRef-4f101b3c-25f0-45ae-b1ae-16e71bede7e2"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-68742c19-0a25-4792-957a-b9508add8ded",
+      "relationshipType": "CONTAINED_BY",
+      "spdxElementId": "SPDXRef-4fad9821-3726-4646-b6c1-7ff45dcf77e9"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-68742c19-0a25-4792-957a-b9508add8ded",
+      "relationshipType": "CONTAINED_BY",
+      "spdxElementId": "SPDXRef-504efb58-0805-4ca0-ac41-7610285640ad"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-68742c19-0a25-4792-957a-b9508add8ded",
+      "relationshipType": "CONTAINED_BY",
+      "spdxElementId": "SPDXRef-523dede0-ed2d-47e3-b6b1-58b0a7d558f5"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-68742c19-0a25-4792-957a-b9508add8ded",
+      "relationshipType": "CONTAINED_BY",
+      "spdxElementId": "SPDXRef-5cd4573f-743d-474b-b86d-1f4554c82228"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-68742c19-0a25-4792-957a-b9508add8ded",
+      "relationshipType": "CONTAINED_BY",
+      "spdxElementId": "SPDXRef-5fec5f57-8e4b-4d2b-ae4b-f7263da7766b"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-68742c19-0a25-4792-957a-b9508add8ded",
+      "relationshipType": "CONTAINED_BY",
+      "spdxElementId": "SPDXRef-60147020-be8c-4f6b-bc12-3714e0cf4b2b"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-68742c19-0a25-4792-957a-b9508add8ded",
+      "relationshipType": "CONTAINED_BY",
+      "spdxElementId": "SPDXRef-61bf25e6-8b7e-4d87-b733-1342a97eec7c"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-68742c19-0a25-4792-957a-b9508add8ded",
+      "relationshipType": "CONTAINED_BY",
+      "spdxElementId": "SPDXRef-632d291b-2ded-4216-98e0-707f62e0272a"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-68742c19-0a25-4792-957a-b9508add8ded",
+      "relationshipType": "CONTAINED_BY",
+      "spdxElementId": "SPDXRef-6716afe2-663e-4cbb-80ab-473ef04281a2"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-68742c19-0a25-4792-957a-b9508add8ded",
+      "relationshipType": "CONTAINED_BY",
+      "spdxElementId": "SPDXRef-6b1b94dd-1122-414b-a3b5-ab936f2e70cb"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-68742c19-0a25-4792-957a-b9508add8ded",
+      "relationshipType": "CONTAINED_BY",
+      "spdxElementId": "SPDXRef-6f8d5c9a-8196-4ae0-bbea-f0d5d678ded1"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-68742c19-0a25-4792-957a-b9508add8ded",
+      "relationshipType": "CONTAINED_BY",
+      "spdxElementId": "SPDXRef-7220b279-e5d6-43c6-afab-af546dd8972b"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-68742c19-0a25-4792-957a-b9508add8ded",
+      "relationshipType": "CONTAINED_BY",
+      "spdxElementId": "SPDXRef-734b3b35-adca-4c15-bd8d-e48fbef6b979"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-68742c19-0a25-4792-957a-b9508add8ded",
+      "relationshipType": "CONTAINED_BY",
+      "spdxElementId": "SPDXRef-74cea680-785b-47f5-ad70-aa32a863b025"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-68742c19-0a25-4792-957a-b9508add8ded",
+      "relationshipType": "CONTAINED_BY",
+      "spdxElementId": "SPDXRef-75b6d339-5751-470c-8556-d43ab20b1a53"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-68742c19-0a25-4792-957a-b9508add8ded",
+      "relationshipType": "CONTAINED_BY",
+      "spdxElementId": "SPDXRef-78f68d7a-dc2f-4fd2-97a5-a8439d59b583"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-68742c19-0a25-4792-957a-b9508add8ded",
+      "relationshipType": "CONTAINED_BY",
+      "spdxElementId": "SPDXRef-7954eada-cd8e-43ad-b842-7cc42c15cf54"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-68742c19-0a25-4792-957a-b9508add8ded",
+      "relationshipType": "CONTAINED_BY",
+      "spdxElementId": "SPDXRef-7d6679d5-a996-4de3-833a-edd78d9b8547"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-68742c19-0a25-4792-957a-b9508add8ded",
+      "relationshipType": "CONTAINED_BY",
+      "spdxElementId": "SPDXRef-7d9c7293-96a2-4190-8ff3-73d559587e1d"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-68742c19-0a25-4792-957a-b9508add8ded",
+      "relationshipType": "CONTAINED_BY",
+      "spdxElementId": "SPDXRef-7de70630-7365-4c73-aa0f-a25b3b9e109f"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-68742c19-0a25-4792-957a-b9508add8ded",
+      "relationshipType": "CONTAINED_BY",
+      "spdxElementId": "SPDXRef-7e85098d-3f27-4af5-9b76-383ac03f985f"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-68742c19-0a25-4792-957a-b9508add8ded",
+      "relationshipType": "CONTAINED_BY",
+      "spdxElementId": "SPDXRef-7f04d69e-6f87-489f-a12b-0f8c980448c0"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-68742c19-0a25-4792-957a-b9508add8ded",
+      "relationshipType": "CONTAINED_BY",
+      "spdxElementId": "SPDXRef-83224006-3739-4320-98ca-54d4244be657"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-68742c19-0a25-4792-957a-b9508add8ded",
+      "relationshipType": "CONTAINED_BY",
+      "spdxElementId": "SPDXRef-8854083b-89ba-4418-acc6-8a108b6babd5"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-68742c19-0a25-4792-957a-b9508add8ded",
+      "relationshipType": "CONTAINED_BY",
+      "spdxElementId": "SPDXRef-88a23cac-590f-47e6-aec3-8840c9befbe2"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-68742c19-0a25-4792-957a-b9508add8ded",
+      "relationshipType": "CONTAINED_BY",
+      "spdxElementId": "SPDXRef-93c5d4ac-1cc2-4e7c-b7f4-77fd9c5714a8"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-68742c19-0a25-4792-957a-b9508add8ded",
+      "relationshipType": "CONTAINED_BY",
+      "spdxElementId": "SPDXRef-9b39ffe0-1d93-4302-ba9a-c97e42880c0e"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-68742c19-0a25-4792-957a-b9508add8ded",
+      "relationshipType": "CONTAINED_BY",
+      "spdxElementId": "SPDXRef-9e6e1e43-9614-4d2c-8af6-e8f1345edaa5"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-68742c19-0a25-4792-957a-b9508add8ded",
+      "relationshipType": "CONTAINED_BY",
+      "spdxElementId": "SPDXRef-a073b375-5516-452b-a485-d7ed279cc019"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-68742c19-0a25-4792-957a-b9508add8ded",
+      "relationshipType": "CONTAINED_BY",
+      "spdxElementId": "SPDXRef-a0bbda50-b51f-468b-87b3-e542467dfca5"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-68742c19-0a25-4792-957a-b9508add8ded",
+      "relationshipType": "CONTAINED_BY",
+      "spdxElementId": "SPDXRef-a0de44f5-5ce1-4a17-9a4e-309c8f736991"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-68742c19-0a25-4792-957a-b9508add8ded",
+      "relationshipType": "CONTAINED_BY",
+      "spdxElementId": "SPDXRef-a7ccafa2-20e2-4eb5-b709-354d0002ec06"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-68742c19-0a25-4792-957a-b9508add8ded",
+      "relationshipType": "VARIANT_OF",
+      "spdxElementId": "SPDXRef-a8aa61fe-f673-418c-bf05-0cae0a87177d"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-68742c19-0a25-4792-957a-b9508add8ded",
+      "relationshipType": "CONTAINED_BY",
+      "spdxElementId": "SPDXRef-a8ce206a-a3b7-47b0-90b8-b776517ce109"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-68742c19-0a25-4792-957a-b9508add8ded",
+      "relationshipType": "CONTAINED_BY",
+      "spdxElementId": "SPDXRef-ac41cc00-61bf-480e-b2af-595cdbe373f2"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-68742c19-0a25-4792-957a-b9508add8ded",
+      "relationshipType": "CONTAINED_BY",
+      "spdxElementId": "SPDXRef-af3ff1b3-3352-4f64-9334-b0e1ba010f5d"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-68742c19-0a25-4792-957a-b9508add8ded",
+      "relationshipType": "CONTAINED_BY",
+      "spdxElementId": "SPDXRef-b1e9b7af-4981-4916-8eee-db95ceccad72"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-68742c19-0a25-4792-957a-b9508add8ded",
+      "relationshipType": "CONTAINED_BY",
+      "spdxElementId": "SPDXRef-b5ecddab-025c-40af-8a0e-fc715a45b099"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-68742c19-0a25-4792-957a-b9508add8ded",
+      "relationshipType": "CONTAINED_BY",
+      "spdxElementId": "SPDXRef-ba444249-5dc8-4e0e-adac-3ae8de9832a8"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-68742c19-0a25-4792-957a-b9508add8ded",
+      "relationshipType": "CONTAINED_BY",
+      "spdxElementId": "SPDXRef-bb040b80-f3db-4c76-9677-94549d8be382"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-68742c19-0a25-4792-957a-b9508add8ded",
+      "relationshipType": "VARIANT_OF",
+      "spdxElementId": "SPDXRef-bb368cb8-fe2d-4c72-9b27-346550c81949"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-68742c19-0a25-4792-957a-b9508add8ded",
+      "relationshipType": "CONTAINED_BY",
+      "spdxElementId": "SPDXRef-bb4f1ed6-0497-454a-8f4e-c43eb92ecd89"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-68742c19-0a25-4792-957a-b9508add8ded",
+      "relationshipType": "CONTAINED_BY",
+      "spdxElementId": "SPDXRef-be077158-a693-4c99-9d71-13959bb0f55f"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-68742c19-0a25-4792-957a-b9508add8ded",
+      "relationshipType": "CONTAINED_BY",
+      "spdxElementId": "SPDXRef-c66836e9-0972-4c95-ac83-d7b4437acf26"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-68742c19-0a25-4792-957a-b9508add8ded",
+      "relationshipType": "CONTAINED_BY",
+      "spdxElementId": "SPDXRef-c911a178-d013-41cf-b35b-edaa90ecd585"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-68742c19-0a25-4792-957a-b9508add8ded",
+      "relationshipType": "CONTAINED_BY",
+      "spdxElementId": "SPDXRef-cb88069a-4cd4-4114-9e65-2aba77e9adc6"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-68742c19-0a25-4792-957a-b9508add8ded",
+      "relationshipType": "CONTAINED_BY",
+      "spdxElementId": "SPDXRef-cc9e892d-d1dd-46dc-9040-58b7b62f5c15"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-68742c19-0a25-4792-957a-b9508add8ded",
+      "relationshipType": "CONTAINED_BY",
+      "spdxElementId": "SPDXRef-deef65c8-7f8b-48ca-8ad0-112ac4d41652"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-68742c19-0a25-4792-957a-b9508add8ded",
+      "relationshipType": "CONTAINED_BY",
+      "spdxElementId": "SPDXRef-e0ed96c6-cc09-45a5-8e50-64af4f61bc64"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-68742c19-0a25-4792-957a-b9508add8ded",
+      "relationshipType": "CONTAINED_BY",
+      "spdxElementId": "SPDXRef-e3ea27c3-2c83-4fdf-bf2f-bf3129f2863c"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-68742c19-0a25-4792-957a-b9508add8ded",
+      "relationshipType": "CONTAINED_BY",
+      "spdxElementId": "SPDXRef-f65b56a5-08eb-4ca8-abe2-14225c7082c0"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-68742c19-0a25-4792-957a-b9508add8ded",
+      "relationshipType": "DESCRIBES",
+      "spdxElementId": "SPDXRef-DOCUMENT"
+    }
+  ],
+  "spdxVersion": "SPDX-2.2"
+}
