@@ -16,8 +16,10 @@ Container_Boundary(c1, "Internet Banking") {
 Rel(user, spog, "Uses", "HTTPS")
 
 Rel(spog, guac, "Uses", "JSON/HTTPS")
+UpdateRelStyle(spog, guac, $offsetY="60", $offsetX="90")
 Rel(spog, bombastic, "Uses", "JSON/HTTPS")
 Rel(spog, vexination, "Uses", "JSON/HTTPS")
+Rel(spog, v11y, "Uses", "JSON/HTTPS")
 
 Rel(guac, s3, "Reads")
 Rel(bombastic, s3, "Reads")
