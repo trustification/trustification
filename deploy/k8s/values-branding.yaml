@@ -1,0 +1,16 @@
+modules:
+
+  spogApi:
+    ingress:
+      additionalAnnotations:
+        "haproxy.router.openshift.io/timeout": "180s"
+    uiConfiguration:
+      configMapRef:
+        name: spog-ui-custom-config
+        key: spog-ui.yaml
+    
+  spogUi:
+    brandingConfigMap: spog-ui-branding
+    ingress:
+      additionalAnnotations:
+        "haproxy.router.openshift.io/timeout": "180s"

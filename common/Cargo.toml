@@ -1,0 +1,20 @@
+[package]
+name = "trustification-common"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+description = "Common tools"
+
+[dependencies]
+anyhow = "1"
+clap = { version = "4", features = ["derive", "env"] }
+log = "0.4"
+serde = { version = "1", features = ["derive"] }
+
+pem = { version = "3", optional = true }
+reqwest = { version = "0.11", optional = true }
+native-tls = { version = "0.2", optional = true }
+
+[features]
+default = ["tls"]
+tls = ["native-tls", "reqwest", "reqwest/native-tls", "pem"]

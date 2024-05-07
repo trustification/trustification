@@ -6,6 +6,11 @@
 *.db-journal
 .DS_Store
 
+# coverage
+/target.cov
+*.profraw
+/.coverage
+
 # from the bom import
 pubring.kbx*
 trustdb.gpg

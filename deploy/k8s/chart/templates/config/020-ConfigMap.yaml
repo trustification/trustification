@@ -1,0 +1,53 @@
+{{- if .Values.config.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.config.name }}
+  labels:
+    app.kubernetes.io/name: {{ .Values.config.name }}
+    app.kubernetes.io/component: config
+    app.kubernetes.io/part-of: trustification
+data:
+{{- if .Values.config.ui }}
+  spog-ui.yaml: |-
+    {{- .Files.Get .Values.config.ui | nindent 4 }}
+{{- end }}
+
+{{- if .Values.ssoDefaults }}
+  auth.yaml: |
+    $schema: "https://raw.githubusercontent.com/trustification/trustification/main/auth/schema/auth.json"
+
+    authentication:
+      clients:
+        - clientId: frontend
+          issuerUrl: https://sso.{{ .Values.domain }}/realms/chicken
+          scopeMappings: &keycloakScopeMappings
+            "create:document": [ "create.sbom", "create.vex" ]
+            "read:document": [ "read.sbom", "read.vex" ]
+            "update:document": [ "update.sbom", "update.vex" ]
+            "delete:document": [ "delete.sbom", "delete.vex" ]
+          {{ if .Values.insecureSso }}tlsInsecure: true{{ end }}
+        - clientId: walker
+          issuerUrl: https://sso.{{ .Values.domain }}/realms/chicken
+          scopeMappings: *keycloakScopeMappings
+          {{ if .Values.insecureSso }}tlsInsecure: true{{ end }}
+        - clientId: testing-user
+          issuerUrl: https://sso.{{ .Values.domain }}/realms/chicken
+          scopeMappings: *keycloakScopeMappings
+          {{ if .Values.insecureSso }}tlsInsecure: true{{ end }}
+        - clientId: testing-manager
+          issuerUrl: https://sso.{{ .Values.domain }}/realms/chicken
+          scopeMappings: *keycloakScopeMappings
+          {{ if .Values.insecureSso }}tlsInsecure: true{{ end }}
+{{- else }}
+{{- if .Values.config.authentication }}
+  auth.yaml: |-
+    {{- .Files.Get .Values.config.authentication | nindent 4 }}
+{{- end }}
+{{- end}}
+
+{{- if .Values.config.collectorist }}
+  collectorist.yaml: |-
+    {{- .Files.Get .Values.config.collectorist | nindent 4 }}
+{{- end }}
+{{- end }}

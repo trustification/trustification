@@ -1,0 +1,215 @@
+appDomain: change-me
+
+partOf: trustification
+replicas: 1
+
+image:
+  name: trust
+  registry: ghcr.io/trustification
+  pullPolicy: IfNotPresent
+  version: f50f3499259a8ca57798d07e645d61cc18f5b6d8
+
+guac:
+  image:
+    name: guac
+    registry: ghcr.io/trustification
+    pullPolicy: IfNotPresent
+    version: "v0.3.32"
+  database: {}
+
+rust: {}
+
+ingress: {}
+
+tls: {}
+
+storage: {}
+
+index:
+  mode: file
+  syncInterval: "1m"
+  writerMemoryBytes: "128MiB"
+
+openshift:
+  useServiceCa: true
+
+oidc:
+  clients:
+    frontend:
+      clientId: frontend
+    walker:
+      clientId: walker
+      clientSecret:
+
+serviceMonitor:
+  enabled: false
+
+infrastructure:
+  port: 9010
+
+metrics:
+  enabled: false
+
+tracing:
+  enabled: false
+
+bombastic:
+  bucket: bombastic
+  topics:
+    stored: sbom-stored
+    failed: sbom-failed
+    indexed: sbom-indexed
+
+vexination:
+  bucket: vexination
+  topics:
+    stored: vex-stored
+    failed: vex-failed
+    indexed: vex-indexed
+
+v11y:
+  bucket: v11y
+  topics:
+    stored: v11y-stored
+    failed: v11y-failed
+    indexed: v11y-indexed
+
+modules:
+
+  documentation:
+    enabled: true
+    ingress: {}
+    image: {}
+    resources:
+      requests:
+        memory: "64Mi"
+      limits:
+        memory: "64Mi"
+
+  bombasticApi:
+    enabled: true
+    ingress: {}
+    image: {}
+    infrastructure: {}
+    tracing: {}
+    metrics: {}
+    rust: {}
+
+  bombasticCollector:
+    enabled: true
+    image: {}
+
+  bombasticIndexer:
+    enabled: true
+    image: {}
+    infrastructure: {}
+    tracing: {}
+    metrics: {}
+    rust: {}
+
+  bombasticWalker:
+    enabled: true
+    image: {}
+    infrastructure: {}
+    sources: {}
+    rust: {}
+
+  spogApi:
+    enabled: true
+    image: {}
+    infrastructure: {}
+    ingress: {}
+    tracing: {}
+    metrics: {}
+    rust: {}
+    crdaUrl: https://rhda.rhcloud.com/api/v4/analysis
+
+  spogUi:
+    enabled: true
+    image: {}
+    ingress: {}
+    resources:
+      requests:
+        memory: "64Mi"
+      limits:
+        memory: "64Mi"
+
+  vexinationApi:
+    enabled: true
+    ingress: {}
+    image: {}
+    infrastructure: {}
+    tracing: {}
+    metrics: {}
+    rust: {}
+
+  vexinationIndexer:
+    enabled: true
+    image: {}
+    infrastructure: {}
+    tracing: {}
+    metrics: {}
+    rust: {}
+
+  vexinationCollector:
+    enabled: true
+    image: {}
+
+  vexinationWalker:
+    enabled: true
+    image: {}
+    infrastructure: {}
+    sources: {}
+    rust: {}
+
+  v11yApi:
+    enabled: true
+    ingress: {}
+    image: {}
+    infrastructure: {}
+    tracing: {}
+    metrics: {}
+    rust: {}
+
+  v11yIndexer:
+    enabled: true
+    image: {}
+    infrastructure: {}
+    tracing: {}
+    metrics: {}
+    rust: {}
+
+  v11yWalker:
+    enabled: true
+    image: {}
+    infrastructure: {}
+    tracing: {}
+    metrics: {}
+    rust: {}
+    storageSize: 10Gi
+
+  guacGraphql:
+    enabled: true
+    image: {}
+    infrastructure: {}
+    metrics: {}
+
+  guacCollectsub:
+    enabled: false
+    image: {}
+
+  guacInitDb:
+    enabled: true
+    image: {}
+
+  initDataset:
+    enabled: true
+    image: {}
+    rust: {}
+
+  integrationTests:
+    enabled: false
+    image: {}
+    rust: {}
+
+workarounds: {}

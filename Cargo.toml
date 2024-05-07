@@ -1,0 +1,126 @@
+[workspace]
+resolver = "2"
+members = [
+    "analytics",
+    "api",
+    "auth",
+    "bombastic/bombastic",
+    "bombastic/api",
+    "bombastic/model",
+    "bombastic/indexer",
+    "bombastic/index",
+    "bombastic/walker",
+    "common",
+    "vexination/vexination",
+    "vexination/api",
+    "vexination/index",
+    "vexination/model",
+    "vexination/indexer",
+    "vexination/walker",
+    "reservoir/reservoir",
+    "reservoir/api",
+    "spog/api",
+    "spog/model",
+    "spog/spog",
+    "exhort/api",
+    "exhort/exhort",
+    "exhort/model",
+    "collectorist/api",
+    "collectorist/collectorist",
+    "collectorist/client",
+    "collector/collector",
+    "collector/client",
+    "collector/osv",
+    "collector/snyk",
+    "v11y/api",
+    "v11y/client",
+    "v11y/model",
+    "v11y/index",
+    "v11y/indexer",
+    "v11y/v11y",
+    "v11y/walker",
+    "integration-tests",
+    "trust",
+    "exporter",
+    "event-bus",
+    "storage",
+    "index",
+    "infrastructure",
+    "version",
+    "admin",
+    "indexer",
+    "xtask",
+]
+default-members = [
+    "analytics",
+    "auth",
+    "bombastic/bombastic",
+    "bombastic/api",
+    "bombastic/model",
+    "bombastic/indexer",
+    "bombastic/index",
+    "common",
+    "vexination/vexination",
+    "vexination/api",
+    "vexination/index",
+    "vexination/model",
+    "vexination/indexer",
+    "vexination/walker",
+    "reservoir/reservoir",
+    "reservoir/api",
+    "spog/api",
+    "spog/model",
+    "spog/spog",
+    "exhort/api",
+    "exhort/exhort",
+    "exhort/model",
+    "collectorist/api",
+    "collectorist/collectorist",
+    "collectorist/client",
+    "collector/collector",
+    "collector/client",
+    "collector/osv",
+    "collector/snyk",
+    "v11y/api",
+    "v11y/client",
+    "v11y/model",
+    "v11y/index",
+    "v11y/indexer",
+    "v11y/v11y",
+    "v11y/walker",
+    "trust",
+    "exporter",
+    "event-bus",
+    "storage",
+    "index",
+    "infrastructure",
+    "version",
+    "indexer",
+]
+
+[workspace.dependencies]
+guac = { git = "https://github.com/trustification/guac-rs.git", rev="561931b314e4ed486ef0372c6afe9f6b83fa3dd4" }
+#guac = { path = "../guac-rs/lib" }
+
+[patch.crates-io]
+#tantivy = { path = "../tantivy" }
+#sikula = { git = "https://github.com/ctron/sikula", rev = "023c27232f016b80a34c8ed77b88d1c30dcae6e0" }
+#sikula = { path = "../sikula" }
+
+# csaf-walker = { path = "../csaf-walker/csaf" }
+# walker-common = { path = "../csaf-walker/common" }
+#cpe = { git = "https://github.com/trustification/cpe-rs", rev = "dc2c5661d436410cc9562596ab16a2e771261eb2" }
+csaf = { git = "https://github.com/ctron/csaf-rs", rev = "183326beac525d58962f78be8eca973017702753" } # FIXME: waiting for release #16 #28
+
+walker-common = { git = "https://github.com/ctron/csaf-walker", rev = "38e76054b756325069f02caa8e6d029029a68a75" } # FIXME: waiting for release
+walker-extras = { git = "https://github.com/ctron/csaf-walker", rev = "38e76054b756325069f02caa8e6d029029a68a75" } # FIXME: waiting for release
+csaf-walker = { git = "https://github.com/ctron/csaf-walker", rev = "38e76054b756325069f02caa8e6d029029a68a75" } # FIXME: waiting for release
+sbom-walker = { git = "https://github.com/ctron/csaf-walker", rev = "38e76054b756325069f02caa8e6d029029a68a75" } # FIXME: waiting for release
+
+# also check: spog/ui/Cargo.toml
+# TODO Switch to the official repository once https://github.com/CycloneDX/cyclonedx-rust-cargo/issues/615 is fixed
+cyclonedx-bom = { git = "https://github.com/carlosthe19916/cyclonedx-rust-cargo", branch = "issue-615-trustification" }
+#spdx-rs = { git = "https://github.com/trustification/spdx-rs", rev = "c65be086e898dae88609f07bbc5a224ba4e0838d" } # FIXME: awaiting doubleopen-project/spdx-rs#/27
+
+#cve = { git = "https://github.com/ctron/cve", rev = "77341768d893098f1f8b1397364fecfb16b4d776" } # FIXME: awaiting release
+#hide = { git = "https://github.com/ctron/hide", rev = "109059cce66fd85dbe40f59ad40b7dab47b70fe1" } # FIXME: awaiting release

@@ -1,0 +1,86 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vexination-indexer
+  labels:
+    app.kubernetes.io/name: vexination-indexer
+    app.kubernetes.io/component: indexer
+    app.kubernetes.io/part-of: trustification
+spec:
+  replicas: {{ .Values.vexination.indexer.replicas | default 1}}
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: vexination-indexer
+      app.kubernetes.io/component: indexer
+      app.kubernetes.io/part-of: trustification
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: vexination-indexer
+        app.kubernetes.io/component: indexer
+        app.kubernetes.io/part-of: trustification
+        metrics: "true"
+    spec:
+      volumes:
+        - name: data
+          emptyDir: {}
+      containers:
+        - image: {{ .Values.trustImage }}:{{ .Values.release }}
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          name: service
+          command: ["/trust"]
+          args:
+            - "vexination"
+            - "indexer"
+            - "--stored-topic"
+            - "{{ .Values.vexination.indexer.topics.stored }}"
+            - "--indexed-topic"
+            - "{{ .Values.vexination.indexer.topics.indexed }}"
+            - "--failed-topic"
+            - "{{ .Values.vexination.indexer.topics.failed }}"
+            - "--index-mode"
+            - "{{ .Values.vexination.indexMode }}"
+            - "--index-dir"
+            - "/data/index"
+{{ if .Values.vexination.indexer.reindex }}
+            - "--reindex"
+            - "always"
+{{ end }}
+          env:
+            - name: RUST_LOG
+              value: {{ default "info" .Values.vexination.indexer.logLevel }}
+            {{ include "trustification.storage-env" ( dict "root" . "config" .Values.vexination ) | nindent 12 }}
+            {{ include "trustification.event-bus-env" ( dict "root" . "config" .Values.vexination ) | nindent 12 }}
+            - name: INFRASTRUCTURE_ENABLED
+              value: "true"
+            - name: INFRASTRUCTURE_BIND
+              value: "[::]:9010"
+            - name: INDEX_WRITER_MEMORY_BYTES
+              value: {{ .Values.vexination.indexer.indexWriterMemoryBytes | default "128 MIB" }}
+            - name: INDEX_SYNC_INTERVAL
+              value: {{ .Values.vexination.indexer.indexSyncInterval | default "1800s" }}
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          ports:
+            - containerPort: 9010
+              protocol: TCP
+              name: infra
+          resources:
+            {{- toYaml .Values.vexination.indexer.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: 9010
+            initialDelaySeconds: 2
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: 9010
+            initialDelaySeconds: 2
+          startupProbe:
+            httpGet:
+              path: /health/startup
+              port: 9010

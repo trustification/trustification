@@ -1,0 +1,15 @@
+[package]
+name = "v11y"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+v11y-api = { path = "../api" }
+v11y-indexer = { path = "../indexer" }
+v11y-walker = { path = "../walker" }
+
+clap = { version = "4", features = ["derive"] }
+anyhow = "1"
+
+
+

@@ -1,0 +1,11 @@
+[package]
+name = "exhort"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+exhort-api = { path = "../api" }
+clap = { version = "4", features = ["derive"] }
+anyhow = "1"
+
+

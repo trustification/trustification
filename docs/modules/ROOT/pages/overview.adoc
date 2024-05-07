@@ -1,0 +1,61 @@
+= Overview
+:page-aliases: docs:ROOT:overview.adoc
+
+Trustification is composed of several independent base services as well as services that provide combined functionality from those base services.
+
+* Bombastic - Storage, archival, search and exporting of Software Bill Of Materials (SBOM) documents.
+* Vexination - Storage, archival, search and exporting of Vulnerability EXchange (VEX) documents.
+* Exhort - Generating reports and recommendations for your dependencies.
+* V11y - Database for recording and retrieving information about a vulnerability.
+* GUAC - Graph for Understanding Artifact Composition. Provides a graph of relationships between artifacts and vulnerabilities.
+* SpOG (Single Pane of Glass) - API and console for searching and analyzing trusted content based on other services.
+
+These services pull information from workloads, vulnerability scanners and your own inventories, and can be integrated in to IDEs, CI/CD pipelines or external consoles, as shown in the below diagram:
+
+image::trustification.jpg[Architecture diagram showing all components in Trustification]
+
+Trustification relies on external services for access management, messaging and storage. Trustification services can run as containers, and can be deployed to any Kubernetes cluster, but it requires access configured for external services.
+
+See the link:https://github.com/trustification/trustification.dev[trustification.dev] repository for examples of how we manage the link:https://trustification.dev[publicly available instance].
+
+== Authentication
+
+All public APIs in Trustification is authenticated using Open ID Connect (OIDC), and you can use any Identity Provider (IdP) that supports OIDC.
+
+== Authorization
+
+Trustification defines two roles in the system: manager and user.
+
+The manager role has write access (upload/modify/delete any SBOM or VEX) to all services.
+
+The user role has read-only access to all services.
+
+== Ingestion flow
+
+The following diagram describes the data ingestion flow for Trustification:
+
+image::trustification_ingest.jpg[Diagram showing the flow of data ingested into Trustification]
+
+* SBOM documents are published using the Bombastic REST API.
+* VEX documents are published using the Vexination REST API.
+* Vulnerability information is added using the V11y REST API.
+
+All writes to the system are authorized as the manager role. All SBOM and VEX documents published to Bombastic and Vexination are stored in object storage (a system that supports the Amazon S3 API), in separate buckets.
+
+When a document written to the object storage, an event is dispatch to an event bus (This can be Amazon SQS or Apache Kafka depending on how you configure Trustification).
+
+There are, by default, 2 consumers of the events:
+
+* Indexer - Incrementally building a search index of new SBOM and VEX documents and publish them to the object storage.
+* GUAC Exporter - Ingesting package and vulnerability information into an instance of GUAC.
+
+== Querying
+
+* SBOM documents can be searched and retrieved using the Bombastic REST API.
+* VEX documents can be searched and retrieved using the Vexination REST API.
+* Vulnerability information can be retrieved using the V11y REST API.
+* Relationships between packages and vulnerabilities can be found using the GUAC GraphQL API (not exposed by default).
+
+image::trustification_query.jpg[Diagram showing the querying of data in Trustification]
+
+NOTE: The SPoG API is not considered a public API and is intended to be used by the SpOG Console.

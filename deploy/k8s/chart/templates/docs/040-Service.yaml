@@ -1,0 +1,21 @@
+{{ if .Values.enableDocs }}
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/name: trust-docs
+    app.kubernetes.io/component: documentation
+    app.kubernetes.io/part-of: trustification
+  name: trust-docs
+spec:
+  ports:
+  - name: endpoint
+    port: 8080
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    app.kubernetes.io/name: trust-docs
+    app.kubernetes.io/component: documentation
+    app.kubernetes.io/part-of: trustification
+  type: ClusterIP
+{{ end }}

@@ -1,0 +1,74 @@
+{{ if ( and .Values.minio.enabled (not (.Values.minioPostInstall).disabled ) ) }}
+kind: Job
+apiVersion: batch/v1
+metadata:
+  name: post-install-minio
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+    argocd.argoproj.io/sync-wave: "0"
+    helm.sh/hook-weight: "4"
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-delete-policy: before-hook-creation
+  labels:
+    app.kubernetes.io/name: post-install-minio
+    app.kubernetes.io/component: storage
+    app.kubernetes.io/part-of: trustification
+
+spec:
+  backoffLimit: 1000
+  completions: 1
+  parallelism: 1
+  ttlSecondsAfterFinished: 600
+  template:
+    spec:
+
+      restartPolicy: OnFailure
+
+      containers:
+        - name: post-install
+          image: {{ .Values.minioPostInstall.clientImage }}
+          imagePullPolicy: IfNotPresent
+
+          env:
+            - name: USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-minio
+                  key: root-user
+            - name: PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-minio
+                  key: root-password
+            - name: MC
+              value: {{ .Values.minioPostInstall.mcPath | quote }}
+
+          command:
+            - bash
+            - -exc
+            - |
+              "$MC" config host add myminio http://{{ .Release.Name }}-minio.{{ .Release.Namespace}}.svc.cluster.local:9000 "${USER}" "${PASSWORD}";
+              "$MC" mb myminio/bombastic --ignore-existing;
+              "$MC" policy download myminio/bombastic;
+              "$MC" event add myminio/bombastic arn:minio:sqs::BOMBASTIC:kafka --event "put,delete" --ignore-existing;
+
+              "$MC" mb myminio/vexination --ignore-existing;
+              "$MC" policy download myminio/vexination;
+              "$MC" event add myminio/vexination arn:minio:sqs::VEXINATION:kafka --event put --ignore-existing;
+
+              "$MC" mb myminio/v11y --ignore-existing;
+              "$MC" policy download myminio/v11y;
+              "$MC" event add myminio/v11y arn:minio:sqs::V11Y:kafka --event put --ignore-existing;
+
+              "$MC" admin service restart myminio;
+
+          volumeMounts:
+            - mountPath: /.mc
+              name: settings
+
+      volumes:
+        - name: settings
+          emptyDir: {}
+
+{{ end }}

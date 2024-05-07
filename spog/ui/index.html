@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trustification Console</title>
+
+    <style>
+        #loading {
+            background-color: white;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+        #loading-background {
+            background-image: url("branding/trustification_icon.svg");
+            background-position: center;
+            background-repeat: no-repeat;
+            background-size: 10%;
+            width: 100%;
+            height: 100%;
+            animation: fadeIn ease-in 3s;
+        }
+        @keyframes fadeIn {
+            0% {opacity:0;}
+            100% {opacity:1;}
+        }
+    </style>
+
+    <link data-trunk rel="scss" href="styles/main.scss">
+
+    <link data-trunk rel="copy-dir" href="branding" data-target-path="branding-default">
+
+    <link data-trunk rel="copy-dir" href="assets">
+    <link data-trunk rel="copy-file" href="assets/codicon.ttf">
+
+    <!-- don't use data-trunk so that we are able to replace that icon later -->
+    <link rel="icon" href="branding/trustification_icon.svg">
+    <link rel="manifest" href="branding/site.webmanifest">
+    <link rel="apple-touch-icon" href="branding/apple-touch-icon.png">
+
+    <link data-trunk rel="copy-dir" href="node_modules/@patternfly/patternfly/assets">
+    <link data-trunk rel="copy-dir" href="node_modules/@fortawesome/fontawesome-free/webfonts">
+
+    <base data-trunk-public-url/>
+</head>
+
+<body>
+    <div id="loading"><div id="loading-background"></div></div>
+</body>
+
+</html>

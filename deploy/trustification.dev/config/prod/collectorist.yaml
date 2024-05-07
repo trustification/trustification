@@ -1,0 +1,12 @@
+collectors:
+  osv:
+    cadence: "1d"
+    url: https://collector-osv.trustification-prod.svc/api/v1/
+    interests:
+    - package
+    - vulnerability
+  snyk:
+    cadence: "1d"
+    url: https://collector-snyk.trustification-prod.svc/api/v1/
+    interests:
+    - package

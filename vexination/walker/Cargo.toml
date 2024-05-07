@@ -1,0 +1,25 @@
+[package]
+name = "vexination-walker"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1"
+
+csaf = "0.5.0"
+csaf-walker = { version = "=0.6.0-alpha.8", default-features = false, features = ["crypto-openssl"] }
+walker-common = { version = "=0.6.0-alpha.8", features = [] }
+url = { version = "2.3.1", features = ["serde"] }
+time = "0.3.21"
+async-trait = "0.1"
+bytes = "1"
+clap = "4.3.3"
+humantime = "2.1.0"
+log = "0.4"
+serde_json = "1.0.68"
+tokio = { version = "1.28.2", features = ["full"] }
+tracing = "0.1"
+walker-extras = "=0.6.0-alpha.8"
+
+trustification-auth = { path = "../../auth" }
+trustification-infrastructure = { path = "../../infrastructure" }

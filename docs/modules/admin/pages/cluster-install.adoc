@@ -1,0 +1,189 @@
+= Installing the application
+
+== Creating a "values file"
+
+The Helm chart requires a set of information which the user needs to provide, and for which there are no defaults. For
+this it is required to create a "values" file, amending the default values. The values file has to be provided when
+performing the installation.
+
+The values files is a simple YAML file, which has a structure defined by the JSON schema of the Helm chart.
+
+TIP: As the chart offers a JSON schema, using an editor/IDE with supports for Helm Charts and JSON schema will make
+it easier creating the file, as it will show schema violations and offer code completion while editing.
+
+=== Providing secrets
+
+The chart allows providing secrets either by providing the actual value, or by providing a reference to a secret.
+
+Taking the storage configuration as an example, it requires the following credentials:
+
+[source,yaml]
+----
+storage:
+  accessKey: …
+  secretKey: …
+----
+
+For both `accessKey` as well as `secretKey`, the information can be provided as either a direct value, or as a
+reference. Also, a mixed version possible. For example:
+
+[source,yaml]
+----
+storage:
+  accessKey: "12345" # <1>
+  secretKey:
+    valueFrom:
+      secretValueRef:
+        name: secret-name # <2>
+        key: secret-key # <3>
+----
+<1> A literal value for the access key
+<2> The name of the secret containing the secret key value
+<3> The name of the key the containing the value inside the secret
+
+NOTE: The helm chart will only reference the values. It will not create the secrets or update the deployments when
+the values of the secrets change. In the case of using a plain value, a changed value will result in a changed
+deployment, and thus Kubernetes will perform a new rollout with the changed value.
+
+TIP: When using the object form, it is possible to provide the object one would provide for a Kubernetes `envVar`
+object, including `value` and `valueFrom`. For more information, see the Kubernetes documentation.
+
+=== A reasonable values file
+
+The following values file is a reasonable example. If you used the OpenTofu method of setting up the AWS resources,
+all secrets are already created in the expected format of the values files and no modifications of the secrets
+are required.
+
+Otherwise, you will need to create these secrets yourself with the information noted during the manual creation of
+the resources.
+
+[source, yaml]
+----
+include::../examples/values-ocp-aws.yaml[]
+----
+<1> Application domain, will be provided from the CLI
+<2> AWS region
+<3> URL of the Cognito domain
+<4> The OIDC issuer URL
+<5> Client ID of the frontend client
+<6> Client ID of the walker client
+
+NOTE: The example values file contains some placeholders in the format of `<name>`. Those placeholders must be replaced
+with actual values.
+
+== Create a new namespace
+
+Create a new namespace for the deployment. In the examples we will assume it is named `trustification`. You can
+create it from the command line using the following command:
+
+[source,bash]
+----
+oc new-project trustification
+----
+
+== Running the Helm installation
+
+Once the values file is generated and the namespace is created, run the Helm chart by executing:
+
+[source,bash]
+----
+NAMESPACE=trustification # <1>
+APP_DOMAIN=-$NAMESPACE.$(kubectl -n openshift-ingress-operator get ingresscontrollers.operator.openshift.io default -o jsonpath='{.status.domain}')
+helm upgrade --install -n $NAMESPACE trustification charts/trustification --values <values-file> --set-string appDomain=$APP_DOMAIN # <2>
+----
+<1> The name of the namespace you created for the deployment
+<2> The name of the "values" file
+
+TIP: The command is actually a mix of "install or upgrade". Which means that you can re-run it multiple times, and it
+will apply the currently configured state from the values file.
+
+=== Custom trust anchor
+
+If you are using a custom trust anchor (custom CA certificate), you will need to add this during the deployment. This
+might be required if you have a corporate CA, or are using the self-signed CA which comes by default with OpenShift or
+CRC.
+
+WARNING: It is not recommended to use the default, self-signed OpenShift CA certificate for any production workloads.
+
+[IMPORTANT]
+.Scope of the additional trust anchor
+====
+The trust anchor can only be added to the deployment of trustification. Be sure to read the full section on this, and
+what is required for the web browser.
+====
+
+The first step is to get the root level certificate file in PKCS #1 format. For OpenShift and CRC, it is possible to
+extract this using the following command:
+
+[source,bash]
+----
+oc get secret -n openshift-ingress  router-certs-default -o go-template='{{index .data "tls.crt"}}' | base64 -d > tls.crt
+----
+
+This will create a local file named `tls.crt`.
+
+NOTE: If you have your own root level certificate, the next steps assume that you have it in your local path,
+named `tls.crt`, and in the PKCS #1 format. Just like the previous command extracted it.
+
+Next, the certificate needs to be loaded this into a `ConfigMap`, so that we can reference it using the Helm values
+file:
+
+[source,bash]
+----
+oc create configmap custom-trust-anchor --from-file=tls.crt -n $NAMESPACE
+----
+
+NOTE: It is possible to use a different name than `custom-trust-anchor`. In this case, you will also need to replace the
+name in the following examples.
+
+In your custom Helm values override file, set the following options:
+
+[source,yaml]
+----
+tls:
+  additionalTrustAnchor: /etc/trust-anchor/tls.crt
+
+extraVolumes:
+  - name: trust-anchor
+    configMap:
+      name: custom-trust-anchor # <1>
+
+extraVolumeMounts:
+  - name: trust-anchor
+    readOnly: true
+    mountPath: /etc/trust-anchor
+----
+<1> The name of the `ConfigMap` holding the root level certificate.
+
+If configured, an additional trust anchor will be added to outgoing HTTPS (client) connections for trustification.
+Meaning that in cases like trustification calling out to the OIDC service, that trust anchor will be in effect.
+
+However, due to the nature of this, it is not possible to add the trust anchor to components outside of this
+deployment with Helm. Most important, the web browser you might use to interact with the system. Trust anchors have to
+be added on the client side of the HTTPS connection. So if you want this trust anchor to be in effect, you will need
+to add it to your web browser, or command line tooling. The way this works depends on the tool in question.
+
+WARNING: It is not recommended to add any self-signed CA used for testing or development purposes to a production
+system. Including your local machine.
+
+An alternative to adding the trust anchor to your local web browser, is to add an exception in the browser for this
+specific site. However, it is necessary to add this exception to **all** endpoints used. Normally this includes:
+
+* The static frontend endpoint
+* The API backends for SPoG, Bombastic, Vexination
+* The OIDC frontend
+
+In order to get the list of the URLs for the endpoints used, execute:
+
+[source,bash]
+----
+oc get routes -n $NAMESPACE --selector app.kubernetes.io/part-of=trusted-profile-analyzer -o jsonpath='{range .items[*]}{"https://"}{@.status.ingress[0].host}{"\n"}{end}'
+----
+
+The exact procedure depends on your browser, but it should follow the following pattern:
+
+* You enter a URL of the service into the URL bar of your browser and load it
+* The browser will warn you about this being a possibly insecure site and ask you to either "navigate away" or add an exception
+* You add an exception and continue with the next URL
+
+Once this is done, the exception will be in place and the connection should work without a problem.

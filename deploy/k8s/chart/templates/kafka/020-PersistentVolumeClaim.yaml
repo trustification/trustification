@@ -1,0 +1,19 @@
+{{- if .Values.deployKafka }}
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: kafka-pvc
+  labels:
+    app.kubernetes.io/name: kafka-pvc
+    app.kubernetes.io/component: storage
+    app.kubernetes.io/part-of: trustification
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.kafka.storageSize | default "10Gi" | quote }}
+  {{- with .Values.kafka.storageClassName }}
+  storageClassName: {{ . | quote }}
+  {{- end }}
+{{ end }}

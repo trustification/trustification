@@ -1,0 +1,136 @@
+version: '3'
+services:
+  minio:
+    image: quay.io/minio/minio:RELEASE.2023-06-19T19-52-50Z
+    command: server --console-address ":9001" /data1
+    depends_on:
+      kafka:
+        condition: service_healthy
+    expose:
+      - "9000"
+      - "9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: "admin"
+      MINIO_ROOT_PASSWORD: "password"
+      MINIO_NOTIFY_KAFKA_ENABLE_BOMBASTIC: "on"
+      MINIO_NOTIFY_KAFKA_BROKERS_BOMBASTIC: "kafka:9094"
+      MINIO_NOTIFY_KAFKA_TOPIC_BOMBASTIC: "sbom-stored"
+      MINIO_NOTIFY_KAFKA_ENABLE_VEXINATION: "on"
+      MINIO_NOTIFY_KAFKA_BROKERS_VEXINATION: "kafka:9094"
+      MINIO_NOTIFY_KAFKA_TOPIC_VEXINATION: "vex-stored"
+      MINIO_NOTIFY_KAFKA_ENABLE_V11Y: "on"
+      MINIO_NOTIFY_KAFKA_BROKERS_V11Y: "kafka:9094"
+      MINIO_NOTIFY_KAFKA_TOPIC_V11Y: "v11y-stored"
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 10
+    networks:
+      default:
+        aliases:
+          - bombastic.minio
+          - vexination.minio
+          - v11y.minio
+          - minio
+
+
+  createbuckets:
+    image: quay.io/minio/mc:RELEASE.2023-06-19T19-31-19Z
+    depends_on:
+      minio:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        /usr/bin/mc config host add myminio http://minio:9000 admin password;
+        /usr/bin/mc mb myminio/bombastic || true;
+        /usr/bin/mc policy download myminio/bombastic;
+        /usr/bin/mc event add myminio/bombastic arn:minio:sqs::BOMBASTIC:kafka --event "put,delete";
+
+        /usr/bin/mc mb myminio/vexination || true;
+        /usr/bin/mc policy download myminio/vexination;
+        /usr/bin/mc event add myminio/vexination arn:minio:sqs::VEXINATION:kafka --event put;
+        /usr/bin/mc admin service restart myminio;
+
+        /usr/bin/mc mb myminio/v11y || true;
+        /usr/bin/mc policy download myminio/v11y;
+        /usr/bin/mc event add myminio/v11y arn:minio:sqs::V11Y:kafka --event put;
+        /usr/bin/mc admin service restart myminio;
+
+  kafka:
+    image: docker.io/bitnami/kafka@sha256:8fedaa492f1f570cade60f5ff09978cd841307b1e9f93fe6216136ca165fcc2d
+#    image: docker.io/bitnami/kafka:3.4
+    expose:
+      - "9092"
+    ports:
+      - "9092:9092"
+    environment:
+      - BITNAMI_DEBUG=yes
+      - KAFKA_ENABLE_KRAFT=yes
+      - ALLOW_PLAINTEXT_LISTENER=yes
+      - KAFKA_CFG_NODE_ID=1
+      - KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE=true
+      - KAFKA_CFG_PROCESS_ROLES=controller,broker
+      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=1@kafka:9093
+      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9094,CONTROLLER://:9093,EXTERNAL://:9092
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9094,EXTERNAL://localhost:9092
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-topics.sh --bootstrap-server localhost:9094 --list"]
+      interval: 30s
+      timeout: 20s
+      retries: 10
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:20.0.0
+    command: start-dev
+    environment:
+      - KEYCLOAK_DB=dev-file
+      - KEYCLOAK_ADMIN=admin
+      - KEYCLOAK_ADMIN_PASSWORD=admin123456
+    ports:
+      - "8090:8080"
+    expose:
+      - "8080"
+    # FIXME: unable to define a health check: https://github.com/keycloak/keycloak/issues/21941
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  init-keycloak:
+    image: quay.io/keycloak/keycloak:20.0.0
+    depends_on:
+      # - keycloak
+      keycloak:
+        condition: service_healthy
+      # FIXME: broken in podman: https://github.com/containers/podman-compose/issues/575
+      # FIXME: even it that works, keycloak has issues too: https://github.com/keycloak/keycloak/issues/21941
+    environment:
+      - KEYCLOAK_URL=http://keycloak:8080
+      - KCADM_PATH=/opt/keycloak/bin/kcadm.sh
+      - KEYCLOAK_ADMIN=admin
+      - KEYCLOAK_ADMIN_PASSWORD=admin123456
+      - REALM=chicken
+      - INIT_DATA=/init-sso/data
+      - CHICKEN_ADMIN=admin
+      - CHICKEN_ADMIN_PASSWORD=admin123456
+      - REDIRECT_URIS=["http://localhost:*"]
+      - WALKER_SECRET=ZVzq9AMOVUdMY1lSohpx1jI3aW56QDPS
+      # The internal name (between containers) is "keycloak". However, from the host it reachable as "localhost:8090".
+      # So the "frontend" needs to be set to that
+      - SSO_FRONTEND_URL=http://localhost:8090
+    volumes:
+      - ./container_files/init-sso:/init-sso${SELINUX_VOLUME_OPTIONS}
+    entrypoint: /usr/bin/bash
+    command: /init-sso/init.sh
