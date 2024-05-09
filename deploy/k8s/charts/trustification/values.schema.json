@@ -820,6 +820,23 @@
               "$ref": "#/definitions/RustApplication"
             }
           ]
+        },
+        "report": {
+          "description": "Configuration options for report.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/Feature"
+            },
+            {
+              "$ref": "#/definitions/Image"
+            },
+            {
+              "$ref": "#/definitions/Infrastructure"
+            },
+            {
+              "$ref": "#/definitions/Ingress"
+            }
+          ]
         }
       }
     },

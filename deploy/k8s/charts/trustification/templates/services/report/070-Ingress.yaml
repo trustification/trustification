@@ -1,0 +1,7 @@
+{{- if and .Values.modules.report.enabled }}
+{{- $mod := dict "root" . "name" "report-server" "component" "report" "module" .Values.modules.report -}}
+{{- include "trustification.ingress.defaultIngress" ( merge (deepCopy $mod) (dict
+  "host" (include "trustification.host.report" $mod )
+  "tlsMode" "edge"
+))}}
+{{- end }}

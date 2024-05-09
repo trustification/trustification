@@ -480,6 +480,15 @@ properties:
                   "^[a-z0-9A-Z_\\-.]*[a-z0-9A-Z]$":
                     $ref: "#/definitions/VexinationWalkerSource"
 
+      report:
+        description: | 
+          Configuration options for report.
+        allOf:
+          - $ref: "#/definitions/Feature"
+          - $ref: "#/definitions/Image"
+          - $ref: "#/definitions/Infrastructure"
+          - $ref: "#/definitions/Ingress"
+
       integrationTests:
         description: |
           Integration tests which can be run as part of the Helm chart.

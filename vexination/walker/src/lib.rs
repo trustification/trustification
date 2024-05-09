@@ -2,7 +2,7 @@ use crate::scanner::{Options, Scanner};
 use std::{path::PathBuf, process::ExitCode, sync::Arc, time::SystemTime};
 use time::{Date, Month, UtcOffset};
 use trustification_auth::client::{OpenIdTokenProviderConfig, OpenIdTokenProviderConfigArguments};
-use trustification_common_walker::report::{handle_report, SplitScannerError};
+use trustification_common_walker::report::{handle_report, ReportType, SplitScannerError};
 use trustification_infrastructure::{Infrastructure, InfrastructureConfig};
 use url::Url;
 use walker_common::sender::provider::TokenProvider;
@@ -128,7 +128,7 @@ impl Run {
                         scanner.run(interval.into()).await?;
                     } else {
                         let (report, result) = scanner.run_once().await.split()?;
-                        handle_report(report).await?;
+                        handle_report(report, ReportType::VEX(String::from("Vexination"))).await?;
                         result?;
                     }
 

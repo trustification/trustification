@@ -1,0 +1,29 @@
+{{- if and .Values.modules.report.enabled }}
+{{- $mod := dict "root" . "name" "report-server" "component" "report" "module" .Values.modules.report -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "trustification.common.name" $mod }}-nginx-config
+data:
+  nginx.conf: |
+    worker_processes auto;
+    error_log /var/log/nginx/error.log warn;
+    events {
+        worker_connections 1024;
+    }
+    http {
+      server {
+        listen 8018;
+        server_name localhost;
+
+        root /opt/app-root/src;
+        index index.html index.htm;
+
+        location / {
+            autoindex on;
+            try_files $uri $uri/ =404;
+        }
+      }
+    }
+
+{{ end }}

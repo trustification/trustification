@@ -74,6 +74,7 @@ v11y:
     failed: v11y-failed
     indexed: v11y-indexed
 
+
 modules:
 
   documentation:
@@ -211,5 +212,11 @@ modules:
     enabled: false
     image: {}
     rust: {}
+
+  report:
+    enabled: true
+    ingress: {}
+    infrastructure: { }
+    image: {}
 
 workarounds: {}

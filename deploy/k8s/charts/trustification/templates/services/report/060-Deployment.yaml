@@ -1,0 +1,60 @@
+{{- if and .Values.modules.report.enabled }}
+{{- $mod := dict "root" . "name" "report-server" "component" "report" "module" .Values.modules.report -}}
+
+
+{{/*---*/}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "trustification.common.name" $mod }}
+  labels:
+    {{- include "trustification.common.labels" $mod | nindent 4 }}
+  annotations:
+    {{- include "trustification.application.annotations" $mod | nindent 4 }}
+
+spec:
+  replicas: {{ include "trustification.application.replicas" $mod }}
+  selector:
+    matchLabels:
+      {{- include "trustification.common.selectorLabels" $mod | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        report: "server"
+        {{- include "trustification.common.selectorLabels" $mod | nindent 8 }}
+        {{- include "trustification.application.podLabels" $mod | nindent 8 }}
+
+    spec:
+      {{- include "trustification.application.pod" $mod | nindent 6 }}
+
+      containers:
+        - name: report
+          image: registry.access.redhat.com/ubi8/nginx-122
+          imagePullPolicy: IfNotPresent
+
+          command: [ "/usr/sbin/nginx" ]
+          args: [ "-g", "daemon off;" ]
+          ports:
+            {{- include "trustification.application.infrastructure.podPorts" $mod | nindent 12 }}
+            - containerPort: 8018
+              name: endpoint
+              protocol: TCP
+
+          volumeMounts:
+            - name: wwwdata
+              mountPath: /opt/app-root/src
+
+            - name: config-volume
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx.conf
+              readOnly: true
+
+      volumes:
+        - name: wwwdata
+          persistentVolumeClaim:
+            claimName: report-server
+        - name: config-volume
+          configMap:
+              name: {{ include "trustification.common.name" $mod }}-nginx-config
+
+{{ end }}

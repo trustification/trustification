@@ -7,7 +7,7 @@ use std::sync::Arc;
 use std::time::SystemTime;
 use time::{Date, Month, UtcOffset};
 use trustification_auth::client::{OpenIdTokenProviderConfig, OpenIdTokenProviderConfigArguments};
-use trustification_common_walker::report::{handle_report, SplitScannerError};
+use trustification_common_walker::report::{handle_report, ReportType, SplitScannerError};
 use trustification_infrastructure::{
     endpoint::{self, Endpoint},
     Infrastructure, InfrastructureConfig,
@@ -162,7 +162,7 @@ impl Run {
                         scanner.run(interval.into()).await?;
                     } else {
                         let (report, result) = scanner.run_once().await.split()?;
-                        handle_report(report).await?;
+                        handle_report(report, ReportType::SBOM(String::from("Sbom"))).await?;
                         result?;
                     }
 
