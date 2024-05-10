@@ -804,6 +804,23 @@
             }
           ]
         },
+        "report": {
+          "description": "Configuration options for report.\n",
+          "allOf": [
+            {
+              "$ref": "#/definitions/Feature"
+            },
+            {
+              "$ref": "#/definitions/Image"
+            },
+            {
+              "$ref": "#/definitions/Infrastructure"
+            },
+            {
+              "$ref": "#/definitions/Ingress"
+            }
+          ]
+        },
         "integrationTests": {
           "description": "Integration tests which can be run as part of the Helm chart.\n",
           "allOf": [
@@ -818,23 +835,6 @@
             },
             {
               "$ref": "#/definitions/RustApplication"
-            }
-          ]
-        },
-        "report": {
-          "description": "Configuration options for report.",
-          "allOf": [
-            {
-              "$ref": "#/definitions/Feature"
-            },
-            {
-              "$ref": "#/definitions/Image"
-            },
-            {
-              "$ref": "#/definitions/Infrastructure"
-            },
-            {
-              "$ref": "#/definitions/Ingress"
             }
           ]
         }

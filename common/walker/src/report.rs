@@ -1,4 +1,5 @@
 use parking_lot::Mutex;
+use serde_json::to_string;
 use std::{collections::BTreeMap, env, ffi::OsString, fs, fs::File, io::Write, sync::Arc};
 use tera::{Context, Tera};
 use time::macros::format_description;
@@ -133,9 +134,6 @@ pub enum ReportType {
 }
 /// Handle the report
 pub async fn handle_report(report: Report, report_type: ReportType) -> anyhow::Result<()> {
-    // FIXME: this is a very simplistic version of handling the error
-    log::info!("Import report: {report:#?}");
-
     let path = env::var_os("REPORT_PATH").unwrap_or_else(|| OsString::from(DEFAULT_REPORT_OUTPUT_PATH));
     let path = path.to_str().unwrap_or(DEFAULT_REPORT_OUTPUT_PATH).to_string();
 
@@ -144,6 +142,7 @@ pub async fn handle_report(report: Report, report_type: ReportType) -> anyhow::R
         ReportType::VEX(vex) => vex,
     };
 
+    ///Generate a report in html format.
     let template_content = include_str!("../templates/report.html");
     let mut tera = Tera::default();
     tera.add_raw_template("report.html", template_content)?;
@@ -154,18 +153,18 @@ pub async fn handle_report(report: Report, report_type: ReportType) -> anyhow::R
     context.insert("type", &report_type_string);
     context.insert("current_time", &current_time);
 
+    let format = format_description!("[year]-[month]-[day].[hour].[minute].[second]");
+    let formatted_time = current_time.clone().format(&format)?;
     match tera.render("report.html", &context) {
         Ok(rendered_html) => {
-            let format = format_description!("[year]-[month]-[day].[hour].[minute].[second]");
-            let formatted_time = current_time.clone().format(&format)?;
-            let out_put_path = format!("{path}/{report_type_string}/report-{formatted_time}.html");
-            if let Some(parent) = std::path::Path::new(&out_put_path).parent() {
+            let out_put_html_path = format!("{path}/{report_type_string}/html/report-{formatted_time}.html");
+            if let Some(parent) = std::path::Path::new(&out_put_html_path).parent() {
                 fs::create_dir_all(parent)?;
             }
-            let mut file = match File::create(out_put_path.clone()) {
+            let mut file = match File::create(out_put_html_path.clone()) {
                 Ok(file) => file,
                 Err(e) => {
-                    log::warn!(" The {} created failed. {:?}", out_put_path.clone(), e);
+                    log::warn!(" The {} created failed. {:?}", out_put_html_path.clone(), e);
                     return Err(e.into());
                 }
             };
@@ -180,6 +179,22 @@ pub async fn handle_report(report: Report, report_type: ReportType) -> anyhow::R
             )
         }
     }
+
+    ///Generate a report in JSON format.
+    let out_put_json_path = format!("{path}/{report_type_string}/json/report-{formatted_time}.json");
+    if let Some(parent) = std::path::Path::new(&out_put_json_path).parent() {
+        fs::create_dir_all(parent)?;
+    }
+    let mut file = match File::create(out_put_json_path.clone()) {
+        Ok(file) => file,
+        Err(e) => {
+            log::warn!(" The {} created failed. {:?}", out_put_json_path.clone(), e);
+            return Err(e.into());
+        }
+    };
+
+    let _ = writeln!(file, "{:?}", to_string(&report).unwrap())?;
+    let _ = file.sync_all();
     Ok(())
 }
 

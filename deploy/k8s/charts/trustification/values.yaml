@@ -216,7 +216,7 @@ modules:
   report:
     enabled: true
     ingress: {}
-    infrastructure: { }
+    infrastructure: {}
     image: {}
 
 workarounds: {}
