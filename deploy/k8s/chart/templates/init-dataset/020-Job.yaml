@@ -34,8 +34,10 @@ spec:
           args:
             - "-ce"
             - |
-              /trust bombastic walker --sink https://sbom.{{ .Values.domain }} --source /data/sbom
-              /trust vexination walker --sink https://vex.{{ .Values.domain }}/api/v1/vex --source /data/csaf
+              /trust bombastic walker --sink https://sbom.{{ .Values.domain }} --source file:/data/sbom
+              echo SBOM import done
+              /trust vexination walker --sink https://vex.{{ .Values.domain }}/api/v1/vex --source file:/data/csaf
+              echo CSAF import done
 
           env:
             {{- include "trustification.authentication-client" ( dict "root" . "clientId" "walker" ) | nindent 16 }}
