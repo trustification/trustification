@@ -142,7 +142,6 @@ pub async fn handle_report(report: Report, report_type: ReportType) -> anyhow::R
         ReportType::VEX(vex) => vex,
     };
 
-    ///Generate a report in html format.
     let template_content = include_str!("../templates/report.html");
     let mut tera = Tera::default();
     tera.add_raw_template("report.html", template_content)?;
@@ -154,7 +153,7 @@ pub async fn handle_report(report: Report, report_type: ReportType) -> anyhow::R
     context.insert("current_time", &current_time);
 
     let format = format_description!("[year]-[month]-[day].[hour].[minute].[second]");
-    let formatted_time = current_time.clone().format(&format)?;
+    let formatted_time = current_time.format(&format)?;
     match tera.render("report.html", &context) {
         Ok(rendered_html) => {
             let out_put_html_path = format!("{path}/{report_type_string}/html/report-{formatted_time}.html");
@@ -180,7 +179,6 @@ pub async fn handle_report(report: Report, report_type: ReportType) -> anyhow::R
         }
     }
 
-    ///Generate a report in JSON format.
     let out_put_json_path = format!("{path}/{report_type_string}/json/report-{formatted_time}.json");
     if let Some(parent) = std::path::Path::new(&out_put_json_path).parent() {
         fs::create_dir_all(parent)?;
@@ -193,7 +191,7 @@ pub async fn handle_report(report: Report, report_type: ReportType) -> anyhow::R
         }
     };
 
-    let _ = writeln!(file, "{:?}", to_string(&report).unwrap())?;
+    writeln!(file, "{:?}", to_string(&report))?;
     let _ = file.sync_all();
     Ok(())
 }

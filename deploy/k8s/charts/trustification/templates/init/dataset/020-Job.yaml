@@ -1,4 +1,5 @@
 {{- if .Values.modules.initDataset.enabled }}
+{{- $isReport := .Values.modules.report.enabled }}
 {{- $mod := dict "root" . "name" "init-dataset" "component" "init" "module" .Values.modules.initDataset -}}
 kind: Job
 apiVersion: batch/v1
@@ -49,15 +50,42 @@ spec:
               echo CSAF import done
 
           env:
+            {{- if $isReport }}
+            - name: REPORT_PATH
+              value: "/tmp/share/reports"
+            {{- end }}
+
             {{- include "trustification.oidc.authenticationClient" ( dict "root" . "clientId" "walker" ) | nindent 12 }}
             {{- include "trustification.application.rust.envVars" $mod | nindent 12 }}
 
           volumeMounts:
+            {{- if $isReport }}
+            - name: report-path
+              mountPath: /tmp/share/reports
+            {{- end }}
             {{- include "trustification.application.extraVolumeMounts" $mod | nindent 12 }}
 
           {{- include "trustification.application.container" $mod | nindent 10 }}
 
       volumes:
+        {{- if $isReport }}
+        - name: report-path
+          persistentVolumeClaim:
+            claimName: report-server
+        {{- end }}
         {{- include "trustification.application.extraVolumes" $mod | nindent 8 }}
+
+      {{- if $isReport }}
+      affinity:
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: report
+                    operator: In
+                    values:
+                      - server
+              topologyKey: "kubernetes.io/hostname"
+      {{- end }}
 
 {{ end }}
