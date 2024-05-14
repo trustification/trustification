@@ -24,8 +24,8 @@ objects:
               - "-ce"
               - |
                 set -e
-                /trust bombastic walker --sink https://sbom.${DOMAIN} --source /data/sbom
-                /trust vexination walker --sink https://vex.${DOMAIN}/api/v1/vex --source /data/csaf
+                /trust bombastic walker --sink https://sbom.${DOMAIN} --source file:/data/sbom
+                /trust vexination walker --sink https://vex.${DOMAIN}/api/v1/vex --source file:/data/csaf
 
             env:
               - name: RUST_LOG
