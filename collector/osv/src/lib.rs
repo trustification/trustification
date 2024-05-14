@@ -115,8 +115,8 @@ impl AppState {
         P: TokenProvider + Clone + 'static,
     {
         Self {
-            v11y_client: v11y_client::V11yClient::new(client, v11y_url, provider),
-            guac_client: GuacClient::new(guac_url.as_str()),
+            v11y_client: v11y_client::V11yClient::new(client.clone(), v11y_url, provider),
+            guac_client: GuacClient::with_client(guac_url.to_string(), client),
             osv: OsvClient::new(),
         }
     }
