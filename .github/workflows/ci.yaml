@@ -101,15 +101,6 @@ jobs:
         run: |
           helm lint ./charts/trustification-branding
 
-      # also lint the deprecated charts for now
-      - name: helm-lint-deprecated (staging)
-        working-directory: deploy/k8s
-        run: |
-          helm lint ./chart -f ../trustification.dev/staging.yaml
-      - name: helm-lint-deprecated (prod)
-        working-directory: deploy/k8s
-        run: |
-          helm lint ./chart -f ../trustification.dev/prod.yaml
 
   ci-backend:
     runs-on: ubuntu-22.04

@@ -1,5 +1,5 @@
 .PHONY: template dashboards clean
-CHART ?= ../k8s/chart
+CHART ?= ../k8s/charts
 DASHBOARDS ?= ../k8s/dashboards
 
 all: template dashboards
