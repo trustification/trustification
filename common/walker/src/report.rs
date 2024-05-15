@@ -1,5 +1,4 @@
 use parking_lot::Mutex;
-use serde_json::to_string;
 use std::{collections::BTreeMap, env, ffi::OsString, fs, fs::File, io::Write, sync::Arc};
 use tera::{Context, Tera};
 use time::macros::format_description;
@@ -170,6 +169,7 @@ pub async fn handle_report(report: Report, report_type: ReportType) -> anyhow::R
 
             let _ = writeln!(file, "{}", rendered_html);
             let _ = file.sync_all();
+            log::info!("Successfully generated the report file.");
         }
         Err(e) => {
             log::warn!(
@@ -179,20 +179,6 @@ pub async fn handle_report(report: Report, report_type: ReportType) -> anyhow::R
         }
     }
 
-    let out_put_json_path = format!("{path}/{report_type_string}/json/report-{formatted_time}.json");
-    if let Some(parent) = std::path::Path::new(&out_put_json_path).parent() {
-        fs::create_dir_all(parent)?;
-    }
-    let mut file = match File::create(out_put_json_path.clone()) {
-        Ok(file) => file,
-        Err(e) => {
-            log::warn!(" The {} created failed. {:?}", out_put_json_path.clone(), e);
-            return Err(e.into());
-        }
-    };
-
-    writeln!(file, "{:?}", to_string(&report))?;
-    let _ = file.sync_all();
     Ok(())
 }
 

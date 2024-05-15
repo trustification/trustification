@@ -7803,7 +7803,6 @@ dependencies = [
  "parking_lot",
  "sequoia-openpgp",
  "serde",
- "serde_json",
  "tera",
  "thiserror",
  "time",
