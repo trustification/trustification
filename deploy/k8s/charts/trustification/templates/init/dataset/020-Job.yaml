@@ -54,7 +54,8 @@ spec:
             - name: REPORT_PATH
               value: "/tmp/share/reports"
             {{- end }}
-
+            - name: IS_REPORT
+              value: $isReport
             {{- include "trustification.oidc.authenticationClient" ( dict "root" . "clientId" "walker" ) | nindent 12 }}
             {{- include "trustification.application.rust.envVars" $mod | nindent 12 }}
 

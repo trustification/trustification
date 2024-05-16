@@ -1,11 +1,12 @@
 use parking_lot::Mutex;
-use std::{collections::BTreeMap, env, ffi::OsString, fs, fs::File, io::Write, sync::Arc};
+use std::{collections::BTreeMap, env, ffi::OsString, fs, sync::Arc};
 use tera::{Context, Tera};
 use time::macros::format_description;
 use time::OffsetDateTime;
 use walker_extras::visitors::SendVisitor;
 
 const DEFAULT_REPORT_OUTPUT_PATH: &str = "/tmp/share/reports";
+const DEFAULT_IS_REPORT: &str = "true";
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Ord, PartialOrd, serde::Deserialize, serde::Serialize)]
 pub enum Phase {
@@ -126,20 +127,16 @@ impl SplitScannerError for Result<Report, ScannerError> {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
-pub enum ReportType {
-    SBOM(String),
-    VEX(String),
-}
 /// Handle the report
-pub async fn handle_report(report: Report, report_type: ReportType) -> anyhow::Result<()> {
+pub async fn handle_report(report: Report, report_type: String) -> anyhow::Result<()> {
+    let is_report = env::var_os("IS_REPORT").unwrap_or_else(|| OsString::from(DEFAULT_IS_REPORT));
+    let is_report_bool = is_report.to_string_lossy().to_lowercase() == "true";
+    if !is_report_bool {
+        return Ok(());
+    }
+
     let path = env::var_os("REPORT_PATH").unwrap_or_else(|| OsString::from(DEFAULT_REPORT_OUTPUT_PATH));
     let path = path.to_str().unwrap_or(DEFAULT_REPORT_OUTPUT_PATH).to_string();
-
-    let report_type_string = match report_type {
-        ReportType::SBOM(sbom) => sbom,
-        ReportType::VEX(vex) => vex,
-    };
 
     let template_content = include_str!("../templates/report.html");
     let mut tera = Tera::default();
@@ -148,27 +145,18 @@ pub async fn handle_report(report: Report, report_type: ReportType) -> anyhow::R
     let mut context = Context::new();
     let current_time = OffsetDateTime::now_utc();
     context.insert("report", &report);
-    context.insert("type", &report_type_string);
+    context.insert("type", &report_type);
     context.insert("current_time", &current_time);
 
-    let format = format_description!("[year]-[month]-[day].[hour].[minute].[second]");
+    let format = format_description!("[year]-[month]-[day]--[hour]-[minute]-[second]");
     let formatted_time = current_time.format(&format)?;
     match tera.render("report.html", &context) {
         Ok(rendered_html) => {
-            let out_put_html_path = format!("{path}/{report_type_string}/html/report-{formatted_time}.html");
+            let out_put_html_path = format!("{path}/{report_type}/html/report-{formatted_time}.html");
             if let Some(parent) = std::path::Path::new(&out_put_html_path).parent() {
                 fs::create_dir_all(parent)?;
             }
-            let mut file = match File::create(out_put_html_path.clone()) {
-                Ok(file) => file,
-                Err(e) => {
-                    log::warn!(" The {} created failed. {:?}", out_put_html_path.clone(), e);
-                    return Err(e.into());
-                }
-            };
-
-            let _ = writeln!(file, "{}", rendered_html);
-            let _ = file.sync_all();
+            fs::write(out_put_html_path.clone(), rendered_html)?;
             log::info!("Successfully generated the report file.");
         }
         Err(e) => {
@@ -184,7 +172,7 @@ pub async fn handle_report(report: Report, report_type: ReportType) -> anyhow::R
 
 #[cfg(test)]
 mod tests {
-    use crate::report::{handle_report, Message, Phase, ReportBuilder, ReportType, Severity};
+    use crate::report::{handle_report, Message, Phase, ReportBuilder, Severity};
 
     #[tokio::test]
     async fn test_handle_report() {
@@ -213,7 +201,7 @@ mod tests {
                 message: "test2 message two".to_string(),
             });
 
-        let rs = handle_report(report.report, ReportType::SBOM("Sbom".to_string())).await;
+        let rs = handle_report(report.report, "Sbom".to_string()).await;
         match rs {
             Ok(_rt) => assert_eq!(true, true),
             Err(_e) => assert_eq!(true, false),
