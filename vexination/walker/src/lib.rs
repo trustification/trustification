@@ -1,4 +1,5 @@
 use crate::scanner::{Options, Scanner};
+use clap::ArgAction;
 use std::{path::PathBuf, process::ExitCode, sync::Arc, time::SystemTime};
 use time::{Date, Month, UtcOffset};
 use trustification_auth::client::{OpenIdTokenProviderConfig, OpenIdTokenProviderConfigArguments};
@@ -66,6 +67,14 @@ pub struct Run {
     /// Long-running mode. The index file will be scanned for changes every interval.
     #[arg(long = "scan-interval")]
     pub scan_interval: Option<humantime::Duration>,
+
+    /// Allow logging of uploaded vexination file reports.
+    #[arg(long, env, default_value_t = true, action = ArgAction::Set)]
+    pub report_enable: bool,
+
+    /// Path of the HTML output file
+    #[arg(long, default_value = "/tmp/share/reports")]
+    pub report_path: Option<String>,
 }
 
 impl Run {
@@ -128,7 +137,9 @@ impl Run {
                         scanner.run(interval.into()).await?;
                     } else {
                         let (report, result) = scanner.run_once().await.split()?;
-                        handle_report(report, "Vexination".to_string()).await?;
+                        if self.report_enable {
+                            handle_report(report, self.report_path, "Vexination".to_string()).await?;
+                        }
                         result?;
                     }
 

@@ -1,12 +1,12 @@
 use parking_lot::Mutex;
-use std::{collections::BTreeMap, env, ffi::OsString, fs, sync::Arc};
+use std::{collections::BTreeMap, env, fs, sync::Arc};
 use tera::{Context, Tera};
 use time::macros::format_description;
 use time::OffsetDateTime;
 use walker_extras::visitors::SendVisitor;
 
 const DEFAULT_REPORT_OUTPUT_PATH: &str = "/tmp/share/reports";
-const DEFAULT_IS_REPORT: &str = "true";
+const DEFAULT_TEMPLATE_FILIE: &str = "../templates/report.html";
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Ord, PartialOrd, serde::Deserialize, serde::Serialize)]
 pub enum Phase {
@@ -128,19 +128,23 @@ impl SplitScannerError for Result<Report, ScannerError> {
 }
 
 /// Handle the report
-pub async fn handle_report(report: Report, report_type: String) -> anyhow::Result<()> {
-    let is_report = env::var_os("IS_REPORT").unwrap_or_else(|| OsString::from(DEFAULT_IS_REPORT));
-    let is_report_bool = is_report.to_string_lossy().to_lowercase() == "true";
-    if !is_report_bool {
+pub async fn handle_report(report: Report, report_path: Option<String>, report_type: String) -> anyhow::Result<()> {
+    if report.messages.is_empty() {
+        log::info!("This report contains no error messages and does not require the generation of an error report");
         return Ok(());
     }
+    let template_file_path = env::var_os("TEMPLATE_FILE");
 
-    let path = env::var_os("REPORT_PATH").unwrap_or_else(|| OsString::from(DEFAULT_REPORT_OUTPUT_PATH));
-    let path = path.to_str().unwrap_or(DEFAULT_REPORT_OUTPUT_PATH).to_string();
+    let path = report_path.unwrap_or_else(|| DEFAULT_REPORT_OUTPUT_PATH.to_string());
 
-    let template_content = include_str!("../templates/report.html");
     let mut tera = Tera::default();
-    tera.add_raw_template("report.html", template_content)?;
+    if let Some(file) = template_file_path {
+        let template_file_path = file.to_str().unwrap_or(DEFAULT_TEMPLATE_FILIE).to_string();
+        let _ = tera.add_template_files(vec![(template_file_path, Some("report.html"))]);
+    } else {
+        let template_content = include_str!("../templates/report.html");
+        tera.add_raw_template("report.html", template_content)?;
+    }
 
     let mut context = Context::new();
     let current_time = OffsetDateTime::now_utc();
@@ -150,32 +154,23 @@ pub async fn handle_report(report: Report, report_type: String) -> anyhow::Resul
 
     let format = format_description!("[year]-[month]-[day]--[hour]-[minute]-[second]");
     let formatted_time = current_time.format(&format)?;
-    match tera.render("report.html", &context) {
-        Ok(rendered_html) => {
-            let out_put_html_path = format!("{path}/{report_type}/html/report-{formatted_time}.html");
-            if let Some(parent) = std::path::Path::new(&out_put_html_path).parent() {
-                fs::create_dir_all(parent)?;
-            }
-            fs::write(out_put_html_path.clone(), rendered_html)?;
-            log::info!("Successfully generated the report file.");
-        }
-        Err(e) => {
-            log::warn!(
-                "There was an error generating the page, please check your files. {:?}",
-                e
-            )
-        }
+    let rendered_html = tera.render("report.html", &context)?;
+    let out_put_html_path = format!("{path}/{report_type}/html/report-{formatted_time}.html");
+    if let Some(parent) = std::path::Path::new(&out_put_html_path).parent() {
+        fs::create_dir_all(parent)?;
     }
+    fs::write(out_put_html_path.clone(), rendered_html)?;
+    log::info!("Successfully generated the report file.");
 
     Ok(())
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::report::{handle_report, Message, Phase, ReportBuilder, Severity};
+    use crate::report::{handle_report, Message, Phase, Report, ReportBuilder, Severity};
+    use std::env;
 
-    #[tokio::test]
-    async fn test_handle_report() {
+    fn create_report() -> Report {
         let mut report = ReportBuilder::new();
         report
             .report
@@ -201,7 +196,12 @@ mod tests {
                 message: "test2 message two".to_string(),
             });
 
-        let rs = handle_report(report.report, "Sbom".to_string()).await;
+        report.report
+    }
+
+    #[tokio::test]
+    async fn test_handle_report_without_env() {
+        let rs = handle_report(create_report(), None, "Sbom".to_string()).await;
         match rs {
             Ok(_rt) => assert_eq!(true, true),
             Err(_e) => assert_eq!(true, false),

@@ -486,8 +486,8 @@ properties:
         allOf:
           - $ref: "#/definitions/Feature"
           - $ref: "#/definitions/Image"
-          - $ref: "#/definitions/Infrastructure"
           - $ref: "#/definitions/Ingress"
+          - $ref: "#/definitions/Patternfly"
 
       integrationTests:
         description: |
@@ -544,6 +544,12 @@ definitions:
       rust:
         $ref: "#/definitions/RustApplicationConfig"
 
+  Patternfly:
+    type: object
+    properties:
+      patternflyUrl:
+        type: string
+        "description": "The URL to the patternfly css.\n"
   RustApplicationConfig:
     type: object
     properties:

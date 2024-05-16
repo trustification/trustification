@@ -218,5 +218,5 @@ modules:
     ingress: {}
     infrastructure: {}
     image: {}
-
+    patternflyUrl: "https://unpkg.com/@patternfly/patternfly/patternfly.css"
 workarounds: {}

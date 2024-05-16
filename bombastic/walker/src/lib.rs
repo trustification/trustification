@@ -84,6 +84,14 @@ pub struct Run {
     /// Additional root certificates for the destination
     #[arg(long = "sender-root-certificates")]
     pub additional_root_certificates: Vec<PathBuf>,
+
+    /// Allow logging of uploaded sbom file reports.
+    #[arg(long, env, default_value_t = true, action = ArgAction::Set)]
+    pub report_enable: bool,
+
+    /// Path of the HTML output file
+    #[arg(long, default_value = "/tmp/share/report")]
+    pub report_path: Option<String>,
 }
 
 impl Run {
@@ -162,7 +170,9 @@ impl Run {
                         scanner.run(interval.into()).await?;
                     } else {
                         let (report, result) = scanner.run_once().await.split()?;
-                        handle_report(report, "Sbom".to_string()).await?;
+                        if self.report_enable {
+                            handle_report(report, self.report_path, "Sbom".to_string()).await?;
+                        }
                         result?;
                     }
 
