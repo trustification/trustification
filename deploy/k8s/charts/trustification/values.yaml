@@ -269,7 +269,7 @@ workarounds: {}
 
 eventBus:
   type: sqs
-  region: <region> # <2>
+  region: <region>
   accessKey:
     valueFrom:
       secretKeyRef:
