@@ -1,5 +1,6 @@
 use std::process::ExitCode;
 
+/// Run bombastic services (`trust bombastic --help` for details)
 #[derive(clap::Subcommand, Debug)]
 pub enum Command {
     Api(bombastic_api::Run),
