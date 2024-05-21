@@ -15,7 +15,60 @@ guac:
     registry: ghcr.io/trustification
     pullPolicy: IfNotPresent
     version: "v0.3.32"
-  database: {}
+
+  database:
+    name:
+      valueFrom:
+        secretKeyRef:
+          name: postgresql-credentials
+          key: db.name
+    host:
+      valueFrom:
+        secretKeyRef:
+          name: postgresql-credentials
+          key: db.host
+    port:
+      valueFrom:
+        secretKeyRef:
+          name: postgresql-credentials
+          key: db.port
+    username:
+      valueFrom:
+        secretKeyRef:
+          name: postgresql-credentials
+          key: db.user
+    password:
+      valueFrom:
+        secretKeyRef:
+          name: postgresql-credentials
+          key: db.password
+
+  initDatabase:
+    name:
+      valueFrom:
+        secretKeyRef:
+          name: postgresql-admin-credentials
+          key: db.name
+    host:
+      valueFrom:
+        secretKeyRef:
+          name: postgresql-admin-credentials
+          key: db.host
+    port:
+      valueFrom:
+        secretKeyRef:
+          name: postgresql-admin-credentials
+          key: db.port
+    username:
+      valueFrom:
+        secretKeyRef:
+          name: postgresql-admin-credentials
+          key: db.user
+    password:
+      valueFrom:
+        secretKeyRef:
+          name: postgresql-admin-credentials
+          key: db.password
 
 rust: {}
 
@@ -213,3 +266,17 @@ modules:
     rust: {}
 
 workarounds: {}
+
+eventBus:
+  type: sqs
+  region: <region> # <2>
+  accessKey:
+    valueFrom:
+      secretKeyRef:
+        name: event-bus-credentials
+        key: aws_access_key_id
+  secretKey:
+    valueFrom:
+      secretKeyRef:
+        name: event-bus-credentials
+        key: aws_secret_access_key
