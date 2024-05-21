@@ -1939,8 +1939,6 @@ parameters:
   value: "false"
 - name: V11Y_WALKER_SUSPEND
   value: "false"
-- name: VEXINATION_WALKER_ENABLED
-  value: "true"
 - name: VEXINATION_WALKER_SUSPEND
   value: "false"
 - name: SEGMENT_SECRET_NAME
