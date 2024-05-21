@@ -334,7 +334,7 @@ jobs:
           ct lint \
             --helm-lint-extra-args "--values deploy/k8s/values-minikube.yaml --set-string appDomain=$APP_DOMAIN" \
             --charts deploy/k8s/charts/trustification \
-            --target-branch ${{ github.event.repository.default_branch }}
+            --target-branch stable
 
       - name: Install chart-testing
         run: |
@@ -342,7 +342,7 @@ jobs:
             --helm-extra-set-args "--values deploy/k8s/values-minikube.yaml --set-string appDomain=$APP_DOMAIN --set-string image.version=ci --set-string image.registry=localhost --set workarounds.initCronJobPvcs=true" \
             --helm-extra-args "--timeout 10m --debug" \
             --namespace $NAMESPACE --charts deploy/k8s/charts/trustification \
-            --target-branch ${{ github.event.repository.default_branch }}
+            --target-branch $stable
 
   # A virtual job, referenced by the branch protection rule
   ci:
