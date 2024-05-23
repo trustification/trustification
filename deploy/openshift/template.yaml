@@ -77,7 +77,7 @@ objects:
   - kind: PersistentVolumeClaim
     apiVersion: v1
     metadata:
-      name: v11y-storage
+      name: v11y-storage2
       labels:
         app.kubernetes.io/name: v11y-api
         app.kubernetes.io/component: api
@@ -1104,7 +1104,7 @@ objects:
           volumes:
             - name: data
               persistentVolumeClaim:
-                claimName: v11y-storage
+                claimName: v11y-storage2
             - name: config
               configMap:
                 name: ${CONFIG_NAME}
