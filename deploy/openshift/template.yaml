@@ -77,7 +77,7 @@ objects:
   - kind: PersistentVolumeClaim
     apiVersion: v1
     metadata:
-      name: v11y-storage
+      name: v11y-storage2
       labels:
         app.kubernetes.io/name: v11y-api
         app.kubernetes.io/component: api
@@ -91,9 +91,9 @@ objects:
   - kind: PersistentVolumeClaim
     apiVersion: v1
     metadata:
-      name: v11y-cvelist
+      name: v11y-cvelist2
       labels:
-        app.kubernetes.io/name: v11y-cvelist
+        app.kubernetes.io/name: v11y-cvelist2
         app.kubernetes.io/component: walker
         app.kubernetes.io/part-of: trustification
     spec:
@@ -101,7 +101,7 @@ objects:
         - ReadWriteOnce
       resources:
         requests:
-          storage: 10Gi
+          storage: 1Gi
   - kind: PersistentVolumeClaim
     apiVersion: v1
     metadata:
@@ -1104,7 +1104,7 @@ objects:
           volumes:
             - name: data
               persistentVolumeClaim:
-                claimName: v11y-storage
+                claimName: v11y-storage2
             - name: config
               configMap:
                 name: ${CONFIG_NAME}
@@ -1755,7 +1755,7 @@ objects:
               volumes:
                 - name: cvelist
                   persistentVolumeClaim:
-                    claimName: v11y-cvelist
+                    claimName: v11y-cvelist2
               initContainers:
                 - name: git-fetch
                   image: quay.io/trustification/git:2.40.1

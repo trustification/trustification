@@ -34,7 +34,7 @@ spec:
       volumes:
         - name: data
           persistentVolumeClaim:
-            claimName: v11y-storage
+            claimName: v11y-storage2
         - name: config
           configMap:
             name: {{ .Values.config.name }}
