@@ -2,9 +2,9 @@
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
-  name: vexination-walker-state
+  name: vexination-walker-state2
   labels:
-    app.kubernetes.io/name: vexination-walker-state
+    app.kubernetes.io/name: vexination-walker-state2
     app.kubernetes.io/component: walker
     app.kubernetes.io/part-of: trustification
 spec:

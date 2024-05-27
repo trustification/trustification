@@ -24,7 +24,7 @@ spec:
           volumes:
             - name: walker-state
               persistentVolumeClaim:
-                claimName: bombastic-walker-state
+                claimName: bombastic-walker-state2
           containers:
             - image: {{ .Values.trustImage }}:{{ .Values.release }}
               imagePullPolicy: {{ .Values.imagePullPolicy }}
