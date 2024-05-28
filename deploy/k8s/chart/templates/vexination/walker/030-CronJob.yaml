@@ -24,7 +24,7 @@ spec:
           volumes:
             - name: walker-state
               persistentVolumeClaim:
-                claimName: vexination-walker-state2
+                claimName: vexination-walker-state
           containers:
             - image: {{ .Values.trustImage }}:{{ .Values.release }}
               imagePullPolicy: {{ .Values.imagePullPolicy }}
