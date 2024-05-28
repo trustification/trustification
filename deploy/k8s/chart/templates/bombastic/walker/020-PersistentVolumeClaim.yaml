@@ -2,9 +2,9 @@
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
-  name: bombastic-walker-state2
+  name: bombastic-walker-state
   labels:
-    app.kubernetes.io/name: bombastic-walker-state2
+    app.kubernetes.io/name: bombastic-walker-state
     app.kubernetes.io/component: walker
     app.kubernetes.io/part-of: trustification
 spec:
