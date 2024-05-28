@@ -3,7 +3,7 @@ use clap::ArgAction;
 use std::{path::PathBuf, process::ExitCode, sync::Arc, time::SystemTime};
 use time::{Date, Month, UtcOffset};
 use trustification_auth::client::{OpenIdTokenProviderConfig, OpenIdTokenProviderConfigArguments};
-use trustification_common_walker::report::{handle_report, SplitScannerError};
+use trustification_common_walker::report::{handle_report, ReportGenerateOption, SplitScannerError};
 use trustification_infrastructure::{Infrastructure, InfrastructureConfig};
 use url::Url;
 use walker_common::sender::provider::TokenProvider;
@@ -72,8 +72,8 @@ pub struct Run {
     #[arg(long, env, default_value_t = true, action = ArgAction::Set)]
     pub report_enable: bool,
 
-    /// Path of the HTML output file
-    #[arg(long, default_value = "/tmp/share/reports")]
+    /// Define report output path
+    #[arg(long)]
     pub report_path: Option<String>,
 }
 
@@ -138,7 +138,14 @@ impl Run {
                     } else {
                         let (report, result) = scanner.run_once().await.split()?;
                         if self.report_enable {
-                            handle_report(report, self.report_path, "Vexination".to_string()).await?;
+                            handle_report(
+                                report,
+                                ReportGenerateOption {
+                                    report_type: "VEXINATION".to_string(),
+                                    report_out_path: self.report_path,
+                                },
+                            )
+                            .await?;
                         }
                         result?;
                     }

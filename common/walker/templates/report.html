@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Walker Report</title>
-    <link rel="stylesheet" href="https://unpkg.com/@patternfly/patternfly/patternfly.css">
     <style>
         .table-section {
             margin-bottom: 20px;
@@ -12,65 +11,106 @@
             padding: 16px;
             background-color: #ffffff;
         }
+
         .table-title {
             color: #333;
             font-size: 18px;
             margin-bottom: 10px;
             text-align: center;
         }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+        }
+
+        .timestamp {
+            font-size: 0.875rem;
+            color: #666;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+            font-weight: bold;
+            line-height: 1;
+            color: #fff;
+            background-color: #197474FF;
+            border-radius: 0.25rem;
+        }
+
+        .page {
+            max-width: fit-content;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+
+        .table-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.875rem;
+            table-layout: fixed;
+        }
+
+        thead {
+            background-color: #f2f2f2;
+        }
+
+        tr {
+            border-bottom: 1px solid #ddd;
+        }
+
+        th, td {
+            padding: 0.5rem;
+            text-align: left;
+            word-wrap: break-word;
+        }
     </style>
 </head>
 <body>
-<h1 class="pf-v5-c-title pf-m-4xl">
-    {{type}} Walker Report <span class="pf-v5-c-timestamp">
-  <time
-          class="pf-v5-c-timestamp__text"
-          datetime="{{current_time}}"
-  >{{current_time}}</time>
-</span>
+<h1>
+    {{type}} Walker Report <span class="timestamp">{{current_time}}</span>
 </h1>
 
-<h2>Uploaded <span class="pf-c-badge pf-m-read pf-m-success" >{{report.numer_of_items}}</span> files</h2>
+<h2>Uploaded <span class="badge">{{report.numer_of_items}}</span> files</h2>
 
-
-<div class="pf-c-page">
-    <main role="main" class="pf-c-page__main" tabindex="-1">
-        <div class="pf-l-stack pf-m-gutter">
-
-            {% for phase, messages in report.messages %}
-            <div class="pf-l-stack__item table-section">
-            <h2  class="table-title">Phase: {{phase}}:</h2>
-            <table
-                    class="pf-v5-c-table pf-m-grid-md"
-                    role="grid"
-                    id="table-basic"
-            >
-                <thead class="pf-v5-c-table__thead">
-                <tr class="pf-v5-c-table__tr" role="row">
-                    <th class="pf-v5-c-table__th" role="columnheader" scope="col" style="width: 25%;">File</th>
-                    <th class="pf-v5-c-table__th" role="columnheader" scope="col" style="width: 15%;">Phase</th>
-                    <th class="pf-v5-c-table__th" role="columnheader" scope="col" style="width: 15%;">Severity</th>
-                    <th class="pf-v5-c-table__th" role="columnheader" scope="col" style="width: 45%;">Message</th>
+<div class="page">
+    <div class="table-container">
+        {% for phase, messages in report.messages %}
+        <div class="table-section">
+            <h2 class="table-title">Phase: {{phase}}:</h2>
+            <table role="grid" id="table-basic">
+                <thead>
+                <tr role="row">
+                    <th role="columnheader" scope="col" style="width: 30%;">File</th>
+                    <th role="columnheader" scope="col" style="width: 20%;">Severity</th>
+                    <th role="columnheader" scope="col" style="width: 50%;">Message</th>
                 </tr>
                 </thead>
 
-                <tbody class="pf-v5-c-table__tbody" role="rowgroup">
+                <tbody role="rowgroup">
                 {% for file, message_list in messages %}
                 {% for msg in message_list %}
-                <tr class="pf-v5-c-table__tr">
-                    <td class="pf-v5-c-table__td" role="cell" data-label="File name">{{file}}</td>
-                    <td class="pf-v5-c-table__td" role="cell" data-label="Branches">{{phase}}</td>
-                    <td class="pf-v5-c-table__td" role="cell" data-label="Pull requests">{{msg.severity}}</td>
-                    <td class="pf-v5-c-table__td" role="cell" data-label="Workspaces">{{msg.message}}</td>
+                <tr>
+                    <td role="cell" data-label="File name">{{file}}</td>
+                    <td role="cell" data-label="Pull requests">{{msg.severity}}</td>
+                    <td role="cell" data-label="Workspaces">{{msg.message}}</td>
                 </tr>
                 {% endfor %}
                 {% endfor %}
                 </tbody>
             </table>
-            </div>
-            {% endfor %}
         </div>
-    </main>
+        {% endfor %}
+    </div>
 </div>
 
 </body>

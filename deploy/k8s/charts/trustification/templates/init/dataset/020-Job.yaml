@@ -1,5 +1,6 @@
 {{- if .Values.modules.initDataset.enabled }}
 {{- $reportEnable := .Values.modules.report.enabled }}
+{{- $cssURl := .Values.modules.report.patternflyUrl }}
 {{- $mod := dict "root" . "name" "init-dataset" "component" "init" "module" .Values.modules.initDataset -}}
 kind: Job
 apiVersion: batch/v1
@@ -36,28 +37,20 @@ spec:
         - name: run
           {{ include "trustification.common.defaultImage" $mod | nindent 10 }}
 
-          command: ["/usr/bin/bash"]
+          command: [ "/usr/bin/bash" ]
           args:
             - "-ce"
             - |
-              ARGS="--report-enable {{$reportEnable}} "
-              REPORT_ARGS=""
-            {{- if $reportEnable }}
-              REPORT_ARGS="--report-path /tmp/share/report "
-            {{- end }}
+              ARGS=""
               if [[ -f /run/secrets/kubernetes.io/serviceaccount/service-ca.crt ]]; then
                 ARGS="--sender-root-certificates /run/secrets/kubernetes.io/serviceaccount/service-ca.crt"
               fi
-              /trust bombastic walker $ARGS $REPORT_ARGS --sink {{ include "trustification.tls.http.protocol" $mod }}://bombastic-api.{{ .Release.Namespace }}.svc.cluster.local --source file:/data/sbom
+              /trust bombastic walker $ARGS --report-enable {{$reportEnable}} --report-path /tmp/share/report  --sink {{ include "trustification.tls.http.protocol" $mod }}://bombastic-api.{{ .Release.Namespace }}.svc.cluster.local --source file:/data/sbom
               echo SBOM import done
-              /trust vexination walker $ARGS $REPORT_ARGS --sink {{ include "trustification.tls.http.protocol" $mod }}://vexination-api.{{ .Release.Namespace }}.svc.cluster.local/api/v1/vex --source file:/data/csaf
+              /trust vexination walker $ARGS --report-enable {{$reportEnable}} --report-path /tmp/share/report  --sink {{ include "trustification.tls.http.protocol" $mod }}://vexination-api.{{ .Release.Namespace }}.svc.cluster.local/api/v1/vex --source file:/data/csaf
               echo CSAF import done
 
           env:
-            {{- if $reportEnable }}
-            - name: TEMPLATE_FILE
-              value: "/var/tmp/report.html"
-            {{- end }}
             {{- include "trustification.oidc.authenticationClient" ( dict "root" . "clientId" "walker" ) | nindent 12 }}
             {{- include "trustification.application.rust.envVars" $mod | nindent 12 }}
 
@@ -66,10 +59,6 @@ spec:
             - name: report-path
               mountPath: /tmp/share/report
 
-            - name: template-path
-              mountPath: /var/tmp/report.html
-              subPath: report.html
-              readOnly: true
             {{- end }}
             {{- include "trustification.application.extraVolumeMounts" $mod | nindent 12 }}
 
@@ -80,10 +69,6 @@ spec:
         - name: report-path
           persistentVolumeClaim:
             claimName: report-server
-        - name: template-path
-          configMap:
-            name: report-server-report-template
-            defaultMode: 0755
 
         {{- end }}
         {{- include "trustification.application.extraVolumes" $mod | nindent 8 }}

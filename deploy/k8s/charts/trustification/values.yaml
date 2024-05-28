@@ -216,7 +216,5 @@ modules:
   report:
     enabled: true
     ingress: {}
-    infrastructure: {}
     image: {}
-    patternflyUrl: "https://unpkg.com/@patternfly/patternfly/patternfly.css"
 workarounds: {}

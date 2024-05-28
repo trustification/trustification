@@ -8,7 +8,6 @@ data:
   nginx.conf: |
     worker_processes auto;
     error_log /dev/stdout info;
-    server_name  _;
     events {
         worker_connections 1024;
     }
@@ -42,6 +41,13 @@ data:
         location / {
             autoindex on;
             try_files $uri $uri/ =404;
+            location /resource/ {
+                autoindex off;
+            }
+        }
+
+        location /lost+found/ {
+        return 404;
         }
       }
     }

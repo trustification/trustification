@@ -815,9 +815,6 @@
             },
             {
               "$ref": "#/definitions/Ingress"
-            },
-            {
-              "$ref": "#/definitions/Patternfly"
             }
           ]
         },
@@ -888,15 +885,6 @@
       "properties": {
         "rust": {
           "$ref": "#/definitions/RustApplicationConfig"
-        }
-      }
-    },
-    "Patternfly": {
-      "type": "object",
-      "properties": {
-        "patternflyUrl": {
-          "type": "string",
-          "description": "The URL to the patternfly css.\n"
         }
       }
     },

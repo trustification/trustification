@@ -7,7 +7,7 @@ use std::sync::Arc;
 use std::time::SystemTime;
 use time::{Date, Month, UtcOffset};
 use trustification_auth::client::{OpenIdTokenProviderConfig, OpenIdTokenProviderConfigArguments};
-use trustification_common_walker::report::{handle_report, SplitScannerError};
+use trustification_common_walker::report::{handle_report, ReportGenerateOption, SplitScannerError};
 use trustification_infrastructure::{
     endpoint::{self, Endpoint},
     Infrastructure, InfrastructureConfig,
@@ -89,8 +89,8 @@ pub struct Run {
     #[arg(long, env, default_value_t = true, action = ArgAction::Set)]
     pub report_enable: bool,
 
-    /// Path of the HTML output file
-    #[arg(long, default_value = "/tmp/share/report")]
+    /// Define report output path
+    #[arg(long)]
     pub report_path: Option<String>,
 }
 
@@ -171,7 +171,14 @@ impl Run {
                     } else {
                         let (report, result) = scanner.run_once().await.split()?;
                         if self.report_enable {
-                            handle_report(report, self.report_path, "Sbom".to_string()).await?;
+                            handle_report(
+                                report,
+                                ReportGenerateOption {
+                                    report_type: "SBOM".to_string(),
+                                    report_out_path: self.report_path,
+                                },
+                            )
+                            .await?;
                         }
                         result?;
                     }

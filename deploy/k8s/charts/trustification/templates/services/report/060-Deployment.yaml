@@ -1,8 +1,6 @@
 {{- if and .Values.modules.report.enabled }}
 {{- $mod := dict "root" . "name" "report-server" "component" "report" "module" .Values.modules.report -}}
 
-
-{{/*---*/}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -35,7 +33,6 @@ spec:
           command: [ "/usr/sbin/nginx" ]
           args: [ "-g", "daemon off;" ]
           ports:
-            {{- include "trustification.application.infrastructure.podPorts" $mod | nindent 12 }}
             - containerPort: 8018
               name: endpoint
               protocol: TCP
@@ -49,12 +46,13 @@ spec:
               subPath: nginx.conf
               readOnly: true
 
+
       volumes:
         - name: wwwdata
           persistentVolumeClaim:
             claimName: report-server
         - name: config-volume
           configMap:
-              name: {{ include "trustification.common.name" $mod }}-nginx-config
+            name: {{ include "trustification.common.name" $mod }}-nginx-config
 
 {{ end }}
