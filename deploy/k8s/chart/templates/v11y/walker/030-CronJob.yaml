@@ -28,7 +28,7 @@ spec:
 
           initContainers:
             - name: git-fetch
-              image: "quay.io/trustification/git:2.40.1"
+              image: {{ .Values.trustImage }}:{{ .Values.release }}
               volumeMounts:
                 - mountPath: /git
                   name: cvelist
