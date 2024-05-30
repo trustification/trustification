@@ -1758,7 +1758,7 @@ objects:
                     claimName: v11y-cvelist
               initContainers:
                 - name: git-fetch
-                  image: quay.io/trustification/git:2.40.1
+                  image: ${BACKEND_IMAGE}:${IMAGE_TAG}
                   volumeMounts:
                     - mountPath: /git
                       name: cvelist
