@@ -33,6 +33,7 @@ spec:
                 - mountPath: /git
                   name: cvelist
               command: ["/bin/sh"]
+              workingDir: /git
               args:
                 - "-ec"
                 - |
