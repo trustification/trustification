@@ -1764,6 +1764,7 @@ objects:
                       name: cvelist
                   command:
                     - /bin/sh
+                  workingDir: /git
                   args:
                     - -ec
                     - "if test -d cvelistV5; then\n  cd cvelistV5\n  git pull\nelse\n\
