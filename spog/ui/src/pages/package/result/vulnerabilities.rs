@@ -32,7 +32,8 @@ impl TableEntryRenderer<Column> for TableData {
                 <Link<AppRoute>
                     to={AppRoute::Cve(View::Content{id: self.id.clone()})}
                 >{ self.id.clone() }</Link<AppRoute>>
-            )).text_modifier(TextModifier::NoWrap),
+            ))
+            .text_modifier(TextModifier::NoWrap),
             Column::Description => html!( <>
                 if let Some(cve) = &self.cve {
                     if let Some(title) = &cve.title {
@@ -45,19 +46,22 @@ impl TableEntryRenderer<Column> for TableData {
                         </ExpandableSection>
                     }
                 }
-            </>).into(),
+            </>)
+            .into(),
             Column::Severity => html!( <>
                 if let Some(cve) = &self.cve {
                     if let Some(score)= &cve.cvss3x_score {
                         <CvssScore cvss={Cvss{score: (*score) as _}} />
                     }
                 }
-            </>).into(),
+            </>)
+            .into(),
             Column::DatePublished => Cell::from(html!( <>
                 if let Some(cve) = &self.cve {
                     {OrNone(cve.date_published).map(date)}
                 }
-            </>)).text_modifier(TextModifier::NoWrap),
+            </>))
+            .text_modifier(TextModifier::NoWrap),
         }
         .into()
     }
