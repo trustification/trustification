@@ -63,7 +63,6 @@ impl TableEntryRenderer<Column> for TableData {
             </>))
             .text_modifier(TextModifier::NoWrap),
         }
-        .into()
     }
 }
 
