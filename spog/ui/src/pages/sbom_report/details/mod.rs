@@ -43,7 +43,8 @@ pub fn details(props: &DetailsProps) -> Html {
                             { for self.vuln.description.clone() }
                         </Content>
                     </ExpandableSection>
-                ).into(),
+                )
+                .into(),
                 Column::Cvss => html!(
                     <>
                         if let Some(score) = self.vuln.score("mitre") {
