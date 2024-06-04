@@ -105,8 +105,6 @@ members = [
 csaf = { git = "https://github.com/ctron/csaf-rs", rev = "183326beac525d58962f78be8eca973017702753" } # FIXME: waiting for release #16 #28
 monaco = { git = "https://github.com/siku2/rust-monaco", rev = "8b8eb78004709058399c2d0dfa7c460d30fe62fd" } # FIXME: waiting for release 0.5.0
 
-packageurl = "0.4"
-
 #sikula = { git = "https://github.com/ctron/sikula", rev = "023c27232f016b80a34c8ed77b88d1c30dcae6e0" }
 
 # also check root level Cargo.toml
