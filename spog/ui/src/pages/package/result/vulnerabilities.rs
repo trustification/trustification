@@ -28,32 +28,36 @@ pub enum Column {
 impl TableEntryRenderer<Column> for TableData {
     fn render_cell(&self, context: CellContext<'_, Column>) -> Cell {
         match context.column {
-            Column::Id => html!(
+            Column::Id => Cell::new(html!(
                 <Link<AppRoute>
                     to={AppRoute::Cve(View::Content{id: self.id.clone()})}
                 >{ self.id.clone() }</Link<AppRoute>>
-            ),
+            )).text_modifier(TextModifier::NoWrap),
             Column::Description => html!( <>
                 if let Some(cve) = &self.cve {
                     if let Some(title) = &cve.title {
                         { title }
                     } else {
-                        { for cve.descriptions.iter() }
+                        <ExpandableSection variant={ExpandableSectionVariant::Truncate}>
+                            <Content>
+                                { for cve.descriptions.iter() }
+                            </Content>
+                        </ExpandableSection>
                     }
                 }
-            </>),
+            </>).into(),
             Column::Severity => html!( <>
                 if let Some(cve) = &self.cve {
                     if let Some(score)= &cve.cvss3x_score {
                         <CvssScore cvss={Cvss{score: (*score) as _}} />
                     }
                 }
-            </>),
-            Column::DatePublished => html!( <>
+            </>).into(),
+            Column::DatePublished => Cell::from(html!( <>
                 if let Some(cve) = &self.cve {
                     {OrNone(cve.date_published).map(date)}
                 }
-            </>),
+            </>)).text_modifier(TextModifier::NoWrap),
         }
         .into()
     }
@@ -157,7 +161,7 @@ pub fn vulnerabilities_table(props: &VulnerabilitiesTableProperties) -> Html {
         <TableHeader<Column>>
             <TableColumn<Column> label="ID" index={Column::Id} />
             <TableColumn<Column> label="Description" index={Column::Description} />
-            <TableColumn<Column> label="CVSS" index={Column::Severity} />
+            <TableColumn<Column> label="CVSS" index={Column::Severity} width={ColumnWidth::Percent(15)} />
             <TableColumn<Column> label="Date published" index={Column::DatePublished} />
         </TableHeader<Column>>
     };

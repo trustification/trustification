@@ -37,7 +37,13 @@ pub fn details(props: &DetailsProps) -> Html {
         fn render_cell(&self, context: CellContext<'_, Column>) -> Cell {
             match context.column {
                 Column::Id => Cell::new(html!(self.vuln.id.clone())).text_modifier(TextModifier::NoWrap),
-                Column::Description => html!({ for self.vuln.description.clone() }).into(),
+                Column::Description => html!(
+                    <ExpandableSection variant={ExpandableSectionVariant::Truncate}>
+                        <Content>
+                            { for self.vuln.description.clone() }
+                        </Content>
+                    </ExpandableSection>
+                ).into(),
                 Column::Cvss => html!(
                     <>
                         if let Some(score) = self.vuln.score("mitre") {
