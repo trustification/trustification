@@ -159,7 +159,7 @@ fn details(props: &DetailsProps) -> Html {
                         <Tabs<TabIndex> inset={TabInset::Page} detached=true selected={*tab} {onselect}>
                             <Tab<TabIndex> index={TabIndex::Info} title="Info" />
                             <Tab<TabIndex> index={TabIndex::Packages} title="Packages" />
-                            <Tab<TabIndex> index={TabIndex::Overview} title="Related advisories" />
+                            <Tab<TabIndex> index={TabIndex::Overview} title="Related vulnerabilities" />
                             { for config.features.show_report.then(|| html_nested!(
                                 <Tab<TabIndex> index={TabIndex::Report} title="Dependency Analytics Report" />
                             )) }
@@ -210,7 +210,7 @@ fn details(props: &DetailsProps) -> Html {
                         <Tabs<TabIndex> inset={TabInset::Page} detached=true selected={*tab} {onselect}>
                             <Tab<TabIndex> index={TabIndex::Info} title="Info" />
                             <Tab<TabIndex> index={TabIndex::Packages} title="Packages" />
-                            <Tab<TabIndex> index={TabIndex::Overview} title="Related advisories" />
+                            <Tab<TabIndex> index={TabIndex::Overview} title="Related vulnerabilities" />
                             { for config.features.show_report.then(|| html_nested!(
                                 <Tab<TabIndex> index={TabIndex::Report} title="Dependency Analytics Report" />
                             )) }
