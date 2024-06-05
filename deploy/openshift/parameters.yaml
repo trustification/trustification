@@ -119,6 +119,10 @@ parameters:
   required: true
 - name: K8S_NAMESPACE
   required: true
+- name: GUAC_ADMIN_DB_SECRET_NAME
+  value: guac-admin-db
+- name: GUAC_USER_DB_SECRET_NAME
+  value: guac-user-db
 - name: VEXINATION_WALKER_SCHEDULE
   value: "10 * * * *"
 - name: BOMBASTIC_WALKER_SCHEDULE
