@@ -119,6 +119,10 @@ parameters:
   required: true
 - name: K8S_NAMESPACE
   required: true
+- name: OIDC_API_CLIENT_ID
+  value: trusted-content-api
+- name: OIDC_SPOG_CLIENT_ID
+  value: trusted-content-frontend
 - name: VEXINATION_WALKER_SCHEDULE
   value: "10 * * * *"
 - name: BOMBASTIC_WALKER_SCHEDULE

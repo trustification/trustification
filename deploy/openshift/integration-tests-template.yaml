@@ -22,9 +22,9 @@ objects:
               - name: TRUST_URL
                 value: "https://${DOMAIN}"
               - name: TRUST_ID
-                value: trusted-content-api
+                value: ${OIDC_API_CLIENT_ID}
               - name: TRUST_USER_ID
-                value: trusted-content-api
+                value: ${OIDC_API_CLIENT_ID}
               - name: ISSUER_URL
                 value: "${ISSUER_URL}"
               - name: TRUST_SECRET
@@ -53,3 +53,5 @@ parameters:
   required: true
 - name: OIDC_CLIENT_SECRET_KEY
   required: true
+- name: OIDC_API_CLIENT_ID
+  value: trusted-content-api

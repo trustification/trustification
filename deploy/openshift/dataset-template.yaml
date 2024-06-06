@@ -31,7 +31,7 @@ objects:
               - name: RUST_LOG
                 value: info
               - name: OIDC_PROVIDER_CLIENT_ID
-                value: trusted-content-api
+                value: ${OIDC_API_CLIENT_ID}
               - name: OIDC_PROVIDER_ISSUER_URL
                 value: "${ISSUER_URL}"
               - name: OIDC_PROVIDER_CLIENT_SECRET
@@ -55,3 +55,5 @@ parameters:
   required: true
 - name: OIDC_CLIENT_SECRET_KEY
   required: true
+- name: OIDC_API_CLIENT_ID
+  value: trusted-content-api
