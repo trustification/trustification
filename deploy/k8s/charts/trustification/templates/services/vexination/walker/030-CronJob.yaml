@@ -63,7 +63,7 @@ spec:
             - name: walker
               {{- include "trustification.common.defaultImage" $mod | nindent 14 }}
 
-              command: [ "/trust" ]
+              command: ["/trust"]
               args:
                 - "vexination"
                 - "walker"

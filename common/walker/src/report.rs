@@ -5,8 +5,6 @@ use time::macros::format_description;
 use time::OffsetDateTime;
 use walker_extras::visitors::SendVisitor;
 
-const DEFAULT_REPORT_OUTPUT_PATH: &str = "/tmp/share/reports";
-
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Ord, PartialOrd, serde::Deserialize, serde::Serialize)]
 pub enum Phase {
     Retrieval,
@@ -133,9 +131,7 @@ pub async fn handle_report(report: Report, option: ReportGenerateOption) -> anyh
         return Ok(());
     }
 
-    let path = option
-        .report_out_path
-        .unwrap_or_else(|| DEFAULT_REPORT_OUTPUT_PATH.to_string());
+    let path = option.report_out_path;
 
     let mut tera = Tera::default();
     let template_content = include_str!("../templates/report.html");
@@ -165,7 +161,7 @@ pub async fn handle_report(report: Report, option: ReportGenerateOption) -> anyh
 #[derive(Clone, Debug)]
 pub struct ReportGenerateOption {
     pub report_type: String,
-    pub report_out_path: Option<String>,
+    pub report_out_path: String,
 }
 
 #[cfg(test)]
@@ -208,7 +204,7 @@ mod tests {
             create_report(),
             ReportGenerateOption {
                 report_type: "SBOM".to_string(),
-                report_out_path: None,
+                report_out_path: "tmp/share/reports".to_string(),
             },
         )
         .await;

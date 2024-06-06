@@ -90,8 +90,8 @@ pub struct Run {
     pub report_enable: bool,
 
     /// Define report output path
-    #[arg(long)]
-    pub report_path: Option<String>,
+    #[arg(long, env, default_value = "/tmp/share/reports")]
+    pub report_path: String,
 }
 
 impl Run {

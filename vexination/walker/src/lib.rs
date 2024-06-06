@@ -73,8 +73,8 @@ pub struct Run {
     pub report_enable: bool,
 
     /// Define report output path
-    #[arg(long)]
-    pub report_path: Option<String>,
+    #[arg(long, env, default_value = "/tmp/share/reports")]
+    pub report_path: String,
 }
 
 impl Run {
@@ -141,7 +141,7 @@ impl Run {
                             handle_report(
                                 report,
                                 ReportGenerateOption {
-                                    report_type: "VEXINATION".to_string(),
+                                    report_type: "Vexination".to_string(),
                                     report_out_path: self.report_path,
                                 },
                             )

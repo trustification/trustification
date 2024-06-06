@@ -65,7 +65,7 @@ spec:
               {{- include "trustification.application.container" $mod | nindent 14 }}
               {{- include "trustification.application.infrastructure.probes" $mod | nindent 14 }}
 
-              command: [ "/trust" ]
+              command: ["/trust"]
               args:
                 - "bombastic"
                 - "walker"

@@ -487,6 +487,22 @@ properties:
           - $ref: "#/definitions/Feature"
           - $ref: "#/definitions/Image"
           - $ref: "#/definitions/Ingress"
+          - enabled_auth:
+              type: boolean
+          - type: object
+            properties:
+              reportUserConfig:
+                type: array
+                minItems: 1
+                items:
+                  required:
+                    - name
+                    - pwd
+                  properties:
+                    name:
+                      type: string
+                    pwd:
+                      type: string
 
       integrationTests:
         description: |
