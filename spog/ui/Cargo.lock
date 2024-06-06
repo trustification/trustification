@@ -479,7 +479,7 @@ dependencies = [
  "chrono",
  "cpe",
  "cvss",
- "packageurl",
+ "packageurl 0.3.0",
  "serde",
  "serde_json",
  "serde_with",
@@ -517,9 +517,9 @@ dependencies = [
 
 [[package]]
 name = "cve"
-version = "0.3.0"
+version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3c93fe9397675e55f01ae2f1268c9275bbc6d157c4966869f21aef3833ccac14"
+checksum = "1b9d44bd6dfe701831e373d715bb7cd04b5768d79b3c71f62cac973d0e63d0fd"
 dependencies = [
  "serde",
  "serde_json",
@@ -546,7 +546,7 @@ dependencies = [
  "fluent-uri",
  "once_cell",
  "ordered-float 4.2.0",
- "packageurl",
+ "packageurl 0.3.0",
  "regex",
  "serde",
  "serde_json",
@@ -2021,7 +2021,18 @@ dependencies = [
 [[package]]
 name = "packageurl"
 version = "0.3.0"
-source = "git+https://github.com/ctron/packageurl.rs?rev=c9a0c192ff0cba5d75b8cbf8be0b1e4dc14320aa#c9a0c192ff0cba5d75b8cbf8be0b1e4dc14320aa"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c53362339d1c48910f1b0c35e2ae96e2d32e442c7dc3ac5f622908ec87221f08"
+dependencies = [
+ "percent-encoding",
+ "thiserror",
+]
+
+[[package]]
+name = "packageurl"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7fd2afe7e71d621b1771201bcdede645dd1a404012cdd6673b56d10be495f2a8"
 dependencies = [
  "percent-encoding",
  "serde",
@@ -2922,7 +2933,7 @@ dependencies = [
  "csaf",
  "cvss",
  "exhort-model",
- "packageurl",
+ "packageurl 0.4.0",
  "schemars",
  "serde",
  "serde_json",
@@ -2962,7 +2973,7 @@ dependencies = [
  "markdown",
  "monaco",
  "openidconnect",
- "packageurl",
+ "packageurl 0.4.0",
  "patternfly-yew",
  "popper-rs",
  "reqwest",
@@ -3020,7 +3031,7 @@ dependencies = [
  "js-sys",
  "log",
  "openidconnect",
- "packageurl",
+ "packageurl 0.4.0",
  "reqwest",
  "schemars",
  "serde",
@@ -3065,7 +3076,7 @@ dependencies = [
  "log",
  "markdown",
  "openidconnect",
- "packageurl",
+ "packageurl 0.4.0",
  "patternfly-yew",
  "reqwest",
  "roxmltree",
@@ -3115,7 +3126,7 @@ dependencies = [
  "log",
  "monaco",
  "openidconnect",
- "packageurl",
+ "packageurl 0.4.0",
  "patternfly-yew",
  "reqwest",
  "roxmltree",
