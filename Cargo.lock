@@ -2916,8 +2916,9 @@ dependencies = [
 
 [[package]]
 name = "guac"
-version = "0.1.0"
-source = "git+https://github.com/trustification/guac-rs.git?rev=503ef3624d3cab9e48e8005865bc5e0971cf1b63#503ef3624d3cab9e48e8005865bc5e0971cf1b63"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "12ae8c364d690ed01898bc5d1a4fe85f835960935739080acbd87a6df45b7b72"
 dependencies = [
  "anyhow",
  "async-nats",
@@ -8046,9 +8047,6 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "clap",
- "collector-osv",
- "cve",
- "cvss",
  "log",
  "prometheus",
  "serde",
