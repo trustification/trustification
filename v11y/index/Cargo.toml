@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-cve = "0.3.0"
+cve = "0.3.1"
 sikula = { version = "0.4.0", features = ["time"] }
 log = "0.4"
 time = "0.3"
