@@ -7,7 +7,7 @@ use actix_web::{post, web, HttpResponse, Responder, ResponseError};
 use derive_more::Display;
 use guac::client::intrinsic::certify_vuln::ScanMetadataInput;
 use guac::client::intrinsic::vuln_equal::VulnEqualInputSpec;
-use guac::client::intrinsic::vuln_metadata::{VulnerabilityMetadataInputSpec, VulnerabilityScoreType};
+//use guac::client::intrinsic::vuln_metadata::{VulnerabilityMetadataInputSpec, VulnerabilityScoreType};
 use guac::client::intrinsic::vulnerability::VulnerabilityInputSpec;
 use packageurl::PackageUrl;
 use utoipa::OpenApi;
@@ -255,29 +255,29 @@ pub async fn collect_packages(
                                     }
                                 }
 
-                                for cvss_v3 in &cvss_v3s {
-                                    if let Err(err) = state
-                                        .guac_client
-                                        .intrinsic()
-                                        .ingest_vuln_metadata(
-                                            &vulnerability_input_spec,
-                                            &VulnerabilityMetadataInputSpec {
-                                                score_type: if cvss_v3.minor_version == 0 {
-                                                    VulnerabilityScoreType::CVSSv3
-                                                } else {
-                                                    VulnerabilityScoreType::CVSSv31
-                                                },
-                                                score_value: cvss_v3.score().value(),
-                                                timestamp: Default::default(),
-                                                origin: "osv".to_string(),
-                                                collector: "osv".to_string(),
-                                            },
-                                        )
-                                        .await
-                                    {
-                                        collected_guac_errors.push(err)
-                                    }
-                                }
+                                // for cvss_v3 in &cvss_v3s {
+                                //     if let Err(err) = state
+                                //         .guac_client
+                                //         .intrinsic()
+                                //         .ingest_vuln_metadata(
+                                //             &vulnerability_input_spec,
+                                //             &VulnerabilityMetadataInputSpec {
+                                //                 score_type: if cvss_v3.minor_version == 0 {
+                                //                     VulnerabilityScoreType::CVSSv3
+                                //                 } else {
+                                //                     VulnerabilityScoreType::CVSSv31
+                                //                 },
+                                //                 score_value: cvss_v3.score().value(),
+                                //                 timestamp: Default::default(),
+                                //                 origin: "osv".to_string(),
+                                //                 collector: "osv".to_string(),
+                                //             },
+                                //         )
+                                //         .await
+                                //     {
+                                //         collected_guac_errors.push(err)
+                                //     }
+                                // }
                             }
                         }
                     }
