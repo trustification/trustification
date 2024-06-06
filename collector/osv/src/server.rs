@@ -76,6 +76,8 @@ impl From<&CollectPackagesRequest> for QueryBatchRequest {
             queries: request
                 .purls
                 .iter()
+                // OSV works only with PURLs so excluding CPEs
+                .filter(|purl| purl.starts_with("pkg:"))
                 .map(|e| QueryPackageRequest {
                     package: Package::Purl { purl: e.clone() },
                 })
@@ -109,7 +111,6 @@ pub async fn collect_packages(
     // while also collecting all relevant errors along the way.
     let mut collected_guac_errors = Vec::new();
     let mut collected_osv_errors = Vec::new();
-    let mut collected_v11y_errors = Vec::new();
 
     for entry in &response.results {
         if let Some(vulns) = &entry.vulns {
@@ -161,12 +162,6 @@ pub async fn collect_packages(
                                                 }
                                             }
                                         }
-                                    }
-
-                                    let v11y_vuln = v11y_client::Vulnerability::from(osv_vuln);
-                                    if let Err(err) = state.v11y_client.ingest_vulnerability(&v11y_vuln).await {
-                                        log::warn!("v11y error: {err}");
-                                        collected_v11y_errors.push(err);
                                     }
                                 }
                                 Ok(None) => {
@@ -296,7 +291,6 @@ pub async fn collect_packages(
         collected_osv_errors
             .iter()
             .map(|err| err.to_string())
-            .chain(collected_v11y_errors.iter().map(|err| err.to_string()))
             .chain(collected_guac_errors.iter().map(|err| err.to_string())),
     );
 

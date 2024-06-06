@@ -10,7 +10,7 @@ use crate::client::schema::{BatchVulnerability, Package, Vulnerability};
 
 pub mod schema;
 
-struct OsvUrl(&'static str);
+pub struct OsvUrl(&'static str);
 
 impl OsvUrl {
     const fn new(base: &'static str) -> Self {
@@ -26,7 +26,7 @@ impl OsvUrl {
     }
 }
 
-const OSV_URL: OsvUrl = OsvUrl::new("https://api.osv.dev/v1");
+pub const OSV_URL: OsvUrl = OsvUrl::new("https://api.osv.dev/v1");
 
 #[derive(Clone, Debug)]
 pub struct OsvClient {
@@ -81,15 +81,27 @@ impl From<url::ParseError> for Error {
     }
 }
 
+impl Default for OsvClient {
+    fn default() -> Self {
+        OsvClient::new()
+    }
+}
+
 #[allow(unused)]
 impl OsvClient {
     pub fn new() -> Self {
         Self {
-            client: reqwest::Client::new(),
+            client: reqwest::Client::builder()
+                .connection_verbose(true)
+                .build()
+                .expect("OsvClient should have been created using ClientBuilder::build()"),
         }
     }
 
     pub async fn query_batch(&self, request: QueryBatchRequest) -> Result<CollatedQueryBatchResponse, Error> {
+        if request.queries.is_empty() {
+            return Ok(CollatedQueryBatchResponse::default());
+        }
         let response: QueryBatchResponse = self
             .client
             .post(OSV_URL.querybatch()?)
