@@ -86,8 +86,8 @@ pub async fn package_search(
 )]
 pub async fn package_get(guac: web::Data<GuacService>, path: web::Path<String>) -> Result<HttpResponse, Error> {
     let purl = path.into_inner();
-    let results = guac.certify_vex(&purl).await?;
-    let vulns = results
+    let vex_results = guac.certify_vex(&purl).await?;
+    let mut vex = vex_results
         .iter()
         .flat_map(|vex| {
             vex.vulnerability
@@ -100,6 +100,22 @@ pub async fn package_get(guac: web::Data<GuacService>, path: web::Path<String>) 
                 .collect::<Vec<V11yRef>>()
         })
         .collect::<Vec<V11yRef>>();
+
+    let vuln_results = guac.certify_vuln(&purl).await?;
+    let mut vulns = vuln_results
+        .iter()
+        .flat_map(|vuln| {
+            vuln.vulnerability
+                .vulnerability_ids
+                .iter()
+                .map(|id| V11yRef {
+                    cve: id.vulnerability_id.clone().to_uppercase(),
+                    severity: "unknown".to_string(),
+                })
+                .collect::<Vec<V11yRef>>()
+        })
+        .collect::<Vec<V11yRef>>();
+    vulns.append(&mut vex);
 
     let pkg = PackageInfo {
         purl,
