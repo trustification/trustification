@@ -17,6 +17,10 @@ metadata:
   name: trustification-service-on-pull-request
   namespace: trusted-content-tenant
 spec:
+  timeouts:
+    pipeline: "2h0m0s"
+    tasks: "1h40m0s"
+    finally: "0h20m0s"
   params:
   - name: dockerfile
     value: container_files/Containerfile.services
