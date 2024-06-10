@@ -1,3 +1,4 @@
+use anyhow::Context;
 use collector_osv::client::schema::SeverityType;
 use collector_osv::client::OsvClient;
 use cve::published::Metric;
@@ -199,8 +200,8 @@ impl Run {
                                         );
                                     }
                                 }
-                                return Ok(serde_json::to_vec::<Published>(&cve)
-                                    .expect("CVE should have been serialized into Vec<u8>"));
+                                return serde_json::to_vec::<Published>(&cve)
+                                    .context("CVE should have been serialized into Vec<u8>");
                             }
                         }
                     }
