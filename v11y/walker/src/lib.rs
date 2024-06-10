@@ -158,6 +158,7 @@ impl Run {
     async fn get_cve_data(osv_client: &OsvClient, path_buf: &PathBuf) -> anyhow::Result<Vec<u8>> {
         let data = tokio::fs::read(path_buf).await?;
 
+        // Just interested in Published CVE because for Rejected CVE the 'cna' field has no 'metrics' field
         if let Ok(mut cve) = serde_json::from_slice::<Published>(&data) {
             if cve.containers.cna.metrics.is_empty() {
                 let result = osv_client.vulns(&cve.metadata.id).await;
@@ -254,5 +255,14 @@ mod test {
                     .starts_with("CVSS:3.0")
             );
         }
+    }
+
+    #[tokio::test]
+    async fn test_get_cve_data_rejected() {
+        let vec = Run::get_cve_data(&OsvClient::new(), &PathBuf::from(r"../testdata/CVE-2021-3601.json"))
+            .await
+            .unwrap();
+        // original size is 1062 so the test ensures no changes are applied in case of a Rejected CVE
+        assert_eq!(vec.len(), 1062);
     }
 }
