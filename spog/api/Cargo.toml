@@ -18,7 +18,7 @@ async-trait = "0.1.73"
 bytes = "1"
 clap = { version = "4.0.29", features = ["derive"] }
 csaf = "0.5"
-cve = "0.2.1"
+cve = "0.3.0"
 cvss = "2"
 futures = "0.3"
 guac = { workspace = true }
