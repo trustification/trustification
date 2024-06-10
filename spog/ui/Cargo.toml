@@ -118,3 +118,8 @@ panic = 'abort'
 codegen-units = 1
 opt-level = 's'
 lto = true
+
+# Do not generate debuginfo for dependencies in `dev` and `test` profiles. This
+# save us some disk space
+[profile.dev.package."*"]
+debug = false
