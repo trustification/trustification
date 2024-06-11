@@ -95,6 +95,7 @@ pub fn remediation_table(props: &CsafRemediationTableProperties) -> Html {
             {entries}
             mode={TableMode::CompactExpandable}
             {onexpand}
+            class="advisory_vulnerability_remediation"
         />
     )
 }
