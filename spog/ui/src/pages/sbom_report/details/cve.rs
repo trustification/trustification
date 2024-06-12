@@ -34,7 +34,7 @@ pub fn details(props: &DetailsProperties) -> Html {
                                             <Severity {severity} />
                                         }
                                         {", "}<strong>{"CVSS"}</strong>{" score is "}
-                                        if let Some(cvss) = adv.cvss_max.clone() {
+                                        if let Some(cvss) = adv.cvss_max {
                                             {cvss}
                                         }
                                         {")"}
