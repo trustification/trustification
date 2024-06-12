@@ -1,6 +1,7 @@
 use crate::hooks::use_related_advisories;
 use patternfly_yew::prelude::*;
 use spog_ui_components::async_state_renderer::async_content;
+use spog_ui_components::severity::Severity;
 use spog_ui_navigation::{AppRoute, View};
 use yew::prelude::*;
 use yew_nested_router::components::Link;
@@ -28,6 +29,15 @@ pub fn details(props: &DetailsProperties) -> Html {
                                             { adv.id.clone() }
                                         </Link<AppRoute>>
                                         {": "}{ adv.title.clone() }
+                                        {" ("}<strong>{"Aggregate"}</strong>{" severity is "}
+                                        if let Some(severity) = adv.severity.clone() {
+                                            <Severity {severity} />
+                                        }
+                                        {", "}<strong>{"CVSS"}</strong>{" score is "}
+                                        if let Some(cvss) = adv.cvss_max.clone() {
+                                            {cvss}
+                                        }
+                                        {")"}
                                     </ListItem>
                                 )) }
                             </List>
