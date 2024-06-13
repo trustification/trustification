@@ -270,7 +270,7 @@ fn get_description(cve: &Cve) -> Option<String> {
 }
 
 /// get the CVSS score as a plain number
-fn get_score(cve: &Cve) -> Option<f32> {
+pub(crate) fn get_score(cve: &Cve) -> Option<f32> {
     let p = match cve {
         Cve::Published(p) => p,
         Cve::Rejected(_) => return None,

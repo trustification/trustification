@@ -1,15 +1,22 @@
-use crate::app_state::AppState;
+use crate::app_state::{AppState, ResponseError};
+use crate::endpoints::sbom::vuln;
 use crate::error::Error;
 use crate::search;
 use crate::service::guac::GuacService;
+use crate::service::v11y::V11yService;
 use actix_web::{
     web::{self, ServiceConfig},
     HttpResponse,
 };
 use actix_web_httpauth::extractors::bearer::BearerAuth;
+use cve::Cve;
+use cvss::v3::Score;
+use guac::client::intrinsic::vulnerability::VulnerabilityId;
 use spog_model::package_info::{PackageInfo, V11yRef};
 use spog_model::prelude::PackageProductDetails;
 use std::sync::Arc;
+use tracing::instrument;
+use tracing::Level;
 use trustification_api::search::{SearchOptions, SearchResult};
 use trustification_auth::authenticator::Authenticator;
 use trustification_infrastructure::new_auth;
@@ -39,11 +46,14 @@ pub(crate) fn configure(auth: Option<Arc<Authenticator>>) -> impl FnOnce(&mut Se
     ),
     params()
 )]
+#[instrument(skip(state, access_token, guac, v11y), err)]
 pub async fn package_search(
     state: web::Data<AppState>,
     params: web::Query<search::QueryParams>,
     options: web::Query<SearchOptions>,
     access_token: Option<BearerAuth>,
+    guac: web::Data<GuacService>,
+    v11y: web::Data<V11yService>,
 ) -> actix_web::Result<HttpResponse> {
     let params = params.into_inner();
     log::trace!("Querying package using {}", params.q);
@@ -59,10 +69,9 @@ pub async fn package_search(
     let mut m: Vec<PackageInfo> = Vec::with_capacity(data.result.len());
     for item in data.result {
         let item = item.document;
-        m.push(PackageInfo {
-            purl: item.purl,
-            vulnerabilities: vec![],
-        });
+        let purl = item.purl;
+        let vulnerabilities = get_vulnerabilities(&guac, &v11y, &purl).await?;
+        m.push(PackageInfo { purl, vulnerabilities });
     }
 
     let result = SearchResult {
@@ -84,44 +93,61 @@ pub async fn package_search(
         ("id" = Url, Path, description = "The ID of the package to retrieve")
     )
 )]
-pub async fn package_get(guac: web::Data<GuacService>, path: web::Path<String>) -> Result<HttpResponse, Error> {
+#[instrument(skip(guac, v11y), err)]
+pub async fn package_get(
+    guac: web::Data<GuacService>,
+    v11y: web::Data<V11yService>,
+    path: web::Path<String>,
+) -> Result<HttpResponse, Error> {
     let purl = path.into_inner();
-    let vex_results = guac.certify_vex(&purl).await?;
-    let mut vex = vex_results
-        .iter()
-        .flat_map(|vex| {
-            vex.vulnerability
-                .vulnerability_ids
-                .iter()
-                .map(|id| V11yRef {
-                    cve: id.vulnerability_id.clone().to_uppercase(),
-                    severity: "unknown".to_string(),
-                })
-                .collect::<Vec<V11yRef>>()
-        })
-        .collect::<Vec<V11yRef>>();
-
-    let vuln_results = guac.certify_vuln(&purl).await?;
-    let mut vulns = vuln_results
-        .iter()
-        .flat_map(|vuln| {
-            vuln.vulnerability
-                .vulnerability_ids
-                .iter()
-                .map(|id| V11yRef {
-                    cve: id.vulnerability_id.clone().to_uppercase(),
-                    severity: "unknown".to_string(),
-                })
-                .collect::<Vec<V11yRef>>()
-        })
-        .collect::<Vec<V11yRef>>();
-    vulns.append(&mut vex);
-
-    let pkg = PackageInfo {
-        purl,
-        vulnerabilities: vulns,
-    };
+    let vulnerabilities = get_vulnerabilities(&guac, &v11y, &purl).await?;
+    let pkg = PackageInfo { purl, vulnerabilities };
     Ok(HttpResponse::Ok().json(&pkg))
+}
+
+/// Retrieve all vulnerabilities (from VEX and CVE) related to the input purl
+#[instrument(skip(guac, v11y), err, ret(level = Level::DEBUG))]
+async fn get_vulnerabilities(
+    guac: &web::Data<GuacService>,
+    v11y: &web::Data<V11yService>,
+    purl: &str,
+) -> Result<Vec<V11yRef>, Error> {
+    let vex_results = guac.certify_vex(purl).await?;
+    let mut vulnerabilities: Vec<V11yRef> = vec![];
+    for certify_vex in vex_results {
+        for vulnerability_id in certify_vex.vulnerability.vulnerability_ids {
+            vulnerabilities.push(get_vulnerability(v11y, vulnerability_id).await?);
+        }
+    }
+    let vuln_results = guac.certify_vuln(purl).await?;
+    for certify_vuln in vuln_results {
+        for vulnerability_id in certify_vuln.vulnerability.vulnerability_ids {
+            vulnerabilities.push(get_vulnerability(v11y, vulnerability_id).await?);
+        }
+    }
+    Ok(vulnerabilities)
+}
+
+/// Retrieve vulnerability information from V11y
+#[instrument(skip(v11y), err, ret(level = Level::DEBUG))]
+async fn get_vulnerability(v11y: &web::Data<V11yService>, vulnerability_id: VulnerabilityId) -> Result<V11yRef, Error> {
+    let cve = vulnerability_id.vulnerability_id.clone().to_uppercase();
+    let severity = Score::from(get_vulnerability_score(v11y, &cve).await?)
+        .severity()
+        .to_string();
+    Ok(V11yRef { cve, severity })
+}
+
+/// Retrieve vulnerability score from V11y
+#[instrument(skip(v11y), err)]
+async fn get_vulnerability_score(v11y: &web::Data<V11yService>, id: &str) -> Result<f64, Error> {
+    if let Some(response) = v11y.fetch_cve(id).await?.or_status_error_opt().await? {
+        let cve: Cve = response.json().await?;
+        if let Some(score) = vuln::get_score(&cve) {
+            return Ok(score as f64);
+        }
+    }
+    Ok(0_f64)
 }
 
 #[derive(Debug, serde::Deserialize, IntoParams)]
