@@ -1,6 +1,6 @@
 mod get;
 mod search;
-mod vuln;
+pub(crate) mod vuln;
 
 pub use get::*;
 pub use search::*;
