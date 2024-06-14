@@ -60,7 +60,7 @@ spec:
             - name: TC_PGOPTIONS
               valueFrom:
                 secretKeyRef:
-                  name: guac-admin-db
+                  name: {{ .Values.guac.database.admin_db_secret_name }}
                   key: "db.options"
                   optional: true
             - name: DB_NAME
@@ -116,7 +116,7 @@ spec:
             - name: TC_PGOPTIONS
               valueFrom:
                 secretKeyRef:
-                  name: guac-admin-db
+                  name: {{ .Values.guac.database.admin_db_secret_name }}
                   key: "db.options"
                   optional: true
             - name: DB_NAME
