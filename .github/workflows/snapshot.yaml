@@ -53,7 +53,7 @@ jobs:
             containerfile: container_files/Containerfile.tests
 
     env:
-      IMAGE_TAG: ci
+      IMAGE_TAG: ${{ needs.init.outputs.version }} latest
       PLATFORMS: "linux/amd64, linux/arm64"
 
     steps:
@@ -106,7 +106,19 @@ jobs:
         run: buildah images | grep '${{ matrix.name }}'
 
       - name: Save image
-        run: podman save --multi-image-archive ${{ matrix.name }}:${{ env.IMAGE_TAG }} > ${{ matrix.name }}-image.tar
+        run: podman save --multi-image-archive ${{ matrix.name }}:latest > ${{ matrix.name }}-image.tar
+
+      # Push to ghcr.io
+      - name: Push to ghcr.io
+        id: push
+        uses: redhat-actions/push-to-registry@v2
+        with:
+          image: ${{ matrix.name }}
+          tags: ${{ env.IMAGE_TAG }}
+          registry: ghcr.io/${{ github.repository_owner }}
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
 
       - name: Log in to ghcr.io
         uses: redhat-actions/podman-login@v1
@@ -115,31 +127,11 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
           registry: "ghcr.io"
 
-      - name: Push to ghcr.io
-        id: push-images
-        run: |
-          IMAGE="ghcr.io/${{ github.repository_owner }}/${{ matrix.name }}:${{ needs.init.outputs.version }}"
-          podman push \
-            "${{ matrix.name }}:ci" \
-            "${IMAGE}" --all \
-            --digestfile "${RUNNER_TEMP}/push.${{ matrix.name }}.digest"
-
-      - name: Push to ghcr.io (as latest)
-        id: push-images-latest
-        run: |
-          IMAGE="ghcr.io/${{ github.repository_owner }}/${{ matrix.name }}:latest"
-          podman push \
-            "${{ matrix.name }}:ci" --all \
-            "${IMAGE}"
-
       - name: Sign the images with GitHub OIDC Token
         env:
           COSIGN_EXPERIMENTAL: true
         run: |
-          imageDigest="$(cat ${RUNNER_TEMP}/push.${{ matrix.name }}.digest)"
-          echo "Image Digest: ${imageDigest}"
-          # and then construct the full (pushed) name
-          cosign sign --yes --recursive "ghcr.io/${{ github.repository_owner }}/${{ matrix.name }}@${imageDigest}"
+          cosign sign --yes --recursive "ghcr.io/${{ github.repository_owner }}/${{ matrix.name }}@${{ steps.push.outputs.digest }}"
 
   staging:
     needs: [ init, publish ]
