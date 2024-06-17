@@ -240,7 +240,7 @@ jobs:
 
     with:
       imageTag: ci
-      platforms: "linux/amd64"
+      platforms: "linux/amd64, linux/arm64"
 
   helm-test:
     runs-on: ubuntu-22.04
