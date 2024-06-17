@@ -766,7 +766,7 @@ objects:
                 - name: TC_PGOPTIONS
                   valueFrom:
                     secretKeyRef:
-                      name: guac-admin-db
+                      name: ${GUAC_ADMIN_DB_SECRET_NAME}
                       key: db.options
                       optional: true
                 - name: DB_NAME
@@ -825,7 +825,7 @@ objects:
                 - name: TC_PGOPTIONS
                   valueFrom:
                     secretKeyRef:
-                      name: guac-admin-db
+                      name: ${GUAC_ADMIN_DB_SECRET_NAME}
                       key: db.options
                       optional: true
                 - name: DB_NAME
