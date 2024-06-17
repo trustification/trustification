@@ -50,34 +50,34 @@ spec:
             - name: PGHOST
               valueFrom:
                 secretKeyRef:
-                  name: guac-admin-db
+                  name: {{ .Values.guac.database.admin_db_secret_name }}
                   key: "db.host"
             - name: PGPORT
               valueFrom:
                 secretKeyRef:
-                  name: guac-admin-db
+                  name: {{ .Values.guac.database.admin_db_secret_name }}
                   key: "db.port"
             - name: TC_PGOPTIONS
               valueFrom:
                 secretKeyRef:
-                  name: guac-admin-db
+                  name: {{ .Values.guac.database.admin_db_secret_name }}
                   key: "db.options"
                   optional: true
             - name: DB_NAME
               valueFrom:
                 secretKeyRef:
                   # we indeed require the user database, as we set up guac's schema
-                  name: guac-user-db
+                  name: {{ .Values.guac.database.user_db_secret_name }}
                   key: "db.name"
             - name: DB_USER
               valueFrom:
                 secretKeyRef:
-                  name: guac-admin-db
+                  name: {{ .Values.guac.database.admin_db_secret_name }}
                   key: "db.user"
             - name: DB_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: guac-admin-db
+                  name: {{ .Values.guac.database.admin_db_secret_name }}
                   key: "db.password"
 {{ end }}
       containers:
@@ -106,33 +106,33 @@ spec:
             - name: PGHOST
               valueFrom:
                 secretKeyRef:
-                  name: guac-admin-db
+                  name: {{ .Values.guac.database.admin_db_secret_name }}
                   key: "db.host"
             - name: PGPORT
               valueFrom:
                 secretKeyRef:
-                  name: guac-admin-db
+                  name: {{ .Values.guac.database.admin_db_secret_name }}
                   key: "db.port"
             - name: TC_PGOPTIONS
               valueFrom:
                 secretKeyRef:
-                  name: guac-admin-db
+                  name: {{ .Values.guac.database.admin_db_secret_name }}
                   key: "db.options"
                   optional: true
             - name: DB_NAME
               valueFrom:
                 secretKeyRef:
-                  name: guac-user-db
+                  name: {{ .Values.guac.database.user_db_secret_name }}
                   key: "db.name"
             - name: DB_USER
               valueFrom:
                 secretKeyRef:
-                  name: guac-user-db
+                  name: {{ .Values.guac.database.user_db_secret_name }}
                   key: "db.user"
             - name: DB_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: guac-user-db
+                  name: {{ .Values.guac.database.user_db_secret_name }}
                   key: "db.password"
 {{- end }}
           volumeMounts:
