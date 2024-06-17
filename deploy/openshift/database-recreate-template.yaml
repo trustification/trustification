@@ -31,45 +31,45 @@ objects:
             - name: PGHOST
               valueFrom:
                 secretKeyRef:
-                  name: guac-admin-db
+                  name: {{ .Values.guac.database.admin_db_secret_name }}
                   key: "db.host"
             - name: PGPORT
               valueFrom:
                 secretKeyRef:
-                  name: guac-admin-db
+                  name: {{ .Values.guac.database.admin_db_secret_name }}
                   key: "db.port"
             - name: PGDATABASE
               valueFrom:
                 secretKeyRef:
-                  name: guac-admin-db
+                  name: {{ .Values.guac.database.admin_db_secret_name }}
                   key: "db.name"
             - name: PGUSER
               valueFrom:
                 secretKeyRef:
-                  name: guac-admin-db
+                  name: {{ .Values.guac.database.admin_db_secret_name }}
                   key: "db.user"
             - name: PGPASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: guac-admin-db
+                  name: {{ .Values.guac.database.admin_db_secret_name }}
                   key: "db.password"
 
             - name: DB_NAME
               valueFrom:
                 secretKeyRef:
-                  name: guac-user-db
+                  name: {{ .Values.guac.database.user_db_secret_name }}
                   key: "db.name"
 
             - name: DB_USER
               valueFrom:
                 secretKeyRef:
-                  name: guac-user-db
+                  name: {{ .Values.guac.database.user_db_secret_name }}
                   key: "db.user"
 
             - name: DB_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: guac-user-db
+                  name: {{ .Values.guac.database.user_db_secret_name }}
                   key: "db.password"
 
           volumeMounts:
@@ -90,45 +90,45 @@ objects:
             - name: PGHOST
               valueFrom:
                 secretKeyRef:
-                  name: guac-admin-db
+                  name: {{ .Values.guac.database.admin_db_secret_name }}
                   key: "db.host"
             - name: PGPORT
               valueFrom:
                 secretKeyRef:
-                  name: guac-admin-db
+                  name: {{ .Values.guac.database.admin_db_secret_name }}
                   key: "db.port"
             - name: PGDATABASE
               valueFrom:
                 secretKeyRef:
-                  name: guac-admin-db
+                  name: {{ .Values.guac.database.admin_db_secret_name }}
                   key: "db.name"
             - name: PGUSER
               valueFrom:
                 secretKeyRef:
-                  name: guac-admin-db
+                  name: {{ .Values.guac.database.admin_db_secret_name }}
                   key: "db.user"
             - name: PGPASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: guac-admin-db
+                  name: {{ .Values.guac.database.admin_db_secret_name }}
                   key: "db.password"
 
             - name: DB_NAME
               valueFrom:
                 secretKeyRef:
-                  name: guac-user-db
+                  name: {{ .Values.guac.database.user_db_secret_name }}
                   key: "db.name"
 
             - name: DB_USER
               valueFrom:
                 secretKeyRef:
-                  name: guac-user-db
+                  name: {{ .Values.guac.database.user_db_secret_name }}
                   key: "db.user"
 
             - name: DB_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: guac-user-db
+                  name: {{ .Values.guac.database.user_db_secret_name }}
                   key: "db.password"
 
           volumeMounts:
@@ -163,26 +163,26 @@ objects:
             - name: PGHOST
               valueFrom:
                 secretKeyRef:
-                  name: guac-admin-db
+                  name: {{ .Values.guac.database.admin_db_secret_name }}
                   key: "db.host"
             - name: PGPORT
               valueFrom:
                 secretKeyRef:
-                  name: guac-admin-db
+                  name: {{ .Values.guac.database.admin_db_secret_name }}
                   key: "db.port"
             - name: DB_NAME
               valueFrom:
                 secretKeyRef:
                   # we indeed require the user database, as we set up guac's schema
-                  name: guac-user-db
+                  name: {{ .Values.guac.database.user_db_secret_name }}
                   key: "db.name"
             - name: DB_USER
               valueFrom:
                 secretKeyRef:
-                  name: guac-admin-db
+                  name: {{ .Values.guac.database.admin_db_secret_name }}
                   key: "db.user"
             - name: DB_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: guac-admin-db
+                  name: {{ .Values.guac.database.admin_db_secret_name }}
                   key: "db.password"
