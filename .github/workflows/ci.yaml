@@ -159,7 +159,7 @@ jobs:
       - name: Install clang llvm pkg-config nettle-dev
         run: |
           sudo apt install clang llvm pkg-config nettle-dev
-          
+
       - name: Check
         run: cargo check
 
