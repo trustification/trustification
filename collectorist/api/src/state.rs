@@ -22,6 +22,7 @@ impl AppState {
         config: &CollectorsConfig,
         csub_url: Url,
         provider: P,
+        ca_certificate_pem_path: Option<String>,
     ) -> Result<Self, anyhow::Error>
     where
         P: TokenProvider + Clone + 'static,
@@ -29,7 +30,7 @@ impl AppState {
         Ok(Self {
             collectors: Collectors::new(config, client, provider.clone()),
             db: Db::new(base).await?,
-            coordinator: Coordinator::new(csub_url),
+            coordinator: Coordinator::new(csub_url, ca_certificate_pem_path),
         })
     }
 }
