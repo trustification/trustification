@@ -2916,9 +2916,9 @@ dependencies = [
 
 [[package]]
 name = "guac"
-version = "0.3.0"
+version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "12ae8c364d690ed01898bc5d1a4fe85f835960935739080acbd87a6df45b7b72"
+checksum = "119e86271de04d288747d6345d9b3d96495fb7c37a61f99a1e81698447f75e76"
 dependencies = [
  "anyhow",
  "async-nats",
@@ -7303,7 +7303,10 @@ dependencies = [
  "percent-encoding",
  "pin-project",
  "prost",
+ "rustls-pemfile 2.1.2",
+ "rustls-pki-types",
  "tokio",
+ "tokio-rustls 0.25.0",
  "tokio-stream",
  "tower",
  "tower-layer",
