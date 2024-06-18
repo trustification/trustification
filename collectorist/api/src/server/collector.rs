@@ -75,6 +75,7 @@ mod test {
                 },
                 Url::parse("http://csub.example.com/").unwrap(),
                 NoTokenProvider,
+                None,
             )
             .await?,
         );

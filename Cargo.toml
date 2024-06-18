@@ -101,7 +101,7 @@ default-members = [
 ]
 
 [workspace.dependencies]
-guac = { version = "0.3.0" }
+guac = { version = "0.3.1" }
 #guac = { path = "../guac-rs/lib" }
 
 [patch.crates-io]
