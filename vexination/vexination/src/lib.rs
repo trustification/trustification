@@ -1,5 +1,6 @@
 use std::process::ExitCode;
 
+/// Run vexination services (`trust vexination --help` for details)
 #[derive(clap::Subcommand, Debug)]
 pub enum Command {
     Api(vexination_api::Run),

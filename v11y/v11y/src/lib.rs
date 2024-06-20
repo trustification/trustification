@@ -1,5 +1,6 @@
 use std::process::ExitCode;
 
+/// Run v11y services (`trust v11y --help` for details)
 #[derive(clap::Subcommand, Debug)]
 pub enum Command {
     Api(v11y_api::Run),
