@@ -143,6 +143,16 @@ async fn query_sbom(
     let path: S3Path = S3Path::from_key(Key::from(&key));
     log::trace!("Querying SBOM using id {}", key);
     let storage = &state.storage;
+
+    // Generate the filename for Content-Disposition HTTP header
+    let sbom_search_query = format!("id:{key}");
+    let sbom_name = state
+        .sbom_index
+        .search(&sbom_search_query, 0, 1, SearchOptions::default())
+        .ok()
+        .and_then(|(result, _)| result.first().map(|hint| hint.document.name.clone()));
+    let content_disposition_header = format!(r#"attachment; filename="{}.json""#, sbom_name.unwrap_or(key));
+
     // determine the encoding of the stored object, if any
     let encoding = storage.get_head(path.clone()).await.ok().and_then(|head| {
         head.content_encoding
@@ -154,11 +164,13 @@ async fn query_sbom(
         // if client's accept-encoding includes S3 encoding, return encoded stream
         Some(enc) => Ok(HttpResponse::Ok()
             .content_type(ContentType::json())
+            .append_header((header::CONTENT_DISPOSITION, content_disposition_header))
             .insert_header((header::CONTENT_ENCODING, enc.to_string()))
             .streaming(storage.get_encoded_stream(path).await.map_err(Error::Storage)?)),
         // otherwise, decode the stream
         None => Ok(HttpResponse::Ok()
             .content_type(ContentType::json())
+            .append_header((header::CONTENT_DISPOSITION, content_disposition_header))
             .streaming(storage.get_decoded_stream(&path).await.map_err(Error::Storage)?)),
     }
 }
