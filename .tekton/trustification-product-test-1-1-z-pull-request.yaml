@@ -34,8 +34,6 @@ spec:
     value: container_files/Containerfile.tests
   - name: path-context
     value: .
-  - name: hermetic
-    value: 'true'
   - name: build-source-image
     value: 'true'
   pipelineSpec:
