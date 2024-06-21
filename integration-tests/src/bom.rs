@@ -1,9 +1,13 @@
 use super::*;
-use crate::{config::Config, runner::Runner};
+use crate::{
+    config::Config,
+    provider::{IntoTokenProvider, ProviderKind},
+    runner::Runner,
+};
 use async_trait::async_trait;
 use bytesize::ByteSize;
-use reqwest::Url;
 use test_context::AsyncTestContext;
+use trustification_auth::client::TokenProvider;
 use trustification_storage::validator::Validator;
 
 #[async_trait]
@@ -12,16 +16,41 @@ impl AsyncTestContext for BombasticContext {
         let config = Config::new().await;
         start_bombastic(&config).await
     }
+
     async fn teardown(self) {
-        for id in &self.fixtures {
-            self.delete_sbom(id).await;
+        for fixture in &self.fixtures {
+            fixture.cleanup(&self).await;
         }
     }
 }
 
+impl HasPushFixture for BombasticContext {
+    fn push_fixture(&mut self, fixture: FixtureKind) {
+        self.fixtures.push(fixture);
+    }
+}
+
+#[async_trait]
+impl AsyncDeleteById for BombasticContext {
+    async fn delete_by_id(&self, id: &str) {
+        self.delete_sbom(id).await;
+    }
+}
+
+impl FileUtility for BombasticContext {}
+
 impl Urlifier for BombasticContext {
     fn base_url(&self) -> &Url {
         &self.url
+    }
+}
+
+impl IntoTokenProvider for BombasticContext {
+    fn token_provider(&self, kind: ProviderKind) -> &dyn TokenProvider {
+        match kind {
+            ProviderKind::User => &self.provider.provider_user,
+            ProviderKind::Manager => &self.provider.provider_manager,
+        }
     }
 }
 
@@ -30,7 +59,7 @@ pub struct BombasticContext {
     pub provider: ProviderContext,
     pub events: EventBusConfig,
     _runner: Option<Runner>,
-    fixtures: Vec<String>,
+    fixtures: Vec<FixtureKind>,
 }
 
 pub async fn start_bombastic(config: &Config) -> BombasticContext {
@@ -48,9 +77,7 @@ pub async fn start_bombastic(config: &Config) -> BombasticContext {
 
     {
         // No remote server requested, so fire up bombastic on ephemeral port
-        let listener = TcpListener::bind("localhost:0").unwrap();
-        let port = listener.local_addr().unwrap().port();
-        let url = Url::parse(&format!("http://localhost:{port}")).unwrap();
+        let (listener, _, url) = tcp_connection();
         let indexer = bombastic_indexer();
         let events = indexer.bus.clone();
 
@@ -63,7 +90,7 @@ pub async fn start_bombastic(config: &Config) -> BombasticContext {
                         panic!("Error running bombastic indexer: {e:?}");
                     }
                     Ok(code) => {
-                        println!("Bombastic indexer exited with code {code:?}");
+                        log::info!("Bombastic indexer exited with code {code:?}");
                     }
                 },
                 bapi = bombastic_api().run(Some(listener)) => match bapi {
@@ -71,7 +98,7 @@ pub async fn start_bombastic(config: &Config) -> BombasticContext {
                         panic!("Error running bombastic API: {e:?}");
                     }
                     Ok(code) => {
-                        println!("Bombastic API exited with code {code:?}");
+                        log::info!("Bombastic API exited with code {code:?}");
                     }
                 },
             }
@@ -88,91 +115,66 @@ pub async fn start_bombastic(config: &Config) -> BombasticContext {
             fixtures: Vec::new(),
         };
 
-        // ensure it's initialized
-        let client = reqwest::Client::new();
-        loop {
-            let response = client
-                .get(context.urlify("/api/v1/sbom?id=none"))
-                .inject_token(&context.provider.provider_user)
-                .await
-                .unwrap()
-                .send()
-                .await
-                .unwrap();
-            if response.status() == StatusCode::NOT_FOUND {
-                break;
-            }
-            tokio::time::sleep(Duration::from_secs(1)).await;
-        }
+        // Ensure it's initialized
+        wait_on_service(&context, "sbom", "id").await;
 
-        // return the context
+        // Return the context
         context
     }
 }
 
 impl BombasticContext {
-    pub async fn upload_sbom(&mut self, key: &str, input: &serde_json::Value) {
-        let response = reqwest::Client::new()
-            .post(self.urlify(format!("/api/v1/sbom?id={key}")))
-            .json(input)
-            .inject_token(&self.provider.provider_manager)
-            .await
-            .unwrap()
-            .send()
-            .await
-            .unwrap();
-        assert_eq!(response.status(), StatusCode::CREATED);
-        self.fixtures.push(key.to_string());
+    pub async fn upload_sbom(&mut self, key: &str, input: &Value) {
+        RequestFactory::new()
+            .with_provider_manager()
+            .post("/api/v1/sbom")
+            .with_query(&[("id", key)])
+            .with_json(input)
+            .expect_status(StatusCode::CREATED)
+            .send(self)
+            .await;
+        self.push_fixture(FixtureKind::Id(String::from(key)));
     }
 
     pub async fn delete_sbom(&self, key: &str) {
-        let response = reqwest::Client::new()
-            .delete(self.urlify(format!("/api/v1/sbom?id={key}")))
-            .inject_token(&self.provider.provider_manager)
-            .await
-            .unwrap()
-            .send()
-            .await
-            .unwrap();
-        assert_eq!(response.status(), StatusCode::NO_CONTENT);
+        RequestFactory::<_, Value>::new()
+            .with_provider_manager()
+            .delete("/api/v1/sbom")
+            .with_query(&[("id", key)])
+            .expect_status(StatusCode::NO_CONTENT)
+            .send(self)
+            .await;
     }
 }
 
-pub async fn wait_for_package_search_result<F: Fn(&serde_json::Value) -> bool>(
-    context: &mut BombasticContext,
-    flags: &[(&str, &str)],
-    check: F,
-) -> serde_json::Value {
+pub async fn wait_for_package_search_result<T, F>(context: &BombasticContext, flags: &T, check: F) -> Value
+where
+    T: Serialize + ?Sized,
+    F: Fn(&Value) -> bool,
+{
     wait_for_search_result(context, flags, check, "/api/v1/package/search").await
 }
 
-pub async fn wait_for_sbom_search_result<F: Fn(&serde_json::Value) -> bool>(
-    context: &mut BombasticContext,
-    flags: &[(&str, &str)],
-    check: F,
-) -> serde_json::Value {
+pub async fn wait_for_sbom_search_result<T, F>(context: &BombasticContext, flags: &T, check: F) -> Value
+where
+    T: Serialize + ?Sized,
+    F: Fn(&Value) -> bool,
+{
     wait_for_search_result(context, flags, check, "/api/v1/sbom/search").await
 }
 
-async fn wait_for_search_result<F: Fn(&serde_json::Value) -> bool>(
-    context: &mut BombasticContext,
-    flags: &[(&str, &str)],
-    check: F,
-    path: &str,
-) -> serde_json::Value {
+async fn wait_for_search_result<T, F>(context: &BombasticContext, flags: &T, check: F, path: &str) -> Value
+where
+    T: Serialize + ?Sized,
+    F: Fn(&Value) -> bool,
+{
+    let request: RequestFactory<'_, _, Value> = RequestFactory::new()
+        .with_provider_manager()
+        .get(path)
+        .with_query(flags)
+        .expect_status(StatusCode::OK);
     loop {
-        let url = context.urlify(path);
-        let response = reqwest::Client::new()
-            .get(url)
-            .query(flags)
-            .inject_token(&context.provider.provider_manager)
-            .await
-            .unwrap()
-            .send()
-            .await
-            .unwrap();
-        assert_eq!(response.status(), StatusCode::OK);
-        let payload: Value = response.json().await.unwrap();
+        let payload = request.send(context).await.1.unwrap().try_into().unwrap();
         if check(&payload) {
             return payload;
         }

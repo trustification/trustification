@@ -16,8 +16,7 @@ impl Runner {
     {
         let (tx, rx) = oneshot::channel::<()>();
 
-        // spawn the application
-
+        // Spawn the application
         let handle = std::thread::spawn(|| {
             let runtime = Runtime::new().unwrap();
             runtime.block_on(async {

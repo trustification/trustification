@@ -2,6 +2,16 @@ use std::sync::Arc;
 use trustification_auth::client::{OpenIdTokenProvider, TokenProvider};
 use trustification_auth::devmode;
 
+#[derive(Clone, Copy)]
+pub enum ProviderKind {
+    User,
+    Manager,
+}
+
+pub trait IntoTokenProvider {
+    fn token_provider(&self, kind: ProviderKind) -> &dyn TokenProvider;
+}
+
 #[derive(Clone)]
 pub struct ProviderContext {
     pub provider_user: Arc<dyn TokenProvider>,
@@ -25,7 +35,7 @@ pub async fn create_provider(client_id: &str, secret: &str, issuer: impl AsRef<s
     .await
     .unwrap();
 
-    let provider = trustification_auth::client::OpenIdTokenProvider::new(client_user, chrono::Duration::seconds(10));
+    let provider = OpenIdTokenProvider::new(client_user, chrono::Duration::seconds(10));
 
     Arc::new(provider)
 }
