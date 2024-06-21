@@ -1,8 +1,12 @@
 use super::*;
-use crate::{config::Config, runner::Runner};
+use crate::{
+    config::Config,
+    provider::{IntoTokenProvider, ProviderKind},
+    runner::Runner,
+};
 use async_trait::async_trait;
 use test_context::AsyncTestContext;
-use trustification_auth::client::OpenIdTokenProviderConfigArguments;
+use trustification_auth::client::{OpenIdTokenProviderConfigArguments, TokenProvider};
 
 #[async_trait]
 impl AsyncTestContext for SpogContext {
@@ -10,6 +14,7 @@ impl AsyncTestContext for SpogContext {
         let config = Config::new().await;
         start_spog(&config).await
     }
+
     async fn teardown(self) {
         self.bombastic.teardown().await;
         self.vexination.teardown().await;
@@ -22,9 +27,18 @@ impl Urlifier for SpogContext {
     }
 }
 
+impl IntoTokenProvider for SpogContext {
+    fn token_provider(&self, kind: ProviderKind) -> &dyn TokenProvider {
+        match kind {
+            ProviderKind::User => &self.provider.provider_user,
+            ProviderKind::Manager => &self.provider.provider_manager,
+        }
+    }
+}
+
 pub struct SpogContext {
-    pub provider: ProviderContext,
     pub url: Url,
+    pub provider: ProviderContext,
 
     pub bombastic: BombasticContext,
     pub vexination: VexinationContext,
@@ -49,9 +63,7 @@ pub async fn start_spog(config: &Config) -> SpogContext {
         use trustification_infrastructure::endpoint;
         use trustification_infrastructure::endpoint::Endpoint;
         // No remote server requested, so fire up spog on ephemeral port
-        let listener = TcpListener::bind("localhost:0").unwrap();
-        let port = listener.local_addr().unwrap().port();
-        let url = Url::parse(&format!("http://localhost:{port}")).unwrap();
+        let (listener, _, url) = tcp_connection();
 
         let bombastic = start_bombastic(config).await;
         let vexination = start_vexination(config).await;
@@ -72,10 +84,9 @@ pub async fn start_spog(config: &Config) -> SpogContext {
                         panic!("Error running spog API: {e:?}");
                     }
                     Ok(code) => {
-                        println!("Spog API exited with code {code:?}");
+                        log::info!("Spog API exited with code {code:?}");
                     }
                 },
-
             }
 
             Ok(())
@@ -90,24 +101,10 @@ pub async fn start_spog(config: &Config) -> SpogContext {
             _runner: Some(runner),
         };
 
-        // ensure it's initialized
-        let client = reqwest::Client::new();
-        loop {
-            let response = client
-                .get(context.urlify("/api/v1/sbom?id=none"))
-                .inject_token(&context.provider.provider_user)
-                .await
-                .unwrap()
-                .send()
-                .await
-                .unwrap();
-            if response.status() == StatusCode::NOT_FOUND {
-                break;
-            }
-            tokio::time::sleep(Duration::from_secs(1)).await;
-        }
+        // Ensure it's initialized
+        wait_on_service(&context, "sbom", "id").await;
 
-        // return the context
+        // Return the context
         context
     }
 }

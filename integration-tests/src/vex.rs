@@ -1,8 +1,13 @@
 use super::*;
-use crate::{config::Config, runner::Runner};
+use crate::{
+    config::Config,
+    provider::{IntoTokenProvider, ProviderKind},
+    runner::Runner,
+};
 use async_trait::async_trait;
 use bytesize::ByteSize;
 use test_context::AsyncTestContext;
+use trustification_auth::client::TokenProvider;
 use trustification_indexer::ReindexMode;
 use trustification_storage::validator::Validator;
 
@@ -12,16 +17,41 @@ impl AsyncTestContext for VexinationContext {
         let config = Config::new().await;
         start_vexination(&config).await
     }
+
     async fn teardown(self) {
-        for id in &self.fixtures {
-            self.delete_vex(id).await;
+        for fixture in &self.fixtures {
+            fixture.cleanup(&self).await;
         }
     }
 }
 
+impl HasPushFixture for VexinationContext {
+    fn push_fixture(&mut self, fixture: FixtureKind) {
+        self.fixtures.push(fixture);
+    }
+}
+
+#[async_trait]
+impl AsyncDeleteById for VexinationContext {
+    async fn delete_by_id(&self, id: &str) {
+        self.delete_vex(id).await;
+    }
+}
+
+impl FileUtility for VexinationContext {}
+
 impl Urlifier for VexinationContext {
     fn base_url(&self) -> &Url {
         &self.url
+    }
+}
+
+impl IntoTokenProvider for VexinationContext {
+    fn token_provider(&self, kind: ProviderKind) -> &dyn TokenProvider {
+        match kind {
+            ProviderKind::User => &self.provider.provider_user,
+            ProviderKind::Manager => &self.provider.provider_manager,
+        }
     }
 }
 
@@ -30,7 +60,7 @@ pub struct VexinationContext {
     pub provider: ProviderContext,
     pub events: EventBusConfig,
     _runner: Option<Runner>,
-    fixtures: Vec<String>,
+    fixtures: Vec<FixtureKind>,
 }
 
 pub async fn start_vexination(config: &Config) -> VexinationContext {
@@ -48,9 +78,7 @@ pub async fn start_vexination(config: &Config) -> VexinationContext {
 
     {
         // No remote server requested, so fire up vexination on ephemeral port
-        let listener = TcpListener::bind("localhost:0").unwrap();
-        let port = listener.local_addr().unwrap().port();
-        let url = Url::parse(&format!("http://localhost:{port}")).unwrap();
+        let (listener, _, url) = tcp_connection();
         let indexer = vexination_indexer();
         let events = indexer.bus.clone();
 
@@ -63,16 +91,15 @@ pub async fn start_vexination(config: &Config) -> VexinationContext {
                         panic!("Error running vexination indexer: {e:?}");
                     }
                     Ok(code) => {
-                        println!("Vexination indexer exited with code {code:?}");
+                        log::info!("Vexination indexer exited with code {code:?}");
                     }
                 },
-
                 vapi = vexination_api().run(Some(listener)) => match vapi {
                     Err(e) => {
                         panic!("Error running vexination API: {e:?}");
                     }
                     Ok(code) => {
-                        println!("Vexination API exited with code {code:?}");
+                        log::info!("Vexination API exited with code {code:?}");
                     }
                 },
             }
@@ -90,57 +117,38 @@ pub async fn start_vexination(config: &Config) -> VexinationContext {
             fixtures: Vec::new(),
         };
 
-        // ensure it's initialized
-        let client = reqwest::Client::new();
-        loop {
-            let response = client
-                .get(context.urlify("/api/v1/vex?advisory=none"))
-                .inject_token(&context.provider.provider_user)
-                .await
-                .unwrap()
-                .send()
-                .await
-                .unwrap();
-            if response.status() == StatusCode::NOT_FOUND {
-                break;
-            }
-            tokio::time::sleep(Duration::from_secs(1)).await;
-        }
+        // Ensure it's initialized
+        wait_on_service(&context, "vex", "advisory").await;
 
-        // return the context
+        // Return the context
         context
     }
 }
 
 impl VexinationContext {
-    pub async fn upload_vex(&mut self, input: &serde_json::Value) {
-        let response = reqwest::Client::new()
-            .post(self.urlify("/api/v1/vex"))
-            .json(input)
-            .inject_token(&self.provider.provider_manager)
-            .await
-            .unwrap()
-            .send()
-            .await
-            .unwrap();
-        assert_eq!(response.status(), StatusCode::CREATED);
+    pub async fn upload_vex(&mut self, input: &Value) {
+        RequestFactory::<&[(&str, &str)], _>::new()
+            .with_provider_manager()
+            .post("/api/v1/vex")
+            .with_json(input)
+            .expect_status(StatusCode::CREATED)
+            .send(self)
+            .await;
         let id = input["document"]["tracking"]["id"].as_str().unwrap().to_string();
-        self.fixtures.push(id);
+        self.push_fixture(FixtureKind::Id(id));
     }
 
     pub async fn delete_vex(&self, key: &str) {
-        let id = urlencoding::encode(key);
-        let response = reqwest::Client::new()
-            .delete(self.urlify(format!("/api/v1/vex?advisory={id}")))
-            .inject_token(&self.provider.provider_manager)
-            .await
-            .unwrap()
-            .send()
-            .await
-            .unwrap();
-        assert_eq!(response.status(), StatusCode::NO_CONTENT);
+        RequestFactory::<_, Value>::new()
+            .with_provider_manager()
+            .delete("/api/v1/vex")
+            .with_query(&[("advisory", key)])
+            .expect_status(StatusCode::NO_CONTENT)
+            .send(self)
+            .await;
     }
 }
+
 // Configuration for the vexination indexer
 fn vexination_indexer() -> vexination_indexer::Run {
     vexination_indexer::Run {
