@@ -38,4 +38,7 @@ COPY --from=builder /usr/src/project/integration-tests/run-test-binaries.sh /
 
 ENV RUST_LOG info
 
+RUN mkdir /licenses
+COPY ./LICENSE /licenses/AL2
+
 ENTRYPOINT ["/run-test-binaries.sh"]
