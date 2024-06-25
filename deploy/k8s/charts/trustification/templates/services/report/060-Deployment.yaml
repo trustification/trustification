@@ -46,10 +46,12 @@ spec:
               subPath: nginx.conf
               readOnly: true
 
+            {{- if $mod.module.enabled_auth}}
             - name: htpasswd
               mountPath: /etc/nginx/.htpasswd
               subPath: .htpasswd
               readOnly: true
+            {{- end}}
 
       volumes:
         - name: wwwdata
@@ -58,8 +60,10 @@ spec:
         - name: config-volume
           configMap:
             name: {{ include "trustification.common.name" $mod }}-nginx-config
+        {{- if $mod.module.enabled_auth}}
         - name: htpasswd
           configMap:
             name: {{ include "trustification.common.name" $mod }}-report-htpasswd
+        {{- end}}
 
 {{ end }}
