@@ -119,6 +119,6 @@ RUN mkdir /data
 COPY ./data/ds1 /data
 
 RUN mkdir /licenses
-COPY ./LICENSE /licenses/AL2
+COPY ./LICENSE /licenses/AL
 
 ENV RUST_LOG info
