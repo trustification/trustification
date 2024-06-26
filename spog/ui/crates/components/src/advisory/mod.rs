@@ -74,6 +74,8 @@ impl TableEntryRenderer<Column> for AdvisoryEntry {
                 let l = self.summary.cves.len();
                 if l == 0 {
                     "N/A".to_string().into()
+                } else if self.summary.cve_severity_count.is_empty() {
+                    self.summary.cves.len().to_string().into()
                 } else {
                     html!(<CvssMap map={self.summary.cve_severity_count.clone()} />)
                 }
