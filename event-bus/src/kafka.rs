@@ -90,15 +90,21 @@ impl KafkaConsumer {
 
     pub(crate) async fn commit<'m>(&'m self, events: &[Event<'m>]) -> Result<(), Error> {
         let mut position = self.consumer.position()?;
+        let mut events_found = false;
         for event in events {
             if let Event::Kafka(event) = event {
                 let topic = event.message.topic();
                 let partition = event.message.partition();
                 let offset = event.message.offset() + 1;
                 position.set_partition_offset(topic, partition, rdkafka::Offset::Offset(offset))?;
+                events_found = true;
             }
         }
-        Consumer::commit(&self.consumer, &position, rdkafka::consumer::CommitMode::Sync)?;
+
+        if events_found {
+            Consumer::commit(&self.consumer, &position, rdkafka::consumer::CommitMode::Sync)?;
+        }
+
         Ok(())
     }
 }
