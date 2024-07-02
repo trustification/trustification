@@ -1,6 +1,7 @@
 use parking_lot::Mutex;
-use std::collections::BTreeMap;
-use std::sync::Arc;
+use std::{collections::BTreeMap, fs, sync::Arc};
+use tera::{Context, Tera};
+use time::macros::format_description;
 use time::OffsetDateTime;
 use walker_extras::visitors::SendVisitor;
 
@@ -124,8 +125,89 @@ impl SplitScannerError for Result<Report, ScannerError> {
 }
 
 /// Handle the report
-pub async fn handle_report(report: Report) -> anyhow::Result<()> {
-    // FIXME: this is a very simplistic version of handling the error
-    log::info!("Import report: {report:#?}");
+pub async fn handle_report(report: Report, option: ReportGenerateOption) -> anyhow::Result<()> {
+    if report.messages.is_empty() {
+        log::info!("This report contains no error messages and does not require the generation of an error report");
+        return Ok(());
+    }
+
+    let path = option.report_out_path;
+
+    let mut tera = Tera::default();
+    let template_content = include_str!("../templates/report.html");
+    tera.add_raw_template("report.html", template_content)?;
+
+    let mut context = Context::new();
+    let current_time = OffsetDateTime::now_utc();
+
+    let report_type = option.report_type;
+    context.insert("report", &report);
+    context.insert("type", &report_type);
+
+    let format = format_description!("[year]-[month]-[day]--[hour]-[minute]-[second]");
+    let formatted_time = current_time.format(&format)?;
+    context.insert("current_time", &formatted_time);
+    let rendered_html = tera.render("report.html", &context)?;
+    let out_put_html_path = format!("{path}/{report_type}/html/report-{formatted_time}.html");
+    if let Some(parent) = std::path::Path::new(&out_put_html_path).parent() {
+        fs::create_dir_all(parent)?;
+    }
+    fs::write(out_put_html_path.clone(), rendered_html)?;
+    log::info!("Successfully generated the report file.");
+
     Ok(())
+}
+
+#[derive(Clone, Debug)]
+pub struct ReportGenerateOption {
+    pub report_type: String,
+    pub report_out_path: String,
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::report::ReportGenerateOption;
+    use crate::report::{handle_report, Message, Phase, Report, ReportBuilder, Severity};
+
+    fn create_report() -> Report {
+        let mut report = ReportBuilder::new();
+        report
+            .report
+            .messages
+            .entry(Phase::Validation)
+            .or_default()
+            .entry("test1".to_string())
+            .or_default()
+            .push(Message {
+                severity: Severity::Error,
+                message: "test1 message one".to_string(),
+            });
+
+        report
+            .report
+            .messages
+            .entry(Phase::Upload)
+            .or_default()
+            .entry("test2".to_string())
+            .or_default()
+            .push(Message {
+                severity: Severity::Error,
+                message: "test2 message two".to_string(),
+            });
+
+        report.report
+    }
+
+    #[tokio::test]
+    async fn test_handle_report_without_env() {
+        let rs = handle_report(
+            create_report(),
+            ReportGenerateOption {
+                report_type: "SBOM".to_string(),
+                report_out_path: "tmp/share/reports".to_string(),
+            },
+        )
+        .await;
+        assert!(rs.is_ok());
+    }
 }

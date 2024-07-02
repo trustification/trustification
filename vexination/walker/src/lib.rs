@@ -1,8 +1,9 @@
 use crate::scanner::{Options, Scanner};
+use clap::ArgAction;
 use std::{path::PathBuf, process::ExitCode, sync::Arc, time::SystemTime};
 use time::{Date, Month, UtcOffset};
 use trustification_auth::client::{OpenIdTokenProviderConfig, OpenIdTokenProviderConfigArguments};
-use trustification_common_walker::report::{handle_report, SplitScannerError};
+use trustification_common_walker::report::{handle_report, ReportGenerateOption, SplitScannerError};
 use trustification_infrastructure::{Infrastructure, InfrastructureConfig};
 use url::Url;
 use walker_common::sender::provider::TokenProvider;
@@ -66,6 +67,14 @@ pub struct Run {
     /// Long-running mode. The index file will be scanned for changes every interval.
     #[arg(long = "scan-interval")]
     pub scan_interval: Option<humantime::Duration>,
+
+    /// Allow logging of uploaded vexination file reports.
+    #[arg(long, env, default_value_t = true, action = ArgAction::Set)]
+    pub report_enable: bool,
+
+    /// Define report output path
+    #[arg(long, env, default_value = "/tmp/share/reports")]
+    pub report_path: String,
 }
 
 impl Run {
@@ -128,7 +137,16 @@ impl Run {
                         scanner.run(interval.into()).await?;
                     } else {
                         let (report, result) = scanner.run_once().await.split()?;
-                        handle_report(report).await?;
+                        if self.report_enable {
+                            handle_report(
+                                report,
+                                ReportGenerateOption {
+                                    report_type: "Vexination".to_string(),
+                                    report_out_path: self.report_path,
+                                },
+                            )
+                            .await?;
+                        }
                         result?;
                     }
 

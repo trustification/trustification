@@ -15,3 +15,16 @@ thiserror = "1"
 time = { version = "0.3", features = ["serde-well-known"] }
 walker-common = "=0.6.0-rc.1"
 walker-extras = "=0.6.0-rc.1"
+tera = "1.19.1"
+sequoia-openpgp = { version = "*", default-features = false }
+
+[dev-dependencies]
+tokio = { version = "1", features = ["full"] }
+
+# Enables a crypto backend for the tests:
+[target.'cfg(not(windows))'.dev-dependencies]
+sequoia-openpgp = { version = "1", default-features = false, features = ["crypto-nettle", "__implicit-crypto-backend-for-tests"]  }
+
+# Enables a crypto backend for the docs.rs generation:
+[package.metadata.docs.rs]
+features = ["sequoia-openpgp/default"]
