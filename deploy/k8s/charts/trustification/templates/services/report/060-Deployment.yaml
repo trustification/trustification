@@ -33,7 +33,7 @@ spec:
           command: [ "/usr/sbin/nginx" ]
           args: [ "-g", "daemon off;" ]
           ports:
-            - containerPort: 8080
+            - containerPort: 8018
               name: endpoint
               protocol: TCP
 
@@ -46,8 +46,8 @@ spec:
               subPath: nginx.conf
               readOnly: true
 
-            {{- if $mod.module.enabled_auth}}
-            - name: htpasswd
+            {{- if $mod.module.enabledAuth}}
+            - name: auth-secret-volume
               mountPath: /etc/nginx/.htpasswd
               subPath: .htpasswd
               readOnly: true
@@ -60,10 +60,10 @@ spec:
         - name: config-volume
           configMap:
             name: {{ include "trustification.common.name" $mod }}-nginx-config
-        {{- if $mod.module.enabled_auth}}
-        - name: htpasswd
-          configMap:
-            name: {{ include "trustification.common.name" $mod }}-report-htpasswd
+        {{- if $mod.module.enabledAuth}}
+        - name: auth-secret-volume
+          secret:
+            secretName: report-auth-secret
         {{- end}}
 
 {{ end }}

@@ -214,12 +214,9 @@ modules:
     rust: {}
 
   report:
-    enabled: true
+    enabled: false
     ingress: {}
     image: {}
-    enabled_auth: false
-    # Here's an example showing how to set up authentication.
-    # reportUserConfig:
-    # - name: admin
-    #   pwd: $apr1$XFCFfzu4$vtfox1qeBPqcZv814kltL1
+    enabledAuth: false
+
 workarounds: {}

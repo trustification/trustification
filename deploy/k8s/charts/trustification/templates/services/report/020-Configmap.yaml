@@ -39,7 +39,7 @@ data:
         index index.html index.htm;
 
         location / {
-            {{- if $mod.module.enabled_auth}}
+            {{- if $mod.module.enabledAuth}}
               auth_basic  "Administrator’s Area";
               auth_basic_user_file /etc/nginx/.htpasswd;
             {{- end}}
