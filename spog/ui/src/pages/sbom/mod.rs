@@ -150,7 +150,23 @@ fn details(props: &DetailsProps) -> Html {
                         <Tabs<TabIndex> inset={TabInset::Page} detached=true selected={*tab} {onselect}>
                             <Tab<TabIndex> index={TabIndex::Info} title="Info" />
                             <Tab<TabIndex> index={TabIndex::Packages} title="Packages" />
-                            <Tab<TabIndex> index={TabIndex::Overview} title="Related vulnerabilities" />
+                            <Tab<TabIndex> index={TabIndex::Overview} title={html!(
+                                <>
+                                    { "Vulnerabilities" }
+                                    <Popover
+                                        target={html!(
+                                            <button class="pf-v5-c-button pf-m-plain pf-m-small" type="button" style="padding: 0px 0px 0px 5px;">
+                                                <span class="pf-v5-c-tabs__item-action-icon">
+                                                { Icon::QuestionCircle }
+                                                </span>
+                                            </button>
+                                        )}
+                                        body={html_nested!(
+                                            <PopoverBody>{"Any found vulnerabilities related to this SBOM. Fixed vulnerabilities are not listed."}</PopoverBody>
+                                        )}
+                                    />
+                                </>
+                            )}/>
                             { for config.features.show_report.then(|| html_nested!(
                                 <Tab<TabIndex> index={TabIndex::Report} title="Dependency Analytics Report" />
                             )) }
