@@ -210,4 +210,12 @@ mod tests {
             .await
             .is_err())
     }
+
+    #[test(tokio::test)]
+    async fn sbom_json_cyclonedx_missing_serial_number() {
+        let expected = include_bytes!("../../bombastic/testdata/sbom-without-serialNumber.cyclonedx.json");
+        let result = test(Validator::SBOM, ByteSize::kb(100), None, expected).await;
+        assert!(result.is_err());
+        assert_eq!(result.err().unwrap().to_string(), Error::InvalidContent.to_string());
+    }
 }
