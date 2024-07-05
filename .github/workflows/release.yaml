@@ -320,7 +320,7 @@ jobs:
       - name: Generate container SBOM
         run: |
           syft ~/download/${{ matrix.name }}-container/${{ matrix.name }}-image.tar --output cyclonedx-json --catalogers rpm,cargo-auditable > staging/${{ matrix.name }}.sbom.json
-          cyclonedx merge --input-files staging/${{ matrix.name }}.sbom.json staging/trust-ui.project.sbom.json --output-file staging/${{ matrix.name }}.sbom.json 
+          cyclonedx merge --input-files staging/${{ matrix.name }}.sbom.json staging/trust-ui.project.sbom.json --output-file staging/${{ matrix.name }}.sbom.json
 
       - name: Log in to ghcr.io
         uses: redhat-actions/podman-login@v1
@@ -335,7 +335,7 @@ jobs:
           IMAGE="ghcr.io/${{ github.repository_owner }}/${{ matrix.name }}:${{ needs.init.outputs.version }}"
           podman push \
             "${{ matrix.name }}:ci" \
-            "${IMAGE}" \
+            "${IMAGE}" --all \
             --digestfile "${RUNNER_TEMP}/push.${{ matrix.name }}.digest"
 
       - name: Push to ghcr.io (as latest)
@@ -344,7 +344,7 @@ jobs:
         run: |
           IMAGE="ghcr.io/${{ github.repository_owner }}/${{ matrix.name }}:latest"
           podman push \
-            "${{ matrix.name }}:ci" \
+            "${{ matrix.name }}:ci" --all \
             "${IMAGE}"
 
       - name: Sign the images with GitHub OIDC Token
