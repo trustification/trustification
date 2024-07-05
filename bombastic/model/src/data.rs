@@ -69,7 +69,7 @@ impl SBOM {
                 Ok(bom) => match bom.serial_number {
                     Some(_) => return Ok(SBOM::CycloneDX(bom)),
                     None => {
-                        let serial_number_error_message = "Error validating CycloneDX: within this application the 'serialNumber' field in CycloneDX SBOM must have a value";
+                        let serial_number_error_message = "Error validating CycloneDX: In order for a CycloneDX SBOM to be successfully ingested the 'serialNumber' field must be populated.";
                         log::error!("{}", serial_number_error_message);
                         let serial_number_error: serde_json::Error =
                             serde::de::Error::custom(serial_number_error_message);
@@ -119,7 +119,7 @@ mod tests {
         let data = include_bytes!("../../testdata/sbom-without-serialNumber.cyclonedx.json");
         let e = SBOM::parse(data).unwrap_err();
         assert!(e.cyclonedx.is_some());
-        assert_eq!(e.cyclonedx.unwrap().to_string(), "Failed to deserialize JSON: Error validating CycloneDX: within this application the 'serialNumber' field in CycloneDX SBOM must have a value");
+        assert_eq!(e.cyclonedx.unwrap().to_string(), "Failed to deserialize JSON: Error validating CycloneDX: In order for a CycloneDX SBOM to be successfully ingested the 'serialNumber' field must be populated.");
         assert!(e.spdx.is_some());
         assert_eq!(
             e.spdx.unwrap().to_string(),
