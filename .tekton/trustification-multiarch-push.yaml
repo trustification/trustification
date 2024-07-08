@@ -22,7 +22,8 @@ spec:
   - name: revision
     value: '{{revision}}'
   - name: output-image
-    value: quay.io/redhat-user-workloads/trusted-content-tenant/trustification-multiarch/trustification-multiarch:{{revision}}
+    value: quay.io/trustification/multiarch:{{revision}}
+    #value: quay.io/redhat-user-workloads/trusted-content-tenant/trustification-multiarch/trustification-multiarch:{{revision}}
   - name: dockerfile
     value: container_files/Containerfile.services
   - name: path-context
