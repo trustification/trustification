@@ -30,78 +30,17 @@ pub fn sbom(props: &SBOMProperties) -> Html {
     let access_token = use_latest_access_token();
 
     let info = use_async_with_cloned_deps(
-        |(id, backend)| async move {
+        |(id, backend, access_token)| async move {
             spog_ui_backend::SBOMService::new(backend.clone(), access_token)
                 .get(id)
                 .await
                 .map(|result| result.map(model::SBOM::parse).map(Rc::new))
         },
-        (props.id.clone(), backend),
+        (props.id.clone(), backend.clone(), access_token.clone()),
     );
 
-    let title = html!(<SBOMTitle id={props.id.clone()}/>);
-
-    let (heading, content) = match &*info {
-        UseAsyncState::Pending | UseAsyncState::Processing => (
-            html!(<PageHeading>{title}</PageHeading>),
-            html!(<PageSection fill={PageSectionFill::Fill}><Spinner/></PageSection>),
-        ),
-        UseAsyncState::Ready(Ok(None)) => (
-            html!(<PageHeading sticky=false>{title} {" "} </PageHeading>),
-            html!(<NotFound/>),
-        ),
-        UseAsyncState::Ready(Ok(Some(data))) => (
-            html!(
-                <PageSection variant={PageSectionVariant::Light} >
-                    <Flex>
-                        <FlexItem>
-                            <Content>
-                                <Title>
-                                    {title} {" "} <Label label={data.type_name()} color={Color::Blue} />
-                                </Title>
-                                <p>
-                                    {"To generate a report, SBOM content will be processed by Red Hat’s Dependency Analytics Service. The SBOM data will be deleted from the Dependency Analytics Service once the report has been generated. Contact"}
-                                    {" "}<a href="mailto:rhtpa-support@redhat.com">{"rhtpa-support@redhat.com"}</a>{" "}
-                                    {"if you have any questions or concerns."}
-                                </p>
-                            </Content>
-                        </FlexItem>
-                        <FlexItem modifiers={[FlexModifier::Align(Alignment::Right), FlexModifier::Align(Alignment::End)]}>
-                            {html!(
-                                <LocalDownloadButton data={data.get_source()} r#type="sbom" filename={clean_ext(&props.id)} />
-                            )}
-                        </FlexItem>
-                    </Flex>
-                </PageSection>
-            ),
-            html!(<Details id={props.id.clone()} sbom={data.clone()}/> ),
-        ),
-        UseAsyncState::Ready(Err(err)) => (
-            html!(<PageHeading>{title}</PageHeading>),
-            html!(<PageSection fill={PageSectionFill::Fill}><Error err={err.to_string()} /></PageSection>),
-        ),
-    };
-
-    html!(
-        <>
-            { heading }
-            { content }
-        </>
-    )
-}
-
-#[derive(Clone, Debug, PartialEq, Properties)]
-pub struct SBOMTitleProperties {
-    pub id: String,
-}
-
-#[function_component(SBOMTitle)]
-pub fn sbom_title(props: &SBOMTitleProperties) -> Html {
-    let backend = use_backend();
-    let access_token = use_latest_access_token();
-
-    let sbom = use_async_with_cloned_deps(
-        |(id, backend)| async move {
+    let sbom_index = use_async_with_cloned_deps(
+        |(id, backend, access_token)| async move {
             spog_ui_backend::SBOMService::new(backend.clone(), access_token)
                 .get_from_index(&id)
                 .await
@@ -114,17 +53,69 @@ pub fn sbom_title(props: &SBOMTitleProperties) -> Html {
                     }
                 })
         },
-        (props.id.clone(), backend),
+        (props.id.clone(), backend.clone(), access_token.clone()),
     );
 
-    let title = match &*sbom {
-        UseAsyncState::Ready(Ok(Some(data))) => Some(data.name.clone()),
-        _ => None,
+    let title = match &*sbom_index {
+        UseAsyncState::Ready(Ok(Some(data))) => html!(data.name.clone()),
+        _ => html!(props.id.clone()),
+    };
+
+    let (heading, content) = match &*info {
+        UseAsyncState::Pending | UseAsyncState::Processing => (
+            html!(<PageHeading>{title}</PageHeading>),
+            html!(<PageSection fill={PageSectionFill::Fill}><Spinner/></PageSection>),
+        ),
+        UseAsyncState::Ready(Ok(None)) => (
+            html!(<PageHeading sticky=false>{title} {" "} </PageHeading>),
+            html!(<NotFound/>),
+        ),
+        UseAsyncState::Ready(Ok(Some(data))) => {
+            let download_button = match &*sbom_index {
+                UseAsyncState::Ready(Ok(Some(data_index))) => {
+                    let filename = format!("{}.json", data_index.name);
+                    html!(<LocalDownloadButton data={data.get_source()} r#type="sbom" filename={filename} />)
+                }
+                _ => {
+                    html!(<LocalDownloadButton data={data.get_source()} r#type="sbom" filename={clean_ext(&props.id)} />)
+                }
+            };
+
+            (
+                html!(
+                    <PageSection variant={PageSectionVariant::Light} >
+                        <Flex>
+                            <FlexItem>
+                                <Content>
+                                    <Title>
+                                        {title} {" "} <Label label={data.type_name()} color={Color::Blue} />
+                                    </Title>
+                                    <p>
+                                        {"To generate a report, SBOM content will be processed by Red Hat’s Dependency Analytics Service. The SBOM data will be deleted from the Dependency Analytics Service once the report has been generated. Contact"}
+                                        {" "}<a href="mailto:rhtpa-support@redhat.com">{"rhtpa-support@redhat.com"}</a>{" "}
+                                        {"if you have any questions or concerns."}
+                                    </p>
+                                </Content>
+                            </FlexItem>
+                            <FlexItem modifiers={[FlexModifier::Align(Alignment::Right), FlexModifier::Align(Alignment::End)]}>
+                                {download_button}
+                            </FlexItem>
+                        </Flex>
+                    </PageSection>
+                ),
+                html!(<Details id={props.id.clone()} sbom={data.clone()}/> ),
+            )
+        }
+        UseAsyncState::Ready(Err(err)) => (
+            html!(<PageHeading>{title}</PageHeading>),
+            html!(<PageSection fill={PageSectionFill::Fill}><Error err={err.to_string()} /></PageSection>),
+        ),
     };
 
     html!(
         <>
-          {title.unwrap_or(props.id.clone())}
+            { heading }
+            { content }
         </>
     )
 }
@@ -159,7 +150,7 @@ fn details(props: &DetailsProps) -> Html {
                         <Tabs<TabIndex> inset={TabInset::Page} detached=true selected={*tab} {onselect}>
                             <Tab<TabIndex> index={TabIndex::Info} title="Info" />
                             <Tab<TabIndex> index={TabIndex::Packages} title="Packages" />
-                            <Tab<TabIndex> index={TabIndex::Overview} title="Related advisories" />
+                            <Tab<TabIndex> index={TabIndex::Overview} title="Related vulnerabilities" />
                             { for config.features.show_report.then(|| html_nested!(
                                 <Tab<TabIndex> index={TabIndex::Report} title="Dependency Analytics Report" />
                             )) }
@@ -210,7 +201,7 @@ fn details(props: &DetailsProps) -> Html {
                         <Tabs<TabIndex> inset={TabInset::Page} detached=true selected={*tab} {onselect}>
                             <Tab<TabIndex> index={TabIndex::Info} title="Info" />
                             <Tab<TabIndex> index={TabIndex::Packages} title="Packages" />
-                            <Tab<TabIndex> index={TabIndex::Overview} title="Related advisories" />
+                            <Tab<TabIndex> index={TabIndex::Overview} title="Related vulnerabilities" />
                             { for config.features.show_report.then(|| html_nested!(
                                 <Tab<TabIndex> index={TabIndex::Report} title="Dependency Analytics Report" />
                             )) }

@@ -1,4 +1,10 @@
+use anyhow::Context;
+use collector_osv::client::schema::SeverityType;
+use collector_osv::client::OsvClient;
+use cve::published::Metric;
+use cve::Published;
 use prometheus::Registry;
+use serde_json::json;
 use std::collections::HashSet;
 use std::ffi::OsStr;
 use std::path::PathBuf;
@@ -119,9 +125,10 @@ impl Run {
 
                     log::info!("Processing {} files", files.len());
 
+                    let osv_client = OsvClient::default();
                     for (key, path) in files.iter().rev() {
                         log::info!("Processing: {key}");
-                        let data = tokio::fs::read(path).await?;
+                        let data = Self::get_cve_data(&osv_client, path).await?;
 
                         const MAX_RETRIES: usize = 10;
                         for retry in 0..MAX_RETRIES {
@@ -147,5 +154,116 @@ impl Run {
             )
             .await?;
         Ok(ExitCode::SUCCESS)
+    }
+
+    async fn get_cve_data(osv_client: &OsvClient, path_buf: &PathBuf) -> anyhow::Result<Vec<u8>> {
+        let data = tokio::fs::read(path_buf).await?;
+
+        // Just interested in Published CVE because for Rejected CVE the 'cna' field has no 'metrics' field
+        if let Ok(mut cve) = serde_json::from_slice::<Published>(&data) {
+            if cve.containers.cna.metrics.is_empty() {
+                let result = osv_client.vulns(&cve.metadata.id).await;
+                match result {
+                    Ok(option) => {
+                        if let Some(vulnerability) = option {
+                            if let Some(severities) = &vulnerability.severity {
+                                for severity in severities {
+                                    let mut metric = Metric {
+                                        format: None,
+                                        scenarios: vec![],
+                                        cvss_v3_1: None,
+                                        cvss_v3_0: None,
+                                        cvss_v2_0: None,
+                                        other: None,
+                                    };
+                                    if matches!(severity.severity_type, SeverityType::CVSSv3) {
+                                        let vector_string = json!({ "vectorString": &severity.score });
+                                        match &severity.score.get(..8) {
+                                            Some("CVSS:3.1") => metric.cvss_v3_1 = Some(vector_string),
+                                            Some("CVSS:3.0") => metric.cvss_v3_0 = Some(vector_string),
+                                            _ => {}
+                                        }
+                                        cve.containers.cna.metrics.push(metric);
+                                        log::info!(
+                                            "Enhanced CVE {} with vectorString {}",
+                                            &cve.metadata.id,
+                                            &severity.score
+                                        );
+                                    } else if matches!(severity.severity_type, SeverityType::CVSSv2) {
+                                        let vector_string = json!({ "vectorString": &severity.score });
+                                        metric.cvss_v2_0 = Some(vector_string);
+                                        cve.containers.cna.metrics.push(metric);
+                                        log::info!(
+                                            "Enhanced CVE {} with vectorString {}",
+                                            &cve.metadata.id,
+                                            &severity.score
+                                        );
+                                    }
+                                }
+                                return serde_json::to_vec::<Published>(&cve)
+                                    .context("CVE should have been serialized into Vec<u8>");
+                            }
+                        }
+                    }
+                    Err(err) => log::warn!(
+                        "Failed to get vulnerability from OSV for CVE {} ({})",
+                        &cve.metadata.id,
+                        err
+                    ),
+                }
+            }
+        }
+        Ok(data)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::Run;
+    use collector_osv::client::OsvClient;
+    use cve::Published;
+    use std::path::PathBuf;
+
+    #[tokio::test]
+    async fn test_get_cve_data_cvss31() {
+        let vec = Run::get_cve_data(&OsvClient::new(), &PathBuf::from(r"../testdata/CVE-2023-33201.json"))
+            .await
+            .unwrap();
+        assert_eq!(vec.len(), 1637);
+        if let Ok(cve) = serde_json::from_slice::<Published>(&vec) {
+            assert_eq!(cve.containers.cna.metrics.len(), 1);
+            assert!(
+                cve.containers.cna.metrics[0].cvss_v3_1.as_ref().unwrap()["vectorString"]
+                    .as_str()
+                    .unwrap()
+                    .starts_with("CVSS:3.1")
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn test_get_cve_data_cvss30() {
+        let vec = Run::get_cve_data(&OsvClient::new(), &PathBuf::from(r"../testdata/CVE-2017-13052.json"))
+            .await
+            .unwrap();
+        assert_eq!(vec.len(), 1701);
+        if let Ok(cve) = serde_json::from_slice::<Published>(&vec) {
+            assert_eq!(cve.containers.cna.metrics.len(), 1);
+            assert!(
+                cve.containers.cna.metrics[0].cvss_v3_0.as_ref().unwrap()["vectorString"]
+                    .as_str()
+                    .unwrap()
+                    .starts_with("CVSS:3.0")
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn test_get_cve_data_rejected() {
+        let vec = Run::get_cve_data(&OsvClient::new(), &PathBuf::from(r"../testdata/CVE-2021-3601.json"))
+            .await
+            .unwrap();
+        // original size is 1062 so the test ensures no changes are applied in case of a Rejected CVE
+        assert_eq!(vec.len(), 1062);
     }
 }

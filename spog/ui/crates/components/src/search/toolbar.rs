@@ -33,7 +33,7 @@ pub fn search_toolbar(props: &SearchToolbarProperties) -> Html {
                             <InputGroup>
                                 <TextInputGroup>
                                     <TextInput
-                                        autofocus=true
+                                        autofocus=false
                                         icon={Icon::Search}
                                         size="64"
                                         placeholder="Search"
