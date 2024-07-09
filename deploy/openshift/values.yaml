@@ -157,6 +157,8 @@ guac:
   database:
     enabled: true
     image: ${POSTGRESQL_IMAGE}
+    admin_db_secret_name: ${GUAC_ADMIN_DB_SECRET_NAME}
+    user_db_secret_name: ${GUAC_USER_DB_SECRET_NAME}
   initJob:
     serviceAccountName: ${GUAC_INIT_JOB_SERVICE_ACCOUNT}
   graphql:
@@ -168,12 +170,12 @@ oidcClients:
     issuerUrl: ${ISSUER_URL}
     scopes: "openid email id.username api.trusted_content"
     clientId:
-      value: trusted-content-frontend
+      value: ${OIDC_SPOG_CLIENT_ID}
   walker:
     issuerUrl: ${ISSUER_URL}
     scopes: "openid id.username"
     clientId:
-      value: trusted-content-api
+      value: ${OIDC_API_CLIENT_ID}
     clientSecret:
       valueFrom:
         secretKeyRef:
@@ -183,12 +185,12 @@ oidcClients:
     issuerUrl: ${ISSUER_URL}
     scopes: "openid id.username"
     clientId:
-      value: trusted-content-api
+      value: ${OIDC_API_CLIENT_ID}
   testingUser:
     issuerUrl: ${ISSUER_URL}
     scopes: "openid id.username"
     clientId:
-      value: trusted-content-api
+      value: ${OIDC_API_CLIENT_ID}
 dataset:
   enabled: false
   enabledJob: ${{DATASET_ENABLED_JOB}}
