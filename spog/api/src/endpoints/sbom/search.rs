@@ -6,7 +6,6 @@ use spog_model::search::SbomSummary;
 use tracing::instrument;
 use spog_model::package_info::PackageInfo;
 use spog_model::prelude::SummaryEntry;
-use spog_model::vuln::SbomReport;
 use trustification_api::search::{SearchOptions, SearchResult};
 use trustification_auth::client::TokenProvider;
 use v11y_model::search::Cves::{Low, Severity};
@@ -100,33 +99,38 @@ async fn search_advisories(state: web::Data<AppState>, sboms: &mut Vec<SbomSumma
 }
 
 pub async fn sboms_with_vulnerability_summary() -> actix_web::Result<HttpResponse> {
-
     let mut summary: Vec<(String, &Vec<SummaryEntry>)> = vec![];
 
-    let summaryEntryNone: SummaryEntry = SummaryEntry{
+    let summaryEntryNone: SummaryEntry = SummaryEntry {
         severity: Severity::None,
         count: 3,
     };
-    let summaryEntryLow: SummaryEntry = SummaryEntry{
+    let summaryEntryLow: SummaryEntry = SummaryEntry {
         severity: Severity::Low,
         count: 5,
     };
-    let summaryEntryMedium: SummaryEntry = SummaryEntry{
+    let summaryEntryMedium: SummaryEntry = SummaryEntry {
         severity: Severity::Medium,
         count: 10,
     };
-    let summaryEntryHigh: SummaryEntry = SummaryEntry{
+    let summaryEntryHigh: SummaryEntry = SummaryEntry {
         severity: Severity::High,
         count: 4,
     };
-    let summaryEntryCritical: SummaryEntry = SummaryEntry{
+    let summaryEntryCritical: SummaryEntry = SummaryEntry {
         severity: Severity::Critical,
         count: 2,
     };
-    let entries: Vec<SummaryEntry> = vec![summaryEntryNone, summaryEntryLow,summaryEntryMedium,summaryEntryHigh,summaryEntryCritical];
-    summary.push(("sbom1".into(),&entries));
-    summary.push(("sbom2".into(),&entries));
-    summary.push(("sbom3".into(),&entries));
+    let entries: Vec<SummaryEntry> = vec![
+        summaryEntryNone,
+        summaryEntryLow,
+        summaryEntryMedium,
+        summaryEntryHigh,
+        summaryEntryCritical,
+    ];
+    summary.push(("sbom1".into(), &entries));
+    summary.push(("sbom2".into(), &entries));
+    summary.push(("sbom3".into(), &entries));
 
     Ok(HttpResponse::Ok().json(summary))
 }
