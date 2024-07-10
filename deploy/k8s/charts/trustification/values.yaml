@@ -74,6 +74,9 @@ v11y:
     failed: v11y-failed
     indexed: v11y-indexed
 
+report:
+  auth:
+    enabled: true
 
 modules:
 
@@ -217,6 +220,5 @@ modules:
     enabled: false
     ingress: {}
     image: {}
-    enabledAuth: false
 
 workarounds: {}

@@ -46,7 +46,7 @@ spec:
               subPath: nginx.conf
               readOnly: true
 
-            {{- if $mod.module.enabledAuth}}
+            {{- if .Values.report.auth.enabled }}
             - name: auth-secret-volume
               mountPath: /etc/nginx/.htpasswd
               subPath: .htpasswd
@@ -60,10 +60,10 @@ spec:
         - name: config-volume
           configMap:
             name: {{ include "trustification.common.name" $mod }}-nginx-config
-        {{- if $mod.module.enabledAuth}}
+        {{- if .Values.report.auth.enabled }}
         - name: auth-secret-volume
           secret:
             secretName: report-auth-secret
-        {{- end}}
+        {{- end }}
 
 {{ end }}

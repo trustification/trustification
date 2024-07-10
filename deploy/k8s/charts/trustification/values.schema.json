@@ -152,6 +152,23 @@
         }
       }
     },
+    "report": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "auth": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "username": {
+            "$ref": "#/definitions/ValueOrRef"
+          },
+          "password": {
+            "$ref": "#/definitions/ValueOrRef"
+          }
+        }
+      }
+    },
     "tls": {
       "type": "object",
       "properties": {
@@ -815,11 +832,6 @@
             },
             {
               "$ref": "#/definitions/Ingress"
-            },
-            {
-              "enabled_auth": {
-                "type": "boolean"
-              }
             }
           ]
         },
@@ -1531,7 +1543,7 @@
     },
     "SyncInterval": {
       "type": "string",
-      "description": "The interval between syncing the indexes. This must be in the \"humantime\" format, for\nexample: `2m` (two minutes), `30s` (30 seconds). \n"
+      "description": "The interval between syncing the indexes. This must be in the \"humantime\" format, for\nexample: `2m` (two minutes), `30s` (30 seconds).\n"
     },
     "GlobalIndexConfig": {
       "type": "object",
