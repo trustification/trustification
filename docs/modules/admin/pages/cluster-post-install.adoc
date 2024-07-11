@@ -189,3 +189,37 @@ NOTE: After changing the values in values file, be sure to re-apply the Helm cha
 Choosing a reasonable interval depends on various factors. On the one side, the more often the indexes are
  synchronized, the sooner a search result will be visiable to the user. On the other side, the more frequent indexes
 are being synchronized, the more bytes will be transferred. And transferred bytes might add to your AWS bill.
+
+== Enabling ingestion report
+
+During ingestion process, jobs can generate reports regarding warnings and errors encountered during the process.
+The report is turned off by default. Tu turn it on, you need to enable the module and set authentication details im the
+values file.
+
+[source,yaml]
+----
+
+report:
+  auth:
+    enabled: true
+    username: admin
+    password: admin123456
+
+modules:
+  report:
+    enabled: false
+----
+
+You can also provide these settings as parameters directly to the helm command
+
+[source,bash]
+----
+helm upgrade --install -n $NAMESPACE trustification charts/trustification --values values-ocp-no-aws.yaml --set-string appDomain=$APP_DOMAIN --set image.registry=ghcr.io/dejanb --set image.version=latest --set image.pullPolicy=Always  --set modules.report.enabled=true --set report.auth.username=admin --set report.auth.password=admin123456
+----
+
+The reports then should be available at the URL of the appropriate route.
+
+[source,bash]
+----
+oc get route -o jsonpath='{"https://"}{range .items[?(@.spec.to.name=="report-server")]}{.spec.host}{"\n"}{end}'
+----
