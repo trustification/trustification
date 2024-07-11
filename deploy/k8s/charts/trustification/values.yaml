@@ -219,6 +219,10 @@ modules:
   report:
     enabled: false
     ingress: {}
-    image: {}
+    image:
+      name: ubi8/nginx-122
+      registry: registry.access.redhat.com
+      pullPolicy: IfNotPresent
+      version: "1-75"
 
 workarounds: {}
