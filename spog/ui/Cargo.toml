@@ -29,7 +29,7 @@ log = "0.4"
 markdown = "1.0.0-alpha.11"
 monaco = { version = "0.5", features = ["yew-components"] }
 openidconnect = "3"
-packageurl = "0.3"
+packageurl = "0.4"
 patternfly-yew = { version = "0.6.0", features = ["icons-fab", "tree"] }
 popper-rs = { version = "0.3.2", features = ["yew"] }
 reqwest = { version = "0.11", features = ["json"] }
@@ -104,8 +104,6 @@ members = [
 
 csaf = { git = "https://github.com/ctron/csaf-rs", rev = "183326beac525d58962f78be8eca973017702753" } # FIXME: waiting for release #16 #28
 monaco = { git = "https://github.com/siku2/rust-monaco", rev = "8b8eb78004709058399c2d0dfa7c460d30fe62fd" } # FIXME: waiting for release 0.5.0
-
-packageurl = { git = "https://github.com/ctron/packageurl.rs", rev = "c9a0c192ff0cba5d75b8cbf8be0b1e4dc14320aa" }
 
 #sikula = { git = "https://github.com/ctron/sikula", rev = "023c27232f016b80a34c8ed77b88d1c30dcae6e0" }
 

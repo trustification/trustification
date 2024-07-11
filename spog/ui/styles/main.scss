@@ -63,3 +63,12 @@ header {
 .tc-package-tree .pf-v5-c-accordion__expandable-content-body {
   padding-right: 0 !important;
 }
+
+// Advisory Vulnerability/remediations
+
+table.advisory_vulnerability_remediation
+  .pf-v5-c-table__expandable-row-content
+  .pf-v5-c-content {
+  overflow-wrap: break-word;
+  max-width: 550px;
+}

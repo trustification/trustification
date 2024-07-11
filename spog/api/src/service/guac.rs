@@ -147,7 +147,8 @@ impl GuacService {
     }
 
     #[instrument(skip(self, purl), fields(purl = %purl), ret, err)]
-    pub async fn certify_vuln(&self, purl: PackageUrl<'_>) -> Result<Vec<CertifyVuln>, Error> {
+    pub async fn certify_vuln(&self, purl: &str) -> Result<Vec<CertifyVuln>, Error> {
+        let purl = PackageUrl::from_str(purl)?;
         Ok(self
             .client
             .intrinsic()

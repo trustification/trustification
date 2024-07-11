@@ -46,6 +46,10 @@ pub struct Run {
     )]
     pub(crate) csub_url: Url,
 
+    /// Path to the Collect Sub client CA Certificate PEM.
+    #[arg(env, long = "csub-ca-certificate-pem-path")]
+    pub(crate) csub_ca_certificate_pem_path: Option<String>,
+
     #[arg(env, long = "collector-config")]
     pub(crate) collector_config: Option<PathBuf>,
 
@@ -97,6 +101,7 @@ impl Run {
                         self.csub_url,
                         provider,
                         self.devmode,
+                        self.csub_ca_certificate_pem_path,
                     )
                     .await?;
 
@@ -144,6 +149,7 @@ impl Run {
         csub_url: Url,
         provider: P,
         devmode: bool,
+        ca_certificate_pem_path: Option<String>,
     ) -> anyhow::Result<Arc<AppState>>
     where
         P: TokenProvider + Clone + 'static,
@@ -166,7 +172,17 @@ impl Run {
         };
 
         let base = base.unwrap_or_else(|| ".".into());
-        let state = Arc::new(AppState::new(client, base, &collectorist_config, csub_url, provider).await?);
+        let state = Arc::new(
+            AppState::new(
+                client,
+                base,
+                &collectorist_config,
+                csub_url,
+                provider,
+                ca_certificate_pem_path,
+            )
+            .await?,
+        );
         Ok(state)
     }
 }
