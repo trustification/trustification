@@ -4,10 +4,11 @@ use std::str::FromStr;
 use std::sync::Arc;
 
 use actix_web::{post, web, HttpResponse, Responder, ResponseError};
+use anyhow::anyhow;
 use derive_more::Display;
 use guac::client::intrinsic::certify_vuln::ScanMetadataInput;
 use guac::client::intrinsic::vuln_equal::VulnEqualInputSpec;
-use guac::client::intrinsic::vuln_metadata::{VulnerabilityMetadataInputSpec, VulnerabilityScoreType};
+//use guac::client::intrinsic::vuln_metadata::{VulnerabilityMetadataInputSpec, VulnerabilityScoreType};
 use guac::client::intrinsic::vulnerability::VulnerabilityInputSpec;
 use packageurl::PackageUrl;
 use utoipa::OpenApi;
@@ -76,6 +77,8 @@ impl From<&CollectPackagesRequest> for QueryBatchRequest {
             queries: request
                 .purls
                 .iter()
+                // OSV works only with PURLs so excluding CPEs
+                .filter(|purl| purl.starts_with("pkg:"))
                 .map(|e| QueryPackageRequest {
                     package: Package::Purl { purl: e.clone() },
                 })
@@ -109,7 +112,6 @@ pub async fn collect_packages(
     // while also collecting all relevant errors along the way.
     let mut collected_guac_errors = Vec::new();
     let mut collected_osv_errors = Vec::new();
-    let mut collected_v11y_errors = Vec::new();
 
     for entry in &response.results {
         if let Some(vulns) = &entry.vulns {
@@ -137,19 +139,30 @@ pub async fn collect_packages(
                         if !vuln.id.to_lowercase().starts_with("cve") {
                             match state.osv.vulns(&vuln.id).await {
                                 Ok(Some(osv_vuln)) => {
-                                    if let Some(aliases) = &osv_vuln.aliases {
-                                        for alias in aliases {
-                                            if alias.to_lowercase().starts_with("cve") {
-                                                vulnerability_input_specs.push(VulnerabilityInputSpec {
-                                                    r#type: "cve".to_string(),
-                                                    vulnerability_id: alias.clone(),
-                                                });
-                                            } else {
-                                                alias_vuln_input_specs.push(VulnerabilityInputSpec {
-                                                    r#type: "osv".to_string(),
-                                                    vulnerability_id: alias.clone(),
-                                                })
+                                    match &osv_vuln.aliases {
+                                        Some(aliases) => {
+                                            for alias in aliases {
+                                                if alias.to_lowercase().starts_with("cve") {
+                                                    vulnerability_input_specs.push(VulnerabilityInputSpec {
+                                                        r#type: "cve".to_string(),
+                                                        vulnerability_id: alias.clone(),
+                                                    });
+                                                } else {
+                                                    alias_vuln_input_specs.push(VulnerabilityInputSpec {
+                                                        r#type: "osv".to_string(),
+                                                        vulnerability_id: alias.clone(),
+                                                    })
+                                                }
                                             }
+                                        }
+                                        // No CVE ID alias found, re https://issues.redhat.com/browse/TC-1582
+                                        // check the comment below because now the lack of a CVE ID is reported as an OSV error
+                                        None => {
+                                            log::warn!(
+                                                "OSV vulnerability CVE alias retrieval for {} found no alias",
+                                                vuln.id
+                                            );
+                                            collected_osv_errors.push(anyhow!(Error::Osv));
                                         }
                                     }
 
@@ -162,12 +175,6 @@ pub async fn collect_packages(
                                             }
                                         }
                                     }
-
-                                    let v11y_vuln = v11y_client::Vulnerability::from(osv_vuln);
-                                    if let Err(err) = state.v11y_client.ingest_vulnerability(&v11y_vuln).await {
-                                        log::warn!("v11y error: {err}");
-                                        collected_v11y_errors.push(err);
-                                    }
                                 }
                                 Ok(None) => {
                                     // not found, do not add it to the response.
@@ -178,14 +185,22 @@ pub async fn collect_packages(
                                 }
                             }
                         }
-                        if vulnerability_input_specs.is_empty() {
-                            // if no CVE ID alias has been found, then worth adding vulnerability with
-                            // the original vuln.id value
-                            vulnerability_input_specs.push(VulnerabilityInputSpec {
-                                r#type: "osv".to_string(),
-                                vulnerability_id: vuln.id.clone(),
-                            })
-                        } else {
+                        // After https://issues.redhat.com/browse/TC-1582, it's not worth adding it
+                        // if no CVE ID has been found because trustification isn't able to manage
+                        // other types of IDs, e.g. GHSA IDs, i.e. GHSA-9vm7-v8wj-3fqw
+                        // This is going to be commented waiting for an improved vulnerabilities
+                        // management capable of managing multiple IDs
+                        /*
+                                                if vulnerability_input_specs.is_empty() {
+                                                    // if no CVE ID alias has been found, then worth adding vulnerability with
+                                                    // the original vuln.id value
+                                                    vulnerability_input_specs.push(VulnerabilityInputSpec {
+                                                        r#type: "osv".to_string(),
+                                                        vulnerability_id: vuln.id.clone(),
+                                                    })
+                                                } else {
+                        */
+                        if !vulnerability_input_specs.is_empty() {
                             // otherwise the original vulnerability must be part of the aliases
                             alias_vuln_input_specs.push(VulnerabilityInputSpec {
                                 r#type: "osv".to_string(),
@@ -260,29 +275,29 @@ pub async fn collect_packages(
                                     }
                                 }
 
-                                for cvss_v3 in &cvss_v3s {
-                                    if let Err(err) = state
-                                        .guac_client
-                                        .intrinsic()
-                                        .ingest_vuln_metadata(
-                                            &vulnerability_input_spec,
-                                            &VulnerabilityMetadataInputSpec {
-                                                score_type: if cvss_v3.minor_version == 0 {
-                                                    VulnerabilityScoreType::CVSSv3
-                                                } else {
-                                                    VulnerabilityScoreType::CVSSv31
-                                                },
-                                                score_value: cvss_v3.score().value(),
-                                                timestamp: Default::default(),
-                                                origin: "osv".to_string(),
-                                                collector: "osv".to_string(),
-                                            },
-                                        )
-                                        .await
-                                    {
-                                        collected_guac_errors.push(err)
-                                    }
-                                }
+                                // for cvss_v3 in &cvss_v3s {
+                                //     if let Err(err) = state
+                                //         .guac_client
+                                //         .intrinsic()
+                                //         .ingest_vuln_metadata(
+                                //             &vulnerability_input_spec,
+                                //             &VulnerabilityMetadataInputSpec {
+                                //                 score_type: if cvss_v3.minor_version == 0 {
+                                //                     VulnerabilityScoreType::CVSSv3
+                                //                 } else {
+                                //                     VulnerabilityScoreType::CVSSv31
+                                //                 },
+                                //                 score_value: cvss_v3.score().value(),
+                                //                 timestamp: Default::default(),
+                                //                 origin: "osv".to_string(),
+                                //                 collector: "osv".to_string(),
+                                //             },
+                                //         )
+                                //         .await
+                                //     {
+                                //         collected_guac_errors.push(err)
+                                //     }
+                                // }
                             }
                         }
                     }
@@ -296,7 +311,6 @@ pub async fn collect_packages(
         collected_osv_errors
             .iter()
             .map(|err| err.to_string())
-            .chain(collected_v11y_errors.iter().map(|err| err.to_string()))
             .chain(collected_guac_errors.iter().map(|err| err.to_string())),
     );
 

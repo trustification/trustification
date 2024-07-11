@@ -479,7 +479,7 @@ dependencies = [
  "chrono",
  "cpe",
  "cvss",
- "packageurl",
+ "packageurl 0.3.0",
  "serde",
  "serde_json",
  "serde_with",
@@ -489,16 +489,15 @@ dependencies = [
 
 [[package]]
 name = "curve25519-dalek"
-version = "4.1.2"
+version = "4.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0a677b8922c94e01bdbb12126b0bc852f00447528dee1782229af9c720c3f348"
+checksum = "97fb8b7c4503de7d6ae7b42ab72a5a59857b4c937ec27a3d4539dba95b5ab2be"
 dependencies = [
  "cfg-if",
  "cpufeatures",
  "curve25519-dalek-derive",
  "digest",
  "fiat-crypto",
- "platforms",
  "rustc_version",
  "subtle",
  "zeroize",
@@ -546,7 +545,7 @@ dependencies = [
  "fluent-uri",
  "once_cell",
  "ordered-float 4.2.0",
- "packageurl",
+ "packageurl 0.3.0",
  "regex",
  "serde",
  "serde_json",
@@ -2021,7 +2020,18 @@ dependencies = [
 [[package]]
 name = "packageurl"
 version = "0.3.0"
-source = "git+https://github.com/ctron/packageurl.rs?rev=c9a0c192ff0cba5d75b8cbf8be0b1e4dc14320aa#c9a0c192ff0cba5d75b8cbf8be0b1e4dc14320aa"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c53362339d1c48910f1b0c35e2ae96e2d32e442c7dc3ac5f622908ec87221f08"
+dependencies = [
+ "percent-encoding",
+ "thiserror",
+]
+
+[[package]]
+name = "packageurl"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7fd2afe7e71d621b1771201bcdede645dd1a404012cdd6673b56d10be495f2a8"
 dependencies = [
  "percent-encoding",
  "serde",
@@ -2157,12 +2167,6 @@ name = "pkg-config"
 version = "0.3.30"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d231b230927b5e4ad203db57bbcbee2802f6bce620b1e4a9024a07d94e2907ec"
-
-[[package]]
-name = "platforms"
-version = "3.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "db23d408679286588f4d4644f965003d056e3dd5abcaaa938116871d7ce2fee7"
 
 [[package]]
 name = "popper-rs"
@@ -2922,7 +2926,7 @@ dependencies = [
  "csaf",
  "cvss",
  "exhort-model",
- "packageurl",
+ "packageurl 0.4.0",
  "schemars",
  "serde",
  "serde_json",
@@ -2962,7 +2966,7 @@ dependencies = [
  "markdown",
  "monaco",
  "openidconnect",
- "packageurl",
+ "packageurl 0.4.0",
  "patternfly-yew",
  "popper-rs",
  "reqwest",
@@ -3020,7 +3024,7 @@ dependencies = [
  "js-sys",
  "log",
  "openidconnect",
- "packageurl",
+ "packageurl 0.4.0",
  "reqwest",
  "schemars",
  "serde",
@@ -3065,7 +3069,7 @@ dependencies = [
  "log",
  "markdown",
  "openidconnect",
- "packageurl",
+ "packageurl 0.4.0",
  "patternfly-yew",
  "reqwest",
  "roxmltree",
@@ -3115,7 +3119,7 @@ dependencies = [
  "log",
  "monaco",
  "openidconnect",
- "packageurl",
+ "packageurl 0.4.0",
  "patternfly-yew",
  "reqwest",
  "roxmltree",
