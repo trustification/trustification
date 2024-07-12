@@ -4,6 +4,7 @@ mod delete;
 mod reindex;
 mod upload;
 
+/// Run admin services (`trust admin --help` for details)
 #[derive(clap::Subcommand, Debug)]
 pub enum Command {
     #[command(subcommand)]

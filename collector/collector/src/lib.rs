@@ -1,5 +1,6 @@
 use std::process::ExitCode;
 
+/// Run collector services (`trust collector --help` for details)
 #[derive(clap::Subcommand, Debug)]
 pub enum Command {
     Osv(collector_osv::Run),
