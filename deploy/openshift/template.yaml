@@ -595,7 +595,7 @@ objects:
         app.kubernetes.io/component: collector
         app.kubernetes.io/part-of: trustification
     spec:
-      replicas: 1
+      replicas: ${{COLLECTOR_OSV_REPLICAS}}
       strategy:
         type: Recreate
       selector:
@@ -2456,6 +2456,8 @@ parameters:
 - name: BOMBASTIC_INDEXER_REPLICAS
   required: true
 - name: COLLECTORIST_API_REPLICAS
+  required: true
+- name: COLLECTOR_OSV_REPLICAS
   required: true
 - name: EXHORT_API_REPLICAS
   required: true
