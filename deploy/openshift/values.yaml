@@ -117,6 +117,7 @@ collector:
     logLevel: ${LOG_LEVEL}
   osv:
     enabled: true
+    replicas: ${{COLLECTOR_OSV_REPLICAS}}
     resources: ${{COLLECTOR_OSV_RESOURCES}}
     logLevel: ${LOG_LEVEL}
 vexination:
