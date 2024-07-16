@@ -98,7 +98,7 @@ v11y:
     schedule: ${V11Y_WALKER_SCHEDULE}
     resources: ${{V11Y_WALKER_RESOURCES}}
 collectorist:
-  enabled: false
+  enabled: true
   api:
     replicas: ${{COLLECTORIST_API_REPLICAS}}
     resources: ${{COLLECTORIST_RESOURCES}}
@@ -116,7 +116,8 @@ collector:
     resources: ${{COLLECTOR_SNYK_RESOURCES}}
     logLevel: ${LOG_LEVEL}
   osv:
-    enabled: false
+    enabled: true
+    replicas: ${{COLLECTOR_OSV_REPLICAS}}
     resources: ${{COLLECTOR_OSV_RESOURCES}}
     logLevel: ${LOG_LEVEL}
 vexination:
