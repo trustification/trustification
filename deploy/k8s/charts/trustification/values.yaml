@@ -75,8 +75,7 @@ v11y:
     indexed: v11y-indexed
 
 report:
-  auth:
-    enabled: true
+  enabled: false
 
 modules:
 
@@ -216,8 +215,8 @@ modules:
     image: {}
     rust: {}
 
-  report:
-    enabled: false
+  reportServer:
+    enabled: true
     ingress: {}
     image:
       name: ubi8/nginx-122

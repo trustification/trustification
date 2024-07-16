@@ -1,5 +1,5 @@
 {{- if .Values.modules.bombasticWalker.enabled }}
-{{- $reportEnable := .Values.modules.report.enabled }}
+{{- $reportEnabled := .Values.report.enabled }}
 {{- range $sourceName, $source := .Values.modules.bombasticWalker.sources }}
 
 {{/* A unique name for the walker */}}
@@ -76,8 +76,8 @@ spec:
                 - "--since-file"
                 - "/walker-state/since"
                 - "--report-enable"
-                - "{{$reportEnable}}"
-                {{- if $reportEnable }}
+                - "{{$reportEnabled}}"
+                {{- if $reportEnabled }}
                 - "--report-path"
                 - "/tmp/share/report"
                 {{- end }}
@@ -109,7 +109,7 @@ spec:
                 {{- include "trustification.application.infrastructure.podPorts" $mod | nindent 16 }}
 
               volumeMounts:
-                {{- if $reportEnable }}
+                {{- if $reportEnabled }}
                 - name: report-path
                   mountPath: /tmp/share/report
 
@@ -119,7 +119,7 @@ spec:
                 {{- include "trustification.application.extraVolumeMounts" $mod | nindent 16 }}
 
           volumes:
-            {{- if $reportEnable }}
+            {{- if $reportEnabled }}
             - name: report-path
               persistentVolumeClaim:
                 claimName: report-server
@@ -130,7 +130,7 @@ spec:
                 claimName: {{ include "trustification.common.name" $mod }}
             {{- include "trustification.application.extraVolumes" $mod | nindent 12 }}
 
-          {{- if $reportEnable }}
+          {{- if $reportEnabled }}
           affinity:
             podAffinity:
               requiredDuringSchedulingIgnoredDuringExecution:

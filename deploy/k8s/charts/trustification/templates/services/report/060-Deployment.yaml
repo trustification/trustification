@@ -1,5 +1,5 @@
-{{- if and .Values.modules.report.enabled }}
-{{- $mod := dict "root" . "name" "report-server" "component" "report" "module" .Values.modules.report -}}
+{{- if and .Values.report.enabled }}
+{{- $mod := dict "root" . "name" "report-server" "component" "report" "module" .Values.modules.reportServer -}}
 
 apiVersion: apps/v1
 kind: Deployment
@@ -46,12 +46,7 @@ spec:
               subPath: nginx.conf
               readOnly: true
 
-            {{- if .Values.report.auth.enabled }}
-            - name: auth-secret-volume
-              mountPath: /etc/nginx/.htpasswd
-              subPath: .htpasswd
-              readOnly: true
-            {{- end}}
+            {{- include "trustification.report.auth.volumeMount" $mod | nindent 12 }}
 
       volumes:
         - name: wwwdata
@@ -60,10 +55,6 @@ spec:
         - name: config-volume
           configMap:
             name: {{ include "trustification.common.name" $mod }}-nginx-config
-        {{- if .Values.report.auth.enabled }}
-        - name: auth-secret-volume
-          secret:
-            secretName: report-auth-secret
-        {{- end }}
+        {{- include "trustification.report.auth.volume" $mod | nindent 8 }}
 
 {{ end }}

@@ -1,5 +1,5 @@
-{{- if and .Values.modules.report.enabled }}
-{{- $mod := dict "root" . "name" "report-server" "component" "report" "module" .Values.modules.report -}}
+{{- if and .Values.report.enabled }}
+{{- $mod := dict "root" . "name" "report-server" "component" "report" "module" .Values.modules.reportServer -}}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -16,7 +16,7 @@ data:
         root /opt/app-root/src;
 
         location / {
-            {{- if .Values.report.auth.enabled }}
+            {{- if (.Values.report.auth) }}
             auth_basic  "Report Area";
             auth_basic_user_file /etc/nginx/.htpasswd;
             {{- end }}

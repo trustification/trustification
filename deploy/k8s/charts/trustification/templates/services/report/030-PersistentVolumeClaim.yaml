@@ -1,5 +1,5 @@
-{{- if and .Values.modules.report.enabled }}
-{{- $mod := dict "root" . "name" "report-server" "component" "report" "module" .Values.modules.report -}}
+{{- if and .Values.report.enabled }}
+{{- $mod := dict "root" . "name" "report-server" "component" "report" "module" .Values.modules.reportServer -}}
 
 kind: PersistentVolumeClaim
 apiVersion: v1
