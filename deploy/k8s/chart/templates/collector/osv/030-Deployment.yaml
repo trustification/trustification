@@ -8,7 +8,7 @@ metadata:
     app.kubernetes.io/component: collector
     app.kubernetes.io/part-of: trustification
 spec:
-  replicas: 1
+  replicas: {{ .Values.collector.osv.replicas | default 1 }}
   strategy:
     type: Recreate
   selector:
