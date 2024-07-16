@@ -746,7 +746,7 @@ objects:
                 - -p
                 - '8080'
                 - --csub-url
-                - http://guac-collectsub.trustification-stage.svc.cluster.local:2782
+                - http://guac-collectsub.$(NAMESPACE).svc.cluster.local:2782
                 - --auth-configuration
                 - /etc/config/auth.yaml
                 - --storage-base
