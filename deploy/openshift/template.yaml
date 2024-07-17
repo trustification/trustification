@@ -2042,8 +2042,9 @@ objects:
                   workingDir: /git
                   args:
                     - -ec
-                    - "if test -d cvelistV5; then\n  cd cvelistV5\n  git pull\nelse\n\
-                      \  git clone https://github.com/CVEProject/cvelistV5\nfi\n"
+                    - "if test -d cvelistV5; then\n  cd cvelistV5\n  git stash\n \
+                      \ git stash clear\n  git pull\nelse\n  git clone https://github.com/CVEProject/cvelistV5\n\
+                      fi\n"
               containers:
                 - image: ${BACKEND_IMAGE}:${IMAGE_TAG}
                   imagePullPolicy: Always
