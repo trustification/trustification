@@ -86,7 +86,7 @@ pub struct Run {
     pub additional_root_certificates: Vec<PathBuf>,
 
     /// Allow logging of uploaded sbom file reports.
-    #[arg(long, env, default_value_t = true, action = ArgAction::Set)]
+    #[arg(long, env, default_value_t = false, action = ArgAction::Set)]
     pub report_enable: bool,
 
     /// Define report output path

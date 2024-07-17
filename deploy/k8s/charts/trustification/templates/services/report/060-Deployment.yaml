@@ -46,5 +46,4 @@ spec:
         {{- include "trustification.report.data.volume" $mod | nindent 8 }}
         {{- include "trustification.report.config.volume" $mod | nindent 8 }}
         {{- include "trustification.report.auth.volume" $mod | nindent 8 }}
-
 {{ end }}

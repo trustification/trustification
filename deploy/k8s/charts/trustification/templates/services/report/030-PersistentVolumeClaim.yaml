@@ -13,5 +13,4 @@ spec:
   resources:
     requests:
       storage: {{ $mod.module.stateStorageSize | default "10Gi" | quote }}
-
 {{end}}

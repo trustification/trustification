@@ -44,9 +44,9 @@ spec:
               if [[ -f /run/secrets/kubernetes.io/serviceaccount/service-ca.crt ]]; then
                 ARGS="--sender-root-certificates /run/secrets/kubernetes.io/serviceaccount/service-ca.crt"
               fi
-              /trust bombastic walker $ARGS --report-enable {{$reportEnabled}} --report-path /tmp/share/report  --sink {{ include "trustification.tls.http.protocol" $mod }}://bombastic-api.{{ .Release.Namespace }}.svc.cluster.local --source file:/data/sbom
+              /trust bombastic walker $ARGS {{ include "trustification.report.walkerInlineArgs" $mod }}  --sink {{ include "trustification.tls.http.protocol" $mod }}://bombastic-api.{{ .Release.Namespace }}.svc.cluster.local --source file:/data/sbom
               echo SBOM import done
-              /trust vexination walker $ARGS --report-enable {{$reportEnabled}} --report-path /tmp/share/report  --sink {{ include "trustification.tls.http.protocol" $mod }}://vexination-api.{{ .Release.Namespace }}.svc.cluster.local/api/v1/vex --source file:/data/csaf
+              /trust vexination walker $ARGS {{ include "trustification.report.walkerInlineArgs" $mod }}  --sink {{ include "trustification.tls.http.protocol" $mod }}://vexination-api.{{ .Release.Namespace }}.svc.cluster.local/api/v1/vex --source file:/data/csaf
               echo CSAF import done
 
           env:
@@ -54,35 +54,15 @@ spec:
             {{- include "trustification.application.rust.envVars" $mod | nindent 12 }}
 
           volumeMounts:
-            {{- if $reportEnabled }}
-            - name: report-path
-              mountPath: /tmp/share/report
-
-            {{- end }}
+            {{- include "trustification.report.data.volumeMount" $mod | nindent 12 }}
             {{- include "trustification.application.extraVolumeMounts" $mod | nindent 12 }}
 
           {{- include "trustification.application.container" $mod | nindent 10 }}
 
       volumes:
-        {{- if $reportEnabled }}
-        - name: report-path
-          persistentVolumeClaim:
-            claimName: report-server
-
-        {{- end }}
+        {{- include "trustification.report.data.volume" $mod | nindent 8 }}
         {{- include "trustification.application.extraVolumes" $mod | nindent 8 }}
 
-      {{- if $reportEnabled }}
-      affinity:
-        podAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            - labelSelector:
-                matchExpressions:
-                  - key: report
-                    operator: In
-                    values:
-                      - server
-              topologyKey: "kubernetes.io/hostname"
-      {{- end }}
+      {{- include "trustification.report.affinity" $mod | nindent 6}}
 
 {{ end }}

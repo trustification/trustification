@@ -1,5 +1,4 @@
 {{- if .Values.modules.vexinationWalker.enabled }}
-{{- $reportEnabled := .Values.report.enabled }}
 {{- range $sourceName, $source := .Values.modules.vexinationWalker.sources }}
 
 {{/* A unique name for the walker */}}
@@ -73,12 +72,7 @@ spec:
                 - {{ $source.url | quote }}
                 - "--since-file"
                 - "/walker-state/since"
-                - "--report-enable"
-                - "{{$reportEnabled}}"
-                {{- if $reportEnabled }}
-                - "--report-path"
-                - "/tmp/share/report"
-                {{- end }}
+                {{- include "trustification.report.walkerArgs" $mod | nindent 16 }}
                 {{- if eq ( include "trustification.openshift.useServiceCa" $ ) "true" }}
                 - --sender-root-certificates
                 - /run/secrets/kubernetes.io/serviceaccount/service-ca.crt
@@ -106,42 +100,19 @@ spec:
               {{- include "trustification.application.infrastructure.probes" $mod | nindent 14 }}
 
               volumeMounts:
-                {{- if $reportEnabled }}
-                - name: report-path
-                  mountPath: /tmp/share/report
-
-                {{- end }}
-
+                {{- include "trustification.report.data.volumeMount" $mod | nindent 16 }}
                 - mountPath: /walker-state
                   name: walker-state
                 {{- include "trustification.application.extraVolumeMounts" $mod | nindent 16 }}
 
           volumes:
-            {{- if $reportEnabled }}
-            - name: report-path
-              persistentVolumeClaim:
-                claimName: report-server
-
-            {{- end }}
-
+            {{- include "trustification.report.data.volume" $mod | nindent 12 }}
             - name: walker-state
               persistentVolumeClaim:
                 claimName: {{ include "trustification.common.name" $mod }}
             {{- include "trustification.application.extraVolumes" $mod | nindent 12 }}
 
-          {{- if $reportEnabled }}
-          affinity:
-            podAffinity:
-              requiredDuringSchedulingIgnoredDuringExecution:
-                - labelSelector:
-                    matchExpressions:
-                      - key: report
-                        operator: In
-                        values:
-                          - server
-                  topologyKey: "kubernetes.io/hostname"
-          {{- end }}
-
+          {{- include "trustification.report.affinity" $mod | nindent 10}}
 {{- end }}{{/* range */}}
 
 {{- end }}

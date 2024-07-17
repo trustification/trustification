@@ -67,6 +67,14 @@ Arguments (dict):
 {{- end }}
 
 {{/*
+Path where report data will be stored
+*/}}
+{{- define "trustification.report.data.path" -}}
+/tmp/share/report
+{{- end -}}
+
+
+{{/*
 Volume mounts for the report nginx server configuration.
 
 Arguments (dict):
@@ -74,8 +82,10 @@ Arguments (dict):
   * module - module object
 */}}
 {{- define "trustification.report.data.volumeMount" }}
-- name: config-data
-  mountPath: /opt/app-root/src
+{{- if .root.Values.report.enabled }}
+- name: report-data
+  mountPath: {{ include "trustification.report.data.path" . }}
+{{- end }}
 {{- end }}
 
 {{/*
@@ -87,7 +97,63 @@ Arguments (dict):
   * module - module object
 */}}
 {{- define "trustification.report.data.volume" }}
-- name: config-data
+{{- if .root.Values.report.enabled }}
+- name: report-data
   persistentVolumeClaim:
-    claimName: {{ include "trustification.common.name" . }}
+    claimName: report-server
 {{- end }}
+{{- end }}
+
+{{/*
+Configuration for pod affinity of walker jobs.
+
+Arguments (dict):
+  * root - .
+  * name - name of the service
+  * module - module object
+*/}}
+{{- define "trustification.report.affinity" }}
+{{- if .root.Values.report.enabled }}
+affinity:
+  podAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      - labelSelector:
+          matchExpressions:
+            - key: report
+              operator: In
+              values:
+                - server
+        topologyKey: "kubernetes.io/hostname"
+{{- end }}
+{{- end }}
+
+{{/*
+Configuration for arguments of walker jobs.
+
+Arguments (dict):
+  * root - .
+  * name - name of the service
+  * module - module object
+*/}}
+{{- define "trustification.report.walkerArgs" }}
+{{- if .root.Values.report.enabled }}
+- "--report-enable"
+- "true"
+- "--report-path"
+- {{ include "trustification.report.data.path" . | quote }}
+{{- end }}
+{{- end }}
+
+{{/*
+Configuration for inline arguments of walker jobs.
+
+Arguments (dict):
+  * root - .
+  * name - name of the service
+  * module - module object
+*/}}
+{{- define "trustification.report.walkerInlineArgs" -}}
+{{- if .root.Values.report.enabled -}}
+--report-enable true --report-path {{ include "trustification.report.data.path" . }}
+{{- end -}}
+{{- end -}}

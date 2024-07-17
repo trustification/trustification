@@ -14,7 +14,7 @@ data:
       server {
         listen 8080;
 
-        root /opt/app-root/src;
+        root {{ include "trustification.report.data.path" . }};
 
         access_log /dev/stdout;
         error_log /dev/stderr;
