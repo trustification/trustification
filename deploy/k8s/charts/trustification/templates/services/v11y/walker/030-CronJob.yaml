@@ -44,6 +44,8 @@ spec:
                 - |
                   if test -d cvelistV5; then
                     cd cvelistV5
+                    git stash
+                    git stash clear
                     git pull
                   else
                     git clone https://github.com/CVEProject/cvelistV5
