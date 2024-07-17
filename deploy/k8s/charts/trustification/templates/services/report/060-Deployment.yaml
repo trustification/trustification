@@ -38,23 +38,13 @@ spec:
               protocol: TCP
 
           volumeMounts:
-            - name: wwwdata
-              mountPath: /opt/app-root/src
-
-            - name: config-volume
-              mountPath: /etc/nginx/nginx.conf
-              subPath: nginx.conf
-              readOnly: true
-
+            {{- include "trustification.report.data.volumeMount" $mod | nindent 12 }}
+            {{- include "trustification.report.config.volumeMount" $mod | nindent 12 }}
             {{- include "trustification.report.auth.volumeMount" $mod | nindent 12 }}
 
       volumes:
-        - name: wwwdata
-          persistentVolumeClaim:
-            claimName: report-server
-        - name: config-volume
-          configMap:
-            name: {{ include "trustification.common.name" $mod }}-nginx-config
+        {{- include "trustification.report.data.volume" $mod | nindent 8 }}
+        {{- include "trustification.report.config.volume" $mod | nindent 8 }}
         {{- include "trustification.report.auth.volume" $mod | nindent 8 }}
 
 {{ end }}

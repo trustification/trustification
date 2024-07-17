@@ -4,7 +4,7 @@
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
-  name: report-server
+  name: {{ include "trustification.common.name" $mod }}
   labels:
     {{- include "trustification.common.labels" $mod | nindent 4 }}
 spec:
