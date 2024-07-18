@@ -4,12 +4,10 @@ use actix_web::{web, HttpResponse};
 use actix_web_httpauth::extractors::bearer::BearerAuth;
 use cvss::Severity;
 use serde::{Deserialize, Serialize};
-use spog_model::prelude::SummaryEntry;
 use spog_model::search::SbomSummary;
 use tracing::instrument;
 use trustification_api::search::{SearchOptions, SearchResult};
 use trustification_auth::client::TokenProvider;
-use utoipa::ToSchema;
 
 #[utoipa::path(
     get,
@@ -115,38 +113,38 @@ pub struct SbomVulnerabilitySummary {
 
 pub async fn sboms_with_vulnerability_summary() -> actix_web::Result<HttpResponse> {
     let mut summary: Vec<SbomVulnerabilitySummary> = vec![];
-    let mut vulns1: Vulnerabilities = Vulnerabilities {
+    let vulns1: Vulnerabilities = Vulnerabilities {
         none: 3,
         low: 12,
         medium: 8,
         high: 5,
         critical: 1,
     };
-    let mut vulns2: Vulnerabilities = Vulnerabilities {
+    let vulns2: Vulnerabilities = Vulnerabilities {
         none: 1,
         low: 8,
         medium: 17,
         high: 9,
         critical: 0,
     };
-    let mut vulns3: Vulnerabilities = Vulnerabilities {
+    let vulns3: Vulnerabilities = Vulnerabilities {
         none: 18,
         low: 20,
         medium: 6,
         high: 8,
         critical: 4,
     };
-    let mut sbom1: SbomVulnerabilitySummary = SbomVulnerabilitySummary {
+    let sbom1: SbomVulnerabilitySummary = SbomVulnerabilitySummary {
         sbom_id: "sbom1_id".into(),
         sbom_name: "sbom1".into(),
         vulnerabilities: vulns1,
     };
-    let mut sbom2: SbomVulnerabilitySummary = SbomVulnerabilitySummary {
+    let sbom2: SbomVulnerabilitySummary = SbomVulnerabilitySummary {
         sbom_id: "sbom2_id".into(),
         sbom_name: "sbom2".into(),
         vulnerabilities: vulns2,
     };
-    let mut sbom3: SbomVulnerabilitySummary = SbomVulnerabilitySummary {
+    let sbom3: SbomVulnerabilitySummary = SbomVulnerabilitySummary {
         sbom_id: "sbom3_id".into(),
         sbom_name: "sbom3".into(),
         vulnerabilities: vulns3,
