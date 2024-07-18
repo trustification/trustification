@@ -3,9 +3,11 @@ use crate::search;
 use actix_web::{web, HttpResponse};
 use actix_web_httpauth::extractors::bearer::BearerAuth;
 use cvss::Severity;
+use serde::{Deserialize, Serialize};
 use spog_model::prelude::SummaryEntry;
 use spog_model::search::SbomSummary;
 use tracing::instrument;
+use utoipa::ToSchema;
 use trustification_api::search::{SearchOptions, SearchResult};
 use trustification_auth::client::TokenProvider;
 
@@ -96,40 +98,62 @@ async fn search_advisories(state: web::Data<AppState>, sboms: &mut Vec<SbomSumma
         }
     }
 }
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+struct Vulnerabilities {
+    none: usize,
+    low: usize,
+    medium: usize,
+    high: usize,
+    critical: usize,
+}
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SbomVulnerabilitySummary {
+    sbom_id: String,
+    sbom_name: String,
+    vulnerabilities: Vulnerabilities,
+}
 
 pub async fn sboms_with_vulnerability_summary() -> actix_web::Result<HttpResponse> {
-    let mut summary: Vec<(String, &Vec<SummaryEntry>)> = vec![];
-
-    let summary_entry_none: SummaryEntry = SummaryEntry {
-        severity: Option::from(Severity::None),
-        count: 3,
+    let mut summary: Vec<SbomVulnerabilitySummary> = vec![];
+    let mut vulns1: Vulnerabilities = Vulnerabilities {
+        none: 3,
+        low: 12,
+        medium: 8,
+        high: 5,
+        critical: 1,
     };
-    let summary_entry_low: SummaryEntry = SummaryEntry {
-        severity: Option::from(Severity::Low),
-        count: 5,
+    let mut vulns2: Vulnerabilities = Vulnerabilities {
+        none: 1,
+        low: 8,
+        medium: 17,
+        high: 9,
+        critical: 0,
     };
-    let summary_entry_medium: SummaryEntry = SummaryEntry {
-        severity: Option::from(Severity::Medium),
-        count: 10,
+    let mut vulns3: Vulnerabilities = Vulnerabilities {
+        none: 18,
+        low: 20,
+        medium: 6,
+        high: 8,
+        critical: 4,
     };
-    let summary_entry_high: SummaryEntry = SummaryEntry {
-        severity: Option::from(Severity::High),
-        count: 4,
+    let mut sbom1: SbomVulnerabilitySummary = SbomVulnerabilitySummary {
+        sbom_id: "sbom1_id".into(),
+        sbom_name: "sbom1".into(),
+        vulnerabilities: vulns1,
     };
-    let summary_entry_critical: SummaryEntry = SummaryEntry {
-        severity: Option::from(Severity::Critical),
-        count: 2,
+    let mut sbom2: SbomVulnerabilitySummary = SbomVulnerabilitySummary {
+        sbom_id: "sbom2_id".into(),
+        sbom_name: "sbom2".into(),
+        vulnerabilities: vulns2,
     };
-    let entries: Vec<SummaryEntry> = vec![
-        summary_entry_none,
-        summary_entry_low,
-        summary_entry_medium,
-        summary_entry_high,
-        summary_entry_critical,
-    ];
-    summary.push(("sbom1".into(), &entries));
-    summary.push(("sbom2".into(), &entries));
-    summary.push(("sbom3".into(), &entries));
+    let mut sbom3: SbomVulnerabilitySummary = SbomVulnerabilitySummary {
+        sbom_id: "sbom3_id".into(),
+        sbom_name: "sbom3".into(),
+        vulnerabilities: vulns3,
+    };
+    summary.push(sbom1);
+    summary.push(sbom2);
+    summary.push(sbom3);
 
     Ok(HttpResponse::Ok().json(summary))
 }
