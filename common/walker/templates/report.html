@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Walker Report</title>
+    <style>
+        .table-section {
+            margin-bottom: 20px;
+            border-radius: 4px;
+            padding: 16px;
+            background-color: #ffffff;
+        }
+
+        .table-title {
+            color: #333;
+            font-size: 18px;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+        }
+
+        .timestamp {
+            font-size: 0.875rem;
+            color: #666;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+            font-weight: bold;
+            line-height: 1;
+            color: #fff;
+            background-color: #197474FF;
+            border-radius: 0.25rem;
+        }
+
+        .page {
+            max-width: fit-content;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+
+        .table-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.875rem;
+            table-layout: fixed;
+        }
+
+        thead {
+            background-color: #f2f2f2;
+        }
+
+        tr {
+            border-bottom: 1px solid #ddd;
+        }
+
+        th, td {
+            padding: 0.5rem;
+            text-align: left;
+            word-wrap: break-word;
+        }
+    </style>
+</head>
+<body>
+<h1>
+    {{type}} Walker Report <span class="timestamp">{{current_time}}</span>
+</h1>
+
+<h2>Uploaded <span class="badge">{{report.numer_of_items}}</span> files</h2>
+
+<div class="page">
+    <div class="table-container">
+        {% for phase, messages in report.messages %}
+        <div class="table-section">
+            <h2 class="table-title">Phase: {{phase}}:</h2>
+            <table role="grid" id="table-basic">
+                <thead>
+                <tr role="row">
+                    <th role="columnheader" scope="col" style="width: 30%;">File</th>
+                    <th role="columnheader" scope="col" style="width: 20%;">Severity</th>
+                    <th role="columnheader" scope="col" style="width: 50%;">Message</th>
+                </tr>
+                </thead>
+
+                <tbody role="rowgroup">
+                {% for file, message_list in messages %}
+                {% for msg in message_list %}
+                <tr>
+                    <td role="cell" data-label="File name">{{file}}</td>
+                    <td role="cell" data-label="Pull requests">{{msg.severity}}</td>
+                    <td role="cell" data-label="Workspaces">{{msg.message}}</td>
+                </tr>
+                {% endfor %}
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+</body>
+</html>

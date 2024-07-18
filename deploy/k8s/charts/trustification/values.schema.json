@@ -152,6 +152,41 @@
         }
       }
     },
+    "report": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "enabled"
+      ],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "auth": {
+          "oneOf": [
+            {
+              "$ref": "#/definitions/SecretRef"
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "username",
+                "password"
+              ],
+              "properties": {
+                "username": {
+                  "$ref": "#/definitions/ValueOrRef"
+                },
+                "password": {
+                  "$ref": "#/definitions/ValueOrRef"
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
     "tls": {
       "type": "object",
       "properties": {
@@ -804,6 +839,20 @@
             }
           ]
         },
+        "reportServer": {
+          "description": "Configuration options for the report server.\n",
+          "allOf": [
+            {
+              "$ref": "#/definitions/Feature"
+            },
+            {
+              "$ref": "#/definitions/Image"
+            },
+            {
+              "$ref": "#/definitions/Ingress"
+            }
+          ]
+        },
         "integrationTests": {
           "description": "Integration tests which can be run as part of the Helm chart.\n",
           "allOf": [
@@ -1276,6 +1325,33 @@
         }
       }
     },
+    "SecretRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "A reference to a `Secret`.\n",
+      "required": [
+        "secretRef"
+      ],
+      "properties": {
+        "secretRef": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "name"
+          ],
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "The name of the secret"
+            },
+            "key": {
+              "type": "string",
+              "description": "The name of the key inside the secret"
+            }
+          }
+        }
+      }
+    },
     "Index": {
       "type": "object",
       "properties": {
@@ -1512,7 +1588,7 @@
     },
     "SyncInterval": {
       "type": "string",
-      "description": "The interval between syncing the indexes. This must be in the \"humantime\" format, for\nexample: `2m` (two minutes), `30s` (30 seconds). \n"
+      "description": "The interval between syncing the indexes. This must be in the \"humantime\" format, for\nexample: `2m` (two minutes), `30s` (30 seconds).\n"
     },
     "GlobalIndexConfig": {
       "type": "object",

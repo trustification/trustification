@@ -1,0 +1,4 @@
+{{- if .Values.report.enabled }}
+{{- $mod := dict "root" . "name" "report-server" "component" "report" "module" .Values.modules.reportServer -}}
+{{- include "trustification.application.defaultService" $mod }}
+{{- end }}
