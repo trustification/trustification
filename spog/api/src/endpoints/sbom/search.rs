@@ -2,7 +2,6 @@ use crate::app_state::AppState;
 use crate::search;
 use actix_web::{web, HttpResponse};
 use actix_web_httpauth::extractors::bearer::BearerAuth;
-use cvss::Severity;
 use serde::{Deserialize, Serialize};
 use spog_model::search::SbomSummary;
 use tracing::instrument;
