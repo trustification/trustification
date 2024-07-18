@@ -1,5 +1,4 @@
 {{- if .Values.modules.initDataset.enabled }}
-{{- $reportEnabled := .Values.report.enabled }}
 {{- $mod := dict "root" . "name" "init-dataset" "component" "init" "module" .Values.modules.initDataset -}}
 kind: Job
 apiVersion: batch/v1

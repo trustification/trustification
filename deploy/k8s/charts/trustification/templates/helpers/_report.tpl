@@ -75,7 +75,7 @@ Path where report data will be stored
 
 
 {{/*
-Volume mounts for the report nginx server configuration.
+Volume mounts for the report nginx server data.
 
 Arguments (dict):
   * root - .
@@ -89,7 +89,7 @@ Arguments (dict):
 {{- end }}
 
 {{/*
-Volume for the report nginx server configuration.
+Volume for the report nginx server data.
 
 Arguments (dict):
   * root - .
