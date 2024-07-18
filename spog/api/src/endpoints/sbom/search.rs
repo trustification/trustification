@@ -7,9 +7,9 @@ use serde::{Deserialize, Serialize};
 use spog_model::prelude::SummaryEntry;
 use spog_model::search::SbomSummary;
 use tracing::instrument;
-use utoipa::ToSchema;
 use trustification_api::search::{SearchOptions, SearchResult};
 use trustification_auth::client::TokenProvider;
+use utoipa::ToSchema;
 
 #[utoipa::path(
     get,
