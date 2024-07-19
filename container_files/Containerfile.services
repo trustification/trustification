@@ -90,14 +90,7 @@ RUN test -f /public/*.wasm
 # Runtime
 FROM registry.access.redhat.com/ubi9/ubi-minimal:latest
 
-LABEL com.redhat.component ="Trustification"
-LABEL description ="Trustification"
-LABEL io.k8s.description ="Trustification"
-LABEL io.k8s.display-name ="Trustification"
-LABEL io.openshift.tags ="Trustification"
-LABEL name ="Trustification"
 LABEL org.opencontainers.image.source="https://github.com/trustification/trustification"
-LABEL summary ="Trustification"
 
 RUN microdnf update -y && microdnf install -y nginx jq git postgresql
 RUN true \

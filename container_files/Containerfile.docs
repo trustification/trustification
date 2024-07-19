@@ -17,12 +17,6 @@ RUN true \
 FROM registry.access.redhat.com/ubi9/ubi-minimal:latest
 
 LABEL org.opencontainers.image.source="https://github.com/trustification/trustification"
-LABEL description="Trustification-docs"
-LABEL io.k8s.description ="Trustification-docs"
-LABEL io.k8s.display-name ="Trustification-docs"
-LABEL summary ="Trustification-docs"
-LABEL io.openshift.tags ="Trustification-docs"
-LABEL name ="Trustification-docs"
 
 RUN microdnf install -y nginx jq
 

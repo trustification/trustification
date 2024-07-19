@@ -6,10 +6,8 @@ use crate::client::schema::{Reference, Vulnerability};
 use crate::client::OsvClient;
 use reqwest::Url;
 use trustification_auth::{
-    auth::AuthConfigArguments,
-    authenticator::Authenticator,
-    authorizer::Authorizer,
-    client::{OpenIdTokenProviderConfigArguments, TokenProvider},
+    auth::AuthConfigArguments, authenticator::Authenticator, authorizer::Authorizer,
+    client::OpenIdTokenProviderConfigArguments,
 };
 use trustification_common::tls::ClientConfig;
 use trustification_infrastructure::{
@@ -18,7 +16,7 @@ use trustification_infrastructure::{
     Infrastructure, InfrastructureConfig,
 };
 
-mod client;
+pub mod client;
 mod server;
 
 #[derive(clap::Args, Debug)]
@@ -72,14 +70,7 @@ impl Run {
                 "collector-osv",
                 |_context| async { Ok(()) },
                 |context| async move {
-                    let provider = self.oidc.into_provider_or_devmode(self.devmode).await?;
-                    let state = Self::configure(
-                        self.client.build_client()?,
-                        self.guac_url,
-                        self.v11y_url,
-                        provider.clone(),
-                    )
-                    .await?;
+                    let state = Self::configure(self.client.build_client()?, self.guac_url).await?;
 
                     server::run(context, state.clone(), self.http, authenticator, authorizer).await
                 },
@@ -89,33 +80,20 @@ impl Run {
         Ok(ExitCode::SUCCESS)
     }
 
-    async fn configure<P>(
-        client: reqwest::Client,
-        guac_url: Url,
-        v11y_url: Url,
-        provider: P,
-    ) -> anyhow::Result<Arc<AppState>>
-    where
-        P: TokenProvider + Clone + 'static,
-    {
-        let state = Arc::new(AppState::new(client, guac_url, v11y_url, provider));
+    async fn configure(client: reqwest::Client, guac_url: Url) -> anyhow::Result<Arc<AppState>> {
+        let state = Arc::new(AppState::new(client, guac_url));
         Ok(state)
     }
 }
 
 pub struct AppState {
-    v11y_client: v11y_client::V11yClient,
     guac_client: GuacClient,
     osv: OsvClient,
 }
 
 impl AppState {
-    pub fn new<P>(client: reqwest::Client, guac_url: Url, v11y_url: Url, provider: P) -> Self
-    where
-        P: TokenProvider + Clone + 'static,
-    {
+    pub fn new(client: reqwest::Client, guac_url: Url) -> Self {
         Self {
-            v11y_client: v11y_client::V11yClient::new(client.clone(), v11y_url, provider),
             guac_client: GuacClient::with_client(guac_url.to_string(), client),
             osv: OsvClient::new(),
         }
