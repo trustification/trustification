@@ -1,6 +1,8 @@
+use cyclonedx_bom::errors::JsonReadError;
 use std::fmt::Formatter;
 use tracing::{info_span, instrument};
 
+#[derive(Debug)]
 pub enum SBOM {
     #[cfg(feature = "cyclonedx-bom")]
     CycloneDX(cyclonedx_bom::prelude::Bom),
@@ -54,7 +56,7 @@ impl SBOM {
             match result {
                 Ok(spdx) => return Ok(SBOM::SPDX(spdx)),
                 Err(e) => {
-                    log::info!("Error parsing SPDX: {:?}", e);
+                    log::error!("Error parsing SPDX: {:?}", e);
                     err.spdx = Some(e);
                 }
             }
@@ -64,9 +66,18 @@ impl SBOM {
         {
             let result = info_span!("parse cyclonedx").in_scope(|| cyclonedx_bom::prelude::Bom::parse_from_json(data));
             match result {
-                Ok(bom) => return Ok(SBOM::CycloneDX(bom)),
+                Ok(bom) => match bom.serial_number {
+                    Some(_) => return Ok(SBOM::CycloneDX(bom)),
+                    None => {
+                        let serial_number_error_message = "Error validating CycloneDX: In order for a CycloneDX SBOM to be successfully ingested the 'serialNumber' field must be populated.";
+                        log::error!("{}", serial_number_error_message);
+                        let serial_number_error: serde_json::Error =
+                            serde::de::Error::custom(serial_number_error_message);
+                        err.cyclonedx = Some(JsonReadError::from(serial_number_error));
+                    }
+                },
                 Err(e) => {
-                    log::info!("Error parsing CycloneDX: {:?}", e);
+                    log::error!("Error parsing CycloneDX: {:?}", e);
                     err.cyclonedx = Some(e);
                 }
             }
@@ -82,5 +93,37 @@ impl SBOM {
             #[cfg(feature = "cyclonedx-bom")]
             Self::CycloneDX(_) => "CycloneDX/1.3".to_string(),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::SBOM;
+
+    #[test]
+    fn parse_cyclonedx_valid_13() {
+        let data = include_bytes!("../../testdata/my-sbom.json");
+        let result = SBOM::parse(data);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn parse_cyclonedx_valid_14() {
+        let data = include_bytes!("../../testdata/syft.cyclonedx.json");
+        let result = SBOM::parse(data);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn parse_cyclonedx_without_serial_number() {
+        let data = include_bytes!("../../testdata/sbom-without-serialNumber.cyclonedx.json");
+        let e = SBOM::parse(data).unwrap_err();
+        assert!(e.cyclonedx.is_some());
+        assert_eq!(e.cyclonedx.unwrap().to_string(), "Failed to deserialize JSON: Error validating CycloneDX: In order for a CycloneDX SBOM to be successfully ingested the 'serialNumber' field must be populated.");
+        assert!(e.spdx.is_some());
+        assert_eq!(
+            e.spdx.unwrap().to_string(),
+            "missing field `spdxVersion` at line 454 column 1"
+        );
     }
 }

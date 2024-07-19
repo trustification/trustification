@@ -61,10 +61,6 @@ parameters:
   required: true
 - name: OIDC_PROVIDER_CLIENT_SECRET_KEY
   required: true
-- name: OIDC_API_CLIENT_ID
-  value: trusted-content-api
-- name: OIDC_SPOG_CLIENT_ID
-  value: trusted-content-frontend
 - name: V11Y_API_RESOURCES
   required: true
 - name: V11Y_STORAGE_BUCKET
@@ -97,15 +93,13 @@ parameters:
   required: true
 - name: GUAC_COLLECTSUB_REPLICAS
   required: true
-- name: GUAC_ADMIN_DB_SECRET_NAME
-  value: guac-admin-db
-- name: GUAC_USER_DB_SECRET_NAME
-  value: guac-user-db
 - name: BOMBASTIC_API_REPLICAS
   required: true
 - name: BOMBASTIC_INDEXER_REPLICAS
   required: true
 - name: COLLECTORIST_API_REPLICAS
+  required: true
+- name: COLLECTOR_OSV_REPLICAS
   required: true
 - name: EXHORT_API_REPLICAS
   required: true

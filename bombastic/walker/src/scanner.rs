@@ -1,4 +1,5 @@
-use crate::processing::ProcessVisitor;
+use crate::{processing::ProcessVisitor, report::SbomReportVisitor};
+use parking_lot::Mutex;
 use sbom_walker::{
     discover::DiscoverConfig, model::metadata::Key, retrieve::RetrievingVisitor, source::new_source,
     validation::ValidationVisitor, walker::Walker,
@@ -8,11 +9,11 @@ use std::sync::Arc;
 use std::time::{Duration, SystemTime};
 use tokio::time::MissedTickBehavior;
 use tracing::{instrument, log};
+use trustification_common_walker::report::{Report, ReportBuilder, ReportVisitor, ScannerError};
 use url::Url;
-use walker_common::sender::HttpSenderOptions;
 use walker_common::{
     fetcher::FetcherOptions,
-    sender::{self, provider::TokenProvider},
+    sender::{self, provider::TokenProvider, HttpSenderOptions},
     since::Since,
     validate::ValidationOptions,
 };
@@ -52,7 +53,9 @@ impl Scanner {
     }
 
     #[instrument(skip(self))]
-    pub async fn run_once(&self) -> anyhow::Result<()> {
+    pub async fn run_once(&self) -> Result<Report, ScannerError> {
+        let report = Arc::new(Mutex::new(ReportBuilder::new()));
+
         let since = Since::new(None::<SystemTime>, self.options.since_file.clone(), Default::default())?;
 
         let source = new_source(
@@ -77,17 +80,32 @@ impl Scanner {
 
         let process = ProcessVisitor {
             enabled: self.options.fix_licenses,
-            next: storage,
+            next: SbomReportVisitor(ReportVisitor::new(report.clone(), storage)),
+            report: report.clone(),
         };
 
         let validation = ValidationVisitor::new(process)
             .with_options(ValidationOptions::new().validation_date(self.options.validation_date));
 
         let walker = Walker::new(source.clone());
-        walker.walk(RetrievingVisitor::new(source.clone(), validation)).await?;
+        walker
+            .walk(RetrievingVisitor::new(source.clone(), validation))
+            .await
+            // if the walker fails, we record the outcome as part of the report, but skip any
+            // further processing, like storing the marker
+            .map_err(|err| ScannerError::Normal {
+                err: err.into(),
+                report: report.lock().clone().build(),
+            })?;
 
+        // if we fail to store the marker, we fail altogether
         since.store()?;
 
-        Ok(())
+        // we're done and return the report
+        Ok(match Arc::try_unwrap(report) {
+            Ok(report) => report.into_inner(),
+            Err(report) => report.lock().clone(),
+        }
+        .build())
     }
 }

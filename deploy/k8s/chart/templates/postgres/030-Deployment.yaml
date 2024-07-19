@@ -43,22 +43,22 @@ spec:
             - name: POSTGRES_DB
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.guac.database.admin_db_secret_name }}
+                  name: guac-admin-db
                   key: db.name
             - name: POSTGRES_USER
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.guac.database.admin_db_secret_name }}
+                  name: guac-admin-db
                   key: db.user
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.guac.database.admin_db_secret_name }}
+                  name: guac-admin-db
                   key: db.password
             - name: PGPASSWORD # used in combination with psql
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.guac.database.admin_db_secret_name }}
+                  name: guac-admin-db
                   key: db.password
 
           readinessProbe:

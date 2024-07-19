@@ -1,7 +1,7 @@
 use crate::{
     config::{Config, DriverKind},
     runner::Runner,
-    start_spog, SpogContext, Urlifier,
+    start_spog, tcp_connection, SpogContext, Urlifier,
 };
 use async_trait::async_trait;
 use reqwest::{StatusCode, Url};
@@ -47,7 +47,7 @@ impl AsyncTestContext for SpogUiContext {
     }
 
     async fn teardown(self) {
-        println!("Tearing down UI");
+        log::info!("Tearing down UI");
         self.driver.quit().await.unwrap();
         self.spog_api.teardown().await;
     }
@@ -67,9 +67,7 @@ pub async fn start_ui(config: &Config) -> SpogUiContext {
 
     {
         // No remote server requested, so fire up UI on ephemeral port
-        let listener = TcpListener::bind("localhost:0").unwrap();
-        let port = listener.local_addr().unwrap().port();
-        let url = Url::parse(&format!("http://localhost:{port}")).unwrap();
+        let (listener, _, url) = tcp_connection();
 
         let spog_api = start_spog(config).await;
 
@@ -85,20 +83,19 @@ pub async fn start_ui(config: &Config) -> SpogUiContext {
                         panic!("Error running spog UI: {e:?}");
                     }
                     Ok(()) => {
-                        println!("Spog UI exited");
+                        log::info!("Spog UI exited");
                     }
                 },
-
             }
 
             Ok(())
         });
 
-        // ensure it's initialized
+        // Ensure it's initialized
         let client = reqwest::Client::new();
         loop {
             let response = client.get(url.clone()).send().await.unwrap();
-            println!("UI check: {}", response.status());
+            log::info!("UI check: {}", response.status());
             if response.status() == StatusCode::OK {
                 break;
             }
@@ -107,10 +104,10 @@ pub async fn start_ui(config: &Config) -> SpogUiContext {
 
         let driver = start_browser(config).await.unwrap();
 
-        // login
+        // Login
         login(&driver, url.clone()).await.unwrap();
 
-        // return the context
+        // Return the context
         SpogUiContext {
             url,
             spog_api,
@@ -171,8 +168,7 @@ impl LoginForm {
 async fn login(driver: &WebDriver, url: Url) -> anyhow::Result<()> {
     driver.goto(url).await?;
 
-    // wait for the tracking consent dialog
-
+    // Wait for the tracking consent dialog
     let allow = driver
         .query(By::Css(".pf-v5-c-button.pf-m-primary"))
         .with_text("Allow")
@@ -181,15 +177,14 @@ async fn login(driver: &WebDriver, url: Url) -> anyhow::Result<()> {
     allow.wait_until().clickable().await?;
     allow.click().await?;
 
-    // now wait for the login dialog
-
+    // Now wait for the login dialog
     let form: LoginForm = driver.query(By::Id("kc-form")).first().await?.into();
     form.base_element().wait_until().displayed().await?;
 
-    // perform the login
-
+    // Perform the login
     form.login("admin", "admin123456").await?;
 
+    // Check that we passed through
     driver.query(By::Css("h1")).with_text("Trusted Content").first().await?;
 
     Ok(())

@@ -35,9 +35,30 @@ pub fn details(props: &DetailsProps) -> Html {
 
     impl TableEntryRenderer<Column> for Entry {
         fn render_cell(&self, context: CellContext<'_, Column>) -> Cell {
+            let description_length = self
+                .vuln
+                .description
+                .as_ref()
+                .map_or(0, |description| description.len());
+
             match context.column {
                 Column::Id => Cell::new(html!(self.vuln.id.clone())).text_modifier(TextModifier::NoWrap),
-                Column::Description => html!({ for self.vuln.description.clone() }).into(),
+                Column::Description => html!(
+                    <>
+                        if description_length > 200 {
+                            <ExpandableSection variant={ExpandableSectionVariant::Truncate}>
+                                <Content>
+                                    { for self.vuln.description.clone() }
+                                </Content>
+                            </ExpandableSection>
+                        } else {
+                            <>
+                                { for self.vuln.description.clone() }
+                            </>
+                        }
+                    </>
+                )
+                .into(),
                 Column::Cvss => html!(
                     <>
                         if let Some(score) = self.vuln.score("mitre") {
