@@ -847,6 +847,14 @@ where
 }
 
 impl<INDEX: Index> IndexStore<INDEX> {
+    /// To obtain the total number of docs.
+    pub fn get_total_docs(&self) -> Result<u64, Error> {
+        let inner = self.inner.read();
+        let reader = inner.reader()?;
+        let searcher = reader.searcher();
+        Ok(searcher.num_docs())
+    }
+
     /// Search the index for a given query and return matching documents.
     pub fn search(
         &self,

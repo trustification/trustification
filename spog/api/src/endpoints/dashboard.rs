@@ -56,13 +56,14 @@ pub(crate) fn configure(auth: Option<Arc<Authenticator>>) -> impl FnOnce(&mut Se
     ),
     params()
 )]
-#[instrument(skip(state, access_token, v11y), err)]
+#[instrument(skip(_state, _access_token, _v11y), err)]
+#[allow(clippy::unwrap_used)]
 pub async fn get_status(
-    state: web::Data<AppState>,
-    params: web::Query<search::QueryParams>,
-    options: web::Query<SearchOptions>,
-    access_token: Option<BearerAuth>,
-    v11y: web::Data<V11yService>,
+    _state: web::Data<AppState>,
+    _params: web::Query<search::QueryParams>,
+    _options: web::Query<SearchOptions>,
+    _access_token: Option<BearerAuth>,
+    _v11y: web::Data<V11yService>,
 ) -> actix_web::Result<HttpResponse> {
     let status = make_mock_data();
     Ok(HttpResponse::Ok().json(serde_json::to_string(&status).unwrap()))
