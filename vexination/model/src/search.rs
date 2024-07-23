@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use serde_json::Value;
 use sikula::prelude::*;
+use time::OffsetDateTime;
 use utoipa::ToSchema;
 
 #[derive(Clone, Debug, PartialEq, Search)]
@@ -34,6 +35,8 @@ pub enum Vulnerabilities<'a> {
     CveRelease(Ordered<time::OffsetDateTime>),
     #[search]
     CveDiscovery(Ordered<time::OffsetDateTime>),
+    #[search(sort)]
+    IndexedTimestamp(Ordered<time::OffsetDateTime>),
     Final,
     Critical,
     High,
@@ -63,6 +66,8 @@ pub struct SearchDocument {
     pub cvss_max: Option<f64>,
     /// Number of severities by level
     pub cve_severity_count: HashMap<String, u64>,
+    /// Time stamp for doc
+    pub indexed_timestamp: OffsetDateTime,
 }
 
 /// The hit describes the document, its score and optionally an explanation of why that score was given.
@@ -87,4 +92,17 @@ pub struct SearchResult {
     pub total: usize,
     /// Documents matched up to max requested
     pub result: Vec<SearchHit>,
+}
+
+/// This payload returns the total number of docs and the last updated doc.
+#[derive(serde::Deserialize, serde::Serialize, Debug, PartialEq, utoipa::ToSchema, Default)]
+pub struct StatusResult {
+    /// Total number of all documents
+    pub total: Option<u64>,
+    /// Id of last updated doc
+    pub last_updated_vex_id: Option<String>,
+    /// Name of last updated doc
+    pub last_updated_vex_name: Option<String>,
+    /// Updated time of last updated doc
+    pub last_updated_date: Option<OffsetDateTime>,
 }

@@ -119,12 +119,24 @@ pub struct SearchResult {
 }
 
 /// This payload returns the total number of docs and the last updated doc.
-#[derive(serde::Deserialize, serde::Serialize, Debug, PartialEq, utoipa::ToSchema)]
+#[derive(serde::Deserialize, serde::Serialize, Debug, PartialEq, utoipa::ToSchema, Default)]
 pub struct StatusResult {
     /// Total number of all documents
-    pub total: u64,
-    /// Name of last updated doc
-    pub last_updated_sbom: String,
+    pub total: Option<u64>,
+    /// id of last updated doc
+    pub last_updated_sbom_id: Option<String>,
+    /// name of last updated doc
+    pub last_updated_sbom_name: Option<String>,
     /// Updated time of last updated doc
-    pub last_updated_date: OffsetDateTime,
+    pub last_updated_date: Option<OffsetDateTime>,
 }
+
+// impl Default for StatusResult {
+//     fn default() -> Self {
+//         StatusResult {
+//             total: 0,
+//             last_updated_sbom: "".to_string(),
+//             last_updated_date: OffsetDateTime::now_utc(),
+//         }
+//     }
+// }

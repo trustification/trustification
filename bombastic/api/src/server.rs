@@ -458,11 +458,12 @@ async fn sbom_status(
 
     if let Some(sbom) = result.first() {
         Ok(HttpResponse::Ok().json(StatusResult {
-            total: total_docs,
-            last_updated_sbom: sbom.document.id.to_string(),
-            last_updated_date: sbom.document.indexed_timestamp,
+            total: Some(total_docs),
+            last_updated_sbom_id: Some(sbom.document.id.to_string()),
+            last_updated_sbom_name: Some(sbom.document.name.to_string()),
+            last_updated_date: Some(sbom.document.indexed_timestamp),
         }))
     } else {
-        Ok(HttpResponse::NoContent().finish())
+        Ok(HttpResponse::Ok().json(StatusResult::default()))
     }
 }

@@ -765,6 +765,14 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_total_num() {
+        assert_search(|index| {
+            let num = &index.get_total_docs();
+            assert_eq!(num.as_ref().unwrap(), &3);
+        })
+    }
+
+    #[tokio::test]
     async fn test_search_package() {
         assert_search(|index| {
             let result =

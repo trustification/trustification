@@ -4,39 +4,12 @@ use crate::service::v11y::V11yService;
 use actix_web::web::ServiceConfig;
 use actix_web::{web, HttpResponse};
 use actix_web_httpauth::extractors::bearer::BearerAuth;
+use spog_model::dashboard::{CSAFStatus, CveStatus, DashboardStatus, SbomStatus};
 use std::sync::Arc;
-use time::OffsetDateTime;
 use tracing::instrument;
 use trustification_api::search::SearchOptions;
 use trustification_auth::authenticator::Authenticator;
 use trustification_infrastructure::new_auth;
-
-#[derive(Clone, serde::Deserialize, serde::Serialize)]
-pub struct DashboardStatus {
-    pub sbom_summary: SbomSummary,
-    pub csaf_summary: CSAFSummary,
-    pub cve_summary: CveSummary,
-}
-
-#[derive(Clone, serde::Deserialize, serde::Serialize)]
-pub struct SbomSummary {
-    pub total_sboms: u64,
-    pub last_updated_sbom: String,
-    pub last_updated_date: OffsetDateTime,
-}
-
-#[derive(Clone, serde::Deserialize, serde::Serialize)]
-pub struct CSAFSummary {
-    pub total_csafs: u64,
-    pub last_updated_csaf: String,
-    pub last_updated_date: OffsetDateTime,
-}
-
-#[derive(Clone, serde::Deserialize, serde::Serialize)]
-pub struct CveSummary {
-    pub last_updated_cve: String,
-    pub last_updated_date: OffsetDateTime,
-}
 
 pub(crate) fn configure(auth: Option<Arc<Authenticator>>) -> impl FnOnce(&mut ServiceConfig) {
     |config: &mut ServiceConfig| {
@@ -56,34 +29,41 @@ pub(crate) fn configure(auth: Option<Arc<Authenticator>>) -> impl FnOnce(&mut Se
     ),
     params()
 )]
-#[instrument(skip(_state, _access_token, _v11y), err)]
-#[allow(clippy::unwrap_used)]
+#[instrument(skip(state, access_token, v11y), err)]
 pub async fn get_status(
-    _state: web::Data<AppState>,
+    state: web::Data<AppState>,
     _params: web::Query<search::QueryParams>,
-    _options: web::Query<SearchOptions>,
-    _access_token: Option<BearerAuth>,
-    _v11y: web::Data<V11yService>,
+    options: web::Query<SearchOptions>,
+    access_token: Option<BearerAuth>,
+    v11y: web::Data<V11yService>,
 ) -> actix_web::Result<HttpResponse> {
-    let status = make_mock_data();
-    Ok(HttpResponse::Ok().json(serde_json::to_string(&status).unwrap()))
-}
+    let sbom_status_result = state
+        .get_sbom_status(options.clone().into_inner(), &access_token)
+        .await?;
+    let vex_status_result = state
+        .get_vex_status(options.clone().into_inner(), &access_token)
+        .await?;
+    let cve_status_result = v11y.get_cve_status().await?;
 
-fn make_mock_data() -> DashboardStatus {
-    DashboardStatus {
-        sbom_summary: SbomSummary {
-            total_sboms: 10,
-            last_updated_sbom: "mocked_sbom".to_string(),
-            last_updated_date: OffsetDateTime::now_utc(),
+    let status = DashboardStatus {
+        sbom_summary: SbomStatus {
+            total_sboms: sbom_status_result.total,
+            last_updated_sbom_id: sbom_status_result.last_updated_sbom_id,
+            last_updated_sbom_name: sbom_status_result.last_updated_sbom_name,
+            last_updated_date: sbom_status_result.last_updated_date,
         },
-        csaf_summary: CSAFSummary {
-            total_csafs: 15,
-            last_updated_csaf: "mocked_csaf".to_string(),
-            last_updated_date: OffsetDateTime::now_utc(),
+        csaf_summary: CSAFStatus {
+            total_csafs: vex_status_result.total,
+            last_updated_csaf_id: vex_status_result.last_updated_vex_id,
+            last_updated_csaf_name: vex_status_result.last_updated_vex_name,
+            last_updated_date: vex_status_result.last_updated_date,
         },
-        cve_summary: CveSummary {
-            last_updated_cve: "mocked_cve".to_string(),
-            last_updated_date: OffsetDateTime::now_utc(),
+        cve_summary: CveStatus {
+            total_cves: cve_status_result.total,
+            last_updated_cve: cve_status_result.last_updated_cve_id,
+            last_updated_date: cve_status_result.last_updated_date,
         },
-    }
+    };
+
+    Ok(HttpResponse::Ok().json(status))
 }
