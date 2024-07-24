@@ -74,6 +74,9 @@ v11y:
     failed: v11y-failed
     indexed: v11y-indexed
 
+report:
+  enabled: false
+
 modules:
 
   documentation:
@@ -211,5 +214,14 @@ modules:
     enabled: false
     image: {}
     rust: {}
+
+  reportServer:
+    enabled: true
+    ingress: {}
+    image:
+      name: ubi8/nginx-122
+      registry: registry.access.redhat.com
+      pullPolicy: IfNotPresent
+      version: "1-75"
 
 workarounds: {}

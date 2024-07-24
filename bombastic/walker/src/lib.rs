@@ -7,7 +7,7 @@ use std::sync::Arc;
 use std::time::SystemTime;
 use time::{Date, Month, UtcOffset};
 use trustification_auth::client::{OpenIdTokenProviderConfig, OpenIdTokenProviderConfigArguments};
-use trustification_common_walker::report::{handle_report, SplitScannerError};
+use trustification_common_walker::report::{handle_report, ReportGenerateOption, SplitScannerError};
 use trustification_infrastructure::{
     endpoint::{self, Endpoint},
     Infrastructure, InfrastructureConfig,
@@ -84,6 +84,14 @@ pub struct Run {
     /// Additional root certificates for the destination
     #[arg(long = "sender-root-certificates")]
     pub additional_root_certificates: Vec<PathBuf>,
+
+    /// Allow logging of uploaded sbom file reports.
+    #[arg(long, env, default_value_t = false, action = ArgAction::Set)]
+    pub report_enable: bool,
+
+    /// Define report output path
+    #[arg(long, env, default_value = "/tmp/share/reports")]
+    pub report_path: String,
 }
 
 impl Run {
@@ -162,7 +170,16 @@ impl Run {
                         scanner.run(interval.into()).await?;
                     } else {
                         let (report, result) = scanner.run_once().await.split()?;
-                        handle_report(report).await?;
+                        if self.report_enable {
+                            handle_report(
+                                report,
+                                ReportGenerateOption {
+                                    report_type: "SBOM".to_string(),
+                                    report_out_path: self.report_path,
+                                },
+                            )
+                            .await?;
+                        }
                         result?;
                     }
 
