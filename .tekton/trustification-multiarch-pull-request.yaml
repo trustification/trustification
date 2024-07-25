@@ -23,8 +23,8 @@ spec:
   - name: revision
     value: '{{revision}}'
   - name: output-image
-    value: quay.io/trustification/multiarch:{{revision}}
-    # value: quay.io/redhat-user-workloads/trusted-content-tenant/trustification-multiarch/trustification-multiarch:on-pr-{{revision}}
+    # value: quay.io/trustification/multiarch:{{revision}}
+    value: quay.io/redhat-user-workloads/trusted-content-tenant/trustification-multiarch/trustification-multiarch:on-pr-{{revision}}
   - name: image-expires-after
     value: 5d
   - name: dockerfile
