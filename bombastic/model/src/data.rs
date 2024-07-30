@@ -1,5 +1,7 @@
-use cyclonedx_bom::errors::JsonReadError;
 use std::fmt::Formatter;
+
+use cyclonedx_bom::errors::JsonReadError;
+use cyclonedx_bom::prelude::{Validate, ValidationResult};
 use tracing::{info_span, instrument};
 
 #[derive(Debug)]
@@ -66,8 +68,33 @@ impl SBOM {
         {
             let result = info_span!("parse cyclonedx").in_scope(|| cyclonedx_bom::prelude::Bom::parse_from_json(data));
             match result {
+                // check the serial number has a value
                 Ok(bom) => match bom.serial_number {
-                    Some(_) => return Ok(SBOM::CycloneDX(bom)),
+                    // then validate the SBOM itself
+                    // having checked the serial number is available before validating is mandatory
+                    // because it's an optional field in specs and the validation will succeed if
+                    // the serial number is missing and this isn't what we want because
+                    // serial number is mandatory for trustification to correlate properly
+                    Some(_) => match bom.validate() {
+                        Ok(validation_result) => match validation_result {
+                            ValidationResult::Passed => return Ok(SBOM::CycloneDX(bom)),
+                            ValidationResult::Failed { reasons } => {
+                                let all_reasons = reasons
+                                    .into_iter()
+                                    .map(|reason| reason.message)
+                                    .collect::<Vec<String>>()
+                                    .join(", ");
+                                log::error!("Error validating CycloneDX: {}", all_reasons);
+                                let validation_failed: serde_json::Error = serde::de::Error::custom(all_reasons);
+                                err.cyclonedx = Some(JsonReadError::from(validation_failed));
+                            }
+                        },
+                        Err(e) => {
+                            log::error!("Error validating CycloneDX: {}", e);
+                            let validation_error: serde_json::Error = serde::de::Error::custom(e);
+                            err.cyclonedx = Some(JsonReadError::from(validation_error));
+                        }
+                    },
                     None => {
                         let serial_number_error_message = "Error validating CycloneDX: In order for a CycloneDX SBOM to be successfully ingested the 'serialNumber' field must be populated.";
                         log::error!("{}", serial_number_error_message);
@@ -112,6 +139,19 @@ mod tests {
         let data = include_bytes!("../../testdata/syft.cyclonedx.json");
         let result = SBOM::parse(data);
         assert!(result.is_ok());
+    }
+
+    #[test]
+    fn parse_cyclonedx_invalid_serial_number() {
+        let data = include_bytes!("../../testdata/syft.cyclonedx.wrong-serialNumber.json");
+        let result = SBOM::parse(data);
+        assert!(result.is_err());
+        let e = result.unwrap_err();
+        assert!(e.cyclonedx.is_some());
+        assert_eq!(
+            e.cyclonedx.unwrap().to_string(),
+            "Failed to deserialize JSON: UrnUuid does not match regular expression"
+        );
     }
 
     #[test]
