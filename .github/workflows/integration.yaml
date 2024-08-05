@@ -68,7 +68,7 @@ jobs:
 
       - name: Compose
         run: |
-          docker-compose ${files} up -d
+          docker compose ${files} up -d
 
       - name: Print storage use
         run: |
@@ -80,11 +80,11 @@ jobs:
         run: |
           #RUST_LOG=tantivy=off,info cargo xtask test --ui --webdriver none --nocapture
           RUST_LOG=tantivy=off,info cargo xtask test --testset integ --nocoverage --nocapture --concurrent=1
-          docker-compose ${files} ps
+          docker compose ${files} ps
 
       - name: Print logs
         if: always()
         run: |
           docker ps -a
-          docker-compose ${files} logs
-          docker-compose ${files} down
+          docker compose ${files} logs
+          docker compose ${files} down
