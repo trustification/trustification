@@ -114,6 +114,7 @@ impl Server {
                     .configure(endpoints::advisory::configure(authenticator.clone()))
                     .configure(endpoints::cve::configure(authenticator.clone()))
                     .configure(endpoints::package::configure(authenticator.clone()))
+                    .configure(endpoints::dashboard::configure(authenticator.clone()))
                     .configure(endpoints::suggestion::configure(authenticator.clone()))
                     .configure(config_configurator.clone())
                     .service({

@@ -1,6 +1,7 @@
 pub mod advisory;
 pub mod analyze;
 pub mod cve;
+pub mod dashboard;
 pub mod index;
 pub mod package;
 pub mod sbom;

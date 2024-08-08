@@ -1,11 +1,27 @@
 use crate::{ApplyAccessToken, Backend, Endpoint};
 use reqwest::{Body, StatusCode};
+use serde::{Deserialize, Serialize};
 use spog_model::prelude::{SbomReport, SbomSummary};
 use spog_ui_common::error::*;
 use std::rc::Rc;
 use trustification_api::search::SearchResult;
 use uuid::Uuid;
 use yew_oauth2::prelude::*;
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+struct Vulnerabilities {
+    none: usize,
+    low: usize,
+    medium: usize,
+    high: usize,
+    critical: usize,
+}
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SbomVulnerabilitySummary {
+    sbom_id: String,
+    sbom_name: String,
+    vulnerabilities: Vulnerabilities,
+}
 
 #[allow(unused)]
 pub struct SBOMService {
@@ -98,6 +114,17 @@ impl SBOMService {
             .client
             .get(self.backend.join(Endpoint::Api, "/api/v1/sbom/search")?)
             .query(&[("q", q)])
+            .latest_access_token(&self.access_token)
+            .send()
+            .await?;
+
+        Ok(response.api_error_for_status().await?.json().await?)
+    }
+
+    pub async fn get_latest_with_vulns(&self) -> Result<Vec<SbomVulnerabilitySummary>, ApiError> {
+        let response: reqwest::Response = self
+            .client
+            .get(self.backend.join(Endpoint::Api, "/api/v1/sbom/latestwithvulns")?)
             .latest_access_token(&self.access_token)
             .send()
             .await?;
