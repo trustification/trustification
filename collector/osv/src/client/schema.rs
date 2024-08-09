@@ -20,51 +20,13 @@ pub enum Package {
 
 /// The package ecosystem that the vulnerabilities in the OSV database
 /// are associated with.
+/// Ref. https://github.com/ossf/osv-schema/blob/fca1c1348935a71bb5e93159d462b9828894c5df/validation/schema.json#L303
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[non_exhaustive]
 #[allow(clippy::upper_case_acronyms)]
 pub enum Ecosystem {
-    Go,
-    #[serde(rename = "npm")]
-    Npm,
-    JavaScript,
-    #[serde(rename = "OSS-Fuzz")]
-    OssFuzz,
-    PyPI,
-    RubyGems,
-    #[serde(rename = "crates.io")]
-    CratesIO,
-    Packagist,
-    Maven,
-    NuGet,
-    Linux,
-    Debian,
-    #[serde(rename = "Debian:3.0")]
-    Debian3_0,
-    #[serde(rename = "Debian:3.1")]
-    Debian3_1,
-    #[serde(rename = "Debian:4.0")]
-    Debian4_0,
-    #[serde(rename = "Debian:5.0")]
-    Debian5_0,
-    #[serde(rename = "Debian:6.0")]
-    Debian6_0,
-    #[serde(rename = "Debian:7")]
-    Debian7,
-    #[serde(rename = "Debian:8")]
-    Debian8,
-    #[serde(rename = "Debian:9")]
-    Debian9,
-    #[serde(rename = "Debian:10")]
-    Debian10,
-    #[serde(rename = "Debian:11")]
-    Debian11,
-    Hex,
-    Android,
-    #[serde(rename = "GitHub Actions")]
-    GitHubActions,
-    Pub,
-    ConanCenter,
+    // PLEASE KEEP THIS LIST SORTED
+    AlmaLinux,
     Alpine,
     #[serde(rename = "Alpine:v3.10")]
     AlpineV3_10,
@@ -98,12 +60,75 @@ pub enum Ecosystem {
     AlpineV3_8,
     #[serde(rename = "Alpine:v3.9")]
     AlpineV3_9,
-    DWF,
-    GSD,
-    UVI,
+    Android,
+    Bioconductor,
+    Bitnami,
+    ConanCenter,
+    CRAN,
+    #[serde(rename = "crates.io")]
+    CratesIO,
+    Debian,
+    #[serde(rename = "Debian:3.0")]
+    Debian3_0,
+    #[serde(rename = "Debian:3.1")]
+    Debian3_1,
+    #[serde(rename = "Debian:4.0")]
+    Debian4_0,
+    #[serde(rename = "Debian:5.0")]
+    Debian5_0,
+    #[serde(rename = "Debian:6.0")]
+    Debian6_0,
+    #[serde(rename = "Debian:7")]
+    Debian7,
+    #[serde(rename = "Debian:8")]
+    Debian8,
+    #[serde(rename = "Debian:9")]
+    Debian9,
+    #[serde(rename = "Debian:10")]
+    Debian10,
+    #[serde(rename = "Debian:11")]
+    Debian11,
+    GHC,
+    #[serde(rename = "GitHub Actions")]
+    GitHubActions,
+    GIT,
+    Go,
+    Hackage,
+    Hex,
+    Linux,
+    Maven,
+    #[serde(rename = "npm")]
+    Npm,
+    NuGet,
+    #[serde(rename = "OSS-Fuzz")]
+    OssFuzz,
+    Packagist,
+    #[serde(rename = "Photon OS")]
+    PhotonOs,
+    Pub,
+    PyPI,
     #[serde(rename = "Rocky Linux")]
     RockyLinux,
-    AlmaLinux,
+    RubyGems,
+    SwiftURL,
+    #[serde(rename = "Ubuntu:20.04:LTS")]
+    Ubuntu20,
+    #[serde(rename = "Ubuntu:22.04:LTS")]
+    Ubuntu22,
+    #[serde(rename = "Ubuntu:24.04:LTS")]
+    Ubuntu24,
+    #[serde(rename = "Ubuntu:Pro:14.04:LTS")]
+    UbuntuPro14,
+    #[serde(rename = "Ubuntu:Pro:16.04:LTS")]
+    UbuntuPro16,
+    #[serde(rename = "Ubuntu:Pro:18.04:LTS")]
+    UbuntuPro18,
+    #[serde(rename = "Ubuntu:Pro:20.04:LTS")]
+    UbuntuPro20,
+    #[serde(rename = "Ubuntu:Pro:22.04:LTS")]
+    UbuntuPro22,
+    #[serde(rename = "Ubuntu:Pro:24.04:LTS")]
+    UbuntuPro24,
 }
 
 /// Type of the affected range supplied. This can be an ecosystem
