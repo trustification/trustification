@@ -2,10 +2,12 @@ use crate::server::Error;
 use crate::AppState;
 use actix_web::{get, web, HttpResponse, Responder};
 use serde::Deserialize;
+use std::sync::Arc;
 use trustification_api::search::{SearchOptions, SearchResult};
 use trustification_auth::authenticator::user::UserInformation;
 use trustification_auth::authorizer::Authorizer;
 use trustification_auth::Permission;
+use v11y_model::search::StatusResult;
 
 /// Parameters for search query.
 #[derive(Debug, Deserialize)]
@@ -103,4 +105,57 @@ async fn search_cve(
         total: Some(total),
         result,
     }))
+}
+
+/// Search status of cve using a free form search query.
+///
+/// See the [documentation](https://docs.trustification.dev/trustification/user/retrieve.html) for a description of the query language.
+#[utoipa::path(
+    get,
+    tag = "cve",
+    responses(
+    (status = 200, description = "Search completed"),
+    (status = BAD_REQUEST, description = "Bad query"),
+    (status = 401, description = "Not authenticated"),
+    ),
+)]
+#[get("/status")]
+async fn cve_status(
+    state: web::Data<AppState>,
+    authorizer: web::Data<Authorizer>,
+    user: UserInformation,
+) -> actix_web::Result<impl Responder> {
+    authorizer.require(&user, Permission::ReadSbom)?;
+
+    let state_clone = Arc::clone(&state);
+
+    let (result, _total) = actix_web::web::block(move || {
+        state_clone.index.search(
+            "-sort:indexedTimestamp",
+            0,
+            1,
+            SearchOptions {
+                metadata: false,
+                explain: false,
+                summaries: true,
+            },
+        )
+    })
+    .await?
+    .map_err(Error::Index)?;
+
+    let state_clone = Arc::clone(&state);
+    let total_docs = actix_web::web::block(move || state_clone.index.get_total_docs())
+        .await?
+        .map_err(Error::Index)?;
+
+    if let Some(cve) = result.first() {
+        Ok(HttpResponse::Ok().json(StatusResult {
+            total: Some(total_docs),
+            last_updated_cve_id: Some(cve.document.id.to_string()),
+            last_updated_date: Some(cve.document.indexed_timestamp),
+        }))
+    } else {
+        Ok(HttpResponse::Ok().json(StatusResult::default()))
+    }
 }

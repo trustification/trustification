@@ -32,6 +32,10 @@ impl V11yUrl {
         self.base_url.join("/api/v1/search")
     }
 
+    pub fn get_cve_status_url(&self) -> Result<Url, ParseError> {
+        self.base_url.join("/api/v1/status")
+    }
+
     pub fn get_vulnerability_url(&self, id: impl AsRef<str>) -> Result<Url, ParseError> {
         self.base_url.join("/api/v1/vulnerability/")?.join(id.as_ref())
     }
@@ -126,6 +130,20 @@ impl V11yClient {
         Ok(self
             .client
             .get(self.v11y_url.get_vulnerability_by_alias_url(alias)?)
+            .propagate_current_context()
+            .inject_token(self.provider.as_ref())
+            .await?
+            .send()
+            .await?
+            .error_for_status()?
+            .json()
+            .await?)
+    }
+
+    pub async fn get_cve_status(&self) -> Result<v11y_model::search::StatusResult, anyhow::Error> {
+        Ok(self
+            .client
+            .get(self.v11y_url.get_cve_status_url()?)
             .propagate_current_context()
             .inject_token(self.provider.as_ref())
             .await?

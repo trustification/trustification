@@ -88,6 +88,7 @@ impl trustification_index::Index for Index {
         let sort_by = query.sorting.first().map(|f| match f.qualifier {
             VulnerabilitiesSortable::Severity => sort_by(f.direction, self.fields.advisory_severity_score),
             VulnerabilitiesSortable::Release => sort_by(f.direction, self.fields.advisory_current),
+            VulnerabilitiesSortable::IndexedTimestamp => sort_by(f.direction, self.fields.indexed_timestamp),
         });
 
         let query = if query.term.is_empty() {
@@ -193,6 +194,14 @@ impl trustification_index::Index for Index {
             }
         }
 
+        let indexed_timestamp = doc
+            .get_first(self.fields.indexed_timestamp)
+            .map(|s| {
+                s.as_date()
+                    .map(|d| d.into_utc())
+                    .unwrap_or(time::OffsetDateTime::UNIX_EPOCH)
+            })
+            .unwrap_or(time::OffsetDateTime::UNIX_EPOCH);
         let document = SearchDocument {
             advisory_id: advisory_id.to_string(),
             advisory_title: advisory_title.to_string(),
@@ -203,6 +212,7 @@ impl trustification_index::Index for Index {
             cves,
             cvss_max,
             cve_severity_count,
+            indexed_timestamp,
         };
 
         let explanation = if options.explain {
@@ -497,7 +507,7 @@ impl Index {
     // TODO use CONST for field names
     pub fn new() -> Self {
         let mut schema = Schema::builder();
-        let indexed_timestamp = schema.add_date_field("indexed_timestamp", STORED);
+        let indexed_timestamp = schema.add_date_field("indexed_timestamp", INDEXED | FAST | STORED);
 
         let advisory_id = schema.add_text_field("advisory_id", STRING | FAST);
         let advisory_id_raw = schema.add_text_field("advisory_id_raw", STRING | STORED);
@@ -632,6 +642,9 @@ impl Index {
             Vulnerabilities::CveRelease(ordered) => create_date_query(&self.schema, self.fields.cve_release, ordered),
             Vulnerabilities::CveDiscovery(ordered) => {
                 create_date_query(&self.schema, self.fields.cve_discovery, ordered)
+            }
+            Vulnerabilities::IndexedTimestamp(value) => {
+                create_date_query(&self.schema, self.fields.indexed_timestamp, value)
             }
         }
     }

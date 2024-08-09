@@ -158,6 +158,50 @@ impl AppState {
     }
 
     #[instrument(skip(self, provider), err)]
+    pub async fn get_vex_status(
+        &self,
+        options: SearchOptions,
+        provider: &dyn TokenProvider,
+    ) -> Result<vexination_model::search::StatusResult, Error> {
+        let url = self.vexination.join("/api/v1/vex/status")?;
+        let response = self
+            .client
+            .get(url)
+            .apply(&options)
+            .propagate_current_context()
+            .inject_token(provider)
+            .await?
+            .send()
+            .await?
+            .or_status_error()
+            .await?;
+
+        Ok(response.json::<vexination_model::prelude::StatusResult>().await?)
+    }
+
+    #[instrument(skip(self, provider), err)]
+    pub async fn get_sbom_status(
+        &self,
+        options: SearchOptions,
+        provider: &dyn TokenProvider,
+    ) -> Result<bombastic_model::search::StatusResult, Error> {
+        let url = self.bombastic.join("/api/v1/sbom/status")?;
+        let response = self
+            .client
+            .get(url)
+            .apply(&options)
+            .propagate_current_context()
+            .inject_token(provider)
+            .await?
+            .send()
+            .await?
+            .or_status_error()
+            .await?;
+
+        Ok(response.json::<bombastic_model::prelude::StatusResult>().await?)
+    }
+
+    #[instrument(skip(self, provider), err)]
     pub async fn search_vex(
         &self,
         q: &str,

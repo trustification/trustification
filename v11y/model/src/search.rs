@@ -25,6 +25,8 @@ pub enum Cves<'a> {
     DateUpdated(Ordered<OffsetDateTime>),
     #[search(sort)]
     DateRejected(Ordered<OffsetDateTime>),
+    #[search(sort)]
+    IndexedTimestamp(Ordered<time::OffsetDateTime>),
 
     Severity(&'a str),
     Low,
@@ -44,7 +46,7 @@ pub struct SearchDocument {
     pub published: bool,
     pub title: Option<String>,
     pub descriptions: Vec<String>,
-
+    pub indexed_timestamp: OffsetDateTime,
     pub cvss3x_score: Option<f64>,
 
     #[serde(with = "time::serde::rfc3339::option")]
@@ -87,4 +89,15 @@ impl<T> SearchHit<T> {
             metadata,
         }
     }
+}
+
+/// This payload returns the total number of docs and the last updated doc.
+#[derive(serde::Deserialize, serde::Serialize, Debug, PartialEq, utoipa::ToSchema, Default)]
+pub struct StatusResult {
+    /// Total number of all documents
+    pub total: Option<u64>,
+    /// Id of last updated doc
+    pub last_updated_cve_id: Option<String>,
+    /// Updated time of last updated doc
+    pub last_updated_date: Option<OffsetDateTime>,
 }

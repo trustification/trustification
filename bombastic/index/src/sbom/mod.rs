@@ -80,7 +80,7 @@ impl Index {
     pub fn new() -> Self {
         let mut schema = Schema::builder();
         let fields = Fields {
-            indexed_timestamp: schema.add_date_field("indexed_timestamp", STORED),
+            indexed_timestamp: schema.add_date_field("indexed_timestamp", INDEXED | FAST | STORED),
             sbom_id: schema.add_text_field("sbom_id", STRING | FAST | STORED),
             sbom_uid: schema.add_text_field("sbom_uid", STRING | FAST | STORED),
             sbom_sha256: schema.add_text_field("sbom_sha256", STRING | STORED),
@@ -417,6 +417,10 @@ impl Index {
             Packages::Device => self.match_classifiers(Classification::Device),
             Packages::Firmware => self.match_classifiers(Classification::Firmware),
             Packages::File => self.match_classifiers(Classification::File),
+            Packages::IndexedTimestamp(ordered) => boost(
+                create_date_query(&self.schema, self.fields.indexed_timestamp, ordered),
+                CREATED_WEIGHT,
+            ),
         }
     }
 
@@ -451,6 +455,14 @@ impl trustification_index::Index for Index {
                     }
                     Direction::Ascending => {
                         sort_by.replace((self.fields.sbom_created, Order::Asc));
+                    }
+                },
+                PackagesSortable::IndexedTimestamp => match f.direction {
+                    Direction::Descending => {
+                        sort_by.replace((self.fields.indexed_timestamp, Order::Desc));
+                    }
+                    Direction::Ascending => {
+                        sort_by.replace((self.fields.indexed_timestamp, Order::Asc));
                     }
                 },
             }
@@ -578,6 +590,16 @@ impl trustification_index::Index for Index {
             .unwrap_or(time::OffsetDateTime::UNIX_EPOCH);
 
         let dependencies: u64 = doc.get_all(self.fields.dep.purl).count() as u64;
+
+        let indexed_timestamp = doc
+            .get_first(self.fields.indexed_timestamp)
+            .map(|s| {
+                s.as_date()
+                    .map(|d| d.into_utc())
+                    .unwrap_or(time::OffsetDateTime::UNIX_EPOCH)
+            })
+            .unwrap_or(time::OffsetDateTime::UNIX_EPOCH);
+
         let document = SearchDocument {
             id: id.to_string(),
             uid,
@@ -594,6 +616,7 @@ impl trustification_index::Index for Index {
             created,
             description: description.to_string(),
             dependencies,
+            indexed_timestamp,
         };
 
         let explanation: Option<serde_json::Value> = if options.explain {
@@ -663,17 +686,16 @@ impl trustification_index::WriteIndex for Index {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use sbom_walker::Sbom;
     use std::path::Path;
     use time::format_description;
     use trustification_index::{IndexStore, IndexWriter};
 
-    use super::*;
-
     const TESTDATA: &[&str] = &[
-        "../testdata/ubi9-sbom.json",
         "../testdata/kmm-1.json",
         "../testdata/my-sbom.json",
+        "../testdata/ubi9-sbom.json",
     ];
 
     fn load_valid_file(store: &mut IndexStore<Index>, writer: &mut IndexWriter, path: impl AsRef<Path>) {
@@ -724,8 +746,30 @@ mod tests {
     async fn test_search_form() {
         assert_search(|index| {
             let result = search(&index, "ubi9-container");
+
             assert_eq!(result.0.len(), 1);
         });
+    }
+
+    #[tokio::test]
+    async fn test_search_sort_by_indexed_timestamp() {
+        assert_search(|index| {
+            let (last_update_docs, _size) = search(&index, "-sort:indexedTimestamp");
+            for doc in last_update_docs {
+                println!(
+                    "name: {:?}  indexed_timestamp: {:?} created : {:?}",
+                    doc.document.id, doc.document.indexed_timestamp, doc.document.created
+                );
+            }
+        });
+    }
+
+    #[tokio::test]
+    async fn test_total_num() {
+        assert_search(|index| {
+            let num = &index.get_total_docs();
+            assert_eq!(num.as_ref().unwrap(), &3);
+        })
     }
 
     #[tokio::test]

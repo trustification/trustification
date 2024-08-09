@@ -56,6 +56,7 @@ pub fn config(
                     .app_data(web::JsonConfig::default().limit(publish_limit)),
             )
             .service(vulnerability::get_cve)
+            .service(search::cve_status)
             .service(search::search_cve),
     )
     .service(swagger_ui_with_auth(ApiDoc::openapi(), swagger_ui_oidc));

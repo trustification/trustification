@@ -1,5 +1,6 @@
 use serde_json::Value;
 use sikula::prelude::*;
+use time::OffsetDateTime;
 
 #[derive(Clone, Debug, PartialEq, Search)]
 pub enum Packages<'a> {
@@ -34,6 +35,8 @@ pub enum Packages<'a> {
     Description(&'a str),
     #[search(sort)]
     Created(Ordered<time::OffsetDateTime>),
+    #[search(sort)]
+    IndexedTimestamp(Ordered<time::OffsetDateTime>),
     Digest(&'a str),
     #[search(scope)]
     License(&'a str),
@@ -59,6 +62,9 @@ pub struct SearchDocument {
     pub id: String,
     /// SBOM unique identifier
     pub uid: Option<String>,
+    /// The creation time of the document.
+    #[schema(value_type = String)]
+    pub indexed_timestamp: time::OffsetDateTime,
     /// SBOM package name
     pub name: String,
     /// SBOM package version
@@ -111,3 +117,26 @@ pub struct SearchResult {
     /// Documents matched up to max requested
     pub result: Vec<SearchHit>,
 }
+
+/// This payload returns the total number of docs and the last updated doc.
+#[derive(serde::Deserialize, serde::Serialize, Debug, PartialEq, utoipa::ToSchema, Default)]
+pub struct StatusResult {
+    /// Total number of all documents
+    pub total: Option<u64>,
+    /// id of last updated doc
+    pub last_updated_sbom_id: Option<String>,
+    /// name of last updated doc
+    pub last_updated_sbom_name: Option<String>,
+    /// Updated time of last updated doc
+    pub last_updated_date: Option<OffsetDateTime>,
+}
+
+// impl Default for StatusResult {
+//     fn default() -> Self {
+//         StatusResult {
+//             total: 0,
+//             last_updated_sbom: "".to_string(),
+//             last_updated_date: OffsetDateTime::now_utc(),
+//         }
+//     }
+// }
