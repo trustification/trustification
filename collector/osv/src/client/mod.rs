@@ -222,4 +222,16 @@ mod tests {
 
         Ok(())
     }
+
+    // https://issues.redhat.com/browse/TC-1714
+    #[tokio::test]
+    async fn query_vuln_ecosystem_ubuntu() -> Result<(), anyhow::Error> {
+        let osv_client = OsvClient::new();
+        // these three CVEs ensure full coverage (at commit date) of the Ubuntu Ecosystem
+        let _vuln: v11y_client::Vulnerability = osv_client.vulns("CVE-2024-40907").await?.unwrap().into();
+        let _vuln: v11y_client::Vulnerability = osv_client.vulns("CVE-2024-7264").await?.unwrap().into();
+        let _vuln: v11y_client::Vulnerability = osv_client.vulns("CVE-2024-4764").await?.unwrap().into();
+
+        Ok(())
+    }
 }
