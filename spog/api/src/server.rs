@@ -1,3 +1,4 @@
+use crate::db::Db;
 use crate::{
     app_state::AppState,
     config,
@@ -34,12 +35,14 @@ impl Server {
 
     pub async fn run(self, context: MainContext<()>, listener: Option<TcpListener>) -> anyhow::Result<()> {
         let provider = self.run.oidc.into_provider_or_devmode(self.run.devmode).await?;
+        let db_path = self.run.db_storage_base.unwrap_or_else(|| ".".into());
         let state = web::Data::new(AppState {
             client: self.run.client.build_client()?,
             bombastic: self.run.bombastic_url.clone(),
             vexination: self.run.vexination_url.clone(),
             exhort: self.run.exhort_url.clone(),
             provider: provider.clone(),
+            db_storage: Db::new(db_path).await?,
         });
 
         let (authn, authz) = self.run.auth.split(self.run.devmode)?.unzip();
