@@ -1,6 +1,7 @@
 mod analytics;
 mod app_state;
 mod config;
+mod db;
 mod endpoints;
 mod error;
 mod openapi;
@@ -92,6 +93,10 @@ pub struct Run {
 
     #[command(flatten)]
     pub client: ClientConfig,
+
+    /// Base path to the database store. Defaults to the local directory.
+    #[arg(env, long = "db-storage-base")]
+    pub db_storage_base: Option<PathBuf>,
 }
 
 impl Run {
