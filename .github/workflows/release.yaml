@@ -126,6 +126,9 @@ jobs:
       - name: Install cargo-auditable
         run: cargo binstall -y cargo-auditable
 
+      - name: Install libsasl2-dev
+        run: sudo apt-get install -y libsasl2-dev
+
       - name: Build
         shell: bash
         run: |
@@ -157,9 +160,19 @@ jobs:
       packages: write
       id-token: write # for using OIDC tokens
     runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        include:
+          - name: trust
+            containerfile: container_files/Containerfile.services
+          - name: trust-docs
+            containerfile: container_files/Containerfile.docs
+          - name: trust-tests
+            containerfile: container_files/Containerfile.tests
 
     env:
-      CONTAINERS: "trust trust-docs trust-tests"
+      IMAGE_TAG: ci
+      PLATFORMS: "linux/amd64, linux/arm64"
 
     steps:
       - name: Checkout
@@ -238,7 +251,7 @@ jobs:
         run: |
           cargo binstall -y cargo-cyclonedx
           cargo cyclonedx --all --format json
-          cp trust/bom.json staging/trust.project.sbom.json
+          cp trust/trust.cdx.json staging/trust.project.sbom.json
 
       - name: Create SBOM of the frontend
         # gather (embedded) dependencies from the yarn build
@@ -271,18 +284,43 @@ jobs:
             cosign sign-blob --yes --b64=false ${i} --output-signature ${i}.cosign.sig --output-certificate ${i}.cosign.crt
           done
 
+      # We need to rebuild images until podman is able to load multi-arch images
+      # https://github.com/containers/podman/issues/4646
+      # - name: Load container
+      #   run: |
+      #     for container in $CONTAINERS; do
+      #       podman load --input ~/download/${container}-container/${container}-image.tar
+      #     done
+
+      - name: Install qemu dependency
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qemu-user-static
+
+      - name: Build Image
+        id: build-image
+        uses: redhat-actions/buildah-build@v2
+        with:
+          image: ${{ matrix.name }}
+          tags: ${{ env.IMAGE_TAG }}
+          envs: |
+            TAG=${{ env.IMAGE_TAG }}
+          build-args: |
+            tag=${{ env.IMAGE_TAG }}
+          platforms: ${{ env.PLATFORMS }}
+          containerfiles: |
+            ./${{ matrix.containerfile }}
+
+      - name: Check images created
+        run: buildah images | grep '${{ matrix.name }}'
+
+      - name: Save image
+        run: podman save --multi-image-archive ${{ matrix.name }}:${{ env.IMAGE_TAG }} > ${{ matrix.name }}-image.tar
+
       - name: Generate container SBOM
         run: |
-          for container in $CONTAINERS; do
-            syft ~/download/${container}-container/${container}-image.tar --output cyclonedx-json --catalogers rpm,cargo-auditable > staging/${container}.sbom.json
-            cyclonedx merge --input-files staging/${container}.sbom.json staging/trust-ui.project.sbom.json --output-file staging/${container}.sbom.json
-          done
-
-      - name: Load container
-        run: |
-          for container in $CONTAINERS; do
-            podman load --input ~/download/${container}-container/${container}-image.tar
-          done
+          syft ~/download/${{ matrix.name }}-container/${{ matrix.name }}-image.tar --output cyclonedx-json --catalogers rpm,cargo-auditable > staging/${{ matrix.name }}.sbom.json
+          cyclonedx merge --input-files staging/${{ matrix.name }}.sbom.json staging/trust-ui.project.sbom.json --output-file staging/${{ matrix.name }}.sbom.json
 
       - name: Log in to ghcr.io
         uses: redhat-actions/podman-login@v1
@@ -294,54 +332,44 @@ jobs:
       - name: Push to ghcr.io
         id: push-images
         run: |
-          for container in $CONTAINERS; do
-            IMAGE="ghcr.io/${{ github.repository_owner }}/${container}:${{ needs.init.outputs.version }}"
-            podman push \
-              "${container}:ci" \
-              "${IMAGE}" \
-              --digestfile "${RUNNER_TEMP}/push.${container}.digest"
-          done
+          IMAGE="ghcr.io/${{ github.repository_owner }}/${{ matrix.name }}:${{ needs.init.outputs.version }}"
+          podman push \
+            "${{ matrix.name }}:ci" \
+            "${IMAGE}" --all \
+            --digestfile "${RUNNER_TEMP}/push.${{ matrix.name }}.digest"
 
       - name: Push to ghcr.io (as latest)
         if: ${{ needs.init.outputs.latest == 'true' }}
         id: push-images-latest
         run: |
-          for container in $CONTAINERS; do
-            IMAGE="ghcr.io/${{ github.repository_owner }}/${container}:latest"
-            podman push \
-              "${container}:ci" \
-              "${IMAGE}"
-          done
+          IMAGE="ghcr.io/${{ github.repository_owner }}/${{ matrix.name }}:latest"
+          podman push \
+            "${{ matrix.name }}:ci" --all \
+            "${IMAGE}"
 
       - name: Sign the images with GitHub OIDC Token
         env:
           COSIGN_EXPERIMENTAL: true
         run: |
-          for container in $CONTAINERS; do
-            imageDigest="$(cat ${RUNNER_TEMP}/push.${container}.digest)"
-            echo "Image Digest: ${imageDigest}"
-            # and then construct the full (pushed) name
-            cosign sign --yes --recursive "ghcr.io/${{ github.repository_owner }}/${container}@${imageDigest}"
-          done
+          imageDigest="$(cat ${RUNNER_TEMP}/push.${{ matrix.name }}.digest)"
+          echo "Image Digest: ${imageDigest}"
+          # and then construct the full (pushed) name
+          cosign sign --yes --recursive "ghcr.io/${{ github.repository_owner }}/${{ matrix.name }}@${imageDigest}"
 
       - name: Attach container SBOM information
         env:
           COSIGN_EXPERIMENTAL: true
         run: |
-          for container in $CONTAINERS; do
-            IMAGE="ghcr.io/${{ github.repository_owner }}/${container}:${{ needs.init.outputs.version }}"
-            # attach and sign SBOM
-            cosign attach sbom --sbom staging/${container}.sbom.json --input-format json --type cyclonedx ${IMAGE}
-            cosign sign --attachment sbom ${IMAGE}
-            # attach SBOM as attestation
-            cosign attest --yes --recursive  --type cyclonedx --predicate staging/${container}.sbom.json ${IMAGE}
-          done
+          IMAGE="ghcr.io/${{ github.repository_owner }}/${{ matrix.name }}:${{ needs.init.outputs.version }}"
+          # attach and sign SBOM
+          cosign attach sbom --sbom staging/${{ matrix.name }}.sbom.json --input-format json --type cyclonedx ${IMAGE}
+          cosign sign --attachment sbom ${IMAGE}
+          # attach SBOM as attestation
+          cosign attest --yes --recursive  --type cyclonedx --predicate staging/${{ matrix.name }}.sbom.json ${IMAGE}
 
       - run: |
-          for container in $CONTAINERS; do
-            cp ~/download/${container}-container/${container}-image.tar staging/${container}-container.tar
-            xz staging/${container}-container.tar
-          done
+          cp ~/download/${{ matrix.name }}-container/${{ matrix.name }}-image.tar staging/${{ matrix.name }}-container.tar
+          xz staging/${{ matrix.name }}-container.tar
 
       - name: Display staging area
         run: ls -R staging
