@@ -1,14 +1,42 @@
 use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
+use utoipa::ToSchema;
+#[derive(Clone, Debug, PartialEq, Eq, ToSchema, Serialize, Deserialize)]
+pub struct UserPreferences {
+    pub user_id: String,
+    pub preferences: Option<Preferences>,
+}
 
-#[derive(Clone, serde::Deserialize, serde::Serialize)]
+impl Default for UserPreferences {
+    fn default() -> Self {
+        UserPreferences {
+            user_id: "".to_string(),
+            preferences: Some(Preferences {
+                sbom1: "".to_string(),
+                sbom2: "".to_string(),
+                sbom3: "".to_string(),
+                sbom4: "".to_string(),
+            }),
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Default)]
+pub struct Preferences {
+    pub sbom1: String,
+    pub sbom2: String,
+    pub sbom3: String,
+    pub sbom4: String,
+}
+
+#[derive(Clone, serde::Deserialize, ToSchema, serde::Serialize)]
 pub struct DashboardStatus {
     pub sbom_summary: SbomStatus,
     pub csaf_summary: CSAFStatus,
     pub cve_summary: CveStatus,
 }
 
-#[derive(Clone, serde::Deserialize, serde::Serialize)]
+#[derive(Clone, serde::Deserialize, ToSchema, serde::Serialize)]
 pub struct SbomStatus {
     /// Total number of all documents
     pub total_sboms: Option<u64>,
@@ -20,7 +48,7 @@ pub struct SbomStatus {
     pub last_updated_date: Option<OffsetDateTime>,
 }
 
-#[derive(Clone, serde::Deserialize, serde::Serialize)]
+#[derive(Clone, serde::Deserialize, ToSchema, serde::Serialize)]
 pub struct CSAFStatus {
     /// Total number of all documents
     pub total_csafs: Option<u64>,
@@ -32,7 +60,7 @@ pub struct CSAFStatus {
     pub last_updated_date: Option<OffsetDateTime>,
 }
 
-#[derive(Clone, serde::Deserialize, serde::Serialize)]
+#[derive(Clone, serde::Deserialize, ToSchema, serde::Serialize)]
 pub struct CveStatus {
     /// Total number of all documents
     pub total_cves: Option<u64>,

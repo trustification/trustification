@@ -32,12 +32,14 @@ spec:
           {{- include "trustification.application.container" $mod | nindent 10 }}
           {{- include "trustification.application.infrastructure.probes" $mod | nindent 10 }}
 
-          command: ["/trust"]
+          command: [ "/trust" ]
           args:
             - "spog"
             - "api"
             - "-p"
             - "8080"
+            - "--db-storage-base"
+            - "{{ include "trustification.preferences.db.path" $mod}}"
             - "--bombastic-url"
             - "{{ include "trustification.tls.http.protocol" $mod }}://bombastic-api.{{ .Release.Namespace }}.svc.cluster.local"
             - "--vexination-url"
@@ -98,7 +100,7 @@ spec:
           volumeMounts:
             {{- include "trustification.application.httpServerVolumesMounts" $mod | nindent 12 }}
             {{- include "trustification.authenticator.volumeMount" $mod | nindent 12 }}
-
+            {{- include "trustification.preferences.db.volumeMount" $mod | nindent 12 }}
             {{- if $mod.module.uiConfiguration }}
             - name: config-ui
               mountPath: /etc/config/spog-ui.yaml
@@ -118,5 +120,6 @@ spec:
         {{- end }}
 
         {{- include "trustification.application.extraVolumes" $mod | nindent 8 }}
+        {{- include "trustification.preferences.db.volume" $mod | nindent 8 }}
 
 {{ end }}

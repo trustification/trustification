@@ -1,0 +1,15 @@
+{{- if .Values.modules.spogApi.enabled }}
+{{- $mod := dict "root" . "name" "user-preferences-db-path" "component" "spog" "module" .Values.modules.spogApi -}}
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: {{ include "trustification.common.name" $mod }}
+  labels:
+    {{- include "trustification.common.labels" $mod | nindent 4 }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ $mod.module.storageSize | default "10Mi" | quote }}
+{{end}}
