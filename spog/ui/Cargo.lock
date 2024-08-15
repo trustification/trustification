@@ -538,22 +538,37 @@ dependencies = [
 
 [[package]]
 name = "cyclonedx-bom"
-version = "0.4.3"
-source = "git+https://github.com/carlosthe19916/cyclonedx-rust-cargo?branch=issue-615-trustification#d2a0f7962dc1c8d28ec24effa325f3b3ad3c22ce"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fa4bc2b1186cf894ec0192863b5d6e6164de1a39ab66d2a281a4157b4ea45138"
 dependencies = [
  "base64 0.21.7",
+ "cyclonedx-bom-macros",
  "fluent-uri",
+ "indexmap 2.2.6",
  "once_cell",
  "ordered-float 4.2.0",
- "packageurl 0.3.0",
+ "purl",
  "regex",
  "serde",
  "serde_json",
  "spdx",
+ "strum 0.26.2",
  "thiserror",
  "time",
  "uuid",
  "xml-rs",
+]
+
+[[package]]
+name = "cyclonedx-bom-macros"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c50341f21df64b412b4f917e34b7aa786c092d64f3f905f478cb76950c7e980c"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.60",
 ]
 
 [[package]]
@@ -2288,6 +2303,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "purl"
+version = "0.1.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c14fe28c8495f7eaf77a6e6106966f95211c0a2404b9da50d248fc32af3a3f14"
+dependencies = [
+ "hex",
+ "percent-encoding",
+ "thiserror",
+]
+
+[[package]]
 name = "quote"
 version = "1.0.36"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2860,9 +2886,9 @@ dependencies = [
 
 [[package]]
 name = "spdx"
-version = "0.10.4"
+version = "0.10.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "29ef1a0fa1e39ac22972c8db23ff89aea700ab96aa87114e1fb55937a631a0c9"
+checksum = "47317bbaf63785b53861e1ae2d11b80d6b624211d42cb20efcd210ee6f8a14bc"
 dependencies = [
  "smallvec",
 ]

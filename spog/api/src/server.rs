@@ -117,8 +117,15 @@ impl Server {
                     .configure(endpoints::advisory::configure(authenticator.clone()))
                     .configure(endpoints::cve::configure(authenticator.clone()))
                     .configure(endpoints::package::configure(authenticator.clone()))
-                    .configure(endpoints::dashboard::configure(authenticator.clone()))
+                    .configure(endpoints::dashboard::configure(
+                        authenticator.clone(),
+                        crda_payload_limit,
+                    ))
                     .configure(endpoints::suggestion::configure(authenticator.clone()))
+                    .configure(endpoints::dashboard::configure(
+                        authenticator.clone(),
+                        crda_payload_limit,
+                    ))
                     .configure(config_configurator.clone())
                     .service({
                         let mut openapi = endpoints::ApiDoc::openapi();

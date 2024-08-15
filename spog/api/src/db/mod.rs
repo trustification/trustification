@@ -1,27 +1,60 @@
-use serde::{Deserialize, Serialize};
+use actix_web::body::BoxBody;
+use actix_web::http::header::ContentType;
+use actix_web::{HttpResponse, ResponseError};
+use http::StatusCode;
+use spog_model::dashboard::UserPreferences;
 use sqlx::sqlite::SqliteConnectOptions;
 use sqlx::{Row, SqlitePool};
 use std::path::Path;
 use std::str::FromStr;
-use utoipa::ToSchema;
+use trustification_common::error::ErrorInformation;
 
 #[allow(dead_code)]
-static DB_FILE_NAME: &str = "user_preferences.db";
-
-#[derive(Clone, Debug, PartialEq, Eq, ToSchema, Serialize, Deserialize)]
-pub struct UserPreferences {
-    user_id: String,
-    preferences: Option<String>,
-}
+static DB_FILE_NAME: &str = "preferences.db";
 
 #[allow(dead_code)]
 pub struct Db {
     pool: SqlitePool,
 }
 
+#[derive(Debug, thiserror::Error)]
+pub enum Error {
+    #[error("JSON parse error: {0}")]
+    Json(#[from] serde_json::Error),
+    #[error("data base error: {0}")]
+    Db(#[from] sqlx::Error),
+}
+
+impl ResponseError for Error {
+    fn status_code(&self) -> StatusCode {
+        match self {
+            Error::Json(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            Error::Db(_) => StatusCode::INTERNAL_SERVER_ERROR,
+        }
+    }
+
+    fn error_response(&self) -> HttpResponse<BoxBody> {
+        let mut res = HttpResponse::build(self.status_code());
+        res.insert_header(ContentType::json());
+
+        match self {
+            Error::Json(json) => res.json(ErrorInformation {
+                error: format!("{}", self.status_code()),
+                message: format!("{}", json),
+                details: json.to_string(),
+            }),
+            Error::Db(db) => res.json(ErrorInformation {
+                error: format!("{}", self.status_code()),
+                message: format!("{}", db),
+                details: db.to_string(),
+            }),
+        }
+    }
+}
+
 impl Db {
     #[allow(dead_code)]
-    pub async fn new(base: impl AsRef<Path>) -> Result<Self, anyhow::Error> {
+    pub async fn new(base: impl AsRef<Path>) -> Result<Self, Error> {
         let db = Self {
             pool: SqlitePool::connect_with(if cfg!(test) {
                 SqliteConnectOptions::from_str(":memory:")?
@@ -37,13 +70,13 @@ impl Db {
     }
 
     #[allow(dead_code)]
-    async fn initialize(&self) -> Result<(), anyhow::Error> {
+    async fn initialize(&self) -> Result<(), Error> {
         self.create_user_preferences_table().await?;
         Ok(())
     }
 
     #[allow(dead_code)]
-    pub async fn create_user_preferences_table(&self) -> Result<(), anyhow::Error> {
+    pub async fn create_user_preferences_table(&self) -> Result<(), Error> {
         sqlx::query(
             r#"CREATE TABLE IF NOT EXISTS preferences (
                 user_id TEXT,
@@ -64,7 +97,7 @@ impl Db {
         Ok(())
     }
     #[allow(dead_code)]
-    pub async fn update_user_preferences(&self, preferences: UserPreferences) -> Result<(), anyhow::Error> {
+    pub async fn update_user_preferences(&self, preferences: UserPreferences) -> Result<(), Error> {
         let content = preferences.preferences.unwrap_or_default();
 
         sqlx::query(
@@ -74,53 +107,73 @@ impl Db {
             "#,
         )
         .bind(preferences.user_id)
-        .bind(content)
+        .bind(serde_json::to_string(&content).unwrap_or_default())
         .execute(&self.pool)
         .await?;
 
         Ok(())
     }
     #[allow(dead_code)]
-    pub async fn select_preferences_by_user_id(&self, user_id: String) -> Result<UserPreferences, anyhow::Error> {
+    pub async fn select_preferences_by_user_id(&self, user_id: String) -> Result<UserPreferences, Error> {
         let result = sqlx::query(
             r#"
            select user_id, preference from preferences where user_id = $1;
             "#,
         )
         .bind(user_id)
-        .fetch_one(&self.pool)
+        .fetch_all(&self.pool)
         .await?;
-        let p = UserPreferences {
-            user_id: result.get("user_id"),
-            preferences: result.get("preference"),
-        };
-        Ok(p)
+
+        if result.is_empty() {
+            Ok(UserPreferences::default())
+        } else {
+            let p = UserPreferences {
+                user_id: result[0].get("user_id"),
+                preferences: serde_json::from_str(result[0].get("preference"))?,
+            };
+            Ok(p)
+        }
     }
 }
 #[cfg(test)]
 mod test {
-    use crate::db::{Db, UserPreferences};
+    use crate::db::Db;
+    use spog_model::dashboard::{Preferences, UserPreferences};
     #[actix_web::test]
     async fn update_user_preferences() -> Result<(), anyhow::Error> {
+        let pre_preferences = Preferences {
+            sbom1: "11".to_string(),
+            sbom2: "21".to_string(),
+            sbom3: "31".to_string(),
+            sbom4: "41".to_string(),
+        };
+
+        let post_preferences = Preferences {
+            sbom1: "1".to_string(),
+            sbom2: "2".to_string(),
+            sbom3: "3".to_string(),
+            sbom4: "4".to_string(),
+        };
+
         let db = Db::new(".").await?;
         db.update_user_preferences(UserPreferences {
             user_id: "xiabai".to_string(),
-            preferences: Some("some fileds".to_string()),
+            preferences: Some(pre_preferences.clone()),
         })
         .await?;
         db.update_user_preferences(UserPreferences {
             user_id: "user1".to_string(),
-            preferences: Some("some field".to_string()),
+            preferences: Some(pre_preferences.clone()),
         })
         .await?;
 
         let result = db.select_preferences_by_user_id("user1".to_string()).await?;
         assert_eq!("user1", result.user_id);
-        assert_eq!("some field", result.preferences.unwrap_or_else(|| "".to_string()));
+        assert_eq!("11".to_string(), result.preferences.unwrap_or_default().sbom1);
 
         db.update_user_preferences(UserPreferences {
             user_id: "user1".to_string(),
-            preferences: Some("changed".to_string()),
+            preferences: Some(post_preferences.clone()),
         })
         .await?;
 
@@ -129,7 +182,7 @@ mod test {
 
         let result = db.select_preferences_by_user_id("user1".to_string()).await?;
         assert_eq!("user1", result.user_id);
-        assert_eq!("changed", result.preferences.unwrap_or_else(|| "".to_string()));
+        assert_eq!("1".to_string(), result.preferences.unwrap_or_default().sbom1);
         Ok(())
     }
 }

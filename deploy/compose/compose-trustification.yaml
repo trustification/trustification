@@ -96,7 +96,7 @@ services:
           sleep 5
         done
         echo keycloak is up
-        /trust spog api --devmode --bombastic-url http://bombastic-api:$BOMBASTIC_API_PORT --vexination-url http://vexination-api:$VEXINATION_API_PORT --guac http://guac-graphql:$GUAC_API_PORT/query --v11y-url http://v11y-api:$V11Y_API_PORT
+        /trust spog api --devmode --db-storage-base $USER_PREFERENCES_DB_PATH --bombastic-url http://bombastic-api:$BOMBASTIC_API_PORT --vexination-url http://vexination-api:$VEXINATION_API_PORT --guac http://guac-graphql:$GUAC_API_PORT/query --v11y-url http://v11y-api:$V11Y_API_PORT
     entrypoint: /usr/bin/bash
     restart: on-failure
     healthcheck:
@@ -106,6 +106,8 @@ services:
       INFRASTRUCTURE_ENABLED: "true"
       OPENID_CONFIGURATION: "http://keycloak:8080/realms/chicken/.well-known/openid-configuration"
       HTTP_SERVER_BIND_ADDR: "::"
+    volumes:
+      - $USER_PREFERENCES_DB_PATH:/tmp/share/db/
 
   spog-ui:
     command: /nginx.sh
