@@ -152,6 +152,40 @@
         }
       }
     },
+    "platforms": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "defaultPlatform": {
+          "type": "string"
+        },
+        "supported": {
+          "type": "array",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "image": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "registry": {
+                  "type": "string"
+                },
+                "pullPolicy": {
+                  "type": "string",
+                  "enum": ["IfNotPresent", "Always", "Never"]
+                },
+                "version": {
+                  "type": "string"
+                }
+              }
+            }
+        }
+      }
+    },
     "report": {
       "type": "object",
       "additionalProperties": false,

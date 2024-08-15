@@ -20,7 +20,9 @@ Arguments (dict):
   * image - image object
 */}}
 {{- define "trustification.common.image" -}}
-{{ $next := merge (deepCopy .) (dict "defaults" .root.Values.image ) }}
+{{- $platform := .root.Values.platforms.supported | where "name" .root.Values.platforms.defaultPlatform | first }}
+
+{{ $next := merge (deepCopy .) (dict "defaults" $platform.image ) }}
 image: {{ include "trustification.common.imageName" $next }}
 imagePullPolicy: {{ include "trustification.common.imagePullPolicy" $next }}
 {{- end }}
