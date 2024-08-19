@@ -47,6 +47,7 @@ pub fn config(
             .service(query_sbom)
             .service(search_sbom)
             .service(search_package)
+            .service(sbom_status)
             .service(
                 web::resource("/sbom")
                     .app_data(web::PayloadConfig::new(publish_limit))
@@ -407,4 +408,62 @@ async fn delete_sboms(
     state.storage.delete_all().await.map_err(Error::Storage)?;
 
     Ok(HttpResponse::NoContent().finish())
+}
+
+/// Search for a status of sbom using a free form search query.
+///
+/// See the [documentation](https://docs.trustification.dev/trustification/user/retrieve.html) for a description of the query language.
+#[utoipa::path(
+    get,
+    tag = "bombastic",
+    path = "/api/v1/sbom/status",
+    responses(
+    (status = 200, description = "Search completed"),
+    (status = BAD_REQUEST, description = "Bad query"),
+    (status = 401, description = "Not authenticated"),
+    ),
+    params(
+    ("q" = String, Query, description = "Search query"),
+    )
+)]
+#[get("/sbom/status")]
+async fn sbom_status(
+    state: web::Data<SharedState>,
+    authorizer: web::Data<Authorizer>,
+    user: UserInformation,
+) -> actix_web::Result<impl Responder> {
+    authorizer.require(&user, Permission::ReadSbom)?;
+
+    let state_clone = Arc::clone(&state);
+
+    let (result, _total) = actix_web::web::block(move || {
+        state_clone.sbom_index.search(
+            "-sort:indexedTimestamp",
+            0,
+            1,
+            SearchOptions {
+                metadata: false,
+                explain: false,
+                summaries: true,
+            },
+        )
+    })
+    .await?
+    .map_err(Error::Index)?;
+
+    let state_clone = Arc::clone(&state);
+    let total_docs = actix_web::web::block(move || state_clone.sbom_index.get_total_docs())
+        .await?
+        .map_err(Error::Index)?;
+
+    if let Some(sbom) = result.first() {
+        Ok(HttpResponse::Ok().json(StatusResult {
+            total: Some(total_docs),
+            last_updated_sbom_id: Some(sbom.document.id.to_string()),
+            last_updated_sbom_name: Some(sbom.document.name.to_string()),
+            last_updated_date: Some(sbom.document.indexed_timestamp),
+        }))
+    } else {
+        Ok(HttpResponse::Ok().json(StatusResult::default()))
+    }
 }
