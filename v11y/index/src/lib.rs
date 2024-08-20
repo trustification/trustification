@@ -62,7 +62,7 @@ impl Index {
         let mut schema = Schema::builder();
 
         let fields = Fields {
-            indexed_timestamp: schema.add_date_field("indexed_timestamp", STORED),
+            indexed_timestamp: schema.add_date_field("indexed_timestamp", INDEXED | FAST | STORED),
             id: schema.add_text_field("id", STRING | FAST | STORED),
             published: schema.add_bool_field("published", FAST | INDEXED | STORED),
 
@@ -204,6 +204,7 @@ impl Index {
                 Occur::Should,
                 Term::from_field_text(self.fields.severity, Severity::Critical.as_str()),
             ),
+            Cves::IndexedTimestamp(value) => create_date_query(&self.schema, self.fields.indexed_timestamp, value),
         }
     }
 
@@ -229,6 +230,7 @@ impl trustification_index::Index for Index {
             CvesSortable::DatePublished => sort_by(f.direction, self.fields.date_published),
             CvesSortable::DateUpdated => sort_by(f.direction, self.fields.date_updated),
             CvesSortable::DateRejected => sort_by(f.direction, self.fields.date_rejected),
+            CvesSortable::IndexedTimestamp => sort_by(f.direction, self.fields.indexed_timestamp),
         });
 
         let query = if query.term.is_empty() {
@@ -318,6 +320,14 @@ impl trustification_index::Index for Index {
 
         let date_published = field2date_opt(&doc, self.fields.date_published);
         let date_updated = field2date_opt(&doc, self.fields.date_updated);
+        let indexed_timestamp = doc
+            .get_first(self.fields.indexed_timestamp)
+            .map(|s| {
+                s.as_date()
+                    .map(|d| d.into_utc())
+                    .unwrap_or(time::OffsetDateTime::UNIX_EPOCH)
+            })
+            .unwrap_or(time::OffsetDateTime::UNIX_EPOCH);
 
         let document = SearchDocument {
             id: id.to_string(),
@@ -328,6 +338,7 @@ impl trustification_index::Index for Index {
 
             date_published,
             date_updated,
+            indexed_timestamp,
         };
 
         let explanation: Option<Value> = if options.explain {

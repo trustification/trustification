@@ -51,6 +51,11 @@ impl V11yService {
     }
 
     #[instrument(skip(self), err)]
+    pub async fn get_cve_status(&self) -> Result<v11y_model::search::StatusResult, Error> {
+        self.client.get_cve_status().await.map_err(Error::Any)
+    }
+
+    #[instrument(skip(self), err)]
     pub async fn search(&self, query: QueryParams) -> Result<SearchResult<Vec<SearchHit<SearchDocument>>>, Error> {
         self.client
             .search(&query.q, query.limit, query.offset)
