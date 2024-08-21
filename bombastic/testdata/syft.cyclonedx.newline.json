@@ -1,0 +1,4894 @@
+{
+    "$schema": "http://cyclonedx.org/schema/bom-1.4.schema.json",
+    "bomFormat": "CycloneDX",
+    "specVersion": "1.4",
+    "serialNumber": "urn:uuid:2fe05a58-57a1-4c3f-9467-805188f8b18a",
+    "version": 1,
+    "metadata": {
+        "timestamp": "2024-08-20T02:59:35Z",
+        "tools": [
+            {
+                "vendor": "anchore",
+                "name": "syft",
+                "version": "1.0.1"
+            }
+        ],
+        "component": {
+            "bom-ref": "129681bef5af81db",
+            "type": "container",
+            "name": "/tmp/files/image",
+            "version": "sha256:f7e5ffcbf6bbaf7fd820a22029ecb723c435317c0aeef70be91f846cf52b0791"
+        },
+        "properties": [
+            {
+                "name": "syft:image:labels:architecture",
+                "value": "x86_64"
+            },
+            {
+                "name": "syft:image:labels:build-date",
+                "value": "2024-08-15T05:24:08"
+            },
+            {
+                "name": "syft:image:labels:com.redhat.component",
+                "value": "python-311-container"
+            },
+            {
+                "name": "syft:image:labels:com.redhat.license_terms",
+                "value": "https://www.redhat.com/en/about/red-hat-end-user-license-agreements#UBI"
+            },
+            {
+                "name": "syft:image:labels:description",
+                "value": "Python 3.11 available as container is a base platform for building and running various Python 3.11 applications and frameworks. Python is an easy to learn, powerful programming language. It has efficient high-level data structures and a simple but effective approach to object-oriented programming. Python's elegant syntax and dynamic typing, together with its interpreted nature, make it an ideal language for scripting and rapid application development in many areas on most platforms."
+            },
+            {
+                "name": "syft:image:labels:distribution-scope",
+                "value": "public"
+            },
+            {
+                "name": "syft:image:labels:io.buildah.version",
+                "value": "1.33.7"
+            },
+            {
+                "name": "syft:image:labels:io.buildpacks.stack.id",
+                "value": "com.redhat.stacks.ubi9-python-311"
+            },
+            {
+                "name": "syft:image:labels:io.k8s.description",
+                "value": "Python 3.11 available as container is a base platform for building and running various Python 3.11 applications and frameworks. Python is an easy to learn, powerful programming language. It has efficient high-level data structures and a simple but effective approach to object-oriented programming. Python's elegant syntax and dynamic typing, together with its interpreted nature, make it an ideal language for scripting and rapid application development in many areas on most platforms."
+            },
+            {
+                "name": "syft:image:labels:io.k8s.display-name",
+                "value": "Python 3.11"
+            },
+            {
+                "name": "syft:image:labels:io.openshift.expose-services",
+                "value": "8080:http"
+            },
+            {
+                "name": "syft:image:labels:io.openshift.s2i.scripts-url",
+                "value": "image:///usr/libexec/s2i"
+            },
+            {
+                "name": "syft:image:labels:io.openshift.tags",
+                "value": "builder,python,python311,python-311,rh-python311"
+            },
+            {
+                "name": "syft:image:labels:io.s2i.scripts-url",
+                "value": "image:///usr/libexec/s2i"
+            },
+            {
+                "name": "syft:image:labels:maintainer",
+                "value": "SoftwareCollections.org <sclorg@redhat.com>"
+            },
+            {
+                "name": "syft:image:labels:name",
+                "value": "ubi9/python-311"
+            },
+            {
+                "name": "syft:image:labels:release",
+                "value": "72.1723699392"
+            },
+            {
+                "name": "syft:image:labels:summary",
+                "value": "Platform for building and running Python 3.11 applications"
+            },
+            {
+                "name": "syft:image:labels:url",
+                "value": "https://access.redhat.com/containers/#/registry.access.redhat.com/ubi9/python-311/images/1-72.1723699392"
+            },
+            {
+                "name": "syft:image:labels:usage",
+                "value": "s2i build https://github.com/sclorg/s2i-python-container.git --context-dir=3.11/test/setup-test-app/ ubi9/python-311 python-sample-app"
+            },
+            {
+                "name": "syft:image:labels:vcs-ref",
+                "value": "18a0ae0240092ce0329d69f3bee474dcb5e000b5"
+            },
+            {
+                "name": "syft:image:labels:vcs-type",
+                "value": "git"
+            },
+            {
+                "name": "syft:image:labels:vendor",
+                "value": "Red Hat, Inc."
+            },
+            {
+                "name": "syft:image:labels:version",
+                "value": "1"
+            }
+        ]
+    },
+    "components": [
+        {
+            "bom-ref": "pkg:npm/%40gradio/accordion@0.3.4?package-id=fe04107cd3981052",
+            "type": "library",
+            "name": "@gradio/accordion",
+            "version": "0.3.4",
+            "description": "Gradio UI packages",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "ISC"
+                    }
+                }
+            ],
+            "cpe": "cpe:2.3:a:\\@gradio\\/accordion:\\@gradio\\/accordion:0.3.4:*:*:*:*:*:*:*",
+            "purl": "pkg:npm/%40gradio/accordion@0.3.4",
+            "properties": [
+                {
+                    "name": "syft:package:foundBy",
+                    "value": "javascript-package-cataloger"
+                },
+                {
+                    "name": "syft:package:language",
+                    "value": "javascript"
+                },
+                {
+                    "name": "syft:package:type",
+                    "value": "npm"
+                },
+                {
+                    "name": "syft:package:metadataType",
+                    "value": "javascript-npm-package"
+                },
+                {
+                    "name": "syft:location:0:layerID",
+                    "value": "sha256:99b2d6fc0edb1f4698bd5006dfef5ad946e700b046b0fdb82dc9f5e433aacc91"
+                },
+                {
+                    "name": "syft:location:0:path",
+                    "value": "/opt/app-root/lib/python3.11/site-packages/gradio/_frontend_code/accordion/package.json"
+                }
+            ]
+        },
+        {
+            "bom-ref": "pkg:npm/%40gradio/annotatedimage@0.5.3?package-id=0c5d93e73cd82370",
+            "type": "library",
+            "name": "@gradio/annotatedimage",
+            "version": "0.5.3",
+            "description": "Gradio UI packages",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "ISC"
+                    }
+                }
+            ],
+            "cpe": "cpe:2.3:a:\\@gradio\\/annotatedimage:\\@gradio\\/annotatedimage:0.5.3:*:*:*:*:*:*:*",
+            "purl": "pkg:npm/%40gradio/annotatedimage@0.5.3",
+            "properties": [
+                {
+                    "name": "syft:package:foundBy",
+                    "value": "javascript-package-cataloger"
+                },
+                {
+                    "name": "syft:package:language",
+                    "value": "javascript"
+                },
+                {
+                    "name": "syft:package:type",
+                    "value": "npm"
+                },
+                {
+                    "name": "syft:package:metadataType",
+                    "value": "javascript-npm-package"
+                },
+                {
+                    "name": "syft:location:0:layerID",
+                    "value": "sha256:99b2d6fc0edb1f4698bd5006dfef5ad946e700b046b0fdb82dc9f5e433aacc91"
+                },
+                {
+                    "name": "syft:location:0:path",
+                    "value": "/opt/app-root/lib/python3.11/site-packages/gradio/_frontend_code/annotatedimage/package.json"
+                }
+            ]
+        },
+        {
+            "bom-ref": "pkg:npm/%40gradio/atoms@0.5.3?package-id=ed21aa77b5c12135",
+            "type": "library",
+            "name": "@gradio/atoms",
+            "version": "0.5.3",
+            "description": "Gradio UI packages",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "ISC"
+                    }
+                }
+            ],
+            "cpe": "cpe:2.3:a:\\@gradio\\/atoms:\\@gradio\\/atoms:0.5.3:*:*:*:*:*:*:*",
+            "purl": "pkg:npm/%40gradio/atoms@0.5.3",
+            "properties": [
+                {
+                    "name": "syft:package:foundBy",
+                    "value": "javascript-package-cataloger"
+                },
+                {
+                    "name": "syft:package:language",
+                    "value": "javascript"
+                },
+                {
+                    "name": "syft:package:type",
+                    "value": "npm"
+                },
+                {
+                    "name": "syft:package:metadataType",
+                    "value": "javascript-npm-package"
+                },
+                {
+                    "name": "syft:location:0:layerID",
+                    "value": "sha256:99b2d6fc0edb1f4698bd5006dfef5ad946e700b046b0fdb82dc9f5e433aacc91"
+                },
+                {
+                    "name": "syft:location:0:path",
+                    "value": "/opt/app-root/lib/python3.11/site-packages/gradio/_frontend_code/atoms/package.json"
+                }
+            ]
+        },
+        {
+            "bom-ref": "pkg:npm/%40gradio/audio@0.9.3?package-id=5e470577f8efdf58",
+            "type": "library",
+            "name": "@gradio/audio",
+            "version": "0.9.3",
+            "description": "Gradio UI packages",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "ISC"
+                    }
+                }
+            ],
+            "cpe": "cpe:2.3:a:\\@gradio\\/audio:\\@gradio\\/audio:0.9.3:*:*:*:*:*:*:*",
+            "purl": "pkg:npm/%40gradio/audio@0.9.3",
+            "properties": [
+                {
+                    "name": "syft:package:foundBy",
+                    "value": "javascript-package-cataloger"
+                },
+                {
+                    "name": "syft:package:language",
+                    "value": "javascript"
+                },
+                {
+                    "name": "syft:package:type",
+                    "value": "npm"
+                },
+                {
+                    "name": "syft:package:metadataType",
+                    "value": "javascript-npm-package"
+                },
+                {
+                    "name": "syft:location:0:layerID",
+                    "value": "sha256:99b2d6fc0edb1f4698bd5006dfef5ad946e700b046b0fdb82dc9f5e433aacc91"
+                },
+                {
+                    "name": "syft:location:0:path",
+                    "value": "/opt/app-root/lib/python3.11/site-packages/gradio/_frontend_code/audio/package.json"
+                }
+            ]
+        },
+        {
+            "bom-ref": "pkg:npm/%40gradio/box@0.1.10?package-id=d7df4a14827f5bda",
+            "type": "library",
+            "name": "@gradio/box",
+            "version": "0.1.10",
+            "description": "Gradio UI packages",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "ISC"
+                    }
+                }
+            ],
+            "cpe": "cpe:2.3:a:\\@gradio\\/box:\\@gradio\\/box:0.1.10:*:*:*:*:*:*:*",
+            "purl": "pkg:npm/%40gradio/box@0.1.10",
+            "properties": [
+                {
+                    "name": "syft:package:foundBy",
+                    "value": "javascript-package-cataloger"
+                },
+                {
+                    "name": "syft:package:language",
+                    "value": "javascript"
+                },
+                {
+                    "name": "syft:package:type",
+                    "value": "npm"
+                },
+                {
+                    "name": "syft:package:metadataType",
+                    "value": "javascript-npm-package"
+                },
+                {
+                    "name": "syft:location:0:layerID",
+                    "value": "sha256:99b2d6fc0edb1f4698bd5006dfef5ad946e700b046b0fdb82dc9f5e433aacc91"
+                },
+                {
+                    "name": "syft:location:0:path",
+                    "value": "/opt/app-root/lib/python3.11/site-packages/gradio/_frontend_code/box/package.json"
+                }
+            ]
+        },
+        {
+            "bom-ref": "pkg:npm/%40gradio/button@0.2.22?package-id=8a79c8315091495e",
+            "type": "library",
+            "name": "@gradio/button",
+            "version": "0.2.22",
+            "description": "Gradio UI packages",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "ISC"
+                    }
+                }
+            ],
+            "cpe": "cpe:2.3:a:\\@gradio\\/button:\\@gradio\\/button:0.2.22:*:*:*:*:*:*:*",
+            "purl": "pkg:npm/%40gradio/button@0.2.22",
+            "properties": [
+                {
+                    "name": "syft:package:foundBy",
+                    "value": "javascript-package-cataloger"
+                },
+                {
+                    "name": "syft:package:language",
+                    "value": "javascript"
+                },
+                {
+                    "name": "syft:package:type",
+                    "value": "npm"
+                },
+                {
+                    "name": "syft:package:metadataType",
+                    "value": "javascript-npm-package"
+                },
+                {
+                    "name": "syft:location:0:layerID",
+                    "value": "sha256:99b2d6fc0edb1f4698bd5006dfef5ad946e700b046b0fdb82dc9f5e433aacc91"
+                },
+                {
+                    "name": "syft:location:0:path",
+                    "value": "/opt/app-root/lib/python3.11/site-packages/gradio/_frontend_code/button/package.json"
+                }
+            ]
+        },
+        {
+            "bom-ref": "pkg:npm/%40gradio/chatbot@0.7.3?package-id=92503c15ebd24877",
+            "type": "library",
+            "name": "@gradio/chatbot",
+            "version": "0.7.3",
+            "description": "Gradio UI packages",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "ISC"
+                    }
+                }
+            ],
+            "cpe": "cpe:2.3:a:\\@gradio\\/chatbot:\\@gradio\\/chatbot:0.7.3:*:*:*:*:*:*:*",
+            "purl": "pkg:npm/%40gradio/chatbot@0.7.3",
+            "properties": [
+                {
+                    "name": "syft:package:foundBy",
+                    "value": "javascript-package-cataloger"
+                },
+                {
+                    "name": "syft:package:language",
+                    "value": "javascript"
+                },
+                {
+                    "name": "syft:package:type",
+                    "value": "npm"
+                },
+                {
+                    "name": "syft:package:metadataType",
+                    "value": "javascript-npm-package"
+                },
+                {
+                    "name": "syft:location:0:layerID",
+                    "value": "sha256:99b2d6fc0edb1f4698bd5006dfef5ad946e700b046b0fdb82dc9f5e433aacc91"
+                },
+                {
+                    "name": "syft:location:0:path",
+                    "value": "/opt/app-root/lib/python3.11/site-packages/gradio/_frontend_code/chatbot/package.json"
+                }
+            ]
+        },
+        {
+            "bom-ref": "pkg:npm/%40gradio/checkbox@0.2.11?package-id=0d74f0b0156500d2",
+            "type": "library",
+            "name": "@gradio/checkbox",
+            "version": "0.2.11",
+            "description": "Gradio UI packages",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "ISC"
+                    }
+                }
+            ],
+            "cpe": "cpe:2.3:a:\\@gradio\\/checkbox:\\@gradio\\/checkbox:0.2.11:*:*:*:*:*:*:*",
+            "purl": "pkg:npm/%40gradio/checkbox@0.2.11",
+            "properties": [
+                {
+                    "name": "syft:package:foundBy",
+                    "value": "javascript-package-cataloger"
+                },
+                {
+                    "name": "syft:package:language",
+                    "value": "javascript"
+                },
+                {
+                    "name": "syft:package:type",
+                    "value": "npm"
+                },
+                {
+                    "name": "syft:package:metadataType",
+                    "value": "javascript-npm-package"
+                },
+                {
+                    "name": "syft:location:0:layerID",
+                    "value": "sha256:99b2d6fc0edb1f4698bd5006dfef5ad946e700b046b0fdb82dc9f5e433aacc91"
+                },
+                {
+                    "name": "syft:location:0:path",
+                    "value": "/opt/app-root/lib/python3.11/site-packages/gradio/_frontend_code/checkbox/package.json"
+                }
+            ]
+        },
+        {
+            "bom-ref": "pkg:npm/%40gradio/checkboxgroup@0.4.5?package-id=68ce2f37fd6919aa",
+            "type": "library",
+            "name": "@gradio/checkboxgroup",
+            "version": "0.4.5",
+            "description": "Gradio UI packages",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "ISC"
+                    }
+                }
+            ],
+            "cpe": "cpe:2.3:a:\\@gradio\\/checkboxgroup:\\@gradio\\/checkboxgroup:0.4.5:*:*:*:*:*:*:*",
+            "purl": "pkg:npm/%40gradio/checkboxgroup@0.4.5",
+            "properties": [
+                {
+                    "name": "syft:package:foundBy",
+                    "value": "javascript-package-cataloger"
+                },
+                {
+                    "name": "syft:package:language",
+                    "value": "javascript"
+                },
+                {
+                    "name": "syft:package:type",
+                    "value": "npm"
+                },
+                {
+                    "name": "syft:package:metadataType",
+                    "value": "javascript-npm-package"
+                },
+                {
+                    "name": "syft:location:0:layerID",
+                    "value": "sha256:99b2d6fc0edb1f4698bd5006dfef5ad946e700b046b0fdb82dc9f5e433aacc91"
+                },
+                {
+                    "name": "syft:location:0:path",
+                    "value": "/opt/app-root/lib/python3.11/site-packages/gradio/_frontend_code/checkboxgroup/package.json"
+                }
+            ]
+        },
+        {
+            "bom-ref": "pkg:npm/%40gradio/client@0.12.1?package-id=b015b9d5dcb9a47f",
+            "type": "library",
+            "name": "@gradio/client",
+            "version": "0.12.1",
+            "description": "Gradio API client",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "ISC"
+                    }
+                }
+            ],
+            "cpe": "cpe:2.3:a:\\@gradio\\/client:\\@gradio\\/client:0.12.1:*:*:*:*:*:*:*",
+            "purl": "pkg:npm/%40gradio/client@0.12.1",
+            "properties": [
+                {
+                    "name": "syft:package:foundBy",
+                    "value": "javascript-package-cataloger"
+                },
+                {
+                    "name": "syft:package:language",
+                    "value": "javascript"
+                },
+                {
+                    "name": "syft:package:type",
+                    "value": "npm"
+                },
+                {
+                    "name": "syft:package:metadataType",
+                    "value": "javascript-npm-package"
+                },
+                {
+                    "name": "syft:location:0:layerID",
+                    "value": "sha256:99b2d6fc0edb1f4698bd5006dfef5ad946e700b046b0fdb82dc9f5e433aacc91"
+                },
+                {
+                    "name": "syft:location:0:path",
+                    "value": "/opt/app-root/lib/python3.11/site-packages/gradio/_frontend_code/client/package.json"
+                }
+            ]
+        },
+        {
+            "bom-ref": "pkg:npm/%40gradio/code@0.5.3?package-id=ba42e29e0d382644",
+            "type": "library",
+            "name": "@gradio/code",
+            "version": "0.5.3",
+            "description": "Gradio UI packages",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "ISC"
+                    }
+                }
+            ],
+            "cpe": "cpe:2.3:a:\\@gradio\\/code:\\@gradio\\/code:0.5.3:*:*:*:*:*:*:*",
+            "purl": "pkg:npm/%40gradio/code@0.5.3",
+            "properties": [
+                {
+                    "name": "syft:package:foundBy",
+                    "value": "javascript-package-cataloger"
+                },
+                {
+                    "name": "syft:package:language",
+                    "value": "javascript"
+                },
+                {
+                    "name": "syft:package:type",
+                    "value": "npm"
+                },
+                {
+                    "name": "syft:package:metadataType",
+                    "value": "javascript-npm-package"
+                },
+                {
+                    "name": "syft:location:0:layerID",
+                    "value": "sha256:99b2d6fc0edb1f4698bd5006dfef5ad946e700b046b0fdb82dc9f5e433aacc91"
+                },
+                {
+                    "name": "syft:location:0:path",
+                    "value": "/opt/app-root/lib/python3.11/site-packages/gradio/_frontend_code/code/package.json"
+                }
+            ]
+        },
+        {
+            "bom-ref": "pkg:npm/%40gradio/colorpicker@0.2.11?package-id=0dcbe796b5a2a7a4",
+            "type": "library",
+            "name": "@gradio/colorpicker",
+            "version": "0.2.11",
+            "description": "Gradio UI packages",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "ISC"
+                    }
+                }
+            ],
+            "cpe": "cpe:2.3:a:\\@gradio\\/colorpicker:\\@gradio\\/colorpicker:0.2.11:*:*:*:*:*:*:*",
+            "purl": "pkg:npm/%40gradio/colorpicker@0.2.11",
+            "properties": [
+                {
+                    "name": "syft:package:foundBy",
+                    "value": "javascript-package-cataloger"
+                },
+                {
+                    "name": "syft:package:language",
+                    "value": "javascript"
+                },
+                {
+                    "name": "syft:package:type",
+                    "value": "npm"
+                },
+                {
+                    "name": "syft:package:metadataType",
+                    "value": "javascript-npm-package"
+                },
+                {
+                    "name": "syft:location:0:layerID",
+                    "value": "sha256:99b2d6fc0edb1f4698bd5006dfef5ad946e700b046b0fdb82dc9f5e433aacc91"
+                },
+                {
+                    "name": "syft:location:0:path",
+                    "value": "/opt/app-root/lib/python3.11/site-packages/gradio/_frontend_code/colorpicker/package.json"
+                }
+            ]
+        },
+        {
+            "bom-ref": "pkg:npm/%40gradio/column@0.1.0?package-id=a7f3b7dc82a51476",
+            "type": "library",
+            "name": "@gradio/column",
+            "version": "0.1.0",
+            "description": "Gradio UI packages",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "ISC"
+                    }
+                }
+            ],
+            "cpe": "cpe:2.3:a:\\@gradio\\/column:\\@gradio\\/column:0.1.0:*:*:*:*:*:*:*",
+            "purl": "pkg:npm/%40gradio/column@0.1.0",
+            "properties": [
+                {
+                    "name": "syft:package:foundBy",
+                    "value": "javascript-package-cataloger"
+                },
+                {
+                    "name": "syft:package:language",
+                    "value": "javascript"
+                },
+                {
+                    "name": "syft:package:type",
+                    "value": "npm"
+                },
+                {
+                    "name": "syft:package:metadataType",
+                    "value": "javascript-npm-package"
+                },
+                {
+                    "name": "syft:location:0:layerID",
+                    "value": "sha256:99b2d6fc0edb1f4698bd5006dfef5ad946e700b046b0fdb82dc9f5e433aacc91"
+                },
+                {
+                    "name": "syft:location:0:path",
+                    "value": "/opt/app-root/lib/python3.11/site-packages/gradio/_frontend_code/column/package.json"
+                }
+            ]
+        },
+        {
+            "bom-ref": "pkg:npm/%40gradio/dataframe@0.6.4?package-id=126fb3d02cdeb59a",
+            "type": "library",
+            "name": "@gradio/dataframe",
+            "version": "0.6.4",
+            "description": "Gradio UI packages",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "ISC"
+                    }
+                }
+            ],
+            "cpe": "cpe:2.3:a:\\@gradio\\/dataframe:\\@gradio\\/dataframe:0.6.4:*:*:*:*:*:*:*",
+            "purl": "pkg:npm/%40gradio/dataframe@0.6.4",
+            "properties": [
+                {
+                    "name": "syft:package:foundBy",
+                    "value": "javascript-package-cataloger"
+                },
+                {
+                    "name": "syft:package:language",
+                    "value": "javascript"
+                },
+                {
+                    "name": "syft:package:type",
+                    "value": "npm"
+                },
+                {
+                    "name": "syft:package:metadataType",
+                    "value": "javascript-npm-package"
+                },
+                {
+                    "name": "syft:location:0:layerID",
+                    "value": "sha256:99b2d6fc0edb1f4698bd5006dfef5ad946e700b046b0fdb82dc9f5e433aacc91"
+                },
+                {
+                    "name": "syft:location:0:path",
+                    "value": "/opt/app-root/lib/python3.11/site-packages/gradio/_frontend_code/dataframe/package.json"
+                }
+            ]
+        },
+        {
+            "bom-ref": "pkg:npm/%40gradio/dataset@0.1.22?package-id=0ce772f2563f1872",
+            "type": "library",
+            "name": "@gradio/dataset",
+            "version": "0.1.22",
+            "description": "Gradio UI packages",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "ISC"
+                    }
+                }
+            ],
+            "cpe": "cpe:2.3:a:\\@gradio\\/dataset:\\@gradio\\/dataset:0.1.22:*:*:*:*:*:*:*",
+            "purl": "pkg:npm/%40gradio/dataset@0.1.22",
+            "properties": [
+                {
+                    "name": "syft:package:foundBy",
+                    "value": "javascript-package-cataloger"
+                },
+                {
+                    "name": "syft:package:language",
+                    "value": "javascript"
+                },
+                {
+                    "name": "syft:package:type",
+                    "value": "npm"
+                },
+                {
+                    "name": "syft:package:metadataType",
+                    "value": "javascript-npm-package"
+                },
+                {
+                    "name": "syft:location:0:layerID",
+                    "value": "sha256:99b2d6fc0edb1f4698bd5006dfef5ad946e700b046b0fdb82dc9f5e433aacc91"
+                },
+                {
+                    "name": "syft:location:0:path",
+                    "value": "/opt/app-root/lib/python3.11/site-packages/gradio/_frontend_code/dataset/package.json"
+                }
+            ]
+        },
+        {
+            "bom-ref": "pkg:npm/%40gradio/dropdown@0.6.2?package-id=d5488695778c9294",
+            "type": "library",
+            "name": "@gradio/dropdown",
+            "version": "0.6.2",
+            "description": "Gradio UI packages",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "ISC"
+                    }
+                }
+            ],
+            "cpe": "cpe:2.3:a:\\@gradio\\/dropdown:\\@gradio\\/dropdown:0.6.2:*:*:*:*:*:*:*",
+            "purl": "pkg:npm/%40gradio/dropdown@0.6.2",
+            "properties": [
+                {
+                    "name": "syft:package:foundBy",
+                    "value": "javascript-package-cataloger"
+                },
+                {
+                    "name": "syft:package:language",
+                    "value": "javascript"
+                },
+                {
+                    "name": "syft:package:type",
+                    "value": "npm"
+                },
+                {
+                    "name": "syft:package:metadataType",
+                    "value": "javascript-npm-package"
+                },
+                {
+                    "name": "syft:location:0:layerID",
+                    "value": "sha256:99b2d6fc0edb1f4698bd5006dfef5ad946e700b046b0fdb82dc9f5e433aacc91"
+                },
+                {
+                    "name": "syft:location:0:path",
+                    "value": "/opt/app-root/lib/python3.11/site-packages/gradio/_frontend_code/dropdown/package.json"
+                }
+            ]
+        },
+        {
+            "bom-ref": "pkg:npm/%40gradio/fallback@0.2.11?package-id=64daa3a5517dc0fe",
+            "type": "library",
+            "name": "@gradio/fallback",
+            "version": "0.2.11",
+            "description": "Gradio UI packages",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "ISC"
+                    }
+                }
+            ],
+            "cpe": "cpe:2.3:a:\\@gradio\\/fallback:\\@gradio\\/fallback:0.2.11:*:*:*:*:*:*:*",
+            "purl": "pkg:npm/%40gradio/fallback@0.2.11",
+            "properties": [
+                {
+                    "name": "syft:package:foundBy",
+                    "value": "javascript-package-cataloger"
+                },
+                {
+                    "name": "syft:package:language",
+                    "value": "javascript"
+                },
+                {
+                    "name": "syft:package:type",
+                    "value": "npm"
+                },
+                {
+                    "name": "syft:package:metadataType",
+                    "value": "javascript-npm-package"
+                },
+                {
+                    "name": "syft:location:0:layerID",
+                    "value": "sha256:99b2d6fc0edb1f4698bd5006dfef5ad946e700b046b0fdb82dc9f5e433aacc91"
+                },
+                {
+                    "name": "syft:location:0:path",
+                    "value": "/opt/app-root/lib/python3.11/site-packages/gradio/_frontend_code/fallback/package.json"
+                }
+            ]
+        },
+        {
+            "bom-ref": "pkg:npm/%40gradio/file@0.5.3?package-id=67ee47c81a6c4c92",
+            "type": "library",
+            "name": "@gradio/file",
+            "version": "0.5.3",
+            "description": "Gradio UI packages",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "ISC"
+                    }
+                }
+            ],
+            "cpe": "cpe:2.3:a:\\@gradio\\/file:\\@gradio\\/file:0.5.3:*:*:*:*:*:*:*",
+            "purl": "pkg:npm/%40gradio/file@0.5.3",
+            "properties": [
+                {
+                    "name": "syft:package:foundBy",
+                    "value": "javascript-package-cataloger"
+                },
+                {
+                    "name": "syft:package:language",
+                    "value": "javascript"
+                },
+                {
+                    "name": "syft:package:type",
+                    "value": "npm"
+                },
+                {
+                    "name": "syft:package:metadataType",
+                    "value": "javascript-npm-package"
+                },
+                {
+                    "name": "syft:location:0:layerID",
+                    "value": "sha256:99b2d6fc0edb1f4698bd5006dfef5ad946e700b046b0fdb82dc9f5e433aacc91"
+                },
+                {
+                    "name": "syft:location:0:path",
+                    "value": "/opt/app-root/lib/python3.11/site-packages/gradio/_frontend_code/file/package.json"
+                }
+            ]
+        },
+        {
+            "bom-ref": "pkg:npm/%40gradio/fileexplorer@0.3.23?package-id=ad27ee53e23cbd29",
+            "type": "library",
+            "name": "@gradio/fileexplorer",
+            "version": "0.3.23",
+            "description": "Gradio UI packages",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "ISC"
+                    }
+                }
+            ],
+            "cpe": "cpe:2.3:a:\\@gradio\\/fileexplorer:\\@gradio\\/fileexplorer:0.3.23:*:*:*:*:*:*:*",
+            "purl": "pkg:npm/%40gradio/fileexplorer@0.3.23",
+            "properties": [
+                {
+                    "name": "syft:package:foundBy",
+                    "value": "javascript-package-cataloger"
+                },
+                {
+                    "name": "syft:package:language",
+                    "value": "javascript"
+                },
+                {
+                    "name": "syft:package:type",
+                    "value": "npm"
+                },
+                {
+                    "name": "syft:package:metadataType",
+                    "value": "javascript-npm-package"
+                },
+                {
+                    "name": "syft:location:0:layerID",
+                    "value": "sha256:99b2d6fc0edb1f4698bd5006dfef5ad946e700b046b0fdb82dc9f5e433aacc91"
+                },
+                {
+                    "name": "syft:location:0:path",
+                    "value": "/opt/app-root/lib/python3.11/site-packages/gradio/_frontend_code/fileexplorer/package.json"
+                }
+            ]
+        },
+        {
+            "bom-ref": "pkg:npm/%40gradio/form@0.1.10?package-id=3271eb1ac36c3de7",
+            "type": "library",
+            "name": "@gradio/form",
+            "version": "0.1.10",
+            "description": "Gradio UI packages",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "ISC"
+                    }
+                }
+            ],
+            "cpe": "cpe:2.3:a:\\@gradio\\/form:\\@gradio\\/form:0.1.10:*:*:*:*:*:*:*",
+            "purl": "pkg:npm/%40gradio/form@0.1.10",
+            "properties": [
+                {
+                    "name": "syft:package:foundBy",
+                    "value": "javascript-package-cataloger"
+                },
+                {
+                    "name": "syft:package:language",
+                    "value": "javascript"
+                },
+                {
+                    "name": "syft:package:type",
+                    "value": "npm"
+                },
+                {
+                    "name": "syft:package:metadataType",
+                    "value": "javascript-npm-package"
+                },
+                {
+                    "name": "syft:location:0:layerID",
+                    "value": "sha256:99b2d6fc0edb1f4698bd5006dfef5ad946e700b046b0fdb82dc9f5e433aacc91"
+                },
+                {
+                    "name": "syft:location:0:path",
+                    "value": "/opt/app-root/lib/python3.11/site-packages/gradio/_frontend_code/form/package.json"
+                }
+            ]
+        },
+        {
+            "bom-ref": "pkg:npm/%40gradio/gallery@0.7.3?package-id=1a1327d7fae06735",
+            "type": "library",
+            "name": "@gradio/gallery",
+            "version": "0.7.3",
+            "description": "Gradio UI packages",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "ISC"
+                    }
+                }
+            ],
+            "cpe": "cpe:2.3:a:\\@gradio\\/gallery:\\@gradio\\/gallery:0.7.3:*:*:*:*:*:*:*",
+            "purl": "pkg:npm/%40gradio/gallery@0.7.3",
+            "properties": [
+                {
+                    "name": "syft:package:foundBy",
+                    "value": "javascript-package-cataloger"
+                },
+                {
+                    "name": "syft:package:language",
+                    "value": "javascript"
+                },
+                {
+                    "name": "syft:package:type",
+                    "value": "npm"
+                },
+                {
+                    "name": "syft:package:metadataType",
+                    "value": "javascript-npm-package"
+                },
+                {
+                    "name": "syft:location:0:layerID",
+                    "value": "sha256:99b2d6fc0edb1f4698bd5006dfef5ad946e700b046b0fdb82dc9f5e433aacc91"
+                },
+                {
+                    "name": "syft:location:0:path",
+                    "value": "/opt/app-root/lib/python3.11/site-packages/gradio/_frontend_code/gallery/package.json"
+                }
+            ]
+        },
+        {
+            "bom-ref": "pkg:npm/%40gradio/group@0.1.0?package-id=f5e0c7e60d01a565",
+            "type": "library",
+            "name": "@gradio/group",
+            "version": "0.1.0",
+            "description": "Gradio UI packages",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "ISC"
+                    }
+                }
+            ],
+            "cpe": "cpe:2.3:a:\\@gradio\\/group:\\@gradio\\/group:0.1.0:*:*:*:*:*:*:*",
+            "purl": "pkg:npm/%40gradio/group@0.1.0",
+            "properties": [
+                {
+                    "name": "syft:package:foundBy",
+                    "value": "javascript-package-cataloger"
+                },
+                {
+                    "name": "syft:package:language",
+                    "value": "javascript"
+                },
+                {
+                    "name": "syft:package:type",
+                    "value": "npm"
+                },
+                {
+                    "name": "syft:package:metadataType",
+                    "value": "javascript-npm-package"
+                },
+                {
+                    "name": "syft:location:0:layerID",
+                    "value": "sha256:99b2d6fc0edb1f4698bd5006dfef5ad946e700b046b0fdb82dc9f5e433aacc91"
+                },
+                {
+                    "name": "syft:location:0:path",
+                    "value": "/opt/app-root/lib/python3.11/site-packages/gradio/_frontend_code/group/package.json"
+                }
+            ]
+        },
+        {
+            "bom-ref": "pkg:npm/%40gradio/highlightedtext@0.4.11?package-id=69c5f479ecd7875f",
+            "type": "library",
+            "name": "@gradio/highlightedtext",
+            "version": "0.4.11",
+            "description": "Gradio UI packages",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "ISC"
+                    }
+                }
+            ],
+            "cpe": "cpe:2.3:a:\\@gradio\\/highlightedtext:\\@gradio\\/highlightedtext:0.4.11:*:*:*:*:*:*:*",
+            "purl": "pkg:npm/%40gradio/highlightedtext@0.4.11",
+            "properties": [
+                {
+                    "name": "syft:package:foundBy",
+                    "value": "javascript-package-cataloger"
+                },
+                {
+                    "name": "syft:package:language",
+                    "value": "javascript"
+                },
+                {
+                    "name": "syft:package:type",
+                    "value": "npm"
+                },
+                {
+                    "name": "syft:package:metadataType",
+                    "value": "javascript-npm-package"
+                },
+                {
+                    "name": "syft:location:0:layerID",
+                    "value": "sha256:99b2d6fc0edb1f4698bd5006dfef5ad946e700b046b0fdb82dc9f5e433aacc91"
+                },
+                {
+                    "name": "syft:location:0:path",
+                    "value": "/opt/app-root/lib/python3.11/site-packages/gradio/_frontend_code/highlightedtext/package.json"
+                }
+            ]
+        },
+        {
+            "bom-ref": "pkg:npm/%40gradio/html@0.1.11?package-id=297d7e79fb743d65",
+            "type": "library",
+            "name": "@gradio/html",
+            "version": "0.1.11",
+            "description": "Gradio UI packages",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "ISC"
+                    }
+                }
+            ],
+            "cpe": "cpe:2.3:a:\\@gradio\\/html:\\@gradio\\/html:0.1.11:*:*:*:*:*:*:*",
+            "purl": "pkg:npm/%40gradio/html@0.1.11",
+            "properties": [
+                {
+                    "name": "syft:package:foundBy",
+                    "value": "javascript-package-cataloger"
+                },
+                {
+                    "name": "syft:package:language",
+                    "value": "javascript"
+                },
+                {
+                    "name": "syft:package:type",
+                    "value": "npm"
+                },
+                {
+                    "name": "syft:package:metadataType",
+                    "value": "javascript-npm-package"
+                },
+                {
+                    "name": "syft:location:0:layerID",
+                    "value": "sha256:99b2d6fc0edb1f4698bd5006dfef5ad946e700b046b0fdb82dc9f5e433aacc91"
+                },
+                {
+                    "name": "syft:location:0:path",
+                    "value": "/opt/app-root/lib/python3.11/site-packages/gradio/_frontend_code/html/package.json"
+                }
+            ]
+        },
+        {
+            "bom-ref": "pkg:npm/%40gradio/icons@0.3.3?package-id=04370c461efd0862",
+            "type": "library",
+            "name": "@gradio/icons",
+            "version": "0.3.3",
+            "description": "Gradio UI packages",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "ISC"
+                    }
+                }
+            ],
+            "cpe": "cpe:2.3:a:\\@gradio\\/icons:\\@gradio\\/icons:0.3.3:*:*:*:*:*:*:*",
+            "purl": "pkg:npm/%40gradio/icons@0.3.3",
+            "properties": [
+                {
+                    "name": "syft:package:foundBy",
+                    "value": "javascript-package-cataloger"
+                },
+                {
+                    "name": "syft:package:language",
+                    "value": "javascript"
+                },
+                {
+                    "name": "syft:package:type",
+                    "value": "npm"
+                },
+                {
+                    "name": "syft:package:metadataType",
+                    "value": "javascript-npm-package"
+                },
+                {
+                    "name": "syft:location:0:layerID",
+                    "value": "sha256:99b2d6fc0edb1f4698bd5006dfef5ad946e700b046b0fdb82dc9f5e433aacc91"
+                },
+                {
+                    "name": "syft:location:0:path",
+                    "value": "/opt/app-root/lib/python3.11/site-packages/gradio/_frontend_code/icons/package.json"
+                }
+            ]
+        },
+        {
+            "bom-ref": "pkg:npm/%40gradio/image@0.9.3?package-id=f944d0bd53d08941",
+            "type": "library",
+            "name": "@gradio/image",
+            "version": "0.9.3",
+            "description": "Gradio UI packages",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "ISC"
+                    }
+                }
+            ],
+            "cpe": "cpe:2.3:a:\\@gradio\\/image:\\@gradio\\/image:0.9.3:*:*:*:*:*:*:*",
+            "purl": "pkg:npm/%40gradio/image@0.9.3",
+            "properties": [
+                {
+                    "name": "syft:package:foundBy",
+                    "value": "javascript-package-cataloger"
+                },
+                {
+                    "name": "syft:package:language",
+                    "value": "javascript"
+                },
+                {
+                    "name": "syft:package:type",
+                    "value": "npm"
+                },
+                {
+                    "name": "syft:package:metadataType",
+                    "value": "javascript-npm-package"
+                },
+                {
+                    "name": "syft:location:0:layerID",
+                    "value": "sha256:99b2d6fc0edb1f4698bd5006dfef5ad946e700b046b0fdb82dc9f5e433aacc91"
+                },
+                {
+                    "name": "syft:location:0:path",
+                    "value": "/opt/app-root/lib/python3.11/site-packages/gradio/_frontend_code/image/package.json"
+                }
+            ]
+        },
+        {
+            "bom-ref": "pkg:npm/%40gradio/imageeditor@0.4.3?package-id=612f4c96b7f7fb92",
+            "type": "library",
+            "name": "@gradio/imageeditor",
+            "version": "0.4.3",
+            "description": "Gradio UI packages",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "ISC"
+                    }
+                }
+            ],
+            "cpe": "cpe:2.3:a:\\@gradio\\/imageeditor:\\@gradio\\/imageeditor:0.4.3:*:*:*:*:*:*:*",
+            "purl": "pkg:npm/%40gradio/imageeditor@0.4.3",
+            "properties": [
+                {
+                    "name": "syft:package:foundBy",
+                    "value": "javascript-package-cataloger"
+                },
+                {
+                    "name": "syft:package:language",
+                    "value": "javascript"
+                },
+                {
+                    "name": "syft:package:type",
+                    "value": "npm"
+                },
+                {
+                    "name": "syft:package:metadataType",
+                    "value": "javascript-npm-package"
+                },
+                {
+                    "name": "syft:location:0:layerID",
+                    "value": "sha256:99b2d6fc0edb1f4698bd5006dfef5ad946e700b046b0fdb82dc9f5e433aacc91"
+                },
+                {
+                    "name": "syft:location:0:path",
+                    "value": "/opt/app-root/lib/python3.11/site-packages/gradio/_frontend_code/imageeditor/package.json"
+                }
+            ]
+        },
+        {
+            "bom-ref": "pkg:pypi/contourpy@1.2.0?package-id=42bfda79df67e3cc",
+            "type": "library",
+            "author": "Ian Thomas <ianthomas23@gmail.com>",
+            "name": "contourpy",
+            "version": "1.2.0",
+            "licenses": [
+                {
+                    "license": {
+                        "name": "BSD 3-Clause License\n \n Copyright (c) 2021-2023, ContourPy Developers.\n All rights reserved.\n \n Redistribution and use in source and binary forms, with or without\n modification, are permitted provided that the following conditions are met:\n \n 1. Redistributions of source code must retain the above copyright notice, this\n list of conditions and the following disclaimer.\n \n 2. Redistributions in binary form must reproduce the above copyright notice,\n this list of conditions and the following disclaimer in the documentation\n and/or other materials provided with the distribution.\n \n 3. Neither the name of the copyright holder nor the names of its\n contributors may be used to endorse or promote products derived from\n this software without specific prior written permission.\n \n THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\"\n AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE\n IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE\n DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE\n FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL\n DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR\n SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER\n CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,\n OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE\n OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
+                    }
+                }
+            ],
+            "cpe": "cpe:2.3:a:ian_thomas_\\<ianthomas23_project:python-contourpy:1.2.0:*:*:*:*:*:*:*",
+            "purl": "pkg:pypi/contourpy@1.2.0",
+            "properties": [
+                {
+                    "name": "syft:package:foundBy",
+                    "value": "python-installed-package-cataloger"
+                },
+                {
+                    "name": "syft:package:language",
+                    "value": "python"
+                },
+                {
+                    "name": "syft:package:type",
+                    "value": "python"
+                },
+                {
+                    "name": "syft:package:metadataType",
+                    "value": "python-package"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:ian_thomas_\\<ianthomas23_project:python_contourpy:1.2.0:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:ian_thomas_\\<ianthomas23project:python-contourpy:1.2.0:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:ian_thomas_\\<ianthomas23project:python_contourpy:1.2.0:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:ian_thomas_\\<ianthomas23_project:contourpy:1.2.0:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:ian-thomas-\\<ianthomas23:python-contourpy:1.2.0:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:ian-thomas-\\<ianthomas23:python_contourpy:1.2.0:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:ian_thomas_\\<ianthomas23:python-contourpy:1.2.0:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:ian_thomas_\\<ianthomas23:python_contourpy:1.2.0:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:ian_thomas_\\<ianthomas23project:contourpy:1.2.0:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:ian-thomas-\\<ianthomas23:contourpy:1.2.0:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:ian_thomas_\\<ianthomas23:contourpy:1.2.0:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:python-contourpy:python-contourpy:1.2.0:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:python-contourpy:python_contourpy:1.2.0:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:python_contourpy:python-contourpy:1.2.0:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:python_contourpy:python_contourpy:1.2.0:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:contourpy:python-contourpy:1.2.0:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:contourpy:python_contourpy:1.2.0:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:python-contourpy:contourpy:1.2.0:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:python_contourpy:contourpy:1.2.0:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:python:python-contourpy:1.2.0:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:python:python_contourpy:1.2.0:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:contourpy:contourpy:1.2.0:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:python:contourpy:1.2.0:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:location:0:layerID",
+                    "value": "sha256:99b2d6fc0edb1f4698bd5006dfef5ad946e700b046b0fdb82dc9f5e433aacc91"
+                },
+                {
+                    "name": "syft:location:0:path",
+                    "value": "/opt/app-root/lib/python3.11/site-packages/contourpy-1.2.0.dist-info/METADATA"
+                },
+                {
+                    "name": "syft:location:1:layerID",
+                    "value": "sha256:99b2d6fc0edb1f4698bd5006dfef5ad946e700b046b0fdb82dc9f5e433aacc91"
+                },
+                {
+                    "name": "syft:location:1:path",
+                    "value": "/opt/app-root/lib/python3.11/site-packages/contourpy-1.2.0.dist-info/RECORD"
+                }
+            ]
+        },
+        {
+            "bom-ref": "pkg:rpm/rhel/dnf-plugins-core@4.3.0-13.el9?arch=noarch&upstream=dnf-plugins-core-4.3.0-13.el9.src.rpm&distro=rhel-9.4&package-id=f1eb847fcea6386d",
+            "type": "library",
+            "publisher": "Red Hat, Inc.",
+            "name": "dnf-plugins-core",
+            "version": "4.3.0-13.el9",
+            "licenses": [
+                {
+                    "license": {
+                        "name": "GPLv2+"
+                    }
+                }
+            ],
+            "cpe": "cpe:2.3:a:dnf-plugins-core:dnf-plugins-core:4.3.0-13.el9:*:*:*:*:*:*:*",
+            "purl": "pkg:rpm/rhel/dnf-plugins-core@4.3.0-13.el9?arch=noarch&upstream=dnf-plugins-core-4.3.0-13.el9.src.rpm&distro=rhel-9.4",
+            "properties": [
+                {
+                    "name": "syft:package:foundBy",
+                    "value": "rpm-db-cataloger"
+                },
+                {
+                    "name": "syft:package:type",
+                    "value": "rpm"
+                },
+                {
+                    "name": "syft:package:metadataType",
+                    "value": "rpm-db-entry"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:dnf-plugins-core:dnf_plugins_core:4.3.0-13.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:dnf_plugins_core:dnf-plugins-core:4.3.0-13.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:dnf_plugins_core:dnf_plugins_core:4.3.0-13.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:dnf-plugins:dnf-plugins-core:4.3.0-13.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:dnf-plugins:dnf_plugins_core:4.3.0-13.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:dnf_plugins:dnf-plugins-core:4.3.0-13.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:dnf_plugins:dnf_plugins_core:4.3.0-13.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:redhat:dnf-plugins-core:4.3.0-13.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:redhat:dnf_plugins_core:4.3.0-13.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:dnf:dnf-plugins-core:4.3.0-13.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:dnf:dnf_plugins_core:4.3.0-13.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:location:0:layerID",
+                    "value": "sha256:9ae5ae34e7cbb81537599d99b5cf2e069f5af6f44f17472023e80a2ace84cd04"
+                },
+                {
+                    "name": "syft:location:0:path",
+                    "value": "/var/lib/rpm/rpmdb.sqlite"
+                },
+                {
+                    "name": "syft:metadata:release",
+                    "value": "13.el9"
+                },
+                {
+                    "name": "syft:metadata:size",
+                    "value": "22536"
+                },
+                {
+                    "name": "syft:metadata:sourceRpm",
+                    "value": "dnf-plugins-core-4.3.0-13.el9.src.rpm"
+                }
+            ]
+        },
+        {
+            "bom-ref": "pkg:rpm/rhel/dwz@0.14-3.el9?arch=x86_64&upstream=dwz-0.14-3.el9.src.rpm&distro=rhel-9.4&package-id=559ce45b51f3f821",
+            "type": "library",
+            "publisher": "Red Hat, Inc.",
+            "name": "dwz",
+            "version": "0.14-3.el9",
+            "licenses": [
+                {
+                    "license": {
+                        "name": "GPLv2+ and GPLv3+"
+                    }
+                }
+            ],
+            "cpe": "cpe:2.3:a:redhat:dwz:0.14-3.el9:*:*:*:*:*:*:*",
+            "purl": "pkg:rpm/rhel/dwz@0.14-3.el9?arch=x86_64&upstream=dwz-0.14-3.el9.src.rpm&distro=rhel-9.4",
+            "properties": [
+                {
+                    "name": "syft:package:foundBy",
+                    "value": "rpm-db-cataloger"
+                },
+                {
+                    "name": "syft:package:type",
+                    "value": "rpm"
+                },
+                {
+                    "name": "syft:package:metadataType",
+                    "value": "rpm-db-entry"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:dwz:dwz:0.14-3.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:location:0:layerID",
+                    "value": "sha256:9ae5ae34e7cbb81537599d99b5cf2e069f5af6f44f17472023e80a2ace84cd04"
+                },
+                {
+                    "name": "syft:location:0:path",
+                    "value": "/var/lib/rpm/rpmdb.sqlite"
+                },
+                {
+                    "name": "syft:metadata:release",
+                    "value": "3.el9"
+                },
+                {
+                    "name": "syft:metadata:size",
+                    "value": "281758"
+                },
+                {
+                    "name": "syft:metadata:sourceRpm",
+                    "value": "dwz-0.14-3.el9.src.rpm"
+                }
+            ]
+        },
+        {
+            "bom-ref": "pkg:npm/eastasianwidth@0.2.0?package-id=5cab956eae34da1b",
+            "type": "library",
+            "author": "Masaki Komagata",
+            "name": "eastasianwidth",
+            "version": "0.2.0",
+            "description": "Get East Asian Width from a character.",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "MIT"
+                    }
+                }
+            ],
+            "cpe": "cpe:2.3:a:eastasianwidth:eastasianwidth:0.2.0:*:*:*:*:*:*:*",
+            "purl": "pkg:npm/eastasianwidth@0.2.0",
+            "externalReferences": [
+                {
+                    "url": "git://github.com/komagata/eastasianwidth.git",
+                    "type": "distribution"
+                }
+            ],
+            "properties": [
+                {
+                    "name": "syft:package:foundBy",
+                    "value": "javascript-package-cataloger"
+                },
+                {
+                    "name": "syft:package:language",
+                    "value": "javascript"
+                },
+                {
+                    "name": "syft:package:type",
+                    "value": "npm"
+                },
+                {
+                    "name": "syft:package:metadataType",
+                    "value": "javascript-npm-package"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:komagata:eastasianwidth:0.2.0:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:location:0:layerID",
+                    "value": "sha256:73d09a56ed618199524fb1a090c94337fc2edd4f38b866cf82332861c704111a"
+                },
+                {
+                    "name": "syft:location:0:path",
+                    "value": "/usr/lib/node_modules/npm/node_modules/eastasianwidth/package.json"
+                }
+            ]
+        },
+        {
+            "bom-ref": "pkg:rpm/rhel/ed@1.14.2-12.el9?arch=x86_64&upstream=ed-1.14.2-12.el9.src.rpm&distro=rhel-9.4&package-id=ea5ada92cdc88f27",
+            "type": "library",
+            "publisher": "Red Hat, Inc.",
+            "name": "ed",
+            "version": "1.14.2-12.el9",
+            "licenses": [
+                {
+                    "license": {
+                        "name": "GPLv3+ and GFDL"
+                    }
+                }
+            ],
+            "cpe": "cpe:2.3:a:redhat:ed:1.14.2-12.el9:*:*:*:*:*:*:*",
+            "purl": "pkg:rpm/rhel/ed@1.14.2-12.el9?arch=x86_64&upstream=ed-1.14.2-12.el9.src.rpm&distro=rhel-9.4",
+            "properties": [
+                {
+                    "name": "syft:package:foundBy",
+                    "value": "rpm-db-cataloger"
+                },
+                {
+                    "name": "syft:package:type",
+                    "value": "rpm"
+                },
+                {
+                    "name": "syft:package:metadataType",
+                    "value": "rpm-db-entry"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:ed:ed:1.14.2-12.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:location:0:layerID",
+                    "value": "sha256:9ae5ae34e7cbb81537599d99b5cf2e069f5af6f44f17472023e80a2ace84cd04"
+                },
+                {
+                    "name": "syft:location:0:path",
+                    "value": "/var/lib/rpm/rpmdb.sqlite"
+                },
+                {
+                    "name": "syft:metadata:release",
+                    "value": "12.el9"
+                },
+                {
+                    "name": "syft:metadata:size",
+                    "value": "129923"
+                },
+                {
+                    "name": "syft:metadata:sourceRpm",
+                    "value": "ed-1.14.2-12.el9.src.rpm"
+                }
+            ]
+        },
+        {
+            "bom-ref": "pkg:rpm/rhel/efi-srpm-macros@6-2.el9_0?arch=noarch&upstream=efi-rpm-macros-6-2.el9_0.src.rpm&distro=rhel-9.4&package-id=4d8dc8f8b6da6d9f",
+            "type": "library",
+            "publisher": "Red Hat, Inc.",
+            "name": "efi-srpm-macros",
+            "version": "6-2.el9_0",
+            "licenses": [
+                {
+                    "license": {
+                        "name": "GPLv3+"
+                    }
+                }
+            ],
+            "cpe": "cpe:2.3:a:efi-srpm-macros:efi-srpm-macros:6-2.el9_0:*:*:*:*:*:*:*",
+            "purl": "pkg:rpm/rhel/efi-srpm-macros@6-2.el9_0?arch=noarch&upstream=efi-rpm-macros-6-2.el9_0.src.rpm&distro=rhel-9.4",
+            "properties": [
+                {
+                    "name": "syft:package:foundBy",
+                    "value": "rpm-db-cataloger"
+                },
+                {
+                    "name": "syft:package:type",
+                    "value": "rpm"
+                },
+                {
+                    "name": "syft:package:metadataType",
+                    "value": "rpm-db-entry"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:efi-srpm-macros:efi_srpm_macros:6-2.el9_0:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:efi_srpm_macros:efi-srpm-macros:6-2.el9_0:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:efi_srpm_macros:efi_srpm_macros:6-2.el9_0:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:efi-srpm:efi-srpm-macros:6-2.el9_0:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:efi-srpm:efi_srpm_macros:6-2.el9_0:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:efi_srpm:efi-srpm-macros:6-2.el9_0:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:efi_srpm:efi_srpm_macros:6-2.el9_0:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:redhat:efi-srpm-macros:6-2.el9_0:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:redhat:efi_srpm_macros:6-2.el9_0:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:efi:efi-srpm-macros:6-2.el9_0:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:efi:efi_srpm_macros:6-2.el9_0:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:location:0:layerID",
+                    "value": "sha256:9ae5ae34e7cbb81537599d99b5cf2e069f5af6f44f17472023e80a2ace84cd04"
+                },
+                {
+                    "name": "syft:location:0:path",
+                    "value": "/var/lib/rpm/rpmdb.sqlite"
+                },
+                {
+                    "name": "syft:metadata:release",
+                    "value": "2.el9_0"
+                },
+                {
+                    "name": "syft:metadata:size",
+                    "value": "41044"
+                },
+                {
+                    "name": "syft:metadata:sourceRpm",
+                    "value": "efi-rpm-macros-6-2.el9_0.src.rpm"
+                }
+            ]
+        },
+        {
+            "bom-ref": "pkg:rpm/rhel/gcc@11.4.1-3.el9?arch=x86_64&upstream=gcc-11.4.1-3.el9.src.rpm&distro=rhel-9.4&package-id=42b094a31cbc3cdc",
+            "type": "library",
+            "publisher": "Red Hat, Inc.",
+            "name": "gcc",
+            "version": "11.4.1-3.el9",
+            "licenses": [
+                {
+                    "license": {
+                        "name": "GPLv3+ and GPLv3+ with exceptions and GPLv2+ with exceptions and LGPLv2+ and BSD"
+                    }
+                }
+            ],
+            "cpe": "cpe:2.3:a:redhat:gcc:11.4.1-3.el9:*:*:*:*:*:*:*",
+            "purl": "pkg:rpm/rhel/gcc@11.4.1-3.el9?arch=x86_64&upstream=gcc-11.4.1-3.el9.src.rpm&distro=rhel-9.4",
+            "properties": [
+                {
+                    "name": "syft:package:foundBy",
+                    "value": "rpm-db-cataloger"
+                },
+                {
+                    "name": "syft:package:type",
+                    "value": "rpm"
+                },
+                {
+                    "name": "syft:package:metadataType",
+                    "value": "rpm-db-entry"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gcc:gcc:11.4.1-3.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:location:0:layerID",
+                    "value": "sha256:9ae5ae34e7cbb81537599d99b5cf2e069f5af6f44f17472023e80a2ace84cd04"
+                },
+                {
+                    "name": "syft:location:0:path",
+                    "value": "/var/lib/rpm/rpmdb.sqlite"
+                },
+                {
+                    "name": "syft:metadata:release",
+                    "value": "3.el9"
+                },
+                {
+                    "name": "syft:metadata:size",
+                    "value": "89262546"
+                },
+                {
+                    "name": "syft:metadata:sourceRpm",
+                    "value": "gcc-11.4.1-3.el9.src.rpm"
+                }
+            ]
+        },
+        {
+            "bom-ref": "pkg:rpm/rhel/gcc-c++@11.4.1-3.el9?arch=x86_64&upstream=gcc-11.4.1-3.el9.src.rpm&distro=rhel-9.4&package-id=fad704b1bd5efc34",
+            "type": "library",
+            "publisher": "Red Hat, Inc.",
+            "name": "gcc-c++",
+            "version": "11.4.1-3.el9",
+            "licenses": [
+                {
+                    "license": {
+                        "name": "GPLv3+ and GPLv3+ with exceptions and GPLv2+ with exceptions and LGPLv2+ and BSD"
+                    }
+                }
+            ],
+            "cpe": "cpe:2.3:a:gcc-c\\+\\+:gcc-c\\+\\+:11.4.1-3.el9:*:*:*:*:*:*:*",
+            "purl": "pkg:rpm/rhel/gcc-c++@11.4.1-3.el9?arch=x86_64&upstream=gcc-11.4.1-3.el9.src.rpm&distro=rhel-9.4",
+            "properties": [
+                {
+                    "name": "syft:package:foundBy",
+                    "value": "rpm-db-cataloger"
+                },
+                {
+                    "name": "syft:package:type",
+                    "value": "rpm"
+                },
+                {
+                    "name": "syft:package:metadataType",
+                    "value": "rpm-db-entry"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gcc-c\\+\\+:gcc_c\\+\\+:11.4.1-3.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gcc_c\\+\\+:gcc-c\\+\\+:11.4.1-3.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gcc_c\\+\\+:gcc_c\\+\\+:11.4.1-3.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:redhat:gcc-c\\+\\+:11.4.1-3.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:redhat:gcc_c\\+\\+:11.4.1-3.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gcc:gcc-c\\+\\+:11.4.1-3.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gcc:gcc_c\\+\\+:11.4.1-3.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:location:0:layerID",
+                    "value": "sha256:9ae5ae34e7cbb81537599d99b5cf2e069f5af6f44f17472023e80a2ace84cd04"
+                },
+                {
+                    "name": "syft:location:0:path",
+                    "value": "/var/lib/rpm/rpmdb.sqlite"
+                },
+                {
+                    "name": "syft:metadata:release",
+                    "value": "3.el9"
+                },
+                {
+                    "name": "syft:metadata:size",
+                    "value": "33516089"
+                },
+                {
+                    "name": "syft:metadata:sourceRpm",
+                    "value": "gcc-11.4.1-3.el9.src.rpm"
+                }
+            ]
+        },
+        {
+            "bom-ref": "pkg:rpm/rhel/gcc-gfortran@11.4.1-3.el9?arch=x86_64&upstream=gcc-11.4.1-3.el9.src.rpm&distro=rhel-9.4&package-id=aa9ce6581c51ab87",
+            "type": "library",
+            "publisher": "Red Hat, Inc.",
+            "name": "gcc-gfortran",
+            "version": "11.4.1-3.el9",
+            "licenses": [
+                {
+                    "license": {
+                        "name": "GPLv3+ and GPLv3+ with exceptions and GPLv2+ with exceptions and LGPLv2+ and BSD"
+                    }
+                }
+            ],
+            "cpe": "cpe:2.3:a:gcc-gfortran:gcc-gfortran:11.4.1-3.el9:*:*:*:*:*:*:*",
+            "purl": "pkg:rpm/rhel/gcc-gfortran@11.4.1-3.el9?arch=x86_64&upstream=gcc-11.4.1-3.el9.src.rpm&distro=rhel-9.4",
+            "properties": [
+                {
+                    "name": "syft:package:foundBy",
+                    "value": "rpm-db-cataloger"
+                },
+                {
+                    "name": "syft:package:type",
+                    "value": "rpm"
+                },
+                {
+                    "name": "syft:package:metadataType",
+                    "value": "rpm-db-entry"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gcc-gfortran:gcc_gfortran:11.4.1-3.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gcc_gfortran:gcc-gfortran:11.4.1-3.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gcc_gfortran:gcc_gfortran:11.4.1-3.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:redhat:gcc-gfortran:11.4.1-3.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:redhat:gcc_gfortran:11.4.1-3.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gcc:gcc-gfortran:11.4.1-3.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gcc:gcc_gfortran:11.4.1-3.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:location:0:layerID",
+                    "value": "sha256:9ae5ae34e7cbb81537599d99b5cf2e069f5af6f44f17472023e80a2ace84cd04"
+                },
+                {
+                    "name": "syft:location:0:path",
+                    "value": "/var/lib/rpm/rpmdb.sqlite"
+                },
+                {
+                    "name": "syft:metadata:release",
+                    "value": "3.el9"
+                },
+                {
+                    "name": "syft:metadata:size",
+                    "value": "33779507"
+                },
+                {
+                    "name": "syft:metadata:sourceRpm",
+                    "value": "gcc-11.4.1-3.el9.src.rpm"
+                }
+            ]
+        },
+        {
+            "bom-ref": "pkg:rpm/rhel/gcc-plugin-annobin@11.4.1-3.el9?arch=x86_64&upstream=gcc-11.4.1-3.el9.src.rpm&distro=rhel-9.4&package-id=d9244556b2d0e3f0",
+            "type": "library",
+            "publisher": "Red Hat, Inc.",
+            "name": "gcc-plugin-annobin",
+            "version": "11.4.1-3.el9",
+            "licenses": [
+                {
+                    "license": {
+                        "name": "GPLv3+ and GPLv3+ with exceptions and GPLv2+ with exceptions and LGPLv2+ and BSD"
+                    }
+                }
+            ],
+            "cpe": "cpe:2.3:a:gcc-plugin-annobin:gcc-plugin-annobin:11.4.1-3.el9:*:*:*:*:*:*:*",
+            "purl": "pkg:rpm/rhel/gcc-plugin-annobin@11.4.1-3.el9?arch=x86_64&upstream=gcc-11.4.1-3.el9.src.rpm&distro=rhel-9.4",
+            "properties": [
+                {
+                    "name": "syft:package:foundBy",
+                    "value": "rpm-db-cataloger"
+                },
+                {
+                    "name": "syft:package:type",
+                    "value": "rpm"
+                },
+                {
+                    "name": "syft:package:metadataType",
+                    "value": "rpm-db-entry"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gcc-plugin-annobin:gcc_plugin_annobin:11.4.1-3.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gcc_plugin_annobin:gcc-plugin-annobin:11.4.1-3.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gcc_plugin_annobin:gcc_plugin_annobin:11.4.1-3.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gcc-plugin:gcc-plugin-annobin:11.4.1-3.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gcc-plugin:gcc_plugin_annobin:11.4.1-3.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gcc_plugin:gcc-plugin-annobin:11.4.1-3.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gcc_plugin:gcc_plugin_annobin:11.4.1-3.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:redhat:gcc-plugin-annobin:11.4.1-3.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:redhat:gcc_plugin_annobin:11.4.1-3.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gcc:gcc-plugin-annobin:11.4.1-3.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gcc:gcc_plugin_annobin:11.4.1-3.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:location:0:layerID",
+                    "value": "sha256:9ae5ae34e7cbb81537599d99b5cf2e069f5af6f44f17472023e80a2ace84cd04"
+                },
+                {
+                    "name": "syft:location:0:path",
+                    "value": "/var/lib/rpm/rpmdb.sqlite"
+                },
+                {
+                    "name": "syft:metadata:release",
+                    "value": "3.el9"
+                },
+                {
+                    "name": "syft:metadata:size",
+                    "value": "57754"
+                },
+                {
+                    "name": "syft:metadata:sourceRpm",
+                    "value": "gcc-11.4.1-3.el9.src.rpm"
+                }
+            ]
+        },
+        {
+            "bom-ref": "pkg:rpm/rhel/gd@2.3.2-3.el9?arch=x86_64&upstream=gd-2.3.2-3.el9.src.rpm&distro=rhel-9.4&package-id=222cf92826f42128",
+            "type": "library",
+            "publisher": "Red Hat, Inc.",
+            "name": "gd",
+            "version": "2.3.2-3.el9",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "MIT"
+                    }
+                }
+            ],
+            "cpe": "cpe:2.3:a:redhat:gd:2.3.2-3.el9:*:*:*:*:*:*:*",
+            "purl": "pkg:rpm/rhel/gd@2.3.2-3.el9?arch=x86_64&upstream=gd-2.3.2-3.el9.src.rpm&distro=rhel-9.4",
+            "properties": [
+                {
+                    "name": "syft:package:foundBy",
+                    "value": "rpm-db-cataloger"
+                },
+                {
+                    "name": "syft:package:type",
+                    "value": "rpm"
+                },
+                {
+                    "name": "syft:package:metadataType",
+                    "value": "rpm-db-entry"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gd:gd:2.3.2-3.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:location:0:layerID",
+                    "value": "sha256:9ae5ae34e7cbb81537599d99b5cf2e069f5af6f44f17472023e80a2ace84cd04"
+                },
+                {
+                    "name": "syft:location:0:path",
+                    "value": "/var/lib/rpm/rpmdb.sqlite"
+                },
+                {
+                    "name": "syft:metadata:release",
+                    "value": "3.el9"
+                },
+                {
+                    "name": "syft:metadata:size",
+                    "value": "422174"
+                },
+                {
+                    "name": "syft:metadata:sourceRpm",
+                    "value": "gd-2.3.2-3.el9.src.rpm"
+                }
+            ]
+        },
+        {
+            "bom-ref": "pkg:rpm/rhel/gd-devel@2.3.2-3.el9?arch=x86_64&upstream=gd-2.3.2-3.el9.src.rpm&distro=rhel-9.4&package-id=00469fbdde4512a9",
+            "type": "library",
+            "publisher": "Red Hat, Inc.",
+            "name": "gd-devel",
+            "version": "2.3.2-3.el9",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "MIT"
+                    }
+                }
+            ],
+            "cpe": "cpe:2.3:a:gd-devel:gd-devel:2.3.2-3.el9:*:*:*:*:*:*:*",
+            "purl": "pkg:rpm/rhel/gd-devel@2.3.2-3.el9?arch=x86_64&upstream=gd-2.3.2-3.el9.src.rpm&distro=rhel-9.4",
+            "properties": [
+                {
+                    "name": "syft:package:foundBy",
+                    "value": "rpm-db-cataloger"
+                },
+                {
+                    "name": "syft:package:type",
+                    "value": "rpm"
+                },
+                {
+                    "name": "syft:package:metadataType",
+                    "value": "rpm-db-entry"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gd-devel:gd_devel:2.3.2-3.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gd_devel:gd-devel:2.3.2-3.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gd_devel:gd_devel:2.3.2-3.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:redhat:gd-devel:2.3.2-3.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:redhat:gd_devel:2.3.2-3.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gd:gd-devel:2.3.2-3.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gd:gd_devel:2.3.2-3.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:location:0:layerID",
+                    "value": "sha256:9ae5ae34e7cbb81537599d99b5cf2e069f5af6f44f17472023e80a2ace84cd04"
+                },
+                {
+                    "name": "syft:location:0:path",
+                    "value": "/var/lib/rpm/rpmdb.sqlite"
+                },
+                {
+                    "name": "syft:metadata:release",
+                    "value": "3.el9"
+                },
+                {
+                    "name": "syft:metadata:size",
+                    "value": "127993"
+                },
+                {
+                    "name": "syft:metadata:sourceRpm",
+                    "value": "gd-2.3.2-3.el9.src.rpm"
+                }
+            ]
+        },
+        {
+            "bom-ref": "pkg:rpm/rhel/gdb@10.2-13.el9?arch=x86_64&upstream=gdb-10.2-13.el9.src.rpm&distro=rhel-9.4&package-id=e77cae662ca71c86",
+            "type": "library",
+            "publisher": "Red Hat, Inc.",
+            "name": "gdb",
+            "version": "10.2-13.el9",
+            "licenses": [
+                {
+                    "license": {
+                        "name": "GPLv3+ and GPLv3+ with exceptions and GPLv2+ and GPLv2+ with exceptions and GPL+ and LGPLv2+ and LGPLv3+ and BSD and Public Domain and GFDL"
+                    }
+                }
+            ],
+            "cpe": "cpe:2.3:a:redhat:gdb:10.2-13.el9:*:*:*:*:*:*:*",
+            "purl": "pkg:rpm/rhel/gdb@10.2-13.el9?arch=x86_64&upstream=gdb-10.2-13.el9.src.rpm&distro=rhel-9.4",
+            "properties": [
+                {
+                    "name": "syft:package:foundBy",
+                    "value": "rpm-db-cataloger"
+                },
+                {
+                    "name": "syft:package:type",
+                    "value": "rpm"
+                },
+                {
+                    "name": "syft:package:metadataType",
+                    "value": "rpm-db-entry"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gdb:gdb:10.2-13.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:location:0:layerID",
+                    "value": "sha256:9ae5ae34e7cbb81537599d99b5cf2e069f5af6f44f17472023e80a2ace84cd04"
+                },
+                {
+                    "name": "syft:location:0:path",
+                    "value": "/var/lib/rpm/rpmdb.sqlite"
+                },
+                {
+                    "name": "syft:metadata:release",
+                    "value": "13.el9"
+                },
+                {
+                    "name": "syft:metadata:size",
+                    "value": "397466"
+                },
+                {
+                    "name": "syft:metadata:sourceRpm",
+                    "value": "gdb-10.2-13.el9.src.rpm"
+                }
+            ]
+        },
+        {
+            "bom-ref": "pkg:rpm/rhel/gdb-gdbserver@10.2-13.el9?arch=x86_64&upstream=gdb-10.2-13.el9.src.rpm&distro=rhel-9.4&package-id=a83c589213e46ca6",
+            "type": "library",
+            "publisher": "Red Hat, Inc.",
+            "name": "gdb-gdbserver",
+            "version": "10.2-13.el9",
+            "licenses": [
+                {
+                    "license": {
+                        "name": "GPLv3+ and GPLv3+ with exceptions and GPLv2+ and GPLv2+ with exceptions and GPL+ and LGPLv2+ and LGPLv3+ and BSD and Public Domain and GFDL"
+                    }
+                }
+            ],
+            "cpe": "cpe:2.3:a:gdb-gdbserver:gdb-gdbserver:10.2-13.el9:*:*:*:*:*:*:*",
+            "purl": "pkg:rpm/rhel/gdb-gdbserver@10.2-13.el9?arch=x86_64&upstream=gdb-10.2-13.el9.src.rpm&distro=rhel-9.4",
+            "properties": [
+                {
+                    "name": "syft:package:foundBy",
+                    "value": "rpm-db-cataloger"
+                },
+                {
+                    "name": "syft:package:type",
+                    "value": "rpm"
+                },
+                {
+                    "name": "syft:package:metadataType",
+                    "value": "rpm-db-entry"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gdb-gdbserver:gdb_gdbserver:10.2-13.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gdb_gdbserver:gdb-gdbserver:10.2-13.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gdb_gdbserver:gdb_gdbserver:10.2-13.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:redhat:gdb-gdbserver:10.2-13.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:redhat:gdb_gdbserver:10.2-13.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gdb:gdb-gdbserver:10.2-13.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gdb:gdb_gdbserver:10.2-13.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:location:0:layerID",
+                    "value": "sha256:9ae5ae34e7cbb81537599d99b5cf2e069f5af6f44f17472023e80a2ace84cd04"
+                },
+                {
+                    "name": "syft:location:0:path",
+                    "value": "/var/lib/rpm/rpmdb.sqlite"
+                },
+                {
+                    "name": "syft:metadata:release",
+                    "value": "13.el9"
+                },
+                {
+                    "name": "syft:metadata:size",
+                    "value": "714031"
+                },
+                {
+                    "name": "syft:metadata:sourceRpm",
+                    "value": "gdb-10.2-13.el9.src.rpm"
+                }
+            ]
+        },
+        {
+            "bom-ref": "pkg:rpm/rhel/gdb-headless@10.2-13.el9?arch=x86_64&upstream=gdb-10.2-13.el9.src.rpm&distro=rhel-9.4&package-id=ed6d0ef19b74faf8",
+            "type": "library",
+            "publisher": "Red Hat, Inc.",
+            "name": "gdb-headless",
+            "version": "10.2-13.el9",
+            "licenses": [
+                {
+                    "license": {
+                        "name": "GPLv3+ and GPLv3+ with exceptions and GPLv2+ and GPLv2+ with exceptions and GPL+ and LGPLv2+ and LGPLv3+ and BSD and Public Domain and GFDL"
+                    }
+                }
+            ],
+            "cpe": "cpe:2.3:a:gdb-headless:gdb-headless:10.2-13.el9:*:*:*:*:*:*:*",
+            "purl": "pkg:rpm/rhel/gdb-headless@10.2-13.el9?arch=x86_64&upstream=gdb-10.2-13.el9.src.rpm&distro=rhel-9.4",
+            "properties": [
+                {
+                    "name": "syft:package:foundBy",
+                    "value": "rpm-db-cataloger"
+                },
+                {
+                    "name": "syft:package:type",
+                    "value": "rpm"
+                },
+                {
+                    "name": "syft:package:metadataType",
+                    "value": "rpm-db-entry"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gdb-headless:gdb_headless:10.2-13.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gdb_headless:gdb-headless:10.2-13.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gdb_headless:gdb_headless:10.2-13.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:redhat:gdb-headless:10.2-13.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:redhat:gdb_headless:10.2-13.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gdb:gdb-headless:10.2-13.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gdb:gdb_headless:10.2-13.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:location:0:layerID",
+                    "value": "sha256:9ae5ae34e7cbb81537599d99b5cf2e069f5af6f44f17472023e80a2ace84cd04"
+                },
+                {
+                    "name": "syft:location:0:path",
+                    "value": "/var/lib/rpm/rpmdb.sqlite"
+                },
+                {
+                    "name": "syft:metadata:release",
+                    "value": "13.el9"
+                },
+                {
+                    "name": "syft:metadata:size",
+                    "value": "12971279"
+                },
+                {
+                    "name": "syft:metadata:sourceRpm",
+                    "value": "gdb-10.2-13.el9.src.rpm"
+                }
+            ]
+        },
+        {
+            "bom-ref": "pkg:rpm/rhel/gdbm-libs@1.19-4.el9?arch=x86_64&epoch=1&upstream=gdbm-1.19-4.el9.src.rpm&distro=rhel-9.4&package-id=d59bef29e19a3e9e",
+            "type": "library",
+            "publisher": "Red Hat, Inc.",
+            "name": "gdbm-libs",
+            "version": "1:1.19-4.el9",
+            "licenses": [
+                {
+                    "license": {
+                        "name": "GPLv3+"
+                    }
+                }
+            ],
+            "cpe": "cpe:2.3:a:gdbm-libs:gdbm-libs:1\\:1.19-4.el9:*:*:*:*:*:*:*",
+            "purl": "pkg:rpm/rhel/gdbm-libs@1.19-4.el9?arch=x86_64&epoch=1&upstream=gdbm-1.19-4.el9.src.rpm&distro=rhel-9.4",
+            "properties": [
+                {
+                    "name": "syft:package:foundBy",
+                    "value": "rpm-db-cataloger"
+                },
+                {
+                    "name": "syft:package:type",
+                    "value": "rpm"
+                },
+                {
+                    "name": "syft:package:metadataType",
+                    "value": "rpm-db-entry"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gdbm-libs:gdbm_libs:1\\:1.19-4.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gdbm_libs:gdbm-libs:1\\:1.19-4.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gdbm_libs:gdbm_libs:1\\:1.19-4.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:redhat:gdbm-libs:1\\:1.19-4.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:redhat:gdbm_libs:1\\:1.19-4.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gdbm:gdbm-libs:1\\:1.19-4.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gdbm:gdbm_libs:1\\:1.19-4.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:location:0:layerID",
+                    "value": "sha256:9ae5ae34e7cbb81537599d99b5cf2e069f5af6f44f17472023e80a2ace84cd04"
+                },
+                {
+                    "name": "syft:location:0:path",
+                    "value": "/var/lib/rpm/rpmdb.sqlite"
+                },
+                {
+                    "name": "syft:metadata:epoch",
+                    "value": "1"
+                },
+                {
+                    "name": "syft:metadata:release",
+                    "value": "4.el9"
+                },
+                {
+                    "name": "syft:metadata:size",
+                    "value": "116306"
+                },
+                {
+                    "name": "syft:metadata:sourceRpm",
+                    "value": "gdbm-1.19-4.el9.src.rpm"
+                }
+            ]
+        },
+        {
+            "bom-ref": "pkg:rpm/rhel/gettext@0.21-8.el9?arch=x86_64&upstream=gettext-0.21-8.el9.src.rpm&distro=rhel-9.4&package-id=180f19575da41dda",
+            "type": "library",
+            "publisher": "Red Hat, Inc.",
+            "name": "gettext",
+            "version": "0.21-8.el9",
+            "licenses": [
+                {
+                    "license": {
+                        "name": "GPLv3+ and LGPLv2+ and GFDL"
+                    }
+                }
+            ],
+            "cpe": "cpe:2.3:a:gettext:gettext:0.21-8.el9:*:*:*:*:*:*:*",
+            "purl": "pkg:rpm/rhel/gettext@0.21-8.el9?arch=x86_64&upstream=gettext-0.21-8.el9.src.rpm&distro=rhel-9.4",
+            "properties": [
+                {
+                    "name": "syft:package:foundBy",
+                    "value": "rpm-db-cataloger"
+                },
+                {
+                    "name": "syft:package:type",
+                    "value": "rpm"
+                },
+                {
+                    "name": "syft:package:metadataType",
+                    "value": "rpm-db-entry"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:redhat:gettext:0.21-8.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:location:0:layerID",
+                    "value": "sha256:9ae5ae34e7cbb81537599d99b5cf2e069f5af6f44f17472023e80a2ace84cd04"
+                },
+                {
+                    "name": "syft:location:0:path",
+                    "value": "/var/lib/rpm/rpmdb.sqlite"
+                },
+                {
+                    "name": "syft:metadata:release",
+                    "value": "8.el9"
+                },
+                {
+                    "name": "syft:metadata:size",
+                    "value": "5278487"
+                },
+                {
+                    "name": "syft:metadata:sourceRpm",
+                    "value": "gettext-0.21-8.el9.src.rpm"
+                }
+            ]
+        },
+        {
+            "bom-ref": "pkg:rpm/rhel/gettext-libs@0.21-8.el9?arch=x86_64&upstream=gettext-0.21-8.el9.src.rpm&distro=rhel-9.4&package-id=f6fb685f6da4940e",
+            "type": "library",
+            "publisher": "Red Hat, Inc.",
+            "name": "gettext-libs",
+            "version": "0.21-8.el9",
+            "licenses": [
+                {
+                    "license": {
+                        "name": "LGPLv2+ and GPLv3+"
+                    }
+                }
+            ],
+            "cpe": "cpe:2.3:a:gettext-libs:gettext-libs:0.21-8.el9:*:*:*:*:*:*:*",
+            "purl": "pkg:rpm/rhel/gettext-libs@0.21-8.el9?arch=x86_64&upstream=gettext-0.21-8.el9.src.rpm&distro=rhel-9.4",
+            "properties": [
+                {
+                    "name": "syft:package:foundBy",
+                    "value": "rpm-db-cataloger"
+                },
+                {
+                    "name": "syft:package:type",
+                    "value": "rpm"
+                },
+                {
+                    "name": "syft:package:metadataType",
+                    "value": "rpm-db-entry"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gettext-libs:gettext_libs:0.21-8.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gettext_libs:gettext-libs:0.21-8.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gettext_libs:gettext_libs:0.21-8.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gettext:gettext-libs:0.21-8.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gettext:gettext_libs:0.21-8.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:redhat:gettext-libs:0.21-8.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:redhat:gettext_libs:0.21-8.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:location:0:layerID",
+                    "value": "sha256:9ae5ae34e7cbb81537599d99b5cf2e069f5af6f44f17472023e80a2ace84cd04"
+                },
+                {
+                    "name": "syft:location:0:path",
+                    "value": "/var/lib/rpm/rpmdb.sqlite"
+                },
+                {
+                    "name": "syft:metadata:release",
+                    "value": "8.el9"
+                },
+                {
+                    "name": "syft:metadata:size",
+                    "value": "1023620"
+                },
+                {
+                    "name": "syft:metadata:sourceRpm",
+                    "value": "gettext-0.21-8.el9.src.rpm"
+                }
+            ]
+        },
+        {
+            "bom-ref": "pkg:rpm/rhel/ghc-srpm-macros@1.5.0-6.el9?arch=noarch&upstream=ghc-srpm-macros-1.5.0-6.el9.src.rpm&distro=rhel-9.4&package-id=46db90a6a59a75d8",
+            "type": "library",
+            "publisher": "Red Hat, Inc.",
+            "name": "ghc-srpm-macros",
+            "version": "1.5.0-6.el9",
+            "licenses": [
+                {
+                    "license": {
+                        "name": "GPLv2+"
+                    }
+                }
+            ],
+            "cpe": "cpe:2.3:a:ghc-srpm-macros:ghc-srpm-macros:1.5.0-6.el9:*:*:*:*:*:*:*",
+            "purl": "pkg:rpm/rhel/ghc-srpm-macros@1.5.0-6.el9?arch=noarch&upstream=ghc-srpm-macros-1.5.0-6.el9.src.rpm&distro=rhel-9.4",
+            "properties": [
+                {
+                    "name": "syft:package:foundBy",
+                    "value": "rpm-db-cataloger"
+                },
+                {
+                    "name": "syft:package:type",
+                    "value": "rpm"
+                },
+                {
+                    "name": "syft:package:metadataType",
+                    "value": "rpm-db-entry"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:ghc-srpm-macros:ghc_srpm_macros:1.5.0-6.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:ghc_srpm_macros:ghc-srpm-macros:1.5.0-6.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:ghc_srpm_macros:ghc_srpm_macros:1.5.0-6.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:ghc-srpm:ghc-srpm-macros:1.5.0-6.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:ghc-srpm:ghc_srpm_macros:1.5.0-6.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:ghc_srpm:ghc-srpm-macros:1.5.0-6.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:ghc_srpm:ghc_srpm_macros:1.5.0-6.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:redhat:ghc-srpm-macros:1.5.0-6.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:redhat:ghc_srpm_macros:1.5.0-6.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:ghc:ghc-srpm-macros:1.5.0-6.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:ghc:ghc_srpm_macros:1.5.0-6.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:location:0:layerID",
+                    "value": "sha256:9ae5ae34e7cbb81537599d99b5cf2e069f5af6f44f17472023e80a2ace84cd04"
+                },
+                {
+                    "name": "syft:location:0:path",
+                    "value": "/var/lib/rpm/rpmdb.sqlite"
+                },
+                {
+                    "name": "syft:metadata:release",
+                    "value": "6.el9"
+                },
+                {
+                    "name": "syft:metadata:size",
+                    "value": "535"
+                },
+                {
+                    "name": "syft:metadata:sourceRpm",
+                    "value": "ghc-srpm-macros-1.5.0-6.el9.src.rpm"
+                }
+            ]
+        },
+        {
+            "bom-ref": "pkg:rpm/rhel/git@2.43.5-1.el9_4?arch=x86_64&upstream=git-2.43.5-1.el9_4.src.rpm&distro=rhel-9.4&package-id=9b2b3feca1064a48",
+            "type": "library",
+            "publisher": "Red Hat, Inc.",
+            "name": "git",
+            "version": "2.43.5-1.el9_4",
+            "licenses": [
+                {
+                    "license": {
+                        "name": "GPLv2"
+                    }
+                }
+            ],
+            "cpe": "cpe:2.3:a:redhat:git:2.43.5-1.el9_4:*:*:*:*:*:*:*",
+            "purl": "pkg:rpm/rhel/git@2.43.5-1.el9_4?arch=x86_64&upstream=git-2.43.5-1.el9_4.src.rpm&distro=rhel-9.4",
+            "properties": [
+                {
+                    "name": "syft:package:foundBy",
+                    "value": "rpm-db-cataloger"
+                },
+                {
+                    "name": "syft:package:type",
+                    "value": "rpm"
+                },
+                {
+                    "name": "syft:package:metadataType",
+                    "value": "rpm-db-entry"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:git:git:2.43.5-1.el9_4:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:location:0:layerID",
+                    "value": "sha256:9ae5ae34e7cbb81537599d99b5cf2e069f5af6f44f17472023e80a2ace84cd04"
+                },
+                {
+                    "name": "syft:location:0:path",
+                    "value": "/var/lib/rpm/rpmdb.sqlite"
+                },
+                {
+                    "name": "syft:metadata:release",
+                    "value": "1.el9_4"
+                },
+                {
+                    "name": "syft:metadata:size",
+                    "value": "87948"
+                },
+                {
+                    "name": "syft:metadata:sourceRpm",
+                    "value": "git-2.43.5-1.el9_4.src.rpm"
+                }
+            ]
+        },
+        {
+            "bom-ref": "pkg:rpm/rhel/git-core@2.43.5-1.el9_4?arch=x86_64&upstream=git-2.43.5-1.el9_4.src.rpm&distro=rhel-9.4&package-id=f7974827d39fd38e",
+            "type": "library",
+            "publisher": "Red Hat, Inc.",
+            "name": "git-core",
+            "version": "2.43.5-1.el9_4",
+            "licenses": [
+                {
+                    "license": {
+                        "name": "GPLv2"
+                    }
+                }
+            ],
+            "cpe": "cpe:2.3:a:git-core:git-core:2.43.5-1.el9_4:*:*:*:*:*:*:*",
+            "purl": "pkg:rpm/rhel/git-core@2.43.5-1.el9_4?arch=x86_64&upstream=git-2.43.5-1.el9_4.src.rpm&distro=rhel-9.4",
+            "properties": [
+                {
+                    "name": "syft:package:foundBy",
+                    "value": "rpm-db-cataloger"
+                },
+                {
+                    "name": "syft:package:type",
+                    "value": "rpm"
+                },
+                {
+                    "name": "syft:package:metadataType",
+                    "value": "rpm-db-entry"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:git-core:git_core:2.43.5-1.el9_4:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:git_core:git-core:2.43.5-1.el9_4:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:git_core:git_core:2.43.5-1.el9_4:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:redhat:git-core:2.43.5-1.el9_4:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:redhat:git_core:2.43.5-1.el9_4:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:git:git-core:2.43.5-1.el9_4:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:git:git_core:2.43.5-1.el9_4:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:location:0:layerID",
+                    "value": "sha256:9ae5ae34e7cbb81537599d99b5cf2e069f5af6f44f17472023e80a2ace84cd04"
+                },
+                {
+                    "name": "syft:location:0:path",
+                    "value": "/var/lib/rpm/rpmdb.sqlite"
+                },
+                {
+                    "name": "syft:metadata:release",
+                    "value": "1.el9_4"
+                },
+                {
+                    "name": "syft:metadata:size",
+                    "value": "21444937"
+                },
+                {
+                    "name": "syft:metadata:sourceRpm",
+                    "value": "git-2.43.5-1.el9_4.src.rpm"
+                }
+            ]
+        },
+        {
+            "bom-ref": "pkg:rpm/rhel/git-core-doc@2.43.5-1.el9_4?arch=noarch&upstream=git-2.43.5-1.el9_4.src.rpm&distro=rhel-9.4&package-id=1e7ce36aa1a98ea6",
+            "type": "library",
+            "publisher": "Red Hat, Inc.",
+            "name": "git-core-doc",
+            "version": "2.43.5-1.el9_4",
+            "licenses": [
+                {
+                    "license": {
+                        "name": "GPLv2"
+                    }
+                }
+            ],
+            "cpe": "cpe:2.3:a:git-core-doc:git-core-doc:2.43.5-1.el9_4:*:*:*:*:*:*:*",
+            "purl": "pkg:rpm/rhel/git-core-doc@2.43.5-1.el9_4?arch=noarch&upstream=git-2.43.5-1.el9_4.src.rpm&distro=rhel-9.4",
+            "properties": [
+                {
+                    "name": "syft:package:foundBy",
+                    "value": "rpm-db-cataloger"
+                },
+                {
+                    "name": "syft:package:type",
+                    "value": "rpm"
+                },
+                {
+                    "name": "syft:package:metadataType",
+                    "value": "rpm-db-entry"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:git-core-doc:git_core_doc:2.43.5-1.el9_4:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:git_core_doc:git-core-doc:2.43.5-1.el9_4:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:git_core_doc:git_core_doc:2.43.5-1.el9_4:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:git-core:git-core-doc:2.43.5-1.el9_4:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:git-core:git_core_doc:2.43.5-1.el9_4:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:git_core:git-core-doc:2.43.5-1.el9_4:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:git_core:git_core_doc:2.43.5-1.el9_4:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:redhat:git-core-doc:2.43.5-1.el9_4:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:redhat:git_core_doc:2.43.5-1.el9_4:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:git:git-core-doc:2.43.5-1.el9_4:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:git:git_core_doc:2.43.5-1.el9_4:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:location:0:layerID",
+                    "value": "sha256:9ae5ae34e7cbb81537599d99b5cf2e069f5af6f44f17472023e80a2ace84cd04"
+                },
+                {
+                    "name": "syft:location:0:path",
+                    "value": "/var/lib/rpm/rpmdb.sqlite"
+                },
+                {
+                    "name": "syft:metadata:release",
+                    "value": "1.el9_4"
+                },
+                {
+                    "name": "syft:metadata:size",
+                    "value": "17578828"
+                },
+                {
+                    "name": "syft:metadata:sourceRpm",
+                    "value": "git-2.43.5-1.el9_4.src.rpm"
+                }
+            ]
+        },
+        {
+            "bom-ref": "pkg:rpm/rhel/glib2@2.68.4-14.el9?arch=x86_64&upstream=glib2-2.68.4-14.el9.src.rpm&distro=rhel-9.4&package-id=7a89968438355624",
+            "type": "library",
+            "publisher": "Red Hat, Inc.",
+            "name": "glib2",
+            "version": "2.68.4-14.el9",
+            "licenses": [
+                {
+                    "license": {
+                        "name": "LGPLv2+"
+                    }
+                }
+            ],
+            "cpe": "cpe:2.3:a:redhat:glib2:2.68.4-14.el9:*:*:*:*:*:*:*",
+            "purl": "pkg:rpm/rhel/glib2@2.68.4-14.el9?arch=x86_64&upstream=glib2-2.68.4-14.el9.src.rpm&distro=rhel-9.4",
+            "properties": [
+                {
+                    "name": "syft:package:foundBy",
+                    "value": "rpm-db-cataloger"
+                },
+                {
+                    "name": "syft:package:type",
+                    "value": "rpm"
+                },
+                {
+                    "name": "syft:package:metadataType",
+                    "value": "rpm-db-entry"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:glib2:glib2:2.68.4-14.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:location:0:layerID",
+                    "value": "sha256:9ae5ae34e7cbb81537599d99b5cf2e069f5af6f44f17472023e80a2ace84cd04"
+                },
+                {
+                    "name": "syft:location:0:path",
+                    "value": "/var/lib/rpm/rpmdb.sqlite"
+                },
+                {
+                    "name": "syft:metadata:release",
+                    "value": "14.el9"
+                },
+                {
+                    "name": "syft:metadata:size",
+                    "value": "13441007"
+                },
+                {
+                    "name": "syft:metadata:sourceRpm",
+                    "value": "glib2-2.68.4-14.el9.src.rpm"
+                }
+            ]
+        },
+        {
+            "bom-ref": "pkg:rpm/rhel/glib2-devel@2.68.4-14.el9?arch=x86_64&upstream=glib2-2.68.4-14.el9.src.rpm&distro=rhel-9.4&package-id=08083b106f56f39d",
+            "type": "library",
+            "publisher": "Red Hat, Inc.",
+            "name": "glib2-devel",
+            "version": "2.68.4-14.el9",
+            "licenses": [
+                {
+                    "license": {
+                        "name": "LGPLv2+"
+                    }
+                }
+            ],
+            "cpe": "cpe:2.3:a:glib2-devel:glib2-devel:2.68.4-14.el9:*:*:*:*:*:*:*",
+            "purl": "pkg:rpm/rhel/glib2-devel@2.68.4-14.el9?arch=x86_64&upstream=glib2-2.68.4-14.el9.src.rpm&distro=rhel-9.4",
+            "properties": [
+                {
+                    "name": "syft:package:foundBy",
+                    "value": "rpm-db-cataloger"
+                },
+                {
+                    "name": "syft:package:type",
+                    "value": "rpm"
+                },
+                {
+                    "name": "syft:package:metadataType",
+                    "value": "rpm-db-entry"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:glib2-devel:glib2_devel:2.68.4-14.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:glib2_devel:glib2-devel:2.68.4-14.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:glib2_devel:glib2_devel:2.68.4-14.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:redhat:glib2-devel:2.68.4-14.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:redhat:glib2_devel:2.68.4-14.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:glib2:glib2-devel:2.68.4-14.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:glib2:glib2_devel:2.68.4-14.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:location:0:layerID",
+                    "value": "sha256:9ae5ae34e7cbb81537599d99b5cf2e069f5af6f44f17472023e80a2ace84cd04"
+                },
+                {
+                    "name": "syft:location:0:path",
+                    "value": "/var/lib/rpm/rpmdb.sqlite"
+                },
+                {
+                    "name": "syft:metadata:release",
+                    "value": "14.el9"
+                },
+                {
+                    "name": "syft:metadata:size",
+                    "value": "3058941"
+                },
+                {
+                    "name": "syft:metadata:sourceRpm",
+                    "value": "glib2-2.68.4-14.el9.src.rpm"
+                }
+            ]
+        },
+        {
+            "bom-ref": "pkg:rpm/rhel/glibc@2.34-100.el9_4.2?arch=x86_64&upstream=glibc-2.34-100.el9_4.2.src.rpm&distro=rhel-9.4&package-id=b89557e9be030faa",
+            "type": "library",
+            "publisher": "Red Hat, Inc.",
+            "name": "glibc",
+            "version": "2.34-100.el9_4.2",
+            "licenses": [
+                {
+                    "license": {
+                        "name": "LGPLv2+ and LGPLv2+ with exceptions and GPLv2+ and GPLv2+ with exceptions and BSD and Inner-Net and ISC and Public Domain and GFDL"
+                    }
+                }
+            ],
+            "cpe": "cpe:2.3:a:redhat:glibc:2.34-100.el9_4.2:*:*:*:*:*:*:*",
+            "purl": "pkg:rpm/rhel/glibc@2.34-100.el9_4.2?arch=x86_64&upstream=glibc-2.34-100.el9_4.2.src.rpm&distro=rhel-9.4",
+            "properties": [
+                {
+                    "name": "syft:package:foundBy",
+                    "value": "rpm-db-cataloger"
+                },
+                {
+                    "name": "syft:package:type",
+                    "value": "rpm"
+                },
+                {
+                    "name": "syft:package:metadataType",
+                    "value": "rpm-db-entry"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:glibc:glibc:2.34-100.el9_4.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:location:0:layerID",
+                    "value": "sha256:9ae5ae34e7cbb81537599d99b5cf2e069f5af6f44f17472023e80a2ace84cd04"
+                },
+                {
+                    "name": "syft:location:0:path",
+                    "value": "/var/lib/rpm/rpmdb.sqlite"
+                },
+                {
+                    "name": "syft:metadata:release",
+                    "value": "100.el9_4.2"
+                },
+                {
+                    "name": "syft:metadata:size",
+                    "value": "6448547"
+                },
+                {
+                    "name": "syft:metadata:sourceRpm",
+                    "value": "glibc-2.34-100.el9_4.2.src.rpm"
+                }
+            ]
+        },
+        {
+            "bom-ref": "pkg:rpm/rhel/glibc-common@2.34-100.el9_4.2?arch=x86_64&upstream=glibc-2.34-100.el9_4.2.src.rpm&distro=rhel-9.4&package-id=09bee66cbf1f6f93",
+            "type": "library",
+            "publisher": "Red Hat, Inc.",
+            "name": "glibc-common",
+            "version": "2.34-100.el9_4.2",
+            "licenses": [
+                {
+                    "license": {
+                        "name": "LGPLv2+ and LGPLv2+ with exceptions and GPLv2+ and GPLv2+ with exceptions and BSD and Inner-Net and ISC and Public Domain and GFDL"
+                    }
+                }
+            ],
+            "cpe": "cpe:2.3:a:glibc-common:glibc-common:2.34-100.el9_4.2:*:*:*:*:*:*:*",
+            "purl": "pkg:rpm/rhel/glibc-common@2.34-100.el9_4.2?arch=x86_64&upstream=glibc-2.34-100.el9_4.2.src.rpm&distro=rhel-9.4",
+            "properties": [
+                {
+                    "name": "syft:package:foundBy",
+                    "value": "rpm-db-cataloger"
+                },
+                {
+                    "name": "syft:package:type",
+                    "value": "rpm"
+                },
+                {
+                    "name": "syft:package:metadataType",
+                    "value": "rpm-db-entry"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:glibc-common:glibc_common:2.34-100.el9_4.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:glibc_common:glibc-common:2.34-100.el9_4.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:glibc_common:glibc_common:2.34-100.el9_4.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:redhat:glibc-common:2.34-100.el9_4.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:redhat:glibc_common:2.34-100.el9_4.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:glibc:glibc-common:2.34-100.el9_4.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:glibc:glibc_common:2.34-100.el9_4.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:location:0:layerID",
+                    "value": "sha256:9ae5ae34e7cbb81537599d99b5cf2e069f5af6f44f17472023e80a2ace84cd04"
+                },
+                {
+                    "name": "syft:location:0:path",
+                    "value": "/var/lib/rpm/rpmdb.sqlite"
+                },
+                {
+                    "name": "syft:metadata:release",
+                    "value": "100.el9_4.2"
+                },
+                {
+                    "name": "syft:metadata:size",
+                    "value": "1083841"
+                },
+                {
+                    "name": "syft:metadata:sourceRpm",
+                    "value": "glibc-2.34-100.el9_4.2.src.rpm"
+                }
+            ]
+        },
+        {
+            "bom-ref": "pkg:rpm/rhel/glibc-devel@2.34-100.el9_4.2?arch=x86_64&upstream=glibc-2.34-100.el9_4.2.src.rpm&distro=rhel-9.4&package-id=cb917f65f11a7fc0",
+            "type": "library",
+            "publisher": "Red Hat, Inc.",
+            "name": "glibc-devel",
+            "version": "2.34-100.el9_4.2",
+            "licenses": [
+                {
+                    "license": {
+                        "name": "LGPLv2+ and LGPLv2+ with exceptions and GPLv2+ and GPLv2+ with exceptions and BSD and Inner-Net and ISC and Public Domain and GFDL"
+                    }
+                }
+            ],
+            "cpe": "cpe:2.3:a:glibc-devel:glibc-devel:2.34-100.el9_4.2:*:*:*:*:*:*:*",
+            "purl": "pkg:rpm/rhel/glibc-devel@2.34-100.el9_4.2?arch=x86_64&upstream=glibc-2.34-100.el9_4.2.src.rpm&distro=rhel-9.4",
+            "properties": [
+                {
+                    "name": "syft:package:foundBy",
+                    "value": "rpm-db-cataloger"
+                },
+                {
+                    "name": "syft:package:type",
+                    "value": "rpm"
+                },
+                {
+                    "name": "syft:package:metadataType",
+                    "value": "rpm-db-entry"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:glibc-devel:glibc_devel:2.34-100.el9_4.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:glibc_devel:glibc-devel:2.34-100.el9_4.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:glibc_devel:glibc_devel:2.34-100.el9_4.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:redhat:glibc-devel:2.34-100.el9_4.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:redhat:glibc_devel:2.34-100.el9_4.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:glibc:glibc-devel:2.34-100.el9_4.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:glibc:glibc_devel:2.34-100.el9_4.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:location:0:layerID",
+                    "value": "sha256:9ae5ae34e7cbb81537599d99b5cf2e069f5af6f44f17472023e80a2ace84cd04"
+                },
+                {
+                    "name": "syft:location:0:path",
+                    "value": "/var/lib/rpm/rpmdb.sqlite"
+                },
+                {
+                    "name": "syft:metadata:release",
+                    "value": "100.el9_4.2"
+                },
+                {
+                    "name": "syft:metadata:size",
+                    "value": "38176"
+                },
+                {
+                    "name": "syft:metadata:sourceRpm",
+                    "value": "glibc-2.34-100.el9_4.2.src.rpm"
+                }
+            ]
+        },
+        {
+            "bom-ref": "pkg:rpm/rhel/glibc-gconv-extra@2.34-100.el9_4.2?arch=x86_64&upstream=glibc-2.34-100.el9_4.2.src.rpm&distro=rhel-9.4&package-id=9a5c7998ebeb29f8",
+            "type": "library",
+            "publisher": "Red Hat, Inc.",
+            "name": "glibc-gconv-extra",
+            "version": "2.34-100.el9_4.2",
+            "licenses": [
+                {
+                    "license": {
+                        "name": "LGPLv2+ and LGPLv2+ with exceptions and GPLv2+ and GPLv2+ with exceptions and BSD and Inner-Net and ISC and Public Domain and GFDL"
+                    }
+                }
+            ],
+            "cpe": "cpe:2.3:a:glibc-gconv-extra:glibc-gconv-extra:2.34-100.el9_4.2:*:*:*:*:*:*:*",
+            "purl": "pkg:rpm/rhel/glibc-gconv-extra@2.34-100.el9_4.2?arch=x86_64&upstream=glibc-2.34-100.el9_4.2.src.rpm&distro=rhel-9.4",
+            "properties": [
+                {
+                    "name": "syft:package:foundBy",
+                    "value": "rpm-db-cataloger"
+                },
+                {
+                    "name": "syft:package:type",
+                    "value": "rpm"
+                },
+                {
+                    "name": "syft:package:metadataType",
+                    "value": "rpm-db-entry"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:glibc-gconv-extra:glibc_gconv_extra:2.34-100.el9_4.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:glibc_gconv_extra:glibc-gconv-extra:2.34-100.el9_4.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:glibc_gconv_extra:glibc_gconv_extra:2.34-100.el9_4.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:glibc-gconv:glibc-gconv-extra:2.34-100.el9_4.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:glibc-gconv:glibc_gconv_extra:2.34-100.el9_4.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:glibc_gconv:glibc-gconv-extra:2.34-100.el9_4.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:glibc_gconv:glibc_gconv_extra:2.34-100.el9_4.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:redhat:glibc-gconv-extra:2.34-100.el9_4.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:redhat:glibc_gconv_extra:2.34-100.el9_4.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:glibc:glibc-gconv-extra:2.34-100.el9_4.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:glibc:glibc_gconv_extra:2.34-100.el9_4.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:location:0:layerID",
+                    "value": "sha256:9ae5ae34e7cbb81537599d99b5cf2e069f5af6f44f17472023e80a2ace84cd04"
+                },
+                {
+                    "name": "syft:location:0:path",
+                    "value": "/var/lib/rpm/rpmdb.sqlite"
+                },
+                {
+                    "name": "syft:metadata:release",
+                    "value": "100.el9_4.2"
+                },
+                {
+                    "name": "syft:metadata:size",
+                    "value": "8162292"
+                },
+                {
+                    "name": "syft:metadata:sourceRpm",
+                    "value": "glibc-2.34-100.el9_4.2.src.rpm"
+                }
+            ]
+        },
+        {
+            "bom-ref": "pkg:rpm/rhel/glibc-headers@2.34-100.el9_4.2?arch=x86_64&upstream=glibc-2.34-100.el9_4.2.src.rpm&distro=rhel-9.4&package-id=535ea35040738404",
+            "type": "library",
+            "publisher": "Red Hat, Inc.",
+            "name": "glibc-headers",
+            "version": "2.34-100.el9_4.2",
+            "licenses": [
+                {
+                    "license": {
+                        "name": "LGPLv2+ and LGPLv2+ with exceptions and GPLv2+ and GPLv2+ with exceptions and BSD and Inner-Net and ISC and Public Domain and GFDL"
+                    }
+                }
+            ],
+            "cpe": "cpe:2.3:a:glibc-headers:glibc-headers:2.34-100.el9_4.2:*:*:*:*:*:*:*",
+            "purl": "pkg:rpm/rhel/glibc-headers@2.34-100.el9_4.2?arch=x86_64&upstream=glibc-2.34-100.el9_4.2.src.rpm&distro=rhel-9.4",
+            "properties": [
+                {
+                    "name": "syft:package:foundBy",
+                    "value": "rpm-db-cataloger"
+                },
+                {
+                    "name": "syft:package:type",
+                    "value": "rpm"
+                },
+                {
+                    "name": "syft:package:metadataType",
+                    "value": "rpm-db-entry"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:glibc-headers:glibc_headers:2.34-100.el9_4.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:glibc_headers:glibc-headers:2.34-100.el9_4.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:glibc_headers:glibc_headers:2.34-100.el9_4.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:redhat:glibc-headers:2.34-100.el9_4.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:redhat:glibc_headers:2.34-100.el9_4.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:glibc:glibc-headers:2.34-100.el9_4.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:glibc:glibc_headers:2.34-100.el9_4.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:location:0:layerID",
+                    "value": "sha256:9ae5ae34e7cbb81537599d99b5cf2e069f5af6f44f17472023e80a2ace84cd04"
+                },
+                {
+                    "name": "syft:location:0:path",
+                    "value": "/var/lib/rpm/rpmdb.sqlite"
+                },
+                {
+                    "name": "syft:metadata:release",
+                    "value": "100.el9_4.2"
+                },
+                {
+                    "name": "syft:metadata:size",
+                    "value": "2169109"
+                },
+                {
+                    "name": "syft:metadata:sourceRpm",
+                    "value": "glibc-2.34-100.el9_4.2.src.rpm"
+                }
+            ]
+        },
+        {
+            "bom-ref": "pkg:rpm/rhel/glibc-langpack-en@2.34-100.el9_4.2?arch=x86_64&upstream=glibc-2.34-100.el9_4.2.src.rpm&distro=rhel-9.4&package-id=8557e395f162a0ca",
+            "type": "library",
+            "publisher": "Red Hat, Inc.",
+            "name": "glibc-langpack-en",
+            "version": "2.34-100.el9_4.2",
+            "licenses": [
+                {
+                    "license": {
+                        "name": "LGPLv2+ and LGPLv2+ with exceptions and GPLv2+ and GPLv2+ with exceptions and BSD and Inner-Net and ISC and Public Domain and GFDL"
+                    }
+                }
+            ],
+            "cpe": "cpe:2.3:a:glibc-langpack-en:glibc-langpack-en:2.34-100.el9_4.2:*:*:*:*:*:*:*",
+            "purl": "pkg:rpm/rhel/glibc-langpack-en@2.34-100.el9_4.2?arch=x86_64&upstream=glibc-2.34-100.el9_4.2.src.rpm&distro=rhel-9.4",
+            "properties": [
+                {
+                    "name": "syft:package:foundBy",
+                    "value": "rpm-db-cataloger"
+                },
+                {
+                    "name": "syft:package:type",
+                    "value": "rpm"
+                },
+                {
+                    "name": "syft:package:metadataType",
+                    "value": "rpm-db-entry"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:glibc-langpack-en:glibc_langpack_en:2.34-100.el9_4.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:glibc_langpack_en:glibc-langpack-en:2.34-100.el9_4.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:glibc_langpack_en:glibc_langpack_en:2.34-100.el9_4.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:glibc-langpack:glibc-langpack-en:2.34-100.el9_4.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:glibc-langpack:glibc_langpack_en:2.34-100.el9_4.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:glibc_langpack:glibc-langpack-en:2.34-100.el9_4.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:glibc_langpack:glibc_langpack_en:2.34-100.el9_4.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:redhat:glibc-langpack-en:2.34-100.el9_4.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:redhat:glibc_langpack_en:2.34-100.el9_4.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:glibc:glibc-langpack-en:2.34-100.el9_4.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:glibc:glibc_langpack_en:2.34-100.el9_4.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:location:0:layerID",
+                    "value": "sha256:9ae5ae34e7cbb81537599d99b5cf2e069f5af6f44f17472023e80a2ace84cd04"
+                },
+                {
+                    "name": "syft:location:0:path",
+                    "value": "/var/lib/rpm/rpmdb.sqlite"
+                },
+                {
+                    "name": "syft:metadata:release",
+                    "value": "100.el9_4.2"
+                },
+                {
+                    "name": "syft:metadata:size",
+                    "value": "5955802"
+                },
+                {
+                    "name": "syft:metadata:sourceRpm",
+                    "value": "glibc-2.34-100.el9_4.2.src.rpm"
+                }
+            ]
+        },
+        {
+            "bom-ref": "pkg:rpm/rhel/glibc-locale-source@2.34-100.el9_4.2?arch=x86_64&upstream=glibc-2.34-100.el9_4.2.src.rpm&distro=rhel-9.4&package-id=08ffc48bbd06ca39",
+            "type": "library",
+            "publisher": "Red Hat, Inc.",
+            "name": "glibc-locale-source",
+            "version": "2.34-100.el9_4.2",
+            "licenses": [
+                {
+                    "license": {
+                        "name": "LGPLv2+ and LGPLv2+ with exceptions and GPLv2+ and GPLv2+ with exceptions and BSD and Inner-Net and ISC and Public Domain and GFDL"
+                    }
+                }
+            ],
+            "cpe": "cpe:2.3:a:glibc-locale-source:glibc-locale-source:2.34-100.el9_4.2:*:*:*:*:*:*:*",
+            "purl": "pkg:rpm/rhel/glibc-locale-source@2.34-100.el9_4.2?arch=x86_64&upstream=glibc-2.34-100.el9_4.2.src.rpm&distro=rhel-9.4",
+            "properties": [
+                {
+                    "name": "syft:package:foundBy",
+                    "value": "rpm-db-cataloger"
+                },
+                {
+                    "name": "syft:package:type",
+                    "value": "rpm"
+                },
+                {
+                    "name": "syft:package:metadataType",
+                    "value": "rpm-db-entry"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:glibc-locale-source:glibc_locale_source:2.34-100.el9_4.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:glibc_locale_source:glibc-locale-source:2.34-100.el9_4.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:glibc_locale_source:glibc_locale_source:2.34-100.el9_4.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:glibc-locale:glibc-locale-source:2.34-100.el9_4.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:glibc-locale:glibc_locale_source:2.34-100.el9_4.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:glibc_locale:glibc-locale-source:2.34-100.el9_4.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:glibc_locale:glibc_locale_source:2.34-100.el9_4.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:redhat:glibc-locale-source:2.34-100.el9_4.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:redhat:glibc_locale_source:2.34-100.el9_4.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:glibc:glibc-locale-source:2.34-100.el9_4.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:glibc:glibc_locale_source:2.34-100.el9_4.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:location:0:layerID",
+                    "value": "sha256:9ae5ae34e7cbb81537599d99b5cf2e069f5af6f44f17472023e80a2ace84cd04"
+                },
+                {
+                    "name": "syft:location:0:path",
+                    "value": "/var/lib/rpm/rpmdb.sqlite"
+                },
+                {
+                    "name": "syft:metadata:release",
+                    "value": "100.el9_4.2"
+                },
+                {
+                    "name": "syft:metadata:size",
+                    "value": "15815222"
+                },
+                {
+                    "name": "syft:metadata:sourceRpm",
+                    "value": "glibc-2.34-100.el9_4.2.src.rpm"
+                }
+            ]
+        },
+        {
+            "bom-ref": "pkg:rpm/rhel/glibc-minimal-langpack@2.34-100.el9_4.2?arch=x86_64&upstream=glibc-2.34-100.el9_4.2.src.rpm&distro=rhel-9.4&package-id=bbda02ce84450249",
+            "type": "library",
+            "publisher": "Red Hat, Inc.",
+            "name": "glibc-minimal-langpack",
+            "version": "2.34-100.el9_4.2",
+            "licenses": [
+                {
+                    "license": {
+                        "name": "LGPLv2+ and LGPLv2+ with exceptions and GPLv2+ and GPLv2+ with exceptions and BSD and Inner-Net and ISC and Public Domain and GFDL"
+                    }
+                }
+            ],
+            "cpe": "cpe:2.3:a:glibc-minimal-langpack:glibc-minimal-langpack:2.34-100.el9_4.2:*:*:*:*:*:*:*",
+            "purl": "pkg:rpm/rhel/glibc-minimal-langpack@2.34-100.el9_4.2?arch=x86_64&upstream=glibc-2.34-100.el9_4.2.src.rpm&distro=rhel-9.4",
+            "properties": [
+                {
+                    "name": "syft:package:foundBy",
+                    "value": "rpm-db-cataloger"
+                },
+                {
+                    "name": "syft:package:type",
+                    "value": "rpm"
+                },
+                {
+                    "name": "syft:package:metadataType",
+                    "value": "rpm-db-entry"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:glibc-minimal-langpack:glibc_minimal_langpack:2.34-100.el9_4.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:glibc_minimal_langpack:glibc-minimal-langpack:2.34-100.el9_4.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:glibc_minimal_langpack:glibc_minimal_langpack:2.34-100.el9_4.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:glibc-minimal:glibc-minimal-langpack:2.34-100.el9_4.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:glibc-minimal:glibc_minimal_langpack:2.34-100.el9_4.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:glibc_minimal:glibc-minimal-langpack:2.34-100.el9_4.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:glibc_minimal:glibc_minimal_langpack:2.34-100.el9_4.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:redhat:glibc-minimal-langpack:2.34-100.el9_4.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:redhat:glibc_minimal_langpack:2.34-100.el9_4.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:glibc:glibc-minimal-langpack:2.34-100.el9_4.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:glibc:glibc_minimal_langpack:2.34-100.el9_4.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:location:0:layerID",
+                    "value": "sha256:9ae5ae34e7cbb81537599d99b5cf2e069f5af6f44f17472023e80a2ace84cd04"
+                },
+                {
+                    "name": "syft:location:0:path",
+                    "value": "/var/lib/rpm/rpmdb.sqlite"
+                },
+                {
+                    "name": "syft:metadata:release",
+                    "value": "100.el9_4.2"
+                },
+                {
+                    "name": "syft:metadata:size",
+                    "value": "0"
+                },
+                {
+                    "name": "syft:metadata:sourceRpm",
+                    "value": "glibc-2.34-100.el9_4.2.src.rpm"
+                }
+            ]
+        },
+        {
+            "bom-ref": "pkg:npm/glob@10.3.12?package-id=90f17caa35739450",
+            "type": "library",
+            "author": "Isaac Z. Schlueter <i@izs.me> (https://blog.izs.me/)",
+            "name": "glob",
+            "version": "10.3.12",
+            "description": "the most correct and second fastest glob implementation in JavaScript",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "ISC"
+                    }
+                }
+            ],
+            "cpe": "cpe:2.3:a:isaacs:glob:10.3.12:*:*:*:*:*:*:*",
+            "purl": "pkg:npm/glob@10.3.12",
+            "externalReferences": [
+                {
+                    "url": "git://github.com/isaacs/node-glob.git",
+                    "type": "distribution"
+                }
+            ],
+            "properties": [
+                {
+                    "name": "syft:package:foundBy",
+                    "value": "javascript-package-cataloger"
+                },
+                {
+                    "name": "syft:package:language",
+                    "value": "javascript"
+                },
+                {
+                    "name": "syft:package:type",
+                    "value": "npm"
+                },
+                {
+                    "name": "syft:package:metadataType",
+                    "value": "javascript-npm-package"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:glob:glob:10.3.12:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:location:0:layerID",
+                    "value": "sha256:73d09a56ed618199524fb1a090c94337fc2edd4f38b866cf82332861c704111a"
+                },
+                {
+                    "name": "syft:location:0:path",
+                    "value": "/usr/lib/node_modules/npm/node_modules/glob/package.json"
+                }
+            ]
+        },
+        {
+            "bom-ref": "pkg:rpm/rhel/gmp@6.2.0-13.el9?arch=x86_64&epoch=1&upstream=gmp-6.2.0-13.el9.src.rpm&distro=rhel-9.4&package-id=1c5e468d61284435",
+            "type": "library",
+            "publisher": "Red Hat, Inc.",
+            "name": "gmp",
+            "version": "1:6.2.0-13.el9",
+            "licenses": [
+                {
+                    "license": {
+                        "name": "LGPLv3+ or GPLv2+"
+                    }
+                }
+            ],
+            "cpe": "cpe:2.3:a:redhat:gmp:1\\:6.2.0-13.el9:*:*:*:*:*:*:*",
+            "purl": "pkg:rpm/rhel/gmp@6.2.0-13.el9?arch=x86_64&epoch=1&upstream=gmp-6.2.0-13.el9.src.rpm&distro=rhel-9.4",
+            "properties": [
+                {
+                    "name": "syft:package:foundBy",
+                    "value": "rpm-db-cataloger"
+                },
+                {
+                    "name": "syft:package:type",
+                    "value": "rpm"
+                },
+                {
+                    "name": "syft:package:metadataType",
+                    "value": "rpm-db-entry"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gmp:gmp:1\\:6.2.0-13.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:location:0:layerID",
+                    "value": "sha256:9ae5ae34e7cbb81537599d99b5cf2e069f5af6f44f17472023e80a2ace84cd04"
+                },
+                {
+                    "name": "syft:location:0:path",
+                    "value": "/var/lib/rpm/rpmdb.sqlite"
+                },
+                {
+                    "name": "syft:metadata:epoch",
+                    "value": "1"
+                },
+                {
+                    "name": "syft:metadata:release",
+                    "value": "13.el9"
+                },
+                {
+                    "name": "syft:metadata:size",
+                    "value": "816844"
+                },
+                {
+                    "name": "syft:metadata:sourceRpm",
+                    "value": "gmp-6.2.0-13.el9.src.rpm"
+                }
+            ]
+        },
+        {
+            "bom-ref": "pkg:rpm/rhel/gnupg2@2.3.3-4.el9?arch=x86_64&upstream=gnupg2-2.3.3-4.el9.src.rpm&distro=rhel-9.4&package-id=3b8d6fd7fa7bc9ba",
+            "type": "library",
+            "publisher": "Red Hat, Inc.",
+            "name": "gnupg2",
+            "version": "2.3.3-4.el9",
+            "licenses": [
+                {
+                    "license": {
+                        "name": "GPLv3+"
+                    }
+                }
+            ],
+            "cpe": "cpe:2.3:a:gnupg2:gnupg2:2.3.3-4.el9:*:*:*:*:*:*:*",
+            "purl": "pkg:rpm/rhel/gnupg2@2.3.3-4.el9?arch=x86_64&upstream=gnupg2-2.3.3-4.el9.src.rpm&distro=rhel-9.4",
+            "properties": [
+                {
+                    "name": "syft:package:foundBy",
+                    "value": "rpm-db-cataloger"
+                },
+                {
+                    "name": "syft:package:type",
+                    "value": "rpm"
+                },
+                {
+                    "name": "syft:package:metadataType",
+                    "value": "rpm-db-entry"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:redhat:gnupg2:2.3.3-4.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:location:0:layerID",
+                    "value": "sha256:9ae5ae34e7cbb81537599d99b5cf2e069f5af6f44f17472023e80a2ace84cd04"
+                },
+                {
+                    "name": "syft:location:0:path",
+                    "value": "/var/lib/rpm/rpmdb.sqlite"
+                },
+                {
+                    "name": "syft:metadata:release",
+                    "value": "4.el9"
+                },
+                {
+                    "name": "syft:metadata:size",
+                    "value": "9227533"
+                },
+                {
+                    "name": "syft:metadata:sourceRpm",
+                    "value": "gnupg2-2.3.3-4.el9.src.rpm"
+                }
+            ]
+        },
+        {
+            "bom-ref": "pkg:rpm/rhel/gnutls@3.8.3-4.el9_4?arch=x86_64&upstream=gnutls-3.8.3-4.el9_4.src.rpm&distro=rhel-9.4&package-id=0adc520ee93e1a17",
+            "type": "library",
+            "publisher": "Red Hat, Inc.",
+            "name": "gnutls",
+            "version": "3.8.3-4.el9_4",
+            "licenses": [
+                {
+                    "license": {
+                        "name": "GPLv3+ and LGPLv2+"
+                    }
+                }
+            ],
+            "cpe": "cpe:2.3:a:gnutls:gnutls:3.8.3-4.el9_4:*:*:*:*:*:*:*",
+            "purl": "pkg:rpm/rhel/gnutls@3.8.3-4.el9_4?arch=x86_64&upstream=gnutls-3.8.3-4.el9_4.src.rpm&distro=rhel-9.4",
+            "properties": [
+                {
+                    "name": "syft:package:foundBy",
+                    "value": "rpm-db-cataloger"
+                },
+                {
+                    "name": "syft:package:type",
+                    "value": "rpm"
+                },
+                {
+                    "name": "syft:package:metadataType",
+                    "value": "rpm-db-entry"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:redhat:gnutls:3.8.3-4.el9_4:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:location:0:layerID",
+                    "value": "sha256:9ae5ae34e7cbb81537599d99b5cf2e069f5af6f44f17472023e80a2ace84cd04"
+                },
+                {
+                    "name": "syft:location:0:path",
+                    "value": "/var/lib/rpm/rpmdb.sqlite"
+                },
+                {
+                    "name": "syft:metadata:release",
+                    "value": "4.el9_4"
+                },
+                {
+                    "name": "syft:metadata:size",
+                    "value": "3448611"
+                },
+                {
+                    "name": "syft:metadata:sourceRpm",
+                    "value": "gnutls-3.8.3-4.el9_4.src.rpm"
+                }
+            ]
+        },
+        {
+            "bom-ref": "pkg:rpm/rhel/go-srpm-macros@3.2.0-3.el9?arch=noarch&upstream=go-rpm-macros-3.2.0-3.el9.src.rpm&distro=rhel-9.4&package-id=a8aeec663fc2ac00",
+            "type": "library",
+            "publisher": "Red Hat, Inc.",
+            "name": "go-srpm-macros",
+            "version": "3.2.0-3.el9",
+            "licenses": [
+                {
+                    "license": {
+                        "name": "GPLv3+"
+                    }
+                }
+            ],
+            "cpe": "cpe:2.3:a:go-srpm-macros:go-srpm-macros:3.2.0-3.el9:*:*:*:*:*:*:*",
+            "purl": "pkg:rpm/rhel/go-srpm-macros@3.2.0-3.el9?arch=noarch&upstream=go-rpm-macros-3.2.0-3.el9.src.rpm&distro=rhel-9.4",
+            "properties": [
+                {
+                    "name": "syft:package:foundBy",
+                    "value": "rpm-db-cataloger"
+                },
+                {
+                    "name": "syft:package:type",
+                    "value": "rpm"
+                },
+                {
+                    "name": "syft:package:metadataType",
+                    "value": "rpm-db-entry"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:go-srpm-macros:go_srpm_macros:3.2.0-3.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:go_srpm_macros:go-srpm-macros:3.2.0-3.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:go_srpm_macros:go_srpm_macros:3.2.0-3.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:go-srpm:go-srpm-macros:3.2.0-3.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:go-srpm:go_srpm_macros:3.2.0-3.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:go_srpm:go-srpm-macros:3.2.0-3.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:go_srpm:go_srpm_macros:3.2.0-3.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:redhat:go-srpm-macros:3.2.0-3.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:redhat:go_srpm_macros:3.2.0-3.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:go:go-srpm-macros:3.2.0-3.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:go:go_srpm_macros:3.2.0-3.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:location:0:layerID",
+                    "value": "sha256:9ae5ae34e7cbb81537599d99b5cf2e069f5af6f44f17472023e80a2ace84cd04"
+                },
+                {
+                    "name": "syft:location:0:path",
+                    "value": "/var/lib/rpm/rpmdb.sqlite"
+                },
+                {
+                    "name": "syft:metadata:release",
+                    "value": "3.el9"
+                },
+                {
+                    "name": "syft:metadata:size",
+                    "value": "61202"
+                },
+                {
+                    "name": "syft:metadata:sourceRpm",
+                    "value": "go-rpm-macros-3.2.0-3.el9.src.rpm"
+                }
+            ]
+        },
+        {
+            "bom-ref": "pkg:rpm/rhel/gobject-introspection@1.68.0-11.el9?arch=x86_64&upstream=gobject-introspection-1.68.0-11.el9.src.rpm&distro=rhel-9.4&package-id=f4422bf03285e92c",
+            "type": "library",
+            "publisher": "Red Hat, Inc.",
+            "name": "gobject-introspection",
+            "version": "1.68.0-11.el9",
+            "licenses": [
+                {
+                    "license": {
+                        "name": "GPLv2+ and LGPLv2+ and MIT"
+                    }
+                }
+            ],
+            "cpe": "cpe:2.3:a:gobject-introspection:gobject-introspection:1.68.0-11.el9:*:*:*:*:*:*:*",
+            "purl": "pkg:rpm/rhel/gobject-introspection@1.68.0-11.el9?arch=x86_64&upstream=gobject-introspection-1.68.0-11.el9.src.rpm&distro=rhel-9.4",
+            "properties": [
+                {
+                    "name": "syft:package:foundBy",
+                    "value": "rpm-db-cataloger"
+                },
+                {
+                    "name": "syft:package:type",
+                    "value": "rpm"
+                },
+                {
+                    "name": "syft:package:metadataType",
+                    "value": "rpm-db-entry"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gobject-introspection:gobject_introspection:1.68.0-11.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gobject_introspection:gobject-introspection:1.68.0-11.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gobject_introspection:gobject_introspection:1.68.0-11.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gobject:gobject-introspection:1.68.0-11.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gobject:gobject_introspection:1.68.0-11.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:redhat:gobject-introspection:1.68.0-11.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:redhat:gobject_introspection:1.68.0-11.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:location:0:layerID",
+                    "value": "sha256:9ae5ae34e7cbb81537599d99b5cf2e069f5af6f44f17472023e80a2ace84cd04"
+                },
+                {
+                    "name": "syft:location:0:path",
+                    "value": "/var/lib/rpm/rpmdb.sqlite"
+                },
+                {
+                    "name": "syft:metadata:release",
+                    "value": "11.el9"
+                },
+                {
+                    "name": "syft:metadata:size",
+                    "value": "936649"
+                },
+                {
+                    "name": "syft:metadata:sourceRpm",
+                    "value": "gobject-introspection-1.68.0-11.el9.src.rpm"
+                }
+            ]
+        },
+        {
+            "bom-ref": "pkg:pypi/gpg@1.15.1?package-id=f54ec6f512c42fd3",
+            "type": "library",
+            "author": "The GnuPG hackers <gnupg-devel@gnupg.org>",
+            "name": "gpg",
+            "version": "1.15.1",
+            "licenses": [
+                {
+                    "license": {
+                        "name": "LGPL2.1+ (the library), GPL2+ (tests and examples)"
+                    }
+                }
+            ],
+            "cpe": "cpe:2.3:a:gnupg_hackers_project:python-gpg:1.15.1:*:*:*:*:*:*:*",
+            "purl": "pkg:pypi/gpg@1.15.1",
+            "properties": [
+                {
+                    "name": "syft:package:foundBy",
+                    "value": "python-installed-package-cataloger"
+                },
+                {
+                    "name": "syft:package:language",
+                    "value": "python"
+                },
+                {
+                    "name": "syft:package:type",
+                    "value": "python"
+                },
+                {
+                    "name": "syft:package:metadataType",
+                    "value": "python-package"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gnupg_hackers_project:python_gpg:1.15.1:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gnupg_hackersproject:python-gpg:1.15.1:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gnupg_hackersproject:python_gpg:1.15.1:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gnupg_devel_project:python-gpg:1.15.1:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gnupg_devel_project:python_gpg:1.15.1:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gnupg_develproject:python-gpg:1.15.1:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gnupg_develproject:python_gpg:1.15.1:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gnupg_hackers_project:gpg:1.15.1:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gnupg_hackers:python-gpg:1.15.1:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gnupg_hackers:python_gpg:1.15.1:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gnupg_hackersproject:gpg:1.15.1:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gnupg_devel_project:gpg:1.15.1:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gnupg-devel:python-gpg:1.15.1:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gnupg-devel:python_gpg:1.15.1:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gnupg_devel:python-gpg:1.15.1:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gnupg_devel:python_gpg:1.15.1:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gnupg_develproject:gpg:1.15.1:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:python-gpg:python-gpg:1.15.1:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:python-gpg:python_gpg:1.15.1:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:python_gpg:python-gpg:1.15.1:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:python_gpg:python_gpg:1.15.1:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gnupg_hackers:gpg:1.15.1:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:python:python-gpg:1.15.1:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:python:python_gpg:1.15.1:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gnupg-devel:gpg:1.15.1:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gnupg_devel:gpg:1.15.1:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gpg:python-gpg:1.15.1:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gpg:python_gpg:1.15.1:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:python-gpg:gpg:1.15.1:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:python_gpg:gpg:1.15.1:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:python:gpg:1.15.1:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gpg:gpg:1.15.1:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:location:0:layerID",
+                    "value": "sha256:624d0039f7ae2f740c806a420d084e7612569eaf651d6422ef5fd639fb640b78"
+                },
+                {
+                    "name": "syft:location:0:path",
+                    "value": "/usr/lib64/python3.9/site-packages/gpg-1.15.1-py3.9.egg-info"
+                }
+            ]
+        },
+        {
+            "bom-ref": "pkg:rpm/rhel/gpg-pubkey@5a6340b3-6229229e?distro=rhel-9.4&package-id=6a4614b48b443e33",
+            "type": "library",
+            "name": "gpg-pubkey",
+            "version": "5a6340b3-6229229e",
+            "licenses": [
+                {
+                    "license": {
+                        "name": "pubkey"
+                    }
+                }
+            ],
+            "cpe": "cpe:2.3:a:gpg-pubkey:gpg-pubkey:5a6340b3-6229229e:*:*:*:*:*:*:*",
+            "purl": "pkg:rpm/rhel/gpg-pubkey@5a6340b3-6229229e?distro=rhel-9.4",
+            "properties": [
+                {
+                    "name": "syft:package:foundBy",
+                    "value": "rpm-db-cataloger"
+                },
+                {
+                    "name": "syft:package:type",
+                    "value": "rpm"
+                },
+                {
+                    "name": "syft:package:metadataType",
+                    "value": "rpm-db-entry"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gpg-pubkey:gpg_pubkey:5a6340b3-6229229e:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gpg_pubkey:gpg-pubkey:5a6340b3-6229229e:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gpg_pubkey:gpg_pubkey:5a6340b3-6229229e:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gpg:gpg-pubkey:5a6340b3-6229229e:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gpg:gpg_pubkey:5a6340b3-6229229e:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:location:0:layerID",
+                    "value": "sha256:9ae5ae34e7cbb81537599d99b5cf2e069f5af6f44f17472023e80a2ace84cd04"
+                },
+                {
+                    "name": "syft:location:0:path",
+                    "value": "/var/lib/rpm/rpmdb.sqlite"
+                },
+                {
+                    "name": "syft:metadata:release",
+                    "value": "6229229e"
+                },
+                {
+                    "name": "syft:metadata:size",
+                    "value": "0"
+                }
+            ]
+        },
+        {
+            "bom-ref": "pkg:rpm/rhel/gpg-pubkey@fd431d51-4ae0493b?distro=rhel-9.4&package-id=0b9edfc7dd36b25d",
+            "type": "library",
+            "name": "gpg-pubkey",
+            "version": "fd431d51-4ae0493b",
+            "licenses": [
+                {
+                    "license": {
+                        "name": "pubkey"
+                    }
+                }
+            ],
+            "cpe": "cpe:2.3:a:gpg-pubkey:gpg-pubkey:fd431d51-4ae0493b:*:*:*:*:*:*:*",
+            "purl": "pkg:rpm/rhel/gpg-pubkey@fd431d51-4ae0493b?distro=rhel-9.4",
+            "properties": [
+                {
+                    "name": "syft:package:foundBy",
+                    "value": "rpm-db-cataloger"
+                },
+                {
+                    "name": "syft:package:type",
+                    "value": "rpm"
+                },
+                {
+                    "name": "syft:package:metadataType",
+                    "value": "rpm-db-entry"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gpg-pubkey:gpg_pubkey:fd431d51-4ae0493b:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gpg_pubkey:gpg-pubkey:fd431d51-4ae0493b:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gpg_pubkey:gpg_pubkey:fd431d51-4ae0493b:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gpg:gpg-pubkey:fd431d51-4ae0493b:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gpg:gpg_pubkey:fd431d51-4ae0493b:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:location:0:layerID",
+                    "value": "sha256:9ae5ae34e7cbb81537599d99b5cf2e069f5af6f44f17472023e80a2ace84cd04"
+                },
+                {
+                    "name": "syft:location:0:path",
+                    "value": "/var/lib/rpm/rpmdb.sqlite"
+                },
+                {
+                    "name": "syft:metadata:release",
+                    "value": "4ae0493b"
+                },
+                {
+                    "name": "syft:metadata:size",
+                    "value": "0"
+                }
+            ]
+        },
+        {
+            "bom-ref": "pkg:rpm/rhel/gpgme@1.15.1-6.el9?arch=x86_64&upstream=gpgme-1.15.1-6.el9.src.rpm&distro=rhel-9.4&package-id=5441bf12f7bae9a7",
+            "type": "library",
+            "publisher": "Red Hat, Inc.",
+            "name": "gpgme",
+            "version": "1.15.1-6.el9",
+            "licenses": [
+                {
+                    "license": {
+                        "name": "LGPLv2+ and GPLv3+"
+                    }
+                }
+            ],
+            "cpe": "cpe:2.3:a:redhat:gpgme:1.15.1-6.el9:*:*:*:*:*:*:*",
+            "purl": "pkg:rpm/rhel/gpgme@1.15.1-6.el9?arch=x86_64&upstream=gpgme-1.15.1-6.el9.src.rpm&distro=rhel-9.4",
+            "properties": [
+                {
+                    "name": "syft:package:foundBy",
+                    "value": "rpm-db-cataloger"
+                },
+                {
+                    "name": "syft:package:type",
+                    "value": "rpm"
+                },
+                {
+                    "name": "syft:package:metadataType",
+                    "value": "rpm-db-entry"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gpgme:gpgme:1.15.1-6.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:location:0:layerID",
+                    "value": "sha256:9ae5ae34e7cbb81537599d99b5cf2e069f5af6f44f17472023e80a2ace84cd04"
+                },
+                {
+                    "name": "syft:location:0:path",
+                    "value": "/var/lib/rpm/rpmdb.sqlite"
+                },
+                {
+                    "name": "syft:metadata:release",
+                    "value": "6.el9"
+                },
+                {
+                    "name": "syft:metadata:size",
+                    "value": "576065"
+                },
+                {
+                    "name": "syft:metadata:sourceRpm",
+                    "value": "gpgme-1.15.1-6.el9.src.rpm"
+                }
+            ]
+        },
+        {
+            "bom-ref": "pkg:npm/graceful-fs@4.2.11?package-id=cf7455ce700b48fc",
+            "type": "library",
+            "name": "graceful-fs",
+            "version": "4.2.11",
+            "description": "A drop-in replacement for fs, making various improvements.",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "ISC"
+                    }
+                }
+            ],
+            "cpe": "cpe:2.3:a:graceful-fs:graceful-fs:4.2.11:*:*:*:*:*:*:*",
+            "purl": "pkg:npm/graceful-fs@4.2.11",
+            "externalReferences": [
+                {
+                    "url": "https://github.com/isaacs/node-graceful-fs",
+                    "type": "distribution"
+                }
+            ],
+            "properties": [
+                {
+                    "name": "syft:package:foundBy",
+                    "value": "javascript-package-cataloger"
+                },
+                {
+                    "name": "syft:package:language",
+                    "value": "javascript"
+                },
+                {
+                    "name": "syft:package:type",
+                    "value": "npm"
+                },
+                {
+                    "name": "syft:package:metadataType",
+                    "value": "javascript-npm-package"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:graceful-fs:graceful_fs:4.2.11:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:graceful_fs:graceful-fs:4.2.11:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:graceful_fs:graceful_fs:4.2.11:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:graceful:graceful-fs:4.2.11:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:graceful:graceful_fs:4.2.11:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:isaacs:graceful-fs:4.2.11:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:isaacs:graceful_fs:4.2.11:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:location:0:layerID",
+                    "value": "sha256:73d09a56ed618199524fb1a090c94337fc2edd4f38b866cf82332861c704111a"
+                },
+                {
+                    "name": "syft:location:0:path",
+                    "value": "/usr/lib/node_modules/npm/node_modules/graceful-fs/package.json"
+                }
+            ]
+        },
+        {
+            "bom-ref": "pkg:npm/gradio@4.19.2?package-id=7cc3cd7b9731703e",
+            "type": "library",
+            "name": "gradio",
+            "version": "4.19.2",
+            "cpe": "cpe:2.3:a:gradio:gradio:4.19.2:*:*:*:*:*:*:*",
+            "purl": "pkg:npm/gradio@4.19.2",
+            "properties": [
+                {
+                    "name": "syft:package:foundBy",
+                    "value": "javascript-package-cataloger"
+                },
+                {
+                    "name": "syft:package:language",
+                    "value": "javascript"
+                },
+                {
+                    "name": "syft:package:type",
+                    "value": "npm"
+                },
+                {
+                    "name": "syft:package:metadataType",
+                    "value": "javascript-npm-package"
+                },
+                {
+                    "name": "syft:location:0:layerID",
+                    "value": "sha256:99b2d6fc0edb1f4698bd5006dfef5ad946e700b046b0fdb82dc9f5e433aacc91"
+                },
+                {
+                    "name": "syft:location:0:path",
+                    "value": "/opt/app-root/lib/python3.11/site-packages/gradio/package.json"
+                }
+            ]
+        },
+        {
+            "bom-ref": "pkg:pypi/gradio@4.19.2?package-id=5e0641869a5d4b70",
+            "type": "library",
+            "author": "Abubakar Abid <gradio-team@huggingface.co>, Ali Abid <gradio-team@huggingface.co>, Ali Abdalla <gradio-team@huggingface.co>, Dawood Khan <gradio-team@huggingface.co>, Ahsen Khaliq <gradio-team@huggingface.co>, Pete Allen <gradio-team@huggingface.co>, \u00d6mer Faruk \u00d6zdemir <gradio-team@huggingface.co>, Freddy A Boulton <gradio-team@huggingface.co>, Hannah Blair <gradio-team@huggingface.co>",
+            "name": "gradio",
+            "version": "4.19.2",
+            "licenses": [
+                {
+                    "license": {
+                        "id": "Apache-2.0"
+                    }
+                }
+            ],
+            "cpe": "cpe:2.3:a:abubakar_abid_\\<gradio_team_project:python-gradio:4.19.2:*:*:*:*:*:*:*",
+            "purl": "pkg:pypi/gradio@4.19.2",
+            "properties": [
+                {
+                    "name": "syft:package:foundBy",
+                    "value": "python-installed-package-cataloger"
+                },
+                {
+                    "name": "syft:package:language",
+                    "value": "python"
+                },
+                {
+                    "name": "syft:package:type",
+                    "value": "python"
+                },
+                {
+                    "name": "syft:package:metadataType",
+                    "value": "python-package"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:abubakar_abid_\\<gradio_team_project:python_gradio:4.19.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:abubakar_abid_\\<gradio_teamproject:python-gradio:4.19.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:abubakar_abid_\\<gradio_teamproject:python_gradio:4.19.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:abubakar_abid_\\<gradio_team_project:gradio:4.19.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:abubakar-abid-\\<gradio-team:python-gradio:4.19.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:abubakar-abid-\\<gradio-team:python_gradio:4.19.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:abubakar_abid_\\<gradio_team:python-gradio:4.19.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:abubakar_abid_\\<gradio_team:python_gradio:4.19.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:abubakar_abid_\\<gradio_teamproject:gradio:4.19.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:abubakar-abid-\\<gradio-team:gradio:4.19.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:abubakar_abid_\\<gradio_team:gradio:4.19.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:python-gradio:python-gradio:4.19.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:python-gradio:python_gradio:4.19.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:python_gradio:python-gradio:4.19.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:python_gradio:python_gradio:4.19.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gradio:python-gradio:4.19.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gradio:python_gradio:4.19.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:python-gradio:gradio:4.19.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:python:python-gradio:4.19.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:python:python_gradio:4.19.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:python_gradio:gradio:4.19.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gradio:gradio:4.19.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:python:gradio:4.19.2:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:location:0:layerID",
+                    "value": "sha256:99b2d6fc0edb1f4698bd5006dfef5ad946e700b046b0fdb82dc9f5e433aacc91"
+                },
+                {
+                    "name": "syft:location:0:path",
+                    "value": "/opt/app-root/lib/python3.11/site-packages/gradio-4.19.2.dist-info/METADATA"
+                },
+                {
+                    "name": "syft:location:1:layerID",
+                    "value": "sha256:99b2d6fc0edb1f4698bd5006dfef5ad946e700b046b0fdb82dc9f5e433aacc91"
+                },
+                {
+                    "name": "syft:location:1:path",
+                    "value": "/opt/app-root/lib/python3.11/site-packages/gradio-4.19.2.dist-info/RECORD"
+                }
+            ]
+        },
+        {
+            "bom-ref": "pkg:npm/gradio_client@0.10.1?package-id=1764ba2becb0bd90",
+            "type": "library",
+            "name": "gradio_client",
+            "version": "0.10.1",
+            "cpe": "cpe:2.3:a:gradio-client:gradio-client:0.10.1:*:*:*:*:*:*:*",
+            "purl": "pkg:npm/gradio_client@0.10.1",
+            "properties": [
+                {
+                    "name": "syft:package:foundBy",
+                    "value": "javascript-package-cataloger"
+                },
+                {
+                    "name": "syft:package:language",
+                    "value": "javascript"
+                },
+                {
+                    "name": "syft:package:type",
+                    "value": "npm"
+                },
+                {
+                    "name": "syft:package:metadataType",
+                    "value": "javascript-npm-package"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gradio-client:gradio_client:0.10.1:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gradio_client:gradio-client:0.10.1:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gradio_client:gradio_client:0.10.1:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gradio:gradio-client:0.10.1:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:gradio:gradio_client:0.10.1:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:location:0:layerID",
+                    "value": "sha256:99b2d6fc0edb1f4698bd5006dfef5ad946e700b046b0fdb82dc9f5e433aacc91"
+                },
+                {
+                    "name": "syft:location:0:path",
+                    "value": "/opt/app-root/lib/python3.11/site-packages/gradio_client/package.json"
+                }
+            ]
+        },
+        {
+            "bom-ref": "pkg:rpm/rhel/zlib-devel@1.2.11-40.el9?arch=x86_64&upstream=zlib-1.2.11-40.el9.src.rpm&distro=rhel-9.4&package-id=eb44e705808b572f",
+            "type": "library",
+            "publisher": "Red Hat, Inc.",
+            "name": "zlib-devel",
+            "version": "1.2.11-40.el9",
+            "licenses": [
+                {
+                    "license": {
+                        "name": "zlib and Boost"
+                    }
+                }
+            ],
+            "cpe": "cpe:2.3:a:zlib-devel:zlib-devel:1.2.11-40.el9:*:*:*:*:*:*:*",
+            "purl": "pkg:rpm/rhel/zlib-devel@1.2.11-40.el9?arch=x86_64&upstream=zlib-1.2.11-40.el9.src.rpm&distro=rhel-9.4",
+            "properties": [
+                {
+                    "name": "syft:package:foundBy",
+                    "value": "rpm-db-cataloger"
+                },
+                {
+                    "name": "syft:package:type",
+                    "value": "rpm"
+                },
+                {
+                    "name": "syft:package:metadataType",
+                    "value": "rpm-db-entry"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:zlib-devel:zlib_devel:1.2.11-40.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:zlib_devel:zlib-devel:1.2.11-40.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:zlib_devel:zlib_devel:1.2.11-40.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:redhat:zlib-devel:1.2.11-40.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:redhat:zlib_devel:1.2.11-40.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:zlib:zlib-devel:1.2.11-40.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:cpe23",
+                    "value": "cpe:2.3:a:zlib:zlib_devel:1.2.11-40.el9:*:*:*:*:*:*:*"
+                },
+                {
+                    "name": "syft:location:0:layerID",
+                    "value": "sha256:9ae5ae34e7cbb81537599d99b5cf2e069f5af6f44f17472023e80a2ace84cd04"
+                },
+                {
+                    "name": "syft:location:0:path",
+                    "value": "/var/lib/rpm/rpmdb.sqlite"
+                },
+                {
+                    "name": "syft:metadata:release",
+                    "value": "40.el9"
+                },
+                {
+                    "name": "syft:metadata:size",
+                    "value": "141092"
+                },
+                {
+                    "name": "syft:metadata:sourceRpm",
+                    "value": "zlib-1.2.11-40.el9.src.rpm"
+                }
+            ]
+        },
+        {
+            "bom-ref": "os:rhel@9.4",
+            "type": "operating-system",
+            "name": "rhel",
+            "version": "9.4",
+            "description": "Red Hat Enterprise Linux 9.4 (Plow)",
+            "cpe": "cpe:2.3:o:redhat:enterprise_linux:9:*:baseos:*:*:*:*:*",
+            "swid": {
+                "tagId": "rhel",
+                "name": "rhel",
+                "version": "9.4"
+            },
+            "externalReferences": [
+                {
+                    "url": "https://bugzilla.redhat.com/",
+                    "type": "issue-tracker"
+                },
+                {
+                    "url": "https://www.redhat.com/",
+                    "type": "website"
+                }
+            ],
+            "properties": [
+                {
+                    "name": "syft:distro:id",
+                    "value": "rhel"
+                },
+                {
+                    "name": "syft:distro:idLike:0",
+                    "value": "fedora"
+                },
+                {
+                    "name": "syft:distro:prettyName",
+                    "value": "Red Hat Enterprise Linux 9.4 (Plow)"
+                },
+                {
+                    "name": "syft:distro:versionID",
+                    "value": "9.4"
+                }
+            ]
+        }
+    ]
+}
