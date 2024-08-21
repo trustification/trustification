@@ -81,12 +81,22 @@ impl SBOM {
                             ValidationResult::Failed { reasons } => {
                                 let all_reasons = reasons
                                     .into_iter()
+                                    // Ignore normalizedstring errors
+                                    // until https://github.com/CycloneDX/cyclonedx-rust-cargo/issues/737 is fixed
+                                    .filter(|reason| {
+                                        reason.message
+                                            != "NormalizedString contains invalid characters \\r \\n \\t or \\r\\n"
+                                    })
                                     .map(|reason| reason.message)
                                     .collect::<Vec<String>>()
                                     .join(", ");
-                                log::error!("Error validating CycloneDX: {}", all_reasons);
-                                let validation_failed: serde_json::Error = serde::de::Error::custom(all_reasons);
-                                err.cyclonedx = Some(JsonReadError::from(validation_failed));
+                                if all_reasons.is_empty() {
+                                    return Ok(SBOM::CycloneDX(bom));
+                                } else {
+                                    log::error!("Error validating CycloneDX: {}", all_reasons);
+                                    let validation_failed: serde_json::Error = serde::de::Error::custom(all_reasons);
+                                    err.cyclonedx = Some(JsonReadError::from(validation_failed));
+                                }
                             }
                         },
                         Err(e) => {
@@ -137,6 +147,13 @@ mod tests {
     #[test]
     fn parse_cyclonedx_valid_14() {
         let data = include_bytes!("../../testdata/syft.cyclonedx.json");
+        let result = SBOM::parse(data);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn parse_cyclonedx_valid_14_newline() {
+        let data = include_bytes!("../../testdata/syft.cyclonedx.newline.json");
         let result = SBOM::parse(data);
         assert!(result.is_ok());
     }
