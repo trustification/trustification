@@ -120,7 +120,7 @@ pub async fn sboms_with_vulnerability_summary(
     guac: web::Data<GuacService>,
     v11y: web::Data<V11yService>,
 ) -> actix_web::Result<HttpResponse> {
-    let tenLatestSboms = state
+    let ten_latest_sboms = state
         .search_sbom(
             "-sort:indexedTimestamp",
             0,
@@ -135,7 +135,7 @@ pub async fn sboms_with_vulnerability_summary(
         .await?;
 
     let mut summary: Vec<SbomVulnerabilitySummary> = vec![];
-    for item in tenLatestSboms.result {
+    for item in ten_latest_sboms.result {
         let item = item.document;
         let vulnerabilities =
             process_get_vulnerabilities(&state, &v11y, &guac, &access_token, &item.id, Some(0), Some(100000))
