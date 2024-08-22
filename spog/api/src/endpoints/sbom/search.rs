@@ -1,9 +1,15 @@
 use crate::app_state::AppState;
+use crate::endpoints::sbom::process_get_vulnerabilities;
 use crate::search;
+use crate::search::QueryParams;
+use crate::service::guac::GuacService;
+use crate::service::v11y::V11yService;
+use actix_web::web::Query;
 use actix_web::{web, HttpResponse};
 use actix_web_httpauth::extractors::bearer::BearerAuth;
 use serde::{Deserialize, Serialize};
 use spog_model::search::SbomSummary;
+use time::macros::offset;
 use tracing::instrument;
 use trustification_api::search::{SearchOptions, SearchResult};
 use trustification_auth::client::TokenProvider;
@@ -110,47 +116,58 @@ pub struct SbomVulnerabilitySummary {
     vulnerabilities: Vulnerabilities,
 }
 
-pub async fn sboms_with_vulnerability_summary() -> actix_web::Result<HttpResponse> {
-    let mut summary: Vec<SbomVulnerabilitySummary> = vec![];
-    let vulns1: Vulnerabilities = Vulnerabilities {
-        none: 3,
-        low: 12,
-        medium: 8,
-        high: 5,
-        critical: 1,
-    };
-    let vulns2: Vulnerabilities = Vulnerabilities {
-        none: 1,
-        low: 8,
-        medium: 17,
-        high: 9,
-        critical: 0,
-    };
-    let vulns3: Vulnerabilities = Vulnerabilities {
-        none: 18,
-        low: 20,
-        medium: 6,
-        high: 8,
-        critical: 4,
-    };
-    let sbom1: SbomVulnerabilitySummary = SbomVulnerabilitySummary {
-        sbom_id: "sbom1_id".into(),
-        sbom_name: "sbom1".into(),
-        vulnerabilities: vulns1,
-    };
-    let sbom2: SbomVulnerabilitySummary = SbomVulnerabilitySummary {
-        sbom_id: "sbom2_id".into(),
-        sbom_name: "sbom2".into(),
-        vulnerabilities: vulns2,
-    };
-    let sbom3: SbomVulnerabilitySummary = SbomVulnerabilitySummary {
-        sbom_id: "sbom3_id".into(),
-        sbom_name: "sbom3".into(),
-        vulnerabilities: vulns3,
-    };
-    summary.push(sbom1);
-    summary.push(sbom2);
-    summary.push(sbom3);
+pub async fn sboms_with_vulnerability_summary(
+    state: web::Data<AppState>,
+    options: web::Query<SearchOptions>,
+    access_token: Option<BearerAuth>,
+    guac: web::Data<GuacService>,
+    v11y: web::Data<V11yService>,
+) -> actix_web::Result<HttpResponse> {
+    let data = state
+        .search_sbom("-sort:indexedTimestamp", 0, 10, options.into_inner(), &access_token)
+        .await?;
 
+    let mut summary: Vec<SbomVulnerabilitySummary> = vec![];
+    for item in data.result {
+        let metadata = item.metadata.unwrap_or_default();
+        let item = item.document;
+        let sbomReport = process_get_vulnerabilities(
+            &state.clone(),
+            &v11y.clone(),
+            &guac.clone(),
+            &access_token.clone(),
+            &item.id,
+            Some(0),
+            Some(100000),
+        )
+        .await?;
+        let mut vulnSummary: Vulnerabilities = Vulnerabilities {
+            none: 0,
+            low: 0,
+            medium: 0,
+            high: 0,
+            critical: 0,
+        };
+        let sbomReportSummary = sbomReport.unwrap().summary;
+        for (key, value) in sbomReportSummary {
+            for summaryEntry in value {
+                let severity = summaryEntry.severity.unwrap();
+                let count = summaryEntry.count;
+                match severity.as_str() {
+                    "Low" => vulnSummary.low += count,
+                    "Medium" => vulnSummary.medium += count,
+                    "High" => vulnSummary.high += count,
+                    "Critical" => vulnSummary.critical += count,
+                    _ => vulnSummary.none += count,
+                }
+            }
+        }
+        let sbomVulnSum: SbomVulnerabilitySummary = SbomVulnerabilitySummary {
+            sbom_id: item.id,
+            sbom_name: item.name,
+            vulnerabilities: vulnSummary,
+        };
+        summary.push(sbomVulnSum);
+    }
     Ok(HttpResponse::Ok().json(summary))
 }
