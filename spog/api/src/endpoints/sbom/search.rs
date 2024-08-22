@@ -1,16 +1,16 @@
 use crate::app_state::AppState;
 use crate::endpoints::sbom::process_get_vulnerabilities;
 use crate::search;
-use actix_web::{web, HttpResponse};
 use crate::search::QueryParams;
 use crate::service::guac::GuacService;
 use crate::service::v11y::V11yService;
 use actix_web::web::Query;
+use actix_web::{web, HttpResponse};
 use actix_web_httpauth::extractors::bearer::BearerAuth;
 use serde::{Deserialize, Serialize};
 use spog_model::search::SbomSummary;
-use time::macros::offset;
 use spog_model::vuln::SbomReport;
+use time::macros::offset;
 use tracing::instrument;
 use trustification_api::search::{SearchOptions, SearchResult};
 use trustification_auth::client::TokenProvider;
@@ -125,79 +125,73 @@ pub async fn sboms_with_vulnerability_summary(
 ) -> actix_web::Result<HttpResponse> {
     let tenLatestSboms = state
         .search_sbom(
-           "-sort:indexedTimestamp",
-           0,
-           10,
-
-           SearchOptions {
+            "-sort:indexedTimestamp",
+            0,
+            10,
+            SearchOptions {
                 explain: false,
                 metadata: true,
                 summaries: true,
             },
-            &access_token)
+            &access_token,
+        )
         .await?;
 
     let mut summary: Vec<SbomVulnerabilitySummary> = vec![];
     for item in tenLatestSboms.result {
         let item = item.document;
-        let sbomReport = process_get_vulnerabilities(
-            &state,
-            &v11y,
-            &guac,
-            &access_token,
-            &item.id,
-            Some(0),
-            Some(100000),
-        )
-        .await?.as_ref()
-            .and_then(|sbom_report: &SbomReport| sbom_report.summary.first())
-            .map_or(
-                Vulnerabilities {
-                    none: 0,
-                    low: 0,
-                    medium: 0,
-                    high: 0,
-                    critical: 0,
-                },
-                |(_mitre, vulnerability_summary)| {
-                    let none = vulnerability_summary
-                        .iter()
-                        .find(|item| item.severity == Some(cvss::Severity::None))
-                        .map_or_else(
-                            || {
-                                vulnerability_summary
-                                    .iter()
-                                    .find(|item| item.severity.is_none())
-                                    .map_or(0, |entry| entry.count)
-                            },
-                            |entry| entry.count,
-                        );
-                    let low = vulnerability_summary
-                        .iter()
-                        .find(|item| item.severity == Some(cvss::Severity::Low))
-                        .map_or(0, |entry| entry.count);
-                    let medium = vulnerability_summary
-                        .iter()
-                        .find(|item| item.severity == Some(cvss::Severity::Medium))
-                        .map_or(0, |entry| entry.count);
-                    let high = vulnerability_summary
-                        .iter()
-                        .find(|item| item.severity == Some(cvss::Severity::High))
-                        .map_or(0, |entry| entry.count);
-                    let critical = vulnerability_summary
-                        .iter()
-                        .find(|item| item.severity == Some(cvss::Severity::Critical))
-                        .map_or(0, |entry| entry.count);
-
+        let sbomReport =
+            process_get_vulnerabilities(&state, &v11y, &guac, &access_token, &item.id, Some(0), Some(100000))
+                .await?
+                .as_ref()
+                .and_then(|sbom_report: &SbomReport| sbom_report.summary.first())
+                .map_or(
                     Vulnerabilities {
-                        none,
-                        low,
-                        medium,
-                        high,
-                        critical,
-                    }
-                },
-            );
+                        none: 0,
+                        low: 0,
+                        medium: 0,
+                        high: 0,
+                        critical: 0,
+                    },
+                    |(_mitre, vulnerability_summary)| {
+                        let none = vulnerability_summary
+                            .iter()
+                            .find(|item| item.severity == Some(cvss::Severity::None))
+                            .map_or_else(
+                                || {
+                                    vulnerability_summary
+                                        .iter()
+                                        .find(|item| item.severity.is_none())
+                                        .map_or(0, |entry| entry.count)
+                                },
+                                |entry| entry.count,
+                            );
+                        let low = vulnerability_summary
+                            .iter()
+                            .find(|item| item.severity == Some(cvss::Severity::Low))
+                            .map_or(0, |entry| entry.count);
+                        let medium = vulnerability_summary
+                            .iter()
+                            .find(|item| item.severity == Some(cvss::Severity::Medium))
+                            .map_or(0, |entry| entry.count);
+                        let high = vulnerability_summary
+                            .iter()
+                            .find(|item| item.severity == Some(cvss::Severity::High))
+                            .map_or(0, |entry| entry.count);
+                        let critical = vulnerability_summary
+                            .iter()
+                            .find(|item| item.severity == Some(cvss::Severity::Critical))
+                            .map_or(0, |entry| entry.count);
+
+                        Vulnerabilities {
+                            none,
+                            low,
+                            medium,
+                            high,
+                            critical,
+                        }
+                    },
+                );
 
         let sbom_vulnerabilities = SbomVulnerabilitySummary {
             sbom_id: item.id,
@@ -207,6 +201,4 @@ pub async fn sboms_with_vulnerability_summary(
         summary.push(sbom_vulnerabilities);
     }
     Ok(HttpResponse::Ok().json(summary))
-
-
 }
