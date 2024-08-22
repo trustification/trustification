@@ -1,16 +1,13 @@
 use crate::app_state::AppState;
 use crate::endpoints::sbom::process_get_vulnerabilities;
 use crate::search;
-use crate::search::QueryParams;
 use crate::service::guac::GuacService;
 use crate::service::v11y::V11yService;
-use actix_web::web::Query;
 use actix_web::{web, HttpResponse};
 use actix_web_httpauth::extractors::bearer::BearerAuth;
 use serde::{Deserialize, Serialize};
 use spog_model::search::SbomSummary;
 use spog_model::vuln::SbomReport;
-use time::macros::offset;
 use tracing::instrument;
 use trustification_api::search::{SearchOptions, SearchResult};
 use trustification_auth::client::TokenProvider;
