@@ -137,7 +137,7 @@ pub async fn sboms_with_vulnerability_summary(
     let mut summary: Vec<SbomVulnerabilitySummary> = vec![];
     for item in tenLatestSboms.result {
         let item = item.document;
-        let sbomReport =
+        let vulnerabilities =
             process_get_vulnerabilities(&state, &v11y, &guac, &access_token, &item.id, Some(0), Some(100000))
                 .await?
                 .as_ref()
