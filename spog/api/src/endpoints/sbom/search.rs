@@ -5,7 +5,7 @@ use crate::service::guac::GuacService;
 use crate::service::v11y::V11yService;
 use actix_web::{web, HttpResponse};
 use actix_web_httpauth::extractors::bearer::BearerAuth;
-use serde::{Deserialize, Serialize};
+use spog_model::prelude::{Last10SbomVulnerabilitySummary, Last10SbomVulnerabilitySummaryVulnerabilities};
 use spog_model::search::SbomSummary;
 use spog_model::vuln::SbomReport;
 use tracing::instrument;
@@ -99,20 +99,7 @@ async fn search_advisories(state: web::Data<AppState>, sboms: &mut Vec<SbomSumma
         }
     }
 }
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-struct Vulnerabilities {
-    none: usize,
-    low: usize,
-    medium: usize,
-    high: usize,
-    critical: usize,
-}
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub struct SbomVulnerabilitySummary {
-    sbom_id: String,
-    sbom_name: String,
-    vulnerabilities: Vulnerabilities,
-}
+
 #[instrument(skip(state, v11y, guac, access_token), err)]
 pub async fn sboms_with_vulnerability_summary(
     state: web::Data<AppState>,
@@ -134,7 +121,7 @@ pub async fn sboms_with_vulnerability_summary(
         )
         .await?;
 
-    let mut summary: Vec<SbomVulnerabilitySummary> = vec![];
+    let mut summary: Vec<Last10SbomVulnerabilitySummary> = vec![];
     for item in ten_latest_sboms.result {
         let item = item.document;
         let vulnerabilities =
@@ -143,7 +130,7 @@ pub async fn sboms_with_vulnerability_summary(
                 .as_ref()
                 .and_then(|sbom_report: &SbomReport| sbom_report.summary.first())
                 .map_or(
-                    Vulnerabilities {
+                    Last10SbomVulnerabilitySummaryVulnerabilities {
                         none: 0,
                         low: 0,
                         medium: 0,
@@ -180,7 +167,7 @@ pub async fn sboms_with_vulnerability_summary(
                             .find(|item| item.severity == Some(cvss::Severity::Critical))
                             .map_or(0, |entry| entry.count);
 
-                        Vulnerabilities {
+                        Last10SbomVulnerabilitySummaryVulnerabilities {
                             none,
                             low,
                             medium,
@@ -190,7 +177,7 @@ pub async fn sboms_with_vulnerability_summary(
                     },
                 );
 
-        let sbom_vulnerabilities = SbomVulnerabilitySummary {
+        let sbom_vulnerabilities = Last10SbomVulnerabilitySummary {
             sbom_id: item.id,
             sbom_name: item.name,
             vulnerabilities,
