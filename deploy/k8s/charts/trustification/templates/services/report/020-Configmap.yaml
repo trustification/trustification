@@ -1,0 +1,31 @@
+{{- if and .Values.report.enabled }}
+{{- $mod := dict "root" . "name" "report-server" "component" "report" "module" .Values.modules.reportServer -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "trustification.common.name" $mod }}-nginx-config
+data:
+  nginx.conf: |
+    events {
+        worker_connections 1024;
+    }
+
+    http {
+      server {
+        listen 8080;
+
+        root {{ include "trustification.report.data.path" . }};
+
+        access_log /dev/stdout;
+        error_log /dev/stderr;
+
+        location / {
+            {{- if (.Values.report.auth) }}
+            auth_basic  "Report Area";
+            auth_basic_user_file /etc/nginx/.htpasswd;
+            {{- end }}
+            autoindex on;
+        }
+      }
+    }
+{{ end }}

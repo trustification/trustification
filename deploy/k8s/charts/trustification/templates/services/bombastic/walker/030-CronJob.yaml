@@ -1,5 +1,4 @@
 {{- if .Values.modules.bombasticWalker.enabled }}
-
 {{- range $sourceName, $source := .Values.modules.bombasticWalker.sources }}
 
 {{/* A unique name for the walker */}}
@@ -80,7 +79,7 @@ spec:
                 - --sender-root-certificates
                 - /run/secrets/kubernetes.io/serviceaccount/service-ca.crt
                 {{- end }}
-
+                {{- include "trustification.report.walkerArgs" $mod | nindent 16 }}
                 {{- if $source.acceptV3Signatures }}
                 - "-3"
                 {{- end }}
@@ -104,15 +103,19 @@ spec:
                 {{- include "trustification.application.infrastructure.podPorts" $mod | nindent 16 }}
 
               volumeMounts:
+                {{- include "trustification.report.data.volumeMount" $mod | nindent 16 }}
                 - mountPath: /walker-state
                   name: walker-state
                 {{- include "trustification.application.extraVolumeMounts" $mod | nindent 16 }}
 
           volumes:
+            {{- include "trustification.report.data.volume" $mod | nindent 12 }}
             - name: walker-state
               persistentVolumeClaim:
                 claimName: {{ include "trustification.common.name" $mod }}
             {{- include "trustification.application.extraVolumes" $mod | nindent 12 }}
+
+          {{- include "trustification.report.affinity" $mod | nindent 10}}
 
 {{- end }}{{/* range */}}
 

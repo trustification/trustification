@@ -43,9 +43,9 @@ spec:
               if [[ -f /run/secrets/kubernetes.io/serviceaccount/service-ca.crt ]]; then
                 ARGS="--sender-root-certificates /run/secrets/kubernetes.io/serviceaccount/service-ca.crt"
               fi
-              /trust bombastic walker $ARGS --sink {{ include "trustification.tls.http.protocol" $mod }}://bombastic-api.{{ .Release.Namespace }}.svc.cluster.local --source file:/data/sbom
+              /trust bombastic walker $ARGS {{ include "trustification.report.walkerInlineArgs" $mod }}  --sink {{ include "trustification.tls.http.protocol" $mod }}://bombastic-api.{{ .Release.Namespace }}.svc.cluster.local --source file:/data/sbom
               echo SBOM import done
-              /trust vexination walker $ARGS --sink {{ include "trustification.tls.http.protocol" $mod }}://vexination-api.{{ .Release.Namespace }}.svc.cluster.local/api/v1/vex --source file:/data/csaf
+              /trust vexination walker $ARGS {{ include "trustification.report.walkerInlineArgs" $mod }}  --sink {{ include "trustification.tls.http.protocol" $mod }}://vexination-api.{{ .Release.Namespace }}.svc.cluster.local/api/v1/vex --source file:/data/csaf
               echo CSAF import done
 
           env:
@@ -53,11 +53,15 @@ spec:
             {{- include "trustification.application.rust.envVars" $mod | nindent 12 }}
 
           volumeMounts:
+            {{- include "trustification.report.data.volumeMount" $mod | nindent 12 }}
             {{- include "trustification.application.extraVolumeMounts" $mod | nindent 12 }}
 
           {{- include "trustification.application.container" $mod | nindent 10 }}
 
       volumes:
+        {{- include "trustification.report.data.volume" $mod | nindent 8 }}
         {{- include "trustification.application.extraVolumes" $mod | nindent 8 }}
+
+      {{- include "trustification.report.affinity" $mod | nindent 6}}
 
 {{ end }}

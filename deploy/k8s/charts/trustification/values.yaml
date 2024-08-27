@@ -7,7 +7,7 @@ image:
   name: trust
   registry: ghcr.io/trustification
   pullPolicy: IfNotPresent
-  version: f50f3499259a8ca57798d07e645d61cc18f5b6d8
+  version: 24c355f6f1f70df574aa66aa96ea7a1035e89da9
 
 guac:
   image:
@@ -73,6 +73,9 @@ v11y:
     stored: v11y-stored
     failed: v11y-failed
     indexed: v11y-indexed
+
+report:
+  enabled: false
 
 modules:
 
@@ -211,5 +214,14 @@ modules:
     enabled: false
     image: {}
     rust: {}
+
+  reportServer:
+    enabled: true
+    ingress: {}
+    image:
+      name: ubi8/nginx-122
+      registry: registry.access.redhat.com
+      pullPolicy: IfNotPresent
+      version: "1-75"
 
 workarounds: {}

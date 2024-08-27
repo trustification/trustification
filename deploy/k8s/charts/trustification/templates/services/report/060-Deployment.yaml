@@ -1,0 +1,49 @@
+{{- if and .Values.report.enabled }}
+{{- $mod := dict "root" . "name" "report-server" "component" "report" "module" .Values.modules.reportServer -}}
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "trustification.common.name" $mod }}
+  labels:
+    {{- include "trustification.common.labels" $mod | nindent 4 }}
+  annotations:
+    {{- include "trustification.application.annotations" $mod | nindent 4 }}
+
+spec:
+  replicas: {{ include "trustification.application.replicas" $mod }}
+  selector:
+    matchLabels:
+      {{- include "trustification.common.selectorLabels" $mod | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        report: "server"
+        {{- include "trustification.common.selectorLabels" $mod | nindent 8 }}
+        {{- include "trustification.application.podLabels" $mod | nindent 8 }}
+
+    spec:
+      {{- include "trustification.application.pod" $mod | nindent 6 }}
+
+      containers:
+        - name: report
+          {{- include "trustification.common.defaultImage" $mod | nindent 10 }}
+          {{- include "trustification.application.container" $mod | nindent 10 }}
+
+          command: [ "/usr/sbin/nginx" ]
+          args: [ "-g", "daemon off;" ]
+          ports:
+            - containerPort: 8080
+              name: endpoint
+              protocol: TCP
+
+          volumeMounts:
+            {{- include "trustification.report.data.volumeMount" $mod | nindent 12 }}
+            {{- include "trustification.report.config.volumeMount" $mod | nindent 12 }}
+            {{- include "trustification.report.auth.volumeMount" $mod | nindent 12 }}
+
+      volumes:
+        {{- include "trustification.report.data.volume" $mod | nindent 8 }}
+        {{- include "trustification.report.config.volume" $mod | nindent 8 }}
+        {{- include "trustification.report.auth.volume" $mod | nindent 8 }}
+{{ end }}

@@ -1,5 +1,4 @@
 {{- if .Values.modules.vexinationWalker.enabled }}
-
 {{- range $sourceName, $source := .Values.modules.vexinationWalker.sources }}
 
 {{/* A unique name for the walker */}}
@@ -73,7 +72,7 @@ spec:
                 - {{ $source.url | quote }}
                 - "--since-file"
                 - "/walker-state/since"
-
+                {{- include "trustification.report.walkerArgs" $mod | nindent 16 }}
                 {{- if eq ( include "trustification.openshift.useServiceCa" $ ) "true" }}
                 - --sender-root-certificates
                 - /run/secrets/kubernetes.io/serviceaccount/service-ca.crt
@@ -89,6 +88,7 @@ spec:
                 {{- end }}
 
               env:
+
                 {{- include "trustification.application.rust.envVars" $mod | nindent 16 }}
                 {{- include "trustification.application.infrastructure.envVars" $mod | nindent 16 }}
                 {{- include "trustification.oidc.authenticationClient" ( dict "root" $ "clientId" "walker" ) | nindent 16 }}
@@ -100,16 +100,19 @@ spec:
               {{- include "trustification.application.infrastructure.probes" $mod | nindent 14 }}
 
               volumeMounts:
+                {{- include "trustification.report.data.volumeMount" $mod | nindent 16 }}
                 - mountPath: /walker-state
                   name: walker-state
                 {{- include "trustification.application.extraVolumeMounts" $mod | nindent 16 }}
 
           volumes:
+            {{- include "trustification.report.data.volume" $mod | nindent 12 }}
             - name: walker-state
               persistentVolumeClaim:
                 claimName: {{ include "trustification.common.name" $mod }}
             {{- include "trustification.application.extraVolumes" $mod | nindent 12 }}
 
+          {{- include "trustification.report.affinity" $mod | nindent 10}}
 {{- end }}{{/* range */}}
 
 {{- end }}

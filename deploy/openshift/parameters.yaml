@@ -99,6 +99,8 @@ parameters:
   required: true
 - name: COLLECTORIST_API_REPLICAS
   required: true
+- name: COLLECTOR_OSV_REPLICAS
+  required: true
 - name: EXHORT_API_REPLICAS
   required: true
 - name: SPOG_API_REPLICAS
