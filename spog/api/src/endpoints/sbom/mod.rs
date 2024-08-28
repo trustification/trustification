@@ -19,6 +19,11 @@ pub(crate) fn configure(auth: Option<Arc<Authenticator>>) -> impl FnOnce(&mut Se
                 .to(search),
         );
         config.service(
+            web::resource("/api/v1/sbom/latestwithvulns")
+                .wrap(new_auth!(auth.clone()))
+                .to(sboms_with_vulnerability_summary),
+        );
+        config.service(
             web::resource("/api/v1/sbom/vulnerabilities")
                 .wrap(new_auth!(auth))
                 .to(get_vulnerabilities),

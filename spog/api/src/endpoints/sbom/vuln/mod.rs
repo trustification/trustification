@@ -82,7 +82,7 @@ pub async fn get_vulnerabilities(
 }
 
 #[instrument(skip(state, guac, v11y, access_token), err)]
-async fn process_get_vulnerabilities(
+pub async fn process_get_vulnerabilities(
     state: &AppState,
     v11y: &V11yService,
     guac: &GuacService,
