@@ -156,6 +156,10 @@ jobs:
         run: |
           sudo apt-get install -y libsasl2-dev
 
+      - name: Install clang llvm pkg-config nettle-dev
+        run: |
+          sudo apt install clang llvm pkg-config nettle-dev
+
       - name: Check
         run: cargo check
 
@@ -240,7 +244,7 @@ jobs:
 
     with:
       imageTag: ci
-      platforms: "linux/amd64, linux/arm64"
+      platforms: "linux/amd64"
 
   helm-test:
     runs-on: ubuntu-22.04

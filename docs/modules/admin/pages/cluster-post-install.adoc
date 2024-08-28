@@ -189,3 +189,45 @@ NOTE: After changing the values in values file, be sure to re-apply the Helm cha
 Choosing a reasonable interval depends on various factors. On the one side, the more often the indexes are
  synchronized, the sooner a search result will be visiable to the user. On the other side, the more frequent indexes
 are being synchronized, the more bytes will be transferred. And transferred bytes might add to your AWS bill.
+
+== Enabling ingestion report
+
+During ingestion, jobs can generate reports regarding warnings and errors encountered during the process.
+The report is turned off by default. Tu turn it on, you need to enable it and set authentication details im the
+values file (values-report-userpass.yaml).
+
+[source,yaml]
+----
+report:
+  enabled: true
+  auth:
+    username: admin
+    password: admin123456
+----
+
+Alternately, you can create an authentication secret manually, like
+
+[source,bash]
+----
+htpasswd -c .htpasswd admin
+kubectl create secret generic report-server-auth --from-file=.htpasswd
+----
+
+And reference that secret in the report configuration (values-report-secret.yaml)
+
+[source,yaml]
+----
+report:
+  enabled: true
+  auth:
+    secretRef:
+      name: report-server-auth
+      key: .htpasswd
+----
+
+After successful chart deployment, reports should be available at the URL of the appropriate route.
+
+[source,bash]
+----
+oc get route -o jsonpath='{"https://"}{range .items[?(@.spec.to.name=="report-server")]}{.spec.host}{"\n"}{end}'
+----
