@@ -284,7 +284,7 @@ impl Index {
     ) {
         if let Some(hashes) = &component.hashes {
             for hash in hashes.0.iter() {
-                if hash.alg == HashAlgorithm::SHA256 {
+                if hash.alg == HashAlgorithm::SHA_256 {
                     document.add_text(fields.sha256, &hash.content.0);
                 }
             }

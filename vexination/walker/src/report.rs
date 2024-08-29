@@ -1,4 +1,3 @@
-use async_trait::async_trait;
 use csaf_walker::{
     retrieve::RetrievalError,
     validation::{ValidatedAdvisory, ValidatedVisitor, ValidationError},
@@ -9,14 +8,13 @@ use walker_extras::visitors::{SendValidatedAdvisoryError, SendVisitor};
 
 pub struct AdvisoryReportVisitor(pub ReportVisitor);
 
-#[async_trait(?Send)]
 impl ValidatedVisitor for AdvisoryReportVisitor {
     type Error = <SendVisitor as ValidatedVisitor>::Error;
     type Context = <SendVisitor as ValidatedVisitor>::Context;
 
     async fn visit_context(
         &self,
-        context: &csaf_walker::validation::ValidationContext,
+        context: &csaf_walker::validation::ValidationContext<'_>,
     ) -> Result<Self::Context, Self::Error> {
         self.0.next.visit_context(context).await
     }

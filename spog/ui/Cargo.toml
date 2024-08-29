@@ -16,7 +16,7 @@ convert_case = "0.6.0"
 csaf = { version = "0.5.0", default-features = false }
 cve = "0.3.1"
 cvss = { version = "2", features = ["serde"] }
-cyclonedx-bom = "0.4"
+cyclonedx-bom = "0.7"
 futures = "0.3.29"
 gloo-events = "0.2"
 gloo-net = "0.5"
@@ -109,7 +109,7 @@ monaco = { git = "https://github.com/siku2/rust-monaco", rev = "8b8eb78004709058
 
 # also check root level Cargo.toml
 # TODO Switch to the official repository once https://github.com/CycloneDX/cyclonedx-rust-cargo/issues/615 is fixed
-cyclonedx-bom = { git = "https://github.com/carlosthe19916/cyclonedx-rust-cargo", branch = "issue-615-trustification" }
+#cyclonedx-bom = { git = "https://github.com/carlosthe19916/cyclonedx-rust-cargo", branch = "issue-615-trustification" }
 #spdx-rs = { git = "https://github.com/trustification/spdx-rs", rev = "c65be086e898dae88609f07bbc5a224ba4e0838d" } # FIXME: awaiting doubleopen-project/spdx-rs#/27
 
 # release profile settings to reduce the final binary size

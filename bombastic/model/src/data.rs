@@ -1,7 +1,7 @@
 use std::fmt::Formatter;
 
 use cyclonedx_bom::errors::JsonReadError;
-use cyclonedx_bom::prelude::{Validate, ValidationResult};
+use cyclonedx_bom::prelude::Validate;
 use tracing::{info_span, instrument};
 
 #[derive(Debug)]
@@ -75,19 +75,19 @@ impl SBOM {
                     // because it's an optional field in specs and the validation will succeed if
                     // the serial number is missing and this isn't what we want because
                     // serial number is mandatory for trustification to correlate properly
-                    Some(_) => match bom.validate() {
-                        Ok(validation_result) => match validation_result {
-                            ValidationResult::Passed => return Ok(SBOM::CycloneDX(bom)),
-                            ValidationResult::Failed { reasons } => {
-                                let all_reasons = reasons
-                                    .into_iter()
+                    Some(_) => {
+                        let result = bom.validate();
+                        match result.passed() {
+                            true => return Ok(SBOM::CycloneDX(bom)),
+                            false => {
+                                let all_reasons = result
+                                    .errors()
                                     // Ignore normalizedstring errors
                                     // until https://github.com/CycloneDX/cyclonedx-rust-cargo/issues/737 is fixed
-                                    .filter(|reason| {
-                                        reason.message
-                                            != "NormalizedString contains invalid characters \\r \\n \\t or \\r\\n"
+                                    .filter(|(reason, _)| {
+                                        reason != "NormalizedString contains invalid characters \\r \\n \\t or \\r\\n"
                                     })
-                                    .map(|reason| reason.message)
+                                    .map(|(reason, _)| reason)
                                     .collect::<Vec<String>>()
                                     .join(", ");
                                 if all_reasons.is_empty() {
@@ -98,13 +98,8 @@ impl SBOM {
                                     err.cyclonedx = Some(JsonReadError::from(validation_failed));
                                 }
                             }
-                        },
-                        Err(e) => {
-                            log::error!("Error validating CycloneDX: {}", e);
-                            let validation_error: serde_json::Error = serde::de::Error::custom(e);
-                            err.cyclonedx = Some(JsonReadError::from(validation_error));
                         }
-                    },
+                    }
                     None => {
                         let serial_number_error_message = "Error validating CycloneDX: In order for a CycloneDX SBOM to be successfully ingested the 'serialNumber' field must be populated.";
                         log::error!("{}", serial_number_error_message);
