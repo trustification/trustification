@@ -333,9 +333,9 @@ impl<'a, T: Serialize + ?Sized, U: Serialize + ?Sized> RequestFactory<'a, T, U> 
             }
         }
         let payload = if self.payload_as_text {
-            response.text().await.map(|x| PayloadKind::Text(x)).ok()
+            response.text().await.map(PayloadKind::Text).ok()
         } else {
-            response.json().await.map(|x| PayloadKind::Json(x)).ok()
+            response.json().await.map(PayloadKind::Json).ok()
         };
         log::log!(self.log_level, "Response payload: {:#?}", payload);
         (true, payload)
@@ -397,7 +397,7 @@ pub enum FixtureKind {
 impl FixtureKind {
     async fn cleanup(&self, context: &impl AsyncDeleteById) {
         match self {
-            FixtureKind::Id(id) => context.delete_by_id(&id).await,
+            FixtureKind::Id(id) => context.delete_by_id(id).await,
             FixtureKind::File(path) => {
                 remove_file(&path).await.unwrap();
             }
