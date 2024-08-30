@@ -1781,6 +1781,11 @@
           "type": "string",
           "format": "uri"
         },
+        "retries": {
+          "type": "integer",
+          "default": 5,
+          "minimum": 0
+        },
         "job": {
           "type": "object",
           "description": "Overrides for the Job",
@@ -1816,6 +1821,11 @@
             "type": "string",
             "format": "uri"
           }
+        },
+        "retries": {
+          "type": "integer",
+          "default": 5,
+          "minimum": 0
         },
         "job": {
           "type": "object",
