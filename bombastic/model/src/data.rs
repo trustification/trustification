@@ -1,7 +1,8 @@
-use std::fmt::Formatter;
-
 use cyclonedx_bom::errors::JsonReadError;
-use cyclonedx_bom::prelude::Validate;
+use cyclonedx_bom::prelude::{Validate, ValidationResult};
+use cyclonedx_bom::validation::ValidationErrorsKind;
+use std::collections::HashSet;
+use std::fmt::Formatter;
 use tracing::{info_span, instrument};
 
 #[derive(Debug)]
@@ -80,14 +81,13 @@ impl SBOM {
                         match result.passed() {
                             true => return Ok(SBOM::CycloneDX(bom)),
                             false => {
-                                let all_reasons = result
-                                    .errors()
+                                let all_reasons = Self::get_validation_error_messages(result.clone())
+                                    .into_iter()
                                     // Ignore normalizedstring errors
                                     // until https://github.com/CycloneDX/cyclonedx-rust-cargo/issues/737 is fixed
-                                    .filter(|(reason, _)| {
+                                    .filter(|reason| {
                                         reason != "NormalizedString contains invalid characters \\r \\n \\t or \\r\\n"
                                     })
-                                    .map(|(reason, _)| reason)
                                     .collect::<Vec<String>>()
                                     .join(", ");
                                 if all_reasons.is_empty() {
@@ -116,6 +116,32 @@ impl SBOM {
         }
 
         Err(err)
+    }
+
+    fn get_validation_error_messages(validation_result: ValidationResult) -> HashSet<String> {
+        let mut result = HashSet::<String>::new();
+        validation_result.errors().for_each(|(_, error_kind)| match error_kind {
+            ValidationErrorsKind::Struct(value) => {
+                result.extend(Self::get_validation_error_messages(value));
+            }
+            ValidationErrorsKind::List(value) => value.into_values().for_each(|validation_result| {
+                result.extend(Self::get_validation_error_messages(validation_result));
+            }),
+            ValidationErrorsKind::Field(value) => {
+                value.into_iter().for_each(|error| {
+                    result.insert(error.message);
+                });
+            }
+            ValidationErrorsKind::Enum(value) => {
+                result.insert(value.message);
+            }
+            ValidationErrorsKind::Custom(value) => {
+                value.into_iter().for_each(|error| {
+                    result.insert(error.message);
+                });
+            }
+        });
+        result
     }
 
     pub fn type_str(&self) -> String {
