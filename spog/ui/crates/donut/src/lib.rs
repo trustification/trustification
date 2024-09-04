@@ -9,11 +9,20 @@ extern "C" {
     #[wasm_bindgen(js_name = "ChartDonutRenderer")]
     pub fn create(reference: &web_sys::Node, opts: &JsValue);
 
+    #[wasm_bindgen(js_name = "SbomStackChartRenderer")]
+    pub fn create_sbom_stack_chart_renderer(reference: &web_sys::Node, opts: &JsValue);
+
 }
 
 pub fn create_donut(node: &NodeRef, options: &JsValue) {
     if let Some(node) = node.get() {
         create(&node, options);
+    }
+}
+
+pub fn create_sbom_stack_chart(node: &NodeRef, options: &JsValue) {
+    if let Some(node) = node.get() {
+        create_sbom_stack_chart_renderer(&node, options);
     }
 }
 
@@ -50,6 +59,27 @@ pub fn donut(props: &DonutProperties) -> Html {
                 let _ = js_sys::Reflect::set(&options, &JsValue::from_str("labels"), labels.as_ref());
             }
             create_donut(node, &options);
+        }
+    });
+
+    html!(<div style={props.style.clone()} ref={node}></div>)
+}
+
+#[derive(PartialEq, Properties)]
+pub struct SbomStackChartProperties {
+    pub sboms: Value,
+
+    #[prop_or_default]
+    pub style: Option<AttrValue>,
+}
+
+#[function_component(SbomStackChart)]
+pub fn sbom_stack_chart(props: &SbomStackChartProperties) -> Html {
+    let node = use_node_ref();
+
+    use_effect_with((node.clone(), props.sboms.clone()), move |(node, sboms)| {
+        if let Ok(sboms) = JsValue::from_serde(sboms) {
+            create_sbom_stack_chart(node, &sboms);
         }
     });
 
