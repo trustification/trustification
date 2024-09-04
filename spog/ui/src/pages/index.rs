@@ -6,8 +6,9 @@ use crate::{
 };
 use patternfly_yew::prelude::*;
 use search::search_input::SearchInput;
-use spog_ui_backend::{use_backend, DashboardService};
+use spog_ui_backend::{use_backend, DashboardService, SBOMService};
 use spog_ui_common::{components::SafeHtml, error::components::Error, utils::time::full_utc_date};
+use spog_ui_donut::SbomStackChart;
 use spog_ui_navigation::{AppRoute, View};
 use spog_ui_utils::{analytics::use_analytics, config::use_config_private};
 use yew::prelude::*;
@@ -100,7 +101,7 @@ pub fn index() -> Html {
                                                 {"Below is a summary of CVE status for your last 10 ingested SBOMs. You can click on the SBOM name or CVE severity number below to be taken to their respective details page. You can also select up to 4 SBOMs to watch, by default you will see the last 4 SBOMs you have uploaded."}
                                             </StackItem>
                                             <StackItem>
-                                                // <LastSbomsChart />
+                                                <LastSbomsChart />
                                             </StackItem>
                                         </Stack>
                                     </GridItem>
@@ -120,6 +121,54 @@ pub fn index() -> Html {
 
             <SafeHtml html={config.landing_page.footer_content.clone()} />
 
+        </>
+    )
+}
+
+#[function_component(LastSbomsChart)]
+pub fn last_sboms_chart() -> Html {
+    let backend = use_backend();
+    let access_token = use_latest_access_token();
+
+    let sboms = use_async_with_cloned_deps(
+        |backend| async move {
+            SBOMService::new(backend.clone(), access_token)
+                .get_latest_with_vulns()
+                .await
+                .map(|result| {
+                    let number_of_elements = result.len();
+                    let json = serde_json::to_value(result).expect("Could not unparse latest sbom json");
+                    (json, number_of_elements)
+                })
+        },
+        backend,
+    );
+
+    html!(
+        <>
+            {
+                match &*sboms {
+                    UseAsyncState::Pending | UseAsyncState::Processing => html!(
+                        <PageSection fill={PageSectionFill::Fill}>
+                            <Spinner />
+                        </PageSection>
+                    ),
+                    UseAsyncState::Ready(Ok((json, number_of_elements))) => html!(
+                        if *number_of_elements > 0usize {
+                            <SbomStackChart sboms={json.clone()} style="height: 375px; width: 800px" />
+                        } else {
+                            <EmptyState
+                                title="No SBOMs found"
+                                icon={Icon::Cubes}
+                            >
+                            </EmptyState>
+                        }
+                    ),
+                    UseAsyncState::Ready(Err(_)) => html!(
+                        <Error title="Error" message="Internal server error" />
+                    ),
+                }
+            }
         </>
     )
 }

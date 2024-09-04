@@ -1,6 +1,6 @@
 use crate::{ApplyAccessToken, Backend, Endpoint};
 use reqwest::{Body, StatusCode};
-use spog_model::prelude::{SbomReport, SbomSummary};
+use spog_model::prelude::{Last10SbomVulnerabilitySummary, SbomReport, SbomSummary};
 use spog_ui_common::error::*;
 use std::rc::Rc;
 use trustification_api::search::SearchResult;
@@ -98,6 +98,17 @@ impl SBOMService {
             .client
             .get(self.backend.join(Endpoint::Api, "/api/v1/sbom/search")?)
             .query(&[("q", q)])
+            .latest_access_token(&self.access_token)
+            .send()
+            .await?;
+
+        Ok(response.api_error_for_status().await?.json().await?)
+    }
+
+    pub async fn get_latest_with_vulns(&self) -> Result<Vec<Last10SbomVulnerabilitySummary>, ApiError> {
+        let response: reqwest::Response = self
+            .client
+            .get(self.backend.join(Endpoint::Api, "/api/v1/sbom/latestwithvulns")?)
             .latest_access_token(&self.access_token)
             .send()
             .await?;
