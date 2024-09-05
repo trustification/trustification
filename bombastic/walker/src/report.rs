@@ -1,4 +1,3 @@
-use async_trait::async_trait;
 use sbom_walker::{
     retrieve::RetrievalError,
     validation::{ValidatedSbom, ValidatedVisitor, ValidationContext, ValidationError},
@@ -9,12 +8,11 @@ use walker_extras::visitors::{SendValidatedSbomError, SendVisitor};
 
 pub struct SbomReportVisitor(pub ReportVisitor);
 
-#[async_trait(?Send)]
 impl ValidatedVisitor for SbomReportVisitor {
     type Error = <SendVisitor as ValidatedVisitor>::Error;
     type Context = <SendVisitor as ValidatedVisitor>::Context;
 
-    async fn visit_context(&self, context: &ValidationContext) -> Result<Self::Context, Self::Error> {
+    async fn visit_context(&self, context: &ValidationContext<'_>) -> Result<Self::Context, Self::Error> {
         self.0.next.visit_context(context).await
     }
 
