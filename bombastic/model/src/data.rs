@@ -174,6 +174,13 @@ mod tests {
     }
 
     #[test]
+    fn parse_cyclonedx_valid_15() {
+        let data = include_bytes!("../../testdata/syft.cyclonedx-1.5.json");
+        let result = SBOM::parse(data);
+        assert!(result.is_ok());
+    }
+
+    #[test]
     fn parse_cyclonedx_valid_14_newline() {
         let data = include_bytes!("../../testdata/syft.cyclonedx.newline.json");
         let result = SBOM::parse(data);
