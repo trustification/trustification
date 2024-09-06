@@ -70,7 +70,7 @@ pub fn parse(data: &[u8]) -> Result<SBOM, anyhow::Error> {
             let spec_version = json.as_ref().and_then(|json| json["specVersion"].as_str());
 
             match spec_version {
-                Some("1.3") | Some("1.4") => {}
+                Some("1.3") | Some("1.4") | Some("1.5") => {}
                 Some(other) => bail!("Unsupported CycloneDX version: {other}"),
                 None => bail!("Unable to detect CycloneDX version"),
             }
