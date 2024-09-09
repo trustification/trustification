@@ -523,8 +523,6 @@ objects:
                 - file
                 - --index-dir
                 - /data/index
-                - --reindex
-                - always
               env:
                 - name: RUST_LOG
                   value: ${LOG_LEVEL}
