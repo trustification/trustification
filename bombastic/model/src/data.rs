@@ -79,7 +79,7 @@ impl SBOM {
                     // serial number is mandatory for trustification to correlate properly
                     Some(_) => {
                         let result = bom.validate();
-                        match result.passed() { 
+                        match result.passed() {
                             true => return Ok(SBOM::CycloneDX(bom)),
                             false => {
                                 let all_reasons = Self::get_validation_error_messages(result.clone())
