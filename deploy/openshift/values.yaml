@@ -49,7 +49,7 @@ bombastic:
     resources: ${{BOMBASTIC_COLLECTOR_RESOURCES}}
   indexer:
     replicas: ${{BOMBASTIC_INDEXER_REPLICAS}}
-    reindex: true
+    reindex: false
     indexSyncInterval: ${BOMBASTIC_INDEXER_INDEX_SYNC_INTERVAL}
     indexWriterMemoryBytes: ${BOMBASTIC_INDEXER_INDEX_WRITER_MEMORY_BYTES}
     topics:
