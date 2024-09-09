@@ -154,7 +154,7 @@ async fn process_get_vulnerabilities(
                 .and_then(|metadata| metadata.timestamp.as_ref())
                 .and_then(|timestamp| {
                     let format = format_description!("[year]-[month]-[day]");
-                    match OffsetDateTime::parse(&timestamp.to_string(), &format) {
+                    match OffsetDateTime::parse(timestamp.as_ref(), &format) {
                         Ok(time) => Some(time),
                         Err(_) => None,
                     }
