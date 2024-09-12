@@ -142,17 +142,17 @@ mod test {
     #[actix_web::test]
     async fn update_user_preferences() -> Result<(), anyhow::Error> {
         let pre_preferences = Preferences {
-            sbom1: "11".to_string(),
-            sbom2: "21".to_string(),
-            sbom3: "31".to_string(),
-            sbom4: "41".to_string(),
+            sbom1: Some("11".to_string()),
+            sbom2: Some("21".to_string()),
+            sbom3: Some("31".to_string()),
+            sbom4: Some("41".to_string()),
         };
 
         let post_preferences = Preferences {
-            sbom1: "1".to_string(),
-            sbom2: "2".to_string(),
-            sbom3: "3".to_string(),
-            sbom4: "4".to_string(),
+            sbom1: Some("1".to_string()),
+            sbom2: Some("2".to_string()),
+            sbom3: Some("3".to_string()),
+            sbom4: Some("4".to_string()),
         };
 
         let db = Db::new(".").await?;
@@ -169,7 +169,10 @@ mod test {
 
         let result = db.select_preferences_by_user_id("user1".to_string()).await?;
         assert_eq!("user1", result.user_id);
-        assert_eq!("11".to_string(), result.preferences.unwrap_or_default().sbom1);
+        assert_eq!(
+            "11".to_string(),
+            result.preferences.unwrap_or_default().sbom1.unwrap_or_default()
+        );
 
         db.update_user_preferences(UserPreferences {
             user_id: "user1".to_string(),
@@ -182,7 +185,10 @@ mod test {
 
         let result = db.select_preferences_by_user_id("user1".to_string()).await?;
         assert_eq!("user1", result.user_id);
-        assert_eq!("1".to_string(), result.preferences.unwrap_or_default().sbom1);
+        assert_eq!(
+            "1".to_string(),
+            result.preferences.unwrap_or_default().sbom1.unwrap_or_default()
+        );
         Ok(())
     }
 }

@@ -25,6 +25,6 @@ Volume for the user preferences data.
 db path
 
 */}}
-{{- define "trustification.preferences.db.path" }}
+{{- define "trustification.preferences.db.path" -}}
 /data/db/
 {{- end }}
