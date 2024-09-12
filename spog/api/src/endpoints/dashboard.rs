@@ -19,7 +19,7 @@ pub(crate) fn configure(auth: Option<Arc<Authenticator>>, payload_limit: usize) 
                 .wrap(new_auth!(auth))
                 .service(web::resource("/status").to(get_status))
                 .service(
-                    web::resource("/userPreferences/")
+                    web::resource("/userPreferences")
                         .app_data(PayloadConfig::new(payload_limit))
                         .route(web::post().to(user_preferences_update))
                         .route(web::get().to(user_preferences_receive)),
@@ -46,7 +46,7 @@ pub async fn user_preferences_receive(
             .db_storage
             .select_preferences_by_user_id(user_id.to_string())
             .await?;
-        Ok(HttpResponse::Ok().json(result))
+        Ok(HttpResponse::Ok().json(result.preferences))
     } else {
         Err(actix_web::error::ErrorUnauthorized(401))
     }
@@ -70,8 +70,9 @@ pub async fn user_preferences_update(
             user_id: user_id.to_string(),
             preferences: Some(payload.into_inner()),
         };
+        let result = up.preferences.clone();
         state.db_storage.update_user_preferences(up).await?;
-        Ok(HttpResponse::Ok().finish())
+        Ok(HttpResponse::Ok().json(result))
     } else {
         Err(actix_web::error::ErrorUnauthorized(401))
     }

@@ -12,10 +12,10 @@ impl Default for UserPreferences {
         UserPreferences {
             user_id: "".to_string(),
             preferences: Some(Preferences {
-                sbom1: "".to_string(),
-                sbom2: "".to_string(),
-                sbom3: "".to_string(),
-                sbom4: "".to_string(),
+                sbom1: None,
+                sbom2: None,
+                sbom3: None,
+                sbom4: None,
             }),
         }
     }
@@ -23,10 +23,10 @@ impl Default for UserPreferences {
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub struct Preferences {
-    pub sbom1: String,
-    pub sbom2: String,
-    pub sbom3: String,
-    pub sbom4: String,
+    pub sbom1: Option<String>,
+    pub sbom2: Option<String>,
+    pub sbom3: Option<String>,
+    pub sbom4: Option<String>,
 }
 
 #[derive(Clone, serde::Deserialize, ToSchema, serde::Serialize)]
