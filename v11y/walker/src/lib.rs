@@ -161,7 +161,15 @@ impl Run {
 
         // Just interested in Published CVE because for Rejected CVE the 'cna' field has no 'metrics' field
         if let Ok(mut cve) = serde_json::from_slice::<Published>(&data) {
-            if cve.containers.cna.metrics.is_empty() {
+            let cvss_metric_not_provided = cve
+                .containers
+                .cna
+                .metrics
+                .iter()
+                .filter(|metric| metric.cvss_v2_0.is_some() || metric.cvss_v3_0.is_some() || metric.cvss_v3_1.is_some())
+                .collect::<Vec<&Metric>>()
+                .is_empty();
+            if cvss_metric_not_provided {
                 let result = osv_client.vulns(&cve.metadata.id).await;
                 match result {
                     Ok(option) => {
@@ -265,5 +273,23 @@ mod test {
             .unwrap();
         // original size is 1062 so the test ensures no changes are applied in case of a Rejected CVE
         assert_eq!(vec.len(), 1062);
+    }
+
+    #[tokio::test]
+    async fn test_get_cve_data_metrics_not_empty_without_cvss() {
+        let vec = Run::get_cve_data(&OsvClient::new(), &PathBuf::from(r"../testdata/CVE-2023-50164.json"))
+            .await
+            .unwrap();
+        // assert_eq!(vec.len(), 1701);
+        if let Ok(cve) = serde_json::from_slice::<Published>(&vec) {
+            assert_eq!(cve.containers.cna.metrics.len(), 2);
+            assert!(
+                // the CVSS score is the 2nd element because metrics array wasn't empty
+                cve.containers.cna.metrics[1].cvss_v3_1.as_ref().unwrap()["vectorString"]
+                    .as_str()
+                    .unwrap()
+                    .eq("CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H")
+            );
+        }
     }
 }
