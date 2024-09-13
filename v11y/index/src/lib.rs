@@ -5,7 +5,6 @@ use cvss::v3::Base;
 use cvss::Severity;
 use serde_json::Value;
 use sikula::prelude::*;
-use std::cmp::max;
 use std::time::Duration;
 use time::OffsetDateTime;
 use trustification_api::search::SearchOptions;
