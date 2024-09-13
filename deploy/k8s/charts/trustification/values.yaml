@@ -125,6 +125,7 @@ modules:
     tracing: {}
     metrics: {}
     rust: {}
+    storageSize: "10Mi"
     crdaUrl: https://rhda.rhcloud.com/api/v4/analysis
 
   spogUi:

@@ -6591,6 +6591,7 @@ dependencies = [
  "serde_yaml",
  "spdx-rs",
  "spog-model",
+ "sqlx",
  "thiserror",
  "time",
  "tokio",
