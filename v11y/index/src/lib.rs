@@ -1,4 +1,5 @@
 use core::str::FromStr;
+use std::cmp::max;
 pub use cve::Cve;
 use cve::{common, Published, Rejected, Timestamp};
 use cvss::v3::Base;
@@ -8,22 +9,15 @@ use sikula::prelude::*;
 use std::time::Duration;
 use time::OffsetDateTime;
 use trustification_api::search::SearchOptions;
-use trustification_index::{
-    create_boolean_query, create_date_query, create_float_query, create_string_query_case, create_text_query,
-    field2bool, field2date_opt, field2str, field2strvec,
-    metadata::doc2metadata,
-    sort_by,
-    tantivy::{
-        self,
-        collector::TopDocs,
-        doc,
-        query::{AllQuery, Occur, Query, TermQuery},
-        schema::{Field, Schema, Term, FAST, INDEXED, STORED, STRING, TEXT},
-        store::ZstdCompressor,
-        DateTime, DocAddress, DocId, IndexSettings, Score, Searcher, SegmentReader,
-    },
-    term2query, Case, Document, Error as SearchError, SearchQuery,
-};
+use trustification_index::{create_boolean_query, create_date_query, create_float_query, create_string_query_case, create_text_query, field2bool, field2date_opt, field2str, field2strvec, metadata::doc2metadata, sort_by, tantivy::{
+    self,
+    collector::TopDocs,
+    doc,
+    query::{AllQuery, Occur, Query, TermQuery},
+    schema::{Field, Schema, Term, FAST, INDEXED, STORED, STRING, TEXT},
+    store::ZstdCompressor,
+    DateTime, DocAddress, DocId, IndexSettings, Score, Searcher, SegmentReader,
+}, term2query, Case, Document, Error as SearchError, SearchQuery, field2f64vec};
 use v11y_model::search::{Cves, CvesSortable, SearchDocument, SearchHit};
 
 pub struct Index {
@@ -316,7 +310,9 @@ impl trustification_index::Index for Index {
             .map(|s| s.to_string())
             .collect();
 
-        let cvss3x_score = doc.get_first(self.fields.cvss3x_score).and_then(|s| s.as_f64());
+        let cvss3x_score = field2f64vec(&doc, self.fields.cvss3x_score)?
+            .into_iter()
+            .max_by(|a, b| a.total_cmp(b));
 
         let date_published = field2date_opt(&doc, self.fields.date_published);
         let date_updated = field2date_opt(&doc, self.fields.date_updated);

@@ -180,7 +180,12 @@ fn cve_title(cve: &cve::Cve) -> Html {
 }
 
 fn cvss3(metrics: &[Metric]) -> Html {
+    let mut html_vec: Vec<Html> = Vec::new();
+    let mut max_score:f64 = 0.0;
+    let mut count:i64 = 0;
+    let mut max_count:i64 = 0;
     for m in metrics {
+        count+=1;
         if let Some(cvss) = m
             .cvss_v3_1
             .as_ref()
@@ -188,9 +193,24 @@ fn cvss3(metrics: &[Metric]) -> Html {
             .and_then(|cvss| cvss["vectorString"].as_str())
             .and_then(|cvss| cvss::v3::Base::from_str(cvss).ok())
         {
-            return html!(<Cvss3Label {cvss}/>);
+            let cloned_cvss = cvss.clone();
+            html_vec.push(html!(<Cvss3Label {cvss}/>));
+            if cloned_cvss.score().value() > max_score{
+                max_score = cloned_cvss.score().value();
+                max_count = count;
+            }
         }
     }
+    if max_count != 0 {
+        let mut html_count:i64 = 1;
+        for html in html_vec{
+            if html_count == max_count {
+                return html;
+            }
+            html_count += 1;
+        }
+    }
+
     html!()
 }
 
