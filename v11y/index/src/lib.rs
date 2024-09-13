@@ -1,23 +1,30 @@
 use core::str::FromStr;
-use std::cmp::max;
 pub use cve::Cve;
 use cve::{common, Published, Rejected, Timestamp};
 use cvss::v3::Base;
 use cvss::Severity;
 use serde_json::Value;
 use sikula::prelude::*;
+use std::cmp::max;
 use std::time::Duration;
 use time::OffsetDateTime;
 use trustification_api::search::SearchOptions;
-use trustification_index::{create_boolean_query, create_date_query, create_float_query, create_string_query_case, create_text_query, field2bool, field2date_opt, field2str, field2strvec, metadata::doc2metadata, sort_by, tantivy::{
-    self,
-    collector::TopDocs,
-    doc,
-    query::{AllQuery, Occur, Query, TermQuery},
-    schema::{Field, Schema, Term, FAST, INDEXED, STORED, STRING, TEXT},
-    store::ZstdCompressor,
-    DateTime, DocAddress, DocId, IndexSettings, Score, Searcher, SegmentReader,
-}, term2query, Case, Document, Error as SearchError, SearchQuery, field2f64vec};
+use trustification_index::{
+    create_boolean_query, create_date_query, create_float_query, create_string_query_case, create_text_query,
+    field2bool, field2date_opt, field2f64vec, field2str, field2strvec,
+    metadata::doc2metadata,
+    sort_by,
+    tantivy::{
+        self,
+        collector::TopDocs,
+        doc,
+        query::{AllQuery, Occur, Query, TermQuery},
+        schema::{Field, Schema, Term, FAST, INDEXED, STORED, STRING, TEXT},
+        store::ZstdCompressor,
+        DateTime, DocAddress, DocId, IndexSettings, Score, Searcher, SegmentReader,
+    },
+    term2query, Case, Document, Error as SearchError, SearchQuery,
+};
 use v11y_model::search::{Cves, CvesSortable, SearchDocument, SearchHit};
 
 pub struct Index {
