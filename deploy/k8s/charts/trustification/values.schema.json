@@ -334,6 +334,9 @@
             {
               "type": "object",
               "properties": {
+                "storageSize": {
+                  "type": "string"
+                },
                 "crdaUrl": {
                   "type": "string",
                   "format": "uri"

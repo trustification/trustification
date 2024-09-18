@@ -5,6 +5,7 @@ use bytes::Bytes;
 use http::StatusCode;
 use tracing::instrument;
 
+use crate::db::Db;
 use trustification_api::search::SearchOptions;
 use trustification_api::Apply;
 use trustification_auth::client::{TokenInjector, TokenProvider};
@@ -18,6 +19,7 @@ pub struct AppState {
     pub bombastic: reqwest::Url,
     pub vexination: reqwest::Url,
     pub exhort: reqwest::Url,
+    pub db_storage: Db,
 }
 
 impl AppState {

@@ -1,23 +1,80 @@
 use crate::app_state::AppState;
 use crate::search;
 use crate::service::v11y::V11yService;
-use actix_web::web::ServiceConfig;
+use actix_web::web::{PayloadConfig, ServiceConfig};
 use actix_web::{web, HttpResponse};
 use actix_web_httpauth::extractors::bearer::BearerAuth;
-use spog_model::dashboard::{CSAFStatus, CveStatus, DashboardStatus, SbomStatus};
+use spog_model::dashboard::{CSAFStatus, CveStatus, DashboardStatus, Preferences, SbomStatus, UserPreferences};
 use std::sync::Arc;
 use tracing::instrument;
 use trustification_api::search::SearchOptions;
+use trustification_auth::authenticator::user::UserInformation;
 use trustification_auth::authenticator::Authenticator;
 use trustification_infrastructure::new_auth;
 
-pub(crate) fn configure(auth: Option<Arc<Authenticator>>) -> impl FnOnce(&mut ServiceConfig) {
-    |config: &mut ServiceConfig| {
+pub(crate) fn configure(auth: Option<Arc<Authenticator>>, payload_limit: usize) -> impl FnOnce(&mut ServiceConfig) {
+    move |config: &mut ServiceConfig| {
         config.service(
             web::scope("/api/v1/dashboard")
                 .wrap(new_auth!(auth))
-                .service(web::resource("/status").to(get_status)),
+                .service(web::resource("/status").to(get_status))
+                .service(
+                    web::resource("/userPreferences")
+                        .app_data(PayloadConfig::new(payload_limit))
+                        .route(web::post().to(user_preferences_update))
+                        .route(web::get().to(user_preferences_receive)),
+                ),
         );
+    }
+}
+
+#[utoipa::path(
+    get,
+    path = "/api/v1/dashboard/userPreferences",
+    responses(
+    (status = 200, description = "userPreferences search was successful", body = UserPreferences),
+    ),
+    params()
+)]
+#[instrument(skip(state), err)]
+pub async fn user_preferences_receive(
+    state: web::Data<AppState>,
+    user_information: UserInformation,
+) -> actix_web::Result<HttpResponse> {
+    if let Some(user_id) = user_information.id() {
+        let result = state
+            .db_storage
+            .select_preferences_by_user_id(user_id.to_string())
+            .await?;
+        Ok(HttpResponse::Ok().json(result.preferences))
+    } else {
+        Err(actix_web::error::ErrorUnauthorized(401))
+    }
+}
+
+#[utoipa::path(
+    post,
+    path = "/api/v1/dashboard/userPreferences",
+    responses(
+    (status = 200, description = "userPreferences update was successful", body = UserPreferences),
+    ),
+)]
+#[instrument(skip(state), err)]
+pub async fn user_preferences_update(
+    state: web::Data<AppState>,
+    payload: web::Json<Preferences>,
+    user_information: UserInformation,
+) -> actix_web::Result<HttpResponse> {
+    if let Some(user_id) = user_information.id() {
+        let up = UserPreferences {
+            user_id: user_id.to_string(),
+            preferences: Some(payload.into_inner()),
+        };
+        let result = up.preferences.clone();
+        state.db_storage.update_user_preferences(up).await?;
+        Ok(HttpResponse::Ok().json(result))
+    } else {
+        Err(actix_web::error::ErrorUnauthorized(401))
     }
 }
 
