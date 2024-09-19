@@ -27,7 +27,7 @@ pub struct SbomReportProperties {
     pub id: String,
 }
 
-fn as_float(value: &Value) -> Option<f64> {
+pub fn as_float(value: &Value) -> Option<f64> {
     match value {
         Value::Number(n) if n.is_f64() => n.as_f64(),
         Value::Number(n) if n.is_i64() => n.as_i64().map(|i| i as _),
@@ -150,7 +150,7 @@ pub fn sbom(props: &SbomReportProperties) -> Html {
 }
 
 /// build the options for the donut chart
-fn donut_options(data: &spog_model::vuln::SbomReport) -> Value {
+pub fn donut_options(data: &spog_model::vuln::SbomReport) -> Value {
     let mut summary = data
         .summary
         .iter()
