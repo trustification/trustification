@@ -223,14 +223,14 @@ pub fn last_data_ingested() -> Html {
                         </PageSection>
                     ),
                     UseAsyncState::Ready(Ok(value)) => html!(
-                        <Grid>
+                        <Grid gutter=true>
                             <GridItem cols={[6]}>
                                 <DescriptionList>
                                     <DescriptionGroup term="Last SBOM ingested">
                                         <Stack>
                                             <StackItem>
                                                 if let Some(last_updated_date) = &value.sbom_summary.last_updated_date {
-                                                   {full_utc_date(*last_updated_date)}
+                                                    {full_utc_date(*last_updated_date)}
                                                 }
                                             </StackItem>
                                             <StackItem>
@@ -242,6 +242,18 @@ pub fn last_data_ingested() -> Html {
                                             </StackItem>
                                         </Stack>
                                     </DescriptionGroup>
+                                </DescriptionList>
+                            </GridItem>
+                            <GridItem cols={[6]}>
+                                <DescriptionList>
+                                    <DescriptionGroup term="Total SBOMs">
+                                        {value.sbom_summary.total_sboms}
+                                    </DescriptionGroup>
+                                </DescriptionList>
+                            </GridItem>
+
+                            <GridItem cols={[6]}>
+                                <DescriptionList>
                                     <DescriptionGroup term="Last Advisory ingested">
                                         <Stack>
                                             <StackItem>
@@ -258,6 +270,18 @@ pub fn last_data_ingested() -> Html {
                                             </StackItem>
                                         </Stack>
                                     </DescriptionGroup>
+                                </DescriptionList>
+                            </GridItem>
+                            <GridItem cols={[6]}>
+                                <DescriptionList>
+                                    <DescriptionGroup term="Total Advisories">
+                                        {value.csaf_summary.total_csafs}
+                                    </DescriptionGroup>
+                                </DescriptionList>
+                            </GridItem>
+
+                            <GridItem cols={[6]}>
+                                <DescriptionList>
                                     <DescriptionGroup term="Last CVE ingested">
                                         <Stack>
                                             <StackItem>
@@ -278,12 +302,6 @@ pub fn last_data_ingested() -> Html {
                             </GridItem>
                             <GridItem cols={[6]}>
                                 <DescriptionList>
-                                    <DescriptionGroup term="Total SBOMs">
-                                        {value.sbom_summary.total_sboms}
-                                    </DescriptionGroup>
-                                    <DescriptionGroup term="Total Advisories">
-                                        {value.csaf_summary.total_csafs}
-                                    </DescriptionGroup>
                                     <DescriptionGroup term="Total CVEs">
                                         {value.cve_summary.total_cves}
                                     </DescriptionGroup>
