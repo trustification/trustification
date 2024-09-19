@@ -109,7 +109,7 @@ pub async fn sboms_with_vulnerability_summary(
 ) -> actix_web::Result<HttpResponse> {
     let ten_latest_sboms = state
         .search_sbom(
-            "-sort:indexedTimestamp",
+            "sort:indexedTimestamp",
             0,
             10,
             SearchOptions {
