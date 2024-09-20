@@ -13,8 +13,8 @@ use std::{
 use time::OffsetDateTime;
 use trustification_api::search::SearchOptions;
 use trustification_index::{
-    boost, create_date_query, create_float_query, create_string_query, create_string_query_case, create_text_query,
-    field2date, field2float, field2str, field2str_opt, field2strvec,
+    boost, create_date_query, create_float_query, create_i64_query, create_string_query, create_string_query_case,
+    create_text_query, field2date, field2float, field2str, field2str_opt, field2strvec,
     metadata::doc2metadata,
     sort_by,
     tantivy::{
@@ -197,11 +197,10 @@ impl trustification_index::Index for Index {
         let indexed_timestamp = doc
             .get_first(self.fields.indexed_timestamp)
             .map(|s| {
-                s.as_date()
-                    .map(|d| d.into_utc())
-                    .unwrap_or(time::OffsetDateTime::UNIX_EPOCH)
+                s.as_i64()
+                    .unwrap_or(time::OffsetDateTime::UNIX_EPOCH.unix_timestamp_nanos() as i64)
             })
-            .unwrap_or(time::OffsetDateTime::UNIX_EPOCH);
+            .unwrap_or(time::OffsetDateTime::UNIX_EPOCH.unix_timestamp_nanos() as i64);
         let document = SearchDocument {
             advisory_id: advisory_id.to_string(),
             advisory_title: advisory_title.to_string(),
@@ -272,10 +271,10 @@ impl trustification_index::WriteIndex for Index {
             self.fields.advisory_title => csaf.document.title.clone(),
         );
 
-        document.add_date(
-            self.fields.indexed_timestamp,
-            DateTime::from_utc(OffsetDateTime::now_utc()),
-        );
+        let now = OffsetDateTime::now_utc();
+        let nanos_since_epoch = now.unix_timestamp_nanos();
+        let nanos_since_epoch_i64 = nanos_since_epoch as i64;
+        document.add_i64(self.fields.indexed_timestamp, nanos_since_epoch_i64);
 
         if let Some(notes) = &csaf.document.notes {
             for note in notes {
@@ -507,7 +506,7 @@ impl Index {
     // TODO use CONST for field names
     pub fn new() -> Self {
         let mut schema = Schema::builder();
-        let indexed_timestamp = schema.add_date_field("indexed_timestamp", INDEXED | FAST | STORED);
+        let indexed_timestamp = schema.add_i64_field("indexed_timestamp", INDEXED | FAST | STORED);
 
         let advisory_id = schema.add_text_field("advisory_id", STRING | FAST);
         let advisory_id_raw = schema.add_text_field("advisory_id_raw", STRING | STORED);
@@ -644,7 +643,7 @@ impl Index {
                 create_date_query(&self.schema, self.fields.cve_discovery, ordered)
             }
             Vulnerabilities::IndexedTimestamp(value) => {
-                create_date_query(&self.schema, self.fields.indexed_timestamp, value)
+                create_i64_query(&self.schema, self.fields.indexed_timestamp, value)
             }
         }
     }
