@@ -690,7 +690,6 @@ mod tests {
     use super::*;
     use sbom_walker::Sbom;
     use std::path::Path;
-    use time::format_description;
     use trustification_index::{IndexStore, IndexWriter};
 
     const TESTDATA: &[&str] = &[
@@ -756,12 +755,13 @@ mod tests {
     async fn test_search_sort_by_indexed_timestamp() {
         assert_search(|index| {
             let (last_update_docs, _size) = search(&index, "-sort:indexedTimestamp");
-            for doc in last_update_docs {
+            for doc in &last_update_docs {
                 println!(
                     "name: {:?}  indexed_timestamp: {:?} created : {:?}",
                     doc.document.id, doc.document.indexed_timestamp, doc.document.created
                 );
             }
+            assert_eq!("ubi9-sbom", &last_update_docs[0].document.id);
         });
     }
 
@@ -929,8 +929,8 @@ mod tests {
             for result in result.0 {
                 assert!(result.metadata.is_some());
                 let indexed_date = result.metadata.as_ref().unwrap()["indexed_timestamp"].clone();
-                let value: &str = indexed_date["values"][0].as_str().unwrap();
-                let indexed_date = OffsetDateTime::parse(value, &format_description::well_known::Rfc3339).unwrap();
+                let value = indexed_date["values"][0].as_i64().unwrap();
+                let indexed_date = OffsetDateTime::from_unix_timestamp_nanos(value as i128).unwrap();
                 assert!(indexed_date >= now);
             }
         });

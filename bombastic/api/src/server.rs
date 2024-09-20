@@ -463,7 +463,7 @@ async fn sbom_status(
             last_updated_sbom_id: Some(sbom.document.id.to_string()),
             last_updated_sbom_name: Some(sbom.document.name.to_string()),
             last_updated_date: Some(
-                OffsetDateTime::from_unix_timestamp(sbom.document.indexed_timestamp)
+                OffsetDateTime::from_unix_timestamp_nanos(sbom.document.indexed_timestamp as i128)
                     .unwrap_or(OffsetDateTime::UNIX_EPOCH),
             ),
         }))

@@ -747,7 +747,6 @@ fn rewrite_cpe_partial(value: &str) -> String {
 #[cfg(test)]
 mod tests {
     use std::fmt::Display;
-    use time::format_description;
     use trustification_index::IndexStore;
 
     use super::*;
@@ -800,6 +799,20 @@ mod tests {
                 },
             )
             .unwrap()
+    }
+
+    #[tokio::test]
+    async fn test_search_sort_by_indexed_timestamp() {
+        assert_search(|index| {
+            let (last_update_docs, _size) = search(&index, "-sort:indexedTimestamp");
+            for doc in &last_update_docs {
+                println!(
+                    "name: {:?}  indexed_timestamp: {:?} created : {:?}",
+                    doc.document.advisory_id, doc.document.indexed_timestamp, doc.document.advisory_date
+                );
+            }
+            assert_eq!("RHSA-2023:4378", &last_update_docs[0].document.advisory_id);
+        });
     }
 
     #[tokio::test]
@@ -1132,8 +1145,8 @@ mod tests {
             for result in result.0 {
                 assert!(result.metadata.is_some());
                 let indexed_date = result.metadata.as_ref().unwrap()["indexed_timestamp"].clone();
-                let value: &str = indexed_date["values"][0].as_str().unwrap();
-                let indexed_date = OffsetDateTime::parse(value, &format_description::well_known::Rfc3339).unwrap();
+                let value = indexed_date["values"][0].as_i64().unwrap();
+                let indexed_date = OffsetDateTime::from_unix_timestamp_nanos(value as i128).unwrap();
                 assert!(indexed_date >= now);
             }
         });

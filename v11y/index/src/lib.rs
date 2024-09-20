@@ -406,7 +406,11 @@ mod test {
     use std::path::Path;
     use trustification_index::{IndexStore, IndexWriter};
 
-    const TESTDATA: &[&str] = &["../testdata/CVE-2023-44487.json"];
+    const TESTDATA: &[&str] = &[
+        "../testdata/CVE-2023-44487.json",
+        "../testdata/CVE-2017-13052.json",
+        "../testdata/CVE-2023-33201.json",
+    ];
 
     fn load_valid_file(store: &mut IndexStore<Index>, writer: &mut IndexWriter, path: impl AsRef<Path>) {
         let data = std::fs::read(&path).unwrap();
@@ -451,6 +455,20 @@ mod test {
                 },
             )
             .unwrap()
+    }
+
+    #[tokio::test]
+    async fn test_search_sort_by_indexed_timestamp() {
+        assert_search(|index| {
+            let (last_update_docs, _size) = search(&index, "-sort:indexedTimestamp");
+            for doc in &last_update_docs {
+                println!(
+                    "name: {:?}  indexed_timestamp: {:?} created : {:?}",
+                    doc.document.id, doc.document.indexed_timestamp, doc.document.date_published
+                );
+            }
+            assert_eq!("CVE-2023-33201", &last_update_docs[0].document.id);
+        });
     }
 
     #[tokio::test]

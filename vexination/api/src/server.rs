@@ -325,7 +325,7 @@ async fn vex_status(
             last_updated_vex_id: Some(vex.document.advisory_id.to_string()),
             last_updated_vex_name: Some(vex.document.advisory_title.to_string()),
             last_updated_date: Some(
-                OffsetDateTime::from_unix_timestamp(vex.document.indexed_timestamp)
+                OffsetDateTime::from_unix_timestamp_nanos(vex.document.indexed_timestamp as i128)
                     .unwrap_or(OffsetDateTime::UNIX_EPOCH),
             ),
         }))

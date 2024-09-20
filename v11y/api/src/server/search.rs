@@ -155,7 +155,7 @@ async fn cve_status(
             total: Some(total_docs),
             last_updated_cve_id: Some(cve.document.id.to_string()),
             last_updated_date: Some(
-                OffsetDateTime::from_unix_timestamp(cve.document.indexed_timestamp)
+                OffsetDateTime::from_unix_timestamp_nanos(cve.document.indexed_timestamp as i128)
                     .unwrap_or(OffsetDateTime::UNIX_EPOCH),
             ),
         }))
