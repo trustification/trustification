@@ -228,12 +228,8 @@ async fn bombastic_reindexing(context: &mut BombasticContext) {
 
     wait_for_sbom_search_result(context, &[("q", &encode(&key)), ("metadata", "true")], |response| {
         response["total"].as_u64().filter(|&t| t > 0).is_some_and(|_| {
-            let format = &time::format_description::well_known::Rfc3339;
-            let ts = OffsetDateTime::parse(
-                response["result"][0]["$metadata"]["indexed_timestamp"]["values"][0]
-                    .as_str()
-                    .unwrap(),
-                format,
+            let ts = OffsetDateTime::from_unix_timestamp_nanos(
+                response["result"][0]["document"]["indexed_timestamp"].as_i64().unwrap() as i128,
             )
             .unwrap();
             ts > now
