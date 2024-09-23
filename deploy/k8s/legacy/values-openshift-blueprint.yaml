@@ -41,7 +41,7 @@ trustImage: ghcr.io/trustification/trust
 uiImage: ghcr.io/trustification/trust
 docsImage: ghcr.io/trustification/trust-docs
 testsImage: ghcr.io/trustification/trust-tests
-guacImage: ghcr.io/trustification/guac:v0.3.27
+guacImage: ghcr.io/trustification/guac:v0.7.2-RC7
 
 domain: apps.cluster-s2528.sandbox1481.opentlc.com
 
@@ -62,7 +62,7 @@ postgres:
     runAsNonRoot: true
     seccompProfile:
       type: RuntimeDefault
-sso: {}
+sso: { }
 kafka:
   image: docker.io/bitnami/kafka@sha256:8fedaa492f1f570cade60f5ff09978cd841307b1e9f93fe6216136ca165fcc2d
   resources:
@@ -100,7 +100,7 @@ config:
   enabled: true
   name: trustification-config
 default:
-  routeAnnotations: {}
+  routeAnnotations: { }
 spog:
   crdaUrl: https://rhda.rhcloud.com/api/v4/analysis
   branding: true
@@ -254,7 +254,7 @@ exhort:
   enabled: true
   api:
     resources:
-keycloakRealm: {}
+keycloakRealm: { }
 oidcClients:
   frontend:
     issuerUrl: https://sso.apps.cluster-s2528.sandbox1481.opentlc.com/realms/chicken
@@ -286,7 +286,7 @@ guac:
   database:
     enabled: true
     image: docker.io/library/postgres:15
-  initJob: {}
+  initJob: { }
   graphql:
     debug: true
     resources:
