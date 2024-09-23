@@ -81,6 +81,21 @@ export const SbomStackChartRenderer = (htmlElement: HTMLElement, props: StackCha
         <ChartAxis
           label="Products"
           axisLabelComponent={<ChartLabel dx={0} x={10} y={140} />}
+          tickLabelComponent={
+            <ChartLabel
+              className="pf-v5-c-button pf-m-link pf-m-inline"
+              style={[{ fill: '#0066cc' }]}
+              events={{
+                onClick: (event) => {
+                  const sbom_name = (event.target as any).innerHTML as string | null;
+                  const sbom = props.find((item) => item.sbom_name === sbom_name);
+                  if (sbom) {
+                    window.open(`/sbom/content/${sbom.sbom_id}`);
+                  }
+                },
+              }}
+            />
+          }
         />
         <ChartAxis
           dependentAxis
