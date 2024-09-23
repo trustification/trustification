@@ -9,7 +9,7 @@ use derive_more::Display;
 use guac::client::intrinsic::certify_vuln::ScanMetadataInput;
 use guac::client::intrinsic::vuln_equal::VulnEqualInputSpec;
 //use guac::client::intrinsic::vuln_metadata::{VulnerabilityMetadataInputSpec, VulnerabilityScoreType};
-use guac::client::intrinsic::vulnerability::VulnerabilityInputSpec;
+use guac::client::intrinsic::vulnerability::{IDorVulnerabilityInput, VulnerabilityInputSpec};
 use packageurl::PackageUrl;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
@@ -143,15 +143,19 @@ pub async fn collect_packages(
                                         Some(aliases) => {
                                             for alias in aliases {
                                                 if alias.to_lowercase().starts_with("cve") {
-                                                    vulnerability_input_specs.push(VulnerabilityInputSpec {
-                                                        r#type: "cve".to_string(),
-                                                        vulnerability_id: alias.clone(),
-                                                    });
+                                                    vulnerability_input_specs.push(IDorVulnerabilityInput::from(
+                                                        &VulnerabilityInputSpec {
+                                                            r#type: "cve".to_string(),
+                                                            vulnerability_id: alias.clone(),
+                                                        },
+                                                    ));
                                                 } else {
-                                                    alias_vuln_input_specs.push(VulnerabilityInputSpec {
-                                                        r#type: "osv".to_string(),
-                                                        vulnerability_id: alias.clone(),
-                                                    })
+                                                    alias_vuln_input_specs.push(IDorVulnerabilityInput::from(
+                                                        &VulnerabilityInputSpec {
+                                                            r#type: "osv".to_string(),
+                                                            vulnerability_id: alias.clone(),
+                                                        },
+                                                    ));
                                                 }
                                             }
                                         }
@@ -202,10 +206,10 @@ pub async fn collect_packages(
                         */
                         if !vulnerability_input_specs.is_empty() {
                             // otherwise the original vulnerability must be part of the aliases
-                            alias_vuln_input_specs.push(VulnerabilityInputSpec {
+                            alias_vuln_input_specs.push(IDorVulnerabilityInput::from(&VulnerabilityInputSpec {
                                 r#type: "osv".to_string(),
                                 vulnerability_id: vuln.id.clone(),
-                            })
+                            }));
                         }
                         // Next, for each vulnerability mentioned by OSV, ensure the vulnerability
                         // is known to GUAC so that further verbs can be applied to them.
@@ -235,6 +239,7 @@ pub async fn collect_packages(
                                             time_scanned: Default::default(),
                                             origin: "osv".to_string(),
                                             collector: "osv".to_string(),
+                                            document_ref: "".to_string(),
                                         },
                                     )
                                     .await
@@ -266,6 +271,7 @@ pub async fn collect_packages(
                                                     collector: "osv".to_string(),
                                                     origin: "osv".to_string(),
                                                     justification: "osv".to_string(),
+                                                    document_ref: "".to_string(),
                                                 },
                                             )
                                             .await
