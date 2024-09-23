@@ -7,7 +7,7 @@ use actix_web::{post, web, HttpResponse, Responder, ResponseError};
 use guac::client::intrinsic::certify_vuln::ScanMetadataInput;
 use guac::client::intrinsic::vuln_equal::VulnEqualInputSpec;
 use guac::client::intrinsic::vuln_metadata::{VulnerabilityMetadataInputSpec, VulnerabilityScoreType};
-use guac::client::intrinsic::vulnerability::VulnerabilityInputSpec;
+use guac::client::intrinsic::vulnerability::{IDorVulnerabilityInput, VulnerabilityInputSpec};
 use packageurl::PackageUrl;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
@@ -140,10 +140,10 @@ pub async fn collect_packages(
 
                                 let mut ids = Vec::new();
 
-                                let snyk_vuln_input_spec = VulnerabilityInputSpec {
+                                let snyk_vuln_input_spec = IDorVulnerabilityInput::from(&VulnerabilityInputSpec {
                                     r#type: "snyk".to_string(),
                                     vulnerability_id: issue.attributes.key.clone(),
-                                };
+                                });
 
                                 ids.push(issue.attributes.key.clone());
                                 // Ingest the root Snyk issue `key`
@@ -175,6 +175,7 @@ pub async fn collect_packages(
                                                 time_scanned: Default::default(),
                                                 origin: "snyk".to_string(),
                                                 collector: "snyk".to_string(),
+                                                document_ref: "".to_string(),
                                             },
                                         )
                                         .await
@@ -186,10 +187,11 @@ pub async fn collect_packages(
                                 }
 
                                 for problem in &issue.attributes.problems {
-                                    let problem_vuln_input_spec = VulnerabilityInputSpec {
-                                        r#type: "snyk".to_string(),
-                                        vulnerability_id: problem.id.clone(),
-                                    };
+                                    let problem_vuln_input_spec =
+                                        IDorVulnerabilityInput::from(&VulnerabilityInputSpec {
+                                            r#type: "snyk".to_string(),
+                                            vulnerability_id: problem.id.clone(),
+                                        });
 
                                     ids.push(problem.id.clone());
 
@@ -214,6 +216,7 @@ pub async fn collect_packages(
                                                 justification: "snyk".to_string(),
                                                 origin: "snyk".to_string(),
                                                 collector: "snyk".to_string(),
+                                                document_ref: "".to_string(),
                                             },
                                         )
                                         .await
@@ -223,10 +226,11 @@ pub async fn collect_packages(
 
                                     // Special-case CVEs
                                     if problem.id.to_lowercase().starts_with("cve") {
-                                        let cve_vuln_input_spec = VulnerabilityInputSpec {
-                                            r#type: "cve".to_string(),
-                                            vulnerability_id: problem.id.clone(),
-                                        };
+                                        let cve_vuln_input_spec =
+                                            IDorVulnerabilityInput::from(&VulnerabilityInputSpec {
+                                                r#type: "cve".to_string(),
+                                                vulnerability_id: problem.id.clone(),
+                                            });
 
                                         if let Err(err) = state
                                             .guac_client
@@ -247,6 +251,7 @@ pub async fn collect_packages(
                                                     justification: "snyk".to_string(),
                                                     origin: "snyk".to_string(),
                                                     collector: "snyk".to_string(),
+                                                    document_ref: "".to_string(),
                                                 },
                                             )
                                             .await
@@ -270,6 +275,7 @@ pub async fn collect_packages(
                                                         timestamp: Default::default(),
                                                         origin: severity.source.clone(),
                                                         collector: "snyk".to_string(),
+                                                        document_ref: "".to_string(),
                                                     },
                                                 )
                                                 .await
@@ -288,6 +294,7 @@ pub async fn collect_packages(
                                                         timestamp: Default::default(),
                                                         origin: severity.source.clone(),
                                                         collector: "snyk".to_string(),
+                                                        document_ref: "".to_string(),
                                                     },
                                                 )
                                                 .await

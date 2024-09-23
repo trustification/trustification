@@ -2950,9 +2950,9 @@ dependencies = [
 
 [[package]]
 name = "guac"
-version = "0.3.1"
+version = "0.7.2-0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "119e86271de04d288747d6345d9b3d96495fb7c37a61f99a1e81698447f75e76"
+checksum = "c3c2ca48bb85fa76be4ba01079da51480f8140b79cb79d80db06c2c4b648b4ab"
 dependencies = [
  "anyhow",
  "async-nats",
