@@ -2,6 +2,7 @@ import {
   Chart,
   ChartAxis,
   ChartBar,
+  ChartLabel,
   ChartLegend,
   ChartStack,
   ChartThemeColor,
@@ -58,14 +59,15 @@ export const SbomStackChartRenderer = (htmlElement: HTMLElement, props: StackCha
         name="sbom-summary-status"
         padding={{
           bottom: 75,
-          left: 230,
+          left: 330,
           right: 50,
           top: 50,
         }}
         themeColor={ChartThemeColor.multiOrdered}
-        width={600}
+        width={700}
         legendComponent={
           <ChartLegend
+            y={10}
             colorScale={[
               criticalColor.var,
               highColor.var,
@@ -76,11 +78,16 @@ export const SbomStackChartRenderer = (htmlElement: HTMLElement, props: StackCha
           />
         }
       >
-        <ChartAxis />
+        <ChartAxis
+          label="Products"
+          axisLabelComponent={<ChartLabel dx={0} x={10} y={140} />}
+        />
         <ChartAxis
           dependentAxis
           showGrid
           tickValues={showTickValues ? [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] : undefined}
+          label="CVEs by Severity"
+          fixLabelOverlap={true}
         />
         <ChartStack
           horizontal
