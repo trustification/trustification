@@ -97,6 +97,8 @@ parameters:
   required: true
 - name: BOMBASTIC_INDEXER_REPLICAS
   required: true
+- name: BOMBASTIC_COLLECTOR_REPLICAS
+  required: true
 - name: COLLECTORIST_API_REPLICAS
   required: true
 - name: COLLECTOR_OSV_REPLICAS
@@ -110,6 +112,8 @@ parameters:
 - name: VEXINATION_API_REPLICAS
   required: true
 - name: VEXINATION_INDEXER_REPLICAS
+  required: true
+- name: VEXINATION_COLLECTOR_REPLICAS
   required: true
 - name: V11Y_API_REPLICAS
   required: true
@@ -127,10 +131,6 @@ parameters:
   value: "10 * * * *"
 - name: V11Y_WALKER_SCHEDULE
   value: "1 0 * * *"
-- name: VEXINATION_COLLECTOR_SCHEDULE
-  value: "30 * * * *"
-- name: BOMBASTIC_COLLECTOR_SCHEDULE
-  value: "0 * * * *"
 - name: V11Y_API_INDEX_SYNC_INTERVAL
   value: "1800s"
 - name: V11Y_INDEXER_INDEX_SYNC_INTERVAL

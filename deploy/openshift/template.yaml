@@ -481,6 +481,106 @@ objects:
   - apiVersion: apps/v1
     kind: Deployment
     metadata:
+      name: bombastic-collector
+      labels:
+        app.kubernetes.io/name: bombastic-collector
+        app.kubernetes.io/component: collector
+        app.kubernetes.io/part-of: trustification
+    spec:
+      replicas: ${{BOMBASTIC_COLLECTOR_REPLICAS}}
+      selector:
+        matchLabels:
+          app.kubernetes.io/name: bombastic-collector
+          app.kubernetes.io/component: collector
+          app.kubernetes.io/part-of: trustification
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: bombastic-collector
+            app.kubernetes.io/component: collector
+            app.kubernetes.io/part-of: trustification
+            metrics: 'true'
+        spec:
+          volumes:
+            - name: config
+              configMap:
+                name: ${CONFIG_NAME}
+            - name: guac-config
+              configMap:
+                name: guac-cm
+          containers:
+            - image: ${GUAC_IMAGE}
+              imagePullPolicy: Always
+              name: service
+              command:
+                - /opt/guac/guacone
+              args:
+                - collect
+                - s3
+                - --s3-bucket
+                - ${BOMBASTIC_STORAGE_BUCKET}
+                - --s3-region
+                - ${AWS_REGION}
+                - --poll
+              workingDir: /guac
+              env:
+                - name: STORAGE_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${BOMBASTIC_AWS_SECRET_NAME}
+                      key: aws_access_key_id
+                - name: STORAGE_SECRET_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${BOMBASTIC_AWS_SECRET_NAME}
+                      key: aws_secret_access_key
+                - name: STORAGE_BUCKET
+                  value: ${BOMBASTIC_STORAGE_BUCKET}
+                - name: STORAGE_REGION
+                  value: ${AWS_REGION}
+                - name: EVENT_BUS
+                  value: sqs
+                - name: SQS_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${BOMBASTIC_AWS_SECRET_NAME}
+                      key: aws_access_key_id
+                - name: SQS_SECRET_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${BOMBASTIC_AWS_SECRET_NAME}
+                      key: aws_secret_access_key
+                - name: SQS_REGION
+                  value: ${AWS_REGION}
+                - name: NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.namespace
+                - name: AWS_ACCESS_KEY_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${BOMBASTIC_AWS_SECRET_NAME}
+                      key: aws_access_key_id
+                - name: AWS_SECRET_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${BOMBASTIC_AWS_SECRET_NAME}
+                      key: aws_secret_access_key
+                - name: AWS_REGION
+                  value: ${AWS_REGION}
+              ports:
+                - containerPort: 2782
+                  protocol: TCP
+              resources: ${{BOMBASTIC_COLLECTOR_RESOURCES}}
+              volumeMounts:
+                - name: guac-config
+                  mountPath: /guac
+                  readOnly: true
+                - mountPath: /etc/config
+                  name: config
+  - apiVersion: apps/v1
+    kind: Deployment
+    metadata:
       name: bombastic-indexer
       labels:
         app.kubernetes.io/name: bombastic-indexer
@@ -523,8 +623,6 @@ objects:
                 - file
                 - --index-dir
                 - /data/index
-                - --reindex
-                - always
               env:
                 - name: RUST_LOG
                   value: ${LOG_LEVEL}
@@ -1694,6 +1792,106 @@ objects:
   - apiVersion: apps/v1
     kind: Deployment
     metadata:
+      name: vexination-collector
+      labels:
+        app.kubernetes.io/name: vexination-collector
+        app.kubernetes.io/component: collector
+        app.kubernetes.io/part-of: trustification
+    spec:
+      replicas: ${{VEXINATION_COLLECTOR_REPLICAS}}
+      selector:
+        matchLabels:
+          app.kubernetes.io/name: vexination-collector
+          app.kubernetes.io/component: collector
+          app.kubernetes.io/part-of: trustification
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: vexination-collector
+            app.kubernetes.io/component: collector
+            app.kubernetes.io/part-of: trustification
+            metrics: 'true'
+        spec:
+          volumes:
+            - name: config
+              configMap:
+                name: ${CONFIG_NAME}
+            - name: guac-config
+              configMap:
+                name: guac-cm
+          containers:
+            - image: ${GUAC_IMAGE}
+              imagePullPolicy: Always
+              name: service
+              command:
+                - /opt/guac/guacone
+              args:
+                - collect
+                - s3
+                - --s3-bucket
+                - ${VEXINATION_STORAGE_BUCKET}
+                - --s3-region
+                - ${AWS_REGION}
+                - --poll
+              workingDir: /guac
+              env:
+                - name: STORAGE_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${VEXINATION_AWS_SECRET_NAME}
+                      key: aws_access_key_id
+                - name: STORAGE_SECRET_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${VEXINATION_AWS_SECRET_NAME}
+                      key: aws_secret_access_key
+                - name: STORAGE_BUCKET
+                  value: ${VEXINATION_STORAGE_BUCKET}
+                - name: STORAGE_REGION
+                  value: ${AWS_REGION}
+                - name: EVENT_BUS
+                  value: sqs
+                - name: SQS_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${VEXINATION_AWS_SECRET_NAME}
+                      key: aws_access_key_id
+                - name: SQS_SECRET_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${VEXINATION_AWS_SECRET_NAME}
+                      key: aws_secret_access_key
+                - name: SQS_REGION
+                  value: ${AWS_REGION}
+                - name: NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.namespace
+                - name: AWS_ACCESS_KEY_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${VEXINATION_AWS_SECRET_NAME}
+                      key: aws_access_key_id
+                - name: AWS_SECRET_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${VEXINATION_AWS_SECRET_NAME}
+                      key: aws_secret_access_key
+                - name: AWS_REGION
+                  value: ${AWS_REGION}
+              ports:
+                - containerPort: 2782
+                  protocol: TCP
+              resources: null
+              volumeMounts:
+                - name: guac-config
+                  mountPath: /guac
+                  readOnly: true
+                - mountPath: /etc/config
+                  name: config
+  - apiVersion: apps/v1
+    kind: Deployment
+    metadata:
       name: vexination-indexer
       labels:
         app.kubernetes.io/name: vexination-indexer
@@ -1799,79 +1997,6 @@ objects:
                 httpGet:
                   path: /health/startup
                   port: 9010
-  - apiVersion: batch/v1
-    kind: CronJob
-    metadata:
-      name: bombastic-collector
-      labels:
-        app.kubernetes.io/name: bombastic-collector
-        app.kubernetes.io/component: collector
-        app.kubernetes.io/part-of: trustification
-    spec:
-      schedule: ${BOMBASTIC_COLLECTOR_SCHEDULE}
-      suspend: false
-      concurrencyPolicy: Forbid
-      jobTemplate:
-        spec:
-          template:
-            metadata:
-              labels:
-                app.kubernetes.io/name: bombastic-collector
-                app.kubernetes.io/component: collector
-                app.kubernetes.io/part-of: trustification
-                metrics: 'true'
-            spec:
-              restartPolicy: Never
-              volumes:
-                - name: config
-                  configMap:
-                    name: ${CONFIG_NAME}
-                - name: guac-config
-                  configMap:
-                    name: guac-cm
-              containers:
-                - image: ${GUAC_IMAGE}
-                  imagePullPolicy: Always
-                  name: service
-                  command:
-                    - /opt/guac/guacone
-                  args:
-                    - collect
-                    - s3
-                    - --s3-bucket
-                    - ${BOMBASTIC_STORAGE_BUCKET}
-                    - --s3-region
-                    - ${AWS_REGION}
-                    - --limit
-                    - '100'
-                  workingDir: /guac
-                  env:
-                    - name: NAMESPACE
-                      valueFrom:
-                        fieldRef:
-                          fieldPath: metadata.namespace
-                    - name: AWS_ACCESS_KEY_ID
-                      valueFrom:
-                        secretKeyRef:
-                          name: ${BOMBASTIC_AWS_SECRET_NAME}
-                          key: aws_access_key_id
-                    - name: AWS_SECRET_ACCESS_KEY
-                      valueFrom:
-                        secretKeyRef:
-                          name: ${BOMBASTIC_AWS_SECRET_NAME}
-                          key: aws_secret_access_key
-                    - name: AWS_REGION
-                      value: ${AWS_REGION}
-                  ports:
-                    - containerPort: 2782
-                      protocol: TCP
-                  resources: ${{BOMBASTIC_COLLECTOR_RESOURCES}}
-                  volumeMounts:
-                    - name: guac-config
-                      mountPath: /guac
-                      readOnly: true
-                    - mountPath: /etc/config
-                      name: config
   - apiVersion: batch/v1
     kind: CronJob
     metadata:
@@ -2110,79 +2235,6 @@ objects:
                     httpGet:
                       path: /health/startup
                       port: 9010
-  - apiVersion: batch/v1
-    kind: CronJob
-    metadata:
-      name: vexination-collector
-      labels:
-        app.kubernetes.io/name: vexination-collector
-        app.kubernetes.io/component: collector
-        app.kubernetes.io/part-of: trustification
-    spec:
-      schedule: ${VEXINATION_COLLECTOR_SCHEDULE}
-      suspend: false
-      concurrencyPolicy: Forbid
-      jobTemplate:
-        spec:
-          template:
-            metadata:
-              labels:
-                app.kubernetes.io/name: vexination-collector
-                app.kubernetes.io/component: collector
-                app.kubernetes.io/part-of: trustification
-                metrics: 'true'
-            spec:
-              restartPolicy: Never
-              volumes:
-                - name: config
-                  configMap:
-                    name: ${CONFIG_NAME}
-                - name: guac-config
-                  configMap:
-                    name: guac-cm
-              containers:
-                - image: ${GUAC_IMAGE}
-                  imagePullPolicy: Always
-                  name: service
-                  command:
-                    - /opt/guac/guacone
-                  args:
-                    - collect
-                    - s3
-                    - --s3-bucket
-                    - ${VEXINATION_STORAGE_BUCKET}
-                    - --s3-region
-                    - ${AWS_REGION}
-                    - --limit
-                    - '100'
-                  workingDir: /guac
-                  env:
-                    - name: NAMESPACE
-                      valueFrom:
-                        fieldRef:
-                          fieldPath: metadata.namespace
-                    - name: AWS_ACCESS_KEY_ID
-                      valueFrom:
-                        secretKeyRef:
-                          name: ${VEXINATION_AWS_SECRET_NAME}
-                          key: aws_access_key_id
-                    - name: AWS_SECRET_ACCESS_KEY
-                      valueFrom:
-                        secretKeyRef:
-                          name: ${VEXINATION_AWS_SECRET_NAME}
-                          key: aws_secret_access_key
-                    - name: AWS_REGION
-                      value: ${AWS_REGION}
-                  ports:
-                    - containerPort: 2782
-                      protocol: TCP
-                  resources: ${{VEXINATION_COLLECTOR_RESOURCES}}
-                  volumeMounts:
-                    - name: guac-config
-                      mountPath: /guac
-                      readOnly: true
-                    - mountPath: /etc/config
-                      name: config
   - apiVersion: batch/v1
     kind: CronJob
     metadata:
@@ -2448,6 +2500,8 @@ parameters:
   required: true
 - name: BOMBASTIC_INDEXER_REPLICAS
   required: true
+- name: BOMBASTIC_COLLECTOR_REPLICAS
+  required: true
 - name: COLLECTORIST_API_REPLICAS
   required: true
 - name: COLLECTOR_OSV_REPLICAS
@@ -2461,6 +2515,8 @@ parameters:
 - name: VEXINATION_API_REPLICAS
   required: true
 - name: VEXINATION_INDEXER_REPLICAS
+  required: true
+- name: VEXINATION_COLLECTOR_REPLICAS
   required: true
 - name: V11Y_API_REPLICAS
   required: true
@@ -2478,10 +2534,6 @@ parameters:
   value: "10 * * * *"
 - name: V11Y_WALKER_SCHEDULE
   value: "1 0 * * *"
-- name: VEXINATION_COLLECTOR_SCHEDULE
-  value: "30 * * * *"
-- name: BOMBASTIC_COLLECTOR_SCHEDULE
-  value: "0 * * * *"
 - name: V11Y_API_INDEX_SYNC_INTERVAL
   value: "1800s"
 - name: V11Y_INDEXER_INDEX_SYNC_INTERVAL
