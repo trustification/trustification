@@ -26,7 +26,7 @@ pub enum Cves<'a> {
     #[search(sort)]
     DateRejected(Ordered<OffsetDateTime>),
     #[search(sort)]
-    IndexedTimestamp(Ordered<time::OffsetDateTime>),
+    IndexedTimestamp(Ordered<i64>),
 
     Severity(&'a str),
     Low,
@@ -46,7 +46,7 @@ pub struct SearchDocument {
     pub published: bool,
     pub title: Option<String>,
     pub descriptions: Vec<String>,
-    pub indexed_timestamp: OffsetDateTime,
+    pub indexed_timestamp: i64,
     pub cvss3x_score: Option<f64>,
 
     #[serde(with = "time::serde::rfc3339::option")]
