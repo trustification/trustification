@@ -90,7 +90,14 @@ export const SbomStackChartRenderer = (htmlElement: HTMLElement, props: StackCha
                   const sbom_name = (event.target as any).innerHTML as string | null;
                   const sbom = props.find((item) => item.sbom_name === sbom_name);
                   if (sbom) {
-                    window.open(`/sbom/content/${sbom.sbom_id}`);
+                    const sbomDetailsPage = `/sbom/content/${sbom.sbom_id}`;
+
+                    const wasmBindings = (window as any).wasmBindings;
+                    if (wasmBindings) {
+                      wasmBindings.spogNavigateTo(sbomDetailsPage);
+                    } else {
+                      window.open(sbomDetailsPage);
+                    }
                   }
                 },
               }}
