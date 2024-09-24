@@ -216,7 +216,7 @@ fn common_header(props: &CommonHeaderProperties) -> Html {
                     <Content>
                         <Title>{"Scan an SBOM"}</Title>
                         <p>
-                            {"Load an existing CycloneDX 1.4 or SPDX 2.2 file"}
+                            {"Load an existing CycloneDX (1.3, 1.4, 1.5) or SPDX (2.2, SPDX 2.3) file"}
                             if let Some(url) = &config.scanner.documentation_url {
                                 {" or "}
                                 <a
