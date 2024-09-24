@@ -9,8 +9,8 @@ use std::time::Duration;
 use time::OffsetDateTime;
 use trustification_api::search::SearchOptions;
 use trustification_index::{
-    create_boolean_query, create_date_query, create_float_query, create_string_query_case, create_text_query,
-    field2bool, field2date_opt, field2str, field2strvec,
+    create_boolean_query, create_date_query, create_float_query, create_i64_query, create_string_query_case,
+    create_text_query, field2bool, field2date_opt, field2str, field2strvec,
     metadata::doc2metadata,
     sort_by,
     tantivy::{
@@ -62,7 +62,7 @@ impl Index {
         let mut schema = Schema::builder();
 
         let fields = Fields {
-            indexed_timestamp: schema.add_date_field("indexed_timestamp", INDEXED | FAST | STORED),
+            indexed_timestamp: schema.add_i64_field("indexed_timestamp", INDEXED | FAST | STORED),
             id: schema.add_text_field("id", STRING | FAST | STORED),
             published: schema.add_bool_field("published", FAST | INDEXED | STORED),
 
@@ -87,10 +87,10 @@ impl Index {
     fn index_common(&self, document: &mut Document, metadata: &common::Metadata, _container: &common::CnaContainer) {
         document.add_text(self.fields.id, &metadata.id);
 
-        document.add_date(
-            self.fields.indexed_timestamp,
-            DateTime::from_utc(OffsetDateTime::now_utc()),
-        );
+        let now = OffsetDateTime::now_utc();
+        let nanos_since_epoch = now.unix_timestamp_nanos();
+        let nanos_since_epoch_i64 = nanos_since_epoch as i64;
+        document.add_i64(self.fields.indexed_timestamp, nanos_since_epoch_i64);
 
         Self::add_timestamp(document, self.fields.date_reserved, metadata.date_reserved);
         Self::add_timestamp(document, self.fields.date_published, metadata.date_published);
@@ -204,7 +204,7 @@ impl Index {
                 Occur::Should,
                 Term::from_field_text(self.fields.severity, Severity::Critical.as_str()),
             ),
-            Cves::IndexedTimestamp(value) => create_date_query(&self.schema, self.fields.indexed_timestamp, value),
+            Cves::IndexedTimestamp(value) => create_i64_query(&self.schema, self.fields.indexed_timestamp, value),
         }
     }
 
@@ -323,11 +323,10 @@ impl trustification_index::Index for Index {
         let indexed_timestamp = doc
             .get_first(self.fields.indexed_timestamp)
             .map(|s| {
-                s.as_date()
-                    .map(|d| d.into_utc())
-                    .unwrap_or(time::OffsetDateTime::UNIX_EPOCH)
+                s.as_i64()
+                    .unwrap_or(time::OffsetDateTime::UNIX_EPOCH.unix_timestamp_nanos() as i64)
             })
-            .unwrap_or(time::OffsetDateTime::UNIX_EPOCH);
+            .unwrap_or(time::OffsetDateTime::UNIX_EPOCH.unix_timestamp_nanos() as i64);
 
         let document = SearchDocument {
             id: id.to_string(),
@@ -407,7 +406,11 @@ mod test {
     use std::path::Path;
     use trustification_index::{IndexStore, IndexWriter};
 
-    const TESTDATA: &[&str] = &["../testdata/CVE-2023-44487.json"];
+    const TESTDATA: &[&str] = &[
+        "../testdata/CVE-2023-44487.json",
+        "../testdata/CVE-2017-13052.json",
+        "../testdata/CVE-2023-33201.json",
+    ];
 
     fn load_valid_file(store: &mut IndexStore<Index>, writer: &mut IndexWriter, path: impl AsRef<Path>) {
         let data = std::fs::read(&path).unwrap();
@@ -452,6 +455,20 @@ mod test {
                 },
             )
             .unwrap()
+    }
+
+    #[tokio::test]
+    async fn test_search_sort_by_indexed_timestamp() {
+        assert_search(|index| {
+            let (last_update_docs, _size) = search(&index, "-sort:indexedTimestamp");
+            for doc in &last_update_docs {
+                println!(
+                    "name: {:?}  indexed_timestamp: {:?} created : {:?}",
+                    doc.document.id, doc.document.indexed_timestamp, doc.document.date_published
+                );
+            }
+            assert_eq!("CVE-2023-33201", &last_update_docs[0].document.id);
+        });
     }
 
     #[tokio::test]

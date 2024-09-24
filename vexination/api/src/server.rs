@@ -14,6 +14,7 @@ use trustification_auth::{
     swagger_ui::{swagger_ui_with_auth, SwaggerUiOidc},
     Permission,
 };
+use trustification_index::tantivy::time::OffsetDateTime;
 use trustification_index::Error as IndexError;
 use trustification_infrastructure::new_auth;
 use trustification_storage::{Error as StorageError, Key, S3Path, Storage};
@@ -323,7 +324,10 @@ async fn vex_status(
             total: Some(total_docs),
             last_updated_vex_id: Some(vex.document.advisory_id.to_string()),
             last_updated_vex_name: Some(vex.document.advisory_title.to_string()),
-            last_updated_date: Some(vex.document.indexed_timestamp),
+            last_updated_date: Some(
+                OffsetDateTime::from_unix_timestamp_nanos(vex.document.indexed_timestamp as i128)
+                    .unwrap_or(OffsetDateTime::UNIX_EPOCH),
+            ),
         }))
     } else {
         Ok(HttpResponse::Ok().json(StatusResult::default()))
