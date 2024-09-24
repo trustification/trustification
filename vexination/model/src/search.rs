@@ -36,7 +36,7 @@ pub enum Vulnerabilities<'a> {
     #[search]
     CveDiscovery(Ordered<time::OffsetDateTime>),
     #[search(sort)]
-    IndexedTimestamp(Ordered<time::OffsetDateTime>),
+    IndexedTimestamp(Ordered<i64>),
     Final,
     Critical,
     High,
@@ -67,7 +67,7 @@ pub struct SearchDocument {
     /// Number of severities by level
     pub cve_severity_count: HashMap<String, u64>,
     /// Time stamp for doc
-    pub indexed_timestamp: OffsetDateTime,
+    pub indexed_timestamp: i64,
 }
 
 /// The hit describes the document, its score and optionally an explanation of why that score was given.

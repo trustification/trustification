@@ -36,7 +36,7 @@ pub enum Packages<'a> {
     #[search(sort)]
     Created(Ordered<time::OffsetDateTime>),
     #[search(sort)]
-    IndexedTimestamp(Ordered<time::OffsetDateTime>),
+    IndexedTimestamp(Ordered<i64>),
     Digest(&'a str),
     #[search(scope)]
     License(&'a str),
@@ -64,7 +64,7 @@ pub struct SearchDocument {
     pub uid: Option<String>,
     /// The creation time of the document.
     #[schema(value_type = String)]
-    pub indexed_timestamp: time::OffsetDateTime,
+    pub indexed_timestamp: i64,
     /// SBOM package name
     pub name: String,
     /// SBOM package version
@@ -130,13 +130,3 @@ pub struct StatusResult {
     /// Updated time of last updated doc
     pub last_updated_date: Option<OffsetDateTime>,
 }
-
-// impl Default for StatusResult {
-//     fn default() -> Self {
-//         StatusResult {
-//             total: 0,
-//             last_updated_sbom: "".to_string(),
-//             last_updated_date: OffsetDateTime::now_utc(),
-//         }
-//     }
-// }

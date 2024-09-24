@@ -7,6 +7,7 @@ use trustification_api::search::{SearchOptions, SearchResult};
 use trustification_auth::authenticator::user::UserInformation;
 use trustification_auth::authorizer::Authorizer;
 use trustification_auth::Permission;
+use trustification_index::tantivy::time::OffsetDateTime;
 use v11y_model::search::StatusResult;
 
 /// Parameters for search query.
@@ -153,7 +154,10 @@ async fn cve_status(
         Ok(HttpResponse::Ok().json(StatusResult {
             total: Some(total_docs),
             last_updated_cve_id: Some(cve.document.id.to_string()),
-            last_updated_date: Some(cve.document.indexed_timestamp),
+            last_updated_date: Some(
+                OffsetDateTime::from_unix_timestamp_nanos(cve.document.indexed_timestamp as i128)
+                    .unwrap_or(OffsetDateTime::UNIX_EPOCH),
+            ),
         }))
     } else {
         Ok(HttpResponse::Ok().json(StatusResult::default()))

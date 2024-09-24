@@ -12,7 +12,7 @@ use spdx_rs::models::Algorithm;
 use time::{format_description::well_known::Rfc3339, OffsetDateTime};
 use trustification_api::search::SearchOptions;
 use trustification_index::{
-    boost, create_boolean_query, create_date_query, create_string_query, field2str,
+    boost, create_boolean_query, create_date_query, create_i64_query, create_string_query, field2str,
     metadata::doc2metadata,
     tantivy::{
         self,
@@ -80,7 +80,7 @@ impl Index {
     pub fn new() -> Self {
         let mut schema = Schema::builder();
         let fields = Fields {
-            indexed_timestamp: schema.add_date_field("indexed_timestamp", INDEXED | FAST | STORED),
+            indexed_timestamp: schema.add_i64_field("indexed_timestamp", INDEXED | FAST | STORED),
             sbom_id: schema.add_text_field("sbom_id", STRING | FAST | STORED),
             sbom_uid: schema.add_text_field("sbom_uid", STRING | FAST | STORED),
             sbom_sha256: schema.add_text_field("sbom_sha256", STRING | STORED),
@@ -130,10 +130,11 @@ impl Index {
             &bom.document_creation_information.spdx_document_namespace,
         );
         document.add_text(self.fields.sbom_name, &bom.document_creation_information.document_name);
-        document.add_date(
-            self.fields.indexed_timestamp,
-            DateTime::from_utc(OffsetDateTime::now_utc()),
-        );
+
+        let now = OffsetDateTime::now_utc();
+        let nanos_since_epoch = now.unix_timestamp_nanos();
+        let nanos_since_epoch_i64 = nanos_since_epoch as i64;
+        document.add_i64(self.fields.indexed_timestamp, nanos_since_epoch_i64);
 
         for creators in &bom.document_creation_information.creation_info.creators {
             document.add_text(self.fields.sbom_creators, creators);
@@ -240,10 +241,11 @@ impl Index {
         if let Some(serial) = &bom.serial_number {
             document.add_text(self.fields.sbom_uid, serial.to_string());
         }
-        document.add_date(
-            self.fields.indexed_timestamp,
-            DateTime::from_utc(OffsetDateTime::now_utc()),
-        );
+        let now = OffsetDateTime::now_utc();
+        let nanos_since_epoch = now.unix_timestamp_nanos();
+        let nanos_since_epoch_i64 = nanos_since_epoch as i64;
+        document.add_i64(self.fields.indexed_timestamp, nanos_since_epoch_i64);
+
         if let Some(metadata) = &bom.metadata {
             if let Some(timestamp) = &metadata.timestamp {
                 let timestamp = timestamp.to_string();
@@ -418,7 +420,7 @@ impl Index {
             Packages::Firmware => self.match_classifiers(Classification::Firmware),
             Packages::File => self.match_classifiers(Classification::File),
             Packages::IndexedTimestamp(ordered) => boost(
-                create_date_query(&self.schema, self.fields.indexed_timestamp, ordered),
+                create_i64_query(&self.schema, self.fields.indexed_timestamp, ordered),
                 CREATED_WEIGHT,
             ),
         }
@@ -594,11 +596,10 @@ impl trustification_index::Index for Index {
         let indexed_timestamp = doc
             .get_first(self.fields.indexed_timestamp)
             .map(|s| {
-                s.as_date()
-                    .map(|d| d.into_utc())
-                    .unwrap_or(time::OffsetDateTime::UNIX_EPOCH)
+                s.as_i64()
+                    .unwrap_or(time::OffsetDateTime::UNIX_EPOCH.unix_timestamp_nanos() as i64)
             })
-            .unwrap_or(time::OffsetDateTime::UNIX_EPOCH);
+            .unwrap_or(time::OffsetDateTime::UNIX_EPOCH.unix_timestamp_nanos() as i64);
 
         let document = SearchDocument {
             id: id.to_string(),
@@ -689,7 +690,6 @@ mod tests {
     use super::*;
     use sbom_walker::Sbom;
     use std::path::Path;
-    use time::format_description;
     use trustification_index::{IndexStore, IndexWriter};
 
     const TESTDATA: &[&str] = &[
@@ -755,12 +755,13 @@ mod tests {
     async fn test_search_sort_by_indexed_timestamp() {
         assert_search(|index| {
             let (last_update_docs, _size) = search(&index, "-sort:indexedTimestamp");
-            for doc in last_update_docs {
+            for doc in &last_update_docs {
                 println!(
                     "name: {:?}  indexed_timestamp: {:?} created : {:?}",
                     doc.document.id, doc.document.indexed_timestamp, doc.document.created
                 );
             }
+            assert_eq!("ubi9-sbom", &last_update_docs[0].document.id);
         });
     }
 
@@ -928,8 +929,8 @@ mod tests {
             for result in result.0 {
                 assert!(result.metadata.is_some());
                 let indexed_date = result.metadata.as_ref().unwrap()["indexed_timestamp"].clone();
-                let value: &str = indexed_date["values"][0].as_str().unwrap();
-                let indexed_date = OffsetDateTime::parse(value, &format_description::well_known::Rfc3339).unwrap();
+                let value = indexed_date["values"][0].as_i64().unwrap();
+                let indexed_date = OffsetDateTime::from_unix_timestamp_nanos(value as i128).unwrap();
                 assert!(indexed_date >= now);
             }
         });
