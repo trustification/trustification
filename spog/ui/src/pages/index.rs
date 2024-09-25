@@ -264,7 +264,7 @@ pub fn last_data_ingested() -> Html {
                                             <StackItem>
                                                 if let Some(last_updated_csaf_id) = &value.csaf_summary.last_updated_csaf_id {
                                                     <Link<AppRoute> to={AppRoute::Advisory(View::Content {id: last_updated_csaf_id.clone()})} >
-                                                        { &value.csaf_summary.last_updated_csaf_name }
+                                                        { &value.csaf_summary.last_updated_csaf_id }
                                                     </Link<AppRoute>>
                                                 }
                                             </StackItem>
