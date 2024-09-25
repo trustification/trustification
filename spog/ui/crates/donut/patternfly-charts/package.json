@@ -20,7 +20,8 @@
     "web-vitals": "^2.1.0"
   },
   "overrides": {
-    "async": "^3.2.6"
+    "async": "^3.2.6",
+    "body-parser": "^1.20.3"
   },
   "scripts": {
     "copy:js:main": "cp build/static/js/main.js ../js/main.js",
