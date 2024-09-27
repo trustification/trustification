@@ -1,4 +1,4 @@
-release: 200d7dcf103a25d478f34ef8d0670c76724d704b
+release: 61a3e30e18e16225c02f7757762e3db70c42531b
 trustImage: ghcr.io/trustification/trust
 uiImage: ghcr.io/trustification/trust
 docsImage: ghcr.io/trustification/trust-docs
@@ -229,7 +229,7 @@ guac:
   database:
     enabled: true
     image: docker.io/library/postgres:15
-  initJob: { }
+  initJob: {}
   graphql:
     debug: true
     affinity:
