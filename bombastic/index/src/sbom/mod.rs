@@ -698,6 +698,8 @@ mod tests {
         "../testdata/ubi9-sbom.json",
     ];
 
+    const TESTDATA_23: &[&str] = &["../testdata/ansible_automation_platform-1.2.json"];
+
     fn load_valid_file(store: &mut IndexStore<Index>, writer: &mut IndexWriter, path: impl AsRef<Path>) {
         let data = std::fs::read(&path).unwrap();
         // ensure it parses
@@ -708,7 +710,7 @@ mod tests {
         writer.add_document(store.index_as_mut(), name, &data).unwrap();
     }
 
-    fn assert_search<F>(f: F)
+    fn assert_search<F>(f: F, data: &[&str])
     where
         F: FnOnce(IndexStore<Index>),
     {
@@ -718,7 +720,7 @@ mod tests {
         let mut store = IndexStore::new_in_memory(index).unwrap();
         let mut writer = store.writer().unwrap();
 
-        for file in TESTDATA {
+        for file in data {
             load_valid_file(&mut store, &mut writer, file);
         }
 
@@ -744,219 +746,275 @@ mod tests {
 
     #[tokio::test]
     async fn test_search_form() {
-        assert_search(|index| {
-            let result = search(&index, "ubi9-container");
+        assert_search(
+            |index| {
+                let result = search(&index, "ubi9-container");
 
-            assert_eq!(result.0.len(), 1);
-        });
+                assert_eq!(result.0.len(), 1);
+            },
+            TESTDATA,
+        );
     }
 
     #[tokio::test]
     async fn test_search_sort_by_indexed_timestamp() {
-        assert_search(|index| {
-            let (last_update_docs, _size) = search(&index, "-sort:indexedTimestamp");
-            for doc in &last_update_docs {
-                println!(
-                    "name: {:?}  indexed_timestamp: {:?} created : {:?}",
-                    doc.document.id, doc.document.indexed_timestamp, doc.document.created
-                );
-            }
-            assert_eq!("ubi9-sbom", &last_update_docs[0].document.id);
-        });
+        assert_search(
+            |index| {
+                let (last_update_docs, _size) = search(&index, "-sort:indexedTimestamp");
+                for doc in last_update_docs {
+                    println!(
+                        "name: {:?}  indexed_timestamp: {:?} created : {:?}",
+                        doc.document.id, doc.document.indexed_timestamp, doc.document.created
+                    );
+                }
+            },
+            TESTDATA,
+        );
+    }
+
+    #[tokio::test]
+    async fn test_spdx_23() {
+        assert_search(
+            |index| {
+                let (last_update_docs, _size) = search(&index, "ANSIBLE-TOWER-3.8-RHEL-7");
+                assert_eq!(1, last_update_docs.len());
+                assert_eq!("ansible_automation_platform-1.2", last_update_docs[0].document.id);
+            },
+            TESTDATA_23,
+        )
     }
 
     #[tokio::test]
     async fn test_total_num() {
-        assert_search(|index| {
-            let num = &index.get_total_docs();
-            assert_eq!(num.as_ref().unwrap(), &3);
-        })
+        assert_search(
+            |index| {
+                let num = &index.get_total_docs();
+                assert_eq!(num.as_ref().unwrap(), &3);
+            },
+            TESTDATA,
+        )
     }
 
     #[tokio::test]
     async fn test_search_package() {
-        assert_search(|index| {
-            let result =
+        assert_search(
+            |index| {
+                let result =
                 search(&index,
                        "\"pkg:oci/ubi9@sha256:cb303404e576ff5528d4f08b12ad85fab8f61fa9e5dba67b37b119db24865df3?repository_url=registry.redhat.io/ubi9&tag=9.1.0-1782\" in:package"
                 );
-            assert_eq!(result.0.len(), 1);
+                assert_eq!(result.0.len(), 1);
 
-            let result = search(&index, "ubi9-container in:package");
-            assert_eq!(result.0.len(), 1);
+                let result = search(&index, "ubi9-container in:package");
+                assert_eq!(result.0.len(), 1);
 
-            let result = search(&index, "ubi9-containe in:package");
-            assert_eq!(result.0.len(), 1);
+                let result = search(&index, "ubi9-containe in:package");
+                assert_eq!(result.0.len(), 1);
 
-            let result = search(&index, "ubi9-containe in:package");
-            assert_eq!(result.0.len(), 1);
+                let result = search(&index, "ubi9-containe in:package");
+                assert_eq!(result.0.len(), 1);
 
-            let result = search(&index, "\"cpe:/a:redhat:kernel_module_management:1.0::el9\" in:package");
-            assert_eq!(result.0.len(), 1);
-        });
+                let result = search(&index, "\"cpe:/a:redhat:kernel_module_management:1.0::el9\" in:package");
+                assert_eq!(result.0.len(), 1);
+            },
+            TESTDATA,
+        );
     }
 
     #[tokio::test]
     async fn test_search_namespace() {
-        assert_search(|index| {
-            let result = search(&index, "namespace:io.seedwing");
-            assert_eq!(result.0.len(), 1);
-        });
+        assert_search(
+            |index| {
+                let result = search(&index, "namespace:io.seedwing");
+                assert_eq!(result.0.len(), 1);
+            },
+            TESTDATA,
+        );
     }
 
     #[tokio::test]
     async fn test_search_created() {
-        assert_search(|index| {
-            let result = search(&index, "created:>2022-01-01");
-            assert_eq!(result.0.len(), 3);
+        assert_search(
+            |index| {
+                let result = search(&index, "created:>2022-01-01");
+                assert_eq!(result.0.len(), 3);
 
-            let result = search(&index, "created:2023-03-30");
-            assert_eq!(result.0.len(), 1);
+                let result = search(&index, "created:2023-03-30");
+                assert_eq!(result.0.len(), 1);
 
-            let result = search(&index, "created:2023-03-29");
-            assert_eq!(result.0.len(), 0);
+                let result = search(&index, "created:2023-03-29");
+                assert_eq!(result.0.len(), 0);
 
-            let result = search(&index, "created:2023-03-31");
-            assert_eq!(result.0.len(), 0);
-        });
+                let result = search(&index, "created:2023-03-31");
+                assert_eq!(result.0.len(), 0);
+            },
+            TESTDATA,
+        );
     }
 
     #[tokio::test]
     async fn test_all() {
-        assert_search(|index| {
-            let result = search(&index, "");
-            assert_eq!(result.0.len(), 3);
-            if let Some(search_hit) = result.0.first() {
-                assert_eq!(search_hit.document.name, "kmm-1");
-                assert_eq!(search_hit.document.dependencies, 279);
-            }
-        });
+        assert_search(
+            |index| {
+                let result = search(&index, "");
+                assert_eq!(result.0.len(), 3);
+                if let Some(search_hit) = result.0.first() {
+                    assert_eq!(search_hit.document.name, "kmm-1");
+                    assert_eq!(search_hit.document.dependencies, 279);
+                }
+            },
+            TESTDATA,
+        );
     }
 
     #[tokio::test]
     async fn test_not() {
-        assert_search(|index| {
-            let result = search(&index, "type:oci");
-            assert_eq!(result.0.len(), 1);
-            let result = search(&index, "NOT type:oci");
-            assert_eq!(result.0.len(), 2);
+        assert_search(
+            |index| {
+                let result = search(&index, "type:oci");
+                assert_eq!(result.0.len(), 1);
+                let result = search(&index, "NOT type:oci");
+                assert_eq!(result.0.len(), 2);
 
-            let result = search(&index, "NOT ubi9");
-            assert_eq!(result.0.len(), 2);
+                let result = search(&index, "NOT ubi9");
+                assert_eq!(result.0.len(), 2);
 
-            let result = search(&index, "type:oci NOT ubi9");
-            assert_eq!(result.0.len(), 0);
+                let result = search(&index, "type:oci NOT ubi9");
+                assert_eq!(result.0.len(), 0);
 
-            let result = search(&index, "type:oci NOT ubi8");
-            assert_eq!(result.0.len(), 1);
-        });
+                let result = search(&index, "type:oci NOT ubi8");
+                assert_eq!(result.0.len(), 1);
+            },
+            TESTDATA,
+        );
     }
 
     #[tokio::test]
     async fn test_sorting_noterms() {
-        assert_search(|index| {
-            let result = search(&index, "sort:created");
-            assert_eq!(result.0.len(), 3);
-            assert_eq!(result.0[0].document.id, "my-sbom");
-            assert_eq!(result.0[1].document.id, "ubi9-sbom");
-            assert_eq!(result.0[2].document.id, "kmm-1");
-            assert!(result.0[0].document.created < result.0[1].document.created);
+        assert_search(
+            |index| {
+                let result = search(&index, "sort:created");
+                assert_eq!(result.0.len(), 3);
+                assert_eq!(result.0[0].document.id, "my-sbom");
+                assert_eq!(result.0[1].document.id, "ubi9-sbom");
+                assert_eq!(result.0[2].document.id, "kmm-1");
+                assert!(result.0[0].document.created < result.0[1].document.created);
 
-            let result = search(&index, "-sort:created");
-            assert_eq!(result.0.len(), 3);
-            assert_eq!(result.0[0].document.id, "kmm-1");
-            assert_eq!(result.0[1].document.id, "ubi9-sbom");
-            assert_eq!(result.0[2].document.id, "my-sbom");
-            assert!(result.0[0].document.created > result.0[1].document.created);
-        });
+                let result = search(&index, "-sort:created");
+                assert_eq!(result.0.len(), 3);
+                assert_eq!(result.0[0].document.id, "kmm-1");
+                assert_eq!(result.0[1].document.id, "ubi9-sbom");
+                assert_eq!(result.0[2].document.id, "my-sbom");
+                assert!(result.0[0].document.created > result.0[1].document.created);
+            },
+            TESTDATA,
+        );
     }
 
     #[tokio::test]
     async fn test_sorting() {
-        assert_search(|index| {
-            let result = search(&index, "NOT ubi9 sort:created");
-            assert_eq!(result.0.len(), 2);
-            assert_eq!(result.0[0].document.id, "my-sbom");
-            assert_eq!(result.0[1].document.id, "kmm-1");
-            assert!(result.0[0].document.created < result.0[1].document.created);
+        assert_search(
+            |index| {
+                let result = search(&index, "NOT ubi9 sort:created");
+                assert_eq!(result.0.len(), 2);
+                assert_eq!(result.0[0].document.id, "my-sbom");
+                assert_eq!(result.0[1].document.id, "kmm-1");
+                assert!(result.0[0].document.created < result.0[1].document.created);
 
-            let result = search(&index, "NOT ubi9 -sort:created");
-            assert_eq!(result.0.len(), 2);
-            assert_eq!(result.0[0].document.id, "kmm-1");
-            assert_eq!(result.0[1].document.id, "my-sbom");
-            assert!(result.0[0].document.created > result.0[1].document.created);
-        });
+                let result = search(&index, "NOT ubi9 -sort:created");
+                assert_eq!(result.0.len(), 2);
+                assert_eq!(result.0[0].document.id, "kmm-1");
+                assert_eq!(result.0[1].document.id, "my-sbom");
+                assert!(result.0[0].document.created > result.0[1].document.created);
+            },
+            TESTDATA,
+        );
     }
 
     #[tokio::test]
     async fn test_purl_qualifiers() {
-        assert_search(|index| {
-            let result = search(&index, "qualifier:tag:9.1.0-1782");
-            assert_eq!(result.0.len(), 1);
-        });
+        assert_search(
+            |index| {
+                let result = search(&index, "qualifier:tag:9.1.0-1782");
+                assert_eq!(result.0.len(), 1);
+            },
+            TESTDATA,
+        );
     }
 
     #[tokio::test]
     async fn test_supplier() {
-        assert_search(|index| {
-            let result = search(&index, "supplier:\"Organization: Red Hat\"");
-            assert_eq!(result.0.len(), 2);
-        });
+        assert_search(
+            |index| {
+                let result = search(&index, "supplier:\"Organization: Red Hat\"");
+                assert_eq!(result.0.len(), 2);
+            },
+            TESTDATA,
+        );
 
-        assert_search(|index| {
-            let result = search(&index, "\"Red Hat\" in:supplier");
-            assert_eq!(result.0.len(), 2);
-        });
+        assert_search(
+            |index| {
+                let result = search(&index, "\"Red Hat\" in:supplier");
+                assert_eq!(result.0.len(), 2);
+            },
+            TESTDATA,
+        );
     }
 
     #[tokio::test]
     async fn test_metadata() {
         let now = OffsetDateTime::now_utc();
-        assert_search(|index| {
-            let result = index
-                .search(
-                    "",
-                    0,
-                    10000,
-                    SearchOptions {
-                        explain: false,
-                        metadata: true,
-                        summaries: true,
-                    },
-                )
-                .unwrap();
-            assert_eq!(result.0.len(), 3);
-            for result in result.0 {
-                assert!(result.metadata.is_some());
-                let indexed_date = result.metadata.as_ref().unwrap()["indexed_timestamp"].clone();
-                let value = indexed_date["values"][0].as_i64().unwrap();
-                let indexed_date = OffsetDateTime::from_unix_timestamp_nanos(value as i128).unwrap();
-                assert!(indexed_date >= now);
-            }
-        });
+        assert_search(
+            |index| {
+                let result = index
+                    .search(
+                        "",
+                        0,
+                        10000,
+                        SearchOptions {
+                            explain: false,
+                            metadata: true,
+                            summaries: true,
+                        },
+                    )
+                    .unwrap();
+                assert_eq!(result.0.len(), 3);
+                for result in result.0 {
+                    assert!(result.metadata.is_some());
+                    let indexed_date = result.metadata.as_ref().unwrap()["indexed_timestamp"].clone();
+                    let value = indexed_date["values"][0].as_i64().unwrap();
+                    let indexed_date = OffsetDateTime::from_unix_timestamp_nanos(value as i128).unwrap();
+                    assert!(indexed_date >= now);
+                }
+            },
+            TESTDATA,
+        );
     }
 
     #[tokio::test]
     async fn test_explain() {
-        assert_search(|index| {
-            let result = index
-                .search(
-                    "(ubi in:package) OR (ubi in:description)",
-                    0,
-                    10000,
-                    SearchOptions {
-                        explain: true,
-                        metadata: false,
-                        summaries: true,
-                    },
-                )
-                .unwrap();
-            assert_eq!(result.0.len(), 1);
-            assert!(result.0[0].explanation.is_some());
-            println!(
-                "Explanation: {}",
-                serde_json::to_string_pretty(&result.0[0].explanation.as_ref().unwrap()).unwrap()
-            );
-        });
+        assert_search(
+            |index| {
+                let result = index
+                    .search(
+                        "(ubi in:package) OR (ubi in:description)",
+                        0,
+                        10000,
+                        SearchOptions {
+                            explain: true,
+                            metadata: false,
+                            summaries: true,
+                        },
+                    )
+                    .unwrap();
+                assert_eq!(result.0.len(), 1);
+                assert!(result.0[0].explanation.is_some());
+                println!(
+                    "Explanation: {}",
+                    serde_json::to_string_pretty(&result.0[0].explanation.as_ref().unwrap()).unwrap()
+                );
+            },
+            TESTDATA,
+        );
     }
 }
