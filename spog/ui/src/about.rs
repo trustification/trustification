@@ -13,9 +13,9 @@ pub fn about() -> Html {
     let backend = use_backend();
     let access_token = use_latest_access_token();
 
-    let version = use_memo((), |()| version!());
+    let _version = use_memo((), |()| version!());
 
-    let remote = use_async_with_cloned_deps(
+    let _remote = use_async_with_cloned_deps(
         |backend| async {
             VersionService::new(backend, access_token)
                 .get_version()
@@ -37,23 +37,20 @@ pub fn about() -> Html {
                 {background_image_src}
                 {product_name}
                 trademark="Copyright © 2020, 2024 Red Hat, Inc"
+                class="rhtpa-about"
             >
-                <Content>
-                    <p>{ &version.description }</p>
-                    // width is required to better align
-                    <dl style="width: 100%">
-                        <dt>{ "Frontend" }</dt>
-                        <dd>
-                            <VersionInfo {version}/>
-                        </dd>
-
-                        <dt>{ "Backend" }</dt>
+                <div class="pf-v5-c-content pf-v5-u-py-xl">
+                    <h1>{"About"}</h1>
+                    <p>{"Red Hat’s Trusted Profile Analyzer (RHTPA) is a proactive service that assists in risk management of Open Source Software (OSS) packages and dependencies. The Trusted Profile Analyzer service brings awareness to and remediation of OSS vulnerabilities discovered within the software supply chain."}</p>
+                </div>
+                <div class="pf-v5-c-content pf-v5-u-py-xl">
+                    <dl>
+                        <dt>{"Version"}</dt>
                         <dd>
                             {"1.2.0"}
                         </dd>
                     </dl>
-
-                </Content>
+                </div>
             </AboutModal>
         </Bullseye>
     )
