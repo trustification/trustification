@@ -49,22 +49,7 @@ pub fn about() -> Html {
 
                         <dt>{ "Backend" }</dt>
                         <dd>
-                            <p> { backend.endpoints.url.to_string() } </p>
-                            {
-                                match &*remote {
-                                    UseAsyncState::Pending | UseAsyncState::Processing => {
-                                        html!( <Spinner/> )
-                                    },
-                                    UseAsyncState::Ready(Ok(result)) => {
-                                        html!(<>
-                                            <VersionInfo version={result.clone()} />
-                                        </>)
-                                    },
-                                    UseAsyncState::Ready(Err(err)) => html! (
-                                        format!("Failed to retrieve version: {err}")
-                                    ),
-                                }
-                            }
+                            {"1.2.0"}
                         </dd>
                     </dl>
 
