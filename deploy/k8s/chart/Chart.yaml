@@ -8,6 +8,6 @@ appVersion: "1.16.0"
 
 dependencies:
 - name: keycloak
-  version: "=15.1.7"
+  version: "=22.2.6"
   repository: "https://charts.bitnami.com/bitnami"
   condition: keycloak.enabled

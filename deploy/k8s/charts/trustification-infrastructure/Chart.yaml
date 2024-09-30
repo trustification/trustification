@@ -20,7 +20,7 @@ home: https://trustification.io
 dependencies:
   - name: keycloak
     repository: https://charts.bitnami.com/bitnami
-    version: 18.2.1
+    version: 22.2.6
     condition: keycloak.enabled
   - name: minio
     repository: https://charts.bitnami.com/bitnami
