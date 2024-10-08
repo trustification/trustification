@@ -15,7 +15,7 @@ import noneColor from '@patternfly/react-tokens/dist/esm/global_palette_black_40
 import lowColor from '@patternfly/react-tokens/dist/esm/chart_color_blue_200';
 import mediumColor from '@patternfly/react-tokens/dist/esm/chart_color_gold_300';
 import highColor from '@patternfly/react-tokens/dist/esm/chart_color_red_100';
-import criticalColor from '@patternfly/react-tokens/dist/esm/chart_color_red_300';
+import criticalColor from '@patternfly/react-tokens/dist/esm/chart_color_purple_400';
 
 interface StackChartProps {
   sbom_id: string;
@@ -44,7 +44,7 @@ export const SbomStackChartRenderer = (htmlElement: HTMLElement, props: StackCha
     { name: 'High' },
     { name: 'Medium' },
     { name: 'Low' },
-    { name: 'None' },
+    { name: 'Unknown' },
   ];
 
   const root = ReactDOM.createRoot(htmlElement);
