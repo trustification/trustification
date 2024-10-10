@@ -101,23 +101,15 @@ pub fn spdx_main(bom: &SPDX) -> Html {
                 },
                 None => vec![
                     html!(
-                            <CardBody>
-                                <DescriptionList>
-                                    <DescriptionGroup term="ID">{ desc.clone() }</DescriptionGroup>
-                                </DescriptionList>
-                            </CardBody>
-
-                    ),
-                    html!(
-                        <CardBody>
-                            { "ID could not be found in document" }
-                        </CardBody>
-                    ),
+                        <DescriptionList>
+                            <DescriptionGroup term="ID">{ desc.clone() }</DescriptionGroup>
+                        </DescriptionList>
+                    )
                 ],
             };
 
             html!(
-                <Card full_height=true>
+                <Card>
                     <CardTitle><Title size={Size::XLarge}>{ "Package" }</Title></CardTitle>
                     {
                         for content.into_iter()
