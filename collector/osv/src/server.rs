@@ -132,6 +132,7 @@ pub async fn collect_packages(
                         let mut vulnerability_input_specs = Vec::new();
                         let mut alias_vuln_input_specs = Vec::new();
                         let mut cvss_v3s = Vec::new();
+                        let mut alias_required = false;
                         // If available ingest a vulnerability using its CVE-ID as the unique key
                         // adopted everywhere in trustification.
                         // To retrieve a vulnerability's CVE-ID, OSV must be called again
@@ -149,6 +150,7 @@ pub async fn collect_packages(
                                                             vulnerability_id: alias.clone(),
                                                         },
                                                     ));
+                                                    alias_required = true;
                                                 } else {
                                                     alias_vuln_input_specs.push(IDorVulnerabilityInput::from(
                                                         &VulnerabilityInputSpec {
@@ -188,6 +190,11 @@ pub async fn collect_packages(
                                     collected_osv_errors.push(err);
                                 }
                             }
+                        } else {
+                            vulnerability_input_specs.push(IDorVulnerabilityInput::from(&VulnerabilityInputSpec {
+                                r#type: "osv".to_string(),
+                                vulnerability_id: vuln.id.clone(),
+                            }));
                         }
                         // After https://issues.redhat.com/browse/TC-1582, it's not worth adding it
                         // if no CVE ID has been found because trustification isn't able to manage
@@ -204,7 +211,7 @@ pub async fn collect_packages(
                                                     })
                                                 } else {
                         */
-                        if !vulnerability_input_specs.is_empty() {
+                        if alias_required {
                             // otherwise the original vulnerability must be part of the aliases
                             alias_vuln_input_specs.push(IDorVulnerabilityInput::from(&VulnerabilityInputSpec {
                                 r#type: "osv".to_string(),
