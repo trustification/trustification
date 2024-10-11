@@ -64,7 +64,7 @@ impl Collector {
         match response {
             Ok(response) => {
                 for purl in response.purls.keys() {
-                    log::info!("[{id}] scanned {} {:?}", purl, response.purls.values());
+                    log::info!("[{id}] scanned {} {:?}", purl, response.purls.get(purl));
                     let _ = state.db.insert_purl(purl).await.ok();
                     let _ = state.db.update_purl_scan_time(&id, purl).await.ok();
                 }
