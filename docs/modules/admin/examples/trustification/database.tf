@@ -118,7 +118,7 @@ resource "aws_db_instance" "guac" {
   instance_class      = "db.m7g.large"
   username            = var.db-master-user
   password            = random_password.guac-db-admin-password.result
-  ca_cert_identifier  = "rds-ca-2019"
+  ca_cert_identifier  = "rds-ca-rsa4096-g1"
   skip_final_snapshot = true
 
   availability_zone = var.availability-zone
