@@ -166,6 +166,15 @@ v11y:
   api:
     tracing: "enabled"
     resources:
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: kubernetes.io/arch
+                  operator: In
+                  values:
+                    - amd64
   indexer:
     topics:
       stored: v11y-stored-prod
