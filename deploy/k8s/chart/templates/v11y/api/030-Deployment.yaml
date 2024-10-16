@@ -96,6 +96,15 @@ spec:
               name: infra
           resources:
             {{- toYaml .Values.v11y.api.resources | nindent 12 }}
+          affinity:
+            nodeAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                  - matchExpressions:
+                      - key: kubernetes.io/arch
+                        operator: In
+                        values:
+                          - amd64
           livenessProbe:
             httpGet:
               path: /health/live
