@@ -24,7 +24,7 @@ dependencies:
     condition: keycloak.enabled
   - name: minio
     repository: https://charts.bitnami.com/bitnami
-    version: 13.2.0
+    version: 14.8.0
     condition: minio.enabled
   - name: postgresql
     repository: https://charts.bitnami.com/bitnami
