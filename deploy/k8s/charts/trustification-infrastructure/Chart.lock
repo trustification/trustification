@@ -1,7 +1,7 @@
 dependencies:
 - name: keycloak
   repository: https://charts.bitnami.com/bitnami
-  version: 18.2.1
+  version: 18.7.1
 - name: minio
   repository: https://charts.bitnami.com/bitnami
   version: 13.2.0
@@ -11,5 +11,5 @@ dependencies:
 - name: kafka
   repository: https://charts.bitnami.com/bitnami
   version: 26.8.3
-digest: sha256:4b8064da5c4e43192c0606a07be1923c53cb019225991d117c8d8d3168ab36d0
-generated: "2024-01-29T17:36:52.909270869+01:00"
+digest: sha256:46e59eea82f5d4574b2ad5f8f98c06ad52cda4ea97d10af8b5643fb84a1fb066
+generated: "2024-10-20T15:04:14.600584655+02:00"
