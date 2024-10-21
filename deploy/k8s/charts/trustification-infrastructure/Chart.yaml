@@ -20,11 +20,11 @@ home: https://trustification.io
 dependencies:
   - name: keycloak
     repository: https://charts.bitnami.com/bitnami
-    version: 18.2.1
+    version: 18.7.1
     condition: keycloak.enabled
   - name: minio
     repository: https://charts.bitnami.com/bitnami
-    version: 13.2.0
+    version: 13.8.4
     condition: minio.enabled
   - name: postgresql
     repository: https://charts.bitnami.com/bitnami
@@ -32,5 +32,5 @@ dependencies:
     condition: postgresql.enabled
   - name: kafka
     repository: https://charts.bitnami.com/bitnami
-    version: 26.8.3
+    version: 26.11.4
     condition: kafka.enabled
