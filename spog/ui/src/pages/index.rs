@@ -90,7 +90,7 @@ pub fn index() -> Html {
                                     <input type="submit" hidden=true formmethod="dialog" />
 
                                     <Grid gutter=true>
-                                        <GridItem offset={[4]} cols={[4]}>
+                                        <GridItem cols={[4]}>
                                             <SearchInput {onchange} autofocus=true />
                                         </GridItem>
 
