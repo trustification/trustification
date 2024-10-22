@@ -234,7 +234,7 @@ pub fn search_input(props: &SearchProperties) -> Html {
             <patternfly_yew::prelude::SearchInput
                 id={ID_SEARCH_ELEMENT}
                 inner_ref={input_ref.clone()}
-                placeholder="Search for an SBOM, advisory, or CVE"
+                placeholder="Search for an SBOM, VEX, or CVE"
                 value={(**value).clone()}
                 {onchange}
                 {onclear}
