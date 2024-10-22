@@ -119,7 +119,7 @@ pub fn index() -> Html {
                                     <GridItem cols={[6]}>
                                         <Stack gutter=true>
                                             <StackItem>
-                                                {"Below is a summary of CVE status for your last 10 ingested SBOMs. You can click on the SBOM name or CVE severity number below to be taken to their respective details page. You can also select up to 4 SBOMs to watch, by default you will see the last 4 SBOMs you have uploaded."}
+                                                {"Below is a summary of CVE status for your last 10 ingested SBOMs. You can click on the SBOM name or CVE severity number below to be taken to their respective details page."}
                                             </StackItem>
                                             <StackItem>
                                                 <LastSbomsChart />
