@@ -44,7 +44,7 @@ impl SBOMService {
     }
 
     pub async fn get(&self, id: impl AsRef<str>) -> Result<Option<String>, ApiError> {
-        let mut url = self.backend.join(Endpoint::Api, "/api/v1/sbom")?;
+        let mut url = self.backend.join(Endpoint::Bombastic, "/api/v1/sbom")?;
         url.query_pairs_mut().append_pair("id", id.as_ref()).finish();
 
         let response = self
