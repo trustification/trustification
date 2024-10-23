@@ -182,11 +182,7 @@ pub fn last_sboms_chart() -> Html {
                     ),
                     UseAsyncState::Ready(Ok((json, number_of_elements))) => html!(
                         if *number_of_elements > 0usize {
-                            // <Split>
-                                // <SplitItem fill=true>
-                                    <SbomStackChart sboms={json.clone()} style="height: 375px; width: 750px" />
-                                // </SplitItem>
-                            // </Split>                            
+                            <SbomStackChart sboms={json.clone()} style="height: 375px; width: 750px" />
                         } else {
                             <EmptyState
                                 title="No SBOMs found"
