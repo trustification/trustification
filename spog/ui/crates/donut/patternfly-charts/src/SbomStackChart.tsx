@@ -74,6 +74,7 @@ export const SbomStackChartRenderer = (htmlElement: HTMLElement, props: StackCha
         legendComponent={
           <ChartLegend
             y={10}
+            x={300}
             colorScale={[
               criticalColor.var,
               highColor.var,
