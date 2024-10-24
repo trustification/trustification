@@ -122,7 +122,9 @@ pub fn index() -> Html {
                                                 {"Below is a summary of CVE status for your last 10 ingested SBOMs. You can click on the SBOM name or CVE severity number below to be taken to their respective details page."}
                                             </StackItem>
                                             <StackItem>
-                                                <LastSbomsChart />
+                                                <div class="pf-v5-l-split">
+                                                    <LastSbomsChart />
+                                                </div>
                                             </StackItem>
                                         </Stack>
                                     </GridItem>
@@ -180,7 +182,7 @@ pub fn last_sboms_chart() -> Html {
                     ),
                     UseAsyncState::Ready(Ok((json, number_of_elements))) => html!(
                         if *number_of_elements > 0usize {
-                            <SbomStackChart sboms={json.clone()} style="height: 375px; width: 800px" />
+                            <SbomStackChart sboms={json.clone()} style="height: 375px; width: 750px" />
                         } else {
                             <EmptyState
                                 title="No SBOMs found"
