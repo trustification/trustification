@@ -49,7 +49,7 @@ minio:
 
 minioPostInstall:
   disabled: false
-  clientImage: docker.io/bitnami/minio-client:2024.1.18-debian-11-r1
+  clientImage: docker.io/bitnami/minio-client:2024.10.8-debian-12-r1
   mcPath: /opt/bitnami/minio-client/bin/mc
 
 keycloak:
