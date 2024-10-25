@@ -102,19 +102,17 @@ impl Index {
         fields: &Fields,
         sha256: &str,
     ) {
-        let mut document = doc!();
-        document.add_text(fields.sha256, sha256);
-        document.add_date(fields.indexed_timestamp, DateTime::from_utc(OffsetDateTime::now_utc()));
-
-        if let Some(comment) = &package.package_summary_description {
-            document.add_text(fields.desc, comment);
-        }
-
-        let mut package_id = "".to_string();
         for r in package.external_reference.iter() {
             if r.reference_type == "purl" {
+                let mut document = doc!();
+                document.add_text(fields.sha256, sha256);
+                document.add_date(fields.indexed_timestamp, DateTime::from_utc(OffsetDateTime::now_utc()));
+
+                if let Some(comment) = &package.package_summary_description {
+                    document.add_text(fields.desc, comment);
+                }
                 let purl = r.reference_locator.clone();
-                package_id = purl.clone();
+                let package_id = purl.clone();
 
                 if let Ok(package) = packageurl::PackageUrl::from_str(&purl) {
                     document.add_text(fields.purl_name, package.name());
@@ -133,32 +131,31 @@ impl Index {
 
                     document.add_text(fields.purl_type, package.ty());
                 }
+                document.add_text(fields.purl, &package_id);
+                document.add_text(fields.name, &package.package_name);
+                if let Some(version) = &package.package_version {
+                    document.add_text(fields.version, version);
+                }
+
+                for sum in package.package_checksum.iter() {
+                    if sum.algorithm == Algorithm::SHA256 {
+                        document.add_text(fields.sha256, &sum.value);
+                    }
+                }
+
+                if let Some(license) = &package.declared_license {
+                    document.add_text(fields.license, license.to_string());
+                }
+
+                if let Some(supplier) = &package.package_supplier {
+                    document.add_text(fields.supplier, supplier);
+                }
+
+                // Only add packages with purls
+                if !package_id.is_empty() {
+                    documents.push((package_id, document));
+                }
             }
-        }
-
-        document.add_text(fields.purl, &package_id);
-        document.add_text(fields.name, &package.package_name);
-        if let Some(version) = &package.package_version {
-            document.add_text(fields.version, version);
-        }
-
-        for sum in package.package_checksum.iter() {
-            if sum.algorithm == Algorithm::SHA256 {
-                document.add_text(fields.sha256, &sum.value);
-            }
-        }
-
-        if let Some(license) = &package.declared_license {
-            document.add_text(fields.license, license.to_string());
-        }
-
-        if let Some(supplier) = &package.package_supplier {
-            document.add_text(fields.supplier, supplier);
-        }
-
-        // Only add packages with purls
-        if !package_id.is_empty() {
-            documents.push((package_id, document));
         }
     }
 
@@ -614,6 +611,27 @@ mod tests {
         assert_search(|index| {
             let result = search(&index, "redhat.dbus");
             assert_eq!(result.0.len(), 13);
+        });
+    }
+
+    #[tokio::test]
+    async fn test_search_package_with_multiple_purls() {
+        assert_search(|mut index| {
+            let mut writer = index.writer().unwrap();
+            load_valid_file(&mut index, &mut writer, "../testdata/openssl-3.0.7-18.el9_2.spdx.json");
+            writer.commit().unwrap();
+            // test each PURL related to 'openssl-perl' for each architecture has been ingested
+            let archs = ["aarch64", "ppc64le", "i686", "\"x86_64\"", "s390x"];
+            archs.iter().for_each(|arch| {
+                let result = search(
+                    &index,
+                    format!("name:openssl-perl AND qualifier:arch:{}", arch).as_str(),
+                );
+                assert_eq!(result.0.len(), 3);
+            });
+            // test all the PURLs have been ingested
+            let result = search(&index, "(openssl in:name) AND (version:\"3.0.7-18.el9_2\")");
+            assert_eq!(result.0.len(), 30);
         });
     }
 }
