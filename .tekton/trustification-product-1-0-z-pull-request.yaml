@@ -228,7 +228,7 @@ spec:
         - name: name
           value: buildah
         - name: bundle
-          value: quay.io/redhat-appstudio-tekton-catalog/task-buildah:0.2@sha256:4e43a2d6f4024492aa88d8105b9c4b19c6323152e5e2739e069ec17f3faf1899
+          value: quay.io/redhat-appstudio-tekton-catalog/task-buildah:0.2@sha256:79bfd61dc67a505f8a7025181a7651f73479742eb10d9bc35f2d73254629d4f3
         - name: kind
           value: task
         resolver: bundles
@@ -324,7 +324,7 @@ spec:
         - name: name
           value: sast-snyk-check
         - name: bundle
-          value: quay.io/redhat-appstudio-tekton-catalog/task-sast-snyk-check:0.3@sha256:5afb7b376daf8ace689fc4ba8a741e5a0174338a378b758aac402a32c638caee
+          value: quay.io/redhat-appstudio-tekton-catalog/task-sast-snyk-check:0.3@sha256:a35e1b1e108fe50737e47d5d71368ec882809fdd854096691d4e6fa7bc67e77b
         - name: kind
           value: task
         resolver: bundles
