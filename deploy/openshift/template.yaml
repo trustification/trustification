@@ -115,7 +115,7 @@ objects:
         - ReadWriteOnce
       resources:
         requests:
-          storage: 10Gi
+          storage: 20Gi
   - kind: PersistentVolumeClaim
     apiVersion: v1
     metadata:
