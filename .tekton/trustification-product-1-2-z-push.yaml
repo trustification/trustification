@@ -27,6 +27,8 @@ spec:
     value: container_files/Containerfile.services
   - name: path-context
     value: .
+  - name: build-source-image
+    value: 'true'
   pipelineSpec:
     finally:
     - name: show-sbom
