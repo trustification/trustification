@@ -17,7 +17,12 @@ pub struct ClientConfig {
     pub tls_insecure: bool,
 
     /// Additional certificates which will be added as trust anchors.
-    #[arg(id = "client-tls-ca-certificates", long, env = "CLIENT_TLS_CA_CERTIFICATES")]
+    #[arg(
+        id = "client-tls-ca-certificates",
+        long,
+        env = "CLIENT_TLS_CA_CERTIFICATES",
+        value_delimiter = ','
+    )]
     #[serde(default)]
     pub ca_certificates: Vec<String>,
 }
