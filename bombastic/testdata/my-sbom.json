@@ -53,7 +53,8 @@
       "licenses" : [ ],
       "purl" : "pkg:maven/io.seedwing/seedwing-java-example@1.0.0-SNAPSHOT?type=jar",
       "type" : "library",
-      "bom-ref" : "pkg:maven/io.seedwing/seedwing-java-example@1.0.0-SNAPSHOT?type=jar"
+      "bom-ref" : "pkg:maven/io.seedwing/seedwing-java-example@1.0.0-SNAPSHOT?type=jar",
+      "cpe": "cpe:/o:io.seedwing:seedwing-java-example:1.0.0-SNAPSHOT::"
     }
   },
   "components" : [
@@ -7297,3 +7298,4 @@
     }
   ]
 }
+
