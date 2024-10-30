@@ -1,11 +1,13 @@
 mod packages;
 
+use std::collections::BTreeMap;
 use std::rc::Rc;
 
 pub use packages::*;
 
 use patternfly_yew::prelude::*;
 use serde_json::Value;
+use spog_ui_common::utils::OrNone;
 use yew::prelude::*;
 
 #[derive(PartialEq, Properties)]
@@ -69,5 +71,58 @@ pub fn cyclonedx_creator(bom: &cyclonedx_bom::prelude::Bom) -> Html {
                 </DescriptionList>
             </CardBody>
         </Card>
+    )
+}
+
+pub fn cyclonedx_main(bom: &cyclonedx_bom::prelude::Bom) -> Html {
+    match bom.metadata.as_ref() {
+        Some(metadata) => match metadata.component.as_ref() {
+            Some(component) => {
+                html!(
+                    <Card>
+                        <CardTitle><Title size={Size::XLarge}>{ "Package" }</Title></CardTitle>
+                        <CardBody>
+                            <DescriptionList>
+                                <DescriptionGroup term="Name">{ component.name.to_string() }</DescriptionGroup>
+                                <DescriptionGroup term="Version">{ OrNone(component.version.as_ref()) }</DescriptionGroup>
+                                <DescriptionGroup term="Type">{ component.component_type.to_string() }</DescriptionGroup>
+                                <DescriptionGroup term="External References"> { cyclonedx_external_references(component)} </DescriptionGroup>
+                            </DescriptionList>
+                        </CardBody>
+                    </Card>
+                )
+            }
+            None => html!(),
+        },
+        None => html!(),
+    }
+}
+
+pub fn cyclonedx_external_references(component: &cyclonedx_bom::prelude::Component) -> Html {
+    let mut external_references = BTreeMap::new();
+    // since in SPDX SBOM both CPE and PURL are listed in the external references
+    // for UX conistency among the UI, they are managed in the same way in Cyclone SBOM
+    if let Some(cpe) = component.cpe.as_ref() {
+        external_references.insert(cpe.to_string(), "CPE".to_string());
+    }
+    if let Some(purl) = component.purl.as_ref() {
+        external_references.insert(purl.to_string(), "PURL".to_string());
+    }
+    if let Some(ext_refs) = component.external_references.as_ref() {
+        ext_refs.0.iter().for_each(|e| {
+            external_references.insert(e.url.to_string(), e.external_reference_type.to_string());
+        })
+    }
+    html!(
+        <List>
+            { for external_references.iter()
+                .map(|(value, label)| {
+                    html_nested!( <ListItem>
+                        {&value} { " " }
+                        <Label label={format!("{}", label)} color={Color::Grey} />
+                    </ListItem> )
+                })
+            }
+        </List>
     )
 }
