@@ -334,6 +334,10 @@ impl Index {
             });
         }
 
+        if let Some(cpe) = &component.cpe {
+            document.add_text(fields.cpe, cpe);
+        };
+
         document.add_text(fields.classifier, component.component_type.to_string());
     }
 
@@ -791,7 +795,15 @@ mod tests {
             let result = search(&index, "ubi9-containe in:package");
             assert_eq!(result.0.len(), 1);
 
+            // SPDX CPE
             let result = search(&index, "\"cpe:/a:redhat:kernel_module_management:1.0::el9\" in:package");
+            assert_eq!(result.0.len(), 1);
+
+            // CycloneDX CPE
+            let result = search(
+                &index,
+                "\"cpe:/o:io.seedwing:seedwing-java-example:1.0.0-SNAPSHOT::\" in:package",
+            );
             assert_eq!(result.0.len(), 1);
         });
     }
