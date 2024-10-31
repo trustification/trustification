@@ -98,7 +98,7 @@ kafka:
 keycloakPostInstall:
   disabled: false
   # NOTE: this must be an image which contain things like bash, kcadm, grep, awk
-  image: docker.io/bitnami/keycloak:23
+  image: docker.io/bitnami/keycloak:26
   kcadmPath: /opt/bitnami/keycloak/bin/kcadm.sh
   realmAdmin:
     name: admin
