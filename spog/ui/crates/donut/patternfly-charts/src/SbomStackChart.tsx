@@ -33,6 +33,10 @@ interface StackChartProps {
   };
 }
 
+const generateSbomBarName = (sbom: StackChartProps, index: number) => {
+  return `${Math.abs(index - 10)}. ${sbom.sbom_name}`;
+};
+
 export const SbomStackChartRenderer = (htmlElement: HTMLElement, props: StackChartProps[]) => {
   const showTickValues = props.every((item) => {
     return (
@@ -95,7 +99,9 @@ export const SbomStackChartRenderer = (htmlElement: HTMLElement, props: StackCha
               events={{
                 onClick: (event) => {
                   const sbom_name = (event.target as any).innerHTML as string | null;
-                  const sbom = props.find((item) => item.sbom_name === sbom_name);
+                  const sbom = props.find(
+                    (item, index) => generateSbomBarName(item, index) === sbom_name,
+                  );
                   if (sbom) {
                     const sbomDetailsPage = `/sbom/content/${sbom.sbom_id}`;
 
@@ -132,12 +138,12 @@ export const SbomStackChartRenderer = (htmlElement: HTMLElement, props: StackCha
             <ChartBar
               key={legend.name}
               labelComponent={<ChartTooltip constrainToVisibleArea />}
-              data={props.map((sbom) => {
+              data={props.map((sbom, index) => {
                 const severityKey = legend.severity;
                 const count = sbom.vulnerabilities[severityKey] as number;
                 return {
                   name: legend.name,
-                  x: sbom.sbom_name,
+                  x: generateSbomBarName(sbom, index),
                   y: count,
                   label: `${legend.name}: ${count}`,
                 };
