@@ -1,10 +1,10 @@
 use cyclonedx_bom::errors::{BomError, JsonReadError};
 use cyclonedx_bom::prelude::{SpecVersion, Validate, ValidationResult};
 use cyclonedx_bom::validation::ValidationErrorsKind;
+use serde_json::Value;
 use std::collections::HashSet;
 use std::fmt::Formatter;
 use std::str::FromStr;
-use serde_json::Value;
 use tracing::{info_span, instrument};
 
 #[derive(Debug)]
@@ -88,7 +88,8 @@ impl SBOM {
                         if let Some(version) = parsed_json.get("specVersion") {
                             let version = version
                                 .as_str()
-                                .ok_or_else(|| BomError::UnsupportedSpecVersion(version.to_string())).unwrap();
+                                .ok_or_else(|| BomError::UnsupportedSpecVersion(version.to_string()))
+                                .unwrap();
 
                             match SpecVersion::from_str(version).unwrap() {
                                 SpecVersion::V1_3 => spec_version = SpecVersion::V1_3,
