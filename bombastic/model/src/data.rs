@@ -1,8 +1,10 @@
-use cyclonedx_bom::errors::JsonReadError;
-use cyclonedx_bom::prelude::{Validate, ValidationResult};
+use cyclonedx_bom::errors::{BomError, JsonReadError};
+use cyclonedx_bom::prelude::{SpecVersion, Validate, ValidationResult};
 use cyclonedx_bom::validation::ValidationErrorsKind;
 use std::collections::HashSet;
 use std::fmt::Formatter;
+use std::str::FromStr;
+use serde_json::Value;
 use tracing::{info_span, instrument};
 
 #[derive(Debug)]
@@ -77,7 +79,30 @@ impl SBOM {
                     // the serial number is missing and this isn't what we want because
                     // serial number is mandatory for trustification to correlate properly
                     Some(_) => {
-                        let result = bom.validate();
+                        //workaround to deal with cyclonedx-rust-cargo validate() method
+                        //validating against SpecVersion::V1_3, the default, in all cases
+                        //we therefore have to discover the spec version from the json data
+                        //to pass into validate_version() as the parsed bom doesn't contain this info
+                        let mut spec_version = SpecVersion::V1_3;
+                        let parsed_json: Value = serde_json::from_slice(data).unwrap();
+                        if let Some(version) = parsed_json.get("specVersion") {
+                            let version = version
+                                .as_str()
+                                .ok_or_else(|| BomError::UnsupportedSpecVersion(version.to_string())).unwrap();
+
+                            match SpecVersion::from_str(version).unwrap() {
+                                SpecVersion::V1_3 => spec_version = SpecVersion::V1_3,
+                                SpecVersion::V1_4 => spec_version = SpecVersion::V1_4,
+                                SpecVersion::V1_5 => spec_version = SpecVersion::V1_5,
+                            }
+                        } else {
+                            let spec_version_error_message = "No field 'specVersion' found";
+                            log::error!("{}", spec_version_error_message);
+                            let spec_version_error: serde_json::Error =
+                                serde::de::Error::custom(spec_version_error_message);
+                            err.cyclonedx = Some(JsonReadError::from(spec_version_error));
+                        }
+                        let result = bom.validate_version(spec_version);
                         match result.passed() {
                             true => return Ok(SBOM::CycloneDX(bom)),
                             false => {
@@ -175,6 +200,13 @@ mod tests {
     #[test]
     fn parse_cyclonedx_valid_15() {
         let data = include_bytes!("../../testdata/syft.cyclonedx-1.5.json");
+        let result = SBOM::parse(data);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn parse_cdx_valid_15_license_id() {
+        let data = include_bytes!("../../testdata/cdx-1.5-valid-license-id.json");
         let result = SBOM::parse(data);
         assert!(result.is_ok());
     }
