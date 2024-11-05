@@ -34,7 +34,7 @@ interface StackChartProps {
 }
 
 const generateSbomBarName = (sbom: StackChartProps, index: number) => {
-  return `${Math.abs(index - 10)}. ${sbom.sbom_name}`;
+  return `${' '.repeat(index + 1)}${sbom.sbom_name}`;
 };
 
 export const SbomStackChartRenderer = (htmlElement: HTMLElement, props: StackChartProps[]) => {
