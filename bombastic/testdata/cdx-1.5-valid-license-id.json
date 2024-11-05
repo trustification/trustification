@@ -1,0 +1,194 @@
+{
+  "$schema": "http://cyclonedx.org/schema/bom-1.5.schema.json",
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "serialNumber": "urn:uuid:d2525dbf-827b-45af-b074-c759ba9eebbb",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2024-10-18T06:13:14Z",
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "author": "anchore",
+          "name": "syft",
+          "version": "1.4.1"
+        },
+        {
+          "author": "red hat",
+          "name": "cachi2",
+          "type": "application"
+        }
+      ]
+    },
+    "component": {
+      "bom-ref": "f259ee149f7c0477",
+      "type": "file",
+      "name": "/var/lib/containers/storage/vfs/dir/a0fa5b9d218b35edc7d814d3cd8e666cd7f3005f59b73b7291678ab24d43412c"
+    }
+  },
+  "components": [
+    {
+      "bom-ref": "pkg:pypi/beaker@1.12.1?package-id=6de7e16fa6904c51",
+      "type": "library",
+      "author": "Ben Bangert, Mike Bayer, Philip Jenvey, Alessandro Molina <ben@groovie.org, pjenvey@groovie.org, amol@turbogears.org>",
+      "name": "Beaker",
+      "version": "1.12.1",
+      "licenses": [
+        {
+          "expression": "TCL AND GPL-3.0-or-later WITH Bison-exception-2.2 AND BSD-3-Clause"
+        }
+      ],
+      "cpe": "cpe:2.3:a:beakerbrowser:beaker:1.12.1:*:*:*:*:python:*:*",
+      "purl": "pkg:pypi/Beaker@1.12.1",
+      "properties": [
+        {
+          "name": "syft:package:foundBy",
+          "value": "python-installed-package-cataloger"
+        },
+        {
+          "name": "syft:package:language",
+          "value": "python"
+        },
+        {
+          "name": "syft:package:type",
+          "value": "python"
+        },
+        {
+          "name": "syft:package:metadataType",
+          "value": "python-package"
+        },
+        {
+          "name": "syft:location:0:path",
+          "value": "/usr/lib/python3.12/site-packages/Beaker-1.12.1-py3.12.egg-info/PKG-INFO"
+        },
+        {
+          "name": "syft:location:1:path",
+          "value": "/usr/lib/python3.12/site-packages/Beaker-1.12.1-py3.12.egg-info/top_level.txt"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:pypi/brotli@1.1.0?package-id=365de27b8ece63b4",
+      "type": "library",
+      "author": "The Brotli Authors",
+      "name": "Brotli",
+      "version": "1.1.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "TTWL"
+          }
+        }
+      ],
+      "cpe": "cpe:2.3:a:brotli_authors_project:python-Brotli:1.1.0:*:*:*:*:*:*:*",
+      "purl": "pkg:pypi/Brotli@1.1.0",
+      "properties": [
+        {
+          "name": "syft:package:foundBy",
+          "value": "python-installed-package-cataloger"
+        },
+        {
+          "name": "syft:package:language",
+          "value": "python"
+        },
+        {
+          "name": "syft:package:type",
+          "value": "python"
+        },
+        {
+          "name": "syft:package:metadataType",
+          "value": "python-package"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:brotli_authors_project:python_Brotli:1.1.0:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:brotli_authorsproject:python-Brotli:1.1.0:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:brotli_authorsproject:python_Brotli:1.1.0:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:brotli_authors_project:Brotli:1.1.0:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:brotli_authors:python-Brotli:1.1.0:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:brotli_authors:python_Brotli:1.1.0:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:brotli_authorsproject:Brotli:1.1.0:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:python-Brotli:python-Brotli:1.1.0:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:python-Brotli:python_Brotli:1.1.0:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:python_Brotli:python-Brotli:1.1.0:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:python_Brotli:python_Brotli:1.1.0:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:brotli_authors:Brotli:1.1.0:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:Brotli:python-Brotli:1.1.0:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:Brotli:python_Brotli:1.1.0:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:python-Brotli:Brotli:1.1.0:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:python:python-Brotli:1.1.0:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:python:python_Brotli:1.1.0:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:python_Brotli:Brotli:1.1.0:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:Brotli:Brotli:1.1.0:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:python:Brotli:1.1.0:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:location:0:path",
+          "value": "/usr/lib64/python3.12/site-packages/Brotli-1.1.0-py3.12.egg-info/PKG-INFO"
+        },
+        {
+          "name": "syft:location:1:path",
+          "value": "/usr/lib64/python3.12/site-packages/Brotli-1.1.0-py3.12.egg-info/top_level.txt"
+        }
+      ]
+    }
+  ]
+}
