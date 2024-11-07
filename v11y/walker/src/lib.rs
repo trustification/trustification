@@ -108,10 +108,16 @@ impl Run {
                             continue;
                         }
 
+                        let mut name_matches_prefix = false;
                         for prefix in &self.require_prefix {
-                            if !name.starts_with(prefix) {
-                                continue 'entry;
+                            if name.starts_with(prefix) {
+                                name_matches_prefix = true;
+                                continue;
                             }
+                        }
+                        match name_matches_prefix {
+                            true => (),
+                            false => continue 'entry,
                         }
 
                         if let Some(key) = name.strip_suffix(".json") {
