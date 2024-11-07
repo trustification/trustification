@@ -1227,7 +1227,7 @@ name = "bombastic-index"
 version = "0.1.0"
 dependencies = [
  "bombastic-model",
- "cyclonedx-bom",
+ "cyclonedx-bom 0.8.0",
  "env_logger",
  "log",
  "packageurl 0.4.0",
@@ -1263,7 +1263,7 @@ dependencies = [
 name = "bombastic-model"
 version = "0.1.0"
 dependencies = [
- "cyclonedx-bom",
+ "cyclonedx-bom 0.8.0",
  "log",
  "serde",
  "serde_json",
@@ -2116,6 +2116,30 @@ name = "cyclonedx-bom"
 version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fa4bc2b1186cf894ec0192863b5d6e6164de1a39ab66d2a281a4157b4ea45138"
+dependencies = [
+ "base64 0.21.7",
+ "cyclonedx-bom-macros",
+ "fluent-uri 0.1.4",
+ "indexmap 2.2.6",
+ "once_cell",
+ "ordered-float 4.2.0",
+ "purl",
+ "regex",
+ "serde",
+ "serde_json",
+ "spdx",
+ "strum 0.26.2",
+ "thiserror",
+ "time",
+ "uuid",
+ "xml-rs",
+]
+
+[[package]]
+name = "cyclonedx-bom"
+version = "0.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ce2ec98a191e17f63b92b132f6852462de9eaee03ca8dbf2df401b9fd809bcac"
 dependencies = [
  "base64 0.21.7",
  "cyclonedx-bom-macros",
@@ -5975,7 +5999,7 @@ dependencies = [
  "bytes",
  "chrono",
  "csv",
- "cyclonedx-bom",
+ "cyclonedx-bom 0.7.0",
  "digest",
  "filetime",
  "fluent-uri 0.2.0",

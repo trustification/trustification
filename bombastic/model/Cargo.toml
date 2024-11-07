@@ -18,7 +18,7 @@ utoipa = { version = "4" }
 serde_json = "1"
 urlencoding = "2"
 
-cyclonedx-bom = { version = "0.7.0", optional =  true }
+cyclonedx-bom = { version = "0.8.0", optional =  true }
 spdx-rs = { version = "0.5.5", optional = true }
 
 [features]
