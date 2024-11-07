@@ -7,7 +7,7 @@ image:
   name: trust
   registry: ghcr.io/trustification
   pullPolicy: IfNotPresent
-  version: 24c355f6f1f70df574aa66aa96ea7a1035e89da9
+  version: 8c23c4c654fb7e46cc4df82e41ad45505af53645
 
 guac:
   image:
