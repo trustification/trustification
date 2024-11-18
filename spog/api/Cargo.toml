@@ -39,6 +39,9 @@ urlencoding = "2.1.2"
 utoipa = { version = "4", features = ["actix_extras", "yaml", "time"] }
 utoipa-swagger-ui = { version = "6", features = ["actix-web"] }
 v11y-model = { path = "../../v11y/model" }
+sbom-walker = { version = "0.9.3", features = ["cyclonedx-bom", "spdx-rs"] }
+cyclonedx-bom = { version = "0.7.0" }
+spdx-expression = "0.5.2"
 
 spog-model = { path = "../model" }
 vexination-model = { path = "../../vexination/model" }

@@ -5990,9 +5990,9 @@ dependencies = [
 
 [[package]]
 name = "sbom-walker"
-version = "0.9.0"
+version = "0.9.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d0f2fa9c1cd1452c16a54b01e1939b6a7617cc9228913aa5752c83bf0e3e8443"
+checksum = "74d230a1fc4bb9fea74333adbad2d466fd85927f8acec6a5234d9c4e96d838b8"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -6602,6 +6602,7 @@ dependencies = [
  "csaf",
  "cve",
  "cvss",
+ "cyclonedx-bom 0.7.0",
  "exhort-model",
  "futures",
  "guac",
@@ -6610,9 +6611,11 @@ dependencies = [
  "log",
  "packageurl 0.4.0",
  "reqwest 0.11.27",
+ "sbom-walker",
  "serde",
  "serde_json",
  "serde_yaml",
+ "spdx-expression",
  "spdx-rs",
  "spog-model",
  "sqlx",
@@ -8778,9 +8781,9 @@ dependencies = [
 
 [[package]]
 name = "walker-common"
-version = "0.9.0"
+version = "0.9.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cf77a96b67a43ce73c7f678bda475cc231c8c4c5976f8afe2ab67c3877e236dc"
+checksum = "2a874683afa5b5b913bcecbf74d4d3692f7a77849093c3645616d2d980f9989d"
 dependencies = [
  "anyhow",
  "async-trait",
