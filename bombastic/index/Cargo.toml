@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 bombastic-model = { path = "../model" }
-cyclonedx-bom = "0.7.0"
+cyclonedx-bom = "0.8.0"
 log = "0.4"
 packageurl = "0.4"
 serde_json = "1.0.68"

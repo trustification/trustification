@@ -1,10 +1,8 @@
 use cyclonedx_bom::errors::JsonReadError;
-use cyclonedx_bom::prelude::{SpecVersion, Validate, ValidationResult};
+use cyclonedx_bom::prelude::{Validate, ValidationResult};
 use cyclonedx_bom::validation::ValidationErrorsKind;
-use serde_json::Value;
 use std::collections::HashSet;
 use std::fmt::Formatter;
-use std::str::FromStr;
 use tracing::{info_span, instrument};
 
 #[derive(Debug)]
@@ -79,8 +77,7 @@ impl SBOM {
                     // the serial number is missing and this isn't what we want because
                     // serial number is mandatory for trustification to correlate properly
                     Some(_) => {
-                        let spec_version = Self::get_cyclonedx_spec_version(data)?;
-                        let result = bom.validate_version(spec_version);
+                        let result = bom.validate();
                         match result.passed() {
                             true => return Ok(SBOM::CycloneDX(bom)),
                             false => {
@@ -118,33 +115,6 @@ impl SBOM {
             }
         }
 
-        Err(err)
-    }
-
-    fn get_cyclonedx_spec_version(data: &[u8]) -> Result<SpecVersion, Error> {
-        let mut err: Error = Default::default();
-        let spec_version_error: serde_json::Error = serde::de::Error::custom("No field 'specVersion' found");
-        let error = Some(JsonReadError::from(spec_version_error));
-        //workaround to deal with cyclonedx-rust-cargo validate() method
-        //validating against SpecVersion::V1_3, the default, in all cases
-        //we therefore have to discover the spec version from the json data
-        //to pass into validate_version() as the parsed bom doesn't contain this info
-        // let mut spec_version = SpecVersion::V1_3;
-        match serde_json::from_slice::<Value>(data) {
-            Ok(parsed_json) => match parsed_json.get("specVersion") {
-                Some(version) => match version.as_str() {
-                    Some(version) => match SpecVersion::from_str(version) {
-                        Ok(spec_version) => return Ok(spec_version),
-                        Err(e) => err.cyclonedx = Some(JsonReadError::from(e)),
-                    },
-                    None => err.cyclonedx = error,
-                },
-                None => {
-                    err.cyclonedx = error;
-                }
-            },
-            Err(e) => err.cyclonedx = Some(JsonReadError::from(e)),
-        }
         Err(err)
     }
 
