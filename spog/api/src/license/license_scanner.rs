@@ -4,6 +4,7 @@ use cyclonedx_bom::prelude::{Bom, Component, NormalizedString};
 use sbom_walker::Sbom;
 use spdx_expression::SpdxExpressionError;
 use spdx_rs::models::SPDX;
+use std::str::FromStr;
 
 pub struct LicenseScanner {
     sbom: Sbom,
@@ -23,7 +24,7 @@ impl LicenseScanner {
     pub fn scanner(&self) -> Result<SbomLicense, LicenseScannerError> {
         match &self.sbom {
             Sbom::Spdx(spdx_bom) => {
-                let (sbom_name, all_packages) = self.handle_spdx_sbom(&spdx_bom);
+                let (sbom_name, all_packages) = self.handle_spdx_sbom(spdx_bom);
                 let license_result = SbomLicense {
                     sbom_name: sbom_name.to_string(),
                     packages: all_packages,
@@ -32,7 +33,7 @@ impl LicenseScanner {
                 Ok(license_result)
             }
             Sbom::CycloneDx(cyclonedx_bom) => {
-                let (sbom_name, all_packages) = self.handle_cyclonedx_sbom(&cyclonedx_bom)?;
+                let (sbom_name, all_packages) = self.handle_cyclonedx_sbom(cyclonedx_bom)?;
                 let license_result = SbomLicense {
                     sbom_name: sbom_name.to_string(),
                     packages: all_packages,
@@ -49,7 +50,7 @@ impl LicenseScanner {
             .as_ref()
             .and_then(|metadata| metadata.component.as_ref())
             .map(|component| (component.name.to_string()))
-            .unwrap_or_else(|| (String::default()));
+            .unwrap_or_else(String::default);
 
         let mut sbom_package_list = Vec::new();
         if let Some(cs) = &cyclonedx_bom.components {
@@ -58,18 +59,31 @@ impl LicenseScanner {
                 let package_version = component
                     .version
                     .clone()
-                    .unwrap_or_else(|| NormalizedString::default())
+                    .unwrap_or_else(NormalizedString::default)
                     .to_string();
                 let mut package_purl = String::default();
 
                 if let Some(purl) = component.purl.clone() {
                     package_purl = purl.to_string();
                 }
-
+                let mut purl_namespace = String::default();
+                let mut purl_version = String::default();
+                // let mut purl_type = String::default();
+                let mut purl_name = String::default();
+                if let Ok(pl) = packageurl::PackageUrl::from_str(&package_purl) {
+                    if let Some(namespace) = pl.namespace() {
+                        purl_namespace = namespace.to_string();
+                    }
+                    if let Some(version) = pl.version() {
+                        purl_version = version.to_string();
+                    }
+                    // purl_type = pl.ty().to_string();
+                    purl_name = pl.name().to_string();
+                }
                 let mut supplier = String::default();
                 if let Some(s) = component.supplier.clone() {
                     let ns = s.name;
-                    supplier = ns.unwrap_or_else(|| NormalizedString::new("")).to_string();
+                    supplier = ns.unwrap_or_else(NormalizedString::default).to_string();
                 }
 
                 let packages = self.handle_cyclonedx_sbom_component(&component)?;
@@ -77,6 +91,9 @@ impl LicenseScanner {
                     name: package_name,
                     version: Some(package_version),
                     purl: package_purl,
+                    purl_name,
+                    purl_namespace,
+                    purl_version,
                     supplier: Some(supplier),
                     licenses: packages,
                 })
@@ -102,8 +119,8 @@ impl LicenseScanner {
                                 license_id: not_spdx.to_string(),
                                 name: "".to_string(),
                                 license_text: "".to_string(),
-                                license_text_html: "".to_string(),
                                 is_license_ref: false,
+                                license_comment: "".to_string(),
                             });
                         }
                     },
@@ -125,8 +142,8 @@ impl LicenseScanner {
                         license_id: spdx.identifier.clone(),
                         name: "".to_string(),
                         license_text: "".to_string(),
-                        license_text_html: "".to_string(),
                         is_license_ref: false,
+                        license_comment: "".to_string(),
                     });
                 }
             }
@@ -169,8 +186,11 @@ impl LicenseScanner {
                                 license_id: license_info.license_identifier.to_string(),
                                 name: license_info.license_name.to_string(),
                                 license_text: license_info.extracted_text.to_string(),
-                                license_text_html: "".to_string(),
                                 is_license_ref: true,
+                                license_comment: license_info
+                                    .license_comment
+                                    .as_ref()
+                                    .map_or(String::new(), |v| v.to_string()),
                             });
                         }
                     } else {
@@ -178,17 +198,35 @@ impl LicenseScanner {
                             license_id: String::from(&l.identifier),
                             name: String::from(&l.identifier),
                             license_text: "".to_string(),
-                            license_text_html: "".to_string(),
+                            license_comment: "".to_string(),
                             is_license_ref: false,
                         });
                     }
                 }
             }
 
+            let mut purl_namespace = String::default();
+            let mut purl_version = String::default();
+            // let mut purl_type = String::default();
+            let mut purl_name = String::default();
+
+            if let Ok(pl) = packageurl::PackageUrl::from_str(package_url) {
+                if let Some(namespace) = pl.namespace() {
+                    purl_namespace = namespace.to_string();
+                }
+                if let Some(version) = pl.version() {
+                    purl_version = version.to_string();
+                }
+                // purl_type = pl.ty().to_string();
+                purl_name = pl.name().to_string();
+            }
             let result = SbomPackage {
                 name: String::from(package_name),
                 version: package_version,
                 purl: package_url.to_string(),
+                purl_name,
+                purl_namespace,
+                purl_version,
                 supplier: package_supplier,
                 licenses: spdx_ids,
             };
