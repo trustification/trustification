@@ -1,13 +1,18 @@
 use crate::license::{PackageLicense, SbomLicense, SbomPackage};
+use actix_web::body::BoxBody;
+use actix_web::http::header::ContentType;
+use actix_web::{HttpResponse, ResponseError};
+use bombastic_model::data::SBOM;
 use cyclonedx_bom::models::license::{LicenseChoice, LicenseIdentifier};
 use cyclonedx_bom::prelude::{Bom, Component, NormalizedString};
-use sbom_walker::Sbom;
+use http::StatusCode;
 use spdx_expression::SpdxExpressionError;
 use spdx_rs::models::SPDX;
 use std::str::FromStr;
+use trustification_common::error::ErrorInformation;
 
 pub struct LicenseScanner {
-    sbom: Sbom,
+    sbom: SBOM,
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -16,14 +21,35 @@ pub enum LicenseScannerError {
     SpdxExpression(#[from] SpdxExpressionError),
 }
 
+impl ResponseError for LicenseScannerError {
+    fn status_code(&self) -> StatusCode {
+        match self {
+            LicenseScannerError::SpdxExpression(_) => StatusCode::INTERNAL_SERVER_ERROR,
+        }
+    }
+
+    fn error_response(&self) -> HttpResponse<BoxBody> {
+        let mut res = HttpResponse::build(self.status_code());
+        res.insert_header(ContentType::json());
+
+        match self {
+            LicenseScannerError::SpdxExpression(spdx) => res.json(ErrorInformation {
+                error: format!("{}", self.status_code()),
+                message: format!("{}", spdx),
+                details: spdx.to_string(),
+            }),
+        }
+    }
+}
+
 impl LicenseScanner {
-    pub fn new(sbom: Sbom) -> Self {
-        LicenseScanner { sbom: sbom }
+    pub fn new(sbom: SBOM) -> Self {
+        LicenseScanner { sbom }
     }
 
     pub fn scanner(&self) -> Result<SbomLicense, LicenseScannerError> {
         match &self.sbom {
-            Sbom::Spdx(spdx_bom) => {
+            SBOM::SPDX(spdx_bom) => {
                 let (sbom_name, all_packages) = self.handle_spdx_sbom(spdx_bom);
                 let license_result = SbomLicense {
                     sbom_name: sbom_name.to_string(),
@@ -32,7 +58,7 @@ impl LicenseScanner {
 
                 Ok(license_result)
             }
-            Sbom::CycloneDx(cyclonedx_bom) => {
+            SBOM::CycloneDX(cyclonedx_bom) => {
                 let (sbom_name, all_packages) = self.handle_cyclonedx_sbom(cyclonedx_bom)?;
                 let license_result = SbomLicense {
                     sbom_name: sbom_name.to_string(),
@@ -50,7 +76,7 @@ impl LicenseScanner {
             .as_ref()
             .and_then(|metadata| metadata.component.as_ref())
             .map(|component| (component.name.to_string()))
-            .unwrap_or_else(String::default);
+            .unwrap_or_default();
 
         let mut sbom_package_list = Vec::new();
         if let Some(cs) = &cyclonedx_bom.components {
@@ -86,7 +112,7 @@ impl LicenseScanner {
                     supplier = ns.unwrap_or_else(NormalizedString::default).to_string();
                 }
 
-                let packages = self.handle_cyclonedx_sbom_component(&component)?;
+                let packages = self.handle_cyclonedx_sbom_component(component)?;
                 sbom_package_list.push(SbomPackage {
                     name: package_name,
                     version: Some(package_version),
@@ -107,7 +133,7 @@ impl LicenseScanner {
         component: &Component,
     ) -> Result<Vec<PackageLicense>, LicenseScannerError> {
         let mut licenses = Vec::new();
-        component.licenses.as_ref().map(|l| {
+        if let Some(l) = component.licenses.as_ref() {
             for pl in l.0.clone() {
                 match pl {
                     LicenseChoice::License(spl) => match spl.license_identifier {
@@ -129,7 +155,7 @@ impl LicenseScanner {
                     }
                 }
             }
-        });
+        };
         Ok(licenses)
     }
 
@@ -237,16 +263,15 @@ impl LicenseScanner {
     }
 }
 
+#[cfg(test)]
 mod tests {
-    use crate::license::license_scanner::LicenseScanner;
-    use sbom_walker::model::sbom::ParseAnyError;
-    use sbom_walker::Sbom;
+    use super::*;
+    use bombastic_model::data::SBOM;
     use std::path::Path;
 
-    fn load_sbom_file(path: impl AsRef<Path>) -> Result<Sbom, ParseAnyError> {
-        let data = std::fs::read(&path).unwrap();
-        Ok(Sbom::try_parse_any(&data)
-            .unwrap_or_else(|_| panic!("failed to parse test data: {}", path.as_ref().display())))
+    fn load_sbom_file(path: impl AsRef<Path>) -> Result<SBOM, anyhow::Error> {
+        let data = std::fs::read(&path).unwrap_or_else(|e| panic!("read file failed {:?}", e));
+        Ok(SBOM::parse(&data).unwrap_or_else(|_| panic!("failed to parse test data: {}", path.as_ref().display())))
     }
 
     #[tokio::test]
@@ -283,8 +308,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_cydx() {
-        let sbom =
-            load_sbom_file("../test-data/application.cdx.json").unwrap_or_else(|_| panic!("failed to parse test data"));
+        let sbom = load_sbom_file("../test-data/my-sbom.json").unwrap_or_else(|_| panic!("failed to parse test data"));
 
         let license_scanner = LicenseScanner::new(sbom);
 
@@ -295,13 +319,11 @@ mod tests {
         let package_license = sbom_licenses
             .packages
             .iter()
-            .find(|p| p.purl == "pkg:maven/org.springframework.boot/spring-boot-starter-actuator@3.3.4?type=jar");
+            .find(|p| p.purl == "pkg:maven/io.quarkus/quarkus-arc@2.16.2.Final?type=jar");
 
         if let Some(pl) = package_license {
             let ls: Vec<String> = pl.licenses.iter().map(|l| l.license_id.clone()).collect();
-            // let expected = vec!["Apache-2.0", "GPL+"];
             assert!(ls.contains(&"Apache-2.0".to_string()));
-            assert!(ls.contains(&"GPL+".to_string()));
         } else {
             panic!("the unit test failed");
         }

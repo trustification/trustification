@@ -1,5 +1,5 @@
-mod license_exporter;
-mod license_scanner;
+pub mod license_exporter;
+pub mod license_scanner;
 
 pub struct SbomLicense {
     pub sbom_name: String,

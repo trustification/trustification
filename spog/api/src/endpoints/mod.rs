@@ -3,6 +3,7 @@ pub mod analyze;
 pub mod cve;
 pub mod dashboard;
 pub mod index;
+pub mod license;
 pub mod package;
 pub mod sbom;
 pub mod suggestion;
