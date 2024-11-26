@@ -38,9 +38,12 @@ spec:
                 - "-ec"
                 - |
                   if test -d cvelistV5; then
+                    if [ -f /git/cvelistV5/.git/index.lock ]; then
+                      rm -f /git/cvelistV5/.git/index.lock
+                    fi
+
                     cd cvelistV5
-                    git stash
-                    git stash clear
+                    git reset --hard
                     git pull
                   else
                     git clone https://github.com/CVEProject/cvelistV5
