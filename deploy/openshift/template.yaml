@@ -2042,9 +2042,10 @@ objects:
                   workingDir: /git
                   args:
                     - -ec
-                    - "if test -d cvelistV5; then\n  cd cvelistV5\n  git stash\n \
-                      \ git stash clear\n  git pull\nelse\n  git clone https://github.com/CVEProject/cvelistV5\n\
-                      fi\n"
+                    - "if test -d cvelistV5; then\n  if [ -f /git/cvelistV5/.git/index.lock\
+                      \ ]; then\n    rm -f /git/cvelistV5/.git/index.lock\n  fi\n\n\
+                      \  cd cvelistV5\n  git reset --hard\n  git pull\nelse\n  git\
+                      \ clone https://github.com/CVEProject/cvelistV5\nfi\n"
               containers:
                 - image: ${BACKEND_IMAGE}:${IMAGE_TAG}
                   imagePullPolicy: Always
