@@ -58,7 +58,7 @@ Arguments (dict):
 */}}
 {{ define "trustification.application.infrastructure.probes" }}
 livenessProbe:
-  initialDelaySeconds: 2
+  initialDelaySeconds: {{- include "trustification.application.infrastructure.livenessProbe.initialDelaySeconds" . }}
   httpGet:
     path: /health/live
     port: {{ include "trustification.application.infrastructure.port" . }}
