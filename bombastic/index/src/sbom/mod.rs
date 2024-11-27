@@ -12,7 +12,7 @@ use spdx_rs::models::Algorithm;
 use time::{format_description::well_known::Rfc3339, OffsetDateTime};
 use trustification_api::search::SearchOptions;
 use trustification_index::{
-    boost, create_boolean_query, create_date_query, create_string_query, field2str,
+    boost, create_boolean_query, create_date_query, create_i64_query, create_string_query, field2str,
     metadata::doc2metadata,
     tantivy::{
         self,
@@ -80,7 +80,7 @@ impl Index {
     pub fn new() -> Self {
         let mut schema = Schema::builder();
         let fields = Fields {
-            indexed_timestamp: schema.add_date_field("indexed_timestamp", STORED),
+            indexed_timestamp: schema.add_i64_field("indexed_timestamp", INDEXED | FAST | STORED),
             sbom_id: schema.add_text_field("sbom_id", STRING | FAST | STORED),
             sbom_uid: schema.add_text_field("sbom_uid", STRING | FAST | STORED),
             sbom_sha256: schema.add_text_field("sbom_sha256", STRING | STORED),
@@ -130,10 +130,11 @@ impl Index {
             &bom.document_creation_information.spdx_document_namespace,
         );
         document.add_text(self.fields.sbom_name, &bom.document_creation_information.document_name);
-        document.add_date(
-            self.fields.indexed_timestamp,
-            DateTime::from_utc(OffsetDateTime::now_utc()),
-        );
+
+        let now = OffsetDateTime::now_utc();
+        let nanos_since_epoch = now.unix_timestamp_nanos();
+        let nanos_since_epoch_i64 = nanos_since_epoch as i64;
+        document.add_i64(self.fields.indexed_timestamp, nanos_since_epoch_i64);
 
         for creators in &bom.document_creation_information.creation_info.creators {
             document.add_text(self.fields.sbom_creators, creators);
@@ -240,10 +241,11 @@ impl Index {
         if let Some(serial) = &bom.serial_number {
             document.add_text(self.fields.sbom_uid, serial.to_string());
         }
-        document.add_date(
-            self.fields.indexed_timestamp,
-            DateTime::from_utc(OffsetDateTime::now_utc()),
-        );
+        let now = OffsetDateTime::now_utc();
+        let nanos_since_epoch = now.unix_timestamp_nanos();
+        let nanos_since_epoch_i64 = nanos_since_epoch as i64;
+        document.add_i64(self.fields.indexed_timestamp, nanos_since_epoch_i64);
+
         if let Some(metadata) = &bom.metadata {
             if let Some(timestamp) = &metadata.timestamp {
                 let timestamp = timestamp.to_string();
@@ -284,7 +286,7 @@ impl Index {
     ) {
         if let Some(hashes) = &component.hashes {
             for hash in hashes.0.iter() {
-                if hash.alg == HashAlgorithm::SHA256 {
+                if hash.alg == HashAlgorithm::SHA_256 {
                     document.add_text(fields.sha256, &hash.content.0);
                 }
             }
@@ -331,6 +333,10 @@ impl Index {
                 LicenseChoice::Expression(_) => (),
             });
         }
+
+        if let Some(cpe) = &component.cpe {
+            document.add_text(fields.cpe, cpe);
+        };
 
         document.add_text(fields.classifier, component.component_type.to_string());
     }
@@ -417,6 +423,10 @@ impl Index {
             Packages::Device => self.match_classifiers(Classification::Device),
             Packages::Firmware => self.match_classifiers(Classification::Firmware),
             Packages::File => self.match_classifiers(Classification::File),
+            Packages::IndexedTimestamp(ordered) => boost(
+                create_i64_query(&self.schema, self.fields.indexed_timestamp, ordered),
+                CREATED_WEIGHT,
+            ),
         }
     }
 
@@ -451,6 +461,14 @@ impl trustification_index::Index for Index {
                     }
                     Direction::Ascending => {
                         sort_by.replace((self.fields.sbom_created, Order::Asc));
+                    }
+                },
+                PackagesSortable::IndexedTimestamp => match f.direction {
+                    Direction::Descending => {
+                        sort_by.replace((self.fields.indexed_timestamp, Order::Desc));
+                    }
+                    Direction::Ascending => {
+                        sort_by.replace((self.fields.indexed_timestamp, Order::Asc));
                     }
                 },
             }
@@ -578,6 +596,15 @@ impl trustification_index::Index for Index {
             .unwrap_or(time::OffsetDateTime::UNIX_EPOCH);
 
         let dependencies: u64 = doc.get_all(self.fields.dep.purl).count() as u64;
+
+        let indexed_timestamp = doc
+            .get_first(self.fields.indexed_timestamp)
+            .map(|s| {
+                s.as_i64()
+                    .unwrap_or(time::OffsetDateTime::UNIX_EPOCH.unix_timestamp_nanos() as i64)
+            })
+            .unwrap_or(time::OffsetDateTime::UNIX_EPOCH.unix_timestamp_nanos() as i64);
+
         let document = SearchDocument {
             id: id.to_string(),
             uid,
@@ -594,6 +621,7 @@ impl trustification_index::Index for Index {
             created,
             description: description.to_string(),
             dependencies,
+            indexed_timestamp,
         };
 
         let explanation: Option<serde_json::Value> = if options.explain {
@@ -663,17 +691,15 @@ impl trustification_index::WriteIndex for Index {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use sbom_walker::Sbom;
     use std::path::Path;
-    use time::format_description;
     use trustification_index::{IndexStore, IndexWriter};
 
-    use super::*;
-
     const TESTDATA: &[&str] = &[
-        "../testdata/ubi9-sbom.json",
         "../testdata/kmm-1.json",
         "../testdata/my-sbom.json",
+        "../testdata/ubi9-sbom.json",
     ];
 
     fn load_valid_file(store: &mut IndexStore<Index>, writer: &mut IndexWriter, path: impl AsRef<Path>) {
@@ -724,8 +750,31 @@ mod tests {
     async fn test_search_form() {
         assert_search(|index| {
             let result = search(&index, "ubi9-container");
+
             assert_eq!(result.0.len(), 1);
         });
+    }
+
+    #[tokio::test]
+    async fn test_search_sort_by_indexed_timestamp() {
+        assert_search(|index| {
+            let (last_update_docs, _size) = search(&index, "-sort:indexedTimestamp");
+            for doc in &last_update_docs {
+                println!(
+                    "name: {:?}  indexed_timestamp: {:?} created : {:?}",
+                    doc.document.id, doc.document.indexed_timestamp, doc.document.created
+                );
+            }
+            assert_eq!("ubi9-sbom", &last_update_docs[0].document.id);
+        });
+    }
+
+    #[tokio::test]
+    async fn test_total_num() {
+        assert_search(|index| {
+            let num = &index.get_total_docs();
+            assert_eq!(num.as_ref().unwrap(), &3);
+        })
     }
 
     #[tokio::test]
@@ -746,7 +795,15 @@ mod tests {
             let result = search(&index, "ubi9-containe in:package");
             assert_eq!(result.0.len(), 1);
 
+            // SPDX CPE
             let result = search(&index, "\"cpe:/a:redhat:kernel_module_management:1.0::el9\" in:package");
+            assert_eq!(result.0.len(), 1);
+
+            // CycloneDX CPE
+            let result = search(
+                &index,
+                "\"cpe:/o:io.seedwing:seedwing-java-example:1.0.0-SNAPSHOT::\" in:package",
+            );
             assert_eq!(result.0.len(), 1);
         });
     }
@@ -884,8 +941,8 @@ mod tests {
             for result in result.0 {
                 assert!(result.metadata.is_some());
                 let indexed_date = result.metadata.as_ref().unwrap()["indexed_timestamp"].clone();
-                let value: &str = indexed_date["values"][0].as_str().unwrap();
-                let indexed_date = OffsetDateTime::parse(value, &format_description::well_known::Rfc3339).unwrap();
+                let value = indexed_date["values"][0].as_i64().unwrap();
+                let indexed_date = OffsetDateTime::from_unix_timestamp_nanos(value as i128).unwrap();
                 assert!(indexed_date >= now);
             }
         });

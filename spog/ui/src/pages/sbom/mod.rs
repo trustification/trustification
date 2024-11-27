@@ -258,6 +258,11 @@ fn details(props: &DetailsProps) -> Html {
                                     </GridItem>
                                 </Grid>
                             </StackItem>
+                            <StackItem>
+                                <Grid gutter=true>
+                                    <GridItem cols={[12]}>{cyclonedx_main(bom)}</GridItem>
+                                </Grid>
+                            </StackItem>
                         </Stack>
                     </PageSection>
 

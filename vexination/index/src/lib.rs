@@ -13,8 +13,8 @@ use std::{
 use time::OffsetDateTime;
 use trustification_api::search::SearchOptions;
 use trustification_index::{
-    boost, create_date_query, create_float_query, create_string_query, create_string_query_case, create_text_query,
-    field2date, field2float, field2str, field2str_opt, field2strvec,
+    boost, create_date_query, create_float_query, create_i64_query, create_string_query, create_string_query_case,
+    create_text_query, field2date, field2float, field2str, field2str_opt, field2strvec,
     metadata::doc2metadata,
     sort_by,
     tantivy::{
@@ -88,6 +88,7 @@ impl trustification_index::Index for Index {
         let sort_by = query.sorting.first().map(|f| match f.qualifier {
             VulnerabilitiesSortable::Severity => sort_by(f.direction, self.fields.advisory_severity_score),
             VulnerabilitiesSortable::Release => sort_by(f.direction, self.fields.advisory_current),
+            VulnerabilitiesSortable::IndexedTimestamp => sort_by(f.direction, self.fields.indexed_timestamp),
         });
 
         let query = if query.term.is_empty() {
@@ -193,6 +194,13 @@ impl trustification_index::Index for Index {
             }
         }
 
+        let indexed_timestamp = doc
+            .get_first(self.fields.indexed_timestamp)
+            .map(|s| {
+                s.as_i64()
+                    .unwrap_or(time::OffsetDateTime::UNIX_EPOCH.unix_timestamp_nanos() as i64)
+            })
+            .unwrap_or(time::OffsetDateTime::UNIX_EPOCH.unix_timestamp_nanos() as i64);
         let document = SearchDocument {
             advisory_id: advisory_id.to_string(),
             advisory_title: advisory_title.to_string(),
@@ -203,6 +211,7 @@ impl trustification_index::Index for Index {
             cves,
             cvss_max,
             cve_severity_count,
+            indexed_timestamp,
         };
 
         let explanation = if options.explain {
@@ -262,10 +271,10 @@ impl trustification_index::WriteIndex for Index {
             self.fields.advisory_title => csaf.document.title.clone(),
         );
 
-        document.add_date(
-            self.fields.indexed_timestamp,
-            DateTime::from_utc(OffsetDateTime::now_utc()),
-        );
+        let now = OffsetDateTime::now_utc();
+        let nanos_since_epoch = now.unix_timestamp_nanos();
+        let nanos_since_epoch_i64 = nanos_since_epoch as i64;
+        document.add_i64(self.fields.indexed_timestamp, nanos_since_epoch_i64);
 
         if let Some(notes) = &csaf.document.notes {
             for note in notes {
@@ -497,7 +506,7 @@ impl Index {
     // TODO use CONST for field names
     pub fn new() -> Self {
         let mut schema = Schema::builder();
-        let indexed_timestamp = schema.add_date_field("indexed_timestamp", STORED);
+        let indexed_timestamp = schema.add_i64_field("indexed_timestamp", INDEXED | FAST | STORED);
 
         let advisory_id = schema.add_text_field("advisory_id", STRING | FAST);
         let advisory_id_raw = schema.add_text_field("advisory_id_raw", STRING | STORED);
@@ -633,6 +642,9 @@ impl Index {
             Vulnerabilities::CveDiscovery(ordered) => {
                 create_date_query(&self.schema, self.fields.cve_discovery, ordered)
             }
+            Vulnerabilities::IndexedTimestamp(value) => {
+                create_i64_query(&self.schema, self.fields.indexed_timestamp, value)
+            }
         }
     }
 }
@@ -735,7 +747,6 @@ fn rewrite_cpe_partial(value: &str) -> String {
 #[cfg(test)]
 mod tests {
     use std::fmt::Display;
-    use time::format_description;
     use trustification_index::IndexStore;
 
     use super::*;
@@ -788,6 +799,20 @@ mod tests {
                 },
             )
             .unwrap()
+    }
+
+    #[tokio::test]
+    async fn test_search_sort_by_indexed_timestamp() {
+        assert_search(|index| {
+            let (last_update_docs, _size) = search(&index, "-sort:indexedTimestamp");
+            for doc in &last_update_docs {
+                println!(
+                    "name: {:?}  indexed_timestamp: {:?} created : {:?}",
+                    doc.document.advisory_id, doc.document.indexed_timestamp, doc.document.advisory_date
+                );
+            }
+            assert_eq!("RHSA-2023:4378", &last_update_docs[0].document.advisory_id);
+        });
     }
 
     #[tokio::test]
@@ -1120,8 +1145,8 @@ mod tests {
             for result in result.0 {
                 assert!(result.metadata.is_some());
                 let indexed_date = result.metadata.as_ref().unwrap()["indexed_timestamp"].clone();
-                let value: &str = indexed_date["values"][0].as_str().unwrap();
-                let indexed_date = OffsetDateTime::parse(value, &format_description::well_known::Rfc3339).unwrap();
+                let value = indexed_date["values"][0].as_i64().unwrap();
+                let indexed_date = OffsetDateTime::from_unix_timestamp_nanos(value as i128).unwrap();
                 assert!(indexed_date >= now);
             }
         });

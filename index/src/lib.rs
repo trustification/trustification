@@ -847,6 +847,14 @@ where
 }
 
 impl<INDEX: Index> IndexStore<INDEX> {
+    /// To obtain the total number of docs.
+    pub fn get_total_docs(&self) -> Result<u64, Error> {
+        let inner = self.inner.read();
+        let reader = inner.reader()?;
+        let searcher = reader.searcher();
+        Ok(searcher.num_docs())
+    }
+
     /// Search the index for a given query and return matching documents.
     pub fn search(
         &self,
@@ -1013,6 +1021,48 @@ pub fn term2query<'m, R: Search, F: Fn(&R::Parsed<'m>) -> Box<dyn Query>>(
                 query_terms.push(term2query(term, f));
             }
             Box::new(BooleanQuery::union(query_terms))
+        }
+    }
+}
+
+/// Crate a i64 query based on an ordered value
+pub fn create_i64_query(schema: &Schema, field: Field, value: &Ordered<i64>) -> Box<dyn Query> {
+    let field_name = schema.get_field_name(field).to_string();
+
+    match value {
+        Ordered::Less(e) => Box::new(RangeQuery::new_term_bounds(
+            field_name,
+            Type::I64,
+            &Bound::Unbounded,
+            &Bound::Excluded(Term::from_field_i64(field, *e)),
+        )),
+        Ordered::LessEqual(e) => Box::new(RangeQuery::new_term_bounds(
+            field_name,
+            Type::I64,
+            &Bound::Unbounded,
+            &Bound::Included(Term::from_field_i64(field, *e)),
+        )),
+        Ordered::Greater(e) => Box::new(RangeQuery::new_term_bounds(
+            field_name,
+            Type::I64,
+            &Bound::Excluded(Term::from_field_i64(field, *e)),
+            &Bound::Unbounded,
+        )),
+        Ordered::GreaterEqual(e) => Box::new(RangeQuery::new_term_bounds(
+            field_name,
+            Type::I64,
+            &Bound::Included(Term::from_field_i64(field, *e)),
+            &Bound::Unbounded,
+        )),
+        Ordered::Equal(e) => {
+            let from = Bound::Included(Term::from_field_i64(field, *e));
+            let to = Bound::Included(Term::from_field_i64(field, *e));
+            Box::new(RangeQuery::new_term_bounds(field_name, Type::I64, &from, &to))
+        }
+        Ordered::Range(from, to) => {
+            let from = bound_map(*from, |f| Term::from_field_i64(field, f));
+            let to = bound_map(*to, |f| Term::from_field_i64(field, f));
+            Box::new(RangeQuery::new_term_bounds(field_name, Type::I64, &from, &to))
         }
     }
 }

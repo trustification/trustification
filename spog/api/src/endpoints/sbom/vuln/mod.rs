@@ -82,7 +82,7 @@ pub async fn get_vulnerabilities(
 }
 
 #[instrument(skip(state, guac, v11y, access_token), err)]
-async fn process_get_vulnerabilities(
+pub async fn process_get_vulnerabilities(
     state: &AppState,
     v11y: &V11yService,
     guac: &GuacService,
@@ -154,7 +154,7 @@ async fn process_get_vulnerabilities(
                 .and_then(|metadata| metadata.timestamp.as_ref())
                 .and_then(|timestamp| {
                     let format = format_description!("[year]-[month]-[day]");
-                    match OffsetDateTime::parse(&timestamp.to_string(), &format) {
+                    match OffsetDateTime::parse(timestamp.as_ref(), &format) {
                         Ok(time) => Some(time),
                         Err(_) => None,
                     }

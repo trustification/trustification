@@ -70,7 +70,7 @@ pub fn parse(data: &[u8]) -> Result<SBOM, anyhow::Error> {
             let spec_version = json.as_ref().and_then(|json| json["specVersion"].as_str());
 
             match spec_version {
-                Some("1.3") | Some("1.4") => {}
+                Some("1.3") | Some("1.4") | Some("1.5") => {}
                 Some(other) => bail!("Unsupported CycloneDX version: {other}"),
                 None => bail!("Unable to detect CycloneDX version"),
             }
@@ -216,7 +216,7 @@ fn common_header(props: &CommonHeaderProperties) -> Html {
                     <Content>
                         <Title>{"Scan an SBOM"}</Title>
                         <p>
-                            {"Load an existing CycloneDX 1.4 or SPDX 2.2 file"}
+                            {"Load an existing CycloneDX (1.3, 1.4, 1.5) or SPDX (2.2, SPDX 2.3) file"}
                             if let Some(url) = &config.scanner.documentation_url {
                                 {" or "}
                                 <a

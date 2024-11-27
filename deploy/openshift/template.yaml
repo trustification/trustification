@@ -91,6 +91,20 @@ objects:
   - kind: PersistentVolumeClaim
     apiVersion: v1
     metadata:
+      name: user-preferences-db-path
+      labels:
+        name: user-preferences-db-path
+        app: spog
+        component: spog-api
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 10Mi
+  - kind: PersistentVolumeClaim
+    apiVersion: v1
+    metadata:
       name: v11y-storage
       labels:
         app.kubernetes.io/name: v11y-api
@@ -746,7 +760,7 @@ objects:
                 - -p
                 - '8080'
                 - --csub-url
-                - http://guac-collectsub.${K8S_NAMESPACE}.svc.cluster.local:2782
+                - http://guac-collectsub:2782
                 - --auth-configuration
                 - /etc/config/auth.yaml
                 - --storage-base
@@ -1166,6 +1180,7 @@ objects:
                 - api
                 - -p
                 - '8080'
+                - --db-storage-base
                 - --bombastic-url
                 - https://bombastic-api.$(NAMESPACE).svc
                 - --vexination-url
@@ -1258,6 +1273,8 @@ objects:
                   name: config
                 - mountPath: /etc/customize
                   name: customize
+                - mountPath: /data/db/
+                  name: user-preferences-db-path
                 - mountPath: /etc/tls
                   name: tls
           volumes:
@@ -1270,6 +1287,9 @@ objects:
             - name: tls
               secret:
                 secretName: spog-api-tls
+            - name: user-preferences-db-path
+              persistentVolumeClaim:
+                claimName: user-preferences-db-path
   - apiVersion: apps/v1
     kind: Deployment
     metadata:
@@ -2042,10 +2062,10 @@ objects:
                   workingDir: /git
                   args:
                     - -ec
-                    - "if test -d cvelistV5; then\n  if [ -f /git/cvelistV5/.git/index.lock\
-                      \ ]; then\n    rm -f /git/cvelistV5/.git/index.lock\n  fi\n\n\
-                      \  cd cvelistV5\n  git reset --hard\n  git pull\nelse\n  git\
-                      \ clone https://github.com/CVEProject/cvelistV5\nfi\n"
+                    - "if [ -f /git/cvelistV5/.git/index.lock ]; then\n  rm -f /git/cvelistV5/.git/index.lock\n\
+                      fi\nif test -d cvelistV5; then\n  cd cvelistV5\n  git reset\
+                      \ --hard\n  git pull\nelse\ngit clone https://github.com/CVEProject/cvelistV5\n\
+                      fi\n"
               containers:
                 - image: ${BACKEND_IMAGE}:${IMAGE_TAG}
                   imagePullPolicy: Always
