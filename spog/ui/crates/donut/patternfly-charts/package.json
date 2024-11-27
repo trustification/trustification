@@ -21,7 +21,8 @@
   },
   "overrides": {
     "async": "^3.2.6",
-    "body-parser": "^1.20.3"
+    "body-parser": "^1.20.3",
+    "serialize-javascript": "^6.0.2"
   },
   "scripts": {
     "copy:js:main": "cp build/static/js/main.js ../js/main.js",
