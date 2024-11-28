@@ -66,62 +66,78 @@ impl LicenseExporter {
     pub fn generate(&self) -> Result<Vec<u8>, LicenseExporterError> {
         let mut wtr_sbom = WriterBuilder::new()
             .delimiter(b'\t')
+            .quote_style(csv::QuoteStyle::Always)
             .has_headers(true) // Set delimiter to tab
             .from_writer(vec![]);
-        wtr_sbom.write_record([
-            "name",
-            "package_name",
-            "package_namespace",
-            "package_version",
-            "referenceLocator",
-            "licenceDeclared: license_ID",
-            "licenceDeclared: license_name",
-        ])?;
 
         let mut wtr_license_ref = WriterBuilder::new()
             .delimiter(b'\t')
+            .quote_style(csv::QuoteStyle::Always)
             .has_headers(true)
             .from_writer(vec![]);
         wtr_license_ref.write_record(["licenseId", "name", "extracted text", "comment"])?;
 
-        wtr_sbom.write_record([
-            &self.sbom_license.sbom_name,
-            "            ",
-            "                ",
-            "              ",
-            "               ",
-            "                         ",
-            "                           ",
-        ])?;
+        if self.sbom_license.is_spdx {
+            wtr_sbom.write_record(["name", "namespace", "referenceLocator", "license", "license name"])?;
 
-        for pl in &self.sbom_license.packages {
-            wtr_sbom.write_record([
-                "",
-                &pl.purl_name,
-                &pl.purl_namespace,
-                &pl.version.as_ref().map_or(String::new(), |v| v.to_string()),
-                &pl.purl,
-                "",
-                "",
-            ])?;
+            for pl in &self.sbom_license.packages {
+                wtr_sbom.write_record([&pl.name, &self.sbom_license.sbom_namespace, &pl.purl, "", ""])?;
 
-            for l in &pl.licenses {
-                wtr_sbom.write_record([
-                    "    ",
-                    "            ",
-                    "                ",
-                    "              ",
-                    "                    ",
-                    l.license_id.as_str(),
-                    l.name.as_str(),
-                ])?;
-                if l.is_license_ref {
-                    wtr_license_ref.write_record([
+                for l in &pl.licenses {
+                    wtr_sbom.write_record([
+                        "           ",
+                        "           ",
+                        "            ",
                         l.license_id.as_str(),
                         l.name.as_str(),
-                        l.license_text.as_str(),
-                        l.license_comment.as_str(),
                     ])?;
+                    if l.is_license_ref {
+                        wtr_license_ref.write_record([
+                            l.license_id.as_str(),
+                            l.name.as_str(),
+                            l.license_text.as_str(),
+                            l.license_comment.as_str(),
+                        ])?;
+                    }
+                }
+            }
+        } else {
+            wtr_sbom.write_record([
+                "name",
+                "group",
+                "version",
+                "referenceLocator",
+                "license",
+                "license name",
+            ])?;
+
+            for pl in &self.sbom_license.packages {
+                wtr_sbom.write_record([
+                    &pl.name,
+                    &self.sbom_license.component_group,
+                    &self.sbom_license.component_version,
+                    &pl.purl,
+                    "",
+                    "",
+                ])?;
+
+                for l in &pl.licenses {
+                    wtr_sbom.write_record([
+                        "       ",
+                        "           ",
+                        "          ",
+                        "          ",
+                        l.license_id.as_str(),
+                        l.name.as_str(),
+                    ])?;
+                    if l.is_license_ref {
+                        wtr_license_ref.write_record([
+                            l.license_id.as_str(),
+                            l.name.as_str(),
+                            l.license_text.as_str(),
+                            l.license_comment.as_str(),
+                        ])?;
+                    }
                 }
             }
         }
@@ -182,7 +198,7 @@ mod tests {
             .unwrap_or_else(|_| panic!("failed to parse test data"));
 
         let export = LicenseExporter::new(sbom_licenses);
-        let mut file = File::create("/tmp/test.zip").unwrap_or_else(|_| panic!("create file failed"));
+        let mut file = File::create("/tmp/rhel-7.9.z_licenses.zip").unwrap_or_else(|_| panic!("create file failed"));
         file.write_all(&export.generate().unwrap_or_else(|_| panic!("generate failed")))
             .unwrap_or_else(|_| panic!("write file failed"));
     }

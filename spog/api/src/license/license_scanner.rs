@@ -8,7 +8,6 @@ use cyclonedx_bom::prelude::{Bom, Component, NormalizedString};
 use http::StatusCode;
 use spdx_expression::SpdxExpressionError;
 use spdx_rs::models::SPDX;
-use std::str::FromStr;
 use trustification_common::error::ErrorInformation;
 
 pub struct LicenseScanner {
@@ -53,16 +52,24 @@ impl LicenseScanner {
                 let (sbom_name, all_packages) = self.handle_spdx_sbom(spdx_bom);
                 let license_result = SbomLicense {
                     sbom_name: sbom_name.to_string(),
+                    sbom_namespace: String::from(&spdx_bom.document_creation_information.spdx_document_namespace),
+                    component_group: "".to_string(),
+                    component_version: "".to_string(),
                     packages: all_packages,
+                    is_spdx: true,
                 };
 
                 Ok(license_result)
             }
             SBOM::CycloneDX(cyclonedx_bom) => {
-                let (sbom_name, all_packages) = self.handle_cyclonedx_sbom(cyclonedx_bom)?;
+                let (name, group, version, all_packages) = self.handle_cyclonedx_sbom(cyclonedx_bom)?;
                 let license_result = SbomLicense {
-                    sbom_name: sbom_name.to_string(),
+                    sbom_name: name.to_string(),
+                    sbom_namespace: "".to_string(),
+                    component_group: group,
+                    component_version: version,
                     packages: all_packages,
+                    is_spdx: false,
                 };
 
                 Ok(license_result)
@@ -70,13 +77,24 @@ impl LicenseScanner {
         }
     }
 
-    fn handle_cyclonedx_sbom(&self, cyclonedx_bom: &Bom) -> Result<(String, Vec<SbomPackage>), LicenseScannerError> {
-        let sbom_name = cyclonedx_bom
-            .metadata
-            .as_ref()
-            .and_then(|metadata| metadata.component.as_ref())
-            .map(|component| (component.name.to_string()))
-            .unwrap_or_default();
+    fn handle_cyclonedx_sbom(
+        &self,
+        cyclonedx_bom: &Bom,
+    ) -> Result<(String, String, String, Vec<SbomPackage>), LicenseScannerError> {
+        let mut name = String::default();
+        let mut version = String::default();
+        let mut group = String::default();
+        if let Some(metadata) = &cyclonedx_bom.metadata {
+            if let Some(component) = &metadata.component {
+                name = String::from(&component.name.to_string());
+                if let Some(v) = &component.version {
+                    version = String::from(&v.to_string());
+                }
+                if let Some(g) = &component.group {
+                    group = String::from(&g.to_string());
+                }
+            }
+        }
 
         let mut sbom_package_list = Vec::new();
         if let Some(cs) = &cyclonedx_bom.components {
@@ -92,20 +110,6 @@ impl LicenseScanner {
                 if let Some(purl) = component.purl.clone() {
                     package_purl = purl.to_string();
                 }
-                let mut purl_namespace = String::default();
-                let mut purl_version = String::default();
-                // let mut purl_type = String::default();
-                let mut purl_name = String::default();
-                if let Ok(pl) = packageurl::PackageUrl::from_str(&package_purl) {
-                    if let Some(namespace) = pl.namespace() {
-                        purl_namespace = namespace.to_string();
-                    }
-                    if let Some(version) = pl.version() {
-                        purl_version = version.to_string();
-                    }
-                    // purl_type = pl.ty().to_string();
-                    purl_name = pl.name().to_string();
-                }
                 let mut supplier = String::default();
                 if let Some(s) = component.supplier.clone() {
                     let ns = s.name;
@@ -117,15 +121,12 @@ impl LicenseScanner {
                     name: package_name,
                     version: Some(package_version),
                     purl: package_purl,
-                    purl_name,
-                    purl_namespace,
-                    purl_version,
                     supplier: Some(supplier),
                     licenses: packages,
                 })
             }
         }
-        Ok((sbom_name, sbom_package_list))
+        Ok((name, group, version, sbom_package_list))
     }
 
     fn handle_cyclonedx_sbom_component(
@@ -231,28 +232,10 @@ impl LicenseScanner {
                 }
             }
 
-            let mut purl_namespace = String::default();
-            let mut purl_version = String::default();
-            // let mut purl_type = String::default();
-            let mut purl_name = String::default();
-
-            if let Ok(pl) = packageurl::PackageUrl::from_str(package_url) {
-                if let Some(namespace) = pl.namespace() {
-                    purl_namespace = namespace.to_string();
-                }
-                if let Some(version) = pl.version() {
-                    purl_version = version.to_string();
-                }
-                // purl_type = pl.ty().to_string();
-                purl_name = pl.name().to_string();
-            }
             let result = SbomPackage {
                 name: String::from(package_name),
                 version: package_version,
                 purl: package_url.to_string(),
-                purl_name,
-                purl_namespace,
-                purl_version,
                 supplier: package_supplier,
                 licenses: spdx_ids,
             };
