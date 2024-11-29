@@ -42,10 +42,10 @@ spec:
               args:
                 - "-ec"
                 - |
-                  if test -d cvelistV5; then
-                    if [ -f /git/cvelistV5/.git/index.lock ]; then
+                  if [ -f /git/cvelistV5/.git/index.lock ]; then
                       rm -f /git/cvelistV5/.git/index.lock
-                    fi
+                  fi
+                  if test -d cvelistV5; then
                     cd cvelistV5
                     git reset --hard
                     git pull
