@@ -2042,10 +2042,10 @@ objects:
                   workingDir: /git
                   args:
                     - -ec
-                    - "if test -d cvelistV5; then\n  if [ -f /git/cvelistV5/.git/index.lock\
-                      \ ]; then\n    rm -f /git/cvelistV5/.git/index.lock\n  fi\n\
-                      \  cd cvelistV5\n  git reset --hard\n  git pull\nelse\n  git\
-                      \ clone https://github.com/CVEProject/cvelistV5\nfi\n"
+                    - "if [ -f /git/cvelistV5/.git/index.lock ]; then\n    rm -f /git/cvelistV5/.git/index.lock\n\
+                      fi\nif test -d cvelistV5; then\n  cd cvelistV5\n  git reset\
+                      \ --hard\n  git pull\nelse\n  git clone https://github.com/CVEProject/cvelistV5\n\
+                      fi\n"
               containers:
                 - image: ${BACKEND_IMAGE}:${IMAGE_TAG}
                   imagePullPolicy: Always
