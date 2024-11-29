@@ -45,10 +45,10 @@ pub async fn download_licenses(
     let exporter = license_exporter::LicenseExporter::new(sbom_licenses);
     let zip = exporter.generate()?;
     Ok(HttpResponse::Ok()
-        .content_type("application/zip")
+        .content_type("application/gzip")
         .append_header((
             "Content-Disposition",
-            format!("attachment; filename=\"{}_licenses.zip\"", sbom_name),
+            format!("attachment; filename=\"{}_licenses.tar.gz\"", sbom_name),
         ))
         .body(zip))
 }

@@ -17,6 +17,7 @@ pub struct SbomPackage {
     pub version: Option<String>,
     /// package package URL
     pub purl: String,
+    pub other_reference: Vec<String>,
     /// package supplier
     pub supplier: Option<String>,
     /// List of all package license

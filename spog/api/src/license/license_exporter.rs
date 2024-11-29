@@ -6,6 +6,7 @@ use csv::WriterBuilder;
 use flate2::write::GzEncoder;
 use flate2::Compression;
 use http::StatusCode;
+use std::collections::HashSet;
 use tar::Builder;
 use trustification_common::error::ErrorInformation;
 
@@ -76,71 +77,50 @@ impl LicenseExporter {
             .has_headers(true)
             .from_writer(vec![]);
         wtr_license_ref.write_record(["licenseId", "name", "extracted text", "comment"])?;
+        wtr_sbom.write_record([
+            "name",
+            "namespace",
+            "group",
+            "version",
+            "package reference",
+            "license",
+            "license name",
+            "alternate package reference",
+        ])?;
 
-        if self.sbom_license.is_spdx {
-            wtr_sbom.write_record(["name", "namespace", "referenceLocator", "license", "license name"])?;
+        let mut license_ref_key: HashSet<String> = HashSet::new();
+        for pl in &self.sbom_license.packages {
+            let alternate_package_reference = pl
+                .other_reference
+                .iter()
+                .map(|reference| reference.as_str())
+                .collect::<Vec<_>>()
+                .join("\n");
 
-            for pl in &self.sbom_license.packages {
-                wtr_sbom.write_record([&pl.name, &self.sbom_license.sbom_namespace, &pl.purl, "", ""])?;
-
-                for l in &pl.licenses {
-                    wtr_sbom.write_record([
-                        "           ",
-                        "           ",
-                        "            ",
-                        l.license_id.as_str(),
-                        l.name.as_str(),
-                    ])?;
-                    if l.is_license_ref {
-                        wtr_license_ref.write_record([
-                            l.license_id.as_str(),
-                            l.name.as_str(),
-                            l.license_text.as_str(),
-                            l.license_comment.as_str(),
-                        ])?;
-                    }
-                }
-            }
-        } else {
-            wtr_sbom.write_record([
-                "name",
-                "group",
-                "version",
-                "referenceLocator",
-                "license",
-                "license name",
-            ])?;
-
-            for pl in &self.sbom_license.packages {
+            for l in &pl.licenses {
                 wtr_sbom.write_record([
                     &pl.name,
+                    &self.sbom_license.sbom_namespace,
                     &self.sbom_license.component_group,
                     &self.sbom_license.component_version,
                     &pl.purl,
-                    "",
-                    "",
+                    l.license_id.as_str(),
+                    l.name.as_str(),
+                    alternate_package_reference.as_str(),
                 ])?;
 
-                for l in &pl.licenses {
-                    wtr_sbom.write_record([
-                        "       ",
-                        "           ",
-                        "          ",
-                        "          ",
+                if l.is_license_ref && !license_ref_key.contains(&l.license_id) {
+                    wtr_license_ref.write_record([
                         l.license_id.as_str(),
                         l.name.as_str(),
+                        l.license_text.as_str(),
+                        l.license_comment.as_str(),
                     ])?;
-                    if l.is_license_ref {
-                        wtr_license_ref.write_record([
-                            l.license_id.as_str(),
-                            l.name.as_str(),
-                            l.license_text.as_str(),
-                            l.license_comment.as_str(),
-                        ])?;
-                    }
+                    license_ref_key.insert(String::from(&l.license_id));
                 }
             }
         }
+
         let sbom_csv = wtr_sbom
             .into_inner()
             .map_err(|err| LicenseExporterError::CsvIntoInnerError(format!("csv into inner error: {}", err)))?;
@@ -158,13 +138,21 @@ impl LicenseExporter {
             header.set_size(sbom_csv.len() as u64);
             header.set_mode(0o644);
             header.set_cksum();
-            archive.append_data(&mut header, "sbom_licenses.csv", &*sbom_csv)?;
+            archive.append_data(
+                &mut header,
+                format!("{}_sbom_licenses.csv", &self.sbom_license.sbom_name),
+                &*sbom_csv,
+            )?;
 
             let mut header = tar::Header::new_gnu();
             header.set_size(license_ref_csv.len() as u64);
             header.set_mode(0o644);
             header.set_cksum();
-            archive.append_data(&mut header, "license_ref.csv", &*license_ref_csv)?;
+            archive.append_data(
+                &mut header,
+                format!("{}_license_ref.csv", &self.sbom_license.sbom_name),
+                &*license_ref_csv,
+            )?;
 
             archive.finish()?;
         }
@@ -187,9 +175,9 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn is_works() {
+    async fn is_works_cydx() {
         let sbom =
-            load_sbom_file("../test-data/rhel-7.9.z.json").unwrap_or_else(|_| panic!("failed to parse test data"));
+            load_sbom_file("../test-data/application.cdx.json").unwrap_or_else(|_| panic!("failed to parse test data"));
 
         let license_scanner = LicenseScanner::new(sbom);
 
@@ -198,7 +186,24 @@ mod tests {
             .unwrap_or_else(|_| panic!("failed to parse test data"));
 
         let export = LicenseExporter::new(sbom_licenses);
-        let mut file = File::create("/tmp/rhel-7.9.z_licenses.zip").unwrap_or_else(|_| panic!("create file failed"));
+        let mut file =
+            File::create("/tmp/application.cdx_licenses.tar.gz").unwrap_or_else(|_| panic!("create file failed"));
+        file.write_all(&export.generate().unwrap_or_else(|_| panic!("generate failed")))
+            .unwrap_or_else(|_| panic!("write file failed"));
+    }
+
+    #[tokio::test]
+    async fn is_works_spdx() {
+        let sbom = load_sbom_file("../test-data/mtv-2.6.json").unwrap_or_else(|_| panic!("failed to parse test data"));
+
+        let license_scanner = LicenseScanner::new(sbom);
+
+        let sbom_licenses = license_scanner
+            .scanner()
+            .unwrap_or_else(|_| panic!("failed to parse test data"));
+
+        let export = LicenseExporter::new(sbom_licenses);
+        let mut file = File::create("/tmp/mtv-2.6_licenses.tar.gz").unwrap_or_else(|_| panic!("create file failed"));
         file.write_all(&export.generate().unwrap_or_else(|_| panic!("generate failed")))
             .unwrap_or_else(|_| panic!("write file failed"));
     }

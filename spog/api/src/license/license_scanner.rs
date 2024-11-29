@@ -7,7 +7,7 @@ use cyclonedx_bom::models::license::{LicenseChoice, LicenseIdentifier};
 use cyclonedx_bom::prelude::{Bom, Component, NormalizedString};
 use http::StatusCode;
 use spdx_expression::SpdxExpressionError;
-use spdx_rs::models::SPDX;
+use spdx_rs::models::{ExternalPackageReferenceCategory, SPDX};
 use trustification_common::error::ErrorInformation;
 
 pub struct LicenseScanner {
@@ -121,6 +121,7 @@ impl LicenseScanner {
                     name: package_name,
                     version: Some(package_version),
                     purl: package_purl,
+                    other_reference: vec![],
                     supplier: Some(supplier),
                     licenses: packages,
                 })
@@ -139,12 +140,18 @@ impl LicenseScanner {
                 match pl {
                     LicenseChoice::License(spl) => match spl.license_identifier {
                         LicenseIdentifier::SpdxId(spdx) => {
-                            Self::fetch_license_from_spdx_expression(&mut licenses, spdx.to_string().as_str());
+                            licenses.push(PackageLicense {
+                                license_id: spdx.to_string(),
+                                name: "".to_string(),
+                                license_text: "".to_string(),
+                                is_license_ref: false,
+                                license_comment: "".to_string(),
+                            });
                         }
                         LicenseIdentifier::Name(not_spdx) => {
                             licenses.push(PackageLicense {
-                                license_id: not_spdx.to_string(),
-                                name: "".to_string(),
+                                license_id: "".to_string(),
+                                name: not_spdx.to_string(),
                                 license_text: "".to_string(),
                                 is_license_ref: false,
                                 license_comment: "".to_string(),
@@ -187,12 +194,19 @@ impl LicenseScanner {
         for pi in &spdx_bom.package_information {
             let package_name = &pi.package_name;
             let package_version = pi.package_version.clone();
-            let package_url = &pi
-                .external_reference
+
+            let reference_refs = &pi.external_reference;
+            let package_url = reference_refs
                 .iter()
-                .find(|r| r.reference_type == "purl")
+                .find(|r| r.reference_category == ExternalPackageReferenceCategory::PackageManager)
                 .map(|r| r.reference_locator.as_str())
                 .unwrap_or("");
+
+            let other_references: &Vec<String> = &reference_refs
+                .iter()
+                .filter(|r| r.reference_category != ExternalPackageReferenceCategory::PackageManager)
+                .map(|r| r.reference_locator.clone())
+                .collect();
 
             let package_supplier = pi.package_supplier.clone();
 
@@ -234,12 +248,12 @@ impl LicenseScanner {
 
             let result = SbomPackage {
                 name: String::from(package_name),
-                version: package_version,
-                purl: package_url.to_string(),
+                version: package_version.clone(),
+                purl: String::from(package_url),
+                other_reference: other_references.clone(),
                 supplier: package_supplier,
                 licenses: spdx_ids,
             };
-
             all_packages.push(result);
         }
         (sbom_name, all_packages)
