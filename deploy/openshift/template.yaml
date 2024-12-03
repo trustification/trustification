@@ -1181,6 +1181,7 @@ objects:
                 - -p
                 - '8080'
                 - --db-storage-base
+                - /tmp/share/db/
                 - --bombastic-url
                 - https://bombastic-api.$(NAMESPACE).svc
                 - --vexination-url
