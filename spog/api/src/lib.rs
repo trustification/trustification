@@ -4,6 +4,7 @@ mod config;
 mod db;
 mod endpoints;
 mod error;
+mod license;
 mod openapi;
 mod search;
 mod server;
