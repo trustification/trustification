@@ -1,4 +1,3 @@
-use async_trait::async_trait;
 use bytes::Bytes;
 use bzip2::Compression;
 use sbom_walker::model::sbom::ParserKind;
@@ -16,7 +15,6 @@ pub struct ProcessVisitor<V> {
     pub next: V,
 }
 
-#[async_trait(?Send)]
 impl<V> ValidatedVisitor for ProcessVisitor<V>
 where
     V: ValidatedVisitor,
@@ -25,7 +23,7 @@ where
     type Error = anyhow::Error;
     type Context = V::Context;
 
-    async fn visit_context(&self, context: &ValidationContext) -> Result<Self::Context, Self::Error> {
+    async fn visit_context(&self, context: &ValidationContext<'_>) -> Result<Self::Context, Self::Error> {
         Ok(self.next.visit_context(context).await?)
     }
 

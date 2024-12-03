@@ -3,7 +3,7 @@ trustImage: ghcr.io/trustification/trust
 uiImage: ghcr.io/trustification/trust
 docsImage: ghcr.io/trustification/trust-docs
 testsImage: ghcr.io/trustification/trust-tests
-guacImage: ghcr.io/trustification/guac:v0.3.32
+guacImage: ghcr.io/trustification/guac:v0.7.2-RC10
 domain: trustification.dev
 replicas: 2
 graphqlReplicas: 1
@@ -50,9 +50,9 @@ spog:
     resources:
       requests:
         cpu: "100m"
-        memory: "512Mi"
+        memory: "256Mi"
       limits:
-        memory: "512Mi"
+        memory: "256Mi"
 bombastic:
   bucket: bombastic-prod
   credentials: bombastic-credentials-secret
@@ -230,7 +230,7 @@ guac:
   database:
     enabled: true
     image: docker.io/library/postgres:15
-  initJob: {}
+  initJob: { }
   graphql:
     debug: true
     affinity:

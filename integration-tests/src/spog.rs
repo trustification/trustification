@@ -146,5 +146,6 @@ fn spog_api(
         swagger_ui_oidc: testing_swagger_ui_oidc(),
         analytics: Default::default(),
         http: Default::default(),
+        db_storage_base: None,
     }
 }

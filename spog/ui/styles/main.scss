@@ -72,3 +72,21 @@ table.advisory_vulnerability_remediation
   overflow-wrap: break-word;
   max-width: 550px;
 }
+
+.rhtpa-about {
+  min-width: 992px;
+  max-width: 992px;
+}
+
+// Dashboard
+.dashboard-select-sbom > div:first-child {
+  width: 100%;
+}
+
+.dashboard-select-sbom > .pf-v5-c-text-input-group__utilities {
+  margin-left: 0px;
+}
+
+.dashboard-select-sbom > .pf-v5-c-text-input-group__utilities > button {
+  padding-left: 8px;
+}

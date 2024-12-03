@@ -1,7 +1,11 @@
+use serde_json::Value;
+use std::collections::HashSet;
 use std::fmt::Formatter;
+use std::str::FromStr;
 
 use cyclonedx_bom::errors::JsonReadError;
-use cyclonedx_bom::prelude::{Validate, ValidationResult};
+use cyclonedx_bom::prelude::{SpecVersion, Validate, ValidationResult};
+use cyclonedx_bom::validation::ValidationErrorsKind;
 use tracing::{info_span, instrument};
 
 #[derive(Debug)]
@@ -75,19 +79,19 @@ impl SBOM {
                     // because it's an optional field in specs and the validation will succeed if
                     // the serial number is missing and this isn't what we want because
                     // serial number is mandatory for trustification to correlate properly
-                    Some(_) => match bom.validate() {
-                        Ok(validation_result) => match validation_result {
-                            ValidationResult::Passed => return Ok(SBOM::CycloneDX(bom)),
-                            ValidationResult::Failed { reasons } => {
-                                let all_reasons = reasons
+                    Some(_) => {
+                        let spec_version = Self::get_cyclonedx_spec_version(data)?;
+                        let result = bom.validate_version(spec_version);
+                        match result.passed() {
+                            true => return Ok(SBOM::CycloneDX(bom)),
+                            false => {
+                                let all_reasons = Self::get_validation_error_messages(result.clone())
                                     .into_iter()
                                     // Ignore normalizedstring errors
                                     // until https://github.com/CycloneDX/cyclonedx-rust-cargo/issues/737 is fixed
                                     .filter(|reason| {
-                                        reason.message
-                                            != "NormalizedString contains invalid characters \\r \\n \\t or \\r\\n"
+                                        reason != "NormalizedString contains invalid characters \\r \\n \\t or \\r\\n"
                                     })
-                                    .map(|reason| reason.message)
                                     .collect::<Vec<String>>()
                                     .join(", ");
                                 if all_reasons.is_empty() {
@@ -98,13 +102,8 @@ impl SBOM {
                                     err.cyclonedx = Some(JsonReadError::from(validation_failed));
                                 }
                             }
-                        },
-                        Err(e) => {
-                            log::error!("Error validating CycloneDX: {}", e);
-                            let validation_error: serde_json::Error = serde::de::Error::custom(e);
-                            err.cyclonedx = Some(JsonReadError::from(validation_error));
                         }
-                    },
+                    }
                     None => {
                         let serial_number_error_message = "Error validating CycloneDX: In order for a CycloneDX SBOM to be successfully ingested the 'serialNumber' field must be populated.";
                         log::error!("{}", serial_number_error_message);
@@ -121,6 +120,59 @@ impl SBOM {
         }
 
         Err(err)
+    }
+
+    fn get_cyclonedx_spec_version(data: &[u8]) -> Result<SpecVersion, Error> {
+        let mut err: Error = Default::default();
+        let spec_version_error: serde_json::Error = serde::de::Error::custom("No field 'specVersion' found");
+        let error = Some(JsonReadError::from(spec_version_error));
+        //workaround to deal with cyclonedx-rust-cargo validate() method
+        //validating against SpecVersion::V1_3, the default, in all cases
+        //we therefore have to discover the spec version from the json data
+        //to pass into validate_version() as the parsed bom doesn't contain this info
+        // let mut spec_version = SpecVersion::V1_3;
+        match serde_json::from_slice::<Value>(data) {
+            Ok(parsed_json) => match parsed_json.get("specVersion") {
+                Some(version) => match version.as_str() {
+                    Some(version) => match SpecVersion::from_str(version) {
+                        Ok(spec_version) => return Ok(spec_version),
+                        Err(e) => err.cyclonedx = Some(JsonReadError::from(e)),
+                    },
+                    None => err.cyclonedx = error,
+                },
+                None => {
+                    err.cyclonedx = error;
+                }
+            },
+            Err(e) => err.cyclonedx = Some(JsonReadError::from(e)),
+        }
+        Err(err)
+    }
+
+    fn get_validation_error_messages(validation_result: ValidationResult) -> HashSet<String> {
+        let mut result = HashSet::<String>::new();
+        validation_result.errors().for_each(|(_, error_kind)| match error_kind {
+            ValidationErrorsKind::Struct(value) => {
+                result.extend(Self::get_validation_error_messages(value));
+            }
+            ValidationErrorsKind::List(value) => value.into_values().for_each(|validation_result| {
+                result.extend(Self::get_validation_error_messages(validation_result));
+            }),
+            ValidationErrorsKind::Field(value) => {
+                value.into_iter().for_each(|error| {
+                    result.insert(error.message);
+                });
+            }
+            ValidationErrorsKind::Enum(value) => {
+                result.insert(value.message);
+            }
+            ValidationErrorsKind::Custom(value) => {
+                value.into_iter().for_each(|error| {
+                    result.insert(error.message);
+                });
+            }
+        });
+        result
     }
 
     pub fn type_str(&self) -> String {
@@ -147,6 +199,20 @@ mod tests {
     #[test]
     fn parse_cyclonedx_valid_14() {
         let data = include_bytes!("../../testdata/syft.cyclonedx.json");
+        let result = SBOM::parse(data);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn parse_cyclonedx_valid_15() {
+        let data = include_bytes!("../../testdata/syft.cyclonedx-1.5.json");
+        let result = SBOM::parse(data);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn parse_cdx_valid_15_license_id() {
+        let data = include_bytes!("../../testdata/cdx-1.5-valid-license-id.json");
         let result = SBOM::parse(data);
         assert!(result.is_ok());
     }

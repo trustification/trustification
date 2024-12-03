@@ -3,7 +3,7 @@ trustImage: ghcr.io/trustification/trust
 uiImage: ghcr.io/trustification/trust
 docsImage: ghcr.io/trustification/trust-docs
 testsImage: ghcr.io/trustification/trust-tests
-guacImage: ghcr.io/trustification/guac:v0.3.27
+guacImage: ghcr.io/trustification/guac:v0.7.2-RC10
 domain: trustification.apps-crc.testing
 
 deployPostgres: true
@@ -24,7 +24,7 @@ postgres:
     runAsNonRoot: true
     seccompProfile:
       type: RuntimeDefault
-sso: {}
+sso: { }
 kafka:
   image: docker.io/bitnami/kafka@sha256:8fedaa492f1f570cade60f5ff09978cd841307b1e9f93fe6216136ca165fcc2d
 minio:
@@ -52,7 +52,7 @@ config:
   authentication: files/crc/auth.yaml
   collectorist: files/crc/collectorist.yaml
 default:
-  routeAnnotations: {}
+  routeAnnotations: { }
 spog:
   crdaUrl: https://rhda.rhcloud.com/api/v4/analysis
   branding: true
@@ -68,9 +68,9 @@ spog:
     resources:
       requests:
         cpu: "100m"
-        memory: "512Mi"
+        memory: "256Mi"
       limits:
-        memory: "512Mi"
+        memory: "256Mi"
 bombastic:
   bucket: bombastic
   credentials: bombastic-credentials-secret
@@ -205,7 +205,7 @@ exhort:
   enabled: true
   api:
     resources:
-keycloakRealm: {}
+keycloakRealm: { }
 oidcClients:
   frontend:
     issuerUrl: https://sso.trustification.apps-crc.testing/realms/chicken
@@ -237,7 +237,7 @@ guac:
   database:
     enabled: true
     image: docker.io/library/postgres:15
-  initJob: {}
+  initJob: { }
   graphql:
     debug: true
     resources:

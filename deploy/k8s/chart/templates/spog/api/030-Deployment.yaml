@@ -37,6 +37,7 @@ spec:
             - "api"
             - "-p"
             - "8080"
+            - "--db-storage-base"
             - "--bombastic-url"
             - "https://bombastic-api.$(NAMESPACE).svc"
             - "--vexination-url"
@@ -127,6 +128,8 @@ spec:
             - mountPath: /etc/customize
               name: customize
 {{- end }}
+            - mountPath: /data/db/
+              name: user-preferences-db-path
             {{ include "trustification.http-server-volume-mounts" . | nindent 12 }}
       volumes:
         - name: config
@@ -138,3 +141,6 @@ spec:
             name: {{ .Values.spog.ui.customizeName | default .Values.config.name }}
 {{- end }}
         {{ include "trustification.http-server-volumes" (dict "root" . "appName" "spog-api") | nindent 8 }}
+        - name: user-preferences-db-path
+          persistentVolumeClaim:
+            claimName: user-preferences-db-path

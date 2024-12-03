@@ -14,6 +14,7 @@ use trustification_auth::{
     swagger_ui::{swagger_ui_with_auth, SwaggerUiOidc},
     Permission,
 };
+use trustification_index::tantivy::time::OffsetDateTime;
 use trustification_index::Error as IndexError;
 use trustification_infrastructure::new_auth;
 use trustification_storage::{Error as StorageError, Key, S3Path, Storage};
@@ -47,6 +48,7 @@ pub fn config(
             )
             .service(search_vex)
             .service(delete_vex)
+            .service(vex_status)
             .service(delete_vexes),
     )
     .service(swagger_ui_with_auth(ApiDoc::openapi(), swagger_ui_oidc));
@@ -270,6 +272,66 @@ async fn search_vex(
     .await?
     .map_err(Error::Index)?;
     Ok(HttpResponse::Ok().json(SearchResult { total, result }))
+}
+
+/// Search status of vulnerability using a free form search query.
+///
+/// See the [documentation](https://docs.trustification.dev/trustification/user/retrieve.html) for a description of the query language.
+#[utoipa::path(
+    get,
+    tag = "vexination",
+    path = "/api/v1/vex/status",
+    responses(
+    (status = 200, description = "Search completed"),
+    (status = BAD_REQUEST, description = "Bad query"),
+    ),
+    params(
+    ("q" = String, Query, description = "Search query"),
+    )
+)]
+#[get("/vex/status")]
+async fn vex_status(
+    state: web::Data<SharedState>,
+    authorizer: web::Data<Authorizer>,
+    user: UserInformation,
+) -> actix_web::Result<HttpResponse> {
+    authorizer.require(&user, Permission::ReadSbom)?;
+
+    let state_clone = Arc::clone(&state);
+
+    let (result, _total) = actix_web::web::block(move || {
+        state_clone.index.search(
+            "-sort:indexedTimestamp",
+            0,
+            1,
+            SearchOptions {
+                metadata: false,
+                explain: false,
+                summaries: true,
+            },
+        )
+    })
+    .await?
+    .map_err(Error::Index)?;
+
+    let state_clone = Arc::clone(&state);
+    let total_docs = actix_web::web::block(move || state_clone.index.get_total_docs())
+        .await?
+        .map_err(Error::Index)?;
+
+    if let Some(vex) = result.first() {
+        Ok(HttpResponse::Ok().json(StatusResult {
+            total: Some(total_docs),
+            last_updated_vex_id: Some(vex.document.advisory_id.to_string()),
+            last_updated_vex_name: Some(vex.document.advisory_title.to_string()),
+            last_updated_date: Some(
+                OffsetDateTime::from_unix_timestamp_nanos(vex.document.indexed_timestamp as i128)
+                    .unwrap_or(OffsetDateTime::UNIX_EPOCH),
+            ),
+        }))
+    } else {
+        Ok(HttpResponse::Ok().json(StatusResult::default()))
+    }
 }
 
 /// Delete a VEX doc using its identifier.
