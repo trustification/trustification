@@ -47,7 +47,7 @@ pub fn about() -> Html {
                     <dl>
                         <dt>{"Version"}</dt>
                         <dd>
-                            {"1.2.0"}
+                            {"main"}
                         </dd>
                     </dl>
                 </div>
