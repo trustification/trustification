@@ -603,7 +603,7 @@ pub fn sbom_donut_chart(props: &SbomDonutChartProperties) -> Html {
     let vulnerabilities = use_async_with_cloned_deps(
         |(id, backend)| async move {
             spog_ui_backend::SBOMService::new(backend.clone(), access_token)
-                .get_sbom_vulns(id)
+                .get_sbom_vulns(id, false)
                 .await
                 .map(|r| r.map(Rc::new))
         },
