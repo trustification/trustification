@@ -95,7 +95,7 @@ pub struct Version {
 macro_rules! version {
     () => {
         $crate::VersionInformation {
-            version: String::from("main"),
+            version: String::from("1.2.1"),
             // version: $crate::Version {
             //     full: env!("CARGO_PKG_VERSION").to_string(),
             //     major: env!("CARGO_PKG_VERSION_MAJOR").parse().unwrap_or_default(),
