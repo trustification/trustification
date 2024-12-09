@@ -99,7 +99,7 @@ pub fn sbom_kebab_dropdown(props: &SbomKebabDropdownProperties) -> Html {
                 icon={props.dropdown_icon.clone()}
         >
             <MenuAction onclick={on_download_sbom_click}>{"Download SBOM"}</MenuAction>
-            <MenuAction onclick={on_download_licenses_click}>{"Download Licenses"}</MenuAction>
+            <MenuAction onclick={on_download_licenses_click}>{"Download License Report"}</MenuAction>
         </Dropdown>
     )
 }

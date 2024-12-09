@@ -74,10 +74,10 @@ pub fn sbom(props: &SBOMProperties) -> Html {
             let download_button = match &*sbom_index {
                 UseAsyncState::Ready(Ok(Some(data_index))) => {
                     let filename = format!("{}.json", data_index.name);
-                    html!(<SbomKebabDropdown id={props.id.clone()} sbom_source={SbomSource::LOCAL(data.get_source(), filename)} dropdown_text={"Actions"} />)
+                    html!(<SbomKebabDropdown id={props.id.clone()} sbom_source={SbomSource::LOCAL(data.get_source(), filename)} dropdown_text={"Download"} />)
                 }
                 _ => {
-                    html!(<SbomKebabDropdown id={props.id.clone()} sbom_source={SbomSource::LOCAL(data.get_source(), clean_ext(&props.id))} dropdown_text={"Actions"} />)
+                    html!(<SbomKebabDropdown id={props.id.clone()} sbom_source={SbomSource::LOCAL(data.get_source(), clean_ext(&props.id))} dropdown_text={"Download"} />)
                 }
             };
 
