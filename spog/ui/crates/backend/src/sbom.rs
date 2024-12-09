@@ -74,9 +74,9 @@ impl SBOMService {
         Ok(response.api_error_for_status().await?.json().await?)
     }
 
-    pub async fn get_sbom_vulns(&self, id: impl AsRef<str>) -> Result<Option<SbomReport>, ApiError> {
+    pub async fn get_sbom_vulns(&self, id: impl AsRef<str>, retrieve_remediation: bool) -> Result<Option<SbomReport>, ApiError> {
         let mut url = self.backend.join(Endpoint::Api, "/api/v1/sbom/vulnerabilities")?;
-        url.query_pairs_mut().append_pair("id", id.as_ref()).finish();
+        url.query_pairs_mut().append_pair("id", id.as_ref()).append_pair("retrieve_remediation", retrieve_remediation.to_string().as_ref()).finish();
 
         let response = self
             .client
