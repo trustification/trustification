@@ -66,7 +66,7 @@ fn version_info(props: &VersionInfoProperties) -> Html {
     html!(
         <dl>
             <dt>{ "Version" }</dt>
-            <dd>{ &props.version.version.full }</dd>
+            <dd>{ &props.version.version }</dd>
             if let Some(info) = &props.version.git.describe {
                 <dt>{ "Git" }</dt>
                 <dd>{ &info }</dd>
