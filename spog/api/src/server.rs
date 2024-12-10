@@ -126,6 +126,7 @@ impl Server {
                         authenticator.clone(),
                         crda_payload_limit,
                     ))
+                    .configure(endpoints::license::configure(crda_payload_limit))
                     .configure(config_configurator.clone())
                     .service({
                         let mut openapi = endpoints::ApiDoc::openapi();
