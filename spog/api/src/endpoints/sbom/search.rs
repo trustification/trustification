@@ -1,13 +1,21 @@
 use crate::app_state::AppState;
-use crate::endpoints::sbom::process_get_vulnerabilities;
-use crate::search;
+
+use crate::error::Error;
+use crate::search::QueryParams;
 use crate::service::guac::GuacService;
+
 use crate::service::v11y::V11yService;
+use crate::{endpoints, search};
 use actix_web::{web, HttpResponse};
 use actix_web_httpauth::extractors::bearer::BearerAuth;
+use bombastic_model::search::SearchHit;
+use cvss::Severity;
+use futures::future::join_all;
 use spog_model::prelude::{Last10SbomVulnerabilitySummary, Last10SbomVulnerabilitySummaryVulnerabilities};
 use spog_model::search::SbomSummary;
-use spog_model::vuln::SbomReport;
+use std::sync::atomic::AtomicUsize;
+use std::sync::atomic::Ordering::Relaxed;
+use std::sync::Arc;
 use tracing::instrument;
 use trustification_api::search::{SearchOptions, SearchResult};
 use trustification_auth::client::TokenProvider;
@@ -121,68 +129,108 @@ pub async fn sboms_with_vulnerability_summary(
         )
         .await?;
 
-    let mut summary: Vec<Last10SbomVulnerabilitySummary> = vec![];
-    for item in ten_latest_sboms.result {
-        let item = item.document;
-        let vulnerabilities =
-            process_get_vulnerabilities(&state, &v11y, &guac, &access_token, &item.id, Some(0), Some(100000))
-                .await?
-                .as_ref()
-                .and_then(|sbom_report: &SbomReport| sbom_report.summary.first())
-                .map_or(
-                    Last10SbomVulnerabilitySummaryVulnerabilities {
-                        none: 0,
-                        low: 0,
-                        medium: 0,
-                        high: 0,
-                        critical: 0,
-                    },
-                    |(_mitre, vulnerability_summary)| {
-                        let none = vulnerability_summary
-                            .iter()
-                            .find(|item| item.severity == Some(cvss::Severity::None))
-                            .map_or_else(
-                                || {
-                                    vulnerability_summary
-                                        .iter()
-                                        .find(|item| item.severity.is_none())
-                                        .map_or(0, |entry| entry.count)
-                                },
-                                |entry| entry.count,
-                            );
-                        let low = vulnerability_summary
-                            .iter()
-                            .find(|item| item.severity == Some(cvss::Severity::Low))
-                            .map_or(0, |entry| entry.count);
-                        let medium = vulnerability_summary
-                            .iter()
-                            .find(|item| item.severity == Some(cvss::Severity::Medium))
-                            .map_or(0, |entry| entry.count);
-                        let high = vulnerability_summary
-                            .iter()
-                            .find(|item| item.severity == Some(cvss::Severity::High))
-                            .map_or(0, |entry| entry.count);
-                        let critical = vulnerability_summary
-                            .iter()
-                            .find(|item| item.severity == Some(cvss::Severity::Critical))
-                            .map_or(0, |entry| entry.count);
+    // Create a vector of async tasks
+    let tasks: Vec<_> = ten_latest_sboms
+        .result
+        .into_iter()
+        .map(|sbom| {
+            let v11y = Arc::clone(&v11y);
+            let guac = Arc::clone(&guac);
+            tokio::task::spawn_local(async move { sbom_vulnerabilities_retrieval(guac, v11y, sbom).await })
+        })
+        .collect();
 
-                        Last10SbomVulnerabilitySummaryVulnerabilities {
-                            none,
-                            low,
-                            medium,
-                            high,
-                            critical,
-                        }
-                    },
-                );
+    // Await all tasks and collect the results
+    log::debug!("start waiting results");
+    let results = join_all(tasks).await;
+    log::debug!("stop waiting results");
 
-        let sbom_vulnerabilities = Last10SbomVulnerabilitySummary {
-            sbom_id: item.id,
-            sbom_name: item.name,
-            vulnerabilities,
-        };
-        summary.push(sbom_vulnerabilities);
-    }
-    Ok(HttpResponse::Ok().json(summary))
+    // Collecting the results in the correct order
+    let mut output: Vec<Last10SbomVulnerabilitySummary> = vec![];
+    results.into_iter().for_each(|result| match result {
+        Ok(inner_result) => match inner_result {
+            Ok(summary) => output.push(summary),
+            Err(err) => log::warn!("Retrieving vulnerabilities for an SBOM failed due to: {:?}", err),
+        },
+        Err(err) => {
+            log::warn!("Retrieving vulnerabilities for an SBOM failed due to: {:?}", err);
+        }
+    });
+
+    Ok(HttpResponse::Ok().json(output))
+}
+
+#[instrument(skip(v11y, guac, sbom), err)]
+async fn sbom_vulnerabilities_retrieval(
+    guac: Arc<GuacService>,
+    v11y: Arc<V11yService>,
+    sbom: SearchHit,
+) -> Result<Last10SbomVulnerabilitySummary, Error> {
+    // find vulnerabilities
+    let cve_to_purl = guac
+        .find_vulnerability_by_uid(
+            sbom.document.uid.clone().unwrap_or("".to_string()).as_str(),
+            Some(0),
+            Some(100000),
+        )
+        .await?;
+    log::info!("{:?} {} vulnerabilities found", sbom.document.uid, cve_to_purl.len());
+
+    // fetch CVE details
+    let cves = cve_to_purl.keys().cloned().collect::<Vec<String>>();
+    let none = &AtomicUsize::new(0);
+    let low = &AtomicUsize::new(0);
+    let medium = &AtomicUsize::new(0);
+    let high = &AtomicUsize::new(0);
+    let critical = &AtomicUsize::new(0);
+    // query 25 vulnerabilities at time
+    let futures = cves.chunks(25).map(|chunk| {
+        let v11y = Arc::clone(&v11y);
+        async move {
+            let q = format!("id:\"{}\"", chunk.join("\" OR id:\""));
+            log::debug!("querying for {}", q);
+            let query: QueryParams = QueryParams {
+                q,
+                offset: 0,
+                limit: chunk.len(),
+            };
+
+            match v11y.search(query).await {
+                Ok(SearchResult { result, total }) => {
+                    if let Some(1..) = total {
+                        result.iter().for_each(|cve| {
+                            let score = Option::from(cve.document.cvss3x_score.unwrap_or(0f64) as f32);
+                            log::debug!("{} score is {:?}", cve.document.id, score);
+                            match endpoints::sbom::vuln::into_severity(cve.document.cvss3x_score.unwrap_or(0f64) as f32)
+                            {
+                                Severity::None => none.fetch_add(1, Relaxed),
+                                Severity::Low => low.fetch_add(1, Relaxed),
+                                Severity::Medium => medium.fetch_add(1, Relaxed),
+                                Severity::High => high.fetch_add(1, Relaxed),
+                                Severity::Critical => critical.fetch_add(1, Relaxed),
+                            };
+                        })
+                    };
+                }
+                Err(e) => {
+                    log::error!("Vulnerabilities search failed due to {:?}", e);
+                }
+            }
+        }
+    });
+    log::debug!("{:?} Start waiting for futures", sbom.document.uid);
+    join_all(futures).await;
+    log::debug!("{:?} Stop waiting for futures", sbom.document.uid);
+
+    Ok(Last10SbomVulnerabilitySummary {
+        sbom_id: sbom.document.id,
+        sbom_name: sbom.document.name,
+        vulnerabilities: Last10SbomVulnerabilitySummaryVulnerabilities {
+            none: none.load(Relaxed),
+            low: low.load(Relaxed),
+            medium: medium.load(Relaxed),
+            high: high.load(Relaxed),
+            critical: critical.load(Relaxed),
+        },
+    })
 }
