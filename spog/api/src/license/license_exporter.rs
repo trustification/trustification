@@ -1,4 +1,5 @@
 use crate::license::SbomLicense;
+use crate::utils::get_sanitize_filename;
 use actix_web::body::BoxBody;
 use actix_web::http::header::ContentType;
 use actix_web::{HttpResponse, ResponseError};
@@ -9,6 +10,8 @@ use http::StatusCode;
 use std::collections::HashSet;
 use tar::Builder;
 use trustification_common::error::ErrorInformation;
+
+extern crate sanitize_filename;
 
 pub struct LicenseExporter {
     sbom_license: SbomLicense,
@@ -140,7 +143,10 @@ impl LicenseExporter {
             header.set_cksum();
             archive.append_data(
                 &mut header,
-                format!("{}_sbom_licenses.csv", &self.sbom_license.sbom_name),
+                format!(
+                    "{}_sbom_licenses.csv",
+                    &get_sanitize_filename(String::from(&self.sbom_license.sbom_name))
+                ),
                 &*sbom_csv,
             )?;
 
@@ -150,7 +156,10 @@ impl LicenseExporter {
             header.set_cksum();
             archive.append_data(
                 &mut header,
-                format!("{}_license_ref.csv", &self.sbom_license.sbom_name),
+                format!(
+                    "{}_license_ref.csv",
+                    &get_sanitize_filename(String::from(&self.sbom_license.sbom_name))
+                ),
                 &*license_ref_csv,
             )?;
 
@@ -164,6 +173,7 @@ impl LicenseExporter {
 mod tests {
     use crate::license::license_exporter::LicenseExporter;
     use crate::license::license_scanner::LicenseScanner;
+    use crate::utils::get_sanitize_filename;
     use bombastic_model::data::SBOM;
     use std::fs::File;
     use std::io::Write;
@@ -172,6 +182,14 @@ mod tests {
     fn load_sbom_file(path: impl AsRef<Path>) -> Result<SBOM, anyhow::Error> {
         let data = std::fs::read(&path).unwrap_or_else(|e| panic!("read file failed {:?}", e));
         Ok(SBOM::parse(&data).unwrap_or_else(|_| panic!("failed to parse test data: {}", path.as_ref().display())))
+    }
+
+    #[tokio::test]
+    async fn test_get_sanitize_filename() {
+        let sbom_name =
+            "/var/lib/containers/storage/vfs/dir/0efa662cc0258b94827838a8c160142b92fefb10b165b204705d9903b3286e89";
+        let result = get_sanitize_filename(sbom_name.to_string());
+        assert!(!result.contains('/'));
     }
 
     #[tokio::test]
