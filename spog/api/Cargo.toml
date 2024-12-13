@@ -39,6 +39,8 @@ urlencoding = "2.1.2"
 utoipa = { version = "4", features = ["actix_extras", "yaml", "time"] }
 utoipa-swagger-ui = { version = "6", features = ["actix-web"] }
 v11y-model = { path = "../../v11y/model" }
+cyclonedx-bom = { version = "0.8.0" }
+spdx-expression = "0.5.2"
 
 spog-model = { path = "../model" }
 vexination-model = { path = "../../vexination/model" }
@@ -56,6 +58,11 @@ v11y-client = { path = "../../v11y/client" }
 trustification-version = { path = "../../version", features = ["actix-web"] }
 time = "0.3.31"
 sqlx = { version = "0.7.0", features = ["runtime-tokio", "sqlite", "chrono"] }
+csv = "1.3.0"
+flate2 = "1.0.35"
+tar = "0.4.43"
+
+sanitize-filename = "=0.6.0"
 
 [build-dependencies]
 trustification-version = { path = "../../version", features = ["build"] }
