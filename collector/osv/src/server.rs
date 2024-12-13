@@ -174,9 +174,27 @@ pub async fn collect_packages(
 
                                     if let Some(severities) = &osv_vuln.severity {
                                         for severity in severities {
-                                            if matches!(severity.severity_type, SeverityType::CVSSv3) {
-                                                if let Ok(cvss) = cvss::v3::Base::from_str(&severity.score) {
-                                                    cvss_v3s.push(cvss);
+                                            match severity.severity_type {
+                                                SeverityType::CVSSv3 => {
+                                                    match cvss::v3::Base::from_str(&severity.score) {
+                                                        Ok(cvss) => {
+                                                            cvss_v3s.push(cvss);
+                                                        }
+                                                        Err(err) => {
+                                                            log::warn!(
+                                                                "Score {} has not been parsed due to {}",
+                                                                severity.score,
+                                                                err
+                                                            );
+                                                        }
+                                                    }
+                                                }
+                                                _ => {
+                                                    log::warn!(
+                                                        "Vulnerability {} has got an unmanaged severity type {:?}",
+                                                        osv_vuln.id,
+                                                        severity.severity_type
+                                                    );
                                                 }
                                             }
                                         }

@@ -299,6 +299,12 @@ pub enum SeverityType {
     #[serde(rename = "UNSPECIFIED")]
     Unspecified,
 
+    /// A CVSS vector string representing the unique characterictics and severity of the
+    /// vulnerability using a version on the Common Vulnerability Scoring System notation that is
+    /// >= 4.0 and < 5.0 (e.g. "CVSS:4.0/AV:N/AC:L/AT:N/PR:H/UI:N/VC:L/VI:L/VA:N/SC:N/SI:N/SA:N").
+    #[serde(rename = "CVSS_V4")]
+    CVSSv4,
+
     /// A CVSS vector string representing the unique characteristics and severity of the
     /// vulnerability using a version of the Common Vulnerability Scoring System notation that is
     /// >= 3.0 and < 4.0 (e.g.`"CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:C/C:H/I:N/A:N"`).
