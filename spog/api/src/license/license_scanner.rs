@@ -140,7 +140,13 @@ impl LicenseScanner {
                 match pl {
                     LicenseChoice::License(spl) => match spl.license_identifier {
                         LicenseIdentifier::SpdxId(spdx) => {
-                            Self::fetch_license_from_spdx_expression(&mut licenses, spdx.to_string().as_str());
+                            licenses.push(PackageLicense {
+                                license_id: spdx.to_string(),
+                                name: "".to_string(),
+                                license_text: "".to_string(),
+                                is_license_ref: false,
+                                license_comment: "".to_string(),
+                            });
                         }
                         LicenseIdentifier::Name(not_spdx) => {
                             licenses.push(PackageLicense {

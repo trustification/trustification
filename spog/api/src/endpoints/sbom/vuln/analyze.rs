@@ -47,6 +47,7 @@ pub async fn analyze_spdx(
     sbom_id: &str,
     offset: Option<i64>,
     limit: Option<i64>,
+    retrieve_remediation: Option<bool>,
 ) -> Result<AnalyzeOutcome, Error> {
     // find vulnerabilities
 
@@ -75,11 +76,17 @@ pub async fn analyze_spdx(
 
     // get all relevant VEX documents
 
-    let vex = collect_vex(state, token, cve_to_purl.keys()).await?;
+    let vex = match retrieve_remediation {
+        Some(false) => {
+            log::debug!("No VEX retrieval since no remediation retrieval is required");
+            HashMap::<String, Vec<Rc<Csaf>>>::new()
+        }
+        _ => collect_vex(state, token, cve_to_purl.keys()).await?,
+    };
 
     // fill in the remediations
 
-    let cve_to_purl = info_span!("scrape_remediations").in_scope(|| {
+    let cve_to_purl = info_span!("scrape_remediations", retrieve_remediation).in_scope(|| {
         let mut count = 0;
 
         let result = cve_to_purl
