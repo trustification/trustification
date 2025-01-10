@@ -24,10 +24,6 @@ Services such as Bombastic and Vexination uses S3-compatible storage for storing
 
 Have a look at the README file for each service for more detailed information on how they work.
 
-## Usage
-
-You can try out a publicly hosted trustification instance at [https://trustification.dev](https://trustification.dev). This instance is ingested with Red Hat security advisories and SBOMs for Red Hat products only.
-
 ## Running locally
 
 Prerequisite: an implementation of the [Compose
@@ -61,8 +57,6 @@ the UI by pointing your browser to
 [http://localhost:8084](http://localhost:8084).
 
 You can also run all of the trustification services via a single binary named `trust` or using the container image `ghcr.io/trustification/trust`.
-
-You can also try out the publicly hosted instance at [https://trustification.dev](https://trustification.dev).
 
 ## Running in production
 
