@@ -30,8 +30,6 @@ spec:
     value: container_files/Containerfile.services
   - name: path-context
     value: .
-  - name: build-source-image
-    value: 'true'
   pipelineSpec:
     description: |
       This pipeline is ideal for building container images from a Containerfile while reducing network traffic.
