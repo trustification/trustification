@@ -24,12 +24,12 @@ spec:
     value: '{{revision}}'
   - name: output-image
     value: quay.io/redhat-user-workloads/trusted-content-tenant/trustification-product-1-3-z:on-pr-{{revision}}
-  - name: image-expires-after
-    value: 5d
   - name: dockerfile
     value: container_files/Containerfile.services
   - name: path-context
     value: .
+  - name: build-source-image
+    value: 'true'
   pipelineSpec:
     description: |
       This pipeline is ideal for building container images from a Containerfile while reducing network traffic.
