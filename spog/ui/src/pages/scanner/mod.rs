@@ -6,7 +6,6 @@ use analytics_next::TrackingEvent;
 use anyhow::bail;
 use bombastic_model::prelude::SBOM;
 use inspect::Inspect;
-use packageurl::PackageUrl;
 use patternfly_yew::prelude::*;
 use serde_json::{json, Value};
 use spog_ui_utils::{
@@ -15,7 +14,7 @@ use spog_ui_utils::{
     hints::{Hint as HintView, Hints},
     tracking_event,
 };
-use std::{rc::Rc, str::FromStr};
+use std::rc::Rc;
 use upload::Upload;
 use yew::prelude::*;
 use yew_more_hooks::prelude::*;
@@ -42,18 +41,18 @@ impl<'a> From<ParseOutcome<'a>> for TrackingEvent<'static> {
     }
 }
 
-fn is_supported_package(purl: &str) -> bool {
-    match PackageUrl::from_str(purl) {
-        Ok(package) => {
-            package.ty() == "maven"
-                || package.ty() == "gradle"
-                || package.ty() == "npm"
-                || package.ty() == "golang"
-                || package.ty() == "pypi"
-        }
-        Err(_) => false,
-    }
-}
+// fn is_supported_package(purl: &str) -> bool {
+//     match PackageUrl::from_str(purl) {
+//         Ok(package) => {
+//             package.ty() == "maven"
+//                 || package.ty() == "gradle"
+//                 || package.ty() == "npm"
+//                 || package.ty() == "golang"
+//                 || package.ty() == "pypi"
+//         }
+//         Err(_) => false,
+//     }
+// }
 
 pub fn parse_and_validate(data: &[u8]) -> Result<SBOM, anyhow::Error> {
     parse(data).and_then(|_| validate(data))
@@ -86,56 +85,56 @@ pub fn parse(data: &[u8]) -> Result<SBOM, anyhow::Error> {
 pub fn validate(data: &[u8]) -> Result<SBOM, anyhow::Error> {
     let sbom = SBOM::parse(data)?;
 
-    #[allow(clippy::single_match)]
-    match &sbom {
-        SBOM::CycloneDX(_bom) => {
-            // re-parse to check for the spec version
-            let json = serde_json::from_slice::<Value>(data).ok();
-
-            let supported_packages = json.as_ref().map(|json| {
-                if let Some(components) = json["components"].as_array() {
-                    let are_all_supported_packages = components
-                        .iter()
-                        .filter_map(|external_ref| external_ref["purl"].as_str())
-                        .all(is_supported_package);
-                    are_all_supported_packages
-                } else {
-                    false
-                }
-            });
-
-            match supported_packages {
-                Some(false) => bail!(
-                    "The SBOM contains package type(s) not supported by Dependency Analytics. The Dependency Analytics report may be unavailable for this SBOM."
-                ),
-                _ => {}
-            }
-        }
-        SBOM::SPDX(_bom) => {
-            let json = serde_json::from_slice::<Value>(data).ok();
-
-            let supported_packages = json.as_ref().map(|json| {
-                if let Some(packages) = json["packages"].as_array() {
-                    let are_all_supported_packages = packages
-                        .iter()
-                        .filter_map(|package| package["externalRefs"].as_array())
-                        .flatten()
-                        .filter_map(|external_ref| external_ref["referenceLocator"].as_str())
-                        .all(is_supported_package);
-                    are_all_supported_packages
-                } else {
-                    false
-                }
-            });
-
-            match supported_packages {
-                Some(true) => {}
-                _ => bail!(
-                    "The SBOM contains package type(s) not supported by Dependency Analytics. The Dependency Analytics report may be unavailable for this SBOM."
-                ),
-            }
-        }
-    }
+    // #[allow(clippy::single_match)]
+    // match &sbom {
+    //     SBOM::CycloneDX(_bom) => {
+    //         // re-parse to check for the spec version
+    //         let json = serde_json::from_slice::<Value>(data).ok();
+    //
+    //         let supported_packages = json.as_ref().map(|json| {
+    //             if let Some(components) = json["components"].as_array() {
+    //                 let are_all_supported_packages = components
+    //                     .iter()
+    //                     .filter_map(|external_ref| external_ref["purl"].as_str())
+    //                     .all(is_supported_package);
+    //                 are_all_supported_packages
+    //             } else {
+    //                 false
+    //             }
+    //         });
+    //
+    //         match supported_packages {
+    //             Some(false) => {
+    //                 bail!("The SBOM contains package type(s) not supported by Dependency Analytics. The Dependency Analytics report may be unavailable for this SBOM.")
+    //             }
+    //             _ => {}
+    //         }
+    //     }
+    //     SBOM::SPDX(_bom) => {
+    //         let json = serde_json::from_slice::<Value>(data).ok();
+    //
+    //         let supported_packages = json.as_ref().map(|json| {
+    //             if let Some(packages) = json["packages"].as_array() {
+    //                 let are_all_supported_packages = packages
+    //                     .iter()
+    //                     .filter_map(|package| package["externalRefs"].as_array())
+    //                     .flatten()
+    //                     .filter_map(|external_ref| external_ref["referenceLocator"].as_str())
+    //                     .all(is_supported_package);
+    //                 are_all_supported_packages
+    //             } else {
+    //                 false
+    //             }
+    //         });
+    //
+    //         match supported_packages {
+    //             Some(true) => {}
+    //             _ => {
+    //                 bail!("The SBOM contains package type(s) not supported by Dependency Analytics. The Dependency Analytics report may be unavailable for this SBOM.")
+    //             }
+    //         }
+    //     }
+    // }
 
     Ok(sbom)
 }
