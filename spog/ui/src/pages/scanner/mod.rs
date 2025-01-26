@@ -6,7 +6,6 @@ use analytics_next::TrackingEvent;
 use anyhow::bail;
 use bombastic_model::prelude::SBOM;
 use inspect::Inspect;
-use packageurl::PackageUrl;
 use patternfly_yew::prelude::*;
 use serde_json::{json, Value};
 use spog_ui_utils::{
@@ -15,7 +14,7 @@ use spog_ui_utils::{
     hints::{Hint as HintView, Hints},
     tracking_event,
 };
-use std::{rc::Rc, str::FromStr};
+use std::rc::Rc;
 use upload::Upload;
 use yew::prelude::*;
 use yew_more_hooks::prelude::*;
