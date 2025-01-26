@@ -6,11 +6,11 @@ use reqwest::Body;
 use spog_ui_backend::{use_backend, AnalyzeService};
 use spog_ui_common::error::components::ApiError;
 use spog_ui_common::{config::use_config_private, error::components::Error};
+use spog_ui_components::download::{SbomKebabDropdown, SbomSource};
 use spog_ui_components::{
     common::{NotFound, PageHeading},
     content::{SourceCode, Technical},
     cyclonedx::*,
-    download::LocalDownloadButton,
     sbom::Report,
     spdx::*,
 };
@@ -74,18 +74,18 @@ pub fn sbom(props: &SBOMProperties) -> Html {
             let download_button = match &*sbom_index {
                 UseAsyncState::Ready(Ok(Some(data_index))) => {
                     let filename = format!("{}.json", data_index.name);
-                    html!(<LocalDownloadButton data={data.get_source()} r#type="sbom" filename={filename} />)
+                    html!(<SbomKebabDropdown id={props.id.clone()} sbom_source={SbomSource::LOCAL(data.get_source(), filename)} dropdown_text={"Download"} />)
                 }
                 _ => {
-                    html!(<LocalDownloadButton data={data.get_source()} r#type="sbom" filename={clean_ext(&props.id)} />)
+                    html!(<SbomKebabDropdown id={props.id.clone()} sbom_source={SbomSource::LOCAL(data.get_source(), clean_ext(&props.id))} dropdown_text={"Download"} />)
                 }
             };
 
             (
                 html!(
                     <PageSection variant={PageSectionVariant::Light} >
-                        <Flex>
-                            <FlexItem>
+                        <Split gutter=true>
+                            <SplitItem fill=true>
                                 <Content>
                                     <Title>
                                         {title} {" "} <Label label={data.type_name()} color={Color::Blue} />
@@ -96,11 +96,11 @@ pub fn sbom(props: &SBOMProperties) -> Html {
                                         {"if you have any questions or concerns."}
                                     </p>
                                 </Content>
-                            </FlexItem>
-                            <FlexItem modifiers={[FlexModifier::Align(Alignment::Right), FlexModifier::Align(Alignment::End)]}>
+                            </SplitItem>
+                            <SplitItem>
                                 {download_button}
-                            </FlexItem>
-                        </Flex>
+                            </SplitItem>
+                        </Split>
                     </PageSection>
                 ),
                 html!(<Details id={props.id.clone()} sbom={data.clone()}/> ),
