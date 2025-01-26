@@ -44,7 +44,7 @@ pub fn sbom(props: &SbomReportProperties) -> Html {
     let info = use_async_with_cloned_deps(
         |(id, backend)| async move {
             spog_ui_backend::SBOMService::new(backend.clone(), access_token)
-                .get_sbom_vulns(id)
+                .get_sbom_vulns(id, true)
                 .await
                 .map(|r| r.map(Rc::new))
         },

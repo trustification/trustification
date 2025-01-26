@@ -6,7 +6,10 @@ pub use report::*;
 pub use report_viewer::*;
 pub use search::*;
 
-use crate::{download::Download, table_wrapper::TableWrapper};
+use crate::{
+    download::{SbomKebabDropdown, SbomSource},
+    table_wrapper::TableWrapper,
+};
 use patternfly_yew::prelude::*;
 use spog_model::prelude::*;
 use spog_ui_backend::{use_backend, Endpoint};
@@ -67,9 +70,12 @@ impl TableEntryRenderer<Column> for PackageEntry {
             Column::Supplier => html!(&self.package.supplier).into(),
             Column::Created => date(self.package.created).into(),
             Column::Download => html!(
-                if let Some(url) = &self.url {
-                    <Download href={url.clone()} r#type="sbom"/>
-                }
+                <SbomKebabDropdown
+                    id={self.id.clone()}
+                    sbom_source={SbomSource::URL(self.url.clone())}
+                    dropdown_variant={MenuToggleVariant::Plain}
+                    dropdown_icon={Icon::EllipsisV}
+                />
             )
             .into(),
             Column::Dependencies => html!(&self.package.dependencies).into(),
@@ -172,7 +178,7 @@ pub fn sbom_result(props: &SbomResultProperties) -> Html {
         }),
         yew::props!(TableColumnProperties<Column> {
             index: Column::Download,
-            label: "Download",
+            label: "",
             width: ColumnWidth::FitContent
         }),
     ];

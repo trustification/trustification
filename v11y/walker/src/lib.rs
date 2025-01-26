@@ -107,8 +107,8 @@ impl Run {
                         if !name.starts_with("CVE-") {
                             continue;
                         }
-
-                        let mut name_matches_prefix = false;
+                        //this is done to stop this section from ignoring files when there's no prefix
+                        let mut name_matches_prefix = self.require_prefix.is_empty();
                         for prefix in &self.require_prefix {
                             if name.starts_with(prefix) {
                                 name_matches_prefix = true;

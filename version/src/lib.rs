@@ -50,7 +50,7 @@ pub mod version;
 #[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 pub struct VersionInformation {
     pub name: String,
-    pub version: Version,
+    pub version: String,
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub description: String,
 
@@ -95,16 +95,16 @@ pub struct Version {
 macro_rules! version {
     () => {
         $crate::VersionInformation {
-            version: $crate::Version {
-                full: env!("CARGO_PKG_VERSION").to_string(),
-                major: env!("CARGO_PKG_VERSION_MAJOR").parse().unwrap_or_default(),
-                minor: env!("CARGO_PKG_VERSION_MINOR").parse().unwrap_or_default(),
-                patch: env!("CARGO_PKG_VERSION_PATCH").parse().unwrap_or_default(),
-                pre: option_env!("CARGO_PKG_VERSION_PRE")
-                    .filter(|s| !s.is_empty())
-                    .map(ToString::to_string),
-            },
-
+            version: String::from("main"),
+            // version: $crate::Version {
+            //     full: env!("CARGO_PKG_VERSION").to_string(),
+            //     major: env!("CARGO_PKG_VERSION_MAJOR").parse().unwrap_or_default(),
+            //     minor: env!("CARGO_PKG_VERSION_MINOR").parse().unwrap_or_default(),
+            //     patch: env!("CARGO_PKG_VERSION_PATCH").parse().unwrap_or_default(),
+            //     pre: option_env!("CARGO_PKG_VERSION_PRE")
+            //         .filter(|s| !s.is_empty())
+            //         .map(ToString::to_string),
+            // },
             name: env!("CARGO_PKG_NAME").into(),
             description: env!("CARGO_PKG_DESCRIPTION").into(),
 

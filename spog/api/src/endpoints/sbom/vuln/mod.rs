@@ -2,9 +2,10 @@ mod analyze;
 mod backtrace;
 mod vex;
 
-use crate::app_state::{AppState, ResponseError};
+use crate::app_state::AppState;
 use crate::endpoints::sbom::vuln::analyze::AnalyzeOutcome;
 use crate::error::Error;
+use crate::search::QueryParams;
 use crate::service::{guac::GuacService, v11y::V11yService};
 use actix_web::cookie::time;
 use actix_web::{web, HttpResponse};
@@ -26,9 +27,11 @@ use std::str::FromStr;
 use time::macros::format_description;
 use time::OffsetDateTime;
 use tracing::{info_span, instrument, Instrument};
+use trustification_api::search::SearchResult;
 use trustification_auth::client::TokenProvider;
 use trustification_common::error::ErrorInformation;
 use utoipa::IntoParams;
+use v11y_model::search::SearchDocument;
 
 /// chunk size for finding VEX by CVE IDs
 const SEARCH_CHUNK_SIZE: usize = 10;
@@ -41,6 +44,7 @@ pub struct GetParams {
     pub id: String,
     pub offset: Option<i64>,
     pub limit: Option<i64>,
+    pub retrieve_remediation: Option<bool>,
 }
 
 #[utoipa::path(
@@ -60,17 +64,7 @@ pub async fn get_vulnerabilities(
     params: web::Query<GetParams>,
     access_token: Option<BearerAuth>,
 ) -> actix_web::Result<HttpResponse> {
-    if let Some(result) = process_get_vulnerabilities(
-        &state,
-        &v11y,
-        &guac,
-        &access_token,
-        &params.id,
-        params.offset,
-        params.limit,
-    )
-    .await?
-    {
+    if let Some(result) = process_get_vulnerabilities(&state, &v11y, &guac, &access_token, &params).await? {
         Ok(HttpResponse::Ok().json(result))
     } else {
         Ok(HttpResponse::NotFound().json(ErrorInformation {
@@ -87,10 +81,12 @@ pub async fn process_get_vulnerabilities(
     v11y: &V11yService,
     guac: &GuacService,
     access_token: &dyn TokenProvider,
-    id: &str,
-    offset: Option<i64>,
-    limit: Option<i64>,
+    params: &GetParams,
 ) -> Result<Option<SbomReport>, Error> {
+    let id = &params.id;
+    let offset = params.offset;
+    let limit = params.limit;
+    let retrieve_remediation = params.retrieve_remediation;
     // FIXME: avoid getting the full SBOM, but the search document fields only
     let sbom: BytesMut = state
         .get_sbom(id, access_token)
@@ -115,6 +111,7 @@ pub async fn process_get_vulnerabilities(
                 &spdx.document_creation_information.spdx_document_namespace,
                 offset,
                 limit,
+                retrieve_remediation,
             )
             .await?;
 
@@ -164,7 +161,7 @@ pub async fn process_get_vulnerabilities(
             let AnalyzeOutcome {
                 cve_to_purl,
                 purl_to_backtrace,
-            } = analyze_spdx(state, guac, access_token, &sbom_id, offset, limit).await?;
+            } = analyze_spdx(state, guac, access_token, &sbom_id, offset, limit, retrieve_remediation).await?;
 
             (name, version, created, cve_to_purl, purl_to_backtrace)
         }
@@ -174,24 +171,38 @@ pub async fn process_get_vulnerabilities(
 
     let details = iter(analyze)
         .map(|(id, affected_packages)| async move {
-            // FIXME: need to provide packages to entry
-            let cve: Cve = match v11y.fetch_cve(&id).await?.or_status_error_opt().await? {
-                Some(cve) => cve.json().await?,
-                None => return Ok(None),
+            log::debug!("querying for {}", id);
+            let query: QueryParams = QueryParams {
+                q: id,
+                offset: 0,
+                limit: 1,
             };
-            let score = get_score(&cve);
+            let SearchResult { result, total } = v11y.search(query).await.map_err(Error::V11y)?;
+            log::debug!("total is {:?}", total);
+            match total {
+                Some(1..) => {
+                    if let Some(cve) = result.first() {
+                        let mut sources = HashMap::new();
+                        let score = Option::from(cve.document.cvss3x_score.unwrap_or(0f64) as f32);
+                        log::debug!("score is {:?}", score);
+                        sources.insert("mitre".to_string(), SourceDetails { score });
 
-            let mut sources = HashMap::new();
-            sources.insert("mitre".to_string(), SourceDetails { score });
-
-            Ok(Some(SbomReportVulnerability {
-                id: cve.id().to_string(),
-                description: get_description(&cve),
-                sources,
-                published: cve.common_metadata().date_published.map(|t| t.assume_utc()),
-                updated: cve.common_metadata().date_updated.map(|t| t.assume_utc()),
-                affected_packages,
-            }))
+                        let result = Ok(Some(SbomReportVulnerability {
+                            id: cve.document.id.clone(),
+                            description: get_description(&cve.document),
+                            sources,
+                            published: cve.document.date_published,
+                            updated: cve.document.date_updated,
+                            affected_packages,
+                        }));
+                        log::debug!("result is {:?}", result);
+                        result
+                    } else {
+                        Ok(None)
+                    }
+                }
+                _ => Ok(None),
+            }
         })
         .buffer_unordered(4)
         // filter out missing ones
@@ -226,7 +237,7 @@ pub async fn process_get_vulnerabilities(
     }))
 }
 
-fn into_severity(score: f32) -> cvss::Severity {
+pub(crate) fn into_severity(score: f32) -> cvss::Severity {
     if score >= 9.0 {
         cvss::Severity::Critical
     } else if score >= 7.0 {
@@ -241,32 +252,19 @@ fn into_severity(score: f32) -> cvss::Severity {
 }
 
 /// get the description
-///
-/// We scan for the first description matching "en" or an empty string, as "en" is default.
-///
-// FIXME: We should consider other langauges as well, like a language priorities list.
-fn get_description(cve: &Cve) -> Option<String> {
-    let desc = match cve {
-        Cve::Published(cve) => {
-            if let Some(title) = cve.containers.cna.title.clone() {
-                return Some(title);
+fn get_description(cve: &SearchDocument) -> Option<String> {
+    Some(
+        match cve.published {
+            true => {
+                if let Some(title) = cve.title.clone() {
+                    return Some(title);
+                }
+                &cve.descriptions
             }
-
-            &cve.containers.cna.descriptions
+            false => &cve.descriptions,
         }
-        Cve::Rejected(cve) => &cve.containers.cna.rejected_reasons,
-    };
-
-    desc.iter()
-        .filter_map(|d| {
-            let lang = &d.language;
-            if lang.is_empty() || lang.starts_with("en") {
-                Some(d.value.clone())
-            } else {
-                None
-            }
-        })
-        .next()
+        .join(" :: "),
+    )
 }
 
 /// get the CVSS score as a plain number
