@@ -5,18 +5,17 @@ mod products;
 use crate::hooks::use_related_advisories;
 use advisories::RelatedAdvisories;
 use cve::common::Description;
-use cve::published::Metric;
 use patternfly_yew::prelude::*;
 use products::RelatedProducts;
 use spog_model::prelude::CveDetails;
 use spog_ui_backend::{use_backend, CveService};
+use spog_ui_common::utils::cvss::Cvss;
 use spog_ui_common::{components::Markdown, config::use_config_private};
 use spog_ui_components::{
-    async_state_renderer::async_content, cvss::Cvss3Label, download::LocalDownloadButton, editor::ReadonlyEditor,
-    time::Date,
+    async_state_renderer::async_content, cvss::Cvss3LabelFromCvss, download::LocalDownloadButton,
+    editor::ReadonlyEditor, time::Date,
 };
 use std::rc::Rc;
-use std::str::FromStr;
 use yew::prelude::*;
 use yew_more_hooks::{
     hooks::{use_async_with_cloned_deps, use_page_state},
@@ -53,6 +52,25 @@ pub fn result_view(props: &ResultViewProperties) -> Html {
                         ))
                     })
                     .transpose()
+            },
+            props.id.clone(),
+        )
+    };
+
+    let cve_index_data = {
+        let backend = backend.clone();
+        let access_token = access_token.clone();
+        use_async_with_cloned_deps(
+            move |id| async move {
+                let service = CveService::new(backend.clone(), access_token.clone());
+                service.get_from_index(&id).await.map(|search_result| {
+                    if search_result.result.len() == 1 {
+                        let data = &search_result.result[0];
+                        Some(data.clone())
+                    } else {
+                        None
+                    }
+                })
             },
             props.id.clone(),
         )
@@ -104,13 +122,13 @@ pub fn result_view(props: &ResultViewProperties) -> Html {
                         <Content>
                             <Title>
                                 {props.id.clone()} { " "}
-                                if let UseAsyncState::Ready(Ok(details)) = &*cve_details {{
-                                     match details.as_ref().map(|details| details.0.as_ref()) {
-                                        Some(cve::Cve::Published(published)) => cvss3(&published.containers.cna.metrics),
-                                        Some(cve::Cve::Rejected(_rejected)) => html!(<Label label="Rejected" color={Color::Grey} />),
-                                        None => html!(),
+                                if let UseAsyncState::Ready(Ok(Some(cve))) = &*cve_index_data {
+                                    if let Some(score) = &cve.document.cvss3x_score {
+                                        {html!(<Cvss3LabelFromCvss cvss={Cvss {
+                                            score: *score as f32
+                                        }}/>)}
                                     }
-                                }}
+                                }
                             </Title>
                             if let UseAsyncState::Ready(Ok(Some((details, _)))) = &*cve_details {
                                 { cve_title(details) }
@@ -179,20 +197,20 @@ fn cve_title(cve: &cve::Cve) -> Html {
     }
 }
 
-fn cvss3(metrics: &[Metric]) -> Html {
-    for m in metrics {
-        if let Some(cvss) = m
-            .cvss_v3_1
-            .as_ref()
-            .or(m.cvss_v3_0.as_ref())
-            .and_then(|cvss| cvss["vectorString"].as_str())
-            .and_then(|cvss| cvss::v3::Base::from_str(cvss).ok())
-        {
-            return html!(<Cvss3Label {cvss}/>);
-        }
-    }
-    html!()
-}
+// fn cvss3(metrics: &[Metric]) -> Html {
+//     for m in metrics {
+//         if let Some(cvss) = m
+//             .cvss_v3_1
+//             .as_ref()
+//             .or(m.cvss_v3_0.as_ref())
+//             .and_then(|cvss| cvss["vectorString"].as_str())
+//             .and_then(|cvss| cvss::v3::Base::from_str(cvss).ok())
+//         {
+//             return html!(<Cvss3Label {cvss}/>);
+//         }
+//     }
+//     html!()
+// }
 
 #[derive(PartialEq, Properties)]
 struct DescriptionsProperties {
