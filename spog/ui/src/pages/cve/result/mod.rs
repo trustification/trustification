@@ -5,7 +5,6 @@ mod products;
 use crate::hooks::use_related_advisories;
 use advisories::RelatedAdvisories;
 use cve::common::Description;
-use cve::published::Metric;
 use patternfly_yew::prelude::*;
 use products::RelatedProducts;
 use spog_model::prelude::CveDetails;
@@ -13,14 +12,10 @@ use spog_ui_backend::{use_backend, CveService};
 use spog_ui_common::utils::cvss::Cvss;
 use spog_ui_common::{components::Markdown, config::use_config_private};
 use spog_ui_components::{
-    async_state_renderer::async_content,
-    cvss::{Cvss3Label, Cvss3LabelFromCvss},
-    download::LocalDownloadButton,
-    editor::ReadonlyEditor,
-    time::Date,
+    async_state_renderer::async_content, cvss::Cvss3LabelFromCvss, download::LocalDownloadButton,
+    editor::ReadonlyEditor, time::Date,
 };
 use std::rc::Rc;
-use std::str::FromStr;
 use yew::prelude::*;
 use yew_more_hooks::{
     hooks::{use_async_with_cloned_deps, use_page_state},
@@ -127,7 +122,7 @@ pub fn result_view(props: &ResultViewProperties) -> Html {
                         <Content>
                             <Title>
                                 {props.id.clone()} { " "}
-                                if let UseAsyncState::Ready(Ok(Some((cve)))) = &*cve_index_data {
+                                if let UseAsyncState::Ready(Ok(Some(cve))) = &*cve_index_data {
                                     if let Some(score) = &cve.document.cvss3x_score {
                                         {html!(<Cvss3LabelFromCvss cvss={Cvss {
                                             score: *score as f32
@@ -202,20 +197,20 @@ fn cve_title(cve: &cve::Cve) -> Html {
     }
 }
 
-fn cvss3(metrics: &[Metric]) -> Html {
-    for m in metrics {
-        if let Some(cvss) = m
-            .cvss_v3_1
-            .as_ref()
-            .or(m.cvss_v3_0.as_ref())
-            .and_then(|cvss| cvss["vectorString"].as_str())
-            .and_then(|cvss| cvss::v3::Base::from_str(cvss).ok())
-        {
-            return html!(<Cvss3Label {cvss}/>);
-        }
-    }
-    html!()
-}
+// fn cvss3(metrics: &[Metric]) -> Html {
+//     for m in metrics {
+//         if let Some(cvss) = m
+//             .cvss_v3_1
+//             .as_ref()
+//             .or(m.cvss_v3_0.as_ref())
+//             .and_then(|cvss| cvss["vectorString"].as_str())
+//             .and_then(|cvss| cvss::v3::Base::from_str(cvss).ok())
+//         {
+//             return html!(<Cvss3Label {cvss}/>);
+//         }
+//     }
+//     html!()
+// }
 
 #[derive(PartialEq, Properties)]
 struct DescriptionsProperties {
