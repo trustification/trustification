@@ -79,8 +79,17 @@ pub fn cvss3(props: &Cvss3Properties) -> Html {
 #[function_component(Cvss3Label)]
 pub fn cvss3_label(props: &Cvss3Properties) -> Html {
     let cvss: Cvss = (&props.cvss).into_prop_value();
+    html!(<Cvss3LabelFromCvss {cvss} />)
+}
 
-    let severity = cvss.to_severity();
+#[derive(PartialEq, Properties)]
+pub struct Cvss3LabelFromCvssProperties {
+    pub cvss: Cvss,
+}
+
+#[function_component(Cvss3LabelFromCvss)]
+pub fn cvss3_label(props: &Cvss3LabelFromCvssProperties) -> Html {
+    let severity = &props.cvss.to_severity();
 
     let color = match severity {
         Severity::None => Color::Blue,
@@ -90,7 +99,7 @@ pub fn cvss3_label(props: &Cvss3Properties) -> Html {
         Severity::Critical => Color::Purple,
     };
 
-    let label = format!("{:.1} {}", cvss.score, severity.as_str());
+    let label = format!("{:.1} {}", &props.cvss.score, severity.as_str());
 
     html!(<Label {color} {label} />)
 }
