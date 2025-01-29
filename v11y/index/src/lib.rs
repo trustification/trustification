@@ -129,17 +129,29 @@ impl Index {
             }
         }
 
-        for metric in &cve.containers.cna.metrics {
-            let score = metric
-                .cvss_v3_1
-                .as_ref()
-                .and_then(|score| parse_score(score, "3.1"))
-                .or_else(|| metric.cvss_v3_0.as_ref().and_then(|score| parse_score(score, "3.0")));
+        let max_score = &cve
+            .containers
+            .cna
+            .metrics
+            .iter()
+            .filter_map(|metric| {
+                metric
+                    .cvss_v3_1
+                    .as_ref()
+                    .and_then(|score| parse_score(score, "3.1"))
+                    .or_else(|| metric.cvss_v3_0.as_ref().and_then(|score| parse_score(score, "3.0")))
+            })
+            .max_by(|x1, x2| {
+                let x1_score_value = x1.score().value();
+                let x2_score_value = x2.score().value();
+                x1_score_value
+                    .partial_cmp(&x2_score_value)
+                    .unwrap_or(std::cmp::Ordering::Equal)
+            });
 
-            if let Some(score) = score {
-                document.add_f64(self.fields.cvss3x_score, score.score().value());
-                document.add_text(self.fields.severity, score.severity().to_string());
-            }
+        if let Some(score) = max_score {
+            document.add_f64(self.fields.cvss3x_score, score.score().value());
+            document.add_text(self.fields.severity, score.severity().to_string());
         }
 
         log::debug!("Indexed {:?}", document);
@@ -407,6 +419,7 @@ mod test {
     use trustification_index::{IndexStore, IndexWriter};
 
     const TESTDATA: &[&str] = &[
+        "../testdata/CVE-2023-6260.json",
         "../testdata/CVE-2023-44487.json",
         "../testdata/CVE-2017-13052.json",
         "../testdata/CVE-2023-33201.json",
@@ -504,10 +517,23 @@ mod test {
     }
 
     #[tokio::test]
+    async fn test_duplicate_base_score() {
+        assert_search(|index| {
+            let result = search(&index, r#"in:id "CVE-2023-6260""#);
+            assert_eq!(result.0.len(), 1);
+            if let Some(search_doc) = result.0.first() {
+                assert_eq!(Some(9_f64), search_doc.document.cvss3x_score);
+            } else {
+                panic!("The CVE is cvssV3_1's baseScore is wrong");
+            }
+        });
+    }
+
+    #[tokio::test]
     async fn test() {
         assert_search(|index| {
             let result = search(&index, r#"allow in:description"#);
-            assert_eq!(result.0.len(), 1);
+            assert_eq!(result.0.len(), 2);
         });
 
         assert_search(|index| {
