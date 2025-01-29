@@ -1,4 +1,4 @@
-use crate::license::{PackageLicense, SbomLicense, SbomPackage};
+use crate::license::{ExtractedLicensingInfos, SbomLicense, SbomPackage};
 use actix_web::body::BoxBody;
 use actix_web::http::header::ContentType;
 use actix_web::{HttpResponse, ResponseError};
@@ -14,6 +14,13 @@ pub struct LicenseScanner {
     sbom: SBOM,
 }
 
+#[derive(Default)]
+struct SpdxLicenses {
+    pub license_text: String,
+    pub license_name: String,
+    pub spdx_licenses: Vec<String>,
+    pub spdx_license_exceptions: Vec<String>,
+}
 #[derive(Debug, thiserror::Error)]
 pub enum LicenseScannerError {
     #[error("failed to parse license data: {0}")]
@@ -46,7 +53,7 @@ impl LicenseScanner {
         LicenseScanner { sbom }
     }
 
-    pub fn scanner(&self) -> Result<SbomLicense, LicenseScannerError> {
+    pub fn scanner(&self) -> Result<(SbomLicense, Vec<ExtractedLicensingInfos>), LicenseScannerError> {
         match &self.sbom {
             SBOM::SPDX(spdx_bom) => {
                 let (sbom_name, all_packages) = self.handle_spdx_sbom(spdx_bom);
@@ -58,8 +65,17 @@ impl LicenseScanner {
                     packages: all_packages,
                     is_spdx: true,
                 };
-
-                Ok(license_result)
+                let extracted_licensing_infos = spdx_bom
+                    .other_licensing_information_detected
+                    .iter()
+                    .map(|oli| ExtractedLicensingInfos {
+                        license_id: oli.license_identifier.clone(),
+                        name: oli.license_name.clone(),
+                        extracted_text: oli.extracted_text.clone(),
+                        comment: oli.license_comment.clone().unwrap_or_default(),
+                    })
+                    .collect();
+                Ok((license_result, extracted_licensing_infos))
             }
             SBOM::CycloneDX(cyclonedx_bom) => {
                 let (name, group, version, all_packages) = self.handle_cyclonedx_sbom(cyclonedx_bom)?;
@@ -72,7 +88,7 @@ impl LicenseScanner {
                     is_spdx: false,
                 };
 
-                Ok(license_result)
+                Ok((license_result, vec![]))
             }
         }
     }
@@ -116,14 +132,17 @@ impl LicenseScanner {
                     supplier = ns.unwrap_or_else(NormalizedString::default).to_string();
                 }
 
-                let packages = self.handle_cyclonedx_sbom_component(component)?;
+                let (spdx_license, other_reference) = self.handle_cyclonedx_sbom_component(component)?;
                 sbom_package_list.push(SbomPackage {
                     name: package_name,
                     version: Some(package_version),
                     purl: package_purl,
-                    other_reference: vec![],
+                    other_reference,
                     supplier: Some(supplier),
-                    licenses: packages,
+                    license_text: spdx_license.license_text,
+                    license_name: spdx_license.license_name,
+                    spdx_licenses: spdx_license.spdx_licenses,
+                    spdx_license_exceptions: spdx_license.spdx_license_exceptions,
                 })
             }
         }
@@ -133,58 +152,61 @@ impl LicenseScanner {
     fn handle_cyclonedx_sbom_component(
         &self,
         component: &Component,
-    ) -> Result<Vec<PackageLicense>, LicenseScannerError> {
-        let mut licenses = Vec::new();
+    ) -> Result<(SpdxLicenses, Vec<String>), LicenseScannerError> {
+        let other_reference = if let Some(cpe) = component.cpe.clone() {
+            cpe.to_string()
+        } else {
+            String::default()
+        };
+        let other_reference = vec![other_reference];
+
         if let Some(l) = component.licenses.as_ref() {
-            for pl in l.0.clone() {
+            if let Some(pl) = l.0.clone().into_iter().next() {
                 match pl {
                     LicenseChoice::License(spl) => match spl.license_identifier {
                         LicenseIdentifier::SpdxId(spdx) => {
-                            licenses.push(PackageLicense {
-                                license_id: spdx.to_string(),
-                                name: "".to_string(),
-                                license_text: "".to_string(),
-                                is_license_ref: false,
-                                license_comment: "".to_string(),
-                            });
+                            let spdx_licenses = vec![spdx.to_string()];
+                            let spdx_license_exceptions = vec![];
+                            return Ok((
+                                SpdxLicenses {
+                                    license_text: "".to_string(),
+                                    license_name: "".to_string(),
+                                    spdx_licenses,
+                                    spdx_license_exceptions,
+                                },
+                                other_reference.clone(),
+                            ));
                         }
                         LicenseIdentifier::Name(not_spdx) => {
-                            licenses.push(PackageLicense {
-                                license_id: "".to_string(),
-                                name: not_spdx.to_string(),
-                                license_text: "".to_string(),
-                                is_license_ref: false,
-                                license_comment: "".to_string(),
-                            });
+                            let spdx_licenses = vec![];
+                            let spdx_license_exceptions = vec![];
+                            return Ok((
+                                SpdxLicenses {
+                                    license_text: "".to_string(),
+                                    license_name: not_spdx.to_string(),
+                                    spdx_licenses,
+                                    spdx_license_exceptions,
+                                },
+                                other_reference.clone(),
+                            ));
                         }
                     },
                     LicenseChoice::Expression(spl_exp) => {
-                        Self::fetch_license_from_spdx_expression(&mut licenses, spl_exp.to_string().as_str());
+                        let spdxs = spdx_expression::SpdxExpression::parse(spl_exp.to_string().as_str())?;
+                        return Ok((
+                            SpdxLicenses {
+                                license_text: spl_exp.clone().to_string(),
+                                license_name: "".to_string(),
+                                spdx_licenses: spdxs.licenses().iter().map(|l| l.to_string()).collect(),
+                                spdx_license_exceptions: spdxs.exceptions().iter().map(|e| e.to_string()).collect(),
+                            },
+                            other_reference.clone(),
+                        ));
                     }
                 }
             }
         };
-        Ok(licenses)
-    }
-
-    fn fetch_license_from_spdx_expression(licenses: &mut Vec<PackageLicense>, spdx: &str) {
-        let spdxs = spdx_expression::SpdxExpression::parse(spdx);
-        match spdxs {
-            Ok(s) => {
-                for spdx in s.licenses() {
-                    licenses.push(PackageLicense {
-                        license_id: spdx.identifier.clone(),
-                        name: "".to_string(),
-                        license_text: "".to_string(),
-                        is_license_ref: false,
-                        license_comment: "".to_string(),
-                    });
-                }
-            }
-            Err(err) => {
-                log::warn!("When an error occurs while parsing an SPDX expression.: {:?}", err)
-            }
-        }
+        Ok((SpdxLicenses::default(), vec![]))
     }
 
     fn handle_spdx_sbom(&self, spdx_bom: &SPDX) -> (String, Vec<SbomPackage>) {
@@ -210,51 +232,21 @@ impl LicenseScanner {
 
             let package_supplier = pi.package_supplier.clone();
 
-            let mut spdx_ids = Vec::new();
             if let Some(license) = &pi.declared_license {
-                for l in license.licenses() {
-                    if l.license_ref {
-                        let license_ref =
-                            &spdx_bom
-                                .other_licensing_information_detected
-                                .iter()
-                                .find(|extraced_license| {
-                                    extraced_license.license_identifier.contains(l.identifier.as_str())
-                                });
+                let result = SbomPackage {
+                    name: String::from(package_name),
+                    version: package_version.clone(),
+                    purl: String::from(package_url),
+                    other_reference: other_references.clone(),
+                    supplier: package_supplier,
+                    license_text: license.to_string(),
+                    license_name: "".to_string(),
+                    spdx_licenses: license.licenses().clone().iter().map(|l| l.to_string()).collect(),
+                    spdx_license_exceptions: license.exceptions().iter().map(|l| l.to_string()).clone().collect(),
+                };
 
-                        if let Some(license_info) = license_ref {
-                            spdx_ids.push(PackageLicense {
-                                license_id: license_info.license_identifier.to_string(),
-                                name: license_info.license_name.to_string(),
-                                license_text: license_info.extracted_text.to_string(),
-                                is_license_ref: true,
-                                license_comment: license_info
-                                    .license_comment
-                                    .as_ref()
-                                    .map_or(String::new(), |v| v.to_string()),
-                            });
-                        }
-                    } else {
-                        spdx_ids.push(PackageLicense {
-                            license_id: String::from(&l.identifier),
-                            name: String::from(&l.identifier),
-                            license_text: "".to_string(),
-                            license_comment: "".to_string(),
-                            is_license_ref: false,
-                        });
-                    }
-                }
+                all_packages.push(result)
             }
-
-            let result = SbomPackage {
-                name: String::from(package_name),
-                version: package_version.clone(),
-                purl: String::from(package_url),
-                other_reference: other_references.clone(),
-                supplier: package_supplier,
-                licenses: spdx_ids,
-            };
-            all_packages.push(result);
         }
         (sbom_name, all_packages)
     }
@@ -278,7 +270,7 @@ mod tests {
 
         let license_scanner = LicenseScanner::new(sbom);
 
-        let sbom_licenses = license_scanner
+        let (sbom_licenses, extracted_license_infos) = license_scanner
             .scanner()
             .unwrap_or_else(|_| panic!("failed to parse test data"));
 
@@ -288,16 +280,14 @@ mod tests {
             .find(|p| p.purl == "pkg:rpm/redhat/xorg-x11-fonts-Type1@7.5-9.el7?arch=noarch");
 
         if let Some(pl) = package_license {
-            let ls: Vec<String> = pl.licenses.iter().map(|l| l.license_id.clone()).collect();
-            assert_eq!(3, ls.len());
-            assert!(ls.contains(&"MIT".to_string()));
-            assert!(ls.contains(&"LicenseRef-Lucida".to_string()));
-            assert!(ls.contains(&"LicenseRef-5".to_string()));
-            for license in &pl.licenses {
-                if license.license_id == "LicenseRef-Lucida" {
-                    assert_eq!(license.license_text, "The license info found in the package meta data is: Lucida. See the specific package info in this SPDX document or the package itself for more details.");
-                }
-            }
+            assert_eq!(3, pl.spdx_licenses.len());
+            assert!(pl.spdx_licenses.contains(&"MIT".to_string()));
+            assert!(pl.spdx_licenses.contains(&"LicenseRef-Lucida".to_string()));
+            assert!(pl.spdx_licenses.contains(&"LicenseRef-5".to_string()));
+
+            assert!(extracted_license_infos
+                .iter()
+                .any(|e| e.license_id == "LicenseRef-Lucida"))
         } else {
             panic!("the unit test failed");
         }
@@ -309,20 +299,54 @@ mod tests {
 
         let license_scanner = LicenseScanner::new(sbom);
 
-        let sbom_licenses = license_scanner
+        let (sbom_licenses, extracted_license_infos) = license_scanner
             .scanner()
             .unwrap_or_else(|_| panic!("failed to parse test data"));
 
+        assert_eq!(0, extracted_license_infos.len());
         let package_license = sbom_licenses
             .packages
             .iter()
             .find(|p| p.purl == "pkg:maven/io.quarkus/quarkus-arc@2.16.2.Final?type=jar");
 
         if let Some(pl) = package_license {
-            let ls: Vec<String> = pl.licenses.iter().map(|l| l.license_id.clone()).collect();
-            assert!(ls.contains(&"Apache-2.0".to_string()));
+            assert!(pl.spdx_licenses.contains(&"Apache-2.0".to_string()));
+            assert_eq!(0, pl.spdx_license_exceptions.len());
         } else {
             panic!("the unit test failed");
+        }
+    }
+    #[tokio::test]
+    async fn test_cydx_with_cpe() {
+        let sbom = load_sbom_file("../test-data/tc_1730_license_escape.json")
+            .unwrap_or_else(|_| panic!("failed to parse test data"));
+
+        let license_scanner = LicenseScanner::new(sbom);
+
+        let (sbom_licenses, extracted_license_infos) = license_scanner
+            .scanner()
+            .unwrap_or_else(|_| panic!("failed to parse test data"));
+
+        assert_eq!(0, extracted_license_infos.len());
+        let package_license = sbom_licenses
+            .packages
+            .iter()
+            .find(|p| p.purl == "pkg:rpm/rhel/llvm-libs@17.0.6-5.el9?arch=x86_64&upstream=llvm-17.0.6-5.el9.src.rpm&distro=rhel-9.4");
+
+        if let Some(license) = package_license {
+            assert!(license.license_text == "Apache-2.0 WITH LLVM-exception OR NCSA");
+            assert_eq!(1, license.spdx_license_exceptions.len());
+            assert_eq!(2, license.spdx_licenses.len());
+            assert!(license.spdx_licenses.contains(&"Apache-2.0".to_string()));
+            assert!(license.spdx_licenses.contains(&"NCSA".to_string()));
+            assert_eq!("LLVM-exception", license.spdx_license_exceptions[0]);
+            assert_eq!(1, license.other_reference.len());
+            assert_eq!(
+                "cpe:2.3:a:llvm-libs:llvm-libs:17.0.6-5.el9:*:*:*:*:*:*:*",
+                license.other_reference[0]
+            );
+        } else {
+            panic!("test failed");
         }
     }
 }

@@ -21,13 +21,15 @@ pub struct SbomPackage {
     /// package supplier
     pub supplier: Option<String>,
     /// List of all package license
-    pub licenses: Vec<PackageLicense>,
+    pub license_text: String,
+    pub license_name: String,
+    pub spdx_licenses: Vec<String>,
+    pub spdx_license_exceptions: Vec<String>,
 }
 
-pub struct PackageLicense {
+pub struct ExtractedLicensingInfos {
     pub license_id: String,
     pub name: String,
-    pub license_text: String,
-    pub license_comment: String,
-    pub is_license_ref: bool,
+    pub extracted_text: String,
+    pub comment: String,
 }
