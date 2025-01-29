@@ -1,4 +1,4 @@
-use crate::license::SbomLicense;
+use crate::license::{ExtractedLicensingInfos, SbomLicense};
 use crate::utils::get_sanitize_filename;
 use actix_web::body::BoxBody;
 use actix_web::http::header::ContentType;
@@ -7,7 +7,6 @@ use csv::WriterBuilder;
 use flate2::write::GzEncoder;
 use flate2::Compression;
 use http::StatusCode;
-use std::collections::HashSet;
 use tar::Builder;
 use trustification_common::error::ErrorInformation;
 
@@ -15,6 +14,7 @@ extern crate sanitize_filename;
 
 pub struct LicenseExporter {
     sbom_license: SbomLicense,
+    extracted_licensing_infos: Vec<ExtractedLicensingInfos>,
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -63,8 +63,11 @@ impl ResponseError for LicenseExporterError {
 }
 
 impl LicenseExporter {
-    pub fn new(sbom_license: SbomLicense) -> Self {
-        LicenseExporter { sbom_license }
+    pub fn new(sbom_license: SbomLicense, extracted_licensing_infos: Vec<ExtractedLicensingInfos>) -> Self {
+        LicenseExporter {
+            sbom_license,
+            extracted_licensing_infos,
+        }
     }
 
     pub fn generate(&self) -> Result<Vec<u8>, LicenseExporterError> {
@@ -86,12 +89,21 @@ impl LicenseExporter {
             "group",
             "version",
             "package reference",
-            "license",
+            "license id",
             "license name",
+            "license expression",
             "alternate package reference",
         ])?;
 
-        let mut license_ref_key: HashSet<String> = HashSet::new();
+        for extracted_licensing_info in &self.extracted_licensing_infos {
+            wtr_license_ref.write_record([
+                extracted_licensing_info.license_id.as_str(),
+                extracted_licensing_info.name.as_str(),
+                extracted_licensing_info.extracted_text.as_str(),
+                extracted_licensing_info.comment.as_str(),
+            ])?;
+        }
+
         for pl in &self.sbom_license.packages {
             let alternate_package_reference = pl
                 .other_reference
@@ -100,28 +112,24 @@ impl LicenseExporter {
                 .collect::<Vec<_>>()
                 .join("\n");
 
-            for l in &pl.licenses {
-                wtr_sbom.write_record([
-                    &pl.name,
-                    &self.sbom_license.sbom_namespace,
-                    &self.sbom_license.component_group,
-                    &self.sbom_license.component_version,
-                    &pl.purl,
-                    l.license_id.as_str(),
-                    l.name.as_str(),
-                    alternate_package_reference.as_str(),
-                ])?;
+            let spdx_licenses = pl
+                .spdx_licenses
+                .iter()
+                .map(|reference| reference.as_str())
+                .collect::<Vec<_>>()
+                .join("\n");
 
-                if l.is_license_ref && !license_ref_key.contains(&l.license_id) {
-                    wtr_license_ref.write_record([
-                        l.license_id.as_str(),
-                        l.name.as_str(),
-                        l.license_text.as_str(),
-                        l.license_comment.as_str(),
-                    ])?;
-                    license_ref_key.insert(String::from(&l.license_id));
-                }
-            }
+            wtr_sbom.write_record([
+                &pl.name,
+                &self.sbom_license.sbom_namespace,
+                &self.sbom_license.component_group,
+                &self.sbom_license.component_version,
+                &pl.purl,
+                &spdx_licenses,
+                &pl.license_name,
+                &pl.license_text,
+                alternate_package_reference.as_str(),
+            ])?;
         }
 
         let sbom_csv = wtr_sbom
@@ -199,13 +207,31 @@ mod tests {
 
         let license_scanner = LicenseScanner::new(sbom);
 
-        let sbom_licenses = license_scanner
+        let (sbom_licenses, extracted_licensing_info) = license_scanner
             .scanner()
             .unwrap_or_else(|_| panic!("failed to parse test data"));
 
-        let export = LicenseExporter::new(sbom_licenses);
+        let export = LicenseExporter::new(sbom_licenses, extracted_licensing_info);
         let mut file =
             File::create("/tmp/application.cdx_licenses.tar.gz").unwrap_or_else(|_| panic!("create file failed"));
+        file.write_all(&export.generate().unwrap_or_else(|_| panic!("generate failed")))
+            .unwrap_or_else(|_| panic!("write file failed"));
+    }
+
+    #[tokio::test]
+    async fn is_works_cydx_with_cpe() {
+        let sbom = load_sbom_file("../test-data/tc_1730_license_escape.json")
+            .unwrap_or_else(|_| panic!("failed to parse test data"));
+
+        let license_scanner = LicenseScanner::new(sbom);
+
+        let (sbom_licenses, extracted_licensing_info) = license_scanner
+            .scanner()
+            .unwrap_or_else(|_| panic!("failed to parse test data"));
+
+        let export = LicenseExporter::new(sbom_licenses, extracted_licensing_info);
+        let mut file =
+            File::create("/tmp/tc_1730_license_escape.tar.gz").unwrap_or_else(|_| panic!("create file failed"));
         file.write_all(&export.generate().unwrap_or_else(|_| panic!("generate failed")))
             .unwrap_or_else(|_| panic!("write file failed"));
     }
@@ -216,12 +242,12 @@ mod tests {
 
         let license_scanner = LicenseScanner::new(sbom);
 
-        let sbom_licenses = license_scanner
+        let (sbom_licenses, extracted_licensing_info) = license_scanner
             .scanner()
             .unwrap_or_else(|_| panic!("failed to parse test data"));
 
-        let export = LicenseExporter::new(sbom_licenses);
-        let mut file = File::create("/tmp/mtv-2.6_licenses.tar.gz").unwrap_or_else(|_| panic!("create file failed"));
+        let export = LicenseExporter::new(sbom_licenses, extracted_licensing_info);
+        let mut file = File::create("/tmp/mtv-2.6.tar.gz").unwrap_or_else(|_| panic!("create file failed"));
         file.write_all(&export.generate().unwrap_or_else(|_| panic!("generate failed")))
             .unwrap_or_else(|_| panic!("write file failed"));
     }
