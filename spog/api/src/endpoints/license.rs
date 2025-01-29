@@ -42,10 +42,10 @@ pub async fn download_licenses(
     let sbom_id = id.into_inner();
     let sbom = get_sbom(state, sbom_id.as_str(), &token).await?;
     let scanner = license_scanner::LicenseScanner::new(sbom);
-    let sbom_licenses = scanner.scanner()?;
+    let (sbom_licenses, extracted_licensing_info) = scanner.scanner()?;
 
     let sbom_name = sbom_licenses.sbom_name.clone();
-    let exporter = license_exporter::LicenseExporter::new(sbom_licenses);
+    let exporter = license_exporter::LicenseExporter::new(sbom_licenses, extracted_licensing_info);
     let zip = exporter.generate()?;
 
     Ok(HttpResponse::Ok()
