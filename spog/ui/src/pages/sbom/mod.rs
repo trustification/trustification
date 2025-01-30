@@ -134,7 +134,7 @@ fn details(props: &DetailsProps) -> Html {
         Info,
         Packages,
         Source,
-        Report,
+        // Report,
     }
 
     let config = use_config_private();
@@ -204,9 +204,9 @@ fn details(props: &DetailsProps) -> Html {
                     <PageSection hidden={*tab != TabIndex::Source} variant={PageSectionVariant::Light} fill={PageSectionFill::Fill}>
                         <SourceCode source={source.clone()} />
                     </PageSection>
-                    <PageSection hidden={*tab != TabIndex::Report} variant={PageSectionVariant::Light} fill={PageSectionFill::Fill}>
-                        <ReportViewwer raw={source.clone()}/>
-                    </PageSection>
+                    // <PageSection hidden={*tab != TabIndex::Report} variant={PageSectionVariant::Light} fill={PageSectionFill::Fill}>
+                    //     <ReportViewwer raw={source.clone()}/>
+                    // </PageSection>
                 </>
             )
         }
@@ -273,9 +273,9 @@ fn details(props: &DetailsProps) -> Html {
                     <PageSection hidden={*tab != TabIndex::Source} fill={PageSectionFill::Fill}>
                         <SourceCode source={source.clone()} />
                     </PageSection>
-                    <PageSection hidden={*tab != TabIndex::Report} fill={PageSectionFill::Fill}>
-                        <ReportViewwer raw={source.clone()}/>
-                    </PageSection>
+                    // <PageSection hidden={*tab != TabIndex::Report} fill={PageSectionFill::Fill}>
+                    //     <ReportViewwer raw={source.clone()}/>
+                    // </PageSection>
                 </>
             )
         }
@@ -303,9 +303,9 @@ fn details(props: &DetailsProps) -> Html {
                     <PageSection hidden={*tab != TabIndex::Source} fill={PageSectionFill::Fill}>
                         <SourceCode source={source.clone()} />
                     </PageSection>
-                    <PageSection hidden={*tab != TabIndex::Report} fill={PageSectionFill::Fill}>
-                        <ReportViewwer raw={source.clone()}/>
-                    </PageSection>
+                    // <PageSection hidden={*tab != TabIndex::Report} fill={PageSectionFill::Fill}>
+                    //     <ReportViewwer raw={source.clone()}/>
+                    // </PageSection>
                 </>
             )
         }
