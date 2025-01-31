@@ -3,7 +3,8 @@ use crate::utils::get_sanitize_filename;
 use actix_web::body::BoxBody;
 use actix_web::http::header::ContentType;
 use actix_web::{HttpResponse, ResponseError};
-use csv::WriterBuilder;
+use core::time::Duration;
+use csv::{Writer, WriterBuilder};
 use flate2::write::GzEncoder;
 use flate2::Compression;
 use http::StatusCode;
@@ -11,6 +12,8 @@ use tar::Builder;
 use trustification_common::error::ErrorInformation;
 
 extern crate sanitize_filename;
+
+type CSVs = (Writer<Vec<u8>>, Writer<Vec<u8>>);
 
 pub struct LicenseExporter {
     sbom_license: SbomLicense,
@@ -71,6 +74,65 @@ impl LicenseExporter {
     }
 
     pub fn generate(&self) -> Result<Vec<u8>, LicenseExporterError> {
+        let (wtr_sbom, wtr_license_ref) = self.generate_csvs()?;
+
+        let sbom_csv = wtr_sbom
+            .into_inner()
+            .map_err(|err| LicenseExporterError::CsvIntoInnerError(format!("csv into inner error: {}", err)))?;
+        let license_ref_csv = wtr_license_ref
+            .into_inner()
+            .map_err(|err| LicenseExporterError::CsvIntoInnerError(format!("csv into inner error: {}", err)))?;
+
+        let mut compressed_data = Vec::new();
+        {
+            let encoder = GzEncoder::new(&mut compressed_data, Compression::default());
+
+            let mut archive = Builder::new(encoder);
+
+            let mut header = tar::Header::new_gnu();
+            header.set_size(sbom_csv.len() as u64);
+            header.set_mode(0o644);
+            header.set_cksum();
+            header.set_mtime(
+                std::time::UNIX_EPOCH
+                    .elapsed()
+                    .unwrap_or(Duration::from_secs(0))
+                    .as_secs(),
+            );
+            archive.append_data(
+                &mut header,
+                format!(
+                    "{}_sbom_licenses.csv",
+                    &get_sanitize_filename(String::from(&self.sbom_license.sbom_name))
+                ),
+                &*sbom_csv,
+            )?;
+
+            let mut header = tar::Header::new_gnu();
+            header.set_size(license_ref_csv.len() as u64);
+            header.set_mode(0o644);
+            header.set_cksum();
+            header.set_mtime(
+                std::time::UNIX_EPOCH
+                    .elapsed()
+                    .unwrap_or(Duration::from_secs(0))
+                    .as_secs(),
+            );
+            archive.append_data(
+                &mut header,
+                format!(
+                    "{}_license_ref.csv",
+                    &get_sanitize_filename(String::from(&self.sbom_license.sbom_name))
+                ),
+                &*license_ref_csv,
+            )?;
+
+            archive.finish()?;
+        }
+        Ok(compressed_data)
+    }
+
+    fn generate_csvs(&self) -> Result<CSVs, LicenseExporterError> {
         let mut wtr_sbom = WriterBuilder::new()
             .delimiter(b'\t')
             .quote_style(csv::QuoteStyle::Always)
@@ -104,15 +166,15 @@ impl LicenseExporter {
             ])?;
         }
 
-        for pl in &self.sbom_license.packages {
-            let alternate_package_reference = pl
+        for package in &self.sbom_license.packages {
+            let alternate_package_reference = package
                 .other_reference
                 .iter()
                 .map(|reference| reference.as_str())
                 .collect::<Vec<_>>()
                 .join("\n");
 
-            let spdx_licenses = pl
+            let spdx_licenses = package
                 .spdx_licenses
                 .iter()
                 .map(|reference| reference.as_str())
@@ -120,60 +182,19 @@ impl LicenseExporter {
                 .join("\n");
 
             wtr_sbom.write_record([
-                &pl.name,
+                // &package.name,
+                &self.sbom_license.sbom_name,
                 &self.sbom_license.sbom_namespace,
                 &self.sbom_license.component_group,
                 &self.sbom_license.component_version,
-                &pl.purl,
+                &package.purl,
                 &spdx_licenses,
-                &pl.license_name,
-                &pl.license_text,
+                &package.license_name,
+                &package.license_text,
                 alternate_package_reference.as_str(),
             ])?;
         }
-
-        let sbom_csv = wtr_sbom
-            .into_inner()
-            .map_err(|err| LicenseExporterError::CsvIntoInnerError(format!("csv into inner error: {}", err)))?;
-        let license_ref_csv = wtr_license_ref
-            .into_inner()
-            .map_err(|err| LicenseExporterError::CsvIntoInnerError(format!("csv into inner error: {}", err)))?;
-
-        let mut compressed_data = Vec::new();
-        {
-            let encoder = GzEncoder::new(&mut compressed_data, Compression::default());
-
-            let mut archive = Builder::new(encoder);
-
-            let mut header = tar::Header::new_gnu();
-            header.set_size(sbom_csv.len() as u64);
-            header.set_mode(0o644);
-            header.set_cksum();
-            archive.append_data(
-                &mut header,
-                format!(
-                    "{}_sbom_licenses.csv",
-                    &get_sanitize_filename(String::from(&self.sbom_license.sbom_name))
-                ),
-                &*sbom_csv,
-            )?;
-
-            let mut header = tar::Header::new_gnu();
-            header.set_size(license_ref_csv.len() as u64);
-            header.set_mode(0o644);
-            header.set_cksum();
-            archive.append_data(
-                &mut header,
-                format!(
-                    "{}_license_ref.csv",
-                    &get_sanitize_filename(String::from(&self.sbom_license.sbom_name))
-                ),
-                &*license_ref_csv,
-            )?;
-
-            archive.finish()?;
-        }
-        Ok(compressed_data)
+        Ok((wtr_sbom, wtr_license_ref))
     }
 }
 
@@ -198,6 +219,81 @@ mod tests {
             "/var/lib/containers/storage/vfs/dir/0efa662cc0258b94827838a8c160142b92fefb10b165b204705d9903b3286e89";
         let result = get_sanitize_filename(sbom_name.to_string());
         assert!(!result.contains('/'));
+    }
+
+    #[tokio::test]
+    async fn test_generate_csvs_cyclonedx() {
+        let sbom =
+            load_sbom_file("../test-data/application.cdx.json").unwrap_or_else(|_| panic!("failed to parse test data"));
+
+        let license_scanner = LicenseScanner::new(sbom);
+
+        let (sbom_licenses, extracted_licensing_info) = license_scanner
+            .scanner()
+            .unwrap_or_else(|_| panic!("failed to parse test data"));
+
+        let export = LicenseExporter::new(sbom_licenses, extracted_licensing_info);
+        let (writer_sbom_licenses, _license_ref) = export.generate_csvs().unwrap();
+        let sbom_licenses = String::from_utf8(writer_sbom_licenses.into_inner().unwrap()).unwrap();
+        // https://issues.redhat.com/browse/TC-2212
+        assert_eq!(97, sbom_licenses.matches("spring-petclinic").count());
+        assert_eq!(97, sbom_licenses.matches("org.springframework.samples").count());
+        assert_eq!(97, sbom_licenses.matches("3.3.0-SNAPSHOT").count());
+        assert_eq!(96, sbom_licenses.matches("pkg:maven/").count());
+        // check some PURLs appear multiple times because they have multiple licenses
+        assert_eq!(
+            2,
+            sbom_licenses
+                .matches("pkg:maven/ch.qos.logback/logback-classic@1.5.8?type=jar")
+                .count()
+        );
+        assert_eq!(
+            2,
+            sbom_licenses
+                .matches("pkg:maven/ch.qos.logback/logback-core@1.5.8?type=jar")
+                .count()
+        );
+        assert_eq!(
+            2,
+            sbom_licenses
+                .matches("pkg:maven/jakarta.annotation/jakarta.annotation-api@2.1.1?type=jar")
+                .count()
+        );
+        assert_eq!(
+            2,
+            sbom_licenses
+                .matches("pkg:maven/org.hdrhistogram/HdrHistogram@2.2.2?type=jar")
+                .count()
+        );
+        assert_eq!(63, sbom_licenses.matches("Apache-2.0").count());
+    }
+
+    #[tokio::test]
+    async fn test_generate_csvs_spdx() {
+        let sbom = load_sbom_file("../test-data/mtv-2.6.json").unwrap_or_else(|_| panic!("failed to parse test data"));
+
+        let license_scanner = LicenseScanner::new(sbom);
+
+        let (sbom_licenses, extracted_licensing_info) = license_scanner
+            .scanner()
+            .unwrap_or_else(|_| panic!("failed to parse test data"));
+
+        let export = LicenseExporter::new(sbom_licenses, extracted_licensing_info);
+        let (writer_sbom_licenses, _license_ref) = export.generate_csvs().unwrap();
+        let sbom_licenses = String::from_utf8(writer_sbom_licenses.into_inner().unwrap()).unwrap();
+        // https://issues.redhat.com/browse/TC-2212
+        assert_eq!(10776, sbom_licenses.matches("MTV-2.6").count());
+        assert_eq!(
+            5388,
+            sbom_licenses
+                .matches("https://access.redhat.com/security/data/sbom/spdx/MTV-2.6")
+                .count()
+        );
+        assert_eq!(28, sbom_licenses.matches("pkg:oci/").count());
+        assert_eq!(1976, sbom_licenses.matches("pkg:npm/").count());
+        assert_eq!(2185, sbom_licenses.matches("pkg:golang/").count());
+        assert_eq!(1191, sbom_licenses.matches("pkg:rpm/").count());
+        assert_eq!(4664, sbom_licenses.matches("NOASSERTION").count());
     }
 
     #[tokio::test]

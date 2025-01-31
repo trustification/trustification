@@ -100,6 +100,7 @@ impl LicenseScanner {
         let mut name = String::default();
         let mut version = String::default();
         let mut group = String::default();
+        let mut sbom_package_list = Vec::new();
         if let Some(metadata) = &cyclonedx_bom.metadata {
             if let Some(component) = &metadata.component {
                 name = String::from(&component.name.to_string());
@@ -109,10 +110,26 @@ impl LicenseScanner {
                 if let Some(g) = &component.group {
                     group = String::from(&g.to_string());
                 }
+                // https://issues.redhat.com/browse/TC-2213
+                // first of all add the metadata.component
+                let (spdx_licenses, other_reference) = self.handle_cyclonedx_sbom_component(component)?;
+                spdx_licenses.into_iter().for_each(|spdx_license| {
+                    sbom_package_list.push(SbomPackage {
+                        name: name.clone(),
+                        version: Some(version.clone()),
+                        purl: Self::cyclonedx_get_purl(component),
+                        other_reference: other_reference.clone(),
+                        supplier: Some(Self::cyclondedx_get_supplier(component)),
+                        license_text: spdx_license.license_text,
+                        // https://issues.redhat.com/browse/TC-2160?focusedId=26502788&page=com.atlassian.jira.plugin.system.issuetabpanels:comment-tabpanel#comment-26502788
+                        license_name: spdx_license.license_name,
+                        spdx_licenses: spdx_license.spdx_licenses,
+                        spdx_license_exceptions: spdx_license.spdx_license_exceptions,
+                    });
+                });
             }
         }
 
-        let mut sbom_package_list = Vec::new();
         if let Some(cs) = &cyclonedx_bom.components {
             for component in cs.0.iter() {
                 let package_name = component.name.to_string();
@@ -121,29 +138,22 @@ impl LicenseScanner {
                     .clone()
                     .unwrap_or_else(NormalizedString::default)
                     .to_string();
-                let mut package_purl = String::default();
 
-                if let Some(purl) = component.purl.clone() {
-                    package_purl = purl.to_string();
-                }
-                let mut supplier = String::default();
-                if let Some(s) = component.supplier.clone() {
-                    let ns = s.name;
-                    supplier = ns.unwrap_or_else(NormalizedString::default).to_string();
-                }
-
-                let (spdx_license, other_reference) = self.handle_cyclonedx_sbom_component(component)?;
-                sbom_package_list.push(SbomPackage {
-                    name: package_name,
-                    version: Some(package_version),
-                    purl: package_purl,
-                    other_reference,
-                    supplier: Some(supplier),
-                    license_text: spdx_license.license_text,
-                    license_name: spdx_license.license_name,
-                    spdx_licenses: spdx_license.spdx_licenses,
-                    spdx_license_exceptions: spdx_license.spdx_license_exceptions,
-                })
+                let (spdx_licenses, other_reference) = self.handle_cyclonedx_sbom_component(component)?;
+                spdx_licenses.into_iter().for_each(|spdx_license| {
+                    sbom_package_list.push(SbomPackage {
+                        name: package_name.clone(),
+                        version: Some(package_version.clone()),
+                        purl: Self::cyclonedx_get_purl(component),
+                        other_reference: other_reference.clone(),
+                        supplier: Some(Self::cyclondedx_get_supplier(component)),
+                        license_text: spdx_license.license_text,
+                        // https://issues.redhat.com/browse/TC-2160?focusedId=26502788&page=com.atlassian.jira.plugin.system.issuetabpanels:comment-tabpanel#comment-26502788
+                        license_name: spdx_license.license_name,
+                        spdx_licenses: spdx_license.spdx_licenses,
+                        spdx_license_exceptions: spdx_license.spdx_license_exceptions,
+                    });
+                });
             }
         }
         Ok((name, group, version, sbom_package_list))
@@ -152,7 +162,7 @@ impl LicenseScanner {
     fn handle_cyclonedx_sbom_component(
         &self,
         component: &Component,
-    ) -> Result<(SpdxLicenses, Vec<String>), LicenseScannerError> {
+    ) -> Result<(Vec<SpdxLicenses>, Vec<String>), LicenseScannerError> {
         let other_reference = if let Some(cpe) = component.cpe.clone() {
             cpe.to_string()
         } else {
@@ -160,53 +170,63 @@ impl LicenseScanner {
         };
         let other_reference = vec![other_reference];
 
-        if let Some(l) = component.licenses.as_ref() {
-            if let Some(pl) = l.0.clone().into_iter().next() {
-                match pl {
+        let mut spdx_licenses: Vec<SpdxLicenses> = vec![];
+        if let Some(licenses) = component.licenses.as_ref() {
+            licenses.0.clone().into_iter().for_each(|license| {
+                spdx_licenses.push(match license {
                     LicenseChoice::License(spl) => match spl.license_identifier {
                         LicenseIdentifier::SpdxId(spdx) => {
                             let spdx_licenses = vec![spdx.to_string()];
                             let spdx_license_exceptions = vec![];
-                            return Ok((
-                                SpdxLicenses {
-                                    license_text: "".to_string(),
-                                    license_name: "".to_string(),
-                                    spdx_licenses,
-                                    spdx_license_exceptions,
-                                },
-                                other_reference.clone(),
-                            ));
+                            SpdxLicenses {
+                                license_text: "".to_string(),
+                                license_name: "".to_string(),
+                                spdx_licenses,
+                                spdx_license_exceptions,
+                            }
                         }
                         LicenseIdentifier::Name(not_spdx) => {
                             let spdx_licenses = vec![];
                             let spdx_license_exceptions = vec![];
-                            return Ok((
-                                SpdxLicenses {
-                                    license_text: "".to_string(),
-                                    license_name: not_spdx.to_string(),
-                                    spdx_licenses,
-                                    spdx_license_exceptions,
-                                },
-                                other_reference.clone(),
-                            ));
+                            SpdxLicenses {
+                                license_text: "".to_string(),
+                                license_name: not_spdx.to_string(),
+                                spdx_licenses,
+                                spdx_license_exceptions,
+                            }
                         }
                     },
                     LicenseChoice::Expression(spl_exp) => {
-                        let spdxs = spdx_expression::SpdxExpression::parse(spl_exp.to_string().as_str())?;
-                        return Ok((
-                            SpdxLicenses {
-                                license_text: spl_exp.clone().to_string(),
-                                license_name: "".to_string(),
-                                spdx_licenses: spdxs.licenses().iter().map(|l| l.to_string()).collect(),
-                                spdx_license_exceptions: spdxs.exceptions().iter().map(|e| e.to_string()).collect(),
-                            },
-                            other_reference.clone(),
-                        ));
+                        SpdxLicenses {
+                            license_text: spl_exp.clone().to_string(),
+                            license_name: "".to_string(),
+                            // https://issues.redhat.com/browse/TC-2160?focusedId=26502788&page=com.atlassian.jira.plugin.system.issuetabpanels:comment-tabpanel#comment-26502788
+                            spdx_licenses: vec![],
+                            spdx_license_exceptions: vec![],
+                        }
                     }
-                }
-            }
+                });
+            });
         };
-        Ok((SpdxLicenses::default(), vec![]))
+        Ok((spdx_licenses, other_reference))
+    }
+
+    fn cyclonedx_get_purl(component: &Component) -> String {
+        match component.purl {
+            Some(ref purl) => purl.to_string(),
+            None => String::default(),
+        }
+    }
+
+    fn cyclondedx_get_supplier(component: &Component) -> String {
+        match component.supplier {
+            Some(ref supplier) => supplier
+                .name
+                .clone()
+                .unwrap_or_else(NormalizedString::default)
+                .to_string(),
+            None => String::default(),
+        }
     }
 
     fn handle_spdx_sbom(&self, spdx_bom: &SPDX) -> (String, Vec<SbomPackage>) {
@@ -241,7 +261,9 @@ impl LicenseScanner {
                     supplier: package_supplier,
                     license_text: license.to_string(),
                     license_name: "".to_string(),
-                    spdx_licenses: license.licenses().clone().iter().map(|l| l.to_string()).collect(),
+                    // https://issues.redhat.com/browse/TC-2150
+                    // it's fine to not collect the single licenses when dealing with an expression
+                    spdx_licenses: vec![],
                     spdx_license_exceptions: license.exceptions().iter().map(|l| l.to_string()).clone().collect(),
                 };
 
@@ -280,10 +302,7 @@ mod tests {
             .find(|p| p.purl == "pkg:rpm/redhat/xorg-x11-fonts-Type1@7.5-9.el7?arch=noarch");
 
         if let Some(pl) = package_license {
-            assert_eq!(3, pl.spdx_licenses.len());
-            assert!(pl.spdx_licenses.contains(&"MIT".to_string()));
-            assert!(pl.spdx_licenses.contains(&"LicenseRef-Lucida".to_string()));
-            assert!(pl.spdx_licenses.contains(&"LicenseRef-5".to_string()));
+            assert!(pl.spdx_licenses.is_empty());
 
             assert!(extracted_license_infos
                 .iter()
@@ -315,7 +334,23 @@ mod tests {
         } else {
             panic!("the unit test failed");
         }
+
+        // https://issues.redhat.com/browse/TC-2187
+        // Test a component with multiple elements in the `licenses` array
+        let package_licenses = sbom_licenses
+            .packages
+            .into_iter()
+            .filter(|p| p.purl == "pkg:maven/jakarta.el/jakarta.el-api@3.0.3?type=jar")
+            .collect::<Vec<_>>();
+
+        assert_eq!(2, package_licenses.len());
+        assert!(package_licenses[0].spdx_licenses.contains(&"EPL-2.0".to_string()));
+        assert!(package_licenses[1]
+            .spdx_licenses
+            .contains(&"GPL-2.0-with-classpath-exception".to_string()));
+        assert_eq!(0, package_licenses[1].spdx_license_exceptions.len());
     }
+
     #[tokio::test]
     async fn test_cydx_with_cpe() {
         let sbom = load_sbom_file("../test-data/tc_1730_license_escape.json")
@@ -334,12 +369,9 @@ mod tests {
             .find(|p| p.purl == "pkg:rpm/rhel/llvm-libs@17.0.6-5.el9?arch=x86_64&upstream=llvm-17.0.6-5.el9.src.rpm&distro=rhel-9.4");
 
         if let Some(license) = package_license {
-            assert!(license.license_text == "Apache-2.0 WITH LLVM-exception OR NCSA");
-            assert_eq!(1, license.spdx_license_exceptions.len());
-            assert_eq!(2, license.spdx_licenses.len());
-            assert!(license.spdx_licenses.contains(&"Apache-2.0".to_string()));
-            assert!(license.spdx_licenses.contains(&"NCSA".to_string()));
-            assert_eq!("LLVM-exception", license.spdx_license_exceptions[0]);
+            assert_eq!(license.license_text, "Apache-2.0 WITH LLVM-exception OR NCSA");
+            assert!(license.spdx_license_exceptions.is_empty());
+            assert!(license.spdx_licenses.is_empty());
             assert_eq!(1, license.other_reference.len());
             assert_eq!(
                 "cpe:2.3:a:llvm-libs:llvm-libs:17.0.6-5.el9:*:*:*:*:*:*:*",
