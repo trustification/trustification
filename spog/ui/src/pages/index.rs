@@ -645,7 +645,7 @@ pub fn sbom_donut_chart(props: &SbomDonutChartProperties) -> Html {
             let options = donut_options(data);
             html!(
                 <>
-                    <Donut {options} {labels} style="width: 350px;" />
+                    <Donut {options} {labels} style="max-width: 350px;" />
                 </>
             )
         }
