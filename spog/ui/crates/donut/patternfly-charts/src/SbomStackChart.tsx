@@ -54,7 +54,7 @@ export const SbomStackChartRenderer = (htmlElement: HTMLElement, props: StackCha
     { severity: 'high', name: 'High' },
     { severity: 'medium', name: 'Medium' },
     { severity: 'low', name: 'Low' },
-    { severity: 'none', name: 'Unknown' },
+    { severity: 'none', name: 'None' },
   ];
 
   const root = ReactDOM.createRoot(htmlElement);
