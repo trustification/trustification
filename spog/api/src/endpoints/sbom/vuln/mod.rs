@@ -171,35 +171,42 @@ pub async fn process_get_vulnerabilities(
 
     let details = iter(analyze)
         .map(|(id, affected_packages)| async move {
-            log::debug!("querying for {}", id);
+            let q = format!("id:\"{}\"", id.clone());
+            log::debug!("querying for {}", q);
             let query: QueryParams = QueryParams {
-                q: id,
+                q,
                 offset: 0,
-                limit: 1,
+                limit: 100,
             };
             let SearchResult { result, total } = v11y.search(query).await.map_err(Error::V11y)?;
-            log::debug!("total is {:?}", total);
+            log::debug!("{}/{:?} results found for {}", result.len(), total, id);
             match total {
                 Some(1..) => {
-                    if let Some(cve) = result.first() {
-                        let mut sources = HashMap::new();
-                        let score = Option::from(cve.document.cvss3x_score.unwrap_or(0f64) as f32);
-                        log::debug!("score is {:?}", score);
-                        sources.insert("mitre".to_string(), SourceDetails { score });
+                    result
+                        .into_iter()
+                        // in case the search returned multiple results, the one with the right id
+                        // has to be picked to fill the response
+                        .find(|cve| {
+                            log::debug!("found {} while searching for {}", cve.document.id, id);
+                            cve.document.id.to_lowercase() == id.to_lowercase()
+                        })
+                        .map_or(Ok(None), |cve| {
+                            let mut sources = HashMap::new();
+                            let score = Option::from(cve.document.cvss3x_score.unwrap_or(0f64) as f32);
+                            log::debug!("score is {:?} for {}", score, id);
+                            sources.insert("mitre".to_string(), SourceDetails { score });
 
-                        let result = Ok(Some(SbomReportVulnerability {
-                            id: cve.document.id.clone(),
-                            description: get_description(&cve.document),
-                            sources,
-                            published: cve.document.date_published,
-                            updated: cve.document.date_updated,
-                            affected_packages,
-                        }));
-                        log::debug!("result is {:?}", result);
-                        result
-                    } else {
-                        Ok(None)
-                    }
+                            let result = Ok(Some(SbomReportVulnerability {
+                                id: cve.document.id.clone(),
+                                description: get_description(&cve.document),
+                                sources,
+                                published: cve.document.date_published,
+                                updated: cve.document.date_updated,
+                                affected_packages,
+                            }));
+                            log::debug!("result is {:?}", result);
+                            result
+                        })
                 }
                 _ => Ok(None),
             }
