@@ -395,15 +395,13 @@ impl IndexWriter {
         match index.parse_doc(data) {
             Ok(doc) => {
                 let id = &id(&doc);
-                let docs = index.index_doc(id, &doc).map_err(|e| {
+                let docs = index.index_doc(id, &doc).inspect_err(|_| {
                     self.metrics.failed_total.inc();
-                    e
                 })?;
                 for (i, doc) in docs {
                     self.delete_document(index, &i);
-                    self.writer.add_document(doc).map_err(|e| {
+                    self.writer.add_document(doc).inspect_err(|_| {
                         self.metrics.failed_total.inc();
-                        e
                     })?;
                 }
 

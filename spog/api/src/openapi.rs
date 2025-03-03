@@ -9,6 +9,7 @@ use v11y_model::search::SearchHitWithDocument;
     SearchResultCve = LocalSearchResult<Vec<SearchHitWithDocument>>,
     SearchResultPackage = LocalSearchResult<Vec<PackageInfo>>,
 )]
+#[allow(dead_code)]
 pub struct LocalSearchResult<T> {
     pub result: T,
     pub total: Option<usize>,

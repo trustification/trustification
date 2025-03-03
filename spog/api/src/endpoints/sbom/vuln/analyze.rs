@@ -16,9 +16,11 @@ use tracing::{info_span, instrument, Instrument};
 use trustification_auth::client::TokenProvider;
 
 #[derive(Clone, Debug, Default, Hash, Ord, PartialOrd, Eq, PartialEq)]
+#[allow(dead_code)]
 struct GuacVulnId(String);
 
 #[derive(Clone, Debug)]
+#[allow(dead_code)]
 pub struct Score {
     pub source: String,
     pub r#type: VulnerabilityScoreType,

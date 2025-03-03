@@ -41,4 +41,5 @@ pub fn config(
 }
 
 #[derive(Debug, Display, Error, From)]
+#[allow(dead_code)]
 enum Error {}

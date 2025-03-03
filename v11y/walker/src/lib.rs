@@ -121,7 +121,7 @@ impl Run {
                         }
 
                         if let Some(key) = name.strip_suffix(".json") {
-                            if last_delta.is_none() || filter.contains(&key.to_string()) {
+                            if last_delta.is_none() || filter.contains(key) {
                                 files.push((key.to_string(), entry.path().to_path_buf()));
                             }
                         }

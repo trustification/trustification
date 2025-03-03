@@ -351,9 +351,8 @@ impl Storage {
         let len = bucket
             .put_object_stream_with_content_type(&mut rdr, path, content_type)
             .await
-            .map_err(|e| {
+            .inspect_err(|_| {
                 self.metrics.puts_failed_total.inc();
-                e
             })?
             .uploaded_bytes();
         put_start.observe_duration();
@@ -510,9 +509,8 @@ impl Storage {
             .delete_object(path)
             .await
             .map(|r| r.status_code())
-            .map_err(|e| {
+            .inspect_err(|_| {
                 self.metrics.deletes_failed_total.inc();
-                e
             })?;
         Ok(res)
     }
@@ -527,9 +525,8 @@ impl Storage {
                     .delete_object(obj.key)
                     .await
                     .map(|r| r.status_code())
-                    .map_err(|e| {
+                    .inspect_err(|_| {
                         self.metrics.deletes_failed_total.inc();
-                        e
                     })?;
             }
         }

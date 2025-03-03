@@ -208,8 +208,6 @@ pub fn related_products(props: &RelatedProductsProperties) -> Html {
     }
 }
 
-///
-
 #[derive(PartialEq, Properties)]
 pub struct RelatedProductsTableProperties {
     pub table_data: Rc<Vec<TableData>>,

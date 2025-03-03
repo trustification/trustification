@@ -2,7 +2,8 @@ FROM registry.access.redhat.com/ubi9/ubi:latest as builder
 
 RUN dnf install -y gcc openssl openssl-devel cmake gcc-c++ git curl-minimal unzip cyrus-sasl-devel
 
-RUN curl https://sh.rustup.rs -sSf | sh -s -- -y --profile minimal
+RUN curl https://sh.rustup.rs -sSf | sh -s -- -y --profile minimal --default-toolchain=1.81.0
+
 ENV PATH "$PATH:/root/.cargo/bin"
 
 ARG protoc_version="23.4"

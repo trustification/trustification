@@ -77,6 +77,7 @@ pub struct V11yClient {
 }
 
 impl V11yClient {
+    #[allow(clippy::multiple_bound_locations)]
     pub fn new<P: TokenProvider>(client: reqwest::Client, url: Url, provider: P) -> Self
     where
         P: TokenProvider + 'static,

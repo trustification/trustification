@@ -18,6 +18,7 @@ pub struct AppState {
     pub provider: Arc<dyn TokenProvider>,
     pub bombastic: reqwest::Url,
     pub vexination: reqwest::Url,
+    #[allow(dead_code)]
     pub exhort: reqwest::Url,
     pub db_storage: Db,
 }

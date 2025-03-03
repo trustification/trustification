@@ -738,7 +738,7 @@ fn rewrite_cpe(value: &str) -> String {
 fn rewrite_cpe_partial(value: &str) -> String {
     if value.starts_with("cpe:/") {
         if let Ok(cpe) = cpe::uri::Uri::parse(value) {
-            return cpe.to_string().trim_end_matches(|x| x == ':' || x == '*').to_string();
+            return cpe.to_string().trim_end_matches([':', '*']).to_string();
         }
     }
     value.to_string()

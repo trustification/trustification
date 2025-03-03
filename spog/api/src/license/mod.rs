@@ -7,9 +7,11 @@ pub struct SbomLicense {
     pub component_group: String,
     pub component_version: String,
     pub packages: Vec<SbomPackage>,
+    #[allow(dead_code)]
     pub is_spdx: bool,
 }
 
+#[allow(dead_code)]
 pub struct SbomPackage {
     /// Package name
     pub name: String,
