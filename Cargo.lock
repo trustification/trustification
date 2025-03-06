@@ -3050,15 +3050,17 @@ dependencies = [
 
 [[package]]
 name = "guac"
-version = "0.7.2-0"
+version = "0.7.2-1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c3c2ca48bb85fa76be4ba01079da51480f8140b79cb79d80db06c2c4b648b4ab"
+checksum = "c66266f11087e9aab93729d348a451cedff5aa6c0817f11199b68370e5e6f1ec"
 dependencies = [
  "anyhow",
  "async-nats",
  "async-trait",
  "chrono",
  "graphql_client",
+ "litemap",
+ "native-tls",
  "packageurl 0.4.0",
  "prost",
  "reqwest 0.11.27",
@@ -3069,6 +3071,7 @@ dependencies = [
  "thiserror",
  "tonic",
  "tonic-build",
+ "zerofrom",
 ]
 
 [[package]]
@@ -3973,6 +3976,12 @@ name = "linux-raw-sys"
 version = "0.4.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "01cda141df6706de531b6c46c3a33ecca755538219bd484262fa09410c13539c"
+
+[[package]]
+name = "litemap"
+version = "0.7.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4ee93343901ab17bd981295f2cf0026d4ad018c7c31ba84549a4ddbb47a45104"
 
 [[package]]
 name = "local-channel"
@@ -9359,6 +9368,12 @@ dependencies = [
  "quote",
  "syn 2.0.60",
 ]
+
+[[package]]
+name = "zerofrom"
+version = "0.1.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cff3ee08c995dee1859d998dea82f7374f2826091dd9cd47def953cae446cd2e"
 
 [[package]]
 name = "zeroize"
