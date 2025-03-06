@@ -4,7 +4,7 @@
   "private": true,
   "homepage": ".",
   "dependencies": {
-    "@patternfly/react-charts": "^7.1.1",
+    "@patternfly/react-charts": "^7.4.9",
     "@patternfly/react-core": "^5.1.1",
     "@testing-library/jest-dom": "^5.14.1",
     "@testing-library/react": "^13.0.0",
