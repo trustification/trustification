@@ -184,8 +184,14 @@ spec:
         workspace: git-auth
     - name: prefetch-dependencies
       params:
-      - name: input
-        value: $(params.prefetch-input)
+        - name: input
+          value: $(params.prefetch-input)
+        - name: SOURCE_ARTIFACT
+          value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
+        - name: ociStorage
+          value: $(params.output-image).prefetch
+        - name: ociArtifactExpiresAfter
+          value: $(params.image-expires-after)
       runAfter:
       - clone-repository
       taskRef:
