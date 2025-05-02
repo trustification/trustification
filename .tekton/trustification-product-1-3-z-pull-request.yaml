@@ -15,7 +15,7 @@ metadata:
     appstudio.openshift.io/application: trustification-1-3-z
     appstudio.openshift.io/component: trustification-product-1-3-z
     pipelines.appstudio.openshift.io/type: build
-  name: test-on-pull-request
+  name: trustification-product-1-3-z-on-pull-request
   namespace: trusted-content-tenant
 spec:
   params:
