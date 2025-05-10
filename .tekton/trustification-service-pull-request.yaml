@@ -17,10 +17,6 @@ metadata:
   name: trustification-service-on-pull-request
   namespace: trusted-content-tenant
 spec:
-  timeouts:
-    pipeline: "2h0m0s"
-    tasks: "1h40m0s"
-    finally: "0h20m0s"
   params:
   - name: dockerfile
     value: container_files/Containerfile.services
@@ -343,13 +339,13 @@ spec:
         values:
         - "false"
     - name: sast-snyk-check
-      runAfter:
-      - build-container
       params:
       - name: image-digest
         value: $(tasks.build-container.results.IMAGE_DIGEST)
       - name: image-url
         value: $(tasks.build-container.results.IMAGE_URL)
+      runAfter:
+      - build-container
       taskRef:
         params:
         - name: name
@@ -430,7 +426,12 @@ spec:
     - name: workspace
     - name: git-auth
       optional: true
-  taskRunTemplate: {}
+  taskRunTemplate:
+    serviceAccountName: build-pipeline-trustification-service
+  timeouts:
+    finally: 20m0s
+    pipeline: 2h0m0s
+    tasks: 1h40m0s
   workspaces:
   - name: workspace
     volumeClaimTemplate:
