@@ -16,7 +16,7 @@ futures-util = "0.3"
 humantime = "2"
 jsonpath-rust = "0.4"
 log = "0.4"
-openid = "0.12"
+openid = "0.18"
 reqwest = "0.11"
 schemars = "0.8"
 serde = { version = "1", features = ["derive"] }
