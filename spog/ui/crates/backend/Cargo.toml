@@ -12,7 +12,7 @@ csaf = { version = "0.5.0", default-features = false }
 cve = "0.3.1"
 cyclonedx-bom = "0.8.0"
 gloo-events = "0.2"
-gloo-net = "0.5.0"
+gloo-net = "0.6.0"
 gloo-storage = "0.3.0"
 gloo-utils = { version = "0.2.0", features = ["serde"] }
 js-sys = "0.3"
