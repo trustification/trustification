@@ -18,7 +18,7 @@ urlencoding = "2.1.2"
 thiserror = "1"
 async-compression = { version = "0.4", features = ["tokio", "zstd", "bzip2"] }
 clap = { version = "4", features = ["derive", "env"] }
-prometheus = "0.13.3"
+prometheus = "0.14.0"
 bombastic-model = { path = "../bombastic/model" }
 csaf = "0.5.0"
 hide = "0.1.1"

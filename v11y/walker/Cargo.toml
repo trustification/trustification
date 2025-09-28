@@ -10,7 +10,7 @@ collector-osv = {path = "../../collector/osv"}
 cve = "0.3.1"
 cvss = "2"
 log = "0.4"
-prometheus = "0.13.3"
+prometheus = "0.14.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0.68"
 tokio = { version = "1.0", features = ["full"] }
