@@ -36,7 +36,7 @@ trustification-indexer = { path = "../indexer" }
 
 clap = { version = "4", features = ["derive"] }
 
-prometheus = "0.13.3"
+prometheus = "0.14.0"
 uuid = { version = "1", features = ["v4"] }
 urlencoding = "2.1.2"
 
