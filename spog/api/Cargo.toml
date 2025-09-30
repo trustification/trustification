@@ -57,7 +57,7 @@ trustification-infrastructure = { path = "../../infrastructure" }
 v11y-client = { path = "../../v11y/client" }
 trustification-version = { path = "../../version", features = ["actix-web"] }
 time = "0.3.31"
-sqlx = { version = "0.7.0", features = ["runtime-tokio", "sqlite", "chrono"] }
+sqlx = { version = "0.8.0", features = ["runtime-tokio", "sqlite", "chrono"] }
 csv = "1.3.0"
 flate2 = "1.0.35"
 tar = "0.4.43"
