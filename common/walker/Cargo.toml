@@ -23,7 +23,7 @@ tokio = { version = "1", features = ["full"] }
 
 # Enables a crypto backend for the tests:
 [target.'cfg(not(windows))'.dev-dependencies]
-sequoia-openpgp = { version = "1", default-features = false, features = ["crypto-nettle", "__implicit-crypto-backend-for-tests"]  }
+sequoia-openpgp = { version = "2", default-features = false, features = ["crypto-nettle", "__implicit-crypto-backend-for-tests"]  }
 
 # Enables a crypto backend for the docs.rs generation:
 [package.metadata.docs.rs]
