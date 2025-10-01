@@ -9,7 +9,7 @@ edition = "2021"
 actix-web = "4"
 actix-web-httpauth = "0.8.0"
 anyhow = "1"
-bytesize = "1"
+bytesize = "2"
 clap = { version = "4", features = ["derive"] }
 derive_more = "0.99"
 log = "0.4"

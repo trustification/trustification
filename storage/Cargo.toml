@@ -22,7 +22,7 @@ prometheus = "0.13.3"
 bombastic-model = { path = "../bombastic/model" }
 csaf = "0.5.0"
 hide = "0.1.1"
-bytesize = "1"
+bytesize = "2"
 
 [dev-dependencies]
 rstest = "0.19"
