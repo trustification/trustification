@@ -18,7 +18,7 @@ time = "0.3.21"
 tokio = "1.28.2"
 tracing = "0.1"
 url = "2.4.0"
-walker-common = "0.9.0"
+walker-common = "0.14.0"
 walker-extras = "0.9.0"
 
 trustification-auth = { path = "../../auth" }
