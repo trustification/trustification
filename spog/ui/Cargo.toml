@@ -52,7 +52,7 @@ yew-consent = "0.2"
 yew-hooks = "0.3"
 yew-more-hooks = "0.3.2"
 yew-nested-router = "0.7.0"
-yew-oauth2 = { version = "0.11.0", features = ["yew-nested-router", "openid"] }
+yew-oauth2 = { version = "0.12.0", features = ["yew-nested-router", "openid"] }
 
 bombastic-model = { path = "../../bombastic/model" }
 exhort-model = { path = "../../exhort/model" }
