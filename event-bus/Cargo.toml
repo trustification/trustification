@@ -15,4 +15,4 @@ log = "0.4"
 prometheus = "0.13.3"
 rdkafka = { version = "0.36", features = ["cmake-build", "gssapi", "sasl", "ssl" ] }
 serde_json = "1"
-thiserror = "1.0"
+thiserror = "2.0"

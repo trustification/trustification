@@ -31,7 +31,7 @@ serde = { version = "1.0.152" }
 serde_json = "1.0.89"
 serde_yaml = "0.9"
 spdx-rs = "0.5.5"
-thiserror = "1"
+thiserror = "2"
 tokio = { version = "*", features = ["rt", "fs", "macros", "rt-multi-thread"] }
 tracing = "0.1"
 url = "2"
