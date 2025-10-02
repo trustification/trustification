@@ -22,7 +22,7 @@ trustification-index = { path = "../../index" }
 clap = { version = "4", features = ["derive"] }
 anyhow = "1"
 futures = "0.3"
-derive_more = "0.99"
+derive_more = "2.0"
 prometheus = "0.13.3"
 
 utoipa = { version = "4", features = ["actix_extras"] }
