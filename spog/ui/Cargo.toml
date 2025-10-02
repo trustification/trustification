@@ -28,7 +28,7 @@ js-sys = "0.3"
 log = "0.4"
 markdown = "1.0.0-alpha.11"
 monaco = { version = "0.5", features = ["yew-components"] }
-openidconnect = "3"
+openidconnect = "4"
 packageurl = "0.4"
 patternfly-yew = { version = "0.6.0", features = ["icons-fab", "tree"] }
 popper-rs = { version = "0.3.2", features = ["yew"] }
