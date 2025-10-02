@@ -21,7 +21,7 @@ itertools = "0.12"
 js-sys = "0.3"
 log = "0.4"
 monaco = { version = "0.5", features = ["yew-components"] }
-openidconnect = "3"
+openidconnect = "4"
 packageurl = "0.4"
 patternfly-yew = { version = "0.6.0", features = ["icons-fab", "tree"] }
 reqwest = { version = "0.11", features = ["json"] }
