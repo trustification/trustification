@@ -21,7 +21,7 @@ log = "0.4"
 utoipa = { version = "4", features = ["actix_extras"] }
 utoipa-swagger-ui = { version = "6", features = ["actix-web"] }
 serde = { version = "1.0", features = ["derive"] }
-thiserror = "1.0.44"
+thiserror = "2.0.0"
 serde_json = "1.0.68"
 guac = { workspace = true }
 packageurl = "0.4"
