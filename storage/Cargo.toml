@@ -15,7 +15,7 @@ http = "0.2"
 async-stream = "0.3"
 log = "0.4"
 urlencoding = "2.1.2"
-thiserror = "1"
+thiserror = "2"
 async-compression = { version = "0.4", features = ["tokio", "zstd", "bzip2"] }
 clap = { version = "4", features = ["derive", "env"] }
 prometheus = "0.13.3"
