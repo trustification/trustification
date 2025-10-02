@@ -25,8 +25,8 @@ trustification-common = { path = "../../common" }
 trustification-index = { path = "../../index" }
 trustification-infrastructure = { path = "../../infrastructure" }
 trustification-storage = { path = "../../storage" }
-utoipa = { version = "4", features = ["actix_extras", "chrono"] }
-utoipa-swagger-ui = { version = "6", features = ["actix-web"] }
+utoipa = { version = "5", features = ["actix_extras", "chrono"] }
+utoipa-swagger-ui = { version = "9", features = ["actix-web"] }
 v11y-index = { path = "../index" }
 v11y-model = { path = "../model" }
 
