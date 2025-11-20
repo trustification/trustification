@@ -7,7 +7,7 @@ edition = "2021"
 anyhow = "1"
 clap = { version = "4", features = ["derive"] }
 collector-osv = {path = "../../collector/osv"}
-cve = "0.3.1"
+cve = "0.5.0"
 cvss = "2"
 log = "0.4"
 prometheus = "0.13.3"
