@@ -30,7 +30,7 @@ urlencoding = "2"
 uuid = "1.7.0"
 wasm-bindgen = "0.2"
 wasm-bindgen-futures = "0.4"
-yew = { version = "0.21", features = ["csr"] }
+yew = { version = "0.22", features = ["csr"] }
 yew-more-hooks = "0.3.0"
 yew-oauth2 = { version = "0.11.0", features = ["yew-nested-router", "openid"] }
 
