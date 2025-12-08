@@ -14,7 +14,7 @@ patternfly-yew = "0.6.0"
 serde = "1.0.193"
 serde_json = "1"
 strum = { version = "0.26", features = ["derive"] }
-yew = "0.21"
+yew = "0.22"
 yew-consent = "0.2"
 yew-hooks = "0.3.0"
 yew-more-hooks = "0.3"

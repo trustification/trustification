@@ -9,7 +9,7 @@ gloo-utils = "0.2"
 js-sys = "0.3"
 serde_json = "1"
 wasm-bindgen = "0.2"
-yew = "0.21"
+yew = "0.22"
 
 [dependencies.web-sys]
 version = "0.3.61"
