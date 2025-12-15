@@ -1,3 +1,9 @@
+
+> [!IMPORTANT]
+> This has been superseded by https://github.com/guacsec/trustify
+
+---
+
 # Trustification
 
 [![CI](https://github.com/trustification/trustification/actions/workflows/ci.yaml/badge.svg)](https://github.com/trustification/trustification/actions?query=workflow%3A%22CI%22)
