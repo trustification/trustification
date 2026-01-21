@@ -9,7 +9,7 @@ description = "Authentication and authorization functionality"
 anyhow = "1"
 async-trait = "0.1"
 base64 = "0.21"
-biscuit = "0.6"
+biscuit = "0.7"
 chrono = { version = "0.4.26", default-features = false }
 clap = { version = "4", features = ["derive", "env"] }
 futures-util = "0.3"
