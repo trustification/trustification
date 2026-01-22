@@ -10,7 +10,7 @@ actix-web = { version = "4", features = ["openssl"] }
 actix-web-extras = "0.1"
 actix-web-httpauth = "0.8"
 actix-web-opentelemetry = "0.15"
-actix-web-prom = "0.8.0"
+actix-web-prom = "0.10.0"
 anyhow = "1"
 async-trait = "0.1"
 bytesize = "1.3"
